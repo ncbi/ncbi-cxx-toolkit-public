@@ -87,18 +87,13 @@ bool CTL_RPCCmd::Send()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 121001, "CTL_RPCCmd::Send",
-                           "ct_command failed");
+        DATABASE_DRIVER_FATAL( "ct_command failed", 121001 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 121002, "CTL_RPCCmd::Send",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 121002 );
     }
 
-    if ( !x_AssignParams() ) {
-        m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 121003, "CTL_RPCCmd::Send",
-                           "cannot assign the params");
-    }
+    m_HasFailed = !x_AssignParams();
+    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 121003 );
 
     switch ( ct_send(m_Cmd) ) {
     case CS_SUCCEED:
@@ -107,18 +102,14 @@ bool CTL_RPCCmd::Send()
         m_HasFailed = true;
         if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
             // we need to close this connection
-            throw CDB_ClientEx(eDB_Fatal, 121004, "CTL_RPCCmd::Send",
-                               "Unrecoverable crash of ct_send. "
-                               "Connection must be closed");
+            DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_send. "
+                               "Connection must be closed", 121004 );
         }
-        throw CDB_ClientEx(eDB_Error, 121005, "CTL_RPCCmd::Send",
-                           "ct_send failed");
+        DATABASE_DRIVER_ERROR( "ct_send failed", 121005 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 121006, "CTL_RPCCmd::Send",
-                           "command was canceled");
+        DATABASE_DRIVER_ERROR( "command was canceled", 121006 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 121007, "CTL_RPCCmd::Send",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 121007 );
     case CS_PENDING:
     default:
         m_WasSent = true;
@@ -154,11 +145,9 @@ bool CTL_RPCCmd::Cancel()
         m_WasSent = false;
         return true;
     case CS_FAIL:
-        throw CDB_ClientEx(eDB_Error, 121008, "CTL_RPCCmd::Cancel",
-                           "ct_cancel failed");
+        DATABASE_DRIVER_ERROR( "ct_cancel failed", 121008 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 121009, "CTL_RPCCmd::Cancel",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 121009 );
     default:
         return false;
     }
@@ -178,10 +167,10 @@ CDB_Result* CTL_RPCCmd::Result()
         m_Res = 0;
     }
 
-    if ( !m_WasSent ) {
-        throw CDB_ClientEx(eDB_Error, 121010, "CTL_RPCCmd::Result",
-                           "you need to send a command first");
-    }
+    CHECK_DRIVER_ERROR( 
+        !m_WasSent, 
+        "you need to send a command first", 
+        121010 );
 
     for (;;) {
         CS_INT res_type;
@@ -196,23 +185,18 @@ CDB_Result* CTL_RPCCmd::Result()
             m_HasFailed = true;
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
-                throw CDB_ClientEx(eDB_Fatal, 121012, "CTL_RPCCmd::Result",
-                                   "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed");
+                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                                   "Connection must be closed", 121012 );
             }
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 121013, "CTL_RPCCmd::Result",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 121013 );
         case CS_CANCELED:
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 121011, "CTL_RPCCmd::Result",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 121011 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 121014, "CTL_RPCCmd::Result",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 121014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 121015, "CTL_RPCCmd::Result",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 121015 );
         }
 
         switch ( res_type ) {
@@ -224,9 +208,8 @@ CDB_Result* CTL_RPCCmd::Result()
         case CS_CMD_FAIL: // the command has failed
             g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 121016, "CTL_RPCCmd::Result",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 121016 );
         case CS_ROW_RESULT:
             m_Res = new CTL_RowResult(m_Cmd);
             break;
@@ -240,17 +223,13 @@ CDB_Result* CTL_RPCCmd::Result()
             m_Res = new CTL_StatusResult(m_Cmd);
             break;
         case CS_COMPUTEFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 121017, "CTL_RPCCmd::Result",
-                               "CS_COMPUTEFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 121017 );
         case CS_ROWFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 121018, "CTL_RPCCmd::Result",
-                               "CS_ROWFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 121018 );
         case CS_MSG_RESULT:
-            throw CDB_ClientEx(eDB_Info, 121019, "CTL_RPCCmd::Result",
-                               "CS_MSG_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 121019 );
         default:
-            throw CDB_ClientEx(eDB_Warning, 121020, "CTL_RPCCmd::Result",
-                               "Unexpected result type has arrived");
+            DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 121020 );
         }
 
         return Create_Result(*m_Res);
@@ -264,10 +243,10 @@ void CTL_RPCCmd::DumpResults()
         m_Res = 0;
     }
 
-    if ( !m_WasSent ) {
-        throw CDB_ClientEx(eDB_Error, 121010, "CTL_RPCCmd::DumpResults",
-                           "you need to send a command first");
-    }
+    CHECK_DRIVER_ERROR( 
+        !m_WasSent, 
+        "you need to send a command first", 
+        121010 );
 
     for (;;) {
         CS_INT res_type;
@@ -282,23 +261,18 @@ void CTL_RPCCmd::DumpResults()
             m_HasFailed = true;
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
-                throw CDB_ClientEx(eDB_Fatal, 121012, "CTL_RPCCmd::DumpResults",
-                                   "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed");
+                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                                   "Connection must be closed", 121012 );
             }
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 121013, "CTL_RPCCmd::DumpResults",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 121013 );
         case CS_CANCELED:
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 121011, "CTL_RPCCmd::DumpResults",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 121011 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 121014, "CTL_RPCCmd::DumpResults",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 121014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 121015, "CTL_RPCCmd::DumpResults",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 121015 );
         }
 
         switch ( res_type ) {
@@ -310,9 +284,8 @@ void CTL_RPCCmd::DumpResults()
         case CS_CMD_FAIL: // the command has failed
             g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 121016, "CTL_RPCCmd::DumpResults",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 121016 );
         case CS_ROW_RESULT:
             m_Res = new CTL_RowResult(m_Cmd);
             break;
@@ -326,17 +299,13 @@ void CTL_RPCCmd::DumpResults()
             m_Res = new CTL_StatusResult(m_Cmd);
             break;
         case CS_COMPUTEFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 121017, "CTL_RPCCmd::DumpResults",
-                               "CS_COMPUTEFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 121017 );
         case CS_ROWFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 121018, "CTL_RPCCmd::DumpResults",
-                               "CS_ROWFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 121018 );
         case CS_MSG_RESULT:
-            throw CDB_ClientEx(eDB_Info, 121019, "CTL_RPCCmd::DumpResults",
-                               "CS_MSG_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 121019 );
         default:
-            throw CDB_ClientEx(eDB_Warning, 121020, "CTL_RPCCmd::DumpResults",
-                               "Unexpected result type has arrived");
+            DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 121020 );
         }
 
         if(m_Res) {
@@ -443,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2004/05/17 21:12:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

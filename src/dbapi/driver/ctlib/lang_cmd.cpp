@@ -90,18 +90,13 @@ bool CTL_LangCmd::Send()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 120001, "CTL_LangCmd::Send",
-                           "ct_command failed");
+        DATABASE_DRIVER_FATAL( "ct_command failed", 120001 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 120002, "CTL_LangCmd::Send",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 120002 );
     }
 
-    if ( !x_AssignParams() ) {
-        m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 120003, "CTL_LangCmd::Send",
-                           "cannot assign the params");
-    }
+    m_HasFailed = !x_AssignParams();
+    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 120003 );
 
     switch ( ct_send(m_Cmd) ) {
     case CS_SUCCEED:
@@ -110,18 +105,14 @@ bool CTL_LangCmd::Send()
         m_HasFailed = true;
         if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
             // we need to close this connection
-            throw CDB_ClientEx(eDB_Fatal, 120004, "CTL_LangCmd::Send",
-                               "Unrecoverable crash of ct_send. "
-                               "Connection must be closed");
+            DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_send. "
+                               "Connection must be closed", 120004 );
         }
-        throw CDB_ClientEx(eDB_Error, 120005, "CTL_LangCmd::Send",
-                           "ct_send failed");
+        DATABASE_DRIVER_ERROR( "ct_send failed", 120005 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 120006, "CTL_LangCmd::Send",
-                           "command was canceled");
+        DATABASE_DRIVER_ERROR( "command was canceled", 120006 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 120007, "CTL_LangCmd::Send",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 120007 );
     case CS_PENDING:
     default:
         m_WasSent = true;
@@ -154,11 +145,9 @@ bool CTL_LangCmd::Cancel()
             m_WasSent = false;
             return true;
         case CS_FAIL:
-            throw CDB_ClientEx(eDB_Error, 120008, "CTL_LangCmd::Cancel",
-                               "ct_cancel failed");
+            DATABASE_DRIVER_ERROR( "ct_cancel failed", 120008 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 120009, "CTL_LangCmd::Cancel",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 120009 );
         default:
             return false;
         }
@@ -182,10 +171,10 @@ CDB_Result* CTL_LangCmd::Result()
         m_Res = 0;
     }
 
-    if ( !m_WasSent ) {
-        throw CDB_ClientEx(eDB_Error, 120010, "CTL_LangCmd::Result",
-                           "you need to send a command first");
-    }
+    CHECK_DRIVER_ERROR( 
+        !m_WasSent, 
+        "you need to send a command first", 
+        120010 );
 
     for (;;) {
         CS_INT res_type;
@@ -200,23 +189,20 @@ CDB_Result* CTL_LangCmd::Result()
             m_HasFailed = true;
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
-                throw CDB_ClientEx(eDB_Fatal, 120012, "CTL_LangCmd::Result",
-                                   "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed");
+                DATABASE_DRIVER_FATAL( 
+                    "Unrecoverable crash of ct_result. "
+                    "Connection must be closed", 
+                    120012 );
             }
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 120013, "CTL_LangCmd::Result",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 120013 );
         case CS_CANCELED:
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 120011, "CTL_LangCmd::Result",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 120014, "CTL_LangCmd::Result",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 120014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 120015, "CTL_LangCmd::Result",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 120015 );
         }
 
         switch ( res_type ) {
@@ -229,9 +215,8 @@ CDB_Result* CTL_LangCmd::Result()
             // check the number of affected rows
             g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 120016, "CTL_LangCmd::Result",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 120016 );
         case CS_ROW_RESULT:
             m_Res = new CTL_RowResult(m_Cmd);
             break;
@@ -245,17 +230,13 @@ CDB_Result* CTL_LangCmd::Result()
             m_Res = new CTL_StatusResult(m_Cmd);
             break;
         case CS_COMPUTEFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 120017, "CTL_LangCmd::Result",
-                               "CS_COMPUTEFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 120017 );
         case CS_ROWFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 120018, "CTL_LangCmd::Result",
-                               "CS_ROWFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 120018 );
         case CS_MSG_RESULT:
-            throw CDB_ClientEx(eDB_Info, 120019, "CTL_LangCmd::Result",
-                               "CS_MSG_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 120019 );
         default:
-            throw CDB_ClientEx(eDB_Warning, 120020, "CTL_LangCmd::Result",
-                               "Unexpected result type has arrived");
+            DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
         }
 
         return Create_Result(*m_Res);
@@ -269,10 +250,7 @@ void CTL_LangCmd::DumpResults()
         m_Res = 0;
     }
 
-    if ( !m_WasSent ) {
-        throw CDB_ClientEx(eDB_Error, 120010, "CTL_LangCmd::DumpResults",
-                           "you need to send a command first");
-    }
+    CHECK_DRIVER_ERROR( !m_WasSent, "you need to send a command first", 120010 );
     
 
     for (;;) {
@@ -288,23 +266,18 @@ void CTL_LangCmd::DumpResults()
             m_HasFailed = true;
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
-                throw CDB_ClientEx(eDB_Fatal, 120012, "CTL_LangCmd::DumpResults",
-                                   "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed");
+                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                                   "Connection must be closed", 120012 );
             }
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 120013, "CTL_LangCmd::DumpResults",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 120013 );
         case CS_CANCELED:
             m_WasSent = false;
-            throw CDB_ClientEx(eDB_Error, 120011, "CTL_LangCmd::DumpResults",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 120011 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 120014, "CTL_LangCmd::DumpResults",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 120014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 120015, "CTL_LangCmd::DumpResults",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 120015 );
         }
 
         switch ( res_type ) {
@@ -317,9 +290,8 @@ void CTL_LangCmd::DumpResults()
             // check the number of affected rows
             g_CTLIB_GetRowCount(m_Cmd, &m_RowCount);
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 120016, "CTL_LangCmd::DumpResults",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 120016 );
         case CS_ROW_RESULT:
             m_Res = new CTL_RowResult(m_Cmd);
             break;
@@ -333,17 +305,13 @@ void CTL_LangCmd::DumpResults()
             m_Res = new CTL_StatusResult(m_Cmd);
             break;
         case CS_COMPUTEFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 120017, "CTL_LangCmd::Result",
-                               "CS_COMPUTEFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_COMPUTEFMT_RESULT has arrived", 120017 );
         case CS_ROWFMT_RESULT:
-            throw CDB_ClientEx(eDB_Info, 120018, "CTL_LangCmd::Result",
-                               "CS_ROWFMT_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_ROWFMT_RESULT has arrived", 120018 );
         case CS_MSG_RESULT:
-            throw CDB_ClientEx(eDB_Info, 120019, "CTL_LangCmd::Result",
-                               "CS_MSG_RESULT has arrived");
+            DATABASE_DRIVER_INFO( "CS_MSG_RESULT has arrived", 120019 );
         default:
-            throw CDB_ClientEx(eDB_Warning, 120020, "CTL_LangCmd::Result",
-                               "Unexpected result type has arrived");
+            DATABASE_DRIVER_WARNING( "Unexpected result type has arrived", 120020 );
         }
         if(m_Res) {
             if(m_Connect->m_ResProc) {
@@ -442,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2004/05/17 21:12:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -46,14 +46,19 @@ BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// DEPRECATED. Will be removed in next version.
 CDriverManager* CDriverManager::sm_Instance = 0;
-
-
 DEFINE_CLASS_STATIC_MUTEX(CDriverManager::sm_Mutex);
 
 
 CDriverManager& CDriverManager::GetInstance()
 {
+    // New implementation ...
+//    static CSafeStaticPtr<CDriverManager> instance;
+//
+//    return instance.Get();
+
+// DEPRECATED. Will be removed in next version.
     if ( !sm_Instance ) {
         CMutexGuard GUARD(sm_Mutex);
         // Check again with the lock to avoid races
@@ -67,6 +72,7 @@ CDriverManager& CDriverManager::GetInstance()
 
 void CDriverManager::RemoveInstance()
 {
+// DEPRECATED. Will be removed in next version.
     CMutexGuard GUARD(sm_Mutex);
     delete sm_Instance;
     sm_Instance = 0;
@@ -98,11 +104,11 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
     }
 
     I_DriverContext* ctx = GetDriverContextFromMap( driver_name, attr );
-    if ( !ctx ) {
-        throw CDbapiException
-            ("CDriverManager::CreateDs() -- Failed to get context for driver: "
-             + driver_name);
-    }
+
+    CHECK_NCBI_DBAPI(
+        !ctx,
+        "CDriverManager::CreateDs() -- Failed to get context for driver: " + driver_name
+        );
 
     return RegisterDs(driver_name, ctx);
 }
@@ -170,6 +176,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.17  2005/04/04 13:03:56  ssikorsk
+* Revamp of DBAPI exception class CDB_Exception
+*
 * Revision 1.16  2005/03/08 17:12:58  ssikorsk
 * Allow to add a driver search path for the driver manager
 *

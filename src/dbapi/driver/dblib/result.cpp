@@ -67,7 +67,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 ((CDB_Char*)      item_buff)->SetValue((const char*) d_ptr,
                                                        (size_t) d_len);
                 break;
-			case eDB_LongBinary:
+            case eDB_LongBinary:
                 ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
                                                        (size_t) d_len);
                 break;
@@ -76,8 +76,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                                        (size_t) d_len);
                 break;
             default:
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                   "wrong type of CDB_Object");
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
             }
             return item_buff;
         }
@@ -104,8 +103,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                     *((CDB_Int*)      item_buff) = *v ? 1 : 0;
                     break;
                 default:
-                    throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                       "wrong type of CDB_Object");
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -143,8 +141,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                                        (size_t) d_len);
                 break;
             default:
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                   "wrong type of CDB_Object");
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
             }
             return item_buff;
         }
@@ -156,10 +153,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
     case eDB_DateTime: {
         DBDATETIME* v = (DBDATETIME*) d_ptr;
         if (item_buff) {
-            if (b_type != eDB_DateTime) {
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                   "wrong type of CDB_Object");
-            }
+            CHECK_DRIVER_ERROR( b_type != eDB_DateTime, "wrong type of CDB_Object", 230020 );
             if (v)
                 ((CDB_DateTime*) item_buff)->Assign(v->dtdays, v->dttime);
             else
@@ -184,8 +178,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                         ((int) DBDATETIME4_days(v), (int) DBDATETIME4_mins(v)*60*300);
                     break;
                 default:
-                    throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                       "wrong type of CDB_Object");
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -211,8 +204,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                     *((CDB_Int*)      item_buff) = (Int4)  *v;
                     break;
                 default:
-                    throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                       "wrong type of CDB_Object");
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -234,8 +226,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                     *((CDB_Int*)      item_buff) = (Int4) *v;
                         break;
                 default:
-                    throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                       "wrong type of CDB_Object");
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -252,8 +243,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 if (b_type == eDB_Int)
                     *((CDB_Int*) item_buff) = (Int4) *v;
                 else {
-                    throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                       "wrong type of CDB_Object");
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -265,8 +255,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
     case eDB_Double: {
         if (item_buff && b_type != eDB_Double) {
-            throw CDB_ClientEx(eDB_Error, 130020, "s_GenericGetItem",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
         }
         DBFLT8* v = (DBFLT8*) d_ptr;
         if (item_buff) {
@@ -282,8 +271,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
 
     case eDB_Float: {
         if (item_buff && b_type != eDB_Float) {
-            throw CDB_ClientEx(eDB_Error, 130020, "s_GenericGetItem",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
         }
         DBREAL* v = (DBREAL*) d_ptr;
         if (item_buff) {
@@ -300,7 +288,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
     case eDB_LongBinary: {
         if (item_buff) {
             switch (b_type) {
-			case eDB_LongBinary:
+            case eDB_LongBinary:
                 ((CDB_LongBinary*)item_buff)->SetValue((const void*) d_ptr,
                                                        (size_t) d_len);
                 break;
@@ -310,8 +298,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                 break;
 
             default:
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                   "wrong type of CDB_Object");
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
             }
             return item_buff;
         }
@@ -333,8 +320,7 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
                                                        (size_t) d_len);
                 break;
             default:
-                throw CDB_ClientEx(eDB_Error, 230020, "s_GenericGetItem",
-                                   "wrong type of CDB_Object");
+                DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
             }
             return item_buff;
         }
@@ -456,11 +442,9 @@ bool CDBL_RowResult::Fetch()
             m_EOR = true;
             break;
         case FAIL:
-            throw CDB_ClientEx(eDB_Error, 230003, "CDBL_RowResult::Fetch",
-                               "error in fetching row");
+            DATABASE_DRIVER_ERROR( "error in fetching row", 230003 );
         case BUF_FULL:
-            throw CDB_ClientEx(eDB_Error, 230006, "CDBL_RowResult::Fetch",
-                               "buffer is full");
+            DATABASE_DRIVER_ERROR( "buffer is full", 230006 );
         default:
             *m_ResStatus|= 0x10;
             m_EOR = true;
@@ -504,8 +488,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                     *((CDB_BigInt*) item_buff) = numeric_to_longlong
                         ((unsigned int) v->precision, DBNUMERIC_val(v));
                 } else {
-                    throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
-                                       "wrong type of CDB_Object");
+                    DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                 }
             } else
                 item_buff->AssignNULL();
@@ -527,8 +510,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                              (unsigned int)   v->scale,
                              (unsigned char*) DBNUMERIC_val(v));
                     } else {
-                        throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
-                                           "wrong type of CDB_Object");
+                        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
                     }
                 } else
                     item_buff->AssignNULL();
@@ -543,8 +525,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
 
     case eDB_Text: {
         if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            throw CDB_ClientEx(eDB_Error, 130020, "s_GetItem",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
         }
         CDB_Text* v = item_buff ? (CDB_Text*) item_buff : new CDB_Text;
         v->Append((char*) d_ptr, (int) d_len);
@@ -553,8 +534,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
 
     case eDB_Image: {
         if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-            throw CDB_ClientEx(eDB_Error, 130020, "s_GetItem",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 130020 );
         }
         CDB_Image* v = item_buff ? (CDB_Image*) item_buff : new CDB_Image;
         v->Append((void*) d_ptr, (int) d_len);
@@ -562,8 +542,7 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
     }
 
     default:
-        throw CDB_ClientEx(eDB_Error, 130004, "s_GetItem",
-                           "unexpected result type");
+        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
     }
 }
 
@@ -708,16 +687,14 @@ bool CDBL_BlobResult::Fetch()
             m_EOR = true;
             return false;
         default:
-            throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::Fetch",
-                               "error in fetching row");
+            DATABASE_DRIVER_ERROR( "error in fetching row", 280003 );
         }
     }
     else m_CurrItem = 0;
     s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff));
     if(s == NO_MORE_ROWS) return false;
     if(s < 0) {
-        throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::Fetch",
-                           "error in fetching row");
+        DATABASE_DRIVER_ERROR( "error in fetching row", 280003 );
     }
     m_BytesInBuffer= s;
     m_ReadedBytes= 0;
@@ -739,8 +716,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
     EDB_Type b_type = item_buff ? item_buff->GetType() : eDB_UnsupportedType;
 
     if (item_buff && b_type != eDB_Text && b_type != eDB_Image) {
-        throw CDB_ClientEx(eDB_Error, 230020, "CDBL_BlobResult::GetItem",
-                           "wrong type of CDB_Object");
+        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
     }
 
     if (item_buff == 0) {
@@ -772,8 +748,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
         m_CurrItem = 1;
         break;
     default:
-        throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::GetItem",
-                           "dbreadtext failed");
+        DATABASE_DRIVER_ERROR( "dbreadtext failed", 280003 );
     }
 
     return item_buff;
@@ -814,8 +789,7 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         m_CurrItem = 1;
         break;
     case -1:
-        throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::ReadItem",
-                           "dbreadtext failed");
+        DATABASE_DRIVER_ERROR( "dbreadtext failed", 280003 );
     default:
         break;
     }
@@ -847,8 +821,7 @@ bool CDBL_BlobResult::SkipItem()
         m_CurrItem = 1;
         break;
     default:
-        throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::SkipItem",
-                           "dbreadtext failed");
+        DATABASE_DRIVER_ERROR( "dbreadtext failed", 280003 );
     }
     return true;
 }
@@ -893,8 +866,7 @@ static CDB_Object* s_RetGetItem(DBPROCESS* cmd, int item_no,
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
                                        b_type, d_ptr, d_len);
     if (!val) {
-        throw CDB_ClientEx(eDB_Error, 230004, "s_RetGetItem",
-                           "unexpected result type");
+        DATABASE_DRIVER_ERROR( "unexpected result type", 230004 );
     }
     return val;
 }
@@ -933,7 +905,7 @@ bool CDBL_ParamResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
-	m_CurrItem= 0;
+    m_CurrItem= 0;
         return true;
     }
     m_CurrItem= -1;
@@ -1036,8 +1008,7 @@ static CDB_Object* s_AltGetItem(DBPROCESS* cmd, int id, int item_no,
     CDB_Object* val = s_GenericGetItem(fmt->data_type, item_buff,
                                        b_type, d_ptr, d_len);
     if (!val) {
-        throw CDB_ClientEx(eDB_Error, 130004, "s_AltGetItem",
-                           "unexpected result type");
+        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
     }
     return val;
 }
@@ -1055,15 +1026,11 @@ CDBL_ComputeResult::CDBL_ComputeResult(DBPROCESS* cmd,
 {
     m_ComputeId = DBROWTYPE(cmd);
     if (m_ComputeId == REG_ROW || m_ComputeId == NO_MORE_ROWS) {
-        throw CDB_ClientEx(eDB_Error, 270000,
-                           "CDBL_ComputeResult::CDBL_ComputeResult",
-                           "no compute row found");
+        DATABASE_DRIVER_ERROR( "no compute row found", 270000 );
     }
     m_NofCols = dbnumalts(cmd, m_ComputeId);
     if (m_NofCols < 1) {
-        throw CDB_ClientEx(eDB_Error, 270001,
-                           "CDBL_ComputeResult::CDBL_ComputeResult",
-                           "compute id is invalid");
+        DATABASE_DRIVER_ERROR( "compute id is invalid", 270001 );
     }
     m_CmdNum = DBCURCMD(cmd);
     m_ColFmt = new SDBL_ColDescr[m_NofCols];
@@ -1088,7 +1055,7 @@ bool CDBL_ComputeResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
-	m_CurrItem= 0;
+    m_CurrItem= 0;
         return true;
     }
 
@@ -1099,11 +1066,9 @@ bool CDBL_ComputeResult::Fetch()
         *m_ResStatus ^= 0x10;
         break;
     case FAIL:
-        throw CDB_ClientEx(eDB_Error, 270003, "CDBL_ComputeResult::Fetch",
-                           "error in fetching row");
+        DATABASE_DRIVER_ERROR( "error in fetching row", 270003 );
     case BUF_FULL:
-        throw CDB_ClientEx(eDB_Error, 270006, "CDBL_ComputeResult::Fetch",
-                           "buffer is full");
+        DATABASE_DRIVER_ERROR( "buffer is full", 270006 );
     default:
         break;
     }
@@ -1249,8 +1214,7 @@ CDB_Object* CDBL_StatusResult::GetItem(CDB_Object* item_buff)
         return new CDB_Int(m_Val);
 
     if (item_buff->GetType() != eDB_Int) {
-        throw CDB_ClientEx(eDB_Error, 230020, "CDBL_StatusResult::GetItem",
-                           "wrong type of CDB_Object");
+        DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 230020 );
     }
 
     CDB_Int* i = (CDB_Int*) item_buff;
@@ -1320,9 +1284,7 @@ CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) :
             }
         }
     } catch (CDB_Exception& ) {
-        throw CDB_ClientEx(eDB_Error, 222010,
-                           "CDBL_CursorResult::CDBL_CursorResult",
-                           "failed to get the results");
+        DATABASE_DRIVER_ERROR( "failed to get the results", 222010 );
     }
 }
 
@@ -1391,8 +1353,7 @@ bool CDBL_CursorResult::Fetch()
             }
         }
     } catch (CDB_Exception& ) {
-        throw CDB_ClientEx(eDB_Error, 222011, "CDBL_CursorResult::Fetch",
-                           "Failed to fetch the results");
+        DATABASE_DRIVER_ERROR( "Failed to fetch the results", 222011 );
     }
     return false;
 }
@@ -1451,11 +1412,11 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
 #ifdef MS_DBLIB_IN_USE /*Text,Image*/
     const char* pColName = dbcolname(dblink,col_num);
-    if(pColName == NULL) {
-        throw CDB_ClientEx(eDB_Error, 280000,
-                           "CDBL_ITDescriptor::CDBL_ITDescriptor",
-                           "dbcolname() returns NULL");
-    }
+
+    CHECK_DRIVER_ERROR( 
+        pColName == NULL, 
+        "dbcolname() returns NULL", 
+        280000 );
 
     // We have to use an offset in some undocumented structure
     // (obtained with the help of a debugger).
@@ -1468,11 +1429,11 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 #else
     DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
 
-    if (col_info == 0) {
-        throw CDB_ClientEx(eDB_Error, 280000,
-                           "CDBL_ITDescriptor::CDBL_ITDescriptor",
-                           "Can not get the DBCOLINFO*");
-    }
+    CHECK_DRIVER_ERROR( 
+        col_info == 0, 
+        "Cannot get the DBCOLINFO*", 
+        280000 );
+
     if (!x_MakeObjName(col_info)) {
         m_ObjName = "";
     }
@@ -1521,7 +1482,7 @@ int CDBL_ITDescriptor::DescriptorType() const
 #ifndef MS_DBLIB_IN_USE
     return CDBL_ITDESCRIPTOR_TYPE_MAGNUM;
 #else
-	return CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM;
+    return CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM;
 #endif
 }
 
@@ -1555,6 +1516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.22  2004/05/18 18:30:36  gorelenk
  * PCH <ncbi_pch.hpp> moved to correct place .
  *

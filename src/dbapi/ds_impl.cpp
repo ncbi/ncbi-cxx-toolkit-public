@@ -1,30 +1,30 @@
 /* $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
 *  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
 *
 * ===========================================================================
 *
 * Author:  Michael Kholodov
-*   
+*
 * File Description:
 *   DataSource implementation
 *
@@ -48,14 +48,14 @@ CDataSource::CDataSource(I_DriverContext *ctx)
 
 CDataSource::~CDataSource()
 {
-    _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
+    _TRACE("Deleting " << GetIdent() << " " << (void*)this);
     Notify(CDbapiDeletedEvent(this));
     delete m_context;
     delete m_multiExH;
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    _TRACE(GetIdent() << " " << (void*)this << " deleted.");
 }
 
-void CDataSource::SetLoginTimeout(unsigned int i) 
+void CDataSource::SetLoginTimeout(unsigned int i)
 {
     m_loginTimeout = i;
     if( m_context != 0 ) {
@@ -63,7 +63,7 @@ void CDataSource::SetLoginTimeout(unsigned int i)
     }
 }
 
-void CDataSource::SetLogStream(CNcbiOstream* out) 
+void CDataSource::SetLogStream(CNcbiOstream* out)
 {
     if( out != 0 ) {
         // Clear the previous handlers if present
@@ -72,16 +72,16 @@ void CDataSource::SetLogStream(CNcbiOstream* out)
             m_context->PopDefConnMsgHandler(m_multiExH);
             delete m_multiExH;
             _TRACE("SetLogStream(): CDataSource " << (void*)this
-                << ": message handler " << (void*)m_multiExH 
+                << ": message handler " << (void*)m_multiExH
                 << " removed from context " << (void*)m_context);
             m_multiExH = 0;
         }
-            
+
         CDB_UserHandler *newH = new CDB_UserHandler_Stream(out);
         CDB_UserHandler *h = CDB_UserHandler::SetDefault(newH);
         delete h;
         _TRACE("SetLogStream(): CDataSource " << (void*)this
-                << ": new default message handler " << (void*)newH 
+                << ": new default message handler " << (void*)newH
                 << " installed");
    }
     else {
@@ -91,7 +91,7 @@ void CDataSource::SetLogStream(CNcbiOstream* out)
             m_context->PushCntxMsgHandler(m_multiExH);
             m_context->PushDefConnMsgHandler(m_multiExH);
             _TRACE("SetLogStream(): CDataSource " << (void*)this
-                << ": message handler " << (void*)m_multiExH 
+                << ": message handler " << (void*)m_multiExH
                 << " installed on context " << (void*)m_context);
         }
     }
@@ -101,7 +101,7 @@ CToMultiExHandler* CDataSource::GetHandler()
 {
     return m_multiExH;
 }
-    
+
 CDB_MultiEx* CDataSource::GetErrorAsEx()
 {
     return GetHandler() == 0 ? 0 : GetHandler()->GetMultiEx();
@@ -114,7 +114,7 @@ string CDataSource::GetErrorInfo()
         CDB_UserHandler_Stream h(&out);
         h.HandleIt(GetHandler()->GetMultiEx());
 
-        // Replace MultiEx 
+        // Replace MultiEx
         GetHandler()->ReplaceMultiEx();
 /*
         m_context->PopCntxMsgHandler(m_multiExH);
@@ -133,8 +133,10 @@ string CDataSource::GetErrorInfo()
 
 
 I_DriverContext* CDataSource::GetDriverContext() {
-    if( m_context == 0 )
-      throw CDbapiException("CDataSource::GetDriverContext(): no valid context");
+    CHECK_NCBI_DBAPI(
+        m_context == 0, 
+        "CDataSource::GetDriverContext(): no valid context"
+        );
 
     return m_context;
   }
@@ -147,9 +149,9 @@ IConnection* CDataSource::CreateConnection(EOwnership ownership)
     return conn;
 }
 
-void CDataSource::Action(const CDbapiEvent& e) 
+void CDataSource::Action(const CDbapiEvent& e)
 {
-    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
+    _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName()
            << "' from " << e.GetSource()->GetIdent());
 
     if( dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
@@ -165,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/04/04 13:03:56  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.17  2004/11/08 14:52:50  kholodov
  * Added: additional TRACE messages
  *

@@ -71,9 +71,7 @@ CMySQL_RowResult::CMySQL_RowResult(CMySQL_Connection* conn)
 {
     m_Result = mysql_use_result(&m_Connect->m_MySQL);
     if ( !m_Result ) {
-        throw CDB_ClientEx(eDB_Warning, 800004,
-                           "CMySQL_RowResult::CMySQL_RowResult",
-                           "Failed: mysql_use_result");
+        DATABASE_DRIVER_WARNING( "Failed: mysql_use_result", 800004 );
     }
 
     m_NofCols = mysql_num_fields(m_Result);
@@ -130,9 +128,7 @@ bool CMySQL_RowResult::Fetch()
     if ( m_Row ) {
         m_Lengths = mysql_fetch_lengths(m_Result);
         if ( !m_Lengths )
-            throw CDB_ClientEx(eDB_Warning, 800006,
-                               "CMySQL_RowResult::Fetch",
-                               "Failed: mysql_fetch_lengths");
+            DATABASE_DRIVER_WARNING( "Failed: mysql_fetch_lengths", 800006 );
     }
     m_CurrItem = 0;
     return m_Row != 0;
@@ -315,6 +311,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.8  2004/05/17 21:15:34  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

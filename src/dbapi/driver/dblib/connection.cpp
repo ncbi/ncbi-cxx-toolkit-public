@@ -86,10 +86,7 @@ CDB_RPCCmd* CDBL_Connection::RPC(const string& rpc_name, unsigned int nof_args)
 CDB_BCPInCmd* CDBL_Connection::BCPIn(const string& tab_name,
                                      unsigned int nof_cols)
 {
-    if (!m_BCPAble) {
-        throw CDB_ClientEx(eDB_Error, 210003, "CDBL_Connection::BCPIn",
-                           "No bcp on this connection");
-    }
+    CHECK_DRIVER_ERROR( !m_BCPAble, "No bcp on this connection", 210003 );
     CDBL_BCPInCmd* bcmd = new CDBL_BCPInCmd(this, m_Link, tab_name, nof_cols);
     m_CMDs.Add(bcmd);
     return Create_BCPInCmd(*bcmd);
@@ -111,32 +108,28 @@ CDB_CursorCmd* CDBL_Connection::Cursor(const string& cursor_name,
 CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                               size_t data_size, bool log_it)
 {
-    if (data_size < 1) {
-        throw CDB_ClientEx(eDB_Fatal, 210092,
-                           "CDBL_Connection::SendDataCmd",
-                           "wrong (zero) data size");
-    }
+    CHECK_DRIVER_FATAL( data_size < 1, "wrong (zero) data size", 210092 );
 
     I_ITDescriptor* p_desc= 0;
 
     // check what type of descriptor we've got
     if(descr_in.DescriptorType() != 
 #ifndef MS_DBLIB_IN_USE
-		CDBL_ITDESCRIPTOR_TYPE_MAGNUM
+        CDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #else
-		CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
+        CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #endif
-		) {
-	// this is not a native descriptor
-	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-	if(p_desc == 0) return false;
+        ) {
+    // this is not a native descriptor
+    p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+    if(p_desc == 0) return false;
     }
     
 
     C_ITDescriptorGuard d_guard(p_desc);
 
     CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
-	dynamic_cast<CDBL_ITDescriptor&> (descr_in);
+    dynamic_cast<CDBL_ITDescriptor&> (descr_in);
 
     if (dbwritetext(m_Link,
                     (char*) desc.m_ObjName.c_str(),
@@ -148,8 +141,7 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         dbsqlok(m_Link) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 210093, "CDBL_Connection::SendDataCmd",
-                           "dbwritetext/dbsqlok/dbresults failed");
+        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210093 );
     }
 
     CDBL_SendDataCmd* sd_cmd = new CDBL_SendDataCmd(this, m_Link, data_size);
@@ -305,21 +297,21 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
     // check what type of descriptor we've got
     if(descr_in.DescriptorType() !=
 #ifndef MS_DBLIB_IN_USE
-		CDBL_ITDESCRIPTOR_TYPE_MAGNUM
+        CDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #else
-		CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
+        CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #endif
-		){
-	// this is not a native descriptor
-	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-	if(p_desc == 0) return false;
+        ){
+    // this is not a native descriptor
+    p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
+    if(p_desc == 0) return false;
     }
     
 
     C_ITDescriptorGuard d_guard(p_desc);
 
     CDBL_ITDescriptor& desc = p_desc? dynamic_cast<CDBL_ITDescriptor&> (*p_desc) : 
-	dynamic_cast<CDBL_ITDescriptor&> (descr_in);
+    dynamic_cast<CDBL_ITDescriptor&> (descr_in);
     char buff[1800]; // maximal page size
 
     if (size <= sizeof(buff)) { // we could write a blob in one chunk
@@ -330,8 +322,7 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
                         desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                         log_it ? TRUE : FALSE, (DBINT) s, (BYTE*) buff)
             != SUCCEED) {
-            throw CDB_ClientEx(eDB_Error, 210030, "CDBL_Connection::SendData",
-                               "dbwritetext failed");
+            DATABASE_DRIVER_ERROR( "dbwritetext failed", 210030 );
         }
         return true;
     }
@@ -345,29 +336,25 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
         dbsqlok(m_Link) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 210031, "CDBL_Connection::SendData",
-                           "dbwritetext/dbsqlok/dbresults failed");
+        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210031 );
     }
 
     while (size > 0) {
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
             dbcancel(m_Link);
-            throw CDB_ClientEx(eDB_Fatal, 210032, "CDBL_Connection::SendData",
-                               "Text/Image data corrupted");
+            DATABASE_DRIVER_FATAL( "Text/Image data corrupted", 210032 );
         }
         if (dbmoretext(m_Link, (DBINT) s, (BYTE*) buff) != SUCCEED) {
             dbcancel(m_Link);
-            throw CDB_ClientEx(eDB_Error, 210033, "CDBL_Connection::SendData",
-                               "dbmoretext failed");
+            DATABASE_DRIVER_ERROR( "dbmoretext failed", 210033 );
         }
         size -= s;
     }
 
     //    if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
     if (dbsqlok(m_Link) != SUCCEED || x_Results(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 210034, "CDBL_Connection::SendData",
-                           "dbsqlok/dbresults failed");
+        DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed", 210034 );
     }
 
     return true;
@@ -391,8 +378,7 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
-	throw CDB_ClientEx(eDB_Error, 210035, "CDBL_Connection::x_GetNativeITDescriptor",
-			   "can not send the language command");
+        DATABASE_DRIVER_ERROR( "Cannot send the language command", 210035 );
     }
 
     CDB_Result* res;
@@ -400,24 +386,24 @@ I_ITDescriptor* CDBL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     bool i;
 
     while(lcmd->HasMoreResults()) {
-	res= lcmd->Result();
-	if(res == 0) continue;
-	if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
-	    EDB_Type tt= res->ItemDataType(0);
-	    if(tt == eDB_Text || tt == eDB_Image) {
-		while(res->Fetch()) {
-		    res->ReadItem(&i, 1);
-		
-		    descr= new CDBL_ITDescriptor(m_Link, descr_in);
-		    // descr= res->GetImageOrTextDescriptor();
-		    if(descr) break;
-		}
-	    }
-	}
-	delete res;
+    res= lcmd->Result();
+    if(res == 0) continue;
+    if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
+        EDB_Type tt= res->ItemDataType(0);
+        if(tt == eDB_Text || tt == eDB_Image) {
+        while(res->Fetch()) {
+            res->ReadItem(&i, 1);
+        
+            descr= new CDBL_ITDescriptor(m_Link, descr_in);
+            // descr= res->GetImageOrTextDescriptor();
+            if(descr) break;
+        }
+        }
+    }
+    delete res;
     }
     delete lcmd;
-		
+        
     return descr;
 }
 
@@ -527,10 +513,11 @@ CDBL_SendDataCmd::CDBL_SendDataCmd(CDBL_Connection* con, DBPROCESS* cmd,
 
 size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
-    if (!pChunk  ||  !nof_bytes) {
-        throw CDB_ClientEx(eDB_Fatal, 290000, "CDBL_SendDataCmd::SendChunk",
-                           "wrong (zero) arguments");
-    }
+    CHECK_DRIVER_FATAL( 
+        !pChunk  ||  !nof_bytes, 
+        "wrong (zero) arguments", 
+        290000 );
+
     if (!m_Bytes2go)
         return 0;
 
@@ -539,8 +526,7 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
     if (dbmoretext(m_Cmd, (DBINT) nof_bytes, (BYTE*) pChunk) != SUCCEED) {
         dbcancel(m_Cmd);
-        throw CDB_ClientEx(eDB_Error, 290001, "CDBL_SendDataCmd::SendChunk",
-                           "dbmoretext failed");
+        DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
     }
 
     m_Bytes2go -= nof_bytes;
@@ -548,9 +534,7 @@ size_t CDBL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (m_Bytes2go <= 0) {
         //        if (dbsqlok(m_Cmd) != SUCCEED || dbresults(m_Cmd) == FAIL) {
         if (dbsqlok(m_Cmd) != SUCCEED || m_Connect->x_Results(m_Cmd) == FAIL) {
-            throw CDB_ClientEx(eDB_Error, 290002,
-                               "CDBL_SendDataCmd::SendChunk",
-                               "dbsqlok/results failed");
+            DATABASE_DRIVER_ERROR( "dbsqlok/results failed", 290002 );
         }
     }
 
@@ -586,6 +570,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.13  2005/02/25 16:09:33  soussov
  * adds wrapper for close to make windows happy
  *

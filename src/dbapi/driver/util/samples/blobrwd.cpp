@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
                                                               &err_msg, &packet);
         if(!my_context)
         {
-            cerr << "Can not load a driver " << driver_name << " ["
+            cerr << "Cannot load a driver " << driver_name << " ["
                  << err_msg << "] " << endl;
             return 1;
         }
@@ -221,7 +221,11 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.1  2004/10/19 17:59:53  ivanovsk
+ *
  * Add samples for the modified blobstore util.
  *
  * Revision 1.4  2004/05/25 19:47:28  soussov

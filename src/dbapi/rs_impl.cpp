@@ -1,32 +1,32 @@
 /* $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            PUBLIC DOMAIN NOTICE
 *               National Center for Biotechnology Information
-*                                                                          
-*  This software/database is a "United States Government Work" under the   
-*  terms of the United States Copyright Act.  It was written as part of    
-*  the author's official duties as a United States Government employee and 
-*  thus cannot be copyrighted.  This software/database is freely available 
-*  to the public for use. The National Library of Medicine and the U.S.    
-*  Government have not placed any restriction on its use or reproduction.  
-*                                                                          
-*  Although all reasonable efforts have been taken to ensure the accuracy  
-*  and reliability of the software and data, the NLM and the U.S.          
-*  Government do not and cannot warrant the performance or results that    
-*  may be obtained by using this software or data. The NLM and the U.S.    
-*  Government disclaim all warranties, express or implied, including       
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
 *  warranties of performance, merchantability or fitness for any particular
-*  purpose.                                                                
-*                                                                          
-*  Please cite the author in any work or product based on this material.   
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
 *
 * ===========================================================================
 *
 * File Name:  $Id$
 *
 * Author:  Michael Kholodov
-*   
+*
 * File Description:  Resultset implementation
 *
 */
@@ -68,7 +68,7 @@ CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
 }
 
 
-void CResultSet::Init() 
+void CResultSet::Init()
 {
     // Reserve storage for column data
     EDB_Type type;
@@ -93,7 +93,7 @@ void CResultSet::Init()
         }
     }
 
-    _TRACE("CResultSet::Init(): Space reserved for " << m_data.size() 
+    _TRACE("CResultSet::Init(): Space reserved for " << m_data.size()
            << " columns");
 
 }
@@ -103,16 +103,16 @@ CResultSet::~CResultSet()
     Notify(CDbapiClosedEvent(this));
     FreeResources();
     Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    _TRACE(GetIdent() << " " << (void*)this << " deleted.");
 }
 
-const CVariant& CResultSet::GetVariant(unsigned int idx) 
+const CVariant& CResultSet::GetVariant(unsigned int idx)
 {
     CheckIdx(idx);
     return m_data[idx-1];
 }
 
-const CVariant& CResultSet::GetVariant(const string& name) 
+const CVariant& CResultSet::GetVariant(const string& name)
 {
     int zIdx = GetColNum(name);
 
@@ -122,7 +122,7 @@ const CVariant& CResultSet::GetVariant(const string& name)
 }
 
 
-const IResultSetMetaData* CResultSet::GetMetaData() 
+const IResultSetMetaData* CResultSet::GetMetaData()
 {
     CResultSetMetaData *md = new CResultSetMetaData(m_rs);
     md->AddListener(this);
@@ -130,22 +130,22 @@ const IResultSetMetaData* CResultSet::GetMetaData()
     return md;
 }
 
-EDB_ResType CResultSet::GetResultType() 
+EDB_ResType CResultSet::GetResultType()
 {
     return m_rs->ResultType();
 }
 
-void CResultSet::BindBlobToVariant(bool b) 
+void CResultSet::BindBlobToVariant(bool b)
 {
     m_bindBlob = b;
 }
 
-void CResultSet::DisableBind(bool b) 
+void CResultSet::DisableBind(bool b)
 {
     m_disableBind = b;
 }
 
-bool CResultSet::Next() 
+bool CResultSet::Next()
 {
 
     bool more = false;
@@ -157,9 +157,9 @@ bool CResultSet::Next()
     if( more && !IsDisableBind() ) {
 
         for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
-            
+
             type = m_rs->ItemDataType(i);
-            
+
             if( !IsBindBlob() ) {
                 if( type == eDB_Text || type == eDB_Image )  {
                     m_column = m_rs->CurrentItemNo();
@@ -178,11 +178,11 @@ bool CResultSet::Next()
                     break;
                 }
             }
-            
+
             m_rs->GetItem(m_data[i].GetNonNullData());
         }
 
-    } 
+    }
 
     if( !more ) {
         if( m_ostr ) {
@@ -206,7 +206,7 @@ bool CResultSet::Next()
     else {
         ++m_totalRows;
     }
-  
+
     return more;
 }
 
@@ -218,8 +218,8 @@ size_t CResultSet::Read(void* buf, size_t size)
                 << m_rs->CurrentItemNo());
 #ifdef _DEBUG
         _ASSERT(0);
-#else   
-        throw CDbapiException("Column for BLOB I/O is not initialized");
+#else
+        NCBI_DBAPI_THROW( "Column for BLOB I/O is not initialized" );
 #endif
     }
     else {
@@ -267,7 +267,7 @@ istream& CResultSet::GetBlobIStream(size_t buf_size)
 #endif
     delete m_istr;
     m_istr = new CBlobIStream(this, buf_size);
- 
+
     return *m_istr;
 }
 
@@ -275,11 +275,11 @@ IReader* CResultSet::GetBlobReader()
 {
     delete m_rd;
     m_rd = new CBlobReader(this);
- 
+
     return m_rd;
 }
 
-ostream& CResultSet::GetBlobOStream(size_t blob_size, 
+ostream& CResultSet::GetBlobOStream(size_t blob_size,
                                     EAllowLog log_it,
                                     size_t buf_size)
 {
@@ -291,14 +291,14 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
     // Call ReadItem(0, 0) before getting text/image descriptor
     m_rs->ReadItem(0, 0);
 
-    
+
     I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
     if( desc == 0 ) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;
         _ASSERT(0);
 #else
-        throw CDbapiException("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
+        NCBI_DBAPI_THROW( "CResultSet::GetBlobOStream(): Invalid IT Descriptor" );
 #endif
     }
 
@@ -311,7 +311,7 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
     return *m_ostr;
 }
 
-ostream& CResultSet::GetBlobOStream(IConnection *conn, size_t blob_size, 
+ostream& CResultSet::GetBlobOStream(IConnection *conn, size_t blob_size,
                                     EAllowLog log_it,
                                     size_t buf_size)
 {
@@ -323,14 +323,14 @@ ostream& CResultSet::GetBlobOStream(IConnection *conn, size_t blob_size,
     // Call ReadItem(0, 0) before getting text/image descriptor
     m_rs->ReadItem(0, 0);
 
-    
+
     I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
     if( desc == 0 ) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;
         _ASSERT(0);
 #else
-        throw CDbapiException("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
+        NCBI_DBAPI_THROW( "CResultSet::GetBlobOStream(): Invalid IT Descriptor" );
 #endif
     }
 
@@ -361,13 +361,13 @@ void CResultSet::FreeResources()
     m_rd = 0;
     m_totalRows = -1;
 }
-  
-void CResultSet::Action(const CDbapiEvent& e) 
+
+void CResultSet::Action(const CDbapiEvent& e)
 {
-    _TRACE(GetIdent() << " " << (void*)this 
-              << ": '" << e.GetName() 
+    _TRACE(GetIdent() << " " << (void*)this
+              << ": '" << e.GetName()
               << "' received from " << e.GetSource()->GetIdent());
-    
+
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
         if( dynamic_cast<CStatement*>(e.GetSource()) != 0
             || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
@@ -384,7 +384,7 @@ void CResultSet::Action(const CDbapiEvent& e)
         if(dynamic_cast<CStatement*>(e.GetSource()) != 0
            || dynamic_cast<CCursor*>(e.GetSource()) != 0
            || dynamic_cast<CCallableStatement*>(e.GetSource()) != 0 ) {
-            _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
+            _TRACE("Deleting " << GetIdent() << " " << (void*)this);
             delete this;
         }
     }
@@ -392,27 +392,25 @@ void CResultSet::Action(const CDbapiEvent& e)
 
 
 int CResultSet::GetColNum(const string& name) {
-    
+
     unsigned int i = 0;
     for( ; i < m_rs->NofItems(); ++i ) {
-        
+
         if( !NStr::Compare(m_rs->ItemName(i), name) )
             return i+1;
     }
 
-    throw CDbapiException("CResultSet::GetColNum(): invalid column name ["
-                          + name + "]");
+    NCBI_DBAPI_THROW( "CResultSet::GetColNum(): invalid column name [" + name + "]" );
 }
 
-void CResultSet::CheckIdx(unsigned int idx) 
+void CResultSet::CheckIdx(unsigned int idx)
 {
     if( idx > m_data.size() ) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::CheckIdx(): Column index " << idx << " out of range" << endl;
         _ASSERT(0);
 #else
-        throw CDbapiException("CResultSet::CheckIdx(): Column index" 
-                              + NStr::IntToString(idx) + " out of range");
+        NCBI_DBAPI_THROW( "CResultSet::CheckIdx(): Column index" + NStr::IntToString(idx) + " out of range" );
 #endif
     }
 }
@@ -420,6 +418,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.39  2005/04/04 13:03:56  ssikorsk
+* Revamp of DBAPI exception class CDB_Exception
+*
 * Revision 1.38  2004/11/16 19:59:46  kholodov
 * Added: GetBlobOStream() with explicit connection
 *

@@ -33,7 +33,9 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
+#include <deque>
 
 /** @addtogroup DbExceptions
  *
@@ -44,6 +46,35 @@
 BEGIN_NCBI_SCOPE
 
 
+/// Helper macro for default database exception implementation.
+#define NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
+    {} \
+    exception_class(const exception_class& other) \
+       : base_class(other) \
+    { \
+        x_Assign(other); \
+    } \
+public: \
+    virtual ~exception_class(void) throw() {} \
+    virtual const char* GetType(void) const {return #exception_class;} \
+    typedef int TErrCode; \
+    TErrCode GetErrCode(void) const \
+    { \
+        return typeid(*this) == typeid(exception_class) ? \
+            (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
+    } \
+protected: \
+    exception_class(void) {} \
+    virtual const CException* x_Clone(void) const \
+    { \
+        return new exception_class(*this); \
+    } \
+private: \
+    /* for the sake of semicolon at the end of macro...*/ \
+    static void xx_unused_##exception_class(void)
+
+
+// DEPRECATED, Will be removed soon.
 enum EDB_Severity {
     eDB_Info,
     eDB_Warning,
@@ -52,13 +83,23 @@ enum EDB_Severity {
     eDB_Unknown
 };
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDB_Exception --
+///
+/// Define database exception.  CDB_Exception inherits its basic
+/// functionality from CException and defines additional error codes for
+/// databases.
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public std::exception
+// class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public std::exception
+class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 {
+    friend class CDB_MultiEx;
+
 public:
-    // exception type
-    enum EType {
+    /// Error types that can be generated.
+    enum EErrCode {
         eDS,
         eRPC,
         eSQL,
@@ -67,49 +108,55 @@ public:
         eClient,
         eMulti
     };
-
-    // exception::what()
-    // NOTE:  it's not thread-safe!
-    virtual const char* what() const throw();
+    typedef EErrCode EType;
 
     // access
-    EType          Type()            const  { return m_Type;           }
-    EDB_Severity   Severity()        const  { return m_Severity;       }
-    int            ErrCode()         const  { return m_ErrCode;        }
-    const string&  OriginatedFrom()  const  { return m_OriginatedFrom; }
-    const string&  Message()         const  { return m_Message;        }
+    // DEPRECATED, Will be removed soon.
+    EDB_Severity        Severity(void) const;
+    int                 GetDBErrCode(void) const { return m_DBErrCode; }
 
-    // text representation of the exception type and severity
-    virtual const char* TypeString    () const = 0;
-    const char*         SeverityString() const
-    { return SeverityString(Severity()); }
+    const char*         SeverityString(void) const;
+    // DEPRECATED, Will be removed soon.
     static const char*  SeverityString(EDB_Severity sev);
+    virtual const char* GetErrCodeString(void) const;
 
-    // clone
-    virtual CDB_Exception* Clone() const = 0;
+public:
+    // Duplicate methods. We need them to support the old interface.
 
-    // destructor
-    virtual ~CDB_Exception() throw();
+    EType Type(void) const { return static_cast<EType>(GetErrCode());  }
+    // text representation of the exception type and severity
+    virtual const char* TypeString() const { return GetType();         }
+    int ErrCode(void) const { return GetDBErrCode();                   }
+    const string& Message(void) const { return GetMsg();               }
+    const string& OriginatedFrom() const { return GetModule();         }
+
+public:
+    virtual void ReportExtra(ostream& out) const;
 
 protected:
-    // constructor
-    CDB_Exception(EType type, EDB_Severity severity, int err_code,
-                  const string& originated_from, const string& msg);
+    CDB_Exception(const CDiagCompileInfo& info,
+                  const CException* prev_exception,
+                  EErrCode err_code,
+                  const string& message,
+                  EDiagSev severity,
+                  int db_err_code)
+        : CException(info, prev_exception, CException::eInvalid, message)
+        , m_Severity(severity)
+        , m_DBErrCode(db_err_code)
+        NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_Exception, CException);
 
+protected:
     // data
-    EType        m_Type;
-    EDB_Severity m_Severity;
-    int          m_ErrCode;
-    string       m_OriginatedFrom;
-    string       m_Message;
 
-    // composing the text for "what()"
-    mutable string m_What;
-    virtual void x_ComposeWhat(void) const;
+    EDiagSev    m_Severity;
+    int         m_DBErrCode;
 
-    // standard components used to compose "what()"
-    string& x_StartOfWhat(string* str) const;
-    string& x_EndOfWhat  (string* str) const;
+protected:
+    void x_StartOfWhat(ostream& out) const;
+    void x_EndOfWhat  (ostream& out) const;
+
+protected:
+    virtual void x_Assign(const CException& src);
 };
 
 
@@ -117,14 +164,13 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT CDB_DSEx : public CDB_Exception
 {
 public:
-    CDB_DSEx(EDB_Severity severity, int err_code,
-             const string& originated_from, const string& msg)
-        : CDB_Exception(eDS, severity, err_code, originated_from, msg) {
-        return;
-    }
-
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
+    CDB_DSEx(const CDiagCompileInfo& info,
+             const CException* prev_exception,
+             const string& message,
+             EDiagSev severity,
+             int db_err_code)
+        : CDB_Exception(info, prev_exception, CDB_Exception::eDS, message, severity, db_err_code)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DSEx, CDB_Exception);
 };
 
 
@@ -132,19 +178,31 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_RPCEx : public CDB_Exception
 {
 public:
-    CDB_RPCEx(EDB_Severity severity, int err_code,
-              const string& originated_from, const string& msg,
-              const string& proc_name, int proc_line);
-    virtual ~CDB_RPCEx() throw();
+    CDB_RPCEx(const CDiagCompileInfo& info,
+              const CException* prev_exception,
+              const string& message,
+              EDiagSev severity,
+              int db_err_code,
+              const string& proc_name,
+              int proc_line)
+        : CDB_Exception(info,
+                        prev_exception,
+                        CDB_Exception::eRPC,
+                        message,
+                        severity,
+                        db_err_code)
+        , m_ProcName(proc_name.empty() ? "Unknown" : proc_name)
+        , m_ProcLine(proc_line)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_RPCEx, CDB_Exception);
 
+public:
     const string& ProcName()  const { return m_ProcName; }
     int           ProcLine()  const { return m_ProcLine; }
 
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
+    virtual void ReportExtra(ostream& out) const;
 
 protected:
-    virtual void x_ComposeWhat(void) const;
+    virtual void x_Assign(const CException& src);
 
 private:
     string m_ProcName;
@@ -156,19 +214,31 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_SQLEx : public CDB_Exception
 {
 public:
-    CDB_SQLEx(EDB_Severity severity, int err_code,
-              const string& originated_from, const string& msg,
-              const string& sql_state, int batch_line);
-    virtual ~CDB_SQLEx() throw();
+    CDB_SQLEx(const CDiagCompileInfo& info,
+              const CException* prev_exception,
+              const string& message,
+              EDiagSev severity,
+              int db_err_code,
+              const string& sql_state,
+              int batch_line)
+        : CDB_Exception(info,
+                        prev_exception,
+                        CDB_Exception::eSQL,
+                        message,
+                        severity,
+                        db_err_code)
+        , m_SqlState(sql_state.empty() ? "Unknown" : sql_state)
+        , m_BatchLine(batch_line)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_SQLEx, CDB_Exception);
 
+public:
     const string& SqlState()   const { return m_SqlState;  }
     int           BatchLine()  const { return m_BatchLine; }
 
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
+    virtual void ReportExtra(ostream& out) const;
 
 protected:
-    virtual void x_ComposeWhat(void) const;
+    virtual void x_Assign(const CException& src);
 
 private:
     string m_SqlState;
@@ -180,12 +250,11 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CDB_DeadlockEx : public CDB_Exception
 {
 public:
-    CDB_DeadlockEx(const string& originated_from, const string& msg)
-        : CDB_Exception(eDeadlock, eDB_Error, 123456, originated_from, msg)
-    { return; }
-
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
+    CDB_DeadlockEx(const CDiagCompileInfo& info,
+                   const CException* prev_exception,
+                   const string& message)
+       : CDB_Exception(info, prev_exception, CDB_Exception::eDeadlock, message, eDiag_Error, 123456)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_DeadlockEx, CDB_Exception);
 };
 
 
@@ -193,13 +262,17 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_TimeoutEx : public CDB_Exception
 {
 public:
-    CDB_TimeoutEx(int err_code,
-                  const string& originated_from, const string& msg)
-        : CDB_Exception(eTimeout, eDB_Error, err_code, originated_from, msg)
-    { return; }
-
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
+    CDB_TimeoutEx(const CDiagCompileInfo& info,
+                  const CException* prev_exception,
+                  const string& message,
+                  int db_err_code)
+       : CDB_Exception(info,
+                       prev_exception,
+                       CDB_Exception::eTimeout,
+                       message,
+                       eDiag_Error,
+                       db_err_code)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_TimeoutEx, CDB_Exception);
 };
 
 
@@ -207,13 +280,18 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_ClientEx : public CDB_Exception
 {
 public:
-    CDB_ClientEx(EDB_Severity severity, int err_code,
-                 const string& originated_from, const string& msg)
-        : CDB_Exception(eClient, severity, err_code, originated_from, msg)
-    { return; }
-
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
+    CDB_ClientEx(const CDiagCompileInfo& info,
+                 const CException* prev_exception,
+                 const string& message,
+                 EDiagSev severity,
+                 int db_err_code)
+       : CDB_Exception(info,
+                       prev_exception,
+                       CDB_Exception::eClient,
+                       message,
+                       severity,
+                       db_err_code)
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDB_ClientEx, CDB_Exception);
 };
 
 
@@ -221,59 +299,43 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_MultiEx : public CDB_Exception
 {
 public:
-    CDB_MultiEx(const string& originated_from = kEmptyStr,
-                unsigned int  capacity        = 64);
-    CDB_MultiEx(const CDB_MultiEx& mex);
-    virtual ~CDB_MultiEx() throw();
+    // ctor/dtor
+    CDB_MultiEx(const CDiagCompileInfo& info,
+                const CException* prev_exception,
+                unsigned int  capacity = 64)
+        : CDB_Exception(info,
+                        prev_exception,
+                        eMulti,
+                        kEmptyStr,
+                        eDiag_Info,
+                        0)
+        , m_Bag( new CObjectFor<TExceptionStack>() )
+        , m_NofRooms( capacity )
+        NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION( CDB_MultiEx, CDB_Exception );
 
-    bool           Push(const CDB_Exception& ex)  { return m_Bag->Push(&ex); }
-    CDB_Exception* Pop(void)                      { return m_Bag->Pop();     }
+public:
+    bool              Push(const CDB_Exception& ex);
+    // REsult is not owned by CDB_MultiEx
+    CDB_Exception*    Pop(void);
 
-    unsigned int NofExceptions() const { return m_Bag->NofExceptions(); }
-    unsigned int Capacity()      const { return m_Bag->Capacity();      }
+    unsigned int NofExceptions() const { return m_Bag->GetData().size();    }
+    unsigned int Capacity()      const { return m_NofRooms;                 }
 
-    virtual const char*    TypeString() const;
-    virtual CDB_Exception* Clone() const;
-
-    // Description of this multi-exception only.
-    // NOTE:  method "what()" will print out this multi-exception and then
-    //        all exceptions bagged inside of it.
     string WhatThis(void) const;
 
+    virtual void ReportExtra(ostream& out) const;
+
 protected:
-    virtual void x_ComposeWhat(void) const;
+    void ReportErrorStack(ostream& out) const;
+    virtual void x_Assign(const CException& src);
 
 private:
-    class NCBI_DBAPIDRIVER_EXPORT CDB_MultiExStorage
-    {
-    public:
-        string What();
+    // We use "deque" instead of "stack" here we need to iterate over all 
+    // recors in the container.
+    typedef deque<AutoPtr<const CDB_Exception> > TExceptionStack;
 
-        void AddRef() {
-            ++m_RefCnt;
-        }
-        void DelRef() {
-            if (--m_RefCnt <= 0)
-                delete this;
-        }
-
-        bool           Push(const CDB_Exception* ex);
-        CDB_Exception* Pop(void);
-
-        unsigned int NofExceptions() const { return m_NofExs;   }
-        unsigned int Capacity()      const { return m_NofRooms; }
-	
-        CDB_MultiExStorage(unsigned int capacity);
-        ~CDB_MultiExStorage();
-
-    private:
-        unsigned int    m_NofRooms;
-        unsigned int    m_NofExs;
-        int             m_RefCnt;
-        CDB_Exception** m_Ex;
-    };
-
-    CDB_MultiExStorage* m_Bag;
+    CRef<CObjectFor<TExceptionStack> > m_Bag;
+    unsigned int m_NofRooms; ///< Max number of error messages to print..
 };
 
 
@@ -353,8 +415,37 @@ private:
 
 typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 
+/// Generic macro to throw a database exception, given the exception class,
+/// database error code and message string.
+#define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
+    throw exception_class( DIAG_COMPILE_INFO, \
+        0, (message), severity, err_code )
+
+#define DATABASE_DRIVER_ERROR( message, err_code ) \
+    NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Error )
+
+#define DATABASE_DRIVER_WARNING( message, err_code ) \
+    NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Warning )
+
+#define DATABASE_DRIVER_FATAL( message, err_code ) \
+    NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Fatal )
+
+#define DATABASE_DRIVER_INFO( message, err_code ) \
+    NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Info )
 
 
+#define CHECK_DRIVER_ERROR( failed, message, err_code ) \
+    if ( ( failed ) ) { DATABASE_DRIVER_ERROR( message, err_code ); }
+    
+#define CHECK_DRIVER_WARNING( failed, message, err_code ) \
+    if ( ( failed ) ) { DATABASE_DRIVER_WARNING( message, err_code ); }
+    
+#define CHECK_DRIVER_FATAL( failed, message, err_code ) \
+    if ( ( failed ) ) { DATABASE_DRIVER_FATAL( message, err_code ); }
+    
+#define CHECK_DRIVER_INFO( failed, message, err_code ) \
+    if ( ( failed ) ) { DATABASE_DRIVER_INFO( message, err_code ); }
+    
 END_NCBI_SCOPE
 
 
@@ -364,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/04/04 13:03:02  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.16  2003/11/04 22:22:01  vakatov
  * Factorize the code (especially the reporting one) through better inheritance.
  * +CDB_Exception::TypeString()

@@ -52,47 +52,40 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
     CS_INT outlen;
 
     CS_INT nof_cols;
-    if (ct_res_info(m_Cmd, CS_NUMDATA, &nof_cols, CS_UNUSED, &outlen)
-        != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Error, 130001, "::CTL_RowResult",
-                           "ct_res_info(CS_NUMDATA) failed");
-    }
+    bool rc = (ct_res_info(m_Cmd, CS_NUMDATA, &nof_cols, CS_UNUSED, &outlen)
+               != CS_SUCCEED);
+    CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_NUMDATA) failed", 130001 );
+
     m_NofCols = nof_cols;
 
     CS_INT cmd_num;
-    if (ct_res_info(m_Cmd, CS_CMD_NUMBER, &cmd_num, CS_UNUSED, &outlen)
-        != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Error, 130001, "::CTL_RowResult",
-                           "ct_res_info(CS_CMD_NUMBER) failed");
-    }
+    rc = (ct_res_info(m_Cmd, CS_CMD_NUMBER, &cmd_num, CS_UNUSED, &outlen)
+        != CS_SUCCEED);
+    CHECK_DRIVER_ERROR( rc, "ct_res_info(CS_CMD_NUMBER) failed", 130001 );
     m_CmdNum = cmd_num;
 
-	CS_INT bind_len= 0;
-	m_BindedCols= 0;
+    CS_INT bind_len= 0;
+    m_BindedCols= 0;
 
     m_ColFmt = new CS_DATAFMT[m_NofCols];
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
-        if (ct_describe(m_Cmd, (CS_INT) nof_items + 1, &m_ColFmt[nof_items])
-            != CS_SUCCEED) {
-            throw CDB_ClientEx(eDB_Error, 130002, "::CTL_RowResult",
-                               "ct_describe failed");
-        }
-		bind_len+= m_ColFmt[nof_items].maxlength;
-		if(bind_len <= 2048) m_BindedCols++;
+        rc = (ct_describe(m_Cmd, (CS_INT) nof_items + 1, &m_ColFmt[nof_items])
+            != CS_SUCCEED);
+        CHECK_DRIVER_ERROR( rc, "ct_describe failed", 130002 );
+        bind_len+= m_ColFmt[nof_items].maxlength;
+        if(bind_len <= 2048) m_BindedCols++;
     }
-	if(m_BindedCols) {
-	    m_BindItem= new CS_VOID*[m_BindedCols];
-		m_Copied= new CS_INT[m_BindedCols];
-		m_Indicator= new CS_SMALLINT[m_BindedCols];
-		for(int i= 0; i < m_BindedCols; i++) {
-		  m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
-		  if(ct_bind(m_Cmd, i+1, &m_ColFmt[i], m_BindItem[i], &m_Copied[i], &m_Indicator[i]) 
-			 != CS_SUCCEED) {
-            throw CDB_ClientEx(eDB_Error, 130042, "::CTL_RowResult",
-                               "ct_bind failed");
-		  }
-		}
-	}
+    if(m_BindedCols) {
+        m_BindItem= new CS_VOID*[m_BindedCols];
+        m_Copied= new CS_INT[m_BindedCols];
+        m_Indicator= new CS_SMALLINT[m_BindedCols];
+        for(int i= 0; i < m_BindedCols; i++) {
+          m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
+          rc = (ct_bind(m_Cmd, i+1, &m_ColFmt[i], m_BindItem[i], &m_Copied[i], &m_Indicator[i]) 
+             != CS_SUCCEED);
+          CHECK_DRIVER_ERROR( rc, "ct_bind failed", 130042 );
+        }
+    }
 }
 
 
@@ -144,8 +137,8 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
     case CS_REAL_TYPE:      return eDB_Float;
     case CS_TEXT_TYPE:      return eDB_Text;
     case CS_IMAGE_TYPE:     return eDB_Image;
-	case CS_LONGCHAR_TYPE:  return eDB_LongChar;
-	case CS_LONGBINARY_TYPE: return eDB_LongBinary;
+    case CS_LONGCHAR_TYPE:  return eDB_LongChar;
+    case CS_LONGBINARY_TYPE: return eDB_LongBinary;
     }
 
     return eDB_UnsupportedType;
@@ -167,18 +160,14 @@ bool CTL_RowResult::Fetch()
         m_EOR = true;
         return false;
     case CS_ROW_FAIL:
-        throw CDB_ClientEx(eDB_Error, 130003, "CTL_RowResult::Fetch",
-                           "error while fetching the row");
+        DATABASE_DRIVER_ERROR( "error while fetching the row", 130003 );
     case CS_FAIL:
-        throw CDB_ClientEx(eDB_Error, 130006, "CTL_RowResult::Fetch",
-                           "ct_fetch has failed. "
-                           "You need to cancel the command");
+        DATABASE_DRIVER_ERROR( "ct_fetch has failed. "
+                           "You need to cancel the command", 130006 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 130004, "CTL_RowResult::Fetch",
-                           "the command has been canceled");
+        DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
     default:
-        throw CDB_ClientEx(eDB_Error, 130005, "CTL_RowResult::Fetch",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 130005 );
     }
 }
 
@@ -189,17 +178,17 @@ int CTL_RowResult::CurrentItemNo() const
 }
 
 CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item, 
-										 CS_VOID* buffer, 
-										 CS_INT buflen, CS_INT *outlen)
+                                         CS_VOID* buffer, 
+                                         CS_INT buflen, CS_INT *outlen)
 {
   if(item > m_BindedCols)
-	return ct_get_data(cmd, item, buffer, buflen, outlen);
+    return ct_get_data(cmd, item, buffer, buflen, outlen);
 
   --item;
 
   if((m_Indicator[item] < 0) || ((CS_INT)m_Indicator[item] >= m_Copied[item])) {
-	if(outlen) *outlen= 0;
-	return CS_END_ITEM;
+    if(outlen) *outlen= 0;
+    return CS_END_ITEM;
   }
 
   if(!buffer || (buflen < 1)) return CS_SUCCEED;
@@ -214,7 +203,7 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
 
 // Aux. for CTL_RowResult::GetItem()
 CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
-									 CDB_Object* item_buf)
+                                     CDB_Object* item_buf)
 {
     CS_INT outlen = 0;
     char buffer[2048];
@@ -225,9 +214,8 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         if (item_buf  &&
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
             b_type != eDB_VarChar    &&  b_type != eDB_Char &&
-			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
@@ -276,20 +264,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED:
             if (v != buffer)  delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         default:
             if (v != buffer)  delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
     }
 
     case CS_LONGBINARY_TYPE: {
         if (item_buf  &&
-			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
@@ -304,7 +289,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 case eDB_LongBinary:
                     ((CDB_LongBinary*) item_buf)->SetValue(v, outlen);
                     break;
-				case eDB_LongChar:
+                case eDB_LongChar:
                     v[outlen] = '\0';
                     *((CDB_LongChar*)     item_buf) = v;
                 default:
@@ -317,19 +302,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
 
             CDB_LongBinary* val = (outlen == 0)
                 ? new CDB_LongBinary(fmt.maxlength) : 
-			      new CDB_LongBinary(fmt.maxlength, v, outlen);
+                  new CDB_LongBinary(fmt.maxlength, v, outlen);
 
             if ( v != buffer)  delete[] v;
             return val;
         }
         case CS_CANCELED:
             if (v != buffer)  delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         default:
             if (v != buffer)  delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
     }
 
@@ -337,8 +320,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         if (item_buf  &&
             b_type != eDB_Bit       &&  b_type != eDB_TinyInt  &&
             b_type != eDB_SmallInt  &&  b_type != eDB_Int) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_BIT v;
@@ -374,12 +356,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_Bit() : new CDB_Bit((int) v);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
@@ -388,9 +368,8 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         if (item_buf  &&
             b_type != eDB_VarBinary  &&  b_type != eDB_Binary  &&
             b_type != eDB_VarChar    &&  b_type != eDB_Char &&
-			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         char* v = fmt.maxlength < 2048
@@ -441,22 +420,19 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED: {
             if (v != buffer) delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
             if (v != buffer) delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
 
     case CS_LONGCHAR_TYPE: {
         if (item_buf  &&
-			b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            b_type != eDB_LongChar   &&  b_type != eDB_LongBinary) {
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         char* v = fmt.maxlength < 2048
@@ -495,21 +471,18 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         }
         case CS_CANCELED: {
             if (v != buffer) delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
             if (v != buffer) delete[] v;
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
 
     case CS_DATETIME_TYPE: {
         if (item_buf  &&  b_type != eDB_DateTime) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_DATETIME v;
@@ -537,12 +510,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return val;
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
@@ -550,8 +521,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_DATETIME4_TYPE:  {
         if (item_buf  &&
             b_type != eDB_SmallDateTime  &&  b_type != eDB_DateTime) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_DATETIME4 v;
@@ -585,12 +555,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 : new CDB_SmallDateTime(v.days, v.minutes);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
@@ -599,8 +567,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         if (item_buf  &&
             b_type != eDB_TinyInt  &&  b_type != eDB_SmallInt  &&
             b_type != eDB_Int) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_TINYINT v;
@@ -634,12 +601,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 ? new CDB_TinyInt() : new CDB_TinyInt((Uint1) v);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
@@ -647,8 +612,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_SMALLINT_TYPE: {
         if (item_buf  &&
             b_type != eDB_SmallInt  &&  b_type != eDB_Int) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_SMALLINT v;
@@ -679,20 +643,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 ? new CDB_SmallInt() : new CDB_SmallInt((Int2) v);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
 
     case CS_INT_TYPE: {
         if (item_buf  &&  b_type != eDB_Int) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_INT v;
@@ -713,12 +674,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_Int() : new CDB_Int((Int4) v);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
@@ -726,8 +685,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_DECIMAL_TYPE:
     case CS_NUMERIC_TYPE: {
         if (item_buf  &&  b_type != eDB_BigInt  &&  b_type != eDB_Numeric) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_NUMERIC v;
@@ -737,7 +695,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
         case CS_END_DATA: {
             if ( item_buf ) {
                 if (outlen < 3) { /* it used to be == 0 but ctlib on windows
-				     returns 2 even for NULL numeric */
+                     returns 2 even for NULL numeric */
                     item_buf->AssignNULL();
                 }
                 else {
@@ -770,20 +728,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             }
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
 
     case CS_FLOAT_TYPE: {
         if (item_buf  &&  b_type != eDB_Double) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_FLOAT v;
@@ -805,20 +760,17 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                 ? new CDB_Double() : new CDB_Double((double) v);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
 
     case CS_REAL_TYPE: {
         if (item_buf  &&  b_type != eDB_Float) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CS_REAL v;
@@ -839,12 +791,10 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
             return (outlen == 0) ? new CDB_Float() : new CDB_Float((float) v);
         }
         case CS_CANCELED: {
-            throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                               "the command has been canceled");
+            DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
         }
         default: {
-            throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                               "ct_get_data failed");
+            DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
         }
         }
     }
@@ -852,8 +802,7 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
     case CS_TEXT_TYPE:
     case CS_IMAGE_TYPE: {
        if (item_buf  &&  b_type != eDB_Text  &&  b_type != eDB_Image) {
-            throw CDB_ClientEx(eDB_Error, 130020, "CTL_***Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 130020 );
         }
 
         CDB_Stream* val =
@@ -873,18 +822,15 @@ CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT
                     val->Append(buffer, outlen);
                 return val;
             case CS_CANCELED:
-                throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                                   "the command has been canceled");
+                DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
             default:
-                throw CDB_ClientEx(eDB_Error, 130000, "CTL_***Result::GetItem",
-                                   "ct_get_data failed");
+                DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
             }
         }
     }
 
     default: {
-        throw CDB_ClientEx(eDB_Error, 130004, "CTL_***Result::GetItem",
-                           "unexpected result type");
+        DATABASE_DRIVER_ERROR( "unexpected result type", 130004 );
     }
     }
 }
@@ -914,7 +860,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
     CS_INT outlen = 0;
 
     if((buffer == 0) && (buffer_size == 0)) {
-	buffer= (void*)(&buffer_size);
+    buffer= (void*)(&buffer_size);
     }
 
     switch ( my_ct_get_data(m_Cmd, m_CurrItem+1, buffer, (CS_INT) buffer_size,
@@ -925,11 +871,9 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
     case CS_SUCCEED:
         break;
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 130004, "CTL_RowResult::ReadItem",
-                           "the command has been canceled");
+        DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
     default:
-        throw CDB_ClientEx(eDB_Error, 130000, "CTL_RowResult::ReadItem",
-                           "ct_get_data failed");
+        DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
     }
 
     if ( is_null ) {
@@ -953,27 +897,19 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
     case CS_SUCCEED:
         break;
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 130004,
-                           "CTL_RowResult::GetImageOrTextDescriptor",
-                           "the command has been canceled");
+        DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
     default:
-        throw CDB_ClientEx(eDB_Error, 130000,
-                           "CTL_RowResult::GetImageOrTextDescriptor",
-                           "ct_get_data failed");
+        DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
     }
 
 
-    CTL_ITDescriptor* desc = new CTL_ITDescriptor;
+    auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
 
-    if (ct_data_info(m_Cmd, CS_GET, m_CurrItem+1, &desc->m_Desc)
-        != CS_SUCCEED) {
-        delete desc;
-        throw CDB_ClientEx(eDB_Error, 130010,
-                           "CTL_RowResult::GetImageOrTextDescriptor",
-                           "ct_data_info failed");
-    }
+    bool rc = (ct_data_info(m_Cmd, CS_GET, m_CurrItem+1, &desc->m_Desc)
+        != CS_SUCCEED);
+    CHECK_DRIVER_ERROR( rc, "ct_data_info failed", 130010 );
 
-    return desc;
+    return desc.release();
 }
 
 
@@ -993,11 +929,11 @@ CTL_RowResult::~CTL_RowResult()
     if ( m_ColFmt ) {
         delete[] m_ColFmt;
     }
-	if(m_BindedCols) {
-	  delete [] m_BindItem;
-	  delete [] m_Copied;
-	  delete [] m_Indicator;
-	}
+    if(m_BindedCols) {
+      delete [] m_BindItem;
+      delete [] m_Copied;
+      delete [] m_Indicator;
+    }
 
     if ( m_EOR ) {
         return;
@@ -1052,21 +988,17 @@ bool CTL_CursorResult::SkipItem()
 {
     if (m_CurrItem < (int) m_NofCols) {
         ++m_CurrItem;
-	char dummy[4];
-	switch ( my_ct_get_data(m_Cmd, m_CurrItem, dummy, 0, 0) ) {
-	case CS_END_ITEM:
-	case CS_END_DATA:
-	case CS_SUCCEED:
-	    break;
-	case CS_CANCELED:
-	    throw CDB_ClientEx(eDB_Error, 130004,
-			       "CTL_CursorResult::SkipItem",
-			       "the command has been canceled");
-	default:
-	    throw CDB_ClientEx(eDB_Error, 130000,
-			       "CTL_CursorResult::SkipItem",
-			       "ct_get_data failed");
-	}
+    char dummy[4];
+    switch ( my_ct_get_data(m_Cmd, m_CurrItem, dummy, 0, 0) ) {
+    case CS_END_ITEM:
+    case CS_END_DATA:
+    case CS_SUCCEED:
+        break;
+    case CS_CANCELED:
+        DATABASE_DRIVER_ERROR( "the command has been canceled", 130004 );
+    default:
+        DATABASE_DRIVER_ERROR( "ct_get_data failed", 130000 );
+    }
         return true;
     }
 
@@ -1115,6 +1047,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.18  2004/05/17 21:12:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

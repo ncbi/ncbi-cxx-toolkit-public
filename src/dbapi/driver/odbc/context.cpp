@@ -61,16 +61,27 @@ void CODBC_Reporter::ReportErrors()
                              Msg, sizeof(Msg), &MsgLen)) {
         case SQL_SUCCESS:
             if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
-                CDB_TimeoutEx to(NativeError, "odbc", (const char*)Msg);
+                CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+                                 0,
+                                 (const char*)Msg,
+                                 NativeError);
+
                 m_HStack->PostMsg(&to);
             }
             else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
-                CDB_DeadlockEx dl("odbc", (const char*)Msg);
+                CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+                                  0,
+                                  (const char*)Msg);
                 m_HStack->PostMsg(&dl);
             }
             else if(NativeError != 5701 && NativeError != 5703){
-                CDB_SQLEx se(eDB_Unknown, NativeError, "odbc", (const char*)Msg,
-					(const char*)SqlState, 0);
+                CDB_SQLEx se(DIAG_COMPILE_INFO,
+                             0,
+                             (const char*)Msg,
+                             eDiag_Warning,
+                             NativeError,
+                             (const char*)SqlState,
+                             0);
                 m_HStack->PostMsg(&se);
             }
             continue;
@@ -79,15 +90,22 @@ void CODBC_Reporter::ReportErrors()
 
         case SQL_SUCCESS_WITH_INFO:
             {
-                CDB_DSEx dse(eDB_Unknown, 777, "odbc", "Message is too long to be retrieved");
+                CDB_DSEx dse(DIAG_COMPILE_INFO,
+                             0,
+                             "Message is too long to be retrieved",
+                             eDiag_Warning,
+                             777);
                 m_HStack->PostMsg(&dse);
             }
             continue;
 
         default:
             {
-                CDB_ClientEx ce(eDB_Warning, 420016, "CODBC_Reporter::ReportErrors",
-                                "SQLGetDiagRec failed (memory corruption suspected)");
+                CDB_ClientEx ce(DIAG_COMPILE_INFO,
+                                0,
+                                "SQLGetDiagRec failed (memory corruption suspected",
+                                eDiag_Warning,
+                                420016);
                 m_HStack->PostMsg(&ce);
             }
             break;
@@ -108,8 +126,7 @@ CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) : m_Reporter(0, SQL
 {
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
-        throw CDB_ClientEx(eDB_Fatal, 400001, "CODBCContext::CODBCContext",
-                           "Can not allocate a context");
+        DATABASE_DRIVER_FATAL( "Cannot allocate a context", 400001 );
     }
 
     m_Reporter.SetHandle(m_Context);
@@ -223,15 +240,13 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
     if((mode & fDoNotConnect) != 0) return 0;
     // new connection needed
     if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
-        throw CDB_ClientEx(eDB_Error, 100010, "CODBCContext::Connect",
-                           "You have to provide server name, user name and "
-                           "password to connect to the server");
+        DATABASE_DRIVER_ERROR( "You have to provide server name, user name and "
+                           "password to connect to the server", 100010 );
     }
 
     SQLHDBC con = x_ConnectToServer(srv_name, user_name, passwd, mode);
     if (con == 0) {
-        throw CDB_ClientEx(eDB_Error, 100011, "CODBCContext::Connect",
-                           "Cannot connect to the server");
+        DATABASE_DRIVER_ERROR( "Cannot connect to the server", 100011 );
     }
 
     CODBC_Connection* t_con = new CODBC_Connection(this, con, reusable, pool_name);
@@ -265,7 +280,7 @@ CODBCContext::~CODBCContext()
         delete t_con;
     }
 
-	SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+    SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
 }
 
 
@@ -350,10 +365,10 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 
 void CODBCContext::xReportConError(SQLHDBC con)
 {
-	m_Reporter.SetHandleType(SQL_HANDLE_DBC);
+    m_Reporter.SetHandleType(SQL_HANDLE_DBC);
     m_Reporter.SetHandle(con);
-	m_Reporter.ReportErrors();
-	m_Reporter.SetHandleType(SQL_HANDLE_ENV);
+    m_Reporter.ReportErrors();
+    m_Reporter.SetHandleType(SQL_HANDLE_ENV);
     m_Reporter.SetHandle(m_Context);
 }
 
@@ -398,8 +413,8 @@ I_DriverContext* ODBC_CreateContext(const map<string,string>* attr = 0)
             page_size = citer->second;
         }
         if(!page_size.empty()) {
-	SQLUINTEGER s= atoi(page_size.c_str());
-	cntx->ODBC_SetPacketSize(s);
+    SQLUINTEGER s= atoi(page_size.c_str());
+    cntx->ODBC_SetPacketSize(s);
       }
     }
     return cntx;
@@ -545,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.19  2005/03/21 14:08:30  ssikorsk
  * Fixed the 'version' of a databases protocol parameter handling
  *

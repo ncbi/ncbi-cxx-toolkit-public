@@ -91,21 +91,18 @@ bool CDBL_LangCmd::Send()
     if (!x_AssignParams()) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 220003, "CDBL_LangCmd::Send",
-                           "cannot assign params");
+        DATABASE_DRIVER_ERROR( "cannot assign params", 220003 );
     }
 
     if (dbcmd(m_Cmd, (char*)(m_Query.c_str())) != SUCCEED) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 220001, "CDBL_LangCmd::Send",
-                           "dbcmd failed");
+        DATABASE_DRIVER_FATAL( "dbcmd failed", 220001 );
     }
 
     if (dbsqlsend(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 220005, "CDBL_LangCmd::Send",
-                           "dbsqlsend failed");
+        DATABASE_DRIVER_ERROR( "dbsqlsend failed", 220005 );
     }
 
     m_WasSent = true;
@@ -153,18 +150,14 @@ CDB_Result* CDBL_LangCmd::Result()
         m_Res = 0;
     }
 
-    if (!m_WasSent) {
-        throw CDB_ClientEx(eDB_Error, 220010, "CDBL_LangCmd::Result",
-                           "a command has to be sent first");
-    }
+    CHECK_DRIVER_ERROR( !m_WasSent, "a command has to be sent first", 220010 );
 
     if (m_Status == 0) {
         m_Status = 0x1;
         if (dbsqlok(m_Cmd) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 220011, "CDBL_LangCmd::Result",
-                               "dbsqlok failed");
+            DATABASE_DRIVER_ERROR( "dbsqlok failed", 220011 );
         }
     }
 
@@ -220,8 +213,7 @@ CDB_Result* CDBL_LangCmd::Result()
             break;
         default:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 220016, "CDBL_LangCmd::Result",
-                               "an error was encountered by server");
+            CHECK_DRIVER_WARNING( m_HasFailed, "an error was encountered by server", 220016 );
         }
         break;
     }
@@ -434,15 +426,15 @@ bool CDBL_LangCmd::x_AssignParams()
                 CDB_SmallDateTime& val =
                     dynamic_cast<CDB_SmallDateTime&> (param);
                 sprintf(val_buffer, "'%s'\n",
-			val.Value().AsString("M/D/Y h:m").c_str());
+            val.Value().AsString("M/D/Y h:m").c_str());
                 break;
             }
             case eDB_DateTime: {
                 CDB_DateTime& val =
                     dynamic_cast<CDB_DateTime&> (param);
                 sprintf(val_buffer, "'%s:%.3d'\n",
-			val.Value().AsString("M/D/Y h:m:s").c_str(),
-			(int)(val.Value().NanoSecond()/1000000));
+            val.Value().AsString("M/D/Y h:m:s").c_str(),
+            (int)(val.Value().NanoSecond()/1000000));
                 break;
             }
             default:
@@ -465,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.14  2004/05/18 18:30:36  gorelenk
  * PCH <ncbi_pch.hpp> moved to correct place .
  *

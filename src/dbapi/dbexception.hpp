@@ -27,7 +27,7 @@
  * ===========================================================================
  *
  * Author:  Michael Kholodov, Denis Vakatov
- *   
+ *
  * File Description:  DBAPI exception class
  *
  */
@@ -41,13 +41,22 @@ BEGIN_NCBI_SCOPE
 class CDbapiException : public CDB_ClientEx
 {
 public:
-    CDbapiException(const string& msg)
-        : CDB_ClientEx(eDB_Error, 1000, "DBAPI interface", msg)
-    {
-        return;
-    }
+    CDbapiException(const CDiagCompileInfo& info,
+                    const CException* prev_exception,
+                    const string& message)
+        : CDB_ClientEx(info,
+                       prev_exception,
+                       message,
+                       eDiag_Error,
+                       1000)
+    NCBI_DATABASE_EXCEPTION_DEFAULT_IMPLEMENTATION(CDbapiException, CDB_ClientEx);
 };
 
+#define NCBI_DBAPI_THROW( message ) \
+    throw CDbapiException( DIAG_COMPILE_INFO, 0, (message) )
+    
+#define CHECK_NCBI_DBAPI( failed, message ) \
+    if ( ( failed ) ) { NCBI_DBAPI_THROW( message ); }
 
 END_NCBI_SCOPE
 
@@ -55,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/04 13:03:56  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.2  2003/11/04 22:27:14  vakatov
  * CDbapiException to inherit from CDB_ClientEx.
  * Minor style fixes.

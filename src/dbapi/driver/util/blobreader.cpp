@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
         I_DriverContext* my_context= drv_mgr.GetDriverContext(driver_name,
                                                               &err_msg, &packet);
         if(!my_context) {
-            cerr << "blobreader: Can not load a driver " << driver_name << " [" 
+            cerr << "blobreader: Cannot load a driver " << driver_name << " [" 
                  << err_msg << "] " << endl;
             return 1;
         }
@@ -247,6 +247,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.3  2004/05/25 19:47:28  soussov
  * moves blobstore.hpp header to include
  *
@@ -255,7 +258,6 @@ int main(int argc, char* argv[])
  *
  * Revision 1.1  2004/05/03 16:47:10  soussov
  * initial commit
- *
  *
  * ===========================================================================
  */

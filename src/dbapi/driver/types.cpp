@@ -82,7 +82,7 @@ CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
     case eDB_LongChar        : return new CDB_LongChar  (size);
     case eDB_UnsupportedType : break;
     }
-    throw CDB_ClientEx(eDB_Error, 2, "CDB_Object::Create", "unknown type");
+    DATABASE_DRIVER_ERROR( "unknown type", 2 );
 }
 
 
@@ -107,8 +107,7 @@ void CDB_Int::AssignValue(CDB_Object& v)
         case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
         case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
         default:
-            throw CDB_ClientEx(eDB_Error, 2, "CDB_Int::AssignValue",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
 
 }
@@ -134,8 +133,7 @@ void CDB_SmallInt::AssignValue(CDB_Object& v)
         case eDB_SmallInt: *this= (CDB_SmallInt&)v; break;
         case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
         default:
-            throw CDB_ClientEx(eDB_Error, 2, "CDB_SmallInt::AssignValue",
-                                         "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
     *this= (CDB_SmallInt&)v;
 }
@@ -156,10 +154,8 @@ CDB_Object* CDB_TinyInt::Clone() const
 
 void CDB_TinyInt::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_TinyInt) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_TinyInt::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( v.GetType() != eDB_TinyInt, "wrong type of CDB_Object", 2 );
+
     *this= (CDB_TinyInt&)v;
 }
 
@@ -186,8 +182,7 @@ void CDB_BigInt::AssignValue(CDB_Object& v)
         case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
         case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
         default:
-            throw CDB_ClientEx(eDB_Error, 2, "CDB_BigInt::AssignValue",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
 }
 
@@ -207,10 +202,8 @@ CDB_Object* CDB_VarChar::Clone() const
 
 void CDB_VarChar::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_VarChar) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_VarChar::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( v.GetType() != eDB_VarChar, "wrong type of CDB_Object", 2 );
+
     *this= (CDB_VarChar&)v;
 }
 
@@ -230,10 +223,8 @@ CDB_Object* CDB_Char::Clone() const
 
 void CDB_Char::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Char) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Char::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( v.GetType() != eDB_Char, "wrong type of CDB_Object", 2 );
+
     register CDB_Char& cv= (CDB_Char&)v;
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
@@ -270,10 +261,8 @@ CDB_Object* CDB_LongChar::Clone() const
 
 void CDB_LongChar::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_LongChar) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_LongChar::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( v.GetType() != eDB_LongChar, "wrong type of CDB_Object", 2 );
+
     register CDB_LongChar& cv= (CDB_LongChar&)v;
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
@@ -311,10 +300,8 @@ CDB_Object* CDB_VarBinary::Clone() const
 
 void CDB_VarBinary::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_VarBinary) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_VarBinary::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( v.GetType() != eDB_VarBinary, "wrong type of CDB_Object", 2 );
+
     *this= (CDB_VarBinary&)v;
 }
 
@@ -334,10 +321,8 @@ CDB_Object* CDB_Binary::Clone() const
 
 void CDB_Binary::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Binary) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Binary::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( v.GetType() != eDB_Binary, "wrong type of CDB_Object", 2 );
+
     register CDB_Binary& cv= (CDB_Binary&)v;
     if(m_Size < cv.m_Size) {
         delete [] m_Val;
@@ -374,10 +359,10 @@ CDB_Object* CDB_LongBinary::Clone() const
 
 void CDB_LongBinary::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_LongBinary) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_LongBinary::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( 
+        v.GetType() != eDB_LongBinary, 
+        "wrong type of CDB_Object", 
+        2 );
     register CDB_LongBinary& cv= (CDB_LongBinary&)v;
     if(cv.IsNULL()) {
         m_Null= true;
@@ -416,8 +401,7 @@ void CDB_Float::AssignValue(CDB_Object& v)
         case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
         case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
         default:
-            throw CDB_ClientEx(eDB_Error, 2, "CDB_Float::AssignValue",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
 }
 
@@ -444,8 +428,7 @@ void CDB_Double::AssignValue(CDB_Object& v)
         case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
         case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
         default:
-            throw CDB_ClientEx(eDB_Error, 2, "CDB_Double::AssignValue",
-                               "wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "wrong type of CDB_Object", 2 );
     }
 }
 
@@ -513,10 +496,10 @@ void CDB_Stream::Truncate(size_t nof_bytes)
 
 void CDB_Stream::AssignValue(CDB_Object& v)
 {
-    if((v.GetType() != eDB_Image) && (v.GetType() != eDB_Text)) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Stream::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( 
+        (v.GetType() != eDB_Image) && (v.GetType() != eDB_Text), 
+        "wrong type of CDB_Object", 
+        2 );
     Assign((CDB_Stream&)v);
 }
 
@@ -542,10 +525,11 @@ EDB_Type CDB_Image::GetType() const
 
 CDB_Object* CDB_Image::Clone() const
 {
-    if ( !m_Null ) {
-        throw CDB_ClientEx(eDB_Error, 1, "CDB_Image::Clone",
-                           "Clone for the non NULL image is not supported");
-    }
+    CHECK_DRIVER_ERROR( 
+        !m_Null, 
+        "Clone for the non NULL image is not supported", 
+        1 );
+
     return new CDB_Image;
 }
 
@@ -578,10 +562,11 @@ EDB_Type CDB_Text::GetType() const
 
 CDB_Object* CDB_Text::Clone() const
 {
-    if ( !m_Null ) {
-        throw CDB_ClientEx(eDB_Error, 1, "CDB_Text::Clone",
-                           "Clone for the non-NULL text is not supported");
-    }
+    CHECK_DRIVER_ERROR( 
+        !m_Null, 
+        "Clone for the non-NULL text is not supported", 
+        1 );
+
     return new CDB_Text;
 }
 
@@ -602,10 +587,10 @@ CDB_Object* CDB_SmallDateTime::Clone() const
 
 void CDB_SmallDateTime::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_SmallDateTime) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_SmallDateTime::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( 
+        v.GetType() != eDB_SmallDateTime, 
+        "wrong type of CDB_Object", 
+        2 );
     *this= (CDB_SmallDateTime&)v;
 }
 
@@ -626,10 +611,10 @@ CDB_Object* CDB_DateTime::Clone() const
 
 void CDB_DateTime::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_DateTime) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_DateTime::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( 
+        v.GetType() != eDB_DateTime, 
+        "wrong type of CDB_Object", 
+        2 );
     *this= (CDB_DateTime&)v;
 }
 
@@ -649,10 +634,10 @@ CDB_Object* CDB_Bit::Clone() const
 
 void CDB_Bit::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Bit) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Bit::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( 
+        v.GetType() != eDB_Bit, 
+        "wrong type of CDB_Object", 
+        2 );
     *this= (CDB_Bit&)v;
 }
 
@@ -821,14 +806,14 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         }
     }
 
-    if (!precision  ||  precision > kMaxPrecision) {
-        throw CDB_ClientEx(eDB_Error, 100, "CDB_Numeric::x_MakeFromString",
-                           "illegal precision");
-    }
-    if (scale > precision) {
-        throw CDB_ClientEx(eDB_Error, 101, "CDB_Numeric::x_MakeFromString",
-                           "scale can not be more than precision");
-    }
+    CHECK_DRIVER_ERROR( 
+        !precision  ||  precision > kMaxPrecision, 
+        "illegal precision", 
+        100 );
+    CHECK_DRIVER_ERROR( 
+        scale > precision, 
+        "scale cannot be more than precision", 
+        101 );
 
     bool is_negative= false;
     if(*val == '-') {
@@ -848,16 +833,15 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         } else if (*val == '.') {
             break;
         } else {
-            throw CDB_ClientEx(eDB_Error, 102, "CDB_Numeric::x_MakeFromString",
-                               "string can not be converted");
+            DATABASE_DRIVER_ERROR( "string cannot be converted", 102 );
         }
         ++val;
     }
 
-    if (precision - n < scale) {
-        throw CDB_ClientEx(eDB_Error, 103, "CDB_Numeric::x_MakeFromString",
-                           "string can not be converted because of overflow");
-    }
+    CHECK_DRIVER_ERROR( 
+        precision - n < scale, 
+        "string cannot be converted because of overflow", 
+        103 );
 
     unsigned int dec = 0;
     if (*val == '.') {
@@ -866,9 +850,7 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
             if (*val >= '0'  &&  *val <= '9') {
                 buff1[n++] = *val - '0';
             } else {
-                throw CDB_ClientEx(eDB_Error, 102,
-                                   "CDB_Numeric::x_MakeFromString",
-                                   "string can not be converted");
+                DATABASE_DRIVER_ERROR( "string cannot be converted", 102 );
             }
             ++dec;
             ++val;
@@ -906,10 +888,10 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
 
 void CDB_Numeric::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Numeric) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Numeric::AssignValue",
-                           "wrong type of CDB_Object");
-    }
+    CHECK_DRIVER_ERROR( 
+        v.GetType() != eDB_Numeric, 
+        "wrong type of CDB_Object", 
+        2 );
     *this= (CDB_Numeric&)v;
 }
 
@@ -920,6 +902,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/04/04 13:03:56  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.17  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

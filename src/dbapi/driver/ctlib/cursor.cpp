@@ -84,11 +84,9 @@ CDB_Result* CTL_CursorCmd::Open()
             break;
         case CS_FAIL:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Fatal, 122001, "CTL_CursorCmd::Open",
-                               "ct_cursor(DECLARE) failed");
+            DATABASE_DRIVER_FATAL( "ct_cursor(DECLARE) failed", 122001 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 122002, "CTL_CursorCmd::Open",
-                               "the connection is busy");
+            DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
         }
 
         if (m_Params.NofParams() > 0) {
@@ -97,11 +95,8 @@ CDB_Result* CTL_CursorCmd::Open()
             if (m_Query.find("select") != string::npos  ||
                 m_Query.find("SELECT") != string::npos) {
                 // this is a select
-                if ( !x_AssignParams(true) ) {
-                    m_HasFailed = true;
-                    throw CDB_ClientEx(eDB_Error, 122003,"CTL_CursorCmd::Open",
-                                       "cannot declare the params");
-                }
+                m_HasFailed = !x_AssignParams(true);
+                CHECK_DRIVER_ERROR( m_HasFailed, "cannot declare the params", 122003 );
             }
         }
 
@@ -112,11 +107,9 @@ CDB_Result* CTL_CursorCmd::Open()
                 break;
             case CS_FAIL:
                 m_HasFailed = true;
-                throw CDB_ClientEx(eDB_Fatal, 122004, "CTL_CursorCmd::Open",
-                                   "ct_cursor(ROWS) failed");
+                DATABASE_DRIVER_FATAL( "ct_cursor(ROWS) failed", 122004 );
             case CS_BUSY:
-                throw CDB_ClientEx(eDB_Error, 122002, "CTL_CursorCmd::Open",
-                                   "the connection is busy");
+                DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
             }
         }
     }
@@ -130,22 +123,17 @@ CDB_Result* CTL_CursorCmd::Open()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 122005, "CTL_CursorCmd::Open",
-                           "ct_cursor(open) failed");
+        DATABASE_DRIVER_FATAL( "ct_cursor(open) failed", 122005 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 122002, "CTL_CursorCmd::Open",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
     }
 
     m_IsOpen = true;
 
     if (m_Params.NofParams() > 0) {
         // we do have the parameters
-        if ( !x_AssignParams(false) ) {
-            m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 122003, "CTL_CursorCmd::Open",
-                               "cannot assign the params");
-        }
+        m_HasFailed = !x_AssignParams(false);
+        CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 122003 );
     }
 
     // send this command
@@ -154,15 +142,12 @@ CDB_Result* CTL_CursorCmd::Open()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 122006, "CTL_CursorCmd::Open",
-                           "ct_send failed");
+        DATABASE_DRIVER_ERROR( "ct_send failed", 122006 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 122008, "CTL_CursorCmd::Open",
-                           "command was canceled");
+        DATABASE_DRIVER_ERROR( "command was canceled", 122008 );
     case CS_BUSY:
     case CS_PENDING:
-        throw CDB_ClientEx(eDB_Error, 122007, "CTL_CursorCmd::Open",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122007 );
     }
 
     m_Used = true;
@@ -177,17 +162,13 @@ CDB_Result* CTL_CursorCmd::Open()
             return 0;
         case CS_FAIL:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 122013, "CTL_CursorCmd::Open",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 122013 );
         case CS_CANCELED:
-            throw CDB_ClientEx(eDB_Error, 122011, "CTL_CursorCmd::Open",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 122011 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 122014, "CTL_CursorCmd::Open",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 122014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 122015, "CTL_CursorCmd::Open",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 122015 );
         }
 
         switch ( res_type ) {
@@ -203,9 +184,8 @@ CDB_Result* CTL_CursorCmd::Open()
             while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
                 continue;
             }
-            throw CDB_ClientEx(eDB_Warning, 122016, "CTL_CursorCmd::Open",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 122016 );
         case CS_CURSOR_RESULT:
             m_Res = new CTL_CursorResult(m_Cmd);
             break;
@@ -232,11 +212,9 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 122030, "CTL_CursorCmd::Update",
-                           "ct_cursor(update) failed");
+        DATABASE_DRIVER_FATAL( "ct_cursor(update) failed", 122030 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 122031, "CTL_CursorCmd::Update",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122031 );
     }
 
 
@@ -246,15 +224,12 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 122032, "CTL_CursorCmd::Update",
-                           "ct_send failed");
+        DATABASE_DRIVER_ERROR( "ct_send failed", 122032 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 122033, "CTL_CursorCmd::Update",
-                           "command was canceled");
+        DATABASE_DRIVER_ERROR( "command was canceled", 122033 );
     case CS_BUSY:
     case CS_PENDING:
-        throw CDB_ClientEx(eDB_Error, 122034, "CTL_CursorCmd::Update",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122034 );
     }
 
     // process the results
@@ -268,17 +243,13 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
             return true;
         case CS_FAIL:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 122035, "CTL_CursorCmd::Update",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 122035 );
         case CS_CANCELED:
-            throw CDB_ClientEx(eDB_Error, 122036, "CTL_CursorCmd::Update",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 122036 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 122037, "CTL_CursorCmd::Update",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 122037 );
         default:
-            throw CDB_ClientEx(eDB_Error, 122038, "CTL_CursorCmd::Update",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 122038 );
         }
 
         if(m_Connect->m_ResProc) {
@@ -314,9 +285,8 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
             while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
                 continue;
             }
-            throw CDB_ClientEx(eDB_Warning, 122039, "CTL_CursorCmd::Update",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 122039 );
         default:
             continue;
         }
@@ -337,22 +307,22 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
         desc= m_Res->GetImageOrTextDescriptor();
     }
     else {
-        CTL_ITDescriptor* dsc = new CTL_ITDescriptor;
+        auto_ptr<CTL_ITDescriptor> dsc(new CTL_ITDescriptor);
         
-        if (ct_data_info(m_Cmd, CS_GET, item_num+1, &dsc->m_Desc)
-            != CS_SUCCEED) {
-            delete dsc;
-            throw CDB_ClientEx(eDB_Error, 130010,
-                               "CTL_CursorCmd::UpdateTextImage",
-                               "ct_data_info failed");
-        }
-        desc= dsc;
+        bool rc = (ct_data_info(m_Cmd, CS_GET, item_num+1, &dsc->m_Desc)
+                   != CS_SUCCEED);
+
+        CHECK_DRIVER_ERROR( 
+            rc,
+            "ct_data_info failed", 
+            130010 );
+        desc = dsc.release();
     }
     return desc;
 }
 
 bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
-				    bool log_it)
+                    bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     C_ITDescriptorGuard d_guard(desc);
@@ -361,13 +331,13 @@ bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 }
 
 CDB_SendDataCmd* CTL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
-					    bool log_it)
+                        bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     C_ITDescriptorGuard d_guard(desc);
 
     return (desc) ? m_Connect->SendDataCmd(*desc, size, log_it) : 0;
-}					    
+}                       
 
 bool CTL_CursorCmd::Delete(const string& table_name)
 {
@@ -382,11 +352,9 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 122040, "CTL_CursorCmd::Delete",
-                           "ct_cursor(delete) failed");
+        DATABASE_DRIVER_FATAL( "ct_cursor(delete) failed", 122040 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 122041, "CTL_CursorCmd::Delete",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122041 );
     }
 
     // send this command
@@ -395,15 +363,12 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 122042, "CTL_CursorCmd::Delete",
-                           "ct_send failed");
+        DATABASE_DRIVER_ERROR( "ct_send failed", 122042 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 122043, "CTL_CursorCmd::Delete",
-                           "command was canceled");
+        DATABASE_DRIVER_ERROR( "command was canceled", 122043 );
     case CS_BUSY:
     case CS_PENDING:
-        throw CDB_ClientEx(eDB_Error, 122044, "CTL_CursorCmd::Delete",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122044 );
     }
 
     // process the results
@@ -417,17 +382,13 @@ bool CTL_CursorCmd::Delete(const string& table_name)
             return true;
         case CS_FAIL:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 122045, "CTL_CursorCmd::Delete",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 122045 );
         case CS_CANCELED:
-            throw CDB_ClientEx(eDB_Error, 122046, "CTL_CursorCmd::Delete",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 122046 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 122047, "CTL_CursorCmd::Delete",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 122047 );
         default:
-            throw CDB_ClientEx(eDB_Error, 122048, "CTL_CursorCmd::Delete",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 122048 );
         }
 
         if(m_Connect->m_ResProc) {
@@ -461,9 +422,8 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         case CS_CMD_FAIL: // the command has failed
             m_HasFailed = true;
             while(ct_results(m_Cmd, &res_type) == CS_SUCCEED);
-            throw CDB_ClientEx(eDB_Warning, 122049, "CTL_CursorCmd::Delete",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 122049 );
         default:
             continue;
         }
@@ -494,11 +454,9 @@ bool CTL_CursorCmd::Close()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 122020, "CTL_CursorCmd::Close",
-                           "ct_cursor(close) failed");
+        DATABASE_DRIVER_FATAL( "ct_cursor(close) failed", 122020 );
     case CS_BUSY:
-        throw CDB_ClientEx(eDB_Error, 122021, "CTL_CursorCmd::Close",
-                           "the connection is busy");
+        DATABASE_DRIVER_ERROR( "the connection is busy", 122021 );
     }
 
     // send this command
@@ -507,15 +465,12 @@ bool CTL_CursorCmd::Close()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 122022, "CTL_CursorCmd::Close",
-                           "ct_send failed");
+        DATABASE_DRIVER_ERROR( "ct_send failed", 122022 );
     case CS_CANCELED:
-        throw CDB_ClientEx(eDB_Error, 122023, "CTL_CursorCmd::Close",
-                           "command was canceled");
+        DATABASE_DRIVER_ERROR( "command was canceled", 122023 );
     case CS_BUSY:
     case CS_PENDING:
-        throw CDB_ClientEx(eDB_Error, 122024, "CTL_CursorCmd::Close",
-                           "connection has another request pending");
+        DATABASE_DRIVER_ERROR( "connection has another request pending", 122024 );
     }
 
     m_IsOpen = false;
@@ -529,17 +484,13 @@ bool CTL_CursorCmd::Close()
             return true;
         case CS_FAIL:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 122025, "CTL_CursorCmd::Close",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 122025 );
         case CS_CANCELED:
-            throw CDB_ClientEx(eDB_Error, 122026, "CTL_CursorCmd::Close",
-                               "your command has been canceled");
+            DATABASE_DRIVER_ERROR( "your command has been canceled", 122026 );
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 122027, "CTL_CursorCmd::Close",
-                               "connection has another request pending");
+            DATABASE_DRIVER_ERROR( "connection has another request pending", 122027 );
         default:
-            throw CDB_ClientEx(eDB_Error, 122028, "CTL_CursorCmd::Close",
-                               "your request is pending");
+            DATABASE_DRIVER_ERROR( "your request is pending", 122028 );
         }
 
         if(m_Connect->m_ResProc) {
@@ -577,9 +528,8 @@ bool CTL_CursorCmd::Close()
             while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
                 continue;
             }
-            throw CDB_ClientEx(eDB_Warning, 122029, "CTL_CursorCmd::Close",
-                               "The server encountered an error while "
-                               "executing a command");
+            DATABASE_DRIVER_WARNING( "The server encountered an error while "
+                               "executing a command", 122029 );
         }
     }
 }
@@ -615,10 +565,10 @@ CTL_CursorCmd::~CTL_CursorCmd()
             break;
         case CS_FAIL:
             // m_HasFailed = true;
-            //throw CDB_ClientEx(eDB_Fatal, 122050, "::~CTL_CursorCmd",
+            //throw CDB_ClientEx(eDiag_Fatal, 122050, "::~CTL_CursorCmd",
             //                   "ct_cursor(dealloc) failed");
         case CS_BUSY:
-            //throw CDB_ClientEx(eDB_Error, 122051, "::~CTL_CursorCmd",
+            //throw CDB_ClientEx(eDiag_Error, 122051, "::~CTL_CursorCmd",
             //                   "the connection is busy");
             ct_cmd_drop(m_Cmd);
             return;
@@ -630,14 +580,14 @@ CTL_CursorCmd::~CTL_CursorCmd()
             break;
         case CS_FAIL:
             // m_HasFailed = true;
-            // throw CDB_ClientEx(eDB_Error, 122052, "::~CTL_CursorCmd",
+            // throw CDB_ClientEx(eDiag_Error, 122052, "::~CTL_CursorCmd",
             //                   "ct_send failed");
         case CS_CANCELED:
-            // throw CDB_ClientEx(eDB_Error, 122053, "::~CTL_CursorCmd",
+            // throw CDB_ClientEx(eDiag_Error, 122053, "::~CTL_CursorCmd",
             //                   "command was canceled");
         case CS_BUSY:
         case CS_PENDING:
-            // throw CDB_ClientEx(eDB_Error, 122054, "::~CTL_CursorCmd",
+            // throw CDB_ClientEx(eDiag_Error, 122054, "::~CTL_CursorCmd",
             //                   "connection has another request pending");
             ct_cmd_drop(m_Cmd);
             return;
@@ -655,16 +605,16 @@ CTL_CursorCmd::~CTL_CursorCmd()
                 continue;
             case CS_FAIL:
                 // m_HasFailed = true;
-                //throw CDB_ClientEx(eDB_Error, 122055, "::~CTL_CursorCmd",
+                //throw CDB_ClientEx(eDiag_Error, 122055, "::~CTL_CursorCmd",
                 //                   "ct_result failed");
             case CS_CANCELED:                          
-                // throw CDB_ClientEx(eDB_Error, 122056, "::~CTL_CursorCmd",
+                // throw CDB_ClientEx(eDiag_Error, 122056, "::~CTL_CursorCmd",
                 //                   "your command has been canceled");
             case CS_BUSY:                              
-                // throw CDB_ClientEx(eDB_Error, 122057, "::~CTL_CursorCmd",
+                // throw CDB_ClientEx(eDiag_Error, 122057, "::~CTL_CursorCmd",
                 //                   "connection has another request pending");
             default:                                   
-                //throw CDB_ClientEx(eDB_Error, 122058, "::~CTL_CursorCmd",
+                //throw CDB_ClientEx(eDiag_Error, 122058, "::~CTL_CursorCmd",
                 //                   "your request is pending");
                 need_cont = false;
                 continue;
@@ -701,7 +651,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
             case CS_CMD_FAIL: // the command has failed
                 // m_HasFailed = true;
                 while (ct_results(m_Cmd, &res_type) == CS_SUCCEED);
-                // throw CDB_ClientEx(eDB_Warning, 122059, "::~CTL_CursorCmd",
+                // throw CDB_ClientEx(eDiag_Warning, 122059, "::~CTL_CursorCmd",
                 //                   "The server encountered an error while "
                 //                   "executing a command");
                 need_cont = false;
@@ -713,7 +663,7 @@ CTL_CursorCmd::~CTL_CursorCmd()
 
 #if 0
     if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
-        // throw CDB_ClientEx(eDB_Fatal, 122060, "::~CTL_CursorCmd",
+        // throw CDB_ClientEx(eDiag_Fatal, 122060, "::~CTL_CursorCmd",
         //                   "ct_cmd_drop failed");
     }
 #else
@@ -753,6 +703,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2004/05/17 21:12:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

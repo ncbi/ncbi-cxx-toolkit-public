@@ -60,11 +60,14 @@ class IDataSource;
 
 class NCBI_DBAPI_EXPORT CDriverManager : public C_DriverMgr
 {
+    template<class T> friend class CSafeStaticPtr;
+
 public:
     // Get a single instance of CDriverManager
     static CDriverManager& GetInstance();
 
     // Remove instance of CDriverManager
+    // DEPRECAETD. Instance will be removed automatically.
     static void RemoveInstance();
 
     // Create datasource object
@@ -72,7 +75,7 @@ public:
                 const map<string, string> *attr = 0);
 
     IDataSource* CreateDsFrom(const string& drivers,
-				    const IRegistry* reg = 0);
+                    const IRegistry* reg = 0);
 
     // Destroy datasource object
     void DestroyDs(const string& driver_name);
@@ -85,7 +88,7 @@ protected:
     // Put the new data source into the internal list with
     // corresponding driver name, return previous, if already exists
     class IDataSource* RegisterDs(const string& driver_name,
-				  class I_DriverContext* ctx);
+                  class I_DriverContext* ctx);
 
     map<string, class IDataSource*> m_ds_list;
 
@@ -94,6 +97,7 @@ private:
     // This function will just call the delete operator.
     static void DeleteDs(const IDataSource* const ds);
 
+// DEPRECATED. Will be removed in next version.
 private:
     static CDriverManager* sm_Instance;
     DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
@@ -108,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/04 13:03:02  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.10  2005/03/08 17:13:10  ssikorsk
  * Allow to add a driver search path for the driver manager
  *

@@ -102,11 +102,9 @@ CODBC_RowResult::CODBC_RowResult(
             continue;
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            throw CDB_ClientEx(eDB_Error, 420020, "CODBC_RowResult::CODBC_RowResult",
-                               "SQLDescribeCol failed");
+            DATABASE_DRIVER_ERROR( "SQLDescribeCol failed", 420020 );
         default:
-            throw CDB_ClientEx(eDB_Error, 420021, "CODBC_RowResult::CODBC_RowResult",
-                               "SQLDescribeCol failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLDescribeCol failed (memory corruption suspected)", 420021 );
 	   }
 	}
 }
@@ -162,11 +160,9 @@ bool CODBC_RowResult::Fetch()
             break;
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            throw CDB_ClientEx(eDB_Error, 430003, "CODBC_RowResult::Fetch",
-                               "SQLFetch failed");
+            DATABASE_DRIVER_ERROR( "SQLFetch failed", 430003 );
         default:
-            throw CDB_ClientEx(eDB_Error, 430004, "CODBC_RowResult::Fetch",
-                               "SQLFetch failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLFetch failed (memory corruption suspected)", 430004 );
         }
     }
     return false;
@@ -203,8 +199,7 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
     case SQL_ERROR:
         m_Reporter.ReportErrors();
     default:
-        throw CDB_ClientEx(eDB_Error, 430027, "CODBC_*Result::xGetData",
-                                   "SQLGetData failed ");
+        DATABASE_DRIVER_ERROR( "SQLGetData failed ", 430027 );
     }
 }
 
@@ -257,8 +252,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_LongChar*)     item_buf) = buffer;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -297,8 +291,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_LongChar*) item_buf) = buffer;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
 
         break;
@@ -328,8 +321,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*)      item_buf) = v ? 1 : 0;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -362,8 +354,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         }
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -387,8 +378,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*)      item_buf) = (Int4) v;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -407,8 +397,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*) item_buf) = (Int4) v;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -422,8 +411,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*) item_buf) = (Int4) v;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -438,8 +426,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Double*)      item_buf) = v;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -453,8 +440,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Float*)      item_buf) = v;
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -486,8 +472,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         }
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
@@ -515,8 +500,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 case SQL_ERROR:
                     m_Reporter.ReportErrors();
                 default:
-                    throw CDB_ClientEx(eDB_Error, 430021, "CODBC_*Result::GetItem",
-                               "SQLGetData failed while retrieving text/image into CDB_Text");
+                    DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving text/image into CDB_Text", 430021 );
                 }
 				break;
             }
@@ -540,22 +524,19 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 case SQL_ERROR:
                     m_Reporter.ReportErrors();
                 default:
-                    throw CDB_ClientEx(eDB_Error, 430022, "CODBC_*Result::GetItem",
-                               "SQLGetData failed while retrieving text/image into CDB_Image");
+                    DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving text/image into CDB_Image", 430022 );
                 }
 				break;
             }
             break;
         }
         default:
-            throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
-                               "Wrong type of CDB_Object");
+            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
         }
         break;
     }
     default:
-        throw CDB_ClientEx(eDB_Error, 430025, "CODBC_*Result::GetItem",
-                               "Unsupported column type");
+        DATABASE_DRIVER_ERROR( "Unsupported column type", 430025 );
 
     }
     return item_buf;
@@ -702,8 +683,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             case SQL_ERROR:
                 m_Reporter.ReportErrors();
             default:
-                throw CDB_ClientEx(eDB_Error, 430023, "CODBC_*Result::GetItem",
-                               "SQLGetData failed while retrieving text into CDB_Text");
+                DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving text into CDB_Text", 430023 );
             }
         }
         return val;
@@ -728,15 +708,13 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             case SQL_ERROR:
                 m_Reporter.ReportErrors();
             default:
-                throw CDB_ClientEx(eDB_Error, 430024, "CODBC_*Result::GetItem",
-                                   "SQLGetData failed while retrieving image into CDB_Image");
+                DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving image into CDB_Image", 430024 );
             }
         }
         return val;
     }
     default:
-        throw CDB_ClientEx(eDB_Error, 430025, "CODBC_*Result::GetItem",
-                               "Unsupported column type");
+        DATABASE_DRIVER_ERROR( "Unsupported column type", 430025 );
 
     }
 }
@@ -796,8 +774,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
     case SQL_ERROR:
         m_Reporter.ReportErrors();
     default:
-        throw CDB_ClientEx(eDB_Error, 430026, "CODBC_*Result::ReadItem",
-                                   "SQLGetData failed ");
+        DATABASE_DRIVER_ERROR( "SQLGetData failed ", 430026 );
     }
 }
 
@@ -820,9 +797,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         m_Reporter.ReportErrors();
         return 0;
     default:
-        throw CDB_ClientEx(eDB_Error, 430027,
-                           "CODBC_*Result::GetImageOrTextDescriptor",
-                           "SQLColAttribute failed");
+        DATABASE_DRIVER_ERROR( "SQLColAttribute failed", 430027 );
     }
     string base_table=(const char*)buffer;
 
@@ -838,9 +813,7 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         m_Reporter.ReportErrors();
         return 0;
     default:
-        throw CDB_ClientEx(eDB_Error, 430027,
-                           "CODBC_*Result::GetImageOrTextDescriptor",
-                           "SQLColAttribute failed");
+        DATABASE_DRIVER_ERROR( "SQLColAttribute failed", 430027 );
     }
     string base_column=(const char*)buffer;
 
@@ -924,9 +897,7 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd) :
             }
         }
     } catch (CDB_Exception& ) {
-        throw CDB_ClientEx(eDB_Error, 422010,
-                           "CODBC_CursorResult::CODBC_CursorResult",
-                           "failed to get the results");
+        DATABASE_DRIVER_ERROR( "failed to get the results", 422010 );
     }
 }
 
@@ -1003,8 +974,7 @@ bool CODBC_CursorResult::Fetch()
             }
         }
     } catch (CDB_Exception& ) {
-        throw CDB_ClientEx(eDB_Error, 422011, "CODBC_CursorResult::Fetch",
-                           "Failed to fetch the results");
+        DATABASE_DRIVER_ERROR( "Failed to fetch the results", 422011 );
     }
     return false;
 }
@@ -1060,6 +1030,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.15  2005/02/15 16:07:51  ssikorsk
  * Fixed a bug with GetRowCount plus SELECT statement
  *

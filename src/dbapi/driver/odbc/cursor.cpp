@@ -81,8 +81,7 @@ CDB_Result* CODBC_CursorCmd::Open()
         }
 #endif
     } catch (CDB_Exception& ) {
-        throw CDB_ClientEx(eDB_Error, 422001, "CODBC_CursorCmd::Open",
-                           "failed to declare cursor");
+        DATABASE_DRIVER_ERROR( "failed to declare cursor", 422001 );
     }
     m_IsDeclared = true;
 
@@ -110,8 +109,7 @@ CDB_Result* CODBC_CursorCmd::Open()
             m_LCmd->Release();
             m_LCmd = 0;
         }
-        throw CDB_ClientEx(eDB_Error, 422002, "CODBC_CursorCmd::Open",
-                           "failed to open cursor");
+        DATABASE_DRIVER_ERROR( "failed to open cursor", 422002 );
     }
     m_IsOpen = true;
 
@@ -157,8 +155,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
     } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
-        throw CDB_ClientEx(eDB_Error, 422004, "CODBC_CursorCmd::Update",
-                           "update failed");
+        DATABASE_DRIVER_ERROR( "update failed", 422004 );
     }
 
     return true;
@@ -227,8 +224,7 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
     } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
-        throw CDB_ClientEx(eDB_Error, 422004, "CODBC_CursorCmd::Update",
-                           "update failed");
+        DATABASE_DRIVER_ERROR( "update failed", 422004 );
     }
 
     return true;
@@ -278,8 +274,7 @@ bool CODBC_CursorCmd::Close()
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
-            throw CDB_ClientEx(eDB_Error, 422003, "CODBC_CursorCmd::Close",
-                               "failed to close cursor");
+            DATABASE_DRIVER_ERROR( "failed to close cursor", 422003 );
         }
 
         m_IsOpen = false;
@@ -308,8 +303,7 @@ bool CODBC_CursorCmd::Close()
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
-            throw CDB_ClientEx(eDB_Error, 422003, "CODBC_CursorCmd::Close",
-                               "failed to deallocate cursor");
+            DATABASE_DRIVER_ERROR( "failed to deallocate cursor", 422003 );
         }
 
         m_IsDeclared = false;
@@ -348,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.4  2004/05/17 21:16:06  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -35,8 +35,6 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/public.hpp>
-//#include <dbapi/driver/interfaces.hpp>
-//#include <dbapi/driver/exception.hpp>
 
 #include "conn_impl.hpp"
 #include "ds_impl.hpp"
@@ -93,7 +91,7 @@ void CConnection::ForceSingle(bool enable)
     m_forceSingle = enable;
 }
 
-CDB_Connection* 
+CDB_Connection*
 CConnection::GetCDB_Connection() {
     return m_connection;
 }
@@ -175,7 +173,7 @@ CDB_Connection* CConnection::CloneCDB_Conn()
                                GetCDB_Connection()->Password(),
                                m_modeMask,
                                true);
-    _TRACE("CDB_Connection " << (void*)GetCDB_Connection() 
+    _TRACE("CDB_Connection " << (void*)GetCDB_Connection()
         << " cloned, new CDB_Connection: " << (void*)temp);
     SetDbName(m_database, temp);
     return temp;
@@ -217,9 +215,7 @@ CConnection* CConnection::GetAuxConn()
         return 0;
 
     CConnection *conn = this;
-    if( m_connUsed && m_forceSingle ) {
-        throw CDbapiException("GetAuxConn(): Extra connections not permitted");
-    }
+    CHECK_NCBI_DBAPI( m_connUsed && m_forceSingle, "GetAuxConn(): Extra connections not permitted" );
     if( m_connUsed ) {
         conn = Clone();
         _TRACE("GetAuxConn(): Server: " << GetCDB_Connection()->ServerName()
@@ -248,7 +244,7 @@ void CConnection::Abort()
     //FreeResources();
 }
 
-void CConnection::FreeResources() 
+void CConnection::FreeResources()
 {
     delete m_connection;
     m_connection = 0;
@@ -257,8 +253,10 @@ void CConnection::FreeResources()
 // New part
 IStatement* CConnection::GetStatement()
 {
-    if( m_connUsed ) 
-        throw CDbapiException("CConnection::GetStatement(): Connection taken, cannot use this method");
+    CHECK_NCBI_DBAPI( 
+        m_connUsed, 
+        "CConnection::GetStatement(): Connection taken, cannot use this method"
+        );
 /*
     if( m_stmt == 0 ) {
         m_stmt = new CStatement(this);
@@ -277,8 +275,10 @@ ICallableStatement*
 CConnection::GetCallableStatement(const string& proc,
                                   int nofArgs)
 {
-    if( m_connUsed ) 
-        throw CDbapiException("CConnection::GetCallableStatement(): Connection taken, cannot use this method");
+    CHECK_NCBI_DBAPI(
+        m_connUsed,
+        "CConnection::GetCallableStatement(): Connection taken, cannot use this method"
+        );
 /*
     if( m_cstmt != 0 ) {
         //m_cstmt->PurgeResults();
@@ -300,7 +300,7 @@ ICursor* CConnection::GetCursor(const string& name,
                                 int nofArgs,
                                 int batchSize)
 {
-//    if( m_connUsed ) 
+//    if( m_connUsed )
 //        throw CDbapiException("CConnection::GetCursor(): Connection taken, cannot use this method");
 /*
     if( m_cursor != 0 ) {
@@ -320,7 +320,7 @@ ICursor* CConnection::GetCursor(const string& name,
 IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
                                         unsigned int nof_cols)
 {
-//    if( m_connUsed ) 
+//    if( m_connUsed )
 //        throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
 /*
     if( m_bulkInsert != 0 ) {
@@ -341,9 +341,9 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
 
 IStatement* CConnection::CreateStatement()
 {
-//    if( m_getUsed ) 
+//    if( m_getUsed )
 //        throw CDbapiException("CConnection::CreateStatement(): Get...() methods used");
-    
+
     CStatement *stmt = new CStatement(GetAuxConn());
     AddListener(stmt);
     stmt->AddListener(this);
@@ -354,9 +354,9 @@ ICallableStatement*
 CConnection::PrepareCall(const string& proc,
                          int nofArgs)
 {
-//    if( m_getUsed ) 
+//    if( m_getUsed )
 //        throw CDbapiException("CConnection::CreateCallableStatement(): Get...() methods used");
-    
+
     CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetAuxConn());
     AddListener(cstmt);
     cstmt->AddListener(this);
@@ -368,9 +368,9 @@ ICursor* CConnection::CreateCursor(const string& name,
                                    int nofArgs,
                                    int batchSize)
 {
- //   if( m_getUsed ) 
+ //   if( m_getUsed )
  //       throw CDbapiException("CConnection::CreateCursor(): Get...() methods used");
-    
+
     CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetAuxConn());
     AddListener(cur);
     cur->AddListener(this);
@@ -380,9 +380,9 @@ ICursor* CConnection::CreateCursor(const string& name,
 IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
                                            unsigned int nof_cols)
 {
-//    if( m_getUsed ) 
+//    if( m_getUsed )
 //        throw CDbapiException("CConnection::CreateBulkInsert(): Get...() methods used");
-    
+
     CBulkInsert *bcp = new CBulkInsert(table_name, nof_cols, GetAuxConn());
     AddListener(bcp);
     bcp->AddListener(this);
@@ -402,25 +402,25 @@ void CConnection::Action(const CDbapiEvent& e)
         CBulkInsert *bulkInsert;
         if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
             if( cstmt == m_cstmt ) {
-                _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt); 
+                _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt);
                 m_cstmt = 0;
             }
         }
         else if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
             if( stmt == m_stmt ) {
-                _TRACE("CConnection: Clearing cached statement " << (void*)m_stmt); 
+                _TRACE("CConnection: Clearing cached statement " << (void*)m_stmt);
                 m_stmt = 0;
             }
         }
         else if( (cursor = dynamic_cast<CCursor*>(e.GetSource())) != 0 ) {
             if( cursor == m_cursor ) {
-                _TRACE("CConnection: Clearing cached cursor " << (void*)m_cursor); 
+                _TRACE("CConnection: Clearing cached cursor " << (void*)m_cursor);
                 m_cursor = 0;
             }
         }
         else if( (bulkInsert = dynamic_cast<CBulkInsert*>(e.GetSource())) != 0 ) {
             if( bulkInsert == m_bulkInsert ) {
-                _TRACE("CConnection: Clearing cached bulkinsert " << (void*)m_bulkInsert); 
+                _TRACE("CConnection: Clearing cached bulkinsert " << (void*)m_bulkInsert);
                 m_bulkInsert = 0;
             }
         }
@@ -453,7 +453,7 @@ void CConnection::MsgToEx(bool v)
         // Clear the previous handlers if present
         GetCDB_Connection()->PopMsgHandler(GetHandler());
         _TRACE("MsqToEx(): connection " << (void*)this
-            << ": message handler " << (void*)GetHandler() 
+            << ": message handler " << (void*)GetHandler()
             << " removed from CDB_Connection " << (void*)GetCDB_Connection());
         m_msgToEx = false;
     }
@@ -511,6 +511,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.39  2005/04/04 13:03:56  ssikorsk
+* Revamp of DBAPI exception class CDB_Exception
+*
 * Revision 1.38  2005/02/24 19:53:16  kholodov
 * Fixed: CConnection::Abort() method
 *

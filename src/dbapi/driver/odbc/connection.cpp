@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, bool is_text, bool logit, 
-						          SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph);
+                                  SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph);
 static bool ODBC_xSendDataGetId(SQLHSTMT cmd, SQLPOINTER* id, 
                                 CODBC_Reporter& rep);
 
@@ -115,8 +115,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     return 0; // not implemented
 #else
     if (!m_BCPable) {
-        throw CDB_ClientEx(eDB_Error, 410003, "CODBC_Connection::BCPIn",
-                           "No bcp on this connection");
+        DATABASE_DRIVER_ERROR( "No bcp on this connection", 410003 );
     }
 
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(this, m_Link, table_name, nof_columns);
@@ -180,12 +179,11 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
     CODBC_Reporter lrep(&m_MsgHandlers, SQL_HANDLE_STMT, cmd);
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= img.Size();
-	SQLINTEGER ph;
+    SQLINTEGER ph;
 
     if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, false, log_it, p, lrep, &ph)) ||
        (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
-        throw CDB_ClientEx(eDB_Error, 410035, "CODBC_Connection::SendData",
-                           "can not prepare a command");
+        DATABASE_DRIVER_ERROR( "Cannot prepare a command", 410035 );
     }
 
     return x_SendData(cmd, img, lrep);
@@ -206,12 +204,11 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
     CODBC_Reporter lrep(&m_MsgHandlers, SQL_HANDLE_STMT, cmd);
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= txt.Size();
-	SQLINTEGER ph;
+    SQLINTEGER ph;
 
     if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, true, log_it, p, lrep, &ph)) ||
        (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
-        throw CDB_ClientEx(eDB_Error, 410035, "CODBC_Connection::SendData",
-                           "can not prepare a command");
+        DATABASE_DRIVER_ERROR( "Cannot prepare a command", 410035 );
     }
 
     return x_SendData(cmd, txt, lrep);
@@ -320,8 +317,7 @@ CODBC_Connection::~CODBC_Connection()
         case SQL_SUCCESS:
             break;
         default:
-            throw CDB_ClientEx(eDB_Error, 410009, "CODBC_Connection::~CODBC_Connection",
-                               "SQLDisconnect failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLDisconnect failed (memory corruption suspected)", 410009 );
             
         }
     }
@@ -345,7 +341,7 @@ bool CODBC_Connection::Abort()
 
 static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, bool is_text, bool logit, 
-						          SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph)
+                                  SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph)
 {
     string q= "update ";
     q+= descr_in.TableName();
@@ -356,47 +352,47 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
     //q+= " ;\nset rowcount 0";
 
 #ifdef SQL_TEXTPTR_LOGGING
-	if(!logit) {
-		switch(SQLSetStmtAttr(cmd, SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
-			(SQLPOINTER)SQL_TL_OFF, SQL_IS_INTEGER)) {
-		case SQL_SUCCESS_WITH_INFO:
-		case SQL_ERROR:
-			rep.ReportErrors();
-		default: break;
-		}
-	}
+    if(!logit) {
+        switch(SQLSetStmtAttr(cmd, SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
+            (SQLPOINTER)SQL_TL_OFF, SQL_IS_INTEGER)) {
+        case SQL_SUCCESS_WITH_INFO:
+        case SQL_ERROR:
+            rep.ReportErrors();
+        default: break;
+        }
+    }
 #endif
 
-	switch(SQLPrepare(cmd, (SQLCHAR*)q.c_str(), SQL_NTS)) {
-	case SQL_SUCCESS_WITH_INFO:
-		rep.ReportErrors();
-	case SQL_SUCCESS: break;
-	case SQL_ERROR:
-		rep.ReportErrors();
-	default: return false;
-	}
-			
-	SQLSMALLINT par_type, par_dig, par_null;
+    switch(SQLPrepare(cmd, (SQLCHAR*)q.c_str(), SQL_NTS)) {
+    case SQL_SUCCESS_WITH_INFO:
+        rep.ReportErrors();
+    case SQL_SUCCESS: break;
+    case SQL_ERROR:
+        rep.ReportErrors();
+    default: return false;
+    }
+            
+    SQLSMALLINT par_type, par_dig, par_null;
     SQLUINTEGER par_size;
 
 #if 0
-	switch(SQLNumParams(cmd, &par_dig)) {
-	case SQL_SUCCESS: break;
-	case SQL_SUCCESS_WITH_INFO:
-	case SQL_ERROR:
-		rep.ReportErrors();
-	default: return false;
-	}
+    switch(SQLNumParams(cmd, &par_dig)) {
+    case SQL_SUCCESS: break;
+    case SQL_SUCCESS_WITH_INFO:
+    case SQL_ERROR:
+        rep.ReportErrors();
+    default: return false;
+    }
 #endif
 
-	switch(SQLDescribeParam(cmd, 1, &par_type, &par_size, &par_dig, &par_null)){
-	case SQL_SUCCESS_WITH_INFO:
-		rep.ReportErrors();
-	case SQL_SUCCESS: break;
-	case SQL_ERROR:
-		rep.ReportErrors();
-	default: return false;
-	}
+    switch(SQLDescribeParam(cmd, 1, &par_type, &par_size, &par_dig, &par_null)){
+    case SQL_SUCCESS_WITH_INFO:
+        rep.ReportErrors();
+    case SQL_SUCCESS: break;
+    case SQL_ERROR:
+        rep.ReportErrors();
+    default: return false;
+    }
 
     *ph= SQL_LEN_DATA_AT_EXEC(size);
 
@@ -404,14 +400,14 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                      is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
                      // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
                      size, 0, id, 0, ph)) {
-	case SQL_SUCCESS_WITH_INFO:
-		rep.ReportErrors();
-	case SQL_SUCCESS: break;
-	case SQL_ERROR:
-		rep.ReportErrors();
-	default: return false;
-	}
-		
+    case SQL_SUCCESS_WITH_INFO:
+        rep.ReportErrors();
+    case SQL_SUCCESS: break;
+    case SQL_ERROR:
+        rep.ReportErrors();
+    default: return false;
+    }
+        
 
     
     switch(SQLExecute(cmd)) {
@@ -449,9 +445,9 @@ bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Report
         case SQL_SUCCESS_WITH_INFO:
             rep.ReportErrors();
         case SQL_NEED_DATA:
-			continue;
+            continue;
         case SQL_NO_DATA:
-			return true;
+            return true;
         case SQL_SUCCESS:
             break;
         case SQL_ERROR:
@@ -461,18 +457,16 @@ bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Report
         }
     }
     switch(SQLParamData(cmd, (SQLPOINTER*)&s)) {
-	case SQL_SUCCESS_WITH_INFO: rep.ReportErrors();
+    case SQL_SUCCESS_WITH_INFO: rep.ReportErrors();
     case SQL_SUCCESS:           break;
-	case SQL_NO_DATA:           return true;
+    case SQL_NO_DATA:           return true;
     case SQL_NEED_DATA: 
-	    throw CDB_ClientEx(eDB_Error, 410044, "CODBC_Connection::SendData",
-                               "Not all the data were sent");
-	case SQL_ERROR:             rep.ReportErrors();
-	default:
-		throw CDB_ClientEx(eDB_Error, 410045, "CODBC_Connection::SendData",
-                           "SQLParamData failed");
-	}
-	
+        DATABASE_DRIVER_ERROR( "Not all the data were sent", 410044 );
+    case SQL_ERROR:             rep.ReportErrors();
+    default:
+        DATABASE_DRIVER_ERROR( "SQLParamData failed", 410045 );
+    }
+    
     for(;;) {
         switch(SQLMoreResults(cmd)) {
         case SQL_SUCCESS_WITH_INFO: rep.ReportErrors();
@@ -480,13 +474,11 @@ bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Report
         case SQL_NO_DATA:           break;
         case SQL_ERROR:             
             rep.ReportErrors();
-            throw CDB_ClientEx(eDB_Error, 410014, "CODBC_Connection::SendData",
-                               "SQLMoreResults failed");
+            DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 410014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 410015, "CODBC_Connection::SendData",
-                               "SQLMoreResults failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 410015 );
         }
-		break;
+        break;
     }
     return true;
 }
@@ -511,8 +503,7 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
     if((!ODBC_xSendDataPrepare(cmd, descr, (SQLINTEGER)nof_bytes,
                               false, logit, p, m_Reporter, &m_ParamPH)) ||
        (!ODBC_xSendDataGetId(cmd, &p, m_Reporter))) {
-        throw CDB_ClientEx(eDB_Error, 410035, "CODBC_SendDataCmd::CODBC_SendDataCm",
-                           "can not prepare a command");
+        DATABASE_DRIVER_ERROR( "Cannot prepare a command", 410035 );
     }   
 }
 
@@ -520,7 +511,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 {
     if(nof_bytes > m_Bytes2go) nof_bytes= m_Bytes2go;
     if(nof_bytes < 1) return 0;
-	
+    
     switch(SQLPutData(m_Cmd, (SQLPOINTER)chunk_ptr, (SQLINTEGER)nof_bytes)) {
     case SQL_SUCCESS_WITH_INFO:
         m_Reporter.ReportErrors();
@@ -538,17 +529,15 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 
     SQLPOINTER s= (SQLPOINTER)1;
     switch(SQLParamData(m_Cmd, (SQLPOINTER*)&s)) {
-	case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+    case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
     case SQL_SUCCESS:           break;
-	case SQL_NO_DATA:           break;
+    case SQL_NO_DATA:           break;
     case SQL_NEED_DATA: 
-	    throw CDB_ClientEx(eDB_Error, 410044, "CODBC_Connection::SendChunk",
-                               "Not all the data were sent");
-	case SQL_ERROR:             m_Reporter.ReportErrors();
-	default:
-		throw CDB_ClientEx(eDB_Error, 410045, "CODBC_Connection::SendChunk",
-                           "SQLParamData failed");
-	}
+        DATABASE_DRIVER_ERROR( "Not all the data were sent", 410044 );
+    case SQL_ERROR:             m_Reporter.ReportErrors();
+    default:
+        DATABASE_DRIVER_ERROR( "SQLParamData failed", 410045 );
+    }
 
     for(;;) {
         switch(SQLMoreResults(m_Cmd)) {
@@ -557,13 +546,11 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         case SQL_NO_DATA:           break;
         case SQL_ERROR:             
             m_Reporter.ReportErrors();
-            throw CDB_ClientEx(eDB_Error, 410014, "CODBC_SendDataCmd::SendChunk",
-                               "SQLMoreResults failed");
+            DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 410014 );
         default:
-            throw CDB_ClientEx(eDB_Error, 410015, "CODBC_SendDataCmd::SendChunk",
-                               "SQLMoreResults failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 410015 );
         }
-		break;
+        break;
     }
     return nof_bytes;
 }
@@ -607,6 +594,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.7  2005/02/23 21:40:55  soussov
  * Adds Abort() method to connection
  *

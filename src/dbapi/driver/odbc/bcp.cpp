@@ -55,12 +55,11 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* con,
     m_Connect(con), m_Cmd(cmd), m_Params(nof_columns),
     m_WasSent(false), m_HasFailed(false),
     m_HasTextImage(false), m_WasBound(false), 
-	m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd)
+    m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd)
 {
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
-		m_Reporter.ReportErrors();
-        throw CDB_ClientEx(eDB_Fatal, 423001,
-                           "CODBC_BCPInCmd::CODBC_BCPInCmd", "bcp_init failed");
+        m_Reporter.ReportErrors();
+        DATABASE_DRIVER_FATAL( "bcp_init failed", 423001 );
     }
 }
 
@@ -78,9 +77,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
     if (!m_WasBound) {
         for (unsigned int i = 0; i < m_Params.NofParams(); i++) {
             if (m_Params.GetParamStatus(i) == 0) {
-				bcp_bind(m_Cmd, (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i+1);
+                bcp_bind(m_Cmd, (BYTE*) pb, 0, SQL_NULL_DATA, 0, 0, 0, i+1);
                 continue;
-			}
+            }
             
             CDB_Object& param = *m_Params.GetParam(i);
             
@@ -103,7 +102,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 break;
             case eDB_Char:
             case eDB_VarChar:
-			case eDB_LongChar:
+            case eDB_LongChar:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA,(BYTE*) "", 1, SQLCHARACTER, i + 1);
                 break;
@@ -119,7 +118,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
 #endif
             case eDB_Binary:
             case eDB_VarBinary:
-			case eDB_LongBinary:
+            case eDB_LongBinary:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA, 0, 0, SQLBINARY, i + 1);
                 break;
@@ -142,7 +141,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             case eDB_Text:
                 r = bcp_bind(m_Cmd, 0, 0,
                              SQL_VARLEN_DATA, (BYTE*) "", 1, 
-							 SQLTEXT, i + 1);
+                             SQLTEXT, i + 1);
                 m_HasTextImage = true;
                 break;
             case eDB_Image:
@@ -154,9 +153,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 return false;
             }
             if (r != SUCCEED) {
-				m_Reporter.ReportErrors();
+                m_Reporter.ReportErrors();
                 return false;
-			}
+            }
         }
         m_WasBound = true;
     }
@@ -315,9 +314,9 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             return false;
         }
         if (r != SUCCEED) {
-			m_Reporter.ReportErrors();
+            m_Reporter.ReportErrors();
             return false;
-		}
+        }
     }
     return true;
 }
@@ -329,15 +328,13 @@ bool CODBC_BCPInCmd::SendRow()
     
     if (!x_AssignParams(param_buff)) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 423004,
-                           "CODBC_BCPInCmd::SendRow", "cannot assign params");
+        DATABASE_DRIVER_ERROR( "cannot assign params", 423004 );
     }
 
     if (bcp_sendrow(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
-		m_Reporter.ReportErrors();
-        throw CDB_ClientEx(eDB_Error, 423005,
-                           "CODBC_BCPInCmd::SendRow", "bcp_sendrow failed");
+        m_Reporter.ReportErrors();
+        DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 423005 );
     }
     m_WasSent = true;
 
@@ -362,12 +359,15 @@ bool CODBC_BCPInCmd::SendRow()
                     l = s;
                 if (bcp_moretext(m_Cmd, (DBINT) l, (BYTE*) buff) != SUCCEED) {
                     m_HasFailed = true;
-					m_Reporter.ReportErrors();
-                    throw CDB_ClientEx(eDB_Error, 423006,
-                                       "CODBC_BCPInCmd::SendRow",
-                                       param.GetType() == eDB_Text ?
-                                       "bcp_moretext for text failed" :
-                                       "bcp_moretext for image failed");
+                    m_Reporter.ReportErrors();
+
+                    string err_text;
+                    if (param.GetType() == eDB_Text) {
+                        err_text = "bcp_moretext for text failed";
+                    } else {
+                        err_text = "bcp_moretext for image failed";
+                    }
+                    DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 423006 );
                 }
                 if (!l)
                     break;
@@ -395,10 +395,10 @@ bool CODBC_BCPInCmd::CompleteBatch()
 {
     if(m_WasSent) {
         Int4 outrow = bcp_batch(m_Cmd);
-		if(outrow == -1) {
-			m_Reporter.ReportErrors();
-			return false;
-		}
+        if(outrow == -1) {
+            m_Reporter.ReportErrors();
+            return false;
+        }
         return true;
     }
     return false;
@@ -410,10 +410,10 @@ bool CODBC_BCPInCmd::CompleteBCP()
     if(m_WasSent) {
         Int4 outrow = bcp_done(m_Cmd);
         m_WasSent= false;
-		if(outrow == -1) {
-			m_Reporter.ReportErrors();
-			return false;
-		}
+        if(outrow == -1) {
+            m_Reporter.ReportErrors();
+            return false;
+        }
         return true;
     }
     return false;
@@ -448,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.5  2004/05/17 21:16:05  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -149,15 +149,13 @@ C_xDriverMgr::GetDriverContext(
             );
     }
     catch( const CPluginManagerException& e ) {
-        throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::GetDriverContext", e.GetMsg() );
+        DATABASE_DRIVER_FATAL( e.GetMsg(), 300 );
     }
     catch ( const exception& e ) {
-        throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::GetDriverContext",
-            driver_name + " is not available :: " + e.what() );
+        DATABASE_DRIVER_FATAL( driver_name + " is not available :: " + e.what(), 300 );
     }
     catch ( ... ) {
-        throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::GetDriverContext",
-            driver_name + " was unable to load due an unknown error" );
+        DATABASE_DRIVER_FATAL( driver_name + " was unable to load due an unknown error", 300 );
     }
 
     return drv;
@@ -168,11 +166,12 @@ C_xDriverMgr::GetDriverContext(
     const string& driver_name,
     const map<string, string>* attr)
 {
+    auto_ptr<TPluginManagerParamTree> pt;
     const TPluginManagerParamTree* nd = NULL;
 
     if ( attr != NULL ) {
-        TPluginManagerParamTree* pt = MakePluginManagerParamTree(driver_name, attr);
-        _ASSERT(pt);
+        pt.reset( MakePluginManagerParamTree(driver_name, attr) );
+        _ASSERT(pt.get());
         nd = pt->FindNode( driver_name );
     }
 
@@ -194,8 +193,7 @@ void C_xDriverMgr::RegisterDriver(const string&        driver_name,
         m_Drivers[m_NofDrvs-1].drv_name= driver_name;
     }
     else {
-        throw CDB_ClientEx(eDB_Error, 101, "C_xDriverMgr::RegisterDriver",
-                           "No space left for driver registration");
+        DATABASE_DRIVER_ERROR( "No space left for driver registration", 101 );
     }
 
 }
@@ -222,8 +220,7 @@ FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
         }
     }
 
-    throw CDB_ClientEx(eDB_Error, 200, "C_xDriverMgr::GetDriver",
-                       "internal error");
+    DATABASE_DRIVER_ERROR( "internal error", 200 );
 }
 
 bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
@@ -240,9 +237,8 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         }
         FDriverRegister reg = entry_point();
         if(!reg) {
-            throw CDB_ClientEx(eDB_Fatal, 300, "C_xDriverMgr::LoadDriverDll",
-                               "driver reports an unrecoverable error "
-                               "(e.g. conflict in libraries)");
+            DATABASE_DRIVER_FATAL( "driver reports an unrecoverable error "
+                               "(e.g. conflict in libraries)", 300 );
         }
         reg(*this);
         return true;
@@ -348,15 +344,13 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
             );
     }
     catch( const CPluginManagerException& e ) {
-        throw CDB_ClientEx(eDB_Fatal, 300, "Get_I_DriverContext", e.GetMsg() );
+        DATABASE_DRIVER_FATAL( e.GetMsg(), 300 );
     }
     catch ( const exception& e ) {
-        throw CDB_ClientEx(eDB_Fatal, 300, "Get_I_DriverContext",
-            driver_name + " is not available :: " + e.what() );
+        DATABASE_DRIVER_FATAL( driver_name + " is not available :: " + e.what(), 300 );
     }
     catch ( ... ) {
-        throw CDB_ClientEx(eDB_Fatal, 300, "Get_I_DriverContext",
-            driver_name + " was unable to load due an unknown error" );
+        DATABASE_DRIVER_FATAL( driver_name + " was unable to load due an unknown error", 300 );
     }
 
     return drv;
@@ -369,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/04/04 13:03:56  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.23  2005/03/23 14:45:42  vasilche
  * Removed non-MT-safe "created" flag.
  * CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.

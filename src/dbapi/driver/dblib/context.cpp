@@ -116,11 +116,11 @@ CDBLibContext::CDBLibContext(DBINT version) :
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
-    if (m_pDBLibContext != 0) {
-        throw CDB_ClientEx(eDB_Error, 200000, "CDBLibContext::CDBLibContext",
-                           "You cannot use more than one dblib context "
-                           "concurrently");
-    }
+    CHECK_DRIVER_ERROR( 
+        m_pDBLibContext != 0,
+        "You cannot use more than one dblib context "
+        "concurrently", 
+        200000 );
 
 #ifdef MS_DBLIB_IN_USE
     if (dbinit() == NULL || version == 31415)
@@ -128,8 +128,7 @@ CDBLibContext::CDBLibContext(DBINT version) :
         if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
 #endif
             {
-                throw CDB_ClientEx(eDB_Fatal, 200001, "CDBLibContext::CDBLibContext",
-                                   "dbinit failed");
+                DATABASE_DRIVER_FATAL( "dbinit failed", 200001 );
             }
 
     dberrhandle(s_DBLIB_err_callback);
@@ -214,16 +213,12 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
     if((mode & fDoNotConnect) != 0) return 0;
     // new connection needed
     if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
-        throw CDB_ClientEx(eDB_Error, 200010, "CDBLibContext::Connect",
-                           "Insufficient info/credentials to connect");
+        DATABASE_DRIVER_ERROR( "Insufficient info/credentials to connect", 200010 );
     }
 
     DBPROCESS* dbcon = x_ConnectToServer(srv_name, user_name, passwd, mode);
 
-    if (!dbcon) {
-        throw CDB_ClientEx(eDB_Error, 200011, "CDBLibContext::Connect",
-                           "Cannot connect to server");
-    }
+    CHECK_DRIVER_ERROR( !dbcon, "Cannot connect to server", 200011 );
 
 #ifdef MS_DBLIB_IN_USE
     dbsetopt(dbcon, DBTEXTLIMIT, "0" ); // No limit
@@ -323,7 +318,10 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx to(dberr, "dblib", dberrstr);
+            CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+                             0,
+                             dberrstr,
+                             dberr);
             hs->PostMsg(&to);
         }
         return INT_TIMEOUT;
@@ -336,7 +334,11 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx info(eDB_Info, dberr, "dblib", dberrstr);
+            CDB_ClientEx info(DIAG_COMPILE_INFO,
+                         0,
+                         dberrstr,
+                         eDiag_Info,
+                         dberr);
             hs->PostMsg(&info);
         }
         break;
@@ -345,19 +347,30 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXSERVER:
     case EXPROGRAM:
         {
-            CDB_ClientEx err(eDB_Error, dberr, "dblib", dberrstr);
+            CDB_ClientEx err(DIAG_COMPILE_INFO,
+                         0,
+                         dberrstr,
+                         eDiag_Error,
+                         dberr);
             hs->PostMsg(&err);
         }
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx to(dberr, "dblib", dberrstr);
+            CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+                             0,
+                             dberrstr,
+                             dberr);
             hs->PostMsg(&to);
         }
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ftl(eDB_Fatal, dberr, "dblib", dberrstr);
+            CDB_ClientEx ftl(DIAG_COMPILE_INFO,
+                         0,
+                         dberrstr,
+                         eDiag_Fatal,
+                         dberr);
             hs->PostMsg(&ftl);
         }
         break;
@@ -384,20 +397,38 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         &link->m_MsgHandlers : &m_pDBLibContext->m_CntxHandlers;
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx dl(srvname, msgtxt);
+        CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+                          0,
+                          string(srvname) + ": " + msgtxt);
         hs->PostMsg(&dl);
     } else {
-        EDB_Severity sev =
-            severity <  10 ? eDB_Info :
-            severity == 10 ? eDB_Warning :
-            severity <  16 ? eDB_Error :
-            severity >  16 ? eDB_Fatal :
-            eDB_Unknown;
+//         EDiagSev sev =
+//             severity <  10 ? eDiag_Info :
+//             severity == 10 ? eDiag_Warning :
+//             severity <  16 ? eDiag_Error :
+//             severity >  16 ? eDiag_Fatal :
+//             eDB_Unknown;
+
+        EDiagSev sev =
+            severity <  10 ? eDiag_Info :
+            severity == 10 ? eDiag_Warning :
+            severity <  16 ? eDiag_Error : eDiag_Fatal;
+
         if (!procname.empty()) {
-            CDB_RPCEx rpc(sev, msgno, srvname, msgtxt, procname, line);
+            CDB_RPCEx rpc(DIAG_COMPILE_INFO,
+                      0,
+                      string(srvname) + ": " + msgtxt,
+                      sev,
+                      msgno,
+                      procname,
+                      line);
             hs->PostMsg(&rpc);
         } else {
-            CDB_DSEx m(sev, msgno, srvname, msgtxt);
+            CDB_DSEx m(DIAG_COMPILE_INFO,
+                     0,
+                     string(srvname) + ": " + msgtxt,
+                     sev,
+                     msgno);
             hs->PostMsg(&m);
         }
     }
@@ -711,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.37  2005/03/21 16:30:31  dicuccio
  * Permit driver initialization even if parameter lists are not supplied
  *

@@ -52,8 +52,7 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* con,
     m_HasTextImage(false), m_WasBound(false)
 {
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
-        throw CDB_ClientEx(eDB_Fatal, 223001,
-                           "CTDS_BCPInCmd::CTDS_BCPInCmd", "bcp_init failed");
+        DATABASE_DRIVER_FATAL( "bcp_init failed", 223001 );
     }
 }
 
@@ -74,7 +73,7 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 continue;
 
             CDB_Object& param = *m_Params.GetParam(i);
-            
+
             switch ( param.GetType() ) {
             case eDB_Int: {
                 CDB_Int& val = dynamic_cast<CDB_Int&> (param);
@@ -374,14 +373,12 @@ bool CTDS_BCPInCmd::SendRow()
 
     if (!x_AssignParams(param_buff)) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 223004,
-                           "CTDS_BCPInCmd::SendRow", "cannot assign params");
+        DATABASE_DRIVER_ERROR( "cannot assign params", 223004 );
     }
 
     if (bcp_sendrow(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 223005,
-                           "CTDS_BCPInCmd::SendRow", "bcp_sendrow failed");
+        DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 223005 );
     }
     m_WasSent = true;
 
@@ -406,11 +403,14 @@ bool CTDS_BCPInCmd::SendRow()
                     l = s;
                 if (bcp_moretext(m_Cmd, l, (BYTE*) buff) != SUCCEED) {
                     m_HasFailed = true;
-                    throw CDB_ClientEx(eDB_Error, 223006,
-                                       "CTDS_BCPInCmd::SendRow",
-                                       param.GetType() == eDB_Text ?
-                                       "bcp_moretext for text failed" :
-                                       "bcp_moretext for image failed");
+                    string error;
+
+                    if (param.GetType() == eDB_Text) {
+                        error = "bcp_moretext for text failed";
+                    } else {
+                        error = "bcp_moretext for image failed";
+                    }
+                    DATABASE_DRIVER_ERROR( error, 223006 );
                 }
                 if (!l)
                     break;
@@ -440,9 +440,7 @@ bool CTDS_BCPInCmd::CompleteBatch()
         DBINT outrow = bcp_batch(m_Cmd);
         if(outrow < 0) {
             m_HasFailed= true;
-            throw CDB_ClientEx(eDB_Error, 223020,
-                               "CTDS_BCPInCmd::CompleteBatch", 
-                               "bcp_batch failed");
+            DATABASE_DRIVER_ERROR( "bcp_batch failed", 223020 );
         }
         return outrow > 0;
     }
@@ -456,9 +454,7 @@ bool CTDS_BCPInCmd::CompleteBCP()
         DBINT outrow = bcp_done(m_Cmd);
         if(outrow < 0) {
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 223020,
-                               "CTDS_BCPInCmd::CompleteBCP", 
-                               "bcp_done failed");
+            DATABASE_DRIVER_ERROR( "bcp_done failed", 223020 );
         }
         m_WasSent= false;
         return outrow > 0;
@@ -495,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.6  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

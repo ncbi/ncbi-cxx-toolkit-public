@@ -282,7 +282,7 @@ CConnection::CConnection(
         m_DS = m_DM.CreateDs( m_ConnParam.GetDriverName(), &m_ConnParam.GetDatabaseParameters() );
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
 //    m_DS = &CDataSourcePool::GetInstance().GetDataSource( m_ConnParam.GetDriverName() );
@@ -294,7 +294,7 @@ CConnection::CConnection(
         m_DefTransaction = new CTransaction(this, pythonpp::eBorrowed, m_ConnectionMode);
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 }
 
@@ -512,7 +512,7 @@ CDMLConnPool::commit(void) const
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
         catch(const CDB_Exception& e) {
-            throw CDatabaseError(e.Message());
+            throw CDatabaseError(e.GetMsg());
         }
     }
 }
@@ -531,7 +531,7 @@ CDMLConnPool::rollback(void) const
             GetLocalStmt().ExecuteUpdate( "BEGIN TRANSACTION" );
         }
         catch(const CDB_Exception& e) {
-            throw CDatabaseError(e.Message());
+            throw CDatabaseError(e.GetMsg());
         }
     }
 }
@@ -857,7 +857,7 @@ CStmtHelper::SetParam(const string& name, const CVariant& value)
         m_Stmt->SetParam( value, param_name );
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError( e.Message() );
+        throw CDatabaseError( e.GetMsg() );
     }
 }
 
@@ -881,7 +881,7 @@ CStmtHelper::Execute(void)
         throw CInternalError("std::bad_cast exception within 'CStmtHelper::Execute'");
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
     catch(const exception&) {
         throw CInternalError("std::exception exception within 'CStmtHelper::Execute'");
@@ -937,7 +937,7 @@ CStmtHelper::NextRS(void)
         }
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return false;
@@ -1066,7 +1066,7 @@ CCallableStmtHelper::SetParam(const string& name, const CVariant& value)
         m_Stmt->SetParam( value, param_name );
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError( e.Message() );
+        throw CDatabaseError( e.GetMsg() );
     }
 }
 
@@ -1086,7 +1086,7 @@ CCallableStmtHelper::Execute(void)
         throw CInternalError("std::bad_cast exception within 'CCallableStmtHelper::Execute'");
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
     catch(const exception&) {
         throw CInternalError("std::exception exception within 'CCallableStmtHelper::Execute'");
@@ -1142,7 +1142,7 @@ CCallableStmtHelper::NextRS(void)
         }
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return false;
@@ -1341,7 +1341,7 @@ CCursor::close(const pythonpp::CTuple& args)
         GetTransaction().DestroyCursor(this);
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return pythonpp::CNone();
@@ -1513,7 +1513,7 @@ CCursor::fetchone(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return pythonpp::CNone();
@@ -1553,7 +1553,7 @@ CCursor::fetchmany(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return py_list;
@@ -1584,7 +1584,7 @@ CCursor::fetchall(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return py_list;
@@ -1606,7 +1606,7 @@ CCursor::nextset(const pythonpp::CTuple& args)
         }
     }
     catch(const CDB_Exception& e) {
-        throw CDatabaseError(e.Message());
+        throw CDatabaseError(e.GetMsg());
     }
 
     return pythonpp::CNone();
@@ -1685,7 +1685,7 @@ CModuleDBAPI::connect(const pythonpp::CTuple& args)
         return pythonpp::CObject(conn, pythonpp::eTakeOwnership);
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1716,7 +1716,7 @@ CModuleDBAPI::Date(const pythonpp::CTuple& args)
         return pythonpp::CDate(year, month, day);
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1747,7 +1747,7 @@ CModuleDBAPI::Time(const pythonpp::CTuple& args)
         return pythonpp::CTime(hour, minute, second, 0);
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1785,7 +1785,7 @@ CModuleDBAPI::Timestamp(const pythonpp::CTuple& args)
         return pythonpp::CDateTime(year, month, day, hour, minute, second, 0);
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1803,7 +1803,7 @@ CModuleDBAPI::DateFromTicks(const pythonpp::CTuple& args)
     try {
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1821,7 +1821,7 @@ CModuleDBAPI::TimeFromTicks(const pythonpp::CTuple& args)
     try {
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1839,7 +1839,7 @@ CModuleDBAPI::TimestampFromTicks(const pythonpp::CTuple& args)
     try {
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     // Return a dummy object ...
@@ -1871,7 +1871,7 @@ CModuleDBAPI::Binary(const pythonpp::CTuple& args)
         return pythonpp::CObject(obj, pythonpp::eTakeOwnership);
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
 
     return pythonpp::CNone();
@@ -1992,7 +1992,7 @@ Connect(PyObject *self, PyObject *args)
             );
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2029,7 +2029,7 @@ Date(PyObject *self, PyObject *args)
         return IncRefCount(pythonpp::CDate(year, month, day));
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2066,7 +2066,7 @@ Time(PyObject *self, PyObject *args)
         return IncRefCount(pythonpp::CTime(hour, minute, second, 0));
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2110,7 +2110,7 @@ Timestamp(PyObject *self, PyObject *args)
         return IncRefCount(pythonpp::CDateTime(year, month, day, hour, minute, second, 0));
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2136,7 +2136,7 @@ DateFromTicks(PyObject *self, PyObject *args)
         throw CNotSupportedError("Function DateFromTicks");
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2162,7 +2162,7 @@ TimeFromTicks(PyObject *self, PyObject *args)
         throw CNotSupportedError("Function TimeFromTicks");
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2188,7 +2188,7 @@ TimestampFromTicks(PyObject *self, PyObject *args)
         throw CNotSupportedError("Function TimestampFromTicks");
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2225,7 +2225,7 @@ Binary(PyObject *self, PyObject *args)
             );
     }
     catch (const CDB_Exception& e) {
-        pythonpp::CError::SetString(e.Message());
+        pythonpp::CError::SetString(e.GetMsg());
     }
     catch(const pythonpp::CError&) {
         // An error message is already set by an exception ...
@@ -2269,7 +2269,7 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
     {"TimeFromTicks", (PyCFunction) python::TimeFromTicks, METH_VARARGS, "TimeFromTicks"},
     {"TimestampFromTicks", (PyCFunction) python::TimestampFromTicks, METH_VARARGS, "TimestampFromTicks"},
     {"Binary", (PyCFunction) python::Binary, METH_VARARGS, "Binary"},
-	{ NULL, NULL }
+    { NULL, NULL }
 };
 
 
@@ -2381,6 +2381,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/04/04 13:03:57  ssikorsk
+* Revamp of DBAPI exception class CDB_Exception
+*
 * Revision 1.12  2005/03/23 14:45:42  vasilche
 * Removed non-MT-safe "created" flag.
 * CPluginManagerStore::CPMMaker<> replaced by CPluginManagerGetter<>.

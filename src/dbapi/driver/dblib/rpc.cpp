@@ -83,20 +83,17 @@ bool CDBL_RPCCmd::Send()
     if (dbrpcinit(m_Cmd, (char*) m_Query.c_str(),
                   m_Recompile ? DBRPCRECOMPILE : 0) != SUCCEED) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 221001, "CDBL_RPCCmd::Send",
-                           "dbrpcinit failed");
+        DATABASE_DRIVER_ERROR( "dbrpcinit failed", 221001 );
     }
 
     char param_buff[2048]; // maximal page size
     if (!x_AssignParams(param_buff)) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 221003, "CDBL_RPCCmd::Send",
-                           "can not assign the params");
+        DATABASE_DRIVER_ERROR( "Cannot assign the params", 221003 );
     }
     if (dbrpcsend(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 221005, "CDBL_RPCCmd::Send",
-                           "dbrpcsend failed");
+        DATABASE_DRIVER_ERROR( "dbrpcsend failed", 221005 );
     }
 
     m_WasSent = true;
@@ -143,8 +140,7 @@ CDB_Result* CDBL_RPCCmd::Result()
     }
 
     if (!m_WasSent) {
-        throw CDB_ClientEx(eDB_Error, 221010, "CDBL_RPCCmd::Result",
-                           "you have to send a command first");
+        DATABASE_DRIVER_ERROR( "you have to send a command first", 221010 );
     }
 
     if (m_Status == 0) {
@@ -152,8 +148,7 @@ CDB_Result* CDBL_RPCCmd::Result()
         if (dbsqlok(m_Cmd) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 221011, "CDBL_RPCCmd::Result",
-                               "dbsqlok failed");
+            DATABASE_DRIVER_ERROR( "dbsqlok failed", 221011 );
         }
     }
 
@@ -189,8 +184,7 @@ CDB_Result* CDBL_RPCCmd::Result()
             break;
         default:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 221016, "CDBL_RPCCmd::Result",
-                               "error encountered in command execution");
+            DATABASE_DRIVER_WARNING( "error encountered in command execution", 221016 );
         }
         break;
     }
@@ -420,6 +414,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.13  2004/05/18 18:30:37  gorelenk
  * PCH <ncbi_pch.hpp> moved to correct place .
  *

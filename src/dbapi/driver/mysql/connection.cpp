@@ -44,18 +44,14 @@ CMySQL_Connection::CMySQL_Connection(CMySQLContext* cntx,
     : m_Context(cntx)
 {
     if ( !mysql_init(&m_MySQL) ) {
-        throw CDB_ClientEx(eDB_Warning, 800001,
-                           "CMySQL_Connection::CMySQL_Connection",
-                           "Failed: mysql_init");
+        DATABASE_DRIVER_WARNING( "Failed: mysql_init", 800001 );
     }
 
     if ( !mysql_real_connect(&m_MySQL,
                              srv_name.c_str(),
                              user_name.c_str(), passwd.c_str(),
                              NULL, 0, NULL, 0)) {
-        throw CDB_ClientEx(eDB_Warning, 800002,
-                           "CMySQL_Connection::CMySQL_Connection",
-                           "Failed: mysql_real_connect");
+        DATABASE_DRIVER_WARNING( "Failed: mysql_real_connect", 800002 );
     }
 }
 
@@ -207,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.7  2005/02/23 21:38:13  soussov
  * Adds Abort() method to connection
  *

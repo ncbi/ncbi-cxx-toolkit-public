@@ -27,7 +27,7 @@
  * ===========================================================================
  *
  * Author:  Michael Kholodov
- *   
+ *
  * File Description:  Database API interface
  *
  */
@@ -71,7 +71,7 @@ BEGIN_NCBI_SCOPE
 enum EAllowLog {
    eDisableLog,     ///< Disables log.
    eEnableLog       ///< Enables log.
-};  
+};
 
 
 
@@ -82,7 +82,7 @@ enum EAllowLog {
 ///  Interface class defines retrieving column information from a resultset,
 ///  such as total number of columns, type, name, etc.
 
-class NCBI_DBAPI_EXPORT IResultSetMetaData 
+class NCBI_DBAPI_EXPORT IResultSetMetaData
 {
 public:
     /// Destructor.
@@ -173,7 +173,7 @@ public:
     /// @param
     ///   Disables blob binding when set to true.
     virtual void BindBlobToVariant(bool b) = 0;
-  
+
     /// Read unformtted data.
     ///
     /// Reads unformatted data, returns bytes actually read.
@@ -208,7 +208,7 @@ public:
     /// @return
     ///   Returns total number of columns in the resultset
     virtual unsigned int GetTotalColumns() = 0;
-  
+
     /// Get Blob output stream.
     ///
     /// @param buf_size
@@ -225,7 +225,7 @@ public:
     ///    Make sure you have enough log segment space, or disable it.
     /// @param buf_size
     ///   The size of internal buffer, default 1024.
-    virtual ostream& GetBlobOStream(size_t blob_size, 
+    virtual ostream& GetBlobOStream(size_t blob_size,
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
@@ -233,7 +233,7 @@ public:
     ///
     /// @param conn
     ///   addtional connection used for writing blob (the above method
-    ///   clones the existing connection implicitly)    
+    ///   clones the existing connection implicitly)
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
     /// @param log_it
@@ -242,7 +242,7 @@ public:
     /// @param buf_size
     ///   The size of internal buffer, default 1024.
     virtual ostream& GetBlobOStream(IConnection *conn,
-                                    size_t blob_size, 
+                                    size_t blob_size,
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
     /// Get the Blob Reader.
@@ -276,7 +276,7 @@ class NCBI_DBAPI_EXPORT IStatement
 public:
     /// Destructor.
     virtual ~IStatement();
-  
+
     /// Get resulset.
     ///
     /// @return
@@ -294,7 +294,7 @@ public:
     /// @return
     ///   Return true, if the statement failed.
     virtual bool Failed() = 0;
-  
+
     /// Check if resultset has rows.
     ///
     /// @return
@@ -304,7 +304,7 @@ public:
     /// Purge results.
     ///
     /// Calls fetch for every resultset received until
-    /// finished. 
+    /// finished.
     virtual void PurgeResults() = 0;
 
     /// Cancel statement.
@@ -314,7 +314,7 @@ public:
 
     /// Close statement.
     virtual void Close() = 0;
-  
+
     /// Executes one or more SQL statements.
     ///
     /// @param sql
@@ -343,18 +343,18 @@ public:
     virtual void ExecuteLast() = 0;
 
     /// Set input/output parameter.
-    /// 
+    ///
     /// @param v
     ///   Parameter value.
     /// @param name
     ///   Parameter name.
-    virtual void SetParam(const CVariant& v, 
-	  		  const string& name) = 0;
+    virtual void SetParam(const CVariant& v,
+              const string& name) = 0;
 
     /// Clear parameter list.
     virtual void ClearParamList() = 0;
 
-    /// Get total of rows returned. 
+    /// Get total of rows returned.
     ///
     /// Valid only after all rows are retrieved from a resultset
     virtual int GetRowCount() = 0;
@@ -367,8 +367,8 @@ public:
     ///   Size of BLOB to write
     /// @param log_it
     ///   Enable or disable logging
-    virtual IWriter* GetBlobWriter(CDB_ITDescriptor &d, 
-                                   size_t blob_size, 
+    virtual IWriter* GetBlobWriter(CDB_ITDescriptor &d,
+                                   size_t blob_size,
                                    EAllowLog log_it) = 0;
 
     /// Get the parent connection.
@@ -391,7 +391,7 @@ class NCBI_DBAPI_EXPORT ICallableStatement : public virtual IStatement
 public:
     /// Destructor.
     virtual ~ICallableStatement();
-  
+
     /// Execute stored procedure.
     virtual void Execute() = 0;
 
@@ -404,17 +404,17 @@ public:
     virtual int GetReturnStatus() = 0;
 
     /// Set input parameters.
-    /// 
+    ///
     /// @param v
     ///   Parameter value.
     /// @param name
     ///   Parameter name.
-    virtual void SetParam(const CVariant& v, 
+    virtual void SetParam(const CVariant& v,
                           const string& name) = 0;
 
     /// Set output parameter, which will be returned as resultset.
     ///
-    /// NOTE: Use CVariant(EDB_Type type) constructor or 
+    /// NOTE: Use CVariant(EDB_Type type) constructor or
     /// factory method CVariant::<type>(0) to create empty object
     /// of a particular type.
     /// @param v
@@ -443,15 +443,15 @@ class NCBI_DBAPI_EXPORT ICursor
 public:
     /// Destructor.
     virtual ~ICursor();
-  
+
     /// Set input parameter.
     ///
     /// @param v
     ///   Parameter value.
     /// @param name
     ///   Parameter name.
-    virtual void SetParam(const CVariant& v, 
-			const string& name) = 0;
+    virtual void SetParam(const CVariant& v,
+            const string& name) = 0;
 
     /// Open cursor and get corresponding resultset.
     virtual IResultSet* Open() = 0;
@@ -468,7 +468,7 @@ public:
     /// @param buf_size
     ///   The size of internal buffer, default 1024.
     virtual ostream& GetBlobOStream(unsigned int col,
-                                    size_t blob_size, 
+                                    size_t blob_size,
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
@@ -483,7 +483,7 @@ public:
     ///   Enables transaction log for BLOB (enabled by default).
     ///   Make sure you have enough log segment space, or disable it.
     virtual IWriter* GetBlobWriter(unsigned int col,
-                                   size_t blob_size, 
+                                   size_t blob_size,
                                    EAllowLog log_it = eEnableLog) = 0;
     /// Update statement for cursor.
     ///
@@ -501,10 +501,10 @@ public:
 
     /// Cancel cursor
     virtual void Cancel() = 0;
-    
+
     /// Close cursor
     virtual void Close() = 0;
-  
+
     /// Get the parent connection
     ///
     /// NOTE: If the original connections was cloned, returns cloned
@@ -524,7 +524,7 @@ class NCBI_DBAPI_EXPORT IBulkInsert
 public:
     /// Destructor.
     virtual ~IBulkInsert();
-  
+
     /// Bind column.
     ///
     /// @param col
@@ -557,14 +557,14 @@ public:
 ///
 ///  Interface for a database connection.
 
-class NCBI_DBAPI_EXPORT IConnection 
+class NCBI_DBAPI_EXPORT IConnection
 {
 public:
     /// Which connection mode.
     enum EConnMode {
         eBulkInsert = I_DriverContext::fBcpIn,  ///< Bulk insert mode.
         ePasswordEncrypted  ///< Encrypted password mode.
-                    = I_DriverContext::fPasswordEncrypted 
+                    = I_DriverContext::fPasswordEncrypted
     };
 
     /// Destructor.
@@ -590,7 +590,7 @@ public:
     /// Force single connection mode, default false
     ///
     /// Disable this mode before using BLOB output streams
-    /// from IResultSet, because extra connection is needed 
+    /// from IResultSet, because extra connection is needed
     /// in this case.
     virtual void ForceSingle(bool enable) = 0;
 
@@ -608,9 +608,9 @@ public:
     /// @param database
     ///   Database to connect to.
     virtual void Connect(const string& user,
-			 const string& password,
-			 const string& server,
-			 const string& database = kEmptyStr) = 0;
+             const string& password,
+             const string& server,
+             const string& database = kEmptyStr) = 0;
 
     // Clone existing connection. All settings are copied except
     // message handlers
@@ -638,18 +638,18 @@ public:
 
     /// Get statement object for regular SQL queries.
     virtual IStatement* GetStatement() = 0;
-  
+
     /// Get callable statement object for stored procedures.
     ///
     /// @param proc
     ///   Stored procedure name.
     /// @param nofArgs
     ///   Number of arguments.
-    virtual ICallableStatement* GetCallableStatement(const string& proc, 
+    virtual ICallableStatement* GetCallableStatement(const string& proc,
                                                      int nofArgs = 0) = 0;
 
     /// Get cursor object.
-    virtual ICursor* GetCursor(const string& name, 
+    virtual ICursor* GetCursor(const string& name,
                                const string& sql,
                                int nofArgs = 0,
                                int batchSize = 1) = 0;
@@ -666,13 +666,13 @@ public:
 
     /// Get statement object for regular SQL queries.
     virtual IStatement* CreateStatement() = 0;
-  
+
     /// Get callable statement object for stored procedures.
-    virtual ICallableStatement* PrepareCall(const string& proc, 
+    virtual ICallableStatement* PrepareCall(const string& proc,
                                             int nofArgs = 0) = 0;
 
     /// Get cursor object.
-    virtual ICursor* CreateCursor(const string& name, 
+    virtual ICursor* CreateCursor(const string& name,
                                   const string& sql,
                                   int nofArgs = 0,
                                   int batchSize = 1) = 0;
@@ -686,7 +686,7 @@ public:
     /// Abort connection.
     virtual void Abort() = 0;
 
-    /// If enabled, redirects all error messages 
+    /// If enabled, redirects all error messages
     /// to CDB_MultiEx object (see below).
     virtual void MsgToEx(bool v) = 0;
 
@@ -755,6 +755,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/04/04 13:03:02  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.37  2005/02/24 19:50:42  kholodov
  * Added: IConnection::Abort() method
  *

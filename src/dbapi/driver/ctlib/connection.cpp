@@ -45,7 +45,21 @@ inline int close(int fd)
 
 BEGIN_NCBI_SCOPE
 
+////////////////////////////////////////////////////////////////////////////
+void 
+CmdAlloc(CS_CONNECTION*  link, CS_COMMAND** cmd)
+{
+    switch ( ct_cmd_alloc(link, cmd) ) {
+    case CS_SUCCEED:
+        break;
+    case CS_FAIL:
+        DATABASE_DRIVER_FATAL( "ct_cmd_alloc failed", 110001 );
+    case CS_BUSY:
+        DATABASE_DRIVER_FATAL( "the connection is busy", 110002 );
+    }
+}
 
+////////////////////////////////////////////////////////////////////////////
 CTL_Connection::CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
                                bool reusable, const string& pool_name)
 {
@@ -106,16 +120,7 @@ CDB_LangCmd* CTL_Connection::LangCmd(const string& lang_query,
 {
     CS_COMMAND* cmd;
 
-    switch ( ct_cmd_alloc(m_Link, &cmd) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        throw CDB_ClientEx(eDB_Fatal, 110001, "CTL_Connection::LangCmd",
-                           "ct_cmd_alloc failed");
-    case CS_BUSY:
-        throw CDB_ClientEx(eDB_Fatal, 110002, "CTL_Connection::LangCmd",
-                           "the connection is busy");
-    }
+    CmdAlloc(m_Link, &cmd);
 
     CTL_LangCmd* lcmd = new CTL_LangCmd(this, cmd, lang_query, nof_params);
     m_CMDs.Add(lcmd);
@@ -128,16 +133,7 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
 {
     CS_COMMAND* cmd;
 
-    switch ( ct_cmd_alloc(m_Link, &cmd) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        throw CDB_ClientEx(eDB_Fatal, 110001, "CTL_Connection::RPC",
-                           "ct_cmd_alloc failed");
-    case CS_BUSY:
-        throw CDB_ClientEx(eDB_Fatal, 110002, "CTL_Connection::RPC",
-                           "the connection is busy");
-    }
+    CmdAlloc(m_Link, &cmd);
 
     CTL_RPCCmd* rcmd = new CTL_RPCCmd(this, cmd, rpc_name, nof_args);
     m_CMDs.Add(rcmd);
@@ -148,15 +144,11 @@ CDB_RPCCmd* CTL_Connection::RPC(const string& rpc_name,
 CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
                                     unsigned int  nof_columns)
 {
-    if (!m_BCPable) {
-        throw CDB_ClientEx(eDB_Error, 110003, "CTL_Connection::BCPIn",
-                           "No bcp on this connection");
-    }
+    CHECK_DRIVER_ERROR( !m_BCPable, "No bcp on this connection", 110003 );
 
     CS_BLKDESC* cmd;
     if (blk_alloc(m_Link, BLK_VERSION_100, &cmd) != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Fatal, 110004, "CTL_Connection::BCPIn",
-                           "blk_alloc failed");
+        DATABASE_DRIVER_FATAL( "blk_alloc failed", 110004 );
     }
 
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(this, cmd, table_name, nof_columns);
@@ -172,16 +164,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 {
     CS_COMMAND* cmd;
 
-    switch ( ct_cmd_alloc(m_Link, &cmd) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        throw CDB_ClientEx(eDB_Fatal, 110001, "CTL_Connection::Cursor",
-                           "ct_cmd_alloc failed");
-    case CS_BUSY:
-        throw CDB_ClientEx(eDB_Fatal, 110002, "CTL_Connection::Cursor",
-                           "the connection is busy");
-    }
+    CmdAlloc(m_Link, &cmd);
 
     CTL_CursorCmd* ccmd = new CTL_CursorCmd(this, cmd, cursor_name, query,
                                             nof_params, batch_size);
@@ -193,10 +176,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                              size_t data_size, bool log_it)
 {
-    if ( !data_size ) {
-        throw CDB_ClientEx(eDB_Fatal, 110092, "CTL_Connection::SendDataCmd",
-                           "wrong (zero) data size");
-    }
+    CHECK_DRIVER_FATAL( !data_size, "wrong (zero) data size", 110092 );
 
     I_ITDescriptor* p_desc= 0;
 
@@ -211,22 +191,12 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
 
-    switch ( ct_cmd_alloc(m_Link, &cmd) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        throw CDB_ClientEx(eDB_Fatal, 110001, "CTL_Connection::SendDataCmd",
-                           "ct_cmd_alloc failed");
-    case CS_BUSY:
-        throw CDB_ClientEx(eDB_Fatal, 110002, "CTL_Connection::SendDataCmd",
-                           "the connection is busy");
-    }
+    CmdAlloc(m_Link, &cmd);
 
     if (ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA)
         != CS_SUCCEED) {
         ct_cmd_drop(cmd);
-        throw CDB_ClientEx(eDB_Fatal, 110093, "CTL_Connection::SendDataCmd",
-                           "ct_command failed");
+        DATABASE_DRIVER_FATAL( "ct_command failed", 110093 );
     }
 
     CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
@@ -238,9 +208,8 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     if (ct_data_info(cmd, CS_SET, CS_UNUSED, &desc.m_Desc) != CS_SUCCEED) {
         ct_cancel(0, cmd, CS_CANCEL_ALL);
         ct_cmd_drop(cmd);
-        throw CDB_ClientEx(eDB_Fatal, 110093, "CTL_Connection::SendDataCmd",
-                           "ct_data_info failed");
-    }	
+        DATABASE_DRIVER_FATAL( "ct_data_info failed", 110093 );
+    }   
 
     CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(this, cmd, data_size);
     m_CMDs.Add(sd_cmd);
@@ -410,22 +379,12 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     C_ITDescriptorGuard d_guard(p_desc);
     CS_COMMAND* cmd;
 
-    switch ( ct_cmd_alloc(m_Link, &cmd) ) {
-    case CS_SUCCEED:
-        break;
-    case CS_FAIL:
-        throw CDB_ClientEx(eDB_Fatal, 110001, "CTL_Connection::SendData",
-                           "ct_cmd_alloc failed");
-    case CS_BUSY:
-        throw CDB_ClientEx(eDB_Fatal, 110002, "CTL_Connection::SendData",
-                           "the connection is busy");
-    }
+    CmdAlloc(m_Link, &cmd);
 
     if (ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA)
         != CS_SUCCEED) {
         ct_cmd_drop(cmd);
-        throw CDB_ClientEx(eDB_Fatal, 110031, "CTL_Connection::SendData",
-                           "ct_command failed");
+        DATABASE_DRIVER_FATAL( "ct_command failed", 110031 );
     }
 
     CTL_ITDescriptor& desc = p_desc ?
@@ -439,7 +398,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         ct_cancel(0, cmd, CS_CANCEL_ALL);
         ct_cmd_drop(cmd);
         return false;
-    }	
+    }   
 
     while (size > 0) {
         char   buff[1800];
@@ -447,14 +406,12 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         if ( !n_read ) {
             ct_cancel(0, cmd, CS_CANCEL_ALL);
             ct_cmd_drop(cmd);
-            throw CDB_ClientEx(eDB_Fatal, 110032, "CTL_Connection::SendData",
-                               "Text/Image data corrupted");
+            DATABASE_DRIVER_FATAL( "Text/Image data corrupted", 110032 );
         }
         if (ct_send_data(cmd, buff, n_read) != CS_SUCCEED) {
             ct_cancel(0, cmd, CS_CANCEL_CURRENT);
             ct_cmd_drop(cmd);
-            throw CDB_ClientEx(eDB_Fatal, 110033, "CTL_Connection::SendData",
-                               "ct_send_data failed");
+            DATABASE_DRIVER_FATAL( "ct_send_data failed", 110033 );
         }
         size -= n_read;
     }
@@ -462,8 +419,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     if (ct_send(cmd) != CS_SUCCEED) {
         ct_cancel(0, cmd, CS_CANCEL_CURRENT);
         ct_cmd_drop(cmd);
-        throw CDB_ClientEx(eDB_Fatal, 110034, "CTL_Connection::SendData",
-                           "ct_send failed");
+        DATABASE_DRIVER_FATAL( "ct_send failed", 110034 );
     }
 
     for (;;) {
@@ -508,17 +464,13 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                 }
                 if (ret_code != CS_END_DATA) {
                     ct_cmd_drop(cmd);
-                    throw CDB_ClientEx(eDB_Fatal, 110036,
-                                       "CTL_Connection::SendData",
-                                       "ct_fetch failed");
+                    DATABASE_DRIVER_FATAL( "ct_fetch failed", 110036 );
                 }
                 break;
             }
             case CS_CMD_FAIL:
                 ct_cmd_drop(cmd);
-                throw CDB_ClientEx(eDB_Error, 110037,
-                                   "CTL_Connection::SendData",
-                                   "command failed");
+                DATABASE_DRIVER_ERROR( "command failed", 110037 );
             default:
                 break;
             }
@@ -532,14 +484,11 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
             if (ct_cancel(0, cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
                 ct_cmd_drop(cmd);
-                throw CDB_ClientEx(eDB_Fatal, 110033,
-                                   "CTL_Connection::SendData",
-                                   "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed");
+                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                                   "Connection must be closed", 110033 );
             }
             ct_cmd_drop(cmd);
-            throw CDB_ClientEx(eDB_Error, 110034, "CTL_Connection::SendData",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 110034 );
         }
         }
     }
@@ -564,10 +513,8 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
     q+= " \nset rowcount 0";
     
     CDB_LangCmd* lcmd= LangCmd(q, 0);
-    if(!lcmd->Send()) {
-        throw CDB_ClientEx(eDB_Error, 110035, "CTL_Connection::SendData",
-                           "can not send the language command");
-    }
+    bool rc = !lcmd->Send();
+    CHECK_DRIVER_ERROR( rc, "Cannot send the language command", 110035 );
 
     CDB_Result* res;
     I_ITDescriptor* descr= 0;
@@ -585,7 +532,7 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
         delete res;
     }
     delete lcmd;
-		
+        
     return descr;
 }
 
@@ -620,10 +567,10 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* con, CS_COMMAND* cmd,
 
 size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
-    if (!pChunk  ||  !nof_bytes) {
-        throw CDB_ClientEx(eDB_Fatal, 190000, "CTL_SendDataCmd::SendChunk",
-                           "wrong (zero) arguments");
-    }
+    CHECK_DRIVER_FATAL( 
+        !pChunk  ||  !nof_bytes, 
+        "wrong (zero) arguments", 
+        190000 );
 
     if ( !m_Bytes2go )
         return 0;
@@ -632,8 +579,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         nof_bytes = m_Bytes2go;
 
     if (ct_send_data(m_Cmd, (void*) pChunk, (CS_INT) nof_bytes) != CS_SUCCEED){
-        throw CDB_ClientEx(eDB_Fatal, 190001, "CTL_SendDataCmd::SendChunk",
-                           "ct_send_data failed");
+        DATABASE_DRIVER_FATAL( "ct_send_data failed", 190001 );
     }
 
     m_Bytes2go -= nof_bytes;
@@ -642,8 +588,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
     if (ct_send(m_Cmd) != CS_SUCCEED) {
         ct_cancel(0, m_Cmd, CS_CANCEL_CURRENT);
-        throw CDB_ClientEx(eDB_Fatal, 190004, "CTL_SendDataCmd::SendChunk",
-                           "ct_send failed");
+        DATABASE_DRIVER_FATAL( "ct_send failed", 190004 );
     }
 
     for (;;) {
@@ -684,17 +629,13 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                 while ((ret_code = ct_fetch(m_Cmd, CS_UNUSED, CS_UNUSED,
                                             CS_UNUSED, 0)) == CS_SUCCEED);
                 if (ret_code != CS_END_DATA) {
-                    throw CDB_ClientEx(eDB_Fatal, 190006,
-                                       "CTL_SendDataCmd::SendChunk",
-                                       "ct_fetch failed");
+                    DATABASE_DRIVER_FATAL( "ct_fetch failed", 190006 );
                 }
                 break;
             }
             case CS_CMD_FAIL: {
                 ct_cancel(NULL, m_Cmd, CS_CANCEL_ALL);
-                throw CDB_ClientEx(eDB_Error, 190007,
-                                   "CTL_SendDataCmd::SendChunk",
-                                   "command failed");
+                DATABASE_DRIVER_ERROR( "command failed", 190007 );
             }
             default: {
                 break;
@@ -707,13 +648,10 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         }
         default: {
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
-                throw CDB_ClientEx(eDB_Fatal, 190002,
-                                   "CTL_SendDataCmd::SendChunk",
-                                   "Unrecoverable crash of ct_result. "
-                                   "Connection must be closed");
+                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                                   "Connection must be closed", 190002 );
             }
-            throw CDB_ClientEx(eDB_Error, 190003, "CTL_SendDataCmd::SendChunk",
-                               "ct_result failed");
+            DATABASE_DRIVER_ERROR( "ct_result failed", 190003 );
         }
         }
     }
@@ -751,6 +689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.19  2005/02/25 16:09:40  soussov
  * adds wrapper for close to make windows happy
  *

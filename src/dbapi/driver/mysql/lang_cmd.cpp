@@ -77,9 +77,7 @@ bool CMySQL_LangCmd::Send()
 {
     if (mysql_real_query
         (&m_Connect->m_MySQL, m_Query.c_str(), m_Query.length()) != 0) {
-        throw CDB_ClientEx(eDB_Warning, 800003,
-                           "CMySQL_LangCmd::Send",
-                           "Failed: mysql_real_query");
+        DATABASE_DRIVER_WARNING( "Failed: mysql_real_query", 800003 );
     }
     
     int nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
@@ -170,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2004/05/17 21:15:34  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -89,8 +89,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
         cs_ctx_alloc(version, &m_Context);
     if (r != CS_SUCCEED) {
         m_Context = 0;
-        throw CDB_ClientEx(eDB_Fatal, 100001, "CTLibContext::CTLibContext",
-                           "Can not allocate a context");
+        DATABASE_DRIVER_FATAL( "Cannot allocate a context", 100001 );
     }
 
     CS_VOID*     cb;
@@ -101,8 +100,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     r = cs_config(m_Context, CS_GET, CS_MESSAGE_CB, &cb, CS_UNUSED, &outlen);
     if (r != CS_SUCCEED) {
         m_Context = 0;
-        throw CDB_ClientEx(eDB_Error, 100006, "CTLibContext::CTLibContext",
-                           "cs_config failed");
+        DATABASE_DRIVER_ERROR( "cs_config failed", 100006 );
     }
 
     if (cb == (CS_VOID*)  s_CTLIB_cserr_callback) {
@@ -111,8 +109,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
                       (CS_VOID*) &p_pot, (CS_INT) sizeof(p_pot), &outlen);
         if (r != CS_SUCCEED) {
             m_Context = 0;
-            throw CDB_ClientEx(eDB_Error, 100006, "CTLibContext::CTLibContext",
-                               "cs_config failed");
+            DATABASE_DRIVER_ERROR( "cs_config failed", 100006 );
         }
     }
     else {
@@ -122,8 +119,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
         if (r != CS_SUCCEED) {
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            throw CDB_ClientEx(eDB_Error, 100005, "CTLibContext::CTLibContext",
-                               "Can not install the cslib message callback");
+            DATABASE_DRIVER_ERROR( "Cannot install the cslib message callback", 100005 );
         }
 
         p_pot = new CPointerPot;
@@ -133,8 +129,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             cs_ctx_drop(m_Context);
             m_Context = 0;
             delete p_pot;
-            throw CDB_ClientEx(eDB_Error, 100007, "CTLibContext::CTLibContext",
-                               "Can not install the user data");
+            DATABASE_DRIVER_ERROR( "Cannot install the user data", 100007 );
         }
 
         r = ct_init(m_Context, version);
@@ -142,8 +137,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             cs_ctx_drop(m_Context);
             m_Context = 0;
             delete p_pot;
-            throw CDB_ClientEx(eDB_Error, 100002, "CTLibContext::CTLibContext",
-                               "ct_init failed");
+            DATABASE_DRIVER_ERROR( "ct_init failed", 100002 );
         }
 
         r = ct_callback(m_Context, NULL, CS_SET, CS_CLIENTMSG_CB,
@@ -153,8 +147,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             cs_ctx_drop(m_Context);
             m_Context = 0;
             delete p_pot;
-            throw CDB_ClientEx(eDB_Error, 100003, "CTLibContext::CTLibContext",
-                               "Can not install the client message callback");
+            DATABASE_DRIVER_ERROR( "Cannot install the client message callback", 100003 );
         }
 
         r = ct_callback(m_Context, NULL, CS_SET, CS_SERVERMSG_CB,
@@ -164,8 +157,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             cs_ctx_drop(m_Context);
             m_Context = 0;
             delete p_pot;
-            throw CDB_ClientEx(eDB_Error, 100004, "CTLibContext::CTLibContext",
-                               "Can not install the server message callback");
+            DATABASE_DRIVER_ERROR( "Cannot install the server message callback", 100004 );
         }
     }
 
@@ -253,17 +245,14 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
     if((mode & fDoNotConnect) != 0) return 0;
 
     // new connection needed
-    if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
-        throw CDB_ClientEx(eDB_Error, 100010, "CTLibContext::Connect",
-                           "You have to provide server name, user name and "
-                           "password to connect to the server");
-    }
+    CHECK_DRIVER_ERROR( 
+        srv_name.empty()  ||  user_name.empty()  ||  passwd.empty(),
+        "You have to provide server name, user name and "
+        "password to connect to the server", 
+        100010 );
 
     CS_CONNECTION* con = x_ConnectToServer(srv_name, user_name, passwd, mode);
-    if (con == 0) {
-        throw CDB_ClientEx(eDB_Error, 100011, "CTLibContext::Connect",
-                           "Can not connect to the server");
-    }
+    CHECK_DRIVER_ERROR( con == 0, "Cannot connect to the server", 100011 );
 
     CTL_Connection* t_con = new CTL_Connection(this, con, reusable, pool_name);
     t_con->m_MsgHandlers = m_ConnHandlers;
@@ -372,15 +361,16 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 
     if (r == CS_SUCCEED  &&  p_pot != 0  &&  p_pot->NofItems() > 0) {
         CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        EDB_Severity sev = eDB_Error;
+        EDiagSev sev = eDiag_Error;
         if (msg->severity == CS_SV_INFORM) {
-            sev = eDB_Info;
+            sev = eDiag_Info;
         }
         else if (msg->severity == CS_SV_FATAL) {
-            sev = eDB_Fatal;
+            sev = eDiag_Fatal;
         }
 
-        CDB_ClientEx ex(sev, msg->msgnumber, "cslib", msg->msgstring);
+//         CDB_ClientEx ex(sev, msg->msgnumber, "cslib", msg->msgstring);
+        CDB_ClientEx ex(DIAG_COMPILE_INFO, 0, msg->msgstring, sev, msg->msgnumber);
         drv->m_CntxHandlers.PostMsg(&ex);
     }
     else if (msg->severity != CS_SV_INFORM) {
@@ -436,13 +426,12 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 
     switch (msg->severity) {
     case CS_SV_INFORM: {
-        CDB_ClientEx info(eDB_Info,
-                          (int) msg->msgnumber, "ctlib", msg->msgstring);
+        CDB_ClientEx info(DIAG_COMPILE_INFO, 0, msg->msgstring, eDiag_Info, msg->msgnumber);
         hs->PostMsg(&info);
         break;
     }
     case CS_SV_RETRY_FAIL: {
-        CDB_TimeoutEx to((int) msg->msgnumber, "ctlib", msg->msgstring);
+        CDB_TimeoutEx to(DIAG_COMPILE_INFO, 0, msg->msgstring, msg->msgnumber);
         hs->PostMsg(&to);
     if(con) {
       CS_INT status;
@@ -457,14 +446,12 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     case CS_SV_CONFIG_FAIL:
     case CS_SV_API_FAIL:
     case CS_SV_INTERNAL_FAIL: {
-        CDB_ClientEx err(eDB_Error,
-                         (int) msg->msgnumber, "ctlib", msg->msgstring);
+        CDB_ClientEx err(DIAG_COMPILE_INFO, 0, msg->msgstring, eDiag_Error, msg->msgnumber);
         hs->PostMsg(&err);
         break;
     }
     default: {
-        CDB_ClientEx ftl(eDB_Fatal,
-                         (int) msg->msgnumber, "ctlib", msg->msgstring);
+        CDB_ClientEx ftl(DIAG_COMPILE_INFO, 0, msg->msgstring, eDiag_Fatal, msg->msgnumber);
         hs->PostMsg(&ftl);
         break;
     }
@@ -520,30 +507,51 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     }
 
     if (msg->msgnumber == 1205 /*DEADLOCK*/) {
-        CDB_DeadlockEx dl(msg->svrname, msg->text);
+        CDB_DeadlockEx dl(DIAG_COMPILE_INFO, 
+                          0, 
+                          "Server '" + string(msg->svrname) + "': " + msg->text);
         hs->PostMsg(&dl);
     }
     else {
-        EDB_Severity sev =
-            msg->severity <  10 ? eDB_Info :
-            msg->severity == 10 ? eDB_Warning :
-            msg->severity <  16 ? eDB_Error :
-            msg->severity >  16 ? eDB_Fatal :
-            eDB_Unknown;
+//         EDiagSev sev =
+//             msg->severity <  10 ? eDiag_Info :
+//             msg->severity == 10 ? eDiag_Warning :
+//             msg->severity <  16 ? eDiag_Error :
+//             msg->severity >  16 ? eDiag_Fatal :
+//             eDB_Unknown;
+
+        EDiagSev sev =
+            msg->severity <  10 ? eDiag_Info :
+            msg->severity == 10 ? eDiag_Warning :
+            msg->severity <  16 ? eDiag_Error : eDiag_Fatal;
 
         if (msg->proclen > 0) {
-            CDB_RPCEx rpc(sev, (int) msg->msgnumber, msg->svrname, msg->text,
-                          msg->proc, (int) msg->line);
+            CDB_RPCEx rpc(DIAG_COMPILE_INFO,
+                          0,
+                          "Server '" + string(msg->svrname) + "': " + msg->text,
+                          sev,
+                          (int) msg->msgnumber,
+                          msg->proc,
+                          (int) msg->line);
             hs->PostMsg(&rpc);
         }
         else if (msg->sqlstatelen > 1  &&
                  (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-            CDB_SQLEx sql(sev, (int) msg->msgnumber, msg->svrname, msg->text,
-                          (const char*) msg->sqlstate, (int) msg->line);
+            CDB_SQLEx sql(DIAG_COMPILE_INFO,
+                          0,
+                          "Server '" + string(msg->svrname) + "': " + msg->text,
+                          sev,
+                          (int) msg->msgnumber,
+                          (const char*) msg->sqlstate,
+                          (int) msg->line);
             hs->PostMsg(&sql);
         }
         else {
-            CDB_DSEx m(sev, (int) msg->msgnumber, msg->svrname, msg->text);
+            CDB_DSEx m(DIAG_COMPILE_INFO,
+                       0,
+                       "Server '" + string(msg->svrname) + "': " + msg->text,
+                       sev,
+                       (int) msg->msgnumber);
             hs->PostMsg(&m);
         }
     }
@@ -1043,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.37  2005/03/21 14:08:30  ssikorsk
  * Fixed the 'version' of a databases protocol parameter handling
  *

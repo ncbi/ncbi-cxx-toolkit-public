@@ -61,8 +61,7 @@ CODBC_LangCmd::CODBC_LangCmd(
 
 /* This logic is not working for some reason
     if ( SQLSetStmtAttr(m_Cmd, SQL_ATTR_ROWS_FETCHED_PTR, &m_RowCount, sizeof(m_RowCount)) != SQL_SUCCESS ) {
-        throw CDB_ClientEx(eDB_Error, 420014, "CODBC_LangCmd::CODBC_LangCmd",
-            "SQLSetStmtAttr failed (memory corruption suspected)");
+        DATABASE_DRIVER_ERROR( "SQLSetStmtAttr failed (memory corruption suspected)", 420014 );
     }
 */
 }
@@ -99,17 +98,16 @@ bool CODBC_LangCmd::Send()
     CMemPot bindGuard;
     string q_str;
 
-	if(m_Params.NofParams() > 0) {
-		SQLINTEGER* indicator= (SQLINTEGER*)
-				bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
+    if(m_Params.NofParams() > 0) {
+        SQLINTEGER* indicator= (SQLINTEGER*)
+                bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
 
-		if (!x_AssignParams(q_str, bindGuard, indicator)) {
-			SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
-			m_HasFailed = true;
-			throw CDB_ClientEx(eDB_Error, 420003, "CODBC_LangCmd::Send",
-                           "cannot assign params");
-		}
-	}
+        if (!x_AssignParams(q_str, bindGuard, indicator)) {
+            SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+            m_HasFailed = true;
+            DATABASE_DRIVER_ERROR( "cannot assign params", 420003 );
+        }
+    }
 
     string* real_query;
     if(!q_str.empty()) {
@@ -134,8 +132,7 @@ bool CODBC_LangCmd::Send()
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 420001, "CODBC_LangCmd::Send",
-                           "SQLExecDirect failed");
+        DATABASE_DRIVER_FATAL( "SQLExecDirect failed", 420001 );
 
     case SQL_SUCCESS_WITH_INFO:
         m_Reporter.ReportErrors();
@@ -146,20 +143,17 @@ bool CODBC_LangCmd::Send()
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 420002, "CODBC_LangCmd::Send",
-                           "Some other query is executing on this connection");
+        DATABASE_DRIVER_FATAL( "Some other query is executing on this connection", 420002 );
 
     case SQL_INVALID_HANDLE:
         m_HasFailed= true;
-        throw CDB_ClientEx(eDB_Fatal, 420004, "CODBC_LangCmd::Send",
-                           "The statement handler is invalid (memory corruption suspected)");
+        DATABASE_DRIVER_FATAL( "The statement handler is invalid (memory corruption suspected)", 420004 );
 
     default:
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 420005, "CODBC_LangCmd::Send",
-                           "Unexpected error");
+        DATABASE_DRIVER_FATAL( "Unexpected error", 420005 );
 
     }
 
@@ -211,12 +205,11 @@ CDB_Result* CODBC_LangCmd::Result()
     }
 
     if (!m_WasSent) {
-        throw CDB_ClientEx(eDB_Error, 420010, "CODBC_LangCmd::Result",
-                           "a command has to be sent first");
+        DATABASE_DRIVER_ERROR( "a command has to be sent first", 420010 );
     }
 
     if(!m_hasResults) {
-		m_WasSent= false;
+        m_WasSent= false;
         return 0;
     }
 
@@ -232,27 +225,23 @@ CDB_Result* CODBC_LangCmd::Result()
 
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            throw CDB_ClientEx(eDB_Error, 420011, "CODBC_LangCmd::Result",
-                               "SQLNumResultCols failed");
+            DATABASE_DRIVER_ERROR( "SQLNumResultCols failed", 420011 );
         default:
-            throw CDB_ClientEx(eDB_Error, 420012, "CODBC_LangCmd::Result",
-                               "SQLNumResultCols failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLNumResultCols failed (memory corruption suspected)", 420012 );
         }
 
         if(nof_cols < 1) { // no data in this result set
-			SQLINTEGER rc;
-			switch(SQLRowCount(m_Cmd, &rc)) {
-				case SQL_SUCCESS_WITH_INFO:
-					m_Reporter.ReportErrors();
-				case SQL_SUCCESS: break;
-				case SQL_ERROR:
-						m_Reporter.ReportErrors();
-						throw CDB_ClientEx(eDB_Error, 420013, "CODBC_LangCmd::Result",
-                               "SQLRowCount failed");
-				default:
-					throw CDB_ClientEx(eDB_Error, 420014, "CODBC_LangCmd::Result",
-						"SQLRowCount failed (memory corruption suspected)");
-			}
+            SQLINTEGER rc;
+            switch(SQLRowCount(m_Cmd, &rc)) {
+                case SQL_SUCCESS_WITH_INFO:
+                    m_Reporter.ReportErrors();
+                case SQL_SUCCESS: break;
+                case SQL_ERROR:
+                        m_Reporter.ReportErrors();
+                        DATABASE_DRIVER_ERROR( "SQLRowCount failed", 420013 );
+                default:
+                    DATABASE_DRIVER_ERROR( "SQLRowCount failed (memory corruption suspected)", 420014 );
+            }
 
             m_RowCount = rc;
             m_hasResults= xCheck4MoreResults();
@@ -333,9 +322,9 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
         const char*   type;
-		char tbuf[64];
+        char tbuf[64];
 
-		SQLRETURN rc_from_bind;
+        SQLRETURN rc_from_bind;
 
         switch (param.GetType()) {
         case eDB_Int: {
@@ -389,7 +378,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
         }
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-			sprintf(tbuf,"varchar(%d)", val.Size());
+            sprintf(tbuf,"varchar(%d)", val.Size());
             type= tbuf;
             indicator[n]= SQL_NTS;
             rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR,
@@ -414,7 +403,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
         }
         case eDB_LongBinary: {
             CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-			sprintf(tbuf,"varbinary(%d)", val.Size());
+            sprintf(tbuf,"varbinary(%d)", val.Size());
             type= tbuf;
             type = "varbinary(255)";
             indicator[n]= val.DataSize();
@@ -473,7 +462,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
                 ts->minute= t.Minute();
                 ts->second= t.Second();
                 ts->fraction= t.NanoSecond()/1000000;
-				ts->fraction*= 1000000; /* MSSQL has a bug - it can not handle fraction of msecs */
+                ts->fraction*= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
             rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP,
@@ -485,21 +474,19 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             return false;
         }
 
-		switch(rc_from_bind) {
-	        case SQL_SUCCESS_WITH_INFO:
-		        m_Reporter.ReportErrors();
+        switch(rc_from_bind) {
+            case SQL_SUCCESS_WITH_INFO:
+                m_Reporter.ReportErrors();
 
-			case SQL_SUCCESS:
-				break;
+            case SQL_SUCCESS:
+                break;
 
-			case SQL_ERROR:
-				m_Reporter.ReportErrors();
-				throw CDB_ClientEx(eDB_Error, 420066, "CODBC_LangCmd::x_AssignParams",
-                               "SQLBindParameter failed");
-			default:
-				throw CDB_ClientEx(eDB_Error, 420067, "CODBC_LangCmd::x_AssignParams",
-                               "SQLBindParameter failed (memory corruption suspected)");
-		}
+            case SQL_ERROR:
+                m_Reporter.ReportErrors();
+                DATABASE_DRIVER_ERROR( "SQLBindParameter failed", 420066 );
+            default:
+                DATABASE_DRIVER_ERROR( "SQLBindParameter failed (memory corruption suspected)", 420067 );
+        }
         cmd += "declare " + name + ' ' + type + ";select " + name + " = ?;";
 
         if(param.IsNULL()) {
@@ -518,11 +505,9 @@ bool CODBC_LangCmd::xCheck4MoreResults()
     case SQL_NO_DATA:           return false;
     case SQL_ERROR:
         m_Reporter.ReportErrors();
-        throw CDB_ClientEx(eDB_Error, 420014, "CODBC_LangCmd::xCheck4MoreResults",
-                           "SQLMoreResults failed");
+        DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 420014 );
     default:
-        throw CDB_ClientEx(eDB_Error, 420015, "CODBC_LangCmd::xCheck4MoreResults",
-                           "SQLMoreResults failed (memory corruption suspected)");
+        DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 420015 );
     }
 }
 
@@ -533,6 +518,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2005/02/15 16:07:51  ssikorsk
  * Fixed a bug with GetRowCount plus SELECT statement
  *

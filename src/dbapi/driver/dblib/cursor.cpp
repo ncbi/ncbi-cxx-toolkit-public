@@ -73,11 +73,8 @@ CDB_Result* CDBL_CursorCmd::Open()
     m_HasFailed = false;
 
     // declare the cursor
-    if (!x_AssignParams()) {
-        m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 222003, "CDBL_CursorCmd::Open",
-                           "cannot assign params");
-    }
+    m_HasFailed = !x_AssignParams();
+    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign params", 222003 );
 
 
     m_LCmd = 0;
@@ -103,8 +100,7 @@ CDB_Result* CDBL_CursorCmd::Open()
             delete m_LCmd;
             m_LCmd = 0;
         }
-        throw CDB_ClientEx(eDB_Error, 222001, "CDBL_CursorCmd::Open",
-                           "failed to declare cursor");
+        DATABASE_DRIVER_ERROR( "failed to declare cursor", 222001 );
     }
     m_IsDeclared = true;
 
@@ -132,8 +128,7 @@ CDB_Result* CDBL_CursorCmd::Open()
             delete m_LCmd;
             m_LCmd = 0;
         }
-        throw CDB_ClientEx(eDB_Error, 222002, "CDBL_CursorCmd::Open",
-                           "failed to open cursor");
+        DATABASE_DRIVER_ERROR( "failed to open cursor", 222002 );
     }
     m_IsOpen = true;
 
@@ -172,8 +167,7 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
     } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
-        throw CDB_ClientEx(eDB_Error, 222004, "CDBL_CursorCmd::Update",
-                           "update failed");
+        DATABASE_DRIVER_ERROR( "update failed", 222004 );
     }
 
     return true;
@@ -208,7 +202,7 @@ CDB_SendDataCmd* CDBL_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
     C_ITDescriptorGuard g(desc);
     
     return (desc) ? m_Connect->SendDataCmd(*desc, size, log_it) : 0;
-}					    
+}                       
 
 bool CDBL_CursorCmd::Delete(const string& table_name)
 {
@@ -236,8 +230,7 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
     } catch (CDB_Exception& ) {
         if (cmd)
             delete cmd;
-        throw CDB_ClientEx(eDB_Error, 222004, "CDBL_CursorCmd::Update",
-                           "update failed");
+        DATABASE_DRIVER_ERROR( "update failed", 222004 );
     }
 
     return true;
@@ -285,8 +278,7 @@ bool CDBL_CursorCmd::Close()
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            throw CDB_ClientEx(eDB_Error, 222003, "CDBL_CursorCmd::Close",
-                               "failed to close cursor");
+            DATABASE_DRIVER_ERROR( "failed to close cursor", 222003 );
         }
 
         m_IsOpen = false;
@@ -315,8 +307,7 @@ bool CDBL_CursorCmd::Close()
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            throw CDB_ClientEx(eDB_Error, 222003, "CDBL_CursorCmd::Close",
-                               "failed to deallocate cursor");
+            DATABASE_DRIVER_ERROR( "failed to deallocate cursor", 222003 );
         }
 
         m_IsDeclared = false;
@@ -458,7 +449,7 @@ bool CDBL_CursorCmd::x_AssignParams()
                     dynamic_cast<CDB_DateTime&> (param);
                 string t = val.Value().AsString("M/D/Y h:m:s");
                 sprintf(val_buffer, "'%s:%.3d'", t.c_str(),
-			(int)(val.Value().NanoSecond()/1000000));
+            (int)(val.Value().NanoSecond()/1000000));
                 break;
             }
             default:
@@ -482,6 +473,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.12  2004/05/18 18:30:36  gorelenk
  * PCH <ncbi_pch.hpp> moved to correct place .
  *

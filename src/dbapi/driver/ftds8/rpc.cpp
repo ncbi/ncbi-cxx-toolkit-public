@@ -78,30 +78,26 @@ bool CTDS_RPCCmd::Send()
     if (!x_AssignOutputParams()) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 221001, "CTDS_RPCCmd::Send",
-                           "cannot assign the output params");
+        DATABASE_DRIVER_ERROR( "cannot assign the output params", 221001 );
     }
 
     string cmd= "execute " + m_Query;
     if (dbcmd(m_Cmd, (char*)(cmd.c_str())) != SUCCEED) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 221002, "CTDS_RPCCmd::Send",
-                           "dbcmd failed");
+        DATABASE_DRIVER_FATAL( "dbcmd failed", 221002 );
     }
 
     if (!x_AssignParams()) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 221003, "CTDS_RPCCmd::Send",
-                           "can not assign the params");
+        DATABASE_DRIVER_ERROR( "Cannot assign the params", 221003 );
     }
 
     m_Connect->TDS_SetTimeout();
 
     if (dbsqlsend(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 221005, "CTDS_RPCCmd::Send",
-                           "dbsqlsend failed");
+        DATABASE_DRIVER_ERROR( "dbsqlsend failed", 221005 );
     }
 
     m_WasSent = true;
@@ -148,8 +144,7 @@ CDB_Result* CTDS_RPCCmd::Result()
     }
 
     if (!m_WasSent) {
-        throw CDB_ClientEx(eDB_Error, 221010, "CTDS_RPCCmd::Result",
-                           "you have to send a command first");
+        DATABASE_DRIVER_ERROR( "you have to send a command first", 221010 );
     }
 
     if (m_Status == 0) {
@@ -157,8 +152,7 @@ CDB_Result* CTDS_RPCCmd::Result()
         if (dbsqlok(m_Cmd) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 221011, "CTDS_RPCCmd::Result",
-                               "dbsqlok failed");
+            DATABASE_DRIVER_ERROR( "dbsqlok failed", 221011 );
         }
     }
 
@@ -184,8 +178,7 @@ CDB_Result* CTDS_RPCCmd::Result()
             break;
         default:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 221016, "CTDS_RPCCmd::Result",
-                               "error encountered in command execution");
+            DATABASE_DRIVER_WARNING( "error encountered in command execution", 221016 );
         }
         break;
     }
@@ -344,7 +337,7 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
                     val_buffer[i++] = '\'';
                 val_buffer[i++] = *c++;
             }
-			if(*c != '\0') return false;
+            if(*c != '\0') return false;
             val_buffer[i++] = '\'';
             val_buffer[i++] = '\n';
             val_buffer[i] = '\0';
@@ -384,7 +377,7 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
                 dynamic_cast<const CDB_LongBinary&> (param);
             const unsigned char* c = (const unsigned char*) val.Value();
             size_t i = 0, size = val.DataSize();
-			if(size*2 > sizeof(val_buffer) - 4) return false;
+            if(size*2 > sizeof(val_buffer) - 4) return false;
             val_buffer[i++] = '0';
             val_buffer[i++] = 'x';
             for (size_t j = 0; j < size; j++) {
@@ -409,15 +402,15 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
             const CDB_SmallDateTime& val =
                 dynamic_cast<const CDB_SmallDateTime&> (param);
             sprintf(val_buffer, "'%s'\n",
-		    val.Value().AsString("M/D/Y h:m").c_str());
+            val.Value().AsString("M/D/Y h:m").c_str());
             break;
         }
         case eDB_DateTime: {
             const CDB_DateTime& val =
                 dynamic_cast<const CDB_DateTime&> (param);
             sprintf(val_buffer, "'%s:%.3d'\n",
-		    val.Value().AsString("M/D/Y h:m:s").c_str(),
-		    (int)(val.Value().NanoSecond()/1000000));
+            val.Value().AsString("M/D/Y h:m:s").c_str(),
+            (int)(val.Value().NanoSecond()/1000000));
             break;
         }
         default:
@@ -464,22 +457,22 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
         case eDB_VarChar:
             type = "varchar(255)";
             break;
-		case eDB_LongChar: {
-		    CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
-		    sprintf(buffer, "varchar(%d)", lc.Size());
-		    type= buffer;
-			break;
-		}
+        case eDB_LongChar: {
+            CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
+            sprintf(buffer, "varchar(%d)", lc.Size());
+            type= buffer;
+            break;
+        }
         case eDB_Binary:
         case eDB_VarBinary:
             type = "varbinary(255)";
             break;
-		case eDB_LongBinary: {
-		    CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
-		    sprintf(buffer, "varbinary(%d)", lb.Size());
-		    type= buffer;
-			break;
-		}
+        case eDB_LongBinary: {
+            CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
+            sprintf(buffer, "varbinary(%d)", lb.Size());
+            type= buffer;
+            break;
+        }
         case eDB_Float:
             type = "real";
             break;
@@ -545,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.12  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

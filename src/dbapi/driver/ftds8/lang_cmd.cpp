@@ -86,25 +86,23 @@ bool CTDS_LangCmd::Send()
     if (!x_AssignParams()) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 220003, "CTDS_LangCmd::Send",
-                           "cannot assign params");
+        DATABASE_DRIVER_ERROR( "cannot assign params", 220003 );
     }
 
     if (dbcmd(m_Cmd, (char*)(m_Query.c_str())) != SUCCEED) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 220001, "CTDS_LangCmd::Send",
-                           "dbcmd failed");
+        DATABASE_DRIVER_FATAL( "dbcmd failed", 220001 );
     }
 
     
     m_Connect->TDS_SetTimeout();
 
-    if (dbsqlsend(m_Cmd) != SUCCEED) {
-        m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 220005, "CTDS_LangCmd::Send",
-                           "dbsqlsend failed");
-    }
+    m_HasFailed = dbsqlsend(m_Cmd) != SUCCEED;
+    CHECK_DRIVER_ERROR( 
+        m_HasFailed,
+        "dbsqlsend failed", 
+        220005 );
 
     m_WasSent = true;
     m_Status = 0;
@@ -151,18 +149,17 @@ CDB_Result* CTDS_LangCmd::Result()
         m_Res = 0;
     }
 
-    if (!m_WasSent) {
-        throw CDB_ClientEx(eDB_Error, 220010, "CTDS_LangCmd::Result",
-                           "a command has to be sent first");
-    }
+    CHECK_DRIVER_ERROR( 
+        !m_WasSent,
+        "a command has to be sent first", 
+        220010 );
 
     if (m_Status == 0) {
         m_Status = 0x1;
         if (dbsqlok(m_Cmd) != SUCCEED) {
             m_WasSent = false;
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 220011, "CTDS_LangCmd::Result",
-                               "dbsqlok failed");
+            DATABASE_DRIVER_ERROR( "dbsqlok failed", 220011 );
         }
     }
 
@@ -188,8 +185,7 @@ CDB_Result* CTDS_LangCmd::Result()
             break;
         default:
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Warning, 221016, "CTDS_RPCCmd::Result",
-                               "error encountered in command execution");
+            DATABASE_DRIVER_WARNING( "error encountered in command execution", 221016 );
         }
         break;
     }
@@ -306,23 +302,23 @@ bool CTDS_LangCmd::x_AssignParams()
         case eDB_VarChar:
             type = "varchar(255)";
             break;
-		case eDB_LongChar: {
-		    CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
-		    sprintf(val_buffer, "varchar(%d)", lc.Size());
-		    type= val_buffer;
-			break;
-		}
+        case eDB_LongChar: {
+            CDB_LongChar& lc = dynamic_cast<CDB_LongChar&> (param);
+            sprintf(val_buffer, "varchar(%d)", lc.Size());
+            type= val_buffer;
+            break;
+        }
         case eDB_Binary:
         case eDB_VarBinary:
             type = "varbinary(255)";
             break;
-		case eDB_LongBinary: {
-		    CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
-			if(lb.DataSize()*2 > (sizeof(val_buffer) - 4)) return false;
-		    sprintf(val_buffer, "varbinary(%d)", lb.Size());
-		    type= val_buffer;
-			break;
-		}
+        case eDB_LongBinary: {
+            CDB_LongBinary& lb = dynamic_cast<CDB_LongBinary&> (param);
+            if(lb.DataSize()*2 > (sizeof(val_buffer) - 4)) return false;
+            sprintf(val_buffer, "varbinary(%d)", lb.Size());
+            type= val_buffer;
+            break;
+        }
         case eDB_Float:
             type = "real";
             break;
@@ -406,7 +402,7 @@ bool CTDS_LangCmd::x_AssignParams()
                 val_buffer[i++] = '\'';
                 val_buffer[i++] = '\n';
                 val_buffer[i] = '\0';
-				if(*c != '\0') return false;
+                if(*c != '\0') return false;
                 break;
             }
             case eDB_Binary: {
@@ -471,7 +467,7 @@ bool CTDS_LangCmd::x_AssignParams()
                 CDB_DateTime& val =
                     dynamic_cast<CDB_DateTime&> (param);
                 sprintf(val_buffer,  "'%s:%.3d'\n",   val.Value().AsString("M/D/Y h:m:s").c_str(),
-			(int)(val.Value().NanoSecond()/1000000));
+            (int)(val.Value().NanoSecond()/1000000));
                 break;
             }
             default:
@@ -494,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.13  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

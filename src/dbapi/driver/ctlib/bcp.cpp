@@ -271,8 +271,7 @@ bool CTL_BCPInCmd::SendRow()
         if (blk_init(m_Cmd, CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM)
             != CS_SUCCEED) {
             m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Fatal, 123001, "CTL_BCPInCmd::SendRow",
-                               "blk_init failed");
+            DATABASE_DRIVER_FATAL( "blk_init failed", 123001 );
         }
         m_WasSent = true;
 
@@ -282,34 +281,30 @@ bool CTL_BCPInCmd::SendRow()
             if (m_Params.GetParamStatus(i) != 0)
                 continue;
 
-            if (blk_describe(m_Cmd, i + 1, &fmt) != CS_SUCCEED) {
-                m_HasFailed = true;
-                throw CDB_ClientEx(eDB_Error, 123002, "CTL_BCPInCmd::SendRow",
-                                   "blk_describe failed (check the number of "
-                                   "columns in a table)");
-            }
+            m_HasFailed = (blk_describe(m_Cmd, i + 1, &fmt) != CS_SUCCEED);
+            CHECK_DRIVER_ERROR( 
+                m_HasFailed,
+                "blk_describe failed (check the number of "
+                "columns in a table)", 
+                123002 );
 
-            if (blk_bind(m_Cmd, i + 1, &fmt, (void*) &m_Params,
-                         &datalen, &indicator) != CS_SUCCEED) {
-                m_HasFailed = true;
-                throw CDB_ClientEx(eDB_Error, 123003, "CTL_BCPInCmd::SendRow",
-                                   "blk_bind failed for default value");
-            }
+            m_HasFailed = (blk_bind(m_Cmd, i + 1, &fmt, (void*) &m_Params,&datalen, &indicator) != CS_SUCCEED);
+            CHECK_DRIVER_ERROR( 
+                m_HasFailed,
+                "blk_bind failed for default value", 
+                123003 );
         }
     }
 
 
-    if ( !x_AssignParams() ) {
-        m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 123004, "CTL_BCPInCmd::SendRow",
-                           "cannot assign the params");
-    }
+    m_HasFailed = !x_AssignParams();
+    CHECK_DRIVER_ERROR( m_HasFailed, "cannot assign the params", 123004 );
 
     switch ( blk_rowxfer(m_Cmd) ) {
     case CS_BLK_HAS_TEXT:  {
         char buff[2048];
         size_t n;
-	
+    
         for (i = 0;  i < m_Params.NofParams();  i++) {
             if (m_Params.GetParamStatus(i) == 0)
                 continue;
@@ -324,13 +319,11 @@ bool CTL_BCPInCmd::SendRow()
                 for (datalen = (CS_INT) par.Size();  datalen > 0;
                      datalen -= (CS_INT) n) {
                     n = par.Read(buff, 2048);
-                    if (blk_textxfer(m_Cmd, (CS_BYTE*) buff, (CS_INT) n, 0)
-                        == CS_FAIL) {
-                        m_HasFailed = true;
-                        throw CDB_ClientEx
-                            (eDB_Error, 123005, "CTL_BCPInCmd::SendRow",
-                             "blk_textxfer failed for the text/image field");
-                    }
+                    m_HasFailed = (blk_textxfer(m_Cmd, (CS_BYTE*) buff, (CS_INT) n, 0) == CS_FAIL);
+                    CHECK_DRIVER_ERROR( 
+                        m_HasFailed, 
+                        "blk_textxfer failed for the text/image field", 123005 
+                        );
                 }
             }
         }
@@ -339,8 +332,7 @@ bool CTL_BCPInCmd::SendRow()
         return true;
     default:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 123007,
-                           "CTL_BCPInCmd::SendRow", "blk_rowxfer failed");
+        CHECK_DRIVER_FATAL( m_HasFailed, "blk_rowxfer failed", 123007 );
     }
 
     return false;
@@ -357,8 +349,7 @@ bool CTL_BCPInCmd::Cancel()
     case CS_SUCCEED: m_WasSent= false; return true;
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 123020,
-                           "CTL_BCPInCmd::Cancel", "blk_done failed");
+        DATABASE_DRIVER_FATAL( "blk_done failed", 123020 );
     default: m_WasSent = false; return false;
     }
 }
@@ -374,8 +365,7 @@ bool CTL_BCPInCmd::CompleteBatch()
     case CS_SUCCEED: return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 123020,
-                           "CTL_BCPInCmd::CompleteBatch", "blk_done failed");
+        DATABASE_DRIVER_FATAL( "blk_done failed", 123020 );
     default: return false;
     }
 }
@@ -391,8 +381,7 @@ bool CTL_BCPInCmd::CompleteBCP()
     case CS_SUCCEED: m_WasSent= false; return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 123020,
-                           "CTL_BCPInCmd::CompleteBCP", "blk_done failed");
+        DATABASE_DRIVER_FATAL( "blk_done failed", 123020 );
     default: m_WasSent= false; return false;
     }
 }
@@ -437,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:56  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2004/10/19 15:32:44  soussov
  * fixes bug in binding NULL valued CDB_Char, CDB_VarChar, CDB_Binary, CDB_VarBinary
  *

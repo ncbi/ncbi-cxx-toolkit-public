@@ -82,8 +82,7 @@ CDB_BCPInCmd* CTDS_Connection::BCPIn(const string& tab_name,
                                      unsigned int nof_cols)
 {
     if (!m_BCPAble) {
-        throw CDB_ClientEx(eDB_Error, 210003, "CTDS_Connection::BCPIn",
-                           "No bcp on this connection");
+        DATABASE_DRIVER_ERROR( "No bcp on this connection", 210003 );
     }
     CTDS_BCPInCmd* bcmd = new CTDS_BCPInCmd(this, m_Link, tab_name, nof_cols);
     m_CMDs.Add(bcmd);
@@ -107,9 +106,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                               size_t data_size, bool log_it)
 {
     if (data_size < 1) {
-        throw CDB_ClientEx(eDB_Fatal, 210092,
-                           "CTDS_Connection::SendDataCmd",
-                           "wrong (zero) data size");
+        DATABASE_DRIVER_FATAL( "wrong (zero) data size", 210092 );
     }
 
     I_ITDescriptor* p_desc= 0;
@@ -137,8 +134,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
         dbsqlok(m_Link) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 210093, "CTDS_Connection::SendDataCmd",
-                           "dbwritetext/dbsqlok/dbresults failed");
+        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210093 );
     }
 
     CTDS_SendDataCmd* sd_cmd = new CTDS_SendDataCmd(this, m_Link, data_size);
@@ -312,8 +308,7 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
                         desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                         log_it ? TRUE : FALSE, (DBINT) s, (BYTE*) buff)
             != SUCCEED) {
-            throw CDB_ClientEx(eDB_Error, 210030, "CTDS_Connection::SendData",
-                               "dbwritetext failed");
+            DATABASE_DRIVER_ERROR( "dbwritetext failed", 210030 );
         }
         return true;
     }
@@ -327,29 +322,25 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
         dbsqlok(m_Link) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 210031, "CTDS_Connection::SendData",
-                           "dbwritetext/dbsqlok/dbresults failed");
+        DATABASE_DRIVER_ERROR( "dbwritetext/dbsqlok/dbresults failed", 210031 );
     }
 
     while (size > 0) {
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
             dbcancel(m_Link);
-            throw CDB_ClientEx(eDB_Fatal, 210032, "CTDS_Connection::SendData",
-                               "Text/Image data corrupted");
+            DATABASE_DRIVER_FATAL( "Text/Image data corrupted", 210032 );
         }
         if (dbmoretext(m_Link, (DBINT) s, (BYTE*) buff) != SUCCEED) {
             dbcancel(m_Link);
-            throw CDB_ClientEx(eDB_Error, 210033, "CTDS_Connection::SendData",
-                               "dbmoretext failed");
+            DATABASE_DRIVER_ERROR( "dbmoretext failed", 210033 );
         }
         size -= s;
     }
 
     //    if (dbsqlok(m_Link) != SUCCEED || dbresults(m_Link) == FAIL) {
     if (dbsqlok(m_Link) != SUCCEED || x_Results(m_Link) == FAIL) {
-        throw CDB_ClientEx(eDB_Error, 110034, "CTDS_Connection::SendData",
-                           "dbsqlok/dbresults failed");
+        DATABASE_DRIVER_ERROR( "dbsqlok/dbresults failed", 110034 );
     }
 
     return true;
@@ -373,8 +364,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
     
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
-        throw CDB_ClientEx(eDB_Error, 210035, "CTDS_Connection::x_GetNativeITDescriptor",
-                           "can not send the language command");
+        DATABASE_DRIVER_ERROR( "Cannot send the language command", 210035 );
     }
 
     CDB_Result* res;
@@ -389,7 +379,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
             if(tt == eDB_Text || tt == eDB_Image) {
                 while(res->Fetch()) {
                     res->ReadItem(&i, 1);
-		
+        
                     descr= new CTDS_ITDescriptor(m_Link, descr_in);
                     // descr= res->GetImageOrTextDescriptor();
                     if(descr) break;
@@ -399,7 +389,7 @@ I_ITDescriptor* CTDS_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor&
         delete res;
     }
     delete lcmd;
-		
+        
     return descr;
 }
 
@@ -502,8 +492,7 @@ CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection* con, DBPROCESS* cmd,
 size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
     if (!pChunk  ||  !nof_bytes) {
-        throw CDB_ClientEx(eDB_Fatal, 290000, "CTDS_SendDataCmd::SendChunk",
-                           "wrong (zero) arguments");
+        DATABASE_DRIVER_FATAL( "wrong (zero) arguments", 290000 );
     }
     if (!m_Bytes2go)
         return 0;
@@ -513,8 +502,7 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
     if (dbmoretext(m_Cmd, nof_bytes, (BYTE*) pChunk) != SUCCEED) {
         dbcancel(m_Cmd);
-        throw CDB_ClientEx(eDB_Error, 290001, "CTDS_SendDataCmd::SendChunk",
-                           "dbmoretext failed");
+        DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
     }
 
     m_Bytes2go -= nof_bytes;
@@ -522,9 +510,7 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (m_Bytes2go <= 0) {
         //        if (dbsqlok(m_Cmd) != SUCCEED || dbresults(m_Cmd) == FAIL) {
         if (dbsqlok(m_Cmd) != SUCCEED || m_Connect->x_Results(m_Cmd) == FAIL) {
-            throw CDB_ClientEx(eDB_Error, 290002,
-                               "CTDS_SendDataCmd::SendChunk",
-                               "dbsqlok/results failed");
+            DATABASE_DRIVER_ERROR( "dbsqlok/results failed", 290002 );
         }
     }
 
@@ -560,6 +546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.9  2005/02/25 16:09:26  soussov
  * adds wrapper for close to make windows happy
  *

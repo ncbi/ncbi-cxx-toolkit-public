@@ -135,7 +135,7 @@ CDB_Exception* read_CDB_Exception(IGate *pGate)
   if( pGate->get_input_arg("exception", &exceptionType) != IGate::eGood )
     return NULL;
 
-  int severity = (int)eDB_Unknown; // EDB_Severity::
+  int severity = (int)eDB_Unknown; // EDiagSev::
   pGate->get_input_arg("severity", &severity);
   int code = 0;
   pGate->get_input_arg("code"    , &code    );
@@ -152,7 +152,13 @@ CDB_Exception* read_CDB_Exception(IGate *pGate)
       int line = 0;
       pGate->get_input_arg("line", &line);
 
-      return new CDB_RPCEx( (EDB_Severity)severity,code,from,msg,  proc,line );
+      return new CDB_RPCEx(DIAG_COMPILE_INFO,
+                           0,
+                           msg,
+                           (EDiagSev)severity,
+                           code,
+                           proc,
+                           line);
     }
     case CDB_Exception::eSQL:
     {
@@ -161,12 +167,35 @@ CDB_Exception* read_CDB_Exception(IGate *pGate)
       int line = 0;
       pGate->get_input_arg("line" , &line );
 
-      return new CDB_SQLEx( (EDB_Severity)severity,code,from,msg,  state,line );
+      return new CDB_SQLEx(DIAG_COMPILE_INFO,
+                           0,
+                           msg,
+                           (EDiagSev)severity,
+                           code,
+                           state,
+                           line);
     }
-    case CDB_Exception::eDS      : return new CDB_DSEx      ( (EDB_Severity)severity, code, from, msg );
-    case CDB_Exception::eDeadlock: return new CDB_DeadlockEx( from, msg );
-    case CDB_Exception::eTimeout : return new CDB_TimeoutEx ( code, from, msg );
-    case CDB_Exception::eClient  : return new CDB_ClientEx  ( (EDB_Severity)severity, code, from, msg );
+    case CDB_Exception::eDS      : 
+        return new CDB_DSEx(DIAG_COMPILE_INFO,
+                            0,
+                            msg,
+                            (EDiagSev)severity,
+                            code);
+    case CDB_Exception::eDeadlock: 
+        return new CDB_DeadlockEx(DIAG_COMPILE_INFO,
+                                  0,
+                                  msg);
+    case CDB_Exception::eTimeout : 
+        return new CDB_TimeoutEx(DIAG_COMPILE_INFO,
+                                 0,
+                                 msg,
+                                 code);
+    case CDB_Exception::eClient  : 
+        return new CDB_ClientEx(DIAG_COMPILE_INFO,
+                                0,
+                                msg,
+                                (EDiagSev)severity,
+                                code);
     case CDB_Exception::eMulti :
     {
       int count = 0;
@@ -185,7 +214,7 @@ CDB_Exception* read_CDB_Exception(IGate *pGate)
       cerr << " code=" << code << " severity=" << severity << "\n";
       cerr<< "  from=" << from << "\n";
       cerr<< "  msg=" << msg << "\n";
-      //throw CDB_Exception( (CDB_Exception::EType)exceptionType,  (EDB_Severity)severity,code,from,msg );
+      //throw CDB_Exception( (CDB_Exception::EType)exceptionType,  (EDiagSev)severity,code,from,msg );
       return NULL;
   }
 }

@@ -80,11 +80,11 @@ CDB_Result* CTDS_CursorCmd::Open()
     m_HasFailed = false;
 
     // declare the cursor
-    if (!x_AssignParams()) {
-        m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Error, 222003, "CTDS_CursorCmd::Open",
-                           "cannot assign params");
-    }
+    m_HasFailed = !x_AssignParams();
+    CHECK_DRIVER_ERROR( 
+        m_HasFailed,
+        "cannot assign params", 
+        222003 );
 
 
     m_LCmd = 0;
@@ -118,8 +118,7 @@ CDB_Result* CTDS_CursorCmd::Open()
             delete m_LCmd;
             m_LCmd = 0;
         }
-        throw CDB_ClientEx(eDB_Error, 222001, "CTDS_CursorCmd::Open",
-                           "failed to declare cursor");
+        DATABASE_DRIVER_ERROR( "failed to declare cursor", 222001 );
     }
     m_IsDeclared = true;
 
@@ -147,8 +146,7 @@ CDB_Result* CTDS_CursorCmd::Open()
             delete m_LCmd;
             m_LCmd = 0;
         }
-        throw CDB_ClientEx(eDB_Error, 222002, "CTDS_CursorCmd::Open",
-                           "failed to open cursor");
+        DATABASE_DRIVER_ERROR( "failed to open cursor", 222002 );
     }
     m_IsOpen = true;
 
@@ -166,16 +164,13 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
     if (!m_IsOpen)
         return false;
 
-    CDB_LangCmd* cmd = 0;
-
     try {
-	while(m_LCmd->HasMoreResults()) {
-	    CDB_Result* r= m_LCmd->Result();
-	    if(r) delete r;
-	}
+        while(m_LCmd->HasMoreResults()) {
+            auto_ptr<CDB_Result> r(m_LCmd->Result());
+        }
 
         string buff = upd_query + " where current of " + m_Name;
-        cmd = m_Connect->LangCmd(buff);
+        const auto_ptr<CDB_LangCmd> cmd(m_Connect->LangCmd(buff));
         cmd->Send();
         cmd->DumpResults();
 #if 0
@@ -188,12 +183,8 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
             }
         }
 #endif
-        delete cmd;
     } catch (CDB_Exception&) {
-        if (cmd)
-            delete cmd;
-        throw CDB_ClientEx(eDB_Error, 222004, "CTDS_CursorCmd::Update",
-                           "update failed");
+        DATABASE_DRIVER_ERROR( "update failed", 222004 );
     }
 
     return true;
@@ -213,7 +204,7 @@ I_ITDescriptor* CTDS_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 }
 
 bool CTDS_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
-				    bool log_it)
+                    bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     C_ITDescriptorGuard d_guard(desc);
@@ -230,7 +221,7 @@ bool CTDS_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 }
 
 CDB_SendDataCmd* CTDS_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, 
-					    bool log_it)
+                        bool log_it)
 {
     I_ITDescriptor* desc= x_GetITDescriptor(item_num);
     C_ITDescriptorGuard d_guard(desc);
@@ -247,7 +238,7 @@ CDB_SendDataCmd* CTDS_CursorCmd::SendDataCmd(unsigned int item_num, size_t size,
         return m_Connect->SendDataCmd(*desc, size, log_it);
     }
     return 0;
-}					    
+}                       
 
 bool CTDS_CursorCmd::Delete(const string& table_name)
 {
@@ -257,10 +248,10 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
     CDB_LangCmd* cmd = 0;
 
     try {
-	while(m_LCmd->HasMoreResults()) {
-	    CDB_Result* r= m_LCmd->Result();
-	    if(r) delete r;
-	}
+    while(m_LCmd->HasMoreResults()) {
+        CDB_Result* r= m_LCmd->Result();
+        if(r) delete r;
+    }
 
         string buff = "delete " + table_name + " where current of " + m_Name;
         cmd = m_Connect->LangCmd(buff);
@@ -280,8 +271,7 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
     } catch (CDB_Exception&) {
         if (cmd)
             delete cmd;
-        throw CDB_ClientEx(eDB_Error, 222004, "CTDS_CursorCmd::Update",
-                           "update failed");
+        DATABASE_DRIVER_ERROR( "update failed", 222004 );
     }
 
     return true;
@@ -329,8 +319,7 @@ bool CTDS_CursorCmd::Close()
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            throw CDB_ClientEx(eDB_Error, 222003, "CTDS_CursorCmd::Close",
-                               "failed to close cursor");
+            DATABASE_DRIVER_ERROR( "failed to close cursor", 222003 );
         }
 
         m_IsOpen = false;
@@ -359,8 +348,7 @@ bool CTDS_CursorCmd::Close()
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            throw CDB_ClientEx(eDB_Error, 222003, "CTDS_CursorCmd::Close",
-                               "failed to deallocate cursor");
+            DATABASE_DRIVER_ERROR( "failed to deallocate cursor", 222003 );
         }
 
         m_IsDeclared = false;
@@ -464,7 +452,7 @@ bool CTDS_CursorCmd::x_AssignParams()
                         val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-				if(*c != '\0') return false; 
+                if(*c != '\0') return false; 
                 val_buffer[i++] = '\'';
                 val_buffer[i] = '\0';
                 break;
@@ -499,7 +487,7 @@ bool CTDS_CursorCmd::x_AssignParams()
                 CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
                 const unsigned char* c = (const unsigned char*) val.Value();
                 size_t i = 0, size = val.DataSize();
-				if(size*2 > sizeof(val_buffer) - 4) return false;
+                if(size*2 > sizeof(val_buffer) - 4) return false;
                 val_buffer[i++] = '0';
                 val_buffer[i++] = 'x';
                 for (size_t j = 0; j < size; j++) {
@@ -531,7 +519,7 @@ bool CTDS_CursorCmd::x_AssignParams()
                     dynamic_cast<CDB_DateTime&> (param);
                 string t = val.Value().AsString("M/D/Y h:m:s");
                 sprintf(val_buffer, "'%s:%.3d'", t.c_str(),
-			(int)(val.Value().NanoSecond()/1000000));
+            (int)(val.Value().NanoSecond()/1000000));
                 break;
             }
             default:
@@ -555,6 +543,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.12  2004/12/10 15:26:11  ssikorsk
  * FreeTDS is ported on windows
  *

@@ -85,18 +85,17 @@ bool CODBC_RPCCmd::Send()
     CMemPot bindGuard;
     string q_str;
 
-	if(m_Params.NofParams() > 0) {
-		SQLINTEGER* indicator= (SQLINTEGER*)
-				bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
+    if(m_Params.NofParams() > 0) {
+        SQLINTEGER* indicator= (SQLINTEGER*)
+                bindGuard.Alloc(m_Params.NofParams()*sizeof(SQLINTEGER));
 
-		if (!x_AssignParams(q_str, main_exec_query, param_result_query, 
+        if (!x_AssignParams(q_str, main_exec_query, param_result_query, 
                           bindGuard, indicator)) {
-			SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
-			m_HasFailed = true;
-			throw CDB_ClientEx(eDB_Error, 420003, "CODBC_RPCCmd::Send",
-                           "cannot assign params");
-		}
-	}
+            SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+            m_HasFailed = true;
+            DATABASE_DRIVER_ERROR( "cannot assign params", 420003 );
+        }
+    }
 
    if(m_Recompile) main_exec_query+= " with recompile";
 
@@ -120,8 +119,7 @@ bool CODBC_RPCCmd::Send()
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 420001, "CODBC_RPCCmd::Send",
-                           "SQLExecDirect failed");
+        DATABASE_DRIVER_FATAL( "SQLExecDirect failed", 420001 );
 
     case SQL_SUCCESS_WITH_INFO:
         m_Reporter.ReportErrors();
@@ -132,20 +130,17 @@ bool CODBC_RPCCmd::Send()
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 420002, "CODBC_RPCCmd::Send",
-                           "Some other query is executing on this connection");
+        DATABASE_DRIVER_FATAL( "Some other query is executing on this connection", 420002 );
         
     case SQL_INVALID_HANDLE:
         m_HasFailed= true;
-        throw CDB_ClientEx(eDB_Fatal, 420004, "CODBC_RPCCmd::Send",
-                           "The statement handler is invalid (memory corruption suspected)");
+        DATABASE_DRIVER_FATAL( "The statement handler is invalid (memory corruption suspected)", 420004 );
         
     default:
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        throw CDB_ClientEx(eDB_Fatal, 420005, "CODBC_RPCCmd::Send",
-                           "Unexpected error");
+        DATABASE_DRIVER_FATAL( "Unexpected error", 420005 );
         
     }
     m_WasSent = true;
@@ -196,12 +191,11 @@ CDB_Result* CODBC_RPCCmd::Result()
     }
 
     if (!m_WasSent) {
-        throw CDB_ClientEx(eDB_Error, 420010, "CODBC_RPCCmd::Result",
-                           "a command has to be sent first");
+        DATABASE_DRIVER_ERROR( "a command has to be sent first", 420010 );
     }
 
     if(!m_hasResults) {
-		m_WasSent= false;
+        m_WasSent= false;
         return 0;
     }
 
@@ -218,27 +212,23 @@ CDB_Result* CODBC_RPCCmd::Result()
 
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            throw CDB_ClientEx(eDB_Error, 420011, "CODBC_RPCCmd::Result",
-                               "SQLNumResultCols failed");
+            DATABASE_DRIVER_ERROR( "SQLNumResultCols failed", 420011 );
         default:
-            throw CDB_ClientEx(eDB_Error, 420012, "CODBC_RPCCmd::Result",
-                               "SQLNumResultCols failed (memory corruption suspected)");
+            DATABASE_DRIVER_ERROR( "SQLNumResultCols failed (memory corruption suspected)", 420012 );
         }
 
         if(nof_cols < 1) { // no data in this result set
-			SQLINTEGER rc;
-			switch(SQLRowCount(m_Cmd, &rc)) {
-				case SQL_SUCCESS_WITH_INFO:
-					m_Reporter.ReportErrors(); 
-				case SQL_SUCCESS: break;
-				case SQL_ERROR:
-						m_Reporter.ReportErrors();
-						throw CDB_ClientEx(eDB_Error, 420013, "CODBC_RPCCmd::Result",
-                               "SQLRowCount failed");
-				default:
-					throw CDB_ClientEx(eDB_Error, 420014, "CODBC_RPCCmd::Result",
-						"SQLRowCount failed (memory corruption suspected)");
-			}
+            SQLINTEGER rc;
+            switch(SQLRowCount(m_Cmd, &rc)) {
+                case SQL_SUCCESS_WITH_INFO:
+                    m_Reporter.ReportErrors(); 
+                case SQL_SUCCESS: break;
+                case SQL_ERROR:
+                        m_Reporter.ReportErrors();
+                        DATABASE_DRIVER_ERROR( "SQLRowCount failed", 420013 );
+                default:
+                    DATABASE_DRIVER_ERROR( "SQLRowCount failed (memory corruption suspected)", 420014 );
+            }
 
             m_RowCount = rc;
             m_hasResults= xCheck4MoreResults();
@@ -252,11 +242,9 @@ CDB_Result* CODBC_RPCCmd::Result()
             case SQL_SUCCESS:           break;
             case SQL_ERROR:
                 m_Reporter.ReportErrors();
-                throw CDB_ClientEx(eDB_Error, 420015, "CODBC_RPCCmd::Result",
-                                   "SQLColAttribute failed");
+                DATABASE_DRIVER_ERROR( "SQLColAttribute failed", 420015 );
             default:
-                throw CDB_ClientEx(eDB_Error, 420016, "CODBC_RPCCmd::Result",
-                                   "SQLColAttribute failed (memory corruption suspected)");
+                DATABASE_DRIVER_ERROR( "SQLColAttribute failed (memory corruption suspected)", 420016 );
             }
             
             if(strcmp(n_buff, "STpROCrETURNsTATUS") == 0) {//this is a status result
@@ -264,16 +252,16 @@ CDB_Result* CODBC_RPCCmd::Result()
                 m_Res= new CODBC_StatusResult(m_Cmd, m_Reporter);
             }
         }
-		if(!m_Res) {
-			if(m_HasStatus) {
-				m_HasStatus= false;
-				m_Res= new CODBC_ParamResult(nof_cols, m_Cmd, m_Reporter);
-			}	
-			else {
-				m_Res = new CODBC_RowResult(nof_cols, m_Cmd, m_Reporter, &m_RowCount);
-			}
-		}
-		return Create_Result(*m_Res);
+        if(!m_Res) {
+            if(m_HasStatus) {
+                m_HasStatus= false;
+                m_Res= new CODBC_ParamResult(nof_cols, m_Cmd, m_Reporter);
+            }   
+            else {
+                m_Res = new CODBC_RowResult(nof_cols, m_Cmd, m_Reporter, &m_RowCount);
+            }
+        }
+        return Create_Result(*m_Res);
     }
 
     m_WasSent = false;
@@ -408,7 +396,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
         }
         case eDB_LongChar: {
             CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
-			sprintf(tbuf,"varchar(%d)", val.Size());
+            sprintf(tbuf,"varchar(%d)", val.Size());
             type= tbuf;
             indicator[n]= SQL_NTS;
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
@@ -433,7 +421,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
         }
         case eDB_LongBinary: {
             CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
-			sprintf(tbuf,"varbinary(%d)", val.Size());
+            sprintf(tbuf,"varbinary(%d)", val.Size());
             type= tbuf;
             indicator[n]= val.DataSize();
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
@@ -491,7 +479,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                 ts->minute= t.Minute();
                 ts->second= t.Second();
                 ts->fraction= t.NanoSecond()/1000000;
-				ts->fraction*= 1000000; /* MSSQL has a bug - it can not handle fraction of msecs */
+                ts->fraction*= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
@@ -509,12 +497,12 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             sprintf(p_nm, "@pR%d", n);
             q_exec+= p_nm;
             cmd+= "declare ";
-			cmd+= p_nm;
-			cmd+= ' ';
-			cmd+= type;
-			cmd+= ";select ";
-			cmd+= p_nm;
-			cmd+= " = ?;";
+            cmd+= p_nm;
+            cmd+= ' ';
+            cmd+= type;
+            cmd+= ";select ";
+            cmd+= p_nm;
+            cmd+= " = ?;";
         }
         else {
             q_exec+= name+'='+name;
@@ -531,7 +519,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             if(!q_select.empty()) q_select+= ',';
             q_select.append(p_name+1);
             q_select+= '=';
-			q_select+= p_name;
+            q_select+= p_name;
         }
             
     }
@@ -546,11 +534,9 @@ bool CODBC_RPCCmd::xCheck4MoreResults()
     case SQL_NO_DATA:           return false;
     case SQL_ERROR:             
         m_Reporter.ReportErrors();
-        throw CDB_ClientEx(eDB_Error, 420014, "CODBC_RPCCmd::xCheck4MoreResults",
-                           "SQLMoreResults failed");
+        DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 420014 );
     default:
-        throw CDB_ClientEx(eDB_Error, 420015, "CODBC_RPCCmd::xCheck4MoreResults",
-                           "SQLMoreResults failed (memory corruption suspected)");
+        DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 420015 );
     }
 }
 
@@ -561,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/04 13:03:57  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.10  2005/02/15 16:07:51  ssikorsk
  * Fixed a bug with GetRowCount plus SELECT statement
  *

@@ -93,8 +93,8 @@ void CDBAPI_CacheAdmin::Init(void)
 
     arg_desc->AddFlag("m",
                       "Run cache maintenance (Timeout based BLOB removal).");
-    
-    
+
+
 
     arg_desc->AddOptionalKey("st",
                       "stimeout",
@@ -121,7 +121,7 @@ void CDBAPI_CacheAdmin::Init(void)
 
 int CDBAPI_CacheAdmin::Connect(const CArgs& args)
 {
-    CDriverManager &db_drv_man = CDriverManager::GetInstance(); 
+    CDriverManager &db_drv_man = CDriverManager::GetInstance();
     string drv_name;
 
 #ifdef NCBI_OS_MSWIN
@@ -134,14 +134,14 @@ int CDBAPI_CacheAdmin::Connect(const CArgs& args)
     IDataSource* ds = db_drv_man.CreateDs(drv_name);
 
     if (ds == 0) {
-        NcbiCerr << "Cannot init driver: " << drv_name 
+        NcbiCerr << "Cannot init driver: " << drv_name
                     << NcbiEndl;
         return 1;
     }
 
-    m_Conn.reset(ds->CreateConnection()); 
+    m_Conn.reset(ds->CreateConnection());
     if (m_Conn.get() == 0) {
-        NcbiCerr << "Cannot create connection. Driver: " << drv_name 
+        NcbiCerr << "Cannot create connection. Driver: " << drv_name
                     << NcbiEndl;
         return 1;
     }
@@ -191,8 +191,8 @@ int CDBAPI_CacheAdmin::Run(void)
         }
 
     } catch( CDB_Exception& dbe ) {
-        NcbiCerr << dbe.what() << NcbiEndl 
-                 << dbe.Message() 
+        NcbiCerr << dbe.what() << NcbiEndl
+                 << dbe.GetMsg()
                  << NcbiEndl;
     }
 
@@ -209,6 +209,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/04 13:03:56  ssikorsk
+ * Revamp of DBAPI exception class CDB_Exception
+ *
  * Revision 1.2  2004/07/21 15:33:46  kuznets
  * Fixed auto-login name and application parameters
  *
