@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/11/12 04:03:00  thiessen
+* working file save including alignment edits
+*
 * Revision 1.33  2000/11/11 21:15:55  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -330,6 +333,28 @@ StructureSet::~StructureSet(void)
     if (showHideManager) delete showHideManager;
     if (styleManager) delete styleManager;
     if (alignmentManager) delete alignmentManager;
+}
+
+bool StructureSet::PrepareMimeForOutput(ncbi::objects::CNcbi_mime_asn1& mime) const
+{
+    // replace edited alignments
+    if (newAlignments && alignmentSet && alignmentSet->newAsnAlignmentData) {
+        SeqAnnotList *seqAnnots = NULL;
+        if (mime.IsStrucseqs())
+            seqAnnots = &(mime.GetStrucseqs().SetSeqalign());
+        else if (mime.IsAlignstruc())
+            seqAnnots = &(mime.GetAlignstruc().SetSeqalign());
+
+        if (seqAnnots) {
+            seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
+            SeqAnnotList::iterator o = seqAnnots->begin();
+            SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
+            for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
+                o->Reset(n->GetPointer());   // copy each Seq-annot CRef
+        }
+    }
+
+	return true;
 }
 
 void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)

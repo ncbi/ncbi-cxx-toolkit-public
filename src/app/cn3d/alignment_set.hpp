@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/12 04:02:21  thiessen
+* working file save including alignment edits
+*
 * Revision 1.7  2000/11/11 21:12:07  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -94,8 +97,8 @@ public:
 
     bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
 
-private:
-    SeqAnnotList *newAsnAlignmentData;
+    // new alignment data in asn1 format, created from (edited) BlockMultipleAlignment
+    const SeqAnnotList *newAsnAlignmentData;
 };
 
 class MasterSlaveAlignment : public StructureBase

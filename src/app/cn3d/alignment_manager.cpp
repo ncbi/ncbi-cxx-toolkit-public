@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/12 04:02:59  thiessen
+* working file save including alignment edits
+*
 * Revision 1.24  2000/11/11 21:15:53  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -165,7 +168,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
         alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
         alignmentSet = newAlignmentSet;
     } else {
-        ERR_POST(Warning << "Couldn't create pairwise alignments from the current multiple! "
+        ERR_POST(Warning << "Couldn't create pairwise alignments from the current multiple!\n"
             << "Alignment data in output file will be left unchanged.");
     }
 }

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/12 04:02:22  thiessen
+* working file save including alignment edits
+*
 * Revision 1.9  2000/10/16 14:25:19  thiessen
 * working alignment fit coloring
 *
@@ -150,6 +153,7 @@ public:
     enum {
         // File menu
             MID_OPEN,
+            MID_SAVE,
             MID_EXIT,
         // View menu
             MID_TRANSLATE,
@@ -176,6 +180,8 @@ public:
     void OnCloseWindow(wxCloseEvent& event);
 
     void OnOpen(wxCommandEvent& event);
+    void OnSave(wxCommandEvent& event);
+
     void OnAdjustView(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
@@ -184,6 +190,7 @@ public:
 
 private:
     Messenger *messenger;
+    wxString currentDataFilename;
 };
 
 class Cn3DGLCanvas: public wxGLCanvas

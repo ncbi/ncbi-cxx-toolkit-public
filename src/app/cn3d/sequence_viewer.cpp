@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/11/12 04:02:59  thiessen
+* working file save including alignment edits
+*
 * Revision 1.25  2000/11/11 21:15:54  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -378,7 +381,7 @@ bool SequenceViewerWindow::SaveDialog(bool canCancel)
     int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
     if (canCancel) option |= wxCANCEL;
 
-    wxMessageDialog dialog(NULL, "Do you want to save your edited alignment?", "", option);
+    wxMessageDialog dialog(NULL, "Do you want to keep the changes to this alignment?", "", option);
     option = dialog.ShowModal();
 
     if (option == wxID_CANCEL) return false; // user cancelled this operation

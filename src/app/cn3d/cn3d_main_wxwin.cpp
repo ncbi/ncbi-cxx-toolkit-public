@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/12 04:02:59  thiessen
+* working file save including alignment edits
+*
 * Revision 1.13  2000/11/02 16:56:01  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -141,6 +144,8 @@
 #include <serial/serial.hpp>            
 #include <serial/objistrasn.hpp>       
 #include <serial/objistrasnb.hpp>       
+#include <serial/objostrasn.hpp>       
+#include <serial/objostrasnb.hpp>       
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
@@ -263,6 +268,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_CLOSE(                                      Cn3DMainFrame::OnCloseWindow)
     EVT_MENU(MID_EXIT,                              Cn3DMainFrame::OnExit)
     EVT_MENU(MID_OPEN,                              Cn3DMainFrame::OnOpen)
+    EVT_MENU(MID_SAVE,                              Cn3DMainFrame::OnSave)
     EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,      Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
@@ -279,6 +285,7 @@ Cn3DMainFrame::Cn3DMainFrame(Messenger *mesg,
     wxMenuBar *menuBar = new wxMenuBar;
     wxMenu *menu = new wxMenu;
     menu->Append(MID_OPEN, "&Open");
+    menu->Append(MID_SAVE, "&Save");
     menu->AppendSeparator();
     menu->Append(MID_EXIT, "E&xit");
     menuBar->Append(menu, "&File");
@@ -406,25 +413,14 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
     }
 }
 
-void Cn3DMainFrame::LoadFile(const char *filename)
+static bool ReadMimeFromFile(const char *filename, CNcbi_mime_asn1& mime)
 {
-    glCanvas->SetCurrent();
-
-    // clear old data
-    if (glCanvas->structureSet) {
-        messenger->RemoveAllHighlights(false);
-        delete glCanvas->structureSet;
-        glCanvas->structureSet = NULL;
-        glCanvas->renderer.AttachStructureSet(NULL);
-        glCanvas->Refresh(false);
-    }
-
     // initialize the binary input stream 
     auto_ptr<CNcbiIstream> inStream;
     inStream.reset(new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
-        ERR_POST(Error << "Cannot open file '" << filename << "'");
-        return;
+        ERR_POST(Error << "Cannot open file '" << filename << "' for reading");
+        return false;
     }
 
     // try to decide if it's binary or ascii
@@ -443,25 +439,94 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     }
 
     // Read the CNcbi_mime_asn1 data 
-    CNcbi_mime_asn1 mime;
     try {
         *inObject >> mime;
     } catch (exception& e) {
         ERR_POST(Error << "Cannot read file '" << filename << "'\nreason: " << e.what());
-        return;
+        return false;
     }
 
-    // Create StructureSet from mime data
-    glCanvas->structureSet = new StructureSet(mime, messenger);
-    glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
-    glCanvas->Refresh(false);
+    return true;
+}
+
+static bool WriteMimeToFile(const char *filename, CNcbi_mime_asn1& mime, boolean doTextAsn = true)
+{
+    // initialize a binary output stream 
+    auto_ptr<CNcbiOstream> outStream;
+    outStream.reset(new CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
+    if (!(*outStream)) {
+        ERR_POST(Error << "Cannot open file '" << filename << "' for writing");
+        return false;
+    }
+
+    auto_ptr<CObjectOStream> outObject;
+    if (doTextAsn) {
+        // Associate ASN.1 text serialization methods with the input 
+        outObject.reset(new CObjectOStreamAsn(*outStream));
+    } else {
+        // Associate ASN.1 binary serialization methods with the input 
+        outObject.reset(new CObjectOStreamAsnBinary(*outStream));
+    }
+
+    // Read the CNcbi_mime_asn1 data 
+    try {
+        *outObject << mime;
+    } catch (exception& e) {
+        ERR_POST(Error << "Cannot write file '" << filename << "'\nreason: " << e.what());
+        return false;
+    }
+
+    return true;
+}
+
+void Cn3DMainFrame::LoadFile(const char *filename)
+{
+    glCanvas->SetCurrent();
+
+    // clear old data
+    if (glCanvas->structureSet) {
+        messenger->RemoveAllHighlights(false);
+        delete glCanvas->structureSet;
+        glCanvas->structureSet = NULL;
+        glCanvas->renderer.AttachStructureSet(NULL);
+        glCanvas->Refresh(false);
+        currentDataFilename.Clear();
+    }
+
+    CNcbi_mime_asn1 mime;
+    if (ReadMimeFromFile(filename, mime)) {
+        // Create StructureSet from mime data
+        glCanvas->structureSet = new StructureSet(mime, messenger);
+        glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
+        glCanvas->Refresh(false);
+        currentDataFilename = filename;
+    }
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
 {
-    const wxString& filestr = wxFileSelector("Choose a binary ASN1 file to open");
-    if (filestr.IsEmpty()) return;
-    LoadFile(filestr.c_str());
+    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open");
+    if (!filestr.IsEmpty())
+        LoadFile(filestr.c_str());
+}
+
+void Cn3DMainFrame::OnSave(wxCommandEvent& event)
+{
+    if (!glCanvas->structureSet || currentDataFilename.IsEmpty()) return;
+    
+    wxString outputFilename = wxFileSelector("Choose a filename for output", "", "", ".prt", "*.prt", wxSAVE); 
+    if (!outputFilename.IsEmpty()) {
+
+        CNcbi_mime_asn1 mime;
+        TESTMSG("reading in original datafile " << currentDataFilename.c_str());
+        if (!ReadMimeFromFile(currentDataFilename.c_str(), mime)) return;
+
+        TESTMSG("applying changes to asn1 data");
+        if (!glCanvas->structureSet->PrepareMimeForOutput(mime)) return;
+
+        TESTMSG("writing output file " << outputFilename.c_str());
+        WriteMimeToFile(outputFilename.c_str(), mime, true);
+    }
 }
 
 void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/12 04:02:22  thiessen
+* working file save including alignment edits
+*
 * Revision 1.28  2000/11/11 21:12:08  thiessen
 * create Seq-annot from BlockMultipleAlignment
 *
@@ -210,6 +213,11 @@ public:
 
     // for ensuring unique structure<->structure alignments for repeated structures
     std::map < int, bool > usedFeatures;
+
+    // do any necessary adjustments to original asn data before output; returns true
+    // if successful, false if something went wrong - in which case data probably
+    // should not be used
+    bool PrepareMimeForOutput(ncbi::objects::CNcbi_mime_asn1& mime) const;
 
 private:
     void MatchSequencesToMolecules(void);
