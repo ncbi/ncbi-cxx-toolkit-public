@@ -149,7 +149,7 @@ public:
     virtual ERW_Result PendingCount(size_t* count)
     {
         if ( m_Buffer ) {
-            *count = m_BufferPtr - m_Buffer;
+            *count = m_BufferSize;
             return eRW_Success;
         }
         else if ( m_OverflowFile ) {
@@ -923,6 +923,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/10/24 13:54:03  vasilche
+ * Rolled back incorrect fix of PendingCount().
+ *
  * Revision 1.25  2003/10/24 13:41:23  kuznets
  * Completed PendingCount implementaion
  *
