@@ -88,7 +88,6 @@ public:
 
     CRef<CGBDataLoader> gb_loader;
 #ifdef HAVE_BERKELEY_DB
-//    auto_ptr<CBDB_BLOB_Cache> bdb_cache;
     auto_ptr<CBDB_Cache> blob_cache;
     auto_ptr<CBDB_Cache> id_cache;
 #endif
@@ -193,14 +192,6 @@ void CDemoApp::Init(void)
 #ifdef HAVE_BERKELEY_DB
     arg_desc->AddFlag("cache",
                       "use BDB cache");
-/*	
-    arg_desc->AddDefaultKey("cache_mode", "CacheMode",
-                            "Cache classes to use",
-                            CArgDescriptions::eString, "new");
-    arg_desc->SetConstraint("cache_mode",
-                            &(*new CArgAllow_Strings,
-                              "old", "newid", "new"));
-*/	
     arg_desc->AddDefaultKey("id_cache_days", "id_cache_days",
                             "number of days to keep gi->sat/satkey cache",
                             CArgDescriptions::eInteger, "1");
@@ -351,8 +342,8 @@ int CDemoApp::Run(void)
                         ICache::fExpireLeastFrequentlyUsed |
                         ICache::fPurgeOnStartup;
                     blob_cache->SetTimeStampPolicy(flags, cache_age*24*60*60);
-			        blob_cache->SetReadUpdateLimit(1000);
-					blob_cache->SetVersionRetention(ICache::eKeepAll);
+                    blob_cache->SetReadUpdateLimit(1000);
+                    blob_cache->SetVersionRetention(ICache::eKeepAll);
                     
                     blob_cache->Open(cache_path.c_str(), "blobs");
                 }}
@@ -367,12 +358,12 @@ int CDemoApp::Run(void)
                     
                     ICache::TTimeStampFlags flags =
                         ICache::fTimeStampOnCreate|
-						ICache::fTrackSubKey|
+                        ICache::fTrackSubKey|
                         ICache::fCheckExpirationAlways;
                     id_cache->SetTimeStampPolicy(flags, id_days*24*60*60+1);
-					id_cache->SetVersionRetention(ICache::eKeepAll);
+                    id_cache->SetVersionRetention(ICache::eKeepAll);
                     
-                    id_cache->Open((cache_path+"/id").c_str(), "ids");
+                    id_cache->Open(cache_path.c_str(), "ids");
                 }}
                 rdr->SetIdCache(id_cache.get());
 
@@ -843,6 +834,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2004/08/24 16:43:53  vasilche
+* Removed TAB symbols from sources.
+* Seq-id cache is put in the same directory as blob cache.
+* Removed dead code.
+*
 * Revision 1.80  2004/08/19 17:02:35  vasilche
 * Use CBlob_id instead of obsolete CSeqref.
 * Use requested feature subtype for all feature iterations.
