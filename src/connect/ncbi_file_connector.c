@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/04/26 16:32:36  lavr
+ * Added setting of default timeout in meta-connector's setup routine
+ *
  * Revision 6.6  2001/12/04 15:56:35  lavr
  * Use strdup() instead of explicit strcpy(malloc(...), ...)
  *
@@ -279,6 +282,7 @@ static void s_Setup
 #ifdef IMPLEMENTED__CONN_WaitAsync
     CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
 #endif
+    meta->default_timeout = 0/*infinite*/;
 }
 
 

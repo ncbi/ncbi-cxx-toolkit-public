@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/04/26 16:32:49  lavr
+ * Added setting of default timeout in meta-connector's setup routine
+ *
  * Revision 6.1  2002/02/20 19:14:08  lavr
  * Initial revision
  *
@@ -200,6 +203,7 @@ static EIO_Status s_VT_Status
     case eIO_Write:
         return xxx->w_status;
     default:
+        assert(0); /* should never happen as checked by connection */
         return eIO_InvalidArg;
     }
 }
@@ -231,6 +235,7 @@ static void s_Setup
 #ifdef IMPLEMENTED__CONN_WaitAsync
     CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
 #endif
+    meta->default_timeout = 0/*infinite*/;
 }
 
 
@@ -238,7 +243,7 @@ static void s_Destroy
 (CONNECTOR connector)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-    
+
     free(xxx);
     free(connector);
 }
