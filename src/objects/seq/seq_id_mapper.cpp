@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/seq/seq_id_mapper.hpp>
+#include <corelib/ncbimtx.hpp>
 #include "seq_id_tree.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -42,26 +43,50 @@ BEGIN_SCOPE(objects)
 //  CSeq_id_Mapper::
 //
 
-    
-static CSeq_id_Mapper* s_Seq_id_Mapper = 0;
 
-CRef<CSeq_id_Mapper> CSeq_id_Mapper::GetInstance(void)
+typedef CSeq_id_Mapper TInstance;
+
+// slow implementation with mutex
+static TInstance* s_Instance = 0;
+DEFINE_STATIC_FAST_MUTEX(s_InstanceMutex);
+
+CRef<TInstance> TInstance::GetInstance(void)
 {
-    if (!s_Seq_id_Mapper) {
-        s_Seq_id_Mapper = new CSeq_id_Mapper;
-    }
-    return Ref(s_Seq_id_Mapper);
+    CRef<TInstance> ret;
+    {{
+        CFastMutexGuard guard(s_InstanceMutex);
+        ret.Reset(s_Instance);
+        if ( !ret || ret->ReferencedOnlyOnce() ) {
+            if ( ret ) {
+                ret.Release();
+            }
+            ret.Reset(new TInstance);
+            s_Instance = ret;
+        }
+    }}
+    _ASSERT(ret == s_Instance);
+    return ret;
 }
+
+
+static void s_ResetInstance(TInstance* instance)
+{
+    CFastMutexGuard guard(s_InstanceMutex);
+    if ( s_Instance == instance ) {
+        s_Instance = 0;
+    }
+}
+
 
 CSeq_id_Mapper::CSeq_id_Mapper(void)
 {
-    s_Seq_id_Mapper = this;
-    CSeq_id_Which_Tree::Initialize(m_Trees);
+    CSeq_id_Which_Tree::Initialize(this, m_Trees);
 }
 
 
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
+    s_ResetInstance(this);
 #ifdef _DEBUG
     CSeq_id_Handle::DumpRegister("~CSeq_id_Mapper");
 #endif
@@ -69,8 +94,6 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
     ITERATE ( TTrees, it, m_Trees ) {
         _ASSERT((*it)->Empty());
     }
-    _ASSERT(s_Seq_id_Mapper == this);
-    s_Seq_id_Mapper = 0;
 }
 
 
@@ -146,7 +169,21 @@ void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
 }
 
 
-bool CSeq_id_Mapper::x_IsBetter(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2)
+bool CSeq_id_Mapper::x_Match(const CSeq_id_Handle& h1,
+                                const CSeq_id_Handle& h2)
+{
+    CSeq_id_Which_Tree& tree1 = x_GetTree(h1);
+    CSeq_id_Which_Tree& tree2 = x_GetTree(h2);
+    if ( &tree1 != &tree2 )
+        return false;
+
+    // Compare versions if any
+    return tree1.Match(h1, h2);
+}
+
+
+bool CSeq_id_Mapper::x_IsBetter(const CSeq_id_Handle& h1,
+                                const CSeq_id_Handle& h2)
 {
     CSeq_id_Which_Tree& tree1 = x_GetTree(h1);
     CSeq_id_Which_Tree& tree2 = x_GetTree(h2);
@@ -166,6 +203,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/09/30 18:42:40  vasilche
+* Added CSeq_id_Handle::GetMapper() and MatchesTo().
+* Added thread safety to CSeq_id_Mapper::GetInstance().
+*
 * Revision 1.50  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
