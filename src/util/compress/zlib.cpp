@@ -103,6 +103,7 @@ CCompression::EStatus CCompressionZip::DeflateFlush(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
+
     m_Stream.next_in   = 0;
     m_Stream.avail_in  = 0;
     m_Stream.next_out  = (unsigned char*)out_buf;
@@ -112,7 +113,7 @@ CCompression::EStatus CCompressionZip::DeflateFlush(
     SetLastError(errcode);
     *out_avail = out_size - m_Stream.avail_out;
 
-    if ( errcode == Z_OK ) {
+    if ( errcode == Z_OK  ||  errcode == Z_BUF_ERROR ) {
         if ( m_Stream.avail_out == 0) {
             return eStatus_Overflow;
         }
@@ -278,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/15 16:49:33  ivanov
+ * Added processing zlib return code Z_BUF_ERROR to DeflateFlush()
+ *
  * Revision 1.1  2003/04/07 20:21:35  ivanov
  * Initial revision
  *
