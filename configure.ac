@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.279 2004/03/22 19:28:26 vakatov Exp $
+#  $Id: configure.ac,v 1.280 2004/03/23 15:47:11 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3476,6 +3476,8 @@ fi
 
 if test "$with_ctools" = "no" ; then
    WithoutProjects="$WithoutProjects ctools"
+else
+   WithProjects="$WithProjects ctools"
 fi
 
 

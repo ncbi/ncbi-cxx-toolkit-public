@@ -19037,6 +19037,8 @@ fi
 
 if test "$with_ctools" = "no" ; then
    WithoutProjects="$WithoutProjects ctools"
+else
+   WithProjects="$WithProjects ctools"
 fi
 
 
