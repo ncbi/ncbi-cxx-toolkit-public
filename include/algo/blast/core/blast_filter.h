@@ -155,6 +155,8 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
  * @param offset Offset into the full sequence [in]
  * @param filter_options specifies how filtering is to be done [in]
  * @param seqloc_retval Resulting locations for filtered region. [out]
+ * @param blast_message error messages on error [out]
+ * @return zero on success
 */
 NCBI_XBLAST_EXPORT
 Int2
@@ -163,7 +165,8 @@ BlastSetUp_Filter(EBlastProgramType program_number,
     Int4 length, 
     Int4 offset, 
     const SBlastFilterOptions* filter_options,
-    BlastSeqLoc* *seqloc_retval);
+    BlastSeqLoc* *seqloc_retval,
+    Blast_Message * *blast_message);
 
 
 /** Does preparation for filtering and then calls BlastSetUp_Filter
