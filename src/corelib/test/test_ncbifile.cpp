@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/01/10 16:48:06  ivanov
+ * Added test s_TEST_CheckPath()
+ *
  * Revision 1.4  2001/11/19 18:13:10  juran
  * Add s_TEST_MatchesMask().
  * Use GetEntries() instead of Contents().
@@ -58,39 +61,11 @@
 
 USING_NCBI_SCOPE;
 
-#ifdef __MACOS__
+#if defined __MACOS__
 #define main testfiles
 extern int testfiles(int, const char *[]);
 #endif
 
-
-/////////////////////////////////
-// File name spliting tests
-//
-
-static void s_TEST_MatchesMask(void)
-{
-    _ASSERT( CDirEntry::MatchesMask(""        ,""));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"*"));
-    _ASSERT(!CDirEntry::MatchesMask("file"    ,"*.*"));
-    _ASSERT( CDirEntry::MatchesMask("file.cpp","*.cpp"));
-    _ASSERT( CDirEntry::MatchesMask("file.cpp","*.c*"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"file*"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"f*"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"f*le"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"f**l*e"));
-    _ASSERT(!CDirEntry::MatchesMask("file"    ,"???"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"????"));
-    _ASSERT(!CDirEntry::MatchesMask("file"    ,"?????"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"?i??"));
-    _ASSERT(!CDirEntry::MatchesMask("file"    ,"?l??"));
-    _ASSERT(!CDirEntry::MatchesMask("file"    ,"?i?"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"?*?"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"?***?"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"?*"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"*?"));
-    _ASSERT( CDirEntry::MatchesMask("file"    ,"********?"));
-}
 
 /////////////////////////////////
 // File name spliting tests
@@ -108,6 +83,14 @@ static void s_TEST_SplitPath(void)
 
     path = CFile::MakePath("c:\\windows\\", "win.ini");
     _VERIFY( path == "c:\\windows\\win.ini" );
+
+    CFile::SplitPath("c:win.ini", &dir, &title, &ext);
+    _VERIFY( dir   == "c:" );
+    _VERIFY( title == "win" );
+    _VERIFY( ext   == ".ini" );
+
+    path = CFile::MakePath("c:", "win", "ini");
+    _VERIFY( path == "c:win.ini" );
 
     CFile f("c:\\dir\\subdir\\file.ext");
     _VERIFY( f.GetDir()  == "c:\\dir\\subdir\\" );
@@ -142,14 +125,144 @@ static void s_TEST_SplitPath(void)
     path = CFile::MakePath("Hard Disk:Folder",   "file", "ext");
     _VERIFY( path == "Hard Disk:Folder:file.ext" );
     
-    //CFile f(":Not likely to exist.tar.gz");
-    //cout << f.GetDir() << endl;
-    //_VERIFY( f.GetName() == "Not likely to exist.tar.gz" );
-    //_VERIFY( f.GetBase() == "Not likely to exist.tar" );
-    //_VERIFY( f.GetExt()  == ".gz" );
 #endif
 }
 
+
+/////////////////////////////////
+//  Path checking tests
+//
+
+static void s_TEST_CheckPath(void)
+{
+     CDirEntry d;
+
+    // IsAbsolutePath() test
+
+#if defined NCBI_OS_MSWIN
+    _VERIFY( d.IsAbsolutePath("c:\\") );
+    _VERIFY( d.IsAbsolutePath("c:\\file") );
+    _VERIFY( d.IsAbsolutePath("c:file") );
+    _VERIFY( d.IsAbsolutePath("\\\\machine\\dir") );
+    _VERIFY( d.IsAbsolutePath("\\file") );
+    _VERIFY(!d.IsAbsolutePath("file") );
+    _VERIFY(!d.IsAbsolutePath(".\\file") );
+    _VERIFY(!d.IsAbsolutePath("..\\file") );
+    _VERIFY(!d.IsAbsolutePath("dir\\file") );
+#elif defined NCBI_OS_UNIX
+    _VERIFY( d.IsAbsolutePath("/") );
+    _VERIFY( d.IsAbsolutePath("/file") );
+    _VERIFY( d.IsAbsolutePath("/dir/dir") );
+    _VERIFY(!d.IsAbsolutePath("file") );
+    _VERIFY(!d.IsAbsolutePath("./file") );
+    _VERIFY(!d.IsAbsolutePath("../file") );
+    _VERIFY(!d.IsAbsolutePath("dir/file") );
+#elif defined NCBI_OS_MAC
+    _VERIFY( d.IsAbsolutePath("HD:") );
+    _VERIFY( d.IsAbsolutePath("HD:file") );
+    _VERIFY(!d.IsAbsolutePath("file") );
+    _VERIFY(!d.IsAbsolutePath(":file") );
+    _VERIFY(!d.IsAbsolutePath(":file:file") );
+#endif
+
+    // Convert path to OS dependent test
+
+    _VERIFY( d.ConvertToOSPath("")             == "" );
+    _VERIFY( d.ConvertToOSPath("c:\\file")     == "c:\\file" );
+    _VERIFY( d.ConvertToOSPath("/dir/file")    == "/dir/file" );
+    _VERIFY( d.ConvertToOSPath("dir:file")     == "dir:file" );
+#if defined NCBI_OS_MSWIN
+    _VERIFY( d.ConvertToOSPath("dir")          == "dir" );
+    _VERIFY( d.ConvertToOSPath("dir\\file")    == "dir\\file" );
+    _VERIFY( d.ConvertToOSPath("dir/file")     == "dir\\file" );
+    _VERIFY( d.ConvertToOSPath(":dir:file")    == "dir\\file" );
+    _VERIFY( d.ConvertToOSPath(":dir::file")   == "dir\\..\\file" );
+    _VERIFY( d.ConvertToOSPath(":dir:::file")  == "dir\\..\\..\\file" );
+    _VERIFY( d.ConvertToOSPath("./dir/file")   == ".\\dir\\file" );
+    _VERIFY( d.ConvertToOSPath("../file")      == "..\\file" );
+    _VERIFY( d.ConvertToOSPath("../../file")   == "..\\..\\file" );
+#elif defined NCBI_OS_UNIX
+    _VERIFY( d.ConvertToOSPath("dir")          == "dir" );
+    _VERIFY( d.ConvertToOSPath("dir\\file")    == "dir/file" );
+    _VERIFY( d.ConvertToOSPath("dir/file")     == "dir/file" );
+    _VERIFY( d.ConvertToOSPath(":dir:file")    == "dir/file" );
+    _VERIFY( d.ConvertToOSPath(":dir::file")   == "dir/../file" );
+    _VERIFY( d.ConvertToOSPath(".\\dir\\file") == "./dir/file" );
+    _VERIFY( d.ConvertToOSPath("..\\file")     == "../file" );
+    _VERIFY( d.ConvertToOSPath("..\\..\\file") == "../../file" );
+#elif defined NCBI_OS_MAC
+    _VERIFY( d.ConvertToOSPath("dir")          == ":dir" );
+    _VERIFY( d.ConvertToOSPath("dir\\file")    == ":dir:file" );
+    _VERIFY( d.ConvertToOSPath("dir/file")     == ":dir:file" );
+    _VERIFY( d.ConvertToOSPath(":dir:file")    == ":dir:file" );
+    _VERIFY( d.ConvertToOSPath("./dir/file")   == ":dir:file" );
+    _VERIFY( d.ConvertToOSPath("../file")      == "::file" );
+    _VERIFY( d.ConvertToOSPath("../../file")   == ":::file" );
+    _VERIFY( d.ConvertToOSPath("../.././../file")   == "::::file" );
+#endif
+
+    // ConcatPath() test
+
+#if defined NCBI_OS_MSWIN
+    _VERIFY( d.ConcatPath("c:", "file")     == "c:file");
+    _VERIFY( d.ConcatPath("dir", "file")    == "dir\\file");
+    _VERIFY( d.ConcatPath("dir", "\\file")  == "dir\\file");
+    _VERIFY( d.ConcatPath("dir\\", "file")  == "dir\\file");
+    _VERIFY( d.ConcatPath("\\dir\\", "file")== "\\dir\\file");
+    _VERIFY( d.ConcatPath("", "file")       == "file");
+    _VERIFY( d.ConcatPath("dir", "")        == "dir\\");
+    _VERIFY( d.ConcatPath("", "")           == "");
+#elif defined NCBI_OS_UNIX
+    _VERIFY( d.ConcatPath("dir", "file")    == "dir/file");
+    _VERIFY( d.ConcatPath("dir", "/file")   == "dir/file");
+    _VERIFY( d.ConcatPath("dir/", "file")   == "dir/file");
+    _VERIFY( d.ConcatPath("/dir/", "file")  == "/dir/file");
+    _VERIFY( d.ConcatPath("", "file")       == "file");
+    _VERIFY( d.ConcatPath("dir", "")        == "dir/");
+    _VERIFY( d.ConcatPath("", "")           == "");
+#elif defined NCBI_OS_MAC
+    _VERIFY( d.ConcatPath("HD", "dir")      == "HD:dir");
+    _VERIFY( d.ConcatPath(":dir", "file")   == ":dir:file");
+    _VERIFY( d.ConcatPath("dir:", "file")   == "dir:file");
+    _VERIFY( d.ConcatPath("dir", ":file")   == "dir:file");
+    _VERIFY( d.ConcatPath("dir::", "file")  == "dir::file");
+    _VERIFY( d.ConcatPath("dir", "::file")  == "dir::file");
+    _VERIFY( d.ConcatPath("", "file")       == ":file");
+    _VERIFY( d.ConcatPath(":file", "")      == ":file:");
+    _VERIFY( d.ConcatPath("", "")           == ":");
+#endif
+}
+
+
+/////////////////////////////////
+// File name maching test
+//
+
+static void s_TEST_MatchesMask(void)
+{
+     CDirEntry d;
+
+    _ASSERT( d.MatchesMask(""        ,""));
+    _ASSERT( d.MatchesMask("file"    ,"*"));
+    _ASSERT(!d.MatchesMask("file"    ,"*.*"));
+    _ASSERT( d.MatchesMask("file.cpp","*.cpp"));
+    _ASSERT( d.MatchesMask("file.cpp","*.c*"));
+    _ASSERT( d.MatchesMask("file"    ,"file*"));
+    _ASSERT( d.MatchesMask("file"    ,"f*"));
+    _ASSERT( d.MatchesMask("file"    ,"f*le"));
+    _ASSERT( d.MatchesMask("file"    ,"f**l*e"));
+    _ASSERT(!d.MatchesMask("file"    ,"???"));
+    _ASSERT( d.MatchesMask("file"    ,"????"));
+    _ASSERT(!d.MatchesMask("file"    ,"?????"));
+    _ASSERT( d.MatchesMask("file"    ,"?i??"));
+    _ASSERT(!d.MatchesMask("file"    ,"?l??"));
+    _ASSERT(!d.MatchesMask("file"    ,"?i?"));
+    _ASSERT( d.MatchesMask("file"    ,"?*?"));
+    _ASSERT( d.MatchesMask("file"    ,"?***?"));
+    _ASSERT( d.MatchesMask("file"    ,"?*"));
+    _ASSERT( d.MatchesMask("file"    ,"*?"));
+    _ASSERT( d.MatchesMask("file"    ,"********?"));
+}
 
 
 /////////////////////////////////
@@ -224,14 +337,14 @@ static void s_TEST_File(void)
 // Work with directories
 //
 
-#ifdef NCBI_OS_MAC
-#define REL ":"
-#define SEP ":"
-#define CWD ":"
+#if defined NCBI_OS_MAC
+#   define REL ":"
+#   define SEP ":"
+#   define CWD ":"
 #else
-#define REL ""
-#define SEP "/"
-#define CWD "."
+#   define REL ""
+#   define SEP "/"
+#   define CWD "."
 #endif
 
 static void s_TEST_Dir(void)
@@ -308,6 +421,11 @@ static void s_TEST_Dir(void)
 
     _VERIFY( dir.Remove(CDir::eRecursive) );
     _VERIFY( !dir.Exists() );
+    
+    // Home dir
+    string homedir = CDir::GetHome();
+    _VERIFY ( !homedir.empty() );
+    cout << homedir << endl;
 }
 
 
@@ -337,9 +455,14 @@ int CTest::Run(void)
 {
     cout << "Run test" << endl << endl;
 
-    s_TEST_MatchesMask();
+    // CDirEntry
     s_TEST_SplitPath();
+    s_TEST_CheckPath();
+    s_TEST_MatchesMask();
+
+    // CFile
     s_TEST_File();
+    // CDir
     s_TEST_Dir();
 
     cout << endl;
