@@ -281,7 +281,7 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
     if ( !ids.IsLoaded() ) {
         CReaderRequestConn conn(result);
         ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
-        ids.SetLoaded();
+        // ids.SetLoaded();
     }
 }
 
