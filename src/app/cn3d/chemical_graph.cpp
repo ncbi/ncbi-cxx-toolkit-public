@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/05/31 14:51:28  thiessen
+* small tweaks
+*
 * Revision 1.32  2002/03/18 15:17:29  thiessen
 * fix minor omission
 *
@@ -196,7 +199,10 @@ void LoadStandardDictionary(const char *filename)
 
 void DeleteStandardDictionary(void)
 {
-    if (standardDictionary) delete standardDictionary;
+    if (standardDictionary) {
+        delete standardDictionary;
+        standardDictionary = NULL;
+    }
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.140  2002/05/31 14:51:31  thiessen
+* small tweaks
+*
 * Revision 1.139  2002/05/31 13:35:02  thiessen
 * use wxWin's FSSpec->path converter
 *
@@ -714,6 +717,11 @@ void RaiseLogWindow(void)
 #ifndef CN3D_DONT_USE_MESSAGE_LOG
     if (!logFrame) {
         logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
+#ifdef __WXMAC__
+        // make empty menu for this window
+        wxMenuBar *menuBar = new wxMenuBar;
+        logFrame->SetMenuBar(menuBar);
+#endif
         logFrame->SetSizeHints(150, 100);
         logFrame->logText = new wxTextCtrl(logFrame, -1, "",
             wxPoint(0,0), logFrame->GetClientSize(), wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
@@ -834,7 +842,7 @@ void Cn3DApp::InitRegistry(void)
 
 bool Cn3DApp::OnInit(void)
 {
-    TESTMSG("Welcome to Cn3D++!\nbuilt " << __DATE__ << " with " << wxVERSION_STRING);
+    TESTMSG("Welcome to Cn3D 4.0!\nbuilt " << __DATE__ << " with " << wxVERSION_STRING);
 
     // help system loads from zip file
 #if wxUSE_STREAMS && wxUSE_ZIPSTREAM && wxUSE_ZLIB
