@@ -142,11 +142,11 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     static const char stateful_capable[] = "Client-Mode: STATEFUL_CAPABLE\r\n";
     SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
     const char *tag;
+    CONNECTOR conn;
     size_t buflen;
-    CONNECTOR c;
     BUF buf = 0;
-    CONN conn;
     char *s;
+    CONN c;
 
     /* Form service name argument (as CGI argument) */
     if (sizeof(service) + strlen(iter->service) > sizeof(net_info->args))
@@ -187,14 +187,18 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     assert(strcmp(net_info->http_user_header, s) == 0);
     free(s);
     /* All the rest in the net_info structure is fine with us */
-    if (!(c = HTTP_CreateConnectorEx(net_info, 0/*flags*/, s_ParseHeader,
-                                     0/*adj.info*/, iter/*data*/, 0/*clnup*/)))
+    conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush/*flags*/,
+                                  s_ParseHeader, 0/*adjust net_info*/,
+                                  iter/*adj.data*/, 0/*adj.cleanup*/);
+    if (!conn || CONN_Create(conn, &c) != eIO_Success) {
+        CORE_LOGF(eLOG_Error, ("[DISPATCHER]  Unable to create aux. %s",
+                               conn ? "connection" : "connector"));
+        assert(0);
         return 0/*failed*/;
-    if (CONN_Create(c, &conn) != eIO_Success)
-        return 0/*failed*/;
-    /* This dummy read will send all the HTTP data, we'll get a callback */
-    CONN_Read(conn, 0, 0, &buflen, eIO_ReadPlain);
-    CONN_Close(conn);
+    }
+    CONN_Flush(c);
+    /* This will also send all the HTTP data, we'll get a callback */
+    CONN_Close(c);
     return ((SDISPD_Data*) iter->data)->n_node != 0;
 }
 
@@ -229,7 +233,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
         while (*p && isspace((unsigned char)(*p)))
             p++;
         if (data->net_info->debug_printout)
-            CORE_LOGF(eLOG_Warning, ("[DISPATCHER] %s", p));
+            CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", p));
 #endif
         return 1/*updated*/;
     }
@@ -391,6 +395,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2002/09/06 15:44:19  lavr
+ * Use fHCC_SureFlush and CONN_Flush() instead of dummy read
+ *
  * Revision 6.40  2002/08/12 15:13:50  lavr
  * Temporary fix for precision loss in transmission of SERV_Info as text
  *

@@ -154,7 +154,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
 #if defined(_DEBUG) && !defined(NDEBUG)
                 if (uuu->net_info->debug_printout)
                     CORE_LOG(eLOG_Warning,
-                             "[SERVICE] Fallback to stateless requested");
+                             "[SERVICE]  Fallback to stateless requested");
 #endif
                 break;
             }
@@ -483,7 +483,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             uuu->port = 0;
             uuu->ticket = 0;
             net_info->max_try = 1;
-            conn = HTTP_CreateConnectorEx(net_info, 0/*flags*/,
+            conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush/*flags*/,
                                           s_ParseHeader, 0/*adj.info*/,
                                           uuu/*adj.data*/, 0/*cleanup.data*/);
             /* Wait for connection info back (error-transparent by DISPD.CGI)*/
@@ -491,9 +491,13 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 CONN_SetTimeout(c, eIO_Open,      timeout);
                 CONN_SetTimeout(c, eIO_ReadWrite, timeout);
                 CONN_SetTimeout(c, eIO_Close,     timeout);
-                /* This dummy read triggers parse header callback */
-                CONN_Read(c, 0, 0, &n, eIO_ReadPlain);
+                CONN_Flush(c);
+                /* This also triggers parse header callback */
                 CONN_Close(c);
+            } else {
+                CORE_LOGF(eLOG_Error, ("[SERVICE]  Unable to create aux. %s",
+                                       conn ? "connection" : "connector"));
+                assert(0);
             }
             if (!uuu->host)
                 return 0/*No connection info returned*/;
@@ -738,6 +742,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2002/09/06 15:44:02  lavr
+ * Use fHCC_SureFlush and CONN_Flush() instead of dummy read
+ *
  * Revision 6.40  2002/08/07 16:33:33  lavr
  * Changed EIO_ReadMethod enums accordingly; log moved to end
  *
