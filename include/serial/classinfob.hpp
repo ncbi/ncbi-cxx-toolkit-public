@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/10/22 15:16:19  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
 * Revision 1.8  2000/10/13 16:28:29  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -130,7 +133,6 @@ public:
     static TTypeInfo GetClassInfoBy(const type_info& id,
                                     void (*creator)(void));
 
-    bool IsCObject(void) const;
     const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
 
     // iterators interface

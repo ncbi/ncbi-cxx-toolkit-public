@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/10/22 15:16:22  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
 * Revision 1.30  2001/05/17 15:07:09  lavr
 * Typos corrected
 *
@@ -189,7 +192,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip)
+      m_SkipFunction(&CVoidTypeFunctions::Skip),
+      m_IsCObject(false)
 {
 }
 
@@ -199,7 +203,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip)
+      m_SkipFunction(&CVoidTypeFunctions::Skip),
+      m_IsCObject(false)
 {
 }
 
@@ -209,7 +214,8 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook),
-      m_SkipFunction(&CVoidTypeFunctions::Skip)
+      m_SkipFunction(&CVoidTypeFunctions::Skip),
+      m_IsCObject(false)
 {
 }
 
@@ -254,11 +260,6 @@ bool CTypeInfo::IsType(TTypeInfo typeInfo) const
 }
 
 bool CTypeInfo::MayContainType(TTypeInfo /*typeInfo*/) const
-{
-    return false;
-}
-
-bool CTypeInfo::IsCObject(void) const
 {
     return false;
 }

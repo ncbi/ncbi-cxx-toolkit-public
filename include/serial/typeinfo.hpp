@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/10/22 15:16:20  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
 * Revision 1.35  2001/05/17 14:59:47  lavr
 * Typos corrected
 *
@@ -255,7 +258,7 @@ public:
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 
     // return true if type is inherited from CObject
-    virtual bool IsCObject(void) const;
+    bool IsCObject(void) const;
     virtual const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
     // return true CTypeInfo of object (redefined in polymorphic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
@@ -309,6 +312,8 @@ protected:
     void SetWriteFunction(TTypeWriteFunction func);
     void SetCopyFunction(TTypeCopyFunction func);
     void SetSkipFunction(TTypeSkipFunction func);
+
+    bool m_IsCObject;
 
 private:
     // type specific function pointers

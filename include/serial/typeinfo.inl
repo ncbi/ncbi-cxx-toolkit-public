@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/10/22 15:16:20  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
 * Revision 1.4  2000/09/29 16:18:15  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -132,6 +135,12 @@ inline
 void CTypeInfo::DefaultCopyData(CObjectStreamCopier& copier) const
 {
     m_CopyHookData.GetDefaultFunction()(copier, this);
+}
+
+inline
+bool CTypeInfo::IsCObject(void) const
+{
+    return m_IsCObject;
 }
 
 #endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */

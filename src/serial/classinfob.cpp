@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/10/22 15:16:22  grichenk
+* Optimized CTypeInfo::IsCObject()
+*
 * Revision 1.12  2001/05/17 15:07:05  lavr
 * Typos corrected
 *
@@ -106,7 +109,7 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        const void* /*nonCObject*/,
                                        TTypeCreate createFunc,
                                        const type_info& ti)
-    : CParent(typeFamily, size, name), m_IsCObject(false)
+    : CParent(typeFamily, size, name)
 {
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
@@ -117,8 +120,9 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        const CObject* /*cObject*/,
                                        TTypeCreate createFunc,
                                        const type_info& ti)
-    : CParent(typeFamily, size, name), m_IsCObject(true)
+    : CParent(typeFamily, size, name)
 {
+    m_IsCObject = true;
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
 }
@@ -128,7 +132,7 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        const void* /*nonCObject*/,
                                        TTypeCreate createFunc,
                                        const type_info& ti)
-    : CParent(typeFamily, size, name), m_IsCObject(false)
+    : CParent(typeFamily, size, name)
 {
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
@@ -139,8 +143,9 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        const CObject* /*cObject*/,
                                        TTypeCreate createFunc,
                                        const type_info& ti)
-    : CParent(typeFamily, size, name), m_IsCObject(true)
+    : CParent(typeFamily, size, name)
 {
+    m_IsCObject = true;
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
 }
@@ -257,14 +262,9 @@ TTypeInfo CClassTypeInfoBase::GetClassInfoByName(const string& name)
     return i->second;
 }
 
-bool CClassTypeInfoBase::IsCObject(void) const
-{
-    return m_IsCObject;
-}
-
 const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) const
 {
-    if ( m_IsCObject ) {
+    if ( IsCObject() ) {
         return static_cast<const CObject*>(objectPtr);
     }
     return 0;
