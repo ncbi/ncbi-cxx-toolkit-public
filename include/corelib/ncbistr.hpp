@@ -97,6 +97,9 @@ public:
 //    String-processing utilities
 //
 
+// A maximal double precision used in the double to string conversion
+#define MAX_DOUBLE_PRECISION  200
+
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
@@ -129,6 +132,9 @@ public:
     static string IntToString(long value, bool sign=false);
     static string UIntToString(unsigned long value);
     static string DoubleToString(double value);
+    // NOTE: if precission is more that MAX_DOUBLE_PRECISION,
+    //       then it will be set to MAX_DOUBLE_PRECISION
+    static string DoubleToString(double value, unsigned int precision);
     static string PtrToString(const void* ptr);
 
     /// Return one of: 'true, 'false'
@@ -694,6 +700,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2003/01/06 16:43:05  ivanov
+ * + DoubleToString() with 'precision'
+ *
  * Revision 1.27  2002/12/20 19:40:45  ucko
  * Add NStr::Find and variants.
  *

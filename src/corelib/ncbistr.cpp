@@ -32,6 +32,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
+#include <memory>
 #include <algorithm>
 #include <ctype.h>
 #include <errno.h>
@@ -324,6 +325,19 @@ string NStr::DoubleToString(double value)
     char buffer[64];
     ::sprintf(buffer, "%g", value);
     return buffer;
+}
+
+
+string NStr::DoubleToString(double value, unsigned int precision)
+{
+    // Exponent size + sign + dot + ending '\0' + max.precision
+    char buffer[308 + 3 + MAX_DOUBLE_PRECISION];
+    if ( precision > MAX_DOUBLE_PRECISION ) {
+        precision = MAX_DOUBLE_PRECISION;
+    }
+    ::sprintf(buffer, "%.*f", precision, value);
+    return buffer;
+
 }
 
 
@@ -715,6 +729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2003/01/06 16:42:45  ivanov
+ * + DoubleToString() with 'precision'
+ *
  * Revision 1.57  2002/10/18 20:48:56  lavr
  * +ENewLine_Mode and '\n' translation in NStr::PrintableString()
  *
