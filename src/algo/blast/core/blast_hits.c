@@ -1410,8 +1410,8 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    if (purge) {
       Blast_HSPListPurgeNullHSPs(hsp_list);
    }
-   
-   BlastSequenceBlkFree(seq_arg.seq);
+
+   BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
    subject_blk->sequence = NULL;
 
    return status;
@@ -2147,8 +2147,7 @@ Int2 Blast_HSPResultsSaveHSPList(Uint1 program, BlastHSPResults* results,
          results->hitlist_array[0] = 
             Blast_HitListNew(hit_options->prelim_hitlist_size);
       }
-      Blast_HitListUpdate(results->hitlist_array[0], 
-                          hsp_list);
+      Blast_HitListUpdate(results->hitlist_array[0], hsp_list);
    }
    
    return status; 
