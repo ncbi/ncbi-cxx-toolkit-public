@@ -248,6 +248,11 @@ export features
 PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
 export PATH
 
+# Export bin and lib pathes
+CFG_BIN="${x_conf_dir}/bin"
+CFG_LIB="${x_conf_dir}/lib"
+export CFG_BIN CFG_LIB
+
 # Define time-guard script to run tests from other scripts
 CHECK_EXEC="${x_root_dir}/scripts/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"

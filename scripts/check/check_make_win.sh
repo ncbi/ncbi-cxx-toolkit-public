@@ -403,6 +403,11 @@ for build_tree in \$build_trees; do
    # Add current configuration's build and dll build directories to PATH
    PATH=".:\${build_dir}/\${build_tree}bin/\${x_conf}:\${build_dir}/\${build_tree}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
    export PATH
+
+   # Export bin and lib pathes
+   CFG_BIN="\${build_dir}/\${build_tree}bin/\${x_conf}"
+   CFG_LIB="\${build_dir}/\${build_tree}lib/\${x_conf}"
+   export CFG_BIN CFG_LIB
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
