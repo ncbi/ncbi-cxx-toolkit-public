@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/01 13:14:25  vasilche
+* Fixed throw() declaration in CRef/CConstRef
+*
 * Revision 1.11  2000/08/15 19:42:06  vasilche
 * Changed refernce counter to allow detection of more errors.
 *
@@ -364,7 +367,7 @@ public:
 
     // getters
     inline
-    TObjectType* GetNonNullPointer(void) const THROWS_NONE
+    TObjectType* GetNonNullPointer(void) const
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr )
@@ -377,7 +380,7 @@ public:
             return m_Ptr;
         }
     inline
-    TObjectType* GetPointer(void) const
+    TObjectType* GetPointer(void) const THROWS_NONE
         {
             return GetPointerOrNull();
         }
@@ -557,7 +560,7 @@ public:
             return m_Ptr;
         }
     inline
-    TObjectType* GetPointer(void) const
+    TObjectType* GetPointer(void) const THROWS_NONE
         {
             return GetPointerOrNull();
         }
