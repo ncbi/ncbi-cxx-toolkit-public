@@ -274,7 +274,7 @@ public:
     /// Unset the parameter if specified "value" is empty.
     ///
     /// @param value
-    ///   Value to set the parameter to.
+    ///   Value that the parameter is set to.
     /// @param flags
     ///   To control search.
     ///   Valid flags := { ePersistent, eNoOverride, eTruncate }
@@ -288,7 +288,7 @@ public:
     /// @param comment
     ///   Optional comment string describing parameter.
     /// @return
-    ///   TRUE if specified parameter is set;  FALSE otherwise.
+    ///   TRUE if specified parameter is set; FALSE otherwise.
     bool Set(const string& section, const string& name, const string& value,
              TFlags flags = 0, const string& comment = kEmptyStr);
 
@@ -383,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/08/18 18:44:07  siyan
+ * Minor comment changes.
+ *
  * Revision 1.30  2003/08/14 12:25:28  siyan
  * Made previous documentation changes consistent.
  * Best not to mix the ///< style with @param style for parameter documentation
