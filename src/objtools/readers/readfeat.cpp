@@ -139,6 +139,9 @@ public:
     enum EOrgRef {
         eOrgRef_organism,
         eOrgRef_organelle,
+        eOrgRef_macronuclear,
+        eOrgRef_proviral,
+        eOrgRef_virion,
         eOrgRef_div,
         eOrgRef_lineage,
         eOrgRef_gcode,
@@ -588,11 +591,14 @@ typedef struct singleinit {
 } SingleInit;
 
 static SingleInit single_key_list [] = {
-    { "pseudo" },
-    { "germline" },
-    { "rearranged" },
-    { "transgenic" },
-    { "environmental_sample" }
+    { "pseudo"               },
+    { "germline"             },
+    { "rearranged"           },
+    { "transgenic"           },
+    { "environmental_sample" },
+    { "macronuclear"         },
+    { "proviral"             },
+    { "virion"               }
 };
 
 // constructor
@@ -994,6 +1000,15 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
                     return true;
                 }
             }
+        case eOrgRef_macronuclear:
+            bsp.SetGenome (CBioSource::eGenome_macronuclear);
+            return true;
+        case eOrgRef_proviral:
+            bsp.SetGenome (CBioSource::eGenome_proviral);
+            return true;
+        case eOrgRef_virion:
+            bsp.SetGenome (CBioSource::eGenome_virion);
+            return true;
         case eOrgRef_div:
             {
                 CBioSource::TOrg& orp = bsp.SetOrg ();
