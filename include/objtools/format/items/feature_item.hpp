@@ -135,8 +135,6 @@ public:
     // constructors
     CFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
         const CSeq_loc* loc, EMapped mapped = eMapped_not_mapped);
-    //CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
-    //    const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped);
 
     // fetaure key (name)
     string GetKey(void) const;
@@ -171,6 +169,7 @@ private:
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
     void x_CleanQuals(void) const;
+    const CFlatStringQVal* x_GetStringQual(EFeatureQualifier slot) const;
     // feature table quals
     typedef vector< CRef<CFormatQual> > TQualVec;
     void x_AddFTableQuals(CBioseqContext& ctx) const;
@@ -301,6 +300,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/05/07 15:21:50  shomrat
+* + Helper function x_GetStringQual(..)
+*
 * Revision 1.14  2004/05/06 17:41:38  shomrat
 * Fixes to feature formatting
 *
