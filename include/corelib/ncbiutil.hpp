@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/02 00:46:06  vakatov
+* DeleteElements():  use "typename" for Cnt::iterator
+*
 * Revision 1.1  1999/05/06 20:32:52  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
 *
@@ -190,7 +193,7 @@ inline void SetMapString(map<Key, string>& m, const Key& key, const string& data
 template<class Cnt>
 inline void DeleteElements( Cnt& cnt )
 {
-    for ( Cnt::iterator i = cnt.begin(); i != cnt.end(); ++i ) {
+    for ( typename Cnt::iterator i = cnt.begin(); i != cnt.end(); ++i ) {
         delete *i;
     }
 }
