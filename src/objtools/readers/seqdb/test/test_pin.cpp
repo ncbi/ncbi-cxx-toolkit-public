@@ -955,6 +955,56 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-swiss]";
         
+        if (s == "-chunk") {
+            cout << "enter db name:" << endl;
+            
+            string dbname;
+            cin >> dbname;
+            
+            cout << "entered db name: [" << dbname << "]" << endl;
+            
+            //CSeqDB phil(dbname, 'p', 1000000, 1 << 30, true);
+            CSeqDB phil(dbname, 'p', 1880000, 1 << 30, true);
+            
+            const Uint4 max_oids = 100;
+            
+            Uint4 begin(0), end(0);
+            
+            //Uint4 oid_list[max_oids];
+            vector<Uint4> oid_list;
+            oid_list.resize(max_oids);
+            
+            bool have_any = true;
+            
+            Uint4 chunk_index = 0;
+            
+            while (have_any) {
+                cout << "\nChunk #" << chunk_index++ << "\n    ";
+                
+                if (CSeqDB::eOidList == phil.GetNextOIDChunk(begin, end, oid_list)) {
+                    have_any = ! oid_list.empty();
+                    
+                    Uint4 begin2 = 0;
+                    
+                    for(Uint4 i = 0; i<oid_list.size(); i++) {
+                        cout << i << "/" << (i-begin2) << ": got oid(L) " << oid_list[i] << "\n    ";
+                    }
+                } else {
+                    have_any = (begin != end);
+                    
+                    for(Uint4 i = begin; i<end; i++) {
+                        cout << i << "/" << (i-begin) << ": got oid(R) " << i << "\n    ";
+                    }
+                }
+                
+                if (! have_any) {
+                    cout << "\nNo more oids to get." << endl;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-chunk]";
+        
         
         if (s == "-lib") {
             CSeqDB phil(/*dbpath,*/ "nt nt month est", 'n');
