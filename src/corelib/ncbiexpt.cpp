@@ -409,6 +409,15 @@ CErrnoException::CErrnoException(const CErrnoException& other) throw()
     m_Errno = other.m_Errno;
 }
 
+// for backward compatibility
+CErrnoException::CErrnoException(const string& message) throw()
+    : CException("unknown",-1,0,
+        (CException::EErrCode) CException::eInvalid,
+        message + ": " + ::strerror(errno)),
+    m_Errno(errno)
+{
+}
+
 CErrnoException::~CErrnoException(void) throw()
 {
 }
@@ -477,6 +486,16 @@ CParseException::CParseException(const CParseException& other) throw()
     m_Pos = other.m_Pos;
 }
 
+// for backward compatibility
+CParseException::CParseException(const string& message,
+    string::size_type pos) throw()
+    : CException("unknown",-1,0,
+        (CException::EErrCode) CException::eInvalid,
+        s_ComposeParse(message,pos)),
+    m_Pos(pos)
+{
+}
+
 CParseException::~CParseException(void) throw()
 {
 }
@@ -522,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/07/16 16:26:38  gouriano
+ * added backward-compatibility constructors to CErrnoException and CParseException
+ *
  * Revision 1.24  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *

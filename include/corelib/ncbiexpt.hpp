@@ -522,6 +522,10 @@ public:
         const CException* prev_exception,
         EErrCode err_code, const string& message) throw();
     CErrnoException(const CErrnoException& other) throw();
+
+    // for backward compatibility
+    CErrnoException(const string& message) throw();
+
     virtual ~CErrnoException(void) throw();
 
     // Reporting
@@ -561,6 +565,10 @@ public:
         EErrCode err_code,const string& message,
         string::size_type pos) throw();
     CParseException(const CParseException& other) throw();
+
+    // for backward compatibility
+    CParseException(const string& message,string::size_type pos) throw();
+
     virtual ~CParseException(void) throw();
 
     // Reporting
@@ -600,6 +608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2002/07/16 16:27:36  gouriano
+ * added backward-compatibility constructors to CErrnoException and CParseException
+ *
  * Revision 1.33  2002/07/15 18:17:51  gouriano
  * renamed CNcbiException and its descendents
  *
