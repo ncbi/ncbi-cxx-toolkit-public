@@ -146,6 +146,10 @@ bool CBlast4Options::SubmitSync(void)
     case EStart:
         poll_immed = true;
         x_SubmitSearch();
+        if (! m_Err.empty()) {
+            break;
+        }
+        // fall through
         
     case EWait:
         x_PollUntilDone(poll_immed);
@@ -337,6 +341,11 @@ int CBlast4Options::x_GetState(void)
 
 void CBlast4Options::x_SubmitSearch(void)
 {
+    if (m_Qsr.Empty()) {
+        m_Err = "No request exists and no RID was specified.";
+        return;
+    }
+    
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetQueue_search(*m_Qsr);
     
@@ -487,19 +496,39 @@ void CBlast4Options::x_PollUntilDone(bool poll_immed)
     }
 }
 
-void CBlast4Options::x_Init(CBlastOptionsHandle * algo_opts,
+void CBlast4Options::x_Init(CBlastOptionsHandle * opts_handle,
                             const char          * program,
                             const char          * service)
 {
-    m_Verbose   = false;
-    m_Pending   = false;
     m_ErrIgn    = 5;
+    m_Pending   = false;
+    m_Verbose   = false;
     
     m_Qsr.Reset(new objects::CBlast4_queue_search_request);
     m_Qsr->SetProgram(program);
     m_Qsr->SetService(service);
-    m_Qsr->SetAlgorithm_options().Set()
-        = *(algo_opts->SetOptions().GetBlast4AlgoOpts());
+    
+    CBlast4_parameters * algo_opts =
+        opts_handle->SetOptions().GetBlast4AlgoOpts();
+    
+    if (algo_opts) {
+        m_Qsr->SetAlgorithm_options().Set() = *algo_opts;
+    } else {
+        // This happens if you do not specify eRemote for the
+        // CBlastOptions subclass constructor.
+        string errmsg("CBlast4Options: No remote API options.");
+        
+        ERR_POST(errmsg);
+        throw runtime_error(errmsg);
+    }
+}
+
+void CBlast4Options::x_Init(const string & RID)
+{
+    m_ErrIgn    = 5;
+    m_Pending   = true;
+    m_Verbose   = false;
+    m_RID       = RID;
 }
 
 // the "int" version is not actually used (no program options need it.)
@@ -558,6 +587,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/06 00:16:39  bealer
+* - Add RID capability.
+* - Detect lack of eRemote flag.
+*
 * Revision 1.4  2004/02/05 19:20:39  bealer
 * - Add retry capability to API code.
 *
