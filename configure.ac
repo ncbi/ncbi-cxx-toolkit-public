@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.188 2003/05/19 18:41:30 ucko Exp $
+#  $Id: configure.ac,v 1.189 2003/05/19 19:12:09 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -714,7 +714,10 @@ fi
 #### Set compiler prefix for non-native compilers
 case "$host_os:$compiler" in
    *:GCC | *:KCC | *:ICC )
-      compiler_pfx="${compiler}-" ;;
+      compiler_pfx="${compiler}-"
+      compiler_vpfx=`echo "${compiler}${compiler_ver}-" | \
+         sed -e 's/\.//g; s/[\([0-9][0-9][0-9]\)[0-9]*]/\1/'`
+      ;;
 esac
 
 
@@ -2397,7 +2400,10 @@ if test "$with_fltk" != "no"; then
          FLTK_PATH="$NCBI/fltk"
       fi
    fi
-   if test -d "$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+   if test -d "$FLTK_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+        -a -z "$FLTK_ARCH_PATH"; then
+      FLTK_ARCH_PATH="$FLTK_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
+   elif test -d "$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$FLTK_ARCH_PATH"; then
       FLTK_ARCH_PATH="$FLTK_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
    else
@@ -2453,7 +2459,10 @@ if test "$with_wxwin" != "no" ; then
          WXWIN_PATH="$NCBI/wxwin"
       fi
    fi
-   if test -d "$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+   if test -d "$WXWIN_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
+        -a -z "$WXWIN_ARCH_PATH"; then
+      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
+   elif test -d "$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}/lib" \
         -a -z "$WXWIN_ARCH_PATH"; then
       WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
    else
