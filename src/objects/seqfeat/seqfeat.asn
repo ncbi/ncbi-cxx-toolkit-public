@@ -1,4 +1,4 @@
---$Revision: 1.7 $
+--$Revision: 1.8 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -229,7 +229,7 @@ Gene-ref ::= SEQUENCE {
     maploc VisibleString OPTIONAL ,    -- descriptive map location
     pseudo BOOLEAN DEFAULT FALSE ,          -- pseudogene
     db SET OF Dbtag OPTIONAL ,      -- ids in other dbases
-	syn SET OF VisibleString }      -- synonyms for locus
+	syn SET OF VisibleString OPTIONAL }      -- synonyms for locus
 
 END
 
