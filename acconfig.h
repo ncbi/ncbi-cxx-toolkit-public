@@ -21,6 +21,3 @@
 
 /* "auto_ptr" template class is not implemented in <memory> */
 #undef HAVE_NO_AUTO_PTR
-
-/* "snprintf()" is not defined in <stdio.h> */
-#undef HAVE_NO_SNPRINTF
