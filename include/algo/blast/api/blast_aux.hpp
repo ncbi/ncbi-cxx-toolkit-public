@@ -57,7 +57,7 @@ USING_SCOPE(objects);
  */
 NCBI_XBLAST_EXPORT
 BlastMask*
-CSeqLoc2BlastMask(CConstRef<CSeq_loc> sl, int index);
+CSeqLoc2BlastMask(const CSeq_loc *slp, int index);
 
 CRef<CSeq_loc>
 BlastMask2CSeqLoc(BlastMask* mask);
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/11 17:12:10  dondosha
+* Do not use CConstRef as argument to CSeqLoc2BlastMask
+*
 * Revision 1.8  2003/08/11 16:09:53  dondosha
 * Pass CConstRef by value in CSeqLoc2BlastMask
 *
