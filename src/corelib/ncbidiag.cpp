@@ -194,7 +194,7 @@ void CDiagBuffer::Flush(void)
     EDiagSev sev = m_Diag->GetSeverity();
     if ( ostr->pcount() ) {
         const char* message = ostr->str();
-        ostr->rdbuf()->freeze(0);
+        ostr->rdbuf()->freeze(false);
         SDiagMessage mess
             (sev, message, ostr->pcount(),
              m_Diag->GetFile(), m_Diag->GetLine(),
@@ -204,8 +204,8 @@ void CDiagBuffer::Flush(void)
         DiagHandler(mess);
 
 #if defined(NCBI_COMPILER_KCC)
-        // KCC's implementation of "freeze(0)" makes the ostrstream buffer
-        // stuck. We need to replace the frozen stream with the new one.
+        // KCC's implementation of "freeze(false)" makes the ostrstream buffer
+        // stuck.  We need to replace the frozen stream with the new one.
         delete ostr;
         m_Stream = new CNcbiOstrstream;
 #endif
@@ -277,7 +277,7 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
     Write(ostr, flags);
     ostr.put('\0');
     str = ostr.str();
-    ostr.rdbuf()->freeze(0);
+    ostr.rdbuf()->freeze(false);
 }
 
 
@@ -351,13 +351,13 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os,
     // (<err_code>.<err_subcode>) or (err_text)
     if ((m_ErrCode  ||  m_ErrSubCode || m_ErrText)  &&
         IsSetDiagPostFlag(eDPF_ErrCode, m_Flags)) {
-        os << "(";
+        os << '(';
         if (m_ErrText) {
             os << m_ErrText;
         } else {
             os << m_ErrCode;
             if ( IsSetDiagPostFlag(eDPF_ErrSubCode, m_Flags)) {
-                os << "." << m_ErrSubCode;
+                os << '.' << m_ErrSubCode;
             }
         }
         os << ") ";
@@ -375,7 +375,7 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream& os,
     if (have_description) {
         if (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
             !description.m_Message.empty())
-            os << NcbiEndl << description.m_Message << " ";
+            os << NcbiEndl << description.m_Message << ' ';
         if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
             !description.m_Explanation.empty())
             os << NcbiEndl << description.m_Explanation;
@@ -698,7 +698,7 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
 {
     {
         ostrstream os;
-        os << endl << "NCBI C++ Exception:" << endl << '\0';
+        os << '\n' << "NCBI C++ Exception:" << '\n';
         *this << (string)CNcbiOstrstreamToString(os);
     }
     const CException* pex;
@@ -775,7 +775,7 @@ void CNcbiDiag::DiagAssert(const char* file, size_t line,
                            const char* expression)
 {
     CNcbiDiag(file, line, NCBI_NS_NCBI::eDiag_Fatal, eDPF_Trace) <<
-        "Assertion failed: (" << expression << ")" << Endm;
+        "Assertion failed: (" << expression << ')' << Endm;
 }
 
 void CNcbiDiag::DiagValidate(const char* file, size_t line,
@@ -1065,7 +1065,7 @@ bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
         } else if (err_ready) {
         // Get line of explanation message
             if (!err_text.empty()) {
-                err_text += "\n";
+                err_text += '\n';
             }
             err_text += str;
         }
@@ -1105,6 +1105,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.76  2003/10/31 19:38:53  lavr
+ * No '\0' in exception reporting
+ *
  * Revision 1.75  2003/09/26 15:54:13  vakatov
  * CNcbiDiag::DiagAssert() -- print everything (trace-like -- file, line, etc.)
  * in the message
