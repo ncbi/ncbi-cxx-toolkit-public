@@ -52,7 +52,6 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/general/Name_std.hpp>
-#include <objects/biblio/Auth_list.hpp>
 
 // Object manager includes
 #include <objmgr/scope.hpp>
@@ -163,6 +162,9 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_descr", "print all found descriptors");
     arg_desc->AddFlag("print_cds", "print CDS");
     arg_desc->AddFlag("print_features", "print all found features");
+    arg_desc->AddFlag("print_mapper",
+                      "print retult of CSeq_loc_Mapper "
+                      "(when -print_features is set)");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("by_product", "Search features by their product");
     arg_desc->AddFlag("count_types",
@@ -327,6 +329,7 @@ int CDemoApp::Run(void)
         GetVariant<CSeqdesc>(args["desc_type"]);
     bool print_cds = args["print_cds"];
     bool print_features = args["print_features"];
+    bool print_mapper = args["print_mapper"];
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
@@ -479,18 +482,19 @@ int CDemoApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
 
+    CSeq_entry_Handle added_entry;
     if ( args["file"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["file"].AsInputFile() >> MSerial_AsnText >> *entry;
         if ( used_memory_check ) {
             exit(0);
         }
-        scope.AddTopLevelSeqEntry(*entry);
+        added_entry = scope.AddTopLevelSeqEntry(*entry);
     }
     if ( args["bfile"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["bfile"].AsInputFile() >> MSerial_AsnBinary >> *entry;
-        scope.AddTopLevelSeqEntry(*entry);
+        added_entry = scope.AddTopLevelSeqEntry(*entry);
     }
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
@@ -535,9 +539,10 @@ int CDemoApp::Run(void)
         NcbiCout << "-------------------- END --------------------\n";
     }
 
+    CRef<CSeq_id> search_id = id;
     CRef<CSeq_loc> whole_loc(new CSeq_loc);
     // No region restrictions -- the whole bioseq is used:
-    whole_loc->SetWhole(*id);
+    whole_loc->SetWhole(*search_id);
     CRef<CSeq_loc> range_loc;
     TSeqPos range_from, range_to;
     if ( args["range_from"] || args["range_to"] ) {
@@ -554,7 +559,7 @@ int CDemoApp::Run(void)
             range_to = handle.GetBioseqLength()-1;
         }
         range_loc.Reset(new CSeq_loc);
-        range_loc->SetInt().SetId(*id);
+        range_loc->SetInt().SetId(*search_id);
         range_loc->SetInt().SetFrom(range_from);
         range_loc->SetInt().SetTo(range_to);
     }
@@ -712,7 +717,8 @@ int CDemoApp::Run(void)
             base_sel.SetSearchExternal(handle);
         }
         if ( limit_tse ) {
-            base_sel.SetLimitTSE(handle.GetTopLevelEntry());
+            base_sel.SetLimitTSE(added_entry?
+                                 added_entry: handle.GetTopLevelEntry());
         }
         if ( include_allnamed ) {
             base_sel.SetAllNamedAnnots();
@@ -751,7 +757,7 @@ int CDemoApp::Run(void)
                 subtypes_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
             }
             CRef<CSeq_loc_Mapper> mapper;
-            if ( print_features ) {
+            if ( print_features && print_mapper ) {
                 mapper.Reset(new CSeq_loc_Mapper(handle,
                                                  CSeq_loc_Mapper::eSeqMap_Up));
             }
@@ -787,10 +793,13 @@ int CDemoApp::Run(void)
                         NcbiCout << "\n" <<
                             MSerial_AsnText <<
                             it->GetOriginalFeature().GetLocation();
-                        NcbiCout << "Mapped location:";
-                        NcbiCout << "\n" <<
-                            MSerial_AsnText <<
-                            *mapper->Map(it->GetOriginalFeature().GetLocation());
+                        if ( mapper ) {
+                            NcbiCout << "Mapped location:";
+                            NcbiCout << "\n" <<
+                                MSerial_AsnText <<
+                                *mapper->Map(it->GetOriginalFeature()
+                                             .GetLocation());
+                        }
                     }
                     else {
                         NcbiCout << "Location:\n" <<
@@ -843,14 +852,31 @@ int CDemoApp::Run(void)
             // sequences in the same top level seq-entry, ignore far pointers.
             SAnnotSelector sel = base_sel;
             sel.SetFeatType(CSeqFeatData::e_Cdregion);
+            size_t no_product_count = 0;
             for ( CFeat_CI it(scope, *range_loc, sel); it;  ++it ) {
                 count++;
                 // Get seq vector filtered with the current feature location.
                 // e_ViewMerged flag forces each residue to be shown only once.
-                CSeqVector cds_vect
-                    (!by_product? it->GetProduct(): it->GetLocation(),
-                     scope,
-                     CBioseq_Handle::eCoding_Iupac);
+                CSeqVector cds_vect;
+                if ( by_product ) {
+                    cds_vect = CSeqVector(it->GetLocation(), scope,
+                                          CBioseq_Handle::eCoding_Iupac);
+                }
+                else {
+                    if ( it->IsSetProduct() ) {
+                        cds_vect = CSeqVector(it->GetProduct(), scope,
+                                              CBioseq_Handle::eCoding_Iupac);
+                    }
+                    else {
+                        ++no_product_count;
+                        /*
+                        ERR_POST("Cdregion with no product");
+                        NcbiCout << "Original location: " << MSerial_AsnText <<
+                            it->GetOriginalFeature().GetLocation();
+                        */
+                        continue;
+                    }
+                }
                 // Print first 10 characters of each cd-region
                 if ( print_cds ) {
                     NcbiCout << "cds" << count <<
@@ -885,6 +911,10 @@ int CDemoApp::Run(void)
                 }
             }
             NcbiCout << "Feat count (loc range, cds):\t" << count << NcbiEndl;
+            if ( no_product_count ) {
+                NcbiCout << "*** no product on " << no_product_count << " cds"
+                         << NcbiEndl;
+            }
         }
 
         // Search features only in the TSE containing the target bioseq.
@@ -901,6 +931,15 @@ int CDemoApp::Run(void)
                  << count << NcbiEndl;
 
         if ( !only_features ) {
+            if ( whole_tse ) {
+                count = 0;
+                for (CFeat_CI it(handle.GetTopLevelEntry(), base_sel);
+                     it; ++it) {
+                    count++;
+                }
+                NcbiCout << "Feat count        (TSE):\t" << count << NcbiEndl;
+            }
+
             // The same way may be used to iterate aligns and graphs,
             // except that there is no type filter for both of them.
             count = 0;
@@ -1045,6 +1084,11 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2005/02/24 17:13:20  vasilche
+* Added flag -print_mapper to check CSeq_loc_Mapper.
+* Added scan of all features in TSE when -whole_tse is specified.
+* Avoid failure when cdregions don't have product.
+*
 * Revision 1.98  2005/02/01 21:55:11  grichenk
 * Added direction flag for mapping between top level sequence
 * and segments.
