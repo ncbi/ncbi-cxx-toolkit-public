@@ -37,6 +37,7 @@
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
+#include <objects/mmdb2/Model_type.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -52,6 +53,7 @@
 #include <wx/confbase.h>
 #include <wx/fileconf.h>
 #include <wx/filename.h>
+#include <wx/choicdlg.h>
 
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_glcanvas.hpp"
@@ -77,6 +79,7 @@
 #include "cn3d/cdd_splash_dialog.hpp"
 #include "cn3d/command_processor.hpp"
 #include "cn3d/animation_controls.hpp"
+#include "cn3d/cn3d_cache.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -125,7 +128,7 @@ static void SaveFavorites(void);
 BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_CLOSE     (                                         StructureWindow::OnCloseWindow)
     EVT_MENU      (MID_EXIT,                                StructureWindow::OnExit)
-    EVT_MENU      (MID_OPEN,                                StructureWindow::OnOpen)
+    EVT_MENU_RANGE(MID_OPEN, MID_NETWORK_OPEN,              StructureWindow::OnOpen)
     EVT_MENU_RANGE(MID_SAVE_SAME, MID_SAVE_AS,              StructureWindow::OnSave)
     EVT_MENU      (MID_PNG,                                 StructureWindow::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_STEREO,                StructureWindow::OnAdjustView)
@@ -164,6 +167,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menuBar = new wxMenuBar;
     fileMenu = new wxMenu;
     fileMenu->Append(MID_OPEN, "&Open\tCtrl+O");
+    fileMenu->Append(MID_NETWORK_OPEN, "&Network Load...");
     fileMenu->Append(MID_SAVE_SAME, "&Save\tCtrl+S");
     fileMenu->Append(MID_SAVE_AS, "Save &As...");
     fileMenu->Append(MID_PNG, "&Export PNG");
@@ -1406,12 +1410,37 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
         SaveDialog(true, false);                        // give structure window a chance to save data
     }
 
-    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
-        "", "", "All Files|*.*|CDD (*.acd)|*.acd|Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
-        wxOPEN | wxFILE_MUST_EXIST);
+    if (event.GetId() == MID_OPEN) {
+        const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
+            "", "", "All Files|*.*|CDD (*.acd)|*.acd|Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
+            wxOPEN | wxFILE_MUST_EXIST);
+        if (!filestr.IsEmpty())
+            LoadData(filestr.c_str(), false);
+    }
 
-    if (!filestr.IsEmpty())
-        LoadData(filestr.c_str());
+    else if (event.GetId() == MID_NETWORK_OPEN) {
+        wxString id = wxGetTextFromUser("Please enter a PDB or MMDB id", "Input id");
+        if (id.size() == 0)
+            return;
+
+        wxArrayString choiceStrs;
+        choiceStrs.Add("alpha");
+        choiceStrs.Add("single");
+        choiceStrs.Add("PDB");
+        wxString modelStr = wxGetSingleChoice(
+            "Please select which type of model you'd like to load", "Select model", choiceStrs);
+        if (modelStr.size() == 0)
+            return;
+        EModel_type model = eModel_type_ncbi_all_atom;
+        if (modelStr == "alpha")
+            model = eModel_type_ncbi_backbone;
+        else if (modelStr == "PDB")
+            model = eModel_type_pdb_model;
+
+        CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model);
+        if (mime)
+            LoadData(NULL, false, mime);
+    }
 }
 
 void StructureWindow::OnSave(wxCommandEvent& event)
@@ -1503,6 +1532,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/01/17 01:47:26  thiessen
+* add network load
+*
 * Revision 1.25  2004/01/17 00:17:31  thiessen
 * add Biostruc and network structure load
 *

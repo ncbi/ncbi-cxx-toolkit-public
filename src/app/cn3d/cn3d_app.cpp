@@ -60,8 +60,8 @@
 #include <wx/filesys.h>
 #include <wx/fs_zip.h>
 
-#include "cn3d/cn3d_app.hpp"
 #include "cn3d/asn_reader.hpp"
+#include "cn3d/cn3d_app.hpp"
 #include "cn3d/structure_window.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/structure_set.hpp"
@@ -622,6 +622,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/01/17 01:47:26  thiessen
+* add network load
+*
 * Revision 1.12  2004/01/17 00:17:28  thiessen
 * add Biostruc and network structure load
 *

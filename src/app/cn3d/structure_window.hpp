@@ -82,7 +82,7 @@ public:
     void SendCommand(const std::string& toApp, const std::string& command, const std::string& data);
 
     // public methods
-    bool LoadData(const char *filename, bool force = false, ncbi::objects::CNcbi_mime_asn1 *mimeData = NULL);
+    bool LoadData(const char *filename, bool force, ncbi::objects::CNcbi_mime_asn1 *mimeData = NULL);
     bool SaveDialog(bool prompt, bool canCancel);
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
@@ -91,6 +91,7 @@ public:
     enum {
         // File menu
             MID_OPEN,
+            MID_NETWORK_OPEN,
             MID_SAVE_SAME,
             MID_SAVE_AS,
             MID_PNG,
@@ -266,6 +267,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/01/17 01:47:27  thiessen
+* add network load
+*
 * Revision 1.10  2004/01/17 00:17:32  thiessen
 * add Biostruc and network structure load
 *
