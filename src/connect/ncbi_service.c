@@ -447,22 +447,35 @@ char* SERV_Print(SERV_ITER iter)
 }
 
 
-double SERV_Preference(double pref, double gap, double mean)
+/*
+ * Note parameters' ranges here:
+ * 0.0 <= pref <= 1.0
+ * 0.0 <  gap  <= 1.0
+ * n >= 2
+ * Hence, the formula below always yields a value in the range [0.0 .. 1.0].
+ */
+double SERV_Preference(double pref, double gap, int n)
 {
+    assert(0.0 <= pref && pref <= 1.0);
+    assert(0.0 <  gap  && gap  <= 1.0);
+    assert(n >= 2);
     if (gap >= pref)
         return gap;
-    else if (gap >= 0.75*mean)
+    else if (gap >= 0.75*(1.0/(double) n))
         return pref;
     else
-        return 2.0*gap*pref;
+        return 2.5*gap*pref;
 }
 
 
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2003/02/13 22:04:16  lavr
+ * Document SERV_Preference() domain, change last argument, tweak formula
+ *
  * Revision 6.43  2003/01/31 21:19:30  lavr
- * +SERV_GetInfoP(), preference measure for preferred host, and SERV_Preference()
+ * +SERV_GetInfoP(), preference measure for preferred host, SERV_Preference()
  *
  * Revision 6.42  2002/11/12 05:53:01  lavr
  * Fit a long line within 80 chars
