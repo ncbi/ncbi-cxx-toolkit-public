@@ -359,6 +359,14 @@ public:
     /// Return Client name
     using CNetServiceClient::GetClientName;
 
+    /// Shutdown level
+    ///
+    enum EShutdownLevel {
+        eNoShutdown = 0, ///< No Shutdown was requested
+        eNormal,         ///< Normal shutdown was requested
+        eImmidiate       ///< Urgent shutdown was requested
+    };
+
 protected:
 
     /// Shutdown the server daemon.
@@ -634,6 +642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/22 16:09:05  didenko
+ * + enum EShutdownLevel
+ *
  * Revision 1.15  2005/03/21 16:53:31  didenko
  * + creating from PluginManager
  *
