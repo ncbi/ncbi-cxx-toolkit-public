@@ -80,6 +80,8 @@ CNcbiApplication::CNcbiApplication(void)
 {
     m_DisableArgDesc = false;
     m_HideArgs = 0;
+    m_StdioFlags = 0;
+    m_CinBuffer = 0;
 
     // Register the app. instance
     if ( m_Instance ) {
@@ -107,6 +109,9 @@ CNcbiApplication::~CNcbiApplication(void)
 {
     m_Instance = 0;
     FlushDiag(0, true);
+    if (m_CinBuffer) {
+        delete [] m_CinBuffer;
+    } 
 }
 
 
@@ -164,10 +169,7 @@ int CNcbiApplication::AppMain
  const char*        conf,
  const string&      name)
 {
-    // SUN WorkShop STL stream library has significant performance loss when
-    // sync_with_stdio is true (default)
-    // So we turn off sync_with_stdio here:
-    IOS_BASE::sync_with_stdio(false);
+    x_SetupStdio();
 
     // Get program name
     string appname = name;
@@ -726,6 +728,35 @@ void CNcbiApplication::HideStdArgs(THideStdArgs hide_mask)
     m_HideArgs = hide_mask;
 }
 
+void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
+{
+    // do not call this function more than once
+    // and from places other than App constructor
+    _ASSERT(m_StdioFlags == 0);
+    m_StdioFlags = stdio_flags;
+}
+
+void CNcbiApplication::x_SetupStdio(void)
+{
+    if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
+        // SUN WorkShop STL stream library has significant performance loss when
+        // sync_with_stdio is true (default)
+        // So we turn off sync_with_stdio here:
+        IOS_BASE::sync_with_stdio(false);
+    }
+
+    if ((m_StdioFlags & fDefault_CinBufferSize) == 0) {
+#if defined(NCBI_COMPILER_GCC)
+#  if NCBI_COMPILER_VERSION >= 300
+        _ASSERT(!m_CinBuffer);
+        const size_t kCinBufSize = 4096;
+        m_CinBuffer = new char[kCinBufSize];
+        cin.rdbuf()->pubsetbuf(m_CinBuffer, kCinBufSize);
+#  endif
+#endif
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -733,6 +764,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2003/03/19 19:37:10  gouriano
+ * added optional adjustment of stdio streams
+ *
  * Revision 1.56  2003/03/14 21:01:06  kans
  * commented out include Processes because Mac OS 10.2 libraries give an undefined symbol error
  *

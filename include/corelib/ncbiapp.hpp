@@ -144,20 +144,6 @@ public:
     // SetArgDescriptions(). Throw exception if no descriptions have been set.
     const CArgs& GetArgs(void) const;
 
-    // By default ArgDescriptions are enabled (i.e. required)
-    void DisableArgDescriptions(void);
-
-    // Hide descriptions of the standard flags (-h, -logfile, -conffile, -version)
-    // in the usage message (you still can pass them in the cmd.-line)
-    enum EHideStdArgs {
-        fHideHelp     = 0x01,
-        fHideLogfile  = 0x02,
-        fHideConffile = 0x04,
-        fHideVersion  = 0x08
-    };
-    typedef int THideStdArgs;  // binary OR of "EHideStdArgs"
-    void HideStdArgs(THideStdArgs hide_mask);
-
     // Get the application's cached environment
     const CNcbiEnvironment& GetEnvironment(void) const;
 
@@ -178,6 +164,30 @@ public:
 
 
 protected:
+    // By default ArgDescriptions are enabled (i.e. required)
+    void DisableArgDescriptions(void);
+
+    // Hide descriptions of the standard flags (-h, -logfile, -conffile, -version)
+    // in the usage message (you still can pass them in the cmd.-line)
+    enum EHideStdArgs {
+        fHideHelp     = 0x01,
+        fHideLogfile  = 0x02,
+        fHideConffile = 0x04,
+        fHideVersion  = 0x08
+    };
+    typedef int THideStdArgs;  // binary OR of "EHideStdArgs"
+    void HideStdArgs(THideStdArgs hide_mask);
+
+    // Adjust behavior of standard i/o streams
+    // Setting a flag means "use compilers' defaults"
+    enum EStdioSetup {
+        fDefault_SyncWithStdio  = 0x01,
+        fDefault_CinBufferSize  = 0x02
+    };
+    typedef int TStdioSetupFlags;  // binary OR of "EStdioSetup"
+    void SetStdioFlags(TStdioSetupFlags stdio_flags);
+
+
     // Set program version (call it from constructor)
     // Default:  0.0.0 (unknown)
     void SetVersion(const CVersionInfo& version);
@@ -226,6 +236,8 @@ protected:
     string GetHomeDir(void);
 
 private:
+    void x_SetupStdio(void);
+
     static CNcbiApplication*   m_Instance;   // current app.instance
     auto_ptr<CVersionInfo>     m_Version;    // program version
     auto_ptr<CNcbiEnvironment> m_Environ;    // cached application environment
@@ -236,6 +248,8 @@ private:
     auto_ptr<CArgs>            m_Args;       // parsed cmd.-line args
     bool                       m_DisableArgDesc;
     THideStdArgs               m_HideArgs;
+    TStdioSetupFlags           m_StdioFlags;
+    char*                      m_CinBuffer;
 };
 
 
@@ -273,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/03/19 19:36:09  gouriano
+ * added optional adjustment of stdio streams
+ *
  * Revision 1.28  2002/12/26 17:12:42  ivanov
  * Added version info and Set/GetVersion functions into CNcbiApplication class
  *
