@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/03/07 23:00:15  lavr
+ * Default value for SConnNetInfo::stateless set to empty (FALSE)
+ *
  * Revision 6.11  2001/03/02 20:07:07  lavr
  * Typos fixed
  *
@@ -194,7 +197,7 @@ typedef struct {
 #define DEF_CONN_DEBUG_PRINTOUT   ""
                                   
 #define REG_CONN_STATELESS        "STATELESS"
-#define DEF_CONN_STATELESS        "TRUE"
+#define DEF_CONN_STATELESS        ""
 
 #define REG_CONN_FIREWALL         "FIREWALL"
 #define DEF_CONN_FIREWALL         ""
