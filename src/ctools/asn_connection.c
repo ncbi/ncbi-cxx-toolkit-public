@@ -33,9 +33,6 @@
 #include <connect/ncbi_service_connector.h>
 #include <ctools/asn_connection.h>
 #include "../connect/ncbi_priv.h"
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 
 #ifdef __cplusplus
@@ -174,6 +171,9 @@ CONN CreateAsnConn_Service(const char*     service,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2003/11/13 16:01:31  lavr
+ * Included headers revised
+ *
  * Revision 1.4  2002/08/07 16:38:18  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *
