@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/04/09 14:38:23  thiessen
+* add cdd splash screen
+*
 * Revision 1.3  2001/12/06 23:13:44  thiessen
 * finish import/align new sequences into single-structure data; many small tweaks
 *
@@ -55,7 +58,7 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// The following is taken unmodified from wxDesigner's C++ header from annotate_dialog.wdr
+// The following is taken unmodified from wxDesigner's C++ header from cdd_ref_dialog.wdr
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <wx/image.h>
@@ -99,10 +102,10 @@ BEGIN_EVENT_TABLE(CDDRefDialog, wxDialog)
     EVT_BUTTON      (-1,    CDDRefDialog::OnButton)
 END_EVENT_TABLE()
 
-CDDRefDialog::CDDRefDialog(StructureSet *structureSet,
+CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
-        sSet(structureSet)
+        sSet(structureSet), dialogHandle(handle)
 {
     if (!structureSet || !(descrSet = structureSet->GetCDDDescrSet())) {
         ERR_POST(Error << "CDDRefDialog::CDDRefDialog() - error getting descr set data");
@@ -123,10 +126,17 @@ CDDRefDialog::CDDRefDialog(StructureSet *structureSet,
     topSizer->SetSizeHints(this);
 }
 
+CDDRefDialog::~CDDRefDialog(void)
+{
+    // so owner knows that this dialog has been destroyed
+    if (dialogHandle && *dialogHandle) *dialogHandle = NULL;
+    TESTMSG("CDD references dialog destroyed");
+}
+
 // same as hitting done
 void CDDRefDialog::OnCloseWindow(wxCloseEvent& event)
 {
-    EndModal(wxOK);
+    Destroy();
 }
 
 void CDDRefDialog::OnButton(wxCommandEvent& event)
@@ -187,7 +197,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     }
 
     else if (event.GetId() == ID_B_DONE) {
-        EndModal(wxOK);
+        Destroy();
     }
 }
 

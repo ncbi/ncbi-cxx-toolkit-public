@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/04/09 14:38:23  thiessen
+* add cdd splash screen
+*
 * Revision 1.1  2001/10/09 18:57:26  thiessen
 * add CDD references editing dialog
 *
@@ -59,13 +62,16 @@ class StructureSet;
 class CDDRefDialog : public wxDialog
 {
 public:
-    CDDRefDialog(StructureSet *structureSet,
+    CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos = wxDefaultPosition);
+    ~CDDRefDialog(void);
 
 private:
     StructureSet *sSet;
+    CDDRefDialog **dialogHandle;
     ncbi::objects::CCdd_descr_set *descrSet;
+
     void ResetListBox(void);
 
     // event callbacks

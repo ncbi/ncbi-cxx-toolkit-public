@@ -1,4 +1,4 @@
-/*  $Id: cn3d.rc,v 1.4 2002/04/09 14:38:25 thiessen Exp $
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -26,26 +26,53 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Required resource file for creating wxDialog-derived dialogs
+*       dialog for CDD splash screen
 *
 * ---------------------------------------------------------------------------
-* $Log: cn3d.rc,v $
-* Revision 1.4  2002/04/09 14:38:25  thiessen
+* $Log$
+* Revision 1.1  2002/04/09 14:38:24  thiessen
 * add cdd splash screen
-*
-* Revision 1.3  2002/01/18 13:55:29  thiessen
-* add help menu and viewer
-*
-* Revision 1.2  2001/05/18 23:25:07  thiessen
-* add program icon
-*
-* Revision 1.1  2001/05/17 13:18:56  thiessen
-* add cn3d.rc
 *
 * ===========================================================================
 */
 
-cn3d ICON "cn3d.ico"
+#ifndef CN3D_CDD_SPLASH_DIALOG__HPP
+#define CN3D_CDD_SPLASH_DIALOG__HPP
 
-#include <wx/msw/wx.rc>
-//#include <wx/html/msw/wxhtml.rc>
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistl.hpp>
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
+
+#include <wx/wx.h>
+
+
+BEGIN_SCOPE(Cn3D)
+
+class Cn3DMainFrame;
+class StructureSet;
+
+class CDDSplashDialog : public wxDialog
+{
+public:
+    CDDSplashDialog(Cn3DMainFrame *cn3dFrame, StructureSet *structureSet,
+        wxWindow* parent, wxWindowID id, const wxString& title,
+        const wxPoint& pos = wxDefaultPosition);
+
+private:
+    Cn3DMainFrame *structureWindow;
+    StructureSet *sSet;
+
+    // event callbacks
+    void OnCloseWindow(wxCloseEvent& event);
+    void OnButton(wxCommandEvent& event);
+
+    DECLARE_EVENT_TABLE()
+};
+
+END_SCOPE(Cn3D)
+
+#endif // CN3D_CDD_SPLASH_DIALOG__HPP

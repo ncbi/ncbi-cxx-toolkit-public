@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2002/04/09 14:38:27  thiessen
+* add cdd splash screen
+*
 * Revision 1.58  2002/02/19 14:59:39  thiessen
 * add CDD reject and purge sequence
 *
@@ -306,6 +309,7 @@ private:
 class Cn3DGLCanvas;
 class CDDAnnotateDialog;
 class MultiTextDialog;
+class CDDRefDialog;
 
 class Cn3DMainFrame: public wxFrame, public MultiTextDialogOwner
 {
@@ -417,6 +421,7 @@ private:
     // non-modal dialogs owned by this object
     CDDAnnotateDialog *cddAnnotateDialog;
     MultiTextDialog *cddDescriptionDialog, *cddNotesDialog;
+    CDDRefDialog *cddRefDialog;
     void DestroyNonModalDialogs(void);
 
     void OnExit(wxCommandEvent& event);

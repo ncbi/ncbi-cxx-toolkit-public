@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.129  2002/04/09 14:38:26  thiessen
+* add cdd splash screen
+*
 * Revision 1.128  2002/03/07 19:16:04  thiessen
 * don't auto-show sequence windows
 *
@@ -535,6 +538,7 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cdd_splash_dialog.hpp"
 
 #include <ncbienv.h>
 
@@ -1102,7 +1106,7 @@ END_EVENT_TABLE()
 Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), structureLimit(1000),
-    cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
+    cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL), cddRefDialog(NULL),
     helpController(NULL), helpConfig(NULL)
 {
     topWindow = this;
@@ -1425,7 +1429,7 @@ void Cn3DMainFrame::OnTimer(wxTimerEvent& event)
 
     else if (animationMode == ANIM_SPIN) {
         // pretend the user dragged the mouse to the right
-        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV, 4, 0);
+        glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV, 3, 0);
         glCanvas->Refresh(false);
     }
 }
@@ -1626,6 +1630,7 @@ void Cn3DMainFrame::DestroyNonModalDialogs(void)
     if (cddAnnotateDialog) cddAnnotateDialog->Destroy();
     if (cddNotesDialog) cddNotesDialog->Destroy();
     if (cddDescriptionDialog) cddDescriptionDialog->Destroy();
+    if (cddRefDialog) cddRefDialog->Destroy();
 }
 
 void Cn3DMainFrame::OnPreferences(wxCommandEvent& event)
@@ -1699,8 +1704,10 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             break;
 
         case MID_EDIT_CDD_REFERENCES: {
-            CDDRefDialog dialog(glCanvas->structureSet, this, -1, "CDD References");
-            dialog.ShowModal();
+            if (!cddRefDialog)
+                cddRefDialog = new CDDRefDialog(
+                    glCanvas->structureSet, &cddRefDialog, this, -1, "CDD References");
+            cddRefDialog->Show(true);
             break;
         }
 
@@ -1944,6 +1951,12 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         SetDiagPostLevel(eDiag_Info);
         if (readOK) {
             glCanvas->structureSet = new StructureSet(mime, structureLimit, glCanvas->renderer);
+            // if CDD is contained in a mime, then show CDD splash screen
+            if (glCanvas->structureSet->IsCDD()) {
+                CDDSplashDialog *splash = new CDDSplashDialog(
+                    this, glCanvas->structureSet, this, -1, "CDD Descriptive Items", wxPoint(200,50));
+                splash->Show(true);
+            }
         } else {
             ERR_POST(Warning << "error: " << err);
             delete mime;
@@ -2342,4 +2355,5 @@ bool RegistrySetString(const std::string& section, const std::string& name, cons
 }
 
 END_SCOPE(Cn3D)
+
 

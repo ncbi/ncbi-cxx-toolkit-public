@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/04/09 14:38:22  thiessen
+* add cdd splash screen
+*
 * Revision 1.23  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -257,7 +260,7 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
 CDDAnnotateDialog::~CDDAnnotateDialog(void)
 {
     // so owner knows that this dialog has been destroyed
-    if (*dialogHandle) *dialogHandle = NULL;
+    if (dialogHandle && *dialogHandle) *dialogHandle = NULL;
     TESTMSG("destroyed CDDAnnotateDialog");
 }
 
