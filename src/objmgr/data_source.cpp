@@ -61,6 +61,9 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
+#include <objmgr/impl/prefetch_impl.hpp>
+#include <corelib/ncbimtx.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -163,6 +166,11 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
 
 CDataSource::~CDataSource(void)
 {
+    if (m_PrefetchThread) {
+        // Wait for the prefetch thread to stop
+        m_PrefetchThread->Terminate();
+        m_PrefetchThread->Join();
+    }
     DropAllTSEs();
     m_Loader.Reset();
 }
@@ -1020,6 +1028,23 @@ void CDataSource::x_CollectBioseqs(const CSeq_entry_Info& info,
 }
 
 
+void CDataSource::Prefetch(CPrefetchToken_Impl& token)
+{
+#if !defined(NCBI_NO_THREADS)
+    if (!m_PrefetchThread) {
+        CFastMutexGuard guard(m_PrefetchLock);
+        // Check againi
+        if (!m_PrefetchThread) {
+            m_PrefetchThread.Reset(new CPrefetchThread(*this));
+            m_PrefetchThread->Run();
+        }
+    }
+    _ASSERT(m_PrefetchThread);
+    m_PrefetchThread->AddRequest(token);
+#endif
+}
+
+
 void CDataSource::DebugDump(CDebugDumpContext /*ddc*/,
                             unsigned int /*depth*/) const
 {
@@ -1032,6 +1057,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.132  2004/04/16 13:31:47  grichenk
+* Added data pre-fetching functions.
+*
 * Revision 1.131  2004/03/31 17:08:07  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

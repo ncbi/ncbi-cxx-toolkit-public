@@ -148,7 +148,6 @@ public:
     CSeq_annot_Handle AddAnnot(const CSeq_annot& annot,
                                TPriority pri = kPriority_NotSet);
 
-
     //////////////////////////////////////////////////////////////////
     // Modification of existing object tree
     CBioseq_EditHandle GetEditHandle(const CBioseq_Handle& seq);
@@ -237,6 +236,9 @@ private:
     // to prevent copying
     CScope_Impl(const CScope_Impl&);
     CScope_Impl& operator=(const CScope_Impl&);
+
+    // Return the highest priority loader or null
+    CDataSource* GetFirstLoaderSource(void);
 
     void UpdateAnnotIndex(const CSeq_annot& limit_annot);
     void UpdateAnnotIndex(const CSeq_annot_Handle& annot);
@@ -369,6 +371,7 @@ private:
     friend class CTSE_CI;
     friend class CSeq_annot_CI;
     friend class CSeqMap_CI;
+    friend class CPrefetchToken_Impl;
 };
 
 
@@ -378,6 +381,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/04/16 13:31:46  grichenk
+* Added data pre-fetching functions.
+*
 * Revision 1.7  2004/04/13 15:59:35  grichenk
 * Added CScope::GetBioseqHandle() with id resolving flag.
 *

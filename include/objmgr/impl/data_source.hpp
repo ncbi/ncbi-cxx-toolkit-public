@@ -67,6 +67,8 @@ class CBioseq_Info;
 
 // others
 class CBioseq_Handle;
+class CPrefetchToken_Impl;
+class CPrefetchThread;
 
 class CTSE_LockingSetLock;
 
@@ -289,6 +291,8 @@ public:
     CConstRef<CSeq_annot_Info> FindSeq_annot_Info(const CSeq_annot& annot);
     CConstRef<CBioseq_Info> FindBioseq_Info(const CBioseq& bioseq);
 
+    virtual void Prefetch(CPrefetchToken_Impl& token);
+
 private:
     friend class CAnnotTypes_CI; // using mutex etc.
     friend class CBioseq_Handle; // using mutex
@@ -297,6 +301,7 @@ private:
     friend class CSeq_entry_Info;
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
+    friend class CPrefetchToken_Impl;
 
     // attach, detach, index & unindex methods
     // TSE
@@ -394,6 +399,10 @@ private:
     // Default priority for the datasource
     TPriority             m_DefaultPriority;
 
+    // Prefetching thread and lock, used when initializing the thread
+    CRef<CPrefetchThread> m_PrefetchThread;
+    CFastMutex            m_PrefetchLock;
+
     // hide copy constructor
     CDataSource(const CDataSource&);
     CDataSource& operator=(const CDataSource&);
@@ -442,6 +451,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2004/04/16 13:31:46  grichenk
+* Added data pre-fetching functions.
+*
 * Revision 1.73  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

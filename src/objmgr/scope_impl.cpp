@@ -1354,6 +1354,18 @@ void CScope_Impl::GetAllTSEs(TTSE_Handles& tses, int kind)
 }
 
 
+CDataSource* CScope_Impl::GetFirstLoaderSource(void)
+{
+    TReadLockGuard rguard(m_Scope_Conf_RWLock);
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        if ( it->GetDataLoader() ) {
+            return &it->GetDataSource();
+        }
+    }
+    return 0;
+}
+
+
 void CScope_Impl::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CScope_Impl");
@@ -1373,6 +1385,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/04/16 13:31:47  grichenk
+* Added data pre-fetching functions.
+*
 * Revision 1.13  2004/04/14 19:12:12  vasilche
 * Added storing TSE in history when returning CSeq_entry or CSeq_annot handles.
 * Added test for main id before matching handles in GetBioseqHandleFromTSE().

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/16 13:31:47  grichenk
+* Added data pre-fetching functions.
+*
 * Revision 1.2  2004/04/05 17:00:55  grichenk
 * Fixed iterator flags
 *
@@ -125,6 +128,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/prefetch.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -173,9 +177,10 @@ protected:
     map<int, int> m_mapGiToFeat0;
     map<int, int> m_mapGiToFeat1;
 
-    int m_gi_from;
-    int m_gi_to;
-    int m_pause;
+    int  m_gi_from;
+    int  m_gi_to;
+    int  m_pause;
+    bool m_prefetch;
 };
 
 
@@ -232,6 +237,17 @@ bool CTestOM::Thread_Run(int idx)
     int delta = (to > from) ? 1 : -1;
     int pause = m_pause;
 
+    CPrefetchToken token;
+    if (m_prefetch) {
+        LOG_POST("Using prefetch");
+        // Initialize prefetch token;
+        CPrefetchToken::TIds ids;
+        for ( int i = from, end = to+delta; i != end; i += delta ) {
+            ids.push_back(CSeq_id_Handle::GetGiHandle(i));
+        }
+        token = CPrefetchToken(scope, ids);
+    }
+
     bool ok = true;
     const int kMaxErrorCount = 3;
     int error_count = 0;
@@ -243,7 +259,18 @@ bool CTestOM::Thread_Run(int idx)
 // load sequence
             CSeq_id sid;
             sid.SetGi(i);
-            CBioseq_Handle handle = scope.GetBioseqHandle(sid);
+            CBioseq_Handle handle;
+            if (m_prefetch) {
+                if (!token) {
+                    LOG_POST("T" << idx << ": gi = " << i
+                             << ": INVALID PREFETCH TOKEN");
+                    continue;
+                }
+                handle = token.NextBioseqHandle(scope);
+            }
+            else {
+                handle = scope.GetBioseqHandle(sid);
+            }
             if (!handle) {
                 LOG_POST("T" << idx << ": gi = " << i << ": INVALID HANDLE");
                 continue;
@@ -277,16 +304,16 @@ bool CTestOM::Thread_Run(int idx)
                     handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
                                         CBioseq_Handle::eStrand_Plus);
 
-                int start = max(0, int(sv.size()-60));
+                int start = max(0, int(sv.size()-600000));
                 int stop  = sv.size();
 
                 sv.GetSeqData(start, stop, buff);
-                cout << "POS: " << buff << endl;
+                //cout << "POS: " << buff << endl;
 
                 sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
                                          CBioseq_Handle::eStrand_Minus);
                 sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
-                cout << "NEG: " << buff << endl;
+                //cout << "NEG: " << buff << endl;
             }}
 
 // enumerate descriptions
@@ -391,6 +418,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("pause", "Pause",
          "Pause between requests in seconds",
          CArgDescriptions::eInteger, "0");
+    args.AddFlag("prefetch", "Use prefetching");
     return true;
 }
 
@@ -400,9 +428,10 @@ bool CTestOM::TestApp_Init(void)
     CORE_SetLOG(LOG_cxx2c());
 
     const CArgs& args = GetArgs();
-    m_gi_from = args["fromgi"].AsInteger();
-    m_gi_to   = args["togi"].AsInteger();
-    m_pause   = args["pause"].AsInteger();
+    m_gi_from  = args["fromgi"].AsInteger();
+    m_gi_to    = args["togi"].AsInteger();
+    m_pause    = args["pause"].AsInteger();
+    m_prefetch = args["prefetch"];
 
     NcbiCout << "Testing ObjectManager ("
         << "gi from "

@@ -183,6 +183,7 @@ private:
     friend class CAnnot_Collector;
     friend class CBioseq_CI;
     friend class CHeapScope;
+    friend class CPrefetchToken_Impl;
 
     CRef<CScope>      m_HeapScope;
     CRef<CScope_Impl> m_Impl;
@@ -207,6 +208,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2004/04/16 13:31:46  grichenk
+* Added data pre-fetching functions.
+*
 * Revision 1.77  2004/04/13 16:39:36  grichenk
 * Corrected comments
 *
