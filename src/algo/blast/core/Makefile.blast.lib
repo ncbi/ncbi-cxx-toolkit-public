@@ -4,7 +4,7 @@ SRC_C = aa_ungapped blast_dust blast_engine blast_extend blast_filter \
     blast_gapalign blast_hits blast_lookup blast_message blast_options \
     blast_seg blast_seqsrc blast_setup blast_stat blast_traceback blast_util \
     gapinfo greedy_align link_hsps lookup_util lookup_wrap mb_lookup ncbi_std \
-    ncbi_math blast_encoding pattern phi_extend phi_lookup
+    ncbi_math blast_encoding pattern phi_extend phi_lookup blast_psi_priv
 
 SRC   = $(SRC_C)
 
