@@ -226,7 +226,7 @@ void CDDBookRefDialog::SetWidgetStates(void)
 
     // set items in listbox
     CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
-    for (d=descrSet->Set().begin(); d!=de; d++) {
+    for (d=descrSet->Set().begin(); d!=de; ++d) {
         if ((*d)->IsBook_ref()) {
             // make client data of menu item a pointer to the CRef containing the CCdd_descr object
             listbox->Append(MakeRID((*d)->GetBook_ref()), &(*d));
@@ -316,10 +316,10 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
         CRef < CCdd_descr > *switchWith = NULL;
         if (event.GetId() == ID_B_UP && selectedItem > 0) {
             switchWith = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem - 1));
-            selectedItem--;
+            --selectedItem;
         } else if (event.GetId() == ID_B_DOWN && selectedItem < listbox->GetCount() - 1){
             switchWith = reinterpret_cast<CRef<CCdd_descr>*>(listbox->GetClientData(selectedItem + 1));
-            selectedItem++;
+            ++selectedItem;
         } else {
             WARNINGMSG("CDDBookRefDialog::OnClick() - invalid up/down request");
             return;
@@ -408,17 +408,17 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
     else if (event.GetId() == ID_B_DELETE) {
         if (selDescr) {
             CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
-            for (d=descrSet->Set().begin(); d!=de; d++) {
+            for (d=descrSet->Set().begin(); d!=de; ++d) {
                 if (&(*d) == selDescr) {
                     descrSet->Set().erase(d);
                     sSet->SetDataChanged(StructureSet::eCDDData);
                     if (selectedItem == listbox->GetCount() - 1)
-                        selectedItem--;
+                        --selectedItem;
                     break;
                 }
             }
         } else
-            selectedItem--;
+            --selectedItem;
         editOn = false;
     }
 
@@ -547,6 +547,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/15 17:27:02  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.4  2004/02/19 17:04:45  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

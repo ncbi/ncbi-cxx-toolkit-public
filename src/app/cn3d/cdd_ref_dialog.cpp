@@ -196,7 +196,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
     // delete reference
     else if (event.GetId() == ID_B_DELETE && descr) {
         CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
-        for (d=descrSet->Set().begin(); d!=de; d++) {
+        for (d=descrSet->Set().begin(); d!=de; ++d) {
             if (d->GetPointer() == descr) {
                 descrSet->Set().erase(d);
                 sSet->SetDataChanged(StructureSet::eCDDData);
@@ -208,21 +208,21 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
 
     else if ((event.GetId() == ID_B_UP || event.GetId() == ID_B_DOWN) && descr) {
         CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end(), p = descrSet->Set().end(), n;
-        for (d=descrSet->Set().begin(); d!=de; d++) {
+        for (d=descrSet->Set().begin(); d!=de; ++d) {
             if (d->GetPointer() == descr) {
                 CRef < CCdd_descr > tmp(*d);
                 n = d;
                 do {        // find next pmid ref
-                    n++;
+                    ++n;
                 } while (n != descrSet->Set().end() && !((*n)->IsReference() && (*n)->GetReference().IsPmid()));
                 if (event.GetId() == ID_B_DOWN && n != descrSet->Set().end()) {
                     *d = *n;
                     *n = tmp;
-                    selectItem++;
+                    ++selectItem;
                 } else if (event.GetId() == ID_B_UP && p != descrSet->Set().end()) {
                     *d = *p;
                     *p = tmp;
-                    selectItem--;
+                    --selectItem;
                 } else
                     break;
                 sSet->SetDataChanged(StructureSet::eCDDData);
@@ -245,7 +245,7 @@ void CDDRefDialog::ResetListBox(void)
 
     listbox->Clear();
     CCdd_descr_set::Tdata::iterator d, de = descrSet->Set().end();
-    for (d=descrSet->Set().begin(); d!=de; d++) {
+    for (d=descrSet->Set().begin(); d!=de; ++d) {
         if ((*d)->IsReference() && (*d)->GetReference().IsPmid()) {
             wxString title;
             title.Printf("%i", (*d)->GetReference().GetPmid().Get());
@@ -328,6 +328,9 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/15 17:28:48  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.11  2004/02/19 17:04:45  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

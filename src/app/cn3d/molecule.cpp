@@ -79,7 +79,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     // get ID, name, and type
     id = graph.GetId().Get();
     CMolecule_graph::TDescr::const_iterator k, ke=graph.GetDescr().end();
-    for (k=graph.GetDescr().begin(); k!=ke; k++) {
+    for (k=graph.GetDescr().begin(); k!=ke; ++k) {
         if (k->GetObject().IsMolecule_type()) {
             type = static_cast<eType>(k->GetObject().GetMolecule_type());
         }
@@ -137,12 +137,12 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
     int nResidues = 0;
 
-    for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
+    for (i=graph.GetResidue_sequence().begin(); i!=ie; ++i) {
 
         const Residue *residue = new Residue(this, (*i).GetObject(), id,
             standardDictionary, localDictionary);
         residues[residue->id] = residue;
-        nResidues++;
+        ++nResidues;
 
         // this assumption is frequently made elsewhere, relating seqLocs (numbering from zero)
         // to residue ID's (numbering from one) - so enforce it here
@@ -216,7 +216,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     // load inter-residue bonds from SEQUENCE OF Inter-residue-bond OPTIONAL
     if (graph.IsSetInter_residue_bonds()) {
         je = graph.GetInter_residue_bonds().end();
-        for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
+        for (j=graph.GetInter_residue_bonds().begin(); j!=je; ++j) {
 
             int order = j->GetObject().IsSetBond_order() ?
                 j->GetObject().GetBond_order() : Bond::eUnknown;
@@ -280,7 +280,7 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         return false;
     }
 
-    for (int i=0; i<nResidues; i++) {
+    for (int i=0; i<nResidues; ++i) {
 
         int rID = seqIndexes[i] + 1;    // residueIDs start at 1
         ResidueMap::const_iterator r = residues.find(rID);
@@ -333,7 +333,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                 Colors::IsLightColor(settings.backgroundColor) ? black : white;
 
             // do start (N or 5') and end (C or 3') labels
-            for (int startTerminus=1; startTerminus>=0; startTerminus--) {
+            for (int startTerminus=1; startTerminus>=0; --startTerminus) {
 
                 // determine color and location - assumes sequential residue id's (from 1)
                 const Vector *alphaPos = NULL, *prevPos = NULL;
@@ -402,6 +402,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/03/15 17:34:03  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.40  2004/02/19 17:04:57  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -432,7 +432,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         if (outputWidth * outputHeight > MAX_BUFFER_PIXELS) {
             bufferHeight = MAX_BUFFER_PIXELS / outputWidth;
             nChunks = outputHeight / bufferHeight;              // whole chunks +
-            if (outputHeight % bufferHeight != 0) nChunks++;    // partially occupied chunk
+            if (outputHeight % bufferHeight != 0) ++nChunks;    // partially occupied chunk
             interlaced = false;
         }
 
@@ -666,8 +666,8 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
             int pass, r;
             nRows = -outputHeight; // signal to monitor that we're interlacing
             if (png_set_interlace_handling(png_ptr) != 7) throw "confused by unkown PNG interlace scheme";
-            for (pass = 1; pass <= 7; pass++) {
-                for (int i = outputHeight - 1; i >= 0; i--) {
+            for (pass = 1; pass <= 7; ++pass) {
+                for (int i = outputHeight - 1; i >= 0; --i) {
                     r = outputHeight - i - 1;
                     // when interlacing, only certain rows are actually read
                     // during certain passes - avoid unncessary reads
@@ -690,7 +690,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
         else {
             int bufferRow, bufferRowStart;
             nRows = outputHeight;
-            for (int chunk = nChunks - 1; chunk >= 0; chunk--) {
+            for (int chunk = nChunks - 1; chunk >= 0; --chunk) {
 
                 // set viewport for this chunk and redraw
                 if (nChunks > 1) {
@@ -706,7 +706,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
                     bufferRowStart = bufferHeight - 1;
 
                 // dump chunk to PNG file
-                for (bufferRow = bufferRowStart; bufferRow >= 0; bufferRow--) {
+                for (bufferRow = bufferRowStart; bufferRow >= 0; --bufferRow) {
                     glReadPixels(0, bufferRow, outputWidth, 1, GL_RGB, GL_UNSIGNED_BYTE, rowStorage);
                     png_write_row(png_ptr, rowStorage);
                 }
@@ -877,6 +877,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/03/15 17:30:06  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.19  2004/02/19 17:04:50  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -90,7 +90,7 @@ void BlockMultipleAlignment::InitCache(void)
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
 {
     BlockList::iterator i, ie = blocks.end();
-    for (i=blocks.begin(); i!=ie; i++) delete *i;
+    for (i=blocks.begin(); i!=ie; ++i) delete *i;
     delete sequences;
     delete conservationColorer;
     RemovePSSM();
@@ -101,7 +101,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     // must actually copy the list
     BlockMultipleAlignment *copy = new BlockMultipleAlignment(new SequenceList(*sequences), alignmentManager);
     BlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         Block *newBlock = (*b)->Clone(copy);
         copy->blocks.push_back(newBlock);
         if ((*b)->IsAligned()) {
@@ -152,7 +152,7 @@ const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 
     int i, j;
     pssm->matrix = (Int4 **) MemNew(pssm->rows * sizeof(Int4 *));
-    for (i=0; i<pssm->rows; i++) {
+    for (i=0; i<pssm->rows; ++i) {
         pssm->matrix[i] = (Int4 *) MemNew(pssm->columns * sizeof(Int4));
 #ifdef PRINT_PSSM
         fprintf(f, "matrix %i : ", i);
@@ -161,20 +161,20 @@ const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
         // set scores from threader matrix
         if (i < seqMtf->n) {
             // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
-            for (j=0; j<pssm->columns; j++)
+            for (j=0; j<pssm->columns; ++j)
                 pssm->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
 
-            for (j=0; j<seqMtf->AlphabetSize; j++) {
+            for (j=0; j<seqMtf->AlphabetSize; ++j) {
                 pssm->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
                     Round(((double) seqMtf->ww[i][j]) / Threader::SCALING_FACTOR);
             }
         } else {
             // initialize last row with BLAST_SCORE_MIN
-            for (j=0; j<pssm->columns; j++)
+            for (j=0; j<pssm->columns; ++j)
                 pssm->matrix[i][j] = BLAST_SCORE_MIN;
         }
 #ifdef PRINT_PSSM
-        for (j=0; j<pssm->columns; j++)
+        for (j=0; j<pssm->columns; ++j)
             fprintf(f, "%i ", pssm->matrix[i][j]);
         fprintf(f, "\n");
 #endif
@@ -183,15 +183,15 @@ const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 #ifdef PRINT_PSSM
     // for diffing with scoremat stored in ascii CD
     fprintf(f, "{\n");
-    for (i=0; i<seqMtf->n; i++) {
-        for (j=0; j<pssm->columns; j++) {
+    for (i=0; i<seqMtf->n; ++i) {
+        for (j=0; j<pssm->columns; ++j) {
             fprintf(f, "      %i,\n", pssm->matrix[i][j]);
         }
     }
     fprintf(f, "}\n");
     // for diffing with .mtx file
-    for (i=0; i<seqMtf->n; i++) {
-        for (j=0; j<pssm->columns; j++) {
+    for (i=0; i<seqMtf->n; ++i) {
+        for (j=0; j<pssm->columns; ++j) {
             fprintf(f, "%i  ", pssm->matrix[i][j]);
         }
         fprintf(f, "\n");
@@ -200,26 +200,26 @@ const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 
 #ifdef _DEBUG
     pssm->posFreqs = (Nlm_FloatHi **) MemNew(pssm->rows * sizeof(Nlm_FloatHi *));
-    for (i=0; i<pssm->rows; i++) {
+    for (i=0; i<pssm->rows; ++i) {
         pssm->posFreqs[i] = (Nlm_FloatHi *) MemNew(pssm->columns * sizeof(Nlm_FloatHi));
 #ifdef PRINT_PSSM
         fprintf(f, "freqs %i : ", i);
 #endif
         if (i < seqMtf->n) {
-            for (j=0; j<seqMtf->AlphabetSize; j++) {
+            for (j=0; j<seqMtf->AlphabetSize; ++j) {
                 pssm->posFreqs[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
                     seqMtf->freqs[i][j] / Threader::SCALING_FACTOR;
             }
         }
 #ifdef PRINT_PSSM
-        for (j=0; j<pssm->columns; j++)
+        for (j=0; j<pssm->columns; ++j)
             fprintf(f, "%g ", pssm->posFreqs[i][j]);
         fprintf(f, "\n");
 #endif
     }
 
     // we're not actually using the frequency table; just printing it out for debugging/testing
-    for (i=0; i<pssm->rows; i++) MemFree(pssm->posFreqs[i]);
+    for (i=0; i<pssm->rows; ++i) MemFree(pssm->posFreqs[i]);
     MemFree(pssm->posFreqs);
 #endif // _DEBUG
 
@@ -266,7 +266,7 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
         *nextBlock = GetBlockAfter(block);
     const Block::Range *range, *prevRange = NULL, *nextRange = NULL;
     SequenceList::const_iterator sequence = sequences->begin();
-    for (row=0; row<block->NSequences(); row++, sequence++) {
+    for (row=0; row<block->NSequences(); ++row, ++sequence) {
         range = block->GetRangeOfRow(row);
         if (prevBlock) prevRange = prevBlock->GetRangeOfRow(row);
         if (nextBlock) nextRange = nextBlock->GetRangeOfRow(row);
@@ -304,7 +304,7 @@ UnalignedBlock * BlockMultipleAlignment::
     UnalignedBlock *newBlock = new UnalignedBlock(this);
     newBlock->width = 0;
 
-    for (row=0, s=sequences->begin(); s!=se; row++, s++) {
+    for (row=0, s=sequences->begin(); s!=se; ++row, ++s) {
 
         if (leftBlock)
             from = leftBlock->GetRangeOfRow(row)->to + 1;
@@ -340,7 +340,7 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
     Block *newUnalignedBlock;
 
     // unaligned blocks to the left of each aligned block
-    for (a=blocks.begin(); a!=ae; a++) {
+    for (a=blocks.begin(); a!=ae; ++a) {
         alignedBlock = *a;
         newUnalignedBlock = CreateNewUnalignedBlockBetween(prevAlignedBlock, alignedBlock);
         if (newUnalignedBlock) blocks.insert(a, newUnalignedBlock);
@@ -363,20 +363,20 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
 
     // reset old stuff, recalculate width
     totalWidth = 0;
-    for (b=blocks.begin(); b!=be; b++) totalWidth += (*b)->width;
+    for (b=blocks.begin(); b!=be; ++b) totalWidth += (*b)->width;
 //    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
 
     // fill out the block map
     conservationColorer->Clear();
     blockMap.resize(totalWidth);
     UngappedAlignedBlock *aBlock;
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         aBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
         if (aBlock) {
             conservationColorer->AddBlock(aBlock);
-            n++;
+            ++n;
         }
-        for (j=0; j<(*b)->width; j++, i++) {
+        for (j=0; j<(*b)->width; ++j, ++i) {
             blockMap[i].block = *b;
             blockMap[i].blockColumn = j;
             blockMap[i].alignedBlockNum = aBlock ? n : -1;
@@ -559,7 +559,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
 
     if (cachePrevRow < 0 || cachePrevRow >= NRows() || sequence != (*sequences)[cachePrevRow]) {
         int row;
-        for (row=0; row<NRows(); row++) if ((*sequences)[row] == sequence) break;
+        for (row=0; row<NRows(); ++row) if ((*sequences)[row] == sequence) break;
         if (row == NRows()) {
 //            ERRORMSG("BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
             return -1;
@@ -648,7 +648,7 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
     if (cachePrevBlock) {
         range = cachePrevBlock->GetRangeOfRow(row);
         if (seqIndex >= range->from && seqIndex <= range->to) return cachePrevBlock;
-        cacheBlockIterator++; // start search at next block
+        ++cacheBlockIterator; // start search at next block
     } else {
         cacheBlockIterator = blocks.begin();
     }
@@ -662,7 +662,7 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
             cachePrevBlock = *cacheBlockIterator; // cache this block
             return cachePrevBlock;
         }
-        cacheBlockIterator++;
+        ++cacheBlockIterator;
     } while (1);
 }
 
@@ -704,7 +704,7 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
     while (from <= to) {
         GetSequenceAndIndexAt(from, row, justification, &sequence, &fromIndex, &ignored);
         if (fromIndex >= 0) break;
-        from++;
+        ++from;
     }
     if (from > to) return;
 
@@ -712,7 +712,7 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
     while (to >= from) {
         GetSequenceAndIndexAt(to, row, justification, &sequence, &toIndex, &ignored);
         if (toIndex >= 0) break;
-        to--;
+        --to;
     }
 
     if (toggle)
@@ -736,7 +736,7 @@ Block * BlockMultipleAlignment::GetBlockBefore(const Block *block) const
 {
     Block *prevBlock = NULL;
     BlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         if (*b == block) break;
         prevBlock = *b;
     }
@@ -757,9 +757,9 @@ const UnalignedBlock * BlockMultipleAlignment::GetUnalignedBlockBefore(
 Block * BlockMultipleAlignment::GetBlockAfter(const Block *block) const
 {
     BlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         if (*b == block) {
-            b++;
+            ++b;
             if (b == be) break;
             return *b;
         }
@@ -770,7 +770,7 @@ Block * BlockMultipleAlignment::GetBlockAfter(const Block *block) const
 void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, const Block *insertAt)
 {
     BlockList::iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         if (*b == insertAt) {
             blocks.insert(b, newBlock);
             return;
@@ -782,9 +782,9 @@ void BlockMultipleAlignment::InsertBlockBefore(Block *newBlock, const Block *ins
 void BlockMultipleAlignment::InsertBlockAfter(const Block *insertAt, Block *newBlock)
 {
     BlockList::iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         if (*b == insertAt) {
-            b++;
+            ++b;
             blocks.insert(b, newBlock);
             return;
         }
@@ -795,7 +795,7 @@ void BlockMultipleAlignment::InsertBlockAfter(const Block *insertAt, Block *newB
 void BlockMultipleAlignment::RemoveBlock(Block *block)
 {
     BlockList::iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         if (*b == block) {
             delete *b;
             blocks.erase(b);
@@ -822,14 +822,14 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
     if (blockColumn == 0 && requestedShift > 0 && requestedShift < info.block->width) {
         actualShift = requestedShift;
         TRACEMSG("shrinking block from left");
-        for (row=0; row<NRows(); row++) {
+        for (row=0; row<NRows(); ++row) {
             range = info.block->GetRangeOfRow(row);
             info.block->SetRangeOfRow(row, range->from + requestedShift, range->to);
         }
         info.block->width -= requestedShift;
         Block *prevBlock = GetBlockBefore(info.block);
         if (prevBlock && !prevBlock->IsAligned()) {
-            for (row=0; row<NRows(); row++) {
+            for (row=0; row<NRows(); ++row) {
                 range = prevBlock->GetRangeOfRow(row);
                 prevBlock->SetRangeOfRow(row, range->from, range->to + requestedShift);
             }
@@ -846,14 +846,14 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
                 requestedShift < 0 && requestedShift > -info.block->width) {
         actualShift = requestedShift;
         TRACEMSG("shrinking block from right");
-        for (row=0; row<NRows(); row++) {
+        for (row=0; row<NRows(); ++row) {
             range = info.block->GetRangeOfRow(row);
             info.block->SetRangeOfRow(row, range->from, range->to + requestedShift);
         }
         info.block->width += requestedShift;
         Block *nextBlock = GetBlockAfter(info.block);
         if (nextBlock && !nextBlock->IsAligned()) {
-            for (row=0; row<NRows(); row++) {
+            for (row=0; row<NRows(); ++row) {
                 range = nextBlock->GetRangeOfRow(row);
                 nextBlock->SetRangeOfRow(row, range->from + requestedShift, range->to);
             }
@@ -871,14 +871,14 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         if (nextBlock && !nextBlock->IsAligned()) {
             int nRes;
             actualShift = requestedShift;
-            for (row=0; row<NRows(); row++) {
+            for (row=0; row<NRows(); ++row) {
                 range = nextBlock->GetRangeOfRow(row);
                 nRes = range->to - range->from + 1;
                 if (nRes < actualShift) actualShift = nRes;
             }
             if (actualShift) {
                 TRACEMSG("growing block to right");
-                for (row=0; row<NRows(); row++) {
+                for (row=0; row<NRows(); ++row) {
                     range = info.block->GetRangeOfRow(row);
                     info.block->SetRangeOfRow(row, range->from, range->to + actualShift);
                     range = nextBlock->GetRangeOfRow(row);
@@ -900,14 +900,14 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         if (prevBlock && !prevBlock->IsAligned()) {
             int nRes;
             actualShift = requestedShift;
-            for (row=0; row<NRows(); row++) {
+            for (row=0; row<NRows(); ++row) {
                 range = prevBlock->GetRangeOfRow(row);
                 nRes = range->to - range->from + 1;
                 if (nRes < -actualShift) actualShift = -nRes;
             }
             if (actualShift) {
                 TRACEMSG("growing block to left");
-                for (row=0; row<NRows(); row++) {
+                for (row=0; row<NRows(); ++row) {
                     range = info.block->GetRangeOfRow(row);
                     info.block->SetRangeOfRow(row, range->from + actualShift, range->to);
                     range = prevBlock->GetRangeOfRow(row);
@@ -994,7 +994,7 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     if (prevUABlock) {
         prevUABlock->SetRangeOfRow(row, prevRange->from, prevRange->to - actualShift);
         prevUABlock->width = 0;
-        for (int i=0; i<NRows(); i++) {
+        for (int i=0; i<NRows(); ++i) {
             prevRange = prevUABlock->GetRangeOfRow(i);
             width = prevRange->to - prevRange->from + 1;
             if (width < 0) ERRORMSG("BlockMultipleAlignment::ShiftRow() - negative width on left");
@@ -1013,7 +1013,7 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     if (nextUABlock) {
         nextUABlock->SetRangeOfRow(row, nextRange->from - actualShift, nextRange->to);
         nextUABlock->width = 0;
-        for (int i=0; i<NRows(); i++) {
+        for (int i=0; i<NRows(); ++i) {
             nextRange = nextUABlock->GetRangeOfRow(i);
             width = nextRange->to - nextRange->from + 1;
             if (width < 0) ERRORMSG("BlockMultipleAlignment::ShiftRow() - negative width on right");
@@ -1049,7 +1049,7 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
 
     const Block::Range *range;
     int oldTo;
-    for (int row=0; row<NRows(); row++) {
+    for (int row=0; row<NRows(); ++row) {
         range = info.block->GetRangeOfRow(row);
         oldTo = range->to;
         info.block->SetRangeOfRow(row, range->from, range->from + info.block->width - 1);
@@ -1071,17 +1071,17 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
         *lastBlock = blockMap[toAlignmentIndex].block;
     if (expandedBlock == lastBlock) return false;
     int i;
-    for (i=fromAlignmentIndex; i<=toAlignmentIndex; i++)
+    for (i=fromAlignmentIndex; i<=toAlignmentIndex; ++i)
         if (!blockMap[i].block->IsAligned()) return false;
 
     TRACEMSG("merging block(s)");
-    for (i=0; i<NRows(); i++)
+    for (i=0; i<NRows(); ++i)
         expandedBlock->SetRangeOfRow(i,
             expandedBlock->GetRangeOfRow(i)->from, lastBlock->GetRangeOfRow(i)->to);
     expandedBlock->width = lastBlock->GetRangeOfRow(0)->to - expandedBlock->GetRangeOfRow(0)->from + 1;
 
     Block *deletedBlock = NULL, *blockToDelete;
-    for (i=fromAlignmentIndex; i<=toAlignmentIndex; i++) {
+    for (i=fromAlignmentIndex; i<=toAlignmentIndex; ++i) {
         blockToDelete = blockMap[i].block;
         if (blockToDelete == expandedBlock) continue;
         if (blockToDelete != deletedBlock) {
@@ -1109,7 +1109,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
     vector < int > seqIndexesFrom(NRows()), seqIndexesTo(NRows());
     const Sequence *seq;
 	bool ignored;
-    for (row=0; row<NRows(); row++) {
+    for (row=0; row<NRows(); ++row) {
         if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, &seq, &seqIndexFrom, &ignored) ||
             !GetSequenceAndIndexAt(toAlignmentIndex, row, justification, &seq, &seqIndexTo, &ignored) ||
             seqIndexFrom < 0 || seqIndexTo < 0 ||
@@ -1127,7 +1127,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
     bool deletePrevUABlock = true, deleteNextUABlock = true;
     const Block::Range *prevRange;
     int rangeWidth;
-    for (row=0; row<NRows(); row++) {
+    for (row=0; row<NRows(); ++row) {
         prevRange = prevUABlock->GetRangeOfRow(row);
 
         nextUABlock->SetRangeOfRow(row, seqIndexesTo[row] + 1, prevRange->to);
@@ -1187,7 +1187,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     if (prevBlock && !prevBlock->IsAligned() && nextBlock && !nextBlock->IsAligned()) {
         const Block::Range *prevRange, *nextRange;
         int maxWidth = 0, width;
-        for (int row=0; row<NRows(); row++) {
+        for (int row=0; row<NRows(); ++row) {
             prevRange = prevBlock->GetRangeOfRow(row);
             nextRange = nextBlock->GetRangeOfRow(row);
             width = nextRange->to - prevRange->from + 1;
@@ -1202,7 +1202,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     // unaligned block on left only
     else if (prevBlock && !prevBlock->IsAligned()) {
         const Block::Range *prevRange, *range;
-        for (int row=0; row<NRows(); row++) {
+        for (int row=0; row<NRows(); ++row) {
             prevRange = prevBlock->GetRangeOfRow(row);
             range = block->GetRangeOfRow(row);
             prevBlock->SetRangeOfRow(row, prevRange->from, range->to);
@@ -1213,7 +1213,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     // unaligned block on right only
     else if (nextBlock && !nextBlock->IsAligned()) {
         const Block::Range *range, *nextRange;
-        for (int row=0; row<NRows(); row++) {
+        for (int row=0; row<NRows(); ++row) {
             range = block->GetRangeOfRow(row);
             nextRange = nextBlock->GetRangeOfRow(row);
             nextBlock->SetRangeOfRow(row, range->from, nextRange->to);
@@ -1258,7 +1258,7 @@ bool BlockMultipleAlignment::DeleteRow(int row)
 
     // remove sequence from list
     SequenceList::iterator s = (const_cast<SequenceList*>(sequences))->begin();
-    for (int i=0; i<row; i++) s++;
+    for (int i=0; i<row; ++i) ++s;
     (const_cast<SequenceList*>(sequences))->erase(s);
 
     // delete row from all blocks, removing any zero-width blocks
@@ -1267,11 +1267,11 @@ bool BlockMultipleAlignment::DeleteRow(int row)
         (*b)->DeleteRow(row);
         if ((*b)->width == 0) {
             br = b;
-            b++;
+            ++b;
             TRACEMSG("deleting block resized to zero width");
             RemoveBlock(*br);
         } else
-            b++;
+            ++b;
     }
 
     // update total alignment width
@@ -1286,7 +1286,7 @@ void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *
     uabs->clear();
     uabs->reserve(blocks.size());
     BlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         UngappedAlignedBlock *uab = dynamic_cast<UngappedAlignedBlock*>(*b);
         if (uab) uabs->push_back(uab);
     }
@@ -1301,7 +1301,7 @@ bool BlockMultipleAlignment::ExtractRows(
     // make a bool list of rows to remove, also checking to make sure slave list items are in range
     int i;
     vector < bool > removeRows(NRows(), false);
-    for (i=0; i<slavesToRemove.size(); i++) {
+    for (i=0; i<slavesToRemove.size(); ++i) {
         if (slavesToRemove[i] > 0 && slavesToRemove[i] < NRows()) {
             removeRows[slavesToRemove[i]] = true;
         } else {
@@ -1319,7 +1319,7 @@ bool BlockMultipleAlignment::ExtractRows(
         GetUngappedAlignedBlocks(&uaBlocks);
         UngappedAlignedBlockList::const_iterator u, ue = uaBlocks.end();
 
-        for (i=0; i<slavesToRemove.size(); i++) {
+        for (i=0; i<slavesToRemove.size(); ++i) {
 
             // redraw molecule associated with removed row
             const Molecule *molecule = GetSequenceOfRow(slavesToRemove[i])->molecule;
@@ -1330,7 +1330,7 @@ bool BlockMultipleAlignment::ExtractRows(
             (*newSeqs)[0] = (*sequences)[0];
             (*newSeqs)[1] = (*sequences)[slavesToRemove[i]];
             BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(newSeqs, alignmentManager);
-            for (u=uaBlocks.begin(); u!=ue; u++) {
+            for (u=uaBlocks.begin(); u!=ue; ++u) {
                 // only copy blocks that aren't flagged to be realigned
                 if (markBlocks.find(*u) == markBlocks.end()) {
                     UngappedAlignedBlock *newABlock = new UngappedAlignedBlock(newAlignment);
@@ -1381,11 +1381,11 @@ bool BlockMultipleAlignment::ExtractRows(
         (*b)->DeleteRows(removeRows, slavesToRemove.size());
         if ((*b)->width == 0) {
             br = b;
-            b++;
+            ++b;
             TRACEMSG("deleting block resized to zero width");
             RemoveBlock(*br);
         } else
-            b++;
+            ++b;
     }
 
     // update total alignment width
@@ -1408,9 +1408,9 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     typedef map < UngappedAlignedBlock *, const UngappedAlignedBlock * > AlignedBlockMap;
     AlignedBlockMap correspondingNewBlocks;
 
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         if (!(*b)->IsAligned()) continue;
-        for (nb=newAlignment->blocks.begin(); nb!=nbe; nb++) {
+        for (nb=newAlignment->blocks.begin(); nb!=nbe; ++nb) {
             if (!(*nb)->IsAligned()) continue;
 
             newRange = (*nb)->GetRangeOfRow(0);
@@ -1430,7 +1430,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     modSequences->resize(modSequences->size() + nNewRows);
     rowDoubles.resize(rowDoubles.size() + nNewRows);
     rowStrings.resize(rowStrings.size() + nNewRows);
-    for (i=0; i<nNewRows; i++) {
+    for (i=0; i<nNewRows; ++i) {
         (*modSequences)[modSequences->size() + i - nNewRows] = (*(newAlignment->sequences))[i + 1];
         SetRowDouble(NRows() + i - nNewRows, newAlignment->GetRowDouble(i + 1));
         SetRowStatusLine(NRows() + i - nNewRows, newAlignment->GetRowStatusLine(i + 1));
@@ -1442,15 +1442,15 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     // that this object's block structure is unchanged
 
     // resize all aligned blocks
-    for (b=blocks.begin(); b!=be; b++) (*b)->AddRows(nNewRows);
+    for (b=blocks.begin(); b!=be; ++b) (*b)->AddRows(nNewRows);
 
     // set ranges of aligned blocks, and add them to the list
     AlignedBlockMap::const_iterator ab, abe = correspondingNewBlocks.end();
     const Block::Range *thisMaster, *newMaster;
-    for (ab=correspondingNewBlocks.begin(); ab!=abe; ab++) {
+    for (ab=correspondingNewBlocks.begin(); ab!=abe; ++ab) {
         thisMaster = ab->first->GetRangeOfRow(0);
         newMaster = ab->second->GetRangeOfRow(0);
-        for (i=0; i<nNewRows; i++) {
+        for (i=0; i<nNewRows; ++i) {
             newRange = ab->second->GetRangeOfRow(i + 1);
             ab->first->SetRangeOfRow(NRows() + i - nNewRows,
                 newRange->from + thisMaster->from - newMaster->from,
@@ -1463,12 +1463,12 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     for (b=blocks.begin(); b!=be; ) {
         if (!(*b)->IsAligned()) {
             BlockList::iterator bb(b);
-            bb++;
+            ++bb;
             delete *b;
             blocks.erase(b);
             b = bb;
         } else
-            b++;
+            ++b;
     }
     InitCache();
 
@@ -1498,11 +1498,11 @@ int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
     }
 
     geometryViolations.resize(NRows());
-    for (int row=0; row<NRows(); row++) {
+    for (int row=0; row<NRows(); ++row) {
         geometryViolations[row].resize(GetSequenceOfRow(row)->Length(), false);
         Threader::IntervalList::const_iterator i, ie = violations[row].end();
-        for (i=violations[row].begin(); i!=ie; i++)
-            for (int l=i->first; l<=i->second; l++)
+        for (i=violations[row].begin(); i!=ie; ++i)
+            for (int l=i->first; l<=i->second; ++l)
                 geometryViolations[row][l] = true;
     }
 
@@ -1528,7 +1528,7 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
     CSeq_align::C_Segs::TDendiag::iterator d, de = denDiags.end();
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b = blocks.begin();
     const Block::Range *range;
-    for (d=denDiags.begin(); d!=de; d++, b++) {
+    for (d=denDiags.begin(); d!=de; ++d, ++b) {
 
         CDense_diag *denDiag = new CDense_diag();
         d->Reset(denDiag);
@@ -1581,7 +1581,7 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
 
     // must do one column at a time, rather than range, in case there are inserts wrt the master
     bool anyError = false;
-    for (int i=from; i<=to; i++) {
+    for (int i=from; i<=to; ++i) {
 
         // sanity check
         if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
@@ -1598,7 +1598,7 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
         int blockOffset = i - block->GetRangeOfRow(0)->from;
 
         // highlight aligned residue in each row
-        for (int row=0; row<NRows(); row++) {
+        for (int row=0; row<NRows(); ++row) {
             int slaveIndex = block->GetRangeOfRow(row)->from + blockOffset;
             GlobalMessenger()->AddHighlights(GetSequenceOfRow(row), slaveIndex, slaveIndex);
         }
@@ -1611,7 +1611,7 @@ int BlockMultipleAlignment::NAlignedBlocks(void) const
 {
     int n = 0;
     BlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) if ((*b)->IsAligned()) n++;
+    for (b=blocks.begin(); b!=be; ++b) if ((*b)->IsAligned()) ++n;
     return n;
 }
 
@@ -1626,7 +1626,7 @@ int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJ
     const Block *block = NULL;
     const Block::Range *range;
 
-    for (alignmentIndex=0; alignmentIndex<totalWidth; alignmentIndex++) {
+    for (alignmentIndex=0; alignmentIndex<totalWidth; ++alignmentIndex) {
 
         // check each block to see if index is in range
         if (block != blockMap[alignmentIndex].block) {
@@ -1643,7 +1643,7 @@ int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJ
 
                 // search block columns to find index (inefficient, but avoids having to write
                 // inverse functions of Block::GetIndexAt()
-                for (blockColumn=0; blockColumn<block->width; blockColumn++) {
+                for (blockColumn=0; blockColumn<block->width; ++blockColumn) {
                     if (seqIndex == block->GetIndexAt(blockColumn, row, justification))
                         return alignmentIndex + blockColumn;
                 }
@@ -1663,7 +1663,7 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
 {
     // one SeqAlign (chained into a linked list) for each slave row
     SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (int row=1; row<NRows(); row++) {
+    for (int row=1; row<NRows(); ++row) {
 
         SeqAlignPtr sap = SeqAlignNew();
         if (prevSap) prevSap->next = sap;
@@ -1679,7 +1679,7 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
         GetUngappedAlignedBlocks(&blocks);
         UngappedAlignedBlockList::const_iterator b, be = blocks.end();
 
-        for (b=blocks.begin(); b!=be; b++) {
+        for (b=blocks.begin(); b!=be; ++b) {
             DenseDiagPtr dd = DenseDiagNew();
             if (prevDd) prevDd->next = dd;
             prevDd = dd;
@@ -1713,7 +1713,7 @@ Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) c
 {
     UngappedAlignedBlock *copy = new UngappedAlignedBlock(newMultiple);
     const Block::Range *range;
-    for (int row=0; row<NSequences(); row++) {
+    for (int row=0; row<NSequences(); ++row) {
         range = GetRangeOfRow(row);
         copy->SetRangeOfRow(row, range->from, range->to);
     }
@@ -1724,7 +1724,7 @@ Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) c
 void UngappedAlignedBlock::DeleteRow(int row)
 {
     RangeList::iterator r = ranges.begin();
-    for (int i=0; i<row; i++) r++;
+    for (int i=0; i<row; ++i) ++r;
     ranges.erase(r);
 }
 
@@ -1777,7 +1777,7 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
 void UnalignedBlock::Resize(void)
 {
     width = 0;
-    for (int i=0; i<NSequences(); i++) {
+    for (int i=0; i<NSequences(); ++i) {
         int blockWidth = ranges[i].to - ranges[i].from + 1;
         if (blockWidth > width) width = blockWidth;
     }
@@ -1786,7 +1786,7 @@ void UnalignedBlock::Resize(void)
 void UnalignedBlock::DeleteRow(int row)
 {
     RangeList::iterator r = ranges.begin();
-    for (int i=0; i<row; i++) r++;
+    for (int i=0; i<row; ++i) ++r;
     ranges.erase(r);
     Resize();
 }
@@ -1801,7 +1801,7 @@ Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
 {
     UnalignedBlock *copy = new UnalignedBlock(newMultiple);
     const Block::Range *range;
-    for (int row=0; row<NSequences(); row++) {
+    for (int row=0; row<NSequences(); ++row) {
         range = GetRangeOfRow(row);
         copy->SetRangeOfRow(row, range->from, range->to);
     }
@@ -1815,6 +1815,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/03/15 17:27:02  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.54  2004/02/19 17:04:43  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
