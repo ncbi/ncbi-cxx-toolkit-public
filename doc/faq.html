@@ -87,7 +87,11 @@ an identifier search on the class name (e.g., CSeq_id) and looking in the <b>Def
 <tr><td>serial<td>xser
 <tr><td>util<td>xutil
 </table>
-<br><br>Note: The C++ toolkit libraries have dependencies on each other. For example, symbols defined in seqfeat (libseqfeat.a) are referenced in library mmdb1 (libmmdb1.a). In this case you most link seqfeat after mmdb1.
+<br><br>Note: The C++ Toolkit libraries have dependencies on each other. For example, symbols defined in <b>seqfeat</b> (<i>libseqfeat.a</i>) are referenced in library <b>mmdb1</b> (<i>libmmdb1.a</i>). In this case you must link <b>seqfeat</b> after <b>mmdb1</b>.
+
+<p>
+There is a <a href="depgraph.html">Library Dependency Graph</a> to help you
+figure out dependencies between the NCBI C++ Toolkit libraries.
 
 <p>
 Most often, difficulties arise when one is linking an application using
