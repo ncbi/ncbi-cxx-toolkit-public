@@ -1,7 +1,6 @@
 #include <algo/blast/core/blast_def.h> /* for sfree() macro */
 #include <algo/blast/core/ncbi_std.h>
 
-#ifndef NCBI_C_TOOLKIT
 void * MemDup (const void *orig, size_t size)
 {
 	void*	copy;
@@ -15,7 +14,6 @@ void * MemDup (const void *orig, size_t size)
 	memcpy(copy, orig, size);
 		return copy;
 }
-#endif
 
 /*****************************************************************************
 *
