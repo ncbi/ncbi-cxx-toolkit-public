@@ -1007,10 +1007,10 @@ static EIO_Status s_Close(SOCK sock)
  * not eIO_Closed |       1       |  Read hit EOF and completed with r_status
  * ---------------+---------------+------------------------------------------
  */
-static int s_NCBI_Recv(SOCK        sock,
-                       void*       buffer,
-                       size_t      size,
-                       int/*bool*/ peek)
+static int s_Recv(SOCK        sock,
+                  void*       buffer,
+                  size_t      size,
+                  int/*bool*/ peek)
 {
     char*  x_buffer = (char*) buffer;
     char   xx_buffer[4096];
@@ -1056,7 +1056,7 @@ static int s_NCBI_Recv(SOCK        sock,
                 /* catch unknown ERROR */
                 sock->r_status = eIO_Unknown;
                 CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Trace,
-                               "[SOCK::s_NCBI_Recv]  Failed recv()");
+                               "[SOCK::s_Recv]  Failed recv()");
             }
             return n_read ? (int) n_read : -1;
         }
@@ -1084,7 +1084,7 @@ static int s_NCBI_Recv(SOCK        sock,
 
 /* Read/Peek data from the socket
  */
-static EIO_Status s_Recv(SOCK        sock,
+static EIO_Status s_Read(SOCK        sock,
                          void*       buf,
                          size_t      size,
                          size_t*     n_read,
@@ -1105,7 +1105,7 @@ static EIO_Status s_Recv(SOCK        sock,
 
     for (;;) { /* retry if interrupted by a signal */
         /* try to read */
-        int x_read = s_NCBI_Recv(sock, buf, size, peek);
+        int x_read = s_Recv(sock, buf, size, peek);
         if (x_read > 0) {
             assert(x_read <= (int) size);
             *n_read = x_read;
@@ -1191,7 +1191,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
 
                 assert(polls[i].sock);
                 /* try upread as mush as possible data into internal buffer */
-                s_NCBI_Recv(polls[i].sock, 0, 1000000000, 1/*peek*/);
+                s_Recv(polls[i].sock, 0, 1000000000, 1/*peek*/);
                 /* then poll about writing-only w/o upread */
                 save_r_on_w = polls[i].sock->r_on_w;
                 polls[i].sock->r_on_w = eOff;
@@ -1227,10 +1227,10 @@ static EIO_Status s_SelectStallsafe(size_t                n,
 
 /* Write data to the socket "as is" (as many bytes at once as possible)
  */
-static EIO_Status s_WriteWhole(SOCK        sock,
-                               const void* buf,
-                               size_t      size,
-                               size_t*     n_written)
+static EIO_Status s_Send(SOCK        sock,
+                         const void* buf,
+                         size_t      size,
+                         size_t*     n_written)
 {
     int         x_errno;
 
@@ -1288,15 +1288,18 @@ static EIO_Status s_WriteWhole(SOCK        sock,
         }
 
         if (x_errno != SOCK_EINTR) {
-            /* forcibly closed by peer or shut down */
-            if (x_errno == SOCK_ECONNRESET  ||  x_errno == SOCK_EPIPE)
-                sock->w_status = eIO_Closed; /* actually closed */
+            /* forcibly closed by peer or shut down? */
+            if (x_errno != SOCK_ECONNRESET  &&  x_errno != SOCK_EPIPE) {
+                CORE_LOG_ERRNO(SOCK_ERRNO,
+                               eLOG_Trace, "[SOCK::s_Send]  Failed send()");
+            } else
+                sock->w_status = eIO_Closed;
             break;
         }
 
-        sock->w_status = eIO_Interrupt;
         if (sock->i_on_sig == eOn ||
             (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)) {
+            sock->w_status = eIO_Interrupt;
             break;
         }
     }
@@ -1305,15 +1308,15 @@ static EIO_Status s_WriteWhole(SOCK        sock,
 }
 
 
-#if defined(SOCK_WRITE_SLICE)
-/* Split output buffer by slices (of size <= SOCK_WRITE_SLICE) before writing
- * to the socket
- */
-static EIO_Status s_WriteSliced(SOCK        sock,
-                                const void* buf,
-                                size_t      size,
-                                size_t*     n_written)
+static EIO_Status s_Write(SOCK        sock,
+                          const void* buf,
+                          size_t      size,
+                          size_t*     n_written)
 {
+#if defined(SOCK_WRITE_SLICE)
+    /* Split output buffer by slices (of size <= SOCK_WRITE_SLICE)
+     * before writing to the socket
+     */
     EIO_Status status = eIO_Success;
 
     *n_written = 0;
@@ -1321,7 +1324,7 @@ static EIO_Status s_WriteSliced(SOCK        sock,
     while (size  &&  status == eIO_Success) {
         size_t n_io = size > SOCK_WRITE_SLICE ? SOCK_WRITE_SLICE : size;
         size_t n_io_done;
-        status = s_WriteWhole(sock, (char*)buf + x_written, n_io, &n_io_done);
+        status = s_Send(sock, (char*) buf + x_written, n_io, &n_io_done);
         *n_written += n_io_done;
         if (n_io != n_io_done)
             break;
@@ -1329,21 +1332,9 @@ static EIO_Status s_WriteSliced(SOCK        sock,
     }
 
     return status;
-}
-#endif /* SOCK_WRITE_SLICE */
-
-
-static EIO_Status s_Write(SOCK        sock,
-                          const void* buf,
-                          size_t      size,
-                          size_t*     n_written)
-{
-    /* Do a write */
-#if defined(SOCK_WRITE_SLICE)
-    return s_WriteSliced(sock, buf, size, n_written);
 #else
-    return s_WriteWhole (sock, buf, size, n_written);
-#endif
+    return s_Send(sock, buf, size, n_written);
+#endif /* SOCK_WRITE_SLICE */
 }
 
 
@@ -1644,11 +1635,11 @@ extern EIO_Status SOCK_Read(SOCK           sock,
 
     switch ( how ) {
     case eIO_ReadPlain:
-        status = s_Recv(sock, buf, size, &x_read, 0/*false, read*/);
+        status = s_Read(sock, buf, size, &x_read, 0/*false, read*/);
         break;
 
     case eIO_ReadPeek:
-        status = s_Recv(sock, buf, size, &x_read, 1/*true, peek*/);
+        status = s_Read(sock, buf, size, &x_read, 1/*true, peek*/);
         break;
 
     case eIO_ReadPersist:
@@ -1940,6 +1931,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 {
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
+    if ( !host ) {
+        host = SOCK_gethostbyname(0);
+    }
+
     if (host  &&  name  &&  namelen) {
 #if defined(HAVE_GETNAMEINFO)
         struct sockaddr_in addr;
@@ -1950,7 +1945,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = host;
         if (getnameinfo((struct sockaddr *) &addr, sizeof(addr), name, namelen,
-                        0, 0, NI_NAMEREQD) == 0) {
+                        0, 0, 0) == 0) {
             return name;
         } else {
             return 0;
@@ -1980,10 +1975,13 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 # endif
 
         if (!he  ||  strlen(he->h_name) > namelen - 1) {
+            if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
+                name = 0;
+            }
 # if !defined(HAVE_GETHOSTBYADDR_R)
             CORE_UNLOCK;
 # endif
-            return 0;
+            return name;
         }
         strncpy(name, he->h_name, namelen - 1);
 # if !defined(HAVE_GETHOSTBYADDR_R)
@@ -2001,6 +1999,12 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2002/10/11 19:50:55  lavr
+ * Few renames of internal functions (s_NCBI_Recv, s_Recv, etc)
+ * Interface change: SOCK_gethostbyaddr() returns dotted IP address
+ * when failed to convert given address into FQDN, it also now accepts
+ * 0 to return the name (or dotted IP) of the local host
+ *
  * Revision 6.64  2002/09/13 19:26:46  lavr
  * Few style-conforming changes
  *
