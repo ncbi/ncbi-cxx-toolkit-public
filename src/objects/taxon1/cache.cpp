@@ -421,7 +421,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 	    for( i = lLin.begin(); i != lLin.end(); ++i ) {
 		int cls( (*i)->GetCde() );
 		if( cls == syn_cls || cls == comm_cls ) {
-		    org.SetSyn().push_back( (*i)->GetOname() );
+		    org.SetSyn().insert( (*i)->GetOname() );
 		}
 	    }
 	    // Set taxid as db tag
@@ -871,6 +871,9 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 /*
  * $Log$
+ * Revision 6.2  2002/01/28 21:37:02  domrach
+ * list changed to multiset in BuildOrgRef()
+ *
  * Revision 6.1  2002/01/28 19:56:10  domrach
  * Initial checkin of the library implementation files
  *
