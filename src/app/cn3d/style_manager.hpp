@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/21 19:31:17  thiessen
+* add style consistency checking
+*
 * Revision 1.9  2000/08/21 17:22:45  thiessen
 * add primitive highlighting for testing
 *
@@ -144,12 +147,15 @@ public:
     StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
 };
 
+class StructureSet;
 class StructureObject;
 class Residue;
 class AtomPntr;
 class Bond;
 class BondStyle;
 class AtomStyle;
+class Object3D;
+class ObjectStyle;
 class Helix3D;
 class HelixStyle;
 class Strand3D;
@@ -187,6 +193,9 @@ public:
     bool GetStrandStyle(const StructureObject *object,
         const Strand3D& strand, StrandStyle *strandStyle) const;
 
+    // check style option consistency
+    bool CheckStyleSettings(const StructureSet *set);
+
     // just to test molecule redrawing for now
     void HighlightResidue(const StructureObject *object, int moleculeID, int residueID);
 
@@ -198,6 +207,9 @@ private:
     // StyleSettings accessors
     const StyleSettings& GetStyleForResidue(const StructureObject *object,
         int moleculeID, int residueID) const;
+
+    bool GetObjectStyle(const StructureObject *object, const Object3D& object3D,
+        const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const;
 
 public:
     void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
@@ -231,22 +243,24 @@ public:
     double tension;
 };
 
-class HelixStyle
+class ObjectStyle
 {
 public:
     StyleManager::eDisplayStyle style;
-    double radius;
-    Vector color;
-    double arrowLength, arrowBaseWidthProportion, arrowTipWidthProportion;
-};
-
-class StrandStyle
-{
-public:
-    StyleManager::eDisplayStyle style;
-    double width, thickness;
     Vector color;
     double arrowLength, arrowBaseWidthProportion;
+};
+
+class HelixStyle : public ObjectStyle
+{
+public:
+    double radius, arrowTipWidthProportion;
+};
+
+class StrandStyle : public ObjectStyle
+{
+public:
+    double width, thickness;
 };
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/08/21 19:31:48  thiessen
+* add style consistency checking
+*
 * Revision 1.20  2000/08/21 17:22:38  thiessen
 * add primitive highlighting for testing
 *
@@ -101,6 +104,7 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb1/Biostruc_descr.hpp>
 #include <objects/mmdb2/Biostruc_model.hpp>
+#include <objects/mmdb2/Model_type.hpp>
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
 #include <objects/mmdb3/Chem_graph_alignment.hpp>
@@ -261,6 +265,7 @@ void StructureSet::SetCenter(const Vector *given)
 bool StructureSet::Draw(const AtomSet *atomSet) const
 {
     TESTMSG("drawing StructureSet");
+    if (!styleManager->CheckStyleSettings(this)) return false;
     return true;
 }
 
@@ -341,6 +346,14 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
         // iterate SEQUENCE OF Biostruc-model
         CBiostruc::TModel::const_iterator i, ie=biostruc.GetModel().end();
         for (i=biostruc.GetModel().begin(); i!=ie; i++) {
+
+            // assume all models in this set are of same type
+            if (i->GetObject().GetType() == eModel_type_ncbi_backbone)
+                parentSet->isAlphaOnly = true;
+            else
+                parentSet->isAlphaOnly = false;
+
+            // load each Biostruc-model into a CoordSet
             if (i->GetObject().IsSetModel_coordinates()) {
                 CoordSet *coordSet =
                     new CoordSet(this, i->GetObject().GetModel_coordinates());

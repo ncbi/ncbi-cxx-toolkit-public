@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/21 19:31:17  thiessen
+* add style consistency checking
+*
 * Revision 1.17  2000/08/07 14:12:48  thiessen
 * added animation frames
 *
@@ -117,6 +120,7 @@ public:
 
     // public data
     const bool isMultipleStructure;
+    bool isAlphaOnly; // assume if one Object is alpha-only, then they all are
 
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/21 19:31:48  thiessen
+* add style consistency checking
+*
 * Revision 1.8  2000/08/21 17:22:38  thiessen
 * add primitive highlighting for testing
 *
@@ -125,7 +128,7 @@ void StyleSettings::SetToWireframe(void)
 {
     proteinBackbone.type = nucleotideBackbone.type = eComplete;
     proteinBackbone.style = nucleotideBackbone.style = eWire;
-    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eSecondaryStructure;
+    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eObject;
 
     proteinSidechains.isOn = nucleotideSidechains.isOn = true;
     proteinSidechains.style = nucleotideSidechains.style = eWire;
@@ -164,6 +167,44 @@ void StyleSettings::SetToWireframe(void)
     tubeWormRadius = 0.3;
 
     backgroundColor = Vector(0,0,0);
+}
+
+// check for inconsistencies in style settings - checks just globalStyle for now,
+// but should eventually check all styles (for user annotations) used in
+// this StructureSet. Return false if there's an uncorrectable problem.
+bool StyleManager::CheckStyleSettings(const StructureSet *set)
+{
+    // can't do worm with partial or complete backbone
+    if (((globalStyle.proteinBackbone.style == StyleSettings::eWireWorm ||
+          globalStyle.proteinBackbone.style == StyleSettings::eTubeWorm) &&
+         (globalStyle.proteinBackbone.type == StyleSettings::ePartial ||
+          globalStyle.proteinBackbone.type == StyleSettings::eComplete))) {
+        ERR_POST(Error << "CheckStyleSettings(): can't have worm with non-trace backbone");
+        globalStyle.proteinBackbone.type = StyleSettings::eTrace;
+    }
+    if (((globalStyle.nucleotideBackbone.style == StyleSettings::eWireWorm ||
+          globalStyle.nucleotideBackbone.style == StyleSettings::eTubeWorm) &&
+         (globalStyle.nucleotideBackbone.type == StyleSettings::ePartial ||
+          globalStyle.nucleotideBackbone.type == StyleSettings::eComplete))) {
+        ERR_POST(Error << "CheckStyleSettings(): can't have worm with non-trace backbone");
+        globalStyle.nucleotideBackbone.type = StyleSettings::eTrace;
+    }
+
+    // can't do non-trace backbones for ncbi-backbone models
+    if (set->isAlphaOnly) {
+        if (globalStyle.proteinBackbone.type == StyleSettings::ePartial ||
+            globalStyle.proteinBackbone.type == StyleSettings::eComplete) {
+            ERR_POST(Error << "CheckStyleSettings(): can't have worm with ncbi-backbone models");
+            globalStyle.proteinBackbone.type = StyleSettings::eTrace;
+        }
+        if (globalStyle.nucleotideBackbone.type == StyleSettings::ePartial ||
+            globalStyle.nucleotideBackbone.type == StyleSettings::eComplete) {
+            ERR_POST(Error << "CheckStyleSettings(): can't have worm with ncbi-backbone models");
+            globalStyle.nucleotideBackbone.type = StyleSettings::eTrace;
+        }
+    }
+
+    return true;
 }
 
 #define ATOM_NOT_DISPLAYED do { \
@@ -483,17 +524,6 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         bondStyle->end2.color = bondStyle->end1.color;
         bondStyle->end2.radius = bondStyle->end1.radius;
     }
-
-    // check options consistency, to avoid worm bonds between non-alpha atoms
-    if ((info1->classification != Residue::eAlphaBackboneAtom &&
-         (bondStyle->end1.style == eLineWormBond ||
-          bondStyle->end1.style == eThickWormBond)) ||
-        (info2->classification != Residue::eAlphaBackboneAtom &&
-         (bondStyle->end2.style == eLineWormBond ||
-          bondStyle->end2.style == eThickWormBond))) {
-        ERR_POST(Error << "StyleManager::GetBondStyle() - can't have worm bonds between non-alpha atoms");
-        return false;
-    }
         
     // add midCap if style or radius for two sides of bond is different;
     if (bondStyle->end1.style != bondStyle->end2.style ||
@@ -540,6 +570,43 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     return true;
 }
 
+bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D& object3D,
+    const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const
+{
+    // should eventually check to see if the residues covered by the object are visible...
+
+    // set drawing style
+    if (generalStyle.style == StyleSettings::eWithArrows) {
+        objectStyle->style = StyleManager::eObjectWithArrow;
+    } else if (generalStyle.style == StyleSettings::eWithoutArrows) {
+        objectStyle->style = StyleManager::eObjectWithoutArrow;
+    } else {
+        ERR_POST(Warning << "StyleManager::GetObjectStyle() - invalid 3d-object style");
+        return false;
+    }
+
+    // set color
+    switch (generalStyle.colorScheme) {
+        case StyleSettings::eMolecule:
+            // should actually be a color cycle...
+        case StyleSettings::eObject:
+            // should actually be a color cycle...
+            if (object->IsMaster())
+                objectStyle->color = Vector(1,0,1);
+            else
+                objectStyle->color = Vector(0,0,1);
+            break;
+        case StyleSettings::eSecondaryStructure:
+            // set by caller
+            break;
+        default:
+            ERR_POST(Error << "StyleManager::GetObjectStyle() - inappropriate color scheme for 3d-object");
+            return false;
+    }
+
+    return true;
+}
+
 bool StyleManager::GetHelixStyle(const StructureObject *object,
     const Helix3D& helix, HelixStyle *helixStyle) const
 {
@@ -551,41 +618,19 @@ bool StyleManager::GetHelixStyle(const StructureObject *object,
         helixStyle->style = StyleManager::eNotDisplayed;
         return true;
     }
-    // should eventually check to see if the residues covered by the object are visible...
 
-    // set drawing style
+    if (!GetObjectStyle(object, helix, settings.helixObjects, helixStyle))
+        return false;
+
+    // helix-specific settings
+    helixStyle->radius = settings.helixRadius;
     if (settings.helixObjects.style == StyleSettings::eWithArrows) {
-        helixStyle->style = StyleManager::eObjectWithArrow;
         helixStyle->arrowLength = 4.0;
         helixStyle->arrowBaseWidthProportion = 1.2;
         helixStyle->arrowTipWidthProportion = 0.4;
-    } else if (settings.helixObjects.style == StyleSettings::eWithoutArrows) {
-        helixStyle->style = StyleManager::eObjectWithoutArrow;
-    } else {
-        ERR_POST(Warning << "StyleManager::GetHelixStyle() - invalid helix style");
-        return false;
     }
-
-    helixStyle->radius = settings.helixRadius;
-
-    // set color
-    switch (settings.helixObjects.colorScheme) {
-        case StyleSettings::eMolecule:
-            // should actually be a color cycle...
-        case StyleSettings::eObject:
-            // should actually be a color cycle...
-            if (object->IsMaster())
-                helixStyle->color = Vector(1,0,1);
-            else
-                helixStyle->color = Vector(0,0,1);
-            break;
-        case StyleSettings::eSecondaryStructure:
-            helixStyle->color = Vector(0,1,0);
-            break;
-        default:
-            ERR_POST(Error << "StyleManager::GetHelixStyle() - inappropriate color scheme for helix");
-            return false;
-    }
+    if (settings.helixObjects.colorScheme == StyleSettings::eSecondaryStructure)
+        helixStyle->color = Vector(0,1,0);
 
     return true;
 }
@@ -601,41 +646,19 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
         strandStyle->style = StyleManager::eNotDisplayed;
         return true;
     }
-    // should eventually check to see if the residues covered by the object are visible...
 
-    // set drawing style
-    if (settings.strandObjects.style == StyleSettings::eWithArrows) {
-        strandStyle->style = StyleManager::eObjectWithArrow;
-        strandStyle->arrowLength = 2.8;
-        strandStyle->arrowBaseWidthProportion = 1.6;
-    } else if (settings.strandObjects.style == StyleSettings::eWithoutArrows) {
-        strandStyle->style = StyleManager::eObjectWithoutArrow;
-    } else {
-        ERR_POST(Warning << "StyleManager::GetStrandStyle() - invalid strand style");
+    if (!GetObjectStyle(object, strand, settings.strandObjects, strandStyle))
         return false;
-    }
 
+    // strand-specific settings
     strandStyle->width = settings.strandWidth;
     strandStyle->thickness = settings.strandThickness;
-
-    // set color
-    switch (settings.strandObjects.colorScheme) {
-        case StyleSettings::eMolecule:
-            // should actually be a color cycle...
-        case StyleSettings::eObject:
-            // should actually be a color cycle...
-            if (object->IsMaster())
-                strandStyle->color = Vector(1,0,1);
-            else
-                strandStyle->color = Vector(0,0,1);
-            break;
-        case StyleSettings::eSecondaryStructure:
-            strandStyle->color = Vector(.7,.7,0);
-            break;
-        default:
-            ERR_POST(Error << "StyleManager::GetStrandStyle() - inappropriate color scheme for strand");
-            return false;
+    if (settings.strandObjects.style == StyleSettings::eWithArrows) {
+        strandStyle->arrowLength = 2.8;
+        strandStyle->arrowBaseWidthProportion = 1.6;
     }
+    if (settings.strandObjects.colorScheme == StyleSettings::eSecondaryStructure)
+            strandStyle->color = Vector(.7,.7,0);
 
     return true;
 }
