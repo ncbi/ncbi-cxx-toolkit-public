@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/12 16:39:31  thiessen
+* fix MouseDown return value
+*
 * Revision 1.10  2000/10/12 16:22:37  thiessen
 * working block split
 *
@@ -126,7 +129,7 @@ public:
     // beginning of selection), saying where the mouse was at the time and
     // with what control keys (see eControlKeys above). If 'false' is returned,
     // then no selection will ensue; if 'true', selection acts normally.
-    virtual bool MouseDown(int column, int row, unsigned int controls) { }
+    virtual bool MouseDown(int column, int row, unsigned int controls) { return true; }
 
     // this is the callback when the the widget is in eSelect mode; it gives the
     // corners of the rectangle of cells selected.
