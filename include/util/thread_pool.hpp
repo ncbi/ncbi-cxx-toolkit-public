@@ -453,7 +453,6 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data, Uint1 priority)
     // Having the mutex, we can safely drop "volatile"
     TQueue& q = const_cast<TQueue&>(m_Queue);
     if (q.size() == m_MaxSize) {
-        m_PutSem.TryWait();
         NCBI_THROW(CBlockingQueueException, eFull, "CBlockingQueue<>::Put: "
                    "attempt to insert into a full queue");
     } else if (q.empty()) {
@@ -474,6 +473,9 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data, Uint1 priority)
     /// in FIFO order
     Uint4 real_priority = (priority << 24) + m_RequestCounter--;
     q.insert( CQueueItem(real_priority,data) );
+    if (q.size() == m_MaxSize) {
+        m_PutSem.TryWait();
+    }
 }
 
 
@@ -652,6 +654,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/03/23 20:37:44  didenko
+* Moved checking the queue size and raising the semaphore after a request insertion in CBlockingQueue<>::Put method
+*
 * Revision 1.18  2005/03/14 17:10:30  didenko
 * + request priority to CBlockingQueue and CPoolOfThreads
 * + DoxyGen
