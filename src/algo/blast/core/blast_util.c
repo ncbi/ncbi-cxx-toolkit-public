@@ -170,25 +170,19 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
 	return 0;
 }
 
-Uint1Ptr LIBCALL
+Int2 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
-   Int4 nt_length, Int2 frame, Int4Ptr length, CharPtr genetic_code)
+   Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, CharPtr genetic_code)
 {
 	Uint1 codon[CODON_LENGTH];
 	Int4 index, index_prot;
 	SeqMapTablePtr smtp;
 	Uint1 residue, new_residue;
         Uint1Ptr nucl_seq;
-	Uint1Ptr prot_seq;
 
 	smtp = SeqMapTableFind(Seq_code_ncbistdaa, Seq_code_ncbieaa);
 
         nucl_seq = (frame >= 0 ? query_seq : query_seq_rev);
-
-	/* Allocate two extra spaces for NULLB's at beginning and end of 
-           sequence */
-	prot_seq = (Uint1Ptr) 
-           MemNew((2+(nt_length+2)/CODON_LENGTH)*sizeof(Uint1));
 
 	/* The first character in the protein is the NULLB sentinel. */
 	prot_seq[0] = NULLB;
@@ -207,42 +201,8 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
 		}
 	}
 	prot_seq[index_prot] = NULLB;
-	*length = index_prot-1;
 	
-	return prot_seq;
-}
-
-BioseqPtr
-BLAST_MakeTempProteinBioseq (Uint1Ptr sequence, Int4 length, Uint1 alphabet)
-{
-    BioseqPtr bsp;
-    Int4 byte_store_length;
-    Nlm_ByteStorePtr byte_store;
-    ObjectIdPtr oip;
-
-    if (sequence == NULL || length == 0)
-        return NULL;
-    
-    byte_store = Nlm_BSNew(length);
-    
-    byte_store_length = Nlm_BSWrite(byte_store, (VoidPtr) sequence, length);
-    if (length != byte_store_length) {
-        Nlm_BSDelete(byte_store, length);
-        return NULL;
-    }
-    
-    bsp = BioseqNew();
-    bsp->seq_data = byte_store;
-    bsp->length = length;
-    bsp->seq_data_type = alphabet;
-    bsp->mol = Seq_mol_aa;
-    bsp->repr = Seq_repr_raw;
-    
-    oip = UniqueLocalId();
-    ValNodeAddPointer(&(bsp->id), SEQID_LOCAL, oip);
-    SeqMgrAddToBioseqIndex(bsp);
-    
-    return bsp;
+	return 0;
 }
 
 
@@ -272,51 +232,6 @@ Int4 MakeBlastSequenceBlkFromOID(ReadDBFILEPtr db, Int4 oid, BLAST_SequenceBlkPt
   seq->frame = 0;
   seq->oid = oid;
   return 0;
-}
-
-Int4 MakeBlastSequenceBlkFromFasta(FILE *fasta_fp, BLAST_SequenceBlkPtr seq)
-{
-   BioseqPtr query_bsp;
-   SeqEntryPtr query_sep;
-   Boolean is_na = FALSE;
-   Boolean believe_defline = TRUE;
-   SeqLocPtr mask_slp = NULL;
-   Int2 ctr=1;
-   
-   Uint1Ptr sequence = NULL;
-   
-   query_sep=FastaToSeqEntryForDb(fasta_fp,
-                               is_na, /* query is nucleotide? */
-                               NULL, /* error message */
-                               believe_defline, /* believe query defline? */
-                               "", /* prefix for localid if not parseable */
-                               &ctr, /* starting point for constructing a unique id */
-                               &mask_slp);
-
-   if (query_sep == NULL)
-      return 1;
-   
-   SeqEntryExplore(query_sep, &query_bsp, FindProt);
-   
-   if (query_bsp == NULL)
-      return 1;
-   
-   /* allocate contiguous space for the sequence */
-   sequence = Malloc(query_bsp->length);
-   
-   if (sequence == NULL)
-      return 1;
-   
-   /* convert to ncbistdaa encoding */
-   BioseqRawConvert(query_bsp, Seq_code_ncbistdaa);
-   
-   /* read the sequence */
-   BSSeek(query_bsp->seq_data, 0, SEEK_SET);
-   BSRead(query_bsp->seq_data, sequence, query_bsp->length);
-   
-   seq->length = query_bsp->length;
-   seq->sequence = sequence;
-   return 0;
 }
 
 /*

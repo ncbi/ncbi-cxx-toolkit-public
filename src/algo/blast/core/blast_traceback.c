@@ -442,10 +442,13 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             translated_length = translated_length_orig + 3;
          }
          if (translated_sequence[hsp->subject.frame] == NULL) {
+            translated_length[hsp->subject.frame] = 
+               (subject_blk->length-ABS(hsp->subject.frame)+1)/CODON_LENGTH;
             translated_sequence[hsp->subject.frame] =
-               BLAST_GetTranslation(nucl_sequence, nucl_sequence_rev, 
-                  subject_blk->length, hsp->subject.frame, 
-                  &translated_length[hsp->subject.frame], genetic_code);
+               (Uint1Ptr) Malloc(translated_length[hsp->subject.frame] + 2);
+            BLAST_GetTranslation(nucl_sequence, nucl_sequence_rev, 
+               subject_blk->length, hsp->subject.frame, 
+               translated_sequence[hsp->subject.frame], genetic_code);
          }
          subject_start = translated_sequence[hsp->subject.frame] + 1;
          subject_length_orig = translated_length[hsp->subject.frame];
