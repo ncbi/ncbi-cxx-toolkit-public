@@ -123,59 +123,6 @@
 /* ========================================================================= */
 
 
-/** @defgroup ALGO ALGORITHMS
- *  Algorithm members
- */
-
-/** @defgroup AlgoExcep Algorithm Exceptions
- *  @ingroup ALGO
- */
-
-/** @defgroup AlgoGlobal Global Alignment Algorithm
- *  @ingroup ALGO
- */
-
-/** @defgroup AlgoGlobalmRna Global Alignment with mRna, Dna
- *  @ingroup ALGO
- */
-
-/** @defgroup AlgoAlignMM Myers & Milner Global Alignment Algorithm
- *  @ingroup ALGO
- */
-
-
-/* ========================================================================= */
-
-
-/**
- *  @defgroup CGI
- *  CGI Members
- */
-
-/** @defgroup CGIBase CGI Base Classes
- *  @ingroup CGI
- */
-
-/** @defgroup CGICmd CGI Command APIs
- *  @ingroup CGI
- */
-
-/** @defgroup CGIExcep CGI Exception
- *  @ingroup CGI
- */
-
-/** @defgroup CGIReqRes CGI Request/Response APIs
- *  @ingroup CGI
- */
-
-/** @defgroup CookieAffinity Cookie Affinity Services 
- *  @ingroup CGI
- */
-
-
-/* ========================================================================= */
-
-
 /** @defgroup CONNECT
  *  Connect Library members
  */
@@ -228,26 +175,6 @@
 /* ========================================================================= */
 
 
-/** @defgroup CTOOLS
- *  Ctool members
- */
-
-/** @defgroup CToolsBridge C/C++ Toolkit Bridge
- *  @ingroup CTOOLS
- */
-
-/** @defgroup CToolsASNConn ASN Streams Connection
- *  @ingroup CTOOLS
- */
-
-/** @defgroup CToolsASNConv ASN Converter
- *  @ingroup CTOOLS
- */
-
-
-/* ========================================================================= */
-
-
 /** @defgroup DBAPI
  *  Database API members
  */
@@ -288,8 +215,29 @@
 /* ========================================================================= */
 
 
-/** @defgroup GUI
- *  HTML members
+/**
+ *  @defgroup CGI
+ *  CGI Members
+ */
+
+/** @defgroup CGIBase CGI Base Classes
+ *  @ingroup CGI
+ */
+
+/** @defgroup CGICmd CGI Command APIs
+ *  @ingroup CGI
+ */
+
+/** @defgroup CGIExcep CGI Exception
+ *  @ingroup CGI
+ */
+
+/** @defgroup CGIReqRes CGI Request/Response APIs
+ *  @ingroup CGI
+ */
+
+/** @defgroup CookieAffinity Cookie Affinity Services 
+ *  @ingroup CGI
  */
 
 
@@ -297,7 +245,7 @@
 
 
 /** @defgroup HTML
- *  GUI members
+ *  HTML members
  */
 
 /** @defgroup CreationFactory Creation Factory
@@ -326,75 +274,6 @@
 
 /** @defgroup TagMapper Tag Mapper Classes
  *  @ingroup HTML
- */
-
-
-
-/* ========================================================================= */
-
-
-/** @defgroup OBJECTS
- *  Objects members
- */
-
-
-/* ========================================================================= */
-
-
-/** @defgroup OBJECTMANAGER OBJECT MANAGER
- *  Object Manager members
- */
-
-
-/* ========================================================================= */
-
-
-/** @defgroup SERIAL
- *  Serial members
- */
-
-/** @defgroup FieldsComplex Fields for Complex ASN types
- *  @ingroup SERIAL
- */
-
-/** @defgroup GenClassSupport Generated Classes Support
- *  @ingroup SERIAL
- */
-
-/** @defgroup HookSupport Hook Support
- *  @ingroup SERIAL
- */
-
-/** @defgroup ObjHierarchy Object Hierarchy Iterator
- *  @ingroup SERIAL
- */
-
-/** @defgroup ObjStreamSupport Object Stream Support
- *  @ingroup SERIAL
- */
-
-/** @defgroup SerialDef Serialization Definition
- *  @ingroup SERIAL
- */
-
-/** @defgroup SerialExcep Serial Exception
- *  @ingroup SERIAL
- */
-
-/** @defgroup TypeInfoC Type Info Classes for C Toolkit
- *  @ingroup SERIAL
- */
-
-/** @defgroup TypeInfoCPP Type Info Classes for C++ Toolkit
- *  @ingroup SERIAL
- */
-
-/** @defgroup TypeLookup Type Lookup
- *  @ingroup SERIAL
- */
-
-/** @defgroup UserCodeSupport User Code Support
- *  @ingroup SERIAL
  */
 
 
@@ -467,5 +346,126 @@
 
 /** @defgroup WeakMap Weak Map Template
  *  @ingroup UTIL
+ */
+
+
+/* ========================================================================= */
+
+
+/** @defgroup SERIAL
+ *  Serial members
+ */
+
+/** @defgroup FieldsComplex Fields for Complex ASN types
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup GenClassSupport Generated Classes Support
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup HookSupport Hook Support
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup ObjHierarchy Object Hierarchy Iterator
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup ObjStreamSupport Object Stream Support
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup SerialDef Serialization Definition
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup SerialExcep Serial Exception
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup TypeInfoC Type Info Classes for C Toolkit
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup TypeInfoCPP Type Info Classes for C++ Toolkit
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup TypeLookup Type Lookup
+ *  @ingroup SERIAL
+ */
+
+/** @defgroup UserCodeSupport User Code Support
+ *  @ingroup SERIAL
+ */
+
+
+/* ========================================================================= */
+
+
+/** @defgroup OBJECTMANAGER OBJECT MANAGER
+ *  Object Manager members
+ */
+
+
+/* ========================================================================= */
+
+/** @defgroup GBENCH GENOME BENCH
+ *  Genome Bench members
+ */
+
+
+
+/* ========================================================================= */
+
+
+/** @defgroup CTOOLS
+ *  Ctool members
+ */
+
+/** @defgroup CToolsBridge C/C++ Toolkit Bridge
+ *  @ingroup CTOOLS
+ */
+
+/** @defgroup CToolsASNConn ASN Streams Connection
+ *  @ingroup CTOOLS
+ */
+
+/** @defgroup CToolsASNConv ASN Converter
+ *  @ingroup CTOOLS
+ */
+
+
+/* ========================================================================= */
+
+
+/** @defgroup ALGO ALGORITHMS
+ *  Algorithm members
+ */
+
+/** @defgroup AlgoExcep Algorithm Exceptions
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoGlobal Global Alignment Algorithm
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoGlobalmRna Global Alignment with mRna, Dna
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoAlignMM Myers & Milner Global Alignment Algorithm
+ *  @ingroup ALGO
+ */
+
+
+/* ========================================================================= */
+
+
+
+/** @defgroup GUI
+ *  HTML members
  */
 
