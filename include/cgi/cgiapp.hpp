@@ -129,6 +129,9 @@ private:
                    TLogPostFlags           flags)
         const;
 
+    // Add cookie with load balancer information
+    void x_AddLBCookie();
+
     CCgiContext&   x_GetContext (void) const;
     CNcbiResource& x_GetResource(void) const;
 
@@ -193,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/02/19 17:51:34  kuznets
+* Added generation of load balancing cookie
+*
 * Revision 1.30  2003/02/05 01:21:43  ucko
 * "friend" -> "friend class" for GCC 3; CVS log -> end.
 *

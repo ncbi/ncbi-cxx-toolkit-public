@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Author: Eugene Vasilchenko, Denis Vakatov, Anatoliy Kuznetsov
 *
 * File Description:
 *   Definition CGI application class and its context class.
@@ -32,6 +32,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
+#include <connect/ncbi_socket.h>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
@@ -80,7 +81,7 @@ int CCgiApplication::Run(void)
         // Restore old diagnostic state when done.
         CDiagRestorer diag_restorer;
         ConfigureDiagnostics(*m_Context);
-
+        x_AddLBCookie();
         result = ProcessRequest(*m_Context);
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
@@ -434,6 +435,60 @@ CCgiStatistics* CCgiApplication::CreateStat()
     return new CCgiStatistics(*this);
 }
 
+void CCgiApplication::x_AddLBCookie()
+{
+    const CNcbiRegistry& reg = GetConfig();
+
+    string cookie_name =
+        GetConfig().GetString("CGI-LB", "Name", kEmptyStr,
+                               CNcbiRegistry::eReturn);
+
+    if ( cookie_name.empty() ) return;
+
+    int life_span = reg.GetInt("CGI-LB", "LifeSpan", 0,
+                               CNcbiRegistry::eReturn);
+
+    string domain = reg.GetString("CGI-LB", "Domain", "ncbi.nlm.nih.gov",
+                               CNcbiRegistry::eReturn);
+
+    if ( domain.empty() ) {
+        ERR_POST("CGI-LB: 'Domain' not specified.");
+    } else {
+        if (domain[0] != '.') {     // domain must start with dot
+            domain.insert(0, ".");
+        }
+    }
+
+    string path = reg.GetString("CGI-LB", "Path", kEmptyStr,
+                               CNcbiRegistry::eReturn);
+
+    bool secure = reg.GetBool("CGI-LB", "Secure", false,
+                               CNcbiRegistry::eErrPost);
+
+    string host = reg.GetString("CGI-LB", "Host", kEmptyStr,
+                               CNcbiRegistry::eReturn);
+
+    if ( host.empty() ) {
+        unsigned int ip_addr = SOCK_gethostbyname(0);
+        char buf[100];
+        int res = SOCK_ntoa(ip_addr, buf, sizeof(buf));
+        if (res == 0) {
+            host = buf;
+        }
+        else {
+            ERR_POST("CCgiApp::x_AddLBCookie SOCK_ntoa error:" << res);
+        }
+    }
+    CCgiCookie cookie(cookie_name, host, domain, path);
+    if (life_span > 0) {
+        CTime exp_time(CTime::eCurrent, CTime::eGmt);
+        exp_time.AddSecond(life_span);
+        cookie.SetExpTime(exp_time);
+    }
+    cookie.SetSecure(secure);
+
+    GetContext().GetResponse().Cookies().Add(cookie);
+}
 
 
 ///////////////////////////////////////////////////////
@@ -611,6 +666,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2003/02/19 17:51:46  kuznets
+* Added generation of load balancing cookie
+*
 * Revision 1.35  2003/02/10 22:33:54  ucko
 * Use CTime::DiffSecond rather than operator -, which works in days, and
 * don't rely on implicit time_t -> CTime construction.
