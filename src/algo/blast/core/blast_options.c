@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.3  2003/04/02 17:20:41  dondosha
+ * Added calculation of ungapped cutoff score in correct place
+ *
  * Revision 1.2  2003/04/01 17:42:33  dondosha
  * Added arguments to BlastExtensionParametersNew
  *
@@ -278,36 +281,42 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 *****************************************************************************/
 
 Int2
-BlastInitialWordParametersNew(BlastInitialWordOptionsPtr options, BLAST_ScoreBlkPtr sbp, BlastInitialWordParametersPtr *parameters)
-
+BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
+   BlastHitSavingOptionsPtr hit_options, 
+   BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
+   BlastQueryInfoPtr query_info, BlastInitialWordParametersPtr *parameters)
 {
-	if (options == NULL || sbp == NULL || sbp->kbp_std[0] == NULL)
-		return 8;
+   Int4 context = query_info->first_context;
+   Int4 cutoff_score;
 
-	*parameters = (BlastInitialWordParametersPtr) MemNew(sizeof(BlastInitialWordParameters));
+   if (!word_options || !hit_options || !sbp || !sbp->kbp_std[context])
+      return 8;
 
-	(*parameters)->options = options;
+   *parameters = (BlastInitialWordParametersPtr) 
+      MemNew(sizeof(BlastInitialWordParameters));
 
-	(*parameters)->x_dropoff = 
-           ceil(options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[0]->Lambda);
+   (*parameters)->options = word_options;
 
-#if 0
-        /* A fixed score cut-off can be set only if there is just one query 
-           sequence */
-        if (query_info->num_queries == 1) {
-           if (options->is_gapped && 
-               options->program_number != blast_type_blastn) {
-              BlastCutoffs_simple(&((*parameters)->cutoff_score), 
-                                  &(options->expect_value), sbp->kbp_gap[0], 
-                                  query_info->eff_searchsp_array[0], FALSE);
-           } else {
-              BlastCutoffs_simple(&((*parameters)->cutoff_score), 
-                                  &(options->expect_value), sbp->kbp_std[0], 
-                                  query_info->eff_searchsp_array[0], FALSE);
-           }
-        }
-#endif
-	return 0;
+   (*parameters)->x_dropoff = 
+      ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
+
+   /* A fixed score cut-off can be set only if there is just one query 
+      sequence */
+   if (hit_options->is_gapped && 
+       hit_options->program_number != blast_type_blastn) {
+      BlastCutoffs_simple(&cutoff_score, &(hit_options->expect_value), 
+         sbp->kbp_gap[context], query_info->eff_searchsp_array[context], 
+         FALSE);
+   } else {
+      BlastCutoffs_simple(&cutoff_score, &(hit_options->expect_value), 
+         sbp->kbp_std[context], query_info->eff_searchsp_array[context], 
+         FALSE);
+   }
+
+   (*parameters)->cutoff_score = 
+      MIN((Int4)ext_params->gap_trigger, cutoff_score);
+
+   return 0;
 }
 
 
@@ -942,11 +951,10 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 
 Int2
 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
-   BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info,
-   BlastHitSavingParametersPtr *parameters)
-
+   int handle_results(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
+           VoidPtr), BlastHitSavingParametersPtr *parameters)
 {
-   if (!options || !parameters || !sbp)
+   if (!options || !parameters)
       return 1;
 
    *parameters = (BlastHitSavingParametersPtr) 
@@ -956,6 +964,8 @@ BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options,
       return 1;
 
    (*parameters)->options = options;
+
+   (*parameters)->handle_results = handle_results;
 
    return 0;
 }

@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.3  2003/04/02 17:20:41  dondosha
+* Added calculation of ungapped cutoff score in correct place
+*
 * Revision 1.2  2003/04/01 17:45:54  dondosha
 * Corrections for filtering with translated queries
 *
@@ -1561,7 +1564,6 @@ SeqLocPtr *filter_slp_out,
 BLAST_ExtendWordPtr *ewp,
 BLAST_ScoreBlkPtr *sbpp,
 LookupTableWrapPtr *lookup_wrap,
-BlastInitialWordParametersPtr *word_parameters,
 BlastHitSavingParametersPtr *hit_parameters,
 Blast_MessagePtr *blast_message	
 )
@@ -1593,7 +1595,7 @@ Blast_MessagePtr *blast_message
         SeqLocPtr mask_slp, next_mask_slp;      /* Auxiliary locations for lower case masks */
         Int4 counter;
         SeqIdPtr seqid = NULL, mask_seqid = NULL, next_mask_seqid = NULL;
-        Uint1 prog_number;
+        Uint1 program_number;
 
 	if ((status=BlastScoringOptionsValidate(scoring_options, blast_message)) != 0)
 	{
@@ -1610,7 +1612,7 @@ Blast_MessagePtr *blast_message
 		return status;
 	}
 
-        BlastProgram2Number(program, &prog_number);
+        BlastProgram2Number(program, &program_number);
 
 	is_na = ISA_na(SeqLocMol(slp));
 	while (tmp_slp)
@@ -1893,15 +1895,16 @@ Blast_MessagePtr *blast_message
 		sbp->kbp = sbp->kbp_gap;
                	BlastKarlinBlkStandardCalc(sbp, 0, sbp->number_of_contexts-1);
         }
-        /* Fill the query information structure, including the context 
-           offsets for multiple queries */
+
         if (ewp && (status = BLAST_ExtendWordInit(sequence_block, word_options, 
                                 eff_len_options->db_length, 
                                 eff_len_options->dbseq_num, ewp)) != 0)
            return status;
 
+        /* Fill the query information structure, including the context 
+           offsets for multiple queries */
         if (query_info && 
-            (status = BLAST_SetUpQueryInfo(prog_number, query_slp, sbp, 
+            (status = BLAST_SetUpQueryInfo(program_number, query_slp, sbp, 
                                            query_info)) != 0)
            return status;
 
@@ -1909,16 +1912,11 @@ Blast_MessagePtr *blast_message
                          eff_len_options, sbp, *query_info, query_slp)) != 0)
            return status;
 
-	/* IMPORTANT: calculation of HitSavingParameters should be after 
-           calculation of effective length! */
         if (hit_parameters)
-           BlastHitSavingParametersNew(hit_options, sbp, *query_info,
-                                       hit_parameters);
+           BlastHitSavingParametersNew(hit_options, NULL, hit_parameters);
 
-	if (word_parameters)
-           BlastInitialWordParametersNew(word_options, sbp, word_parameters);
-
-        sbp->kbp = sbp->kbp_std; /* should be moved somewhere?? */
+        /* Why are there so many Karlin block names?? */
+        sbp->kbp = sbp->kbp_std;
         sbp->kbp_gap = sbp->kbp_gap_std;
 
 	return 0;
