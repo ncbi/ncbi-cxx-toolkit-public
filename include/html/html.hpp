@@ -149,43 +149,43 @@ class CHTMLNode : public CNCBINode
     typedef CNCBINode CParent;
 public:
     CHTMLNode(void)
-        { }
+    { }
     CHTMLNode(const char* tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLNode(const char* tagname, const char* text)
         : CParent(tagname)
-        {
-            AppendPlainText(text);
-        }
+    {
+        AppendPlainText(text);
+    }
     CHTMLNode(const char* tagname, const string& text)
         : CParent(tagname)
-        {
-            AppendPlainText(text);
-        }
+    {
+        AppendPlainText(text);
+    }
     CHTMLNode(const char* tagname, CNCBINode* node)
         : CParent(tagname)
-        {
-            AppendChild(node);
-        }
+    {
+        AppendChild(node);
+    }
     CHTMLNode(const string& tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLNode(const string& tagname, const char* text)
         : CParent(tagname)
-        {
-            AppendPlainText(text);
-        }
+    {
+        AppendPlainText(text);
+    }
     CHTMLNode(const string& tagname, const string& text)
         : CParent(tagname)
-        {
-            AppendPlainText(text);
-        }
+    {
+        AppendPlainText(text);
+    }
     CHTMLNode(const string& tagname, CNCBINode* node)
         : CParent(tagname)
-        {
-            AppendChild(node);
-        }
+    {
+        AppendChild(node);
+    }
     ~CHTMLNode(void);
 
     // convenient way to set some common attributes
@@ -259,13 +259,13 @@ public:
     void SetText(const string& text);
 
     bool NoEncode(void) const
-        {
-            return m_NoEncode;
-        }
+    {
+        return m_NoEncode;
+    }
     void SetNoEncode(bool noEncode = true)
-        {
-            m_NoEncode = noEncode;
-        }
+    {
+        m_NoEncode = noEncode;
+    }
 
     virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode);
 
@@ -297,28 +297,28 @@ class CHTMLOpenElement: public CHTMLNode
 public:
     CHTMLOpenElement(const char* tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLOpenElement(const char* tagname, const char* text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLOpenElement(const char* tagname, const string& text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLOpenElement(const char* tagname, CNCBINode* node)
         : CParent(tagname, node)
-        { }
+    { }
     CHTMLOpenElement(const string& tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLOpenElement(const string& tagname, const char* text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLOpenElement(const string& tagname, const string& text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLOpenElement(const string& tagname, CNCBINode* node)
         : CParent(tagname, node)
-        { }
+    { }
     ~CHTMLOpenElement(void);
 
     // prints tag itself
@@ -333,28 +333,28 @@ class CHTMLInlineElement: public CHTMLOpenElement
 public:
     CHTMLInlineElement(const char* tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLInlineElement(const char* tagname, const char* text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLInlineElement(const char* tagname, const string& text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLInlineElement(const char* tagname, CNCBINode* node)
         : CParent(tagname, node)
-        { }
+    { }
     CHTMLInlineElement(const string& tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLInlineElement(const string& tagname, const char* text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLInlineElement(const string& tagname, const string& text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLInlineElement(const string& tagname, CNCBINode* node)
         : CParent(tagname, node)
-        { }
+    { }
     ~CHTMLInlineElement(void);
 
     // prints tag close    
@@ -369,28 +369,28 @@ class CHTMLElement: public CHTMLInlineElement
 public:
     CHTMLElement(const char* tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLElement(const char* tagname, const char* text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLElement(const char* tagname, const string& text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLElement(const char* tagname, CNCBINode* node)
         : CParent(tagname, node)
-        { }
+    { }
     CHTMLElement(const string& tagname)
         : CParent(tagname)
-        { }
+    { }
     CHTMLElement(const string& tagname, const char* text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLElement(const string& tagname, const string& text)
         : CParent(tagname, text)
-        { }
+    { }
     CHTMLElement(const string& tagname, CNCBINode* node)
         : CParent(tagname, node)
-        { }
+    { }
     ~CHTMLElement(void);
 
     // prints tag close    
@@ -403,20 +403,20 @@ class CHTMLComment : public CHTMLNode
     typedef CHTMLNode CParent;
 public:
     CHTMLComment(void)
-        {
-        }
+    {
+    }
     CHTMLComment(const char* text)
-        {
-            AppendPlainText(text);
-        }
+    {
+        AppendPlainText(text);
+    }
     CHTMLComment(const string& text)
-        {
-            AppendPlainText(text);
-        }
+    {
+        AppendPlainText(text);
+    }
     CHTMLComment(CNCBINode* node)
-        {
-            AppendChild(node);
-        }
+    {
+        AppendChild(node);
+    }
     ~CHTMLComment(void);
 
     virtual CNcbiOstream& Print(CNcbiOstream& out, TMode mode = eHTML);
@@ -431,26 +431,26 @@ class CHTMLListElement : public CHTMLElement
 public:
     CHTMLListElement(const char* tagname, bool compact = false)
         : CParent(tagname)
-        {
-            if ( compact )
-                SetCompact();
-        }
+    {
+        if ( compact )
+            SetCompact();
+    }
     CHTMLListElement(const char* tagname, const char* type,
                      bool compact = false)
         : CParent(tagname)
-        {
-            SetType(type);
-            if ( compact )
-                SetCompact();
-        }
+    {
+        SetType(type);
+        if ( compact )
+            SetCompact();
+    }
     CHTMLListElement(const char* tagname, const string& type,
                      bool compact = false)
         : CParent(tagname)
-        {
-            SetType(type);
-            if ( compact )
-                SetCompact();
-        }
+    {
+        SetType(type);
+        if ( compact )
+            SetCompact();
+    }
     ~CHTMLListElement(void);
 
     CHTMLListElement* AppendItem(const char* text);
@@ -526,16 +526,16 @@ public:
     typedef unsigned TIndex;
     CHTML_tc(const char* tagname)
         : CParent(tagname), m_Parent(0)
-        { }
+    { }
     CHTML_tc(const char* tagname, const char* text)
         : CParent(tagname, text), m_Parent(0)
-        { }
+    { }
     CHTML_tc(const char* tagname, const string& text)
         : CParent(tagname, text), m_Parent(0)
-        { }
+    { }
     CHTML_tc(const char* tagname, CNCBINode* node)
         : CParent(tagname, node), m_Parent(0)
-        { }
+    { }
     ~CHTML_tc(void);
 
     // type for row and column indexing
@@ -603,11 +603,11 @@ public:
 
     // current insertion point
     void SetCurrentCell(TIndex row, TIndex col)
-        { m_CurrentRow = row; m_CurrentCol = col; }
+    { m_CurrentRow = row; m_CurrentCol = col; }
     TIndex GetCurrentRow(void) const
-        { return m_CurrentRow; }
+    { return m_CurrentRow; }
     TIndex GetCurrentCol(void) const
-        { return m_CurrentCol; }
+    { return m_CurrentCol; }
 
     class CTableInfo;
 
@@ -618,21 +618,21 @@ public:
     CHTML_tc* Cell(TIndex row, TIndex column, ECellType type,
                    TIndex rowSpan, TIndex colSpan);
     CHTML_tc* HeaderCell(TIndex row, TIndex column)
-        { return Cell(row, column, eHeaderCell); }
+    { return Cell(row, column, eHeaderCell); }
     CHTML_tc* DataCell(TIndex row, TIndex column)
-        { return Cell(row, column, eDataCell); }
+    { return Cell(row, column, eDataCell); }
 
     CHTML_tc* NextCell(ECellType type = eAnyCell);
     CHTML_tc* NextHeaderCell(void)
-        { return NextCell(eHeaderCell); }
+    { return NextCell(eHeaderCell); }
     CHTML_tc* NextDataCell(void)
-        { return NextCell(eDataCell); }
+    { return NextCell(eDataCell); }
 
     CHTML_tc* NextRowCell(ECellType type = eAnyCell);
     CHTML_tc* NextRowHeaderCell(void)
-        { return NextRowCell(eHeaderCell); }
+    { return NextRowCell(eHeaderCell); }
     CHTML_tc* NextRowDataCell(void)
-        { return NextRowCell(eDataCell); }
+    { return NextRowCell(eDataCell); }
 
     // checks table contents for validaty, throws exception if invalid
     void CheckTable(void) const;
@@ -667,7 +667,7 @@ public:
     };
     // Set rows and cols separators (affects ePlainText mode only)
     void SetPlainSeparators(const string& col_left     = kEmptyStr,
-                            const string& col_middle   = "\t",
+                            const string& col_middle   = " ",
                             const string& col_right    = kEmptyStr,
                             const char    row_sep_char = '-',
                             ERowPlainSep  is_row_sep   = eSkipRowSep);
@@ -837,27 +837,27 @@ public:
 // the <button> tag
 /*
   commented out because it's not supported in most browsers
-class CHTML_button : public CHTMLElement
-{
-    typedef CHTMLElement CParent;
-public:
-    enum EButtonType {
-        eSubmit,
-        eReset,
-        eButton
-    };
-    CHTML_button(const string& text, EButtonType type);
-    CHTML_button(CNCBINode* contents, EButtonType type);
-    CHTML_button(const string& text, const string& name,
-                 const string& value = kEmptyStr);
-    CHTML_button(CNCBINode* contents, const string& name,
-                 const string& value = kEmptyStr);
-    ~CHTML_button(void);
+  class CHTML_button : public CHTMLElement
+  {
+  typedef CHTMLElement CParent;
+  public:
+  enum EButtonType {
+  eSubmit,
+  eReset,
+  eButton
+  };
+  CHTML_button(const string& text, EButtonType type);
+  CHTML_button(CNCBINode* contents, EButtonType type);
+  CHTML_button(const string& text, const string& name,
+  const string& value = kEmptyStr);
+  CHTML_button(CNCBINode* contents, const string& name,
+  const string& value = kEmptyStr);
+  ~CHTML_button(void);
 
-    CHTML_button* SetType(EButtonType type);
-    CHTML_button* SetSubmit(const string& name,
-                            const string& value = kEmptyStr);
-};
+  CHTML_button* SetType(EButtonType type);
+  CHTML_button* SetSubmit(const string& name,
+  const string& value = kEmptyStr);
+  };
 */
 
 // <input type=text> tag
@@ -1226,6 +1226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2002/01/29 20:00:18  ivanov
+ * (plain text) CHTML_table:: set def. medium sep. to " " instead of "\t"
+ *
  * Revision 1.56  2002/01/28 17:56:43  vakatov
  * (plain text) CHTML_table:: set def. medium sep. to "\t" instead of "\t|\t"
  *
@@ -1306,7 +1309,8 @@ END_NCBI_SCOPE
  * CHTMLNode::  added attribute "CLASS"
  *
  * Revision 1.35  1999/05/20 16:49:11  pubmed
- * Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
+ * Changes for SaveAsText: all Print() methods get mode parameter that can be 
+ * HTML or PlainText
  *
  * Revision 1.34  1999/05/10 17:01:11  vasilche
  * Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().

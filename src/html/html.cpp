@@ -265,8 +265,8 @@ CHTMLDualNode::CHTMLDualNode(const char* html, const char* plain)
 
 CHTMLDualNode::CHTMLDualNode(CNCBINode* child, const char* plain)
 {
-   AppendChild(child);
-   m_Plain = plain;
+    AppendChild(child);
+    m_Plain = plain;
 }
 
 CHTMLDualNode::~CHTMLDualNode(void)
@@ -579,12 +579,12 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
     non_const_iterate ( TChildren, i, Children() ) {
 
         if ( dynamic_cast<CHTML_head*>(Node(i)) ) {
-             Node(i)->AppendChild(new CHTMLText(
-                      CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl)));
+            Node(i)->AppendChild(new CHTMLText(
+                                               CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl)));
         } else {
             if ( dynamic_cast<CHTML_body*>(Node(i)) ) {
-                 Node(i)->AppendChild(new CHTMLText(
-                          CHTMLPopupMenu::GetCodeBody()));
+                Node(i)->AppendChild(new CHTMLText(
+                                                   CHTMLPopupMenu::GetCodeBody()));
             }
         }
     }
@@ -600,22 +600,22 @@ class CHTML_tc_Cache
 public:
     CHTML_tc_Cache(void)
         : m_Used(false), m_Node(0)
-        {
-        }
+    {
+    }
 
     bool IsUsed(void) const
-        {
-            return m_Used;
-        }
+    {
+        return m_Used;
+    }
 
     bool IsNode(void) const
-        {
-            return m_Node != 0;
-        }
+    {
+        return m_Node != 0;
+    }
     CHTML_tc* GetCellNode(void) const
-        {
-            return m_Node;
-        }
+    {
+        return m_Node;
+    }
 
     void SetUsed(void);
     void SetCellNode(CHTML_tc* node);
@@ -633,27 +633,27 @@ public:
     CHTML_tr_Cache(void)
         : m_Node(0),
           m_CellCount(0), m_CellsSize(0), m_Cells(0), m_FilledCellCount(0)
-        {
-        }
+    {
+    }
     ~CHTML_tr_Cache(void)
-        {
-            delete[] m_Cells;
-        }
+    {
+        delete[] m_Cells;
+    }
 
     CHTML_tr* GetRowNode(void) const
-        {
-            return m_Node;
-        }
+    {
+        return m_Node;
+    }
     void SetRowNode(CHTML_tr* rowNode)
-        {
-            _ASSERT(!m_Node && rowNode);
-            m_Node = rowNode;
-        }
+    {
+        _ASSERT(!m_Node && rowNode);
+        m_Node = rowNode;
+    }
 
     TIndex GetCellCount(void) const
-        {
-            return m_CellCount;
-        }
+    {
+        return m_CellCount;
+    }
     CHTML_tc_Cache& GetCellCache(TIndex col);
 
     void AppendCell(CHTML_tr* rowNode, TIndex col,
@@ -681,9 +681,9 @@ public:
     ~CHTML_table_Cache(void);
 
     TIndex GetRowCount(void) const
-        {
-            return m_RowCount;
-        }
+    {
+        return m_RowCount;
+    }
 
     CHTML_tr_Cache& GetRowCache(TIndex row);
     CHTML_tr* GetRowNode(TIndex row);
@@ -802,7 +802,7 @@ size_t CHTML_tr::GetTextLength(TMode mode)
     size_t textlen = strlen(sout.str());
     if ( mode == ePlainText ) {
         textlen += m_Parent->m_ColSepL.length() +
-                   m_Parent->m_ColSepR.length();
+            m_Parent->m_ColSepR.length();
         if ( cols ) {
             textlen += m_Parent->m_ColSepM.length() * (cols - 1);
         }
@@ -1138,7 +1138,7 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
 
 CHTML_table::CHTML_table(void)
     : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1)),
-      m_ColSepL(kEmptyStr), m_ColSepM(kEmptyStr), m_ColSepR(kEmptyStr),
+      m_ColSepL(kEmptyStr), m_ColSepM(" "), m_ColSepR(kEmptyStr),
       m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
 }
@@ -1199,7 +1199,7 @@ CHTML_tr* CHTML_table::Row(TIndex row)  // todo: exception
 CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type)
 {
     return GetCache().GetCellNode(m_CurrentRow = row, m_CurrentCol = col,
-                                 type);
+                                  type);
 }
 
 CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type,
@@ -1542,59 +1542,59 @@ CHTML_reset::~CHTML_reset(void)
 // button tag
 /*
   commented out because it's not supported in most browsers
-CHTML_button::CHTML_button(const string& text, EButtonType type)
-    : CParent("button", text)
-{
-    SetType(type);
-}
+  CHTML_button::CHTML_button(const string& text, EButtonType type)
+  : CParent("button", text)
+  {
+  SetType(type);
+  }
 
-CHTML_button::CHTML_button(CNCBINode* contents, EButtonType type)
-    : CParent("button", contents)
-{
-    SetType(type);
-}
+  CHTML_button::CHTML_button(CNCBINode* contents, EButtonType type)
+  : CParent("button", contents)
+  {
+  SetType(type);
+  }
 
-CHTML_button::CHTML_button(const string& text, const string& name,
-                           const string& value)
-    : CParent("button", text)
-{
-    SetSubmit(name, value);
-}
+  CHTML_button::CHTML_button(const string& text, const string& name,
+  const string& value)
+  : CParent("button", text)
+  {
+  SetSubmit(name, value);
+  }
 
-CHTML_button::CHTML_button(CNCBINode* contents, const string& name,
-                           const string& value)
-    : CParent("button", contents)
-{
-    SetSubmit(name, value);
-}
+  CHTML_button::CHTML_button(CNCBINode* contents, const string& name,
+  const string& value)
+  : CParent("button", contents)
+  {
+  SetSubmit(name, value);
+  }
 
-CHTML_button* CHTML_button::SetType(EButtonType type)
-{
-    switch ( type ) {
-    case eSubmit:
-        SetAttribute("type", "submit");
-        break;
-    case eReset:
-        SetAttribute("type", "reset");
-        break;
-    case eButton:
-        SetAttribute("type", "button");
-        break;
-    }
-    return this;
-}
+  CHTML_button* CHTML_button::SetType(EButtonType type)
+  {
+  switch ( type ) {
+  case eSubmit:
+  SetAttribute("type", "submit");
+  break;
+  case eReset:
+  SetAttribute("type", "reset");
+  break;
+  case eButton:
+  SetAttribute("type", "button");
+  break;
+  }
+  return this;
+  }
 
-CHTML_button* CHTML_button::SetSubmit(const string& name,
-                                      const string& value)
-{
-    SetNameAttribute(name);
-    SetOptionalAttribute("value", value);
-    return this;
-}
+  CHTML_button* CHTML_button::SetSubmit(const string& name,
+  const string& value)
+  {
+  SetNameAttribute(name);
+  SetOptionalAttribute("value", value);
+  return this;
+  }
 
-CHTML_button::~CHTML_button(void)
-{
-}
+  CHTML_button::~CHTML_button(void)
+  {
+  }
 */
 
 // text tag
@@ -1985,6 +1985,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2002/01/29 20:01:46  ivanov
+ * (plain text) CHTML_table:: set def. medium sep. to " " instead of "\t"
+ *
  * Revision 1.71  2002/01/29 19:25:55  ivanov
  * Typo fixed
  *
