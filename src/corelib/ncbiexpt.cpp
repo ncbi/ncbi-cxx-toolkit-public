@@ -137,6 +137,13 @@ CException::~CException(void) throw()
     }
 }
 
+
+const char* CException::GetType(void) const
+{
+    return "CException";
+}
+
+
 void CException::AddBacklog(const char* file,int line,
                             const string& message)
 {
@@ -186,7 +193,6 @@ string CException::ReportAll(TDiagPostFlags flags) const
         os << "    ";
         os << pile.top()->ReportThis(flags) << '\n';
     }
-    os << ends;
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
         CExceptionReporter::ReportDefault(0,0,"(background reporting)",
@@ -255,7 +261,7 @@ void CException::x_ReportToDebugger(void) const
         GetType() << "::" << GetErrCodeString() << " : \"" <<
         GetMsg() << "\" ";
     ReportExtra(os);
-    os << '\n' << ends;
+    os << '\n';
     OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
 #endif
     DoThrowTraceAbort();
@@ -413,6 +419,22 @@ const char* CStrErrAdapt::strerror(int errnum)
 #endif
 
 
+/////////////////////////////////////////////////////////////////////////////
+// Core exceptions
+/////////////////////////////////////////////////////////////////////////////
+
+
+const char* CCoreException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+    case eCore:       return "eCore";
+    case eNullPtr:    return "eNullPtr";
+    case eDll:        return "eDll";
+    case eInvalidArg: return "eInvalidArg";
+    default:          return CException::GetErrCodeString();
+    }
+}
+
 
 END_NCBI_SCOPE
 
@@ -420,6 +442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/10/24 13:24:55  vasilche
+ * Moved body of virtual method to *.cpp file.
+ *
  * Revision 1.33  2003/06/02 15:25:14  lavr
  * Replace some endl's with '\n's; and all '\0's with ends's
  *

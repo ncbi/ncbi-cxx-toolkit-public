@@ -520,7 +520,7 @@ public:
     // ---- Attributes ---------
 
     /// Get class name as a string.
-    virtual const char* GetType(void) const { return "CException"; }
+    virtual const char* GetType(void) const;
 
     /// Get error code interpreted as text.
     virtual const char* GetErrCodeString(void) const;
@@ -789,16 +789,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode()) {
-        case eCore:       return "eCore";
-        case eNullPtr:    return "eNullPtr";
-        case eDll:        return "eDll";
-        case eInvalidArg: return "eInvalidArg";
-        default:          return CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CCoreException, CException);
@@ -1121,6 +1112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2003/10/24 13:24:54  vasilche
+ * Moved body of virtual method to *.cpp file.
+ *
  * Revision 1.47  2003/08/01 15:17:21  siyan
  * Documentation changes. Removed superfluous (extra)
  * "public" keyword in CErrnoTemplException.
