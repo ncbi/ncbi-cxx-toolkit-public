@@ -1,4 +1,4 @@
---$Revision: 3.1 $
+--$Revision: 3.2 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -312,7 +312,7 @@ OrgName ::= SEQUENCE {
         virus VisibleString ,              -- virus names are different
         hybrid MultiOrgName ,              -- hybrid between organisms
         namedhybrid BinomialOrgName ,      -- some hybrids have genus x species name
-        partial PartialOrgName } ,         -- when genus not known
+        partial PartialOrgName } OPTIONAL , -- when genus not known
     attrib VisibleString OPTIONAL ,        -- attribution of name
     mod SEQUENCE OF OrgMod OPTIONAL }
 
