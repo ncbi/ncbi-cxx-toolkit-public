@@ -473,7 +473,7 @@ string CTime::GetFormat(void)
 int CTime::MonthNameToNum(const string& month)
 {
     const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull; 
-    for (int i = 0; i <= 12; i++) {
+    for (int i = 0; i < 12; i++) {
         if (month == name[i]) {
             return i+1;
         }
@@ -1358,6 +1358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2003/10/06 13:30:37  ivanov
+ * Fixed cut&paste bug in the MonthNumToName()
+ *
  * Revision 1.40  2003/10/03 18:27:06  ivanov
  * Added month and day of week names conversion functions
  *
