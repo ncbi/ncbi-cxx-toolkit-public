@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/08/09 23:14:13  thiessen
+* fixes for MIPSPro and Mac compilers
+*
 * Revision 1.9  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -79,15 +82,13 @@ const Colors * GlobalColors(void)
 
 
 // # colors for color cycles
-static enum {
-    nCycle1 = 10
-};
+static const int
+    nCycle1 = 10;
 
 // # colors for color maps (must be >1)
-static enum {
+static const int
     nTemperatureMap = 5,
-    nHydrophobicityMap = 3
-};
+    nHydrophobicityMap = 3;
 
 
 Colors::Colors(void)

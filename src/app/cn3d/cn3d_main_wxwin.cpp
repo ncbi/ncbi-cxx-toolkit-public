@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2001/08/09 23:14:13  thiessen
+* fixes for MIPSPro and Mac compilers
+*
 * Revision 1.62  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -1139,7 +1142,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         return;
     }
 
-    SetTitle(wxFileNameFromPath(filename) + " - Cn3D++");
+    SetTitle(wxString(wxFileNameFromPath(filename)) + " - Cn3D++");
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
