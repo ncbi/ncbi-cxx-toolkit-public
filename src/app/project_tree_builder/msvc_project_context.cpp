@@ -243,7 +243,6 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     list<string> add_include_dirs_list;
     list<string> dirs;
     string dir;
-    list<string>::const_iterator i;
 
     // project dir
     add_include_dirs_list.push_back 
@@ -956,6 +955,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/01/04 14:10:48  gouriano
+ * Removed unused variable
+ *
  * Revision 1.43  2004/12/30 17:47:51  gouriano
  * Also add StdLibs to the list of additional libraries
  *
