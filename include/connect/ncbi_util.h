@@ -140,7 +140,7 @@ typedef enum {
     fLOG_FileLine = 0x4, /* (must always be printed for "eLOG_Trace" level) */
     fLOG_DateTime = 0x8,
     fLOG_OmitNoteLevel = 0x4000,/* do not add "NOTE:" if eLOG_Note is level */
-    fLOG_None     = 0x8000 /* nothing but the error message and data        */
+    fLOG_None     = 0x8000 /* nothing but specified parts plus msg and data */
 } ELOG_Format;
 typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
 #define fLOG_Short  (fLOG_Level)
@@ -234,6 +234,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/01/17 01:33:41  lavr
+ * Specify fLOG_None more precisely
+ *
  * Revision 6.16  2003/01/08 01:59:33  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *
