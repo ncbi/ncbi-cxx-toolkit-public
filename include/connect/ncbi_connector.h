@@ -1,5 +1,5 @@
-#ifndef NCBI_CONNECTOR__H
-#define NCBI_CONNECTOR__H
+#ifndef CONNECT___CONNECTOR__H
+#define CONNECT___CONNECTOR__H
 
 /*  $Id$
  * ===========================================================================
@@ -31,44 +31,9 @@
  * File Description:
  *   Specifications to implement a connector("CONNECTOR") to be used to open
  *   and handle connection("CONN", see also in "ncbi_connection.[ch]") to an
- *   abstract i/o service.
- *   This is generally not for the public use. It is to be used in the modules
- *   that implement a particular connector.
+ *   abstract I/O service. This is generally not for the public use.
+ *   It is to be used in the modules that implement a particular connector.
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2002/04/26 16:29:32  lavr
- * Add default_timeout member to meta-connector
- *
- * Revision 6.8  2002/03/22 22:18:48  lavr
- * Cosmetic update
- *
- * Revision 6.7  2001/04/24 21:20:01  lavr
- * Introduced CONN_DEFAULT_TIMEOUT and CONN_INFINITE_TIMEOUT
- *
- * Revision 6.6  2001/03/02 20:07:18  lavr
- * Typos fixed
- *
- * Revision 6.5  2001/01/11 16:39:33  lavr
- * FDestroy function is now clearly documented not to destroy
- * the connector itself, only its handle (private internal data).
- *
- * Revision 6.4  2001/01/03 22:29:22  lavr
- * Changed IOStatus -> Status
- *
- * Revision 6.3  2000/12/29 17:45:07  lavr
- * Heavily modified to have a stack of connectors
- * VTable format changed; all virtual function now accept CONNECTOR as a
- * first argument (not void* as in previous versions)
- *
- * Revision 6.2  2000/04/07 19:59:49  vakatov
- * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
- * to "ncbi_connector.h"
- *
- * Revision 6.1  2000/03/24 22:52:48  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_core.h>
@@ -88,8 +53,7 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
 
 /* Function type definitions for the connector method table.
  * The arguments & the behavior of "FConnector***" functions are mostly just
- * the same as those for their counterparts "CONN_***"
- * (see in "ncbi_connection.h").
+ * the same as those for their counterparts "CONN_***" in ncbi_connection.h.
  * First argument of these functions accepts a real connector handle
  * rather than a connection handle("CONN").
  * In every call, which has STimeout as an argument, this argument
@@ -100,11 +64,12 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
  */
 
 
-/* Get name of the connector (must not be NULL!)
+/* Get the name of the connector (may not be NULL!)
  */
 typedef const char* (*FConnectorGetType)
 (CONNECTOR       connector
  );
+
 
 /* Open connection. Used to setup all related data structures,
  * but not necessarily has to actually open the data channel.
@@ -117,9 +82,9 @@ typedef EIO_Status (*FConnectorOpen)
 
 /* Wait until either read or write (dep. on the "direction" value) becomes
  * available, or until "timeout" is expired, or until error occurs.
- * NOTE 1: FConnectorWait is guaranteed to be called after FConnectorOpen,
- *         and only if FConnectorOpen returned "eIO_Success".
- * NOTE 2: "event" is guaranteed to be either "eIO_Read" or "eIO_Write".
+ * NOTE 1:  FConnectorWait is guaranteed to be called after FConnectorOpen,
+ *          and only if FConnectorOpen returned "eIO_Success".
+ * NOTE 2:  "event" is guaranteed to be either "eIO_Read" or "eIO_Write".
  */
 typedef EIO_Status (*FConnectorWait)
 (CONNECTOR       connector,
@@ -129,11 +94,11 @@ typedef EIO_Status (*FConnectorWait)
 
 
 /* The passed "n_written" always non-NULL, and "*n_written" always zero.
- * It must return "eIO_Success" when (and only when) all requested data
- * have been successfully written.
+ * It returns "eIO_Success" iff all requested data have been successfully
+ * written.
  * It returns the # of successfully written data (in bytes) in "*n_written".
- * NOTE: FConnectorWrite is guaranteed to be called after FConnectorOpen,
- *       and only if FConnectorOpen returned "eIO_Success".
+ * NOTE:  FConnectorWrite is guaranteed to be called after FConnectorOpen,
+ *        and only if the latter succeeded (returned "eIO_Success").
  */
 typedef EIO_Status (*FConnectorWrite)
 (CONNECTOR       connector,
@@ -145,8 +110,8 @@ typedef EIO_Status (*FConnectorWrite)
 
 
 /* Flush yet unwritten output data, if any.
- * NOTE: FConnectorFlush is guaranteed to be called after FConnectorOpen,
- *       and only if FConnectorOpen returned "eIO_Success".
+ * NOTE:  FConnectorFlush is guaranteed to be called after FConnectorOpen,
+ *        and only if the latter succeeded (returned "eIO_Success").
  */
 typedef EIO_Status (*FConnectorFlush)
 (CONNECTOR       connector,
@@ -155,8 +120,8 @@ typedef EIO_Status (*FConnectorFlush)
 
 
 /* The passed "n_read" always non-NULL, and "*n_read" always zero.
- * NOTE: FConnectorRead is guaranteed to be called after FConnectorOpen,
- *       and only if FConnectorOpen returned "eIO_Success".
+ * NOTE:  FConnectorRead is guaranteed to be called after FConnectorOpen,
+ *        and only if the latter succeeded (returned "eIO_Success").
  */
 typedef EIO_Status (*FConnectorRead)
 (CONNECTOR       connector,
@@ -167,11 +132,11 @@ typedef EIO_Status (*FConnectorRead)
  );
 
 /* Obtain last I/O completion code from the transport level (connector).
- * NOTE 1: FConnectorStatus is guaranteed to be called after FConnectorOpen,
- *         and only if FConnectorOpen returned "eIO_Success".
- * NOTE 2: "direction" is guaranteed to be either "eIO_Read" or "eIO_Write".
- * NOTE 3: Should return "eIO_Success" in case of inexistent (incomplete)
- *         low level transport, if any.
+ * NOTE 1:  FConnectorStatus is guaranteed to be called after FConnectorOpen,
+ *          and only if the latter succeeded (returned "eIO_Success").
+ * NOTE 2:  "direction" is guaranteed to be either "eIO_Read" or "eIO_Write".
+ * NOTE 3:  Should return "eIO_Success" in case of inexistent (incomplete)
+ *          low level transport, if any.
  */
 typedef EIO_Status (*FConnectorStatus)
 (CONNECTOR       connector,
@@ -179,7 +144,10 @@ typedef EIO_Status (*FConnectorStatus)
  );
           
 
-/* "FConnectorFlush" gets called before "FConnectorClose" automatically.
+/* Close data link (if any) and cleanup related data structures.
+ * NOTE 1:  FConnectorClose is guaranteed to be called after FConnectorOpen,
+ *          and only if the latter succeeded (returned "eIO_Success").
+ * NOTE 2:  FConnectorFlush gets called before FConnectorClose automatically.
  */
 typedef EIO_Status (*FConnectorClose)
 (CONNECTOR       connector,
@@ -187,8 +155,8 @@ typedef EIO_Status (*FConnectorClose)
  );
 
 
-/* Standard set of connector functions to handle a connection
- * (corresponding connectors are also here), part of CONNECTION.
+/* Standard set of connector methods to handle a connection (corresponding
+ * connectors are also here), part of connection handle("CONN").
  */
 typedef struct {
     FConnectorGetType   get_type;    CONNECTOR c_get_type;
@@ -202,8 +170,8 @@ typedef struct {
     FConnectorRead      read;        CONNECTOR c_read;
     FConnectorStatus    status;      CONNECTOR c_status;
     FConnectorClose     close;       CONNECTOR c_close;
-    const STimeout*     default_timeout;
-    STimeout            default_tmo; /* storage for default_timeout */
+    const STimeout*     default_timeout; /* default timeout pointer     */
+    STimeout            default_tmo;     /* storage for default_timeout  */
     CONNECTOR           list;
 } SMetaConnector;
 
@@ -227,27 +195,35 @@ typedef struct {
     } while (0);
 
 
+/* Insert a connector in the beginning of the connection's list of connectors.
+ */
 extern EIO_Status METACONN_Add
 (SMetaConnector* meta,
  CONNECTOR       connector
  );
 
 
+/* Delete given "connector" all its descendants (all connectors if "connector"
+ * is 0) from the connections's list of connectors. FConnectorDestroy is
+ * called for each removed connector.
+ */
 extern EIO_Status METACONN_Remove
 (SMetaConnector* meta,
  CONNECTOR       connector
  );
 
 
-/* Upcall on request to setup virtual function table (e.g. from CONNECTION).
+/* Upcall on request to setup virtual function table (called from connection).
  */
 typedef void (*FSetupVTable)
 (SMetaConnector* meta,
  CONNECTOR       connector
  );
 
-/* Destroy connector handle but do not destroy connector itself yet.
- * (This is NOT a close request!)
+
+/* Destroy connector and its data handle. This is NOT a close request!
+ * Should not to be used on open connectors (that is, for those
+ * FConnectorClose has to be called first prior to this call).
  */
 typedef void (*FDestroy)
 (CONNECTOR       connector
@@ -257,7 +233,7 @@ typedef void (*FDestroy)
 /* Connector specification.
  */
 typedef struct SConnectorTag {
-    void*                handle;    /* handle of the connector      */
+    void*                handle;    /* data handle of the connector */
     CONNECTOR            next;      /* linked list                  */
     SMetaConnector*      meta;      /* back link to CONNECTION      */
     FSetupVTable         setup;     /* used in CONNECTION init      */
@@ -292,4 +268,45 @@ typedef EIO_Status (*FConnectorWaitAsync)
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_CONNECTOR__H */
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.10  2002/09/06 15:40:54  lavr
+ * More comments and notes to the API; log moved to end
+ *
+ * Revision 6.9  2002/04/26 16:29:32  lavr
+ * Add default_timeout member to meta-connector
+ *
+ * Revision 6.8  2002/03/22 22:18:48  lavr
+ * Cosmetic update
+ *
+ * Revision 6.7  2001/04/24 21:20:01  lavr
+ * Introduced CONN_DEFAULT_TIMEOUT and CONN_INFINITE_TIMEOUT
+ *
+ * Revision 6.6  2001/03/02 20:07:18  lavr
+ * Typos fixed
+ *
+ * Revision 6.5  2001/01/11 16:39:33  lavr
+ * FDestroy function is now clearly documented not to destroy
+ * the connector itself, only its handle (private internal data).
+ *
+ * Revision 6.4  2001/01/03 22:29:22  lavr
+ * Changed IOStatus -> Status
+ *
+ * Revision 6.3  2000/12/29 17:45:07  lavr
+ * Heavily modified to have a stack of connectors
+ * VTable format changed; all virtual function now accept CONNECTOR as a
+ * first argument (not void* as in previous versions)
+ *
+ * Revision 6.2  2000/04/07 19:59:49  vakatov
+ * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
+ * to "ncbi_connector.h"
+ *
+ * Revision 6.1  2000/03/24 22:52:48  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___CONNECTOR__H */
