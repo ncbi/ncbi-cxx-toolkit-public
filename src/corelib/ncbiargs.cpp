@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/09/06 18:56:04  butanaev
+ * Added stdin, stdout support. Fixed bug in PrintOut.
+ *
  * Revision 1.1  2000/08/31 23:54:49  vakatov
  * Initial revision
  *
@@ -102,12 +105,12 @@ bool CArgValue::AsBoolean(void) const
     ARG_THROW("Not implemented", AsString());
 }
 
-CNcbiIfstream &CArgValue::AsInputFile(void) const
+CNcbiIstream &CArgValue::AsInputFile(void) const
 {
     ARG_THROW("Not implemented", AsString());
 }
 
-CNcbiOfstream &CArgValue::AsOutputFile(void) const
+CNcbiOstream &CArgValue::AsOutputFile(void) const
 {
     ARG_THROW("Not implemented", AsString());
 }
@@ -259,25 +262,28 @@ public:
     CArg_InputFile(const string&       value,
                    IOS_BASE::openmode  openmode  = 0,
                    bool                delay_open = false);
-    virtual CNcbiIfstream& AsInputFile(void) const;
+    virtual CNcbiIstream& AsInputFile(void) const;
 
 private:
     void Open(void) const;
     IOS_BASE::openmode              m_OpenMode;
-    mutable auto_ptr<CNcbiIfstream> m_InputFile;
+    mutable auto_ptr<CNcbiIstream> m_InputFile;
 };
 
 
 inline void CArg_InputFile::Open(void) const
 {
-    if ( m_InputFile.get() )
-        return;
+  if (m_InputFile.get())
+    return;
 
-    m_InputFile.reset(new CNcbiIfstream(AsString().c_str(),
-                                        IOS_BASE::in | m_OpenMode));
-    if (!m_InputFile.get()  ||  !*m_InputFile) {
-        ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
-    }
+  string fileName = AsString();
+  if(fileName == "stdin")
+    m_InputFile.reset(new CNcbiIfstream(0));
+  else
+    m_InputFile.reset(new CNcbiIfstream(fileName.c_str(), IOS_BASE::in | m_OpenMode));
+
+  if (! m_InputFile.get() || !*m_InputFile)
+    ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
 }
 
 inline CArg_InputFile::CArg_InputFile(const string&      value,
@@ -291,7 +297,7 @@ inline CArg_InputFile::CArg_InputFile(const string&      value,
         Open();
 }
 
-CNcbiIfstream& CArg_InputFile::AsInputFile(void) const
+CNcbiIstream& CArg_InputFile::AsInputFile(void) const
 {
     Open();
     return *m_InputFile;
@@ -307,24 +313,27 @@ public:
     CArg_OutputFile(const string&      value,
                     IOS_BASE::openmode openmode,
                     bool               delay_open);
-    virtual CNcbiOfstream& AsOutputFile(void) const;
+    virtual CNcbiOstream& AsOutputFile(void) const;
 private:
     void Open(void) const;
     IOS_BASE::openmode              m_OpenMode;
-    mutable auto_ptr<CNcbiOfstream> m_OutputFile;
+    mutable auto_ptr<CNcbiOstream> m_OutputFile;
 };
 
 
 inline void CArg_OutputFile::Open(void) const
 {
-    if ( m_OutputFile.get() )
-        return;
+  if(m_OutputFile.get())
+    return;
 
-    m_OutputFile.reset(new CNcbiOfstream(AsString().c_str(),
-                                         IOS_BASE::out | m_OpenMode));
-    if (!m_OutputFile.get()  ||  !*m_OutputFile) {
-        ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
-    }
+  string fileName = AsString();
+  if(fileName == "stdout")
+    m_OutputFile.reset(new CNcbiOfstream(1));
+  else
+    m_OutputFile.reset(new CNcbiOfstream(AsString().c_str(), IOS_BASE::out | m_OpenMode));
+
+  if (!m_OutputFile.get()  ||  !*m_OutputFile)
+    ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
 }
 
 inline CArg_OutputFile::CArg_OutputFile(const string&      value,
@@ -338,7 +347,7 @@ inline CArg_OutputFile::CArg_OutputFile(const string&      value,
         Open();
 }
 
-CNcbiOfstream& CArg_OutputFile::AsOutputFile(void) const
+CNcbiOstream& CArg_OutputFile::AsOutputFile(void) const
 {
     Open();
     return *m_OutputFile;
@@ -489,10 +498,14 @@ CArgDesc_Plain::~CArgDesc_Plain(void)
 string CArgDesc_Plain::GetUsageSynopsis(const string& name, bool optional)
     const
 {
-    if ( optional )
-        return "[" + name + "]";
-    else
-        return "<" + name + ">";
+  string tmp = name;
+  if(tmp.empty())
+    tmp = "...";
+
+  if(optional)
+    return "[" + tmp + "]";
+  else
+    return "<" + tmp + ">";
 }
 
 string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const

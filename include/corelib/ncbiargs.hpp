@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/09/06 18:56:56  butanaev
+ * Added stdin, stdout support. Fixed bug in PrintOut.
+ *
  * Revision 1.1  2000/08/31 23:54:47  vakatov
  * Initial revision
  *
@@ -118,8 +121,8 @@ public:
     virtual long            AsInteger    (void) const;
     virtual double          AsDouble     (void) const;
     virtual bool            AsBoolean    (void) const;
-    virtual CNcbiIfstream&  AsInputFile  (void) const;
-    virtual CNcbiOfstream&  AsOutputFile (void) const;
+    virtual CNcbiIstream&  AsInputFile  (void) const;
+    virtual CNcbiOstream&  AsOutputFile (void) const;
 
 protected:
     // Prohibit explicit instantiation of "CArg" objects
