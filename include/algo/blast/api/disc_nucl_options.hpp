@@ -86,7 +86,7 @@ public:
 
     /// Sets WordSize
     /// @param ws WordSize [in]
-    void SetWordSize(short ws) { 
+    void SetWordSize(int ws) { 
         if (ws == 11 || ws == 12) {
             m_Opts->SetWordSize(ws); 
         } else {
@@ -126,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/28 13:36:17  madden
+ * [GS]etWordSize is now an int rather than a short
+ *
  * Revision 1.11  2004/08/03 21:52:16  dondosha
  * Minor correction in options dependency logic
  *

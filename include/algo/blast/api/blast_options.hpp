@@ -156,8 +156,8 @@ public:
     int GetLookupTableType() const;
     void SetLookupTableType(int type);
 
-    short GetWordSize() const;
-    void SetWordSize(short ws);
+    int GetWordSize() const;
+    void SetWordSize(int ws);
 
     int GetAlphabetSize() const;
     void SetAlphabetSize(int s);
@@ -713,14 +713,14 @@ public:
         }
     }
 
-    short GetWordSize() const
+    int GetWordSize() const
     {
         if (! m_Local) {
             x_Throwx("Error: GetWordSize() not available.");
         }
         return m_Local->GetWordSize();
     }
-    void SetWordSize(short ws)
+    void SetWordSize(int ws)
     {
         if (m_Local) {
             m_Local->SetWordSize(ws);
@@ -1838,14 +1838,14 @@ CBlastOptionsLocal::SetLookupTableType(int type)
     } 
 }
 
-inline short
+inline int
 CBlastOptionsLocal::GetWordSize() const
 {
     return m_LutOpts->word_size;
 }
 
 inline void
-CBlastOptionsLocal::SetWordSize(short ws)
+CBlastOptionsLocal::SetWordSize(int ws)
 {
     m_LutOpts->word_size = ws;
 }
@@ -2480,6 +2480,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2004/12/28 13:36:17  madden
+* [GS]etWordSize is now an int rather than a short
+*
 * Revision 1.79  2004/12/21 17:14:35  dondosha
 * Added CBlastEngineTest friend class for new unit tests
 *

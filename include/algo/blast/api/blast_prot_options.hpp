@@ -67,10 +67,10 @@ public:
     void SetWordThreshold(int wt) { m_Opts->SetWordThreshold(wt); }
 
     /// Returns WordSize
-    short GetWordSize() const { return m_Opts->GetWordSize(); }
+    int GetWordSize() const { return m_Opts->GetWordSize(); }
     /// Sets WordSize
     /// @param ws WordSize [in]
-    void SetWordSize(short ws) { m_Opts->SetWordSize(ws); }
+    void SetWordSize(int ws) { m_Opts->SetWordSize(ws); }
 
     /******************* Initial word options ***********************/
     /// Returns WindowSize
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/12/28 13:36:17  madden
+ * [GS]etWordSize is now an int rather than a short
+ *
  * Revision 1.8  2004/06/08 22:27:36  camacho
  * Add missing doxygen comments
  *

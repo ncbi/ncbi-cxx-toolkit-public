@@ -62,7 +62,7 @@ public:
     /// Returns WordThreshold
     int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
     /// Returns WordSize
-    short GetWordSize() const { return m_Opts->GetWordSize(); }
+    int GetWordSize() const { return m_Opts->GetWordSize(); }
 
     /******************* Initial word options ***********************/
     /// Returns WindowSize
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/12/28 13:36:17  madden
+ * [GS]etWordSize is now an int rather than a short
+ *
  * Revision 1.6  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *

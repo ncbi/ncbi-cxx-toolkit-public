@@ -84,10 +84,10 @@ public:
     void SetScanStep(unsigned char step) { m_Opts->SetScanStep(step); }
 
     /// Returns WordSize
-    short GetWordSize() const { return m_Opts->GetWordSize(); }
+    int GetWordSize() const { return m_Opts->GetWordSize(); }
     /// Sets WordSize
     /// @param ws WordSize [in]
-    void SetWordSize(short ws) 
+    void SetWordSize(int ws) 
     { 
         if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
             if (GetLookupTableType() == MB_LOOKUP_TABLE && 
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/12/28 13:36:17  madden
+ * [GS]etWordSize is now an int rather than a short
+ *
  * Revision 1.19  2004/08/30 16:53:23  dondosha
  * Added E in front of enum names ESeedExtensionMethod and ESeedContainerType
  *
