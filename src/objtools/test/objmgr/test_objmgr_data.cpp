@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/09/13 18:33:34  vasilche
+* Removed obsolete code.
+*
 * Revision 1.10  2004/09/08 16:29:13  vasilche
 * Added time in verbose output.
 *
@@ -336,12 +339,6 @@ bool CTestOM::Thread_Run(int idx)
 
                 // check CSeqMap_CI
                 if ( !m_no_seq_map ) {
-                    /*
-                      CSeqMap_CI it =
-                      handle.GetSeqMap().BeginResolved(&scope,
-                      kMax_Int,
-                      CSeqMap::fFindRef);
-                    */
                     CSeqMap_CI it(ConstRef(&handle.GetSeqMap()),
                                   &scope,
                                   0,
@@ -381,13 +378,7 @@ bool CTestOM::Thread_Run(int idx)
                 SetValue(m_mapGiToDesc, sih, count);
 
                 // enumerate features
-                CSeq_loc loc;
-                loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
                 SAnnotSelector sel(CSeqFeatData::e_not_set);
-                if ( idx%2 == 0 ) {
-                    sel.SetOverlapType(sel.eOverlap_Intervals);
-                    sel.SetResolveMethod(sel.eResolve_All);
-                }
                 if ( m_no_named ) {
                     sel.ResetAnnotsNames().AddUnnamedAnnots();
                 }
@@ -400,7 +391,8 @@ bool CTestOM::Thread_Run(int idx)
 
                 count = 0;
                 if ( idx%2 == 0 ) {
-                    for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
+                    sel.SetResolveMethod(sel.eResolve_All);
+                    for ( CFeat_CI it(handle, 0, 0, sel); it; ++it ) {
                         count++;
                     }
                     if ( m_verbose ) {
@@ -408,13 +400,12 @@ bool CTestOM::Thread_Run(int idx)
                     }
                     // verify result
                     SetValue(m_mapGiToFeat0, sih, count);
-                    if ( false && idx == 0 ) {
-                        NcbiCout << "feat_count_0("<<sih.AsString()<<") = " <<
-                            count << NcbiEndl;
-                    }
                 }
                 else {
-                    for ( CFeat_CI it(handle, 0, 0, sel); it;  ++it ) {
+                    sel.SetOverlapType(sel.eOverlap_Intervals);
+                    CSeq_loc loc;
+                    loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
+                    for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
                         count++;
                     }
                     // verify result
