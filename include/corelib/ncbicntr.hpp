@@ -112,7 +112,9 @@ extern "C" {
 #  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
 #  ifdef __MWERKS__
-    // necessary to Metrowerks can compile the following header properly
+    // necessary so Metrowerks can compile the following header properly
+    // unfortunately, there's no way to save the old value of the macro,
+    // so NCBI_verify_save must be just a flag.
 #    define __NOEXTENSIONS__
 #    ifdef verify
 #      define NCBI_verify_save verify
@@ -126,7 +128,11 @@ extern "C" {
 #  endif
 #  ifdef NCBI_verify_save
 #    undef verify
-#    define verify NCBI_verify_save
+#    if defined(NDEBUG) || !defined(_DEBUG)
+#      define verify(expr) (void) expr
+#    else
+#      define verify(expr) assert(expr)
+#    endif
 #  endif
    typedef SInt32 TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
@@ -291,7 +297,7 @@ THROWS_NONE
 #  ifdef __sparcv9
     TValue old_value;
     for (;;) {
-        old_value = *nv_value_p;
+        old_value = *value_p;
         result = old_value + delta;
         // Atomic compare-and-swap: if *value_p == old_value, swap it
         // with result; otherwise, just put the current value in result.
@@ -358,8 +364,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/02/18 23:28:46  ucko
+* Clean up after previous (mislogged) commit, and honor volatility better.
+*
 * Revision 1.20  2004/02/17 20:35:23  rsmith
-* moved core/settings.[ch]pp and core/system_path.[ch]pp to config and utils, respectively.
+* Deal with stray definition of verify() on Mac.
 *
 * Revision 1.19  2004/02/04 00:38:03  ucko
 * Centralize undefinition of Darwin's check macro.
