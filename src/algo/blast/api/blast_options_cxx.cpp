@@ -95,19 +95,19 @@ CBlastOption::~CBlastOption()
 {
 }
 
-CBlastOption::EProgram BLASTGetEProgram(Uint1 prog)
+EProgram BLASTGetEProgram(Uint1 prog)
 {
     if (prog == blast_type_blastp)
-        return CBlastOption::eBlastp;
+        return eBlastp;
     if (prog == blast_type_blastn)
-        return CBlastOption::eBlastn;
+        return eBlastn;
     if (prog == blast_type_blastx)
-        return CBlastOption::eBlastx;
+        return eBlastx;
     if (prog == blast_type_tblastn)
-        return CBlastOption::eTblastn;
+        return eTblastn;
     if (prog == blast_type_tblastx)
-        return CBlastOption::eTblastx;
-    return CBlastOption::eBlastUndef;
+        return eTblastx;
+    return eBlastUndef;
 }
 
 void
@@ -504,6 +504,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/19 20:28:10  dondosha
+* EProgram enum type is no longer part of CBlastOption class
+*
 * Revision 1.12  2003/08/19 13:46:13  dicuccio
 * Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.
 *

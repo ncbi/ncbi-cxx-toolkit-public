@@ -45,12 +45,12 @@
 #include <algo/blast/core/blast_util.h>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(blast);
 USING_SCOPE(objects);
+BEGIN_SCOPE(blast)
 
 static int
 BLAST_SetUpQueryInfo(TSeqLocVector &slp,
-    CBlastOption::EProgram program, BlastQueryInfo** query_info_ptr)
+    EProgram program, BlastQueryInfo** query_info_ptr)
 {
    Int4 length, protein_length;
    bool translate = 
@@ -345,7 +345,7 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
 }
 
 int
-BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
+BLAST_SetUpQuery(EProgram program_number, 
     TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk)
 {
@@ -359,11 +359,11 @@ BLAST_SetUpQuery(CBlastOption::EProgram program_number,
                                       query_info)))
       return status;
 
-   if (program_number == CBlastOption::eBlastn) {
+   if (program_number == eBlastn) {
       encoding = BLASTNA_ENCODING;
       num_frames = 2;
-   } else if (program_number == CBlastOption::eBlastp || 
-              program_number == CBlastOption::eTblastn) {
+   } else if (program_number == eBlastp || 
+              program_number == eTblastn) {
       encoding = BLASTP_ENCODING;
       num_frames = 1;
    } else { 
@@ -384,4 +384,5 @@ BLAST_SetUpQuery(CBlastOption::EProgram program_number,
    return 0;
 }
 
+END_SCOPE(blast)
 END_NCBI_SCOPE

@@ -135,8 +135,15 @@ CBl2Seq::x_ResetSubjectDs()
     //m_pOptions->SetDbLength(0);  // FIXME: Really needed?
 }
 
-CRef<CSeq_align_set> 
+CRef<CSeq_align_set>
 CBl2Seq::Run()
+{
+    TSeqAlignVector seqalignv = MultiQRun();
+    return seqalignv[0];
+}
+
+TSeqAlignVector
+CBl2Seq::MultiQRun()
 {
     SetupSearch();
     //m_pOptions->DebugDumpText(cerr, "m_pOptions", 1);
@@ -147,20 +154,20 @@ CBl2Seq::Run()
 }
 
 unsigned int
-x_GetNumberOfFrames(CBlastOption::EProgram p)
+x_GetNumberOfFrames(EProgram p)
 {
     unsigned int retval = 0;
 
     switch (p) {
-    case CBlastOption::eBlastn:
+    case eBlastn:
         retval = 2;
         break;
-    case CBlastOption::eBlastp:
-    case CBlastOption::eTblastn: 
+    case eBlastp:
+    case eTblastn: 
         retval = 1;
         break;
-    case CBlastOption::eBlastx:
-    case CBlastOption::eTblastx:
+    case eBlastx:
+    case eTblastx:
         retval = 6;
         break;
     default:
@@ -185,9 +192,9 @@ CBl2Seq::x_SetupQueryInfo()
     mi_clsQueryInfo->first_context = 0;
     mi_clsQueryInfo->last_context = mi_clsQueryInfo->num_queries * nframes - 1;
 
-    bool is_na = (m_eProgram == CBlastOption::eBlastn) ? true : false;
-    bool translate = ((m_eProgram == CBlastOption::eBlastx) ||
-                      (m_eProgram == CBlastOption::eTblastx)) ? true : false;
+    bool is_na = (m_eProgram == eBlastn) ? true : false;
+    bool translate = ((m_eProgram == eBlastx) ||
+                      (m_eProgram == eTblastx)) ? true : false;
 
 #if 0
     // Adjust first/last context depending on (first?) query strand
@@ -323,11 +330,11 @@ CBl2Seq::x_SetupQueries()
 
     // Determine sequence encoding
     Uint1 encoding;
-    if (m_eProgram == CBlastOption::eBlastn) {
+    if (m_eProgram == eBlastn) {
         encoding = BLASTNA_ENCODING;
-    } else if (m_eProgram == CBlastOption::eBlastn ||
-               m_eProgram == CBlastOption::eBlastx ||
-               m_eProgram == CBlastOption::eTblastx) {
+    } else if (m_eProgram == eBlastn ||
+               m_eProgram == eBlastx ||
+               m_eProgram == eTblastx) {
         encoding = NCBI4NA_ENCODING;
     } else {
         encoding = BLASTP_ENCODING;
@@ -341,9 +348,9 @@ CBl2Seq::x_SetupQueries()
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
     }
 
-    bool is_na = (m_eProgram == CBlastOption::eBlastn) ? true : false;
-    bool translate = ((m_eProgram == CBlastOption::eBlastx) ||
-                      (m_eProgram == CBlastOption::eTblastx)) ? true : false;
+    bool is_na = (m_eProgram == eBlastn) ? true : false;
+    bool translate = ((m_eProgram == eBlastx) ||
+                      (m_eProgram == eTblastx)) ? true : false;
 
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = x_GetNumberOfFrames(m_eProgram);
@@ -436,7 +443,7 @@ CBl2Seq::x_SetupQueries()
     }
 
     // Convert the BlastMask* into a CSeq_loc
-    // TODO: Implement this!
+    // TODO: Implement this! 
     //mi_vFilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
 }
 
@@ -448,9 +455,9 @@ CBl2Seq::x_SetupSubjects()
     // Nucleotide subject sequences are stored in ncbi2na format, but the
     // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
     // the ambiguities
-    bool subj_is_na = (m_eProgram == CBlastOption::eBlastn  ||
-                       m_eProgram == CBlastOption::eTblastn ||
-                       m_eProgram == CBlastOption::eTblastx);
+    bool subj_is_na = (m_eProgram == eBlastn  ||
+                       m_eProgram == eTblastn ||
+                       m_eProgram == eTblastx);
 
     Uint1 encoding = (subj_is_na ? NCBI2NA_ENCODING : BLASTP_ENCODING);
 
@@ -472,9 +479,9 @@ CBl2Seq::x_SetupSubjects()
             subj->sequence = buf;
             subj->sequence_allocated = TRUE;
 
-            encoding = (m_eProgram == CBlastOption::eBlastn) ? 
+            encoding = (m_eProgram == eBlastn) ? 
                 BLASTNA_ENCODING : NCBI4NA_ENCODING;
-            bool use_sentinels = (m_eProgram == CBlastOption::eBlastn) ?
+            bool use_sentinels = (m_eProgram == eBlastn) ?
                 true : false;
 
             // Retrieve the sequence with ambiguities
@@ -559,11 +566,10 @@ CBl2Seq::Traceback()
 #endif
 }
 
-CRef<CSeq_align_set>
+TSeqAlignVector
 CBl2Seq::x_Results2SeqAlign()
 {
     _TRACE("*** Calling results2seqalign ***");
-    CRef<CSeq_align_set> retval(new CSeq_align_set());
 
     vector< CConstRef<CSeq_id> > query_vector;
     ITERATE(TSeqLocVector, itr, m_tQueries) {
@@ -575,18 +581,32 @@ CBl2Seq::x_Results2SeqAlign()
     _ASSERT(mi_vResults.size() == m_tSubjects.size());
     unsigned int index = 0;
     
-    
-    for (index = 0; index < m_tQueries.size(); ++index)
+    TSeqAlignVector retval;
+
+    for (index = 0; index < m_tSubjects.size(); ++index)
     {
-        CRef<CSeq_align_set> seqalign =
+        TSeqAlignVector seqalign =
             BLAST_Results2CSeqAlign(mi_vResults[index], m_eProgram,
                 m_tQueries, NULL, 
                 &m_tSubjects[index],
                 m_pOptions->GetScoringOpts(), mi_pScoreBlock,
-                m_pOptions->GetHitSavingOpts()->is_gapped);
+                m_pOptions->GetGappedMode());
 
-        if (seqalign) {
-            retval->Set().merge(seqalign->Set());
+        if (seqalign.size() > 0) {
+            /* Merge the new vector with the current. Assume that both vectors
+               contain CSeq_align_sets for all queries, i.e. have the same 
+               size. */
+            if (retval.size() == 0) {
+                // First time around, just fill the empty vector with the 
+                // seqaligns from the first subject.
+                retval.swap(seqalign);
+            } else {
+                int i;
+                for (i=0; i<retval.size(); ++i) {
+                    retval[i]->Set().splice(retval[i]->Set().end(), 
+                                            seqalign[i]->Set());
+                }
+            }
         }
     }
 
@@ -607,6 +627,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2003/08/19 20:27:06  dondosha
+ * EProgram enum type is no longer part of CBlastOption class
+ *
  * Revision 1.21  2003/08/19 13:46:13  dicuccio
  * Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.
  *
