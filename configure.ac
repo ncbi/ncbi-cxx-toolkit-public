@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.117 2002/08/14 19:47:28 vakatov Exp $
+#  $Id: configure.ac,v 1.118 2002/08/15 21:08:16 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2075,7 +2075,11 @@ else
 
    # SSS DB
    if test "$with_sssdb" != "no" ; then
-      LIBSSSDB="-lsssdb"
+      if test "$with_mt" = "yes" ; then
+         LIBSSSDB="-lsssdb -lssssys"
+      else
+         LIBSSSDB="-lsssdb"
+      fi
       AC_CACHE_CHECK([for the NCBI SSS DB library], ncbi_cv_lib_sssdb,
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"

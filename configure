@@ -9838,7 +9838,11 @@ _ACEOF
 
    # SSS DB
    if test "$with_sssdb" != "no" ; then
-      LIBSSSDB="-lsssdb"
+      if test "$with_mt" = "yes" ; then
+         LIBSSSDB="-lsssdb -lssssys"
+      else
+         LIBSSSDB="-lsssdb"
+      fi
       echo "$as_me:$LINENO: checking for the NCBI SSS DB library" >&5
 echo $ECHO_N "checking for the NCBI SSS DB library... $ECHO_C" >&6
 if test "${ncbi_cv_lib_sssdb+set}" = set; then
