@@ -36,6 +36,7 @@
  */
 
 #include <corelib/ncbidiag.hpp>
+#include <errno.h>
 #include <string>
 #include <stdexcept>
 #include <typeinfo>
@@ -582,6 +583,68 @@ private:
     int m_Errno;
 };
 
+template <class TBase>
+class CErrnoTemplException : EXCEPTION_VIRTUAL_BASE public TBase
+{
+public:
+    enum EErrCode {
+        eErrnoTempl
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eErrnoTempl: return "eErrnoTempl";
+        default:      return CException::GetErrCodeString();
+        }
+    }
+
+    CErrnoTemplException(const char* file,int line,
+        const CException* prev_exception,
+        EErrCode err_code, const string& message) throw()
+          : TBase(file, line, prev_exception,
+            (typename TBase::EErrCode)(CException::eInvalid),
+            message)
+    {
+        m_Errno = errno;
+        x_Init(file,line,message + ": " + ::strerror(m_Errno),prev_exception);
+        x_InitErrCode((CException::EErrCode) err_code);
+    }
+    CErrnoTemplException(const CErrnoTemplException<TBase>& other) throw()
+        : TBase( other)
+    {
+        m_Errno = other.m_Errno;
+        x_Assign(other);
+    }
+    virtual ~CErrnoTemplException(void) throw() {}
+
+    virtual void ReportExtra(ostream& out) const
+    {
+        out << "m_Errno = " << m_Errno;
+    }
+
+    // Attributes
+    virtual const char* GetType(void) const {return "CErrnoTemplException";}
+    EErrCode GetErrCode(void) const
+    {
+        return typeid(*this) == typeid(CErrnoTemplException<TBase>) ?
+            (CErrnoTemplException<TBase>::EErrCode) x_GetErrCode() :
+            (CErrnoTemplException<TBase>::EErrCode) CException::eInvalid;
+    }
+    int GetErrno(void) const throw() { return m_Errno; }
+
+protected:
+    CErrnoTemplException(void) throw()
+    {
+        m_Errno = errno;
+    }
+    virtual const CException* x_Clone(void) const
+    {
+        return new CErrnoTemplException<TBase>(*this);
+    }
+private:
+    int m_Errno;
+};
+
 
 
 class NCBI_XNCBI_EXPORT CParseException : EXCEPTION_VIRTUAL_BASE public CException
@@ -626,6 +689,78 @@ private:
     string::size_type m_Pos;
 };
 
+class NStr;
+template <class TBase>
+class CParseTemplException : EXCEPTION_VIRTUAL_BASE public TBase
+{
+public:
+    enum EErrCode {
+        eParseTempl
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eParseTempl: return "eParseTempl";
+        default:     return CException::GetErrCodeString();
+        }
+    }
+
+    // Report "pos" along with "what"
+    CParseTemplException(const char* file,int line,
+        const CException* prev_exception,
+        EErrCode err_code,const string& message,
+        string::size_type pos) throw()
+          : TBase(file, line,prev_exception,
+            (typename TBase::EErrCode)(CException::eInvalid),
+            message), m_Pos(pos)
+    {
+        x_Init(file,line,
+            string("{") + NStr::UIntToString(m_Pos) + "} " + message,
+            prev_exception);
+        x_InitErrCode((CException::EErrCode) err_code);
+    }
+
+    CParseTemplException(const CParseTemplException<TBase>& other) throw()
+        : TBase(other)
+    {
+        m_Pos = other.m_Pos;
+        x_Assign(other);
+    }
+
+    virtual ~CParseTemplException(void) throw() {}
+
+    // Reporting
+    virtual void ReportExtra(ostream& out) const
+    {
+        out << "m_Pos = " << m_Pos;
+    }
+
+    // Attributes
+    virtual const char* GetType(void) const {return "CParseTemplException";}
+    EErrCode GetErrCode(void) const
+    {
+        return typeid(*this) == typeid(CParseTemplException<TBase>) ?
+            (CParseTemplException<TBase>::EErrCode) x_GetErrCode() :
+            (CParseTemplException<TBase>::EErrCode) CException::eInvalid;
+    }
+
+    // Extra
+    string::size_type GetPos(void) const throw() { return m_Pos; }
+
+protected:
+    CParseTemplException(void) throw()
+    {
+        m_Pos = 0;
+    }
+    virtual const CException* x_Clone(void) const
+    {
+        return new CParseTemplException<TBase>(*this);
+    }
+
+private:
+    string::size_type m_Pos;
+};
+
 
 // To throw exceptions with one additional parameter (e.g. CParseException)
 
@@ -660,6 +795,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2003/02/14 19:31:23  gouriano
+ * added definition of templates for errno and parse exceptions
+ *
  * Revision 1.39  2002/12/18 22:53:21  dicuccio
  * Added export specifier for building DLLs in windows.  Added global list of
  * all such specifiers in mswin_exports.hpp, included through ncbistl.hpp
