@@ -350,10 +350,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         if ( info.type->CanBeCopied() ) {
             string cType = info.type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
-                "    // data copy constructor\n"
+                "    /// Data copy constructor.\n"
                 "    "<<code.GetClassNameDT()<<"(const "<<cType<<"& value);\n"
                 "\n"
-                "    // data assignment operator\n"
+                "    /// Data assignment operator.\n"
                 "    void operator=(const "<<cType<<"& value);\n"
                 "\n";
             inlineMethods <<
@@ -393,27 +393,34 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             {
                 isNull = x_IsNullType(i);
                 isNullWithAtt = x_IsNullWithAttlist(i);
+// IsSetX
+                code.ClassPublic() <<
+                    "    /// Check if a value has been assigned to "<<i->cName<<" data member.\n"
+                    "    ///\n"
+                    "    /// Data member "<<i->cName<<" is ";
 // comment: what is it
                 if (i->optional) {
                     if (i->defaultValue.empty()) {
-                        code.ClassPublic() << "    // optional\n";
+                        code.ClassPublic() << "optional";
                     } else {
-                        code.ClassPublic() << "    // mandatory with default\n";
+                        code.ClassPublic() << "mandatory with default";
                     }
                 } else {
-                    code.ClassPublic() << "    // mandatory\n";
+                    code.ClassPublic() << "mandatory";
                 }
 // comment: typedef
                 if (!isNull) {
                     code.ClassPublic()
-                        << "    // typedef "
+                        <<";\n    /// its type is defined as \'typedef "
                         << i->type->GetCType(code.GetNamespace())
-                        <<" "<<i->tName<<"\n";
+                        <<" "<<i->tName<<"\'";
                 }
-
-// IsSetX
                 code.ClassPublic() <<
-                    "    bool IsSet" << i->cName<<"(void) const;\n";
+                    "\n"
+                    "    /// @return\n"
+                    "    ///   - true, if a value has been assigned.\n"
+                    "    ///   - false, otherwise.\n"
+                    "    bool IsSet" << i->cName<<"(void) const;\n\n";
                 inlineMethods <<
                     "inline\n"
                     "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n"
@@ -451,8 +458,22 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "\n";
 
 // CanGetX
+                if (isNull || isNullWithAtt) {
+                    code.ClassPublic() <<
+                        "    /// Check if value of "<<i->cName<<" member is getatable.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   - false; the data member of type \'NULL\' has no value.\n";
+                } else {
+                    code.ClassPublic() <<
+                        "    /// Check if it is safe to call Get"<<i->cName<<" method.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   - true, if the data member is getatable.\n"
+                        "    ///   - false, otherwise.\n";
+                }
                 code.ClassPublic() <<
-                    "    bool CanGet" << i->cName<<"(void) const;\n";
+                    "    bool CanGet" << i->cName<<"(void) const;\n\n";
                 inlineMethods <<
                     "inline\n"
                     "bool "<<methodPrefix<<"CanGet"<<i->cName<<"(void) const\n"
@@ -482,7 +503,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     assignValue = i->type->GetInitializer();
             }
             setters <<
-                "    void Reset"<<i->cName<<"(void);\n";
+                "    /// Reset "<<i->cName<<" data member.\n"
+                "    void Reset"<<i->cName<<"(void);\n\n";
             // inline only when non reference and doesn't have reset code
             bool inl = !i->ref && resetCode.empty();
             code.MethodStart(inl) <<
@@ -548,13 +570,21 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if (!isNull) {
                 if (i->dataType && i->dataType->IsPrimitive()) {
                     code.ClassPublic() <<
-                        "    "<<i->tName<<" Get"<<i->cName<<"(void) const;\n";
+                        "    /// Get the "<<i->cName<<" member data.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Copy of the member data.\n"
+                        "    "<<i->tName<<" Get"<<i->cName<<"(void) const;\n\n";
                     code.MethodStart(inl) <<
                         ""<<rType<<" "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                         "{\n";
                 } else {
                     code.ClassPublic() <<
-                        "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
+                        "    /// Get the "<<i->cName<<" member data.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Reference to the member data.\n"
+                        "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n\n";
                     code.MethodStart(inl) <<
                         "const "<<rType<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                         "{\n";
@@ -581,7 +611,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if (!isNullWithAtt) {
                     // generate reference setter
                     setters <<
-                        "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n";
+                        "    /// Assign a value to "<<i->cName<<" data member.\n"
+                        "    ///\n"
+                        "    /// @param value\n"
+                        "    ///   Reference to value.\n"
+                        "    void Set"<<i->cName<<"("<<i->tName<<"& value);\n\n";
                     methods <<
                         "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
                         "{\n";
@@ -600,7 +634,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "\n";
                 }
                 setters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                    "    /// Assign a value to "<<i->cName<<" data member.\n"
+                    "    ///\n"
+                    "    /// @return\n"
+                    "    ///   Reference to the data value.\n"
+                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n\n";
                 if ( i->canBeNull ) {
                     // we have to init ref before returning
                     _ASSERT(!i->haveFlag);
@@ -651,8 +689,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                     string ircType(ir->type->GetCType(
                                         code.GetNamespace()));
                                     setters <<
+                                        "    /// Assign a value to "<<i->cName<<" data member.\n"
+                                        "    ///\n"
+                                        "    /// @param value\n"
+                                        "    ///   Reference to value.\n"
                                         "    void Set"<<i->cName<<"(const "<<
-                                        ircType<<"& value);\n";
+                                        ircType<<"& value);\n\n";
                                     methods <<
                                         "void "<<methodPrefix<<"Set"<<
                                         i->cName<<"(const "<<ircType<<
@@ -672,7 +714,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 if (isNull) {
                     setters <<
-                        "    void Set"<<i->cName<<"(void);\n";
+                        "    /// Set NULL data member (assign \'NULL\' value to "<<i->cName<<" data member).\n"
+                        "    void Set"<<i->cName<<"(void);\n\n";
                     inlineMethods <<
                         "inline\n"<<
                         "void "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
@@ -685,7 +728,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 } else {
                     if ( i->type->CanBeCopied() ) {
                         setters <<
-                            "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                            "    /// Assign a value to "<<i->cName<<" data member.\n"
+                            "    ///\n"
+                            "    /// @param value\n"
+                            "    ///   Reference to value.\n"
+                            "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n\n";
                         inlineMethods <<
                             "inline\n"
                             "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<rType<<"& value)\n"
@@ -705,7 +752,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "\n";
                     }
                     setters <<
-                        "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                        "    /// Assign a value to "<<i->cName<<" data member.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Reference to the data value.\n"
+                        "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n\n";
                     inlineMethods <<
                         "inline\n"<<
                         rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
@@ -752,8 +803,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "the only member of adaptor class is optional");
                 }
                 code.ClassPublic() <<
-                    "    operator const "<<i->tName<<"& (void) const;\n"
-                    "    operator "<<i->tName<<"& (void);\n";
+                    "    /// Conversion operator to \'const "<<i->tName<<"\' type.\n"
+                    "    operator const "<<i->tName<<"& (void) const;\n\n"
+                    "    /// Conversion operator to \'"<<i->tName<<"\' type.\n"
+                    "    operator "<<i->tName<<"& (void);\n\n";
                 inlineMethods <<
                     "inline\n"<<
                     methodPrefix<<"operator const "<<rType<<"& (void) const\n"
@@ -884,7 +937,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
     // generate Reset method
     code.ClassPublic() <<
-        "    // reset whole object\n"
+        "    /// Reset the whole object\n"
         "    ";
     if ( !wrapperClass ) {
         if ( HaveUserClass() )
@@ -1101,10 +1154,26 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
 void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
 {
+    out << "\n"
+        << "/** @addtogroup ";
+    if (!CClassCode::GetDoxygenGroup().empty()) {
+        out << CClassCode::GetDoxygenGroup();
+    } else {
+        out << "dataspec_" << GetModuleName();
+    }
+    out
+        << "\n *\n"
+        << " * @{\n"
+        << " */\n\n";
     bool wrapperClass = (m_Members.size() == 1) &&
         m_Members.front().cName.empty();
     bool generateCopy = wrapperClass && m_Members.front().type->CanBeCopied();
 
+    out <<
+        "/////////////////////////////////////////////////////////////////////////////\n"
+        "///\n"
+        "/// " << GetClassNameDT() << " --\n"
+        "///\n\n";
     out << "class ";
     if ( !CClassCode::GetExportSpecifier().empty() )
         out << CClassCode::GetExportSpecifier() << " ";
@@ -1128,19 +1197,22 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         const SMemberInfo& info = m_Members.front();
         string cType = info.type->GetCType(GetNamespace());
         out <<
-            "    // data copy constructor\n"
-            "    "<<GetClassNameDT()<<"(const "<<cType<<"& value);\n"
+            "    /// Copy constructor\n"
+            "    "<<GetClassNameDT()<<"(const "<<cType<<"& value);\n\n"
             "\n"
-            "    // data assignment operator\n"
-            "    "<<GetClassNameDT()<<"& operator=(const "<<cType<<"& value);\n"
+            "    /// Assignment operator\n"
+            "    "<<GetClassNameDT()<<"& operator=(const "<<cType<<"& value);\n\n"
             "\n";
     }
     ITERATE ( TMembers, i, m_Members ) {
         if (i->simple && !x_IsNullType(i)) {
             out <<
+            "    /// Conversion operator to \'"
+            << i->type->GetCType(GetNamespace()) << "\' type.\n"
             "    operator const " << i->type->GetCType(GetNamespace()) <<
-            "&(void) const;\n";
+            "&(void) const;\n\n";
             out <<
+            "    /// Assignment operator.\n"
             "    " << GetClassNameDT() << "& operator="<<"(const "<<
             i->type->GetCType(GetNamespace()) << "& value);\n" <<
             "\n";
@@ -1154,11 +1226,10 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "& value);\n"
         "\n";
 
+    out << "};\n"
+        << "/* @} */\n";
+    out << "\n";
     out <<
-        "};\n"
-        "\n"
-        "\n"
-        "\n"
         "/////////////////// "<<GetClassNameDT()<<" inline methods\n"
         "\n"
         "// constructor\n"
@@ -1306,6 +1377,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/04/29 20:11:39  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.60  2004/03/08 20:08:53  gouriano
 * Correct namespaces of generated classes
 *

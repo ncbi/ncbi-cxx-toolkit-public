@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/04/29 20:11:39  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.40  2004/03/26 14:41:48  dicuccio
 * Deleted dead code
 *
@@ -116,7 +119,9 @@
 
 BEGIN_NCBI_SCOPE
 
-string          CClassCode::sm_ExportSpecifier;
+string    CClassCode::sm_ExportSpecifier;
+string    CClassCode::sm_DoxygenGroup;
+string    CClassCode::sm_DocRootURL;
 
 
 CClassContext::~CClassContext(void)
@@ -157,6 +162,26 @@ void CClassCode::SetExportSpecifier(const string& str)
 const string& CClassCode::GetExportSpecifier(void)
 {
     return sm_ExportSpecifier;
+}
+
+void CClassCode::SetDoxygenGroup(const string& str)
+{
+    sm_DoxygenGroup = str;
+}
+
+const string& CClassCode::GetDoxygenGroup(void)
+{
+    return sm_DoxygenGroup;
+}
+
+void CClassCode::SetDocRootURL(const string& str)
+{
+    sm_DocRootURL = str;
+}
+
+const string& CClassCode::GetDocRootURL(void)
+{
+    return sm_DocRootURL;
 }
 
 const CNamespace& CClassCode::GetNamespace(void) const
@@ -247,6 +272,11 @@ CNcbiOstream& CClassCode::WriteDestructionCode(CNcbiOstream& out) const
 
 CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
 {
+    header <<
+        "/////////////////////////////////////////////////////////////////////////////\n"
+        "///\n"
+        "/// " << GetClassNameDT() << " --\n"
+        "///\n\n";
     header << "class ";
     if ( !GetExportSpecifier().empty() )
         header << CClassCode::GetExportSpecifier() << " ";

@@ -185,6 +185,9 @@ void CDataTool::Init(void)
                       "set \"-o*\" arguments for NCBI directory tree",
                       CArgDescriptions::eString);
 
+    d->AddOptionalKey("odx", "URL",
+                      "URL of documentation root folder",
+                      CArgDescriptions::eString);
     d->AddFlag("lax_syntax",
                "allow non-standard ASN.1 syntax accepted by asntool");
 
@@ -200,6 +203,7 @@ bool CDataTool::ProcessModules(void)
     if ( const CArgValue& oR = args["oR"] ) {
         // NCBI directory tree
         const string& rootDir = oR.AsString();
+        generator.SetRootDir(rootDir);
         generator.SetHPPDir(Path(rootDir, "include"));
         string srcDir = Path(rootDir, "src");
         generator.SetCPPDir(srcDir);
@@ -416,6 +420,23 @@ bool CDataTool::GenerateCode(void)
         }
         CClassCode::SetExportSpecifier(ex);
     }
+    // define the Doxygen group
+    {
+        if ( const CArgValue& odx = args["odx"] ) {
+            string root = odx.AsString();
+            if (root.empty()) {
+                // default
+                root = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/source";
+            }
+            CClassCode::SetDocRootURL(root);
+        }
+        string group = generator.GetConfig().Get("-","_addtogroup_name");
+        CClassCode::SetDoxygenGroup(group);
+        group = generator.GetConfig().Get("-","_ingroup_name");
+        generator.SetDoxygenIngroup(group);
+        group = generator.GetConfig().Get("-","_addtogroup_description");
+        generator.SetDoxygenGroupDescription(group);
+    }
 
     // prepare generator
     
@@ -530,6 +551,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2004/04/29 20:11:39  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.68  2004/03/19 15:45:19  gouriano
 * corrected fxs argument description
 *

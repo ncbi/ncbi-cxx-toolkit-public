@@ -250,6 +250,23 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     const CNamespace& ns = GetNamespace();
     string ref_name = m_RefType->GetCType(ns);
     string className = GetClassName();
+    out
+        << "\n"
+        << "/** @addtogroup ";
+    if (!CClassCode::GetDoxygenGroup().empty()) {
+        out << CClassCode::GetDoxygenGroup();
+    } else {
+        out << "dataspec_" << GetModuleName();
+    }
+    out
+        << "\n *\n"
+        << " * @{\n"
+        << " */\n\n";
+    out <<
+        "/////////////////////////////////////////////////////////////////////////////\n"
+        "///\n"
+        "/// " << className << " --\n"
+        "///\n\n";
     out << "class ";
     if ( !CClassCode::GetExportSpecifier().empty() )
         out << CClassCode::GetExportSpecifier() << " ";
@@ -271,13 +288,12 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     if ( !is_class ) {
         // Generate type convertions
         out <<
-            "    // explicit constructor from the primitive type\n" <<
+            "    /// Explicit constructor from the primitive type.\n" <<
             "    explicit " << className + "(const " + ref_name + "& data)" << "\n"
-            "        : Tparent(data) {}\n";
+            "        : Tparent(data) {}\n\n";
     }
-    out <<
-        "};\n"
-        "\n";
+    out << "};\n"
+        << "/* @} */\n\n";
 }
 
 void CAliasTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
@@ -414,6 +430,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/29 20:11:40  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.4  2004/03/08 20:08:53  gouriano
 * Correct namespaces of generated classes
 *

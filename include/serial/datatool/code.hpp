@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/04/29 20:09:44  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.10  2002/12/23 18:38:52  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
@@ -191,12 +194,20 @@ public:
     static void SetExportSpecifier(const string& str);
     static const string& GetExportSpecifier(void);
 
+    static void SetDoxygenGroup(const string& str);
+    static const string& GetDoxygenGroup(void);
+
+    static void SetDocRootURL(const string& str);
+    static const string& GetDocRootURL(void);
+
 private:
     CClassContext& m_Code;
     string m_ClassName;
     string m_ParentClassName;
     CNamespace m_ParentClassNamespace;
     static string sm_ExportSpecifier;
+    static string sm_DoxygenGroup;
+    static string sm_DocRootURL;
 
     bool m_VirtualDestructor;
     CNcbiOstrstream m_ClassPublic;

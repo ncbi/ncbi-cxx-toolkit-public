@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/04/29 20:11:40  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.47  2003/11/20 14:32:40  gouriano
 * changed generated C++ code so NULL data types have no value
 *
@@ -391,51 +394,78 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     string ncbiNamespace =
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
 
-    CNcbiOstream* copy_out = HaveAssignment() ?
-        &code.ClassPublic() : &code.ClassPrivate();
-    string param_name = HaveAssignment() ?
-        "src" : "";
-    *copy_out <<
-        "    // copy constructor and assignment operator\n"
-        "    "<<codeClassName<<"(const "<<codeClassName<<"& " <<param_name<<
-        ");\n"
-        "    "<<codeClassName<<"& operator=(const "<<codeClassName<<"& "<<
-        param_name<<");\n"
-        "\n";
+    if ( HaveAssignment() ) {
+        code.ClassPublic() <<
+            "    /// Copy constructor.\n"
+            "    "<<codeClassName<<"(const "<<codeClassName<<"& src);\n\n"
+            "   /// Assignment operator\n"
+            "    "<<codeClassName<<"& operator=(const "<<codeClassName<<"& src);\n\n\n";
+    } else {
+        code.ClassPrivate() <<
+            "    // copy constructor and assignment operator\n"
+            "    "<<codeClassName<<"(const "<<codeClassName<<"& );\n"
+            "    "<<codeClassName<<"& operator=(const "<<codeClassName<<"& );\n";
+    }
 
     // generated choice enum
     {
+        string cName(STATE_NOT_SET);
+        size_t currlen, maxlen = cName.size() + 2;
+        ITERATE(TVariants, i, m_Variants) {
+            if (!i->attlist) {
+                maxlen = max(maxlen,i->cName.size());
+            }
+        }
         code.ClassPublic() <<
-            "    // choice state enum\n"
+            "\n    /// Choice variants.\n"
             "    enum "STATE_ENUM" {\n"
-            "        "STATE_NOT_SET" = "<<kEmptyChoice;
+            "        "STATE_NOT_SET" = "<<kEmptyChoice
+            <<"," ;
+        for (currlen = strlen(STATE_NOT_SET)+2; currlen < maxlen; ++currlen) {
+            code.ClassPublic() << " ";
+        }
+        code.ClassPublic()
+            <<"  ///< No variant selected\n" ;
         TMemberIndex currIndex = kEmptyChoice;
         bool needIni = false;
-        ITERATE ( TVariants, i, m_Variants ) {
+        for (TVariants::const_iterator i= m_Variants.begin(); i != m_Variants.end();) {
             ++currIndex;
             if (!i->attlist) {
-                code.ClassPublic() << ",\n"
-                    "        "STATE_PREFIX<<i->cName;
+                cName = i->cName;
+                code.ClassPublic() << "        "STATE_PREFIX<<cName;
                 if (needIni) {
                     code.ClassPublic() << " = "<<currIndex;
                     needIni = false;
                 }
+                ++i;
+                if (i != m_Variants.end()) {
+                    code.ClassPublic() << ",";
+                } else {
+                    code.ClassPublic() << " ";
+                }
+                for (currlen = cName.size(); currlen < maxlen; ++currlen) {
+                    code.ClassPublic() << " ";
+                }
+                code.ClassPublic() << "  ///< Variant "<<cName<<" is selected.";
+                code.ClassPublic() << "\n";
             } else {
+                ++i;
                 needIni = true;
             }
         }
-        code.ClassPublic() << "\n"
-            "    };\n";
+        code.ClassPublic() << "    };\n";
+
+        code.ClassPublic() << "    /// Maximum+1 value of the choice variant enumerator.\n";
         code.ClassPublic() <<
             "    enum E_ChoiceStopper {\n"
-            "        e_MaxChoice = " << currIndex+1 << " // == "
+            "        e_MaxChoice = " << currIndex+1 << " ///< == "STATE_PREFIX
                 << m_Variants.rbegin()->cName << "+1\n"
             "    };\n"
             "\n";
     }
 
     code.ClassPublic() <<
-        "    // reset selection to none\n"
+        "    /// Reset the selection (set it to "STATE_NOT_SET").\n"
         "    ";
     if ( HaveUserClass() )
         code.ClassPublic() << "virtual ";
@@ -445,21 +475,45 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
     // generate choice methods
     code.ClassPublic() <<
-        "    // choice state\n"
-        "    "STATE_ENUM" Which(void) const;\n"
-        "    // throw exception if current selection is not as requested\n"
-        "    void CheckSelected("STATE_ENUM" index) const;\n"
-        "    // throw exception about wrong selection\n"
-        "    void ThrowInvalidSelection("STATE_ENUM" index) const;\n"
-        "    // return selection name (for diagnostic purposes)\n"
+        "    /// Which variant is currently selected.\n"
+        "    ///\n"
+        "    /// @return\n"
+        "    ///   Choice state enumerator.\n"
+        "    "STATE_ENUM" Which(void) const;\n\n"
+        "    /// Verify selection, throw exception if it differs from the expected.\n"
+        "    ///\n"
+        "    /// @param index\n"
+        "    ///   Expected selection.\n"
+        "    void CheckSelected("STATE_ENUM" index) const;\n\n"
+        "    /// Throw \'InvalidSelection\' exception.\n"
+        "    ///\n"
+        "    /// @param index\n"
+        "    ///   Expected selection.\n"
+        "    void ThrowInvalidSelection("STATE_ENUM" index) const;\n\n"
+        "    /// Retrieve selection name (for diagnostic purposes).\n"
+        "    ///\n"
+        "    /// @param index\n"
+        "    ///   One of possible selection states.\n"
+        "    /// @return\n"
+        "    ///   Name string.\n"
         "    static "<<stdNamespace<<"string SelectionName("STATE_ENUM" index);\n"
         "\n";
     setters <<
-        "    // select requested variant if needed\n"
+        "    /// Select the requested variant if needed.\n"
+        "    ///\n"
+        "    /// @param index\n"
+        "    ///   New selection state.\n"
+        "    /// @param reset\n"
+        "    ///   Flag that defines the resetting of the variant data. The data will\n"
+        "    ///   be reset if either the current selection differs from the new one,\n"
+        "    ///   or the flag is set to eDoResetVariant.\n"
         "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
     if ( delayed ) {
         setters <<
-            "    // select requested variant using delay buffer (for internal use)\n"
+            "    /// Select the requested variant using delay buffer (for internal use).\n"
+            "    ///\n"
+            "    /// @param index\n"
+            "    ///   New selection state.\n"
             "    void SelectDelayBuffer("STATE_ENUM" index);\n";
     }
     setters <<
@@ -835,51 +889,101 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             bool isNull = x_IsNullType(i);
             bool isNullWithAtt = x_IsNullWithAttlist(i);
 
-// comment: typedef
-            if (!isNull) {
-                code.ClassPublic()
-                    << "    // typedef "<< cType <<" "<<tType<<"\n";
-            }
-
             if (i->attlist) {
                 code.ClassPublic() <<
-                    "    void Reset"<<i->cName<<"(void);\n";
+                    "    /// Reset the attribute list.\n"
+                    "    void Reset"<<i->cName<<"(void);\n\n";
             } else {
                 code.ClassPublic() <<
-                    "    bool Is"<<i->cName<<"(void) const;\n";
+                    "    /// Check if variant "<<i->cName<<" is selected.\n"
+                    "    ///\n";
+                if (!isNull) {
+                    code.ClassPublic()
+                        << "    /// "<<i->cName<<" type is defined as \'typedef "<< cType <<" "<<tType<<"\'.\n";
+                }
+                code.ClassPublic() <<
+                    "    /// @return\n"
+                    "    ///   - true, if the variant is selected.\n"
+                    "    ///   - false, otherwise.\n"
+                    "    bool Is"<<i->cName<<"(void) const;\n\n";
             }
             if (i->dataType && i->dataType->IsPrimitive()) {
                 code.ClassPublic() <<
-                    "    "<<tType<<" Get"<<i->cName<<"(void) const;"
+                    "    /// Get the variant data.\n"
+                    "    ///\n"
+                    "    /// @return\n"
+                    "    ///   Copy of the variant data.\n"
+                    "    "<<tType<<" Get"<<i->cName<<"(void) const;\n\n"
                     "\n";
             } else {
                 if (!isNull) {
+                    if (i->attlist) {
+                        code.ClassPublic() <<
+                            "    /// Get the attribute list data.\n";
+                    } else {
+                        code.ClassPublic() <<
+                            "    /// Get the variant data.\n";
+                    }
                     code.ClassPublic() <<
-                        "    const "<<tType<<"& Get"<<i->cName<<"(void) const;"
-                        "\n";
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Reference to the data.\n"
+                        "    const "<<tType<<"& Get"<<i->cName<<"(void) const;\n\n";
                 }
             }
             if (isNull) {
                 setters <<
-                    "    void Set"<<i->cName<<"(void);\n";
+                    "    /// Select the variant.\n"
+                    "    void Set"<<i->cName<<"(void);\n\n";
             } else {
+                if (i->attlist) {
+                    setters <<
+                        "    /// Set the attribute list data.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Reference to the data.\n";
+                } else {
+                    setters <<
+                        "    /// Select the variant.\n"
+                        "    ///\n"
+                        "    /// @return\n"
+                        "    ///   Reference to the variant data.\n";
+                }
                 setters <<
-                    "    "<<tType<<"& Set"<<i->cName<<"(void);\n";
+                    "    "<<tType<<"& Set"<<i->cName<<"(void);\n\n";
             }
             if ( i->type->CanBeCopied() ) {
                 if (i->attlist) {
                     setters <<
-                        "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
+                        "    /// Set the attribute list data.\n"
+                        "    ///\n"
+                        "    /// @param value\n"
+                        "    ///   Reference to data.\n"
+                        "    void Set"<<i->cName<<"("<<tType<<"& value);\n\n";
                 } else {
                     if (!isNull) {
                         setters <<
-                            "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
+                            "    /// Select the variant and set its data.\n"
+                            "    ///\n"
+                            "    /// @param value\n"
+                            "    ///   Reference to variant data.\n"
+                            "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n\n";
                     }
                 }
             }
             if ( i->memberType == eObjectPointerMember && !isNullWithAtt) {
+                if (i->attlist) {
+                    setters <<
+                        "    /// Set the attribute list data.\n";
+                } else {
+                    setters <<
+                        "    /// Select the variant and set its data.\n";
+                }
                 setters <<
-                    "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
+                    "    ///\n"
+                    "    /// @param value\n"
+                    "    ///   Reference to the data.\n"
+                    "    void Set"<<i->cName<<"("<<tType<<"& value);\n\n";
             }
             string memberRef;
             string constMemberRef;
@@ -1043,6 +1147,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                                         string ircType(ir->type->GetCType(
                                             code.GetNamespace()));
                                         setters <<
+                                            "    /// Select the variant and set its data.\n"
+                                            "    ///\n"
+                                            "    /// @param value\n"
+                                            "    ///   Reference to variant data.\n"
                                             "    void Set"<<i->cName<<"(const "<<
                                             ircType<<"& value);\n";
                                         methods <<

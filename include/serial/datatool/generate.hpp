@@ -74,6 +74,10 @@ public:
         {
             m_CPPDir = dir;
         }
+    const string& GetCPPDir(void) const
+        {
+            return m_CPPDir;
+        }
     void SetHPPDir(const string& dir)
         {
             m_HPPDir = dir;
@@ -98,6 +102,18 @@ public:
     CFileSet& GetImportModules(void)
         {
             return m_ImportFiles;
+        }
+    const string& GetDefFile(void) const
+        {
+            return m_DefFile;
+        }
+    void SetRootDir(const string& dir)
+        {
+            m_RootDir = dir;
+        }
+    const string& GetRootDir(void) const
+        {
+            return m_RootDir;
         }
 
     bool Check(void) const;
@@ -130,6 +146,15 @@ public:
     CDataType* ResolveMain(const string& fullName) const;
     const string& ResolveFileName(const string& name) const;
 
+    void SetDoxygenIngroup(const string& str)
+        {
+            m_DoxygenIngroup = str;
+        }
+    void SetDoxygenGroupDescription(const string& str)
+        {
+            m_DoxygenGroupDescription = str;
+        }
+
 protected:
 
     static void GetTypes(TTypeNames& typeNames, const string& name);
@@ -160,6 +185,10 @@ private:
     CNamespace m_DefaultNamespace;
     bool m_UseQuotedForm;
     bool m_CreateCvsignore;
+    string m_DoxygenIngroup;
+    string m_DoxygenGroupDescription;
+    string m_DefFile;
+    string m_RootDir;
 
     TOutputFiles m_Files;
 };
@@ -170,6 +199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/29 20:09:44  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.11  2003/05/29 17:22:59  gouriano
 * added possibility of generation .cvsignore file
 *

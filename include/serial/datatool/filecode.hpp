@@ -110,10 +110,13 @@ public:
     bool GenerateUserCPP(const string& path, string& fileName) const;
 
     CNcbiOstream& WriteSourceFile(CNcbiOstream& out) const;
-    CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out) const;
-    CNcbiOstream& WriteCopyright(CNcbiOstream& out) const;
-    CNcbiOstream& WriteUserCopyright(CNcbiOstream& out) const;
-    CNcbiOstream& WriteLogKeyword(CNcbiOstream& out) const;
+    static CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out);
+    CNcbiOstream& WriteSpecRefs(CNcbiOstream& out) const;
+    CNcbiOstream& WriteCopyright(CNcbiOstream& out, bool header) const;
+    CNcbiOstream& WriteUserCopyright(CNcbiOstream& out, bool header) const;
+    static CNcbiOstream& WriteLogKeyword(CNcbiOstream& out);
+
+    void GetModuleNames( map<string,string>& names) const;
 
 private:
     const CCodeGenerator* m_CodeGenerator;
@@ -151,6 +154,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2004/04/29 20:09:44  gouriano
+* Generate DOXYGEN-style comments in C++ headers
+*
 * Revision 1.15  2003/05/29 17:22:59  gouriano
 * added possibility of generation .cvsignore file
 *
