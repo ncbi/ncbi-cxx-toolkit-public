@@ -530,18 +530,27 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
 {
    double alpha=0, beta=0; /*alpha and beta for new scoring system */
-   Int4 length_adjustment = 0;  /* length adjustment for current iteration. */
    Int4 index;		/* loop index. */
    Int4	db_num_seqs;	/* number of sequences in database. */
    Int8	db_length;	/* total length of database. */
    Blast_KarlinBlk* *kbp_ptr; /* Array of Karlin block pointers */
-   Int4 query_length;   /* length of an individual query sequence */
-   Int8 effective_search_space = 0; /* Effective search space for a given 
-                                   sequence/strand/frame */
    const BlastEffectiveLengthsOptions* eff_len_options = eff_len_params->options;
 
-   if (sbp == NULL)
-      return 1;
+   if (!query_info || !sbp)
+      return -1;
+
+   /* If overriding search space value is provided in options, just assign it. 
+    * Also set length adjustments to 0, since they are not going to be used.
+    */
+   if (eff_len_options->searchsp_eff) {
+      for (index = query_info->first_context; 
+           index <= query_info->last_context; index++) {
+         query_info->contexts[index].eff_searchsp = 
+            eff_len_options->searchsp_eff;
+         query_info->contexts[index].length_adjustment = 0;
+      }
+      return 0;
+   }
 
    /* use overriding value from effective lengths options or the real value
       from effective lengths parameters. */
@@ -550,8 +559,10 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    else
       db_length = eff_len_params->real_db_length;
 
-   /* If database (subject) length is not available at this stage, 
-      do nothing */
+   /* If database (subject) length is not available at this stage, do nothing.
+    * This situation can occur in the initial set up for a non-database search,
+    * where each subject is treated as an individual sequence. 
+    */
    if (db_length == 0)
       return 0;
 
@@ -576,40 +587,37 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
    for (index = query_info->first_context;
         index <= query_info->last_context;
         index++) {
-       Blast_KarlinBlk * kbp;   /* statistical parameters for the
-                                   current context */
-       kbp = kbp_ptr[index];
-       
-       if ((query_length = query_info->contexts[index].query_length) > 0) {
-          /* Use the correct Karlin block. For blastn, two identical Karlin
-             blocks are allocated for each sequence (one per strand), but we
-             only need one of them.
+      Blast_KarlinBlk * kbp; /* statistical parameters for the current context */
+      Int4 length_adjustment = 0; /* length adjustment for current iteration. */
+      Int8 effective_search_space = 0; /* Effective search space for a given 
+                                          sequence/strand/frame */
+      Int4 query_length;   /* length of an individual query sequence */
+      
+      kbp = kbp_ptr[index];
+      
+      if ((query_length = query_info->contexts[index].query_length) > 0) {
+         /* Use the correct Karlin block. For blastn, two identical Karlin
+          * blocks are allocated for each sequence (one per strand), but we
+          * only need one of them.
           */
-          if (program_number != eBlastTypeBlastn &&
-              scoring_options->gapped_calculation) {
-             BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK,
-                                           alpha/kbp->Lambda, beta,
-                                           query_length, db_length,
-                                           db_num_seqs, &length_adjustment);
-          } else {
-             BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK, 1/kbp->H, 0,
-                                           query_length, db_length,
-                                           db_num_seqs, &length_adjustment);
-          }        
-          /* If overriding search space value is provided in options, 
-             do not calculate it. */
-          if (eff_len_options->searchsp_eff) {
-             effective_search_space = eff_len_options->searchsp_eff;
-          } else {
-             effective_search_space =
-                (query_length - length_adjustment) * 
-                (db_length - db_num_seqs*length_adjustment);
-          }
-       }
-       query_info->contexts[index].eff_searchsp = effective_search_space;
-       query_info->contexts[index].length_adjustment = length_adjustment;
+         if (program_number != eBlastTypeBlastn &&
+             scoring_options->gapped_calculation) {
+            BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK,
+                                          alpha/kbp->Lambda, beta,
+                                          query_length, db_length,
+                                          db_num_seqs, &length_adjustment);
+         } else {
+            BLAST_ComputeLengthAdjustment(kbp->K, kbp->logK, 1/kbp->H, 0,
+                                          query_length, db_length,
+                                          db_num_seqs, &length_adjustment);
+         }        
+         effective_search_space =
+            (query_length - length_adjustment) * 
+            (db_length - db_num_seqs*length_adjustment);
+      }
+      query_info->contexts[index].eff_searchsp = effective_search_space;
+      query_info->contexts[index].length_adjustment = length_adjustment;
    }
-
    return 0;
 }
 
