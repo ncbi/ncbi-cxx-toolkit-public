@@ -268,8 +268,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  */
 typedef enum {
     eCONN_OnClose = 0
-#define CONN_N_CALLBACKS 1
 } ECONN_Callback;
+#define CONN_N_CALLBACKS 1
 
 typedef void (*FConnCallback)(CONN conn, ECONN_Callback type, void* data);
 
@@ -326,6 +326,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2004/06/09 14:03:06  jcherry
+ * Moved #define out of enum body (SWIG was choking on this)
+ *
  * Revision 6.19  2004/05/24 19:58:29  lavr
  * +NCBI_XCONNECT_EXPORT for CONN_ReadLine()
  *
