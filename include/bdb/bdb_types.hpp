@@ -1060,6 +1060,10 @@ public:
     const CBDB_Field& GetField(unsigned int idx) const;
     CBDB_Field&       GetField(unsigned int idx);
 
+    /// Find the field with the specified name. Name is case insensitive.
+    /// @return -1 if field cannot be found
+    int GetFieldIndex(const string& name) const;
+
     /// Return TRUE if buffer is in a non-native byte order
     bool IsByteSwapped() const { return m_ByteSwapped; }
 
@@ -1721,6 +1725,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/02/12 19:54:00  kuznets
+ * + CBDB_BufferManager::GetFieldIndex()
+ *
  * Revision 1.31  2004/02/04 17:02:34  kuznets
  * Commented operator char* for LString type to avoid ambuiguity
  *
