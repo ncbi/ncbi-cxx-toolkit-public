@@ -620,7 +620,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
         RUN_TEST(UnsignedInt);
-        // RUN_TEST(HTTPLoad);
+        RUN_TEST(HTTPLoad);
         RUN_TEST(FullBlobs);
 
     } catch (exception& e) {
@@ -671,6 +671,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/12/17 19:18:06  ucko
+* Restore HTTPLoad test, as MMDBSRV is back in order.
+*
 * Revision 1.22  2004/12/17 02:05:20  ucko
 * Temporarily disable HTTPLoad test because MMDBSRV seems to be out of order.
 *
