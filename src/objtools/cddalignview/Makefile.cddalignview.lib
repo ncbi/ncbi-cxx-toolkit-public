@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq
+ASN_DEP = seq cdd
 
 SRC = \
 	cav_alignset \
