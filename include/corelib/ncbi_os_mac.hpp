@@ -59,7 +59,7 @@ BEGIN_NCBI_SCOPE
 //   COSErrException_Mac
 //
 
-class COSErrException_Mac : public runtime_error
+class COSErrException_Mac : public exception
 {
     OSErr m_OSErr;
     
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2003/02/27 22:04:20  lebedev
+ * COSErrException_Mac changed from runtime_error to exception
+ *
  * Revision 1.5  2002/07/11 14:17:53  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

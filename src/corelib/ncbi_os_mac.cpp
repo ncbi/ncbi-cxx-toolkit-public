@@ -60,8 +60,7 @@ static string s_OSErr_ComposeMessage(const OSErr& os_err, const string& what)
 
 COSErrException_Mac::COSErrException_Mac(const OSErr&  os_err,
                                          const string& what) THROWS_NONE
-    : runtime_error(s_OSErr_ComposeMessage(os_err, what)),
-      m_OSErr(os_err)
+    : exception(), m_OSErr(os_err)
 {
     return;
 }
@@ -554,6 +553,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2003/02/27 22:03:59  lebedev
+ * COSErrException_Mac changed from runtime_error to exception
+ *
  * Revision 1.3  2001/12/18 21:40:39  juran
  * Copy in MoreFiles fucntions that we need.
  *
