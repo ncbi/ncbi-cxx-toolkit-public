@@ -46,7 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/core/phi_extend.h>
 #include <algo/blast/core/link_hsps.h>
 
-/** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
+/** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
 typedef struct BlastCoreAuxStruct {
 
@@ -72,7 +72,7 @@ typedef struct BlastCoreAuxStruct {
 
 /** Deallocates all memory in BlastCoreAuxStruct */
 static BlastCoreAuxStruct* 
-BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
+s_BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
 {
    BlastExtendWordFree(aux_struct->ewp);
    BLAST_InitHitListFree(aux_struct->init_hitlist);
@@ -94,7 +94,7 @@ BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
  *                       tblastn only [in]
  * @param offset Shift in the subject sequence protein coordinates [in]
  */
-static void TranslateHSPsToDNAPCoord(EBlastProgramType program, 
+static void s_TranslateHSPsToDNAPCoord(EBlastProgramType program, 
         BlastInitHitList* init_hitlist, BlastQueryInfo* query_info,
         Int2 subject_frame, Int4 subject_length, Int4 offset)
 {
@@ -160,7 +160,7 @@ static void TranslateHSPsToDNAPCoord(EBlastProgramType program,
  * @param hsp_list_out List of HSPs found for a given subject sequence [in]
  */
 static Int2
-BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* query, 
+s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* query, 
    BlastQueryInfo* query_info_in, BLAST_SequenceBlk* subject, 
    LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
    BlastScoringParameters* score_params, 
@@ -191,11 +191,11 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
    Boolean prelim_traceback = 
       (ext_params->options->ePrelimGapExt == eGreedyWithTracebackExt);
 
-   const Boolean k_translated_subject = (program_number == eBlastTypeTblastn
+   const Boolean kTranslatedSubject = (program_number == eBlastTypeTblastn
                          || program_number == eBlastTypeTblastx
                          || program_number == eBlastTypeRpsTblastn);
 
-   if (k_translated_subject) {
+   if (kTranslatedSubject) {
       first_context = 0;
       last_context = 5;
       if (score_options->is_ooframe) {
@@ -252,7 +252,7 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
       Int4 offset = 0; /* Used as offset into subject sequence (if chunked) */
       Int4 total_subject_length; /* Length of subject sequence used when split. */
 
-      if (k_translated_subject) {
+      if (kTranslatedSubject) {
          subject->frame = BLAST_ContextToFrame(eBlastTypeBlastx, context);
          subject->sequence = 
             translation_buffer + frame_offsets[context] + 1;
@@ -295,9 +295,9 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
             if (score_options->is_ooframe) {
                /* Convert query offsets in all HSPs into the mixed-frame  
                   coordinates */
-               TranslateHSPsToDNAPCoord(program_number, init_hitlist, 
+               s_TranslateHSPsToDNAPCoord(program_number, init_hitlist, 
                   query_info, subject->frame, orig_length, offset);
-               if (k_translated_subject) {
+               if (kTranslatedSubject) {
                   prot_length = subject->length;
                   subject->length = 2*orig_length + 1;
                }
@@ -311,7 +311,7 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
             aux_struct->GetGappedScore(program_number, query, query_info, 
                subject, gap_align, score_params, ext_params, hit_params, 
                init_hitlist, &hsp_list, gapped_stats);
-            if (score_options->is_ooframe && k_translated_subject)
+            if (score_options->is_ooframe && kTranslatedSubject)
                subject->length = prot_length;
          } else {
             BLAST_GetUngappedHSPList(init_hitlist, query_info, subject,
@@ -404,7 +404,7 @@ BLAST_SearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* quer
 }
 
 static Int2 
-FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs, 
+s_FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs, 
    BlastScoringParameters* score_params, 
    BlastInitialWordParameters* word_params, 
    BlastExtensionParameters* ext_params,
@@ -442,7 +442,7 @@ FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
  *                       structures [out]
  */
 static Int2 
-BLAST_SetUpAuxStructures(const BlastSeqSrc* seq_src,
+s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    LookupTableWrap* lookup_wrap,	
    const BlastInitialWordOptions* word_options,
    const BlastExtensionOptions* ext_options,
@@ -543,7 +543,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
       return -1;
 
    if ((status =
-       BLAST_SetUpAuxStructures(seq_src, lookup_wrap, word_options,
+       s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_options,
           ext_options, hit_options, query, &aux_struct)) != 0)
       return status;
 
@@ -610,7 +610,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
                                     query_info, query, index) != 0)
            return -1;
 
-       BLAST_SearchEngineCore(program_number, &concat_db, one_query_info, 
+       s_BlastSearchEngineCore(program_number, &concat_db, one_query_info, 
           one_query, lookup_wrap, gap_align, score_params, 
           word_params, ext_params, hit_params, db_options, 
           diagnostics, aux_struct, &hsp_list);
@@ -631,7 +631,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    if (diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
-   FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
+   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
 
    /* Do the traceback. After this call, query and 
       subject have reverted to their traditional meanings. */
@@ -653,7 +653,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    gap_align->positionBased = FALSE;
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
-   BlastCoreAuxStructFree(aux_struct);
+   s_BlastCoreAuxStructFree(aux_struct);
    sfree(score_params);
    sfree(hit_params);
    sfree(ext_params);
@@ -697,7 +697,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    BlastLinkHSPParametersUpdate(word_params, hit_params, gapped_calculation);
    
    if ((status = 
-       BLAST_SetUpAuxStructures(seq_src, lookup_wrap, word_options, 
+       s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_options, 
           ext_options, hit_options, query, &aux_struct)) != 0)
       return status;
 
@@ -742,7 +742,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       }
 
       status = 
-         BLAST_SearchEngineCore(program_number, query, query_info,
+         s_BlastSearchEngineCore(program_number, query, query_info,
             seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
             ext_params, hit_params, db_options, diagnostics, aux_struct, 
             &hsp_list);
@@ -790,7 +790,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    if (diagnostics && diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
-   FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
+   s_FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
 
    if (hit_options->phi_align) {
       /* Save the product of effective occurrencies of pattern in query and
@@ -802,7 +802,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    }
 
    word_params = BlastInitialWordParametersFree(word_params);
-   BlastCoreAuxStructFree(aux_struct);
+   s_BlastCoreAuxStructFree(aux_struct);
    return status;
 }
 

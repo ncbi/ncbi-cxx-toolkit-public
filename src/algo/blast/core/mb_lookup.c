@@ -64,7 +64,8 @@ BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
 /** Convert weight, template length and template type from input options into
     an MBTemplateType enum
 */
-static DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length, 
+static DiscTemplateType 
+s_GetDiscTemplateType(Int2 weight, Uint1 length, 
                                      DiscWordType type)
 {
    if (weight == 11) {
@@ -117,7 +118,7 @@ static DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
  */
 
 static Int2 
-MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
+s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         BlastMBLookupTable* mb_lt, Uint1 width,
         const LookupTableOptions* lookup_options)
 
@@ -126,34 +127,34 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    Int4 mask;
    Int2 word_length, extra_length;
    DiscTemplateType template_type;
-   const Uint1 k_nuc_mask = 0xfc;
-   const Boolean k_two_templates = 
+   const Uint1 kNucMask = 0xfc;
+   const Boolean kTwoTemplates = 
       (lookup_options->mb_template_type == MB_TWO_TEMPLATES);
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
    /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
-      So we use a helper_array to keep track of this, but compress it by k_compression_factor so it stays 
+      So we use a helper_array to keep track of this, but compress it by kCompressionFactor so it stays 
       in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
       not seem to affect the overall performance of the rest of the program. */
    Uint4 longest_chain=0;
    Uint4* helper_array;     /* Helps to estimate longest chain. */
-   const Int4 k_compression_factor=2048; /* compress helper_array by factor of 2048. */
+   const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
 
    ASSERT(mb_lt);
    ASSERT(lookup_options->mb_template_length > 0);
 
-   template_type = GetDiscTemplateType(lookup_options->word_size,
+   template_type = s_GetDiscTemplateType(lookup_options->word_size,
                       lookup_options->mb_template_length, 
                       (DiscWordType)lookup_options->mb_template_type);
 
 
    mb_lt->template_type = template_type;
-   mb_lt->two_templates = k_two_templates;
-   if (k_two_templates) /* For now leave only one possibility for the second template */
+   mb_lt->two_templates = kTwoTemplates;
+   if (kTwoTemplates) /* For now leave only one possibility for the second template */
       mb_lt->second_template_type = template_type + 1;
 
 
-   if (k_two_templates) {
+   if (kTwoTemplates) {
       if ((mb_lt->hashtable2 = (Int4*) 
            calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
          MBLookupTableDestruct(mb_lt);
@@ -177,7 +178,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
 
-   helper_array = (Uint4*) calloc(mb_lt->hashsize/k_compression_factor, sizeof(Uint4));
+   helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, sizeof(Uint4));
    if (helper_array == NULL)
 	return -1;
 
@@ -208,7 +209,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
       for (index = from; index <= last_offset; index++) {
          val = *++seq;
-         if ((val & k_nuc_mask) != 0) { /* ambiguity or gap */
+         if ((val & kNucMask) != 0) { /* ambiguity or gap */
             ecode = 0;
             pos = seq + word_length;
          } else {
@@ -285,7 +286,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                      break;
                   }
                      
-                  if (k_two_templates) {
+                  if (kTwoTemplates) {
                      switch (template_type) {
                      case TEMPL_11_16:
                         ecode2 = GET_WORD_INDEX_11_16_OPT(ecode);
@@ -325,7 +326,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                                     (((PV_ARRAY_TYPE) 1)<<(ecode2&PV_ARRAY_MASK));
                      }
                      else
-                        longest_chain = MAX(longest_chain, helper_array[ecode2/k_compression_factor]++); 
+                        longest_chain = MAX(longest_chain, helper_array[ecode2/kCompressionFactor]++); 
 
                      if (mb_lt->hashtable[ecode1] == 0)
                      {
@@ -333,7 +334,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                                     (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
                      }
                      else
-                        longest_chain = MAX(longest_chain, helper_array[ecode1/k_compression_factor]++); 
+                        longest_chain = MAX(longest_chain, helper_array[ecode1/kCompressionFactor]++); 
 
                      /* This could overestimate the longest chain again by a factor of 2. */
                      /* Are two helper_arrays needed, or is that overkill? */
@@ -347,7 +348,7 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                                     (((PV_ARRAY_TYPE) 1)<<(ecode1&PV_ARRAY_MASK));
                      }
                      else
-                        longest_chain = MAX(longest_chain, helper_array[ecode1/k_compression_factor]++); 
+                        longest_chain = MAX(longest_chain, helper_array[ecode1/kCompressionFactor]++); 
                   }
                   mb_lt->next_pos[index] = mb_lt->hashtable[ecode1];
                   mb_lt->hashtable[ecode1] = index;
@@ -373,24 +374,24 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
  */
 
 static Int2 
-MB_FillContigTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
+s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         BlastMBLookupTable* mb_lt, Uint1 width,
         const LookupTableOptions* lookup_options)
 
 {
    BlastSeqLoc* loc;
-   const Uint1 k_nuc_mask = 0xfc;
+   const Uint1 kNucMask = 0xfc;
    Int2 word_length;
    Int4 mask;
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
    /* The calculation of the longest chain can be cpu intensive for long queries or sets of queries. 
-      So we use a helper_array to keep track of this, but compress it by k_compression_factor so it stays 
+      So we use a helper_array to keep track of this, but compress it by kCompressionFactor so it stays 
       in memory.  Hence we only end up with a conservative (high) estimate for longest_chain, but this does
       not seem to affect the overall performance of the rest of the program. */
    Uint4 longest_chain=0;
    Uint4* helper_array;     /* Helps to estimate longest chain. */
-   const Int4 k_compression_factor=2048; /* compress helper_array by factor of 2048. */
+   const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
 
 
    ASSERT(mb_lt);
@@ -405,7 +406,7 @@ MB_FillContigTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    pv_array = mb_lt->pv_array;
    pv_array_bts = mb_lt->pv_array_bts;
 
-   helper_array = (Uint4*) calloc(mb_lt->hashsize/k_compression_factor, sizeof(Uint4));
+   helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, sizeof(Uint4));
    if (helper_array == NULL)
 	return -1;
 
@@ -433,7 +434,7 @@ MB_FillContigTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
       for (index = from; index <= last_offset; index++) {
          val = *++seq;
-         if ((val & k_nuc_mask) != 0) { /* ambiguity or gap */
+         if ((val & kNucMask) != 0) { /* ambiguity or gap */
             ecode = 0;
             pos = seq + word_length;
          } else {
@@ -448,7 +449,7 @@ MB_FillContigTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                   }
                   else
                   {
-                        longest_chain = MAX(longest_chain, helper_array[ecode/k_compression_factor]++); 
+                        longest_chain = MAX(longest_chain, helper_array[ecode/kCompressionFactor]++); 
                   }
                   mb_lt->next_pos[index] = mb_lt->hashtable[ecode];
                   mb_lt->hashtable[ecode] = index;
@@ -473,8 +474,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    Int2 bytes_in_word;
    Uint1 width;
    BlastMBLookupTable* mb_lt;
-   const Int4 k_small_query_cutoff = 15000;
-   const Int4 k_large_query_cutoff = 800000;
+   const Int4 kSmallQueryCutoff = 15000;
+   const Int4 kLargeQueryCutoff = 800000;
    
    *mb_lt_ptr = NULL;
 
@@ -522,16 +523,16 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
       if (lookup_options->word_size == 11 && lookup_options->mb_template_length > 0) {
          mb_lt->hashsize = 1 << 22;
-         if( table_entries <= k_small_query_cutoff ||
-	     table_entries >= k_large_query_cutoff )
+         if( table_entries <= kSmallQueryCutoff ||
+	     table_entries >= kLargeQueryCutoff )
             pv_shift = 3;
 	 else
             pv_shift = 2;
       }
       else {
          mb_lt->hashsize = 1 << 24;
-         if( table_entries <= k_small_query_cutoff ||
-	     table_entries >= k_large_query_cutoff )
+         if( table_entries <= kSmallQueryCutoff ||
+	     table_entries >= kLargeQueryCutoff )
             pv_shift = 5;
 	 else
             pv_shift = 4;
@@ -571,9 +572,9 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    }
 
    if (lookup_options->mb_template_length)
-     status = MB_FillDiscTable(query, location, mb_lt, width, lookup_options);
+     status = s_FillDiscMBTable(query, location, mb_lt, width, lookup_options);
    else
-     status = MB_FillContigTable(query, location, mb_lt, width, lookup_options);
+     status = s_FillContigMBTable(query, location, mb_lt, width, lookup_options);
 
    if (status > 0)
       return status;

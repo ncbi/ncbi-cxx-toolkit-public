@@ -96,7 +96,7 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
  */
 
 static Int2
-BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_info, Blast_KarlinBlk** kbp_ret)
+s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_info, Blast_KarlinBlk** kbp_ret)
 {
         Int4 index;   /* Look for the first valid kbp. */
         Int2 status=1;  /* 1 means no valid block found. */
@@ -287,7 +287,8 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
  * @param program The blast program type
  * @return The default per-program expect value
  */
-static double GetCutoffEvalue(EBlastProgramType program)
+static double 
+s_GetCutoffEvalue(EBlastProgramType program)
 {
    switch(program) {
    case eBlastTypeBlastn:
@@ -329,7 +330,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    ASSERT(word_options);
    ASSERT(sbp);
    ASSERT(sbp->kbp_std[query_info->first_context]);
-   if (BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_std) != 0)
+   if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_std) != 0)
          return -1;
 
    *parameters = (BlastInitialWordParameters*) 
@@ -365,10 +366,10 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
    /* kbp_gap is only non-NULL for gapped searches! */
    if (sbp->kbp_gap) {
-      if (BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
+      if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
          return -1;
    } else {
-      if (BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp) != 0)
+      if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp) != 0)
          return -1;
       gapped_calculation = FALSE;
    }
@@ -379,16 +380,16 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
         gap_trigger (at 22 bits) seems like a good value for both of these.  Ungapped blastn is an exception (see
         comment below) and it's not clear that this should be.  */
       Blast_KarlinBlk* kbp_ungap;
-      const BlastInitialWordOptions* k_options = parameters->options;
-      if (BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_ungap) != 0)
+      const BlastInitialWordOptions* kOptions = parameters->options;
+      if (s_BlastFindValidKarlinBlk(sbp->kbp_std, query_info, &kbp_ungap) != 0)
           return -1;
-      gap_trigger = (Int4) ((k_options->gap_trigger*NCBIMATH_LN2 + kbp_ungap->logK) / kbp_ungap->Lambda);
+      gap_trigger = (Int4) ((kOptions->gap_trigger*NCBIMATH_LN2 + kbp_ungap->logK) / kbp_ungap->Lambda);
    }
 
    ASSERT(kbp);
 
    if (!gapped_calculation || program_number == eBlastTypeBlastn) {
-      double cutoff_e = GetCutoffEvalue(program_number);
+      double cutoff_e = s_GetCutoffEvalue(program_number);
       Int4 avg_qlen = (query_info->context_offsets[query_info->last_context+1] - 1) /
          (query_info->last_context + 1);
       double gap_decay_rate = 0.0;
@@ -547,7 +548,7 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
        
  
    if (sbp->kbp) {
-      if (BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
+      if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
          return -1;
    } else {
       /* The Karlin block is not found, can't do any calculations */
@@ -562,7 +563,7 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
 
    /* Set gapped X-dropoffs only if it is a gapped search. */
    if (sbp->kbp_gap) {
-      if (BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp_gap) != 0)
+      if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp_gap) != 0)
          return -1;
       params->gap_x_dropoff = 
          (Int4) (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
@@ -1009,7 +1010,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
  * @return TRUE if options combination valid.
  */
 static Boolean 
-DiscWordOptionsValidate(Int2 word_size, Uint1 template_length,
+s_DiscWordOptionsValidate(Int2 word_size, Uint1 template_length,
                         Uint1 template_type)
 {
    if (template_length == 0)
@@ -1085,7 +1086,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
    }
 
    if (program_number == eBlastTypeBlastn && options->mb_template_length > 0) {
-      if (!DiscWordOptionsValidate(options->word_size,
+      if (!s_DiscWordOptionsValidate(options->word_size,
               options->mb_template_length, options->mb_template_type)) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                             "Invalid discontiguous template parameters");
@@ -1374,10 +1375,10 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
       Karlin blocks have been set. */
    gapped_calculation = (sbp->kbp_gap != NULL);
    if (gapped_calculation) {
-      if (BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
+      if (s_BlastFindValidKarlinBlk(sbp->kbp_gap, query_info, &kbp) != 0)
          return -1;
    } else {
-      if (BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
+      if (s_BlastFindValidKarlinBlk(sbp->kbp, query_info, &kbp) != 0)
          return -1;
    }
 
@@ -1634,6 +1635,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.141  2004/11/15 16:32:37  dondosha
+ * Changed constant names and static functions names in accordance with C++ toolkit guidelines
+ *
  * Revision 1.140  2004/11/02 18:20:14  madden
  * 1.) Reorganization of options to move gap_trigger from BlastExtensionParameters to BlastInitialWordOptions,
  * and use ungapped_cutoff in place of gap_trigger in parameter structures.

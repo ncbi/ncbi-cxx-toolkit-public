@@ -512,9 +512,9 @@ _DEBUG_printMsa(const char* filename, const _PSIMsa* msa)
  * @return PSIERR_GAPINQUERY if validation fails, else PSI_SUCCESS
  */
 static int
-_PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
+s_PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 p = 0;            /* index on positions sequences */
     ASSERT(msa);
 
@@ -523,7 +523,7 @@ _PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
     }
 
     for (p = 0; p < msa->dimensions->query_length; p++) {
-        if (msa->cell[kQueryIndex][p].letter == GAP || msa->query[p] == GAP) {
+        if (msa->cell[kQueryIndex][p].letter == kGapResidue || msa->query[p] == kGapResidue) {
             return PSIERR_GAPINQUERY;
         }
     }
@@ -536,11 +536,11 @@ _PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
  * else PSI_SUCCESS
  */
 static int
-_PSIValidateNoFlankingGaps(const _PSIMsa* msa)
+s_PSIValidateNoFlankingGaps(const _PSIMsa* msa)
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 s = 0;            /* index on sequences */
-    Uint4 p = 0;            /* index on positions sequences */
+    Int4 p = 0;            /* index on positions sequences */
     ASSERT(msa);
 
     /* Look for starting gaps in alignments */
@@ -551,9 +551,9 @@ _PSIValidateNoFlankingGaps(const _PSIMsa* msa)
         }
 
         /* find the first aligned residue */
-        for (p = 0; p < msa->dimensions->query_length; p++) {
+        for (p = 0; p < (Int4) msa->dimensions->query_length; p++) {
             if (msa->cell[s][p].is_aligned) {
-                if (msa->cell[s][p].letter == GAP) {
+                if (msa->cell[s][p].letter == kGapResidue) {
                     return PSIERR_STARTINGGAP;
                 } else {
                     break;
@@ -572,7 +572,7 @@ _PSIValidateNoFlankingGaps(const _PSIMsa* msa)
         /* find the first aligned residue */
         for (p = msa->dimensions->query_length - 1; p >= 0; p--) {
             if (msa->cell[s][p].is_aligned) {
-                if (msa->cell[s][p].letter == GAP) {
+                if (msa->cell[s][p].letter == kGapResidue) {
                     return PSIERR_ENDINGGAP;
                 } else {
                     break;
@@ -591,9 +591,9 @@ _PSIValidateNoFlankingGaps(const _PSIMsa* msa)
  * else PSI_SUCCESS
  */
 static int
-_PSIValidateAlignedColumns(const _PSIMsa* msa) 
+s_PSIValidateAlignedColumns(const _PSIMsa* msa) 
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 s = 0;            /* index on sequences */
     Uint4 p = 0;            /* index on positions sequences */
     ASSERT(msa);
@@ -607,7 +607,7 @@ _PSIValidateAlignedColumns(const _PSIMsa* msa)
 
             if (msa->cell[s][p].is_aligned) {
                 found_aligned_sequence = TRUE;
-                if (msa->cell[s][p].letter != GAP) {
+                if (msa->cell[s][p].letter != kGapResidue) {
                     found_non_gap_residue = TRUE;
                     break;
                 }
@@ -632,7 +632,7 @@ _PSIValidateAlignedColumns(const _PSIMsa* msa)
  * @return PSIERR_NOALIGNEDSEQS if validation fails, else PSI_SUCCESS
  */
 static int
-_PSIValidateParticipatingSequences(const _PSIMsa* msa)
+s_PSIValidateParticipatingSequences(const _PSIMsa* msa)
 {
     Uint4 s = 0;            /* index on aligned sequences */
     ASSERT(msa);
@@ -659,22 +659,22 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
         return PSIERR_BADPARAM;
     }
 
-    retval = _PSIValidateNoFlankingGaps(msa);
+    retval = s_PSIValidateNoFlankingGaps(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
 
-    retval = _PSIValidateAlignedColumns(msa);
+    retval = s_PSIValidateAlignedColumns(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
 
-    retval = _PSIValidateNoGapsInQuery(msa, ignore_consensus);
+    retval = s_PSIValidateNoGapsInQuery(msa, ignore_consensus);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
 
-    retval = _PSIValidateParticipatingSequences(msa);
+    retval = s_PSIValidateParticipatingSequences(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
@@ -689,14 +689,14 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
  * @param msa multiple sequence alignment data structure [in]
  */
 static void
-_PSIPurgeSelfHits(_PSIMsa* msa);
+s_PSIPurgeSelfHits(_PSIMsa* msa);
 
 /** Keeps only one copy of any aligned sequences which are >kPSINearIdentical%
  * identical to one another
  * @param msa multiple sequence alignment data structure [in]
  */
 static void
-_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa);
+s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa);
 
 /** This function compares the sequences in the msa->cell
  * structure indexed by sequence_index1 and seq_index2. If it finds aligned 
@@ -711,7 +711,7 @@ _PSIPurgeNearIdenticalAlignments(_PSIMsa* msa);
  * [in]
  */
 static void
-_PSIPurgeSimilarAlignments(_PSIMsa* msa,
+s_PSIPurgeSimilarAlignments(_PSIMsa* msa,
                            Uint4 seq_index1,
                            Uint4 seq_index2,
                            double max_percent_identity);
@@ -725,27 +725,27 @@ _PSIPurgeBiasedSegments(_PSIMsa* msa)
         return PSIERR_BADPARAM;
     }
 
-    _PSIPurgeSelfHits(msa);
-    _PSIPurgeNearIdenticalAlignments(msa);
+    s_PSIPurgeSelfHits(msa);
+    s_PSIPurgeNearIdenticalAlignments(msa);
     _PSIUpdatePositionCounts(msa);
 
     return PSI_SUCCESS;
 }
 
 static void
-_PSIPurgeSelfHits(_PSIMsa* msa)
+s_PSIPurgeSelfHits(_PSIMsa* msa)
 {
     Uint4 s = 0;        /* index on sequences */
 
     ASSERT(msa);
 
     for (s = kQueryIndex + 1; s < msa->dimensions->num_seqs + 1; s++) {
-        _PSIPurgeSimilarAlignments(msa, kQueryIndex, s, kPSIIdentical);
+        s_PSIPurgeSimilarAlignments(msa, kQueryIndex, s, kPSIIdentical);
     }
 }
 
 static void
-_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
+s_PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
 {
     Uint4 i = 0;
     Uint4 j = 0;
@@ -757,7 +757,7 @@ _PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
             /* N.B.: The order of comparison of sequence pairs is deliberate,
              * tests on real data indicated that this approach allowed more
              * sequences to be purged */
-            _PSIPurgeSimilarAlignments(msa, j, (i + j),
+            s_PSIPurgeSimilarAlignments(msa, j, (i + j),
                                        kPSINearIdentical);
         }
     }
@@ -798,7 +798,7 @@ _PSIUpdatePositionCounts(_PSIMsa* msa)
 }
 
 /** Defines the states of the finite state machine used in
- * _PSIPurgeSimilarAlignments. Successor to posit.c's POS_COUNTING and
+ * s_PSIPurgeSimilarAlignments. Successor to posit.c's POS_COUNTING and
  * POS_RESTING */
 typedef enum _EPSIPurgeFsmState {
     eCounting,
@@ -807,7 +807,7 @@ typedef enum _EPSIPurgeFsmState {
 
 /** Auxiliary structure to maintain information about two aligned regions
  * between the query and a subject sequence. It is used to store the data
- * manipulated by the finite state machine used in _PSIPurgeSimilarAlignments.
+ * manipulated by the finite state machine used in s_PSIPurgeSimilarAlignments.
  */
 typedef struct _PSIAlignmentTraits {
     Uint4 start;            /**< starting offset of alignment w.r.t. query */
@@ -953,13 +953,13 @@ _handleEitherAlignedNeitherX(_PSIAlignmentTraits* traits,
 }
 
 static void
-_PSIPurgeSimilarAlignments(_PSIMsa* msa,
+s_PSIPurgeSimilarAlignments(_PSIMsa* msa,
                            Uint4 seq_index1,
                            Uint4 seq_index2,
                            double max_percent_identity)
 {
 
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     _EPSIPurgeFsmState state = eCounting;   /* initial state of the fsm */
     _PSIAlignmentTraits traits;
     Uint4 p = 0;                    /* position on alignment */
@@ -978,27 +978,29 @@ _PSIPurgeSimilarAlignments(_PSIMsa* msa,
      * determine if a region of the alignment should be purged */
     for (p = 0; p < msa->dimensions->query_length; p++) {
 
-        const _PSIMsaCell* seq1 = msa->cell[seq_index1];
-        const _PSIMsaCell* seq2 = msa->cell[seq_index2];
+        const _PSIMsaCell* kSeq1 = msa->cell[seq_index1];
+        const _PSIMsaCell* kSeq2 = msa->cell[seq_index2];
 
         /* Indicates if the position in seq_index1 currently being examined is 
          * aligned. In the special case for seq_index1 == kQueryIndex, this 
          * variable is set to FALSE to force the other sequence's position to 
          * be used to proceed with processing. */
-        const Boolean pos1_aligned = (seq_index1 == kQueryIndex ? 
-                                FALSE : seq1[p].is_aligned);
+        const Boolean kPos1Aligned = (seq_index1 == kQueryIndex ? 
+                                      FALSE : kSeq1[p].is_aligned);
         /* Indicates if the position in seq_index2 currently being examined is 
          * aligned. */
-        const Boolean pos2_aligned = seq2[p].is_aligned;
+        const Boolean kPos2Aligned = kSeq2[p].is_aligned;
 
-        Boolean neither_is_aligned = !pos1_aligned && !pos2_aligned;
+        Boolean neither_is_aligned = !kPos1Aligned && !kPos2Aligned;
         /* FIXME: kludgy solution, need to document fsm */
-        Boolean both_are_aligned = seq1[p].is_aligned && pos2_aligned;
-        Boolean either_is_aligned = pos1_aligned || pos2_aligned;
+        Boolean both_are_aligned = kSeq1[p].is_aligned && kPos2Aligned;
+        Boolean either_is_aligned = kPos1Aligned || kPos2Aligned;
 
-        Boolean neither_is_X = seq1[p].letter != X && seq2[p].letter != X;
-        Boolean either_is_X = seq1[p].letter == X || seq2[p].letter == X;
-        Boolean same_residue = seq1[p].letter == seq2[p].letter;
+        Boolean neither_is_X = 
+           kSeq1[p].letter != kXResidue && kSeq2[p].letter != kXResidue;
+        Boolean either_is_X = 
+           kSeq1[p].letter == kXResidue || kSeq2[p].letter == kXResidue;
+        Boolean same_residue = kSeq1[p].letter == kSeq2[p].letter;
 
         /* Look for events interesting to the finite state machine */
         if (neither_is_aligned) {
@@ -1089,7 +1091,7 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,                  /* [in] */
 static void
 _PSIGetLeftExtents(const _PSIMsa* msa, Uint4 seq_index)
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     _PSIMsaCell* sequence_position = NULL;
     Uint4 prev = 0;  /* index for the first and previous position */
     Uint4 curr = 0;  /* index for the current position */
@@ -1101,7 +1103,7 @@ _PSIGetLeftExtents(const _PSIMsa* msa, Uint4 seq_index)
     sequence_position = msa->cell[seq_index];
 
     if (sequence_position[prev].is_aligned && 
-        sequence_position[prev].letter != GAP) {
+        sequence_position[prev].letter != kGapResidue) {
         sequence_position[prev].extents.left = prev;
     }
 
@@ -1124,7 +1126,7 @@ _PSIGetLeftExtents(const _PSIMsa* msa, Uint4 seq_index)
 static void
 _PSIGetRightExtents(const _PSIMsa* msa, Uint4 seq_index)
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     _PSIMsaCell* sequence_position = NULL;
     Uint4 last = 0;      /* index for the last position */
     Int4 curr = 0;       /* index for the current position */
@@ -1137,7 +1139,7 @@ _PSIGetRightExtents(const _PSIMsa* msa, Uint4 seq_index)
     last = msa->dimensions->query_length - 1;
 
     if (sequence_position[last].is_aligned && 
-        sequence_position[last].letter != GAP) {
+        sequence_position[last].letter != kGapResidue) {
         sequence_position[last].extents.right = last;
     }
 
@@ -1162,7 +1164,7 @@ _PSIComputePositionExtents(const _PSIMsa* msa,
                            _PSIAlignedBlock* aligned_blocks)
 {
 #ifdef PSI_IGNORE_GAPS_IN_COLUMNS
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
 #endif
     _PSIMsaCell* sequence_position = NULL;
     Uint4 i = 0;
@@ -1177,7 +1179,7 @@ _PSIComputePositionExtents(const _PSIMsa* msa,
     for (i = 0; i < msa->dimensions->query_length; i++) {
 #ifdef PSI_IGNORE_GAPS_IN_COLUMNS
         if (sequence_position[i].is_aligned && 
-            sequence_position[i].letter != GAP) {
+            sequence_position[i].letter != kGapResidue) {
 #else
         if (sequence_position[i].is_aligned) {
 #endif
@@ -1195,7 +1197,7 @@ static void
 _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
                                 _PSIAlignedBlock* aligned_blocks)
 {
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 i = 0;
     
     ASSERT(msa);
@@ -1213,18 +1215,18 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
     /* Do not include X's in aligned region lengths */
     for (i = 0; i < msa->dimensions->query_length; i++) {
 
-        if (msa->query[i] == X) {
+        if (msa->query[i] == kXResidue) {
 
             Uint4 idx = 0;
             for (idx = 0; idx < i; idx++) {
                 if ((Uint4)aligned_blocks->pos_extnt[idx].right >= i &&
-                    msa->query[idx] != X) {
+                    msa->query[idx] != kXResidue) {
                     aligned_blocks->size[idx]--;
                 }
             }
             for (idx = msa->dimensions->query_length - 1; idx > i; idx--) {
                 if ((Uint4)aligned_blocks->pos_extnt[idx].left <= i &&
-                    msa->query[idx] != X) {
+                    msa->query[idx] != kXResidue) {
                     aligned_blocks->size[idx]--;
                 }
             }
@@ -1428,10 +1430,10 @@ _PSICalculateNormalizedSequenceWeights(
     ASSERT(aligned_blocks);
     ASSERT(seq_weights);
     ASSERT(aligned_seqs);
-    ASSERT(position >= 0 && position < msa->dimensions->query_length);
+    ASSERT(position < msa->dimensions->query_length);
 
-    for (i = (Uint4) aligned_blocks->pos_extnt[position].left; 
-         i <= (Uint4) aligned_blocks->pos_extnt[position].right; i++) {
+    for (i = (Uint4)aligned_blocks->pos_extnt[position].left; 
+         i <= (Uint4)aligned_blocks->pos_extnt[position].right; i++) {
 
         /* Keeps track of how many occurrences of each residue are found in a
          * column of the alignment extent corresponding to a query position */
@@ -1445,19 +1447,19 @@ _PSICalculateNormalizedSequenceWeights(
                sizeof(Uint4)*BLASTAA_SIZE);
 
         /* Assert that the alignment extents have sane values */
-        ASSERT(i >= 0 && i < msa->dimensions->query_length);
+        ASSERT(i < msa->dimensions->query_length);
 
         /* Count number of residues in column i of the alignment extent
          * corresponding to position */
         for (asi = 0; asi < num_aligned_seqs; asi++) {
-            const Uint4 seq_idx = aligned_seqs[asi];
-            const Uint1 residue = 
-                msa->cell[seq_idx][i].letter;
+            const Uint4 kSeqIdx = aligned_seqs[asi];
+            const Uint1 kResidue = 
+                msa->cell[kSeqIdx][i].letter;
 
-            if (residue_counts_for_column[residue] == 0) {
+            if (residue_counts_for_column[kResidue] == 0) {
                 num_distinct_residues_for_column++;
             }
-            residue_counts_for_column[residue]++;
+            residue_counts_for_column[kResidue]++;
         }
 
         sigma += num_distinct_residues_for_column;
@@ -1526,7 +1528,7 @@ _PSICalculateMatchWeights(
     Uint4 num_aligned_seqs,             /* [in] */
     _PSISequenceWeights* seq_weights)    /* [out] */
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 asi = 0;   /* index into array of aligned sequences */
 
     ASSERT(msa);
@@ -1541,7 +1543,7 @@ _PSICalculateMatchWeights(
             seq_weights->norm_seq_weights[seq_idx];
 
         /* Collected for diagnostics information, not used elsewhere */
-        if (residue != GAP) {
+        if (residue != kGapResidue) {
             seq_weights->gapless_column_weights[position] +=
              seq_weights->norm_seq_weights[seq_idx];
         }
@@ -1554,7 +1556,7 @@ _PSIGetAlignedSequencesForPosition(const _PSIMsa* msa,
                                    Uint4* aligned_sequences)
 {
 #ifdef PSI_IGNORE_GAPS_IN_COLUMNS
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
 #endif
     Uint4 retval = 0;
     Uint4 i = 0;
@@ -1571,7 +1573,7 @@ _PSIGetAlignedSequencesForPosition(const _PSIMsa* msa,
 
 #ifdef PSI_IGNORE_GAPS_IN_COLUMNS
         if (msa->cell[i][position].is_aligned &&
-            msa->cell[i][position].letter != GAP) {
+            msa->cell[i][position].letter != kGapResidue) {
 #else
         if (msa->cell[i][position].is_aligned) {
 #endif
@@ -1587,8 +1589,8 @@ _PSISpreadGapWeights(const _PSIMsa* msa,
                      _PSISequenceWeights* seq_weights,
                      Boolean ignore_consensus)
 {
-    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kGapResidue = AMINOACID_TO_NCBISTDAA['-'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 pos = 0;   /* residue position (ie: column number) */
     Uint4 res = 0;   /* residue */
     const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
@@ -1599,7 +1601,7 @@ _PSISpreadGapWeights(const _PSIMsa* msa,
     for (pos = 0; pos < msa->dimensions->query_length; pos++) {
 
         if (msa->num_matching_seqs[pos] <= kExpectedNumMatchingSeqs ||
-            msa->cell[kQueryIndex][pos].letter == X) {
+            msa->cell[kQueryIndex][pos].letter == kXResidue) {
             continue;
         }
 
@@ -1607,11 +1609,11 @@ _PSISpreadGapWeights(const _PSIMsa* msa,
         for (res = 0; res < msa->alphabet_size; res++) {
             if (seq_weights->std_prob[res] > kEpsilon) {
                 seq_weights->match_weights[pos][res] += 
-                    (seq_weights->match_weights[pos][GAP] * 
+                    (seq_weights->match_weights[pos][kGapResidue] * 
                      seq_weights->std_prob[res]);
             }
         }
-        seq_weights->match_weights[pos][GAP] = 0.0;
+        seq_weights->match_weights[pos][kGapResidue] = 0.0;
 
     }
 }
@@ -1623,7 +1625,7 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
                          const _PSISequenceWeights* seq_weights,
                          Boolean ignore_consensus)
 {
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 pos = 0;   /* residue position (ie: column number) */
     Boolean check_performed = FALSE;  /* were there any sequences checked? */
     const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
@@ -1637,7 +1639,7 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
         Uint4 residue = 0;
 
         if (msa->num_matching_seqs[pos] <= kExpectedNumMatchingSeqs ||
-            msa->cell[kQueryIndex][pos].letter == X) {
+            msa->cell[kQueryIndex][pos].letter == kXResidue) {
             continue;
         }
 
@@ -1672,7 +1674,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                       _PSIInternalPssmData* internal_pssm)
 {
     /* Subscripts are indicated as follows: N_i, where i is a subscript of N */
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     SFreqRatios* freq_ratios = NULL;/* matrix-specific frequency ratios */
     Uint4 p = 0;                    /* index on positions */
     Uint4 r = 0;                    /* index on residues */
@@ -1680,7 +1682,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
     if ( !msa || !seq_weights || !sbp || !aligned_blocks || !internal_pssm ) {
         return PSIERR_BADPARAM;
     }
-    ASSERT(sbp->alphabet_size == msa->alphabet_size);
+    ASSERT(((Uint4)sbp->alphabet_size) == msa->alphabet_size);
 
     freq_ratios = _PSIMatrixFrequencyRatiosNew(sbp->name);
 
@@ -1690,7 +1692,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
 
             /* If there is an 'X' in the query sequence at position p
                or the standard probability of residue r is close to 0 */
-            if (msa->cell[kQueryIndex][p].letter == X ||
+            if (msa->cell[kQueryIndex][p].letter == kXResidue ||
                 seq_weights->std_prob[r] <= kEpsilon) {
                 internal_pssm->freq_ratios[p][r] = 0.0;
             } else {
@@ -1702,7 +1704,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                 /* Effective number of independent observations for column p */
                 double alpha = 0.0;
                 /* Renamed to match the formula in the paper */
-                const double beta = pseudo_count;
+                const double kBeta = pseudo_count;
                 double numerator = 0.0;         /* intermediate term */
                 double denominator = 0.0;       /* intermediate term */
                 double qOverPEstimate = 0.0;    /* intermediate term */
@@ -1715,7 +1717,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                                    freq_ratios->data[r][i]);
                     }
                 }
-                pseudo *= beta;
+                pseudo *= kBeta;
 
                 alpha = seq_weights->sigma[p]/aligned_blocks->size[p]-1;
 
@@ -1724,7 +1726,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
                      seq_weights->std_prob[r]) 
                     + pseudo;
 
-                denominator = alpha + beta;
+                denominator = alpha + kBeta;
 
                 ASSERT(denominator != 0.0);
                 qOverPEstimate = numerator/denominator;
@@ -1843,8 +1845,8 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
                             const BlastScoreBlk* sbp,
                             const double* std_probs)
 {
-    const Uint4 X = AMINOACID_TO_NCBISTDAA['X'];
-    const Uint4 Star = AMINOACID_TO_NCBISTDAA['*'];
+    const Uint4 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint4 kStarResidue = AMINOACID_TO_NCBISTDAA['*'];
     Uint4 i = 0;
     Uint4 j = 0;
     SFreqRatios* freq_ratios = NULL;    /* only needed when there are not
@@ -1890,8 +1892,8 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
                     BLAST_Nint(kPSIScaleFactor * tmp);
             }
 
-            if ( (j == X || j == Star) &&
-                 (sbp->matrix[kResidue][X] != BLAST_SCORE_MIN) ) {
+            if ( (j == kXResidue || j == kStarResidue) &&
+                 (sbp->matrix[kResidue][kXResidue] != BLAST_SCORE_MIN) ) {
                 internal_pssm->scaled_pssm[i][j] = 
                     sbp->matrix[kResidue][j] * kPSIScaleFactor;
             }
@@ -2086,14 +2088,14 @@ _PSIScaleMatrix(const Uint1* query,
 Uint4
 _PSISequenceLengthWithoutX(const Uint1* seq, Uint4 length)
 {
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 retval = 0;       /* the return value */
     Uint4 i = 0;            /* loop index */
 
     ASSERT(seq);
 
     for(i = 0; i < length; i++) {
-        if (seq[i] != X) {
+        if (seq[i] != kXResidue) {
             retval++;
         }
     }
@@ -2108,7 +2110,7 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
                               const double* std_probs,              /* [in] */
                               const BlastScoreBlk* sbp)             /* [in] */
 {
-    const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
+    const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
     Uint1 aa_alphabet[BLASTAA_SIZE];            /* ncbistdaa alphabet */
     Uint4 alphabet_size = 0;                    /* number of elements populated
                                                    in array above */
@@ -2156,7 +2158,7 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
     score_freqs->obs_min = min_score;
     score_freqs->obs_max = max_score;
     for (p = 0; p < query_length; p++) {
-        if (query[p] == X) {
+        if (query[p] == kXResidue) {
             continue;
         }
 
@@ -2380,6 +2382,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/11/15 16:32:37  dondosha
+ * Changed constant names and static functions names in accordance with C++ toolkit guidelines
+ *
  * Revision 1.32  2004/11/15 14:21:43  camacho
  * Correction to _PSIValidateAlignedColumns when the query sequence should be accounted
  *
