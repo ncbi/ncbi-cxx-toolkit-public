@@ -4,7 +4,7 @@
 #include <serial/classinfo.hpp>
 
 #include <asn.h>
-#include <internal/webenv/asn/webenv.h>
+#include <webenv.h>
 
 BEGIN_NCBI_SCOPE
 
