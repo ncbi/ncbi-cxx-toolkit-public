@@ -39,6 +39,7 @@
 
 
 // generated includes
+#include <corelib/ncbitime.hpp>
 #include <objects/seq/Seq_annot_.hpp>
 
 // generated classes
@@ -46,6 +47,10 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+class CUser_object;
+class CDate;
+
 
 class NCBI_SEQ_EXPORT CSeq_annot : public CSeq_annot_Base
 {
@@ -60,11 +65,24 @@ public:
     // new CAnnotdesc of type name
     void AddName(const string &name);
 
-    // Adds a CAnnotdesc of type title
+    // Adds a CAnnotdesc of type title.  This will replace any previous
+    // title fields.
     void AddTitle(const string &title);
+    void SetTitle(const string &title);
 
     // Adds a CAnnotdesc of type comment
     void AddComment(const string &comment);
+
+    // Add/Set the create-date field
+    void SetCreateDate(const CTime& dt);
+    void SetCreateDate(CDate& dt);
+
+    // Add/Set the create-date field
+    void SetUpdateDate(const CTime& dt);
+    void SetUpdateDate(CDate& dt);
+
+    // add a user-object descriptor
+    void AddUserObject(CUser_object& obj);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -96,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 13:09:58  dicuccio
+* Added helper functions to set dates in descriptions
+*
 * Revision 1.1  2003/05/07 10:59:14  clausen
 * Added AddName, AddTitle, AddCmment
 *
