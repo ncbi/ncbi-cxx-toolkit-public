@@ -33,6 +33,8 @@
 #include "seq_loader.hpp"
 #include "splign_app_exception.hpp"
 
+#include <string>
+#include <algorithm>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -184,7 +186,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 	if(buf[0] == '>') break;
 	size_t size_old = seq->size();
 	seq->resize(size_old + line_size);
-	copy(buf, buf + line_size, seq->begin() + size_old);
+	transform(buf, buf + line_size, seq->begin() + size_old, (int(*)(int))toupper);
       }
       else if (i0 == i1) {
 	break; // GCC hack
@@ -221,7 +223,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 	size_t finish = (src_read > to)?
 	                (line_size - (src_read - to) + 1):
 	                line_size;
-	copy(buf + start, buf + finish, seq->begin() + dst_read);
+	transform(buf + start, buf + finish, seq->begin() + dst_read, (int(*)(int))toupper);
 	dst_read += finish - start;
 	if(dst_read >= dst_seq_len) {
 	  seq->resize(dst_seq_len);
@@ -241,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/18 16:04:16  kapustin
+ * Support lower case input sequences
+ *
  * Revision 1.9  2003/12/09 13:20:50  ucko
  * +<memory> for auto_ptr
  *
