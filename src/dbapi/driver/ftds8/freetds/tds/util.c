@@ -288,9 +288,14 @@ void tdsdump_dump_buf(
  */
 void tdsdump_log(int debug_lvl, const char *fmt, ...)
 {
+#ifndef NDEBUG
    int ret = 0;
 
+#ifdef NCBI_FTDS
+   if (debug_lvl < g_debug_lvl) 
+#else
    if (debug_lvl>g_debug_lvl) 
+#endif
 	return;
 
    if (g_append_mode) {
@@ -360,6 +365,7 @@ void tdsdump_log(int debug_lvl, const char *fmt, ...)
    if (g_append_mode && ret) {
       fclose(dumpfile);
    }
+#endif
 } /* tdsdump_log()  */
 
 /* Jeff's hack*** NEW CODE *** */
