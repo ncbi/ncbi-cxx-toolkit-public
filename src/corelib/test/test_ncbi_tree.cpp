@@ -71,6 +71,11 @@ ETreeTraverseCode TestFunctor1(CTreeNode<int>& tr, int delta)
     return eTreeTraverse;
 }
 
+static string s_IntToStr(int i)
+{
+    return NStr::IntToString(i);
+}
+
 static void s_TEST_Tree()
 {
     typedef CTreeNode<int>  TTree;
@@ -193,10 +198,9 @@ static void s_TEST_Tree()
     assert(parent_node);
     assert(parent_node->GetValue() == 3);
 
-    typedef string (*IntConvType)(long, bool sign = false);
-
-
-    TreePrint(cout, *str, (IntConvType) NStr::IntToString);
+    // NStr::IntToString's extra argument is problematic, so we supply
+    // and use a trivial wrapper.
+    TreePrint(cout, *str, s_IntToStr);
 
     delete str;
 }
@@ -318,6 +322,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2004/04/08 21:46:35  ucko
+ * Use a more foolproof method of supplying NStr::IntToString to TreePrint.
+ *
  * Revision 1.9  2004/04/08 18:35:50  kuznets
  * + tree print test
  *
