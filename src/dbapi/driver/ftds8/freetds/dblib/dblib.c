@@ -2587,6 +2587,7 @@ TDSSOCKET *tds = (TDSSOCKET *) dbproc->tds_socket;
 
 	do {
 		marker = tds_get_byte(dbproc->tds_socket);
+		if(marker == 0 && dbproc->tds_socket->s == 0) return FAIL;
 		tds_process_default_tokens(dbproc->tds_socket, marker);
 	} while (marker!=TDS_DONE_TOKEN);
 
