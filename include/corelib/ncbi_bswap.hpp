@@ -64,11 +64,11 @@ inline
 Int2 CByteSwap::GetInt2(const unsigned char* ptr)
 {
 #ifdef WORDS_BIGENDIAN
-    Int2 ret = (ptr[1] << 8) | 
-               (ptr[0]);
+    Int2 ret = (Int2(ptr[1]) << 8) | 
+               (Int2(ptr[0]));
 #else
-    Int2 ret = (ptr[0] << 8) | 
-               (ptr[1]);
+    Int2 ret = (Int2(ptr[0]) << 8) | 
+               (Int2(ptr[1]));
 #endif
 
     return ret;
@@ -91,15 +91,15 @@ inline
 Int4 CByteSwap::GetInt4(const unsigned char* ptr)
 {
 #ifdef WORDS_BIGENDIAN
-    Int4 ret = (ptr[3] << 24) | 
-               (ptr[2] << 16) | 
-               (ptr[1] << 8)  | 
-               (ptr[0]);
+    Int4 ret = (Int4(ptr[3]) << 24) | 
+               (Int4(ptr[2]) << 16) | 
+               (Int4(ptr[1]) << 8)  | 
+               (Int4(ptr[0]));
 #else
-    Int4 ret = (ptr[0] << 24) | 
-               (ptr[1] << 16) | 
-               (ptr[2] << 8)  | 
-               (ptr[3]);
+    Int4 ret = (Int4(ptr[0]) << 24) | 
+               (Int4(ptr[1]) << 16) | 
+               (Int4(ptr[2]) << 8)  | 
+               (Int4(ptr[3]));
 #endif
     return ret;
 }
@@ -124,23 +124,23 @@ inline
 Int8 CByteSwap::GetInt8(const unsigned char* ptr)
 {
 #ifdef WORDS_BIGENDIAN
-    Int8 ret = (ptr[7] << 56) | 
-               (ptr[6] << 48) | 
-               (ptr[5] << 40) | 
-               (ptr[4] << 32) |
-               (ptr[3] << 24) |
-               (ptr[2] << 16) |
-               (ptr[1] << 8)  |
-               (ptr[0]);
+    Int8 ret = (Int8(ptr[7]) << 56) | 
+               (Int8(ptr[6]) << 48) | 
+               (Int8(ptr[5]) << 40) | 
+               (Int8(ptr[4]) << 32) |
+               (Int8(ptr[3]) << 24) |
+               (Int8(ptr[2]) << 16) |
+               (Int8(ptr[1]) << 8)  |
+               (Int8(ptr[0]));
 #else
-    Int8 ret = (ptr[0] << 56) | 
-               (ptr[1] << 48) | 
-               (ptr[2] << 40) | 
-               (ptr[3] << 32) |
-               (ptr[4] << 24) |
-               (ptr[5] << 16) |
-               (ptr[6] << 8)  |
-               (ptr[7]);
+    Int8 ret = (Int8(ptr[0]) << 56) | 
+               (Int8(ptr[1]) << 48) | 
+               (Int8(ptr[2]) << 40) | 
+               (Int8(ptr[3]) << 32) |
+               (Int8(ptr[4]) << 24) |
+               (Int8(ptr[5]) << 16) |
+               (Int8(ptr[6]) << 8)  |
+               (Int8(ptr[7]));
 #endif
 
     return ret;
@@ -205,6 +205,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/09/10 16:44:47  kuznets
+ * Fixed a bug with bit shifting without casting to a proper (16,32,64 bit) type.
+ * Thanks Eugene Vasilchenko for submitting it.
+ *
  * Revision 1.4  2003/09/10 15:13:30  kuznets
  * Fixed minor compilation issues.
  *
