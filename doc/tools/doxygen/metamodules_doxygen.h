@@ -30,6 +30,7 @@
  *
  */
 
+
 /** @defgroup CORELIB
  *  Core Library members
  */
@@ -122,6 +123,30 @@
 /* ========================================================================= */
 
 
+/** @defgroup ALGO ALGORITHMS
+ *  Algorithm members
+ */
+
+/** @defgroup AlgoExcep Algorithm Exceptions
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoGlobal Global Alignment Algorithm
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoGlobalmRna Global Alignment with mRna, Dna
+ *  @ingroup ALGO
+ */
+
+/** @defgroup AlgoAlignMM Myers & Milner Global Alignment Algorithm
+ *  @ingroup ALGO
+ */
+
+
+/* ========================================================================= */
+
+
 /**
  *  @defgroup CGI 
  *  CGI Members
@@ -207,15 +232,6 @@
 
 /** @defgroup OBJECTMANAGER OBJECT MANAGER
  *  Object Manager members
- */
-
-/** @defgroup ALGO ALGORITHMS
- *  Algorithm members
- */
-
-
-/** @defgroup APP APPLICATION
- *  Application members
  */
 
 
