@@ -612,7 +612,7 @@ public:
         if (IsByteSwapped()) {
             v = CByteSwap::GetInt2((unsigned char*)GetBuffer());
         } else {
-            ::memcpy(&v, GetBuffer(), sizeof(Int4));
+            ::memcpy(&v, GetBuffer(), sizeof(Int2));
         }
         return v;
     }
@@ -1720,6 +1720,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/12/23 22:31:31  ucko
+ * Fix typo that could lead to stack overruns.
+ *
  * Revision 1.28  2003/12/22 18:52:43  kuznets
  * Implemeneted length prefixed string field (CBDB_FieldLString)
  *
