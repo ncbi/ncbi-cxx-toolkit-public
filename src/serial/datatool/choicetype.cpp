@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/26 19:29:47  gouriano
+* corrected CreateTypeInfo method to handle XML attribute lists
+*
 * Revision 1.26  2002/11/19 19:48:28  gouriano
 * added support of XML attributes of choice variants
 *
@@ -147,6 +150,7 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/choiceptrstr.hpp>
+#include <serial/member.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
@@ -237,8 +241,30 @@ CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i ) {
         CDataMember* member = i->get();
-        typeInfo->AddVariant(member->GetName(), 0,
-                             member->GetType()->GetTypeInfo());
+        if (member->Attlist()) {
+            CMemberInfo* memInfo =
+                typeInfo->AddMember(member->GetName(),0,
+                                    member->GetType()->GetTypeInfo());
+            if (member->NoPrefix()) {
+                memInfo->SetNoPrefix();
+            }
+            if (member->Attlist()) {
+                memInfo->SetAttlist();
+            }
+            if (member->Notag()) {
+                memInfo->SetNotag();
+            }
+        } else {
+            CVariantInfo* varInfo = 
+                typeInfo->AddVariant(member->GetName(), 0,
+                                     member->GetType()->GetTypeInfo());
+            if (member->NoPrefix()) {
+                varInfo->SetNoPrefix();
+            }
+            if (member->Notag()) {
+                varInfo->SetNotag();
+            }
+        }
     }
     return UpdateModuleName(typeInfo.release());
 }
