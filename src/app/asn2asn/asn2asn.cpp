@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/10/27 14:42:59  ostell
+* removed extra CreateArguments call so that usage shows properly
+*
 * Revision 1.29  2000/10/20 19:29:52  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -303,7 +306,6 @@ int CAsn2Asn::Run(void)
         argDesc.AddFlag("ih", "Use read hooks");
         argDesc.AddFlag("oh", "Use write hooks");
 
-        args.reset(argDesc.CreateArgs(GetArguments()));
         try {
             args.reset(argDesc.CreateArgs(GetArguments()));
         }
