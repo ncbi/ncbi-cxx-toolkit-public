@@ -248,6 +248,7 @@ SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk,
             translation_buffer_ptr, frame_offsets_ptr, NULL);
       }
    }
+
    return 0;
 }
 
@@ -365,7 +366,8 @@ FillHSPFromGapAlign(BlastHSP* hsp, BlastGapAlignStruct* gap_align,
       hsp->gap_info->original_length2 = subject_length;
       if (program_number == blast_type_blastx)
          hsp->gap_info->translate1 = TRUE;
-      if (program_number == blast_type_tblastn)
+      if (program_number == blast_type_tblastn ||
+          program_number == blast_type_rpstblastn)
          hsp->gap_info->translate2 = TRUE;
    }
 }
@@ -477,7 +479,8 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
             if (keep == TRUE)
             {
                if (program_number == blast_type_blastp ||
-                program_number == blast_type_blastn) {
+                   program_number == blast_type_rpsblast ||
+                   program_number == blast_type_blastn) {
 
                   BLAST_KarlinBlk** kbp;
                   if (scoring_options->gapped_calculation)
@@ -500,11 +503,12 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                   /* Scale down score for blastp and tblastn. */
                    hsp->score = (Int4) ((hsp->score+(0.5*scalingFactor))/scalingFactor);
                }
+
                /* only one alignment considered for blast[np]. */
                /* This may be changed by LinkHsps for blastx or tblastn. */
                hsp->num = 1;
                if ((program_number == blast_type_tblastn ||
-                   program_number == blast_type_psitblastn) && 
+                    program_number == blast_type_rpstblastn) && 
                      hit_options->longest_intron > 0) {
                    hsp->evalue = 
                      BLAST_KarlinStoE_simple(hsp->score, 
@@ -635,7 +639,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    const Boolean kGreedyTraceback = (ext_options->algorithm_type == EXTEND_GREEDY_NO_TRACEBACK);
    const Boolean kTranslateSubject = 
       (program_number == blast_type_tblastn ||
-       program_number == blast_type_psitblastn);   
+       program_number == blast_type_rpstblastn); 
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -689,7 +693,12 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             BLAST_GetQueryLength(query_info, hsp->context);
       }
 
-      if (gap_align->rps_blast || 
+      /* preliminary RPS blast alignments have not had
+         the composition-based correction applied yet, so
+         we cannot reliably check whether an HSP is contained
+         within another */
+
+      if (program_number == blast_type_rpsblast ||
           !HSPContainedInHSPCheck(hsp_array, hsp, index, k_is_ooframe)) {
 
          Int4 start_shift = 0;
@@ -814,7 +823,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
 
     if (program_number == blast_type_blastx ||
         program_number == blast_type_tblastn ||
-        program_number == blast_type_psitblastn) {
+        program_number == blast_type_rpstblastn) {
         
         if (hit_params->do_sum_stats == TRUE) {
            BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
@@ -853,12 +862,14 @@ static Uint1 GetTracebackEncoding(Uint1 program_number)
       encoding = BLASTNA_ENCODING;
       break;
    case blast_type_blastp:
+   case blast_type_rpsblast:
       encoding = BLASTP_ENCODING;
       break;
    case blast_type_blastx:
       encoding = BLASTP_ENCODING;
       break;
    case blast_type_tblastn:
+   case blast_type_rpstblastn:
       encoding = NCBI4NA_ENCODING;
       break;
    case blast_type_tblastx:
@@ -1067,7 +1078,13 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
    if (!hit_list)
       return 0;
 
-   sbp->kbp_gap[0]->Lambda /= psi_options->scalingFactor;
+   /* for translated searches, the traceback code calculates
+      E values *after* the scaling factor has been removed from
+      the alignment scores. Thus, lambda must not be pre-scaled
+      for a translated search */
+
+   if (program_number != blast_type_rpstblastn)
+      sbp->kbp_gap[0]->Lambda /= psi_options->scalingFactor;
 
    for (i = 0; i < hit_list->hsplist_count; i++) {
       hsp_list = hit_list->hsplist_array[i];
@@ -1103,25 +1120,33 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
          one_db_seq_info.context_offsets = &offsets[0];
          one_db_seq_info.eff_searchsp_array = query_info->eff_searchsp_array;
 
-         /* replace the PSSM for this DB sequence */
+         /* Update the statistics for this database sequence
+            (if not a translated search) */
 
-         sbp->posMatrix = RPSCalculatePSSM(psi_options->scalingFactor,
-                  query->length, query->sequence, one_db_seq.length,
-                  orig_pssm + db_seq_start[0]);
+         if (program_number == blast_type_rpstblastn) {
+            sbp->posMatrix = orig_pssm + db_seq_start[0];
+         }
+         else {
+            /* replace the PSSM and the Karlin values
+               for this DB sequence. */
 
-         /* Update the statistics for this database sequence */
+            sbp->posMatrix = RPSCalculatePSSM(psi_options->scalingFactor,
+                        query->length, query->sequence, one_db_seq.length,
+                        orig_pssm + db_seq_start[0]);
 
-         sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
-         sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
+            sbp->kbp_gap[0]->K = RPS_K_MULT * karlin_k[hsp_list->oid];
+            sbp->kbp_gap[0]->logK = log(RPS_K_MULT * karlin_k[hsp_list->oid]);
+         }
 
-         /* compute the traceback information and calculate all the
-            E values */
+         /* compute the traceback information and calculate E values
+            for all HSPs in the list */
 
          BlastHSPListGetTraceback(program_number, hsp_list, &one_db_seq, 
             query, &one_db_seq_info, gap_align, sbp, score_options, 
             ext_params->options, hit_params, db_options, psi_options);
 
-         RPSFreePSSM(sbp->posMatrix, one_db_seq.length);
+         if (program_number != blast_type_rpstblastn)
+            RPSFreePSSM(sbp->posMatrix, one_db_seq.length);
       }
 
       /* Revert query and subject to their traditional meanings. 
@@ -1132,8 +1157,9 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
    }
 
    /* restore input data */
-   sbp->kbp_gap[0]->Lambda *= psi_options->scalingFactor;
+   if (program_number != blast_type_rpstblastn)
+      sbp->kbp_gap[0]->Lambda *= psi_options->scalingFactor;
+
    gap_align->sbp->posMatrix = orig_pssm;
    return status;
 }
-
