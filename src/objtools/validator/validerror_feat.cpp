@@ -284,7 +284,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
 {
     const CGene_ref* grp = feat.GetGeneXref();
     if ( grp  ) {
-        return grp->GetPseudo();
+        return (grp->IsSetPseudo()  &&  grp->GetPseudo());
     }
 
     // !!! DEBUG {
@@ -301,8 +301,9 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
         eOverlap_Contains,
         *m_Scope);
     if ( overlap ) {
-        if ( overlap->GetPseudo()  ||
-             overlap->GetData().GetGene().GetPseudo() ) {
+        if ( (overlap->IsSetPseudo()  &&  overlap->GetPseudo())  ||
+             (overlap->GetData().GetGene().IsSetPseudo()  &&
+              overlap->GetData().GetGene().GetPseudo()) ) {
             return true;
         }
     }
@@ -405,7 +406,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
         "Internal partial intervals do not include first/last residue of sequence",
         "Improper use of partial (greater than or less than)"
     };
-    
+
     partial_loc  = SeqLocPartialCheck(feat.GetLocation(), m_Scope );
     if (feat.IsSetProduct ()) {
         partial_prod = SeqLocPartialCheck(feat.GetProduct (), m_Scope );
@@ -413,29 +414,32 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
     
     if ( (partial_loc  != eSeqlocPartial_Complete)  ||
          (partial_prod != eSeqlocPartial_Complete)  ||   
-        feat.GetPartial () == true ) {
+         (feat.IsSetPartial()  &&  feat.GetPartial() == true) ) {
+
         // a feature on a partial sequence should be partial -- it often isn't
-        if ( !feat.GetPartial ()  &&
+        if ( (!feat.IsSetPartial()  ||  !feat.GetPartial()) &&
             partial_loc != eSeqlocPartial_Complete  &&
             feat.GetLocation ().Which () == CSeq_loc::e_Whole ) {
             PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                 "On partial Bioseq, SeqFeat.partial should be TRUE", feat);
         }
         // a partial feature, with complete location, but partial product
-        else if ( feat.GetPartial()  &&
+        else if ( (feat.IsSetPartial()  &&  feat.GetPartial())  &&
             partial_loc == eSeqlocPartial_Complete  &&
             feat.IsSetProduct () &&
             feat.GetProduct ().Which () == CSeq_loc::e_Whole  &&
             partial_prod != eSeqlocPartial_Complete ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                "When SeqFeat.product is a partial Bioseq, SeqFeat.location should also be partial", feat);
+                "When SeqFeat.product is a partial Bioseq, SeqFeat.location "
+                "should also be partial", feat);
         }
         // gene on segmented set is now 'order', should also be partial
         else if ( feat.GetData ().IsGene ()  &&
             !feat.IsSetProduct ()  &&
             partial_loc == eSeqlocPartial_Internal ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                "Gene of 'order' with otherwise complete location should have partial flag set", feat);
+                "Gene of 'order' with otherwise complete location should "
+                "have partial flag set", feat);
         }
         // inconsistent combination of partial/complete product,location,partial flag
         else if ( (partial_prod == eSeqlocPartial_Complete  &&  feat.IsSetProduct ())  ||
@@ -457,7 +461,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                 str += "complete, ";
             }
             str += "Feature.partial= ";
-            if ( feat.GetPartial () ) {
+            if ( feat.IsSetPartial()  &&  feat.GetPartial() ) {
                 str += "TRUE";
             } else {
                 str += "FALSE";
@@ -465,11 +469,13 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, str, feat);
         }
         // 5' or 3' partial location giving unclassified partial product
-        else if ( (partial_loc & eSeqlocPartial_Start || partial_loc & eSeqlocPartial_Stop) &&
-            partial_prod & eSeqlocPartial_Other &&
-            feat.GetPartial () ) {
+        else if ( (partial_loc & eSeqlocPartial_Start  ||
+                   partial_loc & eSeqlocPartial_Stop)  &&
+                   partial_prod & eSeqlocPartial_Other &&
+                   feat.IsSetPartial()  &&  feat.GetPartial() ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem,
-                "5' or 3' partial location should not have unclassified partial location", feat);
+                "5' or 3' partial location should not have unclassified "
+                "partial location", feat);
         }
         
         // may have other error bits set as well 
@@ -702,6 +708,10 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         
         CSeqVector seq_vec =
             bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac, citer.GetStrand());
+        if ( !m_Imp.CheckSeqVector(seq_vec) ) {
+            break;
+        }
+
         // check donor on all but last exon and on sequence
         if ( ((check_all && !partial_last)  ||  counter < num_of_parts)  &&
              (stop < seq_len - 2) ) {
@@ -711,7 +721,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
             if ( IsResidue(res1)  &&  IsResidue(res2) ) {
                 if ( (res1 != 'G')  || (res2 != 'T' ) ) {
                     string msg;
-                    if ( (res1 == 'G')  && (res2 != 'C' ) ) { // GC minor splice site
+                    if ( (res1 == 'G')  && (res2 == 'C' ) ) { // GC minor splice site
                         sev = eDiag_Info;
                         msg = "Rare splice donor consensus (GC) found instead of "
                               "(GT) after exon ending at position " +
@@ -766,7 +776,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     const CRNA_ref::EType& rna_type = rna.GetType ();
 
     if ( rna_type == CRNA_ref::eType_mRNA ) {
-        bool pseudo = feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat);
+        bool pseudo = (feat.IsSetPseudo()  &&  feat.GetPseudo())  ||  IsOverlappingGenePseudo(feat);
         
         if ( !pseudo ) {
             ValidateMrnaTrans(feat);      /* transcription check */
@@ -1388,12 +1398,12 @@ void CValidError_feat::ValidateCommonCDSProduct
                 feat);
         }
     }
-    const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(prod.GetBioseq());
+    CConstRef<CSeq_feat> sfp = m_Imp.GetCDSGivenProduct(prod.GetBioseq());
     if ( !sfp ) {
         return;
     }
     
-    if ( &feat != sfp ) {
+    if ( &feat != sfp.GetPointer() ) {
         // if genomic product set, with one cds on contig and one on cdna,
         // do not report.
         if ( m_Imp.IsGPS() ) {
@@ -1547,11 +1557,12 @@ static const string s_RefseqExceptionStrings [] = {
 
 void CValidError_feat::ValidateExcept(const CSeq_feat& feat)
 {
-    if ( !feat.GetExcept () && !feat.GetExcept_text ().empty() ) {
+    if ( feat.IsSetExcept() &&  !feat.GetExcept()  &&
+         feat.IsSetExcept_text()  &&  !feat.GetExcept_text().empty() ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptInconsistent,
             "Exception text is set, but exception flag is not set", feat);
     }
-    if ( !feat.GetExcept_text ().empty() ) {
+    if ( feat.IsSetExcept_text()  &&  !feat.GetExcept_text ().empty() ) {
         ValidateExceptText(feat.GetExcept_text(), feat);
     }
 }
@@ -1672,14 +1683,16 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     if ( !nuc_handle ) {
         return;
     }
-    CCdregion_translate::TranslateCdregion(
-        transl_prot, 
-        nuc_handle, 
-        location, 
-        cdregion, 
-        true,   // include stop codons
-        false); // do not remove trailing X/B/Z
-    
+    try {
+        CCdregion_translate::TranslateCdregion(
+            transl_prot, 
+            nuc_handle, 
+            location, 
+            cdregion, 
+            true,   // include stop codons
+            false); // do not remove trailing X/B/Z
+    } catch ( const runtime_error& ) {
+    }
     if ( transl_prot.empty() ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_CdTransFail, 
             "Unable to translate", feat);
@@ -2011,6 +2024,9 @@ bool CValidError_feat::IsPartialAtSpliceSite
 
     CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,
         temp.GetStrand());
+    if ( !m_Imp.CheckSeqVector(vec) ) {
+        return false;
+    }
     TSeqPos len = vec.size();
 
     if ( temp.GetStrand() == eNa_strand_minus ) {
@@ -2170,6 +2186,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/04/04 18:42:22  shomrat
+* Increased robustness in face of exceptions and minor bug fixes
+*
 * Revision 1.23  2003/03/31 14:40:13  shomrat
 * $id: -> $id$
 *
