@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/format_guess.hpp>
 
 #include <serial/objectinfo.hpp>
 #include <serial/objistr.hpp>
@@ -127,6 +128,25 @@ private:
 };
 
 
+// Return serialization format corresponding to CFormatGuess
+inline ESerialDataFormat FormatGuess2Serial(CFormatGuess::EFormat fmt)
+{
+    switch (fmt) 
+    {
+    case CFormatGuess::eBinaryASN:
+        return eSerial_AsnBinary;
+    case CFormatGuess::eTextASN:
+        return eSerial_AsnText;
+    case CFormatGuess::eXml:
+        return eSerial_Xml;
+    case CFormatGuess::eFasta:
+        return eSerial_None;       
+    default:
+        return eSerial_None;
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -135,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/06 20:26:56  kuznets
+ * Added inline function FormatGuess2Serial
+ *
  * Revision 1.7  2003/06/02 16:01:38  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr
