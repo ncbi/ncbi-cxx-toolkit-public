@@ -105,9 +105,6 @@ public:
     const T&    operator() (size_t i, size_t j) const;
     T&          operator() (size_t i, size_t j);
 
-    // stream reader operator
-    friend CNcbiIstream& operator>> (CNcbiIstream& is, CNcbiMatrix<T>& M);
-
 protected:
 
     // the data strip we use
@@ -140,15 +137,26 @@ template <class T>
 inline CNcbiOstream&
 operator<< (CNcbiOstream& os, const CNcbiMatrix<T>& M);
 
+///
+/// global addition: matrix + matrix
+///
 template <class T, class U>
 inline CNcbiMatrix< NCBI_PROMOTE(T,U) >
 operator+ (const CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global subtraction: matrix - matrix
+///
 template <class T, class U>
 inline CNcbiMatrix< NCBI_PROMOTE(T,U) >
 operator- (const CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
 
+///
+/// global multiplication: matrix * scalar
+/// this is a hack, as MSVC doesn't support partial template specialization
+/// we provide implementations for a number of popular types
+///
 template <class T>
 inline CNcbiMatrix< NCBI_PROMOTE(T, size_t) >
 operator* (const CNcbiMatrix<T>&, size_t);
@@ -176,46 +184,79 @@ inline CNcbiMatrix< NCBI_PROMOTE(double, U) >
 operator* (double, const CNcbiMatrix<U>&);
 
 
+///
+/// global multiplication: matrix * matrix
+///
 template <class T, class U>
 inline CNcbiMatrix< NCBI_PROMOTE(T,U) >
 operator* (const CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global multiplication: matrix * vector
+///
 template <class T, class U>
 inline vector< NCBI_PROMOTE(T,U) >
 operator* (const CNcbiMatrix<T>&, const vector<U>&);
 
+///
+/// global multiplication: vector * matrix
+///
 template <class T, class U>
 inline vector< NCBI_PROMOTE(T,U) >
 operator* (const vector<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global addition: matrix += matrix
+///
 template <class T, class U>
 inline CNcbiMatrix<T>&
 operator+= (CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global subtraction: matrix -= matrix
+///
 template <class T, class U>
 inline CNcbiMatrix<T>&
 operator-= (CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global multiplication: matrix *= matrix
+///
 template <class T, class U>
 inline CNcbiMatrix<T>&
 operator*= (CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global multiplication: matrix *= vector
+///
 template <class T, class U>
 inline vector<T>&
 operator*= (CNcbiMatrix<T>&, const vector<U>&);
 
+///
+/// global multiplication: matrix *= scalar
+///
 template <class T>
 inline CNcbiMatrix<T>&
 operator*= (CNcbiMatrix<T>&, T);
 
+///
+/// global division: matrix /= matrix
+///
 template <class T>
 inline CNcbiMatrix<T>&
 operator/= (CNcbiMatrix<T>&, T);
 
+///
+/// global comparison: matrix == matrix
+///
 template <class T, class U>
 inline bool
 operator== (const CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
 
+///
+/// global comparison: matrix != matrix
+///
 template <class T, class U>
 inline bool
 operator!= (const CNcbiMatrix<T>&, const CNcbiMatrix<U>&);
@@ -347,7 +388,7 @@ inline void CNcbiMatrix<T>::Resize(size_t new_rows, size_t new_cols, T val)
     size_t j = min(new_cols, m_Cols);
 
     for (size_t r = 0;  r < i;  ++r) {
-        for (size_t c = 0;  c < j; ++c) {
+        for (size_t c = 0;  c < j;  ++c) {
             new_data[r * new_cols + c] = m_Data[r * m_Cols + c];
         }
     }
@@ -478,11 +519,6 @@ operator+ (const CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
         *res_iter = *m0_iter + *m1_iter;
     }
 
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] + m1[i];
-     **/
-
     return res;
 }
 
@@ -510,11 +546,6 @@ operator+= (CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
         *m0_iter++ += *m1_iter++;
     }
 
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      m0[i] += m1[i];
-     **/
-
     return m0;
 }
 
@@ -540,11 +571,6 @@ operator- (const CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
         *res_iter = *m0_iter - *m1_iter;
     }
 
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] - m1[i];
-     **/
-
     return res;
 }
 
@@ -563,11 +589,6 @@ operator-= (CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
     for ( ;  m0_iter != m0_end;  ++m0_iter, ++m1_iter) {
         *m0_iter -= *m1_iter;
     }
-
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      m0[i] -= m1[i];
-     **/
 
     return m0;
 }
@@ -590,11 +611,6 @@ operator* (const CNcbiMatrix<T>& m0, size_t val)
         *res_iter = *m0_iter * val;
     }
 
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] * val;
-      */
-
     return res;
 }
 
@@ -612,14 +628,6 @@ operator* (size_t val, const CNcbiMatrix<U>& m0)
     for ( ;  res_iter != res_end;  ++res_iter, ++m0_iter) {
         *res_iter = *m0_iter * val;
     }
-
-    /**
-      typedef NCBI_PROMOTE(size_t, U) promote_t;
-      CNcbiMatrix< promote_t > res(m0.GetRows(), m0.GetCols());
-
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] * val;
-     **/
 
     return res;
 }
@@ -639,14 +647,6 @@ operator* (const CNcbiMatrix<T>& m0, float val)
         *res_iter = *m0_iter * val;
     }
 
-    /**
-      typedef NCBI_PROMOTE(T, float) promote_t;
-      CNcbiMatrix< promote_t > res(m0.GetRows(), m0.GetCols());
-
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] * val;
-     **/
-
     return res;
 }
 
@@ -664,14 +664,6 @@ operator* (float val, const CNcbiMatrix<U>& m0)
     for ( ;  res_iter != res_end;  ++res_iter, ++m0_iter) {
         *res_iter = *m0_iter * val;
     }
-
-    /**
-      typedef NCBI_PROMOTE(float, U) promote_t;
-      CNcbiMatrix< promote_t > res(m0.GetRows(), m0.GetCols());
-
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] * val;
-     **/
 
     return res;
 }
@@ -691,14 +683,6 @@ operator* (const CNcbiMatrix<T>& m0, double val)
         *res_iter = *m0_iter * val;
     }
 
-    /**
-      typedef NCBI_PROMOTE(T, double) promote_t;
-      CNcbiMatrix< promote_t > res(m0.GetRows(), m0.GetCols());
-
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] * val;
-     **/
-
     return res;
 }
 
@@ -717,14 +701,6 @@ operator* (double val, const CNcbiMatrix<U>& m0)
         *res_iter = *m0_iter * val;
     }
 
-    /**
-      typedef NCBI_PROMOTE(double, U) promote_t;
-      CNcbiMatrix< promote_t > res(m0.GetRows(), m0.GetCols());
-
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      res[i] = m0[i] * val;
-     **/
-
     return res;
 }
 
@@ -739,10 +715,6 @@ operator*= (CNcbiMatrix<T>& m0, T val)
     for ( ;  m0_iter != m0_end;  ++m0_iter) {
         *m0_iter *= val;
     }
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      m0[i] *= val;
-     **/
 
     return m0;
 }
@@ -760,10 +732,6 @@ operator/= (CNcbiMatrix<T>& m0, T val)
     for ( ;  m0_iter != m0_end;  ++m0_iter) {
         *m0_iter *= val;
     }
-    /**
-      for (size_t i=0; i<m0.GetData().size(); ++i)
-      m0[i] *= val;
-     **/
 
     return m0;
 }
@@ -775,12 +743,13 @@ operator* (const CNcbiMatrix<T>& m, const vector<U>& v)
 {
     _ASSERT(m.GetCols() == v.size());
 
-    typedef NCBI_PROMOTE(T,U) promote_t;
-    vector< promote_t > res(m.GetRows(), promote_t(0));
+    typedef NCBI_PROMOTE(T,U) TPromote;
+    vector< TPromote > res(m.GetRows(), TPromote(0));
 
-    for (size_t r=0; r<m.GetRows(); ++r) {
-        for (size_t i=0; i<m.GetCols(); ++i)
+    for (size_t r = 0;  r < m.GetRows();  ++r) {
+        for (size_t i = 0;  i < m.GetCols();  ++i) {
             res[r] += m(r,i) * v[i];
+        }
     }
 
     return res;
@@ -793,12 +762,13 @@ operator* (const vector<T>& v, const CNcbiMatrix<U>& m)
 {
     _ASSERT(m.GetRows() == v.size());
 
-    typedef NCBI_PROMOTE(T,U) promote_t;
-    vector< promote_t > res(m.GetCols(), promote_t(0));
+    typedef NCBI_PROMOTE(T,U) TPromote;
+    vector<TPromote> res(m.GetCols(), TPromote(0));
 
-    for (size_t c=0; c<m.GetCols(); ++c) {
-        for (size_t i=0; i<m.GetRows(); ++i)
+    for (size_t c = 0;  c < m.GetCols();  ++c) {
+        for (size_t i = 0;  i < m.GetRows();  ++i) {
             res[c] += m(i,c) * v[i];
+        }
     }
 
     return res;
@@ -811,15 +781,15 @@ operator* (const CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
 {
     _ASSERT(m0.GetCols() == m1.GetRows());
 
-    typedef NCBI_PROMOTE(T,U) promote_t;
-    CNcbiMatrix< promote_t > res(m0.GetRows(), m1.GetCols(), promote_t(0));
+    typedef NCBI_PROMOTE(T,U) TPromote;
+    CNcbiMatrix< TPromote > res(m0.GetRows(), m1.GetCols(), TPromote(0));
 
 #if 1
-    for (size_t r=0; r<m0.GetRows(); ++r) {
-        for (size_t c=0; c<m1.GetCols(); ++c)
-        {
-            for (size_t i=0; i<m0.GetCols(); ++i)
+    for (size_t r = 0; r < m0.GetRows();  ++r) {
+        for (size_t c = 0;  c < m1.GetCols();  ++c) {
+            for (size_t i = 0;  i < m0.GetCols();  ++i) {
                 res(r,c) += m0(r,i) * m1(i,c);
+            }
         }
     }
 #endif
@@ -830,10 +800,10 @@ operator* (const CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
     const vector<U>& rhs = m1.GetData();
     size_t col_mod = m0.GetCols() % 4;
 
-    for (size_t r=0; r<m0.GetRows(); ++r) {
+    for (size_t r = 0;  r < m0.GetRows();  ++r) {
         size_t r_offs = r * m0.GetCols();
 
-        for (size_t c=0; c<m1.GetCols(); ++c) {
+        for (size_t c = 0;  c < m1.GetCols();  ++c) {
             size_t i=0;
             T t0 = 0;
             T t1 = 0;
@@ -846,22 +816,22 @@ operator* (const CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
                 break;
 
             case 3:
-                t0 += m0.GetData()[r_offs+2] * m1(2,c);
+                t0 += m0.GetData()[r_offs + 2] * m1(2,c);
                 ++i;
             case 2:
-                t0 += m0.GetData()[r_offs+1] * m1(1,c);
+                t0 += m0.GetData()[r_offs + 1] * m1(1,c);
                 ++i;
             case 1:
-                t0 += m0.GetData()[r_offs+0] * m1(0,c);
+                t0 += m0.GetData()[r_offs + 0] * m1(0,c);
                 ++i;
                 break;
             }
 
-            for (; i<m0.GetCols(); i += 2) {
-                t0 += lhs[r_offs+i+0] * m1(i+0,c);
-                t1 += lhs[r_offs+i+1] * m1(i+1,c);
-                //t2 += lhs[r_offs+i+2] * m1(i+2,c);
-                //t3 += lhs[r_offs+i+3] * m1(i+3,c);
+            for (;  i < m0.GetCols();  i += 2) {
+                t0 += lhs[r_offs + i + 0] * m1(i + 0, c);
+                t1 += lhs[r_offs + i + 1] * m1(i + 1, c);
+                //t2 += lhs[r_offs + i + 2] * m1(i + 2, c);
+                //t3 += lhs[r_offs + i + 3] * m1(i + 3, c);
             }
             res(r,c) = t0 + t1 + t2 + t3;
         }
@@ -898,7 +868,7 @@ operator== (const CNcbiMatrix<T>& m0, const CNcbiMatrix<U>& m1)
         return false;
     }
 
-    for (size_t i=0; i<m0.GetData().size(); ++i) {
+    for (size_t i = 0;  i < m0.GetData().size();  ++i) {
         if (m0[i] != m1[i]) {
             return false;
         }
@@ -949,17 +919,17 @@ inline CNcbiIstream& operator>>(CNcbiIstream& is, CNcbiMatrix<T>& M)
         }
         vector<string> fields;
         NStr::Tokenize(line, " \t", fields, NStr::eMergeDelims);
-        if (A.m_Cols == 0) {
-            A.m_Cols = fields.size();
+        if (A.GetCols() == 0) {
+            A.Resize(A.GetCols(), fields.size());
         }
-        if (fields.size() != A.m_Cols) {
-            throw runtime_error(string("error at line ") +
-                                NStr::IntToString(linenum) + ": expected " +
-                                NStr::IntToString(A.m_Cols) + "columns; got" +
-                                NStr::IntToString(fields.size()));
+        if (fields.size() != A.GetCols()) {
+            NCBI_THROW(CException, eUnknown,
+                       "error at line " +
+                       NStr::IntToString(linenum) + ": expected " +
+                       NStr::IntToString(A.GetCols()) + " columns; got" +
+                       NStr::IntToString(fields.size()));
         }
-        A.GetData().resize((A.m_Rows + 1) * A.m_Cols);
-        A.m_Rows++;
+        A.Resize(A.GetRows() + 1, A.GetCols());
         for (int i = 0;  i < A.m_Cols;  ++i) {
             A(A.GetRows() - 1, i) = NStr::StringToDouble(fields[i]);
         }
@@ -969,11 +939,16 @@ inline CNcbiIstream& operator>>(CNcbiIstream& is, CNcbiMatrix<T>& M)
 }
 
 
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 14:00:40  dicuccio
+ * Added comments.  Fixed spacing issues.  Changed extraction operator to be
+ * non-friend function
+ *
  * Revision 1.1  2004/02/09 17:34:11  dicuccio
  * Moved from gui/math
  *
