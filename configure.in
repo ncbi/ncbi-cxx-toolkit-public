@@ -156,13 +156,7 @@ x_CXX=
 
 #### Provide default environment setup for known platforms/compilers
 compiler_extra=
-
-if test "$GCC" = "yes" ; then
-   DEPFLAGS="-MM"
-else
-   DEPFLAGS="-M"
-fi
-
+DEPFLAGS="-M"
 case "$host:$compiler" in
  sparc-sun-solaris2\.6:GCC )
    echo "GCC compiler is not supported for:  $host"
