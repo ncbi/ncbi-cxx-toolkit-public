@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  .......
+ * Author:  Cliff Clausen, Eugene Vasilchenko
  *
  * File Description:
  *   .......
@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/10/22 11:39:49  clausen
+ * Added Compare()
+ *
  * Revision 1.4  2001/06/25 18:52:02  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -58,23 +61,31 @@
 
 // generated includes
 #include <objects/seqloc/Seq_loc_.hpp>
+#include <objects/seqloc/Seq_loc_mix.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
 
+//
 #include <util/range.hpp>
 
-// generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+class CScope;
 
 class CSeq_loc : public CSeq_loc_Base
 {
-    typedef CSeq_loc_Base Tparent;
 public:
+    typedef CSeq_loc_Base Tparent;
+    typedef CPacked_seqpnt_Base::TPoints TPoints;
+    typedef CPacked_seqint_Base::Tdata   TIntervals;
+    typedef CSeq_loc_mix_Base::Tdata     TLocations;
+
     // constructor
     CSeq_loc(void);
     // destructor
-    ~CSeq_loc(void);
+    virtual ~CSeq_loc(void);
 
     // returns length, in residues, of Seq_loc
     // return = -1 = couldn't calculate due to error
@@ -84,10 +95,21 @@ public:
         eUndefined = -2
     };
 
+    // Method to determine the containment relationship between CSeq_locs
+    enum ECompare {
+        eNoOverlap = 0, // Sequences do not overlap
+        eContained,     // *this contained by seqloc
+        eContains,      // *this contains seqloc
+        eSame,          // *this and seqloc contain each other
+        eOverlap        // Sequences overlap each other
+    };
+    ECompare Compare(const CSeq_loc& seqloc, CScope* scope = 0) const;
+
     int GetLength(void) const;
 
     typedef CRange<int> TRange;
     TRange GetTotalRange(void) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
@@ -102,6 +124,7 @@ private:
 inline
 CSeq_loc::CSeq_loc(void)
 {
+    return;
 }
 
 
@@ -109,7 +132,6 @@ CSeq_loc::CSeq_loc(void)
 
 
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
 
 
