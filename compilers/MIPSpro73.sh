@@ -10,6 +10,7 @@
 
 ## Setup for the local (NCBI) environment
 set -a
+NCBI_COMPILER="MIPSpro73"
 
 CC="cc"
 CXX="CC"

@@ -18,6 +18,7 @@ PATH_BSH="//$MSVC_DRIVE/$MSVC_PATH"
 
 # Export the following interpreter variables
 set -a
+NCBI_COMPILER="MSVC"
 
 # Shell for the "configure" script and makefiles
 CONFIG_SHELL="bash"

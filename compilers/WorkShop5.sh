@@ -13,6 +13,7 @@
 WS_BIN=${WS_BIN:="/netopt/SUNWspro6/bin"}
 
 set -a
+NCBI_COMPILER="WorkShop5"
 
 # 32- or 64-bit architecture (64-bit is for SPARC Solaris 2.7 only!)
 case "$1" in
