@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/03/07 14:06:06  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.3  2000/02/03 20:16:20  vasilche
 * Fixed bug in type info generation for templates.
 *
@@ -109,28 +112,6 @@ protected:
 private:
     string m_TemplateName;
     AutoPtr<CTypeStrings> m_Arg1Type;
-};
-
-class CPointerTypeStrings : public CTemplate1TypeStrings
-{
-    typedef CTemplate1TypeStrings CParent;
-public:
-    CPointerTypeStrings(CTypeStrings* type);
-    CPointerTypeStrings(AutoPtr<CTypeStrings> type);
-    ~CPointerTypeStrings(void);
-
-    void GenerateTypeCode(CClassContext& ctx) const;
-
-    string GetCType(void) const;
-    string GetRef(void) const;
-
-    bool CanBeInSTL(void) const;
-
-    string GetIsSetCode(const string& var) const;
-
-    string GetInitializer(void) const;
-    string GetDestructionCode(const string& expr) const;
-    string GetResetCode(const string& var) const;
 };
 
 class CSetTypeStrings : public CTemplate1TypeStrings

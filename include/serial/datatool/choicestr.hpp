@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/07 14:06:04  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.2  2000/02/11 17:09:26  vasilche
 * Removed unneeded flags.
 *
@@ -92,6 +95,11 @@ public:
     CChoiceTypeStrings(const string& externalName, const string& className);
     ~CChoiceTypeStrings(void);
 
+    bool HaveAssignment(void) const
+        {
+            return m_HaveAssignment;
+        }
+
     void AddVariant(const string& name, AutoPtr<CTypeStrings> type);
 
 protected:
@@ -102,6 +110,7 @@ protected:
 
 private:
     TVariants m_Variants;
+    bool m_HaveAssignment;
 };
 
 class CChoiceRefTypeStrings : public CClassRefTypeStrings
@@ -111,6 +120,8 @@ public:
     CChoiceRefTypeStrings(const string& className,
                           const string& namespaceName,
                           const string& fileName);
+
+    bool CanBeInSTL(void) const;
 };
 
 #endif

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/03/07 14:06:33  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.41  2000/02/17 20:05:07  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -381,7 +384,8 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
 {
     AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(IdName(),
                                                           ClassName()));
-    code->AddMember(NcbiEmptyString, GetFullCType(), false);
+    code->AddMember(NcbiEmptyString, GetFullCType(), NcbiEmptyString,
+                    false, NcbiEmptyString);
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/03/07 14:06:31  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.12  2000/02/17 21:26:18  vasilche
 * Inline methods now will be at the end of *_Base.hpp files.
 *
@@ -219,7 +222,7 @@ void CFileCode::GenerateHPP(const string& path) const
         "#define " << hppDefine << "\n"
         "\n"
         "// standard includes\n"
-        "#include <corelib/ncbistd.hpp>\n";
+        "#include <corelib/ncbiobj.hpp>\n";
 
     if ( !m_HPPIncludes.empty() ) {
         header <<
@@ -335,9 +338,7 @@ bool CFileCode::GenerateUserHPP(const string& path) const
         "// This is generated file, you may modify it freely\n"
         "#ifndef " << hppDefine << "\n"
         "#define " << hppDefine << "\n"
-        "\n"
-        "// standard includes\n"
-        "#include <corelib/ncbistd.hpp>\n";
+        "\n";
 
     header <<
         "\n"

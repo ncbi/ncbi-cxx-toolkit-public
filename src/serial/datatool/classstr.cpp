@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/07 14:06:30  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.4  2000/02/17 20:05:06  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -90,7 +93,8 @@
 
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
                                      const string& className)
-    : m_ExternalName(externalName), m_ClassName(className)
+    : m_IsObject(true), m_HaveUserClass(true),
+      m_ExternalName(externalName), m_ClassName(className)
 {
 }
 
@@ -100,19 +104,24 @@ CClassTypeStrings::~CClassTypeStrings(void)
 
 void CClassTypeStrings::AddMember(const string& name,
                                   AutoPtr<CTypeStrings> type,
+                                  const string& pointerType,
                                   bool optional,
                                   const string& defaultValue)
 {
-    m_Members.push_back(SMemberInfo(name, type, optional, defaultValue));
+    m_Members.push_back(SMemberInfo(name, type,
+                                    pointerType,
+                                    optional, defaultValue));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             AutoPtr<CTypeStrings> t,
+                                            const string& pType,
                                             bool opt,
-                                            const string& def)
+                                            const string& defValue)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
-      type(t), optional(opt), defaultValue(def)
+      type(t), ptrType(pType),
+      optional(opt), defaultValue(defValue)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -140,6 +149,11 @@ bool CClassTypeStrings::CanBeInSTL(void) const
     return false;
 }
 
+bool CClassTypeStrings::IsObject(void) const
+{
+    return m_IsObject;
+}
+
 string CClassTypeStrings::GetResetCode(const string& var) const
 {
     return var+".Reset();\n";
@@ -156,12 +170,19 @@ void CClassTypeStrings::SetParentClass(const string& className,
 
 void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
-    bool inClass = !ctx.GetMethodPrefix().empty();
+    bool haveUserClass = HaveUserClass();
     string codeClassName = GetClassName();
-    if ( !inClass )
+    if ( haveUserClass )
         codeClassName += "_Base";
     CClassCode code(ctx, codeClassName);
-    code.SetParentClass(m_ParentClassName, m_ParentClassNamespaceName);
+    if ( haveUserClass )
+        code.SetVirtualDestructor();
+    if ( m_ParentClassName.empty() ) {
+        code.SetParentClass("CObject", "NCBI_NS_NCBI");
+    }
+    else {
+        code.SetParentClass(m_ParentClassName, m_ParentClassNamespaceName);
+    }
 
     code.ClassPublic() <<
         "    // type info\n"
@@ -169,7 +190,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         "\n";
 
     GenerateClassCode(code,
-                      inClass? code.ClassPublic(): code.ClassProtected(),
+                      haveUserClass? code.ClassPublic(): code.ClassProtected(),
                       code.GetMethodPrefix(),
                       codeClassName);
 }
@@ -204,6 +225,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         getters <<
             "    // members\n";
         iterate ( TMembers, i, m_Members ) {
+            string valueName;
+            bool ref = !i->ptrType.empty();
+            if ( !ref ) {
+                valueName = i->mName;
+            }
+            else {
+                valueName = "(*"+i->mName+")";
+            }
             // generate getter
             getters <<
                 "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
@@ -211,7 +240,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 "inline\n"
                 "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                 "{\n"
-                "    return "<<i->mName<<";\n"
+                "    return "<<valueName<<";\n"
                 "}\n"
                 "\n";
             // generate setter
@@ -222,7 +251,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "inline\n"
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
                     "{\n"
-                    "    "<<i->mName<<" = value;\n";
+                    "    "<<valueName<<" = value;\n";
                 if ( i->optional && i->type->NeedSetFlag() ) {
                     code.InlineMethods() <<
                         "    m_set_"<<i->cName<<" = true;\n";
@@ -243,7 +272,18 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "    m_set_"<<i->cName<<" = true;\n";
                 }
                 code.InlineMethods() <<
-                    "    return "<<i->mName<<";\n"
+                    "    return "<<valueName<<";\n"
+                    "}\n"
+                    "\n";
+            }
+            // generate reference setter
+            if ( !i->ptrType.empty() ) {
+                getters <<
+                    "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value);\n";
+                code.Methods() <<
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
+                    "{\n"
+                    "    "<<i->mName<<" = value;\n"
                     "}\n"
                     "\n";
             }
@@ -256,14 +296,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "inline\n"
                     "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void)\n"
                     "{\n";
-                if ( i->type->NeedSetFlag() ) {
+                if ( !i->ptrType.empty() ) {
                     code.InlineMethods() <<
-                        "    return m_set_"<<i->cName<<";\n";
+                        "    return "<<i->mName<<";\n";
                 }
                 else {
-                    // doesn't need set flag -> use special code
-                    code.InlineMethods() <<
-                        "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
+                    if ( i->type->NeedSetFlag() ) {
+                        code.InlineMethods() <<
+                            "    return m_set_"<<i->cName<<";\n";
+                    }
+                    else {
+                        // doesn't need set flag -> use special code
+                        code.InlineMethods() <<
+                            "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
+                    }
                 }
                 code.InlineMethods() <<
                     "}\n"
@@ -271,15 +317,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             
             // generate Reset... method
-            string assignValue;
+            string destructionCode = i->type->GetDestructionCode(valueName);
+            string assignValue = i->defaultValue;
             string resetCode;
-            if ( !i->defaultValue.empty() ) {
-                assignValue = i->defaultValue;
-            }
-            else {
-                resetCode =
-                    i->type->GetDestructionCode(i->mName) +
-                    i->type->GetResetCode(i->mName);
+            if ( assignValue.empty() && !ref ) {
+                resetCode = i->type->GetResetCode(valueName);
                 if ( resetCode.empty() )
                     assignValue = i->type->GetInitializer();
             }
@@ -294,22 +336,50 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 getters <<
                     "    void Reset"<<i->cName<<"(void);\n";
             }
-            bool inl = !assignValue.empty();
+            bool inl = resetCode.empty() && i->ptrType.empty();
             code.MethodStart(inl) <<
                 "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
                 "{\n";
-            if ( !assignValue.empty() ) {
-                // assign default value
-                code.Methods(inl) <<
-                    "    "<<i->mName<<" = "<<assignValue<<";\n";
+            WriteTabbed(code.Methods(inl), destructionCode);
+            if ( ref ) {
+                if ( !i->optional ) {
+                    // just reset value
+                    resetCode = i->type->GetResetCode(valueName);
+                    if ( !resetCode.empty() ) {
+                        WriteTabbed(code.Methods(inl), resetCode);
+                    }
+                    else {
+                        code.Methods(inl) <<
+                            "    "<<valueName<<" = "<<i->type->GetInitializer()<<";\n";
+                    }
+                }
+                else if ( assignValue.empty() ) {
+                    // no default value
+                    code.Methods(inl) <<
+                        "    "<<i->mName<<".Reset();\n";
+                }
+                else {
+                    if ( assignValue.empty() )
+                        assignValue = i->type->GetInitializer();
+                    // assign default value
+                    code.Methods(inl) <<
+                        "    "<<i->mName<<".Reset(new "<<i->tName<<"("<<assignValue<<"));\n";
+                }
             }
             else {
-                // no default value
-                WriteTabbed(code.Methods(inl), resetCode);
-            }
-            if ( i->optional && i->type->NeedSetFlag() ) {
-                code.Methods(inl) <<
-                    "    m_set_"<<i->cName<<" = false;\n";
+                if ( !assignValue.empty() ) {
+                    // assign default value
+                    code.Methods(inl) <<
+                        "    "<<i->mName<<" = "<<assignValue<<";\n";
+                }
+                else {
+                    // no default value
+                    WriteTabbed(code.Methods(inl), resetCode);
+                }
+                if ( i->optional && i->type->NeedSetFlag() ) {
+                    code.Methods(inl) <<
+                        "    m_set_"<<i->cName<<" = false;\n";
+                }
             }
             code.Methods(inl) <<
                 "}\n"
@@ -349,7 +419,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "    // members data\n";
 		{
 	        iterate ( TMembers, i, m_Members ) {
-		        if ( i->optional && i->type->NeedSetFlag() ) {
+                bool ref = !i->ptrType.empty();
+		        if ( i->optional && i->type->NeedSetFlag() && !ref ) {
 			        code.ClassPrivate() <<
 				        "    bool m_set_"<<i->cName<<";\n";
 				}
@@ -357,8 +428,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         }
 		{
 			iterate ( TMembers, i, m_Members ) {
-				code.ClassPrivate() <<
-	                "    "<<i->tName<<" "<<i->mName<<";\n";
+                bool ref = !i->ptrType.empty();
+                if ( ref ) {
+                    code.ClassPrivate() <<
+                        "    NCBI_NS_NCBI::CRef< "<<i->tName<<" > "<<i->mName<<";\n";
+                }
+                else {
+                    code.ClassPrivate() <<
+                        "    "<<i->tName<<" "<<i->mName<<";\n";
+                }
 		    }
 		}
     }
@@ -367,18 +445,35 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
 		{
 	        iterate ( TMembers, i, m_Members ) {
-		        if ( i->optional && i->type->NeedSetFlag() ) {
-			        code.AddInitializer("m_set_"+i->cName, "false");
-				}
+                bool ref = !i->ptrType.empty();
+                if ( i->optional && i->type->NeedSetFlag() && !ref ) {
+                    code.AddInitializer("m_set_"+i->cName, "false");
+                }
 			}
         }
         {
             iterate ( TMembers, i, m_Members ) {
-                string init = i->defaultValue;
-                if ( init.empty() )
-                    init = i->type->GetInitializer();
-                if ( !init.empty() )
-                    code.AddInitializer(i->mName, init);
+                bool ref = !i->ptrType.empty();
+                if ( ref ) {
+                    string init = i->defaultValue;
+                    if ( !init.empty() ) {
+                        code.AddInitializer(i->mName,
+                                            "new "+i->tName+'('+init+')');
+                    }
+                    else if ( !i->optional ) {
+                        if ( init.empty() )
+                            init = i->type->GetInitializer();
+                        code.AddInitializer(i->mName,
+                                            "new "+i->tName+'('+init+')');
+                    }
+                }
+                else {
+                    string init = i->defaultValue;
+                    if ( init.empty() )
+                        init = i->type->GetInitializer();
+                    if ( !init.empty() )
+                        code.AddInitializer(i->mName, init);
+                }
             }
         }
     }
@@ -386,7 +481,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate Reset method
     code.ClassPublic() <<
         "    // reset whole object\n"
-        "    void Reset(void);\n"
+        "    ";
+    if ( HaveUserClass() )
+        code.ClassPublic() << "virtual ";
+    code.ClassPublic() <<
+        "void Reset(void);\n"
         "\n";
     if ( generateMainReset ) {
         code.Methods() <<
@@ -417,9 +516,21 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     }
     {
         iterate ( TMembers, i, m_Members ) {
-            code.Methods() <<
-                "        "<<i->type->GetTypeInfoCode(i->externalName,
-                                                     i->mName);
+            bool ref = !i->ptrType.empty();
+            if ( ref ) {
+                code.Methods() <<
+                    "        NCBI_NS_NCBI::AddMember("
+                    "info->GetMembers(), "
+                    "\""+i->externalName+"\", "
+                    "NCBI_NS_NCBI::Check< NCBI_NS_NCBI::CRef< "+i->tName+" > >::Ptr(MEMBER_PTR("+i->mName+")), "
+                    "&NCBI_NS_NCBI::CRefTypeInfo< "+i->tName+" >::GetTypeInfo, "
+                    +i->type->GetRef()+')';
+            }
+            else {
+                code.Methods() <<
+                    "        "<<i->type->GetTypeInfoCode(i->externalName,
+                                                         i->mName);
+            }
             if ( i->optional ) {
                 if ( !i->defaultValue.empty() ) {
                     code.Methods() <<
@@ -511,6 +622,11 @@ bool CClassRefTypeStrings::CanBeKey(void) const
 bool CClassRefTypeStrings::CanBeInSTL(void) const
 {
     return false;
+}
+
+bool CClassRefTypeStrings::IsObject(void) const
+{
+    return true;
 }
 
 string CClassRefTypeStrings::GetResetCode(const string& var) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/07 14:06:33  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.4  2000/02/03 20:16:15  vasilche
 * Fixed bug in type info generation for templates.
 *
@@ -196,62 +199,6 @@ void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
     CParent::GenerateTypeCode(ctx);
     GetArg2Type()->GenerateTypeCode(ctx);
-}
-
-CPointerTypeStrings::CPointerTypeStrings(AutoPtr<CTypeStrings> type)
-    : CParent(NcbiEmptyString, type)
-{
-}
-
-CPointerTypeStrings::CPointerTypeStrings(CTypeStrings* type)
-    : CParent(NcbiEmptyString, type)
-{
-}
-
-CPointerTypeStrings::~CPointerTypeStrings(void)
-{
-}
-
-bool CPointerTypeStrings::CanBeInSTL(void) const
-{
-    return true;
-}
-
-string CPointerTypeStrings::GetIsSetCode(const string& var) const
-{
-    return "("+var+") != 0";
-}
-
-string CPointerTypeStrings::GetCType(void) const
-{
-    return GetArg1Type()->GetCType()+'*';
-}
-
-string CPointerTypeStrings::GetRef(void) const
-{
-    return "&NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo, "+GetArg1Type()->GetRef();
-}
-
-string CPointerTypeStrings::GetInitializer(void) const
-{
-    return "0";
-}
-
-string CPointerTypeStrings::GetDestructionCode(const string& expr) const
-{
-    return
-        GetArg1Type()->GetDestructionCode("*(" + expr + ')')+
-        "delete ("+expr+");\n";
-}
-
-string CPointerTypeStrings::GetResetCode(const string& var) const
-{
-    return var + " = 0;\n";
-}
-
-void CPointerTypeStrings::GenerateTypeCode(CClassContext& ctx) const
-{
-    GetArg1Type()->GeneratePointerTypeCode(ctx);
 }
 
 CSetTypeStrings::CSetTypeStrings(const string& templateName,

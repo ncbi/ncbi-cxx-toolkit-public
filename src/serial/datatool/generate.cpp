@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/03/07 14:06:32  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.26  2000/02/01 21:48:00  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -140,9 +143,12 @@ void CCodeGenerator::LoadConfig(const string& fileName)
     }
     else {
         CNcbiIfstream in(fileName.c_str());
-        if ( !in )
-            ERR_POST(Fatal << "cannot open file " << fileName);
-        m_Config.Read(in);
+        if ( !in ) {
+            ERR_POST(Warning << "cannot open file " << fileName);
+        }
+        else {
+            m_Config.Read(in);
+        }
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/03/07 14:06:31  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.26  2000/02/17 20:05:06  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -162,7 +165,7 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
     header <<
         "class "<<GetClassName();
     if ( !GetParentClassName().empty() )
-        header << " : public "<<GetParentClassName();
+        header << " : public "<<GetParentClassNamespaceName()<<"::"<<GetParentClassName();
     header <<
         "\n"
         "{\n"

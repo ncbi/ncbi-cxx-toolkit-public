@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/03/07 14:06:05  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.2  2000/02/17 20:05:02  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -78,14 +81,17 @@ class CClassTypeStrings : public CTypeStrings
     typedef CTypeStrings CParent;
 public:
     struct SMemberInfo {
-        string externalName;
-        string cName;
-        string mName;
-        string tName;
-        AutoPtr<CTypeStrings> type;
-        bool optional;
-        string defaultValue;
+        string externalName; // logical name
+        string cName; // C++ type code
+        string mName; // member name
+        string tName; // typedef name
+        AutoPtr<CTypeStrings> type; // value type
+        string ptrType; // "*" or "NCBI_NS_NCBI::CRef"
+        string valueName; // value name (mName or '*'+mName)
+        bool optional; // have OPTIONAL or DEFAULT attribute
+        string defaultValue; // DEFAULT value code
         SMemberInfo(const string& name, AutoPtr<CTypeStrings> type,
+                    const string& pointerType,
                     bool optional, const string& defaultValue);
     };
     typedef list<SMemberInfo> TMembers;
@@ -107,14 +113,29 @@ public:
                         const string& fileName);
 
     void AddMember(const string& name, AutoPtr<CTypeStrings> type,
-                   bool optional,
-                   const string& defaultValue = NcbiEmptyString);
+                   const string& pointerType,
+                   bool optional, const string& defaultValue);
 
     string GetCType(void) const;
     string GetRef(void) const;
 
     bool CanBeKey(void) const;
     bool CanBeInSTL(void) const;
+    bool IsObject(void) const;
+
+    void SetObject(bool isObject)
+        {
+            m_IsObject = isObject;
+        }
+
+    bool HaveUserClass(void) const
+        {
+            return m_HaveUserClass;
+        }
+    void SetHaveUserClass(bool haveUserClass)
+        {
+            m_HaveUserClass = haveUserClass;
+        }
 
     void GenerateTypeCode(CClassContext& ctx) const;
     string GetResetCode(const string& var) const;
@@ -129,6 +150,8 @@ protected:
                                    const string& codeClassName) const;
 
 private:
+    bool m_IsObject;
+    bool m_HaveUserClass;
     string m_ExternalName;
     string m_ClassName;
     string m_ParentClassName;
@@ -149,6 +172,7 @@ public:
 
     bool CanBeKey(void) const;
     bool CanBeInSTL(void) const;
+    bool IsObject(void) const;
 
     string GetResetCode(const string& var) const;
 

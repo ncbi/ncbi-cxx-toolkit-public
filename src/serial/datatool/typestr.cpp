@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/03/07 14:06:34  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.10  2000/02/02 14:57:07  vasilche
 * Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
 *
@@ -76,7 +79,7 @@
 
 #include <serial/tool/typestr.hpp>
 #include <serial/tool/classctx.hpp>
-#include <serial/tool/stlstr.hpp>
+#include <serial/tool/ptrstr.hpp>
 
 CTypeStrings::~CTypeStrings(void)
 {
@@ -107,6 +110,11 @@ bool CTypeStrings::CanBeInSTL(void) const
     return true;
 }
 
+bool CTypeStrings::IsObject(void) const
+{
+    return false;
+}
+
 bool CTypeStrings::NeedSetFlag(void) const
 {
     return true;
@@ -119,7 +127,10 @@ string CTypeStrings::GetIsSetCode(const string& /*var*/) const
 
 CTypeStrings* CTypeStrings::ToPointer(void)
 {
-    return new CPointerTypeStrings(this);
+    if ( IsObject() )
+        return new CRefTypeStrings(this);
+    else
+        return new CPointerTypeStrings(this);
 }
 
 void CTypeStrings::GenerateCode(CClassContext& ctx) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/03/07 14:06:06  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.1  2000/02/01 21:46:24  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -78,6 +81,7 @@ public:
 
     virtual bool CanBeKey(void) const;
     virtual bool CanBeInSTL(void) const;
+    virtual bool IsObject(void) const;
     virtual bool NeedSetFlag(void) const;
 
     virtual string GetInitializer(void) const;

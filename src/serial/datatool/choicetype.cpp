@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 14:06:30  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.6  2000/02/01 21:47:55  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -170,6 +173,9 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
 {
     AutoPtr<CChoiceTypeStrings> code(new CChoiceTypeStrings(IdName(),
                                                             ClassName()));
+    bool haveUserClass = GetParentType() == 0;
+    code->SetHaveUserClass(haveUserClass);
+    code->SetObject(true);
     iterate ( TMembers, i, GetMembers() ) {
         code->AddVariant((*i)->GetName(), (*i)->GetType()->GetFullCType());
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/03/07 14:06:30  vasilche
+* Added generation of reference counted objects.
+*
 * Revision 1.6  2000/02/17 20:05:06  vasilche
 * Inline methods now will be generated in *_Base.inl files.
 * Fixed processing of StringStore.
@@ -103,7 +106,8 @@
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
                                        const string& className)
-    : CParent(externalName, className)
+    : CParent(externalName, className),
+      m_HaveAssignment(false)
 {
 }
 
@@ -115,6 +119,23 @@ void CChoiceTypeStrings::AddVariant(const string& name,
                                     AutoPtr<CTypeStrings> type)
 {
     m_Variants.push_back(SVariantInfo(name, type));
+    if ( m_Variants.back().memberType == ePointerMember ) {
+        CTypeStrings* type = m_Variants.back().type.get();
+        if ( !type->IsObject() ) {
+            CClassTypeStrings* classType =
+                dynamic_cast<CClassTypeStrings*>(type);
+            if ( classType ) {
+                classType->SetObject(true);
+            }
+            else {
+/*
+                ERR_POST(Fatal<<"variant "<<name<<" in CHOICE "<<GetClassName()<<
+                         " have non object/string pointer");
+                m_HaveAssignment = false;
+*/
+            }
+        }
+    }
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
@@ -126,7 +147,7 @@ CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
         memberType = eStringMember;
         memberRef = STRING_MEMBER;
     }
-    else if ( type->CanBeInSTL() ) {
+    else if ( type->CanBeKey() ) {
         memberType = eSimpleMember;
         memberRef = "m_" + cName;
     }
@@ -173,6 +194,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         }
     }
 
+    if ( HaveAssignment() ) {
+        code.ClassPublic() <<
+            "    // copy constructor and assignment operator\n"
+            "    "<<codeClassName<<"(const "<<codeClassName<<"& src);\n"
+            "    "<<codeClassName<<"& operator=(const "<<codeClassName<<"& src);\n"
+            "\n";
+    }
+
     // generated choice enum
     {
         code.ClassPublic() <<
@@ -190,7 +219,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
     code.ClassPublic() <<
         "    // reset selection to none\n"
-        "    void Reset(void);\n"
+        "    ";
+    if ( HaveUserClass() )
+        code.ClassPublic() << "virtual ";
+    code.ClassPublic() <<
+        "void Reset(void);\n"
         "\n";
 
     // generate choice methods
@@ -223,20 +256,44 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "inline\n"
         "void "<<methodPrefix<<"Select("<<STATE_ENUM<<" index, NCBI_NS_NCBI::EResetVariant reset)\n"
         "{\n"
-        "    if ( reset == NCBI_NS_NCBI::eDoResetVariant ||\n"
-        "         "<<STATE_MEMBER<<" != index ) {\n"
+        "    if ( reset == NCBI_NS_NCBI::eDoResetVariant || "<<STATE_MEMBER<<" != index ) {\n"
         "        Reset();\n"
         "        DoSelect(index);\n"
         "    }\n"
         "}\n"
         "\n";
 
+    if ( HaveAssignment() ) {
+        code.InlineMethods() <<
+            "inline\n"<<
+            methodPrefix<<codeClassName<<"(const "<<codeClassName<<"& src)\n"
+            "{\n"
+            "    DoAssign(src);\n"
+            "}\n"
+            "\n"
+            "inline\n"<<
+            methodPrefix<<codeClassName<<"& "<<methodPrefix<<"operator=(const "<<codeClassName<<"& src)\n"
+            "{\n"
+            "    if ( this != &src ) {\n"
+            "        Reset();\n"
+            "        DoAssign(src);\n"
+            "    }\n"
+            "    return *this;\n"
+            "}\n"
+            "\n";
+    }
+
     // generate choice state
     code.ClassPrivate() <<
         "    // choice state\n"
         "    "<<STATE_ENUM<<' '<<STATE_MEMBER<<";\n"
         "    // helper methods\n"
-        "    void DoSelect("<<STATE_ENUM<<" index);\n"
+        "    void DoSelect("<<STATE_ENUM<<" index);\n";
+    if ( HaveAssignment() ) {
+        code.ClassPrivate() <<
+            "    void DoAssign(const "<<codeClassName<<"& src);\n";
+    }
+    code.ClassPrivate() <<
         "    static void* x_Create(void);\n"
         "    static int x_Selected(const void*);\n"
         "    static void x_Select(void*, int);\n"
@@ -264,8 +321,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     WriteTabbed(code.Methods(), 
                                 i->type->GetDestructionCode(i->memberRef),
                                 "        ");
+                    if ( i->type->IsObject() ) {
+                        code.Methods() <<
+                            "        m_"<<i->cName<<"->RemoveReference();\n";
+                    }
+                    else {
+                        code.Methods() <<
+                            "        delete m_"<<i->cName<<";\n";
+                    }
                     code.Methods() <<
-                        "        delete m_"<<i->cName<<";\n"
                         "        break;\n";
                 }
             }
@@ -292,6 +356,56 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n";
     }
 
+    // generate Assign method
+    if ( HaveAssignment() ) {
+        code.Methods() <<
+            "void "<<methodPrefix<<"DoAssign(const "<<codeClassName<<"& src)\n"
+            "{\n"
+            "    "<<STATE_ENUM<<" index = src.Which();\n"
+            "    switch ( index ) {\n";
+        iterate ( TVariants, i, m_Variants ) {
+            if ( i->memberType == eSimpleMember ) {
+                code.Methods() <<
+                    "    case "<<STATE_PREFIX<<i->cName<<":\n"
+                    "        m_"<<i->cName<<" = src.m_"<<i->cName<<";\n"
+                    "        break;\n";
+            }
+            else if ( i->memberType == ePointerMember ) {
+                code.Methods() <<
+                    "    case "<<STATE_PREFIX<<i->cName<<":\n";
+                if ( i->type->IsObject() ) {
+                    code.Methods() <<
+                        "        (m_"<<i->cName<<" = src.m_"<<i->cName<<")->AddReference();\n";
+                }
+                else {
+                    code.Methods() <<
+                        "        m_"<<i->cName<<" = new T"<<i->cName<<"(*src.m_"<<i->cName<<");\n";
+                }
+                code.Methods() <<
+                    "        break;\n";
+            }
+        }
+        if ( haveString ) {
+            // generate destruction code for string
+            iterate ( TVariants, i, m_Variants ) {
+                if ( i->memberType == eStringMember ) {
+                    code.Methods() <<
+                        "    case "<<STATE_PREFIX<<i->cName<<":\n";
+                }
+            }
+            code.Methods() <<
+                "        "<<STRING_MEMBER<<" = src."<<STRING_MEMBER<<";\n"
+                "        break;\n";
+        }
+        code.Methods() <<
+            "    default:\n"
+            "        break;\n"
+            "    }\n"
+            "    "<<STATE_MEMBER<<" = index;\n"
+            "}\n"
+            "\n";
+    }
+
     // generate Select method
     {
         code.Methods() <<
@@ -310,8 +424,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 else if ( i->memberType == ePointerMember ) {
                     code.Methods() <<
-                        "    case "<<STATE_PREFIX<<i->cName<<":\n"
-                        "        m_"<<i->cName<<" = new "<<i->cType<<";\n"
+                        "    case "<<STATE_PREFIX<<i->cName<<":\n";
+                    if ( i->type->IsObject() ) {
+                        code.Methods() <<
+                            "        (m_"<<i->cName<<" = new "<<i->cType<<")->AddReference();\n";
+                    }
+                    else {
+                        code.Methods() <<
+                            "        m_"<<i->cName<<" = new "<<i->cType<<";\n";
+                    }
+                    code.Methods() <<
                         "        break;\n";
                 }
             }
@@ -342,7 +464,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName("<<STATE_ENUM<<" index)\n"
             "{\n"
-            "    if ( index < 0 || index > "<<m_Variants.size()<<" )\n"
+            "    if ( unsigned(index) > "<<m_Variants.size()<<" )\n"
             "        return \"?unknown?\";\n"
             "    return sm_SelectionNames[index];\n"
             "}\n"
@@ -376,6 +498,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    const T"<<i->cName<<"& Get"<<i->cName<<"(void) const;\n"
                 "    T"<<i->cName<<"& Get"<<i->cName<<"(void);\n"
                 "    T"<<i->cName<<"& Set"<<i->cName<<"(void);\n";
+            if ( i->memberType == ePointerMember && i->type->IsObject() ) {
+                getters <<
+                    "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef<T"<<i->cName<<">& ref);\n";
+            }
             code.InlineMethods() <<
                 "inline\n"
                 "bool "<<methodPrefix<<"Is"<<i->cName<<"(void) const\n"
@@ -413,6 +539,19 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "{\n"
                     "    Select("<<STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n"
                     "    "<<i->memberRef<<" = value;\n"
+                    "}\n"
+                    "\n";
+            }
+            if ( i->memberType == ePointerMember && i->type->IsObject() ) {
+                code.Methods() <<
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef<T"<<i->cName<<">& ref)\n"
+                    "{\n"
+                    "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&*ref);\n"
+                    "    if ( "<<STATE_MEMBER<<" != "<<STATE_PREFIX<<i->cName<<" || m_"<<i->cName<<" != ptr ) {\n"
+                    "        Reset();\n"
+                    "        (m_"<<i->cName<<" = ptr)->AddReference();\n"
+                    "        "<<STATE_MEMBER<<" = "<<STATE_PREFIX<<i->cName<<";\n"
+                    "    }\n"
                     "}\n"
                     "\n";
             }
@@ -471,7 +610,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         iterate ( TVariants, i, m_Variants ) {
             if ( i->memberType == ePointerMember ) {
                 code.Methods() <<
-                    "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", NCBI_NS_NCBI::Check< "<<i->cType<<"* >::Ptr(MEMBER_PTR(m_"<<i->cName<<")), "<<i->type->GetRef()<<")->SetPointer();\n";
+                    "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", NCBI_NS_NCBI::Check< "<<i->cType<<"* >::Ptr(MEMBER_PTR(m_"<<i->cName<<")), "<<i->type->GetRef()<<')';
+                if ( i->type->IsObject() ) {
+                    code.Methods() <<
+                        "->SetObjectPointer()";
+                }
+                else {
+                    code.Methods() <<
+                        "->SetPointer()";
+                }
+                code.Methods() <<
+                    ";\n";
             }
             else {
                 code.Methods() <<
@@ -492,4 +641,9 @@ CChoiceRefTypeStrings::CChoiceRefTypeStrings(const string& className,
                                              const string& fileName)
     : CParent(className, namespaceName, fileName)
 {
+}
+
+bool CChoiceRefTypeStrings::CanBeInSTL(void) const
+{
+    return false;
 }
