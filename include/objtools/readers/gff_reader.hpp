@@ -95,7 +95,7 @@ public:
 
     CRef<CSeq_entry> Read(CNcbiIstream& in, TFlags flags = fDefaults);
 
-    struct SRecord : public CObject
+    struct NCBI_XOBJREAD_EXPORT SRecord : public CObject
     {
         struct SSubLoc
         {
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/29 19:19:33  jcherry
+ * Added export specifier
+ *
  * Revision 1.8  2005/03/02 15:00:06  dicuccio
  * Added additional options: fCreateGeneFeats (create gene features if non exist);
  * fSetProducts (promote transcript_id and protein_id to products on mRNA and CDS

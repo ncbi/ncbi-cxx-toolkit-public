@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 // Try and fail parser, used for discovery of files structure.
 //
 
-class CLDS_CoreObjectsReader : public CObjectsSniffer
+class NCBI_LDS_EXPORT CLDS_CoreObjectsReader : public CObjectsSniffer
 {
 public:
     CLDS_CoreObjectsReader();
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/29 19:21:21  jcherry
+ * Added export specifier
+ *
  * Revision 1.8  2004/08/30 18:16:28  gouriano
  * Use CNcbiStreamoff instead of size_t for stream offset operations
  *
