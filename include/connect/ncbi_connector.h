@@ -37,6 +37,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/11 16:39:33  lavr
+ * FDestroy function is now clearly documented not to destroy
+ * the connector itself, only its handle (private internal data).
+ *
  * Revision 6.4  2001/01/03 22:29:22  lavr
  * Changed IOStatus -> Status
  *
@@ -209,7 +213,8 @@ typedef void (*FSetupVTable)
  CONNECTOR       connector
  );
 
-/* Destroy connector handle (NOT a close request!).
+/* Destroy connector handle but do not destroy connector itself yet.
+ * (This is NOT a close request!)
  */
 typedef void (*FDestroy)
 (CONNECTOR       connector
