@@ -221,7 +221,9 @@ void CLDS_Database::LoadTypeMap()
 
 CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db) 
 {
-    m_DataBases.push_back(db);
+    if (db) {
+        m_DataBases.push_back(db);
+    }
 }
 
 
@@ -240,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/10/27 19:18:59  kuznets
+ * Added NULL database protection into CLDS_DatabaseHolder::CLDS_DatabaseHolder
+ *
  * Revision 1.12  2003/10/09 18:12:26  kuznets
  * Some functionality of lds migrated into lds_admin
  *
