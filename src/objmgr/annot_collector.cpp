@@ -627,14 +627,13 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                     idit->second.GetOverlappingRange();
                 const CSeqMap& seqMap = bh.GetSeqMap();
                 SSeqMapSelector sel;
-                sel.SetPosition(idrange.GetFrom())
-                    .SetResolveCount(m_Selector.m_ResolveDepth - 1)
+                sel.SetResolveCount(m_Selector.m_ResolveDepth - 1)
                     .SetFlags(CSeqMap::fFindRef);
                 if ( m_Selector.m_ResolveMethod ==
                     SAnnotSelector::eResolve_TSE ) {
                     sel.SetLimitTSE(bh.GetTopLevelEntry());
                 }
-                CSeqMap_CI smit(seqMap.FindResolved(m_Scope, sel));
+                CSeqMap_CI smit(seqMap.FindResolved(m_Scope, idrange.GetFrom(), sel));
                 while ( smit && smit.GetPosition() < idrange.GetToOpen() ) {
                     _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
                     if ( !CanResolveId(smit.GetRefSeqid(), bh) ) {
@@ -1522,6 +1521,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/09/30 15:03:41  grichenk
+* Fixed segments resolving
+*
 * Revision 1.24  2004/09/27 14:35:46  grichenk
 * +Flag for handling unresolved IDs (search/ignore/fail)
 * +Selector method for external annotations search

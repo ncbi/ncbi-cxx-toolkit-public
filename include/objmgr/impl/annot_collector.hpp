@@ -610,9 +610,10 @@ CScope::EGetBioseqFlag CAnnot_Collector::GetGetFlag(void) const
     case SAnnotSelector::eResolve_TSE:
         // TSE is already resolved
         return CScope::eGetBioseq_Resolved;
+    default:
+        // Do not load new TSEs
+        return CScope::eGetBioseq_Loaded;
     }
-    // Do not load new TSEs
-    return CScope::eGetBioseq_Loaded;
 }
 
 
@@ -622,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/30 15:03:41  grichenk
+* Fixed segments resolving
+*
 * Revision 1.15  2004/09/27 14:35:46  grichenk
 * +Flag for handling unresolved IDs (search/ignore/fail)
 * +Selector method for external annotations search

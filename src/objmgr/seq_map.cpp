@@ -437,6 +437,14 @@ CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
 }
 
 
+CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
+                                 TSeqPos pos,
+                                 SSeqMapSelector& selector) const
+{
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, pos, selector);
+}
+
+
 CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
                                  CScope* scope,
                                  size_t maxResolveCount,
@@ -470,9 +478,9 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
     return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
                       SSeqMapSelector()
                       .SetRange(from, length)
+                      .SetStrand(strand)
                       .SetResolveCount(maxResolveCount)
-                      .SetFlags(flags),
-                      strand);
+                      .SetFlags(flags));
 }
 
 
@@ -485,9 +493,9 @@ bool CSeqMap::CanResolveRange(CScope* scope,
         CSeqMap_CI seg(CConstRef<CSeqMap>(this), scope,
                        SSeqMapSelector()
                        .SetRange(from, length)
+                       .SetStrand(strand)
                        .SetResolveCount(size_t(-1))
-                       .SetFlags(fDefaultFlags),
-                       strand);
+                       .SetFlags(fDefaultFlags));
         for ( ; seg; ++seg);
     }
     catch (exception) {
@@ -855,6 +863,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/09/30 15:03:41  grichenk
+* Fixed segments resolving
+*
 * Revision 1.60  2004/09/27 14:29:20  grichenk
 * Added FindResolved() with selector
 *

@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
 // SSeqMapSelector
 /////////////////////////////////////////////////////////////////////////////
 
+
 SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry* tse)
 {
     m_TSE.Reset(tse);
@@ -123,21 +124,13 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
     m_Selector
         .SetResolveCount(maxResolveCount)
         .SetFlags(flags);
-    if (pos >= seqMap->GetLength(scope)) {
-        // Special case - end of seq map
-        m_Selector.SetRange(seqMap->GetLength(scope), 0);
-        TSegmentInfo push;
-        push.m_SeqMap = seqMap;
-        push.m_LevelRangePos = 0;
-        push.m_LevelRangeEnd = GetPosition();
-        push.m_MinusStrand = false;
-        push.m_Index = seqMap->x_GetSegmentsCount();
-        m_Stack.push_back(push);
-        return;
+    TSeqPos len = seqMap->GetLength(scope);
+    if (pos > len) {
+        pos = len;
     }
-    x_Push(seqMap, 0, seqMap->GetLength(scope), false, pos);
+    x_Push(seqMap, 0, len, false, pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition()) ) {
+        if ( !x_Push(pos - m_Selector.m_Position) ) {
             x_SettleNext();
             break;
         }
@@ -154,44 +147,16 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
     : m_Scope(scope)
 {
     m_Selector
+        .SetStrand(strand)
         .SetResolveCount(maxResolveCount)
         .SetFlags(flags);
-    if (pos >= seqMap->GetLength(scope)) {
-        // Special case - end of seq map
-        m_Selector.SetRange(seqMap->GetLength(scope), 0);
-        TSegmentInfo push;
-        push.m_SeqMap = seqMap;
-        push.m_LevelRangePos = 0;
-        push.m_LevelRangeEnd = GetPosition();
-        push.m_MinusStrand = false;
-        push.m_Index = seqMap->x_GetSegmentsCount();
-        m_Stack.push_back(push);
-        return;
+    TSeqPos len = seqMap->GetLength(scope);
+    if (pos > len) {
+        pos = len;
     }
-    x_Push(seqMap, 0, seqMap->GetLength(scope), IsReverse(strand), pos);
+    x_Push(seqMap, 0, seqMap->GetLength(scope), m_Selector.m_MinusStrand, pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition()) ) {
-            x_SettleNext();
-            break;
-        }
-    }
-}
-
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       SSeqMapSelector& selector,
-                       ENa_strand strand)
-    : m_Scope(scope),
-      m_Selector(selector)
-{
-    TSeqPos pos = GetPosition();
-    x_Push(seqMap,
-           m_Selector.m_Position,
-           m_Selector.m_Length,
-           IsReverse(strand), 0);
-    while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition()) ) {
+        if ( !x_Push(pos - m_Selector.m_Position) ) {
             x_SettleNext();
             break;
         }
@@ -205,16 +170,44 @@ CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
     : m_Scope(scope),
       m_Selector(selector)
 {
-    TSeqPos pos = GetPosition();
+    x_Push(seqMap,
+           m_Selector.m_Position,
+           seqMap->GetLength(scope),
+           m_Selector.m_MinusStrand,
+           0);
+    while ( !x_Found() ) {
+        if ( !x_Push(0) ) {
+            x_SettleNext();
+            break;
+        }
+    }
+}
+
+
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       TSeqPos pos,
+                       SSeqMapSelector& selector)
+    : m_Scope(scope),
+      m_Selector(selector)
+{
+    TSeqPos len = seqMap->GetLength(scope);
     if (m_Selector.m_Length == kInvalidSeqPos) {
-        m_Selector.SetRange(pos, seqMap->GetLength(scope));
+        m_Selector.m_Length = len - m_Selector.m_Position;
+    }
+    if (pos < m_Selector.m_Position) {
+        pos = m_Selector.m_Position;
+    }
+    if (m_Selector.m_Length < pos - m_Selector.m_Position) {
+        pos = m_Selector.m_Position + m_Selector.m_Length;
     }
     x_Push(seqMap,
            m_Selector.m_Position,
-           m_Selector.m_Length,
-           false, 0);
+           seqMap->GetLength(scope),
+           m_Selector.m_MinusStrand,
+           pos);
     while ( !x_Found() ) {
-        if ( !x_Push(pos - GetPosition()) ) {
+        if ( !x_Push(pos - m_Selector.m_Position) ) {
             x_SettleNext();
             break;
         }
@@ -544,6 +537,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/09/30 15:03:41  grichenk
+* Fixed segments resolving
+*
 * Revision 1.27  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

@@ -94,7 +94,9 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
     typedef CSeqMap::TFlags TFlags;
 
     SSeqMapSelector()
-        : m_Position(0), m_Length(kInvalidSeqPos),
+        : m_Position(0),
+          m_Length(kInvalidSeqPos),
+          m_MinusStrand(false),
           m_MaxResolveCount(0),
           m_Flags(CSeqMap::fDefaultFlags)
         {
@@ -113,6 +115,11 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
+    SSeqMapSelector& SetStrand(ENa_strand strand)
+        {
+            m_MinusStrand = IsReverse(strand);
+            return *this;
+        }
     SSeqMapSelector& SetResolveCount(size_t res_cnt)
         {
             m_MaxResolveCount = res_cnt;
@@ -151,6 +158,8 @@ private:
     TSeqPos             m_Position;
     // length of current segment
     TSeqPos             m_Length;
+    // Requested strand
+    bool                m_MinusStrand;
     // maximum resolution level
     size_t              m_MaxResolveCount;
     // limit search to single TSE
@@ -184,8 +193,8 @@ public:
                SSeqMapSelector& selector);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
                CScope* scope,
-               SSeqMapSelector& selector,
-               ENa_strand strand);
+               TSeqPos pos,
+               SSeqMapSelector& selector);
 
     ~CSeqMap_CI(void);
 
@@ -291,6 +300,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/30 15:03:41  grichenk
+* Fixed segments resolving
+*
 * Revision 1.15  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

@@ -176,6 +176,9 @@ public:
                              TFlags flags = fDefaultFlags) const;
     CSeqMap_CI FindResolved(CScope* scope,
                             SSeqMapSelector& selector) const;
+    CSeqMap_CI FindResolved(CScope* scope,
+                            TSeqPos pos,
+                            SSeqMapSelector& selector) const;
     CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
                             size_t maxResolveCount = size_t(-1),
                             TFlags flags = fDefaultFlags) const;
@@ -312,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/09/30 15:03:41  grichenk
+* Fixed segments resolving
+*
 * Revision 1.49  2004/09/27 14:29:20  grichenk
 * Added FindResolved() with selector
 *
