@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/05/17 19:09:24  thiessen
+* undo spin button event workaround for wxmac
+*
 * Revision 1.18  2002/05/16 18:46:07  thiessen
 * Mac fixes
 *
@@ -214,7 +217,7 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
     wxDialog(parent, -1, "Style Options", wxPoint(400, 100), wxDefaultSize,
         wxCAPTION | wxSYSTEM_MENU), // not resizable
     editedSettings(settingsToEdit), originalSettings(*settingsToEdit),
-    structureSet(set), changedSinceApply(false), changedEver(false), ready(false)
+    structureSet(set), changedSinceApply(false), changedEver(false)
 {
     // setup maps for associating style types with strings
     SetupStyleStrings();
@@ -240,8 +243,6 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
     topSizer->Fit(this);
     topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
-    
-    ready = true;
 }
 
 StyleDialog::~StyleDialog(void)
@@ -670,8 +671,6 @@ bool StyleDialog::HandleColorButton(int bID)
 
 void StyleDialog::OnChange(wxCommandEvent& event)
 {
-    if (!ready) return; // on Mac, event is generated on spin button ctor; ignore till panel set up
-    
     TESTMSG("control changed");
     StyleSettings tmpSettings;
     if (!GetValues(&tmpSettings) ||

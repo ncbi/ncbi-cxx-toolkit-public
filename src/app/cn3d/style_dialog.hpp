@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/05/17 19:09:27  thiessen
+* undo spin button event workaround for wxmac
+*
 * Revision 1.8  2002/05/16 18:46:10  thiessen
 * Mac fixes
 *
@@ -135,7 +138,7 @@ private:
     StyleSettings *editedSettings;
     const StyleSettings originalSettings;
     const StructureSet *structureSet;
-    bool changedSinceApply, changedEver, ready;
+    bool changedSinceApply, changedEver;
 
     FloatingPointSpinCtrl *fpSpaceFill, *fpBallRadius, *fpStickRadius, *fpTubeRadius,
         *fpTubeWormRadius, *fpHelixRadius, *fpStrandWidth, *fpStrandThickness;
