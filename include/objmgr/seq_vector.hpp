@@ -155,7 +155,6 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void) const
 inline
 const CSeqMap& CSeqVector::x_GetSeqMap(void) const
 {
-    _ASSERT(m_SeqMap);
     return *m_SeqMap;
 }
 
@@ -166,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/06/13 19:40:14  grichenk
+* Removed _ASSERT() from x_GetSeqMap()
+*
 * Revision 1.37  2003/06/13 17:22:26  grichenk
 * Check if seq-map is not null before using it
 *
