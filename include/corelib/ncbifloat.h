@@ -57,12 +57,15 @@
 #endif
 
 
-/* @} *
+/* @} */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/03 17:52:31  ucko
+ * Properly close doxygen end-group comment.
+ *
  * Revision 1.3  2003/04/01 14:19:42  siyan
  * Added doxygen support
  *
