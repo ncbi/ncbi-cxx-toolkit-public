@@ -231,7 +231,7 @@ bool CDataTool::ProcessModules(void)
         LoadDefinitions(generator.GetMainModules(),
                         modulesPath, args["m"].AsString());
 
-    if ( const CArgValue& sxo = args["sxo"] ) {
+    if ( args["sxo"] ) {
         CDataType::SetEnforcedStdXml(true);
     }
 
@@ -278,11 +278,11 @@ bool CDataTool::ProcessData(void)
 {    
     const CArgs& args = GetArgs();
     bool stdXmlIn = false;
-    if ( const CArgValue& sxi = args["sxi"] ) {
+    if ( args["sxi"] ) {
         stdXmlIn = true;
     }
     bool stdXmlOut = false;
-    if ( const CArgValue& sxo = args["sxo"] ) {
+    if ( args["sxo"] ) {
         stdXmlOut = true;
     }
 
@@ -599,6 +599,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2004/12/20 20:29:16  gouriano
+* Eliminate compiler warnings
+*
 * Revision 1.75  2004/12/06 18:26:52  gouriano
 * Ignore -M parameter when parsing DTD
 * Process multiple records of the same type when converting data
