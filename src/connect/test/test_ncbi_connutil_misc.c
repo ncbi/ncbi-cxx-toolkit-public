@@ -28,39 +28,6 @@
  * File Description:
  *   Tests for "ncbi_connutil.c"
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.10  2002/11/22 15:09:40  lavr
- * Replace all occurances of "ray" with "yar"
- *
- * Revision 6.9  2002/10/11 19:57:17  lavr
- * Add tests for ConnNetInfo_*UserHeader() routines
- *
- * Revision 6.8  2002/03/22 19:46:51  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.7  2002/02/20 19:12:39  lavr
- * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced; test cleaned
- *
- * Revision 6.6  2002/02/05 21:45:55  lavr
- * Included header files rearranged
- *
- * Revision 6.5  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.4  2000/11/07 23:24:43  vakatov
- * [MIME]  In-sync with the C Toolkit "connutil.c:R6.15"
- *
- * Revision 6.3  2000/04/12 15:22:07  vakatov
- * Always #undef NDEBUG
- *
- * Revision 6.2  2000/03/29 17:21:48  vakatov
- * + CORE_SetLOG(0) at the program end.
- *
- * Revision 6.1  2000/03/24 22:53:38  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_connutil.h>
@@ -328,3 +295,43 @@ int main(void)
     CORE_SetLOG(0);
     return 0;
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.11  2002/12/13 21:20:55  lavr
+ * Move log to end
+ *
+ * Revision 6.10  2002/11/22 15:09:40  lavr
+ * Replace all occurances of "ray" with "yar"
+ *
+ * Revision 6.9  2002/10/11 19:57:17  lavr
+ * Add tests for ConnNetInfo_*UserHeader() routines
+ *
+ * Revision 6.8  2002/03/22 19:46:51  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.7  2002/02/20 19:12:39  lavr
+ * Swapped eENCOD_Url and eENCOD_None; eENCOD_Unknown introduced; test cleaned
+ *
+ * Revision 6.6  2002/02/05 21:45:55  lavr
+ * Included header files rearranged
+ *
+ * Revision 6.5  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.4  2000/11/07 23:24:43  vakatov
+ * [MIME]  In-sync with the C Toolkit "connutil.c:R6.15"
+ *
+ * Revision 6.3  2000/04/12 15:22:07  vakatov
+ * Always #undef NDEBUG
+ *
+ * Revision 6.2  2000/03/29 17:21:48  vakatov
+ * + CORE_SetLOG(0) at the program end.
+ *
+ * Revision 6.1  2000/03/24 22:53:38  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */
