@@ -507,7 +507,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
       readdb_get_sequence_ex(rdfp, subject_blk->oid, 
          &subject_blk->sequence_start, &buf_len, TRUE);
       subject_blk->sequence = subject_blk->sequence_start + 1;
-      subject_blk->sequence_allocated = TRUE;
+      subject_blk->sequence_start_allocated = TRUE;
    }
    /* The sequence in blastna encoding is now stored in sequence_start */
    subject_start = subject_blk->sequence_start + 1;
