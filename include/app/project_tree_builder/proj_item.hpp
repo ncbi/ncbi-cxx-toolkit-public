@@ -33,6 +33,9 @@
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
 #include <app/project_tree_builder/resolver.hpp>
+#include <app/project_tree_builder/proj_datatool_generated_src.hpp>
+
+#include <set>
 
 #include <corelib/ncbienv.hpp>
 
@@ -68,7 +71,8 @@ public:
               const string& sources_base,
               const list<string>& sources, 
               const list<string>& depends,
-              const list<string>& requires);
+              const list<string>& requires,
+              const list<CDataToolGeneratedSrc> datatool_src);
 
     ~CProjItem(void);
 
@@ -92,6 +96,9 @@ public:
 
     /// What this project requires to have.
     list<string> m_Requires;
+
+    /// Source files *.asn , *.dtd to be processed by datatool app
+    list<CDataToolGeneratedSrc> m_DatatoolSources;
 
 private:
     void Clear(void);
@@ -156,27 +163,54 @@ private:
 
     struct SMakeInInfo
     {
-        SMakeInInfo(CProjItem::TProjType type,
+        typedef enum {
+            eApp,
+            eLib,
+            eAsn 
+        } TMakeinType;
+
+        SMakeInInfo(TMakeinType          type,
                     const list<string>&  names)
-            :m_ProjType(type),
+            :m_Type     (type),
              m_ProjNames(names)
         {
         }
-        CProjItem::TProjType m_ProjType;
-        list<string>         m_ProjNames;
+        
+        TMakeinType   m_Type;
+        list<string>  m_ProjNames;
     };
     typedef list<SMakeInInfo> TMakeInInfoList;
     static void AnalyzeMakeIn(const CSimpleMakeFileContents& makein_contents, 
                               TMakeInInfoList*               info);
 
     
-    static string CreateMakeAppLibFileName(CProjItem::TProjType projtype, 
-                                           const string&        projname);
+    static string CreateMakeAppLibFileName(const string&            base_dir,
+                                           SMakeInInfo::TMakeinType makeintype,
+                                           const string&            projname);
 
     static void CreateFullPathes(const string&      dir, 
                                  const list<string> files,
                                  list<string>*      full_pathes);
 
+    /// Helpers for project creation
+    static string DoCreateAppProject(const string& source_base_dir,
+                                     const string& proj_name,
+                                     const string& applib_mfilepath,
+                                     const TFiles& makeapp, 
+                                     CProjectItemsTree* tree);
+
+    static string DoCreateLibProject(const string& source_base_dir,
+                                     const string& proj_name,
+                                     const string& applib_mfilepath,
+                                     const TFiles& makelib, 
+                                     CProjectItemsTree* tree);
+
+    static string DoCreateAsnProject(const string& source_base_dir,
+                                     const string& proj_name,
+                                     const string& applib_mfilepath,
+                                     const TFiles& makeapp, 
+                                     const TFiles& makelib, 
+                                     CProjectItemsTree* tree);
 };
 
 
@@ -231,12 +265,70 @@ private:
 
 };
 
+struct  SProjectTreeFolder
+{
+    SProjectTreeFolder()
+        :m_Parent(NULL)
+    {
+    }
+
+
+    SProjectTreeFolder(const string& name, SProjectTreeFolder* parent)
+        :m_Name  (name),
+         m_Parent(parent)
+    {
+    }
+
+    string    m_Name;
+    
+    typedef map<string, SProjectTreeFolder* > TSiblings;
+    TSiblings m_Siblings;
+
+    typedef set<string> TProjects;
+    TProjects m_Projects;
+
+    SProjectTreeFolder* m_Parent;
+    bool IsRoot(void) const
+    {
+        return m_Parent == NULL;
+    }
+};
+
+
+class CProjectTreeFolders
+{
+public:
+    CProjectTreeFolders(const CProjectItemsTree& tree);
+    
+    SProjectTreeFolder m_RootParent;
+
+    typedef list<string> TPath;
+    SProjectTreeFolder* FindFolder(const TPath& path);
+    SProjectTreeFolder* FindOrCreateFolder(const TPath& path);
+    
+    static void CreatePath(const string& root_src_dir, 
+                           const string& project_base_dir,
+                           TPath*        path);
+
+private:
+    SProjectTreeFolder* CreateFolder(SProjectTreeFolder* parent, 
+                                     const string&       folder_name);
+
+    list<SProjectTreeFolder> m_Folders;
+
+    CProjectTreeFolders(void);
+    CProjectTreeFolders(const CProjectTreeFolders&);
+    CProjectTreeFolders& operator= (const CProjectTreeFolders&);
+};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/30 20:42:21  gorelenk
+ * Added support of ASN projects
+ *
  * Revision 1.5  2004/01/26 19:25:42  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support

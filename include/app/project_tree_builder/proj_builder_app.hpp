@@ -103,6 +103,11 @@ public:
     const CMsvcMetaMakefile& GetMetaMakefile(void);
 
     const SProjectTreeInfo&  GetProjectTreeInfo(void);
+
+    string GetDatatoolId          (void) const;
+    string GetDatatoolPathForApp  (void) const;
+    string GetDatatoolPathForLib  (void) const;
+    string GetDatatoolCommandLine (void) const;
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
@@ -160,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/30 20:41:34  gorelenk
+ * Added support of ASN projects
+ *
  * Revision 1.7  2004/01/28 17:55:06  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
