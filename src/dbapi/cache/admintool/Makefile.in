@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = dbapi_cache_admin
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
