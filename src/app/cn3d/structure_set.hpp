@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/12/22 19:25:47  thiessen
+* write cdd output files
+*
 * Revision 1.34  2000/12/21 23:42:25  thiessen
 * load structures from cdd's
 *
@@ -145,9 +148,8 @@
 #include <vector>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#include <objects/mmdb1/Biostruc.hpp>
-#include <objects/mmdb1/Biostruc_annot_set.hpp>
 #include <objects/cdd/Cdd.hpp>
+#include <objects/mmdb1/Biostruc.hpp>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
@@ -174,10 +176,10 @@ class Molecule;
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime);
+    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime);
     // to load in a CDD, need "dataDir" to be pathname to dir. that contains MMDB Biostrucs,
-    // with trailing path separator
-    StructureSet(const ncbi::objects::CCdd& cdd, const char *dataDir);
+    // must end with trailing path separator
+    StructureSet(ncbi::objects::CCdd *cdd, const char *dataDir);
     ~StructureSet(void);
 
     // public data
@@ -203,8 +205,24 @@ public:
     double maxDistFromCenter; // max distance of any atom from center
     Vector rotationCenter; // center of rotation (relative to Master's coordinates)
 
+    // for assigning display lists and frames
+    unsigned int lastDisplayList;
+
+    typedef LIST_TYPE < unsigned int > DisplayLists;
+    typedef std::vector < DisplayLists > FrameMap;
+    FrameMap frameMap;
+
+    // to map display list -> slave transform
+    typedef std::map < unsigned int, const Matrix * const * > TransformMap;
+    TransformMap transformMap;
+
+    // for ensuring unique structure<->structure alignments for repeated structures
+    std::map < int, bool > usedFeatures;
+
+
     // public methods
 
+    // put in new AlignmentSet - e.g. when alignment has been edited
     void ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet);
 
     // set screen and rotation center of model (coordinate relative to Master);
@@ -220,26 +238,13 @@ public:
     // called when an atom is selected in the GL window
     void SelectedAtom(unsigned int name);
 
-    // for assigning display lists and frames
-    unsigned int lastDisplayList;
-
-    typedef LIST_TYPE < unsigned int > DisplayLists;
-    typedef std::vector < DisplayLists > FrameMap;
-    FrameMap frameMap;
-
-    // to map display list -> slave transform
-    typedef std::map < unsigned int, const Matrix * const * > TransformMap;
-    TransformMap transformMap;
-
-    // for ensuring unique structure<->structure alignments for repeated structures
-    std::map < int, bool > usedFeatures;
-
-    // do any necessary adjustments to original asn data before output; returns true
-    // if successful, false if something went wrong - in which case data probably
-    // should not be used
-    bool PrepareMimeForOutput(ncbi::objects::CNcbi_mime_asn1& mime) const;
+    // writes data to a file; returns true on success
+    bool SaveASNData(const char *filename) const;
 
 private:
+    ncbi::objects::CNcbi_mime_asn1 *mimeData;
+    ncbi::objects::CCdd *cddData;
+
     void Init(void);
     void MatchSequencesToMolecules(void);
     void VerifyFrameMap(void) const;
@@ -249,7 +254,13 @@ private:
     unsigned int lastAtomName;
 
     // flags to tell whether various parts of the data have been changed
-    bool newAlignments;
+    enum eDataChanged {
+        eAlignmentData = 0x01
+    };
+    unsigned int dataChanged;
+
+public:
+    bool HasDataChanged(void) const { return (dataChanged > 0); }
 };
 
 class ChemicalGraph;

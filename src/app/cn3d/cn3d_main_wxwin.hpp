@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/12/22 19:25:46  thiessen
+* write cdd output files
+*
 * Revision 1.13  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -110,7 +113,6 @@
 #endif
 #include <wx/glcanvas.h>
 
-#include "cn3d/structure_set.hpp"
 #include "cn3d/opengl_renderer.hpp"
 
 
@@ -143,6 +145,8 @@ class Cn3DGLCanvas;
 
 class Cn3DMainFrame: public wxFrame
 {
+    friend class Cn3DApp;
+
 public:
     Cn3DMainFrame(
         wxFrame *parent, const wxString& title,
@@ -207,7 +211,7 @@ public:
     DECLARE_EVENT_TABLE()
 
 private:
-    wxString currentDataFilename;
+    wxString workingDir, programDir, dataDir;
 };
 
 class Cn3DGLCanvas: public wxGLCanvas

@@ -26,10 +26,13 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      template for reading in ASN data of any type from a file
+*      template for reading/writing ASN data of any type from/to a file
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/22 19:25:46  thiessen
+* write cdd output files
+*
 * Revision 1.1  2000/12/21 23:42:24  thiessen
 * load structures from cdd's
 *
@@ -45,6 +48,8 @@
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/objostrasnb.hpp>
 
 #include <string>
 
@@ -59,7 +64,6 @@ static bool ReadASNFromFile(const char *filename, ASNClass& ASNobject, bool isBi
     auto_ptr<ncbi::CNcbiIstream> inStream;
     inStream.reset(new ncbi::CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary));
     if (!(*inStream)) {
-//        ERR_POST(ncbi::Error << "Cannot open file '" << filename << "' for reading");
         err = "Cannot open file for reading";
         return false;
     }
@@ -78,7 +82,38 @@ static bool ReadASNFromFile(const char *filename, ASNClass& ASNobject, bool isBi
         err.erase();
         *inObject >> ASNobject;
     } catch (exception& e) {
-//        ERR_POST(ncbi::Error << "Cannot read file '" << filename << "'\nreason: " << e.what());
+        err = e.what();
+        return false;
+    }
+
+    return true;
+}
+
+// for writing ASN data
+template < class ASNClass >
+static bool WriteASNToFile(const char *filename, ASNClass& mime, bool isBinary, std::string& err)
+{
+    // initialize a binary output stream
+    auto_ptr<ncbi::CNcbiOstream> outStream;
+    outStream.reset(new ncbi::CNcbiOfstream(filename, IOS_BASE::out | IOS_BASE::binary));
+    if (!(*outStream)) {
+        err = "Cannot open file for writing";
+        return false;
+    }
+
+    auto_ptr<ncbi::CObjectOStream> outObject;
+    if (isBinary) {
+        // Associate ASN.1 binary serialization methods with the input
+        outObject.reset(new ncbi::CObjectOStreamAsnBinary(*outStream));
+    } else {
+        // Associate ASN.1 text serialization methods with the input
+        outObject.reset(new ncbi::CObjectOStreamAsn(*outStream));
+    }
+
+    // Read the CNcbi_mime_asn1 data
+    try {
+        *outObject << mime;
+    } catch (exception& e) {
         err = e.what();
         return false;
     }

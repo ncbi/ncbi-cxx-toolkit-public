@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/12/22 19:26:40  thiessen
+* write cdd output files
+*
 * Revision 1.2  2000/12/01 19:35:57  thiessen
 * better domain assignment; basic show/hide mechanism
 *
@@ -59,7 +62,7 @@ Colors::Colors(void)
     cycle1[1].Set(0, 0, 1);
     cycle1[2].Set(139.0/255, 87.0/255, 66.0/255);
     cycle1[3].Set(0, 1, .5);
-    cycle1[4].Set(.5, .5, .5);
+    cycle1[4].Set(.7, .7, .7);
     cycle1[5].Set(1, 165.0/255, 0);
     cycle1[6].Set(1, 114.0/255, 86.0/255);
     cycle1[7].Set(0, 1, 0);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/12/22 19:26:40  thiessen
+* write cdd output files
+*
 * Revision 1.40  2000/12/21 23:42:16  thiessen
 * load structures from cdd's
 *
@@ -291,10 +294,12 @@ void StructureSet::Init(void)
     sequenceSet = NULL;
     alignmentSet = NULL;
     alignmentManager = NULL;
-    newAlignments = false;
+    dataChanged = 0;
     colors = new Colors();
     nDomains = 0;
     parentSet = this;
+    mimeData = NULL;
+    cddData = NULL;
     showHideManager = new ShowHideManager();
     styleManager = new StyleManager();
     if (!showHideManager || !styleManager)
@@ -302,53 +307,54 @@ void StructureSet::Init(void)
     GlobalMessenger()->RemoveAllHighlights(false);
 }
 
-StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-    StructureBase(NULL), isMultipleStructure(mime.IsAlignstruc())
+StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
+    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc())
 {
     Init();
+    mimeData = mime;
     StructureObject *object;
 
     // create StructureObjects from (list of) biostruc
-    if (mime.IsStrucseq()) {
-        object = new StructureObject(this, mime.GetStrucseq().GetStructure(), true);
+    if (mime->IsStrucseq()) {
+        object = new StructureObject(this, mime->GetStrucseq().GetStructure(), true);
         objects.push_back(object);
-        sequenceSet = new SequenceSet(this, mime.GetStrucseq().GetSequences());
+        sequenceSet = new SequenceSet(this, mime->GetStrucseq().GetSequences());
         MatchSequencesToMolecules();
         alignmentManager = new AlignmentManager(sequenceSet, NULL);
 
-    } else if (mime.IsStrucseqs()) {
-        object = new StructureObject(this, mime.GetStrucseqs().GetStructure(), true);
+    } else if (mime->IsStrucseqs()) {
+        object = new StructureObject(this, mime->GetStrucseqs().GetStructure(), true);
         objects.push_back(object);
-        sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
+        sequenceSet = new SequenceSet(this, mime->GetStrucseqs().GetSequences());
         MatchSequencesToMolecules();
-        alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
+        alignmentSet = new AlignmentSet(this, mime->GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
 
-    } else if (mime.IsAlignstruc()) {
+    } else if (mime->IsAlignstruc()) {
         TESTMSG("Master:");
-        object = new StructureObject(this, mime.GetAlignstruc().GetMaster(), true);
+        object = new StructureObject(this, mime->GetAlignstruc().GetMaster(), true);
         objects.push_back(object);
-        const CBiostruc_align::TSlaves& slaves = mime.GetAlignstruc().GetSlaves();
+        const CBiostruc_align::TSlaves& slaves = mime->GetAlignstruc().GetSlaves();
 		CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
         for (i=slaves.begin(); i!=e; i++) {
             TESTMSG("Slave:");
             object = new StructureObject(this, i->GetObject(), false);
             if (!object->SetTransformToMaster(
-                    mime.GetAlignstruc().GetAlignments(),
+                    mime->GetAlignstruc().GetAlignments(),
                     objects.front()->mmdbID))
                 ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
                     << " with master " << objects.front()->pdbID);
             objects.push_back(object);
         }
-        sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
+        sequenceSet = new SequenceSet(this, mime->GetAlignstruc().GetSequences());
         MatchSequencesToMolecules();
-        alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
+        alignmentSet = new AlignmentSet(this, mime->GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
 
-    } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
-        object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);
+    } else if (mime->IsEntrez() && mime->GetEntrez().GetData().IsStructure()) {
+        object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true);
         objects.push_back(object);
 
     } else {
@@ -359,13 +365,14 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     showHideManager->ConstructShowHideArray(this);
 }
 
-StructureSet::StructureSet(const CCdd& cdd, const char *dataDir) :
-    StructureBase(NULL), isMultipleStructure(false)
+StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
+    StructureBase(NULL), isMultipleStructure(true)
 {
     Init();
+    cddData = cdd;
 
     // read sequences first; these contain links to MMDB id's
-    sequenceSet = new SequenceSet(this, cdd.GetSequences());
+    sequenceSet = new SequenceSet(this, cdd->GetSequences());
 
     // create a list of MMDB ids to try to load
     vector < int > mmdbIDs;
@@ -374,43 +381,20 @@ StructureSet::StructureSet(const CCdd& cdd, const char *dataDir) :
         if ((*s)->mmdbLink != Sequence::NOT_SET) mmdbIDs.push_back((*s)->mmdbLink);
 
     // if more than one structure, the Biostruc-annot-set should contain structure alignments
-    // for slaves->master - and thus also the identity of the master. Once that's determined,
-    // then we can load structures and slave structure alignments.
-    if (mmdbIDs.size() > 0) {
-        if (!cdd.IsSetFeatures()) {
+    // for slaves->master - and thus also the identity of the master.
+    static const int NOT_SET = -1;
+    int masterMMDBID = NOT_SET;
+    if (mmdbIDs.size() == 1) {
+        masterMMDBID = mmdbIDs[0];
+    } else if (mmdbIDs.size() > 1) {
+        if (!cdd->IsSetFeatures()) {
             ERR_POST(Error << "StructureSet::StructureSet() - no slave structure alignments."
                 "Structures not loaded.");
         } else {
-            CBiostruc_annot_set::TId::const_iterator i, ie = cdd.GetFeatures().GetId().end();
-            for (i=cdd.GetFeatures().GetId().begin(); i!=ie; i++) {
+            CBiostruc_annot_set::TId::const_iterator i, ie = cdd->GetFeatures().GetId().end();
+            for (i=cdd->GetFeatures().GetId().begin(); i!=ie; i++) {
                 if (i->GetObject().IsMmdb_id()) {
-
-                    int masterMMDBID = i->GetObject().GetMmdb_id();
-                    for (int m=0; m<mmdbIDs.size(); m++) {
-
-                        // load Biostrucs from external files
-                        std::string err;
-                        CBiostruc biostruc;
-                        ostrstream biostrucFile;
-                        biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
-                        TESTMSG("trying to read ncbi-backbone model from Biostruc in '" << biostrucFile.str() << "'");
-                        if (ReadASNFromFile(biostrucFile.str(), biostruc, true, err)) {
-
-                            // create new StructureObject
-                            bool isMaster = (mmdbIDs[m] == masterMMDBID);
-                            StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
-                            if (!isMaster) {
-                                if (!object->SetTransformToMaster(cdd.GetFeatures(), masterMMDBID))
-                                    ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
-                                        << " with master " << objects.front()->pdbID);
-                            }
-                            objects.push_back(object);
-
-                        } else {
-                            ERR_POST(Error << "Failed to read Biostruc from " << biostrucFile.str()
-                                << "\nreason: " << err);
-                        }
-                    }
+                    masterMMDBID = i->GetObject().GetMmdb_id().Get();
                     break;
                 }
             }
@@ -421,8 +405,38 @@ StructureSet::StructureSet(const CCdd& cdd, const char *dataDir) :
         }
     }
 
+    // Once the master MMDB id is determined,
+    // then we can load structures and slave structure alignments.
+    if (masterMMDBID != NOT_SET) {
+        for (int m=0; m<mmdbIDs.size(); m++) {
+
+            // load Biostrucs from external files
+            std::string err;
+            CBiostruc biostruc;
+            ostrstream biostrucFile;
+            biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
+            TESTMSG("trying to read ncbi-backbone model from Biostruc in '" << biostrucFile.str() << "'");
+            if (ReadASNFromFile(biostrucFile.str(), biostruc, true, err)) {
+
+                // create new StructureObject
+                bool isMaster = (mmdbIDs[m] == masterMMDBID);
+                StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
+                if (!isMaster) {
+                    if (!object->SetTransformToMaster(cdd->GetFeatures(), masterMMDBID))
+                        ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
+                            << " with master " << objects.front()->pdbID);
+                }
+                objects.push_back(object);
+
+            } else {
+                ERR_POST(Error << "Failed to read Biostruc from " << biostrucFile.str()
+                    << "\nreason: " << err);
+            }
+        }
+    }
+
     MatchSequencesToMolecules();
-    alignmentSet = new AlignmentSet(this, cdd.GetSeqannot());
+    alignmentSet = new AlignmentSet(this, cdd->GetSeqannot());
     alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
     styleManager->SetToAlignment(StyleSettings::eAligned);
     VerifyFrameMap();
@@ -435,36 +449,53 @@ StructureSet::~StructureSet(void)
     delete showHideManager;
     delete styleManager;
     if (alignmentManager) delete alignmentManager;
-}
-
-bool StructureSet::PrepareMimeForOutput(ncbi::objects::CNcbi_mime_asn1& mime) const
-{
-    // replace edited alignments
-    if (newAlignments && alignmentSet && alignmentSet->newAsnAlignmentData) {
-        SeqAnnotList *seqAnnots = NULL;
-        if (mime.IsStrucseqs())
-            seqAnnots = &(mime.GetStrucseqs().SetSeqalign());
-        else if (mime.IsAlignstruc())
-            seqAnnots = &(mime.GetAlignstruc().SetSeqalign());
-
-        if (seqAnnots) {
-            seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
-            SeqAnnotList::iterator o = seqAnnots->begin();
-            SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
-            for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
-                o->Reset(n->GetPointer());   // copy each Seq-annot CRef
-        }
-    }
-
-	return true;
+    if (cddData) delete cddData;
+    if (mimeData) delete mimeData;
 }
 
 void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
 {
+    // update the AlignmentSet
     _RemoveChild(alignmentSet);
     delete alignmentSet;
     alignmentSet = newAlignmentSet;
-    newAlignments = true;
+    dataChanged |= eAlignmentData;
+
+    // update the asn data
+    SeqAnnotList *seqAnnots = NULL;
+    if (mimeData) {
+        if (mimeData->IsStrucseqs())
+            seqAnnots = &(mimeData->GetStrucseqs().SetSeqalign());
+        else if (mimeData->IsAlignstruc())
+            seqAnnots = &(mimeData->GetAlignstruc().SetSeqalign());
+    }
+
+    else if (cddData) {
+        seqAnnots = &(cddData->SetSeqannot());
+    }
+
+    if (seqAnnots) {
+        seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
+        SeqAnnotList::iterator o = seqAnnots->begin();
+        SeqAnnotList::const_iterator n, ne = alignmentSet->newAsnAlignmentData->end();
+        for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
+            o->Reset(n->GetPointer());   // copy each Seq-annot CRef
+    }
+}
+
+bool StructureSet::SaveASNData(const char *filename) const
+{
+    std::string err;
+    bool writeOK = false;
+    if (mimeData)
+        writeOK = WriteASNToFile(filename, *mimeData, false, err);
+    else if (cddData)
+        writeOK = WriteASNToFile(filename, *cddData, false, err);
+    if (!writeOK) {
+        ERR_POST(Error << "Write failed: " << err);
+        return false;
+    }
+    return true;
 }
 
 // because the frame map (for each frame, a list of diplay lists) is complicated
