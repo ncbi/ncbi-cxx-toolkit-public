@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/03/08 17:56:25  lavr
+ * Redesigned to show that SERV_Open can return SERV_ITER, that
+ * in turn returns 0 even if used for the very first time.
+ *
  * Revision 6.3  2001/03/05 23:21:11  lavr
  * SERV_WriteInfo take only one argument now
  *
@@ -53,23 +57,25 @@ int main(int argc, const char* argv[])
 {
     const char* service = argc > 1 ? argv[1] : "io_bounce";
     const SSERV_Info* info;
+    int n_found = 0;
     SERV_ITER iter;
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
 
-    if (!(iter = SERV_OpenSimple(service)))
-        CORE_LOG(eLOG_Fatal, "Requested service not found");
-    
-    while ((info = SERV_GetNextInfo(iter)) != 0) {
-        char* info_str = SERV_WriteInfo(info);
-        if (!info_str)
-            CORE_LOG(eLOG_Error, "Unable to print server info");
-        else
+    if ((iter = SERV_OpenSimple(service)) != 0) {
+        while ((info = SERV_GetNextInfo(iter)) != 0) {
+            char* info_str = SERV_WriteInfo(info);
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            n_found++;
+        }
+        SERV_Close(iter);
     }
+    
+    if (n_found == 0)
+        CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
+    else
+        CORE_LOG(eLOG_Fatal, "Requested service not found");
 
-    SERV_Close(iter);
-    CORE_LOG(eLOG_Note, "Test complete");
     return 0;
 }
