@@ -73,7 +73,7 @@ double GetProteinWeight(CBioseq_Handle& handle, const CSeq_loc* location)
 {
     CSeqVector v = (location
                     ? handle.GetSequenceView(*location,
-                                             CBioseq_Handle::e_ViewConstructed)
+                                             CBioseq_Handle::eViewConstructed)
                     : handle.GetSeqVector());
     v.SetCoding(CSeq_data::e_Ncbistdaa);
 
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2002/06/12 14:39:05  grichenk
+* Renamed enumerators
+*
 * Revision 1.10  2002/06/07 18:19:54  ucko
 * Reworked to take advantage of CBioseq_Handle::GetSequenceView.
 *

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/06/12 14:39:02  grichenk
+* Renamed enumerators
+*
 * Revision 1.18  2002/06/06 21:00:42  clausen
 * Added include for scope.hpp
 *
@@ -184,12 +187,12 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
     // Make mode-dependent parsing of the range list
     CHandleRange mode_rlist(m_Value); // processed intervals (merged, excluded)
     switch (mode) {
-    case e_ViewConstructed:
+    case eViewConstructed:
         {
             mode_rlist = rlist;
             break;
         }
-    case e_ViewMerged:
+    case eViewMerged:
         {
             // Merge intervals from "rlist"
             iterate (CHandleRange::TRanges, rit, rlist.GetRanges()) {
@@ -197,7 +200,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
             }
             break;
         }
-    case e_ViewExcluded:
+    case eViewExcluded:
         {
             // Exclude intervals from "rlist"
             TSeqPos last_from = 0;

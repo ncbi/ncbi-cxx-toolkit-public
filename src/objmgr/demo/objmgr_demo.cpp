@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/06/12 14:39:03  grichenk
+* Renamed enumerators
+*
 * Revision 1.5  2002/05/06 03:28:49  vakatov
 * OM/OM1 renaming
 *
@@ -207,7 +210,7 @@ int CDemoApp::Run(void)
         // Get seq vector filtered with the current feature location.
         // e_ViewMerged flag forces each residue to be shown only once.
         CSeqVector cds_vect = handle.GetSequenceView
-            (feat_it->GetLocation(), CBioseq_Handle::e_ViewMerged,
+            (feat_it->GetLocation(), CBioseq_Handle::eViewMerged,
              true);
         // Print first 10 characters of each cd-region
         NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";

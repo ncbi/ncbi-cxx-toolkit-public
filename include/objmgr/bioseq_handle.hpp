@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/06/12 14:39:00  grichenk
+* Renamed enumerators
+*
 * Revision 1.20  2002/06/06 19:36:02  clausen
 * Added GetTitle()
 *
@@ -178,9 +181,9 @@ public:
     // when creating merged or excluded views. If "minus_strand" is true,
     // the result is reverse-complement.
     enum ESequenceViewMode {
-        e_ViewConstructed,    // Do not merge or reorder intervals
-        e_ViewMerged,         // Merge overlapping intervals, sort by location
-        e_ViewExcluded        // Show intervals not included in the seq-loc
+        eViewConstructed,    // Do not merge or reorder intervals
+        eViewMerged,         // Merge overlapping intervals, sort by location
+        eViewExcluded        // Show intervals not included in the seq-loc
     };
     virtual CSeqVector GetSequenceView(const CSeq_loc& location,
                                        ESequenceViewMode mode,
