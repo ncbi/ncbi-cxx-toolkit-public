@@ -202,7 +202,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else {
             size_t xx_read = x_read > m_BufSize ? m_BufSize : x_read;
-            memcpy(m_ReadBuf, buf + x_read - xx_read, xx_read);
+            memcpy(m_ReadBuf, buf+x_read-xx_read, xx_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
     }
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/03/28 03:58:08  lavr
+ * CConn_Streambuf::xsgetn(): tiny formal fix in backup condition
+ *
  * Revision 6.23  2003/03/28 03:30:36  lavr
  * Define CConn_Streambuf::xsgetn() unconditionally of compiler
  *
