@@ -350,5 +350,5 @@ IMAGE_LIBS    = $(JPEG_LIBS) $(PNG_LIBS) $(TIFF_LIBS) $(GIF_LIBS) $(XPM_LIBS)
 # Useful sets of object libraries
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode
-OBJMGR_LIBS = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio \
+OBJMGR_LIBS = xobjmgr id2 id1 seqset $(SEQ_LIBS) pub medline biblio \
 	general dbapi_driver xser xcompress z bz2 xconnect xutil xncbi
