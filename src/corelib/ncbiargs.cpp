@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.32  2001/03/16 16:40:18  vakatov
+ * Moved <corelib/ncbi_limits.h> to the header
+ *
  * Revision 1.31  2001/01/22 23:07:14  vakatov
  * CArgValue::AsInteger() to return "int" (rather than "long")
  *
@@ -140,7 +143,6 @@
 
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
-#include <corelib/ncbi_limits.h>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
