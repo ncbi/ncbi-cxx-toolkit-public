@@ -15,7 +15,7 @@ include $(builddir)/Makefile.rules
 ### Dependencies (GNU make only)
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
-	 | sed -e 's%[^ :][^ :]*%$$(wildcard &)%g' \
+	 | sed -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
 	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' > $@_ \
 	  &&  test -s $@_  &&  mv -f $@_ $@
 
