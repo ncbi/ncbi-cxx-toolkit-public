@@ -33,6 +33,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/12/12 14:20:14  vasilche
+* Added operator bool to CArgValue.
+* Added standard typedef element_type to CRef<> and CConstRef<>.
+* Macro iterate() now calls method end() only once and uses temporary variable.
+* Various NStr::Compare() methods made faster.
+* Added class Upcase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.14  2000/11/01 20:35:01  vasilche
 * Fixed detection of heap objects.
 * Removed ECanDelete enum and related constructors.
@@ -202,7 +209,8 @@ public:
 template<class C>
 class CRef {
 public:
-    typedef C TObjectType;
+    typedef C element_type;
+    typedef element_type TObjectType;
 
     inline
     CRef(void) THROWS_NONE
@@ -369,7 +377,8 @@ private:
 template<class C>
 class CConstRef {
 public:
-    typedef const C TObjectType;
+    typedef C element_type;
+    typedef const element_type TObjectType;
 
     inline
     CConstRef(void) THROWS_NONE

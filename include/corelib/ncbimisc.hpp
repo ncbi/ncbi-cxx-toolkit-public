@@ -33,6 +33,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/12/12 14:20:14  vasilche
+* Added operator bool to CArgValue.
+* Added standard typedef element_type to CRef<> and CConstRef<>.
+* Macro iterate() now calls method end() only once and uses temporary variable.
+* Various NStr::Compare() methods made faster.
+* Added class Upcase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.44  2000/12/11 20:42:48  vakatov
 * + NStr::PrintableString()
 *
@@ -219,27 +226,57 @@ struct NStr {
         eCase,
         eNocase  /* ignore character case */
     };
-    static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const char* pattern, ECase use_case = eCase);
-    static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const string& pattern, ECase use_case = eCase);
+    static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                           const char* pattern);
+    static int CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                           const string& pattern);
+    static int CompareCase(const char* s1, const char* s2);
+    static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                             const char* pattern);
+    static int CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                             const string& pattern);
+    static int CompareNocase(const char* s1, const char* s2);
 
-
-    static int Compare(const char* s1, const char* s2,
-                       ECase use_case = eCase);
+    static inline int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                              const char* pattern, ECase use_case = eCase)
+        {
+            if ( use_case == eCase )
+                return CompareCase(str, pos, n, pattern);
+            else
+                return CompareNocase(str, pos, n, pattern);
+        }
+    static inline int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                              const string& pattern, ECase use_case = eCase)
+        {
+            if ( use_case == eCase )
+                return CompareCase(str, pos, n, pattern);
+            else
+                return CompareNocase(str, pos, n, pattern);
+        }
+    static inline int Compare(const char* s1, const char* s2,
+                              ECase use_case = eCase)
+        {
+            if ( use_case == eCase )
+                return CompareCase(s1, s2);
+            else
+                return CompareNocase(s1, s2);
+        }
     static inline int Compare(const string& s1, const char* s2,
-                              ECase use_case = eCase) {
-        return Compare(s1, 0, NPOS, s2, use_case);
-    }
+                              ECase use_case = eCase)
+        {
+            return Compare(s1, 0, NPOS, s2, use_case);
+        }
     static inline int Compare(const char* s1, const string& s2,
-                              ECase use_case = eCase) {
-        return Compare(s2, 0, NPOS, s1, use_case);
-    }
+                              ECase use_case = eCase)
+        {
+            return Compare(s2, 0, NPOS, s1, use_case);
+        }
     static inline int Compare(const string& s1, const string& s2,
-                              ECase use_case = eCase) {
-        return Compare(s1, 0, NPOS, s2, use_case);
-    }
-
+                              ECase use_case = eCase)
+        {
+            return Compare(s1, 0, NPOS, s2, use_case);
+        }
+    
     // these 4 methods change the passed string, then return it
     static string& ToLower(string& str);
     static char*   ToLower(char*   str);
@@ -281,34 +318,78 @@ struct NStr {
                           const string& replace,
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
-
     // Make a printable version of "str". The non-printable characters will
-    // be represented by '\r', '\n', '\v', '\t', or '\XX' where XX is the
-    // character's code in hexadecimal. Back-slash '\' is represented as '\\'.
+    // be represented as "\r", "\n", "\v", "\t", "\0", "\\", or
+    // "\xDD" where DD is the character's code in hexadecimal.
     static string PrintableString(const string& str);
 }; // struct NStr
 
 
 // predicates
 
-// case-INsensitive string comparison
-struct PNocase
-{
-    bool operator() ( const string&, const string& ) const;
-};
-
 // case-sensitive string comparison
 struct PCase
 {
-    bool operator() ( const string&, const string& ) const;
+    // return difference
+    int Compare(const string& s1, const string& s2) const
+        {
+            return NStr::Compare(s1, s2, NStr::eCase);
+        }
+
+    // returns true if s1 < s2
+    bool Less(const string& s1, const string& s2) const
+        {
+            return Compare(s1, s2) < 0;
+        }
+
+    // returns true if s1 == s2
+    bool Equals(const string& s1, const string& s2) const
+        {
+            return Compare(s1, s2) == 0;
+        }
+
+    // returns true if s1 < s2
+    bool operator()(const string& s1, const string& s2) const
+        {
+            return Less(s1, s2);
+        }
+};
+
+// case-INsensitive string comparison
+struct PNocase
+{
+    // return difference
+    int Compare(const string& s1, const string& s2) const
+        {
+            return NStr::Compare(s1, s2, NStr::eNocase);
+        }
+
+    // returns true if s1 < s2
+    bool Less(const string& s1, const string& s2) const
+        {
+            return Compare(s1, s2) < 0;
+        }
+
+    // returns true if s1 == s2
+    bool Equals(const string& s1, const string& s2) const
+        {
+            return Compare(s1, s2) == 0;
+        }
+
+    // returns true if s1 < s2 ignoring case
+    bool operator()(const string& s1, const string& s2) const
+        {
+            return Less(s1, s2);
+        }
 };
 
 // algorithms
 
 template<class Pred>
-bool AStrEquiv( const string& x, const string& y, Pred pr )
+inline
+bool AStrEquiv( const string& x, const string& y, Pred pr)
 {  
-    return !( pr( x, y ) || pr( y, x ) );
+    return pr.Equals(x, y);
 }
 
 class CTypeInfo;

@@ -34,6 +34,13 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/12 14:20:14  vasilche
+* Added operator bool to CArgValue.
+* Added standard typedef element_type to CRef<> and CConstRef<>.
+* Macro iterate() now calls method end() only once and uses temporary variable.
+* Various NStr::Compare() methods made faster.
+* Added class Upcase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.17  1999/12/28 18:55:25  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -214,7 +221,7 @@ inline CT_INT_TYPE ct_not_eof(CT_INT_TYPE i) {
 /*
 string GetString(void)
 {
-    CNcbiOstream buffer;
+    CNcbiOstrstream buffer;
     buffer << "some text";
     return CNcbiOstrstreamToString(buffer);
 }
@@ -237,6 +244,18 @@ private:
     CNcbiOstrstream& m_Out;
 };
 
+// utility class for qutomatic conversion of strings to uppercase letters
+// sample usage:
+//    out << "Original:  \"" << str << "\"\n";
+//    out << "Upparcase: \"" << Upcase(str) << "\"\n";
+class Upcase
+{
+public:
+    Upcase(const string& s) : m_String(s) { }
+    const string& m_String;
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s);
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE

@@ -34,6 +34,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/12/12 14:20:14  vasilche
+* Added operator bool to CArgValue.
+* Added standard typedef element_type to CRef<> and CConstRef<>.
+* Macro iterate() now calls method end() only once and uses temporary variable.
+* Various NStr::Compare() methods made faster.
+* Added class Upcase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.12  2000/08/29 18:32:38  vakatov
 * Rollback R1.11 to R1.10
 *
@@ -385,7 +392,7 @@ struct CNameGetter
 // iterate is useful macro for writing 'for' statements with STL container
 // iterator as an variable.
 #define iterate(Type, Var, Cont) \
-    for ( Type::const_iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
+    for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end(); Var != NCBI_NAME2(Var,_end); ++Var )
 #define non_const_iterate(Type, Var, Cont) \
     for ( Type::iterator Var = Cont.begin(); Var != Cont.end(); ++Var )
 

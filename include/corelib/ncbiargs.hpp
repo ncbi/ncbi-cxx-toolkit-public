@@ -37,6 +37,13 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2000/12/12 14:20:13  vasilche
+ * Added operator bool to CArgValue.
+ * Added standard typedef element_type to CRef<> and CConstRef<>.
+ * Macro iterate() now calls method end() only once and uses temporary variable.
+ * Various NStr::Compare() methods made faster.
+ * Added class Upcase for printing strings to ostream with automatic conversion.
+ *
  * Revision 1.15  2000/11/29 00:07:25  vakatov
  * Flag and key args not to be sorted in alphabetical order by default; see
  * "usage_sort_args" in SetUsageContext().
@@ -165,6 +172,14 @@ class CArgValue : public CObject
 {
     friend class CArgs;
 public:
+    // check if value exists
+    virtual bool HasValue(void) const;
+    operator bool(void) const { return HasValue(); }
+    bool operator!(void) const { return !HasValue(); }
+
+    // check if value is default
+    bool IsDefaultValue(void) const { return m_IsDefaultValue; }
+
     // Get the argument's string value.
     // (If it is a value of flag argument, then return one of "true", "false".)
     const string&  AsString(void) const { return m_String; }
