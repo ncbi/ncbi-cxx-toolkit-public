@@ -228,8 +228,8 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
 }
 
 // internal macros for implementing BEGIN_*_INFO and ADD_*_MEMBER
-#define DECLARE_BASE_OBJECT(ClassName) 
-#define BASE_OBJECT() static_cast<const CClass_Base*>(static_cast<const CClass*>(0))
+#define DECLARE_BASE_OBJECT(ClassName) ClassName* base = 0
+#define BASE_OBJECT() static_cast<const CClass_Base*>(base)
 #define MEMBER_PTR(MemberName) &BASE_OBJECT()->MemberName
 #define CLASS_PTR(ClassName) static_cast<const ClassName*>(BASE_OBJECT())
 
