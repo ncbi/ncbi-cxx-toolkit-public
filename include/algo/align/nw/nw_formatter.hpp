@@ -39,6 +39,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -56,11 +58,9 @@ public:
     CNWFormatter(const CNWAligner& aligner);
 
     // setters
-    void SetSeqIds(const string& id1, const string& id2) {
-        m_Seq1Id = id1;
-        m_Seq2Id = id2;
-    }
-
+    void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
+                   CConstRef<objects::CSeq_id> id2);
+    
     // supported text formats
     enum ETextFormatType {
         eFormatType1,
@@ -74,11 +74,14 @@ public:
     void AsText(string* output, ETextFormatType type,
                 size_t line_width = 100) const;
 
-    void AsSeqAlign(objects::CSeq_align* output) const;
+    CRef<objects::CSeq_align> AsSeqAlign (
+        TSeqPos query_start, objects::ENa_strand query_strand,
+        TSeqPos subj_start,  objects::ENa_strand subj_strand ) const;
 
 private:
-    const CNWAligner* m_aligner;
-    string            m_Seq1Id, m_Seq2Id;
+
+    const CNWAligner*                 m_aligner;
+    CConstRef<objects::CSeq_id>       m_Seq1Id, m_Seq2Id;
 
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
                              vector<char>* seq2_transformed) const;
@@ -93,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/23 16:58:45  kapustin
+ * Use CSeq_id's instead of strings. Modify AsSeqAlign to allow specification of alignment's starts and strands.
+ *
  * Revision 1.5  2004/05/17 14:50:46  kapustin
  * Add/remove/rearrange some includes and object declarations
  *
