@@ -6,11 +6,10 @@
 
 
 include $(srcdir)/Makefile.connect.lib
+include $(srcdir)/Makefile.xxconnect.lib
 
-SRC = $(SRC_C) ncbi_socket_cxx ncbi_core_cxx \
-      ncbi_conn_streambuf ncbi_conn_stream   \
-      email_diag_handler threaded_server
+SRC  = $(SRC_C) $(SRC_CXX)
 
-LIB    = xconnect
+LIB  = xconnect
 
-LIBS   = $(NETWORK_LIBS)
+LIBS = $(NETWORK_LIBS)

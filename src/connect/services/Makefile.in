@@ -9,7 +9,7 @@
 #  - tests:      "test/*.*"
 #################################
 
-LIB_PROJ = connect xconnect
+LIB_PROJ = connect xxconnect xconnect
 SUB_PROJ = @daemons@ test
 
 srcdir = @srcdir@
