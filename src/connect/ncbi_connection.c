@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/23 23:10:53  lavr
+ * Typo corrected in description of connection structure
+ *
  * Revision 6.4  2001/01/12 23:51:38  lavr
  * Message logging modified for use LOG facility only
  *
@@ -98,7 +101,7 @@ typedef struct SConnectionTag {
 #ifdef IMPLEMENTED__CONN_WaitAsync
     SConnectorAsyncHandler async_data; /* info of curr. async event handler */
 #endif
-    eCONN_State            state;      /* connectection state               */
+    eCONN_State            state;      /* connection state                  */
     /* "[c|r|w|l]_timeout" is either 0 or points to "[cc|rr|ww|ll]_timeout" */
     STimeout* c_timeout;               /* timeout on connect                */
     STimeout* r_timeout;               /* timeout on reading                */
@@ -355,7 +358,7 @@ extern EIO_Status CONN_Write
     status = conn->meta.write ?
         (*conn->meta.write)(conn->meta.c_write, buf, size, n_written,
                             conn->w_timeout) : eIO_NotSupported;
-    
+
     if (status != eIO_Success)
         CONN_LOG(eLOG_Error, "[CONN_Write]  Write error");
     
