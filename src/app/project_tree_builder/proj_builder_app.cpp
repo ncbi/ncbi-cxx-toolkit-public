@@ -748,7 +748,7 @@ const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
 }
 
 
-const CDllSrcFilesDistr& CProjBulderApp::GetDllFilesDistr(void)
+CDllSrcFilesDistr& CProjBulderApp::GetDllFilesDistr(void)
 {
     if (m_DllSrcFilesDistr.get())
         return *m_DllSrcFilesDistr;
@@ -804,6 +804,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/05/19 14:23:40  gorelenk
+ * Implemented CProjBulderApp::GetDllFilesDistr .
+ *
  * Revision 1.37  2004/05/17 16:21:38  gorelenk
  * Implemeted CProjBulderApp::GetDllFilesDistr .
  *
