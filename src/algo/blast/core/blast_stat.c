@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.39  2003/10/16 15:55:22  coulouri
+ * fix uninitialized variables
+ *
  * Revision 1.38  2003/10/16 15:52:08  coulouri
  * fix uninitialized variables
  *
@@ -2472,10 +2475,10 @@ static Int2
 BlastKarlinGetMatrixValuesEx2(char* matrix, Int4** open, Int4** extension, Int4** decline_align, double** lambda, double** K, double** H, double** alpha, double** beta, Int4** pref_flags)
 
 {
-	array_of_8 *values;
+	array_of_8 *values = NULL;
 	Boolean found_matrix=FALSE;
 	Int4 index, max_number_values=0;
-	Int4* open_array=NULL,* extension_array=NULL,* decline_align_array=NULL,* pref_flags_array=NULL,* prefs;
+	Int4* open_array=NULL,* extension_array=NULL,* decline_align_array=NULL,* pref_flags_array=NULL,* prefs=NULL;
 	double* lambda_array=NULL,* K_array=NULL,* H_array=NULL,* alpha_array=NULL,* beta_array=NULL;
 	MatrixInfo* matrix_info;
 	ListNode* vnp,* head;
@@ -2603,7 +2606,7 @@ static Int2
 BlastKarlinReportAllowedValues(const char *matrix_name, 
    Blast_Message** error_return)
 {
-	array_of_8 *values;
+	array_of_8 *values = NULL;
 	Boolean found_matrix=FALSE;
 	char buffer[256];
 	Int4 index, max_number_values=0;
@@ -2797,7 +2800,7 @@ BLAST_PrintMatrixMessage(const char *matrix_name)
 char*
 BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend, Int4 decline_align) 
 {
-	array_of_8 *values;
+	array_of_8 *values = NULL;
 	Boolean found_matrix=FALSE;
 	char* buffer,* ptr;
 	Int4 index, max_number_values=0;
