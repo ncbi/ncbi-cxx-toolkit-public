@@ -188,12 +188,24 @@ AC_PROG_CC
 AC_PROG_CXX
 
 
+#### Detect KCC compiler
+if test "$GCC" != "yes" ; then
+   touch kcc_test.c
+   kcc_ver="`$CXX -V -c kcc_test.c 2>&1`"
+   rm -f kcc_test.c kcc_test.o
+   case "$kcc_ver" in 
+      KAI* )  KCC="yes" ;;
+   esac
+fi
+
+
 #### Detect supported compilers
 changequote(, )dnl
 compiler=
 compiler_ver=
 ncbi_compiler="UNKNOWN"
 ncbi_compiler_ver="0.0"
+
 if test "$GCC" = "yes" ; then
    compiler_ver="`$CXX --version 2>&1`"
    case "$compiler_ver" in
@@ -202,9 +214,14 @@ if test "$GCC" = "yes" ; then
        ncbi_compiler="GCC"
        ncbi_compiler_ver="2.95" ;;
    esac
+elif test "$KCC" = "yes" ; then
+   compiler_ver="$kcc_ver"
+   compiler="KCC"
+   ncbi_compiler="KCC"
+   ncbi_compiler_ver="`echo $kcc_ver | sed 's%KAI C\+\+ \([0-9.]*\).*%\1%'`"
 else
-   case "$host" in
-    sparc-sun-solaris2\.[678]  |  i*86-pc-solaris2\.[678] )
+   case "$host_os" in
+    solaris* )
       compiler_ver="`$CXX -V 2>&1`"
       case "$compiler_ver" in
         *WorkShop*Compilers*5\.0)
@@ -217,7 +234,7 @@ else
           ncbi_compiler_ver="5.1" ;;
       esac ;;
 
-    mips-sgi-irix6\.* )
+    irix* )
       compiler_ver="`$CXX -version 2>&1`"
       case "$compiler_ver" in
         MIPSpro*Compilers:*Version*7\.3* )
@@ -226,7 +243,7 @@ else
           ncbi_compiler_ver="7.3" ;;
       esac ;;
 
-    i*86*-pc-cygwin32 )
+    cygwin32 )
       case "$CXX" in
         *cl\.exe* | cl)
           compiler="MSVC" 
@@ -284,28 +301,28 @@ x_CXX=
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
-case "$host:$compiler" in
- sparc-sun-solaris2\.6:GCC )
+case "$host_os:$compiler" in
+ solaris2\.6:GCC )
    echo "GCC compiler is not supported for:  $host"
    compiler=
    ;;
 
- *-linux*:GCC )
+ linux* )
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
- *-osf*:GCC )
+ osf*:GCC )
    CXXFLAGS="-fsquangle $CXXFLAGS"
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
- mips-sgi-irix6\.*:GCC )
+ irix*:GCC )
    if test "$with_debug" != "no" ; then
       LDFLAGS="-LD_LAYOUT:lgot_buffer=24 $LDFLAGS"
    fi
    ;;
 
- *:WorkShop* )
+ solaris*:WorkShop* )
    with_bincopy=${with_bincopy:="no"}
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
@@ -321,7 +338,15 @@ case "$host:$compiler" in
    THREAD_LIBS=${THREAD_LIBS:="-mt -lthread -lpthread"}
    ;;
 
- *:MIPSpro73 )
+ solaris*:KCC )
+   with_bincopy=${with_bincopy:="no"}
+   if test "$with_mt" = "yes" ; then
+      LDFLAGS_DLL="-mt $LDFLAGS_DLL"
+   fi
+   THREAD_LIBS=${THREAD_LIBS:="-mt -lthread -lpthread"}
+   ;;
+
+ irix*:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
    CFLAGS="$COMMON_FLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
@@ -331,13 +356,13 @@ case "$host:$compiler" in
    NETWORK_LIBS=" "
    ;;
 
- i*86*-pc-cygwin32:GCC )
+ cygwin32:GCC )
    with_dll="no"
    NETWORK_LIBS=${NETWORK_LIBS:="-lwsock32"}
    CONF_exe_ext=".exe"
    ;;
 
- i*86*-pc-cygwin32:MSVC )
+ cygwin32:MSVC )
    with_dll="no"
    CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
@@ -388,18 +413,21 @@ fi
 with_64=${with_64:="no"}
 if test "$with_64" = "yes" ; then
    bit64_sfx="64"
-   case "$compiler" in
-    WorkShop5 )
+   case "$host:$compiler" in
+    sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       ;;
-    WorkShop6 )
+    sparc-sun-solaris*:WorkShop6 )
       ARCH_CFLAGS="-xtarget=ultra -xarch=v9"
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -Bdynamic $LIBS"
       ;;
-    MIPSpro73 )
+    mips-sgi-irix*:MIPSpro73 )
       ARCH_CFLAGS="-64"
       CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
       AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
+      ;;
+    mips-sgi-irix*:KCC )
+      ARCH_CFLAGS="-64"
       ;;
     * )
       AC_MSG_ERROR(["Dont know how to compile 64-bit with compiler $CXX $compiler_ver"])
@@ -408,16 +436,16 @@ if test "$with_64" = "yes" ; then
 else
    bit64_sfx=
    ARCH_CFLAGS=
-   case "$compiler" in
-    WorkShop5 )
+   case "$host_os:$compiler" in
+    solaris*:WorkShop5 )
       LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
-    WorkShop6 )
+    solaris*:WorkShop6 )
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCrun -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
-    MIPSpro73 )
+    irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
       ;;
    esac
@@ -431,16 +459,18 @@ LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 #### DLLs
 
 # Generate position-independent code (PIC)
-case "$compiler" in
- GCC )
-   CFLAGS_DLL="-fPIC"
-   CXXFLAGS_DLL="-fPIC"
-   ;;
- WorkShop* | MIPSpro73 )
-   CFLAGS_DLL="-KPIC"
-   CXXFLAGS_DLL="-KPIC"
-   ;;
-esac
+if test -z "$CFLAGS_DLL"  -a  -z "$CXXFLAGS_DLL" ; then
+   case "$host_os:$compiler" in
+    *:GCC | linux*:KCC )
+      CFLAGS_DLL="-fPIC"
+      CXXFLAGS_DLL="-fPIC"
+      ;;
+    solaris*:WorkShop* | irix*:MIPSpro73 | solaris*:KCC | irix*:KCC)
+      CFLAGS_DLL="-KPIC"
+      CXXFLAGS_DLL="-KPIC"
+      ;;
+   esac
+fi
 
 # Provide runpath to the C++ Toolkit DLLs
 rundir="\$(libdir)"
@@ -450,14 +480,14 @@ if test -z "$with_runpath"  &&  test "$with_dll" != "yes" ; then
 fi
 
 if test "$with_runpath" != "no" ; then
-   case "$host:$compiler" in
-    *:WorkShop* )
+   case "$host_os:$compiler" in
+    solaris*:WorkShop* | solaris*:KCC )
       CONF_f_runpath="-R"
       ;;
-    *-linux*:GCC )
+    linux*:GCC )
       CONF_f_runpath="-Xlinker -rpath "
       ;;
-    mips-sgi-irix6\.*:GCC | *:MIPSpro73 )
+    irix*:* | linux*:KCC )
       CONF_f_runpath="-rpath "
       ;;
    esac
@@ -472,8 +502,8 @@ fi
 # Whether to build DLLs or static (and whether by default, or forcibly)
 LIB_OR_DLL="lib"
 if test "$with_dll" = "yes" ; then
-   case "$host:$compiler" in
-    *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop* | *:MIPSpro73 )
+   case "$host_os:$compiler" in
+    linux*:GCC | irix*:* | solaris*:WorkShop* | *:KCC)
       ;;
     * )
       echo
@@ -503,6 +533,9 @@ case "$compiler" in
  WorkShop* )
    LINK_DLL="$CXX $ARCH_CFLAGS -G -h \$@ -o"
    ;;
+ KCC )
+   LINK_DLL="$CXX $ARCH_CFLAGS $LDFLAGS_DLL --soname \$@ -o"
+   ;;
  * )
    if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
       AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
@@ -515,13 +548,13 @@ esac
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
-   case "$compiler" in
-    GCC | MIPSpro73 )
-      ;;
-    WorkShop* )
+   case "$host_os:$compiler" in
+    solaris*:WorkShop* | solaris*:KCC )
       CFLAGS="-mt $CFLAGS"
       CXXFLAGS="-mt $CXXFLAGS"
       LDFLAGS="-mt $LDFLAGS"
+      ;;
+    *:GCC | irix*:MIPSpro73 | *:KCC)
       ;;
     * )
       AC_MSG_ERROR(["Dont know how to build MT-safe with compiler $CXX $compiler_ver"])
@@ -535,16 +568,29 @@ fi
 
 
 #### GNU compiler::  common flags and definitions
-if test "$GCC" = "yes" ; then
+if test "$compiler" = "GCC" ; then
    CFLAGS="-Wall $CFLAGS"
    CXXFLAGS="-Wall $CXXFLAGS"
-   AC_DEFINE_UNQUOTED(__EXTENSIONS__, 1)
+   case "$host_os" in
+      solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
+   esac
+fi
+
+
+#### KAI compiler::  common flags and definitions
+if test "$compiler" = "KCC" ; then
+   AR=${AR:="$CXX -o"}
+   CFLAGS="--display_error_number --c $CFLAGS"
+   CXXFLAGS="--display_error_number --one_instantiation_per_object $CXXFLAGS"
+   case "$host_os" in
+      solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
+   esac
 fi
 
 
 #### Automatic generation of dependencies for/by the "make" utility
 case "$host_os" in
-  solaris* )  KeepStateTarget=".KEEP_STATE:" ;;
+   solaris* )  KeepStateTarget=".KEEP_STATE:" ;;
 esac
 
 if test "$with_autodep" = "yes" ; then
@@ -788,7 +834,8 @@ AC_TRY_COMPILE(
      char   x_buf[1024];
      int    x_err;
      struct hostent *hp =
-         gethostbyname_r("localhost", &x_hp, x_buf, sizeof(x_buf), &x_err); ],
+         gethostbyname_r("localhost", &x_hp, x_buf, sizeof(x_buf), &x_err);
+   ],
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, 1)
 )
 AC_MSG_RESULT()
@@ -1132,6 +1179,8 @@ if test "$with_wxwin" != "no" ; then
          WXWIN_LIBPATH="$WXWIN_PATH/"
          if test "$compiler" = "GCC" ; then
             WXWIN_LIBPATH="${WXWIN_LIBPATH}GCC-"
+         elif test "$compiler" = "KCC" ; then
+            WXWIN_LIBPATH="${WXWIN_LIBPATH}KCC-"
          fi
          if test "$with_debug" = "no" ; then
             WXWIN_LIBPATH="${WXWIN_LIBPATH}Release"
@@ -1235,6 +1284,8 @@ else
       fi
       if test "$compiler" = "GCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
+      elif test "$compiler" = "KCC" ; then
+         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}KAI"
       fi
       if test -n "$bit64_sfx" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}64"
@@ -1434,6 +1485,9 @@ case "$compiler" in
    ;;
  MIPSpro73 )
    test -d ii_files     &&  rm -r ii_files
+   ;;
+ KCC )
+   test -d ti_files     &&  rm -r ti_files
    ;;
 esac
 
