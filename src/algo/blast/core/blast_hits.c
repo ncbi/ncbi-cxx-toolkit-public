@@ -1368,14 +1368,12 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    Int4 index, context, hspcnt;
    Boolean purge, delete_hsp;
    Int2 status = 0;
-   GetSeqArg seq_arg;
 
    if (!hsp_list)
       return status;
 
    hspcnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
-   memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    if (hsp_list->hspcnt == 0)
       /* All HSPs have been deleted */
@@ -1386,12 +1384,16 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       NB: for the BLAST 2 Sequences case, the uncompressed sequence must 
       already be there */
    if (seq_src) {
+      /* Wrap subject sequence block into a GetSeqArg structure, which is 
+         needed by the BlastSeqSrc API. */
+      GetSeqArg seq_arg;
       seq_arg.oid = subject_blk->oid;
       seq_arg.encoding = BLASTNA_ENCODING;
+      seq_arg.seq = subject_blk;
+      /* Return the packed sequence to the database */
+      BLASTSeqSrcRetSequence(seq_src, (void*) &seq_arg);
+      /* Get the unpacked sequence */
       BLASTSeqSrcGetSequence(seq_src, (void*) &seq_arg);
-
-      subject_blk->sequence_start = seq_arg.seq->sequence_start;
-      subject_blk->sequence = seq_arg.seq->sequence_start + 1;
    }
    /* The sequence in blastna encoding is now stored in sequence_start */
    subject_start = subject_blk->sequence_start + 1;
@@ -1420,11 +1422,6 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    if (purge) {
       Blast_HSPListPurgeNullHSPs(hsp_list);
    }
-
-   BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
-   
-   sfree(seq_arg.seq);
-   subject_blk->sequence = NULL;
 
    return status;
 }
