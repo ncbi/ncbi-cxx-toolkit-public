@@ -59,6 +59,8 @@ public:
 
     ~CPrefetchToken_Impl(void);
 
+    DECLARE_OPERATOR_BOOL(IsValid());
+
 private:
     friend class CPrefetchToken;
     friend class CPrefetchThread;
@@ -78,8 +80,6 @@ private:
 
     bool IsValid(void) const;
     
-    DECLARE_OPERATOR_BOOL(IsValid());
-
     CBioseq_Handle NextBioseqHandle(CScope& scope);
 
     void AddTokenReference(void);
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/01/25 14:34:23  vasilche
+* Moved bool operator to public section.
+*
 * Revision 1.7  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
