@@ -12,3 +12,4 @@ Mim_reference.hpp
 Mim_set.hpp
 Mim_text.hpp
 [A-Z]*_.hpp
+mim__.hpp

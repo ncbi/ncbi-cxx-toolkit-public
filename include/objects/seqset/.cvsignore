@@ -1,3 +1,4 @@
 .cvsignore
-[A-Z]*_.hpp
 Bioseq_set.hpp
+[A-Z]*_.hpp
+seqset__.hpp

@@ -1,5 +1,4 @@
 .cvsignore
-[A-Z]*_.hpp
 Align_def.hpp
 Annot_descr.hpp
 Annot_id.hpp
@@ -39,3 +38,5 @@ Seq_hist_rec.hpp
 Seq_inst.hpp
 Seq_literal.hpp
 Seqdesc.hpp
+[A-Z]*_.hpp
+seq__.hpp

@@ -37,3 +37,4 @@ Entrez2_term_list.hpp
 Entrez2_term_pos.hpp
 Entrez2_term_query.hpp
 [A-Z]*_.hpp
+entrez2__.hpp
