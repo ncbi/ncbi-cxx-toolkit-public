@@ -93,7 +93,7 @@ static int s_ScoreForDBSource(const CRef<CSeq_id>& x) {
 void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
 {
     const CBioseq& seq = ctx.GetHandle().GetBioseq();
-    const CSeq_id* id = FindBestChoice(seq.GetId(), s_ScoreForDBSource);
+    CConstRef<CSeq_id> id = FindBestChoice(seq.GetId(), s_ScoreForDBSource);
 
     if ( !id ) {
         m_DBSource.push_back("UNKNOWN");
@@ -152,7 +152,7 @@ void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
             }
         }
         ITERATE (set<CBioseq_Handle>, it, sources) {
-            const CSeq_id* id2 = FindBestChoice(it->GetBioseq().GetId(),
+            CConstRef<CSeq_id> id2 = FindBestChoice(it->GetBioseq().GetId(),
                 s_ScoreForDBSource);
             if ( id2 != 0 ) {
                 string str = x_FormatDBSourceID(*id2);
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/16 19:07:25  vasilche
+* Use CConstRef<CSeq_id> to store returned CConstRef<CSeq_id>.
+*
 * Revision 1.2  2003/12/18 17:43:32  shomrat
 * context.hpp moved
 *
