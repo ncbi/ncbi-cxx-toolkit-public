@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/05/24 20:57:14  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
 * Revision 1.21  2000/01/11 20:10:23  golikov
 * Text modified on graybar
 *
@@ -145,7 +148,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
                 try {
                     m_DisplayPage = NStr::StringToInt(page) - 1;
                     m_PageChanged = true;
-                } catch (exception& e) {
+                } catch (exception& _DEBUG_ARG(e)) {
                     _TRACE( "Exception in CPager::CPager: " << e.what() );
                     // ignore exception right now
                     m_PageChanged = false;
@@ -163,7 +166,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
             //number of the first element in old pagination
             int oldFirstItem = page * NStr::StringToInt( oldPageSize->second );
             m_DisplayPage = oldFirstItem / m_PageSize;
-        } catch(exception& e) {
+        } catch(exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::CPager: " << e.what() );
             m_DisplayPage = 0;
             m_PageChanged = false;
@@ -197,7 +200,7 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
             try {
                 NStr::StringToInt(page);
                 return true;
-            } catch (exception& e) {
+            } catch (exception& _DEBUG_ARG(e)) {
                 _TRACE( "Exception in CPager::IsPagerCommand: "
                         << e.what() );
                 // ignore exception right now
@@ -219,7 +222,7 @@ int CPager::GetDisplayPage(CCgiRequest& request)
             if ( displayPage >= 0 )
                 return displayPage;
             _TRACE( "Negative page start in CPager::GetDisplayPage: " << displayPage );
-        } catch (exception& e) {
+        } catch (exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::GetDisplayPage " << e.what() );
         }
     }
@@ -250,7 +253,7 @@ int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
                 return pageSize;
             }	
             _TRACE( "Nonpositive page size in CPager::GetPageSize: " << pageSize );
-        } catch (exception& e) {
+        } catch (exception& _DEBUG_ARG(e)) {
             _TRACE( "Exception in CPager::GetPageSize " << e.what() );
         }
     }

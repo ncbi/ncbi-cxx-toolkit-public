@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2000/05/24 20:57:13  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
 * Revision 1.60  2000/04/19 18:36:44  vakatov
 * Test NStr::Compare() for non-zero "pos"
 *
@@ -689,11 +692,11 @@ static void TestException_AuxTrace(void)
     try {
         try {
             THROW0_TRACE("Throw a string");
-        } catch (const char* e) {
+        } catch (const char* _DEBUG_ARG(e)) {
             _TRACE("THROW0_TRACE: " << e);
             RETHROW_TRACE;
         }
-    } catch (const char* e) {
+    } catch (const char* _DEBUG_ARG(e)) {
         _TRACE("RETHROW_TRACE: " << e);
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/05/24 20:57:14  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
 * Revision 1.30  2000/05/24 20:09:28  vasilche
 * Implemented DTD generation.
 *
@@ -194,11 +197,11 @@ CDataType* CCodeGenerator::ExternalResolve(const string& module,
     try {
         return m_MainFiles.ExternalResolve(module, name, exported);
     }
-    catch ( CAmbiguiousTypes& exc ) {
+    catch ( CAmbiguiousTypes& _DEBUG_ARG(exc) ) {
         _TRACE(exc.what());
         throw;
     }
-    catch ( CTypeNotFound& exc ) {
+    catch ( CTypeNotFound& _DEBUG_ARG(exc) ) {
         _TRACE(exc.what());
         return m_ImportFiles.ExternalResolve(module, name, exported);
     }
@@ -210,11 +213,11 @@ CDataType* CCodeGenerator::ResolveInAnyModule(const string& name,
     try {
         return m_MainFiles.ResolveInAnyModule(name, exported);
     }
-    catch ( CAmbiguiousTypes& exc ) {
+    catch ( CAmbiguiousTypes& _DEBUG_ARG(exc) ) {
         _TRACE(exc.what());
         throw;
     }
-    catch ( CTypeNotFound& exc ) {
+    catch ( CTypeNotFound& _DEBUG_ARG(exc) ) {
         _TRACE(exc.what());
         return m_ImportFiles.ResolveInAnyModule(name, exported);
     }

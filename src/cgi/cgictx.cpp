@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/05/24 20:57:13  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
 * Revision 1.18  2000/01/20 17:54:15  vakatov
 * CCgiContext:: constructor to get "CNcbiArguments*" instead of raw argc/argv.
 * All virtual member function implementations moved away from the header.
@@ -142,7 +145,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
             env = &app.GetEnvironment();
 
         m_request.reset(new CCgiRequest(args, env, inp));
-    } catch (exception& e) {
+    } catch (exception& _DEBUG_ARG(e)) {
         _TRACE("CCgiContext::CCgiContext: " << e.what());
         PutMsg("Bad request");
 

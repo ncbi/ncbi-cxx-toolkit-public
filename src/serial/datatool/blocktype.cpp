@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/05/24 20:57:14  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
 * Revision 1.17  2000/05/24 20:09:27  vasilche
 * Implemented DTD generation.
 *
@@ -182,8 +185,8 @@ void CDataMemberContainerType::PrintDTD(CNcbiOstream& out) const
     out << " )>\n";
     if ( GetParentType() == 0 )
         out << '\n';
-    iterate ( TMembers, i, m_Members ) {
-        (*i)->GetType()->PrintDTD(out);
+    iterate ( TMembers, j, m_Members ) {
+        (*j)->GetType()->PrintDTD(out);
     }
 }
 
