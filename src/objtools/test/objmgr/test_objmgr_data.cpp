@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/07/13 14:03:08  vasilche
+* Added option "idlist" to test_objmgr_data & test_objmgr_data_mt.
+*
 * Revision 1.6  2004/06/30 20:58:07  vasilche
 * Added option to test list of Seq-ids from file.
 *
@@ -180,20 +183,47 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
+    typedef map<CSeq_id_Handle, int> TValueMap;
+    typedef vector<CSeq_id_Handle> TIds;
+
     CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 
-    map<CSeq_id_Handle, int> m_mapGiToDesc;
-    map<CSeq_id_Handle, int> m_mapGiToFeat0;
-    map<CSeq_id_Handle, int> m_mapGiToFeat1;
+    TValueMap m_mapGiToDesc;
+    TValueMap m_mapGiToFeat0;
+    TValueMap m_mapGiToFeat1;
 
-    vector<CSeq_id_Handle> m_Ids;
+    void SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value);
+
+    TIds m_Ids;
+
+    bool m_load_only;
+    bool m_no_snp;
     int  m_pause;
     bool m_prefetch;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+void CTestOM::SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value)
+{
+    int old_value;
+    {{
+        CFastMutexGuard guard(s_GlobalLock);
+        old_value = vm.insert(TValueMap::value_type(id, value)).first->second;
+    }}
+    if ( old_value != value ) {
+        string name;
+        if ( &vm == &m_mapGiToDesc ) name = "desc";
+        if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
+        if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
+        ERR_POST("Inconsistent "<<name<<" on "<<id.AsString()<<
+                 " was "<<old_value<<" now "<<value);
+    }
+    _ASSERT(old_value == value);
+}
+
 
 int CTestOM::Run(void)
 {
@@ -281,103 +311,85 @@ bool CTestOM::Thread_Run(int idx)
                 continue;
             }
 
-            int count = 0, count_prev;
+            if ( !m_load_only ) {
+                int count = 0;
 
-            // check CSeqMap_CI
-            {{
-                /*
-                CSeqMap_CI it =
-                    handle.GetSeqMap().BeginResolved(&scope,
-                                                     kMax_Int,
-                                                     CSeqMap::fFindRef);
-                */
-                CSeqMap_CI it(ConstRef(&handle.GetSeqMap()),
-                              &scope,
-                              0,
-                              kMax_Int,
-                              CSeqMap::fFindRef);
-                while ( it ) {
-                    _ASSERT(it.GetType() == CSeqMap::eSeqRef);
-                    ++it;
-                }
-            }}
+                // check CSeqMap_CI
+                {{
+                    /*
+                      CSeqMap_CI it =
+                      handle.GetSeqMap().BeginResolved(&scope,
+                      kMax_Int,
+                      CSeqMap::fFindRef);
+                    */
+                    CSeqMap_CI it(ConstRef(&handle.GetSeqMap()),
+                                  &scope,
+                                  0,
+                                  kMax_Int,
+                                  CSeqMap::fFindRef);
+                    while ( it ) {
+                        _ASSERT(it.GetType() == CSeqMap::eSeqRef);
+                        ++it;
+                    }
+                }}
 
-            // check seqvector
-            if ( 0 ) {{
-                string buff;
-                CSeqVector sv =
-                    handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
-                                        CBioseq_Handle::eStrand_Plus);
+                // check seqvector
+                if ( 0 ) {{
+                    string buff;
+                    CSeqVector sv =
+                        handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
+                                            CBioseq_Handle::eStrand_Plus);
 
-                int start = max(0, int(sv.size()-600000));
-                int stop  = sv.size();
+                    int start = max(0, int(sv.size()-600000));
+                    int stop  = sv.size();
 
-                sv.GetSeqData(start, stop, buff);
-                //cout << "POS: " << buff << endl;
+                    sv.GetSeqData(start, stop, buff);
+                    //cout << "POS: " << buff << endl;
 
-                sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
-                                         CBioseq_Handle::eStrand_Minus);
-                sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
-                //cout << "NEG: " << buff << endl;
-            }}
+                    sv = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac, 
+                                             CBioseq_Handle::eStrand_Minus);
+                    sv.GetSeqData(sv.size()-stop, sv.size()-start, buff);
+                    //cout << "NEG: " << buff << endl;
+                }}
 
-            // enumerate descriptions
-            // Seqdesc iterator
-            for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
-                count++;
-            }
-            // verify result
-            {
-                CFastMutexGuard guard(s_GlobalLock);
-                if (m_mapGiToDesc.find(sih) != m_mapGiToDesc.end()) {
-                    count_prev = m_mapGiToDesc[sih];
-                    _ASSERT( m_mapGiToDesc[sih] == count);
-                } else {
-                    m_mapGiToDesc[sih] = count;
-                }
-            }
-
-            // enumerate features
-            CSeq_loc loc;
-            loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
-            count = 0;
-            if ( idx%2 == 0 ) {
-                for (CFeat_CI feat_it(scope, loc,
-                                      CSeqFeatData::e_not_set,
-                                      SAnnotSelector::eOverlap_Intervals,
-                                      SAnnotSelector::eResolve_All);
-                     feat_it;  ++feat_it) {
+                // enumerate descriptions
+                // Seqdesc iterator
+                for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
                     count++;
                 }
                 // verify result
-                {
-                    CFastMutexGuard guard(s_GlobalLock);
-                    if (m_mapGiToFeat0.find(sih) != m_mapGiToFeat0.end()) {
-                        count_prev = m_mapGiToFeat0[sih];
-                        _ASSERT( m_mapGiToFeat0[sih] == count);
-                    } else {
-                        m_mapGiToFeat0[sih] = count;
+                SetValue(m_mapGiToDesc, sih, count);
+
+                // enumerate features
+                CSeq_loc loc;
+                loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
+                SAnnotSelector sel(CSeqFeatData::e_not_set);
+                if ( idx%2 == 0 ) {
+                    sel.SetOverlapType(sel.eOverlap_Intervals);
+                    sel.SetResolveMethod(sel.eResolve_All);
+                }
+                if ( m_no_snp ) {
+                    sel.ExcludedAnnotName("SNP");
+                }
+
+                count = 0;
+                if ( idx%2 == 0 ) {
+                    for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
+                        count++;
+                    }
+                    // verify result
+                    SetValue(m_mapGiToFeat0, sih, count);
+                    if ( false && idx == 0 ) {
+                        NcbiCout << "feat_count_0("<<sih.AsString()<<") = " <<
+                            count << NcbiEndl;
                     }
                 }
-                if ( false && idx == 0 ) {
-                    NcbiCout << "feat_count_0("<<sih.AsString()<<") = " <<
-                        count << NcbiEndl;
-                }
-            }
-            else {
-                for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
-                     feat_it;  ++feat_it) {
-                    count++;
-                }
-                // verify result
-                {
-                    CFastMutexGuard guard(s_GlobalLock);
-                    if (m_mapGiToFeat1.find(sih) != m_mapGiToFeat1.end()) {
-                        count_prev = m_mapGiToFeat1[sih];
-                        _ASSERT( m_mapGiToFeat1[sih] == count);
-                    } else {
-                        m_mapGiToFeat1[sih] = count;
+                else {
+                    for ( CFeat_CI it(handle, 0, 0, sel); it;  ++it ) {
+                        count++;
                     }
+                    // verify result
+                    SetValue(m_mapGiToFeat1, sih, count);
                 }
             }
         }
@@ -427,6 +439,8 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("idlist", "IdList",
          "File with list of Seq-ids to test",
          CArgDescriptions::eInputFile);
+    args.AddFlag("load_only", "Do not work with sequences - only load them");
+    args.AddFlag("no_snp", "Exclude SNP features from processing");
     args.AddDefaultKey
         ("pause", "Pause",
          "Pause between requests in seconds",
@@ -468,12 +482,15 @@ bool CTestOM::TestApp_Init(void)
     if ( m_Ids.empty() ) {
         int gi_from  = args["fromgi"].AsInteger();
         int gi_to    = args["togi"].AsInteger();
-        NcbiCout << "Testing ObjectManager ("
-            "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
-        for ( int gi = gi_from; gi <= gi_to; ++gi ) {
+        int delta = gi_to > gi_from? 1: -1;
+        for ( int gi = gi_from; gi != gi_to+delta; gi += delta ) {
             m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
         }
+        NcbiCout << "Testing ObjectManager ("
+            "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
     }
+    m_load_only = args["load_only"];
+    m_no_snp = args["no_snp"];
     m_pause    = args["pause"].AsInteger();
     m_prefetch = args["prefetch"];
 
@@ -492,7 +509,7 @@ bool CTestOM::TestApp_Init(void)
 bool CTestOM::TestApp_Exit(void)
 {
 /*
-    map<int, int>::iterator it;
+    TValueMap::iterator it;
     for (it = m_mapGiToDesc.begin(); it != m_mapGiToDesc.end(); ++it) {
         LOG_POST(
             "id = "         << it->first.AsString()

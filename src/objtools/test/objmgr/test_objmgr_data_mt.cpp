@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/07/13 14:03:08  vasilche
+* Added option "idlist" to test_objmgr_data & test_objmgr_data_mt.
+*
 * Revision 1.4  2004/06/30 20:58:11  vasilche
 * Added option to test list of Seq-ids from file.
 *
@@ -164,17 +167,19 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
-    typedef map<int, int> TValueMap;
+    typedef map<CSeq_id_Handle, int> TValueMap;
+    typedef vector<CSeq_id_Handle> TIds;
 
     CRef<CScope> m_Scope;
     CRef<CObjectManager> m_ObjMgr;
 
-    TValueMap m_mapGiToDesc, m_mapGiToFeat0, m_mapGiToFeat1;
+    TValueMap m_mapGiToDesc;
+    TValueMap m_mapGiToFeat0;
+    TValueMap m_mapGiToFeat1;
 
-    void SetValue(TValueMap& vm, int gi, int value);
+    void SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value);
 
-    int m_gi_from;
-    int m_gi_to;
+    TIds m_Ids;
 
     bool m_load_only;
     bool m_no_snp;
@@ -186,19 +191,19 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 
 
-void CTestOM::SetValue(TValueMap& vm, int gi, int value)
+void CTestOM::SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value)
 {
     int old_value;
     {{
         CFastMutexGuard guard(s_GlobalLock);
-        old_value = vm.insert(TValueMap::value_type(gi, value)).first->second;
+        old_value = vm.insert(TValueMap::value_type(id, value)).first->second;
     }}
     if ( old_value != value ) {
         string name;
         if ( &vm == &m_mapGiToDesc ) name = "desc";
         if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
         if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
-        ERR_POST("Inconsistent "<<name<<" on gi "<<gi<<
+        ERR_POST("Inconsistent "<<name<<" on "<<id.AsString()<<
                  " was "<<old_value<<" now "<<value);
     }
     _ASSERT(old_value == value);
@@ -211,47 +216,47 @@ bool CTestOM::Thread_Run(int idx)
     CScope scope(*m_ObjMgr);
     scope.AddDefaults();
 
-    int from, to, delta;
+    int from, to;
     // make them go in opposite directions
     if (idx % 2 == 0) {
-        from = m_gi_from;
-        to = m_gi_to;
+        from = 0;
+        to = m_Ids.size()-1;
     } else {
-        from = m_gi_to;
-        to = m_gi_from;
+        from = m_Ids.size()-1;
+        to = 0;
     }
-    delta = (to > from) ? 1 : -1;
+    int delta = (to > from) ? 1 : -1;
 
     bool ok = true;
     const int kMaxErrorCount = 3;
     static int error_count = 0;
     for (int i = from;
          ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
+        CSeq_id_Handle sih = m_Ids[i];
         try {
-// load sequence
-            CSeq_id sid;
-            sid.SetGi(i);
-            CBioseq_Handle handle = scope.GetBioseqHandle(sid);
+            // load sequence
+            CBioseq_Handle handle = scope.GetBioseqHandle(sih);
             if (!handle) {
-                LOG_POST("T" << idx << ": gi = " << i << ": INVALID HANDLE");
-                SetValue(m_mapGiToDesc, i, -1);
+                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                         ": INVALID HANDLE");
+                SetValue(m_mapGiToDesc, sih, -1);
                 continue;
             }
 
             if ( !m_load_only ) {
                 int count = 0;
 
-// enumerate descriptions
+                // enumerate descriptions
                 // Seqdesc iterator
                 for (CSeqdesc_CI desc_it(handle); desc_it;  ++desc_it) {
                     count++;
                 }
-// verify result
-                SetValue(m_mapGiToDesc, i, count);
+                // verify result
+                SetValue(m_mapGiToDesc, sih, count);
 
-// enumerate features
+                // enumerate features
                 CSeq_loc loc;
-                loc.SetWhole(sid);
+                loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
                 SAnnotSelector sel(CSeqFeatData::e_not_set);
                 if ( idx%2 == 0 ) {
                     sel.SetOverlapType(sel.eOverlap_Intervals);
@@ -260,26 +265,27 @@ bool CTestOM::Thread_Run(int idx)
                 if ( m_no_snp ) {
                     sel.ExcludedAnnotName("SNP");
                 }
+
                 count = 0;
                 if ( idx%2 == 0 ) {
-                    for (CFeat_CI feat_it(scope, loc, sel); feat_it;  ++feat_it) {
+                    for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
                         count++;
                     }
-// verify resultila
-                    SetValue(m_mapGiToFeat0, i, count);
+                    // verify result
+                    SetValue(m_mapGiToFeat0, sih, count);
                 }
                 else {
-                    for (CFeat_CI feat_it(handle, 0, 0, sel); feat_it;  ++feat_it) {
+                    for ( CFeat_CI it(handle, 0, 0, sel); it;  ++it ) {
                         count++;
                     }
-// verify result
-                    SetValue(m_mapGiToFeat1, i, count);
+                    // verify result
+                    SetValue(m_mapGiToFeat1, sih, count);
                 }
             }
         }
         catch (CLoaderException& e) {
-            LOG_POST("T" << idx << ": gi = " << i 
-                     << ": EXCEPTION = " << e.what());
+            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                     ": EXCEPTION = " << e.what());
             ok = false;
             if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                 break;
@@ -289,8 +295,8 @@ bool CTestOM::Thread_Run(int idx)
             }
         }
         catch (exception& e) {
-            LOG_POST("T" << idx << ": gi = " << i 
-                     << ": EXCEPTION = " << e.what());
+            LOG_POST("T" << idx << ": id = " << sih.AsString() <<
+                     ": EXCEPTION = " << e.what());
             ok = false;
             if ( ++error_count > kMaxErrorCount ) {
                 break;
@@ -314,6 +320,10 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
         ("togi", "ToGi",
          "Process sequences in the interval TO this Gi",
          CArgDescriptions::eInteger, NStr::IntToString(g_gi_to));
+    args.AddOptionalKey
+        ("idlist", "IdList",
+         "File with list of Seq-ids to test",
+         CArgDescriptions::eInputFile);
     args.AddFlag("load_only", "Do not work with sequences - only load them");
     args.AddFlag("no_snp", "Exclude SNP features from processing");
     return true;
@@ -326,18 +336,46 @@ bool CTestOM::TestApp_Init(void)
     CORE_SetLOG(LOG_cxx2c());
 
     const CArgs& args = GetArgs();
-    m_gi_from = args["fromgi"].AsInteger();
-    m_gi_to   = args["togi"].AsInteger();
+    if ( args["idlist"] ) {
+        CNcbiIstream& file = args["idlist"].AsInputFile();
+        string line;
+        while ( getline(file, line) ) {
+            size_t comment = line.find('#');
+            if ( comment != NPOS ) {
+                line.erase(comment);
+            }
+            line = NStr::TruncateSpaces(line);
+            if ( line.empty() ) {
+                continue;
+            }
+            
+            CSeq_id sid(line);
+            CSeq_id_Handle sih = CSeq_id_Handle::GetHandle(sid);
+            if ( !sih ) {
+                continue;
+            }
+            m_Ids.push_back(sih);
+        }
+        
+        NcbiCout << "Testing ObjectManager (" <<
+            m_Ids.size() << " Seq-ids from file)..." << NcbiEndl;
+    }
+    if ( m_Ids.empty() ) {
+        int gi_from  = args["fromgi"].AsInteger();
+        int gi_to    = args["togi"].AsInteger();
+        int delta = gi_to > gi_from? 1: -1;
+        for ( int gi = gi_from; gi != gi_to+delta; gi += delta ) {
+            m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
+        }
+        NcbiCout << "Testing ObjectManager ("
+            "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
+    }
     m_load_only = args["load_only"];
     m_no_snp = args["no_snp"];
 
-    NcbiCout << "Testing ObjectManager (" << s_NumThreads
-        << " threads, gi from "
-        << m_gi_from << " to " << m_gi_to << ")..." << NcbiEndl;
-
     m_ObjMgr = new CObjectManager;
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),CObjectManager::eDefault);
-
+    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
+                                 CObjectManager::eDefault);
 
     // Scope shared by all threads
 /*
