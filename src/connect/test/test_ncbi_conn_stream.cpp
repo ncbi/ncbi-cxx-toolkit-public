@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/12/30 19:45:50  lavr
+ * 'static' added to every file-scope identifiers
+ *
  * Revision 6.12  2001/07/24 18:00:30  lavr
  * New function introduced s_Read (instead of direct use of istream::read)
  * This function is compiler-dependent, and specially-featured for GCC
@@ -87,7 +90,7 @@
 BEGIN_NCBI_SCOPE
 
 
-const size_t kBufferSize = 1024*1024;
+static const size_t kBufferSize = 1024*1024;
 
 
 static CNcbiRegistry* s_CreateRegistry(void)
@@ -106,7 +109,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
 }
 
 
-size_t s_Read(iostream& ios, char* buffer, size_t size)
+static size_t s_Read(iostream& ios, char* buffer, size_t size)
 {
 #ifdef NCBI_COMPILER_GCC
     size_t read = 0;
@@ -156,7 +159,7 @@ int main(void)
 
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
-    
+
     for (j = 0; j < kBufferSize/1024; j++) {
         for (i = 0; i < 1024 - 1; i++)
             buf1[j*1024 + i] = "0123456789"[rand() % 10];
