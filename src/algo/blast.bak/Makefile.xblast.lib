@@ -2,7 +2,7 @@
 
 include $(srcdir)/Makefile.blast.lib
 
-SRC_CXX = Bl2Seq BlastAux BlastOption BlastSeqalign BlastSetup
+SRC_CXX = bl2seq blast_aux blast_option blast_seqalign blast_setup_cxx
 
 SRC  = $(SRC_C) $(SRC_CXX)
 
