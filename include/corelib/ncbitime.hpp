@@ -54,7 +54,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitype.h>
 #include <time.h>
-#include <math.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -1866,6 +1865,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/09/08 18:06:04  ivanov
+ * Removed redundant #include <math.h>
+ *
  * Revision 1.38  2004/09/07 21:24:30  ucko
  * Remove redundant CTimeSpan:: from Invert's declaration.
  *
