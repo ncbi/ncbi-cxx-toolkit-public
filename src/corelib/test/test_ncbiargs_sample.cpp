@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/06/01 15:36:21  vakatov
+ * Fixed for the case when "logfile" is not provided in the cmd.line
+ *
  * Revision 6.2  2001/06/01 15:17:57  vakatov
  * Workaround a bug in SUN WorkShop 5.1 compiler
  *
@@ -171,7 +174,8 @@ int CArgTestApplication::Run(void)
     // Printout argument values
     lg << "k:         " << args["k"].AsString() << endl;
     lg << "barfooetc: " << args["barfooetc"].AsString() << endl;
-    lg << "logfile:   " << args["logfile"].AsString() << endl;
+    if ( args["logfile"] )
+        lg << "logfile:   " << args["logfile"].AsString() << endl;
 
     if ( args["ko"] ) {
         lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
