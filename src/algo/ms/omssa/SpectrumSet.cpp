@@ -418,7 +418,8 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
             double precursor;
             istr >> precursor;
             MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
-        }
+            MySpectrum->SetCharge().push_back(1);   // required in asn.1 (but shouldn't be)
+            }
         // keep looping while the first character is not numeric
     } while (Line.substr(0, 1).find_first_not_of("0123456789.-") == 0);
 
@@ -461,6 +462,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2004/12/06 23:39:28  lewisg
+ * add fake charge to mgf
+ *
  * Revision 1.14  2004/12/06 22:57:34  lewisg
  * add new file formats
  *
