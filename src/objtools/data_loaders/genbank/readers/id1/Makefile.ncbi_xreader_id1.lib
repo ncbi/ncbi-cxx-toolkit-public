@@ -1,0 +1,16 @@
+# $Id$
+
+SRC = reader_id1
+
+LIB    = ncbi_xreader_id1
+
+CPPFLAGS = $(ORIG_CPPFLAGS)
+
+REQUIRES =
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+#DLL_LIB = ncbi_xreader_id1
+LIBS = $(ORIG_LIBS)

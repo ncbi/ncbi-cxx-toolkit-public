@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = gbloader
+
+LIB = ncbi_xloader_genbank
+
+CPPFLAGS = $(ORIG_CPPFLAGS)
