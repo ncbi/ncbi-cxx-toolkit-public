@@ -12,7 +12,7 @@ script="$0"
 builddir="${1:-//u/coremake/cxx}"
 target="${2:-//u/coremake/public/cxx.last}"
 compiler="${3:-msvc7}"
-compiler="$compiler_prj"
+compiler="${compiler}_prj"
 
 
 if test -n "$4" ; then
