@@ -4186,7 +4186,7 @@ if test "$with_autodep" = "yes" ; then
    Rules="rules_with_autodep"
 elif test "$with_autodep" = "no" ; then
    Rules="rules"
-elif make -v 2>/dev/null | grep 'GNU Make' ; then
+elif make --version 2>/dev/null | grep 'GNU Make' ; then
    Rules="rules_with_autodep"
 else
    Rules="rules"

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.229 2003/10/21 21:45:22 vakatov Exp $
+#  $Id: configure.ac,v 1.230 2003/10/23 16:11:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1108,7 +1108,7 @@ if test "$with_autodep" = "yes" ; then
    Rules="rules_with_autodep"
 elif test "$with_autodep" = "no" ; then
    Rules="rules"
-elif make -v 2>/dev/null | grep 'GNU Make' ; then
+elif make --version 2>/dev/null | grep 'GNU Make' ; then
    Rules="rules_with_autodep"
 else
    Rules="rules"
