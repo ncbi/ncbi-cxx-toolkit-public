@@ -46,6 +46,9 @@ public:
     enum EErrCode {
         eRecordNotFound,
         eFileNotFound,
+        eWrongEntry,
+        eNotImplemented,
+        eInvalidDataType,
         eNull
     };
 
@@ -55,6 +58,9 @@ public:
         case eRecordNotFound:    return "eRecordNotFound";
         case eFileNotFound:      return "eFileNotFound";
         case eNull:              return "eNull";
+        case eNotImplemented:    return "eNotImplemented";
+        case eWrongEntry:        return "eWrongEntry";
+        case eInvalidDataType:   return "eInvalidDataType";
         default:                 return  CException::GetErrCodeString();
         }
     }
@@ -74,6 +80,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/09 16:35:28  kuznets
+ * Added new error codes.
+ *
  * Revision 1.2  2003/06/03 19:14:02  kuznets
  * Added lds dll export/import specifications
  *
