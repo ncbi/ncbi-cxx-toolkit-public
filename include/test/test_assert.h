@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/04/22 20:41:24  ivanov
+ * Added #define _ASSERT assert
+ *
  * Revision 1.6  2002/04/22 20:36:11  ivanov
  * #undef _ASSERT added for Windows to disable use this macro in tests
  * -- application don't terminate in Windows _ASSERT (CRT library bug).
@@ -110,6 +113,7 @@
  * Use "assert" instead _ASSERT.
  */
 #  undef _ASSERT
+#  define _ASSERT assert
 
 
 /* Suppress popup messages on execution errors.
