@@ -45,7 +45,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include "win_mask_ustat.hpp"
+#include "algo/winmask/seq_masker_ostat.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -137,7 +137,7 @@ private:
     Uint8 fastalen( const string & fname ) const;
 
     string input;                   /**<\internal input file (or list of input files) */
-    CRef< CWinMaskUstat > ustat;    /**<\internal object used to output the unit counts statistics */
+    CRef< CSeqMaskerOstat > ustat;  /**<\internal object used to output the unit counts statistics */
     Uint4 max_mem;                  /**<\internal available memory in bytes */
     Uint4 unit_size;                /**<\internal n-mer length in base pairs */
     Uint8 genome_size;              /**<\internal genome size in bases */
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.4  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

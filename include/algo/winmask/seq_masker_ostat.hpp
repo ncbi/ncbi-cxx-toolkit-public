@@ -26,75 +26,85 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Implementation of CWinMaskUStat class.
+ *   Definition of CSeqMaskerUStat class.
  *
  */
 
-#include <ncbi_pch.hpp>
+#ifndef C_WIN_MASK_USTAT_H
+#define C_WIN_MASK_USTAT_H
 
-#include <sstream>
+#include <string>
 
-#include "win_mask_ustat.hpp"
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbistr.hpp>
+#include <corelib/ncbiargs.hpp>
 
 BEGIN_NCBI_SCOPE
 
-//------------------------------------------------------------------------------
-const char * CWinMaskUstat::CWinMaskUstatException::GetErrCodeString() const
+class CSeqMaskerOstat : public CObject
 {
-    switch( GetErrCode() )
-    {
-        case eBadState:     return "bad state";
-        default:            return CException::GetErrCodeString();
-    }
-}
-            
-//------------------------------------------------------------------------------
-void CWinMaskUstat::setUnitSize( Uint1 us )
-{
-    if( state != start )
-    {
-        ostringstream s;
-        s << "can not set unit size in state " << state;
-        NCBI_THROW( CWinMaskUstatException, eBadState, s.str() );
-    }
+    public:
 
-    doSetUnitSize( us );
-    state = ulen;
-}
+        class CSeqMaskerOstatException : public CException
+        {
+            public:
 
-//------------------------------------------------------------------------------
-void CWinMaskUstat::setUnitCount( Uint4 unit, Uint4 count )
-{
-    if( state != ulen && state != udata )
-    {
-        ostringstream s;
-        s << "can not set unit count data in state " << state;
-        NCBI_THROW( CWinMaskUstatException, eBadState, s.str() );
-    }
+                enum EErrCode
+                {
+                    eBadState
+                };
 
-    doSetUnitCount( unit, count );
-    state = udata;
-}
+                virtual const char * GetErrCodeString() const;
 
-//------------------------------------------------------------------------------
-void CWinMaskUstat::setParam( const string & name, Uint4 value )
-{
-    if( state != udata && state != thres )
-    {
-        ostringstream s;
-        s << "can not set masking parameters in state " << state;
-        NCBI_THROW( CWinMaskUstatException, eBadState, s.str() );
-    }
+                NCBI_EXCEPTION_DEFAULT( CSeqMaskerOstatException, CException );
+        };
 
-    doSetParam( name, value );
-    state = thres;
-}
+        explicit CSeqMaskerOstat( CNcbiOstream & os )
+            : out_stream( os ), state( start )
+        {}
+
+        virtual ~CSeqMaskerOstat() {}
+
+        void setUnitSize( Uint1 us );
+        void setUnitCount( Uint4 unit, Uint4 count );
+        void setComment( const string & msg ) { doSetComment( msg ); }
+        void setParam( const string & name, Uint4 value );
+        void setBlank() { doSetBlank(); }
+
+    protected:
+
+        virtual void doSetUnitSize( Uint4 us ) = 0;
+        virtual void doSetUnitCount( Uint4 unit, Uint4 count ) = 0;
+        virtual void doSetComment( const string & msg ) = 0;
+        virtual void doSetParam( const string & name, Uint4 value ) = 0;
+        virtual void doSetBlank() = 0;
+
+        CNcbiOstream & out_stream;
+
+    private:
+
+        CSeqMaskerOstat( const CSeqMaskerOstat & );
+        CSeqMaskerOstat( CSeqMaskerOstat & );
+
+        enum 
+        {
+            start,
+            ulen,
+            udata,
+            thres
+        } state;
+};
 
 END_NCBI_SCOPE
+
+#endif
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.1  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

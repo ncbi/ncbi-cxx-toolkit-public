@@ -26,12 +26,12 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition of CWinMaskUStat class.
+ *   Definition of CSeqMaskerUStatFactory class.
  *
  */
 
-#ifndef C_WIN_MASK_USTAT_H
-#define C_WIN_MASK_USTAT_H
+#ifndef C_WIN_MASK_USTAT_FACTORY_H
+#define C_WIN_MASK_USTAT_FACTORY_H
 
 #include <string>
 
@@ -41,58 +41,30 @@
 
 BEGIN_NCBI_SCOPE
 
-class CWinMaskUstat : public CObject
+class CSeqMaskerOstat;
+
+class CSeqMaskerOstatFactory
 {
-    public:
+  public:
 
-        class CWinMaskUstatException : public CException
-        {
-            public:
+    class CSeqMaskerOstatFactoryException : public CException
+    {
+        public:
+            
+            enum EErrCode
+            {
+                eBadName,
+                eCreateFail
+            };
 
-                enum EErrCode
-                {
-                    eBadState
-                };
+            virtual const char * GetErrCodeString() const;
 
-                virtual const char * GetErrCodeString() const;
+            NCBI_EXCEPTION_DEFAULT( 
+                CSeqMaskerOstatFactoryException, CException );
+    };
 
-                NCBI_EXCEPTION_DEFAULT( CWinMaskUstatException, CException );
-        };
-
-        explicit CWinMaskUstat( CNcbiOstream & os )
-            : out_stream( os ), state( start )
-        {}
-
-        virtual ~CWinMaskUstat() {}
-
-        void setUnitSize( Uint1 us );
-        void setUnitCount( Uint4 unit, Uint4 count );
-        void setComment( const string & msg ) { doSetComment( msg ); }
-        void setParam( const string & name, Uint4 value );
-        void setBlank() { doSetBlank(); }
-
-    protected:
-
-        virtual void doSetUnitSize( Uint4 us ) = 0;
-        virtual void doSetUnitCount( Uint4 unit, Uint4 count ) = 0;
-        virtual void doSetComment( const string & msg ) = 0;
-        virtual void doSetParam( const string & name, Uint4 value ) = 0;
-        virtual void doSetBlank() = 0;
-
-        CNcbiOstream & out_stream;
-
-    private:
-
-        CWinMaskUstat( const CWinMaskUstat & );
-        CWinMaskUstat( CWinMaskUstat & );
-
-        enum 
-        {
-            start,
-            ulen,
-            udata,
-            thres
-        } state;
+    static CSeqMaskerOstat * create( 
+        const string & ustat_type, const string & name );
 };
 
 END_NCBI_SCOPE
@@ -102,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.1  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

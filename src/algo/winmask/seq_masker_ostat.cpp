@@ -26,59 +26,78 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition of CWinMaskUStatAscii class.
+ *   Implementation of CSeqMaskerUStat class.
  *
  */
 
-#ifndef C_WIN_MASK_USTAT_ASCII_H
-#define C_WIN_MASK_USTAT_ASCII_H
+#include <ncbi_pch.hpp>
 
-#include <string>
+#include <sstream>
 
-#include <corelib/ncbistre.hpp>
-
-#include "win_mask_ustat.hpp"
+#include "algo/winmask/seq_masker_ostat.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class CWinMaskUstatAscii : public CWinMaskUstat
+//------------------------------------------------------------------------------
+const char * CSeqMaskerOstat::CSeqMaskerOstatException::GetErrCodeString() const
 {
-    public:
+    switch( GetErrCode() )
+    {
+        case eBadState:     return "bad state";
+        default:            return CException::GetErrCodeString();
+    }
+}
+            
+//------------------------------------------------------------------------------
+void CSeqMaskerOstat::setUnitSize( Uint1 us )
+{
+    if( state != start )
+    {
+        ostringstream s;
+        s << "can not set unit size in state " << state;
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s.str() );
+    }
 
-        class CWinMaskUstatAsciiException : public CException
-        {
-            public:
-                
-                enum EErrCode
-                {
-                    eBadOrder
-                };
+    doSetUnitSize( us );
+    state = ulen;
+}
 
-                virtual const char * GetErrCodeString() const;
+//------------------------------------------------------------------------------
+void CSeqMaskerOstat::setUnitCount( Uint4 unit, Uint4 count )
+{
+    if( state != ulen && state != udata )
+    {
+        ostringstream s;
+        s << "can not set unit count data in state " << state;
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s.str() );
+    }
 
-                NCBI_EXCEPTION_DEFAULT( CWinMaskUstatAsciiException, CException );
-        };
+    doSetUnitCount( unit, count );
+    state = udata;
+}
 
-        explicit CWinMaskUstatAscii( const string & name );
+//------------------------------------------------------------------------------
+void CSeqMaskerOstat::setParam( const string & name, Uint4 value )
+{
+    if( state != udata && state != thres )
+    {
+        ostringstream s;
+        s << "can not set masking parameters in state " << state;
+        NCBI_THROW( CSeqMaskerOstatException, eBadState, s.str() );
+    }
 
-        virtual ~CWinMaskUstatAscii();
-
-    protected:
-
-        virtual void doSetUnitSize( Uint4 us );
-        virtual void doSetUnitCount( Uint4 unit, Uint4 count );
-        virtual void doSetComment( const string & msg );
-        virtual void doSetParam( const string & name, Uint4 value );
-        virtual void doSetBlank();
-};
+    doSetParam( name, value );
+    state = thres;
+}
 
 END_NCBI_SCOPE
-
-#endif
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.1  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

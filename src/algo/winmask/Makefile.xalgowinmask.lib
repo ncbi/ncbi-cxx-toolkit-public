@@ -7,7 +7,8 @@ LIB = xalgowinmask
 SRC = dust_masker seq_masker seq_masker_score_mean seq_masker_score_mean_glob \
     seq_masker_score_min seq_masker_util seq_masker_window \
     seq_masker_window_ambig seq_masker_window_pattern \
-    seq_masker_window_pattern_ambig
+    seq_masker_window_pattern_ambig seq_masker_ostat_factory \
+    seq_masker_ostat seq_masker_ostat_ascii
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

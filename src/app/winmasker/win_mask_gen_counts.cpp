@@ -54,7 +54,7 @@
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_dup_table.hpp"
 #include "win_mask_util.hpp"
-#include "win_mask_ustat_factory.hpp"
+#include "algo/winmask/seq_masker_ostat_factory.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -155,7 +155,7 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     const set< CSeq_id_Handle > & arg_ids,
     const set< CSeq_id_Handle > & arg_exclude_ids )
 :   input( arg_input ),
-    ustat( CWinMaskUstatFactory::create( sformat, output ) ),
+    ustat( CSeqMaskerOstatFactory::create( sformat, output ) ),
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.9  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

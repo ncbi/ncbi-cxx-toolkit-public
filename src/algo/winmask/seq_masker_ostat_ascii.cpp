@@ -26,54 +26,82 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Implementation of CWinMaskUStatFactory class.
+ *   Implementation of CSeqMaskerUStatAscii class.
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include "win_mask_ustat_factory.hpp"
-#include "win_mask_ustat_ascii.hpp"
+#include <sstream>
+
+#include "algo/winmask/seq_masker_ostat_ascii.hpp"
 
 BEGIN_NCBI_SCOPE
 
 //------------------------------------------------------------------------------
 const char * 
-CWinMaskUstatFactory::CWinMaskUstatFactoryException::GetErrCodeString() const
+CSeqMaskerOstatAscii::CSeqMaskerOstatAsciiException::GetErrCodeString() const
 {
     switch( GetErrCode() )
     {
-        case eBadName:      return "bad name";
-        case eCreateFail:   return "creation failure";
-        default:            return CException::GetErrCodeString();
+        case eBadOrder: return "bad unit order";
+        default:        return CException::GetErrCodeString();
     }
 }
 
 //------------------------------------------------------------------------------
-CWinMaskUstat * CWinMaskUstatFactory::create( 
-    const string & ustat_type, const string & name )
+CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( const string & name )
+    : CSeqMaskerOstat( name.empty() ? NcbiCout 
+                                  : *new CNcbiOfstream( name.c_str() ) )
+{}
+
+//------------------------------------------------------------------------------
+CSeqMaskerOstatAscii::~CSeqMaskerOstatAscii()
 {
-    try
-    {
-        if( ustat_type == "ascii" )
-            return new CWinMaskUstatAscii( name );
-        else NCBI_THROW( CWinMaskUstatFactoryException,
-                         eBadName,
-                         "unkown unit counts format" );
-    }
-    catch( ... )
-    {
-        NCBI_THROW( CWinMaskUstatFactoryException,
-                    eCreateFail,
-                    "could not create a unit counts container" );
-    }
+    if( &out_stream != &NcbiCout )
+        delete &out_stream;
 }
-    
+
+//------------------------------------------------------------------------------
+void CSeqMaskerOstatAscii::doSetUnitSize( Uint4 us )
+{ out_stream << us << endl; }
+
+//------------------------------------------------------------------------------
+void CSeqMaskerOstatAscii::doSetUnitCount( Uint4 unit, Uint4 count )
+{ 
+    static Uint4 punit = 0;
+
+    if( unit != 0 && unit <= punit )
+    {
+        ostringstream s;
+        s << "current unit " << hex << unit << "; "
+          << "previous unit " << hex << punit;
+        NCBI_THROW( CSeqMaskerOstatAsciiException, eBadOrder, s.str() );
+    }
+
+    out_stream << hex << unit << " " << dec << count << "\n"; 
+    punit = unit;
+}
+
+//------------------------------------------------------------------------------
+void CSeqMaskerOstatAscii::doSetComment( const string & msg )
+{ out_stream << "#" << msg << "\n"; }
+
+//------------------------------------------------------------------------------
+void CSeqMaskerOstatAscii::doSetParam( const string & name, Uint4 value )
+{ out_stream << ">" << name << " " << value << "\n"; }
+
+//------------------------------------------------------------------------------
+void CSeqMaskerOstatAscii::doSetBlank() { out_stream << "\n"; }
+
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.1  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for

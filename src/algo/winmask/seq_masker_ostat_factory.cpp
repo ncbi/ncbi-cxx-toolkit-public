@@ -26,54 +26,57 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition of CWinMaskUStatFactory class.
+ *   Implementation of CSeqMaskerUStatFactory class.
  *
  */
 
-#ifndef C_WIN_MASK_USTAT_FACTORY_H
-#define C_WIN_MASK_USTAT_FACTORY_H
+#include <ncbi_pch.hpp>
 
-#include <string>
-
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbiargs.hpp>
+#include "algo/winmask/seq_masker_ostat_factory.hpp"
+#include "algo/winmask/seq_masker_ostat_ascii.hpp"
 
 BEGIN_NCBI_SCOPE
 
-class CWinMaskUstat;
-
-class CWinMaskUstatFactory
+//------------------------------------------------------------------------------
+const char * 
+CSeqMaskerOstatFactory::CSeqMaskerOstatFactoryException::GetErrCodeString() const
 {
-  public:
-
-    class CWinMaskUstatFactoryException : public CException
+    switch( GetErrCode() )
     {
-        public:
-            
-            enum EErrCode
-            {
-                eBadName,
-                eCreateFail
-            };
+        case eBadName:      return "bad name";
+        case eCreateFail:   return "creation failure";
+        default:            return CException::GetErrCodeString();
+    }
+}
 
-            virtual const char * GetErrCodeString() const;
-
-            NCBI_EXCEPTION_DEFAULT( 
-                CWinMaskUstatFactoryException, CException );
-    };
-
-    static CWinMaskUstat * create( 
-        const string & ustat_type, const string & name );
-};
-
+//------------------------------------------------------------------------------
+CSeqMaskerOstat * CSeqMaskerOstatFactory::create( 
+    const string & ustat_type, const string & name )
+{
+    try
+    {
+        if( ustat_type == "ascii" )
+            return new CSeqMaskerOstatAscii( name );
+        else NCBI_THROW( CSeqMaskerOstatFactoryException,
+                         eBadName,
+                         "unkown unit counts format" );
+    }
+    catch( ... )
+    {
+        NCBI_THROW( CSeqMaskerOstatFactoryException,
+                    eCreateFail,
+                    "could not create a unit counts container" );
+    }
+}
+    
 END_NCBI_SCOPE
-
-#endif
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.1  2005/03/28 22:41:06  morgulis
+ * Moved win_mask_ustat* files to library and renamed them.
+ *
  * Revision 1.1  2005/03/28 21:33:26  morgulis
  * Added -sformat option to specify the output format for unit counts file.
  * Implemented framework allowing usage of different output formats for
