@@ -36,6 +36,7 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqsplit/seqsplit__.hpp>
 
@@ -64,6 +65,9 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
         case CID2S_Chunk_Content::e_Seq_annot_place:
             x_Attach(*ret, content.GetSeq_annot_place());
             break;
+        case CID2S_Chunk_Content::e_Seq_data:
+            x_Attach(*ret, content.GetSeq_data());
+            break;
         default:
             NCBI_THROW(CLoaderException, eOtherError,
                        "Unexpected split data");
@@ -74,7 +78,16 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
 
 
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
-                          const CID2S_Seq_annot_place_Info& place)
+                            const CID2S_Seq_data_Info& data)
+{
+    TLocationSet loc;
+    x_ParseLocation(loc, data);
+    chunk.x_AddSeq_data(loc);
+}
+
+
+void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
+                            const CID2S_Seq_annot_place_Info& place)
 {
     ITERATE ( CID2S_Seq_annot_place_Info::TBioseqs,
               it, place.GetBioseqs() ) {
@@ -88,7 +101,7 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 
 
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
-                          const CID2S_Seq_annot_Info& annot)
+                            const CID2S_Seq_annot_Info& annot)
 {
     CAnnotName name;
     if ( annot.IsSetName() ) {
@@ -126,7 +139,7 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 
 inline
 void CSplitParser::x_AddWhole(TLocationSet& vec,
-                            const TLocationId& id)
+                              const TLocationId& id)
 {
     vec.push_back(TLocation(id, TLocationRange::GetWhole()));
 }
@@ -134,20 +147,35 @@ void CSplitParser::x_AddWhole(TLocationSet& vec,
 
 inline
 void CSplitParser::x_AddInterval(TLocationSet& vec,
-                               const TLocationId& id,
-                               TSeqPos start, TSeqPos length)
+                                 const TLocationId& id,
+                                 TSeqPos start, TSeqPos length)
 {
     vec.push_back(TLocation(id, TLocationRange(start, start+length-1)));
 }
 
 
+inline
+void CSplitParser::x_AddGiWhole(TLocationSet& vec, int gi)
+{
+    x_AddWhole(vec, CSeq_id_Handle::GetGiHandle(gi));
+}
+
+
+inline
+void CSplitParser::x_AddGiInterval(TLocationSet& vec, int gi,
+                                   TSeqPos start, TSeqPos length)
+{
+    x_AddInterval(vec, CSeq_id_Handle::GetGiHandle(gi), start, length);
+}
+
+
 void CSplitParser::x_ParseLocation(TLocationSet& vec,
-                                 const CID2_Seq_loc& loc)
+                                   const CID2_Seq_loc& loc)
 {
     switch ( loc.Which() ) {
     case CID2_Seq_loc::e_Gi_whole:
     {
-        x_AddWhole(vec, loc.GetGi_whole());
+        x_AddGiWhole(vec, loc.GetGi_whole());
         break;
     }
     
@@ -155,17 +183,17 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
     {
         const CID2_Id_Range& wr = loc.GetGi_whole_range();
         for ( int gi = wr.GetStart(), end = gi+wr.GetCount(); gi < end; ++gi )
-            x_AddWhole(vec, gi);
+            x_AddGiWhole(vec, gi);
         break;
     }
 
     case CID2_Seq_loc::e_Interval:
     {
         const CID2_Interval& interval = loc.GetInterval();
-        x_AddInterval(vec,
-                      interval.GetGi(),
-                      interval.GetStart(),
-                      interval.GetLength());
+        x_AddGiInterval(vec,
+                        interval.GetGi(),
+                        interval.GetStart(),
+                        interval.GetLength());
         break;
     }
 
@@ -174,10 +202,10 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
         const CID2_Packed_Seq_ints& ints = loc.GetPacked_ints();
         ITERATE ( CID2_Packed_Seq_ints::TIntervals, it, ints.GetIntervals() ) {
             const CID2_Seq_range& interval = **it;
-            x_AddInterval(vec,
-                          ints.GetGi(),
-                          interval.GetStart(),
-                          interval.GetLength());
+            x_AddGiInterval(vec,
+                            ints.GetGi(),
+                            interval.GetStart(),
+                            interval.GetLength());
         }
         break;
     }
@@ -191,12 +219,31 @@ void CSplitParser::x_ParseLocation(TLocationSet& vec,
         break;
     }
 
+
+    case CID2_Seq_loc::e_Seq_loc:
+    {
+        CHandleRangeMap hrm;
+        hrm.AddLocation(loc.GetSeq_loc());
+        ITERATE ( CHandleRangeMap, i, hrm ) {
+            ITERATE ( CHandleRange, j, i->second ) {
+                const CHandleRange::TRange& range = j->first;
+                x_AddInterval(vec,
+                              i->first,
+                              range.GetFrom(),
+                              range.GetLength());
+            }
+        }
+        break;
+    }
+
+    case CID2_Seq_loc::e_not_set:
+        break;
     }
 }
 
 
 void CSplitParser::Load(CTSE_Chunk_Info& chunk,
-                      const CID2S_Chunk& id2_chunk)
+                        const CID2S_Chunk& id2_chunk)
 {
     ITERATE ( CID2S_Chunk::TData, dit, id2_chunk.GetData() ) {
         const CID2S_Chunk_Data& data = **dit;
@@ -233,8 +280,8 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
         }
 
         ITERATE ( CID2S_Chunk_Data::TSeq_data, it, data.GetSeq_data() ) {
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "split seq-data is not supported");
+            const CID2S_Sequence_Piece& piece = **it;
+            chunk.x_LoadSequence(place, piece.GetStart(), piece.GetData());
         }
     }
 }
@@ -245,6 +292,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.7  2004/06/15 14:08:22  vasilche
+ * Added parsing split info with split sequences.
+ *
  * Revision 1.6  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -243,7 +243,7 @@ CRef<CTSE_Info> CReader::GetSNPBlob(const CSeqref& seqref, TConn /*conn*/)
 
     info->x_AddAnnotType(CAnnotName("SNP"),
                          SAnnotTypeSelector(CSeqFeatData::eSubtype_variation),
-                         seqref.GetGi(),
+                         CSeq_id_Handle::GetGiHandle(seqref.GetGi()),
                          CTSE_Chunk_Info::TLocationRange::GetWhole());
 
     info->x_TSEAttach(*ret);
@@ -279,6 +279,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.34  2004/06/15 14:08:22  vasilche
+ * Added parsing split info with split sequences.
+ *
  * Revision 1.33  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

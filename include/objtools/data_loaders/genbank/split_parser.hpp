@@ -43,10 +43,12 @@ class CID2S_Chunk_Info;
 class CID2S_Chunk;
 class CID2S_Seq_annot_Info;
 class CID2S_Seq_annot_place_Info;
+class CID2S_Seq_data_Info;
 class CID2_Seq_loc;
 
 class CTSE_Info;
 class CTSE_Chunk_Info;
+class CSeq_id_Handle;
 
 class NCBI_XREADER_EXPORT CSplitParser
 {
@@ -61,8 +63,10 @@ public:
                          const CID2S_Seq_annot_Info& annot);
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Seq_annot_place_Info& place);
+    static void x_Attach(CTSE_Chunk_Info& chunk,
+                         const CID2S_Seq_data_Info& data);
 
-    typedef int TLocationId;
+    typedef CSeq_id_Handle TLocationId;
     typedef CRange<TSeqPos> TLocationRange;
     typedef pair<TLocationId, TLocationRange> TLocation;
     typedef vector<TLocation> TLocationSet;
@@ -73,6 +77,9 @@ protected:
     static void x_AddWhole(TLocationSet& vec, const TLocationId& id);
     static void x_AddInterval(TLocationSet& vec, const TLocationId& id,
                               TSeqPos start, TSeqPos length);
+    static void x_AddGiWhole(TLocationSet& vec, int gi);
+    static void x_AddGiInterval(TLocationSet& vec, int gi,
+                                TSeqPos start, TSeqPos length);
 };
 
 
@@ -81,6 +88,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2004/06/15 14:08:22  vasilche
+* Added parsing split info with split sequences.
+*
 * Revision 1.3  2004/01/28 20:53:42  vasilche
 * Added CSplitParser::Attach().
 *
