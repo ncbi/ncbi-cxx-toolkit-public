@@ -44,7 +44,7 @@ Detailed Contents:
 
 #include <blast_def.h>
 #include <blast_message.h>
-
+#include <blastkar.h>
 
 #ifdef __cplusplus
 extern "C" {

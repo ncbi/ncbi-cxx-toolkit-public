@@ -37,6 +37,7 @@ Contents: Various BLAST utilities
 
 #include <blast_def.h>
 #include <blast_util.h>
+#include <blastkar.h>
 
 static char const rcsid[] = "$Id$";
 
