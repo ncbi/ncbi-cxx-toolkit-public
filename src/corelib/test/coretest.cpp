@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2000/06/09 21:22:49  vakatov
+* Added test for IsDiagStream()
+*
 * Revision 1.61  2000/05/24 20:57:13  vasilche
 * Use new macro _DEBUG_ARG to avoid warning about unused argument.
 *
@@ -535,6 +538,8 @@ static void TestDiag(void)
     NcbiCout << "FLUSHed diag: " << n_flush << " bytes" << NcbiEndl <<NcbiEndl;
 
     SetDiagStream(&NcbiCerr);
+    _ASSERT(  IsDiagStream(&NcbiCerr) );
+    _ASSERT( !IsDiagStream(&NcbiCout) );
     diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
     ERR_POST("[Set Diag Stream(cerr)]  Std.Diag. double = "    << d );
     _TRACE  ( "[Set Diag Stream(cerr)]  Trace double = "       << d );
