@@ -398,7 +398,7 @@ Uint8 NStr::StringToUInt8(const string& str)
 
     Uint8 n = 0;
     Uint8 limdiv = kMax_UI8 / 10;
-    Uint8 limoff = kMax_UI8 % 10;
+    int   limoff = int(kMax_UI8 % 10);
 
     while (*pc) {
         if (!isdigit(*pc))
@@ -474,7 +474,8 @@ SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
     if ( precision > kMaxDoublePrecision ) {
         precision = kMaxDoublePrecision;
     }
-    SIZE_TYPE n = ::sprintf(buffer, "%.*f", precision, value);
+    int x_precision = precision;
+    SIZE_TYPE n = ::sprintf(buffer, "%.*f", x_precision, value);
     SIZE_TYPE n_copy = min(n, buf_size);
     memcpy(buf, buffer, n_copy);
     return n_copy;
@@ -921,6 +922,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2003/01/27 20:06:59  ivanov
+ * Get rid of compilation warnings in StringToUInt8() and DoubleToString()
+ *
  * Revision 1.68  2003/01/24 16:59:27  ucko
  * Add an optional parameter to Split and Tokenize indicating whether to
  * merge adjacent delimiters; clean up WrapList slightly.
