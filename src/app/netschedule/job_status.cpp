@@ -91,7 +91,7 @@ CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id,
 
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
         TBVector& bv = *m_StatusStor[i];
-        bv.set(job_id, (int)status == i);
+        bv.set(job_id, (int)status == (int)i);
     }
 }
 
@@ -139,9 +139,9 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
 
     case CNetScheduleClient::eCanceled:
         old_status = IsStatusNoLock(job_id, CNetScheduleClient::ePending);
-        if (old_status != CNetScheduleClient::EJobStatus::ePending) {
+        if (old_status != CNetScheduleClient::ePending) {
             old_status = 
-                IsStatusNoLock(job_id, CNetScheduleClient::EJobStatus::eRunning);
+                IsStatusNoLock(job_id, CNetScheduleClient::eRunning);
         }
         if ((int)old_status >= 0) {
             x_SetClearStatusNoLock(job_id, status, old_status);
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/11 14:45:29  kuznets
+ * Fixed compilation issue (GCC)
+ *
  * Revision 1.1  2005/02/08 16:42:55  kuznets
  * Initial revision
  *
