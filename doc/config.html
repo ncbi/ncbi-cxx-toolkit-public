@@ -300,10 +300,9 @@ SunPro 5.0 compilers using CVS repository and relevant <i>wrapper script</i>
 cvs checkout -d cpp_foo internal/c++
 
 # Configure (see in "sunpro50.sh" for the compiler and linker flags and tools)
-# Note:  the build tree will be deployed into the source tree -- as
-#        "sunpro50.sh" calls "configure" with "--exec_prefix=."
+# NOTE:  the build tree will be deployed into the source tree
 cd cpp_foo
-sh compilers/sunpro50.sh
+sh compilers/sunpro50.sh .
 
 # Perform a recursive build
 cd cpp_foo/src
@@ -325,10 +324,12 @@ libraries and tools:
   <li> egcs-2.91.57 for CYGWIN_NT-4.0 on PC
   <li> egcs-2.91.66 for RedHat Linux 5.2 on PC
   <li> Metrowerks CodeWarrior for MacOS
-  <li> egcs-1.1.2 for IRIX6.2 (libstdc++.a compiled with "-fsquangle" flag)
+  <li> egcs-1.1.2 for IRIX6.2 (compiled with "-fsquangle" flag)
+  <li> egcs-2.91.66 for Solaris 2.6 on Sun (compiled with "-fsquangle" flag)
 </ul>
 NOTE: Some projects(e.g. "query") are very platform-specific, and they cannot
-be adopted(or even compiled) for all supported platforms.
+be adopted(or even compiled) for all supported platforms. All such projects
+are located under the <i><b>internal/c++/{src|include}/internal/</b></i> directories.
 
 
 <br></br>
