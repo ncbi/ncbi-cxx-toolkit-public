@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 # $Id$
 #
 # Script to update ASN.1 objects' sources on Windows-NT
