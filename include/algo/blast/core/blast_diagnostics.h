@@ -35,11 +35,13 @@
 #define __BLAST_DIAGNOSTICS__
 
 #include <algo/blast/core/ncbi_std.h>
+#include <connect/ncbi_core.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** Structure holding raw cutoff values. */
 typedef struct BlastRawCutoffs {
    Int4 x_drop_ungapped; /**< Raw value of the x-dropoff for ungapped 
                             extensions */
@@ -50,6 +52,8 @@ typedef struct BlastRawCutoffs {
    Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastRawCutoffs;
 
+/** Structure containing hit counts from the ungapped stage of a BLAST 
+ * search */
 typedef struct BlastUngappedStats {
    Int8 lookup_hits; /**< Number of successful lookup table hits */
    Int4 num_seqs_lookup_hits; /**< Number of sequences which had at least one 
@@ -61,6 +65,8 @@ typedef struct BlastUngappedStats {
                             after ungapped stage. */
 } BlastUngappedStats;
 
+/** Structure containing hit counts from the gapped stage of a BLAST 
+ * search */
 typedef struct BlastGappedStats {
    Int4 seqs_ungapped_passed; /**< Number of sequences with top HSP 
                                  after ungapped extension passing the
@@ -79,6 +85,8 @@ typedef struct BlastDiagnostics {
    BlastUngappedStats* ungapped_stat; /**< Ungapped extension counts */
    BlastGappedStats* gapped_stat; /**< Gapped extension counts */
    BlastRawCutoffs* cutoffs; /**< Various raw values for the cutoffs */
+   MT_LOCK mt_lock; /**< Mutex for updating diagnostics data in a 
+                       multi-threaded search. */
 } BlastDiagnostics;
 
 /** Free the BlastDiagnostics structure and all substructures. */
@@ -87,11 +95,23 @@ BlastDiagnostics* Blast_DiagnosticsFree(BlastDiagnostics* diagnostics);
 /** Initialize the BlastDiagnostics structure and all its substructures. */
 BlastDiagnostics* Blast_DiagnosticsInit(void);
 
+/** Initialize the BlastDiagnostics structure for a multi-threaded search.
+ * @param mt_lock Mutex locking mechanism to be used for updates. [in]
+ */
+BlastDiagnostics* Blast_DiagnosticsInitMT(MT_LOCK mt_lock);
+
 /** Fill data in the ungapped hits diagnostics structure */
 void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats, 
                                Int4 total_hits, Int4 extended_hits,
                                Int4 saved_hits);
 
+/** In a multi-threaded run, update global diagnostics data with the data
+ * coming from one of the preliminary search threads.
+ * @param global Diagnostics for the entire BLAST search [in] [out]
+ * @param local Diagnostics from one of the preliminary search threads [in]
+ */
+void 
+Blast_DiagnosticsUpdate(BlastDiagnostics* global, BlastDiagnostics* local);
 
 #ifdef __cplusplus
 }
