@@ -83,7 +83,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     _CrtMemState diff_state;
     if (_CrtMemDifference(&diff_state, &start_state, &stop_state)) {
         _CrtMemDumpStatistics(&diff_state);
-        _CrtMemDumpAllObjectsSince(&diff_state);
+        //_CrtMemDumpAllObjectsSince(&diff_state);
     }
 
     return ret_val;
@@ -99,6 +99,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/01/11 18:32:49  dicuccio
+ * MAGIC: disable dump of all leaked objects (speeds application exit by orders of
+ * magnitude)
+ *
  * Revision 1.1  2004/05/07 15:46:23  dicuccio
  * Copied over from compilers/msvc_prj
  *
