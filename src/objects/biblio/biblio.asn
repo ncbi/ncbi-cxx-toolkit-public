@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -88,7 +88,8 @@ Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
     issue VisibleString OPTIONAL ,
     pages VisibleString OPTIONAL ,
     date Date OPTIONAL ,
-    serial-number INTEGER OPTIONAL }   -- for GenBank style references
+    serial-number INTEGER OPTIONAL ,   -- for GenBank style references
+	title VisibleString OPTIONAL }     -- eg. cit="unpublished",title="title"
     
     
     -- Authorship Group
@@ -148,7 +149,11 @@ Imprint ::= SEQUENCE {                  -- Imprint group
     pub Affil OPTIONAL,                     -- publisher, required for book
     cprt Date OPTIONAL,                     -- copyright date, "    "   "
     part-sup VisibleString OPTIONAL ,       -- used in MEDLINE
-    language VisibleString DEFAULT "ENG" }  -- put here for simplicity
+    language VisibleString DEFAULT "ENG" ,  -- put here for simplicity
+	prepub ENUMERATED {                     -- for prepublication citaions
+		submitted (1) ,                     -- submitted, not accepted
+		in-press (2) ,						-- accepted, not published
+		other (255)  } OPTIONAL }
 
 Meeting ::= SEQUENCE {
     number VisibleString ,
