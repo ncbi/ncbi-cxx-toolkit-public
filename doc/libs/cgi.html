@@ -1,0 +1,336 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>NCBI C++ CGI library</TITLE>
+</HEAD>
+<BODY LINK="#0000ff">
+
+<B><FONT FACE="Arial" SIZE=4><P>NCBI C++ CGI Classes</P>
+</B></FONT>
+<P>Last Revision: 4 Jan 1999</P>
+
+<P>&nbsp;</P>
+<P>The Common Gateway Interface (CGI) is a method used by web servers to pass information from forms displayed in a web browser to a program running on the server and then allow the program to pass a web page back.  The NCBI C++ CGI Classes are used by the program running on the server to decode the CGI input from the server and to send a response.  The library also supports cookies, which is a method for storing information on the user’s machine.  While the library supports the http methods GET and POST via application/x-www-form-urlencoded, it does not presently support POST via multipart/form-data (often used for file upload) but will in the future.  For more information on CGI, see the book <U>HTML Sourcebook</U> by Ian Graham or http://hoohoo.ncsa.uiuc.edu/cgi/</P>
+
+<P>There are 4 main classes: </P>
+<B><P>CCgiRequest</B> – what the CGI program is getting from the client.</P>
+<B><P>CCgiResponse</B> – what the CGI program is sending to the client.</P>
+<B><P>CCookie</B> – a single cookie</P>
+<B><P>CCookies</B> – a cookie container</P>
+
+<P>Note: In the following libraries you will see references to the following typedef’s: CNcbiOstream and CNcbiIstream.  On Solaris and NT, these are identical to the standard library output stream (ostream) and input stream (istream) classes.  These typedef’s are used on older computers to switch between the old stream library and the new standard library stream classes. Further details can be found in an accompanying document (to be written).</P>
+
+<P>A demo program, cgidemo.cpp, can be found in internal/c++/src/corelib/demo.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CCgiRequest</P>
+</B></I></FONT>
+<P>CCgiRequest is the class that reads in the input from the web server and makes it accessible to the CGI program.  </P>
+
+<P>CCgiRequest uses the following typedefs to simplify the code:</P>
+
+<B><P>typedef map&lt;string, string&gt;      TCgiProperties</P>
+<P>typedef multimap&lt;string, string&gt; TCgiEntries</P>
+<P>typedef TCgiEntries::iterator    TCgiEntriesI</P>
+<P>typedef list&lt;string&gt;             TCgiIndexes</P>
+</B>
+<P>All of the basic types come from the C++ Standard library (http://www.sgi.com/Technology/STL/)</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiRequest(int argc, char* argv[], CNcbiIstream* istr=0, bool indexes_as_entries=true)</P>
+</B>
+<P>A CGI program can receive its input from three sources: the command line, environment variables, and an input stream.  Some of this input is given to the CCgiRequest class by the following arguments to the constructor:</P>
+
+<P>int argc, char* argv[] : standard command line arguments.</P>
+
+<P>CNcbiIstream* istr=0 : the input stream to read from.  If 0, reads from stdin, which is what most web servers use.</P>
+
+<P>bool indexes_as_entries=true : if query has any ISINDEX like terms (i.e. no &quot;=&quot; sign), treat it as a form query (i.e. as if it had an &quot;=&quot; sign).</P>
+
+<P>Example:</P>
+<FONT FACE="Courier New"><P>CCgiRequest * MyRequest = new CCgiRequest(argc, argv);</P>
+</FONT>
+<P>&nbsp;</P>
+<B><P>const TCgiEntries&amp; GetEntries(void) const</P>
+</B><P>Get a set of decoded form entries received from the web browser.  So if you sent a cgi query of the form ?name=value, the multimap referenced by TCgiEntries&amp; includes &quot;name&quot; as a .first member and &quot;value&quot; as a .second member.</P>
+
+<P>TCgiEntries&amp; also includes "indexes" if "indexes_as_entries" in the constructor was "true".</P>
+
+<P>&nbsp;</P>
+<B><P>const TCgiIndexes&amp; GetIndexes(void) const</P>
+</B><P>This performs a similar task as GetEntries(), but gets a set of decoded entries received from the web browser that are ISINDEX like terms (i.e. no &quot;=&quot; sign),.  It will always be empty if "indexes_as_entries" in the constructor was "true"(default).</P>
+
+<P>&nbsp;</P>
+<B><P>const string&amp; GetProperty(ECgiProp prop) const</P>
+</B><P>Get the value of a standard property (empty string if not specified).  See the &quot;Standard properties&quot;  list below.</P>
+
+<P>&nbsp;</P>
+<B><P>static const string&amp; GetPropertyName(ECgiProp prop)</P>
+</B><P>The web server sends the CGI program properties of the web server and the http headers received from the web browser (headers are simply additional lines of information sent in a http request and response).  This API gets the name(not value!) of standard properties.  See the &quot;Standard properties&quot; list below.</P>
+
+<B><P>&nbsp;</P>
+<P>Standard properties:</P>
+</B><P>    eCgi_ServerSoftware ,</P>
+<P>    eCgi_ServerName,</P>
+<P>    eCgi_GatewayInterface,</P>
+<P>    eCgi_ServerProtocol,</P>
+<P>    eCgi_ServerPort,        // see also "GetServerPort()"</P>
+
+<P>    // client properties</P>
+<P>    eCgi_RemoteHost,</P>
+<P>    eCgi_RemoteAddr,        // see also "GetRemoteAddr()"</P>
+
+<P>    // client data properties</P>
+<P>    eCgi_ContentType,</P>
+<P>    eCgi_ContentLength,     // see also "GetContentLength()"</P>
+
+<P>    // request properties</P>
+<P>    eCgi_RequestMethod,</P>
+<P>    eCgi_PathInfo,</P>
+<P>    eCgi_PathTranslated,</P>
+<P>    eCgi_ScriptName,</P>
+<P>    eCgi_QueryString,</P>
+
+<P>    // authentication info</P>
+<P>    eCgi_AuthType,</P>
+<P>    eCgi_RemoteUser,</P>
+<P>    eCgi_RemoteIdent,</P>
+
+<P>    // semi-standard properties(from HTTP header)</P>
+<P>    eCgi_HttpAccept,</P>
+<P>    eCgi_HttpCookie,</P>
+<P>    eCgi_HttpIfModifiedSince,</P>
+<P>    eCgi_HttpReferer,</P>
+<P>    eCgi_HttpUserAgent</P>
+
+<P>&nbsp;</P>
+<B><P>const string&amp; GetRandomProperty(const string&amp; key) const</P>
+</B><P>Gets value of any http header that is passed to the CGI program using environment variables of the form "$HTTP_&lt;key&gt;".  In general, these are special purpose http headers not included in the list above.</P>
+
+<P>&nbsp;</P>
+<B><P>Uint2  GetServerPort(void) const</P>
+</B><P>Gets the server port used by web browser to access the server.</P>
+
+<P>&nbsp;</P>
+<B><P>size_t GetContentLength(void) const</P>
+</B><P>Returns the length of the http request.</P>
+
+<P>&nbsp;</P>
+<B><P>const CCgiCookies&amp; GetCookies(void) const</P>
+</B><P>Retrieve the cookies that were sent with the request.  Cookies are text buffers that are stored in the user’s web browsers and can be set and read via http headers.  For more information on cookies see <A HREF="http://home.netscape.com/newsref/std/cookie_spec.html">http://home.netscape.com/newsref/std/cookie_spec.html</A>.  Also, see the CCookie and CCookies classes defined below.</P>
+
+<P>&nbsp;</P>
+<B><P>static SIZE_TYPE ParseEntries(const string&amp; str, TCgiEntries&amp; entries)</P>
+</B>
+<P>This is a helper function that isn’t normally used by CGI programs.  It allows you to decode the URL-encoded string "str" into a set of entries &lt;"name", "value"&gt; and add them to the "entries" multimap.  The new entries are added without overriding the original ones, even if they have the same names.  If the "str" is in ISINDEX format then the entry "value" will be empty.  On success, return zero;  otherwise return location(1-base) of error</P>
+
+<B><P>static SIZE_TYPE ParseIndexes(const string&amp; str, TCgiIndexes&amp; indexes)</P>
+</B>
+<P>This is also a helper function not usually used by CGI programs.  This function decodes the URL-encoded string "str" into a set of ISINDEX-like entries (i.e. no &quot;=&quot; signs in the query) and adds them to the "indexes" set.  On success, return zero, otherwise return location(1-base) of error.</P>
+
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CCgiResponse</P>
+</B></I></FONT>
+<P>CCgiResponse is the object that takes output from the CGI program and sends it to the web browser via the web server.</P>
+
+<P>&nbsp;</P>
+<B><P>CNcbiOstream&amp; WriteHeader() const</P>
+<P>CNcbiOstream&amp; WriteHeader(CNcbiOstream&amp; out) const</P>
+</B>
+<P>This writes the MIME header necessary for all documents sent back to the web browser.  By default, this function assumes that the &quot;Content-type&quot; is &quot;text/html&quot;.  Use the second form of the function if you want to use a stream other that the default.</P>
+
+<P>&nbsp;</P>
+<B><P>void SetContentType(const string &amp;type)</P>
+</B><P>Sets the content type.  By default this is &quot;text/html&quot;.  For example, if you were to send plaintext back to the client, you would set type to &quot;text/plain&quot;.</P>
+
+<P>&nbsp;</P>
+<B><P>string GetContentType(void) const</P>
+</B><P>Retrieves the content type.</P>
+
+<P>&nbsp;</P>
+<B><P>CNcbiOstream&amp; out(void) const</P>
+</B><P>This returns a reference to the output stream being used by the CCgiResponse object.  </P>
+
+<P>Example:</P>
+<FONT FACE="Courier New"><P>CCgiResponse Response;</P>
+<P>Response.WriteHeader();</P>
+<P>Response.out() &lt;&lt; &quot;hello, world&quot; &lt;&lt; flush;</P>
+</FONT>
+<P>&nbsp;</P>
+<B><P>CNcbiOstream* SetOutput(CNcbiOstream* out)</P>
+</B><P>Sets the default output stream.  By default this is stdout, which is what most web servers use.</P>
+
+<P>&nbsp;</P>
+<B><P>CNcbiOstream* GetOutput(void) const</P>
+</B><P>Get the default output stream.</P>
+
+<P>&nbsp;</P>
+<B><P>void Flush() const</P>
+</B><P>Flushes the output stream.</P>
+
+<P>&nbsp;</P>
+<B><P>void SetRawCgi(bool raw)</P>
+</B><P>Turns on non-parsed cgi mode.  When this is turned on AND the name of the cgi program begins with &quot;nph-&quot;, then the web server does no processing of  the data sent back to the client.  In this situation, the client must provide all appropriate http headers.  This boolean switch causes some of these headers to be sent.  </P>
+
+<P>&nbsp;</P>
+<B><P>bool IsRawCgi(void) const</P>
+</B><P>Check to see if non-parsed cgi mode is on.</P>
+
+<P>&nbsp;</P>
+<B><P>void SetHeaderValue(const string&amp; name, const string&amp; value)</P>
+</B><P>Sets an http header with given name and value.  For example, SetHeaderValue(&quot;Mime-Version&quot;, &quot;1.0&quot;); will create the header &quot;Mime-Version: 1.0&quot;.</P>
+
+<P>&nbsp;</P>
+<B><P>void SetHeaderValue(const string&amp; name, const tm&amp; value)</P>
+</B><P>Similar to the above, but sets a header value using a date.  See time.h for the definition of tm.</P>
+
+<P>&nbsp;</P>
+<B><P>void RemoveHeaderValue(const string&amp; name)</P>
+</B><P>Remove the header with name name.</P>
+
+<P>&nbsp;</P>
+<B><P>string GetHeaderValue(const string&amp; name) const</P>
+</B><P>Get the value of the header with name name. </P>
+
+<P>&nbsp;</P>
+<B><P>bool HaveHeaderValue(const string&amp; name) const</P>
+</B><P>Check to see if the header with name name exists.</P>
+
+<P>&nbsp;</P>
+<B><P>void AddCookie(const string&amp; name, const string&amp; value)</P>
+<P>void AddCookie(const CCgiCookie&amp; cookie)</P>
+</B><P>Add a cookie to the response.  This can either be a name, value pair or use the CCookie class described below.</P>
+
+<B><P>&nbsp;</P>
+<P>void AddCookies(const CCgiCookies&amp; cookies)</P>
+</B><P>Add a set of cookies to the response.  See the CCookies class described below.</P>
+
+<P>&nbsp;</P>
+<B><P>const CCgiCookies&amp; Cookies(void) const</P>
+<P>CCgiCookies&amp; Cookies(void)</P>
+</B><P>Return the set of cookies to be sent in the response.</P>
+
+<P>&nbsp;</P>
+<B><P>void RemoveCookie(const string&amp; name)</P>
+</B><P>Remove the cookie with the name name.</P>
+
+<P>&nbsp;</P>
+<B><P>void RemoveAllCookies(void)</P>
+</B><P>Remove all cookies.</P>
+
+<P>&nbsp;</P>
+<B><P>bool HaveCookies(void) const</P>
+</B><P>Are there cookies?</P>
+
+<P>&nbsp;</P>
+<B><P>bool HaveCookie(const string&amp; name) const</P>
+</B><P>Is there a cookie with the given name?</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiCookie* FindCookie(const string&amp; name) const</P>
+</B><P>Return a cookie with the given name.</P>
+
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CCgiCookie</P>
+</B></I></FONT>
+<P>A cookie is a name, value string pair that can be stored on the user’s web browser.  Cookies are allocated per site and have restrictions on size and number.  Cookies have attributes, such as the domain they originated from.  For more information on cookies, see <A HREF="http://home.netscape.com/newsref/std/cookie_spec.html">http://home.netscape.com/newsref/std/cookie_spec.html</A>.  CCgiCookie is used by the CCgiRequest and CCgiResponse classes.</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiCookie(const string&amp; name, const string&amp; value)</P>
+</B><P>Creates a cookie with the given name and value. Throw the "invalid_argument" if "name" or "value" have invalid format:</P>
+<P> - the "name" must not be empty; it must not contain '='</P>
+<P> - both "name" and "value" must not contain: ";, "</P>
+
+<P>&nbsp;</P>
+<B><P>const string&amp; GetName (void) const</P>
+</B><P>Get the cookie name.  The cookie name cannot be changed.</P>
+
+<P>&nbsp;</P>
+<B><P>CNcbiOstream&amp; Write(CNcbiOstream&amp; os) const</P>
+</B><P>Write the cookie out to ostream os.  Normally this is handled by CCgiResponse.</P>
+
+<P>&nbsp;</P>
+<B><P>void Reset(void)</P>
+</B><P>Reset everything but the name to the default state</P>
+
+<P>&nbsp;</P>
+<B><P>void CopyAttributes(const CCgiCookie&amp; cookie)</P>
+</B><P>Set all attribute values(but name!) to those from "cookie"</P>
+
+<P>&nbsp;</P>
+<B><P>void SetValue     (const string&amp; str)</P>
+<P>void SetDomain    (const string&amp; str)</P>
+<P>void SetValidPath (const string&amp; str)</P>
+<P>void SetExpDate   (const tm&amp; exp_date)</P>
+<P>void SetSecure    (bool secure)     </B>   // "false" by default</P>
+
+<P>These function set the various properties of a cookie.  These functions will throw "invalid_argument" if "str" has invalid format.  For the definition of tm, see time.h.</P>
+
+<P>&nbsp;</P>
+<B><P>bool GetValue     (string*  str) const</P>
+<P>bool GetDomain    (string*  str) const</P>
+<P>bool GetValidPath (string*  str) const</P>
+<P>bool GetExpDate   (string*  str) const</P>
+<P>bool GetExpDate   (tm* exp_date) const</P>
+<P>bool GetSecure    (void)         const</P>
+</B>
+<P>These functions return true if the property is set.  They also return value of the property in the argument.  If the property is not set, str is emptied.  These functions throw the "invalid_argument" exception if the argument is a zero pointer.</P>
+
+<P>The string version of GetExpDate will return a string of the form "Wed Aug 9 07:49:37 1994"</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CCgiCookies</P>
+</B></I></FONT>
+<P>CCgiCookies aggregates a collection of CCgiCookie</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiCookies(void)</P>
+<P>CCgiCookies(const string&amp; str)</P>
+</B>
+<P>Creates a CCgiCookies container.  To initialize it with a cookie string, use the format:  "name1=value1; name2=value2; ..."</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiCookie* Add(const string&amp; name, const string&amp; value)</P>
+</B>
+<P>Add a cookie with the given name, value pair.  Note the above requirements on the string format.  Overrides any previous cookie with same name.</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiCookie* Add(const CCgiCookie&amp; cookie)</P>
+</B>
+<P>Add a CCgiCookie.</P>
+
+<P>&nbsp;</P>
+<B><P>void Add(const CCgiCookies&amp; cookies)</P>
+</B>
+<P>Adds a CCgiCookie of cookies.</P>
+
+<P>&nbsp;</P>
+<B><P>void Add(const string&amp; str)</P>
+</B><P> </P>
+<P>Adds cookies using a string of the format "name1=value1; name2=value2; ..." Overrides any previous cookies with same names.</P>
+
+<P>&nbsp;</P>
+<B><P>CCgiCookie* Find(const string&amp; name) const</P>
+</B>
+<P>Looks for a cookie with the given name.  Returns zero not found.</P>
+
+<P>&nbsp;</P>
+<B><P>bool Empty(void) const</P>
+</B>
+<P>"true" if contains no cookies.</P>
+
+<P>&nbsp;</P>
+<B><P>bool Remove(const string&amp; name)</P>
+</B>
+<P>Find and remove a cookie with the given name.  Returns "false" if one is not found.</P>
+
+<P>&nbsp;</P>
+<B><P>void Clear(void)</P>
+
+</B><P>Remove all stored cookies</P>
+
+<P>&nbsp;</P>
+<B><P>CNcbiOstream&amp; Write(CNcbiOstream&amp; os) const</P>
+</B>
+<P>Prints all cookies into the stream "os"(see also CCgiCookie::Write()).  Normally this is handled by CCgiResponse.</P></BODY>
+</HTML>

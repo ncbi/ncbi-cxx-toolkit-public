@@ -1,0 +1,304 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>newhtml</TITLE>
+<META NAME="Template" CONTENT="D:\Program Files\Microsoft Office\Office\html.dot">
+</HEAD>
+<BODY LINK="#0000ff" VLINK="#800080">
+
+<B><FONT FACE="Arial" SIZE=4><P>NCBI C++ HTML Classes</P>
+</B></FONT><P>Last Revision: 13 Jan 1999</P>
+<P>&nbsp;</P>
+<P>The NCBI C++ HTML classes are intended for use in CGI programs that generate HTML. By creating a structured method for creating HTML, these classes allow for reuse of HTML generating code and simplifies laborious tasks, such as creating and maintaining tables.</P>
+<P>A good resource for the use of HTML is the book see the book <U>HTML Sourcebook</U> by Ian Graham.</P>
+<P>Using these classes, the in memory representation of an HTML page is of a graph – each element on the page can have other elements as children. For example, in "&lt;HTML&gt;&lt;BODY&gt;hello&lt;/BODY&gt;&lt;/HTML&gt;" the body tag is a child of the html tag and the text "hello" is a child of the body tag. This graph structure allows for the easy addition of components as well as reuse of code among components since they share the same base classes. </P>
+<P>A sample program, htmldemo.cpp, can be found in internal/c++/src/html/demo.&nbsp;</P>
+<P>&nbsp;</P>
+<B><FONT FACE="Arial" SIZE=4><P>Basic Classes</P>
+</B></FONT><P>There are several basic classes for the html library. The most basic class is CNCBINode, which is a node that knows how to contain and manipulate child CNCBINodes. Two main types of classes are derived from CNCBINode, text nodes and tag (or "element") nodes. The text nodes (CHTMLText and CHTMLPlainText) are intended to be used directly by the user, whereas the basic tag nodes (CHTMLNode, CHTMLElement, CHTMLOpenElement, and CHTMLListElement) are base classes for the nodes actually used to construct a page, such as CHTML_form.</P>
+<P>CHTMLText and CHTMLPlainText are both used to insert text into the generated html, with the latter class performing HTML encoding before generation. </P>
+<P>CHTMLNode is the base class for CHTMLElement (tags with close tags, like FORM), CHTMLOpenElement (tags without end tags, like BR) and CHTMLListElement (tags used in lists, like OL).</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CNCBINode</P>
+</B></I></FONT><P>CNCBINode uses the following typedefs:</P>
+<B><P>typedef list&lt;CNCBINode*&gt; TChildList</P>
+<P>typedef map&lt;string, string&gt; TAttributes</P>
+</B><P>&nbsp;</P>
+<B><P>void RemoveChild(CNCBINode* child)</P>
+</B><P>Removes a child node.</P>
+<P>&nbsp;</P>
+<B><P>CNCBINode* AppendChild(CNCBINode* child)</P>
+</B><P>Add a CNCBINode * to the end the list of child nodes. Returns *this so you can repeat the operation on the same line, e.g. </P>
+<P>Node-&gt;AppendChild(new CNCBINode)-&gt;AppendChild(new CNCBINode).</P>
+<P>&nbsp;</P>
+<B><P>CNCBINode* InsertBefore(CNCBINode* newChild, CNCBINode* refChild)</P>
+</B><P>Adds newChild before the node refChild. Returns the added child, otherwise 0.</P>
+<P>&nbsp;</P>
+<B><P>TChildList::iterator ChildBegin(void)</P>
+<P>TChildList::const_iterator ChildBegin(void) const</P>
+</B><P>Returns the first child.</P>
+<P>&nbsp;</P>
+<B><P>TChildList::iterator ChildEnd(void)</P>
+<P>TChildList::const_iterator ChildEnd(void) const</P>
+</B><P>Returns the end of the child list (this is <I>not</I> the last child).</P>
+<P>&nbsp;</P>
+<B><P>TChildList::iterator FindChild(CNCBINode* child)</P>
+</B><P>Find a particular child, otherwise return 0.</P>
+<P>&nbsp;</P>
+<B><P>virtual CNcbiOstream&amp; Print(CNcbiOstream&amp; out)</P>
+</B><P>Create HTML from the node and all its children and send it to out. Returns a reference to out.</P>
+<P>&nbsp;</P>
+<B><P>virtual void CreateSubNodes(void)</P>
+</B><P>This function is called during printing when the node has not been initialized. A newly created node is internally marked as not initialized. The intent of this function is for the user to replace it with a function that knows how to create all of the subchildren of the node.</P>
+<P>The main use of this function is in classes that define whole regions of pages.</P>
+<P>&nbsp;</P>
+<B><P>const string&amp; GetName(void) const</P>
+<P>void SetName(const string&amp; namein)</P>
+</B><P>Get and set the name of the node.</P>
+<P>&nbsp;</P>
+<B><P>bool HaveAttribute(const string&amp; name) const</P>
+</B><P>Check for an attribute. Attributes are like the href in &lt;a href="<A HREF="http://www.ncbi.nlm.nih.gov/">http://www.ncbi.nlm.nih.gov</A>"&gt;</P>
+<P>&nbsp;</P>
+<B><P>string GetAttribute(const string&amp; name) const</P>
+</B><P>Return a copy of the attribute’s value</P>
+<P>&nbsp;</P>
+<B><P>const string* GetAttributeValue(const string&amp; name) const</P>
+</B><P>Return a pointer to the attribute’s value</P>
+<P>&nbsp;</P>
+<B><P>void SetAttribute(const string&amp; name, const string&amp; value)</P>
+<P>void SetAttribute(const string&amp; name)</P>
+<P>void SetAttribute(const string&amp; name, int value)</P>
+<P>void SetOptionalAttribute(const string&amp; name, const string&amp; value)</P>
+<P>void SetOptionalAttribute(const string&amp; name, bool set)</P>
+<P>void SetAttribute(const char* name, const string&amp; value)</P>
+<P>void SetAttribute(const char* name)</P>
+<P>void SetAttribute(const char* name, int value)</P>
+<P>void SetOptionalAttribute(const char* name, const string&amp; value)</P>
+<P>void SetOptionalAttribute(const char* name, bool set)</P>
+</B><P>Set an attribute. SetOptionalAttribute only sets the attribute if value contains a string or is true.</P>
+<P>&nbsp;</P>
+<B><P>CNCBINode* Clone() const</P>
+</B><P>Clone the node and all of its children</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTMLText</P>
+</I></FONT><P>CHTMLText(const string&amp; text)</P>
+</B><P>This is a text node that can contain html tags, including tags of the form &lt;@...@&gt; which are replaced by CNCBINode’s when printing out (this is discussed further in the CHTMLPage documentation).</P>
+<P>&nbsp;</P>
+<B><P>const string&amp; GetText(void) const</P>
+<P>void SetText(const string&amp; text)</P>
+</B><P>Get and set the text in the node.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTMLPlainText</P>
+</I></FONT><P>CHTMLPlainText(const string&amp; text)</P>
+</B><P>.This node is for text that is to be HTML encoded. For example, characters like "&amp;" are turned into "&amp;amp;"</P>
+<P>&nbsp;</P>
+<B><P>const string&amp; GetText(void) const</P>
+<P>void SetText(const string&amp; text)</P>
+</B><P>Get and set text in the node.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTMLNode</P>
+</B></I></FONT><P>CHTMLNode inherits from CNCBINode is the base class for html tags.</P>
+<P>&nbsp;</P>
+<B><P>CHTMLNode* SetWidth(int width)</P>
+<P>CHTMLNode* SetWidth(const string&amp; width)</P>
+<P>CHTMLNode* SetHeight(int height)</P>
+<P>CHTMLNode* SetHeight(const string&amp; width)</P>
+<P>CHTMLNode* SetAlign(const string&amp; align)</P>
+<P>CHTMLNode* SetBgColor(const string&amp; color)</P>
+<P>CHTMLNode* SetColor(const string&amp; color)</P>
+</B><P>Sets various attributes that are in common for many tags. Avoid setting these on tags that do not support these attributes. Returns *this so that the functions can be daisy chained:</P>
+<P>CHTML_table * Table = new CHTML_table;</P>
+<P>Table-&gt;SetWidth(400)-&gt;SetBgColor("#FFFFFF");</P>
+<P>&nbsp;</P>
+<B><P>void AppendPlainText(const string &amp;)</P>
+</B><P>Appends a CHTMLPlainText node. A plain text node will be encoded so that it does not contain any html tags (e.g. "&lt;" becomes "&amp;lt;").</P>
+<P>&nbsp;</P>
+<B><P>void AppendHTMLText(const string &amp;)</P>
+</B><P>Appends a CHTMLTextNode. This type of node can contain HTML tags, i.e. it is not html encoded.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTMLElement</P>
+</B></I></FONT><P>CHTMLElement is the base class for several tags that have the constructors with the common form:</P>
+<B><P>CHTMLElement()</P>
+<P>CHTMLElement(CNCBINode* node)</P>
+<P>CHTMLElement(const string&amp; text)</P>
+</B><P>The second constructor appends node. The third constructor appends CHTMLText(const string&amp; text).</P>
+<P>&nbsp;</P>
+<P>The tags derived from this class include: <B>CHTML_html, CHTML_head, CHTML_body, CHTML_base, CHTML_isindex, CHTML_link, CHTML_meta, CHTML_script, CHTML_style, CHTML_title, CHTML_address, CHTML_blockquote, CHTML_center, CHTML_div, CHTML_h1, CHTML_h2, CHTML_h3, CHTML_h4, CHTML_h5, CHTML_h6, CHTML_hr, CHTML_p, CHTML_pre, CHTML_dt, CHTML_dd, CHTML_li, CHTML_caption, CHTML_col, CHTML_colgroup, CHTML_thead, CHTML_tbody, CHTML_tfoot, CHTML_tr, CHTML_th, CHTML_td, CHTML_applet, CHTML_param, CHTML_cite, CHTML_code, CHTML_dfn, CHTML_em, CHTML_kbd, CHTML_samp, CHTML_strike, CHTML_strong, CHTML_var, CHTML_b, CHTML_big, CHTML_i, CHTML_s, CHTML_small, CHTML_sub, CHTML_sub, CHTML_sup, CHTML_tt, CHTML_u, CHTML_blink, CHTML_map, CHTML_area</P>
+</B><P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTMLOpenElement</P>
+</B></I></FONT><P>This is used for tags that do not have a close tag (like img). The constructors are of the same form as CHTMLElement.</P>
+<P>The tags derived from this class include: <B>CHTML_pnop</B> (paragraph tag without a close tag)</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTMLListElement</P>
+</B></I></FONT><P>These are elements used in a list.</P>
+<P>&nbsp;</P>
+<B><P>CHTMLListElement(void)</P>
+<P>CHTMLListElement(bool compact)</P>
+<P>CHTMLListElement(const string&amp; type)</P>
+<P>CHTMLListElement(const string&amp; type, bool compact)</P>
+</B><P>Construct the ListElement with the given attibutes: "TYPE" and "COMPACT". Both attributes affect the way the ListElement is displayed.</P>
+<P>&nbsp;</P>
+<B><P>CHTMLListElement* AppendItem(const string&amp; item)</P>
+<P>CHTMLListElement* AppendItem(CNCBINode* item)</P>
+</B><P>These functions add CHTMLText and CNCBINode items as children of the CHTMLListElement.</P>
+<P>&nbsp;</P>
+<P>The tags derived from this class include: <B>CHTML_ul, CHTML_dir, CHTML_menu</B>.</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<B><FONT FACE="Arial" SIZE=4><P>Specialized Tag Classes used in Forms</P>
+</B></FONT><P>The rest of the sections deal with tag classes that have additional members or member functions that make the tags easier to use. In addition there are helper classes, such as CHTML_checkbox, that are easier to use instances of HTML tags.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_form: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_form(const string&amp; action = NcbiEmptyString, const string&amp; method = NcbiEmptyString, const string&amp; enctype = NcbiEmptyString)</P>
+</B><P>Add an HTML form tag with the given attributes. NCBIEmptyString is simply a null string.</P>
+<P>&nbsp;</P>
+<B><P>void AddHidden(const string&amp; name, const string&amp; value)</P>
+</B><P>Add a hidden value to the form.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_input: derived from CHTMLOpenElement</P>
+</I></FONT><P>CHTML_input(const string&amp; type, const string&amp; name)</P>
+</B><P>Create a input tag of the given type and name. Several of the following classes are specialized versions of the input tag, for example, CHTML_checkbox.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_checkbox: derived from CHTML_input</P>
+</I></FONT><P>CHTML_checkbox(const string&amp; name)</P>
+<P>CHTML_checkbox(const string&amp; name, bool checked, const string&amp; description = NcbiEmptyString)</P>
+<P>CHTML_checkbox(const string&amp; name, const string&amp; value)</P>
+<P>CHTML_checkbox(const string&amp; name, const string&amp; value, bool checked, const string&amp; description = NcbiEmptyString)</P>
+</B><P>Create a checkbox with the given attributes. This is an input tag with type="checkbox".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_hidden: derived from CHTML_input</P>
+</I></FONT><P>CHTML_hidden(const string&amp; name, const string&amp; value)</P>
+</B><P>Create a hidden value with the given attributes. This is an input tag with type="hidden".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_image: derived from CHTML_input</P>
+</I></FONT><P>CHTML_image(const string&amp; name, const string&amp; src)</P>
+</B><P>Create an image submit input tag. This is an input tag with type="image".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_radio: derived from CHTML_input</P>
+</I></FONT><P>CHTML_radio(const string&amp; name, const string&amp; value)</P>
+<P>CHTML_radio(const string&amp; name, const string&amp; value, bool checked, const string&amp; description = NcbiEmptyString)</P>
+</B><P>Creates a radio button. Radio buttons are input tags with type="radio button".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_reset: derived from CHTML_input</P>
+</I></FONT><P>CHTML_reset(const string&amp; label = NcbiEmptyString)</P>
+</B><P>Create a reset button. This is an input tag with type="reset".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_submit: derived from CHTML_input</P>
+</I></FONT><P>CHTML_submit(const string&amp; name)</P>
+<P>CHTML_submit(const string&amp; name, const string&amp; label)</P>
+</B><P>Create a submit button. This is an input tag with type="submit".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_text: derived from CHTML_input</P>
+</I></FONT><P>CHTML_text(const string&amp; name, const string&amp; value = NcbiEmptyString)</P>
+<P>CHTML_text(const string&amp; name, int size, const string&amp; value = NcbiEmptyString)</P>
+<P>CHTML_text(const string&amp; name, int size, int maxlength, const string&amp; value = NcbiEmptyString)</P>
+</B><P>Create a text box. This is an input tag with type="text".</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_select: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_select(const string&amp; name, bool multiple = false)</P>
+<P>CHTML_select(const string&amp; name, int size, bool multiple = false)</P>
+</B><P>Create a selection tag used for drop-downs and selection boxes.</P>
+<P>&nbsp;</P>
+<B><P>CHTML_select* AppendOption(const string&amp; option, bool selected = false)</P>
+<P>CHTML_select* AppendOption(const string&amp; option, const string&amp; value, bool selected = false)</P>
+</B><P>Add an entry to the selection box by using the option tag. Returns *this to allow you to daisy-chain calls to AppendOption.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_option: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_option(const string&amp; content, bool selected = false)</P>
+<P>CHTML_option(const string&amp; content, const string&amp; value, bool selected = false)</P>
+</B><P>The option tag used inside of select elements. See CHTML_select for an easy way to add option.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_textarea: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_textarea(const string&amp; name, int cols, int rows)</P>
+<P>CHTML_textarea(const string&amp; name, int cols, int rows, const string&amp; value)</P>
+</B><P>Create a textarea tag inside of a form.</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<B><FONT FACE="Arial" SIZE=4><P>Specialized Tag Classes Used in Lists</P>
+</B></FONT><P>These are specialized tag classes used in lists. See "Basic Classes" for non-specialized tag classes used in list.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_dl: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_dl(bool compact = false)</P>
+</B><P>Create a dl tag.</P>
+<P>&nbsp;</P>
+<B><P>CHTML_dl* AppendTerm(const string&amp; term, CNCBINode* definition = 0)</P>
+<P>CHTML_dl* AppendTerm(const string&amp; term, const string&amp; definition)</P>
+<P>CHTML_dl* AppendTerm(CNCBINode* term, CNCBINode* definition = 0)</P>
+<P>CHTML_dl* AppendTerm(CNCBINode* term, const string&amp; definition)</P>
+</B><P>Append a term and definition to the list by using DD and DT tags.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_ol: derived from CHTMLListElement</P>
+</I></FONT><P>CHTML_ol(bool compact = false)</P>
+<P>CHTML_ol(const string&amp; type, bool compact = false)</P>
+<P>CHTML_ol(int start, bool compact = false)</P>
+<P>CHTML_ol(int start, const string&amp; type, bool compact = false)</P>
+</B><P>The last two constructors let you specify the starting number for the list.</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<B><FONT FACE="Arial" SIZE=4><P>Other Specialized Tag Classes</P>
+</B></FONT><P>These tag classes that have additional members or member functions that make the tags easier to use. </P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_table: derived from CHTMLElement</P>
+</I></FONT><P>CNCBINode* Cell(int row, int column)</P>
+</B><P>This function can be used to specify the size of the table or return a pointer to a particular cell in the table. Throws a runtime_error exception when the children of the table are not TR or the children of each TR is not TH or TD or there are more columns than should be.</P>
+<P>&nbsp;</P>
+<B><P>int CalculateNumberOfColumns(void) const</P>
+<P>int CalculateNumberOfRows(void) const</P>
+</B><P>Returns number of columns and number of rows in the table.</P>
+<P>&nbsp;</P>
+<B><P>CNCBINode* InsertAt(int row, int column, CNCBINode* node)</P>
+<P>CNCBINode* InsertTextAt(int row, int column, const string&amp; text)</P>
+</B><P>Inserts a node or text in the table. Grows the table if the specified cell is outside the table. Uses Cell() so can throw the same exceptions.</P>
+<P>&nbsp;</P>
+<B><P>void ColumnWidth(CHTML_table*, int column, const string &amp; width)</P>
+</B><P>Set the width of a particular column.</P>
+<P>&nbsp;</P>
+<B><P>CHTML_table* SetCellSpacing(int spacing)</P>
+<P>CHTML_table* SetCellPadding(int padding)</P>
+</B><P>Set the cellspacing or cellpadding attributes.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_a: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_a(const string&amp; href, const string&amp; text)</P>
+<P>CHTML_a(const string&amp; href, CNCBINode* node)</P>
+</B><P>Creates a hyperlink that contains the given text or node.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_img: derived from CHTMLOpenElement</P>
+</I></FONT><P>CHTML_img(const string&amp; url)</P>
+<P>CHTML_img(const string&amp; url, int width, int height)</P>
+</B><P>Creates an image tag with the given attributes.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_font: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_font(void)</P>
+<P>CHTML_font(int size, CNCBINode* node = 0)</P>
+<P>CHTML_font(int size, const string&amp; text)</P>
+<P>CHTML_font(int size, bool absolute, CNCBINode* node = 0)</P>
+<P>CHTML_font(int size, bool absolute, const string&amp; text)</P>
+<P>CHTML_font(const string&amp; typeface, CNCBINode* node = 0)</P>
+<P>CHTML_font(const string&amp; typeface, const string&amp; text)</P>
+<P>CHTML_font(const string&amp; typeface, int size, CNCBINode* node = 0)</P>
+<P>CHTML_font(const string&amp; typeface, int size, const string&amp; text)</P>
+<P>CHTML_font(const string&amp; typeface, int size, bool absolute, CNCBINode* node = 0)</P>
+<P>CHTML_font(const string&amp; typeface, int size, bool absolute, const string&amp; text)</P>
+</B><P>Create a font tag with the given attributes. Appends the given text or node. Note that it is cleaner and more reusable to use a stylesheet than to use the font tag.</P>
+<P>&nbsp;</P>
+<B><P>void SetRelativeSize(int size)</P>
+</B><P>Set the size of the font tag.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_color: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_color(const string&amp; color, CNCBINode* node = 0)</P>
+<P>CHTML_color(const string&amp; color, const string&amp; text)</P>
+</B><P>Create a font tag with the given color and append either node or text.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_br: derived from CHTMLOpenElement</P>
+</I></FONT><P>CHTML_br(void)</P>
+<P>CHTML_br(int number)</P>
+</B><P>The last constructor lets you insert multiple BR tags.</P>
+<P>&nbsp;</P>
+<B><I><FONT FACE="Arial"><P>CHTML_basefont: derived from CHTMLElement</P>
+</I></FONT><P>CHTML_basefont(int size)</P>
+<P>CHTML_basefont(const string&amp; typeface)</P>
+<P>CHTML_basefont(const string&amp; typeface, int size)</P>
+</B><P>Set the basefont for the page with the given attributes.</P></BODY>
+</HTML>
