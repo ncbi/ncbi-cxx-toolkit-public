@@ -142,11 +142,15 @@ extern NCBI_XCONNECT_EXPORT TNCBI_Size HEAP_Trim(HEAP heap);
  * (like one after HEAP_Attach), which must be freed by a call to
  * either HEAP_Detach or HEAP_Destroy when no longer needed.
  * If a non-zero number provided (serial number) it is stored
- * in the heap descriptor (zero number is always changed into 1).
+ * in the heap descriptor (zero serial is always turned into 1).
  */
-extern NCBI_XCONNECT_EXPORT HEAP HEAP_CopySerial(const HEAP orig, int serial);
+extern NCBI_XCONNECT_EXPORT HEAP HEAP_CopySerial
+(const HEAP orig,         /* original heap to copy from               */
+ size_t     extra,        /* extra amount to add past the heap extent */
+ int        serial        /* serial number to assign (default is 1)   */
+ );
 
-#define HEAP_Copy(orig) HEAP_CopySerial(orig, 0)
+#define HEAP_Copy(orig) HEAP_CopySerial(orig, 0, 0)
 
 
 /* Detach heap (previously attached by HEAP_Attach).
@@ -186,6 +190,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/08/28 21:09:37  lavr
+ * Accept (and allocate) additional heap extent in HEAP_CopySerial()
+ *
  * Revision 6.16  2003/08/25 14:50:10  lavr
  * Heap arena ptrs changed to be "void*";  expand routine to take user arg
  *

@@ -522,16 +522,17 @@ TNCBI_Size HEAP_Trim(HEAP heap)
 }
 
 
-HEAP HEAP_CopySerial(const HEAP heap, int serial)
+HEAP HEAP_CopySerial(const HEAP heap, size_t extra, int serial)
 {
-    HEAP  newheap;
-    void* newbase;
-    
+    HEAP   newheap;
+    void*  newbase;
+
+    extra = HEAP_ALIGN(extra);
     if (!heap ||
-        !(newbase = malloc(HEAP_ALIGN(heap->size) + sizeof(*newheap))))
+        !(newbase = malloc(HEAP_ALIGN(heap->size) + extra + sizeof(*newheap))))
         return 0;
     memcpy(newbase, heap->base, heap->size);
-    newheap = (HEAP)((char*) newbase + HEAP_ALIGN(heap->size));
+    newheap = (HEAP)((char*) newbase + HEAP_ALIGN(heap->size) + extra);
     newheap->base   = newbase;
     newheap->size   = heap->size;
     newheap->chunk  = 0/*read-only*/;
@@ -552,11 +553,9 @@ void HEAP_Detach(HEAP heap)
 void HEAP_Destroy(HEAP heap)
 {
     if (heap) {
-        if (!heap->chunk && !heap->copy) {
+        if (!heap->chunk && !heap->copy)
             CORE_LOG(eLOG_Warning, "Heap Destroy: Heap is read-only");
-            return;
-        }
-        if (heap->expand)
+        else if (heap->expand/*NB: false for heap copies*/)
             (*heap->expand)(heap->base, 0, heap->arg);
         HEAP_Detach(heap);
     }
@@ -584,6 +583,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/08/28 21:09:58  lavr
+ * Accept (and allocate) additional heap extent in HEAP_CopySerial()
+ *
  * Revision 6.22  2003/08/25 16:53:37  lavr
  * Add/remove spaces here and there to comply with coding rules...
  *
