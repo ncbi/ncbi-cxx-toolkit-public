@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/03/16 17:43:54  vasilche
+* Added missing forward declaration.
+*
 * Revision 1.4  2000/03/16 17:41:13  vasilche
 * Missing USING_NCBI_SCOPE
 *
@@ -61,6 +64,8 @@
 #include <list>
 
 USING_NCBI_SCOPE;
+
+class CDataType;
 
 class CTypeNotFound : public runtime_error
 {
