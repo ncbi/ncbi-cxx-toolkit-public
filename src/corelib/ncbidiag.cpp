@@ -63,11 +63,11 @@ DEFINE_STATIC_MUTEX(s_DiagMutex);
 extern "C" {
     static void s_NcbiDiagPreFork(void)
     {
-        //s_DiagMutex.Lock();
+        s_DiagMutex.Lock();
     }
     static void s_NcbiDiagPostFork(void)
     {
-        //s_DiagMutex.Unlock();
+        s_DiagMutex.Unlock();
     }
 }
 
@@ -1070,6 +1070,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.68  2002/09/30 16:35:16  vasilche
+ * Restored mutex lock on fork().
+ *
  * Revision 1.67  2002/09/24 18:28:20  vasilche
  * Fixed behavour of CNcbiDiag::DiagValidate() in release mode
  *
