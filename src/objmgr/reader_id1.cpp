@@ -207,7 +207,7 @@ CSeq_entry *CId1Blob::Seq_entry()
     m_Seq_entry = &id1_reply.GetGotseqentry();
   else if(id1_reply.IsGotdeadseqentry())
     m_Seq_entry = &id1_reply.GetGotdeadseqentry();
-  if(clenup && m_Seq_entry)
+  if(clenup && m_Seq_entry.GetPointer())
     {
       delete m_Seq_entry;
       m_Seq_entry=0;
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.9  2002/03/25 18:12:48  grichenk
+* Fixed bool convertion
+*
 * Revision 1.8  2002/03/25 17:49:13  kimelman
 * ID1 failure handling
 *
