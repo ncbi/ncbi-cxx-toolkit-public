@@ -962,8 +962,9 @@ if test "$with_sybase" = "no" ; then
    SYBASE_PATH="No_Sybase"
    SYBASE_INCLUDE=
    SYBASE_LIBS=
+   WithoutPackages="$WithoutPackages Sybase"
 else
-   Packages="$Packages Sybase"
+   WithPackages="$WithPackages Sybase"
 fi
 AC_MSG_RESULT([$SYBASE_PATH])
 
@@ -996,8 +997,9 @@ if test "$with_ncbi_c" = "no" ; then
    NCBI_C_INCLUDE=
    NCBI_C_LIBPATH=
    NCBI_C_ncbi=
+   WithoutPackages="$WithoutPackages C-Toolkit"
 else
-   Packages="$Packages C-Toolkit"
+   WithPackages="$WithPackages C-Toolkit"
    NCBI_C_ncbi=${NCBI_C_ncbi:="-lncbi"}
 fi
 AC_MSG_RESULT([$NCBI_C_PATH])
@@ -1028,8 +1030,9 @@ if test "$with_fastcgi" = "no" ; then
    FASTCGI_INCLUDE=
    FASTCGI_LIBS=
    FASTCGI_OBJS=
+   WithoutPackages="$WithoutPackages Fast-CGI"
 else
-   Packages="$Packages Fast-CGI"
+   WithPackages="$WithPackages Fast-CGI"
 fi
 AC_MSG_RESULT([$FASTCGI_PATH])
 
@@ -1100,7 +1103,9 @@ fi
 AC_MSG_RESULT([$with_sssutils])
 
 if test "$with_sssdb" != "no"  ||  test "$with_sssutils" != "no" ; then
-   Packages="$Packages SSS"
+   WithPackages="$WithPackages SSS"
+else
+   WithoutPackages="$WithoutPackages SSS"
 fi
 
 
@@ -1121,8 +1126,9 @@ elif test "$with_pubmed" != "no" ; then
 fi
 if test "$with_pubmed" = "no" ; then
    NCBI_PM_PATH="No_NCBI_PubMed"
+   WithoutPackages="$WithoutPackages PubMed"
 else
-   Packages="$Packages PubMed"
+   WithPackages="$WithPackages PubMed"
 fi
 AC_MSG_RESULT([$NCBI_PM_PATH])
 
@@ -1134,25 +1140,32 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 ## Optional projects
 if test "$with_internal" = "yes" ; then
+   WithProjects="$WithProjects internal"
    if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" || test "$no_internal" = "yes" ; then
       AC_MSG_ERROR(["--with-internal:  Cannot build internal projects"])
    fi
    internal="internal"
 else
+   WithoutProjects="$WithoutProjects internal"
    internal=
 fi
 
 if test "$with_serial" = "no" ; then
+   WithoutProjects="$WithoutProjects serial"
    serial=
 else
+   WithProjects="$WithProjects serial"
    serial="serial"
 fi
 
 if test "$with_objects" = "yes"  &&  test -n "$serial" ; then
+   WithProjects="$WithProjects objects"
    objects="objects"
 else
+   WithoutProjects="$WithoutProjects objects"
    objects=
 fi
+
 
 ## Miscellanea
 if test "$with_execopy" = "no" ; then
@@ -1326,7 +1339,10 @@ CXXFLAGS="$SAVE_CXXFLAGS"
 CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
 with_dll="$SAVE_with_dll"
-Packages="$SAVE_Packages"
+WithPackages="$SAVE_WithPackages"
+WithoutPackages="$SAVE_WithoutPackages"
+WithProjects="$SAVE_WithProjects"
+WithoutProjects="$SAVE_WithoutProjects"
 with_extra_action="$SAVE_with_extra_action"
 
 dnl adjust "/$builddir" to "/src"
@@ -1361,17 +1377,16 @@ fi
 
 dnl printout additional configuration options
 if test "$with_dll" = "yes" ; then
-   DLL_USAGE="Build libraries as dynamic by default"
+   DLL_USAGE="LIBRARIES:  build as dynamic by default"
 elif test "$with_dll" = "no" ; then
-   DLL_USAGE="Build libraries as static only"
+   DLL_USAGE="LIBRARIES:  build as static only"
 else
-   DLL_USAGE="Build libraries as static by default"
+   DLL_USAGE="LIBRARIES:  build as static by default"
 fi
 
 cat << EOCONF
 ===============================================================================
 Overall NCBI C++ Toolkit documentation:     ./doc/index.html 
-
 For the available configuration flags run:  ./configure --help
 or consult documentation at:                ./doc/config.html#ref_Running
 
@@ -1380,8 +1395,13 @@ CXXFLAGS = $CXXFLAGS
 CPPFLAGS = $CPPFLAGS
 LDFLAGS  = $LDFLAGS
 
-* $DLL_USAGE
-* Packages detected:  $Packages
+$DLL_USAGE
+PACKAGES:
+  enabled:   $WithPackages
+  disabled:  $WithoutPackages
+PROJECTS:
+  enabled:   $WithProjects
+  disabled:  $WithoutProjects
 
 Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
@@ -1403,6 +1423,9 @@ SAVE_CXXFLAGS="$CXXFLAGS"
 SAVE_CPPFLAGS="$CPPFLAGS"
 SAVE_LDFLAGS="$LDFLAGS"
 SAVE_with_dll="$with_dll"
-SAVE_Packages="$Packages"
+SAVE_WithPackages="$WithPackages"
+SAVE_WithoutPackages="$WithoutPackages"
+SAVE_WithProjects="$WithProjects"
+SAVE_WithoutProjects="$WithoutProjects"
 SAVE_with_extra_action="$with_extra_action"
 )
