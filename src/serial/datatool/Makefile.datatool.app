@@ -12,3 +12,4 @@ OBJ = moduleset alexer aparser parser lexer type value module \
 LIB = xser xncbi
 
 CPPFLAGS = -I. $(ORIG_CPPFLAGS)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
