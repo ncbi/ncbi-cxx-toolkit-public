@@ -349,7 +349,6 @@ typedef struct BlastHitSavingOptions {
    /* applicable to all, except blastn */
    ESumStatsMode do_sum_stats; /**< Force sum statistics to be used to combine 
                                   HSPs */
-   /* tblastn w/ sum statistics */
    Int4 longest_intron; /**< The longest distance between HSPs allowed for
                            combining via sum statistics with uneven gaps */
    /********************************************************************/
