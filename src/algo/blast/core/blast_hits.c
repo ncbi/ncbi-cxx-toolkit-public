@@ -481,7 +481,7 @@ static Boolean Blast_HSPContained(BlastHSP* hsp1, BlastHSP* hsp2)
    return (hsp_start_is_contained && hsp_end_is_contained);
 }
 
-/** Comparison callback function for sorting HSPs by e-value */
+/** Comparison callback function for sorting HSPs by score */
 static int
 score_compare_hsps(const void* v1, const void* v2)
 {
@@ -518,6 +518,38 @@ score_compare_hsps(const void* v1, const void* v2)
       return 1;
 
    return 0;
+}
+
+#define FUZZY_EVALUE_COMPARE_FACTOR 1e-6
+/** Compares 2 real numbers up to a fixed precision */
+static int fuzzy_evalue_comp(double evalue1, double evalue2)
+{
+   if (evalue1 < (1-FUZZY_EVALUE_COMPARE_FACTOR)*evalue2)
+      return -1;
+   else if (evalue1 > (1+FUZZY_EVALUE_COMPARE_FACTOR)*evalue2)
+      return 1;
+   else 
+      return 0;
+}
+
+/** Comparison callback function for sorting HSPs by e-value and score, before
+    saving BlastHSPList in a BlastHitList. E-value has priority over score, 
+    because lower scoring HSPs might have lower e-values, if they are linked
+    with sum statistics.
+    E-values are compared only up to a certain precision. */
+static int
+evalue_compare_hsps(const void* v1, const void* v2)
+{
+   BlastHSP* h1,* h2;
+   int retval = 0;
+
+   h1 = *((BlastHSP**) v1);
+   h2 = *((BlastHSP**) v2);
+   
+   if ((retval = fuzzy_evalue_comp(h1->evalue, h2->evalue)) != 0)
+      return retval;
+
+   return score_compare_hsps(v1, v2);
 }
 
 /** Comparison callback function for sorting HSPs by diagonal and flagging
@@ -1564,6 +1596,8 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
 }
 
 /** Callback for sorting hsp lists by their best evalue/score;
+ * Evalues are compared only up to a relative error of 
+ * FUZZY_EVALUE_COMPARE_FACTOR. 
  * It is assumed that the HSP arrays in each hit list are already sorted by 
  * e-value/score.
 */
@@ -1574,6 +1608,7 @@ evalue_compare_hsp_lists(const void* v1, const void* v2)
    
    h1 = *(BlastHSPList**) v1;
    h2 = *(BlastHSPList**) v2;
+   int retval = 0;
    
    /* If any of the HSP lists is empty, it is considered "worse" than the 
       other, unless the other is also empty. */
@@ -1584,11 +1619,10 @@ evalue_compare_hsp_lists(const void* v1, const void* v2)
    else if (h2->hspcnt == 0)
       return -1;
 
-   if (h1->hsp_array[0]->evalue < h2->hsp_array[0]->evalue)
-      return -1;
-   if (h1->hsp_array[0]->evalue > h2->hsp_array[0]->evalue)
-      return 1;
-   
+   if ((retval = fuzzy_evalue_comp(h1->hsp_array[0]->evalue, 
+                                   h2->hsp_array[0]->evalue)) != 0)
+      return retval;
+
    if (h1->hsp_array[0]->score > h2->hsp_array[0]->score)
       return -1;
    if (h1->hsp_array[0]->score < h2->hsp_array[0]->score)
@@ -1762,21 +1796,28 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
          MAX(hsp_list->hsp_array[0]->evalue, hit_list->worst_evalue);
       hit_list->low_score = 
          MIN(hsp_list->hsp_array[0]->score, hit_list->low_score);
-   } else if ((hsp_list->hsp_array[0]->evalue > hit_list->worst_evalue) ||
-              ((hsp_list->hsp_array[0]->evalue == hit_list->worst_evalue) &&
-               (hsp_list->hsp_array[0]->score <= hit_list->low_score))) {
-      /* This hit list is less significant than any of those already saved;
-         discard it */
-      Blast_HSPListFree(hsp_list);
    } else {
-      if (!hit_list->heapified) {
-         CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count, 
-                    sizeof(BlastHSPList*), evalue_compare_hsp_lists);
-         hit_list->heapified = TRUE;
+      /* Compare e-values only with a certain precision */
+      int evalue_order = fuzzy_evalue_comp(hsp_list->hsp_array[0]->evalue,
+                                           hit_list->worst_evalue);
+      if (evalue_order > 0 || 
+          (evalue_order == 0 &&
+           (hsp_list->hsp_array[0]->score < hit_list->low_score))) {
+         /* This hit list is less significant than any of those already saved;
+            discard it. Note that newer hits with score and e-value both equal
+            to the current worst will be saved, at the expense of some older 
+            hit.
+         */
+         Blast_HSPListFree(hsp_list);
+      } else {
+         if (!hit_list->heapified) {
+            CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count, 
+                       sizeof(BlastHSPList*), evalue_compare_hsp_lists);
+            hit_list->heapified = TRUE;
+         }
+         Blast_HitListInsertHSPListInHeap(hit_list, hsp_list);
       }
-      Blast_HitListInsertHSPListInHeap(hit_list, hsp_list);
    }
-
    return 0;
 }
 
@@ -1851,10 +1892,12 @@ Int2 Blast_HSPResultsSaveHitList(Uint1 program, BlastHSPResults* results,
       context_factor = 1;
    }
 
-   /* Sort the HSPs by score */
+   /* Sort the HSPs by e-value/score. E-value has a priority here, because
+      lower scoring HSPs in linked sets might have lower e-values, and must
+      be moved higher in the list. */
    if (hsp_list->hspcnt > 1) {
       qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-            score_compare_hsps);
+            evalue_compare_hsps);
    }
 
    /* Rearrange HSPs into multiple hit lists if more than one query */
