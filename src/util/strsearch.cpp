@@ -208,7 +208,8 @@ size_t CBoyerMooreMatcher::Search(const char*  text,
             if ( (j == -1)  &&  IsWholeWord(text, shift, text_len) ) {
                 return  shift;
             } else {
-                shift += (unsigned int)m_LastOccurance[toupper(text[shift + j])];
+                shift += 
+                    (unsigned int)m_LastOccurance[toupper(text[shift + j])];
             }
         }
     }
@@ -258,6 +259,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/11 16:56:33  kuznets
+* Minor reformatting
+*
 * Revision 1.12  2004/03/11 16:54:48  kuznets
 * CBoyerMooreMatcher::Search fixed incorrect bad-character shift in case
 * insensitive search...
