@@ -748,6 +748,7 @@ else
    AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
 fi
 
+
 ### <sys/sockio.h>
 AC_MSG_CHECKING(for sys/sockio.h)
 AC_TRY_COMPILE(
@@ -768,6 +769,23 @@ AC_TRY_COMPILE(
      struct hostent *hp =
          gethostbyname_r("localhost", &x_hp, x_buf, sizeof(x_buf), &x_err); ],
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, 1)
+)
+AC_MSG_RESULT()
+
+
+AC_MSG_CHECKING(for gethostbyaddr_r)
+AC_TRY_COMPILE(
+   [#include <netdb.h>
+    #include <sys/socket.h>
+   ],
+   [ struct hostent  x_hp;
+     char            x_buf[1024];
+     int             x_err;
+     unsigned int    x_host;
+     struct hostent* hp =
+         gethostbyaddr_r((char *) &x_host, sizeof(x_host), AF_INET,
+                         &x_hp, x_buf, sizeof(x_buf), &x_err); ],
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, 1)
 )
 AC_MSG_RESULT()
 

@@ -24,6 +24,9 @@
 /* gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
+/* gethostbyaddr_r() */
+#undef HAVE_GETHOSTBYADDR_R
+
 /* strdup() */
 #undef HAVE_STRDUP
 
