@@ -53,8 +53,10 @@ BEGIN_NCBI_SCOPE
 /// Include definitions from the objects namespace.
 USING_SCOPE(objects);
 
+
 /// Forward declaration of CSeqDB class
 class CSeqDB;
+
 
 /// CSeqDBIter
 /// 
@@ -173,7 +175,7 @@ public:
     /// This version of the constructor assumes memory mapping and
     /// that the entire possible OID range will be included.  [This
     /// version is obsolete, because the sequence type is specified as
-    /// a character; eventually only the ESeqType version will exist].
+    /// a character; eventually only the ESeqType version will exist.]
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
@@ -203,7 +205,7 @@ public:
     /// and end will cause inclusion of the entire database.  [This
     /// version of the constructor is obsolete because the sequence
     /// type is specified as a character; eventually only the ESeqType
-    /// version will exist].
+    /// version will exist.]
     /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
@@ -393,10 +395,16 @@ public:
     ///   A list of Seq-id objects for this sequence.
     list< CRef<CSeq_id> > GetSeqIDs(TOID oid) const;
     
-    /// Returns the type of database opened - protein or nucleotide.
+    /// Returns the type of database opened - protein or nucleotide..
+    /// [This method is obsolete; use GetSequenceType() instead.]
     /// 
     /// This uses the same constants as the constructor.
     char GetSeqType() const;
+    
+    /// Returns the type of database opened - protein or nucleotide.
+    /// 
+    /// This uses the same constants as the constructor.
+    ESeqType GetSequenceType() const;
     
     /// Returns the database title.
     ///
@@ -594,7 +602,9 @@ public:
     /// Find the base names of all volumes.  This method builds an
     /// alias hierarchy (which should be much faster than constructing
     /// an entire CSeqDB object), and returns the resolved volume file
-    /// base names from that hierarchy.
+    /// base names from that hierarchy.  [This version of the method
+    /// is obsolete because the sequence type is specified as a
+    /// character; eventually only the ESeqType version will exist.]
     ///
     /// @param dbname
     ///   The input name of the database
@@ -605,6 +615,24 @@ public:
     static void
     FindVolumePaths(const string   & dbname,
                     char             seqtype,
+                    vector<string> & paths);
+    
+    /// Find volume paths
+    ///
+    /// Find the base names of all volumes.  This method builds an
+    /// alias hierarchy (which should be much faster than constructing
+    /// an entire CSeqDB object), and returns the resolved volume file
+    /// base names from that hierarchy.
+    ///
+    /// @param dbname
+    ///   The input name of the database
+    /// @param seqtype
+    ///   Indicates whether the database is protein or nucleotide
+    /// @param paths
+    ///   The set of resolved database path names
+    static void
+    FindVolumePaths(const string   & dbname,
+                    ESeqType         seqtype,
                     vector<string> & paths);
     
     /// Find volume paths
