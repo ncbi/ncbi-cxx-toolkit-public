@@ -15,6 +15,9 @@ SRC = datatool \
 	dtdaux dtdlexer dtdparser rpcgen
 LIB = xser xutil xncbi
 
+# Build even --without-exe, to avoid version skew.
+APP_OR_NONE = app
+
 CHECK_CMD = datatool.sh
 CHECK_CMD = datatool.sh /net/sampson/a/coremake/test_data/objects
 CHECK_CMD = datatool_xml.sh
