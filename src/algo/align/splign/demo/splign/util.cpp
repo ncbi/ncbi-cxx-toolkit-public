@@ -34,6 +34,8 @@
 #include "util.hpp"
 #include "hf_hitparser.hpp"
 
+#include <corelib/ncbistl.hpp>
+
 #include <algorithm>
 
 
@@ -219,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/17 19:25:13  kapustin
+ * +corelib/ncbistl.hpp to supress msvc warnings
+ *
  * Revision 1.7  2003/12/10 16:07:58  ucko
  * Use NStr::IntToString rather than sprintf in RLE.
  *
