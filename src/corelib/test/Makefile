@@ -41,12 +41,12 @@ CXXFLAGS  = +w2 -g
 LFLAGS    = -L../src -L$(I_LIB)
 
 .SUFFIXES:
-.SUFFIXES:	.cpp $(SUFFIXES)
+.SUFFIXES:  .o .c .h .hpp .cpp
 
 .cpp.o: $(DEP)
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
-
+.KEEP_STATE:
 
 #################################
 
@@ -61,6 +61,7 @@ install: $(EXE)
 	$(COPY) $(EXE) $(E_BIN)/
 
 clean:
+	-rm .make.state
 	-rm -r SunWS_cache
 	-$(DEL) $(EXE)
 	-$(DEL) $(OBJ)
