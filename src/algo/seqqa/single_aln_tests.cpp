@@ -223,6 +223,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
 
         // count of transcript residues doing various things
         CAlnVec avec(exon.GetSegs().GetDenseg(), scope);
+        avec.SetGapChar('-');
         exon_match_count = 0;
         bool in_cds = false;
         for (TSeqPos i = 0;  i <= avec.GetAlnStop();  ++i) {
@@ -468,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/01 19:41:35  jcherry
+ * Set alignment vector gap character appropriately
+ *
  * Revision 1.9  2004/11/18 21:27:40  grichenk
  * Removed default value for scope argument in seq-loc related functions.
  *
