@@ -55,20 +55,34 @@ public:
         delete m_BlobStream;
     }
 
-    virtual ssize_t Read(void* buf, size_t buf_size)
+    virtual EIO_Result Read(void*   buf, 
+                            size_t  count,
+                            size_t* bytes_read)
     {
-        if (buf_size == 0)
-            return 0;
-
-        size_t bytes_read;
+        if (count == 0)
+            return eIO_Success;
+        
+        size_t br;
 
         {{
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-        m_BlobStream->Read(buf, buf_size, &bytes_read);
+        m_BlobStream->Read(buf, count, &br);
         }}
 
-        return bytes_read;
+        if (bytes_read)
+            *bytes_read = br;
+        
+        if (br == 0) 
+            return eIO_Eof;
+        return eIO_Success;
     }
+
+    virtual EIO_Result PendingCount(size_t* count)
+    {
+        return eIO_NotImplemented;
+    }
+
+
 private:
     CBDB_BLOB_CacheIReader(const CBDB_BLOB_CacheIReader&);
     CBDB_BLOB_CacheIReader& operator=(const CBDB_BLOB_CacheIReader&);
@@ -91,16 +105,21 @@ public:
         delete m_BlobStream;
     }
 
-    virtual ssize_t Write(const void* buf, size_t buf_size)
+    virtual EIO_Result Write(const void* buf, size_t count,
+                             size_t* bytes_written = 0)
     {
-        if (buf_size == 0)
-            return 0;
+        if (count == 0)
+            return eIO_Success;
 
         {{
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-        m_BlobStream->Write(buf, buf_size);
+        m_BlobStream->Write(buf, count);
         }}
-        return (ssize_t)buf_size;
+
+        if (bytes_written)
+            *bytes_written = count;
+
+        return eIO_Success;
     }
 
 private:
@@ -358,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/24 15:59:45  kuznets
+ * Reflected changes in IReader/IWriter <util/reader_writer.hpp>
+ *
  * Revision 1.1  2003/09/24 14:30:17  kuznets
  * Initial revision
  *
