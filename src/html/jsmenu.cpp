@@ -262,6 +262,19 @@ string CHTMLPopupMenu::ShowMenu(void) const
 }
 
 
+string CHTMLPopupMenu::HideMenu(void) const
+{
+    switch (m_Type) {
+    case eKurdin:
+        return "PopUpMenu2_Hide(); return false;";
+    default:
+        ;
+    }
+    _TROUBLE;
+    return kEmptyStr;
+}
+
+
 string CHTMLPopupMenu::GetCodeMenuItems(void) const
 {
     string code;
@@ -405,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/12/18 20:14:40  golikov
+ * Added HideMenu
+ *
  * Revision 1.24  2003/12/12 12:10:38  ivanov
  * Updated Sergey Kurdin's popup menu to v2.4
  *

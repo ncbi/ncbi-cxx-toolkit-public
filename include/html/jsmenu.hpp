@@ -175,6 +175,9 @@ public:
     /// Get JavaScript code for menu call.
     string ShowMenu(void) const;
 
+    /// Get JavaScript code for menu hide.
+    string HideMenu(void) const;
+
     /// Get HTML code for inserting into end of the HEAD and BODY blocks.
     /// If "menu_lib_url" is not defined, then use default URL.
     static string GetCodeHead(EType type = eSmith,
@@ -230,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/12/18 20:14:21  golikov
+ * Added HideMenu
+ *
  * Revision 1.15  2003/12/02 14:21:35  ivanov
  * Remjved obsolete functions GetCodeBodyTag[Handler|Action]()
  *
