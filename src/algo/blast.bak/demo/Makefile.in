@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+APP_PROJ = blast2seq
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
