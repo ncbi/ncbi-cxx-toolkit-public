@@ -17,6 +17,7 @@
 		<li> <a href="#ref_NamingFunc">Functions</a>
 	 </ul>
 	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of quasi-namespaces</a>
+	 <li> <a href="#ref_Scope">Use of the NCBI name scope</a>
 	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
 	 <li> <a href="#ref_Class">Class declaration</a> </ul>
 
@@ -74,7 +75,7 @@
 	 not when a real type definition takes place.
 
 
-		<br></br> <br></br>
+	 <br></br> <br></br>
 
 	 <a name="ref_Prefix">
     <h2>Name prefixing and/or the use of quasi-namespaces</h2>
@@ -103,6 +104,36 @@
 	 Usually, this approach is useful for global functions.
 	 As for classes, etc. it is still better to use simple prefixes
 	 (as described above) instead.
+
+
+	 <br></br> <br></br>
+
+	 <a name="ref_Scope">
+    <h2>Use of the NCBI name scope</h2>
+
+	 <i>&lt;ncbistl.hpp&gt;</i>
+
+	 <p>
+	 All NCBI-made API must be put into the single namespace.
+	 For this reason, there are two preprocessor macros,
+	 <i>BEGIN_NCBI_SCOPE</i> and <i>END_NCBI_SCOPE</i>,
+	 that must embrace <b>all</b> NCBI C++ API code -- both declarations
+	 and definitions(see <a href="new_mod.html">examples </a>).
+	 Inside these "brackets", all <i>"std::"</i> and <i>"ncbi::"</i> scope prefixes
+	 can(and must!) be omitted. Safely.
+
+	 <p>
+	 For the code that does not define new API but merely <b>uses</b>
+	 NCBI C++ API, there is a macro <i>USING_NCBI_SCOPE</i>
+	 (semicolon-terminated) that makes all <b>"std"</b>- and
+	 <b>"ncbi"</b>-related types and protos be visible by default,
+	 without the explicit scope specification
+	 (<i>"std::"</i> and <i>"ncbi::"</i> prefixes, respectively).
+
+	 <p>
+	 Use macro <i>NCBI_USING_NAMESPACE_STD</i>(semicolon-terminated)
+	 if you want make visible only <b>"std"</b>-related code, without the
+	 <b>"ncbi"</b>-related one.
 
 
 	 <br></br> <br></br>
