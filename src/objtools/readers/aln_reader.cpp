@@ -29,8 +29,9 @@
  *
  */
 
-#include <objtools/readers/aln_reader.hpp>
+#include "aln_reader.hpp"
 #include <util/creaders/alnread.h>
+#include <util/format_guess.hpp>
 
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -42,6 +43,7 @@
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/seqport_util.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -178,7 +180,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     
     CDense_seg::TIds&     ids     = ds.SetIds();
     CDense_seg::TStarts&  starts  = ds.SetStarts();
-    CDense_seg::TStrands& strands = ds.SetStrands();
+    //CDense_seg::TStrands& strands = ds.SetStrands();
     CDense_seg::TLens&    lens    = ds.SetLens();
 
     ids.resize(m_Dim);
@@ -187,8 +189,10 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
     TSeqPos aln_stop = m_Seqs[0].size(); 
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        CRef<CSeq_id> seq_id(new CSeq_id);
-        seq_id->SetLocal().SetStr(m_Ids[row_i]);
+        CRef<CSeq_id> seq_id(new CSeq_id(m_Ids[row_i]));
+        if (seq_id->Which() == CSeq_id::e_not_set) {
+            seq_id->SetLocal().SetStr(m_Ids[row_i]);
+        }
         ids[row_i] = seq_id;
     }
 
@@ -197,8 +201,9 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
         m_SeqVec[row_i].resize(aln_stop, 0); // size unknown, resize to max
     }
     m_SeqLen.resize(m_Dim, 0);
-    vector<bool> seq;  seq.resize(m_Dim, false);
-    vector<TSignedSeqPos> prev_start; prev_start.resize(m_Dim, 0);
+    vector<bool> is_gap;  is_gap.resize(m_Dim, true);
+    vector<bool> prev_is_gap;  prev_is_gap.resize(m_Dim, true);
+    vector<TSignedSeqPos> next_start; next_start.resize(m_Dim, 0);
     int starts_i = 0;
     TSeqPos prev_aln_pos = 0, prev_len = 0;
     bool new_seg = false;
@@ -211,8 +216,8 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
                 residue != m_EndGap[0]  &&
                 residue != m_Missing[0]) {
 
-                if ( !seq[row_i] ) {
-                    seq[row_i] = true;
+                if (is_gap[row_i]) {
+                    is_gap[row_i] = false;
                     new_seg = true;
                 }
 
@@ -221,8 +226,8 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
 
             } else {
 
-                if (seq[row_i]) {
-                    seq[row_i] = false;
+                if ( !is_gap[row_i] ) {
+                    is_gap[row_i] = true;
                     new_seg = true;
                 }
 
@@ -231,19 +236,25 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
         if (new_seg) {
             numseg++;
 
-            starts.resize(starts_i + m_Dim);
-            for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-                if (seq[row_i]) {
-                    prev_start[row_i] = 
-                        starts[starts_i++] = prev_start[row_i] + prev_len;
-                } else {
-                    starts[starts_i++] = -1;
+            if (aln_pos) { // if not the first seg
+                lens.push_back(prev_len = aln_pos - prev_aln_pos);
+                for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+                    if ( !prev_is_gap[row_i] ) {
+                        next_start[row_i] += prev_len;
+                    }
                 }
             }
 
-            if (prev_aln_pos) {
-                lens.push_back(prev_len = aln_pos - prev_aln_pos);
+            starts.resize(starts_i + m_Dim);
+            for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+                if (is_gap[row_i]) {
+                    starts[starts_i++] = -1;
+                } else {
+                    starts[starts_i++] = next_start[row_i];;
+                }
+                prev_is_gap[row_i] = is_gap[row_i];
             }
+
             prev_aln_pos = aln_pos;
 
             new_seg = false;
@@ -256,8 +267,12 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign()
 
     lens.push_back(aln_stop - prev_aln_pos);
     //strands.resize(numseg * m_Dim, eNa_strand_plus);
+    _ASSERT(lens.size() == numseg);
     ds.SetNumseg(numseg);
 
+#if _DEBUG
+    m_Aln->Validate(true);
+#endif    
     return m_Aln;
 }
 
@@ -282,22 +297,57 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
 
     typedef CDense_seg::TDim TNumrow;
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
+        const string& seq_str     = m_SeqVec[row_i];
+        const size_t& seq_str_len = seq_str.size();
+
         CRef<CSeq_entry> seq_entry (new CSeq_entry);
 
         // seq-id
-        CRef<CSeq_id> seq_id(new CSeq_id);
-        seq_id->SetLocal().SetStr(m_Ids[row_i]);
+        CRef<CSeq_id> seq_id(new CSeq_id(m_Ids[row_i]));
         seq_entry->SetSeq().SetId().push_back(seq_id);
-        
+        if (seq_id->Which() == CSeq_id::e_not_set) {
+            seq_id->SetLocal().SetStr(m_Ids[row_i]);
+        }
+
+        // mol
+        CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
+        CSeq_id::EAccessionInfo ai = seq_id->IdentifyAccession();
+        if (ai & CSeq_id::fAcc_nuc) {
+            mol = CSeq_inst::eMol_na;
+        } else if (ai & CSeq_id::fAcc_prot) {
+            mol = CSeq_inst::eMol_aa;
+        } else {
+            switch (CFormatGuess::SequenceType(seq_str.data(), seq_str_len)) {
+            case CFormatGuess::eNucleotide:  mol = CSeq_inst::eMol_na;  break;
+            case CFormatGuess::eProtein:     mol = CSeq_inst::eMol_aa;  break;
+            default:                         break;
+            }
+        }
+
         // seq-inst
         CRef<CSeq_inst> seq_inst (new CSeq_inst);
-        seq_inst->SetRepr(CSeq_inst::eRepr_seg);
-        seq_inst->SetMol(CSeq_inst::eMol_dna);
-        seq_inst->SetLength(m_SeqLen[row_i]);
-        seq_inst->SetSeq_data().SetIupacna().Set(m_SeqVec[row_i]);
         seq_entry->SetSeq().SetInst(*seq_inst);
-
         seq_set.push_back(seq_entry);
+
+        // repr
+        seq_inst->SetRepr(CSeq_inst::eRepr_raw);
+
+        // mol
+        seq_inst->SetMol(mol);
+
+        // len
+        _ASSERT(seq_str_len == m_SeqLen[row_i]);
+        seq_inst->SetLength(seq_str_len);
+
+        // data
+        CSeq_data& data = seq_inst->SetSeq_data();
+        if (mol == CSeq_inst::eMol_aa) {
+            data.SetIupacna().Set(seq_str);
+        } else {
+            data.SetIupacna().Set(seq_str);
+            CSeqportUtil::Pack(&data);
+        }
+
     }
     
     
@@ -309,6 +359,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/20 16:21:09  todorov
+ * Better seq id; Try to id the mol type; Packed seq data;
+ * Fixed a couple of bugs in GetSeqAlign
+ *
  * Revision 1.3  2004/02/20 01:21:35  ucko
  * Again, erase() strings rather than clear()ing them for compatibility
  * with G++ 2.95.  (The fix seems to have gotten lost in the recent
