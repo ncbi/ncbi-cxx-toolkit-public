@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/03/25 18:10:27  ucko
+* Include <unistd.h> on Unix; necessary for select on FreeBSD at least.
+*
 * Revision 1.24  2002/02/21 17:04:56  ucko
 * [AIX] Include <strings.h> before <sys/time.h> for bzero.
 *
@@ -119,6 +122,7 @@
 #    include <strings.h> // needed for bzero
 #  endif
 #  include <sys/time.h>
+#  include <unistd.h> // needed for select on some platforms
 #endif
 
 
