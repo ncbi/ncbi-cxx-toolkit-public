@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/19 19:50:03  vakatov
+* Implemented "CCgiCookies::"
+* Slightly changed "CCgiCookie::" API
+*
 * Revision 1.1  1998/11/18 21:47:53  vakatov
 * Draft version of CCgiCookie::
 *
@@ -44,6 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 
+
 ///////////////////////////////////////////////////////
 //  CCgiCookie
 //
@@ -55,12 +60,47 @@ inline bool s_ZeroTime(const tm& date) {
 }
 
 
+CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
+    : m_Name(cookie.m_Name),
+      m_Value(cookie.m_Value),
+      m_Domain(cookie.m_Domain),
+      m_ValidPath(cookie.m_ValidPath)
+{
+    m_Expires = cookie.m_Expires;
+    m_Secure  = cookie.m_Secure;
+}
+
 CCgiCookie::CCgiCookie(const string& name, const string& value)
 {
-    SetName(name);
+    if ( name.empty() )
+        throw invalid_argument("Empty cookie name");
+    CheckField(name, " ;,=");
+    m_Name = name;
+
     SetValue(value);
     m_Expires = kZeroTime;
     m_Secure = false;
+}
+
+void CCgiCookie::Reset(void)
+{
+    m_Value.erase();
+    m_Domain.erase();
+    m_ValidPath.erase();
+    m_Expires = kZeroTime;
+    m_Secure = false;
+}
+
+void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
+{
+    if (&cookie == this)
+        return;
+
+    m_Value     = cookie.m_Value;
+    m_Domain    = cookie.m_Domain;
+    m_ValidPath = cookie.m_ValidPath;
+    m_Expires   = cookie.m_Expires;
+    m_Secure    = cookie.m_Secure;
 }
 
 bool CCgiCookie::GetExpDate(string* str) const {
@@ -91,8 +131,7 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const {
 
     os << "Set-Cookie: ";
 
-    _VERIFY ( GetName(&str) );
-    os << str.c_str() << '=';
+    os << GetName().c_str() << '=';
     if ( GetValue(&str) )
         os << str.c_str();
 
@@ -109,15 +148,87 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const {
 }
 
 // Check if the cookie field is valid
-void CCgiCookie::CheckValidCookieField(const string& str,
-                                       const char* banned_symbols) {
-    if (banned_symbols  &&  str.find_first_of(banned_symbols) != string::npos)
+void CCgiCookie::CheckField(const string& str, const char* banned_symbols) {
+    if (banned_symbols  &&  str.find_first_of(banned_symbols) != NPOS)
         throw invalid_argument("CCgiCookie::CheckValidCookieField() [1]");
 
     for (const char* s = str.c_str();  *s;  s++) {
         if ( !isprint(*s) )
             throw invalid_argument("CCgiCookie::CheckValidCookieField() [2]");
     }
+}
+
+
+
+///////////////////////////////////////////////////////
+// Set of CGI send-cookies
+//
+
+CCgiCookie* CCgiCookies::Add(const string& name, const string& value) {
+    CCgiCookie* ck = Find(name);
+    if ( ck ) {  // override existing CCgiCookie
+        ck->Reset();
+        ck->SetValue(value);
+    } else {  // create new CCgiCookie and add it
+        ck = new CCgiCookie(name, value);
+        x_Add(ck);
+    }
+    return ck;
+}
+
+
+CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie) {
+    CCgiCookie* ck = Find(cookie.GetName());
+    if ( ck ) {  // override existing CCgiCookie
+        ck->CopyAttributes(cookie);
+    } else {  // create new CCgiCookie and add it
+        ck = new CCgiCookie(cookie);
+        x_Add(ck);
+    }
+    return ck;
+}
+
+
+void CCgiCookies::Add(const string& str) {
+    const string x_Cookie("Cookie:");
+    SIZE_TYPE pos = str.find_first_not_of(" \t\n");
+
+    if (str.compare(pos, sizeof(x_Cookie), x_Cookie) != 0)
+        throw runtime_error("No `" + x_Cookie + "' in:  `" + str + "'");
+
+    pos += sizeof(x_Cookie);
+    for (;;) {
+        SIZE_TYPE pos_beg = str.find_last_not_of(' ', pos);
+        if (pos_beg == NPOS)
+            return; // done
+        SIZE_TYPE pos_mid = str.find_first_of('=', pos_beg);
+        if (pos_mid == NPOS)
+            break; // error
+        SIZE_TYPE pos_end = str.find_first_of(';', pos_mid);
+        if (pos_end != NPOS) {
+            pos = pos_end + 1;
+            pos_end--;
+        } else {
+            pos_end = str.find_last_not_of(" \t\n", pos_mid);
+            if (pos_end == NPOS)
+                break; // error
+            pos = NPOS; // about to finish
+        }
+
+        Add(str.substr(pos_beg, pos_mid-1), str.substr(pos_mid+1, pos_end));
+    }
+
+    throw runtime_error("Invalid cookie string: `" + str + "'");
+}
+
+CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const {
+    TCookies* cookies = const_cast<TCookies*>(&m_Cookies);
+    for (TCookies::iterator iter = cookies->begin();
+         iter != cookies->end();  iter++) {
+        if (name.compare((*iter)->GetName()) == 0)
+            return iter;
+    }
+    return cookies->end();
 }
 
 

@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1998/11/19 19:50:00  vakatov
+* Implemented "CCgiCookies::"
+* Slightly changed "CCgiCookie::" API
+*
 * Revision 1.12  1998/11/18 21:47:50  vakatov
 * Draft version of CCgiCookie::
 *
@@ -46,11 +50,14 @@
 */
 
 #include <ncbistd.hpp>
+#include <list>
 #include <map>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
+
+// Typedefs
 typedef map<string, string>      TCgiProperties;
 typedef map<string, string>      TCgiCookies;
 typedef multimap<string, string> TCgiEntries;
@@ -62,10 +69,16 @@ typedef multimap<string, string> TCgiEntries;
 
 class CCgiCookie {
 public:
+    // Copy constructor
+    CCgiCookie(const CCgiCookie& cookie);
+
     // Throw the "invalid_argument" if "name" or "value" have invalid format
     //  - the "name" must not be empty; it must not contain '='
     //  - both "name" and "value" must not contain: ";, "
     CCgiCookie(const string& name, const string& value);
+
+    // The cookie name cannot be changed during its whole timelife
+    const string& GetName(void) const;
 
     // Compose and write to output stream "os":
     //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
@@ -73,10 +86,15 @@ public:
     // (here, only "name=value" is mandatory)
     CNcbiOstream& Write(CNcbiOstream& os) const;
 
+    // Reset everything(but name!) to default state like CCgiCookie(m_Name, "")
+    void Reset(void);
+
+    // Set all attribute values(but name!) to those from "cookie"
+    void CopyAttributes(const CCgiCookie& cookie);
+
     // All SetXXX() methods beneath:
     //  - set the property to "str" if "str" has valid format
     //  - throw the "invalid_argument" if "str" has invalid format
-    void SetName      (const string& str);  // mandatory
     void SetValue     (const string& str);
     void SetDomain    (const string& str);  // not spec'd by default
     void SetValidPath (const string& str);  // not spec'd by default
@@ -87,7 +105,6 @@ public:
     //  - return "true"  and copy the property to the "str" if the prop. is set
     //  - return "false" and empty the "str" if the property is not set
     //  - throw the "invalid_argument" exception if argument is a zero pointer
-    bool GetName      (string*  str) const;
     bool GetValue     (string*  str) const;
     bool GetDomain    (string*  str) const;
     bool GetValidPath (string*  str) const;
@@ -104,10 +121,14 @@ private:
     tm     m_Expires;
     bool   m_Secure;
 
-    static void CheckValidCookieField(const string& str,
-                                      const char* banned_symbols);
+    static void CheckField(const string& str, const char* banned_symbols);
     static bool GetString(string* str, const string& val);
 };  // CCgiCookie
+
+
+inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCgiCookie& cookie) {
+    return cookie.Write(os);
+}
 
 
 
@@ -122,15 +143,20 @@ public:
     // Format of the string:  "Cookie: name1=value1; name2=value2; ..."
     CCgiCookies(const string& str);
 
-    void AddCookie(string name, string value);
-    void AddCookies(const string& str); // "Cookie: name1=value1; ..."
-    void AddCookies(const CCgiCookie& cookie);
+    // All Add() functions override the value and attributes of cookie
+    // already existing in this set if the added cookie has the same name
+    CCgiCookie* Add(const string& name, const string& value);
+    CCgiCookie* Add(const CCgiCookie& cookie);  // add a copy of "cookie"
+    void Add(const string& str); // "Cookie: name1=value1; name2=value2; ..."
 
-    CCgiCookie* FindCookie  (const string& name) const;
-    bool        RemoveCookie(const string& name) const;
+    CCgiCookie* Find(const string& name) const;  // return zero if can not find
+    bool RemoveCookie(const string& name);  // return "false" if can not find
 
 private:
-    TCgiCookies m_Cookies;
+    typedef list<CCgiCookie*> TCookies;
+    TCookies m_Cookies;  // (guaranteed to have no same-name cookies)
+    void x_Add(CCgiCookie* cookie);
+    TCookies::iterator x_Find(const string& name) const;
 };  // CCgiCookies
 
 
