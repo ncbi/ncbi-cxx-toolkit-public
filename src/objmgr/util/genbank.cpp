@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/10/17 21:17:49  ucko
+* Seq_vector now properly starts from zero rather than one; adjust code
+* that uses it accordingly.
+*
 * Revision 1.7  2001/10/12 19:49:08  ucko
 * Whoops, use break rather than BREAK for STL iterators.
 *
@@ -1911,7 +1915,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                     string data;
                     data.resize(vec.size());
                     for (SIZE_TYPE n = 0; n < vec.size(); n++) {
-                        data[n] = vec[n + 1];
+                        data[n] = vec[n];
                     }
                     WriteFeatureQualifier("translation", data, true);
                 }}
@@ -2222,7 +2226,7 @@ bool CGenbankWriter::WriteSequence(const CBioseqHandle& handle)
     CSeq_vector vec = m_Scope.GetSequence(handle);
     if (m_Format == eFormat_Genbank) {
         size_t a = 0, c = 0, g = 0, t = 0, other = 0;
-        for (size_t pos = 1;  pos <= vec.size();  ++pos) {
+        for (size_t pos = 0;  pos < vec.size();  ++pos) {
             switch (vec[pos]) {
             case 'A': ++a;     break;
             case 'C': ++c;     break;
@@ -2243,10 +2247,10 @@ bool CGenbankWriter::WriteSequence(const CBioseqHandle& handle)
         m_Stream << NcbiEndl;
     }
     m_Stream << s_Pad("ORIGIN", sm_KeywordWidth);
-    for (size_t n = 1;  n <= vec.size();  ++n) {
-        if (n % 60 == 1) {
-            m_Stream << NcbiEndl << setw(9) << n << ' ';
-        } else if (n % 10 == 1) {
+    for (size_t n = 0;  n < vec.size();  ++n) {
+        if (n % 60 == 0) {
+            m_Stream << NcbiEndl << setw(9) << n + 1 << ' ';
+        } else if (n % 10 == 0) {
             m_Stream << ' ';
         }
         m_Stream << static_cast<char>(tolower(vec[n]));
