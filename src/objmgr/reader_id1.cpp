@@ -151,13 +151,10 @@ CId1StreamBuf::CId1StreamBuf(CId1Seqref &id1Seqref, CConn_ServiceStream *server)
 m_Id1Seqref(id1Seqref)
 {
   CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-  char buf[5];
-  sprintf(buf,"%d",m_Id1Seqref.Sat());
-  string sat(buf);
   
   params->SetGi(m_Id1Seqref.Gi());
   params->SetEnt(m_Id1Seqref.SatKey());
-  params->SetSat(sat);
+  params->SetSat(NStr::IntToString(m_Id1Seqref.Sat()));
   
   CID1server_request id1_request;
   id1_request.SetGetsefromgi(*params);
@@ -338,6 +335,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.29  2003/03/27 19:38:13  vasilche
+* Use safe NStr::IntToString() instead of sprintf().
+*
 * Revision 1.28  2003/03/03 20:34:51  vasilche
 * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
 * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
