@@ -196,6 +196,9 @@ void CFlattishFeature::x_AddQuals(const CCdregion& cds) const
 {
     if (m_IsProduct) {
         return; // We don't need directions when we have the sequence!
+    } else if ( !m_Feat->IsSetProduct() ) {
+        // warn?
+        return;
     }
     CScope& scope = m_Context->GetHandle().GetScope();
     CConstRef<CSeq_feat> prod
@@ -756,6 +759,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/10/17 20:58:41  ucko
+* Don't assume coding-region features have their "product" fields set.
+*
 * Revision 1.9  2003/10/16 20:21:53  ucko
 * Fix a copy-and-paste error in CFlattishFeature::x_AddQuals
 *
