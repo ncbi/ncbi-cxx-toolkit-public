@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/03/29 15:35:55  thiessen
+* remove GetAtom warnings
+*
 * Revision 1.5  2001/03/28 23:02:16  thiessen
 * first working full threading
 *
@@ -568,13 +571,13 @@ static void GetVirtualResidue(const AtomSet *atomSet, const Molecule *mol,
         AtomPntr ap(mol->id, res->id, a->first);
         if (a->second->atomicNumber == 6) {
             if (a->second->code == " C  ")
-                C = atomSet->GetAtom(ap, true);
+                C = atomSet->GetAtom(ap, true, true);
             else if (a->second->code == " CA ")
-                CA = atomSet->GetAtom(ap, true);
+                CA = atomSet->GetAtom(ap, true, true);
             else if (a->second->code == " CB ")
-                CB = atomSet->GetAtom(ap, true);
+                CB = atomSet->GetAtom(ap, true, true);
         } else if (a->second->atomicNumber == 7 && a->second->code == " N  ")
-            N = atomSet->GetAtom(ap, true);
+            N = atomSet->GetAtom(ap, true, true);
         if (C && CA && CB && N) break;
     }
     if (!C || !CA || !N) NO_VIRTUAL_COORDINATE(coord);
@@ -623,8 +626,8 @@ static void GetVirtualPeptide(const AtomSet *atomSet, const Molecule *mol,
 
     AtomPntr ap1(mol->id, res1->id, res1->alphaID), ap2(mol->id, res2->id, res2->alphaID);
     const AtomCoord
-        *atom1 = atomSet->GetAtom(ap1, true),   // 'true' means just use first alt coord
-        *atom2 = atomSet->GetAtom(ap2, true);
+        *atom1 = atomSet->GetAtom(ap1, true, true),   // 'true' means just use first alt coord
+        *atom2 = atomSet->GetAtom(ap2, true, true);
     if (!atom1 || !atom2) NO_VIRTUAL_COORDINATE(coord);
 
     coord->coord = (atom1->site + atom2->site) / 2;
@@ -758,7 +761,7 @@ static void GetMinimumLoopLengths(const Molecule *mol, const AtomSet *atomSet, F
             a1 = NULL;
         else {
             AtomPntr ap1(mol->id, r1->second->id, r1->second->alphaID);
-            a1 = atomSet->GetAtom(ap1, true);   // 'true' means just use first alt coord
+            a1 = atomSet->GetAtom(ap1, true, true);   // 'true' means just use first alt coord
         }
 
         for (r2=r1, j=i; r2!=re; r2++, j++) {
@@ -770,7 +773,7 @@ static void GetMinimumLoopLengths(const Molecule *mol, const AtomSet *atomSet, F
                     a2 = NULL;
                 else {
                     AtomPntr ap2(mol->id, r2->second->id, r2->second->alphaID);
-                    a2 = atomSet->GetAtom(ap2, true);
+                    a2 = atomSet->GetAtom(ap2, true, true);
                 }
                 fldMtf->mll[i][j] = fldMtf->mll[j][i] =
                     (!a1 || !a2) ? 0 : (int) (((a2->site - a1->site).length() - 2.7) / 3.4);
