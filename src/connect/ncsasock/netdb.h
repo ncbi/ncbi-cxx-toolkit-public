@@ -21,6 +21,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.2  2000/03/20 21:49:05  kans
+* initial work on OpenTransport (Churchill)
+*
 * Revision 6.1  1999/11/17 20:52:50  kans
 * changes to allow compilation under c++
 *
@@ -47,13 +50,15 @@
  * use in system calls).
  */
 struct	hostent {
-	char	*h_name;	/* official name of host */
+	char	*h_name;		/* official name of host */
 	char	**h_aliases;	/* alias list */
-	Int4	h_addrtype;	/* host address type */
-	Int4	h_length;	/* length of address */
+	Int4	h_addrtype;		/* host address type */
+	Int4	h_length;		/* length of address */
 	char	**h_addr_list;	/* list of addresses from name server */
-#define	h_addr	h_addr_list[0]	/* address, for backward compatiblity */
 };
+
+#define	h_addr	h_addr_list[0]	/* address, for backward compatiblity */
+
 
 /*
  * Assumption here is that a network number
@@ -90,8 +95,9 @@ unsigned long   gethostid(void);
  * (left in extern int h_errno).
  */
 
+#define NO_ERROR		0 /* default value for the h_errno variable */
 #define	HOST_NOT_FOUND	1 /* Authoritative Answer Host not found */
-#define	TRY_AGAIN	2 /* Non-Authoritive Host not found, or SERVERFAIL */
-#define	NO_RECOVERY	3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
-#define	NO_DATA		4 /* Valid name, no data record of requested type */
+#define	TRY_AGAIN		2 /* Non-Authoritive Host not found, or SERVERFAIL */
+#define	NO_RECOVERY		3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
+#define	NO_DATA			4 /* Valid name, no data record of requested type */
 #define	NO_ADDRESS	NO_DATA		/* no address, look for MX record */

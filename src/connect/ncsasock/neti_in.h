@@ -22,6 +22,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  2000/03/20 21:49:05  kans
+* initial work on OpenTransport (Churchill)
+*
 * Revision 6.0  1997/08/25 18:37:36  madden
 * Revision changed to 6.0
 *
@@ -42,7 +45,7 @@
  * Protocols
  */
 #define	IPPROTO_IP		0		/* dummy for IP */
-#define	IPPROTO_ICMP		1		/* control message protocol */
+#define	IPPROTO_ICMP	1		/* control message protocol */
 #define	IPPROTO_GGP		3		/* gateway^2 (deprecated) */
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_EGP		8		/* exterior gateway protocol */
@@ -54,6 +57,10 @@
 
 #define	IPPROTO_RAW		255		/* raw IP packet */
 #define	IPPROTO_MAX		256
+
+#define	INADDR_NONE		0xffffffff
+#define INET_SUCCESS	1
+#define INET_FAILURE	0
 
 
 /*
@@ -132,6 +139,7 @@ struct ip_opts {
 	char	ip_opts[40];		/* actually variable in size */
 };
 
+#ifndef __OPENTPTINTERNET__
 /*
  * Options for use with [gs]etsockopt at the IP level.
  * First word of comment is data type; bool is stored in int.
@@ -145,7 +153,15 @@ struct ip_opts {
 #define	IP_RECVDSTADDR	7	/* bool; receive IP dst addr w/datagram */
 #define	IP_RETOPTS	8	/* ip_opts; set/get IP per-packet options */
 
-//
+#endif // OPENTPTINTERNET
+
+/* IP address sizes */
+#define INET_ADDRSTRLEN		16	/* for IPv4 dotted decimal							*/
+#define INET6_ADDRSTRLEN	46	/* for IPv6 dhex string								*/
+#define INADDRSZ			4	/* size of IPv4 addr in bytes 						*/
+#define IN6ADDRSZ			16	/* size of IPv6 addr in bytes						*/
+
+
 // The network macros are in machine/endian.h for 4.3reno, but for 
 // sun compatibility, I placed them here- Charlie Reiman
 //

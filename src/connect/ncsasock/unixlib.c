@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.2  2000/03/20 21:49:05  kans
+* initial work on OpenTransport (Churchill)
+*
 * Revision 6.1  1999/07/06 12:58:51  kans
 * commented out chmod function
 *
@@ -45,18 +48,10 @@
 
 #endif
 
-#ifdef THINK_C
-#include <FCntl.h>
-#endif
-
 #include <neti_in.h>
 #include <sock_ext.h>
 #include <sock_str.h>
-#ifdef THINK_C
-#include <pascal.h>
-#else
 #include <Strings.h>  /* for c2pstr */
-#endif /* THINK_C */
 #include <ToolUtils.h>
 
 #include <s_timeb.h>
@@ -64,165 +59,6 @@
 extern int errno;
 extern long errno_long;
 extern SpinFn spinroutine; 
-
-/*
- * unix getwd
- *
- *	where must point to 256 bytes
- *	
- *	work up from the current directory to the root collecting 
- *	name segments as we go
- */
-
-char *getwd(where) char *where;
-{
-	WDPBRec pb;
-	CInfoPBRec cpb;
-	char wdtemp[256],*start,*store,*trav;
-	int i;
-
-	/* get default volume and directory last set by PBSetVol or PBHSetVol */
-	pb.ioNamePtr = (StringPtr) where;
-	PBHGetVol(&pb,false);
-
-	/* add a colon */
-	(*where)++;
-	where[*where] = ':';
-	
-	trav = wdtemp; /* build name here */
-	cpb.dirInfo.ioCompletion = 0L;
-
-	cpb.dirInfo.ioVRefNum = pb.ioWDVRefNum; /* vRefNum of volume on which */
-											/* working dir exists */
-	
-	cpb.dirInfo.ioDrDirID = pb.ioWDDirID; /* directory ID of working directory */
-	
-	while(cpb.dirInfo.ioDrDirID != 0) 
-	{
-		cpb.hFileInfo.ioNamePtr = (StringPtr) trav; /* put name segment here */
-		cpb.hFileInfo.ioFDirIndex = -1;
-		if (PBGetCatInfo(&cpb,false) != 0)  
-		{
-			cpb.dirInfo.ioDrDirID = 0;
-			break;
-		}
-		if (*trav == 0) 
-		{
-			cpb.dirInfo.ioDrDirID=0;
-			break;
-		}
-		i=*trav;      /* save length */
-		*trav=0;      /* null over length */
-		start=trav+1; /* addr of 1st char */
-		trav+=i+1;    /* point past current string for next name segment */ 
-		*trav=0;      /* initially zero length */
-
-		cpb.dirInfo.ioDrDirID = cpb.dirInfo.ioDrParID; /* point up to parent directory */
-	}
-	
-	*wdtemp=0;
-	store=where+*where+1; /* start storing after volume name */
-	
-	if (trav-wdtemp) 
-		*where=(trav-wdtemp); /* set length of where as length of trav */
-	if (trav!=wdtemp) 
-		start=trav-1; 
-	else 
-		start=wdtemp;
-
-	if (start!=wdtemp) 
-	{
-		while(*start) start--;		/* Go to beginning of string */
-		if (start!=wdtemp) 
-			start--;
-	}
-
-	while(start!=wdtemp) 
-	{
-		while(*start) /* Go to beginning of string */
-			start--;		
-		trav=start+1; 
-		while (*trav)  /* store it */
-		{
-			*store=*trav; 
-			store++;
-			trav++; 
-		} 
-		*store=':';	/* Ready to move directory name */
-		store++;
-		if (start!=wdtemp) 
-			start--;
-		*store=0;
-	}	
-	return(p2cstr((unsigned char *) where));
-}
-
-/*
- * unix change working directory
- */
-static int currentWD = 0;
-
-#ifndef __MWERKS__
-int chdir(pathName) char *pathName;
-{
-	WDPBRec pb;
-	char tempst[256];
-	long default_ioWDDirID;
-	short wdToClose;
-
-	/* 
-	 * get default volume last set by PBSetVol or PBHSetVol 
-	 */
-	pb.ioNamePtr = 0L;
-	PBHGetVol(&pb,false);
-	default_ioWDDirID = pb.ioWDDirID;
-
-	/*
-	 * create a new mac working directory using the default volume and
-	 * the callers partial pathname
-	 */
-	strcpy(tempst,pathName);
-	pb.ioNamePtr = (StringPtr)c2pstr(tempst);
-	pb.ioVRefNum = 0;
-	pb.ioWDDirID = default_ioWDDirID;
-	pb.ioCompletion = 0L;
-	pb.ioWDProcID = 'UTCS';
-
-	if ((errno = errno_long = PBOpenWD(&pb,0)) != noErr) 
-		return(-1);
-	
-	/*
-	 * make the mac working directory which has just been created in 'pb'
-	 * the new default directory. destroy the mac working directory which
-	 * was the previous default.
-	 */
-#ifdef THINK_C
-	if ((errno = errno_long = SetVol(0L, pb.ioVRefNum)) != noErr) 
-#else
-	if ((errno = errno_long = setvol(0L, pb.ioVRefNum)) != noErr) 
-#endif
-	{
-		wdToClose = pb.ioVRefNum;
-	} 
-	else 
-	{
-		wdToClose = currentWD;
-		currentWD = pb.ioVRefNum;
-	}
-
-	/*
-	 * close the previous working directory
-	 */
-	if (wdToClose == 0)	/* nothing more to do, return */
-		return(0);
-
-	pb.ioVRefNum = wdToClose;
-	pb.ioCompletion = 0L;
-	(void) PBCloseWD(&pb, false); /* ignore error */
-	
-	return(0);
-}
-#endif
 
 /*
  * Mac version of Unix system call gettimeofday. 
@@ -250,25 +86,6 @@ gettimeofday(tp,tzp) struct timeval *tp; struct timezone *tzp;
 	}
 	return(0);
 }
-
-#if 0
-/*
- * Backwards compatible time call.
- */
-time_t
-time(t)
-	time_t *t;
-{
-	struct timeval tt;
-
-	if (gettimeofday(&tt, (struct timezone *)0) < 0)
-		return (-1);
-	if (t)
-		*t = tt.tv_sec;
-	return (tt.tv_sec);
-}
-#endif
-
 
 /*
  * The arguments are the number of minutes of time
@@ -363,13 +180,6 @@ sleep(seconds) unsigned seconds;
 	}
 #endif /* JAE */
 
-#if 0
-long int getpid()
-{
-	return (42);
-}
-#endif
-
 long int getuid()
 {
 	return (0/*root*/);
@@ -389,46 +199,6 @@ struct passwd *getpwnam()
 {
 	return (NULL /*not found*/);
 }
-
-#ifdef JAE
-char *getlogin()
-{
-	return("macuser");
-}
-#endif /* JAE */
-
-/* not needed, and now conflicts with CodeWarrior stub function
-int chmod(path, mode)
-	char *path;
-	int mode;
-{
-#pragma unused(path)
-#pragma unused(mode)
-	return(0);
-}
-*/
-
-#if 0
-access(path, mode)
-	char *path;
-	int mode;
-{
-#pragma unused(path)
-#pragma unused(mode)
-	return(0);
-}
-
-char *mktemp(template)
-	char *template;
-{
-	return(template);
-}
-
-abort()
-{
-	exit(-1);
-}
-#endif
 
 void bzero( b, s)
 	char *b;
