@@ -373,12 +373,12 @@ which can be used to set the penalty for the last server obtained from the mappi
 
 <p>
 For script files (like ones used to start/stop servers) there is a dedicated utility program called
-<a href="../../lxr/source/src/connect/daemons/lbsm_penalize.c"><b><i>lbsm_penalize</i></b></a>,
+<a href="../../lxr/source/src/connect/daemons/lbsm_penalize.c"><tt>lbsm_penalize</tt></a>,
 which sets penalty from command line. Because of intervening the load-balancing
 mechanism substantially this command should be used with extreme care.
 
 <p>
-<b><i>lbsm_penalize</i></b> is now a part of LBSM set of tools installed on all hosts that run <tt>LBSMD</tt>.
+<tt>lbsm_penalize</tt> is now a part of LBSM set of tools installed on all hosts that run <tt>LBSMD</tt>.
 As explained above, penalizing means making a server less favorable for choosing by load-balancing
 mechanism. Because of the fact that the full penalty of&nbsp;100% makes a server unavailable for clients at all,
 at the time when the server is about to shut down (restart) it is wise to increase the server penalty
@@ -398,7 +398,7 @@ The effect of the above is to set the maximal penalty&nbsp;<tt>100</tt> for the 
 to a different value with optional hold time.) Default hold time equals&nbsp;0.
 In order for penalty to be realized by all hosts of the subnet, <tt>sleep 5</tt> precedes the server shutdown.
 Please note single quotes surrounding penalty specification: they are required in a command shell because
-<b><i>lbsm_penalize</i></b> takes only one argument, the entire penalty specification.
+<tt>lbsm_penalize</tt> takes only one argument, the entire penalty specification.
 
 <p>
 As soon as the server is down, <tt>LBSMD</tt> detects it in the matter of several seconds
