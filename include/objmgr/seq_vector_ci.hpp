@@ -103,9 +103,9 @@ CSeqVector_CI::CSeqVector_CI(void)
     : m_Vector(0),
       m_Coding(CSeq_data::e_not_set),
       m_CachePos(kInvalidSeqPos),
-      m_Cache(0),
       m_BackupPos(kInvalidSeqPos)
 {
+    m_Cache = m_CacheData.end();
     return;
 }
 
@@ -124,7 +124,6 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
       m_BackupPos(sv_it.m_BackupPos),
       m_BackupData(sv_it.m_BackupData)
 {
-    x_UpdateCachePtr();
     m_Cache = m_CacheData.begin() + (&*sv_it.m_Cache - &*sv_it.m_CacheData.begin());
 }
 
@@ -139,7 +138,6 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
     m_CacheData = sv_it.m_CacheData;
     m_BackupPos = sv_it.m_BackupPos;
     m_BackupData = sv_it.m_BackupData;
-    x_UpdateCachePtr();
     m_Cache = m_CacheData.begin() + (&*sv_it.m_Cache - &*sv_it.m_CacheData.begin());
     return *this;
 }
@@ -147,7 +145,7 @@ CSeqVector_CI& CSeqVector_CI::operator=(const CSeqVector_CI& sv_it)
 inline
 CSeqVector_CI& CSeqVector_CI::operator++(void)
 {
-    _ASSERT(bool(m_Vector)  &&  m_Cache < m_CacheData.end());
+    _ASSERT(m_Cache < m_CacheData.end());
     if (++m_Cache >= m_CacheData.end()) {
             x_NextCacheSeg();
     }
@@ -183,7 +181,7 @@ CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
 inline
 CSeqVector_CI::operator bool(void) const
 {
-    return bool(m_Vector)  &&  m_Cache < m_CacheData.end();
+    return m_Cache < m_CacheData.end();
 }
 
 inline
@@ -205,6 +203,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/06/04 13:48:53  grichenk
+* Improved double-caching, fixed problem with strands.
+*
 * Revision 1.5  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

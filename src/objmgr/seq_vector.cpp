@@ -35,17 +35,6 @@
 #include <objmgr/seq_vector_ci.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/impl/data_source.hpp>
-//#include <objects/seq/NCBI8aa.hpp>
-//#include <objects/seq/NCBIpaa.hpp>
-//#include <objects/seq/NCBIstdaa.hpp>
-//#include <objects/seq/NCBIeaa.hpp>
-//#include <objects/seq/NCBIpna.hpp>
-//#include <objects/seq/NCBI8na.hpp>
-//#include <objects/seq/NCBI4na.hpp>
-//#include <objects/seq/NCBI2na.hpp>
-//#include <objects/seq/IUPACaa.hpp>
-//#include <objects/seq/IUPACna.hpp>
-//#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/seq_map.hpp>
@@ -414,6 +403,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/06/04 13:48:56  grichenk
+* Improved double-caching, fixed problem with strands.
+*
 * Revision 1.51  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
