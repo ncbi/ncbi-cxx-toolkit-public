@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/07/01 23:17:04  thiessen
+* skip warning if master choice canceled
+*
 * Revision 1.38  2002/06/06 01:30:02  thiessen
 * fixes for linux/gcc
 *
@@ -418,6 +421,8 @@ const Sequence * UpdateViewer::GetMasterSequence(void) const
                     "Select Chain", chains.size(), titles);
                 if (choice >= 0)
                     master = chains[choice];
+                else    // cancelled
+                    return NULL;
             }
         }
     }
