@@ -6,4 +6,5 @@ LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = echo "test string" | ./test_ncbi_buffer
+CHECK_CMD = test_ncbi_buffer.sh
+CHECK_COPY = test_ncbi_buffer.sh
