@@ -1,2 +1,4 @@
+ASN_DEP = entrez2
+
 LIB = entrez2cli
 SRC = entrez2_client entrez2_client_
