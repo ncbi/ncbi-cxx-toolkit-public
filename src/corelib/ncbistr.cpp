@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/02/01 16:48:09  vakatov
+* CNcbiEmptyString::  more dancing around the Sun "feature" (see also R1.24)
+*
 * Revision 1.24  2000/01/20 16:24:42  vakatov
 * Kludging around the "NcbiEmptyString" to ensure its initialization when
 * it is used by the constructor of a statically allocated object
@@ -123,7 +126,7 @@ BEGIN_NCBI_SCOPE
 
 const string* CNcbiEmptyString::m_Str = 0;
 const string& CNcbiEmptyString::FirstGet(void) {
-    static const string s_str;
+    static const string s_str = "";
     m_Str = &s_str;
     return s_str;
 }
