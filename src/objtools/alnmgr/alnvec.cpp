@@ -150,7 +150,9 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
     } else {
         CSeqVector vec = GetBioseqHandle(row).GetSeqVector
             (CBioseq_Handle::eCoding_Iupac,
-             CBioseq_Handle::eStrand_Plus);
+             IsPositiveStrand(row) ? 
+             CBioseq_Handle::eStrand_Plus :
+             CBioseq_Handle::eStrand_Minus);
         CRef<CSeqVector> seq_vec = new CSeqVector(vec);
         return *(m_SeqVectorCache[row] = seq_vec);
     }
@@ -398,6 +400,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/09/25 20:20:24  todorov
+* x_GetSeqVector uses the strand info now
+*
 * Revision 1.7  2002/09/25 19:34:54  todorov
 * "un-inlined" x_GetSeqVector
 *
