@@ -55,9 +55,6 @@ static char const rcsid[] =
 #define PRO_TRUE_ALPHABET_SIZE 20
 #define scoreRange 10000
 
-#define XCHAR   21    /*character for low-complexity columns*/
-#define STARCHAR   25    /*character for stop codons*/
-
 
 
 
@@ -1434,34 +1431,6 @@ static Blast_ScoreFreq* posfillSfp(Int4 **matrix, Int4 matrixLength, double *sub
 
 
 
-/*Given a sequence of 'length' amino acid residues, compute the
-  probability of each residue and put that in the array resProb*/
-static void fillResidueProbability(Uint1* sequence, Int4 length, double * resProb)
-{
-  Int4 frequency[BLASTAA_SIZE]; /*frequency of each letter*/
-  Int4 i; /*index*/
-  Int4 localLength; /*reduce for X characters*/
-
-  localLength = length;
-  for(i = 0; i < BLASTAA_SIZE; i++)
-    frequency[i] = 0;
-  for(i = 0; i < length; i++) {
-    if (XCHAR != sequence[i])
-      frequency[sequence[i]]++;
-    else
-      localLength--;
-  }
-  for(i = 0; i < BLASTAA_SIZE; i++) {
-    if (frequency[i] == 0)
-      resProb[i] = 0.0;
-    else
-      resProb[i] = ((double) (frequency[i])) /((double) localLength);
-  }
-}
-
-
-#define posEpsilon 0.0001
-
 /** Return the a matrix of the frequency ratios that underlie the
  * score matrix being used on this pass. The returned matrix
  * is position-specific, so if we are in the first pass, use
@@ -1485,11 +1454,11 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
 					double **startNumerator,
 					Int4 numPositions) 
 {
-   Blast_ResFreq* stdrfp; /* gets standard frequencies in prob field */
    double** returnRatios; /*frequency ratios to start investigating each pair*/
    double *standardProb; /*probabilities of each letter*/
    Int4 i,j;  /* Loop indices. */
    SFreqRatios* freqRatios=NULL; /* frequency ratio container for given matrix */
+   const double KposEpsilon = 0.0001;
 
    returnRatios = allocateStartFreqs(numPositions);
 
@@ -1506,20 +1475,16 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
 
    freqRatios = _PSIMatrixFrequencyRatiosFree(freqRatios);
 
-/* FIXME use blast_psi_priv.c:_PSIGetStandardProbabilities when available here. */
-   stdrfp = Blast_ResFreqNew(sbp);
-   Blast_ResFreqStdComp(sbp,stdrfp); 
-   standardProb = calloc(1, BLASTAA_SIZE * sizeof(double));
-   for(i = 0; i < BLASTAA_SIZE; i++)
-       standardProb[i] = stdrfp->prob[i];
-     /*reverse multiplication done in posit.c*/
-   for(i = 0; i < numPositions; i++) 
-     for(j = 0; j < BLASTAA_SIZE; j++) 
-       if ((standardProb[query[i]] > posEpsilon) && (standardProb[j] > posEpsilon) &&     
-	     (j != STARCHAR) && (j != XCHAR)
-	     && (startNumerator[i][j] > posEpsilon))
-	   returnRatios[i][j] = startNumerator[i][j]/standardProb[j];
-   stdrfp = Blast_ResFreqDestruct(stdrfp);
+   standardProb = _PSIGetStandardProbabilities(sbp);
+
+   /*reverse multiplication done in posit.c*/
+   for(i = 0; i < numPositions; i++)
+     for(j = 0; j < BLASTAA_SIZE; j++)
+       if ((standardProb[query[i]] > KposEpsilon) && (standardProb[j] > KposEpsilon) &&
+             (j != AMINOACID_TO_NCBISTDAA['X']) && (j != AMINOACID_TO_NCBISTDAA['*'])
+             && (startNumerator[i][j] > KposEpsilon))
+           returnRatios[i][j] = startNumerator[i][j]/standardProb[j];
+
    sfree(standardProb);
 
    return(returnRatios);
@@ -2154,7 +2119,7 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
     } else {
       kbp    = sbp->kbp_gap_std[0];
       matrix = sbp->matrix;
-      fillResidueProbability(query, queryLength, searchParams->queryProb);
+      Blast_FillResidueProbability(query, queryLength, searchParams->queryProb);
     }
     searchParams->gapOpen    = scoring->gap_open;
     searchParams->gapExtend  = scoring->gap_extend;
@@ -2297,7 +2262,7 @@ Kappa_AdjustSearch(
     Boolean positionBased=FALSE; /* FIXME */
 
     /* compute and plug in new matrix here */
-    fillResidueProbability(filteredSequence, length, sp->resProb);
+    Blast_FillResidueProbability(filteredSequence, length, sp->resProb);
 
     if(positionBased) {
       this_sfp =
