@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.24  2001/11/16 16:06:45  ucko
+ * Handle new Entrez docsum interface properly.
+ *
  * Revision 1.23  2001/10/26 14:49:16  ucko
  * Restructured to avoid CRefs as arguments.
  *
@@ -130,6 +133,7 @@
 #include <objects/entrez2/Entrez2_boolean_exp.hpp>
 #include <objects/entrez2/Entrez2_boolean_reply.hpp>
 #include <objects/entrez2/Entrez2_docsum.hpp>
+#include <objects/entrez2/Entrez2_docsum_data.hpp>
 #include <objects/entrez2/Entrez2_docsum_list.hpp>
 #include <objects/entrez2/Entrez2_eval_boolean.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
@@ -602,20 +606,24 @@ bool CId1FetchApp::LookUpGI(int gi)
 
         const CEntrez2_docsum& docsum
             = *e2_reply.GetReply().GetGet_docsum().GetList().front();
-#if 0 // old interface
+        string caption, title;
+        for (CTypeConstIterator<CEntrez2_docsum_data> it = ConstBegin(docsum);
+             it;  ++it) {
+            // Should this be case-insensitive?
+            if (it->GetField_name() == "Caption") {
+                caption = it->GetField_value();
+            } else if (it->GetField_name() == "Title") {
+                title = it->GetField_value();
+            }
+        }
         *m_OutputFile << '>';
-        if ( docsum.IsSetCaption() ) {
-            *m_OutputFile << docsum.GetCaption();
+        if ( !caption.empty() ) {
+            *m_OutputFile << caption;
         }
         *m_OutputFile << ' ';
-        if ( docsum.IsSetTitle() ) {
-            *m_OutputFile << docsum.GetTitle();
+        if ( !title.empty() ) {
+            *m_OutputFile << title;
         }
-#else // dump as ASN.1 text for now
-        auto_ptr<CObjectOStream> docsum_output
-            (CObjectOStream::Open(eSerial_AsnText, *m_OutputFile));
-        *docsum_output << docsum;
-#endif
     } else if (fmt == "fasta"  &&  lt == "ids") {
         WriteFastaIDs( id1_reply.GetIds() );
     } else if (fmt == "fasta"  &&  lt == "entry") {
