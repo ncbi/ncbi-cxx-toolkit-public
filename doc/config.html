@@ -1149,7 +1149,9 @@ util
 </pre>
 would request a non-recursive build in corelib and a recursive build
 in util.  With this option, the <tt>make</tt> target <tt>all_p</tt>
-will build all selected projects under the current directory.
+will build all selected projects under the current directory.  If
+there is a project you want to keep track of but not automatically
+build, you can follow its name with "&nbsp;update-only".
 <p>
 <b>NOTE:</b> The flags listed <a href="#ref_Optional">above</a> still
 apply; for instance, you still need <i><b>--with-internal</b></i> to
