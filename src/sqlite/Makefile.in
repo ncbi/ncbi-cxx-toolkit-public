@@ -1,0 +1,12 @@
+#################################
+# $Id$
+# Author:  Mike DiCuccio
+#################################
+
+# Meta-makefile for the "SQLite" lib
+#################################
+
+LIB_PROJ = xsqlite
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
