@@ -41,46 +41,19 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_kappa.h>
 #include "blast_psi_priv.h"
 
-/* Comparison function for sorting HSPs by score. 
- * Ties are broken based on subject sequence offsets.
- */
-static int
-score_compare_hsps(const void* v1, const void* v2)
-{
-   BlastHSP* h1,* h2;
-   BlastHSP** hp1,** hp2;
-   
-   hp1 = (BlastHSP**) v1;
-   hp2 = (BlastHSP**) v2;
-   h1 = *hp1;
-   h2 = *hp2;
-   
-   if (h1 == NULL || h2 == NULL)
-      return 0;
-   
-   if (h1->score < h2->score) 
-      return 1;
-   if (h1->score > h2->score)
-      return -1;
-   
-   if( h1->subject.offset < h2->subject.offset )
-      return 1;
-   if( h1->subject.offset > h2->subject.offset )
-      return -1;
-   
-   if( h1->subject.end < h2->subject.end )
-      return 1;
-   if( h1->subject.end > h2->subject.end )
-      return -1;
-   
-   return 0;
-}
-
 /** TRUE if c is between a and b; f between d and f.  Determines if the
  * coordinates are already in an HSP that has been evaluated. 
 */
 #define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
 
+/** Compares HSPs in an HSP array and deletes those whose ranges are completely
+ * included in other HSP ranges. The HSPs must be sorted by e-value/score 
+ * coming into this function. Null HSPs must be purged after this function is
+ * called.
+ * @param hsp_array Array of BlastHSP's [in]
+ * @param hspcnt Size of the array [in]
+ * @param is_ooframe Is this a search with out-of-frame gapping? [in]
+ */
 static void BLASTCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt, 
                                    Boolean is_ooframe)
 {
@@ -413,7 +386,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
    double scale_factor = 1.0;
    BlastScoringOptions *score_options = score_params->options;
    BlastHitSavingOptions *hit_options = hit_params->options;
-   
+ 
    /* For RPS BLAST only, we'll need to divide Lambda by the scaling factor
       for the e-value calculations, because scores are scaled; for PSI-BLAST
       Lambda is already divided by scaling factor, so there is no need to do 
@@ -444,6 +417,14 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
    }
             
    if (keep == TRUE) {
+      Int4 context;
+      /* For RPS tblastn query and subject are switched, so context for Karlin 
+         block should be derived from subject frame. */
+      if (program_number == eBlastTypeRpsTblastn)
+         context = FrameToContext(hsp->subject.frame);
+      else
+         context = hsp->context;
+
       /* If sum statistics is not used, calcualte e-values here. */
       if (!hit_params->link_hsp_params) {
          
@@ -460,11 +441,11 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                calculated correctly from a scaled score. Since score
                is an integer, adjusting score before the e-value 
                calculation would have lead to loss of precision.*/
-            kbp[hsp->context]->Lambda /= scale_factor;
+            kbp[context]->Lambda /= scale_factor;
             hsp->evalue = 
-               BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
-                  query_info->eff_searchsp_array[hsp->context]);
-            kbp[hsp->context]->Lambda *= scale_factor;
+               BLAST_KarlinStoE_simple(hsp->score, kbp[context],
+                  query_info->eff_searchsp_array[context]);
+            kbp[context]->Lambda *= scale_factor;
          }
          if (hsp->evalue > hit_options->expect_value) {
             /* put in for comp. based stats. */
@@ -479,8 +460,8 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
          /* For uneven version of LinkHsps, the individual e-values
             need to be calculated for each HSP. */
          hsp->evalue = 
-            BLAST_KarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
-               query_info->eff_searchsp_array[hsp->context]);
+            BLAST_KarlinStoE_simple(hsp->score, sbp->kbp_gap[context],
+               query_info->eff_searchsp_array[context]);
       }
 
       /* remove any scaling of the calculated score */
@@ -570,7 +551,7 @@ HSPCheckForDegenerateAlignments(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_in
 Int2
 Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
-   BlastQueryInfo* query_info,
+   BlastQueryInfo* query_info_in,
    BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
@@ -580,7 +561,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
    Int4 index;
    BlastHSP* hsp;
    Uint1* query,* subject;
-   Int4 query_length, query_length_orig;
+   Int4 query_length, query_length_orig, subject_length_orig;
    Int4 subject_length=0;
    BlastHSP** hsp_array;
    Int4 q_start, s_start;
@@ -595,6 +576,8 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
    const Boolean kTranslateSubject = 
       (program_number == eBlastTypeTblastn ||
        program_number == eBlastTypeRpsTblastn); 
+   BlastQueryInfo* query_info = query_info_in;
+   Int4 offsets[2];
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -603,7 +586,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
    hsp_array = hsp_list->hsp_array;
 
    if (kTranslateSubject) {
-      if (!gen_code_string)
+      if (!gen_code_string && program_number != eBlastTypeRpsTblastn)
          return -1;
 
       if (k_is_ooframe) {
@@ -614,6 +597,17 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
             of the nucleotide sequence. However its start will also be 
             shifted by 3.*/
          subject_length = 2*subject_blk->length - 1;
+      } else if (program_number == eBlastTypeRpsTblastn) {
+	 translation_buffer = subject_blk->sequence - 1;
+	 frame_offsets = query_info_in->context_offsets;
+	 /* Create a local BlastQueryInfo structure for this subject sequence
+	    that has been switched with the query. */
+	 query_info = BlastMemDup(query_info_in, sizeof(BlastQueryInfo));
+	 query_info->first_context = query_info->last_context = 0;
+	 query_info->num_queries = 1;
+	 offsets[0] = 0;
+	 offsets[1] = query_blk->length + 1;
+	 query_info->context_offsets = offsets; 
       } else {
          SetUpSubjectTranslation(subject_blk, gen_code_string,
             &translation_buffer, &frame_offsets, &partial_translation);
@@ -646,6 +640,20 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
             query_info->context_offsets[hsp->context];
          query_length = query_length_orig = 
             BLAST_GetQueryLength(query_info, hsp->context);
+      }
+
+      subject_length_orig = subject_blk->length;
+      /* For RPS tblastn the "subject" length should be the original 
+	 nucleotide query length, which can be calculated from the 
+	 context offsets in query_info_in. */
+      if (program_number == eBlastTypeRpsTblastn) {
+	 if (hsp->subject.frame > 0) {
+	    subject_length_orig = 
+	       query_info_in->context_offsets[NUM_FRAMES/2] - 1;
+	 } else {
+	    subject_length_orig = query_info_in->context_offsets[NUM_FRAMES] -
+	       query_info_in->context_offsets[NUM_FRAMES/2] - 1;
+	 }
       }
 
       /* preliminary RPS blast alignments have not had
@@ -738,7 +746,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
                    hsp->gap_info->frame1 = hsp->query.frame;
                    hsp->gap_info->frame2 = hsp->subject.frame;
                    hsp->gap_info->original_length1 = query_length_orig;
-                   hsp->gap_info->original_length2 = subject_blk->length;
+                   hsp->gap_info->original_length2 = subject_length_orig;
                    if (program_number == eBlastTypeBlastx)
                       hsp->gap_info->translate1 = TRUE;
                    if (program_number == eBlastTypeTblastn ||
@@ -775,12 +783,19 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
       }
    } /* End loop on HSPs */
 
-    if (translation_buffer) {
-        sfree(translation_buffer);
-    }
-    if (frame_offsets) {
-        sfree(frame_offsets);
-    }
+   if (program_number != eBlastTypeRpsTblastn) {
+      if (translation_buffer) {
+	 sfree(translation_buffer);
+      }
+      if (frame_offsets) {
+	 sfree(frame_offsets);
+      }
+   }
+
+   /* It's time to sort HSPs by e-value/score. */
+   qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
+	 Blast_HSPEvalueCompareCallback);
+    
     /* Now try to detect simular alignments */
 
     BLASTCheckHSPInclusion(hsp_array, hsp_list->hspcnt, k_is_ooframe);
@@ -792,10 +807,15 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number, BlastHSPList* hsp_l
                       sbp, hit_params->link_hsp_params, 
                       score_options->gapped_calculation);
        Blast_HSPListReapByEvalue(hsp_list, hit_options);
+       /* Sort HSPs again by e-value/score. */
+       qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
+	 Blast_HSPEvalueCompareCallback);
     }
     
-    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), score_compare_hsps);
-    
+    /* Free the local query_info structure, if necessary (RPS tblastn only) */
+    if (query_info != query_info_in)
+       sfree(query_info);
+
     /* Remove extra HSPs if there is a user proveded limit on the number 
        of HSPs per database sequence */
     if (hit_options->hsp_num_max > 0 && 
@@ -912,6 +932,10 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
          
       while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
              != kBlastHSPStream_Eof) {
+
+	 /* Make sure the HSPs in this HSP list are sorted. */
+	 Blast_HSPListCheckIfSorted(hsp_list);
+
          /* Perform traceback here, if necessary. */
          if (perform_traceback) {
             seq_arg.oid = hsp_list->oid;
@@ -935,12 +959,12 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
                seq_arg.seq, query_info, gap_align, sbp, score_params, 
                ext_params->options, hit_params, gen_code_string);
             BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
+         
+            /* Recalculate the bit scores, as they might have changed. */
+            Blast_HSPListGetBitScores(hsp_list, 
+               score_params->options->gapped_calculation, sbp);
          }
          
-         /* Recalculate the bit scores, as they might have changed. */
-         Blast_HSPListGetBitScores(hsp_list, 
-            score_params->options->gapped_calculation, sbp);
-
          Blast_HSPResultsInsertHSPList(results, hsp_list, 
                                        hit_params->options->hitlist_size);
       }
@@ -993,8 +1017,14 @@ Blast_HSPRPSUpdate(BlastHSP *hsp)
    }
 }
 
+/** Switches back the query and subject in all HSPs in an HSP list; also
+ * reassigns contexts to indicate query context, needed to pick correct
+ * Karlin block later in the code.
+ * @param program Program type: RPS or RPS tblastn [in]
+ * @param hsplist List of HSPs [in] [out]
+ */
 static void 
-Blast_HSPListRPSUpdate(BlastHSPList *hsplist)
+Blast_HSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
 {
    Int4 i;
    BlastHSP **hsp;
@@ -1014,6 +1044,11 @@ Blast_HSPListRPSUpdate(BlastHSPList *hsplist)
          query and subject sequences getting switched */
 
       Blast_HSPRPSUpdate(hsp[i]);
+
+      /* If query was nucleotide, set context, because it is needed in order 
+	 to pick correct Karlin block for calculating bit scores. */
+      if (program == eBlastTypeRpsTblastn)
+	 hsp[i]->context = FrameToContext(hsp[i]->query.frame);
    }
 }
 
@@ -1035,9 +1070,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
    BlastHSPList* hsp_list;
    BlastScoreBlk* sbp;
    Int4 **orig_pssm;
-   Int4 offsets[2];
    BLAST_SequenceBlk one_db_seq;
-   BlastQueryInfo one_db_seq_info;
    Int4 *db_seq_start;
    BlastHSPResults* results = NULL;
    
@@ -1059,6 +1092,18 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       if (!hsp_list)
          continue;
 
+      /* Make sure the HSPs in this HSP list are sorted. */
+      Blast_HSPListCheckIfSorted(hsp_list);
+
+      /* If traceback should be skipped, just save the HSP list into the results
+         structure. */
+      if (ext_params->options->eTbackExt == eSkipTbck) {
+         /* Save this HSP list in the results structure. */
+         Blast_HSPResultsInsertHSPList(results, hsp_list, 
+                                       hit_params->options->hitlist_size);
+         continue;
+      }
+
       /* pick out one of the sequences from the concatenated
          DB (given by the OID of this HSPList). The sequence
          size does not include the trailing NULL */
@@ -1067,19 +1112,6 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       memset(&one_db_seq, 0, sizeof(one_db_seq));
       one_db_seq.sequence = NULL;
       one_db_seq.length = db_seq_start[1] - db_seq_start[0] - 1;
-      
-      /* Set up the QueryInfo structure for this sequence. The
-         trailing NULL must be added back */
-      
-      offsets[0] = 0;
-      offsets[1] = one_db_seq.length + 1;
-      
-      memset(&one_db_seq_info, 0, sizeof(one_db_seq_info));
-      one_db_seq_info.first_context = 0;
-      one_db_seq_info.last_context = 0;
-      one_db_seq_info.num_queries = 1;
-      one_db_seq_info.context_offsets = &offsets[0];
-      one_db_seq_info.eff_searchsp_array = query_info->eff_searchsp_array;
       
       /* Update the statistics for this database sequence
          (if not a translated search) */
@@ -1103,7 +1135,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
          for all HSPs in the list */
       
       Blast_TracebackFromHSPList(program_number, hsp_list, &one_db_seq, 
-         query, &one_db_seq_info, gap_align, sbp, score_params, 
+         query, query_info, gap_align, sbp, score_params, 
          ext_params->options, hit_params, db_options->gen_code_string);
 
       if (program_number != eBlastTypeRpsTblastn)
@@ -1117,7 +1149,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
       /* Revert query and subject to their traditional meanings. 
          This involves switching the offsets around and reversing
          any traceback information */
-      Blast_HSPListRPSUpdate(hsp_list);
+      Blast_HSPListRPSUpdate(program_number, hsp_list);
 
       /* Calculate and fill the bit scores. This is the only time when 
          they are calculated. */
