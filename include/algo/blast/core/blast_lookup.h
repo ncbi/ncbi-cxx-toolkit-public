@@ -28,9 +28,10 @@
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/core/lookup_wrap.h>
 
-#ifndef AA_LOOKUP__H
-#define AA_LOOKUP__H
+#ifndef BLAST_LOOKUP__H
+#define BLAST_LOOKUP__H
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +56,11 @@ extern "C" {
 
 #define PV_SET(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] |= 1 << ((index) & PV_ARRAY_MASK) )
 #define PV_TEST(lookup, index) ( (lookup)->pv[(index)>>PV_ARRAY_BTS] & 1 << ((index) & PV_ARRAY_MASK) )
+
+/* Number of bits to shift in lookup index calculation when scanning compressed
+ * nucleotide sequence
+ */
+#define FULL_BYTE_SHIFT 8
 
   /* structure defining one cell of the compacted lookup table */
   /* stores the number of hits and
@@ -157,6 +163,9 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
 Int4 LookupTableNew(const LookupTableOptions* opt, LookupTable* * lut, 
 		    Boolean is_protein);
 
+/** Free the lookup table. */
+LookupTable* LookupTableDestruct(LookupTable* lookup);
+
 /** Index an array of queries.
  *
  * @param lookup the lookup table [in/modified]
@@ -222,8 +231,59 @@ Int4 AddNeighboringWords(LookupTable* lookup,
 #define CLEAR_HIGH_BIT(x) (x &= 0x7FFFFFFF)
 #define TEST_HIGH_BIT(x) ( ((x) >> 31) & 1 )
 
+/*********************************
+ * 
+ * Nucleotide functions
+ *
+ *********************************/
+
+/* Macro to test the presence vector array value for a lookup table index */
+#define NA_PV_TEST(pv_array, index, pv_array_bts) (pv_array[(index)>>pv_array_bts]&(((PV_ARRAY_TYPE) 1)<<((index)&PV_ARRAY_MASK)))
+
+/** Scan the compressed subject sequence, returning all word hits, using the 
+ *  old BLASTn approach - looking up words at every byte (4 bases) of the 
+ *  sequence. Lookup table is presumed to have a traditional BLASTn structure.
+ * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param q_offsets Array of query positions where words are found [out]
+ * @param s_offsets Array of subject positions where words are found [out]
+ * @param max_hits The allocated size of the above arrays - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       Int4* end_offset);
+
+/** Scan the compressed subject sequence, returning all word hits, using the 
+ *  arbitrary stride. Lookup table is presumed to have a traditional BLASTn 
+ *  structure. 
+ * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
+ * @param subject The (compressed) sequence to be scanned for words [in]
+ * @param start_offset The offset into the sequence in actual coordinates [in]
+ * @param q_offsets Array of query positions where words are found [out]
+ * @param s_offsets Array of subject positions where words are found [out]
+ * @param max_hits The allocated size of the above arrays - how many offsets 
+ *        can be returned [in]
+ * @param end_offset Where the scanning should stop [in], has stopped [out]
+*/
+Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
+       const BLAST_SequenceBlk* subject, Int4 start_offset,
+       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       Int4* end_offset);
+
+/** Fill the lookup table for a given query sequence or partial sequence.
+ * @param lookup Pointer to the lookup table structure [in] [out]
+ * @param query The query sequence [in]
+ * @param location What locations on the query sequence to index? [in]
+ */
+Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
+                             ListNode* location);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* AA_LOOKUP__H */
+#endif /* BLAST_LOOKUP__H */
