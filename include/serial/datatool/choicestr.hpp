@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/11/19 19:47:50  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.13  2002/11/14 21:07:11  gouriano
 * added support of XML attribute lists
 *
@@ -129,9 +132,13 @@ public:
         int memberTag;
         bool noPrefix;
         bool attlist;
+        bool noTag;
+        bool simple;
+        const CDataType* dataType;
 
         SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
-            bool delayed, int tag, bool noPrefx, bool attlst);
+            bool delayed, int tag, bool noPrefx, bool attlst, bool noTg,
+            bool simpl, const CDataType* dataTp);
     };
     typedef list<SVariantInfo> TVariants;
 
@@ -144,7 +151,8 @@ public:
         }
 
     void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
-                    bool delayed, int tag, bool noPrefix, bool attlist);
+                    bool delayed, int tag, bool noPrefix, bool attlist,
+                    bool noTag, bool simple, const CDataType* dataType);
 
 protected:
     void GenerateClassCode(CClassCode& code,

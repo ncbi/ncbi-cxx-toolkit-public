@@ -61,16 +61,15 @@ void CClassTypeStrings::AddMember(const string& name,
                                   const string& pointerType,
                                   bool optional,
                                   const string& defaultValue,
-                                  bool delayed,
-                                  int tag,
+                                  bool delayed, int tag,
                                   bool noPrefix, bool attlist, bool noTag,
-                                  const CDataType* dataType)
+                                  bool simple,const CDataType* dataType)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue,
                                     delayed, tag, noPrefix,attlist,noTag,
-                                    dataType));
+                                    simple,dataType));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
@@ -78,14 +77,14 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             const string& pType,
                                             bool opt, const string& defValue,
                                             bool del, int tag, bool noPrefx,
-                                            bool attlst, bool noTg,
+                                            bool attlst, bool noTg, bool simpl,
                                             const CDataType* dataTp)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),
       defaultValue(defValue), noPrefix(noPrefx), attlist(attlst), noTag(noTg),
-      dataType(dataTp)
+      simple(simpl),dataType(dataTp)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -501,7 +500,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         CClassTypeStrings* typeStr = resolved->GetTypeStr();
                         if (typeStr) {
                             iterate ( TMembers, ir, typeStr->m_Members ) {
-                                if (ir->noTag) {
+                                if (ir->simple) {
                                     string ircType(ir->type->GetCType(
                                         code.GetNamespace()));
                                     setters <<
@@ -898,9 +897,9 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "public:\n";
     DeclareConstructor(out, GetClassNameDT());
     iterate ( TMembers, i, m_Members ) {
-        if (i->noTag) {
+        if (i->simple) {
             out <<
-                "    " << GetClassNameDT() << "(const " <<
+                "    " << GetClassNameDT() <<"(const "<<
                 i->type->GetCType(GetNamespace()) << "& value);" <<
                 "\n";
             break;
@@ -920,12 +919,12 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "\n";
     }
     iterate ( TMembers, i, m_Members ) {
-        if (i->noTag) {
+        if (i->simple) {
             out <<
             "    operator const " << i->type->GetCType(GetNamespace()) <<
             "&(void) const;\n";
             out <<
-            "    " << GetClassNameDT() << "& operator=(const " <<
+            "    " << GetClassNameDT() << "& operator="<<"(const "<<
             i->type->GetCType(GetNamespace()) << "& value);\n" <<
             "\n";
             break;
@@ -952,7 +951,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "}\n"
         "\n";
     iterate ( TMembers, i, m_Members ) {
-        if (i->noTag) {
+        if (i->simple) {
             out <<
             "inline\n" <<
             GetClassNameDT()<<"::"<<GetClassNameDT()<<"(const "<<
@@ -983,7 +982,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "\n";
     }
     iterate ( TMembers, i, m_Members ) {
-        if (i->noTag) {
+        if (i->simple) {
             out <<
             "inline\n"<<
             GetClassNameDT() << "::"
@@ -996,7 +995,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             out <<
             "inline\n"<<
             GetClassNameDT() << "& " << GetClassNameDT() << "::"
-            "operator=(const " <<
+            "operator="<<"(const "<<
             i->type->GetCType(GetNamespace()) << "& value)\n" <<
             "{\n" <<
             "    Set" << i->cName << "(value);\n" <<
@@ -1079,6 +1078,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2002/11/19 19:48:28  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.41  2002/11/14 21:03:39  gouriano
 * added support of XML attribute lists
 *

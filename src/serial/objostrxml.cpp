@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/11/19 19:48:51  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.36  2002/11/14 21:00:18  gouriano
 * added support of XML attribute lists
 *
@@ -829,11 +832,15 @@ void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
     bool tagIsOpen = false;
     if ( !classType->GetName().empty() ) {
         BEGIN_OBJECT_FRAME2(eFrameClass, classType);
-        if (FetchFrameFromTop(1).GetSkipTag()) {
+        const TFrame& frame1 = FetchFrameFromTop(1);
+        if (frame1.GetSkipTag()) {
             ETypeFamily type = classType->GetTypeFamily();
             if (type == eTypeFamilyClass) {
-                OpenTag(classType);
-                tagIsOpen = true;
+                if (frame1.GetFrameType() !=
+                    CObjectStackFrame::eFrameChoiceVariant) {
+                    OpenTag(classType);
+                    tagIsOpen = true;
+                }
             }
         } else {
             OpenTag(classType);
@@ -868,6 +875,9 @@ void CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
         memberId);
     bool tagIsOpen = false;
     if (memberId.HaveNoPrefix()) {
+        if(memberId.IsAttlist() && m_LastTagAction == eTagClose) {
+            OpenTagEndBack();
+        }
         ETypeFamily type = memberType->GetTypeFamily();
         if ((type != eTypeFamilyPrimitive) && (type != eTypeFamilyContainer)) {
             TopFrame().SetSkipTag();
@@ -929,9 +939,7 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
 
 void CObjectOStreamXml::EndChoiceVariant(void)
 {
-    if (!TopFrame().GetNotag()) {
-        CloseStackTag(0);
-    }
+    CloseStackTag(0);
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/11/19 19:48:28  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.25  2002/11/14 21:03:39  gouriano
 * added support of XML attribute lists
 *
@@ -285,8 +288,11 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
             bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
             code->AddVariant((*i)->GetName(), varType, delayed,
                              (*i)->GetType()->GetTag(),
-                             (*i)->NoPrefix(), (*i)->Attlist());
+                             (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
+                             (*i)->SimpleType(),(*i)->GetType());
+            (*i)->GetType()->SetTypeStr(&(*code));
         }
+        SetTypeStr(&(*code));
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());
     }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/11/19 19:48:29  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.38  2002/11/14 21:02:54  gouriano
 * added support of XML attribute lists
 *
@@ -381,7 +384,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
                         optional, defaultCode, delayed,
                         (*i)->GetType()->GetTag(),
                         (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
-                        (*i)->GetType());
+                        (*i)->SimpleType(),(*i)->GetType());
         (*i)->GetType()->SetTypeStr(&(*code));
     }
     SetTypeStr(&(*code));
@@ -505,7 +508,7 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
     : m_Name(name), m_Type(type), m_Optional(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_SimpleType(false)
 
 {
     if ( m_Name.empty() ) {
@@ -577,6 +580,10 @@ void CDataMember::SetAttlist(void)
 void CDataMember::SetNotag(void)
 {
     m_Notag = true;
+}
+void CDataMember::SetSimpleType(void)
+{
+    m_SimpleType = true;
 }
 
 

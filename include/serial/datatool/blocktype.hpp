@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/11/19 19:47:50  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.11  2002/11/14 21:07:11  gouriano
 * added support of XML attribute lists
 *
@@ -135,6 +138,10 @@ public:
         {
             return m_Notag;
         }
+    bool SimpleType(void) const
+        {
+            return m_SimpleType;
+        }
     const CDataValue* GetDefault(void) const
         {
             return m_Default.get();
@@ -144,6 +151,7 @@ public:
     void SetNoPrefix(void);
     void SetAttlist(void);
     void SetNotag(void);
+    void SetSimpleType(void);
     void SetDefault(const AutoPtr<CDataValue>& value);
 
     CComments& Comments(void)
@@ -158,6 +166,7 @@ private:
     bool m_NoPrefix;
     bool m_Attlist;
     bool m_Notag;
+    bool m_SimpleType;
     AutoPtr<CDataValue> m_Default;
     CComments m_Comments;
 };

@@ -64,12 +64,13 @@ public:
         bool noPrefix;
         bool attlist;
         bool noTag;
+        bool simple;
         const CDataType* dataType;
         SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
                     bool delayed, int tag,
-                    bool noPrefx, bool attlst, bool noTg,
+                    bool noPrefx, bool attlst, bool noTg, bool simpl,
                     const CDataType* dataTp);
     };
     typedef list<SMemberInfo> TMembers;
@@ -96,12 +97,13 @@ public:
                    const string& pointerType,
                    bool optional, const string& defaultValue,
                    bool delayed, int tag,
-                   bool noPrefix, bool attlist, bool noTag,
+                   bool noPrefix, bool attlist, bool noTag, bool simple,
                    const CDataType* dataType);
     void AddMember(const AutoPtr<CTypeStrings>& type, int tag)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
-                      false, NcbiEmptyString, false, tag, false,false,false,0);
+                      false, NcbiEmptyString, false, tag,
+                      false,false,false,false,0);
         }
 
     string GetCType(const CNamespace& ns) const;
@@ -156,6 +158,7 @@ private:
     string m_ParentClassName;
     CNamespace m_ParentClassNamespace;
     string m_ParentClassFileName;
+public:
     TMembers m_Members;
 };
 
@@ -190,6 +193,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2002/11/19 19:47:49  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.17  2002/11/14 21:07:11  gouriano
 * added support of XML attribute lists
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/11/19 19:48:28  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.36  2002/11/18 19:48:46  grichenk
 * Removed "const" from datatool-generated setters
 *
@@ -196,6 +199,7 @@
 */
 
 #include <corelib/ncbiutil.hpp>
+#include <serial/datatool/type.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
@@ -230,19 +234,23 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 void CChoiceTypeStrings::AddVariant(const string& name,
                                     const AutoPtr<CTypeStrings>& type,
                                     bool delayed, int tag,
-                                    bool noPrefix, bool attlist)
+                                    bool noPrefix, bool attlist, bool noTag,
+                                    bool simple, const CDataType* dataType)
 {
     m_Variants.push_back(SVariantInfo(name, type, delayed, tag,
-                                      noPrefix, attlist));
+                                      noPrefix,attlist,noTag,simple,dataType));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
                                                const AutoPtr<CTypeStrings>& t,
                                                bool del, int tag,
-                                               bool noPrefx, bool attlst)
+                                               bool noPrefx, bool attlst,
+                                               bool noTg,bool simpl,
+                                               const CDataType* dataTp)
     : externalName(name), cName(Identifier(name)),
       type(t), delayed(del), memberTag(tag),
-      noPrefix(noPrefx), attlist(attlst)
+      noPrefix(noPrefx), attlist(attlst), noTag(noTg), simple(simpl),
+      dataType(dataTp)
 {
     switch ( type->GetKind() ) {
     case eKindString:
@@ -510,6 +518,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    switch ( "STATE_MEMBER" ) {\n";
             // generate destruction code for pointers
             iterate ( TVariants, i, m_Variants ) {
+                if (i->attlist) {
+                    continue;
+                }
                 if ( i->memberType == ePointerMember ) {
                     methods <<
                         "    case "STATE_PREFIX<<i->cName<<":\n";
@@ -524,6 +535,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( haveString ) {
                 // generate destruction code for string
                 iterate ( TVariants, i, m_Variants ) {
+                    if (i->attlist) {
+                        continue;
+                    }
                     if ( i->memberType == eStringMember ) {
                         methods <<
                             "    case "STATE_PREFIX<<i->cName<<":\n";
@@ -544,6 +558,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( haveObjectPointer ) {
                 // generate destruction code for pointers to CObject
                 iterate ( TVariants, i, m_Variants ) {
+                    if (i->attlist) {
+                        continue;
+                    }
                     if ( i->memberType == eObjectPointerMember ) {
                         methods <<
                             "    case "STATE_PREFIX<<i->cName<<":\n";
@@ -646,6 +663,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             methods <<
                 "    switch ( index ) {\n";
             iterate ( TVariants, i, m_Variants ) {
+                if (i->attlist) {
+                    continue;
+                }
                 switch ( i->memberType ) {
                 case eSimpleMember:
                     {
@@ -893,6 +913,33 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "    }\n"
                         "}\n"
                         "\n";
+                    if (i->dataType) {
+                        const CDataType* resolved = i->dataType->Resolve();
+                        if (resolved && resolved != i->dataType) {
+                            CClassTypeStrings* typeStr = resolved->GetTypeStr();
+                            if (typeStr) {
+                                iterate ( TMembers, ir, typeStr->m_Members ) {
+                                    if (ir->simple) {
+                                        string ircType(ir->type->GetCType(
+                                            code.GetNamespace()));
+                                        setters <<
+                                            "    void Set"<<i->cName<<"(const "<<
+                                            ircType<<"& value);\n";
+                                        methods <<
+                                            "void "<<methodPrefix<<"Set"<<
+                                            i->cName<<"(const "<<ircType<<
+                                            "& value)\n"
+                                            "{\n";
+                                        methods <<
+                                            "    Set" << i->cName <<
+                                            "() = value;\n"
+                                            "}\n"
+                                            "\n";
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
             setters <<
@@ -1089,6 +1136,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if (i->attlist) {
                 methods << "->SetAttlist()";
+            }
+            if (i->noTag) {
+                methods << "->SetNotag()";
             }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";

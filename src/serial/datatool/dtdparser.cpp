@@ -684,6 +684,7 @@ CDataType* DTDParser::AttribNode(const DTDElement& node)
     AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
     member->SetNoPrefix();
     member->SetNotag();
+    member->SetSimpleType();
     container->AddMember(member);
 
     return container.release();
@@ -908,6 +909,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2002/11/19 19:48:28  gouriano
+ * added support of XML attributes of choice variants
+ *
  * Revision 1.4  2002/11/14 21:05:27  gouriano
  * added support of XML attribute lists
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/11/19 19:48:29  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.65  2002/11/14 21:04:02  gouriano
 * added support of XML attribute lists
 *
@@ -212,8 +215,8 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
-      m_DataMember(0),  m_Set(0), m_Choice(0), m_Checked(false),
-      m_Tag(eNoExplicitTag), m_TypeStr(0)
+      m_DataMember(0), m_TypeStr(0), m_Set(0), m_Choice(0), m_Checked(false),
+      m_Tag(eNoExplicitTag)
 {
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/11/19 19:48:52  gouriano
+* added support of XML attributes of choice variants
+*
 * Revision 1.27  2002/11/15 20:33:12  gouriano
 * support of XML attributes of empty elements
 *
@@ -1078,14 +1081,22 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
 void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
     if (!FetchFrameFromTop(1).GetSkipTag()) {
-        OpenTagIfNamed(classInfo);
+        if (HasAttlist()) {
+            TopFrame().SetNotag();
+        } else {
+            OpenTagIfNamed(classInfo);
+        }
     }
 }
 
 void CObjectIStreamXml::EndClass(void)
 {
     if (!FetchFrameFromTop(1).GetSkipTag()) {
-        CloseTagIfNamed(TopFrame().GetTypeInfo());
+        if (TopFrame().GetNotag()) {
+            TopFrame().SetNotag(false);
+        } else {
+            CloseTagIfNamed(TopFrame().GetTypeInfo());
+        }
     }
 }
 
