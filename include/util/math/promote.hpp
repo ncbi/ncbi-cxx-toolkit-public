@@ -32,8 +32,8 @@
  *
  */
 
-// we don't explicitly include <corelib/ncbistd.hpp> because this file is not
-// indented to be used directly
+#include <corelib/ncbistd.hpp>
+
 BEGIN_NCBI_SCOPE
 
 //
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/19 13:11:35  dicuccio
+ * Added include for ncbistd.hpp
+ *
  * Revision 1.5  2004/03/10 14:14:26  dicuccio
  * Changed include guard to be consistent.  Moved commented portion to
  * gui-specific directory.  Cleaned up error in template macros - add space around
