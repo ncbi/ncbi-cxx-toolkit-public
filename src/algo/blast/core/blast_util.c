@@ -195,8 +195,10 @@ Int2 BlastProgram2Number(const char *program, Uint1 *number)
 		*number = blast_type_tblastn;
 	else if (strcasecmp("tblastx", program) == 0)
 		*number = blast_type_tblastx;
-	else if (strcasecmp("psitblastn", program) == 0)
-		*number = blast_type_psitblastn;
+	else if (strcasecmp("rpsblast", program) == 0)
+		*number = blast_type_rpsblast;
+	else if (strcasecmp("rpstblastn", program) == 0)
+		*number = blast_type_rpstblastn;
 
 	return 0;
 }
@@ -223,8 +225,11 @@ Int2 BlastNumber2Program(Uint1 number, char* *program)
 		case blast_type_tblastx:
 			*program = strdup("tblastx");
 			break;
-		case blast_type_psitblastn:
-			*program = strdup("psitblastn");
+		case blast_type_rpsblast:
+			*program = strdup("rpsblast");
+			break;
+		case blast_type_rpstblastn:
+			*program = strdup("rpstblastn");
 			break;
 		default:
 			*program = strdup("unknown");
@@ -653,8 +658,9 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
       else
          frame = -1;
    } else if (prog_number == blast_type_blastp ||
+              prog_number == blast_type_rpsblast ||
               prog_number == blast_type_tblastn ||
-              prog_number == blast_type_psitblastn) {
+              prog_number == blast_type_rpstblastn) { 
       /* Query and subject are protein, no frame. */
       frame = 0;
    } else if (prog_number == blast_type_blastx || 
