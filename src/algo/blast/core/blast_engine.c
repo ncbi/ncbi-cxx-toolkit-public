@@ -368,9 +368,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
    /* epilogue */
 
-   if (blastp)
-      DiagFree(ewp->diag_table);
-
    MemFree(query_offsets); query_offsets = NULL;
    MemFree(subject_offsets); subject_offsets = NULL;
 
