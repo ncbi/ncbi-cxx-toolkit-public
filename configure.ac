@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.93 2002/06/12 18:21:54 ucko Exp $
+#  $Id: configure.ac,v 1.94 2002/06/18 17:52:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -37,6 +37,8 @@
 #      c) other "Makefile"s and scripts in "<builddir>/build"
 #
 #############################################################################
+
+AC_PREREQ(2.53)
 
 dnl Set up lock.  The diversion magic lets this occur before AC_INIT, which
 dnl already interferes with other configure processes.
@@ -1207,126 +1209,98 @@ if test "$with_mt" = "yes" ; then
 
 ## gethostbyname_r() -- 2 different variants
 
-AC_MSG_CHECKING(for gethostbyname_r)
-x_gethostbyname_r="no"
-AC_TRY_COMPILE(
-   [#include <netdb.h>],
-   [
-     void*           dummy = (void*) &gethostbyname_r;
-     char            buf[1024];
-     int             err;
-     struct hostent* hp = 0;
-     hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
-   ],
-   [
-     x_gethostbyname_r="5"
-   ]
-)
-if test "$x_gethostbyname_r" = "no" ; then
-AC_TRY_COMPILE(
-   [#include <netdb.h>],
-   [
-     void*           dummy = (void*) &gethostbyname_r;
-     char            buf[1024];
-     int             err;
-     struct hostent* hp = 0;
-     err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
-   ],
-   [
-     x_gethostbyname_r="6"
-   ]
-)
-fi
+AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
+   [ncbi_cv_func_gethostbyname_r="no"
+    AC_TRY_COMPILE(
+       [#include <netdb.h>],
+       [
+    	 void*           dummy = (void*) &gethostbyname_r;
+    	 char            buf[1024];
+    	 int             err;
+    	 struct hostent* hp = 0;
+    	 hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
+       ],
+       [
+    	 ncbi_cv_func_gethostbyname_r="5"
+       ]
+    )
+    if test "$x_gethostbyname_r" = "no" ; then
+    AC_TRY_COMPILE(
+       [#include <netdb.h>],
+       [
+    	 void*           dummy = (void*) &gethostbyname_r;
+    	 char            buf[1024];
+    	 int             err;
+    	 struct hostent* hp = 0;
+    	 err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
+       ],
+       [
+    	 ncbi_cv_func_gethostbyname_r="6"
+       ]
+    )
+    fi])
 
-if test "$x_gethostbyname_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $x_gethostbyname_r,
-                      [If gethostbyname_r exists, define to the number of
-                       arguments it takes (normally 5 or 6).])
+if test "$ncbi_cv_func_gethostbyname_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $ncbi_cv_func_gethostbyname_r,
+    [If you have the \`gethostbyname_r\' function, define to the number of
+     arguments it takes (normally 5 or 6).])
 fi
-AC_MSG_RESULT($x_gethostbyname_r)
 
 
 
 ## gethostbyaddr_r() -- 2 different variants
 
-AC_MSG_CHECKING(for gethostbyaddr_r)
-x_gethostbyaddr_r="no"
-AC_TRY_COMPILE(
-   [
-     #include <netdb.h>
-     #include <sys/types.h>
-     #include <sys/socket.h>
-   ],
-   [
-     void* dummy = (void*) &gethostbyaddr_r;
-     char            buf[1024];
-     int             err;
-     unsigned int    host;
-     struct hostent* hp = 0;
-     hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-                          hp, buf, sizeof(buf), &err);
-   ],
-   [
-     x_gethostbyaddr_r="7"
-   ]
-)
-if test "$x_gethostbyaddr_r" = "no" ; then
-AC_TRY_COMPILE(
-   [
-     #include <netdb.h>
-     #include <sys/types.h>
-     #include <sys/socket.h>
-   ],
-   [
-     void* dummy = (void*) &gethostbyaddr_r;
-     char            buf[1024];
-     int             err;
-     unsigned int    host;
-     struct hostent* hp = 0;
-     int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
-                               hp, buf, sizeof(buf), &hp, &err);
-   ],
-   [
-     x_gethostbyaddr_r="8"
-   ]
-)
+AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
+   [ncbi_cv_func_gethostbyaddr_r="no"
+    AC_TRY_COMPILE(
+       [
+    	 #include <netdb.h>
+    	 #include <sys/types.h>
+    	 #include <sys/socket.h>
+       ],
+       [
+    	 void* dummy = (void*) &gethostbyaddr_r;
+    	 char            buf[1024];
+    	 int             err;
+    	 unsigned int    host;
+    	 struct hostent* hp = 0;
+    	 hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+    			      hp, buf, sizeof(buf), &err);
+       ],
+       [
+    	 ncbi_cv_func_gethostbyaddr_r="7"
+       ]
+    )
+    if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
+    AC_TRY_COMPILE(
+       [
+    	 #include <netdb.h>
+    	 #include <sys/types.h>
+    	 #include <sys/socket.h>
+       ],
+       [
+    	 void* dummy = (void*) &gethostbyaddr_r;
+    	 char            buf[1024];
+    	 int             err;
+    	 unsigned int    host;
+    	 struct hostent* hp = 0;
+    	 int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+    				   hp, buf, sizeof(buf), &hp, &err);
+       ],
+       [
+    	 ncbi_cv_func_gethostbyaddr_r="8"
+       ]
+    )
+    fi])
+
+if test "$ncbi_cv_func_gethostbyaddr_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $ncbi_cv_func_gethostbyaddr_r,
+    [If you have the \`gethostbyaddr_r\' function, define to the number of
+     arguments it takes (normally 5 or 6).])
 fi
 
-if test "$x_gethostbyaddr_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $x_gethostbyaddr_r,
-                      [If gethostbyaddr_r exists, define to the number of
-                       arguments it takes (normally 7 or 8).])
-fi
-AC_MSG_RESULT($x_gethostbyaddr_r)
 
-
-AC_MSG_CHECKING(for localtime_r)
-AC_TRY_COMPILE(
-   [#include <time.h>],
-   [
-     void* dummy = (void*) &localtime_r;
-     time_t    timer;
-     struct tm result;
-     (void) localtime_r(&timer, &result);
-   ],
-   AC_DEFINE(HAVE_LOCALTIME_R, 1, [Define to 1 if localtime_r exists.])
-)
-AC_MSG_RESULT()
-
-
-AC_MSG_CHECKING(for pthread_setconcurrency)
-AC_TRY_COMPILE(
-   [#include <pthread.h>],
-   [
-     void* dummy = (void*) &pthread_setconcurrency;
-     int ret_value = pthread_setconcurrency(5);
-   ],
-   AC_DEFINE(HAVE_PTHREAD_SETCONCURRENCY, 1,
-             [Define to 1 if pthread_setconcurrency exists.])
-)
-AC_MSG_RESULT()
-
-AC_CHECK_FUNCS(pthread_atfork)
+AC_CHECK_FUNCS(localtime_r pthread_setconcurrency pthread_atfork)
 
 fi
 ### ...reentrant versions of some standard library functions, MT functions
@@ -1334,80 +1308,28 @@ fi
 
 ### Check for other standard library functions
 
-AC_MSG_CHECKING(for strdup)
-AC_TRY_COMPILE(
-   [#include <string.h>],
-   [
-     void* dummy = (void*) &strdup;
-     const char s[] = "abc";
-     char* s1 = strdup(s);
-   ],
-   AC_DEFINE(HAVE_STRDUP, 1, [Define to 1 if strdup exists.])
-)
-AC_MSG_RESULT()
+AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm)
 
+AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,
+   [AC_TRY_COMPILE(
+       [#include <sys/sysinfo.h>],
+       [
+    	 void* dummy = (void*) &sysinfo;
+    	 struct sysinfo* info = 0;
+    	 int retval = sysinfo(info);
+       ], [ncbi_cv_func_sysinfo_1=yes], [ncbi_cv_func_sysinfo_1=no])])
 
-AC_MSG_CHECKING(for Linux-like sysinfo with 1 arg)
-AC_TRY_COMPILE(
-   [#include <sys/sysinfo.h>],
-   [
-     void* dummy = (void*) &sysinfo;
-     struct sysinfo* info = 0;
-     int retval = sysinfo(info);
-   ],
+if test "$ncbi_cv_func_sysinfo_1" = yes; then
    AC_DEFINE(HAVE_SYSINFO_1, 1,
              [Define to 1 if Linux-like 1-arg sysinfo exists.])
-)
-AC_MSG_RESULT()
+fi
 
-
-AC_MSG_CHECKING(for getloadavg)
-AC_TRY_COMPILE(
-   [#include <sys/loadavg.h>],
-   [
-     void* dummy = (void*) &getloadavg;
-     double loadavg[3];
-     int i = getloadavg(loadavg, 3);
-   ],
-   AC_DEFINE(HAVE_GETLOADAVG, 1, [Define to 1 if getloadavg exists.])
-)
-AC_MSG_RESULT()
-
-
-AC_MSG_CHECKING(for sysmp)
-AC_TRY_COMPILE(
-   [
-     #include <sys/sysinfo.h>
-     #include <sys/sysmp.h>
-   ],
-   [ 
-     void* dummy = (void*) &sysmp;
-     struct sysinfo si;
-     sysmp(MP_SAGET, MPSA_SINFO, &si, sizeof(si));
-   ],
-   AC_DEFINE(HAVE_SYSMP, 1, [Define to 1 if sysmp exists.])
-)
-AC_MSG_RESULT()
-
-
-AC_MSG_CHECKING(for strcasecmp)
-AC_TRY_COMPILE(
-   [#include <string.h>],
-   [
-     void* dummy = (void*) &strcasecmp;
-     const char* s1 = 0;
-     const char* s2 = 0;
-     int i = strcasecmp(s1, s2);
-   ],
-   AC_DEFINE(HAVE_STRCASECMP, 1, [Define to 1 if strcasecmp exists.])
-)
-AC_MSG_RESULT()
-
-
-AC_CHECK_FUNCS(timegm)
+# Overkill in some ways...
+AC_FUNC_GETLOADAVG
 
 AC_SEARCH_LIBS(sched_yield, rt,
-    AC_DEFINE(HAVE_SCHED_YIELD, 1, [Define to 1 if sched_yield exists.])
+    AC_DEFINE(HAVE_SCHED_YIELD, 1,
+              [Define to 1 if you have the \`sched_yield\' function.])
 )
 
 ### Check for typedefs, structures, and compiler features.
@@ -1416,123 +1338,122 @@ AC_TYPE_SIZE_T
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
-              [Define to 1 if struct sockaddr_in has a "sin_len" field])],
+      [Define to 1 if \`sin_len\' is a member of \`struct sockaddr_in\'.])],
    [], [#include <sys/types.h>
         #include <netinet/in.h>])   
 
-AC_MSG_CHECKING(if can use exception specifications throw(...) in func.proto)
-AC_TRY_RUN(
-   [template <class T> inline int test_throw_spec(const T&) throw() {
-      return 0;
-   }
-   int main(void) {
-      return test_throw_spec(123);
-   }],
+
+AC_CACHE_CHECK([whether function prototypes can use throw(...)],
+   ncbi_cv_cxx_throw_spec,
+   [AC_TRY_COMPILE(
+       [template <class T> inline int test_throw_spec(const T&) throw() {
+    	  return 0;
+       }],
+       [return test_throw_spec(123);],
+       [ncbi_cv_cxx_throw_spec=yes], [ncbi_cv_cxx_throw_spec=no])])
+if test "$ncbi_cv_cxx_throw_spec" = yes; then
    AC_DEFINE(NCBI_USE_THROW_SPEC, 1,
              [Define to 1 if prototypes can use exception specifications.])
-)
-AC_MSG_RESULT()
+fi
 
 
-AC_MSG_CHECKING(if have an obsolete basic_string::compare())
-AC_TRY_COMPILE(
-   [#include <string>],
-   [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
+AC_CACHE_CHECK([for obsolete string::compare() syntax],
+   ncbi_cv_func_string_compare_obsolete,
+   [AC_TRY_COMPILE(
+       [#include <string>],
+       [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
+       [ncbi_cv_func_string_compare_obsolete=yes],
+       [ncbi_cv_func_string_compare_obsolete=no])])
+if test "$ncbi_cv_func_string_compare_obsolete" = yes; then
    AC_DEFINE(NCBI_OBSOLETE_STR_COMPARE, 1,
-             [Define to 1 if basic_string::compare is non-standard.])
-)
-AC_MSG_RESULT()
+             [Define to 1 if \`string::compare()\' is non-standard.])
+fi
 
 
-AC_MSG_CHECKING(if the auto_ptr template class is poor or not implemented)
-AC_TRY_COMPILE(
-   [#include <memory>],
-   [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
-   ,
+AC_CACHE_CHECK([whether the auto_ptr template class works],
+   ncbi_cv_type_auto_ptr_works,
+   [AC_TRY_COMPILE(
+       [#include <memory>],
+       [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
+       [ncbi_cv_type_auto_ptr_works=yes], [ncbi_cv_type_auto_ptr_works=no])])
+if test "$ncbi_cv_cxx_auto_ptr_works" = no; then
    AC_DEFINE(HAVE_NO_AUTO_PTR, 1,
-             [Define to 1 if auto_ptr<> is poor or not implemented.])
-)
-AC_MSG_RESULT()
+             [Define to 1 if \`auto_ptr<T>\' is missing or broken.])
+fi
 
 
-AC_MSG_CHECKING(if min/max templates are not implemented)
-AC_TRY_COMPILE(
-   [#include <algorithm>
-    #ifdef min
-    #undef min
-    #endif
-    #ifdef max
-    #undef max
-    #endif
-   ],
-   [int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b); ],
-   ,
+AC_CACHE_CHECK([for min/max templates], ncbi_cv_func_min_max,
+   [AC_TRY_COMPILE(
+       [#include <algorithm>
+    	#ifdef min
+    	#undef min
+    	#endif
+    	#ifdef max
+    	#undef max
+    	#endif
+       ],
+       [int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b); ],
+       [ncbi_cv_func_min_max=yes], [ncbi_cv_func_min_max=no])])
+if test "$ncbi_cv_func_min_max" = no; then
    AC_DEFINE(HAVE_NO_MINMAX_TEMPLATE, 1,
-             [Define to 1 if min/max templates are not implemented.])
-)
-AC_MSG_RESULT()
+             [Define to 1 if \`min\'/\`max\' templates are not implemented.])
+fi
 
 
-AC_MSG_CHECKING(if new C++ streams do not have ios_base::)
-AC_TRY_COMPILE(
-   [#include <iostream>],
-   [(void)(std::ios_base::out != std::ios_base::beg); ],
-   ,
+AC_CACHE_CHECK([whether new C++ streams have ios_base::],
+   ncbi_cv_type_ios_base,
+   [AC_TRY_COMPILE(
+       [#include <iostream>],
+       [(void)(std::ios_base::out != std::ios_base::beg); ],
+       [ncbi_cv_type_ios_base=yes], [ncbi_cv_type_ios_base=no])])
+if test "$ncbi_cv_type_ios_base" = no; then
    AC_DEFINE(HAVE_NO_IOS_BASE, 1,
-             [Define to 1 if new C++ streams lack ios_base::.])
-)
-AC_MSG_RESULT()
+             [Define to 1 if new C++ streams lack \`ios_base::\'.])
+fi
 
 
-AC_MSG_CHECKING(for std::char_traits::)
-AC_TRY_COMPILE(
-   [#include <iostream>],
-   [using namespace std;
-   char_traits<char>::int_type  i = char_traits<char>::eof();
-   i = char_traits<char>::not_eof(i);
-   char_traits<char>::char_type c = '\0';
-   char_traits<char>::pos_type  p = 0;
-   char_traits<char>::off_type  o = 1;
-   ],
-   ,
+AC_CACHE_CHECK([for std::char_traits::], ncbi_cv_type_char_traits,
+   [AC_TRY_COMPILE(
+       [#include <iostream>],
+       [using namespace std;
+       char_traits<char>::int_type  i = char_traits<char>::eof();
+       i = char_traits<char>::not_eof(i);
+       char_traits<char>::char_type c = '\0';
+       char_traits<char>::pos_type  p = 0;
+       char_traits<char>::off_type  o = 1;
+       ],
+       [ncbi_cv_type_char_traits=yes], [ncbi_cv_type_char_traits=no])])
+if test "$ncbi_cv_type_char_traits" = no; then
    AC_DEFINE(HAVE_NO_CHAR_TRAITS, 1,
-             [Define to 1 if std::char_traits is missing.])
-)
-AC_MSG_RESULT()
+             [Define to 1 if \`std::char_traits\' is missing.])
+fi
 
 
-AC_MSG_CHECKING(for union semun)
-AC_TRY_COMPILE(
-   [#include <sys/sem.h>
-   union semun { double a;  void* b; };],
-   ,
-   ,
-   AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if union semun exists.])
-)
-AC_MSG_RESULT()
+AC_CHECK_TYPE([union semun],
+   AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if you have \`union semun\'.]),
+   [], [#include <sys/sem.h>])
 
 
-AC_MSG_CHECKING(which way the stack grows)
-AC_TRY_RUN(
-    [
-     int f(int* p)
-     {
-         int i;
-         return (&i < p) ? 1 : 0;
-     }
-     int main(void)
-     {
-         int p;
-         return f(&p);
-     }
-    ],
-    [AC_DEFINE(STACK_GROWS_UP,   1, [Define to 1 if the stack grows up.])
-      stack_dir=up
-    ],
-    [AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.])
-     stack_dir=down],
-    [stack_dir="unknown (cross-compiling)"])
-AC_MSG_RESULT($stack_dir)
+AC_CACHE_CHECK([which way the stack grows], ncbi_cv_sys_stack_dir,
+   [AC_TRY_RUN(
+    	[
+    	 int f(int* p)
+    	 {
+    	     int i;
+    	     return (&i < p) ? 1 : 0;
+    	 }
+    	 int main(void)
+    	 {
+    	     int p;
+    	     return f(&p);
+    	 }
+    	],
+    	[ncbi_cv_sys_stack_dir=up], [ncbi_cv_sys_stack_dir=down],
+    	[ncbi_cv_sys_stack_dir="unknown (cross-compiling)"])])
+case "$ncbi_cv_sys_stack_dir" in
+ up)   AC_DEFINE(STACK_GROWS_UP,   1, [Define to 1 if the stack grows up.])  ;;
+ down) AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.]);;
+esac
 
 ### Check for the availability of other packages
 ### --------------------------------------------
@@ -1562,122 +1483,106 @@ orig_CPPFLAGS="$CPPFLAGS"
 orig_LIBS="$LIBS"
 
 
-NCBI_CHECK_LIBS(KSTAT, -lkstat,
-   [#include <kstat.h>],
-   [kstat_ctl_t* kc = kstat_open(); ])
-
-NCBI_CHECK_LIBS(RPCSVC, -lrpcsvc,
-   [#include <rpc/rpc.h>
-    #include <rpcsvc/rstat.h>],
-   [enum clnt_stat eee = rstat((char*) 0, (struct statstime*) 0); ])
-
-NCBI_CHECK_LIBS(CRYPT, -lcrypt -lcrypt_i,
-   [#include <stdlib.h>],
-   [setkey("my_key"); ])
-
-NCBI_CHECK_LIBS(DL, -ldl,
-   [#include <dlfcn.h>],
-   [dlopen("foo.so", 0); ])
+NCBI_CHECK_LIBS(KSTAT, kstat, kstat_open)
+NCBI_CHECK_LIBS(RPCSVC, rpcsvc, rstat)
+AC_LANG_PUSH(C)
+# Force C for this test because Sun WorkShop otherwise complains about
+# multiple extern "C" declarations of setkey.
+NCBI_CHECK_LIBS(CRYPT, crypt crypt_i, setkey)
+AC_LANG_POP(C)
+NCBI_CHECK_LIBS(DL, dl, dlopen)
 
 
 ## SYBASE libraries
 
-AC_MSG_CHECKING(if SYBASE libraries are available)
-
-## parameters for check :
-##  - bit mode
-##  - local / network         : with fallback to normal case
-##  - new   / regular client  : 
-##  - reentrant               :
-
-test_new_syb() {
-  if test -d $1 ; then
-    test -z "$3"  ||  sybase_lib="$3"
-    SYBASE_PATH="$1"
-    if test -d $2 ; then
-      SYBASE_LCL_PATH="$2"
-    fi
-  else
-    with_sybase_new=no
-    extra_sybase_warning="$extra_sybase_warning New Sybase client not found - using regular one"
- fi
-}
-
 if test "$with_sybase" != "no" ; then
-   # deduce the path to Sybase package
+   net_sybase_root="/netopt/Sybase/clients"
+   local_sybase_root="/export/home/Sybase/clients"
+   default_local_sybase="$local_sybase_root/current"
+   sybase_lib=lib$bit64_sfx
    : ${with_sybase_local:="no"}
    : ${with_sybase_new:="no"}
-   
-   sybase_lib="lib$bit64_sfx"
+
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
-         : ${SYBASE_PATH:="/export/home/sybase/clients/current"}
-      else
-         SYBASE_PATH=$with_sybase_local
+         with_sybase_local=${SYBASE_PATH:-$default_local_sybase}
       fi
-      if test ! -d $SYBASE_PATH ; then
-         SYBASE_PATH=
+      AC_CACHE_CHECK([for local Sybase install in $with_sybase_local],
+         ncbi_cv_path_sybase_local,
+         [if test -d "$with_sybase_local"; then
+             ncbi_cv_path_sybase_local=yes
+          else
+             ncbi_cv_path_sybase_local=no
+          fi])
+      if test "$ncbi_cv_path_sybase_local" = yes; then
+         SYBASE_PATH=$with_sybase_local
+      else
          with_sybase_local=no
-         extra_sybase_warning="$extra_sybase_warning No local sybase client found - using global one" 
       fi
    fi
    if test "$with_sybase_local" = "no" ; then
-     if test "$with_sybase_new" = "yes" ; then
-       case "$host_os" in
-       linux* )
-         test_new_syb /netopt/Sybase/clients/12.5.0.1 /export/home/sybase/clients/12.5.0.1 lib
-          ;;
-       solaris* )
-         if test -n "$bit64_sfx" ; then
-            test_new_syb /netopt/Sybase/clients/12.5.64-EBF9728 /export/home/sybase/clients/12.5.64 lib
-         else
-            test_new_syb /netopt/Sybase/clients/12.5-EBF9723 /export/home/sybase/clients/12.5 lib
-         fi
-         ;;
-       * )
-         with_sybase_new="no"
-         extra_sybase_warning="$extra_sybase_warning New Sybase client not found - using regular one"
-         ;;
-       esac
-     fi
-     if test "$with_sybase_new" != "yes" ; then
-       : ${SYBASE_PATH:="/netopt/Sybase/clients/current"}
-       : ${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
-     fi
-   fi
+      if test "$with_sybase_new" = "yes" ; then
+         case "$host_os:$bit64_sfx" in
+            linux*     ) new_version=12.5.0.1; net_suffix="" ;;
+            solaris*:64) new_version=12.5.64;  net_suffix="-EBF9728" ;;
+            solaris*   ) new_version=12.5;     net_suffix="-EBF9723" ;;
+            *          ) new_version="";
+                         AC_MSG_WARN([--with-sybase-new is unsupported on this platform; ignoring it.]) ;;
+         esac
+         if test -n "$new_version"; then
+            new_sybase_path=$net_sybase_root/$new_version-$net_suffix
+            new_sybase_local=$local_sybase_root/$new_version
+            AC_CACHE_CHECK([for new Sybase install in $new_sybase_local:$new_sybase_path],
+               ncbi_cv_path_sybase_new,
+               [if test -d $new_sybase_path; then
+                   if test -d $new_sybase_local; then
+                      ncbi_cv_path_sybase_new=yes
+                   else
+                      ncbi_cv_path_sybase_new=net-only
+                   fi
+                else
+                   ncbi_cv_path_sybase_new=no
+                fi])
+            if test "$ncbi_cv_path_sybase_new" = no; then
+               with_sybase_new=no
+            else
+               SYBASE_PATH=$new_sybase_path
+               sybase_lib=lib
+               if "$ncbi_cv_path_sybase_new" = yes; then
+                  SYBASE_LCL_PATH=$new_sybase_local
+               fi
+            fi
+         fi # New Sybase potentially available?
+      fi # New Sybase requested?
+      if test "$with_sybase_new" = "no" ; then
+         : ${SYBASE_PATH:="$net_sybase_root/current"}
+         : ${SYBASE_LCL_PATH:="$local_sybase_root/current"}
+      fi
+   fi # No local Sybase (requested)?
 
-   # compose a list of commonly used Sybase libraries
-   case "$host_os" in
-     linux* )
-       SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl"
-       SYBASE_DLLLIST=""
-       ;;
-     solaris* | * )
-       SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
-       SYBASE_DLLLIST="-ltli"
-       ;;
-   esac
-   SYBASE_DBLIBS="-lsybdb"
-
-   # multi-threading and 64-bit specific adjustments
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
-   changequote(<<, >>)dnl
-   sybase_r="no"
-   if test "$with_mt" = "yes"  -a  -f ${SYBASE_LIBPATH}/libct_r.a ; then
-        SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
-        SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
-        sybase_r="yes"
+   syb_sfx=$bit64_sfx
+   if test "$with_mt" = "yes" ; then
+      AC_CACHE_CHECK([for reentrant Sybase libraries], ncbi_cv_lib_sybase_r,
+         [if test -f "$SYBASE_LIBPATH/libct_r$bit64_sfx.a"; then
+             ncbi_cv_lib_sybase_r=yes
+          else
+             ncbi_cv_lib_sybase_r=no
+          fi])
+      if test ncbi_cv_lib_sybase_r = yes; then
+         syb_sfx=_r$bit64_sfx
+      fi
    fi
-   if test -n "$bit64_sfx" ; then
-      SYBASE_INCLUDE="-DSYB_LP64"
-      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1'${bit64_sfx}'/g'`
-      SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1'${bit64_sfx}'/g'`
-      SYBASE_DBLIBS="${SYBASE_DBLIBS}${bit64_sfx}"
-   fi
-   changequote([, ])dnl
+   case "$host_os" in
+      linux*) sybtcl=-lsybtcl$syb_sfx; sybtli="" ;;
+      *)      sybtcl=-ltcl$syb_sfx;    sybtli=-ltli$syb_sfx ;;
+   esac
+   test -n "$bit64_sfx" && SYBASE_INCLUDE="-DSYB_LP64"
+   SYBASE_LIBLIST="-lblk$syb_sfx -lct$syb_sfx -lcs$syb_sfx $sybtcl"
+   SYBASE_LIBLIST="$SYBASE_LIBLIST -lcomn$syb_sfx -lintl$syb_sfx"
+   SYBASE_DLLLIST="$sybtli"
 
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
-   SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
    if test -z "$SYBASE_LCL_PATH" ; then
       SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
@@ -1690,48 +1595,67 @@ if test "$with_sybase" != "no" ; then
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
 
-   # test it
-   CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
-   LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <ctpublic.h>],
-      [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
-      [AC_DEFINE(HAVE_LIBSYBASE, 1,
-                 [Define to 1 if SYBASE libraries are available.])],
-      [with_sybase="no"]
-   )
-fi
+   AC_CACHE_CHECK([for Sybase in $SYBASE_PATH], ncbi_cv_lib_sybase,
+      [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
+       LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+       AC_TRY_LINK(
+          [#include <ctpublic.h>],
+          [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
+          [ncbi_cv_lib_sybase=yes], [ncbi_cv_lib_sybase=no])])
 
-if test "$with_sybase" = "no" ; then
+   if test "$ncbi_cv_lib_sybase" = yes; then
+      WithPackages="$WithPackages Sybase"
+      AC_DEFINE(HAVE_LIBSYBASE, 1,
+                [Define to 1 if SYBASE libraries are available.])
+      if test "$with_mt" = "yes" -a "$ncbi_cv_lib_sybase_r" = "yes"; then
+         AC_DEFINE(HAVE_SYBASE_REENTRANT, 1,
+                   [Define to 1 if SYBASE has reentrant libraries.])
+      fi
+      AC_CACHE_CHECK([for PubSeq service availability], ncbi_cv_db_pubseq,
+         [if grep PUBSEQ_OS $SYBASE_PATH/interfaces >/dev/null; then
+             ncbi_cv_db_pubseq=yes
+          else
+             ncbi_cv_db_pubseq=no
+          fi])
+      if test "$ncbi_cv_db_pubseq" = yes; then
+         AC_DEFINE(HAVE_PUBSEQ_OS, 1,
+                   [Define to 1 if the PUBSEQ service is available.]) 
+      fi
+
+      SYBASE_DBLIBS="$SYBASE_LPATH -lsybdb${bit64_sfx}"
+      AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
+         [CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
+          LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"   
+          AC_TRY_LINK(
+             [
+              #include <sybfront.h>
+              #include <sybdb.h>
+             ],
+             [
+              LOGINREC*  x_login     = 0;
+              DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
+             ],
+             [ncbi_cv_lib_sybdb=yes], [ncbi_cv_lib_sybdb=no])])
+      if test "$ncbi_cv_lib_sybdb" = yes; then
+         WithPackages="$WithPackages DBLib"
+         AC_DEFINE(HAVE_LIBSYBDB, 1,
+                   [Define to 1 if SYBASE DBLib is available.])
+      else
+         WithoutPackages="$WithoutPackages DBLib"
+         SYBASE_DBLIBS=
+      fi
+   else
+      with_sybase=no
+   fi
+fi # with_sybase != no?
+
+if test "$with_sybase" = no; then
+   WithoutPackages="$WithoutPackages Sybase DBLib"
    SYBASE_PATH="No_Sybase"
    SYBASE_INCLUDE=
    SYBASE_LIBS=
    SYBASE_DLLS=
    SYBASE_DBLIBS=
-   WithoutPackages="$WithoutPackages Sybase"
-   AC_MSG_RESULT([no])
-else
-   WithPackages="$WithPackages Sybase"
-   if test -z "$SYBASE_LCL_PATH" ; then
-      AC_MSG_RESULT([$SYBASE_PATH])
-   else
-      AC_MSG_RESULT([$SYBASE_LCL_PATH:$SYBASE_PATH])
-   fi
-   if test "$with_mt" = "yes" ; then
-     if test "$sybase_r" = "yes" ; then
-       AC_DEFINE(HAVE_SYBASE_REENTRANT,1,[Define to 1 if SYBASE has reentrant libraries.])
-     else
-       AC_MSG_WARN(["Using non-reentrant Sybase libraries"])
-     fi
-   fi
-   if test -n "$extra_sybase_warning" ; then 
-      AC_MSG_WARN([$extra_sybase_warning])
-   fi 
-   if test `grep -w PUBSEQ_OS $SYBASE_PATH/interfaces | wc -l` -gt 0 ; then 
-       AC_DEFINE(HAVE_PUBSEQ_OS,1,[Define to 1 if PUBSEQ service is available.]) 
-   else
-       AC_MSG_WARN(["PubSeq service is not avalable"])
-   fi
 fi
 
 SYBASE_LPATH=
@@ -1740,35 +1664,8 @@ SYBASE_LIBLIST=
 SYBASE_DLLLIST=
 SYBASE_LIBPATH=
 
-if test -n "$SYBASE_DBLIBS" ; then
-   AC_MSG_CHECKING(if SYBASE includes DBLib)
-   CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
-   LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"   
-   AC_TRY_LINK(
-      [
-       #include <sybfront.h>
-       #include <sybdb.h>
-      ],
-      [
-       LOGINREC*  x_login     = 0;
-       DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
-      ],
-      [AC_DEFINE(HAVE_LIBSYBDB, 1,
-                 [Define to 1 if SYBASE DBLib is available.])],
-      [SYBASE_DBLIBS=]
-   )
-   if test -n "$SYBASE_DBLIBS" ; then
-      WithPackages="$WithPackages DBLib"
-      AC_MSG_RESULT(yes)
-   else
-      WithoutPackages="$WithoutPackages DBLib"
-      AC_MSG_RESULT(no)
-   fi
-fi
-
 
 ## FreeTDS libraries
-AC_MSG_CHECKING(if FreeTDS libraries are available)
 freetds=
 if test "$with_ftds" != "no" ; then
 #   if test -z "$with_ftds"  -o  "$with_ftds" = "yes" ; then
@@ -1779,6 +1676,7 @@ if test "$with_ftds" != "no" ; then
          FTDS_PATH="<$FTDS_LOCAL_PATH>"
          FTDS_INCLUDE="-I\$(includedir)/$FTDS_LOCAL_PATH -I\$(includedir0)/$FTDS_LOCAL_PATH"
          freetds="freetds"
+         AC_MSG_NOTICE([Using bundled FreeTDS from $FTDS_PATH])
       fi
    else
       FTDS_PATH="$with_ftds"
@@ -1789,22 +1687,24 @@ if test "$with_ftds" != "no" ; then
       FTDS_LIBS="-L$FTDS_PATH/lib ${CONF_f_runpath}$FTDS_PATH/lib $FTDS_LIBS"
       FTDS_INCLUDE="-I$FTDS_PATH/include"
 
-      CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
-      LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
-      AC_TRY_LINK(
-        [
-         #include <sybdb.h>
-         #include <tds.h>
-        ],
-        [
-         LOGINREC*  x_login     = 0;
-         DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
-         TDSLOGIN*  x_tds_login = 0;
-         TDSSOCKET* x_sock      = tds_connect(x_tds_login);
-        ],
-        ,
-        [with_ftds="no"]
-      )
+      AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
+         [CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
+          LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
+          AC_TRY_LINK(
+            [
+             #include <sybdb.h>
+             #include <tds.h>
+            ],
+            [
+             LOGINREC*  x_login     = 0;
+             DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
+             TDSLOGIN*  x_tds_login = 0;
+             TDSSOCKET* x_sock      = tds_connect(x_tds_login);
+            ],
+            [ncbi_cv_lib_freetds=yes], [ncbi_cv_lib_freetds=no])])
+      if test "$ncbi_cv_lib_freetds" = "no"; then
+         with_ftds=no
+      fi
    fi
 fi
 if test "$with_ftds" = "no" ; then
@@ -1812,12 +1712,10 @@ if test "$with_ftds" = "no" ; then
    FTDS_INCLUDE=
    FTDS_LIBS=
    WithoutPackages="$WithoutPackages FreeTDS"
-   AC_MSG_RESULT([no])
 else
    AC_DEFINE(HAVE_LIBFTDS, 1,
              [Define to 1 if FreeTDS libraries are available.])
    WithPackages="$WithPackages FreeTDS"
-   AC_MSG_RESULT([$FTDS_PATH])
 fi
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
@@ -1825,7 +1723,6 @@ AC_SUBST(freetds)
 
 
 ## NCBI C Toolkit
-AC_MSG_CHECKING(if NCBI C Toolkit is available)
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
    NCBI_C_INCLUDE="-I$NCBI_C_PATH/include${bit64_sfx}"
@@ -1838,15 +1735,16 @@ if test "$with_ncbi_c" != "no" ; then
      NCBI_C_LIBPATH="$NCBI_C_LIBPATH $NCBI_C_LIBPATH/ncbithr.o"
    fi
    NCBI_C_LIBPATH="-L$NCBI_C_LIBPATH"
-   CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
-   LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <ncbi.h>],
-      [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ],
-      [AC_DEFINE(HAVE_NCBI_C, 1,
-                 [Define to 1 if the NCBI C toolkit is available.])],
-      [with_ncbi_c="no"]
-   )
+   AC_CACHE_CHECK([for the NCBI C toolkit in $NCBI_C_PATH], ncbi_cv_lib_ctools,
+      [CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
+       LIBS="$NCBI_C_LIBPATH -lncbi $NETWORK_LIBS $orig_LIBS"
+       AC_TRY_LINK(
+          [#include <ncbi.h>],
+          [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ],
+          [ncbi_cv_lib_ctools=yes], [ncbi_cv_lib_ctools=no])])   
+   if test "$ncbi_cv_lib_ctools" = no; then
+      with_ncbi_c=no
+   fi
 fi
 if test "$with_ncbi_c" = "no" ; then
    NCBI_C_PATH="No_NCBI_CToolkit"
@@ -1856,13 +1754,12 @@ if test "$with_ncbi_c" = "no" ; then
    WithoutPackages="$WithoutPackages C-Toolkit"
 else
    WithPackages="$WithPackages C-Toolkit"
+   AC_DEFINE(HAVE_NCBI_C, 1, [Define to 1 if the NCBI C toolkit is available.])
    NCBI_C_ncbi=${NCBI_C_ncbi:="-lncbi"}
 fi
-AC_MSG_RESULT([$NCBI_C_PATH])
 
 
 ## wxWindows
-AC_MSG_CHECKING(if wxWindows is available)
 if test "$with_wxwin" != "no" ; then
    if test -z "$WXWIN_PATH"; then
       if test -d "$with_wxwin"; then
@@ -1889,21 +1786,23 @@ if test "$with_wxwin" != "no" ; then
 #    fi
 #    fi    
 
-   if test -x "$WXWIN_BINPATH/wx-config" ; then
-      WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
-#       WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
-      WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
-
-      CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
-      LIBS="$WXWIN_LIBS $orig_LIBS"
-      AC_TRY_LINK(
-         [#include <wx/wx.h>],
-         [ wxExit(); ],
-         [AC_DEFINE(HAVE_WXWINDOWS, 1,
-                    [Define to 1 if wxWindows is available.])],
-         [with_wxwin="no"]
-      )
-   else
+#  WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
+   WXWIN_INCLUDE=
+   AC_CACHE_CHECK([for wxWindows in $WXWIN_ARCH_PATH], ncbi_cv_lib_wxwindows,
+      [if test -x "$WXWIN_BINPATH/wx-config" ; then
+          WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+          WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
+    
+          CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
+          LIBS="$WXWIN_LIBS $orig_LIBS"
+          AC_TRY_LINK(
+             [#include <wx/wx.h>],
+             [ wxExit(); ],
+             [ncbi_cv_lib_wxwindows=yes], [ncbi_cv_lib_wxwindows=no])
+       else
+          ncbi_cv_lib_wxwindows=no
+       fi])
+   if test "$ncbi_cv_lib_wxwindows" = "no"; then
       with_wxwin="no"
    fi
 fi
@@ -1915,12 +1814,16 @@ if test "$with_wxwin" = "no" ; then
    WithoutPackages="$WithoutPackages wxWindows"
 else
    WithPackages="$WithPackages wxWindows"
+   # The "yes" may have been cached; get the actual settings again if needed
+   if test -z "$WXWIN_INCLUDE"; then
+      WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+      WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
+   fi
+   AC_DEFINE(HAVE_WXWINDOWS, 1, [Define to 1 if wxWindows is available.])
 fi
-AC_MSG_RESULT([$WXWIN_LIBPATH])
 
 
 ## In-house Fast-CGI library
-AC_MSG_CHECKING(if Fast-CGI library is available)
 if test "$with_fastcgi" != "no" ; then
    FASTCGI_PATH=${FASTCGI_PATH:="$NCBI/fcgi-current"}
    FASTCGI_INCLUDE="-I$FASTCGI_PATH/include${bit64_sfx}"
@@ -1930,15 +1833,16 @@ if test "$with_fastcgi" != "no" ; then
       FASTCGI_LIBS="-L$FASTCGI_PATH/altlib${bit64_sfx} -lfcgi $NETWORK_LIBS"
    fi
    FASTCGI_OBJS="fcgibuf"
-   CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
-   LIBS="$FASTCGI_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <fcgiapp.h>],
-      [ (void) FCGX_IsCGI(); ],
-      [AC_DEFINE(HAVE_LIBFASTCGI, 1,
-                 [Define to 1 if FastCGI libraries are available.])],
-      [with_fastcgi="no"]
-   )
+   AC_CACHE_CHECK([for FastCGI libraries in $FASTCGI_PATH], ncbi_cv_lib_fcgi,
+      [CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
+       LIBS="$FASTCGI_LIBS $orig_LIBS"
+       AC_TRY_LINK(
+          [#include <fcgiapp.h>],
+          [ (void) FCGX_IsCGI(); ],
+          [ncbi_cv_lib_fcgi=yes], [ncbi_cv_lib_fcgi=no])])
+   if test "$ncbi_cv_lib_fcgi" = "no"; then
+      with_fastcgi="no"
+   fi
 fi
 if test "$with_fastcgi" = "no" ; then
    FASTCGI_PATH="No_FastCgi"
@@ -1948,8 +1852,9 @@ if test "$with_fastcgi" = "no" ; then
    WithoutPackages="$WithoutPackages Fast-CGI"
 else
    WithPackages="$WithPackages Fast-CGI"
+   AC_DEFINE(HAVE_LIBFASTCGI, 1,
+             [Define to 1 if FastCGI libraries are available.])
 fi
-AC_MSG_RESULT([$FASTCGI_PATH])
 
 
 ## NCBI SSS libraries
@@ -1978,10 +1883,12 @@ if test "$with_sss" != "no" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
    fi
+   AC_MSG_CHECKING([for NCBI SSS directories in $NCBI_SSS_PATH])
    if test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
-      AC_MSG_CHECKING([for NCBI SSS directories in $NCBI_SSS_PATH])
       AC_MSG_RESULT([no])
       with_sss="no"
+   else
+      AC_MSG_RESULT([yes])
    fi
 fi
 
@@ -1998,52 +1905,48 @@ else
    NCBI_SSS_INCLUDE="-I${NCBI_SSS_INCLUDE}"
 
    # SSS UTILS
-   AC_MSG_CHECKING(if NCBI SSS UTILS library is available)
    if test "$with_sssutils" != "no" ; then
-      CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
       LIBSSSUTILS="-lsssutils"
-      LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-      AC_TRY_LINK(
-         [#include <hashtab.hpp>],
-         [ (new C_HashTab(123))->Clear(); ],
-         [
-           AC_DEFINE(HAVE_LIBSSSUTILS, 1,
-                     [Define to 1 if NCBI SSS UTILS library is available.])
-           WithPackages="$WithPackages SSSUTILS"
-         ],
-         [
-           with_sssutils="no"
-           with_sss="no"
-           LIBSSSUTILS=""
-           WithoutPackages="$WithoutPackages SSSUTILS"
-         ]
-      )
+      AC_CACHE_CHECK([for the NCBI SSS UTILS library], ncbi_cv_lib_sssutils,
+         [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+          LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          AC_TRY_LINK(
+             [#include <hashtab.hpp>],
+             [ (new C_HashTab(123))->Clear(); ],
+             [ncbi_cv_lib_sssutils=yes], [ncbi_cv_lib_sssutils=no])])
+      if test "$ncbi_cv_lib_sssutils" = yes; then
+         AC_DEFINE(HAVE_LIBSSSUTILS, 1,
+                   [Define to 1 if the NCBI SSS UTILS library is available.])
+         WithPackages="$WithPackages SSSUTILS"
+      else
+         with_sssutils="no"
+         with_sss="no"
+         LIBSSSUTILS=""
+         WithoutPackages="$WithoutPackages SSSUTILS"
+      fi
    fi
-   AC_MSG_RESULT([$with_sssutils])
 
    # SSS DB
-   AC_MSG_CHECKING(if NCBI SSS DB library is available)
    if test "$with_sssdb" != "no" ; then
-      CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
       LIBSSSDB="-lsssdb"
-      LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-      AC_TRY_LINK(
-         [#include <cslink.hpp>],
-         [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
-         [
-           AC_DEFINE(HAVE_LIBSSSDB, 1,
-                     [Define to 1 if NCBI SSS DB library is available.])
-           WithPackages="$WithPackages SSSDB"
-         ],
-         [
-           with_sssdb="no"
-           with_sss="no"
-           LIBSSSDB=""
-           WithoutPackages="$WithoutPackages SSSDB"
-         ]
-      )
+      AC_CACHE_CHECK([for the NCBI SSS DB library], ncbi_cv_lib_sssdb,
+         [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
+          LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
+          AC_TRY_LINK(
+             [#include <cslink.hpp>],
+             [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
+             [ncbi_cv_lib_sssdb=yes], [ncbi_cv_lib_sssdb=no])])
+      if test "$ncbi_cv_lib_sssdb" = "yes"; then
+         AC_DEFINE(HAVE_LIBSSSDB, 1,
+                   [Define to 1 if the NCBI SSS DB library is available.])
+         WithPackages="$WithPackages SSSDB"
+      else
+         with_sssdb="no"
+         with_sss="no"
+         LIBSSSDB=""
+         WithoutPackages="$WithoutPackages SSSDB"
+      fi
    fi
-   AC_MSG_RESULT([$with_sssdb])
 fi
 
 
@@ -2060,10 +1963,12 @@ if test "$with_geo" != "no" ; then
    if test -z "$NCBI_GEO_LIBPATH" ; then
       NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_pfx}${release_debug}${bit64_sfx}"
    fi
+   AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
    if test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
-      AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
       AC_MSG_RESULT([no])
       with_geo="no"
+   else
+      AC_MSG_RESULT([yes])
    fi
 fi
 
@@ -2076,7 +1981,7 @@ else
    NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE}"
    LIBGEODB="-lgeodb"
 
-   AC_MSG_CHECKING(if NCBI GEO DB library is available)
+   AC_MSG_CHECKING(for the NCBI GEO DB library)
    AC_DEFINE(HAVE_LIBGEODB, 1,
              [Define to 1 if NCBI GEO DB library is available.])
 
@@ -2114,30 +2019,32 @@ if test "$with_sp" != "no" ; then
    if test -z "$SP_LIBPATH" ; then
       SP_LIBPATH="${SP_PATH}/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
    fi
+   AC_MSG_CHECKING([for SP directories in $SP_PATH])
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
-      AC_MSG_CHECKING([for SP directories in $SP_PATH])
       AC_MSG_RESULT([no])
       with_sp="no"
+   else
+      AC_MSG_RESULT([yes])
    fi
 fi
 
 if test "$with_sp" != "no" ; then
-   AC_MSG_CHECKING(if NCBI SP library is available)
    if test -d "$SP_GENERIC"; then
       SP_INCLUDE="-I${SP_INCLUDE} -I${SP_GENERIC}"
    else
       SP_INCLUDE="-I${SP_INCLUDE}"
    fi
    SP_LIBS="-L$SP_LIBPATH -lsp"
-   CPPFLAGS="$SP_INCLUDE $orig_CPPFLAGS"
-   LIBS="$SP_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <SGMLApplication.h>],
-      [ SP_API::SGMLApplication app; ],
-      [AC_DEFINE(HAVE_LIBSP, 1, [Define to 1 if SP library is available.])],
-      [with_sp="no"]
-   )
-   AC_MSG_RESULT([$with_sp])
+   AC_CACHE_CHECK([for the SP SGML library], ncbi_cv_lib_sp,
+      [CPPFLAGS="$SP_INCLUDE $orig_CPPFLAGS"
+       LIBS="$SP_LIBS $orig_LIBS"
+       AC_TRY_LINK(
+          [#include <SGMLApplication.h>],
+          [ SP_API::SGMLApplication app; ],
+          [ncbi_cv_lib_sp=yes], [ncbi_cv_lib_sp=no])])
+   if test "$ncbi_cv_lib_sp" = "no"; then
+      with_sp="no"
+   fi
 fi
 
 if test "$with_sp" = "no" ; then
@@ -2146,11 +2053,11 @@ if test "$with_sp" = "no" ; then
    WithoutPackages="$WithoutPackages SP"
 else
    WithPackages="$WithPackages SP"
+   AC_DEFINE(HAVE_LIBSP, 1, [Define to 1 if the SP SGML library is available.])
 fi
 
 
 ## NCBI PubMed
-AC_MSG_CHECKING(if NCBI PubMed libraries are available)
 if test "$with_ncbi_c" = "no" ; then
    with_pubmed="no"
 fi
@@ -2158,19 +2065,20 @@ fi
 if test "$with_pubmed" != "no" ; then
    NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed"}${bit64_sfx}
 
-   if test ! -d "${NCBI_PM_PATH}" ; then
+   AC_CACHE_CHECK([for NCBI PubMed libraries in $NCBI_PM_PATH], ncbi_cv_lib_pm,
+      [if test ! -d "${NCBI_PM_PATH}" ; then
+          ncbi_cv_lib_pm="no"
+       else
+          CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
+          LIBS="-L$NCBI_PM_PATH/xmldb/out/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
+          AC_TRY_LINK(
+             [#include <ncbistr.hpp>
+              #include <hastring.h>],
+             [ CNcbiString("abc"); CAString("def"); ],
+             [ncbi_cv_lib_pm=yes], [ncbi_cv_lib_pm=no])
+       fi])
+   if test "$ncbi_cv_lib_pm" = "no"; then
       with_pubmed="no"
-   else
-      CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
-      LIBS="-L$NCBI_PM_PATH/xmldb/out/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
-      AC_TRY_LINK(
-         [#include <ncbistr.hpp>
-          #include <hastring.h>],
-         [ CNcbiString("abc"); CAString("def"); ],
-         [AC_DEFINE(HAVE_LIBPUBMED, 1,
-                    [Define to 1 if NCBI PubMed libraries are available.])],
-         [with_pubmed="no"]
-      )
    fi
 fi
 
@@ -2179,9 +2087,9 @@ if test "$with_pubmed" = "no" ; then
    WithoutPackages="$WithoutPackages PubMed"
 else
    WithPackages="$WithPackages PubMed"
+   AC_DEFINE(HAVE_LIBPUBMED, 1,
+             [Define to 1 if NCBI PubMed libraries are available.])
 fi
-
-AC_MSG_RESULT([$NCBI_PM_PATH])
 
 
 ## ORBacus CORBA
@@ -2190,7 +2098,6 @@ if test "${with_orbacus:-yes}" = yes; then
 elif test "$with_orbacus" != no; then
     ORBACUS_PATH=$with_orbacus
 fi
-AC_MSG_CHECKING([for ORBacus])
 if test "$with_orbacus" != no; then
    fullpath=${ORBACUS_PATH}/${release_debug}${mt_sfx}${bit64_sfx}
    LIBOB="-lOB"
@@ -2207,19 +2114,21 @@ if test "$with_orbacus" != no; then
      : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
      : ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
    fi
-   CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
-   LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <OB/CORBA.h>],
-      [
-        int c = 0;
-        char* v[] = { NULL };
-        CORBA::ORB_var orb = CORBA::ORB_init(c, v);
-        if (!CORBA::is_nil(orb)) orb->destroy();
-      ],
-      [AC_DEFINE(HAVE_ORBACUS, 1,
-                 [Define to 1 if ORBacus CORBA package is available.])],
-      [with_orbacus="no"])
+   AC_CACHE_CHECK([for ORBacus in $ORBACUS_PATH], ncbi_cv_lib_orbacus,
+      [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
+       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
+       AC_TRY_LINK(
+          [#include <OB/CORBA.h>],
+          [
+            int c = 0;
+            char* v[] = { NULL };
+            CORBA::ORB_var orb = CORBA::ORB_init(c, v);
+            if (!CORBA::is_nil(orb)) orb->destroy();
+          ],
+          [ncbi_cv_lib_orbacus=yes], [ncbi_cv_lib_orbacus=no])])
+   if test "$ncbi_cv_lib_orbacus" = "no"; then
+      with_orbacus="no"
+   fi
 fi
 if test "$with_orbacus" = no; then
    WithoutPackages="$WithoutPackages ORBacus"
@@ -2230,8 +2139,9 @@ if test "$with_orbacus" = no; then
    LIBIMR=
 else
    WithPackages="$WithPackages ORBacus"
+   AC_DEFINE(HAVE_ORBACUS, 1,
+             [Define to 1 if the ORBacus CORBA package is available.])
 fi
-AC_MSG_RESULT([$ORBACUS_PATH])
 # Sigh... without this, the linker pulls in the contents of the cache
 # and then gripes about missing JTC stuff.
 test -d SunWS_cache  &&  rm -r SunWS_cache
@@ -2271,6 +2181,14 @@ if test "$with_local_lbsm" = "no" ; then
    local_lbsm="ncbi_service_lbsmd_stub"
 else
    WithProjects="$WithProjects local_lbsm"
+fi
+
+
+## daemons under 'connect' don't build on Darwin (MacOS X)
+if test "x$host_os" = "xdarwin"; then
+   daemons=
+else
+   daemons=daemons
 fi
 
 
@@ -2566,6 +2484,7 @@ fi
 ### Compose their target counterparts
 ### Configure
 
+AC_MSG_NOTICE([looking for configurables below $srcdir...])
 excl_file="`pwd`/config.tmp.$$"
 changequote(<<, >>)dnl
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
@@ -2575,7 +2494,9 @@ configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | egrep -v -f 
 rm $excl_file
 
 if test -z "$configurables" ; then
-  AC_MSG_ERROR([Cannot find any configurables below \"${srcdir}\"!])
+  AC_MSG_ERROR([cannot find any configurables below \"${srcdir}\"!])
+else
+  AC_MSG_NOTICE([...done])
 fi
 
 eval ncbi_runpath=`echo $pure_runpath`
@@ -2623,6 +2544,7 @@ AC_SUBST(CXXFLAGS_DLL)
 
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
+AC_SUBST(daemons)
 AC_SUBST(serial)
 AC_SUBST(objects)
 AC_SUBST(dbapi)

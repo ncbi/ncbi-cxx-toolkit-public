@@ -112,31 +112,14 @@ m4_define([_AS_LINENO_PREPARE],
 # Arguments:
 # 1. library name (turned into environment/make variable)
 # 2. values to check
-# 3. #include directives
-# 4. code to compile
+# 3. function name
 AC_DEFUN(NCBI_CHECK_LIBS,
-[AC_MSG_CHECKING(if $1 library and functions are available)
- found=false
- for libs in "[$]$1_LIBS" $2; do
-    [LIBS="$libs $orig_LIBS"]
-    AC_TRY_LINK([$3], [$4], [found=true])
-    if test $found = true -o -n "${$1_LIBS+set}"; then
-       break
-    fi
- done
-
-case "$found" in
- false) AC_MSG_RESULT(no) ;;
- true)
-    if test -n "$libs"; then
-       AC_MSG_RESULT($libs)
-    else
-       AC_MSG_RESULT(in standard libraries)
-    fi
-    $1_LIBS=$libs
-    AC_DEFINE(HAVE_LIB$1, 1,
-              [Define to 1 if $1 is available, either in its own library
-               or as part of the standard libraries.])
-    ;;
-esac
+[saved_LIBS=$LIBS
+ AC_SEARCH_LIBS($3, $2,
+  [AC_DEFINE(HAVE_LIB$1, 1,
+   [Define to 1 if $1 is available, either in its own library or as part
+    of the standard libraries.])
+   test "x$ac_cv_search_$3" = "xnone required" || $1_LIBS=$ac_cv_search_$3],
+   [], [$]$1_LIBS)
+ LIBS=$saved_LIBS
 ])
