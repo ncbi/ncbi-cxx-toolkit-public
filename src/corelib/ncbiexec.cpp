@@ -138,22 +138,20 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
 // Of course, the argument 'arg' can be aligned on segment boundary,
 // when 4 low-order bytes are 0, but chance of this is very low.
 // The function prints out a warning only in Debug mode.
-#if defined(_DEBUG)
+#if defined(_DEBUG)  &&  SIZEOF_VOIDP > SIZEOF_INT
 static void s_CheckExecArg(const char* arg)
 {
-    if  ( sizeof(void*) == 8  &&  sizeof(int) != sizeof(void*) ) {
 #  if defined(WORDS_BIGENDIAN)
-        int lo = int(((Uint8)arg >> 32) & 0xffff);
-        int hi = int((Uint8)arg & 0xffff);
+    int lo = int(((Uint8)arg >> 32) & 0xffffffffU);
+    int hi = int((Uint8)arg & 0xffffffffU);
 #  else
-        int hi = int(((Uint8)arg >> 32) & 0xffff);
-        int lo = int((Uint8)arg & 0xffff);
+    int hi = int(((Uint8)arg >> 32) & 0xffffffffU);
+    int lo = int((Uint8)arg & 0xffffffffU);
 #  endif
-        if ( lo==0  &&  hi!=0 ) {
-            ERR_POST(Warning
-                << "It is possible that you use 0 instead NULL "
-                   "in the end of arguments list of CExec::Spawn*() call.");
-        }
+    if (lo == 0  &&  hi != 0) {
+        ERR_POST(Warning
+                 << "It is possible that you used 0 instead of NULL "
+                 "to terminate the argument list of a CExec::Spawn*() call.");
     }
 }
 #else
@@ -351,6 +349,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/08/19 17:08:58  ucko
+ * More cleanups to s_CheckExecArg; in particular, perform the sizeof
+ * test at compilation-time rather than runtime.
+ *
  * Revision 1.21  2004/08/19 17:01:22  ucko
  * Fix typos in s_CheckExecArg.
  *
