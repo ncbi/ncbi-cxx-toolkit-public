@@ -173,7 +173,7 @@ public:
                             bool* is_null = 0);
 
     // Get a descriptor for text/image column (for SendData).
-    // Return NULL if this result does not (or cannot) have img/text descriptor.
+    // Return NULL if this result does not (or can't) have img/text descriptor.
     // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
     //       before calling this method!
     virtual I_ITDescriptor* GetImageOrTextDescriptor();
@@ -232,8 +232,8 @@ public:
     virtual int RowCount() const;
 
     // Dump the results of the command
-    // if result processor is installed for this connection, it will be called for
-    // each result set
+    // If result processor is installed for this connection, then it will be
+    // called for each result set
     virtual void DumpResults();
 
     // Destructor
@@ -291,8 +291,8 @@ public:
     virtual int RowCount() const;
 
     // Dump the results of the command
-    // if result processor is installed for this connection, it will be called for
-    // each result set
+    // If result processor is installed for this connection, then it will be
+    // called for each result set
     virtual void DumpResults();
 
     // Set the "recompile before execute" flag for the stored proc
@@ -369,9 +369,9 @@ public:
     // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
-				 bool log_it = true);
+                                 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
-					 bool log_it = true);
+                                         bool log_it = true);
 
     // Delete the last fetched row.
     // NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
@@ -427,43 +427,43 @@ private:
     CDB_SendDataCmd();
 };
 
+
+
 class NCBI_DBAPIDRIVER_EXPORT CDB_ITDescriptor : public I_ITDescriptor
 {
 public:
-    CDB_ITDescriptor(const string& table_name, const string& column_name, 
-		     const string& search_conditions) : 
-	m_TableName(table_name), m_ColumnName(column_name), 
-	m_SearchConditions(search_conditions)
-    {
-    }
+    CDB_ITDescriptor(const string& table_name,
+                     const string& column_name, 
+                     const string& search_conditions)
+        : m_TableName(table_name),
+          m_ColumnName(column_name), 
+          m_SearchConditions(search_conditions)
+    {}
 
     virtual int DescriptorType() const;
-    const string& TableName() const {
-	return m_TableName;
-    }
-    const string& ColumnName() const {
-	return m_ColumnName;
-    }
-    const string& SearchConditions() const {
-	return m_SearchConditions;
-    }
+
+    const string& TableName()        const { return m_TableName;        }
+    const string& ColumnName()       const { return m_ColumnName;       }
+    const string& SearchConditions() const { return m_SearchConditions; }
     virtual ~CDB_ITDescriptor();
+
 protected:
     string m_TableName;
     string m_ColumnName;
     string m_SearchConditions;
 };
 
-class CDB_ResultProcessor {
+
+
+class NCBI_DBAPIDRIVER_EXPORT CDB_ResultProcessor
+{
 public:
-    CDB_ResultProcessor(CDB_Connection* c) {
-        m_Con= c;
-        if(m_Con) m_Prev= m_Con->SetResultProcessor(this);
-    }
+    CDB_ResultProcessor(CDB_Connection* c);
+    virtual ~CDB_ResultProcessor();
+
+    // The default implementation just dumps all rows.
+    // To get the data you will need to override this method.
     virtual void ProcessResult(CDB_Result& res);
-    ~CDB_ResultProcessor() {
-        if(m_Con) m_Con->SetResultProcessor(m_Prev);
-    }
 
 private:
     // Prohibit default- and copy- constructors, and assignment
@@ -472,8 +472,9 @@ private:
     CDB_ResultProcessor(const CDB_ResultProcessor&);
 
     CDB_ResultProcessor* m_Prev;
-    CDB_Connection* m_Con;
+    CDB_Connection*      m_Con;
 };
+
 
 END_NCBI_SCOPE
 
@@ -484,8 +485,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/06/20 19:11:23  vakatov
+ * CDB_ResultProcessor::
+ *  - added MS-Win DLL export macro
+ *  - made the destructor virtual
+ *  - moved code from the header to the source file
+ *  - formally reformatted the code
+ *
  * Revision 1.8  2003/06/05 15:54:43  soussov
- * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface, adds CDB_ResultProcessor class
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method
+ * for Connection interface, adds CDB_ResultProcessor class
  *
  * Revision 1.7  2003/04/11 17:46:09  siyan
  * Added doxygen support
@@ -497,7 +506,8 @@ END_NCBI_SCOPE
  * new image/text operations added
  *
  * Revision 1.4  2002/02/13 22:11:16  sapojnik
- * several methods changed from private to protected to allow derived classes (needed for rdblib)
+ * several methods changed from private to protected to allow derived
+ * classes (needed for rdblib)
  *
  * Revision 1.3  2001/11/06 17:58:03  lavr
  * Formatted uniformly as the rest of the library

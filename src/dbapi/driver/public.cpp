@@ -175,7 +175,8 @@ void CDB_Connection::PopMsgHandler(CDB_UserHandler* h)
     m_Connect->PopMsgHandler(h);
 }
 
-CDB_ResultProcessor* CDB_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
+CDB_ResultProcessor*
+CDB_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 {
     return m_Connect? m_Connect->SetResultProcessor(rp) : 0;
 }
@@ -621,7 +622,8 @@ bool CDB_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data, boo
     return m_Cmd->UpdateTextImage(item_num, data, log_it);
 }
 
-CDB_SendDataCmd* CDB_CursorCmd::SendDataCmd(unsigned int item_num, size_t size, bool log_it)
+CDB_SendDataCmd* CDB_CursorCmd::SendDataCmd(unsigned int item_num,
+                                            size_t size, bool log_it)
 {
     s_CheckCursorCmd(m_Cmd, "SendDataCmd");
     return m_Cmd->SendDataCmd(item_num, size, log_it);
@@ -663,7 +665,8 @@ CDB_CursorCmd::~CDB_CursorCmd()
 CDB_SendDataCmd::CDB_SendDataCmd(I_SendDataCmd* c)
 {
     if ( !c ) {
-        throw CDB_ClientEx(eDB_Error, 200006, "CDB_SendDataCmd::CDB_SendDataCmd",
+        throw CDB_ClientEx(eDB_Error, 200006,
+                           "CDB_SendDataCmd::CDB_SendDataCmd",
                            "No valid command provided");
     }
     m_Cmd = c;
@@ -688,6 +691,12 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
     }
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_ITDescriptor::
+//
+
 int CDB_ITDescriptor::DescriptorType() const
 {
     return 0;
@@ -697,12 +706,31 @@ CDB_ITDescriptor::~CDB_ITDescriptor()
 {
 }
 
-// this default implementation just dumps all rows
-// you need to override it to get the data
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_ResultProcessor::
+//
+
+CDB_ResultProcessor::CDB_ResultProcessor(CDB_Connection* c)
+{
+    m_Con = c;
+    if ( m_Con )
+        m_Prev = m_Con->SetResultProcessor(this);
+}
+
 void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
 {
-    while(res.Fetch());
+    while (res.Fetch());  // fetch and forget
 }
+
+
+CDB_ResultProcessor::~CDB_ResultProcessor()
+{
+    if ( m_Con )
+        m_Con->SetResultProcessor(m_Prev);
+}
+
 
 END_NCBI_SCOPE
 
@@ -711,8 +739,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/20 19:11:25  vakatov
+ * CDB_ResultProcessor::
+ *  - added MS-Win DLL export macro
+ *  - made the destructor virtual
+ *  - moved code from the header to the source file
+ *  - formally reformatted the code
+ *
  * Revision 1.6  2003/06/05 15:58:38  soussov
- * adds DumpResults method for LangCmd and RPC, SetResultProcessor method for Connection interface, adds CDB_ResultProcessor class
+ * adds DumpResults method for LangCmd and RPC, SetResultProcessor method
+ * for Connection interface, adds CDB_ResultProcessor class
  *
  * Revision 1.5  2003/01/29 22:35:05  soussov
  * replaces const string& with const char* in inlines
