@@ -139,7 +139,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) par.Value(), &m_Bind[i].datalen,
+                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -149,7 +150,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   = (CS_INT) par.Size();
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) par.Value(), &m_Bind[i].datalen,
+                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -160,7 +162,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             m_Bind[i].datalen   =
                 (m_Bind[i].indicator == -1) ? 0 : (CS_INT) par.Size();
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) par.Value(), &m_Bind[i].datalen,
+                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -170,7 +173,8 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             m_Bind[i].datalen   = (CS_INT) par.Size();
             ret_code = blk_bind(m_Cmd, i + 1, &param_fmt,
-                                (CS_VOID*) par.Value(), &m_Bind[i].datalen,
+                                par.IsNULL()? (CS_VOID*)m_Bind[i].buffer : (CS_VOID*) par.Value(), 
+                                &m_Bind[i].datalen,
                                 &m_Bind[i].indicator);
             break;
         }
@@ -433,6 +437,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/19 15:32:44  soussov
+ * fixes bug in binding NULL valued CDB_Char, CDB_VarChar, CDB_Binary, CDB_VarBinary
+ *
  * Revision 1.8  2004/05/17 21:12:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
