@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  1999/11/26 19:05:21  vakatov
+ * Initialize "log_fp" in "main()"...
+ *
  * Revision 6.2  1999/10/19 16:16:03  vakatov
  * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
  * not #define'd
@@ -105,7 +108,7 @@
 
 /* Log stream
  */
-static FILE* log_fp = stderr;
+static FILE* log_fp;
 
 
 /* The simplest randezvous (a plain request-reply) test functions
@@ -605,6 +608,9 @@ extern int main(int argc, char** argv)
 #define MIN_PORT 5001
 #define DEF_PORT 5555
 #define DEF_HOST "localhost"
+
+    /* Error log stream */
+    log_fp = stderr;
 
     /* Test client or server using hard-coded parameters */
 #if   defined(DO_SERVER)
