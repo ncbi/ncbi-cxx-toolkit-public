@@ -49,16 +49,16 @@
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_psi.h>
 
-/** @addtogroup AlgoBlast
- *
- * @{
- */
-
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
 END_SCOPE(objects)
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_SCOPE(blast)
 
@@ -130,6 +130,8 @@ private: \
     struct_name* m_Ptr; \
 }
 
+#ifndef SKIP_DOXYGEN_PROCESSING
+
 DECLARE_AUTO_CLASS_WRAPPER(BLAST_SequenceBlk, BlastSequenceBlkFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastQueryInfo, BlastQueryInfoFree);
@@ -166,6 +168,8 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, Blast_HSPResultsFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
 
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -175,6 +179,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/09/08 14:14:11  camacho
+* Doxygen fixes
+*
 * Revision 1.40  2004/08/18 18:13:42  camacho
 * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
 *

@@ -51,6 +51,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 
 void
 CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
@@ -308,8 +309,10 @@ CPSIDiagnosticsResponse::DebugDump(CDebugDumpContext ddc,
     ddc.Log("alphabet_size", m_Ptr->alphabet_size);
 }
 
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
 BlastMaskLoc*
-CSeqLoc2BlastMaskLoc(const CSeq_loc* slp, int index)
+CSeqLoc2BlastMaskLoc(const objects::CSeq_loc* slp, int index)
 {
     if (!slp || slp->IsNull())
         return NULL;
@@ -385,7 +388,7 @@ FindGeneticCode(int genetic_code)
     return retval;
 }
 
-EProgram ProgramNameToEnum(const string& program_name)
+EProgram ProgramNameToEnum(const std::string& program_name)
 {
     if (program_name.empty()) {
         NCBI_THROW(CBlastException, eBadParameter, "Empty program name");
@@ -424,6 +427,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2004/09/08 14:14:31  camacho
+ * Doxygen fixes
+ *
  * Revision 1.47  2004/08/18 18:14:13  camacho
  * Remove GetProgramFromBlastProgramType, add ProgramNameToEnum
  *
