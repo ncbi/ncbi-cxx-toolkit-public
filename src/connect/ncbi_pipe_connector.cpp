@@ -46,11 +46,12 @@ USING_NCBI_SCOPE;
 
 // All internal data necessary to perform the (re)connect and i/o
 typedef struct {
-    CPipe*              pipe;       // pipe handle; NULL if not connected yet
-    string              cmd;        // program to execute
-    vector<string>      args;       // program arguments
-    CPipe::TCreateFlags flags;      // pipe create flags
-    bool                is_open;    // true if pipe is open
+    CPipe*              pipe;        // pipe handle; NULL if not connected yet
+    string              cmd;         // program to execute
+    vector<string>      args;        // program arguments
+    CPipe::TCreateFlags flags;       // pipe create flags
+    bool                is_open;     // true if pipe is open
+    bool                is_own_pipe; // true if pipe was created in constructor
 } SPipeConnector;
 
 
@@ -60,6 +61,7 @@ typedef struct {
 
 
 extern "C" {
+
 
 static const char* s_VT_GetType
 (CONNECTOR /*connector*/)
@@ -127,6 +129,7 @@ static EIO_Status s_VT_Wait
  EIO_Event       /*event*/,
  const STimeout* /*timeout*/)
 {
+    /* NB: to be implemented */
     return eIO_Success;
 }
 
@@ -224,7 +227,7 @@ static void s_Destroy
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     if (xxx) {
-        if (xxx->pipe) {
+        if (xxx->is_own_pipe) {
             delete xxx->pipe;
         }
         delete xxx;
@@ -233,31 +236,34 @@ static void s_Destroy
     free(connector);
 }
 
+
 } /* extern "C" */
+
+
+BEGIN_NCBI_SCOPE
 
 
 /***********************************************************************
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
 
-BEGIN_NCBI_SCOPE
-
-
 extern CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
- CPipe::TCreateFlags   create_flags
+ CPipe::TCreateFlags   create_flags,
+ CPipe*                pipe
 )
 {
     CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
     SPipeConnector* xxx = new SPipeConnector();
 
     // Initialize internal data structures
-    xxx->pipe    = new CPipe();
-    xxx->cmd     = cmd;
-    xxx->args    = args;
-    xxx->flags   = create_flags;
-    xxx->is_open = false;
+    xxx->pipe        = pipe ? pipe  : new CPipe();
+    xxx->cmd         = cmd;
+    xxx->args        = args;
+    xxx->flags       = create_flags;
+    xxx->is_open     = false;
+    xxx->is_own_pipe = pipe ? false : true;
 
     // Initialize connector data
     ccc->handle  = xxx;
@@ -276,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2003/09/23 21:09:26  lavr
+ * Allow to create on top of (unowned) CPipe object
+ *
  * Revision 1.3  2003/09/03 14:35:30  ivanov
  * Fixed previous accidentally commited log message
  *
