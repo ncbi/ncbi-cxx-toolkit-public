@@ -66,10 +66,10 @@ public:
     void SetInclusionThreshold(double incthr) { m_Opts->SetInclusionThreshold(incthr); }
     
     /// Returns PseudoCount
-    short GetPseudoCount() const { return m_Opts->GetPseudoCount(); }
+    int GetPseudoCount() const { return m_Opts->GetPseudoCount(); }
     /// Sets PseudoCount
     /// @param p PseudoCount [in]
-    void SetPseudoCount(short p) { m_Opts->SetPseudoCount(p); }
+    void SetPseudoCount(int p) { m_Opts->SetPseudoCount(p); }
     
 protected:
     
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/10 13:17:27  madden
+ * Changed type from short to int for [GS]etPseudoCount
+ *
  * Revision 1.4  2004/12/20 20:10:55  camacho
  * + option to set composition based statistics
  * + option to use pssm in lookup table

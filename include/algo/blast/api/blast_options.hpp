@@ -360,8 +360,8 @@ public:
     double GetInclusionThreshold() const;
     void SetInclusionThreshold(double incthr);
     
-    short GetPseudoCount() const;
-    void SetPseudoCount(short ps);
+    int GetPseudoCount() const;
+    void SetPseudoCount(int ps);
     
     QuerySetUpOptions * GetQueryOpts() const
     {
@@ -1747,14 +1747,14 @@ public:
         }
     }
 
-    short GetPseudoCount() const
+    int GetPseudoCount() const
     {
         if (! m_Local) {
             x_Throwx("Error: GetPseudoCount() not available.");
         }
         return m_Local->GetPseudoCount();
     }
-    void SetPseudoCount(short u)
+    void SetPseudoCount(int u)
     {
         if (m_Local) {
             m_Local->SetPseudoCount(u);
@@ -2738,14 +2738,14 @@ CBlastOptionsLocal::SetInclusionThreshold(double incthr)
     m_PSIBlastOpts->inclusion_ethresh = incthr;
 }
 
-inline short
+inline int
 CBlastOptionsLocal::GetPseudoCount() const
 {
     return m_PSIBlastOpts->pseudo_count;
 }
 
 inline void
-CBlastOptionsLocal::SetPseudoCount(short pc)
+CBlastOptionsLocal::SetPseudoCount(int pc)
 {
     m_PSIBlastOpts->pseudo_count = pc;
 }
@@ -2776,6 +2776,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2005/03/10 13:17:27  madden
+* Changed type from short to int for [GS]etPseudoCount
+*
 * Revision 1.86  2005/03/02 16:45:24  camacho
 * Remove use_real_db_size
 *
