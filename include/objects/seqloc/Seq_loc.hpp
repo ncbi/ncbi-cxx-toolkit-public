@@ -85,6 +85,11 @@ public:
     void InvalidateTotalRangeCache(void);
     void InvalidateTotalRangeCacheAll(void);
 
+    // Both start and end are inclusive, no ID is checked
+    TSeqPos GetStart(void) const;
+    TSeqPos GetEnd(void) const;
+    TSeqPos GetCircularLength(TSeqPos seq_len) const;
+
     // Appends a label suitable for display (e.g., error messages)
     // label must point to an existing string object
     // Method just returns if label is null. Note this label is NOT
@@ -333,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/09/17 18:39:01  grichenk
+ * + GetStart(), GetEnd(), GetCircularLength()
+ *
  * Revision 1.25  2003/06/18 16:00:07  vasilche
  * Fixed GetTotalRange() in multithreaded app.
  *

@@ -378,6 +378,106 @@ CSeq_loc::TRange CSeq_loc::CalculateTotalRangeCheckId(const CSeq_id*& id) const
 }
 
 
+TSeqPos CSeq_loc::GetStart(void) const
+{
+    switch ( Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+        {
+            return kInvalidSeqPos;
+        }
+    case CSeq_loc::e_Whole:
+        {
+            return TRange::GetWhole().GetFrom();
+        }
+    case CSeq_loc::e_Int:
+        {
+            return GetInt().GetFrom();
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            return GetPnt().GetPoint();
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            return (*GetPacked_int().Get().begin())->GetFrom();
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            return *GetPacked_pnt().GetPoints().begin();
+        }
+    case CSeq_loc::e_Mix:
+        {
+            return (*GetMix().Get().begin())->GetStart();
+        }
+    case CSeq_loc::e_Equiv:
+    case CSeq_loc::e_Bond:
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            THROW1_TRACE(runtime_error,
+                         "CSeq_loc::GetStart -- "
+                         "unsupported location type");
+        }
+    }
+}
+
+
+TSeqPos CSeq_loc::GetEnd(void) const
+{
+    switch ( Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+        {
+            return kInvalidSeqPos;
+        }
+    case CSeq_loc::e_Whole:
+        {
+            return TRange::GetWhole().GetTo();
+        }
+    case CSeq_loc::e_Int:
+        {
+            return GetInt().GetTo();
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            return GetPnt().GetPoint();
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            return (*GetPacked_int().Get().rbegin())->GetTo();
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            return *GetPacked_pnt().GetPoints().rbegin();
+        }
+    case CSeq_loc::e_Mix:
+        {
+            return (*GetMix().Get().rbegin())->GetEnd();
+        }
+    case CSeq_loc::e_Equiv:
+    case CSeq_loc::e_Bond:
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            THROW1_TRACE(runtime_error,
+                         "CSeq_loc::GetEnd -- "
+                         "unsupported location type");
+        }
+    }
+}
+
+
+TSeqPos CSeq_loc::GetCircularLength(TSeqPos seq_len) const
+{
+    TSeqPos start = GetStart();
+    TSeqPos stop = GetEnd();
+    return start > stop ? seq_len - start + stop + 1 : stop - start + 1;
+}
+
+
 // CSeq_loc_CI implementation
 CSeq_loc_CI::CSeq_loc_CI(void)
     : m_Location(0),
@@ -832,6 +932,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.32  2003/09/17 18:39:01  grichenk
+ * + GetStart(), GetEnd(), GetCircularLength()
+ *
  * Revision 6.31  2003/07/21 15:32:11  vasilche
  * Fixed access to uninitialized member.
  *
