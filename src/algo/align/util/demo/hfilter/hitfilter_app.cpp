@@ -53,6 +53,8 @@ void CAppHitFilter::Init()
 
 int CAppHitFilter::Run()
 { 
+
+    /*
     typedef CConstRef<CSeq_id>     TId;
     typedef CAlignShadow<TId>      THit;
     typedef CRef<THit>             THitRef;
@@ -76,8 +78,10 @@ int CAppHitFilter::Run()
 
     // dump the result
     ITERATE(THitRefs, ii, hits) {
-        cout << **ii << endl;
+         cout << **ii << endl;
     }
+
+    */
 
     return 0;
 }
@@ -103,6 +107,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/21 22:45:19  kapustin
+ * Temporarily comment out the code
+ *
  * Revision 1.1  2004/12/21 20:07:47  kapustin
  * Initial revision
  *
