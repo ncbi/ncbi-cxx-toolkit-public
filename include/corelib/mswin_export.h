@@ -151,6 +151,7 @@
 #  define NCBI_XALGOSEQ_EXPORTS
 #  define NCBI_XALGOGNOMON_EXPORTS
 #  define NCBI_XBLAST_EXPORTS
+#  define NCBI_XALGOPHYTREE_EXPORTS
 #endif
 
 /*
@@ -317,6 +318,15 @@
 #  define NCBI_XALGOSEQ_EXPORT      __declspec(dllexport)
 #else
 #  define NCBI_XALGOSEQ_EXPORT      __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xalgophytree
+ */
+#ifdef NCBI_XALGOPHYTREE_EXPORTS
+#  define NCBI_XALGOPHYTREE_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_XALGOPHYTREE_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -1286,6 +1296,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.58  2004/02/10 16:59:01  dicuccio
+ * Added export specifier for libxalgophytree
+ *
  * Revision 1.57  2004/02/09 19:23:58  ivanov
  * + NCBI_XCGI_REDIRECT_EXPORTS, added it to NCBI_WEB.DLL
  *
