@@ -29,6 +29,7 @@ SRC = \
 	cn3d_png \
 	cn3d_threader \
 	cn3d_tools \
+	command_processor \
 	conservation_colorer \
 	coord_set \
 	data_manager \
