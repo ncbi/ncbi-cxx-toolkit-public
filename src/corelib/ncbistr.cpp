@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/04/14 21:20:33  vakatov
+* Dont use "snprintf()" as it is not quite portable yet
+*
 * Revision 1.9  1999/04/14 19:57:36  vakatov
 * Use limits from <ncbitype.h> rather than from <limits>.
 * [MSVC++]  fix for "snprintf()" in <ncbistd.hpp>.
@@ -103,28 +106,28 @@ double NStr::StringToDouble(const string& str)
 string NStr::IntToString(int value)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), "%d", value);
+    ::sprintf(buffer, "%d", value);
     return buffer;
 }
 
 string NStr::IntToString(int value, bool sign)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), sign? "%+d": "%d", value);
+    ::sprintf(buffer, sign ? "%+d": "%d", value);
     return buffer;
 }
 
 string NStr::UIntToString(unsigned int value)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), "%u", value);
+    ::sprintf(buffer, "%u", value);
     return buffer;
 }
 
 string NStr::DoubleToString(double value)
 {
     char buffer[64];
-    ::snprintf(buffer, sizeof(buffer), "%g", value);
+    ::sprintf(buffer, "%g", value);
     return buffer;
 }
 

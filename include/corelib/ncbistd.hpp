@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/04/14 21:20:31  vakatov
+* Dont use "snprintf()" as it is not quite portable yet
+*
 * Revision 1.17  1999/04/14 19:46:01  vakatov
 * Fixed for the features:
 *    { NCBI_OBSOLETE_STR_COMPARE, HAVE_NO_AUTO_PTR, HAVE_NO_SNPRINTF }
@@ -185,11 +188,6 @@ private:
     auto_ptr<X>& operator=(auto_ptr<X>&) {}
 };
 #endif /* HAVE_NO_AUTO_PTR */
-
-
-#if defined(HAVE_NO_SNPRINTF)
-#define snprintf _snprintf
-#endif /* HAVE_NO_SNPRINTF */
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
