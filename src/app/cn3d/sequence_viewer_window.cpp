@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/01/14 14:15:07  thiessen
+* default PSSM score = 1.0 when no structure
+*
 * Revision 1.46  2002/12/19 14:15:37  thiessen
 * mac fixes to menus, add icon
 *
@@ -486,6 +489,11 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
         sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, realignSlaves);
 }
 
+#define MASTER_HAS_STRUCTURE \
+    (sequenceViewer->alignmentManager != NULL && \
+     sequenceViewer->alignmentManager->GetCurrentMultipleAlignment() != NULL && \
+     sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetSequenceOfRow(0)->molecule != NULL)
+
 void SequenceViewerWindow::OnSort(wxCommandEvent& event)
 {
     switch (event.GetId()) {
@@ -498,7 +506,8 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             if (DoProximitySort()) ProximitySortOff();
             GetFloatingPointDialog fpDialog(NULL,
                 "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
-                0.0, 1.0, 0.05, ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5));
+                0.0, 1.0, 0.05, (MASTER_HAS_STRUCTURE ?
+                    ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5) : 1.0));
             if (fpDialog.ShowModal() == wxOK) {
                 double weightPSSM = prevPSSMWeight = fpDialog.GetValue();
                 SetCursor(*wxHOURGLASS_CURSOR);
@@ -533,7 +542,8 @@ void SequenceViewerWindow::OnScoreThreader(wxCommandEvent& event)
 {
     GetFloatingPointDialog fpDialog(NULL,
         "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
-        0.0, 1.0, 0.05, ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5));
+        0.0, 1.0, 0.05, (MASTER_HAS_STRUCTURE ?
+            ((prevPSSMWeight >= 0.0) ? prevPSSMWeight : 0.5) : 1.0));
     if (fpDialog.ShowModal() == wxOK) {
         double weightPSSM = prevPSSMWeight = fpDialog.GetValue();
         SetCursor(*wxHOURGLASS_CURSOR);
