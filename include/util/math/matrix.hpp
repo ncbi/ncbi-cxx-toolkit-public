@@ -383,19 +383,25 @@ inline T& CNcbiMatrix<T>::operator() (size_t i, size_t j)
 template <class T>
 inline void CNcbiMatrix<T>::Resize(size_t new_rows, size_t new_cols, T val)
 {
-    /// hack: we just make a new strip and copy things correctly
-    /// there is a faster way to do this
-    TData new_data(new_rows * new_cols, val);
-    size_t i = min(new_rows, m_Rows);
-    size_t j = min(new_cols, m_Cols);
 
-    for (size_t r = 0;  r < i;  ++r) {
-        for (size_t c = 0;  c < j;  ++c) {
-            new_data[r * new_cols + c] = m_Data[r * m_Cols + c];
+    if (new_cols == m_Cols && new_rows >= m_Rows) {
+        // common special case that can easily be handled efficiently
+        m_Data.resize(new_rows * new_cols, val);
+    } else {
+        /// hack: we just make a new strip and copy things correctly
+        /// there is a faster way to do this
+        TData new_data(new_rows * new_cols, val);
+        size_t i = min(new_rows, m_Rows);
+        size_t j = min(new_cols, m_Cols);
+        
+        for (size_t r = 0;  r < i;  ++r) {
+            for (size_t c = 0;  c < j;  ++c) {
+                new_data[r * new_cols + c] = m_Data[r * m_Cols + c];
+            }
         }
-    }
 
-    new_data.swap(m_Data);
+        new_data.swap(m_Data);
+    }
     m_Rows = new_rows;
     m_Cols = new_cols;
 }
@@ -956,6 +962,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/11 17:31:42  jcherry
+ * Sped up adding of rows (greatly speeds reading from streams)
+ *
  * Revision 1.5  2004/03/10 14:13:29  dicuccio
  * Corrected include - use ncbistr instead of ncbistre
  *
