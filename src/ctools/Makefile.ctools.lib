@@ -1,6 +1,6 @@
 # $Id$
 
-CPPFLAGS = ${ORIG_CPPFLAGS} ${NCBI_C_INCLUDE}
-LIBOBJ = ctools
+CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+LIBOBJ = ctools asn_connection
 
 LIB    = xctools
