@@ -33,9 +33,13 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <objmgr/seq_id_handle.hpp>
+
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+
+#include <objmgr/seq_id_handle.hpp>
+#include <objmgr/impl/mutex_pool.hpp>
+#include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -52,6 +56,9 @@ class CTSE_Info;
 class CSeq_entry;
 class CSeq_annot;
 class CSeqMatch_Info;
+class CSynonymsSet;
+class CBioseq_ScopeInfo;
+class CSeq_id_ScopeInfo;
 
 // Bioseq handle -- must be a copy-safe const type.
 class NCBI_XOBJMGR_EXPORT CBioseq_Handle
@@ -59,7 +66,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 public:
     // Destructor
     CBioseq_Handle(void);
-    virtual ~CBioseq_Handle(void);
+    ~CBioseq_Handle(void);
 
     // Bioseq core -- using partially populated CBioseq
     typedef CConstRef<CBioseq> TBioseqCore;
@@ -71,17 +78,18 @@ public:
     bool operator<  (const CBioseq_Handle& h) const;
 
     // Check
-    operator bool(void)  const { return ( bool(m_Bioseq_Info)  &&  m_Value); }
-    bool operator!(void) const { return (!m_Bioseq_Info  || !m_Value); }
+    operator bool(void)  const;
+    bool operator!(void) const;
 
     // Get the complete bioseq (as loaded by now)
-    // Declared "virtual" to avoid circular dependencies with seqloc
-    virtual const CBioseq& GetBioseq(void) const;
+    const CBioseq& GetBioseq(void) const;
 
-    const CSeq_id* GetSeqId(void)  const;
+    const CSeq_id* GetSeqId(void) const;
+
+    const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
     // Get top level seq-entry for a bioseq
-    virtual const CSeq_entry& GetTopLevelSeqEntry(void) const;
+    const CSeq_entry& GetTopLevelSeqEntry(void) const;
 
     // Go up to a certain complexity level (or the nearest level of the same
     // priority if the required class is not found):
@@ -109,11 +117,10 @@ public:
     const CSeq_entry& GetComplexityLevel(CBioseq_set::EClass cls) const;
 
     // Get bioseq core structure
-    // Declared "virtual" to avoid circular dependencies with seqloc
-    virtual TBioseqCore GetBioseqCore(void) const;
+    TBioseqCore GetBioseqCore(void) const;
 
     // Get sequence map.
-    virtual const CSeqMap& GetSeqMap(void) const;
+    const CSeqMap& GetSeqMap(void) const;
 
     // CSeqVector constructor flags
     enum EVectorCoding {
@@ -168,20 +175,16 @@ private:
                    const CSeq_id_Handle& id,
                    const CConstRef<CBioseq_Info>& bioseq);
 
-    // Get the internal seq-id handle
-    const CSeq_id_Handle&  GetKey(void) const;
-
     // Get data source
     CDataSource& x_GetDataSource(void) const;
 
-    const CConstRef<CBioseq_Info>& x_GetBioseq_Info(void) const;
+    const CBioseq_Info& x_GetBioseq_Info(void) const;
 
     bool x_IsSynonym(const CSeq_id& id) const;
+    CConstRef<CSynonymsSet> x_GetSynonyms(void) const;
 
-    CScope*                   m_Scope;
-    CSeq_id_Handle            m_Value;       // Seq-id equivalent
-    CConstRef<CBioseq_Info>   m_Bioseq_Info;
-    CConstRef<CObject>        m_TSE_Lock;
+    CSeq_id_Handle           m_Seq_id;
+    CRef<CBioseq_ScopeInfo>  m_Bioseq_Info;
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
@@ -192,24 +195,40 @@ private:
 
 
 inline
-const CSeq_id_Handle& CBioseq_Handle::GetKey(void) const
+const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 {
-    return m_Value;
+    return m_Seq_id;
 }
 
 
 inline
-bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
+CBioseq_Handle::operator bool(void)  const
 {
-    if (m_Scope != h.m_Scope) {
+    _ASSERT(!m_Bioseq_Info || m_Bioseq_Info->HasBioseq());
+    return m_Bioseq_Info;
+}
+
+
+inline
+bool CBioseq_Handle::operator!(void) const
+{
+    _ASSERT(!m_Bioseq_Info || m_Bioseq_Info->HasBioseq());
+    return !m_Bioseq_Info;
+}
+
+
+inline
+bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
+{
+    if ( &GetScope() != &h.GetScope() ) {
         THROW1_TRACE(runtime_error,
             "CBioseq_Handle::operator==() -- "
             "Unable to compare handles from different scopes");
     }
-    if (bool(m_Bioseq_Info)  &&  bool(h.m_Bioseq_Info))
-        return m_Bioseq_Info == h.m_Bioseq_Info;
+    if ( *this && h )
+        return &x_GetBioseq_Info() == &h.x_GetBioseq_Info();
     // Compare by id key
-    return m_Value == h.m_Value;
+    return GetSeq_id_Handle() == h.GetSeq_id_Handle();
 }
 
 
@@ -223,28 +242,30 @@ bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 inline
 bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 {
-    if (m_Scope != h.m_Scope) {
+    if ( &GetScope() != &h.GetScope() ) {
         THROW1_TRACE(runtime_error,
             "CBioseq_Handle::operator<() -- "
             "Unable to compare CBioseq_Handles from different scopes");
     }
-    if (bool(m_Bioseq_Info)  &&  bool(h.m_Bioseq_Info))
-        return m_Bioseq_Info < h.m_Bioseq_Info;
-    return m_Value < h.m_Value;
+    if ( *this && h )
+        return &x_GetBioseq_Info() < &h.x_GetBioseq_Info();
+    return GetSeq_id_Handle() < h.GetSeq_id_Handle();
 }
 
 
 inline
 CScope& CBioseq_Handle::GetScope(void) const 
 {
-    return *m_Scope;
+    _ASSERT(m_Bioseq_Info);
+    return m_Bioseq_Info->GetScope();
 }
 
 
 inline
-const CConstRef<CBioseq_Info>& CBioseq_Handle::x_GetBioseq_Info(void) const
+const CBioseq_Info& CBioseq_Handle::x_GetBioseq_Info(void) const
 {
-    return m_Bioseq_Info;
+    _ASSERT(m_Bioseq_Info);
+    return m_Bioseq_Info->GetBioseq_Info();
 }
 
 
@@ -254,14 +275,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.39  2003/06/02 16:01:36  dicuccio
-* Rearranged include/objects/ subtree.  This includes the following shifts:
-*     - include/objects/alnmgr --> include/objtools/alnmgr
-*     - include/objects/cddalignview --> include/objtools/cddalignview
-*     - include/objects/flat --> include/objtools/flat
-*     - include/objects/objmgr/ --> include/objmgr/
-*     - include/objects/util/ --> include/objmgr/util/
-*     - include/objects/validator --> include/objtools/validator
+* Revision 1.40  2003/06/19 18:23:44  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
 *
 * Revision 1.38  2003/05/20 15:44:36  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.

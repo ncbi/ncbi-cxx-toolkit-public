@@ -34,10 +34,13 @@
 */
 
 #include <objmgr/impl/tse_info.hpp>
+
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/data_loader.hpp>
+
 #include <corelib/ncbimtx.hpp>
+
 #include <set>
 #include <map>
 #include <list>
@@ -78,7 +81,7 @@ public:
     typedef TTSESet::iterator iterator;
     typedef TTSESet::const_iterator const_iterator;
 
-    void insert(CTSE_Info* tse);
+    bool insert(CTSE_Info* tse);
     void erase(CTSE_Info* tse);
 
     const_iterator begin(void) const
@@ -248,19 +251,19 @@ public:
     CSeq_id_Mapper& GetSeq_id_Mapper(void) const;
 
     /// Get the complete Bioseq (as loaded by now)
-    const CBioseq& GetBioseq(const CBioseq_Handle& handle);
+    const CBioseq& GetBioseq(const CBioseq_Info& info);
 
     /// Get top level Seq-Entry for a Bioseq
-    const CSeq_entry& GetTSE(const CBioseq_Handle& handle);
+    const CSeq_entry& GetTSE(const CTSE_Info& info);
 
     const CSeq_entry& GetTSEFromInfo(const TTSE_Lock& tse);
 
     typedef CConstRef<CBioseq> TBioseqCore;
     /// Get Bioseq core structure
-    TBioseqCore GetBioseqCore(const CBioseq_Handle& handle);
+    TBioseqCore GetBioseqCore(const CBioseq_Info& info);
 
     /// Get sequence map
-    const CSeqMap& GetSeqMap(const CBioseq_Handle& handle);
+    const CSeqMap& GetSeqMap(const CBioseq_Info& info);
 
     CDataLoader* GetDataLoader(void);
     CSeq_entry* GetTopEntry(void);
@@ -399,7 +402,7 @@ private:
     // Create CSeqMap for a bioseq
     void x_CreateSeqMap(CBioseq_Info& seq_info);
     // Non-const version of GetSeqMap()
-    const CSeqMap& x_GetSeqMap(const CBioseq_Handle& handle);
+    const CSeqMap& x_GetSeqMap(const CBioseq_Info& info);
 
     void x_GetAnnotData(const CHandleRangeMap& loc,
                         const SAnnotTypeSelector& sel);
@@ -413,8 +416,18 @@ private:
     // Change live/dead status of a TSE
     void x_UpdateTSEStatus(CSeq_entry& tse, bool dead);
 
+#if 0
+    typedef CRWLock TRWLock;
+    typedef TRWLock::TReadLockGuard TReadLockGuard;
+    typedef TRWLock::TWriteLockGuard TWriteLockGuard;
+#else
+    typedef CMutex TRWLock;
+    typedef CMutexGuard TReadLockGuard;
+    typedef CMutexGuard TWriteLockGuard;
+#endif
+
     // Used to lock: m_Entries, m_TSE_seq, m_TSE_ref
-    mutable CMutex m_DataSource_Mtx;
+    mutable TRWLock m_DataSource_Mtx;
 
     CDataLoader          *m_Loader;
     CRef<CSeq_entry>      m_pTopEntry;
@@ -429,8 +442,8 @@ private:
     TTSEMap               m_TSE_seq;   // id -> TSEs with bioseq
     TTSEMap               m_TSE_ref;   // id -> TSEs with references to id
 
-    // "true" if annotations need to be indexed.
-    bool                  m_DirtyAnnotIndex;
+    // > 0 if annotations need to be indexed.
+    int                   m_DirtyAnnotIndexCount;
 
     friend class CAnnotTypes_CI; // using mutex etc.
     friend class CBioseq_Handle; // using mutex
@@ -474,17 +487,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.57  2003/06/10 15:26:46  vasilche
-* Fixed removal of multi location annotations too.
-*
-* Revision 1.56  2003/06/02 16:01:37  dicuccio
-* Rearranged include/objects/ subtree.  This includes the following shifts:
-*     - include/objects/alnmgr --> include/objtools/alnmgr
-*     - include/objects/cddalignview --> include/objtools/cddalignview
-*     - include/objects/flat --> include/objtools/flat
-*     - include/objects/objmgr/ --> include/objmgr/
-*     - include/objects/util/ --> include/objmgr/util/
-*     - include/objects/validator --> include/objtools/validator
+* Revision 1.58  2003/06/19 18:23:44  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
 *
 * Revision 1.55  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.

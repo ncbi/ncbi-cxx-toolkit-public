@@ -131,10 +131,17 @@ private:
     // Dead seq-entry flag
     bool m_Dead;
 
+    typedef CFastMutex      TRWLock;
+    typedef CFastMutexGuard TReadLockGuard;
+    typedef CFastMutexGuard TWriteLockGuard;
+    
+
     // ID to bioseq-info
-    TBioseqMap m_BioseqMap;
+    TBioseqMap      m_BioseqMap;
+    mutable TRWLock m_BioseqMapLock;
     // ID to annot-selector-map
-    TAnnotMap  m_AnnotMap;
+    TAnnotMap       m_AnnotMap;
+    mutable TRWLock m_AnnotMapLock;
 
     // May be used by data loaders to store blob-id
     typedef CConstRef<CObject> TBlob_ID;
@@ -256,6 +263,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/06/19 18:23:45  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
+*
 * Revision 1.31  2003/06/02 16:01:37  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

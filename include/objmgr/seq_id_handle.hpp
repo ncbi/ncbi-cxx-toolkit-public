@@ -297,16 +297,14 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
-// We explicitly include seq_id_mapper.hpp at the bottom of this file
-// This is done because CSeq_id_Mapper has a circular #include dependency
-// with seq_if_handle.hpp; we skirt the circular reference by placing the
-// #include at the bottom
-//#include <objects/objmgr/seq_id_mapper.hpp>
-
-
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/06/19 18:23:44  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
+*
 * Revision 1.14  2003/06/10 19:06:34  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *

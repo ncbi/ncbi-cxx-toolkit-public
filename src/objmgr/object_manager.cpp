@@ -36,17 +36,13 @@
 */
 
 #include <objmgr/object_manager.hpp>
-#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/data_loader.hpp>
 #include <objmgr/impl/data_source.hpp>
-#include <objmgr/scope.hpp>
+
 #include <objects/seqset/Seq_entry.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-DEFINE_STATIC_MUTEX(s_OM_Mutex);
 
 CObjectManager::CObjectManager(void)
 {
@@ -56,30 +52,29 @@ CObjectManager::CObjectManager(void)
 
 CObjectManager::~CObjectManager(void)
 {
-  //LOG_POST("~CObjectManager - delete " << this );
+    //LOG_POST("~CObjectManager - delete " << this );
     // delete scopes
-    if(!m_setScope.empty())
-      {
+    TWriteLockGuard guard(m_OM_Lock);
+
+    if(!m_setScope.empty()) {
         ERR_POST("Attempt to delete Object Manager with open scopes");
-        while (!m_setScope.empty()) {
-          // this will cause calling RegisterScope and changing m_setScope
-          // be careful with data access synchronization
-          (*m_setScope.begin())->x_DetachFromOM();
+        while ( !m_setScope.empty() ) {
+            // this will cause calling RegisterScope and changing m_setScope
+            // be careful with data access synchronization
+            (*m_setScope.begin())->x_DetachFromOM();
         }
-      }
-    CMutexGuard guard(s_OM_Mutex);
-    // release data sources
-    
-    CDataSource* pSource;
-    while (!m_mapLoaderToSource.empty()) {
-        pSource = m_mapLoaderToSource.begin()->second;
-        _VERIFY(pSource->ReferencedOnlyOnce());
-        x_ReleaseDataSource(pSource);
     }
-    while (!m_mapEntryToSource.empty()) {
-        pSource = m_mapEntryToSource.begin()->second;
-        _VERIFY(pSource->ReferencedOnlyOnce());
-        x_ReleaseDataSource(pSource);
+    // release data sources
+
+    m_setDefaultSource.clear();
+    
+    while (!m_mapToSource.empty()) {
+        CDataSource* pSource = m_mapToSource.begin()->second.GetPointer();
+        _ASSERT(pSource);
+        if ( !pSource->ReferencedOnlyOnce() ) {
+            ERR_POST("Attempt to delete Object Manager with used data sources");
+        }
+        m_mapToSource.erase(m_mapToSource.begin());
     }
     // LOG_POST("~CObjectManager - delete " << this << "  done");
 }
@@ -88,11 +83,11 @@ CObjectManager::~CObjectManager(void)
 // configuration functions
 
 
-void CObjectManager::RegisterDataLoader( CDataLoader& loader,
-                                         EIsDefault   is_default)
+void CObjectManager::RegisterDataLoader(CDataLoader& loader,
+                                        EIsDefault   is_default)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    x_RegisterLoader(loader,is_default);
+    TWriteLockGuard guard(m_OM_Lock);
+    x_RegisterLoader(loader, is_default);
 }
 
 
@@ -102,7 +97,8 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
     string loader_name = factory.GetName();
     _ASSERT(!loader_name.empty());
     // if already registered
-    if (x_GetLoaderByName(loader_name)) {
+    TWriteLockGuard guard(m_OM_Lock);
+    if ( x_GetLoaderByName(loader_name) ) {
         ERR_POST(Warning <<
             "CObjectManager::RegisterDataLoader: " <<
             "data loader " << loader_name << " already registered");
@@ -118,13 +114,14 @@ void CObjectManager::RegisterDataLoader(CDataLoaderFactory& factory,
 }
 
 
-void CObjectManager::RegisterDataLoader(
-    TFACTORY_AUTOCREATE factory, const string& loader_name,
-    EIsDefault   is_default)
+void CObjectManager::RegisterDataLoader(TFACTORY_AUTOCREATE factory,
+                                        const string& loader_name,
+                                        EIsDefault is_default)
 {
     _ASSERT(!loader_name.empty());
     // if already registered
-    if (x_GetLoaderByName(loader_name)) {
+    TWriteLockGuard guard(m_OM_Lock);
+    if ( x_GetLoaderByName(loader_name) ) {
         ERR_POST(Warning <<
             "CObjectManager::RegisterDataLoader: " <<
             "data loader " << loader_name << " already registered");
@@ -140,262 +137,269 @@ void CObjectManager::RegisterDataLoader(
 
 bool CObjectManager::RevokeDataLoader(CDataLoader& loader)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    // make sure it is registered
     string loader_name = loader.GetName();
+
+    TWriteLockGuard guard(m_OM_Lock);
+    // make sure it is registered
     CDataLoader* my_loader = x_GetLoaderByName(loader_name);
-    if (!my_loader || (my_loader != &loader)) {
+    if ( my_loader != &loader ) {
         THROW1_TRACE(runtime_error,
             "CObjectManager::RevokeDataLoader() -- "
             "Data loader " + loader_name + " not registered");
     }
-    CDataSource* source = m_mapLoaderToSource[&loader];
-    if (!source->ReferencedOnlyOnce()) {
-        // this means it is in use
-        return false;
-    }
-    // remove from the maps
-    m_mapLoaderToSource.erase(&loader);
-    m_mapNameToLoader.erase(loader_name);
-    m_setDefaultSource.erase(source);
-    // release source
-    source->RemoveReference();
-    return true;
+    TDataSourceLock lock = x_RevokeDataLoader(&loader);
+    guard.Release();
+    return lock;
 }
 
 
 bool CObjectManager::RevokeDataLoader(const string& loader_name)
 {
+    TWriteLockGuard guard(m_OM_Lock);
     CDataLoader* loader = x_GetLoaderByName(loader_name);
     // if not registered
-    if (!loader)
-    {
+    if ( !loader ) {
         THROW1_TRACE(runtime_error,
             "CObjectManager::RevokeDataLoader() -- "
             "Data loader " + loader_name + " not registered");
     }
-    return RevokeDataLoader(*loader);
+    TDataSourceLock lock = x_RevokeDataLoader(loader);
+    guard.Release();
+    return lock;
 }
 
 
+CObjectManager::TDataSourceLock
+CObjectManager::x_RevokeDataLoader(CDataLoader* loader)
+{
+    TMapToSource::iterator iter = m_mapToSource.find(loader);
+    _ASSERT(iter != m_mapToSource.end());
+    _ASSERT(iter->second->GetDataLoader() == loader);
+    bool is_default = m_setDefaultSource.erase(iter->second);
+    if ( !iter->second->ReferencedOnlyOnce() ) {
+        // this means it is in use
+        if ( is_default )
+            _VERIFY(m_setDefaultSource.insert(iter->second).second);
+        ERR_POST("CObjectManager::RevokeDataLoader: "
+                 "data loader is in use");
+        return TDataSourceLock();
+    }
+    // remove from the maps
+    TDataSourceLock lock(iter->second);
+    m_mapNameToLoader.erase(loader->GetName());
+    m_mapToSource.erase(loader);
+    return lock;
+}
+
+
+/*
 void CObjectManager::RegisterTopLevelSeqEntry(CSeq_entry& top_entry)
 {
-    CMutexGuard guard(s_OM_Mutex);
+    TWriteLockGuard guard(m_OM_Mutex);
     x_RegisterTSE(top_entry);
 }
+*/
 
 /////////////////////////////////////////////////////////////////////////////
 // functions for scopes
 
 void CObjectManager::RegisterScope(CScope& scope)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    m_setScope.insert(&scope);
+    TWriteLockGuard guard(m_OM_ScopeLock);
+    _VERIFY(m_setScope.insert(&scope).second);
 }
 
 
 void CObjectManager::RevokeScope(CScope& scope)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    m_setScope.erase(&scope);
+    TWriteLockGuard guard(m_OM_ScopeLock);
+    _VERIFY(m_setScope.erase(&scope));
 }
 
 
-void CObjectManager::AcquireDefaultDataSources(
-    CPriorityNode& sources,
-    CPriorityNode::TPriority priority)
+void CObjectManager::AcquireDefaultDataSources(TDataSourcesLock& sources)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    set<CDataSource*>::const_iterator itSource;
-    // for each source in defaults
-    for (itSource = m_setDefaultSource.begin();
-        itSource != m_setDefaultSource.end(); ++itSource) {
-        x_AddDataSource(sources, *itSource, priority);
+    TReadLockGuard guard(m_OM_Lock);
+    sources = m_setDefaultSource;
+}
+
+
+CObjectManager::TDataSourceLock
+CObjectManager::AcquireDataLoader(CDataLoader& loader)
+{
+    TReadLockGuard guard(m_OM_Lock);
+    TDataSourceLock lock = x_FindDataSource(&loader);
+    if ( !lock ) {
+        guard.Release();
+        TWriteLockGuard wguard(m_OM_Lock);
+        lock = x_RegisterLoader(loader, eNonDefault, true);
     }
+    return lock;
 }
 
 
-void CObjectManager::AddDataLoader(
-    CPriorityNode& sources, CDataLoader& loader,
-    CPriorityNode::TPriority priority)
+CObjectManager::TDataSourceLock
+CObjectManager::AcquireDataLoader(const string& loader_name)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    x_RegisterLoader(loader);
-    x_AddDataSource(sources, m_mapLoaderToSource[&loader], priority);
-}
-
-
-void CObjectManager::AddDataLoader(
-    CPriorityNode& sources, const string& loader_name,
-    CPriorityNode::TPriority priority)
-{
+    TReadLockGuard guard(m_OM_Lock);
     CDataLoader* loader = x_GetLoaderByName(loader_name);
-    if (loader) {
-        AddDataLoader(sources, *loader, priority);
-    }
-    else {
+    if ( !loader ) {
         THROW1_TRACE(runtime_error,
-            "CObjectManager::AddDataLoader() -- "
+            "CObjectManager::AcquireDataLoader() -- "
             "Data loader " + loader_name + " not found");
     }
-}
-
-void CObjectManager::AddTopLevelSeqEntry(
-    CPriorityNode& sources, CSeq_entry& top_entry,
-    CPriorityNode::TPriority priority)
-{
-    CMutexGuard guard(s_OM_Mutex);
-    x_RegisterTSE(top_entry);
-    x_AddDataSource(sources, m_mapEntryToSource[ &top_entry], priority);
+    TDataSourceLock lock = x_FindDataSource(loader);
+    _ASSERT(lock);
+    return lock;
 }
 
 
-void CObjectManager::AddScope(
-    CPriorityNode& sources, CScope& scope,
-    CPriorityNode::TPriority priority)
+CObjectManager::TDataSourceLock
+CObjectManager::AcquireTopLevelSeqEntry(CSeq_entry& top_entry)
 {
-    CMutexGuard guard(s_OM_Mutex);
-    sources.Insert(scope.m_setDataSrc, priority);
-    for (CPriority_I it(scope.m_setDataSrc); it; ++it) {
-        it->AddReference();
+    TReadLockGuard guard(m_OM_Lock);
+    TDataSourceLock lock = x_FindDataSource(&top_entry);
+    if ( !lock ) {
+        guard.Release();
+        
+        TDataSourceLock source(new CDataSource(top_entry, *this));
+        source->DoDeleteThisObject();
+        
+        TWriteLockGuard wguard(m_OM_Lock);
+        lock = m_mapToSource.insert(
+            TMapToSource::value_type(&top_entry, source)).first->second;
+        _ASSERT(lock);
     }
+    return lock;
 }
 
-
-void CObjectManager::RemoveTopLevelSeqEntry(
-    CPriorityNode& sources, CSeq_entry& top_entry)
-{
-    CMutexGuard guard(s_OM_Mutex);
-    if (m_mapEntryToSource.find(&top_entry) != m_mapEntryToSource.end()) {
-        CDataSource* source = m_mapEntryToSource[ &top_entry];
-
-        source->DropTSE(top_entry);
-
-        // Do not destroy datasource if it's not empty
-        if ( !source->IsEmpty() )
-            return;
-
-        if ( sources.Erase(*source) ) {
-            x_ReleaseDataSource(source);
-        }
-    }
-}
-
-
-void CObjectManager::ReleaseDataSources(CPriorityNode& sources)
-{
-    CMutexGuard guard(s_OM_Mutex);
-    CPriority_I itSet(sources);
-    for (; itSet; ++itSet) {
-        x_ReleaseDataSource(&(*itSet));
-    }
-    sources.Clear();
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // private functions
 
 
-bool CObjectManager::x_RegisterLoader( CDataLoader& loader,EIsDefault   is_default)
+CObjectManager::TDataSourceLock
+CObjectManager::x_FindDataSource(const CObject* key)
+{
+    TMapToSource::iterator iter = m_mapToSource.find(key);
+    return iter == m_mapToSource.end()? TDataSourceLock(): iter->second;
+}
+
+
+CObjectManager::TDataSourceLock
+CObjectManager::x_RegisterLoader(CDataLoader& loader,
+                                 EIsDefault is_default,
+                                 bool no_warning)
 {
     string loader_name = loader.GetName();
     _ASSERT(!loader_name.empty());
 
     // if already registered
-    CDataLoader* my_loader = x_GetLoaderByName(loader_name);
-    if (my_loader) {
-        // must be the same object
-        // there should be NO different loaders with the same name
-        if (my_loader != &loader) {
+    pair<TMapNameToLoader::iterator, bool> ins =
+        m_mapNameToLoader.insert(TMapNameToLoader::value_type(loader_name,0));
+    if ( !ins.second ) {
+        if ( ins.first->second != &loader ) {
             THROW1_TRACE(runtime_error,
-                "CObjectManager::RegisterDataLoader() -- "
-                "Attempt to register different data loaders with the same name");
+                         "CObjectManager::RegisterDataLoader() -- "
+                         "Attempt to register different data loaders "
+                         "with the same name");
         }
-        ERR_POST(Warning <<
-            "CObjectManager::RegisterDataLoader() -- data loader " <<
-            loader_name << " already registered");
-        return false;
+        if ( !no_warning ) {
+            ERR_POST(Warning <<
+                     "CObjectManager::RegisterDataLoader() -- data loader " <<
+                     loader_name << " already registered");
+        }
+        TMapToSource::const_iterator it = m_mapToSource.find(&loader);
+        _ASSERT(it != m_mapToSource.end() && it->second);
+        return it->second;
     }
-    m_mapNameToLoader[ loader_name] = &loader;
+    ins.first->second = &loader;
     // create data source
-    CDataSource* source = new CDataSource(loader, *this);
+    TDataSourceLock source(new CDataSource(loader, *this));
     source->DoDeleteThisObject();
-    source->AddReference();
-    m_mapLoaderToSource[&loader] = source;
+    _VERIFY(m_mapToSource.insert(TMapToSource::value_type(&loader,
+                                                          source)).second);
     if (is_default == eDefault) {
         m_setDefaultSource.insert(source);
     }
-    return true;
+    return source;
 }
 
-void CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
+
+CObjectManager::TDataSourceLock
+CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
 {
-    if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end())
-      {
-        CDataSource *source = new CDataSource(top_entry, *this);
+    TDataSourceLock ret = x_FindDataSource(&top_entry);
+    if ( !ret ) {
+        TDataSourceLock source(new CDataSource(top_entry, *this));
         source->DoDeleteThisObject();
-        source->AddReference();
-        m_mapEntryToSource[ &top_entry] = source ;
-      }
-}
 
-CDataLoader* CObjectManager::x_GetLoaderByName(
-    const string& loader_name) const
-{
-    map< string, CDataLoader* >::const_iterator itMap;
-    itMap = m_mapNameToLoader.find(loader_name);
-    if (itMap != m_mapNameToLoader.end()) {
-        return (*itMap).second;
+        ret = m_mapToSource.insert(
+            TMapToSource::value_type(&top_entry, source)).first->second;
     }
-    return 0;
+    
+    _ASSERT(ret);
+    return ret;
 }
 
-
-void CObjectManager::x_AddDataSource(
-    CPriorityNode& setSources, CDataSource* pSource,
-    CPriorityNode::TPriority priority) const
+CDataLoader* CObjectManager::x_GetLoaderByName(const string& name) const
 {
-    _ASSERT(pSource  &&  setSources.IsTree());
-    if (setSources.Insert(CPriorityNode(*pSource), priority))
-        pSource->AddReference();
+    TMapNameToLoader::const_iterator itMap = m_mapNameToLoader.find(name);
+    return itMap == m_mapNameToLoader.end()? 0: itMap->second;
 }
 
-
-void CObjectManager::x_ReleaseDataSource(CDataSource* pSource)
+bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
 {
-    if (pSource->ReferencedOnlyOnce()) {
-      // LOG_POST("CObjectManager - trying to remove DS " << pSource);
-        CDataLoader* pLoader = pSource->GetDataLoader();
-        if (pLoader) {
-            m_mapLoaderToSource.erase(pLoader);
-            m_mapNameToLoader.erase(pLoader->GetName());
-        }
-        CSeq_entry* pEntry = pSource->GetTopEntry();
-        if (pEntry) {
-            m_mapEntryToSource.erase(pEntry);
-        }
-        m_setDefaultSource.erase(pSource);
-        pSource->RemoveReference();
+    CDataSource& ds = *pSource;
+    _ASSERT(pSource->Referenced());
+    CDataLoader* loader = ds.GetDataLoader();
+    if ( loader ) {
+        pSource.Reset();
+        return false;
     }
-    else {
-        pSource->RemoveReference();
+
+    const CObject* key = ds.GetTopEntry();
+    if ( !key ) {
+        ERR_POST("CObjectManager::ReleaseDataSource: "
+                 "unknown data source key");
+        pSource.Reset();
+        return false;
+    }
+
+    TWriteLockGuard guard(m_OM_Lock);
+    TMapToSource::iterator iter = m_mapToSource.find(key);
+    if ( iter == m_mapToSource.end() ) {
+        guard.Release();
+        ERR_POST("CObjectManager::ReleaseDataSource: "
+                 "unknown data source");
+        pSource.Reset();
+        return false;
+    }
+    _ASSERT(pSource == iter->second);
+    _ASSERT(ds.Referenced() && !ds.ReferencedOnlyOnce());
+    pSource.Reset();
+    if ( ds.ReferencedOnlyOnce() ) {
         // Destroy data source if it's linked to an entry and is not
         // referenced by any scope.
-        if ( pSource->ReferencedOnlyOnce()  &&  !pSource->GetDataLoader() ) {
-            // Release the last reference (kept by this OM) and destroy the
-            // data source.
-            x_ReleaseDataSource(pSource);
+        if ( !ds.GetDataLoader() ) {
+            pSource = iter->second;
+            m_mapToSource.erase(iter);
+            _ASSERT(ds.ReferencedOnlyOnce());
+            guard.Release();
+            pSource.Reset();
+            return true;
         }
     }
+    return false;
 }
 
-
+/*
 CConstRef<CBioseq> CObjectManager::GetBioseq(const CSeq_id& id)
 {
     CScope* pScope = *(m_setScope.begin());
     return CConstRef<CBioseq>(&((pScope->GetBioseqHandle(id)).GetBioseq()));
 }
-
+*/
 
 void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
@@ -405,8 +409,7 @@ void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     if (depth == 0) {
         DebugDumpValue(ddc,"m_setDefaultSource.size()", m_setDefaultSource.size());
         DebugDumpValue(ddc,"m_mapNameToLoader.size()",  m_mapNameToLoader.size());
-        DebugDumpValue(ddc,"m_mapLoaderToSource.size()",m_mapLoaderToSource.size());
-        DebugDumpValue(ddc,"m_mapEntryToSource.size()", m_mapEntryToSource.size());
+        DebugDumpValue(ddc,"m_mapToSource.size()",m_mapToSource.size());
         DebugDumpValue(ddc,"m_setScope.size()",         m_setScope.size());
     } else {
         
@@ -414,10 +417,8 @@ void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             m_setDefaultSource.begin(), m_setDefaultSource.end(), depth);
         DebugDumpPairsValuePtr(ddc,"m_mapNameToLoader",
             m_mapNameToLoader.begin(), m_mapNameToLoader.end(), depth);
-        DebugDumpPairsPtrPtr(ddc,"m_mapLoaderToSource",
-            m_mapLoaderToSource.begin(), m_mapLoaderToSource.end(), depth);
-        DebugDumpPairsPtrPtr(ddc,"m_mapEntryToSource",
-            m_mapEntryToSource.begin(), m_mapEntryToSource.end(), depth);
+        DebugDumpPairsPtrPtr(ddc,"m_mapToSource",
+            m_mapToSource.begin(), m_mapToSource.end(), depth);
         DebugDumpRangePtr(ddc,"m_setScope",
             m_setScope.begin(), m_setScope.end(), depth);
     }
@@ -430,18 +431,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.24  2003/06/02 16:06:38  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
+* Revision 1.25  2003/06/19 18:23:46  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
 *
 * Revision 1.23  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.

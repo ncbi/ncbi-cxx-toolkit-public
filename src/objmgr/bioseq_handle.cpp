@@ -29,24 +29,28 @@
 *
 */
 
+//#include <serial/typeinfo.hpp>
+
 #include <objmgr/bioseq_handle.hpp>
+
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seqmatch_info.hpp>
+
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/handle_range.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/seqmatch_info.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/synonyms.hpp>
+
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <objects/general/Object_id.hpp>
-#include <serial/typeinfo.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objmgr/impl/bioseq_info.hpp>
-#include <objmgr/impl/tse_info.hpp>
+
 #include <objects/seq/Bioseq.hpp>
-#include <objmgr/impl/synonyms.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -54,36 +58,23 @@ BEGIN_SCOPE(objects)
 
 
 CBioseq_Handle::CBioseq_Handle(void)
-    : m_Scope(0)
 {
 }
 
 
 CBioseq_Handle::CBioseq_Handle(CScope* scope, const CSeqMatch_Info& match)
-    : m_Scope(scope),
-      m_Value(match.GetIdHandle()),
-      m_Bioseq_Info(match.GetBioseq_Info()),
-      m_TSE_Lock(&match.GetTSE_Info())
+    : m_Seq_id(match.GetIdHandle()),
+      m_Bioseq_Info(new CBioseq_ScopeInfo(scope, match.GetBioseq_Info()))
 {
-    _ASSERT(m_Scope);
-    _ASSERT(m_Value);
-    _ASSERT(m_Bioseq_Info);
-    _ASSERT(m_TSE_Lock);
 }
 
 
 CBioseq_Handle::CBioseq_Handle(CScope* scope,
                                const CSeq_id_Handle& id,
                                const CConstRef<CBioseq_Info>& bioseq)
-    : m_Scope(scope),
-      m_Value(id),
-      m_Bioseq_Info(bioseq),
-      m_TSE_Lock(&bioseq->GetTSE_Info())
+    : m_Seq_id(id),
+      m_Bioseq_Info(new CBioseq_ScopeInfo(scope, bioseq))
 {
-    _ASSERT(m_Scope);
-    _ASSERT(m_Value);
-    _ASSERT(m_Bioseq_Info);
-    _ASSERT(m_TSE_Lock);
 }
 
 
@@ -106,52 +97,52 @@ CDataSource& CBioseq_Handle::x_GetDataSource(void) const
 
 const CSeq_id* CBioseq_Handle::GetSeqId(void) const
 {
-    return m_Value.x_GetSeqId();
+    return GetSeq_id_Handle().GetSeqIdOrNull();
 }
 
 
 const CBioseq& CBioseq_Handle::GetBioseq(void) const
 {
-    return x_GetDataSource().GetBioseq(*this);
+    return x_GetDataSource().GetBioseq(x_GetBioseq_Info());
 }
 
 
 const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
 {
     // Can not use m_TSE->m_TSE since the handle may be unresolved yet
-    return x_GetDataSource().GetTSE(*this);
+    return x_GetDataSource().GetTSE(x_GetBioseq_Info().GetTSE_Info());
 }
 
 
 CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 {
-    return x_GetDataSource().GetBioseqCore(*this);
+    return x_GetDataSource().GetBioseqCore(x_GetBioseq_Info());
 }
 
 
 const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 {
-    return x_GetDataSource().GetSeqMap(*this);
+    return x_GetDataSource().GetSeqMap(x_GetBioseq_Info());
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         ENa_strand strand) const
 {
-    return CSeqVector(GetSeqMap(), *m_Scope, coding, strand);
+    return CSeqVector(GetSeqMap(), GetScope(), coding, strand);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(ENa_strand strand) const
 {
-    return CSeqVector(GetSeqMap(), *m_Scope, eCoding_Ncbi, strand);
+    return CSeqVector(GetSeqMap(), GetScope(), eCoding_Ncbi, strand);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         EVectorStrand strand) const
 {
-    return CSeqVector(GetSeqMap(), *m_Scope, coding,
+    return CSeqVector(GetSeqMap(), GetScope(), coding,
                       strand == eStrand_Minus?
                       eNa_strand_minus: eNa_strand_plus);
 }
@@ -159,9 +150,18 @@ CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorStrand strand) const
 {
-    return CSeqVector(GetSeqMap(), *m_Scope, eCoding_Ncbi,
+    return CSeqVector(GetSeqMap(), GetScope(), eCoding_Ncbi,
                       strand == eStrand_Minus?
                       eNa_strand_minus: eNa_strand_plus);
+}
+
+
+CConstRef<CSynonymsSet> CBioseq_Handle::x_GetSynonyms(void) const
+{
+    if ( !*this ) {
+        return CConstRef<CSynonymsSet>();
+    }
+    return GetScope().GetSynonyms(*this);
 }
 
 
@@ -169,8 +169,8 @@ bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
 {
     if ( !(*this) )
         return false;
+    CConstRef<CSynonymsSet> syns = x_GetSynonyms();
     CSeq_id_Handle h = CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
-    const CSynonymsSet* syns = m_Scope->x_GetSynonyms(m_Value);
     return syns->find(h) != syns->end();
 }
 
@@ -182,7 +182,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
 {
     if ( mode != eViewConstructed )
         strand = eNa_strand_unknown;
-    return CSeqVector(GetSeqMapByLocation(location, mode), *m_Scope,
+    return CSeqVector(GetSeqMapByLocation(location, mode), GetScope(),
                       coding, strand);
 }
 
@@ -193,7 +193,9 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 {
     CConstRef<CSeqMap> ret;
     if ( mode == eViewConstructed ) {
-        ret = CSeqMap::CreateSeqMapForSeq_loc(loc, m_Scope, &x_GetDataSource());
+        ret = CSeqMap::CreateSeqMapForSeq_loc(loc,
+                                              &GetScope(),
+                                              &x_GetDataSource());
     }
     else {
         // Parse the location
@@ -233,7 +235,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
                     last_from = CHandleRange::TRange::GetWholeTo();
                 }
             }
-            TSeqPos total_length = GetSeqMap().GetLength(m_Scope);
+            TSeqPos total_length = GetSeqMap().GetLength(&GetScope());
             if (last_from < total_length) {
                 mode_rlist.MergeRange(
                     CHandleRange::TRange(last_from, total_length-1),
@@ -248,13 +250,15 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
         ITERATE (CHandleRange, rit, mode_rlist) {
             CRef<CSeq_loc> seg_loc(new CSeq_loc);
             CRef<CSeq_id> id(new CSeq_id);
-            id->Assign(CSeq_id_Mapper::GetSeq_id_Mapper().GetSeq_id(m_Value));
+            id->Assign(*GetSeqId());
             seg_loc->SetInt().SetId(*id);
             seg_loc->SetInt().SetFrom(rit->first.GetFrom());
             seg_loc->SetInt().SetTo(rit->first.GetTo());
             view_loc->SetMix().Set().push_back(seg_loc);
         }
-        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, m_Scope, &x_GetDataSource());
+        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc,
+                                              &GetScope(),
+                                              &x_GetDataSource());
     }
     return ret;
 }
@@ -263,14 +267,14 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
 {
     _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().AttachAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetSeq_entry()), annot);
+    x_GetDataSource().AttachAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetBioseq_Info().GetSeq_entry()), annot);
 }
 
 
 void CBioseq_Handle::RemoveAnnot(CSeq_annot& annot)
 {
     _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().RemoveAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetSeq_entry()), annot);
+    x_GetDataSource().RemoveAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetBioseq_Info().GetSeq_entry()), annot);
 }
 
 
@@ -278,7 +282,7 @@ void CBioseq_Handle::ReplaceAnnot(CSeq_annot& old_annot,
                                   CSeq_annot& new_annot)
 {
     _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().ReplaceAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetSeq_entry()),
+    x_GetDataSource().ReplaceAnnot(const_cast<CSeq_entry&>(m_Bioseq_Info->GetBioseq_Info().GetSeq_entry()),
                                    old_annot, new_annot);
 }
 
@@ -307,10 +311,12 @@ static int s_Complexity[] = {
 };
 
 
-const CSeq_entry& CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
+const CSeq_entry&
+CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
 {
     if (cls == CBioseq_set::eClass_other) {
-        cls = CBioseq_set::EClass(sizeof(s_Complexity) - 1); // adjust 255 to the correct value
+        // adjust 255 to the correct value
+        cls = CBioseq_set::EClass(sizeof(s_Complexity) - 1);
     }
     TBioseqCore bs = GetBioseqCore();
     CSeq_entry* last = bs->GetParentEntry();
@@ -339,22 +345,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.40  2003/06/11 19:32:55  grichenk
-* Added molecule type caching to CSeqMap, simplified
-* coding and sequence type calculations in CSeqVector.
-*
-* Revision 1.39  2003/06/02 16:06:37  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
+* Revision 1.41  2003/06/19 18:23:45  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
 *
 * Revision 1.38  2003/05/20 15:44:37  vasilche
 * Fixed interaction of CDataSource and CDataLoader in multithreaded app.

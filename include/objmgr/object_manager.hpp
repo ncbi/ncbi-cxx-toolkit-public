@@ -35,144 +35,13 @@
 * File Description:
 *           Object manager manages data objects,
 *           provides them to Scopes when needed
-*/
-
-#include <objmgr/data_loader.hpp>
-#include <objmgr/impl/priority.hpp>
-
-#include <corelib/ncbiobj.hpp>
-#include <set>
-#include <map>
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
-
-
-class CDataSource;
-class CBioseq;
-class CSeq_id;
-class CScope;
-class CSeq_id_Mapper;
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CObjectManager
-
-
-class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
-{
-public:
-    CObjectManager(void);
-    virtual ~CObjectManager(void);
-
-public:
-
-// configuration functions
-// this data is always available to scopes -
-// by name - in case of data loader
-// or by address - in case of Seq_entry
-
-    // whether to put data loader or TSE to the default group or not
-    enum EIsDefault {
-        eDefault,
-        eNonDefault
-    };
-
-    // Register existing data loader.
-    // NOTE:  data loader must be created in the heap (ie using operator new).
-    void RegisterDataLoader(CDataLoader& loader,
-                            EIsDefault   is_default = eNonDefault);
-
-    // Register data loader factory.
-    // NOTE:  client has no control on when data loader is created or deleted.
-    void RegisterDataLoader(CDataLoaderFactory& factory,
-                            EIsDefault          is_default = eNonDefault);
-    // RegisterDataLoader(*new CSimpleDataLoaderFactory<TDataLoader>(name), ...
-
-    void RegisterDataLoader(TFACTORY_AUTOCREATE factory,
-                            const string& loader_name,
-                            EIsDefault   is_default = eNonDefault);
-
-
-    // Revoke previously registered data loader.
-    // Return FALSE if the loader is still in use (by some scope).
-    // Throw an exception if the loader is not registered with this ObjMgr.
-    bool RevokeDataLoader(CDataLoader& loader);
-    bool RevokeDataLoader(const string& loader_name);
-
-    // Register top-level seq_entry
-    void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
-
-    virtual CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
-
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-
-protected:
-
-// functions for scopes
-    void RegisterScope(CScope& scope);
-    void RevokeScope  (CScope& scope);
-
-    void AcquireDefaultDataSources(CPriorityNode& sources,
-                                   CPriorityNode::TPriority priority);
-
-    void AddDataLoader(
-        CPriorityNode& sources, const string& loader_name,
-        CPriorityNode::TPriority priority);
-    void AddDataLoader(
-        CPriorityNode& sources, CDataLoader& loader,
-        CPriorityNode::TPriority priority);
-    void AddTopLevelSeqEntry(
-        CPriorityNode& sources, CSeq_entry& top_entry,
-        CPriorityNode::TPriority priority);
-    void AddScope(
-        CPriorityNode& sources, CScope& scope,
-        CPriorityNode::TPriority priority);
-    void RemoveTopLevelSeqEntry(
-        CPriorityNode& sources, CSeq_entry& top_entry);
-
-    void ReleaseDataSources(CPriorityNode& sources);
-
-
-private:
-
-// these are for Object Manager itself
-// nobody else should use it
-    void x_RegisterTSE(CSeq_entry& top_entry);
-    bool x_RegisterLoader(CDataLoader& loader,EIsDefault   is_default = eNonDefault);
-    CDataLoader* x_GetLoaderByName(const string& loader_name) const;
-    
-    void x_AddDataSource(
-        CPriorityNode& sources, CDataSource* source,
-        CPriorityNode::TPriority priority) const;
-    void x_ReleaseDataSource(CDataSource* source);
-
-private:
-
-    set< CDataSource* > m_setDefaultSource;
-    map< string, CDataLoader* > m_mapNameToLoader;
-    map< CDataLoader* , CDataSource* > m_mapLoaderToSource;
-    map< CSeq_entry* , CDataSource* > m_mapEntryToSource;
-    set< CScope* > m_setScope;
-
-    friend class CScope;
-    friend class CDataSource; // To get id-mapper
-};
-
-
-END_SCOPE(objects)
-END_NCBI_SCOPE
-
-/* ===========================================================================
+*
+* ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.14  2003/06/02 16:01:36  dicuccio
-* Rearranged include/objects/ subtree.  This includes the following shifts:
-*     - include/objects/alnmgr --> include/objtools/alnmgr
-*     - include/objects/cddalignview --> include/objtools/cddalignview
-*     - include/objects/flat --> include/objtools/flat
-*     - include/objects/objmgr/ --> include/objmgr/
-*     - include/objects/util/ --> include/objmgr/util/
-*     - include/objects/validator --> include/objtools/validator
+* Revision 1.15  2003/06/19 18:23:44  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
 *
 * Revision 1.13  2003/04/09 16:04:29  grichenk
 * SDataSourceRec replaced with CPriorityNode
@@ -218,5 +87,162 @@ END_NCBI_SCOPE
 *
 * ===========================================================================
 */
+
+#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
+
+#include <objmgr/data_loader_factory.hpp>
+
+#include <set>
+#include <map>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+
+class CDataSource;
+class CDataLoader;
+class CDataLoaderFactory;
+class CSeq_entry;
+class CBioseq;
+class CSeq_id;
+class CScope;
+class CSeq_id_Mapper;
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CObjectManager
+
+
+class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
+{
+public:
+    CObjectManager(void);
+    virtual ~CObjectManager(void);
+
+public:
+    typedef CRef<CDataSource> TDataSourceLock;
+
+// configuration functions
+// this data is always available to scopes -
+// by name - in case of data loader
+// or by address - in case of Seq_entry
+
+    // whether to put data loader or TSE to the default group or not
+    enum EIsDefault {
+        eDefault,
+        eNonDefault
+    };
+
+    // Register existing data loader.
+    // NOTE:  data loader must be created in the heap (ie using operator new).
+    void RegisterDataLoader(CDataLoader& loader,
+                            EIsDefault   is_default = eNonDefault);
+
+    // Register data loader factory.
+    // NOTE:  client has no control on when data loader is created or deleted.
+    void RegisterDataLoader(CDataLoaderFactory& factory,
+                            EIsDefault          is_default = eNonDefault);
+    // RegisterDataLoader(*new CSimpleDataLoaderFactory<TDataLoader>(name), ...
+
+    void RegisterDataLoader(TFACTORY_AUTOCREATE factory,
+                            const string& loader_name,
+                            EIsDefault   is_default = eNonDefault);
+
+
+    // Revoke previously registered data loader.
+    // Return FALSE if the loader is still in use (by some scope).
+    // Throw an exception if the loader is not registered with this ObjMgr.
+    bool RevokeDataLoader(CDataLoader& loader);
+    bool RevokeDataLoader(const string& loader_name);
+
+    // Register top-level seq_entry
+    //void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
+
+    CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
+
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+protected:
+
+// functions for scopes
+    void RegisterScope(CScope& scope);
+    void RevokeScope  (CScope& scope);
+
+    typedef set<TDataSourceLock> TDataSourcesLock;
+
+    TDataSourceLock AcquireDataLoader(CDataLoader& loader);
+    TDataSourceLock AcquireDataLoader(const string& loader_name);
+    TDataSourceLock AcquireTopLevelSeqEntry(CSeq_entry& top_entry);
+    void AcquireDefaultDataSources(TDataSourcesLock& sources);
+    bool ReleaseDataSource(TDataSourceLock& data_source);
+
+#if 0
+    void AcquireDefaultDataSources(CPriorityNode& sources,
+                                   CPriorityNode::TPriority priority);
+
+    void AddDataLoader(
+        CPriorityNode& sources, const string& loader_name,
+        CPriorityNode::TPriority priority);
+    void AddDataLoader(
+        CPriorityNode& sources, CDataLoader& loader,
+        CPriorityNode::TPriority priority);
+    void AddTopLevelSeqEntry(
+        CPriorityNode& sources, CSeq_entry& top_entry,
+        CPriorityNode::TPriority priority);
+    void AddScope(
+        CPriorityNode& sources, CScope& scope,
+        CPriorityNode::TPriority priority);
+    void RemoveTopLevelSeqEntry(
+        CPriorityNode& sources, CSeq_entry& top_entry);
+
+    void ReleaseDataSources(CPriorityNode& sources);
+#endif
+
+private:
+
+// these are for Object Manager itself
+// nobody else should use it
+    TDataSourceLock x_RegisterTSE(CSeq_entry& top_entry);
+    TDataSourceLock x_RegisterLoader(CDataLoader& loader,
+                                     EIsDefault   is_default = eNonDefault,
+                                     bool         no_warning = false);
+    CDataLoader* x_GetLoaderByName(const string& loader_name) const;
+    TDataSourceLock x_FindDataSource(const CObject* key);
+    TDataSourceLock x_RevokeDataLoader(CDataLoader* loader);
+    
+    /*
+    void x_AddDataSource(
+        CPriorityNode& sources, CDataSource* source,
+        CPriorityNode::TPriority priority) const;
+    void x_ReleaseDataSource(CDataSource* source);
+    */
+
+private:
+
+    typedef set< TDataSourceLock >             TSetDefaultSource;
+    typedef map< string, CDataLoader* >        TMapNameToLoader;
+    typedef map< const CObject* , TDataSourceLock >  TMapToSource;
+    typedef set< CScope* >                     TSetScope;
+
+    TSetDefaultSource  m_setDefaultSource;
+    TMapNameToLoader   m_mapNameToLoader;
+    TMapToSource       m_mapToSource;
+    TSetScope          m_setScope;
+    
+    typedef CMutex      TRWLock;
+    typedef CMutexGuard TReadLockGuard;
+    typedef CMutexGuard TWriteLockGuard;
+
+    mutable TRWLock    m_OM_Lock;
+    mutable TRWLock    m_OM_ScopeLock;
+
+    friend class CScope;
+    friend class CDataSource; // To get id-mapper
+};
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 #endif // OBJECT_MANAGER__HPP

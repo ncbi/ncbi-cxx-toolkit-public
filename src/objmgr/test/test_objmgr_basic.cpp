@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/06/19 18:23:46  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
+*
 * Revision 1.16  2003/06/02 16:06:39  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
@@ -103,6 +108,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/data_loader.hpp>
 
 BEGIN_NCBI_SCOPE
 using namespace objects;

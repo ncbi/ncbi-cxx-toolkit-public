@@ -337,7 +337,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_Scope(bioseq.m_Scope)
+      m_Scope(&bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
 }
@@ -371,7 +371,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
-      m_Scope(bioseq.m_Scope)
+      m_Scope(&bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
 }
@@ -959,7 +959,7 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
             continue;
         }
 
-        const CSynonymsSet* syns = m_Scope->x_GetSynonyms(idit->first);
+        CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(idit->first);
         if ( !syns  &&  m_IdResolving == eFailUnresolved ) {
             THROW1_TRACE(runtime_error,
                          "CAnnotTypes_CI::x_Search -- "
@@ -1031,6 +1031,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2003/06/19 18:23:45  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
+*
 * Revision 1.70  2003/06/17 20:34:04  grichenk
 * Added flag to ignore sorting
 *

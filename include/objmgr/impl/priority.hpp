@@ -35,6 +35,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <set>
 #include <map>
 #include <memory>
@@ -43,14 +45,19 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CDataSource;
-
 class CPriorityIterator;
+class CTSE_Info;
+class CDataSource;
+class CDataLoader;
+class CDataSource_ScopeInfo;
 
-class CPriorityNode {
+class NCBI_XOBJMGR_EXPORT CPriorityNode
+{
 public:
+    typedef CDataSource_ScopeInfo TLeaf;
+
     CPriorityNode(void);
-    CPriorityNode(CDataSource& ds);
+    CPriorityNode(TLeaf& leaf);
 
     CPriorityNode(const CPriorityNode& node);
     CPriorityNode& operator=(const CPriorityNode& node);
@@ -60,20 +67,25 @@ public:
     typedef set<CPriorityNode> TPrioritySet;
     typedef map<TPriority, TPrioritySet> TPriorityMap;
 
-    bool operator==(const CPriorityNode& node) const;
     bool operator<(const CPriorityNode& node) const;
 
     // true if the node is a tree, not a leaf
     bool IsTree(void) const;
-    bool IsDataSource(void) const;
-    CDataSource& GetDataSource(void) const;
-    TPriorityMap& GetTree(void) const;
+    bool IsLeaf(void) const;
+
+    TLeaf& GetLeaf(void);
+    const TLeaf& GetLeaf(void) const;
+    TPriorityMap& GetTree(void);
+    const TPriorityMap& GetTree(void) const;
+
     // Set node type to "tree"
     TPriorityMap& SetTree(void);
-    void SetDataSource(CDataSource& ds);
+    // Set node type to "leaf"
+    void SetLeaf(TLeaf& leaf);
 
     bool Insert(const CPriorityNode& node, TPriority priority);
-    bool Erase(const CDataSource& ds);
+    bool Insert(CDataSource& ds, TPriority priority);
+    bool Erase(const TLeaf& leaf);
     bool IsEmpty(void) const;
     void Clear(void);
 
@@ -82,7 +94,7 @@ private:
     void x_CopySubTree(const CPriorityNode& node);
 
     auto_ptr<TPriorityMap> m_SubTree;
-    CDataSource* m_DataSource;
+    CRef<TLeaf>            m_Leaf;
 };
 
 
@@ -90,11 +102,11 @@ class CPriority_I
 {
 public:
     CPriority_I(void);
-    CPriority_I(const CPriorityNode& node);
+    CPriority_I(CPriorityNode& node);
 
     operator bool(void);
-    CDataSource& operator*(void);
-    CDataSource* operator->(void);
+    CPriorityNode::TLeaf& operator*(void);
+    CPriorityNode::TLeaf* operator->(void);
 
     CPriority_I& operator++(void);
 
@@ -111,7 +123,7 @@ private:
     TPriorityMap*           m_Map;
     TMap_I                  m_Map_I;
     TSet_I                  m_Set_I;
-    const CPriorityNode*    m_Node;
+    CPriorityNode*          m_Node;
     auto_ptr<CPriority_I>   m_Sub_I;
 };
 
@@ -119,65 +131,9 @@ private:
 // CPriorityNode inline methods
 
 inline
-CPriorityNode::CPriorityNode(void)
-    : m_SubTree(0), m_DataSource(0)
-{
-}
-
-inline
-CPriorityNode::CPriorityNode(CDataSource& ds)
-    : m_SubTree(0), m_DataSource(&ds)
-{
-}
-
-inline
-CPriorityNode::CPriorityNode(const CPriorityNode& node)
-    : m_SubTree(0), m_DataSource(node.m_DataSource)
-{
-    if ( node.IsTree() )
-        x_CopySubTree(node);
-}
-
-inline
-CPriorityNode& CPriorityNode::operator=(const CPriorityNode& node)
-{
-    if (this != &node) {
-        m_DataSource = node.m_DataSource;
-        if ( node.IsTree() ) {
-            x_CopySubTree(node);
-        }
-        else {
-            m_SubTree.reset();
-        }
-    }
-    return *this;
-}
-
-inline
-void CPriorityNode::x_CopySubTree(const CPriorityNode& node)
-{
-    m_SubTree.reset(new TPriorityMap);
-    ITERATE(TPriorityMap, mit, node.GetTree()) {
-        TPrioritySet& pset = (*m_SubTree)[mit->first];
-        ITERATE(TPrioritySet, sit, mit->second) {
-            pset.insert(*sit);
-        }
-    }
-}
-
-inline
-bool CPriorityNode::operator==(const CPriorityNode& node) const
-{
-    return m_SubTree.get() == node.m_SubTree.get()
-        &&  m_DataSource == node.m_DataSource;
-}
-
-inline
 bool CPriorityNode::operator<(const CPriorityNode& node) const
 {
-    return IsTree() ?
-        (m_SubTree.get() < node.m_SubTree.get()) :
-        (m_DataSource < node.m_DataSource);
+    return (m_SubTree.get() < node.m_SubTree.get()) || (m_Leaf < node.m_Leaf);
 }
 
 inline
@@ -187,123 +143,47 @@ bool CPriorityNode::IsTree(void) const
 }
 
 inline
-bool CPriorityNode::IsDataSource(void) const
+bool CPriorityNode::IsLeaf(void) const
 {
-    return m_DataSource != 0;
+    return m_Leaf;
 }
 
 inline
-CDataSource& CPriorityNode::GetDataSource(void) const
+CDataSource_ScopeInfo& CPriorityNode::GetLeaf(void)
 {
-    _ASSERT(m_DataSource);
-    return *m_DataSource;
+    _ASSERT(IsLeaf());
+    return *m_Leaf;
 }
 
 inline
-CPriorityNode::TPriorityMap& CPriorityNode::GetTree(void) const
+const CDataSource_ScopeInfo& CPriorityNode::GetLeaf(void) const
+{
+    _ASSERT(IsLeaf());
+    return *m_Leaf;
+}
+
+inline
+CPriorityNode::TPriorityMap& CPriorityNode::GetTree(void)
 {
     _ASSERT(IsTree());
     return *m_SubTree;
 }
 
 inline
-CPriorityNode::TPriorityMap& CPriorityNode::SetTree(void)
-{
-    m_DataSource = 0;
-    if (m_SubTree.get() == 0)
-        m_SubTree.reset(new TPriorityMap);
-    return *m_SubTree;
-}
-
-inline
-void CPriorityNode::SetDataSource(CDataSource& ds)
-{
-    m_SubTree.reset();
-    m_DataSource = &ds;
-}
-
-inline
-bool CPriorityNode::Insert(const CPriorityNode& node, TPriority priority)
+const CPriorityNode::TPriorityMap& CPriorityNode::GetTree(void) const
 {
     _ASSERT(IsTree());
-    return (*m_SubTree)[priority].insert(node).second;
-}
-
-inline
-bool CPriorityNode::Erase(const CDataSource& ds)
-{
-    if ( IsTree() ) {
-        TPrioritySet::iterator sit;
-        TPriorityMap::iterator mit;
-        for (mit = m_SubTree->begin(); mit != m_SubTree->end(); ++mit) {
-            for (sit = mit->second.begin(); sit != mit->second.end(); ++sit) {
-                if ( const_cast<CPriorityNode&>(*sit).Erase(ds) )
-                    break;
-            }
-            
-        }
-        if (mit != m_SubTree->end()  &&  sit != mit->second.end()) {
-            // Found the node
-            if ( sit->IsEmpty() ) {
-                mit->second.erase(sit);
-                if ( mit->second.empty() ) {
-                    m_SubTree->erase(mit);
-                }
-            }
-        }
-    }
-    else if (m_DataSource == &ds) {
-        m_DataSource = 0;
-        return true;
-    }
-    return false;
+    return *m_SubTree;
 }
 
 inline
 bool CPriorityNode::IsEmpty(void) const
 {
-    return m_DataSource == 0  &&
-        (m_SubTree.get() == 0  ||  m_SubTree->empty());
-}
-
-
-inline
-void CPriorityNode::Clear(void)
-{
-    m_DataSource = 0;
-    if (m_SubTree.get() != 0) {
-        m_SubTree->clear();
-    }
+    return !IsLeaf()  &&  (!IsTree()  ||  m_SubTree->empty());
 }
 
 
 // CPriority_I inline methods
-
-inline
-CPriority_I::CPriority_I(void)
-    : m_Map(0), m_Node(0), m_Sub_I(0)
-{
-}
-
-inline
-CPriority_I::CPriority_I(const CPriorityNode& node)
-    : m_Map(0), m_Node(0), m_Sub_I(0)
-{
-    if ( node.IsTree() ) {
-        m_Map = &node.GetTree();
-        m_Map_I = m_Map->begin();
-        if (m_Map_I != m_Map->end()) {
-            m_Set_I = m_Map_I->second.begin();
-            if (m_Set_I != m_Map_I->second.end()) {
-                m_Node = &(*m_Set_I);
-                m_Sub_I.reset(new CPriority_I(*m_Node));
-            }
-        }
-    }
-    else if ( node.IsDataSource() ) {
-        m_Node = &node;
-    }
-}
 
 inline
 CPriority_I::operator bool(void)
@@ -312,62 +192,20 @@ CPriority_I::operator bool(void)
 }
 
 inline
-CDataSource& CPriority_I::operator*(void)
+CPriorityNode::TLeaf& CPriority_I::operator*(void)
 {
-    _ASSERT(m_Node  &&  (m_Node->IsTree()  ||  m_Node->IsDataSource()));
+    _ASSERT(m_Node  &&  (m_Node->IsTree()  ||  m_Node->IsLeaf()));
     if (m_Sub_I.get() != 0) {
         return **m_Sub_I;
     }
-    return m_Node->GetDataSource();
+    return m_Node->GetLeaf();
 }
 
 inline
-CDataSource* CPriority_I::operator->(void)
+CPriorityNode::TLeaf* CPriority_I::operator->(void)
 {
     return &this->operator *();
 }
-
-inline
-CPriority_I& CPriority_I::operator++(void)
-{
-    _ASSERT(m_Node);
-    if (m_Sub_I.get() != 0) {
-        // Try to increment sub-iterator
-        ++(*m_Sub_I);
-        if ( *m_Sub_I )
-            return *this;
-        m_Sub_I.reset();
-    }
-    // Current node is not a tree or the tree has been iterated to its end
-    // Select next element in the set/map
-    if ( !m_Map ) {
-        // the node was of type "datasource", nothing else to iterate
-        m_Node = 0;
-        return *this;
-    }
-    ++m_Set_I;
-    while (m_Map_I != m_Map->end()) {
-        while (m_Set_I != m_Map_I->second.end()) {
-            m_Node = &(*m_Set_I);
-            m_Sub_I.reset(new CPriority_I(*m_Node));
-            if ( *m_Sub_I ) {
-                // found non-empty subtree
-                return *this;
-            }
-            m_Sub_I.reset();
-            ++m_Set_I;
-        }
-        ++m_Map_I;
-        if (m_Map_I != m_Map->end()) {
-            m_Set_I = m_Map_I->second.begin();
-        }
-    }
-    // No more valid nodes - reset the iterator
-    m_Node = 0;
-    m_Map = 0;
-    return *this;
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -375,6 +213,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/19 18:23:45  vasilche
+* Added several CXxx_ScopeInfo classes for CScope related information.
+* CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
+* Some fine tuning of locking in CScope.
+*
 * Revision 1.6  2003/05/14 18:39:26  grichenk
 * Simplified TSE caching and filtering in CScope, removed
 * some obsolete members and functions.

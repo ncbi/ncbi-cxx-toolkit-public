@@ -5,7 +5,7 @@
 
 REQUIRES = dbapi
 
-SRC = data_source bioseq_handle scope \
+SRC = data_source bioseq_handle scope scope_info mutex_pool priority \
       tse_info seq_entry_info bioseq_info seq_annot_info seqmatch_info \
       seq_map seq_map_ext seq_map_ci \
       align_ci annot_object annot_types_ci \
