@@ -32,12 +32,15 @@
 * =========================================================================== */
 
 #define NCBI_COUNTER_IMPLEMENTATION
-#include <corelib/ncbithr.hpp>
+#include <corelib/ncbiatomic.hpp>
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/10/01 12:02:51  ucko
+* Fix header for SwapPointers
+*
 * Revision 1.2  2003/06/27 17:28:08  ucko
 * +SwapPointers
 *
