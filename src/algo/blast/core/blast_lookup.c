@@ -871,7 +871,9 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;
    /* s_end points to the place right after the last full sequence byte */ 
-   s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
+   s_end = 
+      abs_start + (*end_offset + reduced_word_length)/COMPRESSION_RATIO;
+
    index = 0;
    
    /* Compute the first index */
