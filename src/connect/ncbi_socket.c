@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2001/12/03 21:35:32  vakatov
+ * + SOCK_IsServerSide()
+ * SOCK_Reconnect() - check against reconnect of server-side socket to its peer
+ *
  * Revision 6.37  2001/11/07 19:00:11  vakatov
  * LSOCK_Accept() -- minor adjustments
  *
@@ -379,6 +383,8 @@ typedef struct SOCK_tag {
     unsigned int id;        /* the internal ID (see also "s_ID_Counter") */
     size_t       n_read;
     size_t       n_written;
+
+    int/*bool*/  is_server_side; /* was created by LSOCK_Accept() */
 } SOCK_struct;
 
 
@@ -741,6 +747,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->log_data = eDefault;
     (*sock)->r_on_w   = eDefault;
     (*sock)->id = ++s_ID_Counter * 1000;
+    (*sock)->is_server_side = 1/*true*/;
     return eIO_Success;
 }
 
@@ -1312,6 +1319,16 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
         s_Close(sock);
     }
 
+    /* Special treatment for server-side socket */
+    if ( sock->is_server_side ) {
+        if (!host  ||  !port) {
+            CORE_LOG(eLOG_Error, "[SOCK_Reconnect]  Attempt to reconnect "
+                     "server-side socket as client one to its peer address");
+            return eIO_InvalidArg;
+        }
+        sock->is_server_side = 0/*false*/;
+    }
+
     /* Connect */
     sock->id++;
     return s_Connect(sock, host, port, timeout);
@@ -1601,6 +1618,12 @@ extern void SOCK_SetReadOnWriteAPI(ESwitch on_off)
 extern void SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
 {
     sock->r_on_w = on_off;
+}
+
+
+extern int/*bool*/ SOCK_IsServerSide(SOCK sock)
+{
+    return sock->is_server_side;
 }
 
 
