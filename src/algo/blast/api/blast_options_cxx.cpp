@@ -99,7 +99,6 @@ CBlastOption::SetBlastp()
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTP;
     m_LutOpts->alphabet_size = 25;
-    SetMatrixName("BLOSUM62");
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -117,6 +116,8 @@ CBlastOption::SetBlastp()
     m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
 
     // Scoring options
+    SetMatrixName("BLOSUM62");
+    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -155,7 +156,6 @@ CBlastOption::SetBlastn()
         m_LutOpts->scan_step = m_LutOpts->word_size - 8 + COMPRESSION_RATIO;
     else
         m_LutOpts->scan_step = m_LutOpts->word_size - 8 + 1;
-    SetMatrixName(NULL);
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_both;
@@ -174,6 +174,8 @@ CBlastOption::SetBlastn()
     m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
 
     // Scoring options
+    SetMatrixName(NULL);
+    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), false));
     m_ScoringOpts->penalty = BLAST_PENALTY;
     m_ScoringOpts->reward = BLAST_REWARD;
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_NUCL;
@@ -215,7 +217,6 @@ void CBlastOption::SetMegablast()
 
     m_LutOpts->mb_template_length = 0;
     m_LutOpts->mb_template_type = 0; // allowed types 0, 1, 2
-    SetMatrixName(NULL);
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_both;
@@ -235,6 +236,8 @@ void CBlastOption::SetMegablast()
     m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
 
     // Scoring options
+    SetMatrixName(NULL);
+    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), false));
     m_ScoringOpts->penalty = BLAST_PENALTY;
     m_ScoringOpts->reward = BLAST_REWARD;
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_MEGABLAST;
@@ -267,7 +270,6 @@ CBlastOption::SetBlastx()
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTX;
     m_LutOpts->alphabet_size = 25;
-    SetMatrixName("BLOSUM62");
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -285,6 +287,8 @@ CBlastOption::SetBlastx()
     m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
 
     // Scoring options
+    SetMatrixName("BLOSUM62");
+    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -316,7 +320,6 @@ CBlastOption::SetTblastn()
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
     m_LutOpts->alphabet_size = 25;
-    SetMatrixName("BLOSUM62");
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -334,6 +337,8 @@ CBlastOption::SetTblastn()
     m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
 
     // Scoring options
+    SetMatrixName("BLOSUM62");
+    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -360,9 +365,12 @@ CBlastOption::SetTblastn()
     // this is needed to avoid using MemFree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    m_DbOpts->gen_code_string = (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
-    copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
-    delete gc;
+    if (gc) {
+        m_DbOpts->gen_code_string = 
+            (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
+        copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
+        delete gc;
+    }
 }
 
 void 
@@ -373,7 +381,6 @@ CBlastOption::SetTblastx()
     m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
     m_LutOpts->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
     m_LutOpts->alphabet_size = 25;
-    SetMatrixName("BLOSUM62");
 
     // Query setup options
     m_QueryOpts->strand_option = eNa_strand_unknown;
@@ -391,6 +398,8 @@ CBlastOption::SetTblastx()
     m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
 
     // Scoring options
+    SetMatrixName("BLOSUM62");
+    SetMatrixPath(BLASTGetMatrixPath(GetMatrixName(), true));
     m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
     m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
     m_ScoringOpts->shift_pen = INT2_MAX;
@@ -416,9 +425,12 @@ CBlastOption::SetTblastx()
     // this is needed to avoid using MemFree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    m_DbOpts->gen_code_string = (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
-    copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
-    delete gc;
+    if (gc) {
+        m_DbOpts->gen_code_string = 
+            (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
+        copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
+        delete gc;
+    }
 }
 
 bool
@@ -472,6 +484,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/08/01 22:34:11  camacho
+* Added accessors/mutators/defaults for matrix_path
+*
 * Revision 1.6  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *

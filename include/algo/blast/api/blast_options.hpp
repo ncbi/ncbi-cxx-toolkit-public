@@ -78,9 +78,6 @@ public:
     void SetProgram(EProgram p);
 
     /******************* Lookup table options ***********************/
-    const char* GetMatrixName() const;
-    void SetMatrixName(const char* matrix);
-
     int GetWordThreshold() const;
     void SetWordThreshold(int w);
 
@@ -200,6 +197,12 @@ public:
     void SetNeighboringMode(bool m = true);
 
     /************************ Scoring options ************************/
+    const char* GetMatrixName() const;
+    void SetMatrixName(const char* matrix);
+
+    const char* GetMatrixPath() const;
+    void SetMatrixPath(const char* path);
+
     int GetMatchReward() const;
     void SetMatchReward(int r);
 
@@ -324,6 +327,12 @@ CBlastOption::SetProgram(CBlastOption::EProgram p)
     }
 }
 
+inline const char*
+CBlastOption::GetMatrixName() const
+{
+    return m_ScoringOpts->matrix;
+}
+
 inline void
 CBlastOption::SetMatrixName(const char* matrix)
 {
@@ -331,8 +340,23 @@ CBlastOption::SetMatrixName(const char* matrix)
         return;
 
     sfree(m_ScoringOpts->matrix);
-
     m_ScoringOpts->matrix = strdup(matrix);
+}
+
+inline const char* 
+CBlastOption::GetMatrixPath() const
+{
+    return m_ScoringOpts->matrix_path;
+}
+
+inline void 
+CBlastOption::SetMatrixPath(const char* path)
+{
+    if (!path)
+        return;
+
+    sfree(m_ScoringOpts->matrix_path);
+    m_ScoringOpts->matrix_path = strdup(path);
 }
 
 inline int
@@ -975,6 +999,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/01 22:34:11  camacho
+* Added accessors/mutators/defaults for matrix_path
+*
 * Revision 1.8  2003/07/31 19:45:33  camacho
 * Eliminate Ptr notation
 *
