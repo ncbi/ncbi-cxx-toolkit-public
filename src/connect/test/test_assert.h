@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/06/21 13:52:15  lebedev
+ * NCBI_OS_DARWIN: assert fix
+ *
  * Revision 6.17  2002/05/01 19:14:08  lavr
  * Changed: NCBI_COMPILER_MIPSPRO -> NCBI_OS_IRIX
  *
@@ -159,6 +162,13 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #ifdef NCBI_OS_OSF1
 #  ifdef   _ASSERT_H_
 #    undef _ASSERT_H_
+#  endif
+#endif
+
+/* ...and on Darwin (at least with GCC 3, but this never hurts) */
+#ifdef NCBI_OS_DARWIN
+#  ifdef   FIXINC_BROKEN_ASSERT_STDLIB_CHECK
+#    undef FIXINC_BROKEN_ASSERT_STDLIB_CHECK
 #  endif
 #endif
 
