@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.134  2002/05/16 18:46:04  thiessen
+* Mac fixes
+*
 * Revision 1.133  2002/04/26 12:42:07  thiessen
 * fix for wxWin 2.2
 *
@@ -573,7 +576,7 @@ IMPLEMENT_APP(Cn3D::Cn3DApp)
 
 #ifdef __WXMAC__
 // wxTextCtrl on Mac is just bad... don't even bother using it, causes weird errors
-#define CN3D_DONT_USE_MESSAGE_LOG
+//#define CN3D_DONT_USE_MESSAGE_LOG
 #endif
 
 BEGIN_SCOPE(Cn3D)
@@ -1369,6 +1372,11 @@ void Cn3DMainFrame::OnHelp(wxCommandEvent& event)
             wxConfig::Set(helpConfig);
             helpController->UseConfig(wxConfig::Get());
             path = wxString(GetProgramDir().c_str()) + "cn3d_commands.htb";
+#ifdef __WXMAC__
+            // convert to UNIX style pathname
+            for (size_t i=0; i<path.size(); i++) 
+                if (path[i] == ':') path[i] = '/';
+#endif
             if (!helpController->AddBook(path))
                 ERR_POST(Error << "Can't load help book at " << path.c_str());
         }

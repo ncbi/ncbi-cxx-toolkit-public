@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/16 18:46:10  thiessen
+* Mac fixes
+*
 * Revision 1.7  2002/04/27 16:32:15  thiessen
 * fix small leaks/bugs found by BoundsChecker
 *
@@ -132,7 +135,7 @@ private:
     StyleSettings *editedSettings;
     const StyleSettings originalSettings;
     const StructureSet *structureSet;
-    bool changedSinceApply, changedEver;
+    bool changedSinceApply, changedEver, ready;
 
     FloatingPointSpinCtrl *fpSpaceFill, *fpBallRadius, *fpStickRadius, *fpTubeRadius,
         *fpTubeWormRadius, *fpHelixRadius, *fpStrandWidth, *fpStrandThickness;
