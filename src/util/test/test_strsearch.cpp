@@ -147,6 +147,20 @@ void s_TEST_BoyerMooreMatcher(void)
     assert(pos == 0);
     }}
 
+    {{
+    CBoyerMooreMatcher matcher("drosophila", 
+                               NStr::eNocase, 
+                               CBoyerMooreMatcher::ePrefixMatch);
+    matcher.InitCommonDelimiters();
+    const char* str1 = 
+       "eukaryotic initiation factor 4E-I [Drosophila melanogaster]";
+
+    int    len = strlen(str1);
+    int    pos = matcher.Search(str1, 0, len);
+
+    assert(pos != -1);
+    }}
+
     cout << "======== String search test (Boyer-Moore) ok." << endl;
 }
 
@@ -179,7 +193,7 @@ void CStrSearchTest::Init(void)
 
 int CStrSearchTest::Run(void)
 {
-    cout << "Run BDB test" << endl << endl;
+    cout << "Run string search test" << endl << endl;
 
 
     s_TEST_BoyerMooreMatcher();
@@ -205,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/11 16:57:39  kuznets
+ * + test case
+ *
  * Revision 1.3  2004/03/05 15:46:30  kuznets
  * fixed compilation warnings on 64-bit
  *
