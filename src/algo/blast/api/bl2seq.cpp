@@ -286,7 +286,7 @@ CBl2Seq::x_Results2SeqAlign()
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
            size. */
-        ASSERT(seqalign.size() == retval.capacity());
+        ASSERT(seqalign.size() == m_tQueries.size());
 
         if (retval.size() == 0) {
             // First time around, just fill the empty vector with the 
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2004/01/02 18:53:27  camacho
+ * Fix assertion
+ *
  * Revision 1.38  2003/12/03 16:43:46  dondosha
  * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
  *
