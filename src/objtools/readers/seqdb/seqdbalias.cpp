@@ -165,9 +165,9 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
     string & first = namevec[0];
     
     for(i = 1; common && (i < namevec.size()); i++) {
-        string & cur = namevec[i];
+        // Reduce common prefix until match is found.
         
-        while(common && (first[common] != cur[common])) {
+        while(string(first, 0, common) != string(namevec[i], 0, common)) {
             --common;
         }
     }

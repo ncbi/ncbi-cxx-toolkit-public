@@ -121,10 +121,15 @@ string SeqDB_FindBlastDBPath(const string & dbname, char dbtype)
     const string & blastdb(env.Get("BLASTDB"));
     
     if (! blastdb.empty()) {
-        attempt = SeqDB_CombinePath(blastdb, dbname);
+        vector<string> roads;
+        NStr::Tokenize(blastdb, ":", roads, NStr::eMergeDelims);
         
-        if (s_SeqDB_DBExists(attempt, dbtype)) {
-            return attempt;
+        for(Uint4 i = 0; i < roads.size(); i++) {
+            attempt = SeqDB_CombinePath(roads[i], dbname);
+            
+            if (s_SeqDB_DBExists(attempt, dbtype)) {
+                return attempt;
+            }
         }
     }
     
