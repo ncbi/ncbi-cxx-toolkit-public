@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/12/08 19:06:24  vasilche
+* Fixed uninitialized variable.
+*
 * Revision 1.33  1999/12/03 21:42:13  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -309,7 +312,7 @@ const CDataType* CDataType::InheritFromType(void) const
         // have references to me
         const CDataType* namedParent = 0;
         const CDataType* unnamedParent = 0;
-        int unnamedParentCount;
+        int unnamedParentCount = 0;
         // try to find exactly one reference from named CHOICE
         iterate ( TReferences, ri, GetReferences() ) {
             const CReferenceDataType* ref = *ri;
@@ -396,7 +399,8 @@ void CDataType::GetRefCType(CTypeStrings& tType, CClassCode& code) const
     tType.SetClass(ns + "::" + ClassName());
 }
 
-void CDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
+void CDataType::GetFullCType(CTypeStrings& /*tType*/,
+                             CClassCode& /*code*/) const
 {
     THROW1_TRACE(runtime_error, LocationString() + ": C++ type undefined");
 }
