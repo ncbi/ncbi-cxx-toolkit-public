@@ -936,7 +936,11 @@ int get_server_info(
  	* If we still don't have the server and port then assume the user
  	* typed an actual server name.
  	*/
+#ifdef NCBI_FTDS
+ 	if (ip_addr[0]=='\0' && entry_num < 2) {
+#else
  	if (ip_addr[0]=='\0') {
+#endif
  		char  *tmp_port;
 
 		/*
