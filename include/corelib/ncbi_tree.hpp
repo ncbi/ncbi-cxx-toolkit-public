@@ -48,14 +48,14 @@ public:
     typedef TValue                     TValueType;
     typedef CTreeNWay<TValue>          TTreeType;
     typedef list<TTreeType*>           TNodeList;
-    typedef TNodeList::iterator        TNodeList_I;
-    typedef TNodeList::const_iterator  TNodeList_CI;
+    typedef typename TNodeList::iterator        TNodeList_I;
+    typedef typename TNodeList::const_iterator  TNodeList_CI;
 
     /// Tree node construction
     ///
     /// @param
     ///   value - node value
-    CTreeNWay(const TValue& value = V());
+    CTreeNWay(const TValue& value = TValue());
     ~CTreeNWay();
 
     CTreeNWay(const TTreeType& tree);
@@ -86,13 +86,13 @@ public:
     TNodeList_I SubNodeEnd() { return m_Nodes.end(); }
 
     /// Return node's value
-    const V& GetValue() const { return m_Value; }
+    const TValue& GetValue() const { return m_Value; }
 
     /// Return node's value
-    V& GetValue() { return m_Value; }
+    TValue& GetValue() { return m_Value; }
 
     /// Set value for the node
-    void SetValue(const V& value) { m_Value = value; }
+    void SetValue(const TValue& value) { m_Value = value; }
 
     /// Remove subnode of the current node. Must be direct subnode.
     ///
@@ -110,7 +110,7 @@ public:
     ///
     /// @param 
     ///    it  subnode iterator
-    void RemoveNode(nodelist_iterator it);
+    void RemoveNode(TNodeList_I it);
 
     /// Remove the subtree from the tree without freeing it
     ///
@@ -149,7 +149,7 @@ public:
     ///    val value reference
     ///
     /// @return pointer to new subtree
-    CTreeNWay<TValue>* AddNode(const V& val);
+    CTreeNWay<TValue>* AddNode(const TValue& val);
 
 
     /// Insert new subnode before the specified location in the subnode list
@@ -158,7 +158,7 @@ public:
     ///    it subnote iterator idicates the location of the new subtree
     /// @param 
     ///    subnode subtree pointer
-    void InsertNode(nodelist_iterator it, TTreeType* subnode);
+    void InsertNode(TNodeList_I it, TTreeType* subnode);
 
 protected:
     void CopyFrom(const TTreeType& tree);
@@ -189,14 +189,14 @@ template <class TId, class TValue> class CTreePairNWay
     : public CTreeNWay< CTreePair<TId, TValue> >
 {
 public:
-    typedef CTreeNWay< CTreePair<TId, TValue> >  TParent;
+    typedef CTreeNWay<CTreePair<TId, TValue> >   TParent;
     typedef CTreePair<TId, TValue>               TTreePair;
 
 public:
+
     CTreePairNWay(const TId& id = TId(), const TValue& value = V());
     CTreePairNWay(const CTreePairNWay<TId, TValue>& tr);
     CTreePairNWay<TId, TValue>& operator=(const CTreePairNWay<TId, TValue>& tr);
-
 };
 
 
@@ -214,7 +214,7 @@ CTreeNWay<TValue>::CTreeNWay(const TValue& value)
 template<class TValue>
 CTreeNWay<TValue>::~CTreeNWay()
 {
-    ITERATE(TNodeList, it, m_Nodes) {
+    ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
         delete node;
     }
@@ -222,6 +222,8 @@ CTreeNWay<TValue>::~CTreeNWay()
 
 template<class TValue>
 CTreeNWay<TValue>::CTreeNWay(const TTreeType& tree)
+: m_Parent(0),
+  m_Value(tree.m_Value)
 {
     CopyFrom(tree);
 }
@@ -229,7 +231,7 @@ CTreeNWay<TValue>::CTreeNWay(const TTreeType& tree)
 template<class TValue>
 CTreeNWay<TValue>& CTreeNWay<TValue>::operator=(const TTreeType& tree)
 {
-    ITERATE(TNodeList, it, m_Nodes) {
+    NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
         delete node;
     }
@@ -240,8 +242,8 @@ CTreeNWay<TValue>& CTreeNWay<TValue>::operator=(const TTreeType& tree)
 template<class TValue>
 void CTreeNWay<TValue>::CopyFrom(const TTreeType& tree)
 {
-    ITERATE(TNodeList, it, tree.m_Nodes) {
-        CTreeNWay* src_node = *it;
+    ITERATE(typename TNodeList, it, tree.m_Nodes) {
+        const CTreeNWay* src_node = *it;
         CTreeNWay* new_node = new CTreeNWay(*src_node);
         AddNode(new_node);
     }
@@ -250,7 +252,7 @@ void CTreeNWay<TValue>::CopyFrom(const TTreeType& tree)
 template<class TValue>
 void CTreeNWay<TValue>::RemoveNode(TTreeType* subnode)
 {
-    ITERATE(TNodeList, it, m_Nodes) {
+    NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
         if (node == subnode) {
             m_Nodes.erase(it);
@@ -270,9 +272,10 @@ void CTreeNWay<TValue>::RemoveNode(TNodeList_I it)
 
 
 template<class TValue>
-CTreeNWay<TValue>::TTreeType* CTreeNWay<TValue>::DetachNode(TTreeType* subnode)
+typename CTreeNWay<TValue>::TTreeType* 
+CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TTreeType* subnode)
 {
-    ITERATE(TNodeList, it, m_Nodes) {
+    NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
         if (node == subnode) {
             m_Nodes.erase(it);
@@ -285,7 +288,8 @@ CTreeNWay<TValue>::TTreeType* CTreeNWay<TValue>::DetachNode(TTreeType* subnode)
 
 
 template<class TValue>
-CTreeNWay<TValue>::TTreeType* CTreeNWay<TValue>::DetachNode(TNodeList_I it)
+typename CTreeNWay<TValue>::TTreeType* 
+CTreeNWay<TValue>::DetachNode(CTreeNWay<TValue>::TNodeList_I it)
 {
     CTreeNWay* node = *it;
     m_Nodes.erase(it);
@@ -296,21 +300,19 @@ CTreeNWay<TValue>::TTreeType* CTreeNWay<TValue>::DetachNode(TNodeList_I it)
 
 
 template<class TValue>
-void CTreeNWay<TValue>::AddNode(TTreeType* subnode)
+void CTreeNWay<TValue>::AddNode(CTreeNWay<TValue>::TTreeType* subnode)
 {
     m_Nodes.push_back(subnode);
     subnode->SetParent(this);
 }
 
-
 template<class TValue>
-CTreeNWay<TValue>* CTreeNWay<TValue>::AddNode(const V& val)
+CTreeNWay<TValue>* CTreeNWay<TValue>::AddNode(const TValue& val)
 {
     TTreeType* subnode = new TTreeType(val);
     AddNode(subnode);
     return subnode;
 }
-
 
 template<class TValue>
 void CTreeNWay<TValue>::InsertNode(TNodeList_I it,
@@ -327,19 +329,19 @@ void CTreeNWay<TValue>::InsertNode(TNodeList_I it,
 //
 
 
-template<TId, TValue>
+template<class TId, class TValue>
 CTreePairNWay<TId, TValue>::CTreePairNWay(const TId& id, const TValue& value)
-: TParent(TTreePair(id, value)
+: CTreePairNWay<TId, TValue>::TParent(TTreePair(id, value))
 {}
 
 
-template<TId, TValue>
+template<class TId, class TValue>
 CTreePairNWay<TId, TValue>::CTreePairNWay(const CTreePairNWay<TId, TValue>& tr)
 : TParent(tr)
 {}
 
 
-template<TId, TValue>
+template<class TId, class TValue>
 CTreePairNWay<TId, TValue>& 
 CTreePairNWay<TId, TValue>::operator=(const CTreePairNWay<TId, TValue>& tr)
 {
@@ -354,6 +356,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/09 19:01:39  kuznets
+ * Fixed compilation for GCC
+ *
  * Revision 1.6  2004/01/09 17:15:11  kuznets
  * Cosmetic cleanup
  *
