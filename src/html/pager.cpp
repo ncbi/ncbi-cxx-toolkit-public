@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/15 18:28:32  vasilche
+* Fixed coredump occured in jrbrowser.
+*
 * Revision 1.18  1999/09/13 15:37:39  golikov
 * Image sizes in page numbers added
 *
@@ -234,8 +237,9 @@ int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
             int pageSize = NStr::StringToInt(entry->second);
             if( pageSize > 0 ) {
                 //replace dispmax for current page size
-                TCgiEntriesI x = entries.find(KParam_PageSize);
-                x->second = entry->second;
+                entries.erase(KParam_PageSize);
+                entries.insert(TCgiEntries::value_type(KParam_PageSize,
+                                                       entry->second));
                 return pageSize;
             }	
             _TRACE( "Nonpositive page size in CPager::GetPageSize: " << pageSize );
