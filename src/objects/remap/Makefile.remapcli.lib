@@ -1,0 +1,4 @@
+ASN_DEP = remap
+
+LIB = remapcli
+SRC = remap_client remap_client_
