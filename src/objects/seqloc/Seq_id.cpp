@@ -692,7 +692,7 @@ const string CSeq_id::GetSeqIdString(bool with_version) const {
         case e_General:
             {
                 const CDbtag& dbt = GetGeneral();
-                string        s   = dbt.GetDb() + ':';
+                string        s /*   = dbt.GetDb() + ':' */;
                 if (dbt.GetTag().Which() == CObject_id::e_Id) {
                     return s + NStr::IntToString(dbt.GetTag().GetId());
                 } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
@@ -1417,6 +1417,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.71  2004/01/21 22:55:47  ucko
+ * GetSeqIdString: drop the database name from general IDs for
+ * compatibility with code that can't handle its presence.
+ *
  * Revision 6.70  2004/01/21 18:04:20  dicuccio
  * Added ctor to create a seq-id from a given dbtag, performing conversion to
  * specific seq-id types where possible
