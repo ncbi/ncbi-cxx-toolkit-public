@@ -691,7 +691,7 @@ CDB_Object* CTDS_BlobResult::GetItem(CDB_Object* item_buff)
 
     STATUS s;
     while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0) {
-        val->Append(m_Buff, sizeof(m_Buff));
+        val->Append(m_Buff, (s < sizeof(m_Buff))? (size_t)s : sizeof(m_Buff));
     }
 
     switch (s) {
@@ -1378,6 +1378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/18 14:59:31  soussov
+ * fixes bug in blob result
+ *
  * Revision 1.7  2002/06/13 21:10:18  soussov
  * freeTDS does not place doubles properly in memory, patch added
  *

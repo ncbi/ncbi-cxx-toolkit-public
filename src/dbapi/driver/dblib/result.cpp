@@ -697,7 +697,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
 
     STATUS s;
     while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
-        val->Append(m_Buff, sizeof(m_Buff));
+        val->Append(m_Buff, (s < sizeof(m_Buff))? (size_t)s : sizeof(m_Buff));
 
     switch (s) {
     case NO_MORE_ROWS:
@@ -1481,6 +1481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/07/18 14:59:10  soussov
+ * fixes bug in blob result
+ *
  * Revision 1.14  2002/07/02 16:05:50  soussov
  * splitting Sybase dblib and MS dblib
  *
