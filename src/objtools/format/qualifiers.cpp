@@ -53,10 +53,12 @@
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
 
 // in Ncbistdaa order
 static const char* kAANames[] = {
@@ -80,15 +82,41 @@ static const char* s_AAName(unsigned char aa, bool is_ascii)
 inline
 static bool s_IsNote(CFFContext& ctx, IFlatQVal::TFlags flags)
 {
-    return ((flags & IFlatQVal::fIsNote)
-            &&  ctx.GetMode() != CFlatFileGenerator::eMode_Dump);
+    return (flags & IFlatQVal::fIsNote);
+}
+
+
+static bool s_StringIsJustQuotes(const string& str)
+{
+    ITERATE(string, it, str) {
+        if ( (*it != '"')  ||  (*it != '\'') ) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
-    x_AddFQ(q, s_IsNote(ctx, flags) ? "note" : name, m_Value, m_Style);
+    if ( s_IsNote(ctx, flags) ) {
+        x_AddFQ(q, "note", m_Value, "\n", m_Style);
+    } else {
+        x_AddFQ(q, name, m_Value, m_Style);
+    }
+}
+
+
+void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
+                           CFFContext& ctx, IFlatQVal::TFlags flags) const
+{
+    if ( s_IsNote(ctx, flags) ) {
+        x_AddFQ(q, "note", JoinNoRedund(m_Value, "; "), "; ", m_Style);
+    } else {
+        x_AddFQ(q, name, JoinNoRedund(m_Value, "; "), m_Style);
+    }
 }
 
 
@@ -160,57 +188,78 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
                             CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
     const char* s = 0;
-    switch (m_Biomol) {
+    switch ( m_Biomol ) {
+    case CMolInfo::eBiomol_unknown:
+        switch ( m_Mol ) {
+        case CSeq_inst::eMol_dna:  s = "unassigned DNA"; break;
+        case CSeq_inst::eMol_rna:  s = "unassigned RNA"; break;
+        default:                   break;
+        }
+        break;
     case CMolInfo::eBiomol_genomic:
-        switch (m_Mol) {
+        switch ( m_Mol ) {
         case CSeq_inst::eMol_dna:  s = "genomic DNA";  break;
         case CSeq_inst::eMol_rna:  s = "genomic RNA";  break;
         default:                   break;
         }
         break;
-
     case CMolInfo::eBiomol_pre_RNA:  s = "pre-mRNA";  break;
     case CMolInfo::eBiomol_mRNA:     s = "mRNA";      break;
     case CMolInfo::eBiomol_rRNA:     s = "rRNA";      break;
     case CMolInfo::eBiomol_tRNA:     s = "tRNA";      break;
     case CMolInfo::eBiomol_snRNA:    s = "snRNA";     break;
     case CMolInfo::eBiomol_scRNA:    s = "scRNA";     break;
-
     case CMolInfo::eBiomol_other_genetic:
     case CMolInfo::eBiomol_other:
-        switch (m_Mol) {
+        switch ( m_Mol ) {
         case CSeq_inst::eMol_dna:  s = "other DNA";  break;
         case CSeq_inst::eMol_rna:  s = "other RNA";  break;
         default:                   break;
         }
         break;
-
     case CMolInfo::eBiomol_cRNA:
     case CMolInfo::eBiomol_transcribed_RNA:  s = "other RNA";  break;
     case CMolInfo::eBiomol_snoRNA:           s = "snoRNA";     break;
     }
 
-    if (s) {
-        x_AddFQ(q, name, s);
+    if ( s == 0 ) {
+        switch ( m_Mol ) {
+        case CSeq_inst::eMol_rna:
+            s = "unassigned RNA";
+            break;
+        case CSeq_inst::eMol_dna:
+        default:
+            s = "unassigned DNA";
+            break;
+        }
     }
+
+    x_AddFQ(q, name, s);
 }
 
 
 void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
-    switch (m_Value->GetSubtype()) {
-    case COrgMod::eSubtype_other:
-        x_AddFQ(q, "note", m_Value->GetSubname());
-        break;
+    string subname = m_Value->GetSubname();
+    if ( s_StringIsJustQuotes(subname) ) {
+        subname = kEmptyStr;
+    }
+    if ( subname.empty() ) {
+        return;
+    }
 
-    default:
-        if (s_IsNote(ctx, flags)) {
-            x_AddFQ(q, "note", name + ": " + m_Value->GetSubname());
+    if ( s_IsNote(ctx, flags) ) {
+        string delim;
+        if ( m_Value->GetSubtype() == COrgMod::eSubtype_other ) {
+            delim = "\n";
         } else {
-            x_AddFQ(q, name, m_Value->GetSubname());
+            delim = "; ";
         }
-        break;
+
+        x_AddFQ(q, "note", name + ": " + subname, delim);
+    } else {
+        x_AddFQ(q, name, subname);
     }
 }
 
@@ -297,25 +346,36 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
                               CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
-    switch (m_Value->GetSubtype()) {
-    case CSubSource::eSubtype_germline:
-    case CSubSource::eSubtype_rearranged:
-    case CSubSource::eSubtype_transgenic:
-    case CSubSource::eSubtype_environmental_sample:
-        x_AddFQ(q, name, kEmptyStr, CFlatQual::eEmpty);
-        break;
+    if ( !m_Value->CanGetName()  ||  m_Value->GetName().empty() ) {
+        return;
+    }
 
-    case CSubSource::eSubtype_other:
-        x_AddFQ(q, "note", m_Value->GetName());
-        break;
+    string subname = m_Value->GetName();
+    if ( s_StringIsJustQuotes(subname) ) {
+        subname = kEmptyStr;
+    }
 
-    default:
-        if (s_IsNote(ctx, flags)) {
-            x_AddFQ(q, "note", name + ": " + m_Value->GetName());
+    if ( s_IsNote(ctx, flags) ) {
+        string delim;
+        bool note = false;
+        if ( m_Value->GetSubtype() == CSubSource::eSubtype_other ) {
+            delim = "\n";
+            note = true;
         } else {
-            x_AddFQ(q, name, m_Value->GetName());
+            delim = "; ";
         }
-        break;
+
+        x_AddFQ(q, "note", note ? subname : name + ": " + subname, delim);
+    } else {
+        CSubSource::TSubtype subtype = m_Value->GetSubtype();
+        if ( subtype == CSubSource::eSubtype_germline            ||
+             subtype == CSubSource::eSubtype_rearranged          ||
+             subtype == CSubSource::eSubtype_transgenic          ||
+             subtype == CSubSource::eSubtype_environmental_sample ) {
+            x_AddFQ(q, name, kEmptyStr, CFlatQual::eEmpty);
+        } else {
+            x_AddFQ(q, name, subname);
+        }
     }
 }
 
@@ -343,6 +403,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:55:38  shomrat
+* changes in formatting of OrgMod and SubSource quals
+*
 * Revision 1.3  2004/01/14 16:18:07  shomrat
 * uncomment code
 *
