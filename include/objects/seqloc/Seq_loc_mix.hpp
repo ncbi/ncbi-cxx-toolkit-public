@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/08/23 22:33:49  vakatov
+ * + <memory>
+ *
  * Revision 1.4  2001/06/25 18:52:02  grichenk
  * Prohibited copy constructor and assignment operator
  *
@@ -60,6 +63,7 @@
 #include <objects/seqloc/Seq_loc_mix_.hpp>
 
 #include <util/rangemap.hpp>
+#include <memory>
 
 // generated classes
 
