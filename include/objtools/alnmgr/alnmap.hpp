@@ -136,14 +136,17 @@ public:
     // get number of
     TNumseg GetNumberOfInsertedSegmentsOnRight(TNumrow row, TNumseg seg) const;
     TNumseg GetNumberOfInsertedSegmentsOnLeft (TNumrow row, TNumseg seg) const;
-    TNumseg       GetSeg             (TSeqPos aln_pos)                  const;
-    TNumseg       GetRawSeg          (TNumrow row, TSeqPos seq_pos)     const;
-    TSignedSeqPos GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos)     const;
-    TSignedSeqPos GetSeqPosFromAlnPos(TNumrow for_row,
-                                      TSeqPos aln_pos)                  const;
-    TSignedSeqPos GetSeqPosFromSeqPos(TNumrow for_row,
-                                      TNumrow row, TSeqPos seq_pos)     const;
+
+    //Position mapping funcitons
+    TNumseg       GetSeg                 (TSeqPos aln_pos)              const;
+    TNumseg       GetRawSeg              (TNumrow row, TSeqPos seq_pos) const;
+    TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos) const;
+    TSignedSeqPos GetSeqPosFromAlnPos    (TNumrow for_row,
+                                          TSeqPos aln_pos)              const;
+    TSignedSeqPos GetSeqPosFromSeqPos    (TNumrow for_row,
+                                          TNumrow row, TSeqPos seq_pos) const;
     TSeqPos       GetBestSeqPosFromAlnPos(TNumrow for_row,
+                                          TSeqPos aln_pos)              const;
 
  
 
@@ -478,14 +481,17 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
 
+
+END_objects_SCOPE // namespace ncbi::objects::
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
-* Revision 1.8  2002/09/27 16:58:21  todorov
-* changed order of params for GetSeqPosFrom{Seq,Aln}Pos
+* Revision 1.10  2002/10/04 17:05:31  todorov
+* Added GetTypeAtAlnPos method
 *
 * Revision 1.8  2002/09/27 16:58:21  todorov
 * changed order of params for GetSeqPosFrom{Seq,Aln}Pos
