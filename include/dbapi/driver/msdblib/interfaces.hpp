@@ -77,7 +77,7 @@ const unsigned int kDBLibMaxNameLen = 128 + 4;
 //  CMSDBLibContext::
 //
 
-class CMSDBLibContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBLibContext : public I_DriverContext
 {
     friend class CDB_Connection;
 
@@ -150,7 +150,7 @@ private:
 //  CTL_Connection::
 //
 
-class CMSDBL_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_Connection : public I_Connection
 {
     friend class CMSDBLibContext;
     friend class CDB_Connection;
@@ -225,7 +225,7 @@ private:
 //  CMSDBL_LangCmd::
 //
 
-class CMSDBL_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_LangCmd : public I_LangCmd
 {
     friend class CMSDBL_Connection;
 protected:
@@ -268,7 +268,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class CMSDBL_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_RPCCmd : public I_RPCCmd
 {
     friend class CMSDBL_Connection;
 protected:
@@ -314,7 +314,7 @@ private:
 //  CMSDBL_CursorCmd::
 //
 
-class CMSDBL_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_CursorCmd : public I_CursorCmd
 {
     friend class CMSDBL_Connection;
 protected:
@@ -360,7 +360,7 @@ private:
 //  CMSDBL_BCPInCmd::
 //
 
-class CMSDBL_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_BCPInCmd : public I_BCPInCmd
 {
     friend class CMSDBL_Connection;
 protected:
@@ -395,7 +395,7 @@ private:
 //  CMSDBL_SendDataCmd::
 //
 
-class CMSDBL_SendDataCmd : public I_SendDataCmd {
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_SendDataCmd : public I_SendDataCmd {
     friend class CMSDBL_Connection;
 protected:
     CMSDBL_SendDataCmd(CMSDBL_Connection* con, DBPROCESS* cmd, size_t nof_bytes);
@@ -432,7 +432,7 @@ struct SDBL_ColDescr
 //  CMSDBL_RowResult::
 //
 
-class CMSDBL_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_RowResult : public I_Result
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
@@ -473,7 +473,7 @@ protected:
 //  CMSDBL_BlobResult::
 //
 
-class CMSDBL_BlobResult : public I_Result
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_BlobResult : public I_Result
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
@@ -516,7 +516,7 @@ protected:
 //  CMSDBL_CursorResult::
 //
 
-class CMSDBL_ParamResult : public CMSDBL_RowResult
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_ParamResult : public CMSDBL_RowResult
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
@@ -536,7 +536,7 @@ protected:
 };
 
 
-class CMSDBL_ComputeResult : public CMSDBL_RowResult
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_ComputeResult : public CMSDBL_RowResult
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
@@ -558,7 +558,7 @@ protected:
 };
 
 
-class CMSDBL_StatusResult : public I_Result
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_StatusResult : public I_Result
 {
     friend class CMSDBL_LangCmd;
     friend class CMSDBL_RPCCmd;
@@ -586,7 +586,7 @@ protected:
 };
 
 
-class CMSDBL_CursorResult : public I_Result
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_CursorResult : public I_Result
 {
     friend class CMSDBL_CursorCmd;
 protected:
@@ -620,7 +620,7 @@ protected:
 
 #define CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd01
 
-class CMSDBL_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_MSDBLIB_EXPORT CMSDBL_ITDescriptor : public I_ITDescriptor
 {
     friend class CMSDBL_RowResult;
     friend class CMSDBL_BlobResult;
@@ -653,9 +653,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/02/13 15:43:18  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_MSDBLIB_EXPORT for class definitions
+ *
  * Revision 1.1  2002/07/02 16:02:25  soussov
  * initial commit
- *
  *
  * ===========================================================================
  */
