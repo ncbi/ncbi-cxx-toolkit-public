@@ -1,0 +1,59 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+# Meta-makefile(to be configured into "Makefile")
+# This can be used to build/install/clean [PROJECT] makefiles
+# in current directory and in the below [SUBPROJ] directories.
+#
+# PROJECT = Makefile.p1 Makefile.p2
+# SUBPROJ = app sub_proj1 sub_proj2
+# include @builddir@/Makefile.meta
+#################################
+
+### One-level build -- [PROJECT] makefiles
+
+all:
+	@if ! -z "$(PROJ)" ; then \
+		for i in $(PROJ) ; do \
+			$(MAKE) -f $$i $(MFLAGS) all ; \
+		done ; \
+	fi
+
+install:
+	@if ! -z "$(PROJ)" ; then \
+		for i in $(PROJ) ; do \
+			$(MAKE) -f $$i $(MFLAGS) install ; \
+		done ; \
+	fi
+
+clean:
+	@if ! -z "$(PROJ)" ; then \
+		for i in $(PROJ) ; do \
+			$(MAKE) -f $$i $(MFLAGS) clean ; \
+		done ; \
+	fi
+
+
+### Recursive build -- in the [SUBPROJ] directories
+
+all_r: all
+	@if ! -z "$(SUBPROJ)" ; then \
+		for i in $(SUBPROJ) ; do \
+			( cd $$i ; $(MAKE) $(MFLAGS) all_r ) ; \
+		done ; \
+	fi
+
+install_r: install
+	@if ! -z "$(SUBPROJ)" ; then \
+		for i in $(SUBPROJ) ; do \
+			( cd $$i ; $(MAKE) $(MFLAGS) install_r ) ; \
+		done ; \
+	fi
+
+clean_r: clean
+	@if ! -z "$(SUBPROJ)" ; then \
+		for i in $(SUBPROJ) ; do \
+			( cd $$i ; $(MAKE) $(MFLAGS) clear_r ) ; \
+		done ; \
+	fi
