@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/07 17:25:31  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.8  2000/07/11 20:36:02  vasilche
 * Removed unnecessary generation of namespace references for enum members.
 * Removed obsolete methods.
@@ -99,8 +102,13 @@ class CNamespace;
 class CTypeStrings {
 public:
     CTypeStrings(void);
-    CTypeStrings(const CNamespace& ns);
     virtual ~CTypeStrings(void);
+
+    const string& GetModuleName(void) const
+        {
+            return m_ModuleName;
+        }
+    void SetModuleName(const string& name);
 
     // kind of C++ representation
     enum EKind {
@@ -146,6 +154,8 @@ public:
     virtual void GenerateTypeCode(CClassContext& ctx) const;
     virtual void GeneratePointerTypeCode(CClassContext& ctx) const;
 
+private:
+    string m_ModuleName;
 };
 
 END_NCBI_SCOPE

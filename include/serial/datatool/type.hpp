@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/07 17:25:30  vasilche
+* Added module names to CTypeInfo and CEnumeratedTypeValues
+*
 * Revision 1.6  2000/09/26 17:38:17  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -136,6 +139,10 @@ public:
             _ASSERT(m_Module != 0);
             return m_Module;
         }
+    bool HaveModuleName(void) const
+        {
+            return m_ParentType == 0;
+        }
 
     const string& GetSourceFileName(void) const;
     int GetSourceLine(void) const
@@ -167,6 +174,7 @@ public:
     virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
     virtual const CTypeInfo* GetRealTypeInfo(void);
     virtual CTypeInfo* CreateTypeInfo(void);
+    CTypeInfo* UpdateModuleName(CTypeInfo* typeInfo) const;
 
     static CNcbiOstream& NewLine(CNcbiOstream& out, int indent);
 
