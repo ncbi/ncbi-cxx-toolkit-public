@@ -1,0 +1,31 @@
+Dense-seg ::= {
+  dim 3,
+  numseg 1,
+  ids {
+    other {
+      accession "NC_000001",
+      version 8
+    },
+    other {
+      accession "NM_194315",
+      version 1
+    },
+    other {
+      accession "NM_058167",
+      version 2
+    }
+  },
+  starts {
+    1248968,
+    0,
+    0
+  },
+  lens {
+    189
+  },
+  strands {
+    plus,
+    minus,
+    minus
+  }
+}

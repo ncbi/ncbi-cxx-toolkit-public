@@ -84,6 +84,9 @@ test2 preserve_rows_set "-noobjmgr t -preserverows t -truncateoverlaps t" \
 test2 frames_with_overlaps "-noobjmgr t -truncateoverlaps t" "frames with truncation of overlaps"
 
 
+test2 refseq_swap "" "the common sequence (refseq) comes second"
+
+
 # clean
 rm $tmp_out
 
