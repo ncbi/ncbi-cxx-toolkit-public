@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/01/06 21:35:37  vasilche
+* Avoid use of Clone.
+* Fixed default CHTML_text width.
+*
 * Revision 1.12  1999/01/05 21:47:14  vasilche
 * Added 'current page' to CPageList.
 * CPageList doesn't display forward/backward if empty.
@@ -112,7 +116,7 @@ void CQueryBox::CreateSubNodes()
     table->SetCellSpacing(0)->SetCellPadding(5)->SetBgColor(m_BgColor)->SetWidth(m_Width);
     AppendChild(table);
 
-    table->InsertAt(0, 0, new CHTML_text(m_TermName, (int)(m_Width*0.075))); // todo: the width calculation
+    table->InsertAt(0, 0, new CHTML_text(m_TermName, m_Width? m_Width/12: 10)); // todo: the width calculation
     table->InsertAt(0, 0, new CHTMLText("&nbsp;"));
     table->InsertAt(0, 0, new CHTML_submit("Search"));
     table->InsertAt(0, 0, new CHTML_br);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/01/06 21:35:37  vasilche
+* Avoid use of Clone.
+* Fixed default CHTML_text width.
+*
 * Revision 1.3  1998/12/28 20:29:19  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -91,7 +95,7 @@ ReadyTagMapper::~ReadyTagMapper(void)
 
 CNCBINode* ReadyTagMapper::MapTag(CNCBINode*, const string&) const
 {
-    return m_Node->Clone();
+    return m_Node; // we decided to avoid use of cloning // ->Clone()
 }
 
 END_NCBI_SCOPE
