@@ -35,6 +35,7 @@
 #include <bdb/bdb_expt.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbi_bswap.hpp>
+#include <corelib/ncbistr.hpp>
 
 #include <string>
 #include <vector>
@@ -145,10 +146,10 @@ class CBDB_FC_Condition;
 ///
 /// Every relational table in BDB library consists of fields, supporting
 /// basic IBDB_Field interface
-class IBDB_Field
+class NCBI_BDB_EXPORT IBDB_Field
 {
 public:
-    virtual ~IBDB_Field() {}
+    virtual ~IBDB_Field();
 
     /// Comparison function. p1 and p2 are void pointers on field buffers.
     /// Positive if p1>p2, zero if p1==p2, negative if p1<p2.
@@ -174,7 +175,7 @@ public:
 /// BDB Data Field conversion interface definition.
 /// All interface functions by default throw "bad conversion" exception.
 
-class IBDB_FieldConvert
+class NCBI_BDB_EXPORT IBDB_FieldConvert
 {
 public:
     virtual ~IBDB_FieldConvert() {}
@@ -193,6 +194,8 @@ public:
         { BDB_THROW(eType, "Bad conversion"); }
 
     virtual string GetString() const = 0;
+
+    virtual void ToString(string& str) const = 0;
 };
 
 
@@ -246,12 +249,18 @@ public:
     /// Return symbolic name for the field
     const string& GetName() const;
 
-protected:
+    /// Get pointer to the data. NULL if not yet attached.
+    const void* GetBuffer() const;
+    /// Get pointer to the data. NULL if not yet attached.
+    void*       GetBuffer();
+
     /// Return maximum possible buffer length
     size_t GetBufferSize() const;
 
     /// Get length of the actual data
     size_t GetLength() const;
+
+protected:
 
     /// Field comparison function
     int CompareWith(const CBDB_Field& field) const;
@@ -300,11 +309,6 @@ protected:
     void  SetBufferSize(size_t size);
     /// Set CBDB_BufferManager -- which works as a memory manager for BDB fields.
     void  SetBufferManager(CBDB_BufferManager* owner);
-
-    /// Get pointer to the data. NULL if not yet attached.
-    const void* GetBuffer() const;
-    /// Get pointer to the data. NULL if not yet attached.
-    void*       GetBuffer();
 
     /// Copy buffer value from the external source
     void CopyFrom(const void* src_buf);
@@ -553,6 +557,12 @@ public:
         return NStr::IntToString(v);
     }
 
+    virtual void ToString(string& str) const
+    {
+        Int4 v = Get();
+        NStr::IntToString(str, v);
+    }
+
     operator Int4() const 
     { 
         return Get(); 
@@ -621,6 +631,12 @@ public:
     {
         Int4  v = Get();
         return NStr::IntToString(v);
+    }
+
+    virtual void ToString(string& str) const
+    {
+        Int4 v = Get();
+        NStr::IntToString(str, v);
     }
 
     operator Int2() const 
@@ -694,6 +710,12 @@ public:
         return NStr::UIntToString(v);
     }
 
+    virtual void ToString(string& str) const
+    {
+        Uint4 v = Get();
+        NStr::UIntToString(str, v);
+    }
+
     operator Uint4() const
     { 
         return Get(); 
@@ -765,6 +787,12 @@ public:
         return NStr::DoubleToString(v);
     }
 
+    virtual void ToString(string& str) const
+    {
+        double v = Get();
+        NStr::DoubleToString(str, v);
+    }
+
     operator float() const 
     { 
         return Get(); 
@@ -833,6 +861,12 @@ public:
     {
         double v = Get();
         return NStr::DoubleToString(v);
+    }
+
+    virtual void ToString(string& str) const
+    {
+        double v = Get();
+        NStr::DoubleToString(str, v);
     }
 
     operator double() const 
@@ -930,6 +964,10 @@ public:
     virtual void SetStdString(const string& str)
     {
         SetString(str.c_str());
+    }
+    virtual void ToString(string& str) const
+    {
+        str = (const char*) GetBuffer();
     }
 
     virtual BDB_CompareFunction GetCompareFunction(bool) const
@@ -1036,7 +1074,8 @@ public:
     virtual BDB_CompareFunction GetCompareFunction(bool) const
     {
         return BDB_LStringCompare;
-    } 
+    }
+    virtual void ToString(string& str) const;
 protected:
     const unsigned char* GetLString(const unsigned char* str, 
                                     bool                 check_legacy, 
@@ -1725,6 +1764,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/03/08 13:30:14  kuznets
+ * + ToString method
+ *
  * Revision 1.32  2004/02/12 19:54:00  kuznets
  * + CBDB_BufferManager::GetFieldIndex()
  *
