@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 20:42:58  vasilche
+* Fixed compilation under MS VS
+*
 * Revision 1.3  1999/06/07 19:59:37  vasilche
 * offset_t -> size_t
 *
@@ -150,7 +153,7 @@ private:
     TMembersByOffset m_MembersByOffset;
 };
 
-template<class CLASS, class PCLASS = void>
+template<class CLASS, class PCLASS = CLASS>
 class CClassInfo : public CClassInfoTmpl
 {
 public:

@@ -8,7 +8,7 @@ new CClassInfo(typeid(Class).name(), typeid(PClass).name(), Class::s_Create)
 
 #define ADD_CLASS_MEMBER(Class, Member) \
 AddMember(CMemberInfo(#Member, \
-                      offset_t(&static_cast<const Class*>(0)->Member), \
+                      size_t(&static_cast<const Class*>(0)->Member), \
                       GetTypeRef(static_cast<const Class*>(0)->Member)))
 #endif
 
@@ -17,7 +17,7 @@ new CClassInfo(typeid(CClass).name(), typeid(PClass).name(), Class::s_Create)
 
 #define ADD_CLASS_MEMBER(Member) \
 AddMember(CMemberInfo(#Member, \
-                      offset_t(&KObject->Member), \
+                      size_t(&KObject->Member), \
                       GetTypeRef(KObject->Member)))
 
 void CSerialObject::CreateTypeInfo(void)

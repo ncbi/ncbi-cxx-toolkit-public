@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/07 20:42:58  vasilche
+* Fixed compilation under MS VS
+*
 * Revision 1.4  1999/06/07 19:59:40  vasilche
 * offset_t -> size_t
 *
@@ -89,10 +92,10 @@ CClassInfoTmpl* CClassInfoTmpl::AddMember(const CMemberInfo& member)
     return this;
 }
 
-void CClassInfoTmpl::CollectObjects(COObjectList& list,
+void CClassInfoTmpl::CollectObjects(COObjectList& l,
                                     TConstObjectPtr object) const
 {
-    AddObject(list, object, this);
+    AddObject(l, object, this);
 }
 
 void CClassInfoTmpl::WriteData(CObjectOStream& out,

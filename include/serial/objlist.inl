@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/07 20:42:58  vasilche
+* Fixed compilation under MS VS
+*
 * Revision 1.1  1999/06/04 20:51:33  vasilche
 * First compilable version of serialization.
 *
@@ -40,10 +43,10 @@
 */
 
 inline
-COObjectInfo::COObjectInfo(const COObjectList& list,
+COObjectInfo::COObjectInfo(const COObjectList& l,
                            TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    list.SetObject(*this, object, typeInfo);
+    l.SetObject(*this, object, typeInfo);
 }
 
 #endif /* def OBJLIST__HPP  &&  ndef OBJLIST__INL */

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/07 20:42:58  vasilche
+* Fixed compilation under MS VS
+*
 * Revision 1.1  1999/06/04 20:51:48  vasilche
 * First compilable version of serialization.
 *
@@ -58,10 +61,10 @@ bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
     return GetObject(object) == 0;
 }
 
-void CPointerTypeInfo::CollectObjects(COObjectList& list,
+void CPointerTypeInfo::CollectObjects(COObjectList& l,
                                       TConstObjectPtr object) const
 {
-    AddObject(list, GetObject(object), GetRealDataTypeInfo(object));
+    AddObject(l, GetObject(object), GetRealDataTypeInfo(object));
 }
 
 void CPointerTypeInfo::WriteData(CObjectOStream& out,

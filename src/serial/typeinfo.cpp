@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 20:42:58  vasilche
+* Fixed compilation under MS VS
+*
 * Revision 1.3  1999/06/07 19:30:28  vasilche
 * More bug fixes
 *
@@ -147,12 +150,12 @@ CTypeInfo::TTypeInfo CTypeInfo::GetPointerTypeInfo(const type_info& id,
     return GetTypeInfoById(id);
 }
 
-void CTypeInfo::AddObject(COObjectList& list,
+void CTypeInfo::AddObject(COObjectList& l,
                           TConstObjectPtr object, TTypeInfo typeInfo)
 {
-    if ( list.Add(object, typeInfo) ) {
+    if ( l.Add(object, typeInfo) ) {
         // new object
-        typeInfo->CollectObjects(list, object);
+        typeInfo->CollectObjects(l, object);
     }
 }
 

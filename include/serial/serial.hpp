@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/07 20:42:58  vasilche
+* Fixed compilation under MS VS
+*
 * Revision 1.4  1999/06/07 19:30:20  vasilche
 * More bug fixes
 *
@@ -114,6 +117,15 @@ CTypeRef GetTypeRef(const string& object)
     return GetStdTypeRef(object);
 }
 
+// define type info getter for user classes
+template<typename CLASS>
+inline
+CTypeRef GetTypeRef(const CLASS& )
+{
+    NcbiCerr << "GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name() << endl;
+    return CTypeRef(typeid(CLASS), CLASS::CreateTypeInfo);
+}
+
 template<typename CLASS>
 inline
 CTypeRef GetTypeRef(const list<CLASS>& )
@@ -128,15 +140,6 @@ inline
 CStlClassInfoList<Data>::CStlClassInfoList(void)
     : CParent(typeid(TObjectType), GetTypeRef(*static_cast<const Data*>(0)))
 {
-}
-
-// define type info getter for user classes
-template<typename CLASS>
-inline
-CTypeRef GetTypeRef(const CLASS& )
-{
-    NcbiCerr << "GetTypeRef(const CLASS&) CLASS: " << typeid(CLASS).name() << endl;
-    return CTypeRef(typeid(CLASS), CLASS::CreateTypeInfo);
 }
 
 // define type info getter for pointers
