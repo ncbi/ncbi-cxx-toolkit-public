@@ -97,7 +97,7 @@ public:
     /// the feature table; otherwise ids are left unset.
     static CRef<objects::CSeq_annot>
     MakeCDSAnnot(const TLocVec& orfs, int genetic_code = 1,
-                 CRef<objects::CSeq_id> id = CRef<objects::CSeq_id>());
+                 objects::CSeq_id* id = NULL);
 };
 
 
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/10/15 20:26:28  dicuccio
+ * Changed API of MakeCDSAnnot() to take a seq-id pointer rather than a CRef<>
+ *
  * Revision 1.14  2003/09/04 19:27:53  jcherry
  * Made an ORF include the stop codon, and marked certain ORFs as
  * partial.  Put ability to construct a feature table into COrf.
