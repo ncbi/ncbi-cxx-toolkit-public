@@ -121,17 +121,17 @@ public:
     int GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
 
     enum EOrgRefStatus {
-	eStatus_Ok = 0,
-	eStatus_WrongTaxId      = 0x001,
-	eStatus_WrongGC         = 0x002,
-	eStatus_WrongMGC        = 0x004,
-	eStatus_NoOrgname       = 0x008,
-	eStatus_WrongTaxname    = 0x010,
-	eStatus_WrongLineage    = 0x020,
-	eStatus_WrongCommonName = 0x040,
-	eStatus_WrongOrgname    = 0x080,
-	eStatus_WrongDivision   = 0x100,
-	eStatus_WrongOrgmod     = 0x200
+        eStatus_Ok = 0,
+        eStatus_WrongTaxId      = 0x001,
+        eStatus_WrongGC         = 0x002,
+        eStatus_WrongMGC        = 0x004,
+        eStatus_NoOrgname       = 0x008,
+        eStatus_WrongTaxname    = 0x010,
+        eStatus_WrongLineage    = 0x020,
+        eStatus_WrongCommonName = 0x040,
+        eStatus_WrongOrgname    = 0x080,
+        eStatus_WrongDivision   = 0x100,
+        eStatus_WrongOrgmod     = 0x200
     };
     typedef unsigned TOrgRefStatus;
     //-----------------------------------------------
@@ -142,10 +142,10 @@ public:
     bool CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out );
 
     enum ESearch {
-	eSearch_Exact,
-	eSearch_TokenSet,
-	eSearch_WildCard, // shell-style wildcards, i.e. *,?,[]
-	eSearch_Phonetic
+        eSearch_Exact,
+        eSearch_TokenSet,
+        eSearch_WildCard, // shell-style wildcards, i.e. *,?,[]
+        eSearch_Phonetic
     };
     //----------------------------------------------
     // Get tax_id by organism name
@@ -338,11 +338,13 @@ public:
     { return LoadSubtreeEx( tax_id, -1, ppNode ); }
 
     enum EIteratorMode {
-	eIteratorMode_FullTree, // Iterator in this mode traverses all tree nodes
-	eIteratorMode_LeavesBranches, // traverses only leaves and branches
-	eIteratorMode_Best,           // leaves and branches plus nodes right below branches
-	eIteratorMode_Blast,          // nodes with non-empty blast names
-	eIteratorMode_Default = eIteratorMode_FullTree
+        eIteratorMode_FullTree,       // Iterator in this mode traverses all 
+                                      // tree nodes
+        eIteratorMode_LeavesBranches, // traverses only leaves and branches
+        eIteratorMode_Best,           // leaves and branches plus 
+                                      // nodes right below branches
+        eIteratorMode_Blast,          // nodes with non-empty blast names
+        eIteratorMode_Default = eIteratorMode_FullTree
     };
     //--------------------------------------------------
     // This function returnes an iterator of a cached partial tree positioned
@@ -369,11 +371,11 @@ public:
     //          false when call failed
     ///
     bool GetNodeProperty( int tax_id, const string& prop_name,
-			  bool& prop_val );
+                          bool& prop_val );
     bool GetNodeProperty( int tax_id, const string& prop_name,
-			  int& prop_val );
+                          int& prop_val );
     bool GetNodeProperty( int tax_id, const string& prop_name,
-			  string& prop_val );
+                          string& prop_val );
 
 private:
     friend class COrgRefCache;
@@ -403,12 +405,12 @@ private:
     void             SetLastError(const char* err_msg);
     void             PopulateReplaced(COrg_ref& org, COrgName::TMod& lMods);
     bool             LookupByOrgRef(const COrg_ref& inp_orgRef, int* pTaxid,
-				    COrgName::TMod& hitMods);
+                                    COrgName::TMod& hitMods);
     void             OrgRefAdjust( COrg_ref& inp_orgRef,
-				   const COrg_ref& db_orgRef,
-				   int tax_id );
+                                   const COrg_ref& db_orgRef,
+                                   int tax_id );
     bool             LoadSubtreeEx( int tax_id, int type,
-				    const ITaxon1Node** ppNode );
+                                    const ITaxon1Node** ppNode );
 };
 
 //-------------------------------------------------
@@ -531,10 +533,10 @@ public:
     virtual bool GoAncestor(const ITaxon1Node* pNode) = 0; 
 
     enum EAction {
-	eOk,   // Ok - Continue traversing
-	eStop, // Stop traversing, exit immediately
-	       // (the iterator will stay on node which returns this code)
-	eSkip  // Skip current node's subree and continue traversing
+        eOk,   // Ok - Continue traversing
+        eStop, // Stop traversing, exit immediately
+               // (the iterator will stay on node which returns this code)
+        eSkip  // Skip current node's subree and continue traversing
     };
 
     //-------------------------------------------------
@@ -548,11 +550,12 @@ public:
     // may differ but LevelBegin() always precedes LevelEnd().
     class I4Each {
     public:
-	virtual EAction LevelBegin(const ITaxon1Node* /*pParent*/)
-	{ return eOk; }
-	virtual EAction Execute(const ITaxon1Node* pNode)= 0;
-	virtual EAction LevelEnd(const ITaxon1Node* /*pParent*/)
-	{ return eOk; }
+        virtual ITreeIterator::EAction
+        LevelBegin(const ITaxon1Node* /*pParent*/)
+        { return eOk; }
+        virtual ITreeIterator::EAction Execute(const ITaxon1Node* pNode)= 0;
+        virtual ITreeIterator::EAction LevelEnd(const ITaxon1Node* /*pParent*/)
+        { return eOk; }
     };
     
     //--------------------------------------------------
@@ -635,7 +638,7 @@ public:
 
 private:
     EAction TraverseLevelByLevelInternal(I4Each& cb, unsigned levels,
-					 vector< const ITaxon1Node* >& skp);
+                                         vector< const ITaxon1Node* >& skp);
 };
 
 
@@ -646,6 +649,10 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.17  2004/06/30 16:06:43  jcherry
+// Qualified type in nested class with name of enclosing class
+// for SWIG.  Tabs->spaces.
+//
 // Revision 1.16  2004/04/01 14:14:01  lavr
 // Spell "occurred", "occurrence", and "occurring"
 //
