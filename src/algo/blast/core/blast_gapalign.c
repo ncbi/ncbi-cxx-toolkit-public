@@ -192,14 +192,14 @@ static Int4
 CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
 
 {
-   Int4 index1, index, increment;
+   Int4 index = 0;
+   Int4 increment = 1;
+   Int4 retval = 0;
 
    if (*hsp_array == NULL || hsp_count == 0)
       return 0;
    
    qsort(hsp_array, hsp_count, sizeof(BlastHSP*), query_offset_compare_hsps);
-   index=0;
-   increment=1;
    while (index < hsp_count-increment) {
       /* Check if both HSP's start on or end on the same digonal. */
       if (hsp_array[index+increment] == NULL) {
@@ -257,14 +257,13 @@ CheckGappedAlignmentsForOverlap(BlastHSP* *hsp_array, Int4 hsp_count)
 
    qsort(hsp_array,hsp_count,sizeof(BlastHSP*), null_compare_hsps);
    
-   index1 = 0;
    for (index=0; index<hsp_count; index++)
    {
       if (hsp_array[index] != NULL)
-         index1++;
+         retval++;
    }
 
-   return index1;
+   return retval;
 }
 
 /** Retrieve the state structure corresponding to a given length
