@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2001/10/25 14:18:30  thiessen
+* fix MeasureText problem (different red)
+*
 * Revision 1.101  2001/10/24 22:02:02  thiessen
 * fix wxGTK concurrent rendering problem
 *
@@ -1722,7 +1725,7 @@ bool Cn3DGLCanvas::MeasureText(const std::string& text, int *width, int *height,
     int x, y, top = image.GetHeight(), left = image.GetWidth(), bottom = -1, right = -1;
     for (x=0; x<image.GetWidth(); x++) {
         for (y=0; y<image.GetHeight(); y++) {
-            if (image.GetRed(x, y) == 255) { // character pixel here
+            if (image.GetRed(x, y) >= 128) { // character pixel here
                 if (y < top) top = y;
                 if (x < left) left = x;
                 if (y > bottom) bottom = y;
