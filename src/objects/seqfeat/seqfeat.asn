@@ -1,4 +1,4 @@
---$Revision: 6.7 $
+--$Revision: 6.8 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -278,7 +278,8 @@ Gene-ref ::= SEQUENCE {
     maploc VisibleString OPTIONAL ,       -- descriptive map location
     pseudo BOOLEAN DEFAULT FALSE ,        -- pseudogene
     db SET OF Dbtag OPTIONAL ,            -- ids in other dbases
-    syn SET OF VisibleString OPTIONAL }   -- synonyms for locus
+    syn SET OF VisibleString OPTIONAL ,   -- synonyms for locus
+    locus-tag VisibleString OPTIONAL }    -- systematic gene name (e.g., MI0001, ORF0069)
 
 END
 
