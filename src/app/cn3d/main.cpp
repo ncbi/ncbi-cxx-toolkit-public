@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/07/18 16:50:11  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.10  2000/07/17 22:37:17  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -154,6 +157,8 @@ bool Cn3DApp::OnInit(void)
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
     EVT_MENU(MID_EXIT,      Cn3DMainFrame::OnExit)
+    EVT_MENU(MID_CENTER,    Cn3DMainFrame::OnSetNewCenter)
+    EVT_MENU(MID_TRANSLATE, Cn3DMainFrame::OnTranslate)
     EVT_MENU(MID_ZOOM_IN,   Cn3DMainFrame::OnZoomIn)
     EVT_MENU(MID_ZOOM_OUT,  Cn3DMainFrame::OnZoomOut)
     EVT_MENU(MID_RESET,     Cn3DMainFrame::OnReset)
@@ -175,6 +180,8 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
 
     // View menu
     menu = new wxMenu;
+    menu->Append(MID_CENTER, "Set New &Center");
+    menu->Append(MID_TRANSLATE, "&Translate");
     menu->Append(MID_ZOOM_IN, "Zoom &In");
     menu->Append(MID_ZOOM_OUT, "Zoom &Out");
     menu->Append(MID_RESET, "&Reset");
@@ -214,6 +221,20 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
 	Destroy();
+}
+
+void Cn3DMainFrame::OnSetNewCenter(wxCommandEvent& event)
+{
+    glCanvas->SetCurrent();
+    glCanvas->structureSet->rotationCenter = Vector(19.791, 50.519, 58.057);
+    glCanvas->Refresh(FALSE);
+}
+
+void Cn3DMainFrame::OnTranslate(wxCommandEvent& event)
+{
+    glCanvas->SetCurrent();
+    glCanvas->renderer.ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
+    glCanvas->Refresh(FALSE);
 }
 
 void Cn3DMainFrame::OnZoomIn(wxCommandEvent& event)

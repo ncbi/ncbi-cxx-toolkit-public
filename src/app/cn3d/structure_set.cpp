@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/07/18 16:50:11  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.11  2000/07/18 00:06:00  thiessen
 * allow arbitrary rotation center
 *
@@ -170,12 +173,10 @@ void StructureSet::SetCenter(const Vector *given)
         if (i==0) center = siteSum / nAtoms;
     }
     TESTMSG("center: " << center << ", maxDistFromCenter " << maxDistFromCenter);
+    rotationCenter = center;
 
     // set camera to center on the selected point
-    if (renderer) {
-        renderer->ChangeView(OpenGLRenderer::eCenterCamera);
-        renderer->ResetCamera();
-    }
+    if (renderer) renderer->ResetCamera();
 }
 
 bool StructureSet::Draw(const StructureBase *data) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/18 16:50:11  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.7  2000/07/18 02:41:33  thiessen
 * fix bug in virtual bonds and altConfs
 *
@@ -92,6 +95,25 @@ static const GLfloat Color_MostlyOff[4] = { 0.05f, 0.05f, 0.05f, 1.0f };
 static const GLfloat Color_MostlyOn[4] = { 0.95f, 0.95f, 0.95f, 1.0f };
 static const GLfloat Color_On[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+// matrix conversion utility functions
+
+// convert from Matrix to GL-matrix ordering
+static void Matrix2GL(const Matrix& m, GLdouble *g)
+{
+    g[0]=m.m[0];  g[4]=m.m[1];  g[8]=m.m[2];   g[12]=m.m[3];
+    g[1]=m.m[4];  g[5]=m.m[5];  g[9]=m.m[6];   g[13]=m.m[7];
+    g[2]=m.m[8];  g[6]=m.m[9];  g[10]=m.m[10]; g[14]=m.m[11];
+    g[3]=m.m[12]; g[7]=m.m[13]; g[11]=m.m[14]; g[15]=m.m[15];
+}
+
+// convert from GL-matrix to Matrix ordering
+static void GL2Matrix(GLdouble *g, Matrix *m)
+{
+    m->m[0]=g[0];  m->m[1]=g[4];  m->m[2]=g[8];   m->m[3]=g[12];
+    m->m[4]=g[1];  m->m[5]=g[5];  m->m[6]=g[9];   m->m[7]=g[13];
+    m->m[8]=g[2];  m->m[9]=g[6];  m->m[10]=g[10]; m->m[11]=g[14];
+    m->m[12]=g[3]; m->m[13]=g[7]; m->m[14]=g[11]; m->m[15]=g[15];
+}
 
 // OpenGLRenderer methods - initialization and setup
 
@@ -171,7 +193,6 @@ void OpenGLRenderer::NewView(void) const
 void OpenGLRenderer::ResetCamera(void)
 {
     glLoadIdentity();
-    glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
     rotateSpeed = 0.5;
 
     // set up initial camera
@@ -187,22 +208,42 @@ void OpenGLRenderer::ResetCamera(void)
         cameraDistance = structureSet->maxDistFromCenter / sin(angle/2);
         cameraClipNear = cameraDistance - structureSet->maxDistFromCenter;
         cameraClipFar = cameraDistance + structureSet->maxDistFromCenter;
+        // move structureSet's center to origin
+        glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
+        structureSet->rotationCenter = structureSet->center;
+
     } else { // for logo
         cameraAngleRad = PI / 14;
         cameraDistance = 200;
         cameraClipNear = 0.5*cameraDistance;
         cameraClipFar = 1.5*cameraDistance;
     }
+
+    glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
     NewView();
 }
 
 void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int Y2)
 {
+    bool doTranslation = false;
+    Vector rotCenter;
+
+    // find out where rotation center is in current GL coordinates
+    if (structureSet && (control==eXYRotateHV || control==eZRotateH) && 
+        structureSet->rotationCenter != structureSet->center) {
+        Matrix m;
+        GL2Matrix(viewMatrix, &m);
+        rotCenter = structureSet->rotationCenter;
+        ApplyTransformation(&rotCenter, m);
+        doTranslation = true;
+    }
+
     glLoadIdentity();
 
-    // rotate relative to molecule center
-    if (structureSet && (control==eXYRotateHV || control==eZRotateH))
-        glTranslated(structureSet->center.x, structureSet->center.y, structureSet->center.z);
+    // rotate relative to rotationCenter
+    if (doTranslation) glTranslated(rotCenter.x, rotCenter.y, rotCenter.z);
+
+    double pixelSize = 0.05; // estimate for now, will do correctly later...
 
     switch (control) {
     case eXYRotateHV:
@@ -213,6 +254,7 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
         glRotated(rotateSpeed*dX, 0.0, 0.0, 1.0);
         break;
     case eXYTranslateHV:
+        glTranslated(dX*pixelSize, dY*pixelSize, 0.0);
         break;
     case eZoomHHVV:
         break;
@@ -230,8 +272,7 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
         break;
     }
 
-    if (structureSet && (control==eXYRotateHV || control==eZRotateH))
-        glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
+    if (doTranslation) glTranslated(-rotCenter.x, -rotCenter.y, -rotCenter.z);
 
     glMultMatrixd(viewMatrix);
     glGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
@@ -252,10 +293,6 @@ void OpenGLRenderer::Display(void) const
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-
-    // move structureSet's center to origin
-    if (structureSet)
-        glTranslated(-structureSet->center.x, -structureSet->center.y, -structureSet->center.z);
 
     glMultMatrixd(viewMatrix);
 
@@ -440,11 +477,7 @@ void OpenGLRenderer::PushMatrix(const Matrix* m) const
 {
     glPushMatrix();
     GLdouble g[16];
-    // convert from Matrix to GL-matrix ordering
-    g[0]=m->m[0];  g[4]=m->m[1];  g[8]=m->m[2];   g[12]=m->m[3];
-    g[1]=m->m[4];  g[5]=m->m[5];  g[9]=m->m[6];   g[13]=m->m[7];
-    g[2]=m->m[8];  g[6]=m->m[9];  g[10]=m->m[10]; g[14]=m->m[11];
-    g[3]=m->m[12]; g[7]=m->m[13]; g[11]=m->m[14]; g[15]=m->m[15];
+    Matrix2GL(*m, g);
     glMultMatrixd(g);
 }
 

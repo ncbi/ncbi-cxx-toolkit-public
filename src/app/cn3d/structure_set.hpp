@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/07/18 16:49:44  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.11  2000/07/18 00:05:45  thiessen
 * allow arbitrary rotation center
 *
@@ -102,6 +105,7 @@ public:
     OpenGLRenderer *renderer;
     Vector center; // center of structure (relative to Master's coordinates)
     double maxDistFromCenter; // max distance of any atom from center
+    Vector rotationCenter; // center of rotation (relative to Master's coordinates)
 
     // public methods
 

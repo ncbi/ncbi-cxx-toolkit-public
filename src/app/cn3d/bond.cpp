@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/18 16:50:10  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.5  2000/07/18 02:41:32  thiessen
 * fix bug in virtual bonds and altConfs
 *
@@ -140,7 +143,6 @@ bool Bond::Draw(const StructureBase *data) const
         set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, connectionColor, connectionColor);
 
     } else {
-        /*
         // color by object for now
         const StructureObject *object;
         GetParentOfType(&object);
@@ -150,7 +152,7 @@ bool Bond::Draw(const StructureBase *data) const
         else
             color = Vector(0,1,0); // green slaves
         set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, color, color);
-        */
+        /*
         const ChemicalGraph *graph;
         if (!GetParentOfType(&graph)) {
             ERR_POST(Warning << "Bond::Draw() - can't get ChemicalGraph parent");
@@ -162,6 +164,7 @@ bool Bond::Draw(const StructureBase *data) const
         info = graph->GetAtomInfo(atom2.mID, atom2.rID, atom2.aID);
         const Element *element2 = PeriodicTable.GetElement(info->atomicNumber);
         set->renderer->DrawStraightBond(a1->site, a2->site, 0.0, element1->color, element2->color);
+        */
     }
 
     return true;

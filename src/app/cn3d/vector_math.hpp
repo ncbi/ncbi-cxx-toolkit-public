@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/18 16:49:44  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.5  2000/07/17 22:36:46  thiessen
 * fix vector_math typo; correctly set initial view
 *
@@ -77,6 +80,14 @@ public:
     {
 		x=v.x; y=v.y; z=v.z;
         return *this;
+    }
+    friend bool operator == (const Vector& a, const Vector& b)
+    {
+        return (a.x==b.x && a.y==b.y && a.z==b.z);
+    }
+    friend bool operator != (const Vector& a, const Vector& b)
+    {
+        return (a.x!=b.x || a.y!=b.y || a.z!=b.z);
     }
     double operator [] (SIZE_TYPE i) const
     {

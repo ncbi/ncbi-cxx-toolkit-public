@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/18 16:49:43  thiessen
+* more friendly rotation center setting
+*
 * Revision 1.4  2000/07/12 23:28:27  thiessen
 * now draws basic CPK model
 *
@@ -112,12 +115,16 @@ public:
             MID_OPEN,
             MID_EXIT,
         MENU2_VIEW,
+            MID_CENTER,
+            MID_TRANSLATE,
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
     };
     void OnOpen(wxCommandEvent& event);
     void OnExit(wxCommandEvent& event);
+    void OnSetNewCenter(wxCommandEvent& event);
+    void OnTranslate(wxCommandEvent& event);
     void OnZoomIn(wxCommandEvent& event);
     void OnZoomOut(wxCommandEvent& event);
     void OnReset(wxCommandEvent& event);
