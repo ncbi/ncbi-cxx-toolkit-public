@@ -451,10 +451,13 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
 	/* hit last row; stop search */
 	return 0;
     }
-    if (S==NULL) 
+    if (S==NULL) {
        space = 0;
-    else 
-       refresh_mb_space(space);
+    } else if (!space) {
+       gamp->space = space = MBSpaceNew();
+    } else { 
+        refresh_mb_space(space);
+    }
     
     max_row = max_row_free + D_diff;
     for (k = 0; k < D_diff; k++)
