@@ -183,12 +183,16 @@ bool CBoyerMooreMatcher::IsWholeWord(const char*  text,
     if ( !m_WholeWord ) 
         return true;
 
+    // Words at the begging and end of text are also considered "whole"
+
     // check on the left  
-    bool left = (pos > 0) && m_WordDelimiters[text[pos - 1]];
+    bool left = (pos == 0) ||
+                ((pos > 0) && m_WordDelimiters[text[pos - 1]]);
 
     // check on the right
     pos += (unsigned int)m_PatLen;
-    bool right = (pos < text_len) && m_WordDelimiters[text[pos]];
+    bool right = (pos == text_len) || 
+                 ((pos < text_len) && m_WordDelimiters[text[pos]]);
 
     return (right && left);
 }
@@ -201,6 +205,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/03 14:37:14  kuznets
+* bug fix: CBoyerMooreMatcher::IsWholeWord added case when
+* the tested token is at the very beggining or end of the text.
+*
 * Revision 1.6  2004/03/02 20:00:45  kuznets
 * Changes in CBoyerMooreMatcher:
 *   - added work with memory areas
