@@ -353,86 +353,6 @@ NStr::StringToUInt(const string&  str,
     return (unsigned int) value;
 }
 
-/// @internal
-static Uint8 DataSizeConvertQual(const char*          qual, 
-                                 unsigned int         value,
-                                 NStr::ECheckEndPtr   check_endptr,
-                                 NStr::EConvErrAction on_error)
-{
-    if (!qual  ||  !*qual) {
-        return value;
-    }
-    Uint8 v = value;
-    if (toupper(*qual) == 'K') {
-        ++qual;
-        if ( (kMax_UI8 / 1024) < v ) {
-            goto throw_err;
-        }
-        v *= 1024;
-    } else if (toupper(*qual) == 'M') {
-        ++qual;
-        if ( (kMax_UI8 / 1024 / 1024) < v ) {
-            goto throw_err;
-        }
-        v *= 1024 * 1024;
-    } else if (toupper(*qual) == 'G') {
-        ++qual;
-        if ( (kMax_UI8 / 1024 / 1024 / 1024) < v ) {
-            goto throw_err;
-        }
-        v *= 1024 * 1024 * 1024;
-    } else {
-        if (check_endptr == NStr::eCheck_Need  && 
-            on_error == NStr::eConvErr_Throw) {
-throw_err:
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to data size value", 0);
-
-        } else {
-            return v;
-        }
-    }
-    if (*qual  &&  toupper(*qual) == 'B') {
-        ++qual;
-    }
-    if (check_endptr == NStr::eCheck_Need  && 
-        on_error == NStr::eConvErr_Throw   &&
-        *qual != 0) {
-        goto throw_err;
-    }
-    return v;
-}
-
-
-unsigned int
-NStr::StringToUInt_DataSize(const string&  str, 
-                            int            base          /* = 10 */,
-                            ECheckEndPtr   check_endptr  /* = eCheck_Need */,
-                            EConvErrAction on_error      /* = eConvErr_Throw */)
-{
-    errno = 0;
-    char* endptr = 0;
-    unsigned long value = strtoul(str.c_str(), &endptr, base);
-    if (errno  ||  value > kMax_UInt) {
-error:
-        if (on_error == eConvErr_Throw) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to unsigned int",
-                        s_DiffPtr(endptr, str.c_str()));
-        }
-        return 0;
-    }
-    // Some trailer (KB, MB) ?
-    if (endptr  &&  *endptr != '\0') { 
-        Uint8 v = DataSizeConvertQual(endptr, value, check_endptr, on_error);
-        if ( v > kMax_UInt ) {
-            goto error;
-        }
-        return (unsigned int) v;
-    }
-    return (unsigned int) value;
-}
-
 
 long NStr::StringToLong(const string&  str, 
                         int            base           /* = 10 */,
@@ -495,7 +415,203 @@ NStr::StringToDouble(const string&  str,
     }
     if (*(endptr - 1) != '.'  &&  *endptr == '.')
         endptr++;
+
     CHECK_ENDPTR("double");
+    return value;
+}
+
+
+/// @internal
+// Check that symbol 'ch' is good symbol for number with radix 'base'.
+bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
+{
+    if (!isalnum(ch)) {
+        return false;
+    }
+    // Corresponding numeric value of *endptr
+    int delta;
+    if (isdigit(ch)) {
+        delta = ch - '0';
+    } else {
+        ch = tolower(ch);
+        delta = ch - 'a' + 10;
+    }
+    if (value) {
+        *value = delta;
+    }
+    return delta < base;
+ }
+
+
+Int8 NStr::StringToInt8(const string&  str,
+                        int            base          /* = 10 */,
+                        ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                        EConvErrAction on_error      /* = eConvErr_Throw */)
+{
+    const char* endptr = str.c_str();
+
+    bool sign = false;
+    switch (*endptr) {
+    case '-':
+        sign = true;
+        /*FALLTHRU*/
+    case '+':
+        endptr++;
+        /*FALLTHRU*/
+    default:
+        break;
+    }
+
+    Int8 n = 0;
+    Int8 limdiv = kMax_I8 / base;
+    Int8 limoff = kMax_I8 % base;
+
+    while(*endptr) {
+        int ch = *endptr;
+        int delta;          // corresponding numeric value of 'ch'
+
+        // Do a sanity check
+        if (!s_IsGoodCharForRadix(ch, base, &delta)) {
+            break;
+        }
+        n *= base;
+
+        // Overflow checking
+        if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
+            if ( on_error == eConvErr_Throw ) {
+                NCBI_THROW2(CStringException, eConvert,
+                            "String cannot be converted to Int8 - overflow",
+                            s_DiffPtr(endptr, str.c_str()));
+            }
+            return 0;
+        }
+        n += delta;
+        endptr++;
+    }
+
+    CHECK_ENDPTR("UInt8");
+    return sign ? -n : n;
+}
+
+
+Uint8 NStr::StringToUInt8(const string&  str,
+                          int            base          /* = 10 */,
+                          ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                          EConvErrAction on_error      /* = eConvErr_Throw */)
+{
+    const char* endptr = str.c_str();
+    if (*endptr == '+') {
+        endptr++;
+    }
+    Uint8 n = 0;
+    Uint8 limdiv = kMax_UI8 / base;
+    int   limoff = int(kMax_UI8 % base);
+
+    while(*endptr) {
+        int ch = *endptr;
+        int delta;          // corresponding numeric value of 'ch'
+
+        // Do a sanity check
+        if (!s_IsGoodCharForRadix(ch, base, &delta)) {
+            break;
+        }
+        n *= base;
+
+        // Overflow checking
+        if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
+            if ( on_error == eConvErr_Throw ) {
+                NCBI_THROW2(CStringException, eConvert,
+                            "String cannot be converted to UInt8 - overflow",
+                            s_DiffPtr(endptr, str.c_str()));
+            }
+            return 0;
+        }
+        n += delta;
+        endptr++;
+    }
+
+    CHECK_ENDPTR("UInt8");
+    return n;
+}
+
+
+/// @internal
+static Uint8 s_DataSizeConvertQual(const char*&         qual, 
+                                   Uint8                value,
+                                   NStr::ECheckEndPtr   check_endptr,
+                                   NStr::EConvErrAction on_error)
+{
+    if (!qual  ||  !*qual) {
+        return value;
+    }
+    Uint8 v = value;
+    bool throw_err = false;
+
+    if (toupper(*qual) == 'K') {
+        ++qual;
+        if ( (kMax_UI8 / 1024) < v ) {
+            throw_err = true;
+        }
+        v *= 1024;
+    } else if (toupper(*qual) == 'M') {
+        ++qual;
+        if ( (kMax_UI8 / 1024 / 1024) < v ) {
+            throw_err = true;
+        }
+        v *= 1024 * 1024;
+    } else if (toupper(*qual) == 'G') {
+        ++qual;
+        if ( (kMax_UI8 / 1024 / 1024 / 1024) < v ) {
+            throw_err = true;
+        }
+        v *= 1024 * 1024 * 1024;
+    } else {
+        // error -- the "qual" point to the last unprocessed symbol
+        return 0;
+    }
+    if (throw_err) {
+        NCBI_THROW2(CStringException, eConvert,
+                    "String cannot be converted to Uint8 - overflow", 0);
+    }
+    if (*qual  &&  toupper(*qual) == 'B') {
+        ++qual;
+    }
+    return v;
+}
+
+
+Uint8
+NStr::StringToUInt8_DataSize(const string&  str, 
+                             int            base         /* = 10 */,
+                             ECheckEndPtr   check_endptr /* = eCheck_Need */,
+                             EConvErrAction on_error     /* =eConvErr_Throw*/)
+{
+    Uint8 value = StringToUInt8(str, base, eCheck_Skip, NStr::eConvErr_NoThrow);
+
+    // Find end ptr
+    const char* endptr = str.c_str();
+    if (*endptr == '+') {
+        endptr++;
+    }
+    while(*endptr) {
+        if (!s_IsGoodCharForRadix(*endptr, base)) {
+            break;
+        }
+        endptr++;
+    }
+    if (!endptr  ||  endptr == str.c_str()) {
+        if ( on_error == eConvErr_Throw ) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted to Uint8",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
+    }
+    // Some trailer (KB, MB, ...) ?
+    if (*endptr != '\0') { 
+        value = s_DataSizeConvertQual(endptr, value, check_endptr, on_error);
+    }
+    CHECK_ENDPTR("Uint8");
     return value;
 }
 
@@ -570,98 +686,6 @@ void NStr::Int8ToString(string& out_str, Int8 value, bool sign)
 }
 
 
-Int8 NStr::StringToInt8(const string& str)
-{
-    bool sign = false;
-    const char* pc = str.c_str();
-
-    switch (*pc) {
-    case '-':
-        sign = true;
-        /*FALLTHRU*/
-    case '+':
-        ++pc;
-        /*FALLTHRU*/
-    default:
-        break;
-    }
-
-    Int8 n = 0;
-    Int8 limdiv = kMax_I8 / 10;
-    Int8 limoff = kMax_I8 % 10;
-
-    do {
-        if (!isdigit(*pc)) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to Int8 - bad digit",
-                        s_DiffPtr(pc, str.c_str()));
-        }
-        int delta = *pc - '0';
-        n *= 10;
-
-        // Overflow checking
-        if (n > limdiv || (n == limdiv && delta > limoff)) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted Int8 - overflow",
-                        s_DiffPtr(pc, str.c_str()));
-        }
-
-        n += delta;
-    } while (*++pc);
-
-    return sign ? -n : n;
-}
-
-
-Uint8 NStr::StringToUInt8(const string& str, int base /* = 10  */)
-{
-    const char* pc = str.c_str();
-
-    if (*pc == '+')
-        ++pc;
- 
-    Uint8 n = 0;
-    Uint8 limdiv = kMax_UI8 / base;
-    int   limoff = int(kMax_UI8 % base);
-
-    do {
-        // Do a sanity check for common radixes
-        int ch = *pc; 
-        if (base == 10  &&  !isdigit(ch)              ||
-            base == 16  &&  !isxdigit(ch)             ||
-            base == 8   &&  (ch < '0'  ||  ch > '7')  ||
-            base == 2   &&  (ch < '0'  ||  ch > '1')) {
-
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to UInt8 - bad digit",
-                        s_DiffPtr(pc, str.c_str()));
-        }
-
-        int delta;  // corresponding numeric value of *pc
-        if (isdigit(ch)) {
-            delta = ch - '0';
-        } else {
-            ch = tolower(ch);
-            // Got to be 'a' to 'f' because of previous sanity checks
-            delta = ch - 'a' + 10;
-        }
-		
-        n *= base;
-
-        // Overflow checking
-        if (n > limdiv  ||  (n == limdiv  &&  delta > limoff)) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "String cannot be converted to UInt8 - overflow",
-                        s_DiffPtr(pc, str.c_str()));
-        }
-
-        n += delta;
-    } while (*++pc);
-
-    return n;
-}
-
-
 void NStr::UInt8ToString(string& out_str, Uint8 value)
 {
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 3 + 2;
@@ -680,13 +704,13 @@ void NStr::UInt8ToString(string& out_str, Uint8 value)
     out_str.append(pos, buffer + kBufSize - pos);
 }
 
+
 string NStr::UInt8ToString(Uint8 value)
 {
     string ret;
     NStr::UInt8ToString(ret, value);
     return ret;
 }
-
 
 
 // A maximal double precision used in the double to string conversion
@@ -1651,6 +1675,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.124  2004/10/15 12:01:12  ivanov
+ * Added 's_' to names of local static functions.
+ * Renamed NStr::StringToUInt_DataSize -> NStr::StringToUInt8_DataSize.
+ * Added additional arguments to NStr::StringTo[U]Int8 to select radix
+ * (now it is not fixed with predefined values, and can be arbitrary)
+ * and action on not permitted trailing symbols in the converting string.
+ *
  * Revision 1.123  2004/10/13 13:08:57  ivanov
  * NStr::DataSizeConvertQual() -- changed return type to Uint8.
  * NStr::StringToUInt_DataSize() -- added check on overflow.
