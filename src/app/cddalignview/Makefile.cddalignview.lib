@@ -1,0 +1,11 @@
+# $Id$
+
+SRC = \
+	cav_alignset \
+	cav_alndisplay \
+	cav_function \
+	cav_seqset
+
+LIB = xcddalignview
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
