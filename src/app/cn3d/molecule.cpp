@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/28 23:47:18  thiessen
+* functional denseg and dendiag alignment parsing
+*
 * Revision 1.11  2000/08/28 18:52:42  thiessen
 * start unpacking alignments
 *
@@ -69,6 +72,7 @@
 #include <objects/mmdb1/Residue_graph.hpp>
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
 
 #include "cn3d/molecule.hpp"
 #include "cn3d/residue.hpp"
@@ -79,13 +83,14 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-const int Molecule::NO_GI = -1;
+const int Molecule::NOT_SET = -1;
 
 Molecule::Molecule(StructureBase *parent,
     const CMolecule_graph& graph,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parent), type(eOther), gi(NO_GI), sequence(NULL)
+    StructureBase(parent), type(eOther), sequence(NULL),
+    gi(NOT_SET), pdbChain(NOT_SET)
 {
     // get ID and type
     id = graph.GetId().Get();
@@ -97,12 +102,19 @@ Molecule::Molecule(StructureBase *parent,
         }
     }
 
-    // get gi for biopolymer chains (for sequence alignment stuff)
+    // get Seq-id for biopolymer chains (for sequence alignment stuff)
     if (IsProtein() || IsNucleotide()) {
-        if (graph.IsSetSeq_id() && graph.GetSeq_id().IsGi()) {
-            gi = graph.GetSeq_id().GetGi();
-        } else {
-            ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get gi");
+        if (graph.IsSetSeq_id()) {
+            if (graph.GetSeq_id().IsGi())
+                gi = graph.GetSeq_id().GetGi();
+            if (graph.GetSeq_id().IsPdb()) {
+                pdbID = graph.GetSeq_id().GetPdb().GetMol().Get();
+                if (graph.GetSeq_id().GetPdb().IsSetChain())
+                    pdbChain = graph.GetSeq_id().GetPdb().GetChain();
+            }
+        }
+        if (gi == NOT_SET && pdbID.size() == 0) {
+            ERR_POST(Critical << "Molecule::Molecule() - biopolymer molecule, but can't get Seq-id");
             return;
         }
     }

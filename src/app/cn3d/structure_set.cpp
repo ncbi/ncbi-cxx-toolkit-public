@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/08/28 23:47:19  thiessen
+* functional denseg and dendiag alignment parsing
+*
 * Revision 1.23  2000/08/28 18:52:42  thiessen
 * start unpacking alignments
 *
@@ -174,12 +177,26 @@ void StructureSet::MatchSequencesToMolecules(void)
                 for (s=sequenceSet->sequences.begin(); s!=se; s++) {
                     if ((*s)->molecule != NULL) continue; // skip already-matched sequences
 
-                    if (m->second->gi != Molecule::NO_GI && m->second->gi == (*s)->gi) {
-                        if (VerifyMatch(*s, *o, m->second)) {
+                    if (SAME_SEQUENCE(m->second, *s)) {
 
+                        if (VerifyMatch(*s, *o, m->second)) {
                             (const_cast<Molecule*>(m->second))->sequence = *s;
                             (const_cast<Sequence*>(*s))->molecule = m->second;
                             nSequenceMatches++;
+
+                            // see if we can fill out gi/pdbID any further once we've verified the match
+                            if (m->second->gi == Molecule::NOT_SET && (*s)->gi != Molecule::NOT_SET)
+                                (const_cast<Molecule*>(m->second))->gi = (*s)->gi;
+                            if (m->second->pdbID.size() == 0 && (*s)->pdbID.size() > 0) {
+                                (const_cast<Molecule*>(m->second))->pdbID = (*s)->pdbID;
+                                (const_cast<Molecule*>(m->second))->pdbChain = (*s)->pdbChain;
+                            }
+                            if ((*s)->gi == Molecule::NOT_SET && m->second->gi != Molecule::NOT_SET)
+                                (const_cast<Sequence*>(*s))->gi = m->second->gi;
+                            if ((*s)->pdbID.size() == 0 && m->second->pdbID.size() > 0) {
+                                (const_cast<Sequence*>(*s))->pdbID = m->second->pdbID;
+                                (const_cast<Sequence*>(*s))->pdbChain = m->second->pdbChain;
+                            }
                             
                             // if this is the master structure of a mutiple-structure alignment,
                             // then we know that this molecule's sequence must also be the

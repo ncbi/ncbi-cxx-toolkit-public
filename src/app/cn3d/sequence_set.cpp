@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/28 23:47:19  thiessen
+* functional denseg and dendiag alignment parsing
+*
 * Revision 1.2  2000/08/28 18:52:42  thiessen
 * start unpacking alignments
 *
@@ -58,17 +61,11 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) :
-    StructureBase(parent), master(NULL)
+static void UnpackSeqSet(const CBioseq_set& set, SequenceSet *parent,
+    SequenceSet::SequenceList& seqlist)
 {
-    SeqEntryList::const_iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; s++) {
-        if (s->GetObject().IsSeq()) {
-            const Sequence *sequence = new Sequence(this, s->GetObject().GetSeq());
-            sequences.push_back(sequence);
-        } else { // Bioseq-set
-            CBioseq_set::TSeq_set::const_iterator q, qe = s->GetObject().GetSet().GetSeq_set().end();
-            for (q=s->GetObject().GetSet().GetSeq_set().begin(); q!=qe; q++) {
+            CBioseq_set::TSeq_set::const_iterator q, qe = set.GetSeq_set().end();
+            for (q=set.GetSeq_set().begin(); q!=qe; q++) {
                 if (q->GetObject().IsSeq()) {
 
                     // only store amino acid or nucleotide sequences
@@ -78,13 +75,25 @@ SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) 
                         q->GetObject().GetSeq().GetInst().GetMol() != CSeq_inst::eMol_na)
                         continue;
 
-                    const Sequence *sequence = new Sequence(this, q->GetObject().GetSeq());
-                    sequences.push_back(sequence);
-                } else {
-                    ERR_POST(Critical << "SequenceSet::SequenceSet() - can't handle nested Bioseq-set");
-                    return;
+                    const Sequence *sequence = new Sequence(parent, q->GetObject().GetSeq());
+                    seqlist.push_back(sequence);
+
+                } else { // Bioseq-set
+                    UnpackSeqSet(q->GetObject().GetSet(), parent, seqlist);
                 }
             }
+}
+
+SequenceSet::SequenceSet(StructureBase *parent, const SeqEntryList& seqEntries) :
+    StructureBase(parent), master(NULL)
+{
+    SeqEntryList::const_iterator s, se = seqEntries.end();
+    for (s=seqEntries.begin(); s!=se; s++) {
+        if (s->GetObject().IsSeq()) {
+            const Sequence *sequence = new Sequence(this, s->GetObject().GetSeq());
+            sequences.push_back(sequence);
+        } else { // Bioseq-set
+            UnpackSeqSet(s->GetObject().GetSet(), this, sequences);
         }
     }
 }
@@ -194,7 +203,7 @@ Sequence::Sequence(StructureBase *parent, const ncbi::objects::CBioseq& bioseq) 
                 << ": confused by sequence representation");
         return;
     }
-    TESTMSG(sequenceString);
+    //TESTMSG(sequenceString);
 }
 
 END_SCOPE(Cn3D)

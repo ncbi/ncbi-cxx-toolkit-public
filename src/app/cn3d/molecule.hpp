@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/28 23:46:46  thiessen
+* functional denseg and dendiag alignment parsing
+*
 * Revision 1.9  2000/08/28 18:52:18  thiessen
 * start unpacking alignments
 *
@@ -103,8 +106,9 @@ public:
         eOther = ncbi::objects::CBiomol_descr::eMolecule_type_other
     };
     eType type;
-    static const int NO_GI;
-    int id, gi;
+    static const int NOT_SET;
+    int id, gi, pdbChain;
+    std::string pdbID;
 
     typedef std::map < int, const Residue * > ResidueMap;
     ResidueMap residues;

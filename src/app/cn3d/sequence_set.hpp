@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/28 23:46:46  thiessen
+* functional denseg and dendiag alignment parsing
+*
 * Revision 1.2  2000/08/28 18:52:18  thiessen
 * start unpacking alignments
 *
@@ -88,5 +91,10 @@ public:
 };
 
 END_SCOPE(Cn3D)
+
+// check match by gi or pdbID
+#define SAME_SEQUENCE(a, b) \
+    (((a)->gi > 0 && (a)->gi == (b)->gi) || \
+     ((a)->pdbID.size() > 0 && (a)->pdbID == (b)->pdbID && (a)->pdbChain == (b)->pdbChain))
 
 #endif // CN3D_SEQUENCE_SET__HPP
