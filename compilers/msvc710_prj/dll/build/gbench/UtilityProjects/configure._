@@ -1,0 +1,1 @@
+%PTB_PATH%\project_tree_builder.exe -dll -logfile out.log -conffile %PTB_PATH%\..\..\..\project_tree_builder.ini %TREE_ROOT% scripts\projects\ncbi_gbench.lst %SLN_PATH%
