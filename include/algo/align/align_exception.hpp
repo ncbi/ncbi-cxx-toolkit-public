@@ -1,5 +1,5 @@
-#ifndef ALGO_EXCEPTION__HPP
-#define ALGO_EXCEPTION__HPP
+#ifndef ALGO_ALIGN_EXCEPTION__HPP
+#define ALGO_ALIGN_EXCEPTION__HPP
 
 /* $Id$
 * ===========================================================================
@@ -90,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/27 20:45:47  kapustin
+ * Minor code cleanup
+ *
  * Revision 1.9  2003/09/30 19:49:32  kapustin
  * Make use of standard score matrix interface
  *
@@ -118,4 +121,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* ALGO_EXCEPTION__HPP */
+#endif  /* ALGO_ALIGN_EXCEPTION__HPP */

@@ -416,13 +416,13 @@ void  CNWAligner::SetPattern(const vector<size_t>& guides)
         for(size_t i = 0; i < dim; i += 4) {
 
             if( guides[i] > guides[i+1] || guides[i+2] > guides[i+3] ) {
-                err = "Guides should be specified in plus strand";
-                break;
+                err = "Pattern hits must be specified in plus strand";
+		break;
             }
 
             if(i > 4) {
                 if(guides[i] <= guides[i-3] || guides[i+2] <= guides[i-2]){
-                    err = "Guides coordinates must be sorted";
+                    err = "Pattern hits coordinates must be sorted";
                     break;
                 }
             }
@@ -430,18 +430,18 @@ void  CNWAligner::SetPattern(const vector<size_t>& guides)
             size_t dim1 = guides[i + 1] - guides[i];
             size_t dim2 = guides[i + 3] - guides[i + 2];
             if( dim1 != dim2) {
-                err = "Guiding hits must have equal length on both sequences";
+                err = "Pattern hits must have equal length on both sequences";
                 break;
             }
 
             if(guides[i+1] >= m_SeqLen1 || guides[i+3] >= m_SeqLen2) {
-                err = "One or more guiding hits are out of range";
+                err = "One or several pattern hits are out of range";
                 break;
             }
         }
     }
     else {
-        err = "Guides vector must have a dimension multiple of four";
+        err = "Pattern must have a dimension multiple of four";
     }
 
     if(err) {
@@ -991,6 +991,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2003/10/27 20:47:35  kapustin
+ * Minor code cleanup
+ *
  * Revision 1.39  2003/10/14 18:44:46  kapustin
  * Adjust esf flags during pattern-guided alignment
  *
