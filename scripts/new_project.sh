@@ -32,6 +32,7 @@ EOF
 CreateMakefile_Lib()
 {
   makefile_name="$1"
+  proj_name="$2"
 
   cat > "$makefile_name" <<EOF
 # Makefile:  $makefile_name
@@ -52,8 +53,8 @@ LOCAL_CPPFLAGS = -I.
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (LIBRARY) TARGET HERE                  ### 
 
-LIBOBJ = 
-LIB    = 
+LIB    = $proj_name
+LIBOBJ = $proj_name
 # LOBJ =
 
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
@@ -78,6 +79,7 @@ EOF
 CreateMakefile_App()
 {
   makefile_name="$1"
+  proj_name="$2"
 
   cat > "$makefile_name" <<EOF
 # Makefile:  $makefile_name
@@ -96,11 +98,11 @@ LOCAL_CPPFLAGS = -I.
 
 #############################################################################
 ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
-APP = 
-OBJ = 
+APP = $proj_name
+OBJ = $proj_name
 
 # PRE_LIBS = $(NCBI_C_LIBPATH) .....
-LIB        = 
+LIB        = xncbi
 # LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
 
 # CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
@@ -154,8 +156,8 @@ fi
 
 
 case "$proj_type" in
-  lib )  CreateMakefile_Lib $makefile_name ;;
-  app )  CreateMakefile_App $makefile_name ;;
+  lib )  CreateMakefile_Lib $makefile_name $proj_name ;;
+  app )  CreateMakefile_App $makefile_name $proj_name ;;
   * )  Usage "Invalid project type:  \"$proj_type\"" ;;
 esac
 
