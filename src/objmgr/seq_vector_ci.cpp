@@ -55,7 +55,6 @@ BEGIN_SCOPE(objects)
 
 
 static const TSeqPos kCacheSize = 16384;
-static const TSeqPos kCacheKeep = kCacheSize / 16;
 
 
 template<class DstIter, class SrcCont>
@@ -179,11 +178,11 @@ void CSeqVector_CI::x_UpdateCache(void)
         x_Seg() = m_Vector->m_SeqMap->FindResolved(m_Position,
             m_Vector->m_Scope, m_Vector->m_Strand);
     }
-    _ASSERT(m_Position >= x_Seg().GetPosition());
-    _ASSERT(m_Position < x_Seg().GetEndPosition());
-
     TSeqPos segStart = x_Seg().GetPosition();
     TSeqPos segSize = x_Seg().GetLength();
+
+    _ASSERT(m_Position >= segStart);
+    _ASSERT(m_Position < segStart + segSize);
 
     if (segSize <= kCacheSize) {
         // Try to cache the whole segment
@@ -206,11 +205,11 @@ void CSeqVector_CI::x_UpdateCache(void)
         }
         else if ( m_Position >= x_CachePos() ) {
             // Moving forward, keep the end of the old cache
-            start = m_Position - kCacheKeep;
+            start = m_Position;
         }
         else {
             // Moving backward, keep the start of the old cache
-            start = m_Position - (kCacheSize - kCacheKeep);
+            start = m_Position - kCacheSize;
         }
 
         // Calculate new cache end, adjust start
@@ -233,49 +232,10 @@ void CSeqVector_CI::x_UpdateCache(void)
         }
         TSeqPos newCacheLen = newCacheEnd - newCachePos;
 
-        // Calculate and copy the overlap between old and new caches
-        TSeqPos copyCachePos = max(oldCachePos, newCachePos);
-        TSeqPos copyCacheEnd = min(oldCacheEnd, newCacheEnd);
-        if (copyCacheEnd > copyCachePos) {
-            // Copy some cache data
-            TSeqPos oldCopyPos = copyCachePos - oldCachePos;
-            TSeqPos newCopyPos = copyCachePos - newCachePos;
-            if ( newCopyPos != oldCopyPos ) {
-                TSeqPos oldCopyEnd = copyCacheEnd - oldCachePos;
-                if (newCacheLen != oldCacheLen) {
-                    TCacheData newCacheData(newCacheLen);
-                    copy(x_Cache() + oldCopyPos, x_Cache() + oldCopyEnd,
-                         &newCacheData[0] + newCopyPos);
-                    swap(x_CacheData(), newCacheData);
-                }
-                else {
-                    if (newCopyPos > oldCopyPos) {
-                        TSeqPos newCopyEnd = copyCacheEnd - newCachePos;
-                        copy_backward(x_Cache() + oldCopyPos, x_Cache() + oldCopyEnd,
-                             x_Cache() + newCopyEnd);
-                    }
-                    else {
-                        copy(x_Cache() + oldCopyPos, x_Cache() + oldCopyEnd,
-                             x_Cache() + newCopyPos);
-                    }
-                }
-            }
-            x_ResizeCache(newCacheLen);
-            x_CachePos() = newCachePos;
-            x_CacheLen() = newCacheLen;
-            if ( copyCachePos > newCachePos ) {
-                x_FillCache(newCachePos, copyCachePos);
-            }
-            if ( newCacheEnd > copyCacheEnd ) {
-                x_FillCache(copyCacheEnd, newCacheEnd);
-            }
-        }
-        else {
-            x_ResizeCache(newCacheLen);
-            x_CachePos() = newCachePos;
-            x_CacheLen() = newCacheLen;
-            x_FillCache(newCachePos, newCacheEnd);
-        }
+        x_ResizeCache(newCacheLen);
+        x_CachePos() = newCachePos;
+        x_CacheLen() = newCacheLen;
+        x_FillCache(newCachePos, newCacheEnd);
     }
 }
 
@@ -291,7 +251,7 @@ void CSeqVector_CI::x_FillCache(TSeqPos pos, TSeqPos end)
 
     TCache_I dst = x_Cache() + (pos - x_CachePos());
 
-    TSeqPos count = x_Seg().GetLength();
+    TSeqPos count = min(x_Seg().GetLength(), end - pos);
 
     _ASSERT(dst - x_Cache() + x_CachePos() + count <= end);
     switch ( x_Seg().GetType() ) {
@@ -453,6 +413,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/05/29 13:35:36  grichenk
+* Fixed bugs in buffer fill/copy procedures.
+*
 * Revision 1.1  2003/05/27 19:42:24  grichenk
 * Initial revision
 *
