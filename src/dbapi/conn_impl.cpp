@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.22  2004/02/27 14:37:33  kholodov
+* Modified: set collection replaced by list for listeners
+*
 * Revision 1.21  2003/11/18 17:00:01  kholodov
 * Added: CloneConnection() method
 *
@@ -316,7 +319,7 @@ IBulkInsert* CConnection::CreateBulkInsert(const string& table_name,
 void CConnection::Action(const CDbapiEvent& e)
 {
     _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName()
-           << "' from " << e.GetSource()->GetIdent());
+           << "' received from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
         if( m_connCounter > 1 ) {

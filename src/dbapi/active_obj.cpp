@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/02/27 14:37:32  kholodov
+* Modified: set collection replaced by list for listeners
+*
 * Revision 1.6  2002/12/16 18:56:50  kholodov
 * Fixed: memory leak in CStatement object
 *
@@ -73,7 +76,7 @@ CActiveObject::~CActiveObject()
 
 void CActiveObject::AddListener(CActiveObject* obj)
 {
-  m_listenerList.insert(obj);
+  m_listenerList.push_back(obj);
   _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
          << " inserted into "
          << GetIdent() << " " << (void*)this << " listener list");
@@ -81,13 +84,11 @@ void CActiveObject::AddListener(CActiveObject* obj)
 
 void CActiveObject::RemoveListener(CActiveObject* obj)
 {
-  TLList::iterator i = m_listenerList.find(obj);
-  if( i != m_listenerList.end() ) {
-    m_listenerList.erase(i);
+    m_listenerList.remove(obj);
     _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
            << " removed from "
            << GetIdent() << " " << (void*)this << " listener list");
-  }
+  
 }
 
 void CActiveObject::Notify(const CDbapiEvent& e)

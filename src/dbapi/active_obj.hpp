@@ -35,6 +35,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2004/02/27 14:37:32  kholodov
+* Modified: set collection replaced by list for listeners
+*
 * Revision 1.6  2002/12/16 18:56:50  kholodov
 * Fixed: memory leak in CStatement object
 *
@@ -60,7 +63,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include <set>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -132,7 +135,7 @@ public:
     string GetIdent() const;
 
 protected:
-    typedef set<CActiveObject*> TLList;
+    typedef list<CActiveObject*> TLList;
 
     void SetIdent(const string& name);
 
