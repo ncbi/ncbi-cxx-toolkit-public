@@ -243,7 +243,8 @@ CDllResolver::~CDllResolver()
     Unload();
 }
 
-bool CDllResolver::TryCandidate(const string& file_name)
+bool CDllResolver::TryCandidate(const string& file_name,
+                                const string& driver_name)
 {
     try {
         CDll* dll = new CDll(file_name, CDll::eLoadNow, CDll::eAutoUnload);
@@ -259,7 +260,13 @@ bool CDllResolver::TryCandidate(const string& file_name)
             if ( !dll_name.empty() ) {
                 string base_name;
                 CDirEntry::SplitPath(entry_point_name, 0, &base_name, 0);
-                NStr::Replace(*it, "${basename}", base_name, entry_point_name);
+                NStr::Replace(*it, 
+                              "${basename}", base_name, entry_point_name);
+
+                if (!driver_name.empty()) {
+                    NStr::Replace(*it, 
+                            "${driver}", driver_name, entry_point_name);
+                }
             }
             
             // Check for the BASE library name macro
@@ -370,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/08/09 15:36:56  kuznets
+ * CDllResolver added support of driver name
+ *
  * Revision 1.22  2004/08/06 11:26:07  ivanov
  * Extend CDllResolver to make it also look in "standard" places.
  * Added TExtraDllPath enum and AddExtraDllPath() method.

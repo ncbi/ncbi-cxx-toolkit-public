@@ -352,25 +352,31 @@ public:
     ///
     /// @param file_name
     ///   Name of the DLL file. Can be full name with path of the base name.
+    /// @param driver_name
+    ///   Name of the driver (substitute for ${driver} macro)
     /// @return
     ///   TRUE if DLL is succesfully loaded and entry point resolved.
     /// @sa
     ///   GetResolvedEntries
-    NCBI_XNCBI_EXPORT bool TryCandidate(const string& file_name);
+    NCBI_XNCBI_EXPORT 
+    bool TryCandidate(const string& file_name,
+                      const string& driver_name = kEmptyStr);
 
     /// Try to resolve file candidates.
     ///
     /// @param candidates
     ///    Container with file names to try.
+    /// @param driver_name
+    ///    Driver name
     /// @sa
     ///   GetResolvedEntries
     template<class TClass>
-    void Try(const TClass& candidates)
+    void Try(const TClass& candidates, const string& driver_name = kEmptyStr)
     {
         typename TClass::const_iterator it = candidates.begin();
         typename TClass::const_iterator it_end = candidates.end();
         for (; it != it_end; ++it) {
-            TryCandidate(*it);
+            TryCandidate(*it, driver_name);
         }
     }
 
@@ -412,7 +418,8 @@ public:
     ///   GetResolvedEntries, AddExtraDllPath
     template<class TClass1, class TClass2>
     void FindCandidates(const TClass1& paths, const TClass2& masks,
-                        TExtraDllPath extra_path = fDefaultDllPath)
+                        TExtraDllPath extra_path = fDefaultDllPath,
+                        const string& driver_name = kEmptyStr)
     {
         // search in the explicitly specified paths
         vector<string> x_path(paths);
@@ -433,9 +440,9 @@ public:
                 x_path_unique.push_back(CDir::DeleteTrailingPathSeparator(*it));
             }
         }
- ITERATE(vector<string>, it, x_path_unique) {
-        cout << *it << endl;
- }
+        ITERATE(vector<string>, it, x_path_unique) {
+                cout << *it << endl;
+        }
 
         // find files
         vector<string> candidates;
@@ -444,7 +451,7 @@ public:
                   masks.begin(), masks.end(),
                   fFF_File);
         // try to resolve entry points in the found DLLs
-        Try(candidates);
+        Try(candidates, driver_name);
     }
 
     /// Get all resolved entry points.
@@ -483,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/08/09 15:36:44  kuznets
+ * CDllResolver added support of driver name
+ *
  * Revision 1.24  2004/08/08 15:36:39  jcherry
  * Fixed CDllResolver::EExtraDllPath
  *
