@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2001/12/04 16:14:45  thiessen
+* add frame icon
+*
 * Revision 1.106  2001/11/27 16:26:07  thiessen
 * major update to data management system
 *
@@ -453,6 +456,11 @@ USING_SCOPE(objects);
 // `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3D::Cn3DApp)
 
+// the application icon (under Windows it is in resources)
+#if defined(__WXGTK__) || defined(__WXMAC__)
+    #include "cn3d/cn3d.xpm"
+#endif
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -867,6 +875,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     GlobalMessenger()->AddStructureWindow(this);
     timer.SetOwner(this, MID_ANIMATE);
     SetSizeHints(150, 150); // min size
+    SetIcon(wxICON(cn3d));
 
     // File menu
     menuBar = new wxMenuBar;
