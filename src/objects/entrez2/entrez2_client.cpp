@@ -47,6 +47,7 @@
 #include <objects/entrez2/Entrez2_id.hpp>
 #include <objects/entrez2/Entrez2_get_links.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
+#include <objects/entrez2/Entrez2_limits.hpp>
 
 #include <objects/entrez2/Entrez2_boolean_element.hpp>
 #include <objects/entrez2/Entrez2_boolean_exp.hpp>
@@ -143,7 +144,8 @@ CEntrez2Client::GetNeighborCounts(int query_uid,
 
 /// Query a db with a string, returning uids as integers
 void CEntrez2Client::Query(const string& query, const string& db,
-                           vector<int>& result_uids)
+                           vector<int>& result_uids,
+                           size_t start, size_t count)
 {
     CRef<CEntrez2_boolean_element> bel(new CEntrez2_boolean_element);
     bel->SetStr(query);
@@ -151,6 +153,14 @@ void CEntrez2Client::Query(const string& query, const string& db,
     CEntrez2_boolean_exp bexp;
     bexp.SetDb().Set(db);
     bexp.SetExp().push_back(bel);
+
+    // set some limits
+    if (start > 0) {
+        bexp.SetLimits().SetOffset_UIDs(start);
+    }
+    if (count > 0) {
+        bexp.SetLimits().SetMax_UIDs(count);
+    }
 
     CEntrez2_eval_boolean req;
     req.SetReturn_UIDs(true);
@@ -204,6 +214,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/06/16 12:02:43  dicuccio
+* Altered API for Query() - added default arguments for starting offset and
+* number of records to retrieve
+*
 * Revision 1.9  2004/05/19 17:20:02  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
