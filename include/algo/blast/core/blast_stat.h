@@ -180,18 +180,12 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
                     **kbp_gap_psi;
 	BLAST_KarlinBlk* 	kbp_ideal;	/* Ideal values (for query with average database composition). */
 	Int4 number_of_contexts;	/* Used by sfp and kbp, how large are these*/
-	Int2		matid;		/* id number of matrix. */
 	char* 	name;		/* name of matrix. */
 	Uint1* 	ambiguous_res;	/* Array of ambiguous res. (e.g, 'X', 'N')*/
 	Int2		ambig_size,	/* size of array above. */
 			ambig_occupy;	/* How many occupied? */
 	ListNode*	comments;	/* Comments about matrix. */
-/**** Andy's modification ****/
 	Int4    	query_length;   /* the length of the query. */
-/**** end Andy's modification ****/
-	Int4	length_adjustment; /* length to trim query/db sequence by. */
-	Int4	effective_query_length; /* shortened query length. */
-	Int8	effective_db_length;	/* trimmed db length */
 	Int8	effective_search_sp;	/* product of above two */
 } BlastScoreBlk;
 
