@@ -349,8 +349,8 @@ int CTestApp::Run(void)
     TSeqPos pos4 = 0;
 
     {{
-        const CSeqMap& smap = handle.GetSeqMap();
-        CSeqMap_CI map_it = smap.BeginResolved(&scope);
+        SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
+        CSeqMap_CI map_it(handle, sel);
         if ( map_it ) {
             // Should happen for any non-empty sequence
             pos2 = map_it.GetEndPosition();
@@ -494,6 +494,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/12/22 15:56:44  vasilche
+* Fix CSeqMap usage to allow used TSE linking.
+*
 * Revision 1.7  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *
