@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/06/08 21:34:35  vakatov
+* #HAVE_NO_CHAR_TRAITS::  handle the case of missing "std::char_traits::"
+*
 * Revision 1.13  1999/05/10 14:26:07  vakatov
 * Fixes to compile and link with the "egcs" C++ compiler under Linux
 *
@@ -172,6 +175,27 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 
 // Read from "is" to "str" up to the delimeter symbol "delim"(or EOF)
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
+
+// "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
+#if defined(HAVE_NO_CHAR_TRAITS)
+#  define CT_INT_TYPE  int
+#  define CT_CHAR_TYPE char
+#  define CT_POS_TYPE  CNcbiStreampos
+#  define CT_OFF_TYPE  CNcbiStreamoff
+#  define CT_EOF       EOF
+inline CT_INT_TYPE ct_not_eof(CT_INT_TYPE i) {
+    return (i == CT_EOF) ? 0 : i;
+}
+#  define CT_NOT_EOF   ct_not_eof
+#else  /* HAVE_NO_CHAR_TRAITS */
+#  define CT_INT_TYPE  NCBI_NS_STD::char_traits<char>::int_type
+#  define CT_CHAR_TYPE NCBI_NS_STD::char_traits<char>::char_type
+#  define CT_POS_TYPE  NCBI_NS_STD::char_traits<char>::pos_type
+#  define CT_OFF_TYPE  NCBI_NS_STD::char_traits<char>::off_type
+#  define CT_EOF       NCBI_NS_STD::char_traits<char>::eof()
+#  define CT_NOT_EOF   NCBI_NS_STD::char_traits<char>::not_eof
+#endif /* HAVE_NO_CHAR_TRAITS */
+
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
