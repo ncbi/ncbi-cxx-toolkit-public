@@ -132,6 +132,7 @@ Int8 FileLength(char* fileName);
 #define Log1p	Nlm_Log1p
 #define PolyGamma	Nlm_PolyGamma
 #define Factorial	Nlm_Factorial
+#define LnFactorial Nlm_LnFactorial
 #define LnGamma	Nlm_LnGamma
 #define RombergIntegrate	Nlm_RombergIntegrate
 #define Gcd	Nlm_Gcd
@@ -164,6 +165,7 @@ double Nlm_Log1p(register double x);
 /* Nth order derivative of log(gamma) */
 double Nlm_PolyGamma (double x, Int4 order);
 double Nlm_Factorial(Int4 n);  /* Factorial */
+double LnFactorial (double x); /* Logarithm of the factorial Fn */
 double Nlm_LnGamma(double x); /* log(gamma(x)) */
 
 /* Nlm_LnGammaInt(n) -- return log(Gamma(n)) for integral n */
