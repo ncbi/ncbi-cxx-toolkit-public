@@ -1439,7 +1439,7 @@ double CStopWatch::GetTimeMark()
     if ( first ) {
         LARGE_INTEGER nfreq;
         QueryPerformanceFrequency(&nfreq);
-        freq  = nfreq.QuadPart;
+        freq  = double(nfreq.QuadPart);
         first = false;
     }
 
@@ -1565,6 +1565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/08/09 20:48:41  vakatov
+ * Type conv warning fix
+ *
  * Revision 1.49  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
