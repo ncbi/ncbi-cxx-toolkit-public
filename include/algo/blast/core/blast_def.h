@@ -126,6 +126,8 @@ typedef struct BlastQueryInfo {
    Int8* eff_searchsp_array; /**< Array of effective search spaces for
                                   multiple queries. Dimension = number of 
                                   query sequences. */
+   Uint4 max_length; /**< Length of the longest among the concatenated 
+                        queries */
 } BlastQueryInfo;
 
 /** A structure containing two integers, used e.g. for locations for the 
