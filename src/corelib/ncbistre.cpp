@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/12/24 00:03:20  vakatov
+* Include ncbistd.hpp instead of ncbiutil.hpp
+*
 * Revision 1.9  2000/12/15 15:36:41  vasilche
 * Added header corelib/ncbistr.hpp for all string utility functions.
 * Optimized string utility functions.
@@ -71,12 +74,12 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include <corelib/ncbiutil.hpp>
 #include <ctype.h>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
+
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
@@ -147,6 +150,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s)
     return out;
 }
 
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
 {
     for ( const char* c = s.m_String; *c; ++c ) {
@@ -155,11 +159,13 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseCharPtrConverter s)
     return out;
 }
 
-// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+
 END_NCBI_SCOPE
 
 
-// See in the header why it's outside the NCBI scope(SunPro bug workaround...)
+
+// See in the header why it is outside of NCBI scope (SunPro bug workaround...)
+
 #if defined(NCBI_USE_OLD_IOSTREAM)
 extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
                                               const NCBI_NS_STD::string& str)
