@@ -219,11 +219,12 @@ private:
 };
 
 
-
+/// @internal
 class CBDB_CacheIWriter : public IWriter
 {
 public:
-    CBDB_CacheIWriter(const char*                path,
+    CBDB_CacheIWriter(CBDB_Cache&                bdb_cache,
+                      const char*                path,
                       const string&              blob_key,
                       int                        version,
                       const string&              subkey,
@@ -232,7 +233,8 @@ public:
                       SCache_AttrDB&             attr_db,
                       int                        stamp_subkey,
                       CBDB_Cache::EWriteSyncMode wsync)
-    : m_Path(path),
+    : m_Cache(bdb_cache),
+      m_Path(path),
       m_BlobKey(blob_key),
       m_Version(version),
       m_SubKey(subkey),
@@ -274,7 +276,8 @@ public:
 			}
 
 			trans.Commit();
-			//m_AttrDB.GetEnv()->TransactionCheckpoint();
+
+            m_Cache.x_PerformCheckPointNoLock(m_BytesInBuffer);
 		}
 
         delete m_BlobStream;
@@ -334,6 +337,7 @@ public:
     /// Flush pending data (if any) down to output device.
     virtual ERW_Result Flush(void)
     {
+        unsigned flushed_bytes = 0;
         // Dumping the buffer
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -346,6 +350,7 @@ public:
             m_BlobStream->SetTransaction(&trans);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             delete[] m_Buffer;
+            flushed_bytes = m_BytesInBuffer; 
             m_Buffer = 0;
             m_BytesInBuffer = 0;
         }
@@ -363,7 +368,8 @@ public:
 		x_UpdateAttributes();
 
         trans.Commit();
-        //m_AttrDB.GetEnv()->TransactionCheckpoint();
+
+        m_Cache.x_PerformCheckPointNoLock(m_BytesInBuffer);
 
         return eRW_Success;
     }
@@ -426,6 +432,7 @@ private:
     CBDB_CacheIWriter& operator=(const CBDB_CacheIWriter&);
 
 private:
+    CBDB_Cache&           m_Cache;
     const char*           m_Path;
     string                m_BlobKey;
     int                   m_Version;
@@ -514,6 +521,8 @@ void CBDB_Cache::Open(const char* cache_path,
         }
     }}
 
+    m_BytesWritten = 0;
+
     m_Env = new CBDB_Env();
 
     string err_file = m_Path + "err" + string(cache_name) + ".log";
@@ -570,6 +579,7 @@ void CBDB_Cache::Open(const char* cache_path,
                                  CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
                 break;
             case eNoTrans:
+                LOG_POST(Info << "BDB_Cache: Creating locking environment");
                 m_Env->OpenWithLocks(cache_path);
                 break;
             default:
@@ -651,7 +661,7 @@ void CBDB_Cache::Open(const char* cache_path,
         m_BatchSleep = batch_sleep;
         m_PurgeBatchSize = batch_size;
     }
-    //m_Env->TransactionCheckpoint();
+    m_Env->TransactionCheckpoint();
 
     m_ReadOnly = false;
 
@@ -715,6 +725,7 @@ void CBDB_Cache::Close()
 
     try {
         if (m_Env) {
+            m_Env->TransactionCheckpoint();
             CleanLog();
 
             if (m_Env->CheckRemove()) {
@@ -854,6 +865,10 @@ void CBDB_Cache::Store(const string&  key,
     }
 
     trans.Commit();
+
+    if (overflow == 0) { // inline BLOB
+        x_PerformCheckPointNoLock(size);
+    }
     //m_CacheAttrDB->GetEnv()->TransactionCheckpoint();
 }
 
@@ -1067,7 +1082,8 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
 
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     return 
-        new CBDB_CacheIWriter(m_Path.c_str(), 
+        new CBDB_CacheIWriter(*this,
+                              m_Path.c_str(), 
                               key, 
                               version,
                               subkey,
@@ -1286,8 +1302,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     int timeout = GetTimeout();
 
     // Search the database for obsolete cache entries
-
-    string last_key;
+    string first_key, last_key;
 
     for (bool flag = true; flag;) {
         unsigned batch_size = GetPurgeBatchSize();
@@ -1316,6 +1331,20 @@ void CBDB_Cache::Purge(time_t           access_timeout,
                     cache_entries.push_back(
                          SCacheDescr(key, version, subkey, overflow));
                 }
+
+                if (i == 0) { // first record in the batch
+                    first_key = last_key;
+                } else 
+                if (i == (batch_size - 1)) { // last record
+                    // if batch stops in the same key we increase 
+                    // the batch size to avoid the infinite loop
+                    // when new batch starts with the very same key
+                    // and never comes to the end
+                    if (first_key == last_key) {
+                        batch_size += 10;
+                    }
+                }
+
             } // for i
 
             if (m_PurgeStop) {
@@ -1373,6 +1402,11 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         }
 
     } // for i
+
+    if (!cache_entries.empty()) {
+        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+        m_Env->TransactionCheckpoint();
+    }
 }
 
 
@@ -1516,7 +1550,14 @@ void CBDB_Cache::Verify(const char*  cache_path,
     delete m_Env; m_Env = 0;
 }
 
-
+void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
+{
+    m_BytesWritten += bytes_written;
+    if (m_BytesWritten > (1 * (1024 * 1024))) {
+        m_Env->TransactionCheckpoint();
+        m_BytesWritten = 0;
+    }
+}
 
 bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
                                          int            version,
@@ -1967,6 +2008,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2004/10/15 14:03:16  kuznets
+ * Fixed infinite loop in Purge. Implemented transaction checkpoints based in dataflow
+ *
  * Revision 1.81  2004/10/13 12:52:25  kuznets
  * Changes in Purge processing: more options to allow Purge in a thread
  *
