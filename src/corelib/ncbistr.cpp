@@ -788,17 +788,17 @@ const void* NStr::StringToPtr(const string& str)
 }
 
 
-static const string s_kTrueString  = "true";
-static const string s_kFalseString = "false";
-static const string s_kTString     = "t";
-static const string s_kFString     = "f";
-static const string s_kYesString   = "yes";
-static const string s_kNoString    = "no";
-static const string s_kYString     = "y";
-static const string s_kNString     = "n";
+static const char* s_kTrueString  = "true";
+static const char* s_kFalseString = "false";
+static const char* s_kTString     = "t";
+static const char* s_kFString     = "f";
+static const char* s_kYesString   = "yes";
+static const char* s_kNoString    = "no";
+static const char* s_kYString     = "y";
+static const char* s_kNString     = "n";
 
 
-const string& NStr::BoolToString(bool value)
+const string NStr::BoolToString(bool value)
 {
     return value ? s_kTrueString : s_kFalseString;
 }
@@ -1689,6 +1689,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.130  2004/12/28 21:19:20  grichenk
+ * Static strings changed to char*
+ *
  * Revision 1.129  2004/12/20 22:36:47  ucko
  * TruncateSpacesInPlace: when built with GCC 3.0.4, don't attempt to
  * replace() str with a portion of itself, as that can yield incorrect

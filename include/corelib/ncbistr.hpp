@@ -474,7 +474,7 @@ public:
     ///   Boolean value to be converted.
     /// @return
     ///   One of: 'true, 'false'
-    static const string& BoolToString(bool value);
+    static const string BoolToString(bool value);
 
     /// Convert string to bool.
     ///
@@ -2582,6 +2582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.74  2004/12/28 21:19:20  grichenk
+ * Static strings changed to char*
+ *
  * Revision 1.73  2004/12/08 12:47:16  kuznets
  * +PNocase_Conditional (case sensitive/insensitive comparison for maps)
  *
