@@ -44,6 +44,7 @@
 #include <sstream>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
+#include <util/random_gen.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq__.hpp>
@@ -186,6 +187,82 @@ s_Asn1Transform(const string & inp)
     return recon;
 }
 
+static void s_MutateString(string & s_in)
+{
+    string s(s_in);
+    
+    static CRandom prng;
+    static string  alph;
+    
+    if (alph.empty()) {
+        string a;
+        a += "0123456789";
+        a += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        a += "abcdefghijklmnopqrstuvwxyz";
+        alph.assign(a.data(), a.data() + a.size());
+    }
+    
+    bool flip = true;
+    
+    while(flip && s.size()) {
+        switch(prng.GetRand(0,3)) {
+        case 0:
+            {
+                // Removal of character.
+                Uint4 point = prng.GetRand(0, s.size()-1);
+                
+                s.erase(s.begin() + point);
+                break;
+            }
+            
+        case 1:
+            {
+                // Insertion of character.
+                
+                Uint4 point = prng.GetRand(0, s.size());
+                Uint4 item  = prng.GetRand(0, alph.size()-1);
+                
+                s.insert(point, 1, alph[item]);
+                break;
+            }
+            
+        case 2:
+            {
+                // Swap characters
+                Uint4 point1 = prng.GetRand(0, s.size()-1);
+                Uint4 point2 = prng.GetRand(0, s.size()-1);
+                
+                char ch = s[point1];
+                s[point1] = s[point2];
+                s[point2] = ch;
+                break;
+            }
+            
+        case 3:
+            {
+                // Mutate character
+                
+                Uint4 point = prng.GetRand(0, s.size()-1);
+                Uint4 item  = prng.GetRand(0, alph.size()-1);
+                
+                s[point] = alph[item];
+                break;
+            }
+        }
+        
+        if (prng.GetRand(0,1)) {
+            if (s != s_in) {
+                flip = false;
+            }
+        }
+    }
+    
+//     cout << "changed [" << s_in << "]" << endl;
+//     cout << "into... [" << s << "]" << endl;
+    
+    s_in = s;
+}
+
 int test1(int argc, char ** argv)
 {
     string dbpath = "/net/fridge/vol/export/blast/db/blast";
@@ -209,6 +286,7 @@ int test1(int argc, char ** argv)
     Uint4 membound      = 0;
     Uint4 slicesize     = 0;
     bool  defer_ret     = false;
+    bool  x4mutate      = false;
     
     string dbname("nr");
     char seqtype = kSeqTypeProt;
@@ -559,6 +637,12 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-xlate3]";
         
+        if (s == "-x4mutate") {
+            x4mutate = true;
+            cerr << "Using mutation engine." << endl;
+            continue;
+        } else desc += " [-x4-mutate]";
+        
         if ((s == "-xlate4r") || 
             (s == "-xlate4rx")) {
             
@@ -578,6 +662,12 @@ int test1(int argc, char ** argv)
                 
                 if (line.empty()) {
                     break;
+                }
+                
+                string linecpy = line;
+                
+                if (x4mutate) {
+                    s_MutateString(line);
                 }
                 
                 vector<Uint4> oids;
@@ -604,7 +694,7 @@ int test1(int argc, char ** argv)
                     }
                 }
                 
-                cout << "Acc [" << line << "] has oids: ";
+                cout << "orig[" << linecpy << "] -> Acc [" << line << "] has oids: ";
                 
                 if (oids.size()) {
                     for(Uint4 i = 0; i < oids.size(); i++) {
@@ -636,10 +726,16 @@ int test1(int argc, char ** argv)
                     break;
                 }
                 
+                string linecpy(line);
+                
+                if (x4mutate) {
+                    s_MutateString(line);
+                }
+                
                 vector<Uint4> oids;
                 db.AccessionToOids(line, oids);
                 
-                cout << "Acc [" << line << "] has oids: ";
+                cout << "orig[" << linecpy << "] -> Acc [" << line << "] has oids: ";
                 
                 if (oids.size()) {
                     for(Uint4 i = 0; i < oids.size(); i++) {
