@@ -30,13 +30,16 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/03/02 20:01:38  lavr
+ * SERV_Close() shown; "../ncbi_priv.h" explained
+ *
  * Revision 6.1  2001/03/01 00:33:59  lavr
  * Initial revision
  *
  * ==========================================================================
  */
 
-#include "../ncbi_priv.h"
+#include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_service.h>
 #include <stdio.h>
 
@@ -62,7 +65,8 @@ int main(int argc, const char* argv[])
         else
             CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
     }
-    
+
+    SERV_Close(iter);
     CORE_LOG(eLOG_Note, "Test complete");
     return 0;
 }
