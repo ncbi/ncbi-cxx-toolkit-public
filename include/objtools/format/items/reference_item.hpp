@@ -75,7 +75,8 @@ public:
         eUnpublished, // unpublished paper
         eSubmission   // direct submission
     };
-    typedef ECategory TCategory;
+    typedef ECategory                       TCategory;
+    typedef vector<CRef<CReferenceItem> >   TReferences;
 
     CReferenceItem(const CPubdesc& pub, CFFContext& ctx,
         const CSeq_loc* loc = 0);
@@ -85,9 +86,9 @@ public:
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     // sort, drops duplicates and cleans up remaining items
-    static void Rearrange(vector<CRef<CReferenceItem> >& refs, CFFContext& ctx);
+    static void Rearrange(TReferences& refs, CFFContext& ctx);
 
-    //bool Matches(const CPub_set& ps) const;
+    bool Matches(const CPub_set& ps) const;
     //bool HasMUID(int id) const { return m_MUIDs.find(id) != m_MUIDs.end(); }
     //bool HasPMID(int id) const { return m_PMIDs.find(id) != m_PMIDs.end(); }
 
@@ -202,6 +203,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/11 16:35:50  shomrat
+* using typdef TReferences
+*
 * Revision 1.1  2003/12/17 19:49:28  shomrat
 * Initial revision (adapted from flat lib)
 *
