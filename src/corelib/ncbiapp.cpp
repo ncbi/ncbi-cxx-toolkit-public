@@ -452,6 +452,7 @@ int CNcbiApplication::AppMain
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION(
                 "Application's initialization failed",e);
+            exit_code = -2;
         }
         catch (exception& e) {
             ERR_POST("Application's initialization failed"
@@ -470,6 +471,7 @@ int CNcbiApplication::AppMain
             catch (CException& e) {
                 NCBI_REPORT_EXCEPTION(
                     "Application's execution failed",e);
+                exit_code = -3;
             }
             catch (exception& e) {
                 ERR_POST("Application's execution failed"
@@ -764,6 +766,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2003/04/07 21:22:54  gouriano
+ * correct App exit codes when CException was catched
+ *
  * Revision 1.57  2003/03/19 19:37:10  gouriano
  * added optional adjustment of stdio streams
  *
