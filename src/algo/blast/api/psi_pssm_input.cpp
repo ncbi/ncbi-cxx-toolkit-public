@@ -420,7 +420,6 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
                                          objects::CScope& scope) 
 {
     ASSERT(ds.GetDim() == 2);
-    Uint1* retval = NULL;
     TSeqPos subjlen = 0;                    // length of the return value
     TSeqPos subj_start = kInvalidSeqPos;    // start of subject alignment
     bool subj_start_found = false;
@@ -450,6 +449,7 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
     seqloc.SetInt().SetId(const_cast<CSeq_id&>(*ds.GetIds().back()));
 
     CBioseq_Handle bh;
+    Uint1* retval = NULL;
     try {
         bh = scope.GetBioseqHandle(seqloc);
         CSeqVector sv(seqloc, scope);
@@ -462,7 +462,7 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
                  seqloc.GetInt().GetId().AsFastaString());
     }
 
-    return make_pair(AutoPtr<Uint1, ArrayDeleter<Uint1> >(retval), subjlen);
+    return make_pair(TAutoUint1ArrayPtr(retval), subjlen);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -521,6 +521,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/12/28 16:47:43  camacho
+ * 1. Use typedefs to AutoPtr consistently
+ * 2. Remove exception specification from blast::SetupQueries
+ * 3. Use SBlastSequence structure instead of std::pair as return value to
+ *    blast::GetSequence
+ *
  * Revision 1.10  2004/12/06 17:54:09  grichenk
  * Replaced calls to deprecated methods
  *

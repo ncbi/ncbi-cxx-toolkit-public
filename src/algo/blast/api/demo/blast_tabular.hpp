@@ -88,7 +88,7 @@ private:
     BlastHitSavingParameters* m_ipHitParams; /**< Hit saving parameters */
     BlastEffectiveLengthsParameters* m_ipEffLenParams; /**< Effective lengths 
                                                           parameters. */
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > m_iGenCodeString; /**< Genetic code
+    TAutoUint1ArrayPtr m_iGenCodeString; /**< Genetic code
                                               string for subject translation. */
     BlastGapAlignStruct* m_ipGapAlign; /**< Structure containing gapped 
                                           alignment information. */
@@ -107,6 +107,12 @@ private:
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/12/28 16:47:43  camacho
+* 1. Use typedefs to AutoPtr consistently
+* 2. Remove exception specification from blast::SetupQueries
+* 3. Use SBlastSequence structure instead of std::pair as return value to
+*    blast::GetSequence
+*
 * Revision 1.5  2004/11/18 21:32:09  dondosha
 * Added some doxygen comments
 *

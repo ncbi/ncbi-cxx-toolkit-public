@@ -301,7 +301,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     Uint1 encoding = GetQueryEncoding(prog);
     
     int buflen = QueryInfo_GetSeqBufLen(qinfo);
-    Uint1* buf = (Uint1*) calloc(buflen+1, sizeof(Uint1));
+    TAutoUint1Ptr buf((Uint1*) calloc(buflen+1, sizeof(Uint1)));
     
     if ( !buf ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
@@ -314,6 +314,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
 
+    // FIXME: this is leaked in case of exception
     BlastMaskLoc* mask = NULL;
     mask = BlastMaskLocNew(qinfo->last_context+1);
 
@@ -324,118 +325,108 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
     ITERATE(TSeqLocVector, itr, queries) {
 
-        ENa_strand strand;
-        BlastSeqLoc* bsl_tmp=NULL;
+        try {
+            ENa_strand strand;
+            BlastSeqLoc* bsl_tmp=NULL;
 
-        if ((is_na || translate) &&
-            (strand_opt == eNa_strand_unknown || 
-             strand_opt == eNa_strand_both)) 
-        {
-            strand = sequence::GetStrand(*itr->seqloc, itr->scope);
-        } else {
-            strand = strand_opt;
-        }
-
-        bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask);
-
-        BlastSeqLoc_RestrictToInterval(&bsl_tmp, itr->seqloc->GetStart(), 
-                                       itr->seqloc->GetEnd());
-
-        pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf;
-
-        if (translate) {
-            ASSERT(strand == eNa_strand_both ||
-                   strand == eNa_strand_plus ||
-                   strand == eNa_strand_minus);
-            // Get both strands of the original nucleotide sequence with
-            // sentinels
-            try {
-                seqbuf = 
-                    GetSequence(*itr->seqloc, encoding, itr->scope, strand,
-                                eSentinels);
-            } catch (const CSeqVectorException&) {
-                sfree(buf);
-                NCBI_THROW(CBlastException, eBadParameter, 
-                           "Sequence not found: wrong query type provided");
+            if ((is_na || translate) &&
+                (strand_opt == eNa_strand_unknown || 
+                 strand_opt == eNa_strand_both)) 
+            {
+                strand = sequence::GetStrand(*itr->seqloc, itr->scope);
+            } else {
+                strand = strand_opt;
             }
-            
 
-            AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
-                FindGeneticCode(options.GetQueryGeneticCode());
-            int na_length = sequence::GetLength(*itr->seqloc, itr->scope);
-            Uint1* seqbuf_rev = NULL;  // negative strand
-            if (strand == eNa_strand_both)
-               seqbuf_rev = seqbuf.first.get() + na_length + 1;
-            else if (strand == eNa_strand_minus)
-               seqbuf_rev = seqbuf.first.get();
+            bsl_tmp = CSeqLoc2BlastSeqLoc(itr->mask);
 
-            // Populate the sequence buffer
-            for (unsigned int i = 0; i < nframes; i++) {
-                if (qinfo->contexts[i].query_length <= 0) {
-                    continue;
+            BlastSeqLoc_RestrictToInterval(&bsl_tmp, itr->seqloc->GetStart(), 
+                                           itr->seqloc->GetEnd());
+
+            SBlastSequence sequence;
+
+            if (translate) {
+                ASSERT(strand == eNa_strand_both ||
+                       strand == eNa_strand_plus ||
+                       strand == eNa_strand_minus);
+                // Get both strands of the original nucleotide sequence with
+                // sentinels
+                sequence = GetSequence(*itr->seqloc, encoding, itr->scope, 
+                                       strand, eSentinels);
+
+                TAutoUint1ArrayPtr gc = 
+                    FindGeneticCode(options.GetQueryGeneticCode());
+                int na_length = sequence::GetLength(*itr->seqloc, itr->scope);
+                Uint1* seqbuf_rev = NULL;  // negative strand
+                if (strand == eNa_strand_both)
+                   seqbuf_rev = sequence.data.get() + na_length + 1;
+                else if (strand == eNa_strand_minus)
+                   seqbuf_rev = sequence.data.get();
+
+                // Populate the sequence buffer
+                for (unsigned int i = 0; i < nframes; i++) {
+                    if (qinfo->contexts[i].query_length <= 0) {
+                        continue;
+                    }
+                    
+                    int offset = qinfo->contexts[ctx_index + i].query_offset;
+
+                    // The BlastContextInfo structure has a "frame" field, but
+                    // that field is set from the program type, and the value
+                    // we want here is the value for blastx, not the actual
+                    // program type (why?).  Perhaps there ought to be two
+                    // frame values...  Further investigation and discussion
+                    // indicates that BLAST_ContextToFrame should do this
+                    // internally (this change will be made soon).
+
+                    //short frame = qinfo->contexts[ctx_index + i].frame;
+                    short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
+
+                    BLAST_GetTranslation(sequence.data.get() + 1,
+                                         seqbuf_rev,
+                                         na_length,
+                                         frame,
+                                         & buf.get()[offset],
+                                         gc.get());
                 }
-                
-                int offset = qinfo->contexts[ctx_index + i].query_offset;
+                // Translate the lower case mask coordinates;
+                BlastMaskLocDNAToProtein(bsl_tmp, mask, index, *itr->seqloc, 
+                         itr->scope);
 
-                // The BlastContextInfo structure has a "frame" field, but
-                // that field is set from the program type, and the value
-                // we want here is the value for blastx, not the actual
-                // program type (why?).  Perhaps there ought to be two
-                // frame values...  Further investigation and discussion
-                // indicates that BLAST_ContextToFrame should do this
-                // internally (this change will be made soon).
+            } else if (is_na) {
 
-                //short frame = qinfo->contexts[ctx_index + i].frame;
-                short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
+                ASSERT(strand == eNa_strand_both ||
+                       strand == eNa_strand_plus ||
+                       strand == eNa_strand_minus);
+                sequence = GetSequence(*itr->seqloc, encoding, itr->scope, 
+                                       strand, eSentinels);
+                int idx = (strand == eNa_strand_minus) ? 
+                    ctx_index + 1 : ctx_index;
 
-                BLAST_GetTranslation(seqbuf.first.get() + 1,
-                                     seqbuf_rev,
-                                     na_length,
-                                     frame,
-                                     & buf[offset],
-                                     gc.get());
-            }
-            // Translate the lower case mask coordinates;
-            BlastMaskLocDNAToProtein(bsl_tmp, mask, index, *itr->seqloc, 
-				     itr->scope);
+                int offset = qinfo->contexts[idx].query_offset;
+                memcpy(&buf.get()[offset], sequence.data.get(), 
+                       sequence.length);
+                mask->seqloc_array[index] = bsl_tmp;
 
-        } else if (is_na) {
+            } else {
 
-            ASSERT(strand == eNa_strand_both ||
-                   strand == eNa_strand_plus ||
-                   strand == eNa_strand_minus);
-            try {
-                seqbuf = GetSequence(*itr->seqloc, encoding, itr->scope, strand,
-				     eSentinels);
-            } catch (const CSeqVectorException&) {
-                sfree(buf);
-                NCBI_THROW(CBlastException, eBadParameter, 
-                           "Sequence not found: wrong query type provided");
-            }
-            int idx = (strand == eNa_strand_minus) ? 
-                ctx_index + 1 : ctx_index;
-
-            int offset = qinfo->contexts[idx].query_offset;
-            memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
-            mask->seqloc_array[index] = bsl_tmp;
-
-        } else {
-
-            try {
-                seqbuf = GetSequence(*itr->seqloc, encoding, itr->scope,
+                sequence = GetSequence(*itr->seqloc, encoding, itr->scope,
                                      eNa_strand_unknown, eSentinels);
-            } catch (const CSeqVectorException&) {
-                sfree(buf);
-                NCBI_THROW(CBlastException, eBadParameter, 
-                           "Sequence not found: wrong query type provided");
+                int offset = qinfo->contexts[ctx_index].query_offset;
+                memcpy(&buf.get()[offset], sequence.data.get(), 
+                       sequence.length);
+                mask->seqloc_array[index] = bsl_tmp;
             }
-            int offset = qinfo->contexts[ctx_index].query_offset;
-            memcpy(&buf[offset], seqbuf.first.get(), seqbuf.second);
-            mask->seqloc_array[index] = bsl_tmp;
-        }
 
-        ++index;
-        ctx_index += nframes;
+            ++index;
+            ctx_index += nframes;
+        } catch (const CException& e) {
+            // FIXME: issue warning, replace inner try/catch blocks
+            //cerr << "A warning should be issued here" << e.what() << endl;
+            NCBI_THROW(CBlastException, eBadParameter, 
+                       "Sequence not found: wrong query type provided");
+            throw;
+        }
         
     }
 
@@ -443,7 +434,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence block");
     }
 
-    BlastSeqBlkSetSequence(*seqblk, buf, buflen - 2);
+    BlastSeqBlkSetSequence(*seqblk, buf.release(), buflen - 2);
 
     (*seqblk)->lcase_mask = mask;
     (*seqblk)->lcase_mask_allocated = TRUE;
@@ -488,9 +479,9 @@ SetupSubjects(const TSeqLocVector& subjects,
     ITERATE(TSeqLocVector, itr, subjects) {
         BLAST_SequenceBlk* subj = NULL;
 
-        pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> seqbuf(
-            GetSequence(*itr->seqloc, encoding, itr->scope,
-                        eNa_strand_plus, sentinels));
+        SBlastSequence sequence = GetSequence(*itr->seqloc, encoding, 
+                                              itr->scope, eNa_strand_plus, 
+                                              sentinels);
 
         if (BlastSeqBlkNew(&subj) < 0) {
             NCBI_THROW(CBlastException, eOutOfMemory, "Subject sequence block");
@@ -502,23 +493,24 @@ SetupSubjects(const TSeqLocVector& subjects,
         ++index;
 
         if (subj_is_na) {
-            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), 
-               (sentinels == eSentinels) ? seqbuf.second - 2 : seqbuf.second);
+            BlastSeqBlkSetSequence(subj, sequence.data.release(), 
+               ((sentinels == eSentinels) ? sequence.length - 2 :
+                sequence.length));
 
             try {
                 // Get the compressed sequence
-                pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos> comp_seqbuf(
+                SBlastSequence compressed_seq = 
                     GetSequence(*itr->seqloc, NCBI2NA_ENCODING, itr->scope,
-                                 eNa_strand_plus, eNoSentinels));
+                                 eNa_strand_plus, eNoSentinels);
                 BlastSeqBlkSetCompressedSequence(subj, 
-                                                 comp_seqbuf.first.release());
+                                                 compressed_seq.data.release());
             } catch (const CSeqVectorException& sve) {
                 BlastSequenceBlkFree(subj);
                 NCBI_THROW(CBlastException, eInternal, sve.what());
             }
         } else {
-            BlastSeqBlkSetSequence(subj, seqbuf.first.release(), 
-                                   seqbuf.second - 2);
+            BlastSeqBlkSetSequence(subj, sequence.data.release(), 
+                                   sequence.length - 2);
         }
 
         seqblk_vec->push_back(subj);
@@ -528,27 +520,15 @@ SetupSubjects(const TSeqLocVector& subjects,
     }
 }
 
-/** Retrieves a sequence buffer from a CSeq_loc in a given encoding.
- * @param sl Sequence location [in]
- * @param encoding What encoding to return buffer in? [in]
- * @param scope Sequence object scope [in]
- * @param strand What strand of sequence to return? [in]
- * @param sentinel Should sentinel bytes be added to buffer? [in]
- * @return Sequence buffer 
- */
-pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
+SBlastSequence
 GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
             ENa_strand strand, ESentinelType sentinel) 
-            THROWS((CBlastException, CException))
 {
     Uint1* buf = NULL;          // buffer to write sequence
     Uint1* buf_var = NULL;      // temporary pointer to buffer
     TSeqPos buflen;             // length of buffer allocated
     TSeqPos i;                  // loop index of original sequence
-    AutoPtr<Uint1, CDeleter<Uint1> > safe_buf; // contains buf to ensure 
-                                               // exception safety
-
-    CBioseq_Handle handle = scope->GetBioseqHandle(sl); // might throw exception
+    TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
 
     // Retrieves the correct strand (plus or minus), but not both
     CSeqVector sv(sl, *scope);
@@ -630,7 +610,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return make_pair(safe_buf, buflen);
+    return SBlastSequence(safe_buf.release(), buflen);
 }
 
 /** Convert masking locations from nucleotide into protein coordinates.
@@ -1000,6 +980,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2004/12/28 16:47:43  camacho
+* 1. Use typedefs to AutoPtr consistently
+* 2. Remove exception specification from blast::SetupQueries
+* 3. Use SBlastSequence structure instead of std::pair as return value to
+*    blast::GetSequence
+*
 * Revision 1.27  2004/12/06 17:54:09  grichenk
 * Replaced calls to deprecated methods
 *

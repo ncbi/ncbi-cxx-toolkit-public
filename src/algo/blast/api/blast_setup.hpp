@@ -63,6 +63,19 @@ SetupSubjects(const TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
+/// Structure to store sequence data and its length for use in the CORE
+/// of BLAST (it's a malloc'ed array of Uint1 and its length)
+/// FIXME: do not confuse with blast_seg.c's SSequence
+struct SBlastSequence {
+    TAutoUint1Ptr   data;
+    TSeqPos         length;
+
+    SBlastSequence()
+        : data(NULL), length(0) {}
+    SBlastSequence(Uint1* d, TSeqPos l)
+        : data(d), length(l) {}
+};
+
 /// Allows specification of whether sentinel bytes should be used or not
 enum ESentinelType {
     eSentinels,
@@ -84,15 +97,15 @@ enum ESentinelType {
  *        When using NCBI2NA_ENCODING, this argument should be set to
  *        eNoSentinels as a sentinel byte cannot be represented in this 
  *        encoding. [in]
+ * @throws CBlastException, CSeqVectorException, CException
  * @return pair containing the buffer and its length. 
  */
 NCBI_XBLAST_EXPORT
-pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
+SBlastSequence
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope,
             objects::ENa_strand strand = objects::eNa_strand_plus, 
-            ESentinelType sentinel = eSentinels)
-            THROWS((CBlastException, CException));
+            ESentinelType sentinel = eSentinels);
 
 /** Calculates the length of the buffer to allocate given the desired encoding,
  * strand (if applicable) and use of sentinel bytes around sequence
@@ -170,6 +183,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/12/28 16:47:43  camacho
+* 1. Use typedefs to AutoPtr consistently
+* 2. Remove exception specification from blast::SetupQueries
+* 3. Use SBlastSequence structure instead of std::pair as return value to
+*    blast::GetSequence
+*
 * Revision 1.26  2004/08/16 19:48:30  dondosha
 * Removed duplicate declaration of GetProgramFromBlastProgramType
 *

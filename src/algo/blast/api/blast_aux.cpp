@@ -395,7 +395,7 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
     return bsl;
 }
 
-AutoPtr<Uint1, ArrayDeleter<Uint1> >
+TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code)
 {
     Uint1* retval = NULL;
@@ -415,7 +415,7 @@ FindGeneticCode(int genetic_code)
         return NULL;
     }
 
-    for (unsigned int i = 0; i < nconv; i++)
+    for (TSeqPos i = 0; i < nconv; i++)
         retval[i] = gc_ncbistdaa.GetNcbistdaa().Get()[i];
 
     return retval;
@@ -574,6 +574,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.61  2004/12/28 16:47:43  camacho
+ * 1. Use typedefs to AutoPtr consistently
+ * 2. Remove exception specification from blast::SetupQueries
+ * 3. Use SBlastSequence structure instead of std::pair as return value to
+ *    blast::GetSequence
+ *
  * Revision 1.60  2004/12/20 21:50:27  camacho
  * + RAII BlastEffectiveLengthsParameters
  *

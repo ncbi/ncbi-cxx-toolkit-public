@@ -248,8 +248,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     const EBlastProgramType kProgramType = eBlastTypeBlastp;
     short status = 0;
 
-    AutoPtr<unsigned char, CDeleter<unsigned char> > guarded_query;
-    guarded_query.reset(x_GuardProteinQuery(query, query_length));
+    TAutoUint1Ptr guarded_query(x_GuardProteinQuery(query, query_length));
 
     // Setup the scoring options
     CBlastScoringOptions opts;
@@ -416,6 +415,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2004/12/28 16:47:43  camacho
+ * 1. Use typedefs to AutoPtr consistently
+ * 2. Remove exception specification from blast::SetupQueries
+ * 3. Use SBlastSequence structure instead of std::pair as return value to
+ *    blast::GetSequence
+ *
  * Revision 1.27  2004/12/13 23:07:36  camacho
  * Remove validation functions moved to algo/blast/core
  *
