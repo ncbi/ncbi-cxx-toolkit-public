@@ -1096,7 +1096,7 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     TTSEMap::const_iterator rtse_it = m_TSE_ref.find(idh);
     if (rtse_it != m_TSE_ref.end()  &&  !rtse_it->second.empty()) {
         ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
-            _ASSERT((*tse)->m_BioseqMap.find(idh) == (*tse)->m_BioseqMap.end());
+            _ASSERT((*tse)->m_Bioseqs.find(idh) == (*tse)->m_Bioseqs.end());
             with_ref.insert(TTSE_Lock(*tse)); // with reference only
         }
     }
@@ -1390,7 +1390,7 @@ bool CDataSource::IsSynonym(const CSeq_id_Handle& h1,
     NON_CONST_ITERATE (TTSESet, tse_it,
                        const_cast<TTSESet&>(tse_set->second) ) {
         const CBioseq_Info& bioseq =
-            *const_cast<CTSE_Info::TBioseqMap&>((*tse_it)->m_BioseqMap)[h1];
+            *const_cast<CTSE_Info::TBioseqs&>((*tse_it)->m_Bioseqs)[h1];
         if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
             return true;
     }
@@ -1499,6 +1499,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2003/06/24 14:35:01  vasilche
+* Fixed compilation in debug mode.
+*
 * Revision 1.110  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.
