@@ -168,6 +168,30 @@ private:
     TFlags        m_Flags;
 };
 
+// public interface for coding region translation function
+
+// uses CTrans_table in <objects/seqfeat/Genetic_code_table.hpp>
+// for rapid translation from a given genetic code, allowing all
+// of the iupac nucleotide ambiguity characters
+
+class CCdregion_translate
+{
+public:
+    // translation coding region into ncbieaa protein sequence
+    static void TranslateCdregion (string& prot,
+                                   CBioseq_Handle& bsh,
+                                   const CSeq_loc& loc,
+                                   const CCdregion& cdr,
+                                   bool include_stop = true,
+                                   bool remove_trailing_X = false);
+
+    // return iupac sequence letters under feature location
+    static void ReadSequenceByLocation (string& seq,
+                                        CBioseq_Handle& bsh,
+                                        const CSeq_loc& loc);
+
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -175,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/09/12 21:38:43  kans
+* added CCdregion_translate and CCdregion_translate
+*
 * Revision 1.4  2002/08/27 21:41:09  ucko
 * Add CFastaOstream.
 *

@@ -41,6 +41,7 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
+
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -50,6 +51,11 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Genetic_code_table.hpp>
 
 #include <objects/util/sequence.hpp>
 
@@ -1594,12 +1600,154 @@ void CFastaOstream::Write(CBioseq& seq, const CSeq_loc* location)
 }
 
 
+void CCdregion_translate::ReadSequenceByLocation (string& seq,
+                                                  CBioseq_Handle& bsh,
+                                                  const CSeq_loc& loc)
+
+{
+    // clear contents of result string
+    seq.clear ();
+
+    // get vector of sequence under location
+    CSeqVector seqv = bsh.GetSequenceView (loc,
+                                           CBioseq_Handle::eViewConstructed,
+                                           CBioseq_Handle::eCoding_Iupac,
+                                           CBioseq_Handle::eStrand_Plus);
+
+    // number of real sequence letters to take
+    int len = seqv.size ();
+    if (len < 1) return;
+
+    // resize string to appropriate length
+    seq.resize (len);
+
+    // copy characters from sequence vector
+    for (int i = 0; i < len; i++) {
+        seq [i] = seqv [i];
+    }
+
+    // this currently has a bug that does not skip past introns
+    // seqv.GetSeqData (0, len - 1, seq);
+}
+
+void CCdregion_translate::TranslateCdregion (string& prot,
+                                             CBioseq_Handle& bsh,
+                                             const CSeq_loc& loc,
+                                             const CCdregion& cdr,
+                                             bool include_stop,
+                                             bool remove_trailing_X)
+
+{
+    // clear contents of result string
+    prot.clear ();
+
+    // copy bases from coding region location
+    string bases = "";
+    ReadSequenceByLocation (bases, bsh, loc);
+
+    // calculate offset from frame parameter
+    int offset = 0;
+    if (cdr.IsSetFrame ()) {
+        switch (cdr.GetFrame ()) {
+            case CCdregion::eFrame_two :
+                offset = 1;
+                break;
+            case CCdregion::eFrame_three :
+                offset = 2;
+                break;
+            default :
+                break;
+        }
+    }
+
+    int dnalen = bases.size () - offset;
+    if (dnalen < 1) return;
+
+    // pad bases string if last codon is incomplete
+    bool incomplete_last_codon = false;
+    int mod = dnalen % 3;
+    if (mod == 1) {
+        bases += "NN";
+        incomplete_last_codon = true;
+    } else if (mod == 2) {
+        bases += "N";
+        incomplete_last_codon = true;
+    }
+
+    // resize output protein translation string
+    prot.resize ((dnalen) / 3);
+
+    // get appropriate translation table
+    const CTrans_table & tbl = (cdr.IsSetCode () ?
+                                CGen_code_table::GetTransTable (cdr.GetCode ()) :
+                                CGen_code_table::GetTransTable (1));
+
+    // main loop through bases
+    for (int i = offset, j = 0, state = 0; i < bases.size (); j++) {
+
+        // loop through one codon at a time
+        for (int k = 0; k < 3; i++, k++) {
+            char ch = bases [i];
+            state = tbl.NextCodonState (state, ch);
+        }
+
+        // save translated amino acid
+        prot [j] = tbl.GetCodonResidue (state);
+    }
+
+    // if complete at 5' end, require valid start codon
+    if (offset == 0  &&  (! loc.IsPartialLeft ())) {
+        int state = tbl.SetCodonState (bases [offset], bases [offset + 1], bases [offset + 2]);
+        prot [0] = tbl.GetStartResidue (state);
+    }
+
+    // code break substitution
+    if (cdr.IsSetCode_break ()) {
+        iterate (CCdregion::TCode_break, code_break, cdr.GetCode_break ()) {
+            // ...
+        }
+    }
+
+    // optionally truncate at first terminator
+    if (! include_stop) {
+        int protlen = prot.size ();
+        for (int i = 0; i < protlen; i++) {
+            if (prot [i] == '*') {
+                prot.resize (i);
+                return;
+            }
+        }
+    }
+
+    // if padding was needed, trim ambiguous last residue
+    if (incomplete_last_codon) {
+        int protlen = prot.size ();
+        if (protlen > 0 && prot [protlen - 1] == 'X') {
+            protlen--;
+            prot.resize (protlen);
+        }
+    }
+
+    // optionally remove trailing X on 3' partial coding region
+    if (remove_trailing_X) {
+        int protlen = prot.size ();
+        while (protlen > 0 && prot [protlen - 1] == 'X') {
+            protlen--;
+        }
+        prot.resize (protlen);
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/09/12 21:39:13  kans
+* added CCdregion_translate and CCdregion_translate
+*
 * Revision 1.4  2002/09/03 21:27:04  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.
