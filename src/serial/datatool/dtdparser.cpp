@@ -341,14 +341,18 @@ void DTDParser::EndElementContent(DTDElement& node)
 void DTDParser::FixEmbeddedNames(DTDElement& node)
 {
     const list<string>& refs = node.GetContent();
+    list<string> fixed;
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
         if (refNode.IsEmbedded()) {
             for ( int depth=1; depth<100; ++depth) {
                 string testName = refNode.CreateEmbeddedName(depth);
                 if (find(refs.begin(),refs.end(),testName) == refs.end()) {
-                    refNode.SetName(testName);
-                    break;
+                    if (find(fixed.begin(),fixed.end(),testName) == fixed.end()) {
+                        fixed.push_back(testName);
+                        refNode.SetName(testName);
+                        break;
+                    }
                 }
             }
         }
@@ -1009,6 +1013,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.17  2004/04/27 18:38:53  gouriano
+ * In FixEmbeddedNames() not to use the same "fixed" name twice
+ *
  * Revision 1.16  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
