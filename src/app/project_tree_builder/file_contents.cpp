@@ -158,7 +158,11 @@ static bool s_SplitKV(const string& line, string* key, string* value)
 
 static bool s_IsKVString(const string& str)
 {
-    return str.find("=") != NPOS;
+    size_t eq_pos = str.find("=");
+    if (eq_pos == NPOS)
+        return false;
+    string mb_key = str.substr(0, eq_pos - 1);
+    return mb_key.find_first_of("$()") == NPOS;
 }
 
 
@@ -229,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/06 20:53:40  gorelenk
+ * Changed implementation of s_IsKVString .
+ *
  * Revision 1.9  2004/02/17 23:25:08  gorelenk
  * Using NcbiGetlineEOL instead of getline.
  *
