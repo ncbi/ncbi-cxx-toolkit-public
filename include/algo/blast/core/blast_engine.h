@@ -78,7 +78,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastResults* results, BlastReturnStat* return_stats);
+   BlastHSPResults* results, BlastReturnStat* return_stats);
 
 /** The high level function performing BLAST comparison of two sequences,
  * after all the setup has been done.
@@ -111,7 +111,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastResults* results, BlastReturnStat* return_stats);
+   BlastHSPResults* results, BlastReturnStat* return_stats);
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 

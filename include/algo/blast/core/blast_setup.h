@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.26  2003/12/03 16:31:46  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults, to avoid name conflicts
+*
 * Revision 1.25  2003/09/10 19:43:05  dondosha
 * Changed #includes in accordance with lookup table code reorganization
 *
@@ -216,7 +219,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         const BlastHitSavingOptions* hit_options,
         BLAST_SequenceBlk* query_blk,
         BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
-        BlastMask* *filter_slp_out,
+        BlastMaskLoc* *filter_slp_out,
         BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
 
 #ifdef __cplusplus

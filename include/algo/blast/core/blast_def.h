@@ -73,11 +73,11 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #endif
 
 /** Structure for keeping the query masking information */
-typedef struct BlastMask {
+typedef struct BlastMaskLoc {
    Int4 index; /**< Index of the query sequence this mask is applied to */
    ListNode* loc_list; /**< List of mask locations */
-   struct BlastMask* next; /**< Pointer to the next query mask */
-} BlastMask;
+   struct BlastMaskLoc* next; /**< Pointer to the next query mask */
+} BlastMaskLoc;
 
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
@@ -94,7 +94,7 @@ typedef struct BLAST_SequenceBlk {
                                         for sequence_start */
    Uint1* oof_sequence; /**< Mixed-frame protein representation of a
                              nucleotide sequence for out-of-frame alignment */
-   BlastMask* lcase_mask; /**< Locations to be masked from operations on this 
+   BlastMaskLoc* lcase_mask; /**< Locations to be masked from operations on this 
                            sequence: lookup table for query; scanning for
                            subject. */
 } BLAST_SequenceBlk;

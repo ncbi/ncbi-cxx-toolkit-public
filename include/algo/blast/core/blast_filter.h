@@ -55,8 +55,8 @@ BlastSeqLoc* BlastSeqLocNew(Int4 from, Int4 to);
 /** Deallocate a BlastSeqLoc structure */
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc);
 
-/** Deallocate memory for a list of BlastMask structures */
-BlastMask* BlastMaskFree(BlastMask* mask_loc);
+/** Deallocate memory for a list of BlastMaskLoc structures */
+BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc);
 
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
@@ -82,7 +82,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out);
 */
 Int2 
 BLAST_ComplementMaskLocations(Uint1 program_number, 
-   BlastQueryInfo* query_info, BlastMask* mask_loc, 
+   BlastQueryInfo* query_info, BlastMaskLoc* mask_loc, 
    BlastSeqLoc* *complement_mask);
 
 /** Runs filtering functions, according to the string "instructions", on the

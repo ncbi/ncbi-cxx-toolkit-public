@@ -59,7 +59,7 @@ extern "C" {
  * @param db_options Options containing database genetic code string [in]
  * @param psi_options Options specific to PSI BLAST [in]
  */
-Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results, 
+Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
@@ -83,7 +83,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
  * @param db_options Options containing database genetic code string [in]
  */
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
-        BlastResults* results, BLAST_SequenceBlk* query, 
+        BlastHSPResults* results, BLAST_SequenceBlk* query, 
         BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringOptions* score_options,

@@ -56,11 +56,11 @@ typedef struct BlastHitList {
 } BlastHitList;
 
 /** The structure to contain all BLAST results, for multiple queries */
-typedef struct BlastResults {
+typedef struct BlastHSPResults {
    Int4 num_queries; /**< Number of query sequences */
    BlastHitList** hitlist_array; /**< Array of results for individual
                                           query sequences */
-} BlastResults;
+} BlastHSPResults;
 
 /** BLAST_SaveHitlist
  *  Save the current hit list to appropriate places in the results structure
@@ -81,7 +81,7 @@ typedef struct BlastResults {
  * @param thr_info Information shared between multiple search threads [in]
  */
 Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query, 
-        BLAST_SequenceBlk* subject, BlastResults* results, 
+        BLAST_SequenceBlk* subject, BlastHSPResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
         BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
         const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
@@ -92,10 +92,10 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
  *                    for [in]
  * @param results_ptr The allocated structure [out]
  */
-Int2 BLAST_ResultsInit(Int4 num_queries, BlastResults** results_ptr);
+Int2 BLAST_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr);
 
 /** Sort each hit list in the BLAST results by best e-value */
-Int2 BLAST_SortResults(BlastResults* results);
+Int2 BLAST_SortResults(BlastHSPResults* results);
 
 /** Calculate the expected values for all HSPs in a hit list. In case of 
  * multiple queries, the offsets are assumed to be already adjusted to 
@@ -193,7 +193,7 @@ BlastHSP* BlastHSPFree(BlastHSP* hsp);
 BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list);
 
 /** Deallocate memory for BLAST results */
-BlastResults* BLAST_ResultsFree(BlastResults* results);
+BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
 
 #ifdef __cplusplus
 }
