@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/08/15 20:26:32  juran
+* Correctly assemble Mac pathnames.  (Omit duplicate ':'.)
+* IsLocalPath(): A Mac pathname beginning with ':' is relative.
+* GetStdPath(): Convert native pathnames to unix-style.
+*
 * Revision 1.19  2001/05/17 15:07:12  lavr
 * Typos corrected
 *
@@ -195,7 +200,7 @@ DestinationFile::~DestinationFile(void)
 #undef ALL_SEPARATOR_CHARS
 #define PARENT_DIR ".."
 
-#ifdef NCBI_OS_WINDOWS
+#ifdef NCBI_OS_MSWIN
 #  define DIR_SEPARATOR_CHAR '\\'
 #  define DIR_SEPARATOR_CHAR2 '/'
 #  define DISK_SEPARATOR_CHAR ':'
@@ -214,6 +219,8 @@ DestinationFile::~DestinationFile(void)
 #ifndef ALL_SEPARATOR_CHARS
 #  define ALL_SEPARATOR_CHARS DIR_SEPARATOR_CHAR
 #endif
+
+#define MAC_FILING_SYNTAX (DIR_SEPARATOR_CHAR == ':')
 
 inline
 bool IsDiskSeparator(char c)
@@ -247,11 +254,12 @@ bool IsLocalPath(const string& path)
     // "xxx/../yyy" everywhere
     // "/xxx/yyy"  on unix
     // "d:xxx" on windows
+    // "HD:folder" on Mac
     if ( path.empty() )
         return false;
 
     if ( IsDirSeparator(path[0]) )
-        return false;
+        return MAC_FILING_SYNTAX ? true : false;
 
     SIZE_TYPE pos;
 #ifdef PARENT_DIR
@@ -280,10 +288,16 @@ string Path(const string& dir, const string& file)
     char lastChar = dir[dir.size() - 1];
     if ( file.empty() )
         _TRACE("Path(\"" << dir << "\", \"" << file << "\")");
-    if ( IsDirSeparator(lastChar) )
-        return dir + file;
-    else
-        return dir + DIR_SEPARATOR_CHAR + file;
+    // Avoid duplicate dir separators
+    if ( IsDirSeparator(lastChar) ) {
+        if ( IsDirSeparator(file[0]) )
+            return dir.substr(0, dir.size()-1) + file;
+    }
+    else {
+        if ( !IsDirSeparator(file[0]) )
+            return dir + DIR_SEPARATOR_CHAR + file;
+    }
+    return dir + file;
 }
 
 string BaseName(const string& path)
@@ -313,6 +327,28 @@ string DirName(const string& path)
     else {
         return NcbiEmptyString;
     }
+}
+
+string GetStdPath(const string& path)
+{
+    string stdpath = path;
+    // If we're using Mac filing syntax,
+    if (MAC_FILING_SYNTAX) {
+        // and the pathname begins with a separator character (a colon),
+        if (stdpath[0] == ':') {
+            // then omit the leading separator.
+            // e.g. ":objects:general:general.asn" -> "objects/general/general.asn"
+            stdpath = stdpath.substr(1);
+        } else {
+            // FIXME:  How do we translate an absolute pathname?
+        }
+    }
+    // Replace each native separator character with the 'standard' one.
+    for (int i = 0; i < stdpath.size(); i++) {
+        if ( IsDirSeparator(stdpath[i]) )
+            stdpath[i] = '/';
+    }
+    return stdpath;
 }
 
 class SSubString
