@@ -7,4 +7,4 @@ SRC     = netschedule_client netschedule_client_lb \
 
 LIB     = xconnserv
 LIBS    = $(NETWORK_LIBS)
-DLL_LIB = xutil xconnect
+DLL_LIB = xthrserv xconnect xutil
