@@ -1,5 +1,5 @@
-#if defined(NCBIOBJ__HPP)  &&  !defined(NCBIOBJ__INL)
-#define NCBIOBJ__INL
+#if defined(CORELIB___NCBIOBJ__HPP)  &&  !defined(CORELIB___NCBIOBJ__INL)
+#define CORELIB___NCBIOBJ__INL
 
 /*  $Id$
  * ===========================================================================
@@ -123,6 +123,10 @@ void CObject::RemoveReference(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/20 20:35:31  ucko
+ * Make include guards consistent with ncbiobj.hpp's again, so the build
+ * doesn't totally break.
+ *
  * Revision 1.9  2003/09/17 15:20:45  vasilche
  * Moved atomic counter swap functions to separate file.
  * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
@@ -157,4 +161,4 @@ void CObject::RemoveReference(void) const
  * ===========================================================================
  */
 
-#endif /* def NCBIOBJ__HPP  &&  ndef NCBIOBJ__INL */
+#endif /* def CORELIB___NCBIOBJ__HPP  &&  ndef CORELIB___NCBIOBJ__INL */
