@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2002/02/01 13:55:54  thiessen
+* fix view restore bug when new file loaded
+*
 * Revision 1.58  2002/01/11 15:48:58  thiessen
 * update for Mac CW7
 *
@@ -698,6 +701,7 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
 {
     structureSet = targetStructureSet;
     currentFrame = ALL_FRAMES;
+    if (!structureSet) initialViewFromASN.Reset();
 
     Init();             // init GL system
     Construct();        // draw structures
@@ -1575,7 +1579,7 @@ bool OpenGLRenderer::LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_ann
     // save a copy of the view settings
     std::string err;
     initialViewFromASN.Reset(CopyASNObject(annotations.GetView(), &err));
-    if (initialViewFromASN.Empty()) {
+    if (err.size() > 0 || initialViewFromASN.Empty()) {
         ERR_POST(Error << "OpenGLRenderer::LoadFromASNViewSettings() - failed to copy settings:\n" << err);
         return false;
     }
