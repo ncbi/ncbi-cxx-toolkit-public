@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <objtools/format/context.hpp>
 #include <objtools/format/flat_file_flags.hpp>
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
@@ -47,7 +48,6 @@ BEGIN_SCOPE(objects)
 class CBioseq_Handle;
 class CSeq_feat;
 class CFlatItemOStream;
-class CFFContext;
 
 
 class CFlatGatherer : public CObject
@@ -138,6 +138,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/26 21:58:06  ucko
+* +<context.hpp> due to use of CRef<CFFContext>, which requires a full
+* declaration with some compilers.
+*
 * Revision 1.8  2004/03/26 17:21:57  shomrat
 * + typedef TCommentVec
 *
