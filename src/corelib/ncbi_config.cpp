@@ -47,12 +47,12 @@ BEGIN_NCBI_SCOPE
 static
 void ParamTree_ConvertSubNodes(const CNcbiRegistry&     reg,
                                    const list<string>&      sub_nodes,
-                                   TParamTree* node);
+                                   CConfig::TParamTree* node);
 /// @internal
 static
 void ParamTree_SplitConvertSubNodes(const CNcbiRegistry&     reg,
-                                        const string&            sub_nodes,
-                                        TParamTree* node);
+                                    const string&            sub_nodes,
+                                    CConfig::TParamTree* node);
 
 
 
@@ -111,7 +111,7 @@ void s_GetSubNodes(const CNcbiRegistry&   reg,
 static
 void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
                               const string&             sub_node_name,
-                              TParamTree*               node)
+                              CConfig::TParamTree*               node)
 {
     const string& section_name = sub_node_name;
     const string& alias_name = reg.Get(section_name, kNodeName);
@@ -120,7 +120,7 @@ void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
 
     // Check if this node is an ancestor (circular reference)
 
-    TParamTree* parent_node =  node;
+    CConfig::TParamTree* parent_node =  node;
     while (parent_node) {
         const string& id = parent_node->GetId();
         if (NStr::CompareNocase(node_name, id) == 0) {
@@ -128,7 +128,7 @@ void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
                             << node->GetId() << "->" << node_name);
             return; // skip the offending subnode
         }
-        parent_node = (TParamTree*)parent_node->GetParent();
+        parent_node = (CConfig::TParamTree*)parent_node->GetParent();
 
     } // while
 
@@ -138,9 +138,9 @@ void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
         return;
 
 
-    TParamTree* sub_node_ptr;
+    CConfig::TParamTree* sub_node_ptr;
     {{
-    auto_ptr<TParamTree> sub_node(new TParamTree);
+    auto_ptr<CConfig::TParamTree> sub_node(new CConfig::TParamTree);
     sub_node->SetId(node_name);
     sub_node_ptr = sub_node.release();
     node->AddNode(sub_node_ptr);
@@ -172,7 +172,7 @@ void ParamTree_ConvertSubNode(const CNcbiRegistry&      reg,
 static
 void ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
                                     const string&         sub_nodes,
-                                    TParamTree*           node)
+                                    CConfig::TParamTree*  node)
 {
     list<string> sub_node_list;
     NStr::Split(sub_nodes, ",; ", sub_node_list);
@@ -183,8 +183,8 @@ void ParamTree_SplitConvertSubNodes(const CNcbiRegistry&  reg,
 /// @internal
 static
 void ParamTree_ConvertSubNodes(const CNcbiRegistry&     reg,
-                                   const list<string>&      sub_nodes,
-                                   TParamTree* node)
+                                   const list<string>&  sub_nodes,
+                                   CConfig::TParamTree* node)
 {
     _ASSERT(node);
 
@@ -273,12 +273,12 @@ CConfig::CConfig(TParamTree* param_tree, EOwnership own)
 : m_ParamTree(param_tree),
   m_OwnTree(own)
 {
-    _ASSERT(params);
+    _ASSERT(param_tree);
 }
 
 CConfig::CConfig(const CNcbiRegistry& reg)
 {
-    m_ParamTree = ParamTree_ConvertRegToTree(reg);
+    m_ParamTree = ConvertRegToTree(reg);
     _ASSERT(m_ParamTree);
     m_OwnTree = eTakeOwnership;
 }
@@ -441,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/09/23 16:34:51  kuznets
+ * Compilation fixes
+ *
  * Revision 1.6  2004/09/23 16:22:03  kuznets
  * All ParamTree_ functions assembled in CConfig class
  *
