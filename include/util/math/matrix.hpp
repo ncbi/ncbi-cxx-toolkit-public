@@ -32,7 +32,7 @@
  *
  */
 
-#include <corelib/ncbistr.hpp>
+#include <corelib/ncbistd.hpp>
 #include <util/math/promote.hpp>
 #include <vector>
 
@@ -962,6 +962,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/19 13:11:19  dicuccio
+ * ncbistr --> ncbistd for broader coverage of NCBI definitions
+ *
  * Revision 1.6  2004/03/11 17:31:42  jcherry
  * Sped up adding of rows (greatly speeds reading from streams)
  *
