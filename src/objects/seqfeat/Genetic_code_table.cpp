@@ -243,11 +243,17 @@ public:
     ~CGen_code_table_imp(void);
 
     // return initialized translation table given genetic code
-    const CTrans_table & GetTransTable (int  gc);
-    const CTrans_table & GetTransTable (const CGenetic_code & gc);
+    const CTrans_table& GetTransTable (int  gc);
+    const CTrans_table& GetTransTable (const CGenetic_code& gc);
 
     // return single copy loaded genetic code table for iteration
-    const CGenetic_code_table & GetCodeTable (void);
+    const CGenetic_code_table& GetCodeTable (void);
+
+    const string& GetNcbieaa(int id) const;
+    const string& GetNcbieaa(const CGenetic_code& gc) const;
+    
+    const string& GetSncbieaa(int id) const;
+    const string& GetSncbieaa(const CGenetic_code& gc) const;
 
 private:
     // genetic code table data
@@ -278,20 +284,126 @@ void CGen_code_table::x_InitImplementation()
 
 // public access functions
 
-const CTrans_table & CGen_code_table::GetTransTable (int id)
+const CTrans_table& CGen_code_table::GetTransTable (int id)
 {
     return x_GetImplementation().GetTransTable (id);
 }
 
-const CTrans_table & CGen_code_table::GetTransTable (const CGenetic_code & gc)
+
+const CTrans_table& CGen_code_table::GetTransTable(const CGenetic_code& gc)
 {
-    return x_GetImplementation().GetTransTable (gc);
+    return x_GetImplementation().GetTransTable(gc);
 }
 
-const CGenetic_code_table & CGen_code_table::GetCodeTable(void)
+
+const CGenetic_code_table& CGen_code_table::GetCodeTable(void)
 {
     return x_GetImplementation().GetCodeTable();
 }
+
+
+const string& CGen_code_table::GetNcbieaa(int id)
+{
+    return x_GetImplementation().GetNcbieaa(id);
+}
+
+
+const string& CGen_code_table::GetNcbieaa(const CGenetic_code& gc)
+{
+    return x_GetImplementation().GetNcbieaa(gc);
+}
+
+
+const string& CGen_code_table::GetSncbieaa(int id) 
+{
+    return x_GetImplementation().GetSncbieaa(id);
+}
+
+
+const string& CGen_code_table::GetSncbieaa(const CGenetic_code& gc)
+{
+    return x_GetImplementation().GetSncbieaa(gc);
+}
+
+
+string CGen_code_table::IndexToCodon(int index)
+{
+    if ( index < 0 || index > 63 ) return CNcbiEmptyString::Get();
+
+    static char na[4] = { 'T', 'C', 'G', 'A' };
+    
+    string codon;
+    codon.resize(3);
+    int total = index;
+    int div = 16;
+    for ( int i = 0; i < 3; ++i ) {
+        int j = total % div;
+        codon[i] = na[j];
+        total -= div * j;
+        div /= 4;
+    }
+
+    return codon;
+}
+
+
+int CGen_code_table::CodonToIndex(char base1, char base2, char base3)
+{
+    string codon;
+    codon.insert(codon.end(), base1);
+    codon.insert(codon.end(), base2);
+    codon.insert(codon.end(), base3);
+
+    return CodonToIndex(codon);
+}
+
+
+static bool s_ValidCodon(const string& codon) 
+{
+    if ( codon.length() != 3 ) return false;
+    
+    for ( int i = 0; i < 3; ++i ) {
+        char ch = toupper(codon[i]);
+        if ( ch != 'A' || ch != 'G' || ch != 'C' || ch != 'T'  || ch != 'U' ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+int CGen_code_table::CodonToIndex(const string& codon)
+{
+    if ( !s_ValidCodon(codon) ) return -1;
+    
+    int weight;
+    int index = 0;
+    int mul = 16;
+    for ( int i = 0; i < 3; ++i ) {
+        switch ( toupper(codon[i]) ) {
+        case 'A' :
+            weight = 2;
+            break;
+        case 'C' :
+            weight = 1;
+            break;
+        case 'G' :
+            weight = 3;
+            break;
+        case 'T' :
+        case 'U' :
+            weight = 0;
+            break;
+        }
+
+        index += mul * weight;
+        mul /= 4;
+    }
+
+    return index;
+}
+
+
 
 // constructor
 CGen_code_table_imp::CGen_code_table_imp(void)
@@ -321,7 +433,7 @@ CGen_code_table_imp::~CGen_code_table_imp(void)
 }
 
 // constructor
-CTrans_table::CTrans_table(const CGenetic_code & gc)
+CTrans_table::CTrans_table(const CGenetic_code& gc)
 {
     const string * ncbieaa  = 0;
     const string * sncbieaa = 0;
@@ -350,7 +462,7 @@ CTrans_table::CTrans_table(const CGenetic_code & gc)
     x_InitFsaTransl (ncbieaa, sncbieaa);
 }
 
-const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
+const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
 {
     _ASSERT(id >= 0);
 
@@ -403,7 +515,7 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
                 NStr::IntToString (id));
 }
 
-const CTrans_table & CGen_code_table_imp::GetTransTable (const CGenetic_code & gc)
+const CTrans_table& CGen_code_table_imp::GetTransTable (const CGenetic_code& gc)
 {
     const string * ncbieaa  = 0;
     const string * sncbieaa = 0;
@@ -442,6 +554,42 @@ const CGenetic_code_table & CGen_code_table_imp::GetCodeTable (void)
 {
     return *m_GcTable;
 }
+
+
+const string& CGen_code_table_imp::GetNcbieaa(int id) const
+{
+    iterate (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
+        if ( (*gcl)->GetId() == id ) {
+            return (*gcl)->GetNcbieaa();
+        }
+    }
+    return CNcbiEmptyString::Get();
+}
+
+
+const string& CGen_code_table_imp::GetNcbieaa(const CGenetic_code& gc) const
+{
+    return gc.GetNcbieaa();
+}
+
+
+const string& CGen_code_table_imp::GetSncbieaa(int id) const
+{
+    iterate (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
+        if ( (*gcl)->GetId() == id ) {
+            return (*gcl)->GetSncbieaa();
+        }
+    }
+    
+    return CNcbiEmptyString::Get();
+}
+
+
+const string& CGen_code_table_imp::GetSncbieaa(const CGenetic_code& gc) const
+{
+    return gc.GetSncbieaa();
+}
+
 
 // standard genetic code
 //
@@ -539,6 +687,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     0  // to indicate that there is no more data
 };
 
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -548,6 +697,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.8  2002/11/26 18:50:31  shomrat
+* Add GetGenCode
+*
 * Revision 6.7  2002/11/04 21:29:16  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
