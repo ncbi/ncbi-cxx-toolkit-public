@@ -25,7 +25,8 @@
 		  <li> <a href="#ref_DriversCTLIB">Sybase CTLIB</a> </li>
 		  <li> <a href="#ref_DriversDBLIB">Sybase DBLIB</a> </li>
 		  <li> <a href="#ref_DriversMSDBLIB">Microsoft DBLIB</a> </li>
-		  <li> <a href="#ref_DriversFTDS">FreeTDS</a> </li>
+		  <li> <a href="#ref_DriversFTDS7">FreeTDS 0.54 (TDS ver. 7.0)</a> </li>
+		  <li> <a href="#ref_DriversFTDS8">FreeTDS 0.60 (TDS ver. 8.0)</a> </li>
 		  <li> <a href="#ref_DriversODBC">ODBC</a> </li>
 		</ul>
 	 </li>
@@ -801,7 +802,8 @@ Supported DBAPI drivers</h2>
     <li> <a href="#ref_DriversCTLIB">Sybase CTLIB</a> </li>
     <li> <a href="#ref_DriversDBLIB">Sybase DBLIB</a> </li>
     <li> <a href="#ref_DriversMSDBLIB">Microsoft DBLIB</a> </li>
-    <li> <a href="#ref_DriversFTDS">FreeTDS</a> </li>
+    <li> <a href="#ref_DriversFTDS7">FreeTDS 0.54 (TDS ver. 7.0)</a> </li>
+    <li> <a href="#ref_DriversFTDS8">FreeTDS 0.60 (TDS ver. 8.0)</a> </li>
     <li> <a href="#ref_DriversODBC">ODBC</a> </li>
 </ul>
 
@@ -967,7 +969,7 @@ Caveats
 Text/image operations fail when working with MS SQL server,
 because MS SQL server sends text/image length in the reverse byte order,
 and this cannot be fixed (as it was fixed for
-<a href="#ref_DriversFTDS">FreeTDS</a>
+<a href="#ref_DriversFTDS7">FreeTDS</a>
 ) as we do not have access to the DBLIB source code.
 </dd>
 <li>
@@ -1053,9 +1055,9 @@ performance overhead if the blob is too big.
 
 <!-- --------------------------------- -->
 
-<a name="ref_DriversFTDS"></a>
+<a name="ref_DriversFTDS7"></a>
 <h4>
-FreeTDS</h4>
+FreeTDS 0.54 (TDS ver. 7.0)</h4>
 <p>
 
 <ul>
@@ -1063,6 +1065,10 @@ FreeTDS</h4>
 <li>
 Registration function (for the manual, static registration)
 <dt><dd>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_FTDS7&d=f" class="ncbi_func">
+DBAPI_RegisterDriver_FTDS7()</a>
+</dd>
+<dd>
 <a href="../lxr/ident?i=DBAPI_RegisterDriver_FTDS&d=f" class="ncbi_func">
 DBAPI_RegisterDriver_FTDS()</a>
 </dd>
@@ -1086,9 +1092,15 @@ dbapi_driver_ftds
 <span class="ncbi_term">FreeTDS</span> libraries and headers used by the driver
 <dt><dd>
 <a href="../config.html#ref_Localization" class="ncbi_env">
+$(FTDS7_LIBS)</a>
+or
+<a href="../config.html#ref_Localization" class="ncbi_env">
 $(FTDS_LIBS)</a>
 </dd>
 <dd>
+<a href="../config.html#ref_Localization" class="ncbi_env">
+$(FTDS7_INCLUDE)</a>
+or
 <a href="../config.html#ref_Localization" class="ncbi_env">
 $(FTDS_INCLUDE)</a>
 </dd>
@@ -1135,6 +1147,114 @@ the OpenServer it is communicating with has language handler installed
 </dd>
 <li>
 The FreeTDS client library (the one using TDS protocol version 7.0)
+was tweaked to work with the MS SQL server and significantly optimized.
+However, it will not work with Sybase server.
+</dd>
+<li>
+Another, earlier non-tweaked version of FreeTDS client library
+theoretically should be able to work with both MS SQL and SYBASE servers
+(using TDS protocol version 4.2), however it was not thoroughly tested
+and can be pretty slow.
+</dd>
+<li>
+Big confusion between the login and the data transfer timeouts.
+</dd>
+<li>
+Numerous bugs in BCP, mostly related to the handling of default values
+and nullable columns.
+</dd>
+</ol></li>
+
+</ul>
+
+<!-- --------------------------------- -->
+
+<a name="ref_DriversFTDS8"></a>
+<h4>
+FreeTDS 0.60 (TDS ver. 8.0)</h4>
+<p>
+
+<ul>
+
+<li>
+Registration function (for the manual, static registration)
+<dt><dd>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_FTDS8&d=f" class="ncbi_func">
+DBAPI_RegisterDriver_FTDS8()</a>
+</dd>
+<dd>
+<a href="../lxr/ident?i=DBAPI_RegisterDriver_FTDS&d=f" class="ncbi_func">
+DBAPI_RegisterDriver_FTDS()</a>
+</dd>
+</dt></li>
+
+<li>
+Driver default name (for the run-time loading from a DLL)
+<dt><dd><span class="ncbi_lib">
+"ftds8"
+</span></dd>
+</dt></li>
+
+<li>
+Driver library
+<dt><dd><span class="ncbi_lib">
+dbapi_driver_ftds8
+</span></dd>
+</dt></li>
+
+<li>
+<span class="ncbi_term">FreeTDS</span> libraries and headers used by the driver
+<dt><dd>
+<a href="../config.html#ref_Localization" class="ncbi_env">
+$(FTDS8_LIBS)</a>
+</dd>
+<dd>
+<a href="../config.html#ref_Localization" class="ncbi_env">
+$(FTDS8_INCLUDE)</a>
+</dd>
+</dt></li>
+
+<li>
+<span class="ncbi_term">FreeTDS</span>-specific header (contains <span class="ncbi_term">non-portable</span> extensions)
+<dt><dd>
+<a href="../lxr/source/include/dbapi/driver/ftds/interfaces.hpp"class="ncbi_file" >
+dbapi/driver/ftds/interfaces.hpp</a>
+</dd>
+</dt></li>
+
+<li>
+<span class="ncbi_term">FreeTDS</span>-specific driver context attributes
+<dt><dd>
+"version", default = <span class="ncbi_value">&lt;DBVERSION_UNKNOWN&gt;</span>
+(also allowed: <span class="ncbi_value">"42"</span>, <span class="ncbi_value">"46"</span>, <b>"70"</b>, <b>"80"</b>, <b>"100"</b>)
+</dd>
+</dt></li>
+
+<li>
+Caveats
+<ol>
+<li>
+Nobody has ever tried working with any TDS version but the default
+(&lt;DBVERSION_UNKNOWN&gt;) one.
+</dd>
+<li>
+Although a slightly modified version of FreeTDS is now part of the
+public toolkit, it retains its own license:
+the <a href="../lxr/source/src/dbapi/driver/ftds/freetds/doc/COPYING.LIB">
+GNU Library General Public License</a>.
+</dd>
+<li>
+The "compute results" functionality (like from SELECT ... AVERAGE ...)
+does not work because current FreeTDS implementation cannot decipher
+the "compute results" specific result set returned by server.
+</dd>
+<li>
+RPC is implemened via a language call, so it will work only if
+the OpenServer it is communicating with has language handler installed
+(and it is not installed on some NCBI OpenServers!).
+</dd>
+<li>
+The FreeTDS client library (the one using TDS protocol version 8.0)
 was tweaked to work with the MS SQL server and significantly optimized.
 However, it will not work with Sybase server.
 </dd>
