@@ -1,4 +1,4 @@
---$Revision: 1.15 $ 
+--$Revision: 1.16 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -51,6 +51,7 @@ Entrezgene ::= SEQUENCE {
     location SEQUENCE OF Maps OPTIONAL,
     gene-source Gene-source OPTIONAL ,             -- NCBI source to Entrez 
     locus SEQUENCE OF Gene-commentary OPTIONAL ,   -- where is the gene on a chromosome 
+    properties SEQUENCE OF Gene-commentary OPTIONAL , 
     refgene SEQUENCE OF Gene-commentary OPTIONAL , -- NG for this? 
     homology SEQUENCE OF Gene-commentary OPTIONAL , 
     comments SEQUENCE OF Gene-commentary OPTIONAL ,
