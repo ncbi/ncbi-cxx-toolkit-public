@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/23 23:08:06  lavr
+ * LOG_cxx2c introduced
+ *
  * Revision 6.3  2001/01/12 05:48:50  vakatov
  * Use reintrepret_cast<> rather than static_cast<> to cast functions.
  * Added more paranoia to catch ALL possible exceptions in the s_*** functions.
@@ -48,6 +51,7 @@
  */
 
 #include <connect/ncbi_core_cxx.hpp>
+#include <corelib/ncbistr.hpp>
 #include <string.h>
 
 
@@ -102,6 +106,59 @@ extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
          reinterpret_cast<FREG_Set> (s_REG_Set),
          pass_ownership ? reinterpret_cast<FREG_Cleanup> (s_REG_Cleanup) : 0,
          0);
+}
+
+
+static void s_LOG_Handler(void* user_data, SLOG_Handler* call_data)
+{
+    EDiagSev level;
+    switch (call_data->level) {
+    case eLOG_Trace:
+        level = eDiag_Trace;
+        break;
+    case eLOG_Note:
+        level = eDiag_Info;
+        break;
+    case eLOG_Warning:
+        level = eDiag_Warning;
+        break;
+    case eLOG_Error:
+        level = eDiag_Error;
+        break;
+    case eLOG_Critical:
+        level = eDiag_Critical;
+        break;
+    case eLOG_Fatal:
+        /*fallthru*/
+    default:
+        level = eDiag_Fatal;
+        break;
+    }
+    CNcbiDiag diag(level, eDPF_Default);
+    if (call_data->file)
+        diag.SetFile(call_data->file);
+    if (call_data->line)
+        diag.SetLine(call_data->line);
+    diag << call_data->message;
+    if (call_data->raw_data && call_data->raw_size) {
+        diag <<
+            "\n#################### [BEGIN] Raw Data (" <<
+            call_data->raw_size <<
+            " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
+            NStr::PrintableString
+            (string(static_cast<const char*>(call_data->raw_data),
+                    call_data->raw_size)) <<
+            "\n#################### [END] Raw Data";
+    }
+}
+
+
+extern LOG LOG_cxx2c(void)
+{
+    return LOG_Create(0,
+                      reinterpret_cast<FLOG_Handler> (s_LOG_Handler),
+                      0,
+                      0);
 }
 
 

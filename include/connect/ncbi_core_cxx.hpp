@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/23 23:08:05  lavr
+ * LOG_cxx2c introduced
+ *
  * Revision 6.2  2001/01/12 16:48:32  lavr
  * Ownership passage is set to 'false' by default
  *
@@ -46,12 +49,14 @@
  */
 
 #include <connect/ncbi_core.h>
+#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
 extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
+extern LOG LOG_cxx2c(void);
 
 
 END_NCBI_SCOPE
