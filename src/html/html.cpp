@@ -274,6 +274,7 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
         SetEventHandler(event, menu->ShowMenu() + kStopEvent);
         return;
     case CHTMLPopupMenu::eKurdin: 
+    case CHTMLPopupMenu::eKurdinConf: 
         SetEventHandler(event, menu->ShowMenu() + kStopEvent);
         SetEventHandler(eHTML_EH_MouseOut, menu->HideMenu());
         return;
@@ -2314,6 +2315,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2004/04/05 16:19:57  ivanov
+ * Added support for Sergey Kurdin's popup menu with configurations
+ *
  * Revision 1.101  2004/03/10 20:11:35  ivanov
  * Changed message text
  *

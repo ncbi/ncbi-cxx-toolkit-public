@@ -50,6 +50,7 @@ enum EMenuType {
     eSmithPlain,
     eSmithHtml,
     eKurdin,
+    eKurdinConf,
     eKurdinSide
 };
 
@@ -57,11 +58,14 @@ enum EMenuType {
 static CHTMLPopupMenu* CreatePopupMenu(EMenuType type)
 {
     CHTMLPopupMenu* menu = 0;
+    static char index = '0';
+    index++;
 
     switch (type) {
     case eSmithPlain:
         // Create Smith's popup menu
-        menu = new CHTMLPopupMenu("MenuSmith", CHTMLPopupMenu::eSmith);
+        menu = new CHTMLPopupMenu(string("MenuSmith_") + index,
+                                  CHTMLPopupMenu::eSmith);
         menu->AddItem("Red"  , "document.bgColor='red'");
         menu->AddItem("Yellow","document.bgColor='yellow'");
         menu->AddItem("Green", "document.bgColor='green'");
@@ -70,18 +74,21 @@ static CHTMLPopupMenu* CreatePopupMenu(EMenuType type)
         menu->SetAttribute(eHTML_PM_fontColor, "black");
         menu->SetAttribute(eHTML_PM_fontColorHilite,"white");
         break;
+
     case eSmithHtml:
         {
         // Create Smith's popup menu with HTML items
-        menu = new CHTMLPopupMenu("MenuSmithHtml");
+        menu = new CHTMLPopupMenu(string("MenuSmithHtml_") + index);
         menu->AddItem("<b>Bold item</b>");
         menu->AddItem("<img src='http://www.ncbi.nlm.nih.gov/corehtml/help.gif'> Image item");
         CHTML_a* anchor = new CHTML_a("some link...", "Link item");
         menu->AddItem(*anchor);
         }
         break;
+
     case eKurdin:
-        menu = new CHTMLPopupMenu("MenuKurdinPopup", CHTMLPopupMenu::eKurdin);
+        menu = new CHTMLPopupMenu(string("MenuKurdinPopup_") + index,
+                                  CHTMLPopupMenu::eKurdin);
         menu->AddItem("NIH", "http://www.nih.gov");
         menu->AddItem("NLM", "http://www.nlm.nih.gov");
         menu->AddItem("NCBI","top.location='http://www.ncbi.nlm.nih.gov'");
@@ -89,8 +96,24 @@ static CHTMLPopupMenu* CreatePopupMenu(EMenuType type)
         menu->SetAttribute(eHTML_PM_titleColor, "yellow");
         menu->SetAttribute(eHTML_PM_alignV, "top");
         break;
+
+    case eKurdinConf:
+        menu = new CHTMLPopupMenu(string("MenuKurdinConfPopup_") + index,
+                                  CHTMLPopupMenu::eKurdinConf);
+        menu->AddItem("NIH", "http://www.nih.gov");
+        menu->AddSeparator();
+        menu->AddItem("NLM", "http://www.nlm.nih.gov");
+        menu->AddSeparator("text");
+        menu->AddItem("NCBI","top.location='http://www.ncbi.nlm.nih.gov'");
+        menu->SetAttribute(eHTML_PM_TitleColor, "yellow");
+        menu->SetAttribute(eHTML_PM_ItemColor, "#000000");
+        menu->SetAttributeGlobal(eHTML_PM_AlignTB, "top");
+        menu->SetAttributeGlobal(eHTML_PM_AlignLR, "right");
+        break;
+
     case eKurdinSide:
-        menu = new CHTMLPopupMenu("MenuKurdinSide", CHTMLPopupMenu::eKurdinSide);
+        menu = new CHTMLPopupMenu("MenuKurdinSide_" + index,
+                                  CHTMLPopupMenu::eKurdinSide);
         menu->AddItem("Web sites");
         menu->AddItem("NIH", "http://www.nih.gov");
         menu->AddItem("NLM", "http://www.nlm.nih.gov");
@@ -103,6 +126,7 @@ static CHTMLPopupMenu* CreatePopupMenu(EMenuType type)
         menu->SetAttribute(eHTML_PM_peepOffset,"20");
         menu->SetAttribute(eHTML_PM_topOffset, "10");
         break;
+
     default:
         _TROUBLE;
     }
@@ -128,9 +152,11 @@ static void Test_Html(void)
     html->AppendChild(body); 
 
     // Create menues
+
     CHTMLPopupMenu* menuSM = CreatePopupMenu(eSmithPlain);
     CHTMLPopupMenu* menuSH = CreatePopupMenu(eSmithHtml);
     CHTMLPopupMenu* menuKP = CreatePopupMenu(eKurdin);
+    CHTMLPopupMenu* menuKC = CreatePopupMenu(eKurdinConf);
     CHTMLPopupMenu* menuKS = CreatePopupMenu(eKurdinSide);
 
     // Add menues to the page
@@ -138,6 +164,7 @@ static void Test_Html(void)
     body->AppendChild(menuSM);
     body->AppendChild(menuSH);
     body->AppendChild(menuKP);
+    body->AppendChild(menuKC);
     // !!! We can add Kurdin's Side menu to the HEAD only!
     head->AppendChild(menuKS);
 
@@ -148,23 +175,35 @@ static void Test_Html(void)
     anchorSH->AttachPopupMenu(menuSH, eHTML_EH_MouseOver);
     CHTML_a* anchorKP  = new CHTML_a("#","Kurdin's popup menu (move mouse over me)");
     anchorKP->AttachPopupMenu(menuKP);
-    CHTML_a* anchorKPC = new CHTML_a("#","Kurdin's popup menu (click me)");
-    anchorKPC->AttachPopupMenu(menuKP, eHTML_EH_Click);
+    CHTML_a* anchorKPc = new CHTML_a("#","Kurdin's popup menu (click me)");
+    anchorKPc->AttachPopupMenu(menuKP, eHTML_EH_Click);
+    CHTML_a* anchorKC  = new CHTML_a("#","Kurdin's popup menu with configurations (move mouse over me)");
+    anchorKC->AttachPopupMenu(menuKC);
+    CHTML_a* anchorKCc = new CHTML_a("#","Kurdin's popup menu with configurations (click me)");
+    anchorKCc->AttachPopupMenu(menuKC, eHTML_EH_Click);
 
-    body->AppendChild(anchorSM);
-    body->AppendChild(new CHTML_p(new CHTML_br(2)));
-    body->AppendChild(anchorSH);
-    body->AppendChild(new CHTML_p(new CHTML_br(2)));
-    body->AppendChild(anchorKP);
-    body->AppendChild(new CHTML_p(new CHTML_br(2)));
-    body->AppendChild(anchorKPC);
+    CRef<CHTML_blockquote> bc(new CHTML_blockquote);
+    bc->AppendChild(anchorSM);
+    bc->AppendChild(new CHTML_br(2));
+    bc->AppendChild(anchorSH);
+    bc->AppendChild(new CHTML_br(2));
+    bc->AppendChild(anchorKP);
+    bc->AppendChild(new CHTML_br(2));
+    bc->AppendChild(anchorKPc);
+    bc->AppendChild(new CHTML_br(2));
+    bc->AppendChild(anchorKC);
+    bc->AppendChild(new CHTML_br(2));
+    bc->AppendChild(anchorKCc);
 
+    body->AppendChild(bc);
     body->AttachPopupMenu(menuKS);
 
+
     // Enable using popup menus (we can skip call this function)
-    html->EnablePopupMenu(CHTMLPopupMenu::eSmith);
-    html->EnablePopupMenu(CHTMLPopupMenu::eKurdin);
-    html->EnablePopupMenu(CHTMLPopupMenu::eKurdinSide);
+//  html->EnablePopupMenu(CHTMLPopupMenu::eSmith);
+//  html->EnablePopupMenu(CHTMLPopupMenu::eKurdin);
+//  html->EnablePopupMenu(CHTMLPopupMenu::eKurdinConf);
+//  html->EnablePopupMenu(CHTMLPopupMenu::eKurdinSide);
     
     // Print in HTML format
     html->Print(cout);
@@ -308,6 +347,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/04/05 16:19:57  ivanov
+ * Added support for Sergey Kurdin's popup menu with configurations
+ *
  * Revision 1.8  2003/12/02 14:29:22  ivanov
  * Added demo for eKurdin menu with onClick event
  *

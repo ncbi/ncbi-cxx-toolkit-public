@@ -29,6 +29,7 @@
 
 #include <html/jsmenu.hpp>
 #include <html/html_exception.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -44,17 +45,45 @@ const string kJSMenuDefaultURL_Smith
 const string kJSMenuDefaultURL_Kurdin
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_4.js";
 
+// Sergey Kurdin's popup menu with configurations
+const string kJSMenuDefaultURL_KurdinConf
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_5loader.js";
+
 // Sergey Kurdin's side menu
 const string kJSMenuDefaultURL_KurdinSide
  = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/sidemenu/sidemenu1.js";
 const string kJSMenuDefaultURL_KurdinSideCSS
  = "http://www.ncbi.nlm.nih.gov/coreweb/styles/sidemenu.css"; 
+
+
+// ===========================================================================
+
+// MT Safe: Have individual copy of global attributes for each thread
+
+// Store menu global attributes in TLS (eKurdinConf menu type only)
+static CSafeStaticRef< CTls<CHTMLPopupMenu::TAttributes> > s_TlsGlobalAttrs;
+
+CHTMLPopupMenu::TAttributes* CHTMLPopupMenu::GetGlobalAttributesPtr(void)
+{
+    CHTMLPopupMenu::TAttributes* attrs = s_TlsGlobalAttrs->GetValue();
+    if ( !attrs ) {
+        attrs = new CHTMLPopupMenu::TAttributes; 
+        s_TlsGlobalAttrs->SetValue(attrs);
+    }
+    return attrs;
+}
+
+
+// ===========================================================================
  
 
 CHTMLPopupMenu::CHTMLPopupMenu(const string& name, EType type)
 {
     m_Name = name;
     m_Type = type;
+
+    // Other menu-specific members
+    m_ConfigName = kEmptyStr;
 }
 
 
@@ -90,11 +119,12 @@ void CHTMLPopupMenu::AddItem(const string& title,
                              const string& mouseover, const string& mouseout)
 {
     string x_action = action;
-    if (m_Type == eKurdinSide) {
+    switch (m_Type) {
+    case eKurdinSide:
         if ( x_action.empty() ) {
             x_action = "none";
         }
-    } else {
+    default:
         if ( NStr::StartsWith(action, "http:", NStr::eNocase) ) {
             x_action = "window.location='" + action + "'";
         }
@@ -134,16 +164,24 @@ void CHTMLPopupMenu::AddItem(CNCBINode& node,
 }
 
 
-void CHTMLPopupMenu::AddSeparator(void)
+void CHTMLPopupMenu::AddSeparator(const string& text)
 {
-    // Only eKurdin popup menu don't support separators
-    if ( m_Type == eKurdin ) {
-        return;
-    }
     SItem item;
-    if (m_Type == eKurdinSide) {
+
+    switch (m_Type) {
+    case eSmith:
+        break;
+    case eKurdin:
+        // eKurdin popup menu doesn't support separators
+        return;
+    case eKurdinConf:
+        item.title  = text.empty() ? "-" : text;
+        item.action = "-";
+        break;
+    case eKurdinSide:
         item.title  = "none";
         item.action = "none";
+        break;
     }
     m_Items.push_back(item);
 } 
@@ -153,10 +191,21 @@ void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
                                   const string&      value)
 {
     m_Attrs[attribute] = value;
+    if (m_Type == eKurdinConf  &&  m_ConfigName.empty()) {
+        m_ConfigName = m_Name;
+    }
 }
 
 
-string CHTMLPopupMenu::GetMenuAttributeValue(EHTML_PM_Attribute attribute) const
+void CHTMLPopupMenu::SetAttributeGlobal(EHTML_PM_Attribute attribute,
+                                        const string&      value)
+{
+    CHTMLPopupMenu::TAttributes* attrs = GetGlobalAttributesPtr();
+    (*attrs)[attribute] = value;
+}
+
+
+string CHTMLPopupMenu::GetAttributeValue(EHTML_PM_Attribute attribute) const
 {
     TAttributes::const_iterator i = m_Attrs.find(attribute);
     if ( i != m_Attrs.end() ) {
@@ -166,72 +215,120 @@ string CHTMLPopupMenu::GetMenuAttributeValue(EHTML_PM_Attribute attribute) const
 }
 
 
-string CHTMLPopupMenu::GetMenuAttributeName(EHTML_PM_Attribute attribute) const
+struct SAttributeSupport {
+    EHTML_PM_Attribute attr;
+    const char*              name[CHTMLPopupMenu::ePMLast+1];
+};
+
+const SAttributeSupport ksAttributeSupportTable[] = {
+
+    //
+    //  Old menu attributes
+    //  (used for compatibility with previous version only).
+    //
+    //  S  - eSmith 
+    //  K  - eKurdin 
+    //  KC - eKurdinConf
+    //  KS - eKurdinSide
+    //
+    //  0     - not sopported, 
+    //  ""    - supported (name not used)
+    //  "..." - supported (with name)
+    //                                     S  K  KC KS            
+
+    { eHTML_PM_enableTracker,            { "enableTracker"       , 0,  0,  0 } },
+    { eHTML_PM_disableHide,              { "disableHide"         , 0,  "", 0 } },
+    { eHTML_PM_menuWidth,                { 0                     , 0,  "", 0 } },
+    { eHTML_PM_peepOffset,               { 0                     , 0,  "", 0 } },
+    { eHTML_PM_topOffset,                { 0                     , 0,  "", 0 } },
+
+    { eHTML_PM_fontSize,                 { "fontSize"            , 0,  0,  0 } },
+    { eHTML_PM_fontWeigh,                { "fontWeigh"           , 0,  0,  0 } },
+    { eHTML_PM_fontFamily,               { "fontFamily"          , 0,  0,  0 } },
+    { eHTML_PM_fontColor,                { "fontColor"           , 0,  0,  0 } },
+    { eHTML_PM_fontColorHilite,          { "fontColorHilite"     , 0,  0,  0 } },
+    { eHTML_PM_menuBorder,               { "menuBorder"          , 0,  0,  0 } },
+    { eHTML_PM_menuItemBorder,           { "menuItemBorder"      , 0,  0,  0 } },
+    { eHTML_PM_menuItemBgColor,          { "menuItemBgColor"     , 0,  0,  0 } },
+    { eHTML_PM_menuLiteBgColor,          { "menuLiteBgColor"     , 0,  0,  0 } },
+    { eHTML_PM_menuBorderBgColor,        { "menuBorderBgColor"   , 0,  0,  0 } },
+    { eHTML_PM_menuHiliteBgColor,        { "menuHiliteBgColor"   , 0,  0,  0 } },
+    { eHTML_PM_menuContainerBgColor,     { "menuContainerBgColor", 0,  0,  0 } },
+    { eHTML_PM_childMenuIcon,            { "childMenuIcon"       , 0,  0,  0 } },
+    { eHTML_PM_childMenuIconHilite,      { "childMenuIconHilite" , 0,  0,  0 } },
+    { eHTML_PM_bgColor,                  { "bgColor"             , "", 0,  0 } },
+    { eHTML_PM_titleColor,               { 0                     , "", 0,  0 } },
+    { eHTML_PM_borderColor,              { 0                     , "", 0,  0 } },
+    { eHTML_PM_alignH,                   { 0                     , "", 0,  0 } },
+    { eHTML_PM_alignV,                   { 0                     , "", 0,  0 } },
+
+    //
+    //  New menu attributes.
+    //
+
+    // View
+
+    { eHTML_PM_ColorTheme,               { 0, 0, "ColorTheme",                0 } },
+    { eHTML_PM_ShowTitle,                { 0, 0, "ShowTitle",                 0 } },
+    { eHTML_PM_ShowCloseIcon,            { 0, 0, "ShowCloseIcon",             0 } },
+    { eHTML_PM_HelpURL,                  { 0, 0, "Help",                      0 } },
+    { eHTML_PM_HideTime,                 { 0, 0, "HideTime",                  0 } },
+    { eHTML_PM_FreeText,                 { 0, 0, "FreeText",                  0 } },
+/*
+    { eHTML_PM_DisableHide,              { 0, 0, "", 0 } },
+    { eHTML_PM_MenuWidth,                { 0, 0, "", 0 } },
+    { eHTML_PM_PeepOffset,               { 0, 0, "", 0 } },
+    { eHTML_PM_TopOffset,                { 0, 0, "", 0 } },
+*/
+    // Menu colors
+
+    { eHTML_PM_BorderColor,              { 0, 0, "BorderColor",               0 } },
+    { eHTML_PM_BackgroundColor,          { 0, 0, "BackgroundColor",           0 } },
+
+    // Position
+    
+    { eHTML_PM_AlignLR,                  { 0, 0, "AlignLR",                   0 } },
+    { eHTML_PM_AlignTB,                  { 0, 0, "AlignTB",                   0 } },
+    { eHTML_PM_AlignCenter,              { 0, 0, "AlignCenter",               0 } },
+
+    // Title
+
+    { eHTML_PM_TitleText,                { 0, 0, "TitleText",                 0 } },
+    { eHTML_PM_TitleColor,               { 0, 0, "TitleColor",                0 } },
+    { eHTML_PM_TitleSize,                { 0, 0, "TitleSize",                 0 } },
+    { eHTML_PM_TitleFont,                { 0, 0, "TitleFont",                 0 } },
+    { eHTML_PM_TitleBackgroundColor,     { 0, 0, "TitleBackgroundColor",      0 } },
+    { eHTML_PM_TitleBackgroundImage,     { 0, 0, "TitleBackgroundImage",      0 } },
+
+    // Items
+
+    { eHTML_PM_ItemColor,                { 0, 0, "ItemColor", 0 } },
+    { eHTML_PM_ItemColorActive,          { 0, 0, "ItemColorActive",           0 } },
+    { eHTML_PM_ItemBackgroundColorActive,{ 0, 0, "ItemBackgroundColorActive", 0 } },
+    { eHTML_PM_ItemSize,                 { 0, 0, "ItemSize",                  0 } },
+    { eHTML_PM_ItemFont,                 { 0, 0, "ItemFont",                  0 } },
+    { eHTML_PM_ItemBulletImage,          { 0, 0, "ItemBulletImage",           0 } },
+    { eHTML_PM_ItemBulletImageActive,    { 0, 0, "ItemBulletImageActive",     0 } },
+    { eHTML_PM_SeparatorColor,           { 0, 0, "SeparatorColor",            0 } }
+};
+
+
+string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute, EType type)
 {
-    switch (attribute) {
-    case eHTML_PM_enableTracker:
-        return "enableTracker"; 
-    case eHTML_PM_disableHide:
-        return "disableHide"; 
-    case eHTML_PM_menuWidth:
-        return "menuWidth"; 
-    case eHTML_PM_peepOffset:
-        return "peepOffset"; 
-    case eHTML_PM_topOffset:
-        return "topOffset"; 
-    case eHTML_PM_fontSize:
-        return "fontSize"; 
-    case eHTML_PM_fontWeigh:
-        return "fontWeigh"; 
-    case eHTML_PM_fontFamily:
-        return "fontFamily"; 
-    case eHTML_PM_fontColor:
-        return "fontColor"; 
-    case eHTML_PM_fontColorHilite:
-        return "fontColorHilite"; 
-    case eHTML_PM_menuBorder:
-        return "menuBorder"; 
-    case eHTML_PM_menuItemBorder:
-        return "menuItemBorder"; 
-    case eHTML_PM_menuItemBgColor:
-        return "menuItemBgColor"; 
-    case eHTML_PM_menuLiteBgColor:
-        return "menuLiteBgColor"; 
-    case eHTML_PM_menuBorderBgColor:
-        return "menuBorderBgColor"; 
-    case eHTML_PM_menuHiliteBgColor:
-        return "menuHiliteBgColor"; 
-    case eHTML_PM_menuContainerBgColor:
-        return "menuContainerBgColor"; 
-    case eHTML_PM_childMenuIcon:
-        return "childMenuIcon"; 
-    case eHTML_PM_childMenuIconHilite:
-        return "childMenuIconHilite"; 
-    case eHTML_PM_bgColor:
-        return "bgColor"; 
-    case eHTML_PM_titleColor:
-        return "titleColor";
-    case eHTML_PM_borderColor:
-        return "borderColor";
-    case eHTML_PM_alignH:
-        return "alignH";
-    case eHTML_PM_alignV:
-        return "alignV";
+    // Find attribute
+    for (size_t i = 0; 
+         i < sizeof(ksAttributeSupportTable)/sizeof(SAttributeSupport);
+         i++) {
+        if ( ksAttributeSupportTable[i].attr == attribute ) {
+            if ( ksAttributeSupportTable[i].name[type] ) {
+                return ksAttributeSupportTable[i].name[type];
+            }
+            break;
+        }
     }
-    _TROUBLE;
+    ERR_POST(Warning << "CHTMLPopupMenu::GetMenuAttributeName:  " <<
+             "This menu type does not support specified attribute");
     return kEmptyStr;
-}
-
-
-string CHTMLPopupMenu::GetName(void) const
-{
-    return m_Name;
-}
-
-
-CHTMLPopupMenu::EType CHTMLPopupMenu::GetType(void) const
-{
-    return m_Type;
 }
 
 
@@ -242,15 +339,17 @@ string CHTMLPopupMenu::ShowMenu(void) const
         return "window.showMenu(window." + m_Name + ");";
     case eKurdin:
         {
-        string align_h      = GetMenuAttributeValue(eHTML_PM_alignH);
-        string align_v      = GetMenuAttributeValue(eHTML_PM_alignV);
-        string color_border = GetMenuAttributeValue(eHTML_PM_borderColor);
-        string color_title  = GetMenuAttributeValue(eHTML_PM_titleColor);
-        string color_back   = GetMenuAttributeValue(eHTML_PM_bgColor);
+        string align_h      = GetAttributeValue(eHTML_PM_alignH);
+        string align_v      = GetAttributeValue(eHTML_PM_alignV);
+        string color_border = GetAttributeValue(eHTML_PM_borderColor);
+        string color_title  = GetAttributeValue(eHTML_PM_titleColor);
+        string color_back   = GetAttributeValue(eHTML_PM_bgColor);
         string s = "','"; 
         return "PopUpMenu2_Set(" + m_Name + ",'" + align_h + s + align_v + s + 
                 color_border + s + color_title + s + color_back + "');";
         }
+    case eKurdinConf:
+        return "PopUpMenu2_Set(" + m_Name + ");";
     case eKurdinSide:
         return "<script language=\"JavaScript1.2\">\n<!--\n" \
                "document.write(SideMenuType == \"static\" ? " \
@@ -266,6 +365,7 @@ string CHTMLPopupMenu::HideMenu(void) const
 {
     switch (m_Type) {
     case eKurdin:
+    case eKurdinConf:
         return "PopUpMenu2_Hide(); return false;";
     default:
         ;
@@ -274,7 +374,81 @@ string CHTMLPopupMenu::HideMenu(void) const
 }
 
 
-string CHTMLPopupMenu::GetCodeMenuItems(void) const
+CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
+{
+    if ( mode == eHTML ) {
+        out << "<script language=\"JavaScript1.2\">\n<!--\n" 
+            << GetCodeItems() << "//-->\n</script>\n";
+    }
+    return out;
+}
+
+
+string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
+{
+    string url, code;
+
+    switch (type) {
+
+    case eSmith:
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Smith : menu_lib_url;
+        break;
+
+    case eKurdin:
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Kurdin : menu_lib_url;
+        break;
+
+    case eKurdinConf:
+        {
+        code = "<script language=\"JavaScript1.2\">\n<!--\n";
+        code += "var PopUpMenu2_GlobalConfig = [\n";
+        code += "[\"UseThisGlobalConfig\",\"yes\"]";
+        // Write properties
+        CHTMLPopupMenu::TAttributes* attrs = GetGlobalAttributesPtr();
+        ITERATE (TAttributes, i, *attrs) {
+            string name  = GetAttributeName(i->first, eKurdinConf);
+            string value = i->second;
+            code += ",\n[\"" + name + "\",\"" + value + "\"]";
+        }
+        code += "\n]\n//-->\n</script>\n";
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinConf :
+               menu_lib_url;
+        break;
+        }
+
+    case eKurdinSide:
+        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide :
+               menu_lib_url;
+        code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" +
+               kJSMenuDefaultURL_KurdinSideCSS + "\">\n"; 
+        break;
+    }
+    if ( !url.empty() ) {
+        code += "<script language=\"JavaScript1.2\" src=\"" + url +
+            "\"></script>\n";
+    }
+    return code;
+}
+
+
+string CHTMLPopupMenu::GetCodeBody(EType type, bool use_dyn_menu)
+{
+    if ( type != eSmith ) {
+        return kEmptyStr;
+    }
+    string use_dm = use_dyn_menu ? "true" : "false";
+    return "<script language=\"JavaScript1.2\">\n"
+        "<!--\nfunction onLoad() {\n"
+        "window.useDynamicMenu = " + use_dm + ";\n"
+        "window.defaultjsmenu = new Menu();\n"
+        "defaultjsmenu.addMenuSeparator();\n"
+        "defaultjsmenu.writeMenus();\n"
+        "}\n"
+        "// For IE & NS6\nif (!document.layers) onLoad();\n//-->\n</script>\n";
+}
+
+
+string CHTMLPopupMenu::GetCodeItems(void) const
 {
     string code;
     switch (m_Type) {
@@ -297,7 +471,7 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
             }
             // Write properties
             ITERATE (TAttributes, i, m_Attrs) {
-                string name  = GetMenuAttributeName(i->first);
+                string name  = GetAttributeName(i->first);
                 string value = i->second;
                 code += m_Name + "." + name + " = \"" + value + "\";\n";
             }
@@ -322,12 +496,43 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
         }
         break;
 
+    case eKurdinConf:
+        {
+            if ( m_ConfigName == m_Name ) {
+                code += "var PopUpMenu2_LocalConfig_" + m_Name + " = [\n";
+                // Write properties
+                ITERATE (TAttributes, i, m_Attrs) {
+                    if ( i != m_Attrs.begin()) {
+                        code += ",\n";
+                    }
+                    string name  = GetAttributeName(i->first);
+                    string value = i->second;
+                    code += "[\"" + name + "\",\"" + value + "\"]";
+                }
+                code += "\n]\n";
+            }
+            code += "var " + m_Name + " = [\n";
+            if ( !m_ConfigName.empty() ) {
+                code += "[\"UseLocalConfig\",\"" + m_ConfigName + "\",\"\",\"\"]";
+            }
+            // Write menu items
+            ITERATE (TItems, i, m_Items) {
+                code += ",\n[\"" +
+                    i->title     + "\",\""  +
+                    i->action    + "\",\""  +
+                    i->mouseover + "\",\""  +
+                    i->mouseout  + "\"]";
+            }
+            code += "\n]\n";
+        }
+        break;
+
     case eKurdinSide:
         {
             // Menu name always is "SideMenuParams"
             code = "var SideMenuParams = [\n";
             // Menu configuration
-            string disable_hide = GetMenuAttributeValue(eHTML_PM_disableHide);
+            string disable_hide = GetAttributeValue(eHTML_PM_disableHide);
             string menu_type;
             if ( disable_hide == "true" ) {
                 menu_type = "static";
@@ -335,9 +540,9 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
                 menu_type = "dynamic";
             // else menu_type have default value
             }
-            string width       = GetMenuAttributeValue(eHTML_PM_menuWidth);
-            string peep_offset = GetMenuAttributeValue(eHTML_PM_peepOffset);
-            string top_offset  = GetMenuAttributeValue(eHTML_PM_topOffset);
+            string width       = GetAttributeValue(eHTML_PM_menuWidth);
+            string peep_offset = GetAttributeValue(eHTML_PM_peepOffset);
+            string top_offset  = GetAttributeValue(eHTML_PM_topOffset);
             code += "[\"\",\"" + menu_type + "\",\"\",\"" + width + "\",\"" +
                 peep_offset + "\",\"" + top_offset + "\",\"\",\"\"]";
             // Write menu items
@@ -355,68 +560,15 @@ string CHTMLPopupMenu::GetCodeMenuItems(void) const
 }
 
 
-CNcbiOstream& CHTMLPopupMenu::PrintBegin(CNcbiOstream& out, TMode mode)
-{
-    if ( mode == eHTML ) {
-        out << "<script language=\"JavaScript1.2\">\n<!--\n" 
-            << GetCodeMenuItems() << "//-->\n</script>\n";
-    }
-    return out;
-}
-
-
-string CHTMLPopupMenu::GetCodeHead(EType type, const string& menu_lib_url)
-{
-    string url, code;
-
-    switch (type) {
-
-    case eSmith:
-        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Smith : menu_lib_url;
-        break;
-
-    case eKurdin:
-        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_Kurdin : menu_lib_url;
-        break;
-
-    case eKurdinSide:
-        url  = menu_lib_url.empty() ? kJSMenuDefaultURL_KurdinSide :
-            menu_lib_url;
-        code = "<link rel=\"stylesheet\" type=\"text/css\" href=\"" +
-            kJSMenuDefaultURL_KurdinSideCSS + "\">\n"; 
-        break;
-    }
-    if ( !url.empty() ) {
-        code += "<script language=\"JavaScript1.2\" src=\"" + url +
-            "\"></script>\n";
-    }
-    return code;
-}
-
-
-string CHTMLPopupMenu::GetCodeBody(EType type, bool use_dynamic_menu)
-{
-    if ( type != eSmith ) {
-        return kEmptyStr;
-    }
-    string use_dm = use_dynamic_menu ? "true" : "false";
-    return "<script language=\"JavaScript1.2\">\n"
-        "<!--\nfunction onLoad() {\n"
-        "window.useDynamicMenu = " + use_dm + ";\n"
-        "window.defaultjsmenu = new Menu();\n"
-        "defaultjsmenu.addMenuSeparator();\n"
-        "defaultjsmenu.writeMenus();\n"
-        "}\n"
-        "// For IE & NS6\nif (!document.layers) onLoad();\n//-->\n</script>\n";
-}
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/04/05 16:19:57  ivanov
+ * Added support for Sergey Kurdin's popup menu with configurations
+ *
  * Revision 1.26  2004/01/08 18:36:52  ivanov
  * Removed _TROUBLE from HideMenu()
  *
