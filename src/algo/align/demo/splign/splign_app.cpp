@@ -29,6 +29,10 @@
  *                   
 */
 
+#include <algorithm>
+#include <iterator>
+#include <iostream>
+
 #include <corelib/ncbistd.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
@@ -375,16 +379,14 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
       // resize
       s.m_box[1] += sh;
       s.m_box[3] += sh;
-      s.m_len += sh;
       vector<char> v (sh, 'M');
       copy(v.begin(), v.end(), back_inserter(s.m_details));
-      // restore idty
-      s.m_idty = count(s.m_details.begin(), s.m_details.end(), 'M')
-	         / double(s.m_len);
+      s.RestoreIdentity();
+
       // correct annotation
       const size_t ann_dim = s.m_annot.size();
       if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
-	s.m_annot[ann_dim-2] = *q++;
+          s.m_annot[ann_dim-2] = *q++;
       }
 
       polya_start += sh;
@@ -398,7 +400,11 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
   for(; j >= 0; --j) {
     const char* p0 = &mrna[qmin] + (*segments)[j].m_box[0];
     const char* p1 = &mrna[qmin] + (*segments)[j].m_box[1] + 1;
-    double ac = count(p0, p1, 'A') / double(p1 - p0);
+    size_t count = 0;
+    for(const char* pc = p0; pc != p1; ++pc) {
+        if(*pc == 'A') ++count;
+    }
+    double ac = double(count) / double(p1 - p0);
     if(ac < 0.9) break;
   }
   if(j >= 0 && j < int(seg_dim - 1)) {
@@ -491,6 +497,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/31 19:43:15  kapustin
+ * Format and compatibility update
+ *
  * Revision 1.1  2003/10/30 19:37:20  kapustin
  * Initial toolkit revision
  *

@@ -147,14 +147,15 @@ void CSplign::SetPattern(const vector<size_t>& pattern)
       if(max_seg_size) {
 
 	const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
-	const size_t sh = min(hitlen_q/4, 30u);
+	const size_t hlq4 = hitlen_q/4;
+	const size_t sh = hlq4 < 30? hlq4: 30;
 
-	size_t delta = max(0, int(sh - L1));
+	size_t delta = sh > L1? sh - L1: 0;
 	size_t q0 = pattern[i] + L1 + delta;
 	size_t s0 = pattern[i+2] + L2 + delta;
 
 	const size_t h2s_right = hitlen_q - R1 - 1;
-	delta = max(0, int(sh - h2s_right));
+	delta = sh > h2s_right? sh - h2s_right: 0;
 	size_t q1 = pattern[i] + R1 - delta;
 	size_t s1 = pattern[i+2] + R2 - delta;
 
@@ -217,10 +218,10 @@ double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
   double min_idty = 1.;
   while(iss_exons) {
     string id1, id2, txt, repr;
-    size_t q0, q1, s0, s1, size;
+    size_t i0, i1, j0, j1, size;
     double idty;
     iss_exons >> id1 >> id2 >> idty >> size
-	      >> q0 >> q1 >> s0 >> s1 >> txt >> repr;
+	      >> i0 >> i1 >> j0 >> j1 >> txt >> repr;
     if(!iss_exons) break;
     if(idty < min_idty) {
       min_idty = idty;
@@ -375,7 +376,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
     ++k0;
   }
 
-  int k1 = seg_dim - 1;
+  int k1 = int(seg_dim - 1);
   while(k1 >= int(k0)) {
     SSegment& s = segments[k1];
     if(s.m_exon) {
@@ -434,7 +435,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
     SSegment& s = segments[k];
     if(!s.m_exon) {
       if(gap_start_idx == -1) {
-	gap_start_idx = k;
+	gap_start_idx = int(k);
 	if(k > 0) {
 	  s.m_box[0] = segments[k-1].m_box[1] + 1;
 	  s.m_box[2] = segments[k-1].m_box[3] + 1;
@@ -479,13 +480,13 @@ void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
 {
   const size_t min_query_size = 4;
 
-  int i0 = m_box[1] - m_box[0] + 1, i0_max = i0;
+  int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
   if(i0 < int(min_query_size)) {
     return;
   }
 
   // find the top score suffix
-  int i1 = m_box[3] - m_box[2] + 1, i1_max = i1;
+  int i1 = int(m_box[3] - m_box[2] + 1), i1_max = i1;
   
   CNWAligner::TScore score_max = 0, s = 0;
   
@@ -494,7 +495,7 @@ void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
   const CNWAligner::TScore wg =  aligner->GetWg();
   const CNWAligner::TScore ws =  aligner->GetWs();
   
-  string::const_reverse_iterator irs0 = m_details.rbegin(),
+  string::reverse_iterator irs0 = m_details.rbegin(),
     irs1 = m_details.rend(), irs = irs0, irs_max = irs0;
 
   for( ; irs != irs1; ++irs) {
@@ -561,10 +562,7 @@ void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
     m_box[2] += i1_max;
     m_details.erase(0, m_details.size() - (irs_max - irs0 + 1));
     m_details.insert(m_details.begin(), head, 'M');
-    m_len = m_details.size();
-
-    // restore idty
-    m_idty = count(m_details.begin(), m_details.end(), 'M') / double(m_len);
+    RestoreIdentity();
     
     // possibly delete first two annotation symbols
     if(m_annot.size() > 2 && m_annot[0] != '<') {
@@ -595,7 +593,7 @@ void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
   const CNWAligner::TScore wg =  aligner->GetWg();
   const CNWAligner::TScore ws =  aligner->GetWs();
 
-  string::const_iterator irs0 = m_details.begin(),
+  string::iterator irs0 = m_details.begin(),
     irs1 = m_details.end(), irs = irs0, irs_max = irs0;
 
   for( ; irs != irs1; ++irs) {
@@ -639,8 +637,8 @@ void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
     }
   }
 
-  int dimq = m_box[1] - m_box[0] + 1;
-  int dims = m_box[3] - m_box[2] + 1;
+  int dimq = int(m_box[1] - m_box[0] + 1);
+  int dims = int(m_box[3] - m_box[2] + 1);
 
   // work around a weird case of equally optimal
   // but detrimental for our purposes alignment
@@ -665,13 +663,9 @@ void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
     m_box[1] = m_box[0] + i0_max;
     m_box[3] = m_box[2] + i1_max;
 
-    m_details.resize(m_len = irs_max - irs0 + 1);
+    m_details.resize(irs_max - irs0 + 1);
     m_details.insert(m_details.end(), tail, 'M');
-
-    m_len = m_details.size();
-
-    // restore idty
-    m_idty = count(m_details.begin(), m_details.end(), 'M') / double(m_len);
+    RestoreIdentity();
     
     // possibly delete last two annotation chars
     size_t adim = m_annot.size();
@@ -682,12 +676,27 @@ void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
 }
 
 
+void CSplign::SSegment::RestoreIdentity()
+{
+    // restore length and identity
+    m_len = m_details.size();
+    string::const_iterator ib = m_details.begin(), ie = m_details.end();
+    size_t count = 0; // not using std::count here due to known incompatibilty
+    for(string::const_iterator ii = ib; ii != ie; ++ii) {
+        if(*ii == 'M') ++count;
+    }
+    m_idty = double(count) / m_len;
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/31 19:43:15  kapustin
+ * Format and compatibility update
+ *
  * Revision 1.1  2003/10/30 19:37:20  kapustin
  * Initial toolkit revision
  *

@@ -1,3 +1,35 @@
+/* $Id$
+* ===========================================================================
+*
+*                            public DOMAIN NOTICE                          
+*               National Center for Biotechnology Information
+*                                                                          
+*  This software/database is a "United States Government Work" under the   
+*  terms of the United States Copyright Act.  It was written as part of    
+*  the author's official duties as a United States Government employee and 
+*  thus cannot be copyrighted.  This software/database is freely available 
+*  to the public for use. The National Library of Medicine and the U.S.    
+*  Government have not placed any restriction on its use or reproduction.  
+*                                                                          
+*  Although all reasonable efforts have been taken to ensure the accuracy  
+*  and reliability of the software and data, the NLM and the U.S.          
+*  Government do not and cannot warrant the performance or results that    
+*  may be obtained by using this software or data. The NLM and the U.S.    
+*  Government disclaim all warranties, express or implied, including       
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.                                                                
+*                                                                          
+*  Please cite the author in any work or product based on this material.   
+*
+* ===========================================================================
+*
+* Author:  Yuri Kapustin
+*
+* File Description:
+*   CSeqLoader class
+*
+*/
+
 #include <fstream>
 #include "seq_loader.hpp"
 #include "splign_app_exception.hpp"
@@ -92,12 +124,16 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     while(*input) {
       size_t i0 = input->tellg();
       input->getline(buf, sizeof buf, '\n');
-      int line_size = int(input->tellg()) - i0 - 1;
-      if(line_size > 0) {
+      size_t i1 = input->tellg();
+      if(i1 - i0 > 1) {
+	size_t line_size = i1 - i0 - 1;
 	if(buf[0] == '>') break;
 	size_t size_old = seq->size();
 	seq->resize(size_old + line_size);
 	copy(buf, buf + line_size, seq->begin() + size_old);
+      }
+      else if (i0 == i1) {
+	break; // GCC hack
       }
     }
   }
@@ -105,28 +141,32 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     // read only a portion of a sequence
     const size_t dst_seq_len = to - from + 1;
     seq->resize(dst_seq_len + sizeof buf);
-    size_t pos0 = input->tellg(), pos1;
+    size_t i0 = input->tellg(), i1;
     size_t dst_read = 0, src_read = 0;
-    int line_len = 0;
     while(*input) {
       input->getline(buf, sizeof buf, '\n');
       if(buf[0] == '>') {
 	seq->resize(dst_read);
 	return;
       }
-      pos1 = input->tellg();
-      line_len = int(pos1) - pos0 - 1;
-      if(line_len > 0) {
-	src_read += line_len;
+      i1 = input->tellg();
+
+      if(i1 - i0 > 1) {
+	src_read += i1 - i0 - 1;
       }
-      else {
+      else if(i1 - i0 == 1) {
 	continue;
       }
+      else { 
+	break; // GCC hack
+      }
+
       if(src_read > from) {
-	size_t start  = dst_read? 0: (line_len - (src_read - from));
+	size_t line_size = i1 - i0 - 1;
+	size_t start  = dst_read? 0: (line_size - (src_read - from));
 	size_t finish = (src_read > to)?
-	                (line_len - (src_read - to) + 1):
-	                line_len;
+	                (line_size - (src_read - to) + 1):
+	                line_size;
 	copy(buf + start, buf + finish, seq->begin() + dst_read);
 	dst_read += finish - start;
 	if(dst_read >= dst_seq_len) {
@@ -134,12 +174,20 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 	  return;
 	}
       }
-      pos0 = pos1;
+      i0 = i1;
     }
     seq->resize(dst_read);
   }
 }
 
 
-
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2003/10/31 19:43:15  kapustin
+ * Format and compatibility update
+ *
+ * ===========================================================================
+ */
