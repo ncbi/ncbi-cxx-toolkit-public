@@ -353,7 +353,9 @@ void CGenbankFormatter::FormatReference
     x_Consortium(l, ref, ctx);
     x_Title(l, ref, ctx);
     x_Journal(l, ref, ctx);
-    x_Medline(l, ref, ctx);
+    if (ref.GetPMID() == 0) {  // suppress MEDLINE if has PUBMED
+        x_Medline(l, ref, ctx);
+    }
     x_Pubmed(l, ref, ctx);
     x_Remark(l, ref, ctx);
 
@@ -762,6 +764,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/03/02 16:31:27  shomrat
+* Supress MEDLINE if has PUBMED
+*
 * Revision 1.25  2005/02/09 14:58:09  shomrat
 * HTML output for SOURCE/ORGANISM paragraph; Fixed empty accession formatting
 *
