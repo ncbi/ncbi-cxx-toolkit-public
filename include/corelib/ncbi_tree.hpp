@@ -163,7 +163,7 @@ public:
     ///    val value reference
     ///
     /// @return pointer to new subtree
-    CTreeNode<TValue>* AddNode(const TValue& val);
+    CTreeNode<TValue>* AddNode(const TValue& val = TValue());
 
 
     /// Insert new subnode before the specified location in the subnode list
@@ -710,6 +710,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/01/29 20:03:17  jcherry
+ * Added default value for AddNode(const TValue& val)
+ *
  * Revision 1.20  2004/01/15 20:05:53  yazhuk
  * Added return falue to operator=
  *
