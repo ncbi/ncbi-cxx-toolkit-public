@@ -1168,10 +1168,9 @@ void CFlatGatherer::x_GatherFeatures(void) const
     if ( ctx.IsInGPS()  &&  cfg.CopyGeneToCDNA()  &&
          ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) {
         const CSeq_feat* mrna = GetmRNAForProduct(ctx.GetHandle());
-        if ( mrna != 0 ) {
-            CConstRef<CSeq_feat> gene = 
-                GetOverlappingGene(mrna->GetLocation(), scope);
-            if ( gene != 0 ) {
+        if (mrna != NULL) {
+            CConstRef<CSeq_feat> gene = GetBestGeneForMrna(*mrna, scope);
+            if (gene) {
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->SetWhole(*ctx.GetPrimaryId());
                 out << new CFeatureItem(*gene, ctx, loc, 
@@ -1368,6 +1367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2004/10/18 18:51:34  shomrat
+* Use new function to get overlapping gene for mRNA
+*
 * Revision 1.29  2004/10/05 15:43:47  shomrat
 * Changes to feature and comment gathering
 *
