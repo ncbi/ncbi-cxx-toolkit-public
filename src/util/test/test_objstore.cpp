@@ -82,7 +82,7 @@ static void TestCReverseDataStore(void)
     assert(!has);
 }
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 /// @internal
 struct ITest
@@ -95,7 +95,7 @@ struct ITest
 
 NCBI_DECLARE_INTERFACE_VERSION(ITest,  "itest", 1, 1, 0);
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE
 
 void TestPluginManagerStore()
 {
@@ -146,6 +146,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/08/05 20:09:01  ucko
+ * Remove semicolons after {BEGIN,END}_NCBI_SCOPE; they aren't necessary,
+ * and some compilers forbid the resulting null declarations.
+ *
  * Revision 1.3  2004/08/05 18:41:26  kuznets
  * test case for plugin manager put to ncbi namespace(GCC compilation fix)
  *
