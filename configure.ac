@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.258 2004/01/27 17:05:11 ucko Exp $
+#  $Id: configure.ac,v 1.259 2004/01/28 13:11:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1334,6 +1334,9 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
       if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
          runpath="$runpath -Wl,-rpath-link,\$(libdir)"
       fi
+      ;;
+    *:ICC )
+      runpath="$runpath -Xlinker -rpath-link -Xlinker \$(libdir)"
       ;;
    esac
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then

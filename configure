@@ -4763,6 +4763,9 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
          runpath="$runpath -Wl,-rpath-link,\$(libdir)"
       fi
       ;;
+    *:ICC )
+      runpath="$runpath -Xlinker -rpath-link -Xlinker \$(libdir)"
+      ;;
    esac
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
    runpath="${CONF_f_runpath}\$(libdir)"
