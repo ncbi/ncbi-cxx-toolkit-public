@@ -119,6 +119,7 @@ res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
 cfgs='Debug DebugDLL DebugMT Release ReleaseDLL ReleaseMT'
+permanent_features='ODBC OpenGL serial objects dbapi app ctools gui algo'
 
 
 ##  Printout USAGE info and exit
@@ -282,16 +283,6 @@ RunTest() {
    x_work_dir="\$build_dir/\${build_tree}check/\$x_conf/\$x_wdir"
    mkdir -p \$x_work_dir
 
-   # Features detection
-   features="ODBC OpenGL serial objects dbapi app ctools gui algo"
-   if test \`echo \$x_conf | grep MT\`; then
-      features="MT \$features"
-   fi
-   if test \`echo \$x_conf | grep DLL\`; then
-      features="MT \$features"
-   fi
-   export features
-
    # Check application requirements
    for x_req in \$x_requires; do
       (echo " \$features " | grep " \$x_req " > /dev/null)  ||  return 0
@@ -376,7 +367,7 @@ RunTest() {
 # For all build trees
 for build_tree in \$build_trees; do
 
-   if test \$build_tree = "."; then
+   if test "\$build_tree" = "."; then
       build_tree=""
    else
       build_tree="\$build_tree/"
@@ -388,9 +379,22 @@ for build_tree in \$build_trees; do
    # For each configuration
    for x_conf in \$configurations; do
 
-   if test \$build_tree = "dll/" -a ! \$x_conf = "DebugDLL" -a ! \$x_conf = "ReleaseDLL" ; then
+   if test "\$build_tree" = "dll/" -a ! \$x_conf = "DebugDLL" -a ! \$x_conf = "ReleaseDLL" ; then
       continue
    fi
+
+   # Features detection
+   features="\$permanent_features"
+   if test \`echo \$x_conf | grep MT\`; then
+      features="MT \$features"
+   fi
+   if test \`echo \$x_conf | grep DLL\`; then
+      features="MT \$features"
+   fi
+   if test "\$build_tree" = "dll/"; then
+      features="DLL \$features"
+   fi
+   export features
 
    # Add current configuration's build and dll build directories to PATH
    PATH=".:\${build_dir}/\${build_tree}bin/\${x_conf}:\${build_dir}/\${build_tree}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
