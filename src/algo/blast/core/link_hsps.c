@@ -1399,7 +1399,7 @@ BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list,
       } else {
          /* Calculate individual HSP e-values first - they'll be needed to
             compare with sum e-values. */
-         BLAST_GetNonSumStatsEvalue(program_number, query_info, 
+         Blast_GetNonSumStatsEvalue(program_number, query_info, 
                                     hsp_list, gapped_calculation, sbp);
          
          new_link_hsps(program_number, hsp_list, query_info, subject, sbp, 

@@ -113,7 +113,7 @@ typedef struct BlastHSPResults {
  *                 sequence coordinates [in]
  * @param hit_parameters The options/parameters related to saving hits [in]
  */
-Int2 BLAST_SaveHitlist(Uint1 program, BlastHSPResults* results, 
+Int2 Blast_SaveHitlist(Uint1 program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters);
 
 /** Initialize the results structure.
@@ -121,10 +121,10 @@ Int2 BLAST_SaveHitlist(Uint1 program, BlastHSPResults* results,
  *                    for [in]
  * @param results_ptr The allocated structure [out]
  */
-Int2 BLAST_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr);
+Int2 Blast_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr);
 
 /** Sort each hit list in the BLAST results by best e-value */
-Int2 BLAST_SortResults(BlastHSPResults* results);
+Int2 Blast_SortResults(BlastHSPResults* results);
 
 /** Calculate the expected values for all HSPs in a hit list. In case of 
  * multiple queries, the offsets are assumed to be already adjusted to 
@@ -136,7 +136,7 @@ Int2 BLAST_SortResults(BlastHSPResults* results);
  * @param gapped_calculation Is this for a gapped or ungapped search? [in]
  * @param sbp Structure containing statistical information [in]
  */
-Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
+Int2 Blast_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp);
 
@@ -145,13 +145,13 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
  * @param sbp Scoring block with statistical parameters [in]
  * @return The e-value corresponding to this score.
  */
-double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp);
+double Blast_PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp);
 
 /** Calculate e-values for a PHI BLAST HSP list.
  * @param hsp_list HSP list found by PHI BLAST [in] [out]
  * @param sbp Scoring block with statistical parameters [in]
  */
-void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
+void Blast_PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
 
 
 /** Reevaluate all HSPs in an HSP list, using ambiguity information. 
@@ -170,7 +170,7 @@ void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
  *             sequence) [in]
  */
 Int2 
-ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
+Blast_ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
@@ -180,7 +180,7 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
  * @param hit_options Options block containing the e-value cut-off [in]
 */
-Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list, 
+Int2 Blast_ReapHitlistByEvalue(BlastHSPList* hsp_list, 
                                BlastHitSavingOptions* hit_options);
 
 /** Reevaluate the HSP's score, e-value and percent identity after taking
@@ -196,7 +196,7 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list,
  * @param sbp Score block with Karlin-Altschul parameters [in]
  * @return Should this HSP be deleted after the score reevaluation?
  */
-Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp, 
+Boolean Blast_ReevaluateHSPWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingOptions* hit_options, 
            const BlastScoringOptions* score_options, 
@@ -212,7 +212,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
  * @param align_length_ptr The alignment length, including gaps [out]
  */
 Int2
-BlastHSPGetNumIdentities(Uint1* query, Uint1* subject, 
+Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Boolean is_gapped, Int4* num_ident_ptr, 
    Int4* align_length_ptr);
 
@@ -225,7 +225,7 @@ BlastHSPGetNumIdentities(Uint1* query, Uint1* subject,
  * @param align_length_ptr The alignment length, including gaps [out]
  */
 Int2
-BlastOOFGetNumIdentities(Uint1* query, Uint1* subject, 
+Blast_OOFGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Uint1 program, 
    Int4* num_ident_ptr, Int4* align_length_ptr);
 
@@ -235,7 +235,7 @@ BlastOOFGetNumIdentities(Uint1* query, Uint1* subject,
  * @param is_ooframe Is out-of-frame gapping used? [in]
 */
 void 
-HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
+Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
                  Boolean is_ooframe);
 
 /** Adjust subject offsets in an HSP list if only part of the subject sequence
@@ -243,7 +243,7 @@ HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list,
  * @param hsp_list List of HSPs from a chunk of a subject sequence [in]
  * @param offset Offset where the chunk starts [in]
  */
-void AdjustOffsetsInHSPList(BlastHSPList* hsp_list, Int4 offset);
+void Blast_AdjustOffsetsInHSPList(BlastHSPList* hsp_list, Int4 offset);
 
 /** An auxiliary structure used for merging HSPs */
 typedef struct BLASTHSPSegment {
@@ -406,7 +406,7 @@ Int2 Blast_HSPListArrayFree(BlastHitList* hitlist);
 
 
 /** Deallocate memory for BLAST results */
-BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
+BlastHSPResults* Blast_ResultsFree(BlastHSPResults* results);
 
 /** Convert a prelimiary list of HSPs, that are the result of
   * an RPS blast search, to a format compatible with the rest
@@ -429,7 +429,7 @@ BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
   * @param results The modified results (in new format) [out]
   */
 
-void RPSUpdateResults(BlastHSPResults *results,
+void Blast_RPSUpdateResults(BlastHSPResults *results,
                       BlastHSPResults *init_results);
 
 #ifdef __cplusplus

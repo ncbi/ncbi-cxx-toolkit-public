@@ -161,7 +161,7 @@ CBl2Seq::x_ResetSubjectDs()
 {
     // Clean up structures and results from any previous search
     mi_pSeqSrc = BlastSeqSrcFree(mi_pSeqSrc);
-    mi_pResults = BLAST_ResultsFree(mi_pResults);
+    mi_pResults = Blast_ResultsFree(mi_pResults);
     sfree(mi_pReturnStats);
     // TODO: Should clear class wrappers for internal parameters structures?
     //      -> destructors will be called for them
@@ -240,7 +240,7 @@ CBl2Seq::ScanDB()
     mi_pResults = NULL;
     mi_pReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
 
-    BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
+    Blast_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
 
     BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
                        mi_clsQueries, mi_clsQueryInfo, 
@@ -316,6 +316,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2004/04/30 16:53:06  dondosha
+ * Changed a number of function names to have the same conventional Blast_ prefix
+ *
  * Revision 1.48  2004/04/05 16:09:27  camacho
  * Rename DoubleInt -> SSeqRange
  *

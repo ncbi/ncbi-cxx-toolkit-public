@@ -101,7 +101,7 @@ CDbBlast::x_ResetQueryDs()
     m_ipLookupSegments = ListNodeFreeData(m_ipLookupSegments);
 
     m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
-    m_ipResults = BLAST_ResultsFree(m_ipResults);
+    m_ipResults = Blast_ResultsFree(m_ipResults);
     
     sfree(m_ipReturnStats);
     NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
@@ -152,7 +152,7 @@ int CDbBlast::SetupSearch()
             BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
-        BLAST_ResultsInit(m_iclsQueryInfo->num_queries, &m_ipResults);
+        Blast_ResultsInit(m_iclsQueryInfo->num_queries, &m_ipResults);
 
         LookupTableWrapInit(m_iclsQueries, 
             m_OptsHandle->GetOptions().GetLutOpts(), 
@@ -317,6 +317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2004/04/30 16:53:06  dondosha
+ * Changed a number of function names to have the same conventional Blast_ prefix
+ *
  * Revision 1.22  2004/04/21 17:33:46  madden
  * Rename BlastHSPFree to Blast_HSPFree
  *

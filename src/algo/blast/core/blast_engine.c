@@ -263,9 +263,10 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          hsp_list->oid = subject->oid;
          
          /* Assign frames in all HSPs. */
-         HSPListSetFrames(program_number, hsp_list, score_options->is_ooframe);
+         Blast_HSPListSetFrames(program_number, hsp_list, 
+                                score_options->is_ooframe);
          
-         AdjustOffsetsInHSPList(hsp_list, offset);
+         Blast_AdjustOffsetsInHSPList(hsp_list, offset);
          /* Allow merging of HSPs either if traceback is already 
             available, or if it is an ungapped search */
          Blast_HSPListsMerge(hsp_list, &combined_hsp_list, hsp_num_max, offset,
@@ -285,20 +286,20 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       /* These e-values will not be accurate yet, since we don't know
          the number of pattern occurrencies in the database. That
          is arbitrarily set to 1 at this time. */
-      PHIGetEvalue(hsp_list, gap_align->sbp);
+      Blast_PHIGetEvalue(hsp_list, gap_align->sbp);
    } else {
       /* Calculate e-values for all HSPs. Skip this step
          for RPS blast, since calculating the E values 
          requires precomputation that has not been done yet */
       if (program_number != blast_type_rpsblast &&
           program_number != blast_type_rpstblastn)
-         status = BLAST_GetNonSumStatsEvalue(program_number, query_info, 
+         status = Blast_GetNonSumStatsEvalue(program_number, query_info, 
                      hsp_list, score_options->gapped_calculation, 
                      gap_align->sbp);
    }
    
    /* Discard HSPs that don't pass the e-value test */
-   status = BLAST_ReapHitlistByEvalue(hsp_list, hit_options);
+   status = Blast_ReapHitlistByEvalue(hsp_list, hit_options);
    
    if (translation_buffer) {
        sfree(translation_buffer);
@@ -593,14 +594,14 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    if (hsp_list && hsp_list->hspcnt > 0) {
       return_stats->prelim_gap_passed += hsp_list->hspcnt;
       /* Save the HSPs into a hit list */
-      BLAST_SaveHitlist(program_number, &prelim_results, hsp_list, hit_params);
+      Blast_SaveHitlist(program_number, &prelim_results, hsp_list, hit_params);
    }
 
    /* Change the results from a single hsplist with many 
       contexts to many hsplists each with a single context.
       'query' and 'subject' offsets are still reversed. */
 
-   RPSUpdateResults(results, &prelim_results);
+   Blast_RPSUpdateResults(results, &prelim_results);
 
    /* for a translated search, throw away the packed version
       of the query and replace with the original (excluding the
@@ -622,7 +623,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    /* The traceback calculated the E values, so it's safe
       to sort the results now */
 
-   BLAST_SortResults(results);
+   Blast_SortResults(results);
 
    /* free the internal structures used */
    /* Do not destruct score block here */
@@ -727,11 +728,12 @@ BLAST_SearchEngine(Uint1 program_number,
          return_stats->prelim_gap_passed += hsp_list->hspcnt;
          if (program_number == blast_type_blastn) {
             status = 
-               ReevaluateHSPListWithAmbiguities(hsp_list, query, seq_arg.seq, 
-                  hit_options, query_info, sbp, score_options, seq_src);
+               Blast_ReevaluateHSPListWithAmbiguities(hsp_list, query, 
+                  seq_arg.seq, hit_options, query_info, sbp, score_options, 
+                  seq_src);
          }
          /* Save the HSPs into a hit list */
-         BLAST_SaveHitlist(program_number, results, hsp_list, hit_params);
+         Blast_SaveHitlist(program_number, results, hsp_list, hit_params);
       }
          /*BlastSequenceBlkClean(subject);*/
    }
@@ -748,7 +750,7 @@ BLAST_SearchEngine(Uint1 program_number,
    /* Now sort the hit lists for all queries, but only if this is a database
       search. */
    if (db_length > 0)
-      BLAST_SortResults(results);
+      Blast_SortResults(results);
 
    if (!ext_options->skip_traceback && score_options->gapped_calculation) {
       status = 

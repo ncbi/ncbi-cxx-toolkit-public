@@ -46,7 +46,7 @@ CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries,
                        BlastHSPResults* results)
     : CDbBlast(queries, seq_src, p)
 {
-    BLAST_ResultsFree(m_ipResults);
+    Blast_ResultsFree(m_ipResults);
     m_ipResults = results;
 }
 
@@ -55,7 +55,7 @@ CDbBlastTraceback::CDbBlastTraceback(const TSeqLocVector& queries,
                        BlastHSPResults* results)
     : CDbBlast(queries, seq_src, opts)
 {
-    BLAST_ResultsFree(m_ipResults);
+    Blast_ResultsFree(m_ipResults);
     m_ipResults = results;
 }
 
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/04/30 16:53:06  dondosha
+ * Changed a number of function names to have the same conventional Blast_ prefix
+ *
  * Revision 1.4  2004/03/16 23:30:59  dondosha
  * Changed mi_ to m_i in member field names
  *

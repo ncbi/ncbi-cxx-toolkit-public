@@ -48,7 +48,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/core/blast_util.h>
 
 void 
-HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
+Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
                  Boolean is_ooframe)
 {
    BlastHSP* hsp;
@@ -91,7 +91,7 @@ BlastHSP* Blast_HSPFree(BlastHSP* hsp)
    return NULL;
 }
 
-Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
+Int2 Blast_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp)
 {
@@ -131,7 +131,7 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    return 0;
 }
 
-double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp)
+double Blast_PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp)
 {
    double paramC = sbp->kbp[0]->paramC;
    double Lambda = sbp->kbp[0]->Lambda;
@@ -140,18 +140,18 @@ double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp)
    return pattern_space*paramC*(1+Lambda*score)*exp(-Lambda*score);
 }
 
-void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
+void Blast_PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
 {
    Int4 index;
    BlastHSP* hsp;
 
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       hsp = hsp_list->hsp_array[index];
-      hsp->evalue = PHIScoreToEvalue(hsp->score, sbp);
+      hsp->evalue = Blast_PHIScoreToEvalue(hsp->score, sbp);
    }
 }
 
-Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list, 
+Int2 Blast_ReapHitlistByEvalue(BlastHSPList* hsp_list, 
         BlastHitSavingOptions* hit_options)
 {
    BlastHSP* hsp;
@@ -222,7 +222,7 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
 }
 
 Int2
-BlastHSPGetNumIdentities(Uint1* query, Uint1* subject, 
+Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Boolean is_gapped, Int4* num_ident_ptr, 
    Int4* align_length_ptr)
 {
@@ -286,7 +286,7 @@ BlastHSPGetNumIdentities(Uint1* query, Uint1* subject,
 }
 
 Int2
-BlastOOFGetNumIdentities(Uint1* query, Uint1* subject, 
+Blast_OOFGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Uint1 program, 
    Int4* num_ident_ptr, Int4* align_length_ptr)
 {
@@ -458,7 +458,7 @@ null_compare_hsps(const void* v1, const void* v2)
 
 /** Sort the HSPs in an HSP list by diagonal and remove redundant HSPs */
 static Int2
-BlastSortUniqHspArray(BlastHSPList* hsp_list)
+Blast_SortUniqHspArray(BlastHSPList* hsp_list)
 {
    Int4 index, new_hspcnt, index1, q_off, s_off, q_end, s_end, index2;
    BlastHSP** hsp_array = hsp_list->hsp_array;
@@ -536,7 +536,7 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    return 0;
 }
 
-Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp, 
+Boolean Blast_ReevaluateHSPWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingOptions* hit_options, 
            const BlastScoringOptions* score_options, 
@@ -695,7 +695,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
          }
          last_esp->num = last_esp_num;
       }
-      BlastHSPGetNumIdentities(query_start, subject_start, hsp, 
+      Blast_HSPGetNumIdentities(query_start, subject_start, hsp, 
          gapped_calculation, &hsp->num_ident, &align_length);
       /* Check if this HSP passes the percent identity test */
       if (((double)hsp->num_ident) / align_length * 100 < 
@@ -713,7 +713,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
 } 
 
 Int2 
-ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
+Blast_ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
@@ -737,7 +737,7 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
    /* In case of no traceback, return without doing anything */
    if (!hsp_list->traceback_done && gapped_calculation) {
       if (hsp_list->hspcnt > 1)
-         status = BlastSortUniqHspArray(hsp_list);
+         status = Blast_SortUniqHspArray(hsp_list);
       return status;
    }
 
@@ -772,7 +772,7 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
       query_start = query_blk->sequence + query_info->context_offsets[context];
 
       delete_hsp = 
-         ReevaluateHSPWithAmbiguities(hsp, query_start, subject_start,
+         Blast_ReevaluateHSPWithAmbiguities(hsp, query_start, subject_start,
             hit_options, score_options, query_info, sbp);
       
       if (delete_hsp) { /* This HSP is now below the cutoff */
@@ -787,7 +787,7 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
    
    /* Check for HSP inclusion once more */
    if (hsp_list->hspcnt > 1)
-      status = BlastSortUniqHspArray(hsp_list);
+      status = Blast_SortUniqHspArray(hsp_list);
 
    BlastSequenceBlkFree(seq_arg.seq);
    subject_blk->sequence = NULL;
@@ -1035,7 +1035,7 @@ static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
    return new_hsp_list;
 }
 
-Int2 BLAST_SaveHitlist(Uint1 program, BlastHSPResults* results, 
+Int2 Blast_SaveHitlist(Uint1 program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters)
 {
    Int2 status = 0;
@@ -1136,7 +1136,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BlastHSPResults* results,
    return status; 
 }
 
-Int2 BLAST_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr)
+Int2 Blast_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr)
 {
    BlastHSPResults* results;
    Int2 status = 0;
@@ -1151,7 +1151,7 @@ Int2 BLAST_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr)
    return status;
 }
 
-BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results)
+BlastHSPResults* Blast_ResultsFree(BlastHSPResults* results)
 {
    Int4 index;
 
@@ -1165,7 +1165,7 @@ BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results)
    return NULL;
 }
 
-static void BlastHitListPurge(BlastHitList* hit_list)
+static void Blast_HitListPurge(BlastHitList* hit_list)
 {
    Int4 index, hsplist_count;
    
@@ -1183,7 +1183,7 @@ static void BlastHitListPurge(BlastHitList* hit_list)
    }
 }
 
-Int2 BLAST_SortResults(BlastHSPResults* results)
+Int2 Blast_SortResults(BlastHSPResults* results)
 {
    Int4 index;
    BlastHitList* hit_list;
@@ -1194,12 +1194,12 @@ Int2 BLAST_SortResults(BlastHSPResults* results)
          qsort(hit_list->hsplist_array, hit_list->hsplist_count, 
                   sizeof(BlastHSPList*), evalue_compare_hsp_lists);
       }
-      BlastHitListPurge(hit_list);
+      Blast_HitListPurge(hit_list);
    }
    return 0;
 }
 
-void AdjustOffsetsInHSPList(BlastHSPList* hsp_list, Int4 offset)
+void Blast_AdjustOffsetsInHSPList(BlastHSPList* hsp_list, Int4 offset)
 {
    Int4 index;
    BlastHSP* hsp;
@@ -1242,7 +1242,7 @@ diag_compare_hsps(const void* v1, const void* v2)
  *               intersection is possible [in]
 */
 static Boolean
-BLAST_MergeHsps(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
+Blast_MergeHsps(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
 {
    BLASTHSPSegment* segments1,* segments2,* new_segment1,* new_segment2;
    GapEditScript* esp1,* esp2,* esp;
@@ -1665,7 +1665,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
              ABS(diag_compare_hsps(&hspp1[index], &hspp2[index1])) < 
              OVERLAP_DIAG_CLOSE) {
             if (merge_hsps) {
-               if (BLAST_MergeHsps(hspp1[index], hspp2[index1], start)) {
+               if (Blast_MergeHsps(hspp1[index], hspp2[index1], start)) {
                   /* Free the second HSP. */
                   hspp2[index1] = Blast_HSPFree(hspp2[index1]);
                }
@@ -1725,7 +1725,7 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
    return 0;
 }
 
-void RPSUpdateResults(BlastHSPResults *final_result,
+void Blast_RPSUpdateResults(BlastHSPResults *final_result,
                       BlastHSPResults *init_result)
 {
    Int4 i, j, k;
@@ -1876,7 +1876,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
          {
 #ifdef ERR_POST_EX_DEFINED
             ErrPostEx(SEV_WARNING, 0, 0, 
-               "UNABLE to reallocate in BLAST_SaveHsp,"
+               "UNABLE to reallocate in Blast_SaveHsp,"
                " continuing with fixed array of %ld HSP's", 
                       (long) hsp_allocated);
 #endif
