@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.3  2002/01/24 20:19:18  ucko
+* Add magic TemporarilyStopListening overflow processor
+* More cleanups
+*
 * Revision 6.2  2002/01/24 18:35:56  ucko
 * Allow custom queue-overflow handling.
 * Clean up SOCKs and CONNs when done with them.
@@ -58,6 +62,12 @@ public:
 };
 
 
+void TemporarilyStopListening(SOCK sock)
+{
+    // This function is just a standin; see below
+}
+
+
 void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
                          unsigned int init_threads, unsigned int max_threads,
                          unsigned int queue_size, int spawn_threshold,
@@ -75,8 +85,12 @@ void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
         if (status == eIO_Success) {
             try {
                 pool.AcceptRequest(factory.New(sock));
-            } catch (...) {
-                if (overflow_proc) {
+            } catch (CBlockingQueue<CRef<CStdRequest> >::CException) {
+                if (overflow_proc == TemporarilyStopListening) {
+                    LSOCK_Close(lsock);
+                    pool.WaitForRoom();
+                    LSOCK_Create(port, 5, &lsock);                    
+                } else if (overflow_proc) {
                     overflow_proc(sock);
                 }
                 SOCK_Close(sock);
@@ -85,6 +99,8 @@ void s_RunThreadedServer(const ISockRequestFactory& factory, unsigned int port,
             ERR_POST("accept failed: " << IO_StatusStr(status));
         }
     }
+
+    LSOCK_Close(lsock);
 }
 
 
