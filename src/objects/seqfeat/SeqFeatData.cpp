@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/03/06 21:59:48  ucko
+ * CSeqFeatData::GetKey: return (misc_)RNA rather than extended name for
+ * RNA of type "other."
+ *
  * Revision 6.1  2001/10/30 20:25:58  ucko
  * Implement feature labels/keys, subtypes, and sorting
  *
@@ -65,7 +69,8 @@ CSeqFeatData::~CSeqFeatData(void)
 // ASCII representation of subtype (GenBank feature key, e.g.)
 string CSeqFeatData::GetKey(EVocabulary vocab) const
 {
-    if (vocab == eVocabulary_genbank) {
+    bool genbank = (vocab == eVocabulary_genbank);
+    if (genbank) {
         switch (Which()) {
         case e_Gene:
             return "gene";
@@ -117,7 +122,9 @@ string CSeqFeatData::GetKey(EVocabulary vocab) const
         case CRNA_ref::eType_snRNA:   return "snRNA";
         case CRNA_ref::eType_scRNA:   return "scRNA";
         case CRNA_ref::eType_snoRNA:  return "sno_RNA"; // ok for GenBank?
-        case CRNA_ref::eType_other:   return GetRna().GetExt().GetName();
+        case CRNA_ref::eType_other:
+            // return GetRna().GetExt().GetName();
+            return genbank ? "misc_RNA" : "RNA";
         default:                      return "misc_RNA";
         }
     case e_Imp:             return GetImp().GetKey(); // "Imp"?
