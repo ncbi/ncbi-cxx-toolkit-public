@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/19 15:47:37  thiessen
+* add row sorting by identifier
+*
 * Revision 1.4  2001/03/13 01:24:15  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -212,6 +215,9 @@ public:
     typedef std::vector < const Sequence * > SequenceList;
     void GetSlaveSequences(SequenceList *seqs) const;
 
+    // sorting functions - only for single-alignment displays!
+    void SortRowsByIdentifier(void);
+
     // recreate the display from the given alignment.
     // NOTE: this assumes the display is from only a single alignment, and will put the block
     // boundary row at the top, regardless of where it was initially
@@ -239,6 +245,8 @@ private:
     void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
     bool controlDown;
+
+    void SortRows(void);
 
 public:
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/03/19 15:47:37  thiessen
+* add row sorting by identifier
+*
 * Revision 1.18  2001/03/13 01:24:16  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -82,6 +85,7 @@ public:
     void SaveDialog(void);
     void SaveAlignment(void);
 
+    // re-creates the display based on the given multiple (and adds block row)
     void RecreateFromEditedMultiple(BlockMultipleAlignment *multiple);
 
 private:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/19 15:47:38  thiessen
+* add row sorting by identifier
+*
 * Revision 1.3  2001/03/13 01:24:16  thiessen
 * working undo system for >1 alignment (e.g., update window)
 *
@@ -75,6 +78,8 @@ private:
         MID_SHOW_HIDE_ROWS = START_VIEWER_WINDOW_DERIVED_MID,
         // edit menu
         MID_DELETE_ROW,
+        MID_SORT_ROWS,   // sort rows submenu
+            MID_SORT_IDENT,
         // mouse mode
         MID_MOVE_ROW,
         // update menu
@@ -88,6 +93,7 @@ private:
     void OnMoveRow(wxCommandEvent& event);
     void OnShowUpdates(wxCommandEvent& event);
     void OnRealign(wxCommandEvent& event);
+    void OnSort(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
