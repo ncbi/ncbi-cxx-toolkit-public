@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/12/28 19:04:22  vakatov
+* #HAVE_NO_MINMAX_TEMPLATE
+*
 * Revision 1.33  1999/12/28 18:55:25  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -252,8 +255,8 @@ public:
 #endif /* HAVE_NO_AUTO_PTR */
 
 
-// dont use min/max from MSVC++ <windef.h>
-#if defined(HAVE_WINDOWS_H)
+// "min" and "max" templates
+#if defined(HAVE_NO_MINMAX_TEMPLATE)
 #define NOMINMAX
 #ifdef min
 #undef min
