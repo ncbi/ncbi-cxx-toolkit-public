@@ -82,10 +82,7 @@ bool CMySQL_LangCmd::Send()
     
     int nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
     m_HasResults = nof_Rows == -1 || nof_Rows > 0;
-    
-    if(mysql_errno(&m_Connect->m_MySQL) == 0) 
-      return false;
-    return true;
+    return ! HasFailed();
 }
 
 
@@ -122,7 +119,9 @@ bool CMySQL_LangCmd::HasMoreResults() const
 
 bool CMySQL_LangCmd::HasFailed() const
 {
-    return false;
+    if(mysql_errno(&m_Connect->m_MySQL) == 0) 
+      return false;
+    return true;
 }
 
 void CMySQL_LangCmd::Release()
@@ -144,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/29 21:42:25  butanaev
+ * Fixed Send, HasFailed functions.
+ *
  * Revision 1.4  2003/05/29 21:25:47  butanaev
  * Added function to return last insert id, fixed RowCount, Send,
  * added call to RowCount in sample app.
