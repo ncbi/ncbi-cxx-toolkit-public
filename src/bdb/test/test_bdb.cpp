@@ -57,9 +57,10 @@
 USING_NCBI_SCOPE;
 
 
-
-static const char* s_TestStrTempl = "Test str %i";
-static const char* s_StrKeyTempl = "%i test key %i";
+namespace {
+    const char* s_TestStrTempl = "Test str %i";
+    const char* s_StrKeyTempl = "%i test key %i";
+}
 
 
 ////////////////////////////////
@@ -2050,6 +2051,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/03/08 17:43:27  vasilche
+ * Put file-scope static names in anonymous namespace instead to please WorkShop.
+ *
  * Revision 1.58  2005/02/22 14:08:40  kuznets
  * Cursor reopen test
  *
