@@ -53,6 +53,7 @@ class NCBI_XALNMGR_EXPORT CAlnVec : public CAlnMap
 
 public:
     typedef CSeqVector::TResidue            TResidue;
+    typedef vector<int>                     TResidueCount;
 
     // constructor
     CAlnVec(const CDense_seg& ds);
@@ -77,12 +78,18 @@ public:
                             const CAlnMap::TRange& seq_rng)               const;
     string& GetSegSeqString(string& buffer, 
                             TNumrow row, 
-                            TNumseg seg, TNumseg offset = 0) const;
+                            TNumseg seg, TNumseg offset = 0)              const;
  
    // alignment (seq + gaps) string (in aln coords)
     string& GetAlnSeqString(string& buffer,
                             TNumrow row, 
                             const CAlnMap::TSignedRange& aln_rng)         const;
+
+    string& GetColumnVector(string& buffer,
+                            TSeqPos aln_pos,
+                            TResidueCount * residue_count = 0,
+                            bool gaps_in_count = false)                   const;
+
     // get the seq string for the whole alignment (seq + gaps)
     // optionally, get the inserts and screen limit coords
     string& GetWholeAlnSeqString(TNumrow       row,
@@ -113,7 +120,8 @@ public:
     CRef<CDense_seg> CreateConsensus(int& consensus_row) const;
 
     // utilities
-    int CalculateScore(TNumrow row1, TNumrow row2) const;
+    int CalculateScore          (TNumrow row1, TNumrow row2) const;
+    int CalculatePercentIdentity(TSeqPos aln_pos)            const;
 
     // static utilities
     static void TranslateNAToAA(const string& na, string& aa);
@@ -343,6 +351,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2003/12/18 19:48:28  todorov
+ * + GetColumnVector & CalculatePercentIdentity
+ *
  * Revision 1.29  2003/12/17 17:01:07  todorov
  * Added translated GetResidue
  *

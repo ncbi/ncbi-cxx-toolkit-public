@@ -771,6 +771,96 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2) const
     return score;
 }
 
+
+string& CAlnVec::GetColumnVector(string& buffer,
+                                 TSeqPos aln_pos,
+                                 TResidueCount * residue_count,
+                                 bool gaps_in_count) const
+{
+    if (aln_pos > GetAlnStop()) {
+        aln_pos = GetAlnStop(); // out-of-range adjustment
+    }
+    TNumseg seg   = GetSeg(aln_pos);
+    TSeqPos delta = aln_pos - GetAlnStart(seg);
+    TSeqPos len   = GetLen(seg);
+
+    TSignedSeqPos pos;
+
+    for (TNumrow row = 0; row < m_NumRows; row++) {
+        pos = GetStart(row, seg);
+        if (pos >= 0) {
+            // it's a sequence residue
+
+            bool plus = IsPositiveStrand(row);
+            if (plus) {
+                pos += delta;
+            } else {
+                pos += len - 1 - delta;
+            }
+            
+            CSeqVector& seq_vec = x_GetSeqVector(row);
+            if (GetWidth(row) == 3) {
+                string na_buff, aa_buff;
+                if (plus) {
+                    seq_vec.GetSeqData(pos, pos + 3, na_buff);
+                } else {
+                    TSeqPos size = seq_vec.size();
+                    seq_vec.GetSeqData(size - pos - 3, size - pos, na_buff);
+                }
+                TranslateNAToAA(na_buff, aa_buff);
+                buffer[row] = aa_buff[0];
+            } else {
+                buffer[row] = seq_vec[plus ? pos : seq_vec.size() - pos - 1];
+            }
+
+            if (residue_count) {
+                (*residue_count)[FromIupac(buffer[row])]++;
+            }
+
+        } else {
+            // it's a gap or endchar
+            buffer[row] = GetGapChar(row);
+            
+            if (GetEndChar() != (buffer[row] = GetGapChar(row))) {
+                // need to check the where the segment is
+                // only if endchar != gap
+                // this saves a check if there're the same
+                TSegTypeFlags type = GetSegType(row, seg);
+                if (type & fNoSeqOnLeft  ||  type & fNoSeqOnRight) {
+                    buffer[row] = GetEndChar();
+                }
+            }
+
+            if (gaps_in_count) {
+                (*residue_count)[FromIupac(buffer[row])]++;
+            }
+        }
+    } // for row
+
+    return buffer;
+}
+
+int CAlnVec::CalculatePercentIdentity(TSeqPos aln_pos) const
+{
+    string column;
+    column.resize(m_NumRows);
+
+    TResidueCount residue_cnt;
+    residue_cnt.resize(16, 0);
+
+    GetColumnVector(column, aln_pos, &residue_cnt);
+    
+    int max = 0, total = 0;
+    ITERATE (TResidueCount, i_res, residue_cnt) {
+        if (*i_res > max) {
+            max = *i_res;
+        }
+        total += *i_res;
+    }
+    return 100 * max / total;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -778,6 +868,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2003/12/18 19:47:51  todorov
+* + GetColumnVector & CalculatePercentIdentity
+*
 * Revision 1.54  2003/12/10 17:17:39  todorov
 * CalcScore now const
 *
