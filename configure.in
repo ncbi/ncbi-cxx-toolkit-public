@@ -1357,14 +1357,15 @@ if test "$with_wxwin" != "no" ; then
       if test -z "$WXWIN_LIBPATH" ; then
          WXWIN_LIBPATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
          if test "$with_debug" = "no" ; then
-            WXWIN_GTK="wx_gtk"
+            WXWIN_GTK=${WXWIN_GTK:="wx_gtk"}
          else
-            WXWIN_GTK="wx_gtkd"
+            WXWIN_GTK=${WXWIN_GTK:="wx_gtkd"}
          fi
       fi
       WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_LIBPATH/bin"}
       WXWIN_LIBPATH="$WXWIN_LIBPATH/lib"
    fi
+   WXWIN_GTK=${WXWIN_GTK:="wx_gtk"}
 
    if test -x "$WXWIN_BINPATH/wx-config" ; then
       WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
@@ -2117,11 +2118,11 @@ LDFLAGS  = $LDFLAGS
 
 $DLL_USAGE
 PACKAGES:
-  enabled:   $WithPackages
-  disabled:  $WithoutPackages
+  enabled:  $WithPackages
+  disabled: $WithoutPackages
 PROJECTS:
-  enabled:   $WithProjects
-  disabled:  $WithoutProjects
+  enabled:  $WithProjects
+  disabled: $WithoutProjects
 
 Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
