@@ -190,15 +190,8 @@ CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
         CBlast4Client().Ask(*request, *reply);
     }
     catch(const CEofException&) {
-        ERR_POST(Error << "No response from server, cannot "
-                 "complete request.");
-        
-#if defined(NCBI_OS_UNIX)
-        // Use _exit() to avoid coredump.
-        _exit(-1);
-#else
-        exit(-1);
-#endif
+        NCBI_THROW(CBlastException, eInternal,
+                   "No response from server, cannot complete request.");
     }
     
     if (eDebug == m_Verbose) {
@@ -811,6 +804,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/07/28 21:02:19  bealer
+* - Remote blast will throw an exception instead of calling exit.
+*
 * Revision 1.17  2004/07/07 21:07:25  dondosha
 * Added default cases in switches to eliminate compiler warnings
 *
