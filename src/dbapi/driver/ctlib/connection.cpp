@@ -188,9 +188,10 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 
     // check what type of descriptor we've got
     if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
-	// this is not a native descriptor
-	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-	if(p_desc == 0) return 0;
+        // this is not a native descriptor
+        p_desc= x_GetNativeITDescriptor
+            (dynamic_cast<CDB_ITDescriptor&> (descr_in));
+        if(p_desc == 0) return 0;
     }
 
     C_ITDescriptorGuard d_guard(p_desc);
@@ -215,7 +216,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     }
 
     CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
-	dynamic_cast<CTL_ITDescriptor&> (descr_in);
+        dynamic_cast<CTL_ITDescriptor&> (descr_in);
     // desc.m_Desc.datatype   = CS_TEXT_TYPE;
     desc.m_Desc.total_txtlen  = (CS_INT)data_size;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
@@ -233,13 +234,15 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 }
 
 
-bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
+bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img,
+                              bool log_it)
 {
     return x_SendData(desc, img, log_it);
 }
 
 
-bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
+bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt,
+                              bool log_it)
 {
     return x_SendData(desc, txt, log_it);
 }
@@ -370,9 +373,11 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
 
     // check what type of descriptor we've got
     if(descr_in.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
-	// this is not a native descriptor
-	p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-	if(p_desc == 0) return false;
+        // this is not a native descriptor
+        p_desc= x_GetNativeITDescriptor
+            (dynamic_cast<CDB_ITDescriptor&> (descr_in));
+        if(p_desc == 0)
+            return false;
     }
     
 
@@ -397,8 +402,9 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                            "ct_command failed");
     }
 
-    CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&> (*p_desc) : 
-	dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    CTL_ITDescriptor& desc = p_desc ?
+        dynamic_cast<CTL_ITDescriptor&> (*p_desc) : 
+            dynamic_cast<CTL_ITDescriptor&> (descr_in);
     // desc->m_Desc.datatype = CS_TEXT_TYPE;
     desc.m_Desc.total_txtlen  = size;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
@@ -450,7 +456,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                     continue;
                 }
                 if (ret_code != CS_END_DATA) {
-		    ct_cmd_drop(cmd);
+                    ct_cmd_drop(cmd);
                     throw CDB_ClientEx(eDB_Fatal, 110036,
                                        "CTL_Connection::SendData",
                                        "ct_fetch failed");
@@ -458,7 +464,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                 break;
             }
             case CS_CMD_FAIL:
-		ct_cmd_drop(cmd);
+                ct_cmd_drop(cmd);
                 throw CDB_ClientEx(eDB_Error, 110037,
                                    "CTL_Connection::SendData",
                                    "command failed");
@@ -468,7 +474,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
             continue;
         }
         case CS_END_RESULTS: {
-	    ct_cmd_drop(cmd);
+            ct_cmd_drop(cmd);
             return true;
         }
         default: {
@@ -488,7 +494,9 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     }
 }
 
-I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor(CDB_ITDescriptor& descr_in)
+
+I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor
+(const CDB_ITDescriptor& descr_in)
 {
     string q= "set rowcount 1\nupdate ";
     q+= descr_in.TableName();
@@ -506,30 +514,30 @@ I_ITDescriptor* CTL_Connection::x_GetNativeITDescriptor(CDB_ITDescriptor& descr_
     
     CDB_LangCmd* lcmd= LangCmd(q, 0);
     if(!lcmd->Send()) {
-	throw CDB_ClientEx(eDB_Error, 110035, "CTL_Connection::SendData",
-			   "can not send the language command");
+        throw CDB_ClientEx(eDB_Error, 110035, "CTL_Connection::SendData",
+                           "can not send the language command");
     }
 
     CDB_Result* res;
     I_ITDescriptor* descr= 0;
-    bool i;
 
     while(lcmd->HasMoreResults()) {
-	res= lcmd->Result();
-	if(res == 0) continue;
-	if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
-	    while(res->Fetch()) {
-		//res->ReadItem(&i, 0);
-		descr= res->GetImageOrTextDescriptor();
-		if(descr) break;
-	    }
-	}
-	delete res;
+        res= lcmd->Result();
+        if(res == 0) continue;
+        if((res->ResultType() == eDB_RowResult) && (descr == 0)) {
+            while(res->Fetch()) {
+                //res->ReadItem(&i, 0);
+                descr= res->GetImageOrTextDescriptor();
+                if(descr) break;
+            }
+        }
+        delete res;
     }
     delete lcmd;
 		
     return descr;
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -560,7 +568,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > m_Bytes2go)
         nof_bytes = m_Bytes2go;
 
-    if (ct_send_data(m_Cmd, (void*) pChunk, (CS_INT) nof_bytes) != CS_SUCCEED) {
+    if (ct_send_data(m_Cmd, (void*) pChunk, (CS_INT) nof_bytes) != CS_SUCCEED){
         throw CDB_ClientEx(eDB_Fatal, 190001, "CTL_SendDataCmd::SendChunk",
                            "ct_send_data failed");
     }
@@ -604,7 +612,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                 break;
             }
             }
-	    continue;
+            continue;
         }
         case CS_END_RESULTS: {
             return nof_bytes;
@@ -659,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/03/27 05:01:58  vakatov
+ * Minor formal fixes
+ *
  * Revision 1.8  2002/03/26 15:34:37  soussov
  * new image/text operations added
  *
