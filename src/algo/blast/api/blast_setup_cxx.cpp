@@ -64,7 +64,7 @@ USING_SCOPE(ncbi::objects);
 
 /// Now allows query concatenation
 void
-SetupQueryInfo(const TSeqLocVector& queries, const CBlastOption& options, 
+SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo)
 {
     ASSERT(qinfo);
@@ -218,7 +218,7 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOption& options,
 }
 
 void
-SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
+SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk)
 {
     // Determine sequence encoding
@@ -316,7 +316,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
 
 void
 SetupSubjects(const TSeqLocVector& subjects, 
-              CBlastOption* options,
+              CBlastOptions* options,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
@@ -498,8 +498,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    AutoPtr<Uint1, CDeleter<Uint1> > tmp(buf);
-    return make_pair(tmp, buflen);
+    return pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>(buf, buflen);
 }
 
 #if 0
@@ -691,6 +690,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/09/11 17:45:03  camacho
+* Changed CBlastOption -> CBlastOptions
+*
 * Revision 1.25  2003/09/10 04:27:43  camacho
 * 1) Minor change to return type of GetSequence
 * 2) Fix to previous revision

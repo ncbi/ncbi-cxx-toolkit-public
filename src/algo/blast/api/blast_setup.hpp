@@ -44,19 +44,19 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-class CBlastOption;
+class CBlastOptions;
 
 void
-SetupQueryInfo(const TSeqLocVector& queries, const CBlastOption& options, 
+SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options, 
                BlastQueryInfo** qinfo); // out
 
 void
-SetupQueries(const TSeqLocVector& queries, const CBlastOption& options,
+SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk);
 
 void
 SetupSubjects(const TSeqLocVector& subjects, 
-              CBlastOption* options,
+              CBlastOptions* options,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
 
@@ -117,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/09/11 17:45:03  camacho
+* Changed CBlastOption -> CBlastOptions
+*
 * Revision 1.12  2003/09/10 04:25:28  camacho
 * Minor change to return type of GetSequence
 *

@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
+CBlastOptions::CBlastOptions(EProgram prog_name) THROWS((CBlastException))
     : m_Program(prog_name)
 {
     int st;
@@ -94,12 +94,12 @@ CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
     }
 }
 
-CBlastOption::~CBlastOption()
+CBlastOptions::~CBlastOptions()
 {
 }
 
 void
-CBlastOption::SetDbGeneticCodeAndStr(int gc)
+CBlastOptions::SetDbGeneticCodeAndStr(int gc)
 {
     SetDbGeneticCode(gc);
     AutoPtr<Uint1, ArrayDeleter<Uint1> > gc_str =
@@ -108,7 +108,7 @@ CBlastOption::SetDbGeneticCodeAndStr(int gc)
 }
 
 void
-CBlastOption::SetBlastp()
+CBlastOptions::SetBlastp()
 {
     // Lookup table options
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
@@ -159,7 +159,7 @@ CBlastOption::SetBlastp()
 
 
 void
-CBlastOption::SetBlastn()
+CBlastOptions::SetBlastn()
 {
     // Lookup table options
     m_LutOpts->lut_type = NA_LOOKUP_TABLE;
@@ -216,7 +216,7 @@ CBlastOption::SetBlastn()
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE; // not really needed
 }
 
-void CBlastOption::SetMegablast()
+void CBlastOptions::SetMegablast()
 {
     // Lookup table optionas
     m_LutOpts->lut_type = MB_LOOKUP_TABLE;
@@ -279,7 +279,7 @@ void CBlastOption::SetMegablast()
 }
 
 void
-CBlastOption::SetBlastx() 
+CBlastOptions::SetBlastx() 
 { 
     // Lookup table options
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
@@ -329,7 +329,7 @@ CBlastOption::SetBlastx()
 }
 
 void 
-CBlastOption::SetTblastn()
+CBlastOptions::SetTblastn()
 {
     // Lookup table options
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
@@ -380,7 +380,7 @@ CBlastOption::SetTblastn()
 }
 
 void 
-CBlastOption::SetTblastx()
+CBlastOptions::SetTblastx()
 {
     // Lookup table options
     m_LutOpts->lut_type = AA_LOOKUP_TABLE;
@@ -430,7 +430,7 @@ CBlastOption::SetTblastx()
 }
 
 bool
-CBlastOption::Validate() const
+CBlastOptions::Validate() const
 {
     Blast_Message* blmsg = NULL;
     string msg;
@@ -459,9 +459,9 @@ CBlastOption::Validate() const
 }
 
 void
-CBlastOption::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
-    ddc.SetFrame("CBlastOption");
+    ddc.SetFrame("CBlastOptions");
     DebugDumpValue(ddc,"m_Program", m_Program);
     m_QueryOpts.DebugDump(ddc, depth);
     m_LutOpts.DebugDump(ddc, depth);
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/09/11 17:45:03  camacho
+* Changed CBlastOption -> CBlastOptions
+*
 * Revision 1.20  2003/09/09 22:13:36  dondosha
 * Added SetDbGeneticCodeAndStr method to set both integer and string genetic code in one call
 *
@@ -503,7 +506,7 @@ END_NCBI_SCOPE
 * Call SetDbGeneticCodeStr when creating a database gen. code string, to avoid code duplication
 *
 * Revision 1.13  2003/08/19 20:28:10  dondosha
-* EProgram enum type is no longer part of CBlastOption class
+* EProgram enum type is no longer part of CBlastOptions class
 *
 * Revision 1.12  2003/08/19 13:46:13  dicuccio
 * Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.

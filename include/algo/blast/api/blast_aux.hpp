@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/09/11 17:44:39  camacho
+* Changed CBlastOption -> CBlastOptions
+*
 * Revision 1.23  2003/09/10 20:00:49  dondosha
 * BlastLookupTableDestruct renamed to LookupTableWrapFree
 *
@@ -151,7 +154,7 @@ END_NCBI_SCOPE
 * Major types definitions moved to blast_types.h
 *
 * Revision 1.17  2003/08/19 20:22:05  dondosha
-* EProgram definition moved from CBlastOption clase to blast scope
+* EProgram definition moved from CBlastOptions clase to blast scope
 *
 * Revision 1.16  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards

@@ -58,7 +58,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
-    : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
+    : m_pOptions(new CBlastOptions(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
     TSeqLocVector subjects;
@@ -70,7 +70,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
                  EProgram p)
-    : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
+    : m_pOptions(new CBlastOptions(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
     queries.push_back(query);
@@ -80,7 +80,7 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
                  EProgram p)
-    : m_pOptions(new CBlastOption(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
+    : m_pOptions(new CBlastOptions(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
 {
     x_Init(queries, subjects);
 }
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2003/09/11 17:45:03  camacho
+ * Changed CBlastOption -> CBlastOptions
+ *
  * Revision 1.32  2003/09/10 20:01:30  dondosha
  * Use lookup_wrap.h
  *
@@ -331,7 +334,7 @@ END_NCBI_SCOPE
  * Cosmetic changes
  *
  * Revision 1.22  2003/08/19 20:27:06  dondosha
- * EProgram enum type is no longer part of CBlastOption class
+ * EProgram enum type is no longer part of CBlastOptions class
  *
  * Revision 1.21  2003/08/19 13:46:13  dicuccio
  * Added 'USING_SCOPE(objects)' to .cpp files for ease of reading implementation.

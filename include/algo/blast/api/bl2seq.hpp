@@ -76,9 +76,9 @@ public:
     void SetProgram(EProgram p);
     EProgram GetProgram() const;
 
-    CBlastOption& SetOptions();
-    void SetOptions(const CBlastOption& opts);
-    const CBlastOption& GetOptions() const;
+    CBlastOptions& SetOptions();
+    void SetOptions(const CBlastOptions& opts);
+    const CBlastOptions& GetOptions() const;
 
     // Perform BLAST search with one query sequence
     virtual CRef<objects::CSeq_align_set> Run();
@@ -99,7 +99,7 @@ private:
     // Data members received from client code
     TSeqLocVector        m_tQueries;         //< query sequence(s)
     TSeqLocVector        m_tSubjects;        //< sequence(s) to BLAST against
-    CBlastOption*        m_pOptions;         //< Blast options
+    CBlastOptions*        m_pOptions;         //< Blast options
     EProgram             m_eProgram;         //< Blast program FIXME ?needed?
 
     ///< Common initialization code for all c-tors
@@ -206,7 +206,7 @@ CBl2Seq::GetSubjects() const
     return m_tSubjects;
 }
 
-inline CBlastOption&
+inline CBlastOptions&
 CBl2Seq::SetOptions()
 {
     mi_bQuerySetUpDone = false;
@@ -214,15 +214,15 @@ CBl2Seq::SetOptions()
 }
 
 inline void
-CBl2Seq::SetOptions(const CBlastOption& opts)
+CBl2Seq::SetOptions(const CBlastOptions& opts)
 {
     delete m_pOptions;
-    m_pOptions = const_cast<CBlastOption*>(&opts);
+    m_pOptions = const_cast<CBlastOptions*>(&opts);
     m_eProgram = m_pOptions->GetProgram();
     mi_bQuerySetUpDone = false;
 }
 
-inline const CBlastOption&
+inline const CBlastOptions&
 CBl2Seq::GetOptions() const
 {
     return *m_pOptions;
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/09/11 17:44:39  camacho
+* Changed CBlastOption -> CBlastOptions
+*
 * Revision 1.19  2003/09/09 20:31:21  camacho
 * Add const type qualifier
 *

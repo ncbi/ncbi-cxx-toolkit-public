@@ -80,7 +80,7 @@ private:
 
     void InitScope(void);
     EProgram GetBlastProgramNum(const string& prog);
-    void ProcessCommandLineArgs(CBlastOption& opt);
+    void ProcessCommandLineArgs(CBlastOptions& opt);
 
     // needed for debugging only
     FILE* GetOutputFilePtr(void);
@@ -243,7 +243,7 @@ CBlast2seqApplication::GetBlastProgramNum(const string& prog)
 }
 
 void
-CBlast2seqApplication::ProcessCommandLineArgs(CBlastOption& opt)
+CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
 {
     CArgs args = GetArgs();
 
@@ -485,6 +485,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/09/11 17:46:16  camacho
+ * Changed CBlastOption -> CBlastOptions
+ *
  * Revision 1.17  2003/09/09 15:43:43  ucko
  * Fix #include directive for blast_input.hpp.
  *
@@ -495,7 +498,7 @@ int main(int argc, const char* argv[])
  * Add processing of command-line options
  *
  * Revision 1.14  2003/08/19 20:36:44  dondosha
- * EProgram enum type is no longer part of CBlastOption class
+ * EProgram enum type is no longer part of CBlastOptions class
  *
  * Revision 1.13  2003/08/18 20:58:57  camacho
  * Added blast namespace, removed *__.hpp includes

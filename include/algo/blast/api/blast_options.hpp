@@ -53,14 +53,14 @@ BEGIN_SCOPE(blast)
 #define GENCODE_STRLEN 64
 
 /// Encapsulates all blast input parameters
-class NCBI_XBLAST_EXPORT CBlastOption : public CObject
+class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
 {
 public:
 
     /// Constructor
-    CBlastOption(EProgram prog_name = eBlastp) THROWS((CBlastException));
+    CBlastOptions(EProgram prog_name = eBlastp) THROWS((CBlastException));
     /// Destructor
-    virtual ~CBlastOption();
+    virtual ~CBlastOptions();
 
     /// Validate the options
     bool Validate() const;
@@ -297,19 +297,19 @@ protected:
 
 private:
     /// Prohibit copy c-tor 
-    CBlastOption(const CBlastOption& bo);
+    CBlastOptions(const CBlastOptions& bo);
     /// Prohibit assignment operator
-    CBlastOption& operator=(const CBlastOption& bo);
+    CBlastOptions& operator=(const CBlastOptions& bo);
 };
 
 inline EProgram
-CBlastOption::GetProgram() const
+CBlastOptions::GetProgram() const
 {
     return m_Program;
 }
 
 inline void
-CBlastOption::SetProgram(EProgram p)
+CBlastOptions::SetProgram(EProgram p)
 {
     _ASSERT(p >= eBlastn && p < eBlastUndef);
     m_Program = p;
@@ -327,13 +327,13 @@ CBlastOption::SetProgram(EProgram p)
 }
 
 inline const char*
-CBlastOption::GetMatrixName() const
+CBlastOptions::GetMatrixName() const
 {
     return m_ScoringOpts->matrix;
 }
 
 inline void
-CBlastOption::SetMatrixName(const char* matrix)
+CBlastOptions::SetMatrixName(const char* matrix)
 {
     if (!matrix)
         return;
@@ -343,13 +343,13 @@ CBlastOption::SetMatrixName(const char* matrix)
 }
 
 inline const char* 
-CBlastOption::GetMatrixPath() const
+CBlastOptions::GetMatrixPath() const
 {
     return m_ScoringOpts->matrix_path;
 }
 
 inline void 
-CBlastOption::SetMatrixPath(const char* path)
+CBlastOptions::SetMatrixPath(const char* path)
 {
     if (!path)
         return;
@@ -359,110 +359,110 @@ CBlastOption::SetMatrixPath(const char* path)
 }
 
 inline int
-CBlastOption::GetWordThreshold() const
+CBlastOptions::GetWordThreshold() const
 {
     return m_LutOpts->threshold;
 }
 
 inline void
-CBlastOption::SetWordThreshold(int w)
+CBlastOptions::SetWordThreshold(int w)
 {
     m_LutOpts->threshold = w;
 }
 
 inline int
-CBlastOption::GetLookupTableType() const
+CBlastOptions::GetLookupTableType() const
 {
     return m_LutOpts->lut_type;
 }
 
 inline void
-CBlastOption::SetLookupTableType(int type)
+CBlastOptions::SetLookupTableType(int type)
 {
     m_LutOpts->lut_type = type;
 }
 
 inline short
-CBlastOption::GetWordSize() const
+CBlastOptions::GetWordSize() const
 {
     return m_LutOpts->word_size;
 }
 
 inline void
-CBlastOption::SetWordSize(short ws)
+CBlastOptions::SetWordSize(short ws)
 {
     m_LutOpts->word_size = ws;
 }
 
 inline int
-CBlastOption::GetAlphabetSize() const
+CBlastOptions::GetAlphabetSize() const
 {
     return m_LutOpts->alphabet_size;
 }
 
 inline void
-CBlastOption::SetAlphabetSize(int s)
+CBlastOptions::SetAlphabetSize(int s)
 {
     m_LutOpts->alphabet_size = s;
 }
 
 inline unsigned char
-CBlastOption::GetScanStep() const
+CBlastOptions::GetScanStep() const
 {
     return m_LutOpts->scan_step;
 }
 
 inline void
-CBlastOption::SetScanStep(unsigned char s)
+CBlastOptions::SetScanStep(unsigned char s)
 {
     m_LutOpts->scan_step = s;
 }
 
 inline unsigned char
-CBlastOption::GetMBTemplateLength() const
+CBlastOptions::GetMBTemplateLength() const
 {
     return m_LutOpts->mb_template_length;
 }
 
 inline void
-CBlastOption::SetMBTemplateLength(unsigned char len)
+CBlastOptions::SetMBTemplateLength(unsigned char len)
 {
     m_LutOpts->mb_template_length = len;
 }
 
 inline unsigned char
-CBlastOption::GetMBTemplateType() const
+CBlastOptions::GetMBTemplateType() const
 {
     return m_LutOpts->mb_template_type;
 }
 
 inline void
-CBlastOption::SetMBTemplateType(unsigned char type)
+CBlastOptions::SetMBTemplateType(unsigned char type)
 {
     m_LutOpts->mb_template_type = type;
 }
 
 inline int
-CBlastOption::GetMBMaxPositions() const
+CBlastOptions::GetMBMaxPositions() const
 {
     return m_LutOpts->max_positions;
 }
 
 inline void
-CBlastOption::SetMBMaxPositions(int m)
+CBlastOptions::SetMBMaxPositions(int m)
 {
     m_LutOpts->max_positions = m;
 }
 
 /******************* Query setup options ************************/
 inline const char*
-CBlastOption::GetFilterString() const
+CBlastOptions::GetFilterString() const
 {
     return m_QueryOpts->filter_string;
 }
 
 inline void
-CBlastOption::SetFilterString(const char* f)
+CBlastOptions::SetFilterString(const char* f)
 {
     if (!f)
         return;
@@ -482,20 +482,20 @@ CBlastOption::SetFilterString(const char* f)
 }
 
 inline objects::ENa_strand
-CBlastOption::GetStrandOption() const
+CBlastOptions::GetStrandOption() const
 {
     return (objects::ENa_strand) m_QueryOpts->strand_option;
 }
 
 inline void
-CBlastOption::SetStrandOption(objects::ENa_strand s)
+CBlastOptions::SetStrandOption(objects::ENa_strand s)
 {
     m_QueryOpts->strand_option = (unsigned char) s;
 }
 
 #if 0
 inline vector< CConstRef<objects::CSeq_loc> >& 
-CBlastOption::GetLCaseMask() const
+CBlastOptions::GetLCaseMask() const
 {
     // Convert BlastMaskPtrs to objects::CSeq_loc
     return m_QueryOpts->lcase_mask;
@@ -503,7 +503,7 @@ CBlastOption::GetLCaseMask() const
 #endif
 
 inline void 
-CBlastOption::SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
+CBlastOptions::SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
 {
     BlastMask* mask = NULL,* curr = NULL,* tail = NULL;
     int index = 0;
@@ -526,356 +526,356 @@ CBlastOption::SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
 }
 
 inline int
-CBlastOption::GetQueryGeneticCode() const
+CBlastOptions::GetQueryGeneticCode() const
 {
     return m_QueryOpts->genetic_code;
 }
 
 inline void
-CBlastOption::SetQueryGeneticCode(int gc)
+CBlastOptions::SetQueryGeneticCode(int gc)
 {
     m_QueryOpts->genetic_code = gc;
 }
 
 /******************* Initial word options ***********************/
 inline int
-CBlastOption::GetWindowSize() const
+CBlastOptions::GetWindowSize() const
 {
     return m_InitWordOpts->window_size;
 }
 
 inline void
-CBlastOption::SetWindowSize(int s)
+CBlastOptions::SetWindowSize(int s)
 {
     m_InitWordOpts->window_size = s;
 }
 
 inline int
-CBlastOption::GetExtendWordMethod() const
+CBlastOptions::GetExtendWordMethod() const
 {
     return m_InitWordOpts->extend_word_method;
 }
 
 inline void
-CBlastOption::SetExtendWordMethod(int ew)
+CBlastOptions::SetExtendWordMethod(int ew)
 {
     m_InitWordOpts->extend_word_method |= ew;
 }
 
 inline double
-CBlastOption::GetXDropoff() const
+CBlastOptions::GetXDropoff() const
 {
     return m_InitWordOpts->x_dropoff;
 }
 
 inline void
-CBlastOption::SetXDropoff(double x)
+CBlastOptions::SetXDropoff(double x)
 {
     m_InitWordOpts->x_dropoff = x;
 }
 
 /******************* Gapped extension options *******************/
 inline double
-CBlastOption::GetGapXDropoff() const
+CBlastOptions::GetGapXDropoff() const
 {
     return m_ExtnOpts->gap_x_dropoff;
 }
 
 inline void
-CBlastOption::SetGapXDropoff(double x)
+CBlastOptions::SetGapXDropoff(double x)
 {
     m_ExtnOpts->gap_x_dropoff = x;
 }
 
 inline double
-CBlastOption::GetGapXDropoffFinal() const
+CBlastOptions::GetGapXDropoffFinal() const
 {
     return m_ExtnOpts->gap_x_dropoff_final;
 }
 
 inline void
-CBlastOption::SetGapXDropoffFinal(double x)
+CBlastOptions::SetGapXDropoffFinal(double x)
 {
     m_ExtnOpts->gap_x_dropoff_final = x;
 }
 
 inline double
-CBlastOption::GetGapTrigger() const
+CBlastOptions::GetGapTrigger() const
 {
     return m_ExtnOpts->gap_trigger;
 }
 
 inline void
-CBlastOption::SetGapTrigger(double g)
+CBlastOptions::SetGapTrigger(double g)
 {
     m_ExtnOpts->gap_trigger = g;
 }
 
 inline int
-CBlastOption::GetGapExtnAlgorithm() const
+CBlastOptions::GetGapExtnAlgorithm() const
 {
     return m_ExtnOpts->algorithm_type;
 }
 
 inline void
-CBlastOption::SetGapExtnAlgorithm(int a)
+CBlastOptions::SetGapExtnAlgorithm(int a)
 {
     m_ExtnOpts->algorithm_type = a;
 }
 
 /******************* Hit saving options *************************/
 inline int
-CBlastOption::GetHitlistSize() const
+CBlastOptions::GetHitlistSize() const
 {
     return m_HitSaveOpts->hitlist_size;
 }
 
 inline void
-CBlastOption::SetHitlistSize(int s)
+CBlastOptions::SetHitlistSize(int s)
 {
     m_HitSaveOpts->hitlist_size = s;
 }
 
 inline int
-CBlastOption::GetMaxNumHspPerSequence() const
+CBlastOptions::GetMaxNumHspPerSequence() const
 {
     return m_HitSaveOpts->hsp_num_max;
 }
 
 inline void
-CBlastOption::SetMaxNumHspPerSequence(int m)
+CBlastOptions::SetMaxNumHspPerSequence(int m)
 {
     m_HitSaveOpts->hsp_num_max = m;
 }
 
 inline int
-CBlastOption::GetTotalHspLimit() const
+CBlastOptions::GetTotalHspLimit() const
 {
     return m_HitSaveOpts->total_hsp_limit;
 }
 
 inline void
-CBlastOption::SetTotalHspLimit(int l)
+CBlastOptions::SetTotalHspLimit(int l)
 {
     m_HitSaveOpts->total_hsp_limit = l;
 }
 
 inline bool
-CBlastOption::GetCullingMode() const
+CBlastOptions::GetCullingMode() const
 {
     return m_HitSaveOpts->perform_culling ? true : false;
 }
 
 inline void
-CBlastOption::SetCullingMode(bool m)
+CBlastOptions::SetCullingMode(bool m)
 {
     m_HitSaveOpts->perform_culling = m;
 }
 
 inline int
-CBlastOption::GetRequiredStart() const
+CBlastOptions::GetRequiredStart() const
 {
     return m_HitSaveOpts->required_start;
 }
 
 inline void
-CBlastOption::SetRequiredStart(int s)
+CBlastOptions::SetRequiredStart(int s)
 {
     m_HitSaveOpts->required_start = s;
 }
 
 inline int
-CBlastOption::GetRequiredEnd() const
+CBlastOptions::GetRequiredEnd() const
 {
     return m_HitSaveOpts->required_end;
 }
 
 inline void
-CBlastOption::SetRequiredEnd(int e)
+CBlastOptions::SetRequiredEnd(int e)
 {
     m_HitSaveOpts->required_end = e;
 }
 
 inline double
-CBlastOption::GetEvalueThreshold() const
+CBlastOptions::GetEvalueThreshold() const
 {
     return m_HitSaveOpts->expect_value;
 }
 
 inline void
-CBlastOption::SetEvalueThreshold(double eval)
+CBlastOptions::SetEvalueThreshold(double eval)
 {
     m_HitSaveOpts->expect_value = eval;
 }
 
 inline double
-CBlastOption::GetOriginalEvalue() const
+CBlastOptions::GetOriginalEvalue() const
 {
     return m_HitSaveOpts->original_expect_value;
 }
 
 #if 0
 void
-CBlastOption::SetOriginalEvalue(double e)
+CBlastOptions::SetOriginalEvalue(double e)
 {
     m_HitSaveOpts->original_expect_value = e;
 }
 #endif
 
 inline int
-CBlastOption::GetCutoffScore() const
+CBlastOptions::GetCutoffScore() const
 {
     return m_HitSaveOpts->cutoff_score;
 }
 
 inline void
-CBlastOption::SetCutoffScore(int s)
+CBlastOptions::SetCutoffScore(int s)
 {
     m_HitSaveOpts->cutoff_score = s;
 }
 
 inline double
-CBlastOption::GetPercentIdentity() const
+CBlastOptions::GetPercentIdentity() const
 {
     return m_HitSaveOpts->percent_identity;
 }
 
 inline void
-CBlastOption::SetPercentIdentity(double p)
+CBlastOptions::SetPercentIdentity(double p)
 {
     m_HitSaveOpts->percent_identity = p;
 }
 
 inline bool
-CBlastOption::GetSumStatisticsMode() const
+CBlastOptions::GetSumStatisticsMode() const
 {
     return m_HitSaveOpts->do_sum_stats ? true : false;
 }
 
 inline void
-CBlastOption::SetSumStatisticsMode(bool m)
+CBlastOptions::SetSumStatisticsMode(bool m)
 {
     m_HitSaveOpts->do_sum_stats = m;
 }
 
 inline double
-CBlastOption::GetSingleHSPEvalueThreshold() const
+CBlastOptions::GetSingleHSPEvalueThreshold() const
 {
     return m_HitSaveOpts->single_hsp_evalue;
 }
 
 inline void
-CBlastOption::SetSingleHSPEvalueThreshold(double e)
+CBlastOptions::SetSingleHSPEvalueThreshold(double e)
 {
     m_HitSaveOpts->single_hsp_evalue = e;
 }
 
 inline int
-CBlastOption::GetSingleHSPCutoffScore() const
+CBlastOptions::GetSingleHSPCutoffScore() const
 {
     return m_HitSaveOpts->single_hsp_score;
 }
 
 inline void
-CBlastOption::SetSingleHSPCutoffScore(int s)
+CBlastOptions::SetSingleHSPCutoffScore(int s)
 {
     m_HitSaveOpts->single_hsp_score = s;
 }
 
 inline int
-CBlastOption::GetLongestIntronLength() const
+CBlastOptions::GetLongestIntronLength() const
 {
     return m_HitSaveOpts->longest_intron;
 }
 
 inline void
-CBlastOption::SetLongestIntronLength(int l)
+CBlastOptions::SetLongestIntronLength(int l)
 {
     m_HitSaveOpts->longest_intron = l;
 }
 
 inline bool
-CBlastOption::GetGappedMode() const
+CBlastOptions::GetGappedMode() const
 {
     return m_HitSaveOpts->is_gapped ? true : false;
 }
 
 inline void
-CBlastOption::SetGappedMode(bool m)
+CBlastOptions::SetGappedMode(bool m)
 {
     m_HitSaveOpts->is_gapped = m;
     m_ScoringOpts->gapped_calculation = m;
 }
 
 inline bool
-CBlastOption::GetNeighboringMode() const
+CBlastOptions::GetNeighboringMode() const
 {
     return m_HitSaveOpts->is_neighboring ? true : false;
 }
 
 inline void
-CBlastOption::SetNeighboringMode(bool m)
+CBlastOptions::SetNeighboringMode(bool m)
 {
     m_HitSaveOpts->is_neighboring = m;
 }
 
 /************************ Scoring options ************************/
 inline int 
-CBlastOption::GetMatchReward() const
+CBlastOptions::GetMatchReward() const
 {
     return m_ScoringOpts->reward;
 }
 
 inline void 
-CBlastOption::SetMatchReward(int r)
+CBlastOptions::SetMatchReward(int r)
 {
     m_ScoringOpts->reward = r;
 }
 
 inline int 
-CBlastOption::GetMismatchPenalty() const
+CBlastOptions::GetMismatchPenalty() const
 {
     return m_ScoringOpts->penalty;
 }
 
 inline void 
-CBlastOption::SetMismatchPenalty(int p)
+CBlastOptions::SetMismatchPenalty(int p)
 {
     m_ScoringOpts->penalty = p;
 }
 
 inline int 
-CBlastOption::GetGapOpeningPenalty() const
+CBlastOptions::GetGapOpeningPenalty() const
 {
     return m_ScoringOpts->gap_open;
 }
 
 inline void 
-CBlastOption::SetGapOpeningPenalty(int g)
+CBlastOptions::SetGapOpeningPenalty(int g)
 {
     m_ScoringOpts->gap_open = g;
 }
 
 inline int 
-CBlastOption::GetGapExtensionPenalty() const
+CBlastOptions::GetGapExtensionPenalty() const
 {
     return m_ScoringOpts->gap_extend;
 }
 
 inline void 
-CBlastOption::SetGapExtensionPenalty(int e)
+CBlastOptions::SetGapExtensionPenalty(int e)
 {
     m_ScoringOpts->gap_extend = e;
 }
 
 inline int 
-CBlastOption::GetFrameShiftPenalty() const
+CBlastOptions::GetFrameShiftPenalty() const
 {
     return m_ScoringOpts->shift_pen;
 }
 
 inline void 
-CBlastOption::SetFrameShiftPenalty(int p)
+CBlastOptions::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
     if (p > 0)
@@ -883,25 +883,25 @@ CBlastOption::SetFrameShiftPenalty(int p)
 }
 
 inline int 
-CBlastOption::GetDecline2AlignPenalty() const
+CBlastOptions::GetDecline2AlignPenalty() const
 {
     return m_ScoringOpts->decline_align;
 }
 
 inline void 
-CBlastOption::SetDecline2AlignPenalty(int p)
+CBlastOptions::SetDecline2AlignPenalty(int p)
 {
     m_ScoringOpts->decline_align = p;
 }
 
 inline bool 
-CBlastOption::GetOutOfFrameMode() const
+CBlastOptions::GetOutOfFrameMode() const
 {
     return m_ScoringOpts->is_ooframe ? true : false;
 }
 
 inline void 
-CBlastOption::SetOutOfFrameMode(bool m)
+CBlastOptions::SetOutOfFrameMode(bool m)
 {
 #if 0
     if (m_Program != eBlastx && m == true)
@@ -913,73 +913,73 @@ CBlastOption::SetOutOfFrameMode(bool m)
 
 /******************** Effective Length options *******************/
 inline Int8 
-CBlastOption::GetDbLength() const
+CBlastOptions::GetDbLength() const
 {
     return m_EffLenOpts->db_length;
 }
 
 inline void 
-CBlastOption::SetDbLength(Int8 l)
+CBlastOptions::SetDbLength(Int8 l)
 {
     m_EffLenOpts->db_length = l;
 }
 
 inline unsigned int 
-CBlastOption::GetDbSeqNum() const
+CBlastOptions::GetDbSeqNum() const
 {
     return (unsigned int) m_EffLenOpts->dbseq_num;
 }
 
 inline void 
-CBlastOption::SetDbSeqNum(unsigned int n)
+CBlastOptions::SetDbSeqNum(unsigned int n)
 {
     m_EffLenOpts->dbseq_num = (Int4) n;
 }
 
 inline Int8 
-CBlastOption::GetEffectiveSearchSpace() const
+CBlastOptions::GetEffectiveSearchSpace() const
 {
     return m_EffLenOpts->searchsp_eff;
 }
  
 inline void 
-CBlastOption::SetEffectiveSearchSpace(Int8 eff)
+CBlastOptions::SetEffectiveSearchSpace(Int8 eff)
 {
     m_EffLenOpts->searchsp_eff = eff;
 }
 
 inline bool 
-CBlastOption::GetUseRealDbSize() const
+CBlastOptions::GetUseRealDbSize() const
 {
     return m_EffLenOpts->use_real_db_size ? true : false;
 }
 
 inline void 
-CBlastOption::SetUseRealDbSize(bool u)
+CBlastOptions::SetUseRealDbSize(bool u)
 {
     m_EffLenOpts->use_real_db_size = u;
 }
 
 inline int 
-CBlastOption::GetDbGeneticCode() const
+CBlastOptions::GetDbGeneticCode() const
 {
     return m_DbOpts->genetic_code;
 }
 
 inline void 
-CBlastOption::SetDbGeneticCode(int gc)
+CBlastOptions::SetDbGeneticCode(int gc)
 {
     m_DbOpts->genetic_code = gc;
 }
 
 inline const unsigned char* 
-CBlastOption::GetDbGeneticCodeStr() const
+CBlastOptions::GetDbGeneticCodeStr() const
 {
     return m_DbOpts->gen_code_string;
 }
 
 inline void 
-CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
+CBlastOptions::SetDbGeneticCodeStr(const unsigned char* gc_str)
 {
     if (!gc_str)
         return;
@@ -994,13 +994,13 @@ CBlastOption::SetDbGeneticCodeStr(const unsigned char* gc_str)
 }
 
 inline const char* 
-CBlastOption::GetPHIPattern() const
+CBlastOptions::GetPHIPattern() const
 {
     return m_LutOpts->phi_pattern;
 }
 
 inline void 
-CBlastOption::SetPHIPattern(const char* pattern, bool is_dna)
+CBlastOptions::SetPHIPattern(const char* pattern, bool is_dna)
 {
     if (!pattern)
         return;
@@ -1021,6 +1021,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/09/11 17:44:39  camacho
+* Changed CBlastOption -> CBlastOptions
+*
 * Revision 1.22  2003/09/09 22:07:57  dondosha
 * Added accessor functions for PHI pattern
 *
@@ -1037,7 +1040,7 @@ END_NCBI_SCOPE
 * Cosmetic changes
 *
 * Revision 1.17  2003/08/19 20:22:05  dondosha
-* EProgram definition moved from CBlastOption clase to blast scope
+* EProgram definition moved from CBlastOptions clase to blast scope
 *
 * Revision 1.16  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards

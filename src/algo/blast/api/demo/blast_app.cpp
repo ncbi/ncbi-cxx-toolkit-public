@@ -87,7 +87,7 @@ private:
 
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
-    CBlastOption*        m_Options;
+    CBlastOptions*        m_Options;
     BlastSeqSrc *        m_bssp;
     CBlastFormatOptions* m_format_options;
     TSeqLocVector        m_query;
@@ -440,7 +440,7 @@ int CBlastApplication::Run(void)
     bssn_info.ctor_argument = (void*) &readdb_args;
     m_bssp = BlastSeqSrcNew(&bssn_info);
 
-    m_Options = new CBlastOption(e_program);
+    m_Options = new CBlastOptions(e_program);
     SetOptions(args);
     
     m_format_options = 
