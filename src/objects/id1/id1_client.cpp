@@ -51,6 +51,28 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+void CID1Client::Ask(const CID1Client::TRequest& request,
+                     CID1Client::TReply& reply,
+                     CID1Client::TReplyChoice::E_Choice wanted)
+{
+    Ask(request, reply);
+    if (reply.Which() == wanted) {
+        return; // ok
+    } else if (reply.IsError()) {
+        CNcbiOstrstream oss;
+        oss << "CID1Client: server error: " << reply.GetError();
+        switch (reply.GetError()) {
+        case 1:  oss << " [withdrawn by submitter's request]";  break;
+        case 2:  oss << " [confidential]";                      break;
+        case 10: oss << " [not found]";                         break;
+        default: break;
+        }
+        NCBI_THROW(CException, eUnknown, CNcbiOstrstreamToString(oss));
+    } else {
+        reply.ThrowInvalidSelection(wanted);
+    }
+}
+
 CRef<CSeq_entry> CID1Client::AskGetsefromgi(const CID1server_maxcomplex& req,
                                             CID1Client::TReply* reply)
 {
@@ -111,6 +133,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/07/01 15:46:01  ucko
+* Overload Ask to add descriptive text to known error codes, using
+* information from Michael Kimelman.
+*
 * Revision 1.4  2004/05/20 18:44:57  ucko
 * Don't attempt to pass temporary Seq-ids, even by const reference, as
 * that technically requires a public copy constructor.

@@ -56,6 +56,14 @@ public:
     // destructor
     ~CID1Client(void);
 
+    // overloaded to give explanations of error codes
+    void Ask(const TRequest& request, TReply& reply,
+             TReplyChoice::E_Choice wanted);
+    // ensure that the base class's other Ask remains available
+    // (not all compilers handle the appropriate "using" directive)
+    void Ask(const TRequest& request, TReply& reply)
+        { CID1Client_Base::Ask(request, reply); }
+
     void SetAllowDeadEntries(bool ok) { m_AllowDeadEntries = ok;   }
     bool GetAllowDeadEntries(void)    { return m_AllowDeadEntries; }
 
@@ -100,6 +108,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/07/01 15:45:50  ucko
+* Overload Ask to add descriptive text to known error codes, using
+* information from Michael Kimelman.
+*
 * Revision 1.2  2004/05/20 18:23:21  jcherry
 * Added a simplified interface for retrieving entries
 *
