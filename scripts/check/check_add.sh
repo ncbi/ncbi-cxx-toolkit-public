@@ -8,27 +8,35 @@
 # Buid list files to checking in the build tree.
 #
 # Usage: (Run only from Makefile.meta)
-#    check_add.sh <project_srcdir> <project_name>
+#    check_add.sh <project_srcdir> <project_name> <signature> [<exeextension>]
 #
 # Example:
-#    check_add.sh ~/c++/src/html/test test_jsmenu
+#    check_add.sh ~/c++/src/html/test test_jsmenu  \
+#                 GCC_295-Debug--sparc-sun-solaris2.8-serpens
 #
 # Note:
 #    1) Environment variable CHECK_RUN_LIST must be set;
 #    2) We assume that current work dir is <project_name> in build dir.
+#    3) If environment variable CHECK_USE_IGNORE_LIST is 'Y' that the name 
+#       of the current test will be checked in ignore list
+#       (src/check/ignore.lst). And if it present in list that this test 
+#       will be skipped. By default this variable is 'Y'.
 #
 ###########################################################################
-
 
 # Parameters
 x_out=$CHECK_RUN_LIST
 x_srcdir=$1
 x_test=$2
-x_exeext=$3
-
+x_signature=$3
+x_exeext=$4
+x_use_ignore_list=${CHECK_USE_IGNORE_LIST-Y}
 x_delim=" ____ "
 # Default timeout for check (in seconds)
 x_timeout_default=200
+
+# Convert source dir to relative path
+x_srcdir_rel=`echo "$x_srcdir" | sed -e 's%^.*/src/%%'`
 
 # Check to necessity make test for this application
 if test ! -f "$x_srcdir/Makefile.$x_test.app";  then
@@ -38,6 +46,18 @@ fi
 
 x_tpath=`echo "$x_srcdir/$x_test" | sed 's%^.*/src/%%'`
 if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
+   # Check ignore list
+   x_use_ignore_list=`echo $x_use_ignore_list | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
+   if test "$x_use_ignore_list"=='Y' ; then
+      x_signature=`echo $x_signature | sed 's/-[a-z]*$//'`
+      root_dir=`echo "$x_srcdir" | sed 's%/src/.*$%%'`
+      ignore_list="$root_dir/src/check/ignore.lst"
+      grep "$x_srcdir_rel/$x_test *$x_signature" $ignore_list > /dev/null 2>&1
+      if grep "$x_srcdir_rel/$x_test *$x_signature" $ignore_list > /dev/null 2>&1; then
+         echo "SKIP -- $x_tpath"
+         exit 0
+      fi
+   fi
    echo "TEST -- $x_tpath"
 else 
    echo "SKIP -- $x_tpath"
@@ -68,14 +88,10 @@ if test -z "$x_requires"; then
    x_requires=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^.[ ]*//'`
 fi
 
-# Convert source dir to relative path
-x_srcdir=`echo "$x_srcdir" | sed -e 's%^.*/src/%%'`
-
-
 # Write data about current test into the list file
 for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
-    echo "$x_srcdir$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires" >> $x_out
+    echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires" >> $x_out
 done
 
 exit 0
