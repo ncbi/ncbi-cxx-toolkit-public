@@ -454,8 +454,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
         sdl->id_url = s_GetIdUrl(ids, FindGi(ids), user_url,
                                  m_IsDbNa, m_Database, 
-                                 (bool)(m_Option & eNewTargetWindow), m_Rid,
-                                 m_QueryNumber);
+                                 (m_Option & eNewTargetWindow) ? true : false,
+                                 m_Rid, m_QueryNumber);
     }
     
     //get defline
@@ -789,8 +789,8 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
             ids.push_back(id_ref);
             sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
                                      m_IsDbNa, m_Database, 
-                                     (bool)(m_Option & eNewTargetWindow), m_Rid,
-                                     m_QueryNumber);
+                                     (m_Option & eNewTargetWindow) ? 
+                                     true : false, m_Rid, m_QueryNumber);
             sdl->score_url = NcbiEmptyString;
         }
     }
@@ -801,6 +801,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.8  2005/02/15 15:49:03  jianye
+*fix compiler warning
+*
 *Revision 1.7  2005/02/14 15:42:47  jianye
 *fixed compiler warning
 *
