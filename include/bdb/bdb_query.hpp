@@ -100,10 +100,16 @@ public:
 
     /// Set node type to eDBField
     /// @param 
-    ///   field_idx - database field index
+    ///   field_idx  database field index
     void SetField(int field_idx);
 
     int GetFiledIdx() const { return m_SubType.FieldIdx; }
+
+    /// Set alternative value
+    void SetAltValue(const string& v) { m_AltValue = v; }
+
+    /// Get alternative value
+    const string& GetAltValue() const { return m_AltValue; }
 
 protected:
 
@@ -115,6 +121,7 @@ protected:
     } m_SubType;
 
     string m_Value;
+    string m_AltValue; ///< Alternative value
 };
 
 /// Query class incapsulates query tree (query clause) and 
@@ -252,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/11 13:17:02  kuznets
+ * Added alternative value to the tree node
+ *
  * Revision 1.7  2004/03/10 14:22:55  kuznets
  * CBDB_FileScanner relaxed private to protected for m_File member
  *
