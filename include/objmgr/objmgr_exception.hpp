@@ -105,6 +105,19 @@ public:
 };
 
 
+class NCBI_XOBJMGR_EXPORT CLocMapperException : public CObjMgrException
+{
+public:
+    enum EErrCode {
+        eBadLocation,
+        eUnknownLength,
+        eOtherError
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CLocMapperException, CObjMgrException);
+};
+
+
 class NCBI_XOBJMGR_EXPORT CLoaderException : public CObjMgrException
 {
 public:
@@ -141,6 +154,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/10 16:24:27  grichenk
+* Added CSeq_loc_Mapper
+*
 * Revision 1.5  2003/11/19 22:18:01  grichenk
 * All exceptions are now CException-derived. Catch "exception" rather
 * than "runtime_error".

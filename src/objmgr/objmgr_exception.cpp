@@ -94,6 +94,17 @@ const char* CAnnotException::GetErrCodeString(void) const
 }
 
 
+const char* CLocMapperException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eBadLocation:      return "eBadLocation";
+    case eUnknownLength:    return "eUnknownLength";
+    case eOtherError:       return "eOtherError";
+    default:                return CException::GetErrCodeString();
+    }
+}
+
+
 const char* CLoaderException::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
