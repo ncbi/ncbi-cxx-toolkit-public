@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/11/15 18:52:02  vakatov
+ * Call SOCK_Shutdown() after the HTTP request is sent.
+ * Use SOCK_Status() instead of SOCK_Eof().
+ *
  * Revision 6.3  2000/10/12 21:43:14  vakatov
  * Minor cosmetic fix...
  *
@@ -126,6 +130,13 @@ static EIO_Status s_FlushData(SHttpConnector* uuu)
         /* on success, discard the succesfully written data and continue */
         BUF_Read(uuu->buf, 0, n_written);
     } while ( BUF_Size(uuu->buf) );
+
+    /* shutdown the socket for writing */
+#if !defined(NCBI_OS_MSWIN)
+    /* (on MS-Win, socket shutdown on writing apparently messes up (?!)
+     *  with the later reading, especially when reading a lot of data.) */
+    SOCK_Shutdown(uuu->sock, eIO_Write);
+#endif
 
     return eIO_Success;
 }
@@ -493,7 +504,7 @@ static EIO_Status s_VT_Read
         EIO_Status status;
         size_t     n_peeked, n_decoded;
         size_t     peek_size = 3 * size;
-        void*      peek_buf = malloc(peek_size);
+        void*      peek_buf  = malloc(peek_size);
 
         /* peek the data */
         status= SOCK_Read(uuu->sock, peek_buf, peek_size, &n_peeked, eIO_Peek);
@@ -509,12 +520,16 @@ static EIO_Status s_VT_Read
                 SOCK_Read(uuu->sock, peek_buf, n_decoded, &x_read, eIO_Plain);
                 assert(x_read == n_decoded);
                 status = eIO_Success;
-            } else if ( SOCK_Eof(uuu->sock) ) {
+            } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed) {
                 /* we are at EOF, and the remaining data cannot be decoded */
                 status = eIO_Unknown;
             } 
         } else {
             status = eIO_Unknown;
+        }
+
+        if (uuu->info->debug_printout  &&  status != eIO_Success) {
+            fprintf(stderr, "\nHTTP::Read()  Cannot URL-decode data!\n");
         }
 
         free(peek_buf);
