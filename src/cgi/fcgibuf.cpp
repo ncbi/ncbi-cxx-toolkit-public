@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/12/04 22:36:10  vakatov
+* Removed obnoxious TRACE in CCgiObuffer::sync()
+*
 * Revision 1.9  2001/10/15 18:26:32  ucko
 * Implement sync; fix a typo
 *
@@ -68,16 +71,14 @@
 * ===========================================================================
 */
 
-// NCBI C++ headers
 #include <corelib/ncbistd.hpp>
-// 3rd-party headers
 #include <fcgiapp.h>
-// local headers
 #include "fcgibuf.hpp"
-// C++ headers
 #include <algorithm>
 
+
 BEGIN_NCBI_SCOPE
+
 
 CCgiObuffer::CCgiObuffer(FCGX_Stream* out, int bufsize /*=512*/ )
     : m_out(out), m_bufsize( bufsize <= 0 ? 1 : bufsize )
@@ -90,11 +91,13 @@ CCgiObuffer::CCgiObuffer(FCGX_Stream* out, int bufsize /*=512*/ )
     setp( m_buf, m_buf + m_bufsize );
 }
 
+
 CCgiObuffer::~CCgiObuffer(void)
 {
     overflow( CT_EOF );
-    delete[] m_buf;
+    delete [] m_buf;
 }
+
 
 CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
 {
@@ -123,9 +126,9 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
             count -= chunk;
         }
     }
-   
+
     setp( m_buf, m_buf + m_bufsize );
-   
+
     if ( c == CT_EOF ) {
         return 0;
     }
@@ -145,9 +148,9 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
     return CT_NOT_EOF(*out->wrNext++ = c);
 }
 
+
 int CCgiObuffer::sync(void)
 {
-    _TRACE("CCgiObuffer::sync");
     CT_INT_TYPE result1 = CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF);
     int         result2 = FCGX_FFlush(m_out);
     if (result1 || result2) {
@@ -165,6 +168,7 @@ CCgiIbuffer::CCgiIbuffer(FCGX_Stream* in)
         THROW1_TRACE(runtime_error, "CCgiObuffer: in is not reader");
     }
 }
+
 
 CT_INT_TYPE CCgiIbuffer::uflow(void)
 {
@@ -187,6 +191,7 @@ CT_INT_TYPE CCgiIbuffer::uflow(void)
     return CT_NOT_EOF(*in->rdNext++);
 }
 
+
 CT_INT_TYPE CCgiIbuffer::underflow(void)
 {
     FCGX_Stream* in = m_in;
@@ -207,5 +212,6 @@ CT_INT_TYPE CCgiIbuffer::underflow(void)
 
     return CT_NOT_EOF(*in->rdNext);
 }
+
 
 END_NCBI_SCOPE
