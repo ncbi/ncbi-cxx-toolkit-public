@@ -73,7 +73,7 @@ public:
     // Supply an annotation selector to be used in feature gathering.
     SAnnotSelector& SetAnnotSelector(void);
 
-    void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
+    void Generate(CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
     void Generate(const CSeq_id& id, const TRange& range, 
@@ -81,7 +81,7 @@ public:
 
     // NB: the item ostream should be allocated on the heap!
     void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
-    void Generate(const CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
+    void Generate(CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
     void Generate(const CSeq_loc& loc, CScope& scope, CFlatItemOStream& item_os);
     void Generate(const CSeq_id& id, const TRange& range,
         ENa_strand strand, CScope& scope, CFlatItemOStream& item_os);
@@ -104,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/02/07 14:56:21  shomrat
+* unconst Seq-submit objects
+*
 * Revision 1.9  2004/05/19 14:46:24  shomrat
 * + Reset()
 *
