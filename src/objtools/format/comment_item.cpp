@@ -810,6 +810,37 @@ void CGsdbComment::x_GatherInfo(CBioseqContext&)
 }
 
 
+// --- CLocalIdComment
+
+CLocalIdComment::CLocalIdComment(const CObject_id& oid, CBioseqContext& ctx) :
+    CCommentItem(ctx), m_Oid(&oid)
+{
+    x_GatherInfo(ctx);
+}
+
+
+void CLocalIdComment::x_GatherInfo(CBioseqContext&)
+{
+    CNcbiOstrstream msg;
+
+    switch ( m_Oid->Which() ) {
+    case CObject_id::e_Id:
+        msg << "LocalID: " << m_Oid->GetId();    
+        break;
+    case CObject_id::e_Str:
+        if ( m_Oid->GetStr().length() < 100 ) {
+            msg << "LocalID: " << m_Oid->GetStr();
+        } else {
+            msg << "LocalID string too large";
+        }
+        break;
+    default:
+        break;
+    }
+    x_SetComment(CNcbiOstrstreamToString(msg));
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -818,6 +849,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/06 17:45:43  shomrat
+* + CLocalIdComment
+*
 * Revision 1.6  2004/04/22 15:51:13  shomrat
 * Changes in context
 *
