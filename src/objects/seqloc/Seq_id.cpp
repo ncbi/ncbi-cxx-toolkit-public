@@ -316,6 +316,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'S':                               return eAcc_ddbj_genome;
                 // BS is actually chimp genomes.
             case 'V':                               return eAcc_gb_sts;
+            case 'X':                               return eAcc_embl_genome;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -816,6 +817,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.32  2002/08/28 14:07:56  ucko
+ * IdentifyAccession: handle BX (EMBL genome)
+ *
  * Revision 6.31  2002/08/26 20:44:06  ucko
  * CSeq_id::IdentifyAccession: +BW (DDBJ EST)
  *
