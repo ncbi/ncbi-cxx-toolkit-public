@@ -1,4 +1,4 @@
---$Revision: 1.13 $ 
+--$Revision: 1.14 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -96,12 +96,17 @@ Gene-commentary ::= SEQUENCE {
         pre-protein (13) ,
         miscRNA  (14) ,
         snoRNA  (15) ,
+        property  (16) ,
         comment (254) ,
         other (255) } ,
     heading VisibleString OPTIONAL ,      -- appears above text 
-    label VisibleString OPTIONAL ,        -- occurs to left of text 
+    label VisibleString OPTIONAL ,        -- occurs to left of text
+                                          -- for protein and RNA types it is a name
+					  -- for property type it is a property tag  
     text VisibleString OPTIONAL ,         -- block of text 
+					  -- for property type it is a property value  
     accession VisibleString OPTIONAL ,    -- accession for the gi in the seqloc, see note 3
+    xtra-properties SEQUENCE OF Xtra-Terms OPTIONAL , -- see note 2
     refs SEQUENCE OF Pub OPTIONAL ,       -- refs for this 
     source SEQUENCE OF Other-source OPTIONAL ,    -- links and refs 
     genomic-coords SEQUENCE OF Seq-loc OPTIONAL , -- referenced sequences in genomic coords
