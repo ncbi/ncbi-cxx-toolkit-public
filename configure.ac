@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.330 2004/11/08 18:56:37 ucko Exp $
+#  $Id: configure.ac,v 1.331 2004/11/18 19:13:34 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2745,16 +2745,30 @@ fi
 ## Berkeley DB library
 if test "$with_bdb" != "no" ; then
    case "$with_bdb" in
-      yes | "" ) : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}     ;;
-      */*      ) BERKELEYDB_PATH=$with_bdb                    ;;
-      *        ) BERKELEYDB_PATH=$NCBI/BerkeleyDB-${with_bdb} ;;
+      yes | "" )
+         : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}
+         ;;
+      */*)
+          BERKELEYDB_PATH=$with_bdb
+          AS_UNSET(BERKELEYDB_INCLUDE)
+          AS_UNSET(BERKELEYDB_LIBPATH)
+          AS_UNSET(BERKELEYDB_LIBS)
+          ;;
+      *)
+          BERKELEYDB_PATH=$NCBI/BerkeleyDB-${with_bdb}
+          AS_UNSET(BERKELEYDB_INCLUDE)
+          AS_UNSET(BERKELEYDB_LIBPATH)
+          AS_UNSET(BERKELEYDB_LIBS)
+          ;;
    esac
-   BERKELEYDB_INCLUDE="-I$BERKELEYDB_PATH/include"
-   for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
-      BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
-      test -d ${BERKELEYDB_LIBPATH}  &&  break
-   done
-   BERKELEYDB_LIBS="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"
+   : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
+   if test -z "${BERKELEYDB_LIBPATH}"; then
+      for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
+         BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
+         test -d ${BERKELEYDB_LIBPATH}  &&  break
+      done
+   fi
+   : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
    else
@@ -2788,7 +2802,7 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
                [Your Berkeley DB version is too old to use.  (Needed 4.1.)])
             with_bdb=no
             ;;
-         4.1.* ) ;;
+         4.1.* | 4.2.* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])

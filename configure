@@ -15601,16 +15601,30 @@ fi
 ## Berkeley DB library
 if test "$with_bdb" != "no" ; then
    case "$with_bdb" in
-      yes | "" ) : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}     ;;
-      */*      ) BERKELEYDB_PATH=$with_bdb                    ;;
-      *        ) BERKELEYDB_PATH=$NCBI/BerkeleyDB-${with_bdb} ;;
+      yes | "" )
+         : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}
+         ;;
+      */*)
+          BERKELEYDB_PATH=$with_bdb
+          $as_unset BERKELEYDB_INCLUDE || test "${BERKELEYDB_INCLUDE+set}" != set || { BERKELEYDB_INCLUDE=; export BERKELEYDB_INCLUDE; }
+          $as_unset BERKELEYDB_LIBPATH || test "${BERKELEYDB_LIBPATH+set}" != set || { BERKELEYDB_LIBPATH=; export BERKELEYDB_LIBPATH; }
+          $as_unset BERKELEYDB_LIBS || test "${BERKELEYDB_LIBS+set}" != set || { BERKELEYDB_LIBS=; export BERKELEYDB_LIBS; }
+          ;;
+      *)
+          BERKELEYDB_PATH=$NCBI/BerkeleyDB-${with_bdb}
+          $as_unset BERKELEYDB_INCLUDE || test "${BERKELEYDB_INCLUDE+set}" != set || { BERKELEYDB_INCLUDE=; export BERKELEYDB_INCLUDE; }
+          $as_unset BERKELEYDB_LIBPATH || test "${BERKELEYDB_LIBPATH+set}" != set || { BERKELEYDB_LIBPATH=; export BERKELEYDB_LIBPATH; }
+          $as_unset BERKELEYDB_LIBS || test "${BERKELEYDB_LIBS+set}" != set || { BERKELEYDB_LIBS=; export BERKELEYDB_LIBS; }
+          ;;
    esac
-   BERKELEYDB_INCLUDE="-I$BERKELEYDB_PATH/include"
-   for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
-      BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
-      test -d ${BERKELEYDB_LIBPATH}  &&  break
-   done
-   BERKELEYDB_LIBS="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"
+   : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
+   if test -z "${BERKELEYDB_LIBPATH}"; then
+      for d in "${release_debug}${bit64_sfx}" "lib${bit64_sfx}" lib; do
+         BERKELEYDB_LIBPATH=${BERKELEYDB_PATH}/$d
+         test -d ${BERKELEYDB_LIBPATH}  &&  break
+      done
+   fi
+   : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
    else
@@ -15696,7 +15710,7 @@ echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_version" >&6
 echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.1.)" >&2;}
             with_bdb=no
             ;;
-         4.1.* ) ;;
+         4.1.* | 4.2.* ) ;;
          * )
             { echo "$as_me:$LINENO: WARNING: Untested Berkeley DB version; may prove incompatible." >&5
 echo "$as_me: WARNING: Untested Berkeley DB version; may prove incompatible." >&2;}
