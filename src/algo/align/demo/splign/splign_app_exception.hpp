@@ -78,98 +78,15 @@ public:
 };
 
 
-//  CSplign exceptions
-//
-class CSplignException : public CException
-{
-public:
-    enum EErrCode {
-        eInternal,
-        eBadParameter,
-	eNotInitialized
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eInternal:
-            return "Internal error";
-        case eBadParameter:
-            return "One or more parameters passed are invalid";
-        case eNotInitialized:
-            return "Splign object not properly initialized";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CSplignException, CException);
-};
-
-//  HitFilter exceptions - will be moved to h\the hit filtering library
-//
-
-class CHitFilterException: public CException
-{
-public:
-    enum EErrCode {
-        eInternal
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eInternal:
-            return "Internal error";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CHitFilterException,CException);
-};
-
-
-
-class CHitException : public CHitFilterException
-{
-public:
-    enum EErrCode {
-        eFormat
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eFormat:
-            return "Input line format error";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CHitException, CHitFilterException);
-};
-
-
-class CHitAccessorException : public CHitFilterException
-{
-public:
-    enum EErrCode {
-        eInputStream,
-        eHitException
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eInputStream:
-            return "Input stream unavailable";
-        case eHitException:
-            return "Hit level exception";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CHitAccessorException, CHitFilterException);
-};
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/11/05 15:54:01  kapustin
+ * Remove unused exception classes
+ *
  * Revision 1.4  2004/06/07 13:47:37  kapustin
  * Throw when no hits returned from Blast
  *
