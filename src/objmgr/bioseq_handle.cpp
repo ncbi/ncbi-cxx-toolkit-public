@@ -441,13 +441,19 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 }
 
 
-bool CBioseq_Handle::ContainsSegment(const CSeq_id& id) const
+bool CBioseq_Handle::ContainsSegment(const CSeq_id& id,
+                                     size_t resolve_depth,
+                                     EFindSegment limit_flag) const
 {
-    return ContainsSegment(CSeq_id_Handle::GetHandle(id));
+    return ContainsSegment(CSeq_id_Handle::GetHandle(id),
+                           resolve_depth,
+                           limit_flag);
 }
 
 
-bool CBioseq_Handle::ContainsSegment(const CBioseq_Handle& part) const
+bool CBioseq_Handle::ContainsSegment(const CBioseq_Handle& part,
+                                     size_t resolve_depth,
+                                     EFindSegment limit_flag) const
 {
     CConstRef<CSynonymsSet> syns = part.GetSynonyms();
     if ( !syns ) {
@@ -455,6 +461,10 @@ bool CBioseq_Handle::ContainsSegment(const CBioseq_Handle& part) const
     }
     SSeqMapSelector sel;
     sel.SetFlags(CSeqMap::fFindRef);
+    if ( limit_flag == eFindSegment_LimitTSE ) {
+        sel.SetLimitTSE(GetTopLevelEntry());
+    }
+    sel.SetResolveCount(resolve_depth);
     CSeqMap_CI it = GetSeqMap().BeginResolved(&GetScope(), sel);
     for ( ; it; ++it) {
         if ( syns->ContainsSynonym(it.GetRefSeqid()) ) {
@@ -465,7 +475,9 @@ bool CBioseq_Handle::ContainsSegment(const CBioseq_Handle& part) const
 }
 
 
-bool CBioseq_Handle::ContainsSegment(CSeq_id_Handle id) const
+bool CBioseq_Handle::ContainsSegment(CSeq_id_Handle id,
+                                     size_t resolve_depth,
+                                     EFindSegment limit_flag) const
 {
     CBioseq_Handle h = GetScope().GetBioseqHandle(id);
     CConstRef<CSynonymsSet> syns;
@@ -474,6 +486,10 @@ bool CBioseq_Handle::ContainsSegment(CSeq_id_Handle id) const
     }
     SSeqMapSelector sel;
     sel.SetFlags(CSeqMap::fFindRef);
+    if ( limit_flag == eFindSegment_LimitTSE ) {
+        sel.SetLimitTSE(GetTopLevelEntry());
+    }
+    sel.SetResolveCount(resolve_depth);
     CSeqMap_CI it = GetSeqMap().BeginResolved(&GetScope(), sel);
     for ( ; it; ++it) {
         if ( syns ) {
@@ -867,6 +883,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2005/02/22 15:16:41  grichenk
+* Added optional depth and limit to ContainsSegment()
+*
 * Revision 1.86  2005/02/10 22:15:20  grichenk
 * Added ContainsSegment
 *
