@@ -1,0 +1,3 @@
+[AddToProject]
+HeadersInInclude = netschedule_client.hpp
+HeadersInSrc = !

@@ -1,0 +1,6 @@
+# $Id$
+
+SRC     = netschedule_client
+LIB     = xconnserv
+LIBS    = $(NETWORK_LIBS)
+DLL_LIB = xutil xconnect
