@@ -84,7 +84,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 10));
+    SetVersion(CVersionInfo(0, 9, 11));
 }
 
 
@@ -212,7 +212,7 @@ void COMSSA::Init()
 			   CArgDescriptions::eInteger, "30");
     argDesc->AddDefaultKey("ht", "tophitnum", 
 			   "number of m/z values corresponding to the most intense peaks that must include one match to the theoretical peptide",
-			   CArgDescriptions::eInteger, "20");
+			   CArgDescriptions::eInteger, "6");
     argDesc->AddDefaultKey("hm", "minhit", 
 			   "the minimum number of m/z matches a sequence library peptide must have for the hit to the peptide to be recorded",
 			   CArgDescriptions::eInteger, "2");
@@ -529,6 +529,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.32  2005/04/05 21:26:34  lewisg
+  adjust ht parameter
+
   Revision 1.31  2005/04/05 21:02:52  lewisg
   increase number of mods, fix gi problem, fix empty scan bug
 
