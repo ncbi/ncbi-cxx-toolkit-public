@@ -3,7 +3,7 @@
 # Miscellaneous applications
 #################################
 
-SUB_PROJ = id1_fetch id1_fetch1
+SUB_PROJ = id1_fetch id1_fetch1 sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
