@@ -66,8 +66,6 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
             throw runtime_error("Could not retrieve seq entry");
     }
 
-    scope->AddTopLevelSeqEntry(*seq_entry);
-    
     int index = 0;
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
@@ -96,9 +94,8 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope,
         retval.push_back(*slp);
 
         // Add this seqentry to the scope
-        CBioseq_Handle bh;
         try {
-            bh = scope->GetBioseqHandle(*seqloc);
+            CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
         } catch (CException& e) {
             scope->AddTopLevelSeqEntry(*seq_entry);
         }
