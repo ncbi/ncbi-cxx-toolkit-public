@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/29 18:19:12  lavr
+ * BONUS added for services running locally.
+ *
  * Revision 6.2  2000/05/22 16:53:13  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -45,6 +48,9 @@
  */
 
 #include "ncbi_servicep.h"
+
+/* Rate increase if svc runs locally */
+#define SERV_LBSMD_LOCAL_SVC_BONUS 1.75
 
 #ifdef __cplusplus
 extern "C" {
