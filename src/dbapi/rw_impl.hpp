@@ -39,6 +39,9 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDB_SendDataCmd;
+class CResultSet;
+
 class CBlobReader : public IReader
 {
 public:
@@ -54,7 +57,7 @@ public:
 
 private:
     
-    class CResultSet *m_rs;
+    CResultSet *m_rs;
 };
 
 class CBlobWriter : public IWriter
@@ -76,7 +79,7 @@ public:
 
 private:
 
-    class CDB_SendDataCmd *dataCmd;
+    CDB_SendDataCmd *dataCmd;
 };
 
 END_NCBI_SCOPE
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2004/07/20 20:23:33  ucko
+* Place forward declarations outside classes to avoid confusing WorkShop.
+*
 * Revision 1.1  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *

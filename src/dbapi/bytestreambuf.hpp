@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2004/07/20 20:23:33  ucko
+* Place forward declarations outside classes to avoid confusing WorkShop.
+*
 * Revision 1.4  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -56,14 +59,17 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDB_SendDataCmd;
+class CResultSet;
+
 class CByteStreamBuf : public streambuf
 {
 public:
     CByteStreamBuf(streamsize bufsize);
     virtual ~CByteStreamBuf();
 
-    void SetCmd(class CDB_SendDataCmd* cmd);
-    void SetRs(class CResultSet* rs);
+    void SetCmd(CDB_SendDataCmd* cmd);
+    void SetRs(CResultSet* rs);
 
 protected:
     virtual streambuf* setbuf(CT_CHAR_TYPE* p, streamsize n);
@@ -82,8 +88,8 @@ private:
     CT_CHAR_TYPE* m_buf;
     size_t m_size;
     //streamsize m_len;
-    class CResultSet* m_rs;
-    class CDB_SendDataCmd* m_cmd;
+    CResultSet* m_rs;
+    CDB_SendDataCmd* m_cmd;
     //int m_column;
 
 };
