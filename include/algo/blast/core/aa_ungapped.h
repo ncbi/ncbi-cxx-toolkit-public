@@ -88,7 +88,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      Uint4 * NCBI_RESTRICT query_offsets,
 			      Uint4 * NCBI_RESTRICT subject_offsets,
 			      Int4 array_size,
-                              BlastInitHitList* ungapped_hsps);
+	                      BlastInitHitList* ungapped_hsps);
 
 /** Scan a subject sequence for word hits and trigger one-hit extensions.
  *
@@ -116,7 +116,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Uint4 * NCBI_RESTRICT query_offsets,
 			      Uint4 * NCBI_RESTRICT subject_offsets,
 			      Int4 array_size,
-                              BlastInitHitList* ungapped_hsps);
+	                      BlastInitHitList* ungapped_hsps);
 
 /**
  * Beginning at s_off and q_off in the subject and query, respectively,
@@ -130,6 +130,8 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
  * @param q_off query offset [in]
  * @param dropoff the X dropoff parameter [in]
  * @param displacement the length of the extension [out]
+ * @param maxscore the score derived from a previous left extension [in]
+ * @param s_last_off the rightmost subject offset examined [out]
  * @return The score of the extension
  */
 
@@ -139,7 +141,19 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			Int4 s_off,
 			Int4 q_off,
 			Int4 dropoff,
-			Int4* displacement);
+			Int4* displacement,
+	                Int4 maxscore,
+	                Int4* s_last_off);
+
+  Int4 BlastPSSMExtendRight(Int4 ** matrix,
+			const BLAST_SequenceBlk* subject,
+			Int4 query_size,
+			Int4 s_off,
+			Int4 q_off,
+			Int4 dropoff,
+			Int4* displacement,
+	                Int4 maxscore,
+	                Int4* s_last_off);
 
 
 /**
@@ -165,6 +179,14 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 		       Int4 dropoff,
 		       Int4* displacement);
 
+Int4 BlastPSSMExtendLeft(Int4 ** matrix,
+		       const BLAST_SequenceBlk* subject,
+		       Int4 query_size,
+		       Int4 s_off,
+		       Int4 q_off,
+		       Int4 dropoff,
+		       Int4* displacement);
+
 
 /** Perform a one-hit extension. Beginning at the specified hit,
  * extend to the left, then extend to the right. 
@@ -178,19 +200,23 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
  * @param hsp_q the offset in the query where the HSP begins [out]
  * @param hsp_s the offset in the subject where the HSP begins [out]
  * @param hsp_len the length of the HSP [out]
+ * @param use_pssm TRUE if the scoring matrix is position-specific [in]
+ * @param s_last_off the rightmost subject offset examined [out]
  * @return the score of the hsp.
  */
 
 Int4 BlastAaExtendOneHit(Int4 ** matrix,
-                         const BLAST_SequenceBlk* subject,
-                         const BLAST_SequenceBlk* query,
-                         Int4 s_off,
-                         Int4 q_off,
-                         Int4 dropoff,
+	                 const BLAST_SequenceBlk* subject,
+	                 const BLAST_SequenceBlk* query,
+	                 Int4 s_off,
+	                 Int4 q_off,
+	                 Int4 dropoff,
 			 Int4* hsp_q,
 			 Int4* hsp_s,
-			 Int4* hsp_len);
-                         
+			 Int4* hsp_len,
+	                 Boolean use_pssm,
+	                 Int4* s_last_off);
+	                 
 /** Perform a two-hit extension. Given two hits L and R, begin
  * at R and extend to the left. If we do not reach L, abort the extension.
  * Otherwise, begin at R and extend to the right.
@@ -205,27 +231,26 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
  * @param hsp_q the offset in the query where the HSP begins [out]
  * @param hsp_s the offset in the subject where the HSP begins [out]
  * @param hsp_len the length of the HSP [out]
+ * @param use_pssm TRUE if the scoring matrix is position-specific [in]
+ * @param word_size number of letters in one word [in]
+ * @param s_last_off the rightmost subject offset examined [out]
  * @return the score of the hsp.
  */
 
 Int4 BlastAaExtendTwoHit(Int4 ** matrix,
-                         const BLAST_SequenceBlk* subject,
-                         const BLAST_SequenceBlk* query,
-                         Int4 s_left_off,
-                         Int4 s_right_off,
-                         Int4 q_right_off,
-                         Int4 dropoff,
+	                 const BLAST_SequenceBlk* subject,
+	                 const BLAST_SequenceBlk* query,
+	                 Int4 s_left_off,
+	                 Int4 s_right_off,
+	                 Int4 q_right_off,
+	                 Int4 dropoff,
 			 Int4* hsp_q,
 			 Int4* hsp_s,
-			 Int4* hsp_len);
-
-/** Create a new diagonal array structure.
-  * @param diag handle to diagonal array structure [in/modified]
-  * @param window_size the window size for the two-hit heuristic
-  * @param longest_seq length of the longest subject or query sequence
-  */
-
-Int4 DiagNew(BLAST_DiagTable* * diag, Int4 window_size, Int4 longest_seq);
+			 Int4* hsp_len,
+	                 Boolean use_pssm,
+	                 Int4 word_size,
+	                 Boolean *right_extend,
+	                 Int4* s_last_off);
 
 /** Update the offset for use with a new sequence.
   * @param diag pointer to the diagonal array structure [in]
@@ -238,21 +263,6 @@ Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length);
   * @param diag pointer to the diagonal array structure [in]
   */
 Int4 DiagClear(BLAST_DiagTable* diag);
-
-/** Free the diagonal array structure.
-  * @param diag pointer to the diagonal array structure
-  */
-Int4 DiagFree(BLAST_DiagTable* diag);
-
-/** Update the level of a given diagonal.
-  * @param diag pointer to the diagonal array structure [in]
-  * @param query_offset offset in the query [in]
-  * @param subject_offset offset in the subject [in]
-  * @param subject_extension how far we've extended along the subject [in]
-  */
-
-/*Int4 DiagUpdateLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension);
-*/
 
 #ifdef _cplusplus
 }

@@ -30,14 +30,6 @@ static char const rcsid[] = "$Id$";
 
 #include <algo/blast/core/aa_ungapped.h>
 
-static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
-
-static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension);
-
-static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
-
-static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
-
 Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                        BLAST_SequenceBlk* query,
                        LookupTableWrap* lut_wrap,
@@ -98,17 +90,19 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      BlastInitHitList* ungapped_hsps)
 {
    LookupTable* lookup = lookup_wrap->lut;
+   Int4 wordsize = lookup->wordsize;
    Int4 i;
    Int4 hits=0;
    Int4 totalhits=0;
    Int4 first_offset = 0;
-   Int4 last_offset  = subject->length - lookup->wordsize;
+   Int4 last_offset  = subject->length - wordsize;
    Int4 score;
    Int4 hsp_q, hsp_s, hsp_len;
    Int4 window;
-   Int4 last_hit, level, diff;
+   Int4 last_hit, s_last_off, diff;
    Int4 diag_offset, diag_coord, diag_mask;
    DiagStruct* diag_array;
+   Boolean right_extend;
 
    if (diag == NULL)
       return -1;
@@ -119,65 +113,76 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    window = diag->window;
 
    while(first_offset <= last_offset) {
+      /* scan the subject sequence for hits */
       hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
-                query_offsets, subject_offsets,	array_size);
+                                query_offsets, subject_offsets, array_size);
 
       totalhits += hits;
       /* for each hit, */
       for (i = 0; i < hits; ++i)
       {
+         /* calculate the diagonal associated with this query-subject
+            pair, and find the distance to the last hit on this diagonal */
+
          diag_coord = 
             (subject_offsets[i]  - query_offsets[i]) & diag_mask;
-         level = diag_array[diag_coord].diag_level;
          
          last_hit = diag_array[diag_coord].last_hit - diag_offset;
          diff = subject_offsets[i] - last_hit;
 
-         if (diff <= 0)
-            continue;
+         if (diff >= window) {
+            /* We are beyond the window for this diagonal; start a new hit */
+            diag_array[diag_coord].last_hit = subject_offsets[i] + diag_offset;
+         } 
+         else {
+            /* If the difference is negative, or is less than the 
+               wordsize (i.e. last hit and this hit overlap), give up */
 
-         if (level > 0) {
-            /* Previous hit already started on this diagonal, but not
-               extended yet */
-            if (diff < lookup->wordsize) {
-               /* New hit is too close to the previous, it does not 
-                  count as a second hit; update the level, so we know 
-                  where the last hit was */
-               diag_array[diag_coord].diag_level = diff + 1;
-            } else if (diff < window + level) {
+            if (diff < wordsize)
+               continue;
+
+            /* If a previous extension has not already 
+               covered this portion of the query and subject 
+               sequences, do the ungapped extension */
+
+            right_extend = TRUE;
+            if (subject_offsets[i] + diag_offset > 
+                diag_array[diag_coord].diag_level) {
+
                /* Extend this pair of hits. The extension to the left must 
                   reach the end of the first word in order for extension 
                   to the right to proceed. */
                hsp_len = 0;
-               score = 
-                  BlastAaExtendTwoHit(matrix, subject, query,
-                     last_hit+lookup->wordsize, subject_offsets[i], 
-                     query_offsets[i], dropoff, &hsp_q, &hsp_s, &hsp_len);
+               score = BlastAaExtendTwoHit(matrix, subject, query,
+                                        last_hit + wordsize, 
+                                        subject_offsets[i], query_offsets[i], 
+                                        dropoff, &hsp_q, &hsp_s, 
+                                        &hsp_len, lookup->use_pssm,
+                                        wordsize, &right_extend, &s_last_off);
+
                /* if the hsp meets the score threshold, report it */
-               if (score > cutoff) {
+               if (score >= cutoff)
                   BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
-                     query_offsets[i], subject_offsets[i], hsp_len, score);
-                  /* Reset level, so we know this hit has been extended */
-                  diag_array[diag_coord].diag_level = 0;
-               }
-               /* Update the last hit on this diagonal to the end of this 
-                  extension */
-               diag_array[diag_coord].last_hit = 
-                  hsp_s + hsp_len + diag_offset;
-            } else {
-               /* New hit is too far away from the previous; discard 
-                  the previous hit and start a new one */
-               diag_array[diag_coord].last_hit = 
-                  subject_offsets[i] + diag_offset;
-               diag_array[diag_coord].diag_level = 1;
+                        query_offsets[i], subject_offsets[i], hsp_len, score);
+
+               /* whether or not the score was high enough, remember
+                  the rightmost subject word offset examined. Future hits must
+                  lie at least one letter to the right of this point */
+               diag_array[diag_coord].diag_level = 
+                        s_last_off - (wordsize - 1) + diag_offset;
             }
-         } else {
-            /* Previous hit already extended, and we are beyond the 
-               end of the extension; start a new hit */
-            diag_array[diag_coord].last_hit = 
-               subject_offsets[i] + diag_offset;
-            diag_array[diag_coord].diag_level = 1;
-         }
+
+            /* If an extension to the right happened (or no extension
+               at all), reset the last hit so that future hits to this 
+               diagonal must start over. Otherwise make the present hit
+               into the previous hit for this diagonal */
+
+            if (right_extend)
+               diag_array[diag_coord].last_hit = 0;
+            else
+               diag_array[diag_coord].last_hit = 
+                        subject_offsets[i] + diag_offset;
+         } 
       }/* end for - done with this batch of hits, call scansubject again. */
    } /* end while - done with the entire sequence. */
  
@@ -205,6 +210,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    Int4 first_offset = 0;
    Int4 last_offset  = subject->length - lookup->wordsize;
    Int4 hsp_q, hsp_s, hsp_len;
+   Int4 s_last_off;
    Int4 i;
    Int4 score;
    Int4 diag_offset, diag_coord, diag_mask, diff;
@@ -213,9 +219,6 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    if (!diag) 
       return -1;
    
-   /* clear the diagonal array */
-   DiagClear(diag);
-   
    diag_offset = diag->offset;
    diag_array = diag->diag_array;
    diag_mask = diag->diag_mask;
@@ -223,13 +226,8 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    while(first_offset <= last_offset)
    {
       /* scan the subject sequence for hits */
-
-      hits = BlastAaScanSubject(lookup_wrap,
-				subject,
-				&first_offset,
-				query_offsets,
-				subject_offsets,
-				array_size);
+      hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
+				query_offsets, subject_offsets, array_size);
 
       totalhits += hits;
       /* for each hit, */
@@ -238,98 +236,30 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
             (subject_offsets[i]  - query_offsets[i]) & diag_mask;
            
          diff = subject_offsets[i] - 
-            (diag_array[diag_coord].last_hit - diag_offset);
+            (diag_array[diag_coord].diag_level - diag_offset);
 
          /* do an extension, but only if we have not already extended
             this far */
          if (diff > 0) {
             score=BlastAaExtendOneHit(matrix, subject, query,
                      subject_offsets[i], query_offsets[i], dropoff,
-                     &hsp_q, &hsp_s, &hsp_len);
+                     &hsp_q, &hsp_s, &hsp_len, lookup->use_pssm, &s_last_off);
 
             /* if the hsp meets the score threshold, report it */
-            if (score > cutoff) {
+            if (score >= cutoff) {
                BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
                   query_offsets[i], subject_offsets[i], hsp_len, score);
             }
-            diag_array[diag_coord].last_hit = hsp_s + hsp_len + diag_offset;
+            diag_array[diag_coord].diag_level = 
+                  s_last_off - (lookup->wordsize - 1) + diag_offset;
          }
       } /* end for */
    } /* end while */
+
+   /* increment the offset in the diagonal array (no windows used) */
+   DiagUpdate(diag, subject->length); 
+ 
    return totalhits;
-}
-
-/** Given a hit, determine the diagonal on which that hit lies, and then determine the previous hit on that diagonal.
- *
- * @param diag the diagonal table [in]
- * @param query_offset the query offset of the hit [in]
- * @param subject_offset the subject offset of the hit [in]
- * @return the subject offset of the previous hit
- */
-
-static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset)
-{
-  Int4 diag_coord;
-
-  if (diag == NULL)
-    return 0;
-
-  diag_coord = (subject_offset - query_offset) & diag->diag_mask;
-  
-    return diag->diag_array[diag_coord].last_hit - diag->offset;
-}
-
-/** Given a hit, determine the diagonal on which that hit lies, and then record the subject offset in the last_hit field of the diagonal array.
- *
- * @param diag the diagonal table [in]
- * @param query_offset the query offset of the hit [in]
- * @param subject_offset the subject offset of the hit [in]
- * @return Zero.
- */
-
-static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset)
-{
-  Int4 diag_coord;
-  
-  if (diag == NULL)
-    return 0;
-  
-  diag_coord = (subject_offset - query_offset) & diag->diag_mask;
-  
-  diag->diag_array[diag_coord].last_hit = subject_offset + diag->offset;
-  return 0;
-}
-
-/** Given a hit, determine if we have previously extended past it.
- *
- * see the corresponding function DiagUpdateLevel() in extend.c
- *
- * @param diag the diagonal table [in]
- * @param query_offset the query offset of the hit [in]
- * @param subject_offset the subject offset of the hit [in]
- * @return 1 if we've previously extended past this hit, 0 otherwise.
- */
-
-
-static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset)
-{
-  Int4 diag_coord;
-  Int4 level;
-
-  if (diag == NULL)
-    return 0;
-
-  diag_coord = (subject_offset  - query_offset) & diag->diag_mask;
-
-  /*
-   * if we've previously extended past the current subject offset,
-   * we can safely skip this extension.
-   */
-  level = diag->diag_array[diag_coord].diag_level - diag->offset;
-  if (subject_offset < level )
-    return -1;
-  else
-    return subject_offset - level;
 }
 
 Int4 BlastAaExtendRight(Int4 ** matrix,
@@ -338,11 +268,12 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
 			Int4 s_off,
 			Int4 q_off,
 			Int4 dropoff,
-			Int4* displacement)
+			Int4* displacement,
+                        Int4 maxscore,
+                        Int4* s_last_off)
 {
   Int4 i, n, best_i = -1;
-  Int4 score=0;
-  Int4 maxscore=0;
+  Int4 score = maxscore;
 
   Uint1* s,* q;
   n = MIN( subject->length - s_off , query->length - q_off );
@@ -351,18 +282,19 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
   q=query->sequence + q_off;
 
   for(i = 0; i < n; i++) {
-     score += matrix[ s[i]] [ q[i] ];
+     score += matrix[ q[i] ] [ s[i] ];
 
      if (score > maxscore) {
         maxscore = score;
         best_i = i;
      }
-     
-     if ((maxscore - score) > dropoff)
+
+     if (score <= 0 || (maxscore - score) >= dropoff)
         break;
   }
 
   *displacement = best_i;
+  *s_last_off = s_off + i;
   return maxscore;
 }
 
@@ -387,13 +319,79 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
    q = query->sequence + q_off - n;
    
    for(i = n; i >= 0; i--) {
-      score += matrix[ s[i] ] [ q[i] ];
+      score += matrix[ q[i] ] [ s[i] ];
       
       if (score > maxscore) {
          maxscore = score;
          best_i = i;
       }
-      if ((maxscore - score) > dropoff)
+      if ((maxscore - score) >= dropoff)
+         break;
+   }
+   
+   *displacement = n - best_i;
+   return maxscore;
+}
+
+Int4 BlastPSSMExtendRight(Int4 ** matrix,
+			const BLAST_SequenceBlk* subject,
+			Int4 query_size,
+			Int4 s_off,
+			Int4 q_off,
+			Int4 dropoff,
+			Int4* displacement,
+                        Int4 maxscore,
+			Int4* s_last_off)
+{
+  Int4 i, n, best_i = -1;
+  Int4 score = maxscore;
+  Uint1* s;
+
+  n = MIN( subject->length - s_off , query_size - q_off );
+  s = subject->sequence + s_off;
+
+  for(i = 0; i < n; i++) {
+     score += matrix[ q_off+i ] [ s[i] ];
+
+     if (score > maxscore) {
+        maxscore = score;
+        best_i = i;
+     }
+
+     if (score <= 0 || (maxscore - score) >= dropoff)
+        break;
+  }
+
+  *displacement = best_i;
+  *s_last_off = s_off + i;
+  return maxscore;
+}
+
+Int4 BlastPSSMExtendLeft(Int4 ** matrix,
+		       const BLAST_SequenceBlk* subject,
+		       Int4 query_size,
+		       Int4 s_off,
+		       Int4 q_off,
+		       Int4 dropoff,
+		       Int4* displacement)
+{
+   Int4 i, n, best_i;
+   Int4 score = 0;
+   Int4 maxscore = 0;
+   Uint1* s;
+   
+   n = MIN( s_off , q_off );
+   best_i = n + 1;
+   s = subject->sequence + s_off - n;
+   
+   for(i = n; i >= 0; i--) {
+      score += matrix[ q_off-n+i ] [ s[i] ];
+
+      if (score > maxscore) {
+         maxscore = score;
+         best_i = i;
+      }
+      if ((maxscore - score) >= dropoff)
          break;
    }
    
@@ -409,22 +407,33 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
                          Int4 dropoff,
 			 Int4* hsp_q,
 			 Int4* hsp_s,
-			 Int4* hsp_len)
+			 Int4* hsp_len,
+                         Boolean use_pssm,
+                         Int4* s_last_off)
 {
   Int4 left_score, right_score;
   Int4 left_disp, right_disp;
 
-  /* first, extend to the left. */
-  left_score = BlastAaExtendLeft(matrix, subject,query,s_off,q_off,dropoff,&left_disp);
-  
-  /* then, extend to the right. */
-  right_score = BlastAaExtendRight(matrix, subject, query, s_off, q_off, dropoff,&right_disp);
+  if (use_pssm) {
+     left_score = BlastPSSMExtendLeft(matrix, subject, query->length, 
+                           s_off, q_off, dropoff, &left_disp);
+     right_score = BlastPSSMExtendRight(matrix, subject, query->length, 
+                           s_off+1, q_off+1, dropoff, &right_disp, 
+                           left_score, s_last_off);
+  }
+  else {
+     left_score = BlastAaExtendLeft(matrix, subject, query, 
+                            s_off, q_off, dropoff, &left_disp);
+     right_score = BlastAaExtendRight(matrix, subject, query, 
+                            s_off+1, q_off+1, dropoff, &right_disp, 
+                            left_score, s_last_off);
+  }
   
   *hsp_q   = q_off - left_disp;
   *hsp_s   = s_off - left_disp;
   *hsp_len = left_disp + right_disp + 2;
   
-  return left_score + right_score;
+  return right_score;
 }
 
 Int4 BlastAaExtendTwoHit(Int4 ** matrix,
@@ -436,98 +445,64 @@ Int4 BlastAaExtendTwoHit(Int4 ** matrix,
                          Int4 dropoff,
 			 Int4* hsp_q,
 			 Int4* hsp_s,
-			 Int4* hsp_len)
+			 Int4* hsp_len,
+                         Boolean use_pssm,
+                         Int4 word_size,
+                         Boolean *right_extend,
+                         Int4 *s_last_off)
 {
-   Int4 left_d, right_d = 0; /* left and right displacements */
+   Int4 left_d = 0, right_d = 0; /* left and right displacements */
    Int4 left_score = 0, right_score = 0; /* left and right scores */
+   Int4 i, score = 0;
+   Uint1 *s = subject->sequence;
+   Uint1 *q = query->sequence;
+
+   /* find the position (up to word_size-1 letters to the
+      right) that gives the largest starting score */
+   for (i = 0; i < word_size; i++) {
+      if (use_pssm)
+         score += matrix[ q_right_off+i ][ s[s_right_off+i] ];
+      else
+         score += matrix[ q[q_right_off+i] ][ s[s_right_off+i] ];
+
+      if (score > left_score) {
+         left_score = score;
+         right_d = i;
+      }
+   }
+   q_right_off += right_d;
+   s_right_off += right_d;
+
+   right_d = -1;
+   *right_extend = FALSE;
+   *s_last_off = s_right_off;
 
    /* first, try to extend left, from the second hit to the first hit. */
-   left_score=BlastAaExtendLeft(matrix,
-			     subject,
-			     query,
-			     s_right_off,
-			     q_right_off,
-			     dropoff,
-			     &left_d);
+   if (use_pssm)
+      left_score = BlastPSSMExtendLeft(matrix, subject, query->length,
+    			     s_right_off, q_right_off, dropoff, &left_d);
+   else
+      left_score = BlastAaExtendLeft(matrix, subject, query,
+    			     s_right_off, q_right_off, dropoff, &left_d);
 
    /* Extend to the right only if left extension reached the first hit. */
    if (left_d >= (s_right_off - s_left_off)) {
-      right_score=BlastAaExtendRight(matrix,
-                                     subject,
-                                     query,
-                                     s_right_off + 1,
-                                     q_right_off + 1,
-                                     dropoff,
-                                     &right_d);
+
+      *right_extend = TRUE;
+      if (use_pssm)
+         right_score = BlastPSSMExtendRight(matrix, subject, query->length,
+                                     s_right_off + 1, q_right_off + 1,
+                                     dropoff, &right_d, left_score, s_last_off);
+      else 
+         right_score = BlastAaExtendRight(matrix, subject, query,
+                                     s_right_off + 1, q_right_off + 1,
+                                     dropoff, &right_d, left_score, s_last_off);
    }
+
    *hsp_q = q_right_off - left_d;
    *hsp_s = s_right_off - left_d;
    *hsp_len = left_d + right_d + 2;
-   
-   return left_score + right_score;
-}
-
-/** Save the rightmost subject offset for this diagonal, so that
- * subsequent extensions that may start on this diagonal do not
- * do the same work over again.
- *
- * @param diag diagonal array [in/out]
- * @param query_offset query offset, used to compute the diagonal [in]
- * @param subject_offset subject offset, used to compute the diagonal [in]
- * @param subject_extension the rightmost subject offset
- * @return Zero.
- */
-
-static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension)
-{
-  Int4 diag_coord;
-
-  if (diag==NULL)
-    return 0;
-
-  diag_coord = (subject_offset - query_offset) & diag->diag_mask;
-  
-  diag->diag_array[diag_coord].diag_level = subject_extension + diag->offset;
-
-  return 0;
-}
-
-/* stores diagonal information (for multiple hit heuristic) as well
- * as extension information (for ungapped extension)
- */
-
-/* for query and subject lengths qlen and slen respectively,
- * there are qlen + slen - 1 diagonals. let maxlen = max(qlen,slen) .
- * then let ndiags = 2 * 2^(ceil(log2(maxlen))),
- * or, twice the next larger power of two of the max of the subject and query lengths.
- * in order to ensure that all diagonals
- * are positive (they are used as array indices, after all), we bias the
- * subject offset by ndiags / 2.
- * thus, the following relation holds when converting from offset
- * coordinates to diagonal coordinates:
- *
- * diagonal = ( s_off + (ndiags / 2) ) - q_off
- * displacement = min(q_off, s_off)
- *
- * 
- * the last_hit element stores the subject offset of the last hit.
- * the diag_level element stores how far to the right the last hit
- * was extended. this is used to prevent subsequent hits (and extensions)
- * from extending over previous extensions.
- *
- */
-
-Int4 DiagNew(BLAST_DiagTable* * diag, Int4 window_size, Int4 longest_seq)
-{
-  *diag = (BLAST_DiagTable*) malloc(sizeof(BLAST_DiagTable));
-
-  (*diag)->diag_array_length = 2 * longest_seq;
-  (*diag)->diag_array = (DiagStruct*) 
-     malloc( (*diag)->diag_array_length * sizeof(DiagStruct));
-  (*diag)->window = window_size;
-  DiagClear(*diag);
-
-return 0;
+   return MAX(left_score,right_score);
 }
 
 Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length)
@@ -564,12 +539,3 @@ Int4 DiagClear(BLAST_DiagTable* diag)
   return 0;
 }
 
-Int4 DiagFree(BLAST_DiagTable* diag)
-{
-  if (diag == NULL)
-    return 0;
-
-free(diag->diag_array);
-free(diag);
-return 0;
-}
