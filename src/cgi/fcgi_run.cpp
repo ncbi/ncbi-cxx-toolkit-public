@@ -370,7 +370,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
             PushDiagPostPrefix(env.Get(m_DiagPrefixEnv).c_str());
 
-            CCgiObuffer       obuf(pfout);
+            CCgiObuffer       obuf(pfout, 512);
             CNcbiOstream      ostr(&obuf);
             CCgiIbuffer       ibuf(pfin);
             CNcbiIstream      istr(&ibuf);
@@ -427,7 +427,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
             // Call the exception handler and set the CGI exit code
             {{
-                CCgiObuffer  obuf(pfout);
+                CCgiObuffer  obuf(pfout, 512);
                 CNcbiOstream ostr(&obuf);
                 int exit_code = OnException(e, ostr);
                 FCGX_SetExitStatus(exit_code, pfout);
@@ -517,8 +517,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.38  2003/10/09 20:57:42  lavr
- * Do not use buf_size parameter in CCgiObuffer() ctor (lost due to rollback)
+ * Revision 1.39  2003/10/13 05:21:01  vakatov
+ * Rollback previous revision, it caused a bug (again; this time
+ * on output); to be fixed later.
  *
  * Revision 1.37  2003/10/09 20:07:04  ucko
  * Rework previous change to avoid possibly setting a negative (-> really
