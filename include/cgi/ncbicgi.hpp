@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  1999/04/14 19:52:20  vakatov
+* + <time.h>
+*
 * Revision 1.33  1999/03/08 22:42:49  vakatov
 * Added "string CCgiCookie::GetValue(void)"
 *
@@ -120,6 +123,7 @@
 #include <corelib/ncbistd.hpp>
 #include <list>
 #include <map>
+#include <time.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -140,7 +144,7 @@ public:
     CCgiCookie(const string& name, const string& value);
 
     // The cookie name cannot be changed during its whole timelife
-    const string& GetName (void) const;
+    const string& GetName(void) const;
 
     // Compose and write to output stream "os":
     //   "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
