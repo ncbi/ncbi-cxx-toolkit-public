@@ -327,11 +327,7 @@ void CFlatGatherer::x_AddComment(CCommentItem* comment) const
 {
     CRef<CCommentItem> com(comment);
     if ( !com->Skip() ) {
-        if ( !m_Comments.empty() ) {
-            m_Comments.push_back(com);
-        } else {
-            *m_ItemOS << com;
-        }
+        m_Comments.push_back(com);
     }
 }
 
@@ -352,17 +348,17 @@ void CFlatGatherer::x_FlushComments(void) const
     if ( m_Comments.empty() ) {
         return;
     }
-
-    // the first one is GSDB comment
-    if ( m_Comments.size() > 1 ) {
-        // if there are subsequent comments, add period after GSDB id
-        CRef<CGsdbComment> gsdb_comment(dynamic_cast<CGsdbComment*>(m_Comments.front().GetPointer()));
-        if ( gsdb_comment ) {
-            gsdb_comment->AddPeriod();
+    // add a period to the last comment
+    m_Comments.back()->AddPeriod();
+    
+    // add a period to a GSDB comment (if exist and not last)
+    TCommentVec::iterator last = m_Comments.end();
+    --last;
+    NON_CONST_ITERATE (TCommentVec, it, m_Comments) {
+        CGsdbComment* gsdb = dynamic_cast<CGsdbComment*>(it->GetPointerOrNull());
+        if ( gsdb != 0   &&  it != last ) {
+            gsdb->AddPeriod();
         }
-    }
-
-    ITERATE (vector< CRef<CCommentItem> >, it, m_Comments) {
         *m_ItemOS << *it;
     }
 
@@ -1205,6 +1201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/03/26 17:24:55  shomrat
+* Changes to comment gathering
+*
 * Revision 1.11  2004/03/25 20:39:47  shomrat
 * Use handles
 *
