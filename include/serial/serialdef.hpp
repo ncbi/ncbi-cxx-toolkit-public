@@ -137,6 +137,10 @@ enum EFixNonPrint {
     eFNP_Default = eFNP_ReplaceAndWarn
 };
 
+enum EStringType {
+    eStringTypeVisible,
+    eStringTypeUTF8
+};
 
 //type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
@@ -175,6 +179,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.23  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

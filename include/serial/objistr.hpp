@@ -81,13 +81,11 @@ class CSkipChoiceVariantHook;
 class CReadObjectInfo;
 class CReadObjectList;
 
+class CPackString;
+
 class NCBI_XSERIAL_EXPORT CObjectIStream : public CObjectStack
 {
 public:
-    enum EStringType {
-        eStringTypeVisible,
-        eStringTypeUTF8
-    };
     // typedefs
     typedef size_t TObjectIndex;
 
@@ -269,6 +267,9 @@ public:
     // string
     virtual void ReadString(string& s,
                             EStringType type = eStringTypeVisible) = 0;
+    virtual void ReadString(string& s,
+                            CPackString& pack_string,
+                            EStringType type = eStringTypeVisible);
     virtual void SkipString(EStringType type = eStringTypeVisible) = 0;
 
     // StringStore
@@ -553,13 +554,12 @@ public:
 };
 
 inline
-char& CheckVisibleChar(char& c,
-                       EFixNonPrint fix_method,
-                       size_t at_line = 0);
+bool GoodVisibleChar(char c);
 
-char& ReplaceVisibleChar(char& c,
-                         EFixNonPrint fix_method,
-                         size_t at_line);
+char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line);
+
+inline
+void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line = 0);
 
 
 /* @} */
@@ -575,6 +575,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2003/08/19 18:32:37  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.85  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

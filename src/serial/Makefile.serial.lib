@@ -4,12 +4,13 @@
 #################################
 
 SRC = \
-	hookdata typeinfo objectinfo objectiter objectio typeref typemap \
+	hookdata hookdatakey typeinfo objectinfo objectiter objectio \
+        typeref typemap \
         stdtypes enumerated ptrinfo autoptrinfo continfo stltypes \
 	memberid memberlist item classinfob member classinfo \
 	variant choice choiceptr \
 	objistr objostr objcopy iterator \
-	serial delaybuf \
+	serial delaybuf pack_string \
 	exception objhook objlist objstack \
 	$(serial_ws50_rtti_kludge) \
 	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml \

@@ -97,6 +97,8 @@ protected:
     virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
+    void ReadStringValue(string& s, EFixNonPrint fix_method);
+    void FixInput(size_t count, EFixNonPrint fix_method, size_t line);
 
     virtual void SkipBool(void);
     virtual void SkipChar(void);
@@ -180,6 +182,15 @@ private:
     void BadStringChar(size_t startLine, char c);
     void UnendedString(size_t startLine);
 
+    void AppendStringData(string& s,
+                          size_t count,
+                          EFixNonPrint fix_method,
+                          size_t line);
+    void AppendLongStringData(string& s,
+                              size_t count,
+                              EFixNonPrint fix_method,
+                              size_t line);
+
     void StartBlock(void);
     bool NextElement(void);
     void EndBlock(void);
@@ -209,6 +220,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/08/19 18:32:37  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.57  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

@@ -416,18 +416,18 @@ void CObjectIStream::SkipStd(const char* const& )
 
 
 inline
-char& CheckVisibleChar(char& c,
-                         EFixNonPrint fix_method,
-                         size_t at_line)
+bool GoodVisibleChar(char c)
 {
-    if (fix_method == eFNP_Allow) {
-        return c;
+    return c >= ' ' && c <= '~';
+}
+
+
+inline
+void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
+{
+    if ( !GoodVisibleChar(c) ) {
+        c = ReplaceVisibleChar(c, fix_method, at_line);
     }
-    if ((c & 0xff) <= '~'  &&  (c & 0xff) >= ' ') {
-    // Printable char - no checks or convertions
-        return c;
-    }
-    return ReplaceVisibleChar(c, fix_method, at_line);
 }
 
 
@@ -437,6 +437,11 @@ char& CheckVisibleChar(char& c,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/08/19 18:32:37  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.21  2003/05/22 20:08:41  gouriano
 * added UTF8 strings
 *

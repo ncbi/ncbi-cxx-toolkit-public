@@ -89,6 +89,9 @@ protected:
     virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadString(string& s,EStringType type = eStringTypeVisible);
+    virtual void ReadString(string& s,
+                            CPackString& pack_string,
+                            EStringType type);
     virtual char* ReadCString(void);
     virtual void ReadStringStore(string& s);
 
@@ -218,7 +221,7 @@ private:
     void ReadBytes(char* buffer, size_t count);
     void SkipBytes(size_t count);
 
-    void ReadStringValue(string& s);
+    void ReadStringValue(size_t length, string& s, EFixNonPrint fix_type);
     void SkipTagData(void);
     bool HaveMoreElements(void);
     void UnexpectedMember(TTag tag);
@@ -242,6 +245,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/08/19 18:32:37  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.40  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

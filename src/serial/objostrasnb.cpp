@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.78  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -878,17 +883,29 @@ void CObjectOStreamAsnBinary::WriteFloat(float data)
 
 void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 {
-    string strcopy = str;
-    size_t length = strcopy.size();
-    // Check the string for non-printable characters
-    if (type == eStringTypeVisible) {
-        for (size_t i = 0; i < length; i++) {
-            CheckVisibleChar(strcopy[i], m_FixMethod);
-        }
-    }
+    size_t length = str.size();
     WriteSysTag(eVisibleString);
     WriteLength(length);
-    WriteBytes(strcopy.data(), length);
+    if ( type == eStringTypeVisible && m_FixMethod != eFNP_Allow ) {
+        size_t done = 0;
+        for ( size_t i = 0; i < length; ++i ) {
+            char c = str[i];
+            if ( !GoodVisibleChar(c) ) {
+                if ( i > done ) {
+                    WriteBytes(str.data() + done, i - done);
+                }
+                FixVisibleChar(c, m_FixMethod);
+                WriteByte(c);
+                done = i + 1;
+            }
+        }
+        if ( done < length ) {
+            WriteBytes(str.data() + done, length - done);
+        }
+    }
+    else {
+        WriteBytes(str.data(), length);
+    }
 }
 
 void CObjectOStreamAsnBinary::WriteStringStore(const string& str)
@@ -911,7 +928,7 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
         if ( checkVisible ) {
             // Check the string for non-printable characters
             for (size_t i = 0; i < c; i++) {
-                CheckVisibleChar(buffer[i], m_FixMethod);
+                FixVisibleChar(buffer[i], m_FixMethod);
             }
         }
         WriteBytes(buffer, c);
@@ -933,9 +950,11 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in)
         string str;
         in.ReadStd(str);
         size_t length = str.size();
-        // Check the string for non-printable characters
-        for (size_t i = 0; i < length; i++) {
-            CheckVisibleChar(str[i], m_FixMethod);
+        if ( m_FixMethod != eFNP_Allow ) {
+            // Check the string for non-printable characters
+            NON_CONST_ITERATE(string, i, str) {
+                FixVisibleChar(*i, m_FixMethod);
+            }
         }
         WriteLength(length);
         WriteBytes(str.data(), length);
@@ -968,22 +987,28 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
     }
     else {
         size_t length = strlen(str);
-        char* strcopy = new char[length+1];
-        strcpy(strcopy, str);
-        try {
-            // Check the string for non-printable characters
-            for (char* c = strcopy; *c; c++) {
-                CheckVisibleChar(*c, m_FixMethod);
+        WriteSysTag(eVisibleString);
+        WriteLength(length);
+        if ( m_FixMethod != eFNP_Allow ) {
+            size_t done = 0;
+            for ( size_t i = 0; i < length; ++i ) {
+                char c = str[i];
+                if ( !GoodVisibleChar(c) ) {
+                    if ( i > done ) {
+                        WriteBytes(str + done, i - done);
+                    }
+                    FixVisibleChar(c, m_FixMethod);
+                    WriteByte(c);
+                    done = i + 1;
+                }
             }
-            WriteSysTag(eVisibleString);
-            WriteLength(length);
-            WriteBytes(strcopy, length);
+            if ( done < length ) {
+                WriteBytes(str + done, length - done);
+            }
         }
-        catch (...) {
-            delete[] strcopy;
-            throw;
+        else {
+            WriteBytes(str, length);
         }
-        delete[] strcopy;
     }
 }
 
@@ -1394,23 +1419,28 @@ void CObjectOStreamAsnBinary::BeginChars(const CharBlock& block)
 
 
 void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
-                                         const char* chars, size_t length)
+                                         const char* str, size_t length)
 {
-    char* strcopy = new char[length+1];
-    try {
-        // Check the string for non-printable characters
-        for (size_t i = 0;  i < length;  i++) {
-            strcopy[i] = chars[i];
-            CheckVisibleChar(strcopy[i], m_FixMethod);
+    if ( m_FixMethod != eFNP_Allow ) {
+        size_t done = 0;
+        for ( size_t i = 0; i < length; ++i ) {
+            char c = str[i];
+            if ( !GoodVisibleChar(c) ) {
+                if ( i > done ) {
+                    WriteBytes(str + done, i - done);
+                }
+                FixVisibleChar(c, m_FixMethod);
+                WriteByte(c);
+                done = i + 1;
+            }
         }
-        strcopy[length] = 0;
-        WriteBytes(strcopy, length);
+        if ( done < length ) {
+            WriteBytes(str + done, length - done);
+        }
     }
-    catch (...) {
-        delete[] strcopy;
-        throw;
+    else {
+        WriteBytes(str, length);
     }
-    delete[] strcopy;
 }
 
 

@@ -544,68 +544,93 @@ void CObjectIStreamAsn::UnendedString(size_t startLine)
                NStr::UIntToString(startLine));
 }
 
-void CObjectIStreamAsn::ReadString(string& s, EStringType type)
+
+inline
+void CObjectIStreamAsn::AppendStringData(string& s,
+                                         size_t count,
+                                         EFixNonPrint fix_method,
+                                         size_t line)
+{
+    const char* data = m_Input.GetCurrentPos();
+    if ( fix_method != eFNP_Allow ) {
+        size_t done = 0;
+        for ( size_t i = 0; i < count; ++i ) {
+            char c = data[i];
+            if ( !GoodVisibleChar(c) ) {
+                if ( i > done ) {
+                    s.append(data + done, i - done);
+                }
+                FixVisibleChar(c, fix_method, line);
+                s += c;
+                done = i + 1;
+            }
+        }
+        if ( done < count ) {
+            s.append(data + done, count - done);
+        }
+    }
+    else {
+        s.append(data, count);
+    }
+    if ( count > 0 ) {
+        m_Input.SkipChars(count);
+    }
+}
+
+
+void CObjectIStreamAsn::AppendLongStringData(string& s,
+                                             size_t count,
+                                             EFixNonPrint fix_method,
+                                             size_t line)
+{
+    // Reserve extra-space to reduce heap reallocation
+    if ( s.empty() ) {
+        s.reserve(count*2);
+    }
+    else if ( s.capacity() < (s.size()+1)*1.1 ) {
+        s.reserve(s.size()*2);
+    }
+    AppendStringData(s, count, fix_method, line);
+}
+
+
+void CObjectIStreamAsn::ReadStringValue(string& s, EFixNonPrint fix_method)
 {
     Expect('\"', true);
-    s.erase();
     size_t startLine = m_Input.GetLine();
     size_t i = 0;
+    s.erase();
     try {
         for (;;) {
             char c = m_Input.PeekChar(i);
             switch ( c ) {
             case '\r':
             case '\n':
-                // Reserve extra-space to reduce heap reallocation
-                if (s.size() == 0) {
-                    s.reserve(1024);
-                }
-                else if ( double(s.capacity())/(s.size()+1.0) < 1.1 ) {
-                    s.reserve(s.size()*2);
-                }
                 // flush string
-                s.append(m_Input.GetCurrentPos(), i);
-                m_Input.SkipChars(i + 1);
+                AppendLongStringData(s, i, fix_method, startLine);
+                m_Input.SkipChar(); // '\r' or '\n'
                 i = 0;
                 // skip end of line
                 SkipEndOfLine(c);
                 break;
             case '\"':
-                if ( m_Input.PeekCharNoEOF(i + 1) == '\"' ) {
-                    // double quote -> one quote
-                    s.append(m_Input.GetCurrentPos(), i + 1);
-                    m_Input.SkipChars(i + 2);
-                    i = 0;
+                s.reserve(s.size() + i);
+                AppendStringData(s, i, fix_method, startLine);
+                m_Input.SkipChar(); // quote
+                if ( m_Input.PeekCharNoEOF() != '\"' ) {
+                    // end of string
+                    return;
                 }
                 else {
-                    // end of string
-                    s.append(m_Input.GetCurrentPos(), i);
-                    m_Input.SkipChars(i + 1);
-                    s.reserve(s.size());
-                    // Check the string for non-printable characters
-                    if (type == eStringTypeVisible) {
-                        for (i = 0; i < s.length(); i++) {
-                            CheckVisibleChar(s[i], m_FixMethod, startLine);
-                        }
-                    }
-                    return;
+                    // double quote -> one quote
+                    i = 1;
                 }
                 break;
             default:
                 // ok: append char
                 if ( ++i == 128 ) {
                     // too long string -> flush it
-
-                    // Reserve extra-space to reduce heap reallocation
-                    if (s.size() == 0) {
-                        s.reserve(1024);
-                    }
-                    else if ( double(s.capacity())/(s.size()+1.0) < 1.1 ) {
-                        s.reserve(s.size()*2);
-                    }
-
-                    s.append(m_Input.GetCurrentPos(), i);
-                    m_Input.SkipChars(i);
+                    AppendLongStringData(s, i, fix_method, startLine);
                     i = 0;
                 }
                 break;
@@ -617,6 +642,12 @@ void CObjectIStreamAsn::ReadString(string& s, EStringType type)
         throw;
     }
 }
+
+void CObjectIStreamAsn::ReadString(string& s, EStringType type)
+{
+    ReadStringValue(s, type == eStringTypeUTF8? eFNP_Allow: m_FixMethod);
+}
+
 
 void CObjectIStreamAsn::SkipBool(void)
 {
@@ -745,7 +776,7 @@ void CObjectIStreamAsn::SkipString(EStringType type)
                 break;
             default:
                 if (type == eStringTypeVisible) {
-                    CheckVisibleChar(c, m_FixMethod, startLine);
+                    FixVisibleChar(c, m_FixMethod, startLine);
                 }
                 // ok: skip char
                 if ( ++i == 128 ) {
@@ -1168,9 +1199,12 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                 else {
                     // end of string
                     // Check the string for non-printable characters
-                    for (size_t i = 0;  i < count;  i++) {
-                        CheckVisibleChar(dst[i], m_FixMethod,
-                                         m_Input.GetLine());
+                    EFixNonPrint fix_method = m_FixMethod;
+                    if ( fix_method != eFNP_Allow ) {
+                        size_t line = m_Input.GetLine();
+                        for (size_t i = 0;  i < count;  i++) {
+                            FixVisibleChar(dst[i], fix_method, line);
+                        }
                     }
                     block.EndOfBlock();
                     return count;
@@ -1238,6 +1272,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.84  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

@@ -76,10 +76,6 @@ class CWriteObjectList;
 class NCBI_XSERIAL_EXPORT CObjectOStream : public CObjectStack
 {
 public:
-    enum EStringType {
-        eStringTypeVisible,
-        eStringTypeUTF8
-    };
     typedef size_t TObjectIndex;
 
     // open methods
@@ -509,6 +505,11 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.77  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *

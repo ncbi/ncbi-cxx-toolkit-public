@@ -55,6 +55,7 @@
 #include <serial/objlist.hpp>
 #include <serial/choiceptr.hpp>
 #include <serial/serialimpl.hpp>
+#include <serial/pack_string.hpp>
 
 #include <limits.h>
 #if HAVE_WINDOWS_H
@@ -1095,6 +1096,14 @@ void CObjectIStream::ReadStringStore(string& s)
     ReadString(s);
 }
 
+void CObjectIStream::ReadString(string& s,
+                                CPackString& pack_string,
+                                EStringType type)
+{
+    ReadString(s);
+    pack_string.Pack(s);
+}
+
 void CObjectIStream::SkipInt1(void)
 {
     SkipSNumber();
@@ -1163,28 +1172,28 @@ void CObjectIStream::SkipStringStore(void)
 }
 
 
-char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
+char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
 {
-    string message = "Bad char in VisibleString" +
-        ((at_line > 0) ?
-            " starting at line " + NStr::UIntToString(at_line) :
-            string("")) + ": " + NStr::IntToString(int(c) & 0xff);
-    c = '#';
-    switch (fix_method) {
-    case eFNP_Replace:
-        break;
-    case eFNP_ReplaceAndWarn:
-        CNcbiDiag(eDiag_Error, eDPF_Default) << message << Endm;
-        break;
-    case eFNP_Throw:
-        NCBI_THROW(CSerialException,eFormatError,message);
-    case eFNP_Abort:
-        CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
-        break;
-    case eFNP_Allow:
-        break;
+    _ASSERT(fix_method != eFNP_Allow);
+    if ( fix_method != eFNP_Replace ) {
+        string message = "Bad char in VisibleString" +
+            ((at_line > 0) ?
+             " starting at line " + NStr::UIntToString(at_line) :
+             string("")) + ": " + NStr::IntToString(int(c) & 0xff);
+        switch (fix_method) {
+        case eFNP_ReplaceAndWarn:
+            CNcbiDiag(eDiag_Error, eDPF_Default) << message << Endm;
+            break;
+        case eFNP_Throw:
+            NCBI_THROW(CSerialException,eFormatError,message);
+        case eFNP_Abort:
+            CNcbiDiag(eDiag_Fatal, eDPF_Default) << message << Endm;
+            break;
+        default:
+            break;
+        }
     }
-    return c;
+    return '#';
 }
 
 
@@ -1192,6 +1201,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.110  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.109  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.

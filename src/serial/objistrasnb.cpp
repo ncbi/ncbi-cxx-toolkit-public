@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.63  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -287,6 +292,7 @@
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
 #include <serial/objistrimpl.hpp>
+#include <serial/pack_string.hpp>
 
 using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 
@@ -792,28 +798,85 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
 void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 {
     ExpectSysTag(eVisibleString);
-    EFixNonPrint fix = m_FixMethod;
-    if (type == eStringTypeUTF8) {
-        m_FixMethod = eFNP_Allow;
+    ReadStringValue(ReadLength(), s,
+                    type == eStringTypeUTF8? eFNP_Allow: m_FixMethod);
+}
+
+void CObjectIStreamAsnBinary::ReadString(string& s,
+                                         CPackString& pack_string,
+                                         EStringType type)
+{
+    ExpectSysTag(eVisibleString);
+    size_t length = ReadLength();
+    char buffer[1024];
+    if ( length > sizeof(buffer) || length > pack_string.GetLengthLimit() ) {
+        pack_string.Skipped();
+        ReadStringValue(length, s,
+                        type == eStringTypeUTF8? eFNP_Allow: m_FixMethod);
     }
-    ReadStringValue(s);
-    m_FixMethod = fix;
+    else {
+        ReadBytes(buffer, length);
+        EndOfTag();
+        pair<CPackString::iterator, bool> found =
+            pack_string.Locate(buffer, length);
+        if ( found.second ) {
+            pack_string.AddOld(s, found.first);
+        }
+        else {
+            if ( type == eStringTypeVisible && m_FixMethod != eFNP_Allow ) {
+                // check contents of string
+                for ( size_t i = 0; i < length; ++i ) {
+                    if ( !GoodVisibleChar(buffer[i]) ) {
+                        for ( ; i < length; ++i ) {
+                            FixVisibleChar(buffer[i], m_FixMethod);
+                        }
+                        pack_string.Pack(s, buffer, length);
+                        return;
+                    }
+                }
+            }
+            pack_string.AddNew(s, buffer, length, found.first);
+        }
+    }
 }
 
 void CObjectIStreamAsnBinary::ReadStringStore(string& s)
 {
     ExpectSysTag(eApplication, false, eStringStore);
-    ReadStringValue(s);
+    ReadStringValue(ReadLength(), s, m_FixMethod);
 }
 
-void CObjectIStreamAsnBinary::ReadStringValue(string& s)
+void CObjectIStreamAsnBinary::ReadStringValue(size_t length,
+                                              string& s,
+                                              EFixNonPrint fix_method)
 {
-    size_t length = ReadLength();
-    s.resize(length);
-    ReadBytes(&s[0], length);
-    // Check the string for non-printable characters
-    for (size_t i = 0; i < s.length(); i++) {
-        CheckVisibleChar(s[i], m_FixMethod);
+    s.reserve(length);
+    char buffer[1024];
+    if ( length < sizeof(buffer) ) {
+        // try to reuse old value
+        ReadBytes(buffer, length);
+        if ( fix_method != eFNP_Allow ) {
+            for ( size_t i = 0; i < length; ++i ) {
+                FixVisibleChar(buffer[i], fix_method);
+            }
+        }
+        if ( s.size() != length || memcmp(s.data(), buffer, length) != 0 ) {
+            s.assign(buffer, length);
+        }
+    }
+    else {
+        s.erase();
+        while ( length ) {
+            size_t count = min(length, sizeof(buffer));
+            ReadBytes(buffer, count);
+            if ( fix_method != eFNP_Allow ) {
+                for ( size_t i = 0; i < count; ++i ) {
+                    FixVisibleChar(buffer[i], fix_method);
+                }
+            }
+            s.append(buffer, count);
+            length -= count;
+        }
     }
     EndOfTag();
 }
@@ -825,9 +888,11 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     char* s = static_cast<char*>(malloc(length + 1));
     ReadBytes(s, length);
     s[length] = 0;
-    // Check the string for non-printable characters
-    for (char* c = s; *c; c++) {
-        CheckVisibleChar(*c, m_FixMethod);
+    if ( m_FixMethod != eFNP_Allow ) {
+        // Check the string for non-printable characters
+        for ( char* ptr = s; length; ++ptr, --length ) {
+            FixVisibleChar(*ptr, m_FixMethod);
+        }
     }
     EndOfTag();
     return s;

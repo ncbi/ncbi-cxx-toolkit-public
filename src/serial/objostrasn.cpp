@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/08/19 18:32:38  vasilche
+* Optimized reading and writing strings.
+* Avoid string reallocation when checking char values.
+* Try to reuse old string data when string reference counting is not working.
+*
 * Revision 1.80  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -557,7 +562,7 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     m_Output.PutChar('"');
     while ( length > 0 ) {
         char c = *ptr++;
-        CheckVisibleChar(c, m_FixMethod, startLine);
+        FixVisibleChar(c, m_FixMethod, startLine);
         --length;
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
@@ -1008,7 +1013,7 @@ void CObjectOStreamAsn::WriteChars(const CharBlock& ,
 {
     while ( length > 0 ) {
         char c = *chars++;
-        CheckVisibleChar(c, m_FixMethod, m_Output.GetLine());
+        FixVisibleChar(c, m_FixMethod, m_Output.GetLine());
         --length;
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
