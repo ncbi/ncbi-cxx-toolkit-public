@@ -53,6 +53,10 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
@@ -131,6 +135,16 @@ public:
         eQual_usedin
     };
 
+    enum EOrgRef {
+        eOrgRef_bad,
+        eOrgRef_organism,
+        eOrgRef_mitochondrion,
+        eOrgRef_div,
+        eOrgRef_lineage,
+        eOrgRef_gcode,
+        eOrgRef_mgcode
+    };
+
     enum ESubSrc {
         eSubSrc_bad,
         eSubSrc_cell_line,
@@ -202,6 +216,7 @@ public:
 
     typedef map< string, CSeqFeatData::ESubtype > TFeatReaderMap;
     typedef map< string, EQual > TQualReaderMap;
+    typedef map< string, EOrgRef > TOrgRefReaderMap;
     typedef map< string, ESubSrc > TSubSrcReaderMap;
     typedef map< string, EOrgMod > TOrgModReaderMap;
     typedef map< string, CSeqFeatData::EBond > TBondReaderMap;
@@ -239,13 +254,18 @@ private:
                                    EQual qtype, const string& val);
     bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
-    bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
-                                   EQual qtype, const string& val);
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& qual, const string& val);
+    bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
+                                   EOrgRef rtype, const string& val);
+    bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
+                                   ESubSrc stype, const string& val);
+    bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
+                                   EOrgMod mtype, const string& val);
 
     TFeatReaderMap   m_FeatKeys;
     TQualReaderMap   m_QualKeys;
+    TOrgRefReaderMap m_OrgRefKeys;
     TSubSrcReaderMap m_SubSrcKeys;
     TOrgModReaderMap m_OrgModKeys;
     TBondReaderMap   m_BondKeys;
@@ -418,6 +438,21 @@ static QualInit qual_key_to_subtype [] = {
     { "",                     CFeature_table_reader_imp::eQual_bad                  }
 };
 
+typedef struct orgrefinit {
+    const char *                       key;
+    CFeature_table_reader_imp::EOrgRef subtype;
+} OrgRefInit;
+
+static OrgRefInit orgref_key_to_subtype [] = {
+    { "div",            CFeature_table_reader_imp::eOrgRef_div           },
+    { "gcode",          CFeature_table_reader_imp::eOrgRef_gcode         },
+    { "lineage",        CFeature_table_reader_imp::eOrgRef_lineage       },
+    { "mgcode",         CFeature_table_reader_imp::eOrgRef_mgcode        },
+    { "mitochondrion",  CFeature_table_reader_imp::eOrgRef_mitochondrion },
+    { "organism",       CFeature_table_reader_imp::eOrgRef_organism      },
+    { "",               CFeature_table_reader_imp::eOrgRef_bad           }
+};
+
 typedef struct subsrcinit {
     const char *                       key;
     CFeature_table_reader_imp::ESubSrc subtype;
@@ -556,6 +591,11 @@ CFeature_table_reader_imp::CFeature_table_reader_imp(void)
     for (int i = 0; i < sizeof (qual_key_to_subtype) / sizeof (QualInit); i++) {
         string str = string (qual_key_to_subtype [i].key);
         m_QualKeys [string (qual_key_to_subtype [i].key)] = qual_key_to_subtype [i].subtype;
+    }
+
+    for (int i = 0; i < sizeof (orgref_key_to_subtype) / sizeof (OrgRefInit); i++) {
+        string str = string (orgref_key_to_subtype [i].key);
+        m_OrgRefKeys [string (orgref_key_to_subtype [i].key)] = orgref_key_to_subtype [i].subtype;
     }
 
     for (int i = 0; i < sizeof (subsrc_key_to_subtype) / sizeof (SubSrcInit); i++) {
@@ -830,16 +870,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
 }
 
 
-bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
-                                                        EQual qtype, const string& val)
-
-{
-    CBioSource& bsp = sfdata.SetBiosrc ();
-    /* not just needs to be passed EQual */
-    return false;
-}
-
-
 bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                                      EQual qtype, const string& qual, const string& val)
 
@@ -883,18 +913,109 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
 }
 
 
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
+                                                        EOrgRef rtype, const string& val)
+
+{
+    CBioSource& bsp = sfdata.SetBiosrc ();
+
+    switch (rtype) {
+        case eOrgRef_organism:
+            {
+                CBioSource::TOrg& orp = bsp.SetOrg ();
+                orp.SetTaxname (val);
+                return true;
+            }
+        case eOrgRef_mitochondrion:
+            bsp.SetGenome (CBioSource::eGenome_mitochondrion);
+            return true;
+        case eOrgRef_div:
+            {
+                CBioSource::TOrg& orp = bsp.SetOrg ();
+                COrg_ref::TOrgname& onp = orp.SetOrgname ();
+                onp.SetDiv (val);
+                return true;
+            }
+        case eOrgRef_lineage:
+            {
+                CBioSource::TOrg& orp = bsp.SetOrg ();
+                COrg_ref::TOrgname& onp = orp.SetOrgname ();
+                onp.SetLineage (val);
+                return true;
+            }
+        case eOrgRef_gcode:
+            {
+                CBioSource::TOrg& orp = bsp.SetOrg ();
+                COrg_ref::TOrgname& onp = orp.SetOrgname ();
+                int code = NStr::StringToInt (val);
+                onp.SetGcode (code);
+                return true;
+            }
+        case eOrgRef_mgcode:
+            {
+                CBioSource::TOrg& orp = bsp.SetOrg ();
+                COrg_ref::TOrgname& onp = orp.SetOrgname ();
+                int code = NStr::StringToInt (val);
+                onp.SetMgcode (code);
+                return true;
+            }
+        default:
+            break;
+    }
+    return false;
+}
+
+
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
+                                                        ESubSrc stype, const string& val)
+
+{
+    CBioSource& bsp = sfdata.SetBiosrc ();
+
+    return false;
+}
+
+
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
+                                                        EOrgMod mtype, const string& val)
+
+{
+    CBioSource& bsp = sfdata.SetBiosrc ();
+
+    return false;
+}
+
+
 bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                                                          const string& qual, const string& val)
 
 {
-    EQual                  qtype;
-    CSeqFeatData::E_Choice typ;
+    CSeqFeatData&          sfdata = sfp->SetData ();
+    CSeqFeatData::E_Choice typ = sfdata.Which ();
 
-    if (m_QualKeys.find (qual) != m_QualKeys.end ()) {
-        qtype = m_QualKeys [qual];
+    if (typ == CSeqFeatData::e_Biosrc) {
+
+        if (m_OrgRefKeys.find (qual) != m_OrgRefKeys.end ()) {
+            EOrgRef rtype = m_OrgRefKeys [qual];
+            if (rtype != eOrgRef_bad) {
+                if (x_AddQualifierToBioSrc (sfdata, rtype, val)) return true;
+            }
+        } else if (m_SubSrcKeys.find (qual) != m_SubSrcKeys.end ()) {
+            ESubSrc stype = m_SubSrcKeys [qual];
+            if (stype != eSubSrc_bad) {
+                if (x_AddQualifierToBioSrc (sfdata, stype, val)) return true;
+            }
+        } else if (m_OrgModKeys.find (qual) != m_OrgModKeys.end ()) {
+            EOrgMod mtype = m_OrgModKeys [qual];
+            if (mtype != eOrgMod_bad) {
+                if (x_AddQualifierToBioSrc (sfdata, mtype, val)) return true;
+            }
+        }
+
+    } else if (m_QualKeys.find (qual) != m_QualKeys.end ()) {
+
+        EQual qtype = m_QualKeys [qual];
         if (qtype != eQual_bad) {
-            CSeqFeatData& sfdata = sfp->SetData ();
-            typ = sfdata.Which ();
             switch (typ) {
                 case CSeqFeatData::e_Gene:
                     if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
@@ -904,9 +1025,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                     break;
                 case CSeqFeatData::e_Rna:
                     if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
-                    break;
-                case CSeqFeatData::e_Biosrc:
-                    if (x_AddQualifierToBioSrc (sfdata, qtype, val)) return true;
                     break;
                case CSeqFeatData::e_Imp:
                     if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
