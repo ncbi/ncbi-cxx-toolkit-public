@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/gff_reader.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -135,6 +136,40 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
 
     CRef<CSeq_entry> tse(m_TSE); // need to save before resetting.
     x_Reset();
+
+    // promote transcript_id and protein_id to products
+    CTypeIterator<CSeq_feat> feat_iter(*tse);
+    for ( ;  feat_iter;  ++feat_iter) {
+        CSeq_feat& feat = *feat_iter;
+
+        string qual_name;
+        switch (feat.GetData().GetSubtype()) {
+        case CSeqFeatData::eSubtype_cdregion:
+            qual_name = "protein_id";
+            break;
+
+        case CSeqFeatData::eSubtype_mRNA:
+            qual_name = "transcript_id";
+            break;
+
+        default:
+            continue;
+            break;
+        }
+
+        string id_str = feat.GetNamedQual(qual_name);
+        if ( !id_str.empty() ) {
+            try {
+                CSeq_id id(id_str);
+                if (id.Which() != CSeq_id::e_not_set) {
+                    feat.SetProduct().SetWhole().Assign(id);
+                }
+            }
+            catch (...) {
+                /// bad 
+            }
+        }
+    }
 
     return tse;
 }
@@ -364,6 +399,7 @@ CRef<CSeq_feat> CGFFReader::x_ParseFeatRecord(const SRecord& record)
                     tag.erase(0, 5);
                 }
             }
+
             CFeature_table_reader::AddFeatQual
                 (feat, tag, value, CFeature_table_reader::fKeepBadKey);
         } else { // don't attempt to parse, just treat as imported
@@ -628,8 +664,6 @@ string CGFFReader::x_FeatureID(const SRecord& record)
     SRecord::TAttrs::const_iterator gene_it = record.FindAttribute("gene_id");
     SRecord::TAttrs::const_iterator transcript_it
         = record.FindAttribute("transcript_id");
-    SRecord::TAttrs::const_iterator protein_it
-        = record.FindAttribute("protein_id");
 
     // concatenate our IDs from above, if found
     string id;
@@ -642,13 +676,6 @@ string CGFFReader::x_FeatureID(const SRecord& record)
             id += ' ';
         }
         id += (*transcript_it)[1];
-    }
-
-    if (protein_it != record.attrs.end()) {
-        if ( !id.empty() ) {
-            id += ' ';
-        }
-        id += (*protein_it)[1];
     }
 
     // look for db xrefs
@@ -727,7 +754,9 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
                         set<TSeqRange>::iterator dst_iter =
                             dlit->ranges.begin();
                         for ( ;  dst_iter != dlit->ranges.end();  ) {
-                            if (dst_iter->IntersectingWith(range)) {
+                            if (dst_iter->IntersectingWith(range)  ||
+                                dst_iter->GetTo() + 1 == range.GetFrom()  ||
+                                range.GetTo() + 1 == dst_iter->GetFrom() ) {
                                 range += *dst_iter;
                                 _TRACE("merging overlapping ranges: "
                                        << range.GetFrom() << " - "
@@ -735,6 +764,7 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
                                        << dst_iter->GetFrom() << " - "
                                        << dst_iter->GetTo());
                                 dlit->ranges.erase(dst_iter++);
+                                break;
                             } else {
                                 ++dst_iter;
                             }
@@ -744,6 +774,25 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
                 } else {
                     ITERATE (set<TSeqRange>, set_iter, slit->ranges) {
                         dlit->ranges.insert(*set_iter);
+                        /**
+                    // we can still merge abutting ranges
+                    set<TSeqRange>::const_iterator set_iter =
+                        slit->ranges.begin();
+
+                    for ( ;  set_iter != slit->ranges.end();  ++set_iter) {
+                        TSeqRange range = *set_iter;
+                        set<TSeqRange>::const_iterator next_iter = set_iter;
+                        for (++next_iter;
+                             next_iter != slit->ranges.end();
+                             ++next_iter) {
+                            if (range.GetTo() + 1 == next_iter->GetFrom()) {
+                                range += *next_iter;
+                            } else {
+                                break;
+                            }
+                        }
+                        dlit->ranges.insert(range);
+                        **/
                     }
                 }
                 merged = true;
@@ -782,10 +831,11 @@ void CGFFReader::x_MergeAttributes(SRecord& dest, const SRecord& src)
         while (dait != dait_end  &&  dait->front() < tag) {
             ++dait;
         }
+
+        if (dait_tag == dait_end  ||  dait_tag->front() != tag) {
+            dait_tag = dait;
+        }
         if (dait->front() == tag) {
-            if (dait_tag == dait_end  ||  dait_tag->front() != tag) {
-                dait_tag = dait;
-            }
             while (dait != dait_end  &&  *dait < *sait) {
                 ++dait;
             }
@@ -986,6 +1036,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/10/12 13:31:37  dicuccio
+* Set products from transcript_id, protein_id where appropriate.  Don't merge
+* qualifiers based on protein_id - missing in some cases (i.e., stop codons).
+* Fixed bug in merging attributes - don't inadvertently erase correct attirbutes
+*
 * Revision 1.8  2004/06/21 18:44:07  ucko
 * Fix GFF 3 alignment parsing logic.
 *
