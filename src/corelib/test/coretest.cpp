@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  1999/11/12 17:33:24  vakatov
+* To be more careful with _DEBUG to suit some ugly MSVC++ features
+*
 * Revision 1.52  1999/10/04 16:21:06  vasilche
 * Added full set of macros THROW*_TRACE
 *
@@ -208,13 +211,16 @@
 * ==========================================================================
 */
 
-#ifndef _DEBUG
-#define _DEBUG
-#endif
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
 #include <algorithm>
+
+// Workaround for non-Debug compilation
+#ifndef _DEBUG
+#undef _ASSERT
+#define _ASSERT(expr) ((void)(expr))
+#endif
+
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
