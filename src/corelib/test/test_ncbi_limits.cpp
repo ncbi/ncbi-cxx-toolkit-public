@@ -64,6 +64,13 @@ void s_TestType(const char* type_name, T value)
 
     assert(minval <= max_plus_1);
     assert(maxval >= max_plus_1);
+
+
+	T v_max = get_limits(value).max();
+	T v_min = get_limits(value).min();
+
+	assert(abs(minval - v_min) < 0.01);
+	assert(abs(maxval - v_max) < 0.01);
 }
 
 
@@ -116,6 +123,9 @@ int main()
         ERR_POST(Fatal << e.what());
     }
 
+	unsigned char c = 10;
+	unsigned char c_max = get_limits(c).max();
+
     // Success
     return 0;
 }
@@ -124,6 +134,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2004/06/01 12:10:35  kuznets
+ * + test for get_limits
+ *
  * Revision 6.5  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
