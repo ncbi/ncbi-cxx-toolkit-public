@@ -908,9 +908,13 @@ void CScope_Impl::ResetHistory(void)
 
 void CScope_Impl::x_ResetHistory(void)
 {
+    // 1. detach all CBbioseq_Handle objects from scope, and
+    // 2. break circular link:
+    // CBioseq_ScopeInfo-> CSynonymsSet-> SSeq_id_ScopeInfo-> CBioseq_ScopeInfo
     NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
         if ( it->second.m_Bioseq_Info ) {
-            it->second.m_Bioseq_Info->m_SynCache.Reset();
+            it->second.m_Bioseq_Info->m_ScopeInfo = 0; // detaching from scope
+            it->second.m_Bioseq_Info->m_SynCache.Reset(); // breaking the link
         }
     }
     m_Seq_idMap.clear();
@@ -1028,6 +1032,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/10/22 14:08:15  vasilche
+* Detach all CBbioseq_Handle objects from scope in CScope::ResetHistory().
+*
 * Revision 1.86  2003/10/22 13:54:36  vasilche
 * All CScope::GetBioseqHandle() methods return 'null' CBioseq_Handle object
 * instead of throwing an exception.
