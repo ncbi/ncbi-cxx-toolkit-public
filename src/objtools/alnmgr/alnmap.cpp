@@ -224,9 +224,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
 {
     TSignedSeqPos start = -1, sseq_pos = seq_pos;
     TNumseg       btm, top, mid, cur, last, cur_top, cur_btm;
-    TNumrow       dim;
     btm = cur_btm = 0; cur = top = last = cur_top = m_NumSegs - 1;
-    dim = m_NumRows;
 
     bool plus = IsPositiveStrand(row);
 
@@ -241,14 +239,14 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             if (plus) {
                 seg = -1;
                 while (++seg < m_NumSegs) {
-                    if (m_Starts[seg * dim + row] >= 0) {
+                    if (m_Starts[seg * x_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
             } else {
                 seg = m_NumSegs;
                 while (seg--) {
-                    if (m_Starts[seg * dim + row] >= 0) {
+                    if (m_Starts[seg * x_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
@@ -264,14 +262,14 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             if (plus) {
                 seg = m_NumSegs;
                 while (seg--) {
-                    if (m_Starts[seg * dim + row] >= 0) {
+                    if (m_Starts[seg * x_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
             } else {
                 seg = -1;
                 while (++seg < m_NumSegs) {
-                    if (m_Starts[seg * dim + row] >= 0) {
+                    if (m_Starts[seg * x_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
@@ -285,7 +283,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
 
         while (cur <= top
                &&  (start = m_Starts[(plus ? cur : last - cur) 
-                                             * dim + row]) < 0) {
+                                             * x_NumRows + row]) < 0) {
             ++cur;
         }
         if (cur <= top && start >= 0) {
@@ -305,7 +303,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
         cur = mid-1;
         while (cur >= btm &&
                (start = m_Starts[(plus ? cur : last - cur)
-                                         * dim + row]) < 0) {
+                                         * x_NumRows + row]) < 0) {
             --cur;
         }
         if (cur >= btm && start >= 0) {
@@ -340,14 +338,12 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
                                            ESearchDirection dir,
                                            bool try_reverse_dir) const
 {
-    TNumrow dim = m_NumRows;
-
     TNumseg raw_seg = GetRawSeg(row, seq_pos, dir, try_reverse_dir);
     if (raw_seg < 0) { // out of seq range
         return -1;
     }
 
-    TSeqPos start = m_Starts[raw_seg * dim + row];
+    TSeqPos start = m_Starts[raw_seg * x_NumRows + row];
     TSeqPos len   = m_Lens[raw_seg];
     TSeqPos stop  = start + len -1;
     bool    plus  = IsPositiveStrand(row);
@@ -491,20 +487,20 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
 
 TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 {
-    int seg, dim, start;
-    dim = m_NumRows;
+    TNumseg seg;
+    TSeqPos start;
     
     if (IsPositiveStrand(row)) {
         seg = -1;
         while (++seg < m_NumSegs) {
-            if ((start = m_Starts[seg * dim + row]) >= 0) {
+            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
                 return start;
             }
         }
     } else {
         seg = m_NumSegs;
         while (seg--) {
-            if ((start = m_Starts[seg * dim + row]) >= 0) {
+            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
                 return start;
             }
         }
@@ -515,20 +511,20 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 
 TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
 {
-    int seg, dim, start;
-    dim = m_NumRows;
-    
+    TNumseg seg;
+    TSeqPos start;
+
     if (IsPositiveStrand(row)) {
         seg = m_NumSegs;
         while (seg--) {
-            if ((start = m_Starts[seg * dim + row]) >= 0) {
+            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
                 return start + m_Lens[seg] - 1;
             }
         }
     } else {
         seg = -1;
         while (++seg < m_NumSegs) {
-            if ((start = m_Starts[seg * dim + row]) >= 0) {
+            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
                 return start + m_Lens[seg] - 1;
             }
         }
@@ -873,6 +869,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/06/05 19:59:33  todorov
+* Fixed a few inefficiencies
+*
 * Revision 1.30  2003/06/05 19:03:12  todorov
 * Added const refs to Dense-seg members as a speed optimization
 *
