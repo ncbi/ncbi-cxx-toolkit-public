@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
             return 1;
         }
         
-    } catch (exception& e) {
+    } catch (exception&) {
         return 1;
     }
     return 0;
@@ -67,6 +67,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/03/14 14:27:32  ivanov
+ * Get rid of an unused variable
+ *
  * Revision 1.2  2003/03/12 16:52:49  ivanov
  * Changed exit code to 99 if running without parameter
  *
