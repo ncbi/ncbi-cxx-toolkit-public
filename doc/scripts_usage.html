@@ -49,8 +49,11 @@ SYNOPSIS:
       internal/c++/include/&lt;cvs_tree_path&gt;
    Create makefiles "Makefile.*_{lib,app}" (based on the original project
    makefiles "Makefile.*.{lib,app}") to build libs/apps using pre-built NCBI
-   C++ Toolkit from [builddir]  (default: /netopt/ncbi_tools/c++/Debug/build).
-
+   C++ Toolkit from [builddir]  (default: /netopt/ncbi_tools/c++/Debug/build); also create
+   top-level makefiles "Makefile" from "Makefile.in".
+LIMITATIONS:
+   - Supports only very basic substitutions in Makefile.in.
+   - May produce bogus library search paths.
 
 </pre>
 
@@ -87,9 +90,11 @@ ARGUMENTS:
 
 <pre>
 
-Usage: update_core.sh [--no-projects] [&lt;dirs&gt;]
+Usage: update_core.sh [--no-projects] [--help] [&lt;dirs&gt;] 
 
   --no-projects: Do not update Windows/MacOS project files.
+
+  --help:        Print this message.
 
   &lt;dirs&gt;: The list of subdirectories to update; "." updates the files in the
   top-level directory.  If no directories are specified, the default list is
@@ -119,9 +124,9 @@ This script supports two modes of operation:
     the build system to work.
 
 The syntax for project lists is documented at
-http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/config.html#ref_ProjectList
-
+<a href="config.html#ref_ProjectList">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/config.html#ref_ProjectList</a>
 </pre>
+
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
