@@ -823,6 +823,12 @@ void CValidError_imp::ValidateSeqLoc
 }
 
 
+CValidError_imp::TFeatAnnotMap CValidError_imp::GetFeatAnnotMap(void)
+{
+    return m_FeatAnnotMap;
+}
+
+
 void CValidError_imp::AddBioseqWithNoPub(const CBioseq& seq)
 {
     m_BioseqWithNoPubs.push_back(CConstRef<CBioseq>(&seq));
@@ -1091,6 +1097,15 @@ void CValidError_imp::Setup(const CSeq_entry& se)
             m_InitialSeqIds.insert(*id);
         }
     }
+
+    // Map features to their enclosing Seq_annot
+    for ( CTypeConstIterator<CSeq_annot> ai(se); ai; ++ai ) {
+        if ( ai->GetData().IsFtable() ) {
+            iterate( CSeq_annot::C_Data::TFtable, fi, ai->GetData().GetFtable() ) {
+                m_FeatAnnotMap[&(**fi)] = &(*ai);
+            }
+        }
+    }
 }
 
 
@@ -1317,6 +1332,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/08 18:35:39  shomrat
+* Added mapping features to their enclosing annotation
+*
 * Revision 1.4  2003/01/02 22:01:20  shomrat
 * Added GetCDSGivenProduct and GetAncestor
 *

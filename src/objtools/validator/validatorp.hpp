@@ -282,7 +282,8 @@ public:
     typedef const CBioseq_set& TSet;
     typedef const CSeqdesc& TDesc;
     typedef const CSeq_annot& TAnnot;
-    typedef const list< CRef< CDbtag > >&TDbtags;
+    typedef const list< CRef< CDbtag > >& TDbtags;
+    typedef map < const CSeq_feat*, const CSeq_annot* >& TFeatAnnotMap;
 
     // Posts errors.
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
@@ -338,6 +339,8 @@ public:
     inline bool IsNW(void) const { return m_IsNW; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
+
+    TFeatAnnotMap GetFeatAnnotMap(void);
 
     void AddBioseqWithNoPub(const CBioseq& seq);
     void AddBioseqWithNoBiosource(const CBioseq& seq);
@@ -409,6 +412,8 @@ private:
     vector< CConstRef<CBioseq> > m_BioseqWithNoPubs;
     // Bioseqs without source (should be considered only if m_NoSource is false)
     vector< CConstRef<CBioseq> > m_BioseqWithNoSource;
+    // Map features to the annotation they are packed in.
+    map < const CSeq_feat*, const CSeq_annot* > m_FeatAnnotMap;
 
     // legal dbxref database strings
     static const string legalDbXrefs[];
@@ -519,8 +524,8 @@ private:
     size_t NumOfIntervals(const CSeq_loc& loc);
     bool LocOnSeg(const CBioseq& seq, const CSeq_loc& loc);
     bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
-    bool IsEqualSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
-    bool IsEqualSeqAnnotDesc(const CFeat_CI& fi1, const CFeat_CI& fi2);
+    bool IsSameSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
+    bool IsSameSeqAnnotDesc(const CFeat_CI& fi1, const CFeat_CI& fi2);
     bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
     bool SuppressTrailingXMsg(const CBioseq& seq);
     bool GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc);
@@ -671,6 +676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/08 18:35:31  shomrat
+* Added mapping features to their enclosing annotation
+*
 * Revision 1.4  2003/01/02 21:57:21  shomrat
 * Add eErr_SEQ_FEAT_BadProductSeqId error; Chenges in (mostly private) interfaces of validation classes
 *
