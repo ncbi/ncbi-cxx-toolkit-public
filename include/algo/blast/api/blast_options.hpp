@@ -33,6 +33,11 @@
 #ifndef ALGO_BLAST_API___BLAST_OPTION__HPP
 #define ALGO_BLAST_API___BLAST_OPTION__HPP
 
+#include <objects/blast/Blast4_value.hpp>
+#include <objects/blast/Blast4_parameter.hpp>
+#include <objects/blast/Blast4_parameters.hpp>
+#include <objects/blast/Blast4_queue_search_reques.hpp>
+
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
@@ -49,18 +54,81 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+enum EBlastOptIdx {
+    eBlastOpt_Program = 100,
+    eBlastOpt_WordThreshold,
+    eBlastOpt_LookupTableType,
+    eBlastOpt_WordSize,
+    eBlastOpt_AlphabetSize,
+    eBlastOpt_ScanStep,
+    eBlastOpt_MBTemplateLength,
+    eBlastOpt_MBTemplateType,
+    eBlastOpt_MBMaxPositions,
+    eBlastOpt_FilterString,
+    eBlastOpt_LCaseMask,
+    eBlastOpt_StrandOption,
+    eBlastOpt_QueryGeneticCode,
+    eBlastOpt_WindowSize,
+    eBlastOpt_SeedContainerType,
+    eBlastOpt_SeedExtensionMethod,
+    eBlastOpt_VariableWordSize,
+    eBlastOpt_UngappedExtension,
+    eBlastOpt_XDropoff,
+    eBlastOpt_GapXDropoff,
+    eBlastOpt_GapXDropoffFinal,
+    eBlastOpt_GapTrigger,
+    eBlastOpt_GapExtnAlgorithm,
+    eBlastOpt_HitlistSize,
+    eBlastOpt_MaxNumHspPerSequence,
+    eBlastOpt_TotalHspLimit,
+    eBlastOpt_CullingMode,
+    eBlastOpt_RequiredStart,
+    eBlastOpt_RequiredEnd,
+    eBlastOpt_EvalueThreshold,
+    eBlastOpt_CutoffScore,
+    eBlastOpt_PercentIdentity,
+    eBlastOpt_SumStatisticsMode,
+    eBlastOpt_SingleHSPEvalueThreshold,
+    eBlastOpt_SingleHSPCutoffScore,
+    eBlastOpt_LongestIntronLength,
+    eBlastOpt_GappedMode,
+    eBlastOpt_NeighboringMode,
+    eBlastOpt_MatrixName,
+    eBlastOpt_MatrixPath,
+    eBlastOpt_MatchReward,
+    eBlastOpt_MismatchPenalty,
+    eBlastOpt_GapOpeningCost,
+    eBlastOpt_GapExtensionCost,
+    eBlastOpt_FrameShiftPenalty,
+    eBlastOpt_Decline2AlignPenalty,
+    eBlastOpt_OutOfFrameMode,
+    eBlastOpt_DbLength,
+    eBlastOpt_DbSeqNum,
+    eBlastOpt_EffectiveSearchSpace,
+    eBlastOpt_UseRealDbSize,
+    eBlastOpt_DbGeneticCode,
+    eBlastOpt_PHIPattern,
+};
+
+
 /// Encapsulates all blast input parameters
-class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
+class NCBI_XBLAST_EXPORT CBlastOptionsLocal : public CObject
 {
 public:
-    CBlastOptions();
-    ~CBlastOptions();
+    enum EAPILocality {
+        eLocal,
+        eRemote,
+        eBoth
+    };
+    
+    CBlastOptionsLocal();
+    ~CBlastOptionsLocal();
 
     /// Validate the options
     bool Validate() const;
 
     /// Accessors/Mutators for individual options
-
+    
     EProgram GetProgram() const;
     void SetProgram(EProgram p);
 
@@ -251,7 +319,52 @@ public:
 
     /// Allows to dump a snapshot of the object
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-
+    
+    QuerySetUpOptions * GetQueryOpts() const
+    {
+        return m_QueryOpts;
+    }
+    
+    LookupTableOptions * GetLutOpts() const
+    {
+        return m_LutOpts;
+    }
+    
+    BlastInitialWordOptions * GetInitWordOpts() const
+    {
+        return m_InitWordOpts;
+    }
+    
+    BlastExtensionOptions * GetExtnOpts() const
+    {
+        return m_ExtnOpts;
+    }
+    
+    BlastHitSavingOptions * GetHitSaveOpts() const
+    {
+        return m_HitSaveOpts;
+    }
+    
+    PSIBlastOptions * GetProtOpts() const
+    {
+        return m_ProtOpts;
+    }
+    
+    BlastDatabaseOptions * GetDbOpts() const
+    {
+        return m_DbOpts;
+    }
+    
+    BlastScoringOptions * GetScoringOpts() const
+    {
+        return m_ScoringOpts;
+    }
+    
+    BlastEffectiveLengthsOptions * GetEffLenOpts() const
+    {
+        return m_EffLenOpts.get();
+    }
+    
 protected:
 
     /// Query sequence settings
@@ -288,6 +401,1301 @@ protected:
 
 private:
     /// Prohibit copy c-tor 
+    CBlastOptionsLocal(const CBlastOptionsLocal& bo);
+    /// Prohibit assignment operator
+    CBlastOptionsLocal& operator=(const CBlastOptionsLocal& bo);
+
+    friend class CBl2Seq;
+    friend class CDbBlast;
+    friend bool operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs);
+    friend bool operator!=(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs);
+};
+
+
+/// Encapsulates all blast input parameters
+class NCBI_XBLAST_EXPORT CBlastOptionsRemote : public CObject
+{
+public:
+    CBlastOptionsRemote(void)
+        : m_DoneDefaults(false)
+    {
+        //m_Req.Reset(new objects::CBlast4_queue_search_request);
+        m_ReqOpts.Reset(new objects::CBlast4_parameters);
+    }
+    
+    ~CBlastOptionsRemote()
+    {
+    }
+    
+//     typedef ncbi::objects::CBlast4_queue_search_request TBlast4Req;
+//     CRef<TBlast4Req> GetBlast4Request()
+//     {
+//         return m_Req;
+//     }
+    
+    // the "new paradigm"
+    typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
+    TBlast4Opts * GetBlast4AlgoOpts()
+    {
+        return m_ReqOpts;
+    }
+    
+    /// Validate the options
+    bool Validate() const
+    {
+        // Not yet..
+        return true;
+    }
+
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+    {
+        // Not yet..
+    }
+
+    typedef vector< CConstRef<objects::CSeq_loc> > TSeqLocVector;
+    
+//     // Basic mandatory functions
+//     void SetProgram(const char * v)
+//     {
+//         m_Req->SetProgram(v);
+//     }
+    
+//     void SetService(const char * v)
+//     {
+//         m_Req->SetService(v);
+//     }
+    
+    // SetValue(x,y) with different types:
+    void SetValue(EBlastOptIdx opt, const EProgram            & x);
+    void SetValue(EBlastOptIdx opt, const int                 & x);
+    void SetValue(EBlastOptIdx opt, const double              & x);
+    void SetValue(EBlastOptIdx opt, const char                * x);
+    void SetValue(EBlastOptIdx opt, const TSeqLocVector       & x);
+    void SetValue(EBlastOptIdx opt, const SeedContainerType   & x);
+    void SetValue(EBlastOptIdx opt, const SeedExtensionMethod & x);
+    void SetValue(EBlastOptIdx opt, const bool                & x);
+    void SetValue(EBlastOptIdx opt, const Int8                & x);
+    
+    // Pseudo-types:
+    void SetValue(EBlastOptIdx opt, const short & x)
+    { int x2 = x; SetValue(opt, x2); }
+    
+    void SetValue(EBlastOptIdx opt, const unsigned int & x)
+    { int x2 = x; SetValue(opt, x2); }
+    
+    void SetValue(EBlastOptIdx opt, const unsigned char & x)
+    { int x2 = x; SetValue(opt, x2); }
+    
+    void SetValue(EBlastOptIdx opt, const objects::ENa_strand & x)
+    { int x2 = x; SetValue(opt, x2); }
+    
+    void DoneDefaults()
+    {
+        m_DoneDefaults = true;
+    }
+    
+private:
+    //CRef<objects::CBlast4_queue_search_request> m_Req;
+    CRef<objects::CBlast4_parameters> m_ReqOpts;
+    
+    bool m_DoneDefaults;
+    
+//     void x_SetProgram(const char * program)
+//     {
+//         m_Req->SetProgram(program);
+//     }
+    
+//     void x_SetService(const char * service)
+//     {
+//         m_Req->SetService(service);
+//     }
+    
+    template<class T>
+    void x_SetParam(const char * name, T & value)
+    {
+        x_SetOneParam(name, & value);
+    }
+    
+    void x_SetOneParam(const char * name, const int * x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetInteger(*x);
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_SetOneParam(const char * name, const char ** x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetString().assign((x && (*x)) ? (*x) : "");
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_SetOneParam(const char * name, const bool * x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetBoolean(*x);
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_SetOneParam(const char * name, CRef<objects::CBlast4_cutoff> * x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetCutoff(**x);
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_SetOneParam(const char * name, const double * x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetReal(*x);
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_SetOneParam(const char * name, const long long int * x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetBig_integer(*x);
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_SetOneParam(const char * name, objects::EBlast4_strand_type * x)
+    {
+        CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+        v->SetStrand_type(*x);
+        
+        CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+        p->SetName(name);
+        p->SetValue(*v);
+        
+        m_ReqOpts->Set().push_back(p);
+    }
+    
+    void x_Throwx(string strang) const
+    {
+        cout << "thrown: " << strang << endl;
+        throw runtime_error(strang);
+    }
+};
+
+
+/// Encapsulates all blast input parameters
+class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
+{
+public:
+    enum EAPILocality {
+        eLocal,
+        eRemote,
+        eBoth
+    };
+    
+    CBlastOptions(EAPILocality locality = eLocal);
+    ~CBlastOptions();
+    
+    EAPILocality GetLocality(void)
+    {
+        if (! m_Remote) {
+            return eLocal;
+        }
+        if (! m_Local) {
+            return eRemote;
+        }
+        return eBoth;
+    }
+    
+//     void SetProgramService(const char * program, const char * service)
+//     {
+//         if (m_Remote) {
+//             m_Remote->SetProgramService(program, service);
+//         }
+//     }
+    
+    /// Validate the options
+    bool Validate() const
+    {
+        bool local_okay  = m_Local  ? (m_Local ->Validate()) : true;
+        bool remote_okay = m_Remote ? (m_Remote->Validate()) : true;
+        
+        return local_okay && remote_okay;
+    }
+    
+    /// Accessors/Mutators for individual options
+
+    EProgram GetProgram() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetProgram() not available.");
+        }
+        return m_Local->GetProgram();
+    }
+    void SetProgram(EProgram p)
+    {
+        if (m_Local) {
+            m_Local->SetProgram(p);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_Program, p);
+        }
+    }
+
+    /******************* Lookup table options ***********************/
+    int GetWordThreshold() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetWordThreshold() not available.");
+        }
+        return m_Local->GetWordThreshold();
+    }
+    void SetWordThreshold(int w)
+    {
+        if (m_Local) {
+            m_Local->SetWordThreshold(w);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_WordThreshold, w);
+        }
+    }
+
+    int GetLookupTableType() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetLookupTableType() not available.");
+        }
+        return m_Local->GetLookupTableType();
+    }
+    void SetLookupTableType(int type)
+    {
+        if (m_Local) {
+            m_Local->SetLookupTableType(type);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_LookupTableType, type);
+        }
+    }
+
+    short GetWordSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetWordSize() not available.");
+        }
+        return m_Local->GetWordSize();
+    }
+    void SetWordSize(short ws)
+    {
+        if (m_Local) {
+            m_Local->SetWordSize(ws);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_WordSize, ws);
+        }
+    }
+
+    int GetAlphabetSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetAlphabetSize() not available.");
+        }
+        return m_Local->GetAlphabetSize();
+    }
+    void SetAlphabetSize(int s)
+    {
+        if (m_Local) {
+            m_Local->SetAlphabetSize(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_AlphabetSize, s);
+        }
+    }
+
+    unsigned char GetScanStep() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetScanStep() not available.");
+        }
+        return m_Local->GetScanStep();
+    }
+    void SetScanStep(unsigned char s)
+    {
+        if (m_Local) {
+            m_Local->SetScanStep(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_ScanStep, s);
+        }
+    }
+
+    /// Megablast only lookup table options
+    unsigned char GetMBTemplateLength() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMBTemplateLength() not available.");
+        }
+        return m_Local->GetMBTemplateLength();
+    }
+    void SetMBTemplateLength(unsigned char len)
+    {
+        if (m_Local) {
+            m_Local->SetMBTemplateLength(len);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MBTemplateLength, len);
+        }
+    }
+
+    unsigned char GetMBTemplateType() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMBTemplateType() not available.");
+        }
+        return m_Local->GetMBTemplateType();
+    }
+    void SetMBTemplateType(unsigned char type)
+    {
+        if (m_Local) {
+            m_Local->SetMBTemplateType(type);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MBTemplateType, type);
+        }
+    }
+
+    int GetMBMaxPositions() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMBMaxPositions() not available.");
+        }
+        return m_Local->GetMBMaxPositions();
+    }
+    void SetMBMaxPositions(int m)
+    {
+        if (m_Local) {
+            m_Local->SetMBMaxPositions(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MBMaxPositions, m);
+        }
+    }
+
+    /******************* Query setup options ************************/
+    const char* GetFilterString() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetFilterString() not available.");
+        }
+        return m_Local->GetFilterString();
+    }
+    void SetFilterString(const char* f)
+    {
+        if (m_Local) {
+            m_Local->SetFilterString(f);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_FilterString, f);
+        }
+    }
+
+    vector< CConstRef<objects::CSeq_loc> >& GetLCaseMask() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetLCaseMask() not available.");
+        }
+        return m_Local->GetLCaseMask();
+    }
+    void SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
+    {
+        if (m_Local) {
+            m_Local->SetLCaseMask(sl_vector);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_LCaseMask, sl_vector);
+        }
+    }
+
+    objects::ENa_strand GetStrandOption() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetStrandOption() not available.");
+        }
+        return m_Local->GetStrandOption();
+    }
+    void SetStrandOption(objects::ENa_strand s)
+    {
+        if (m_Local) {
+            m_Local->SetStrandOption(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_StrandOption, s);
+        }
+    }
+
+    int GetQueryGeneticCode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetQueryGeneticCode() not available.");
+        }
+        return m_Local->GetQueryGeneticCode();
+    }
+    void SetQueryGeneticCode(int gc)
+    {
+        if (m_Local) {
+            m_Local->SetQueryGeneticCode(gc);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_QueryGeneticCode, gc);
+        }
+    }
+
+    /******************* Initial word options ***********************/
+    int GetWindowSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetWindowSize() not available.");
+        }
+        return m_Local->GetWindowSize();
+    }
+    void SetWindowSize(int w)
+    {
+        if (m_Local) {
+            m_Local->SetWindowSize(w);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_WindowSize, w);
+        }
+    }
+
+    SeedContainerType GetSeedContainerType() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSeedContainerType() not available.");
+        }
+        return m_Local->GetSeedContainerType();
+    }
+    void SetSeedContainerType(SeedContainerType type)
+    {
+        if (m_Local) {
+            m_Local->SetSeedContainerType(type);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SeedContainerType, type);
+        }
+    }
+
+    SeedExtensionMethod GetSeedExtensionMethod() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSeedExtensionMethod() not available.");
+        }
+        return m_Local->GetSeedExtensionMethod();
+    }
+    void SetSeedExtensionMethod(SeedExtensionMethod method)
+    {
+        if (m_Local) {
+            m_Local->SetSeedExtensionMethod(method);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SeedExtensionMethod, method);
+        }
+    }
+
+    bool GetVariableWordSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetVariableWordSize() not available.");
+        }
+        return m_Local->GetVariableWordSize();
+    }
+    void SetVariableWordSize(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetVariableWordSize(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_VariableWordSize, val);
+        }
+    }
+
+    bool GetUngappedExtension() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetUngappedExtension() not available.");
+        }
+        return m_Local->GetUngappedExtension();
+    }
+    void SetUngappedExtension(bool val = true)
+    {
+        if (m_Local) {
+            m_Local->SetUngappedExtension(val);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_UngappedExtension, val);
+        }
+    }
+
+    double GetXDropoff() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetXDropoff() not available.");
+        }
+        return m_Local->GetXDropoff();
+    }
+    void SetXDropoff(double x)
+    {
+        if (m_Local) {
+            m_Local->SetXDropoff(x);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_XDropoff, x);
+        }
+    }
+
+    /******************* Gapped extension options *******************/
+    double GetGapXDropoff() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapXDropoff() not available.");
+        }
+        return m_Local->GetGapXDropoff();
+    }
+    void SetGapXDropoff(double x)
+    {
+        if (m_Local) {
+            m_Local->SetGapXDropoff(x);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapXDropoff, x);
+        }
+    }
+
+    double GetGapXDropoffFinal() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapXDropoffFinal() not available.");
+        }
+        return m_Local->GetGapXDropoffFinal();
+    }
+    void SetGapXDropoffFinal(double x)
+    {
+        if (m_Local) {
+            m_Local->SetGapXDropoffFinal(x);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapXDropoffFinal, x);
+        }
+    }
+
+    double GetGapTrigger() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapTrigger() not available.");
+        }
+        return m_Local->GetGapTrigger();
+    }
+    void SetGapTrigger(double g)
+    {
+        if (m_Local) {
+            m_Local->SetGapTrigger(g);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapTrigger, g);
+        }
+    }
+
+    int GetGapExtnAlgorithm() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapExtnAlgorithm() not available.");
+        }
+        return m_Local->GetGapExtnAlgorithm();
+    }
+    void SetGapExtnAlgorithm(int a)
+    {
+        if (m_Local) {
+            m_Local->SetGapExtnAlgorithm(a);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapExtnAlgorithm, a);
+        }
+    }
+
+    void SetSkipTraceback();
+
+    /******************* Hit saving options *************************/
+    int GetHitlistSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetHitlistSize() not available.");
+        }
+        return m_Local->GetHitlistSize();
+    }
+    void SetHitlistSize(int s)
+    {
+        if (m_Local) {
+            m_Local->SetHitlistSize(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_HitlistSize, s);
+        }
+    }
+
+    int GetMaxNumHspPerSequence() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMaxNumHspPerSequence() not available.");
+        }
+        return m_Local->GetMaxNumHspPerSequence();
+    }
+    void SetMaxNumHspPerSequence(int m)
+    {
+        if (m_Local) {
+            m_Local->SetMaxNumHspPerSequence(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MaxNumHspPerSequence, m);
+        }
+    }
+
+    /// Maximum total number of HSPs to keep
+    int GetTotalHspLimit() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetTotalHspLimit() not available.");
+        }
+        return m_Local->GetTotalHspLimit();
+    }
+    void SetTotalHspLimit(int l)
+    {
+        if (m_Local) {
+            m_Local->SetTotalHspLimit(l);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_TotalHspLimit, l);
+        }
+    }
+
+    bool GetCullingMode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetCullingMode() not available.");
+        }
+        return m_Local->GetCullingMode();
+    }
+    void SetCullingMode(bool m = true)
+    {
+        if (m_Local) {
+            m_Local->SetCullingMode(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_CullingMode, m);
+        }
+    }
+
+    /// Start of the region required to be part of the alignment
+    int GetRequiredStart() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetRequiredStart() not available.");
+        }
+        return m_Local->GetRequiredStart();
+    }
+    void SetRequiredStart(int s)
+    {
+        if (m_Local) {
+            m_Local->SetRequiredStart(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_RequiredStart, s);
+        }
+    }
+
+    /// End of the region required to be part of the alignment
+    int GetRequiredEnd() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetRequiredEnd() not available.");
+        }
+        return m_Local->GetRequiredEnd();
+    }
+    void SetRequiredEnd(int e)
+    {
+        if (m_Local) {
+            m_Local->SetRequiredEnd(e);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_RequiredEnd, e);
+        }
+    }
+
+    // Expect value cut-off threshold for an HSP, or a combined hit if sum
+    // statistics is used
+    double GetEvalueThreshold() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetEvalueThreshold() not available.");
+        }
+        return m_Local->GetEvalueThreshold();
+    }
+    void SetEvalueThreshold(double eval)
+    {
+        if (m_Local) {
+            m_Local->SetEvalueThreshold(eval);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_EvalueThreshold, eval);
+        }
+    }
+
+    double GetOriginalEvalue() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetOriginalEvalue() not available.");
+        }
+        return m_Local->GetOriginalEvalue();
+    }
+    //void SetOriginalEvalue(double e);
+
+    // Raw score cutoff threshold
+    int GetCutoffScore() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetCutoffScore() not available.");
+        }
+        return m_Local->GetCutoffScore();
+    }
+    void SetCutoffScore(int s)
+    {
+        if (m_Local) {
+            m_Local->SetCutoffScore(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_CutoffScore, s);
+        }
+    }
+
+    double GetPercentIdentity() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetPercentIdentity() not available.");
+        }
+        return m_Local->GetPercentIdentity();
+    }
+    void SetPercentIdentity(double p)
+    {
+        if (m_Local) {
+            m_Local->SetPercentIdentity(p);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_PercentIdentity, p);
+        }
+    }
+
+    /// Sum statistics options
+    bool GetSumStatisticsMode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSumStatisticsMode() not available.");
+        }
+        return m_Local->GetSumStatisticsMode();
+    }
+    void SetSumStatisticsMode(bool m = true)
+    {
+        if (m_Local) {
+            m_Local->SetSumStatisticsMode(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SumStatisticsMode, m);
+        }
+    }
+
+    double GetSingleHSPEvalueThreshold() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSingleHSPEvalueThreshold() not available.");
+        }
+        return m_Local->GetSingleHSPEvalueThreshold();
+    }
+    void SetSingleHSPEvalueThreshold(double e)
+    {
+        if (m_Local) {
+            m_Local->SetSingleHSPEvalueThreshold(e);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SingleHSPEvalueThreshold, e);
+        }
+    }
+
+    int GetSingleHSPCutoffScore() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSingleHSPCutoffScore() not available.");
+        }
+        return m_Local->GetSingleHSPCutoffScore();
+    }
+    void SetSingleHSPCutoffScore(int s)
+    {
+        if (m_Local) {
+            m_Local->SetSingleHSPCutoffScore(s);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_SingleHSPCutoffScore, s);
+        }
+    }
+
+    int GetLongestIntronLength() const // for tblastn w/ linking HSPs
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetSingleHSPCutoffScore() not available.");
+        }
+        return m_Local->GetSingleHSPCutoffScore();
+    }
+    void SetLongestIntronLength(int l) // for tblastn w/ linking HSPs
+    {
+        if (m_Local) {
+            m_Local->SetLongestIntronLength(l);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_LongestIntronLength, l);
+        }
+    }
+
+
+    /// Returns true if gapped BLAST is set, false otherwise
+    bool GetGappedMode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGappedMode() not available.");
+        }
+        return m_Local->GetGappedMode();
+    }
+    void SetGappedMode(bool m = true)
+    {
+        if (m_Local) {
+            m_Local->SetGappedMode(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GappedMode, m);
+        }
+    }
+
+    // Deprecated
+    bool GetNeighboringMode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetNeighboringMode() not available.");
+        }
+        return m_Local->GetNeighboringMode();
+    }
+    // Deprecated
+    void SetNeighboringMode(bool m = true)
+    {
+        if (m_Local) {
+            m_Local->SetNeighboringMode(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_NeighboringMode, m);
+        }
+    }
+
+    /************************ Scoring options ************************/
+    const char* GetMatrixName() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMatrixName() not available.");
+        }
+        return m_Local->GetMatrixName();
+    }
+    void SetMatrixName(const char* matrix)
+    {
+        if (m_Local) {
+            m_Local->SetMatrixName(matrix);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MatrixName, matrix);
+        }
+    }
+
+    const char* GetMatrixPath() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMatrixPath() not available.");
+        }
+        return m_Local->GetMatrixPath();
+    }
+    void SetMatrixPath(const char* path)
+    {
+        if (m_Local) {
+            m_Local->SetMatrixPath(path);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MatrixPath, path);
+        }
+    }
+
+    int GetMatchReward() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMatchReward() not available.");
+        }
+        return m_Local->GetMatchReward();
+    }
+    void SetMatchReward(int r)
+    {
+        if (m_Local) {
+            m_Local->SetMatchReward(r);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MatchReward, r);
+        }
+    }
+
+    int GetMismatchPenalty() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetMismatchPenalty() not available.");
+        }
+        return m_Local->GetMismatchPenalty();
+    }
+    void SetMismatchPenalty(int p)
+    {
+        if (m_Local) {
+            m_Local->SetMismatchPenalty(p);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_MismatchPenalty, p);
+        }
+    }
+
+    int GetGapOpeningCost() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapOpeningCost() not available.");
+        }
+        return m_Local->GetGapOpeningCost();
+    }
+    void SetGapOpeningCost(int g)
+    {
+        if (m_Local) {
+            m_Local->SetGapOpeningCost(g);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapOpeningCost, g);
+        }
+    }
+
+    int GetGapExtensionCost() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetGapExtensionCost() not available.");
+        }
+        return m_Local->GetGapExtensionCost();
+    }
+    void SetGapExtensionCost(int e)
+    {
+        if (m_Local) {
+            m_Local->SetGapExtensionCost(e);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_GapExtensionCost, e);
+        }
+    }
+
+    int GetFrameShiftPenalty() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetFrameShiftPenalty() not available.");
+        }
+        return m_Local->GetFrameShiftPenalty();
+    }
+    void SetFrameShiftPenalty(int p)
+    {
+        if (m_Local) {
+            m_Local->SetFrameShiftPenalty(p);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_FrameShiftPenalty, p);
+        }
+    }
+
+    int GetDecline2AlignPenalty() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDecline2AlignPenalty() not available.");
+        }
+        return m_Local->GetDecline2AlignPenalty();
+    }
+    void SetDecline2AlignPenalty(int p)
+    {
+        if (m_Local) {
+            m_Local->SetDecline2AlignPenalty(p);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_Decline2AlignPenalty, p);
+        }
+    }
+
+    bool GetOutOfFrameMode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetOutOfFrameMode() not available.");
+        }
+        return m_Local->GetOutOfFrameMode();
+    }
+    void SetOutOfFrameMode(bool m = true)
+    {
+        if (m_Local) {
+            m_Local->SetOutOfFrameMode(m);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_OutOfFrameMode, m);
+        }
+    }
+
+    /******************** Effective Length options *******************/
+    Int8 GetDbLength() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDbLength() not available.");
+        }
+        return m_Local->GetDbLength();
+    }
+    void SetDbLength(Int8 l)
+    {
+        if (m_Local) {
+            m_Local->SetDbLength(l);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DbLength, l);
+        }
+    }
+
+    unsigned int GetDbSeqNum() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDbSeqNum() not available.");
+        }
+        return m_Local->GetDbSeqNum();
+    }
+    void SetDbSeqNum(unsigned int n)
+    {
+        if (m_Local) {
+            m_Local->SetDbSeqNum(n);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DbSeqNum, n);
+        }
+    }
+
+    Int8 GetEffectiveSearchSpace() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetEffectiveSearchSpace() not available.");
+        }
+        return m_Local->GetEffectiveSearchSpace();
+    }
+    void SetEffectiveSearchSpace(Int8 eff)
+    {
+        if (m_Local) {
+            m_Local->SetEffectiveSearchSpace(eff);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_EffectiveSearchSpace, eff);
+        }
+    }
+
+    bool GetUseRealDbSize() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetUseRealDbSize() not available.");
+        }
+        return m_Local->GetUseRealDbSize();
+    }
+    void SetUseRealDbSize(bool u = true)
+    {
+        if (m_Local) {
+            m_Local->SetUseRealDbSize(u);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_UseRealDbSize, u);
+        }
+    }
+
+    int GetDbGeneticCode() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetDbGeneticCode() not available.");
+        }
+        return m_Local->GetDbGeneticCode();
+    }
+    
+    //const unsigned char* GetDbGeneticCodeStr() const
+    //{
+    //    if (! m_Local) {
+    //        throw string("Error: GetDbGeneticCodeStr() not available.");
+    //    }
+    //    return m_Local->GetDbGeneticCodeStr();
+    //}
+    //void SetDbGeneticCodeStr(const unsigned char* gc_str);
+    
+    // Set both integer and string genetic code in one call
+    void SetDbGeneticCode(int gc)
+    {
+        if (m_Local) {
+            m_Local->SetDbGeneticCode(gc);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_DbGeneticCode, gc);
+        }
+    }
+
+    /// @todo PSI-Blast options could go on their own subclass?
+    const char* GetPHIPattern() const
+    {
+        if (! m_Local) {
+            x_Throwx("Error: GetPHIPattern() not available.");
+        }
+        return m_Local->GetPHIPattern();
+    }
+    void SetPHIPattern(const char* pattern, bool is_dna)
+    {
+        if (m_Local) {
+            m_Local->SetPHIPattern(pattern, is_dna);
+        }
+        if (m_Remote) {
+            m_Remote->SetValue(eBlastOpt_PHIPattern, pattern);
+            
+// For now I will assume this is handled when the data is passed to the
+// code in blast4_options - i.e. that code will discriminate on the basis
+// of the type of *OptionHandle that is passed in.
+//
+//             if (is_dna) {
+//                 m_Remote->SetProgram("blastn");
+//             } else {
+//                 m_Remote->SetProgram("blastp");
+//             }
+//             
+//             m_Remote->SetService("phi");
+        }
+    }
+    
+    /// Allows to dump a snapshot of the object
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+    {
+        if (m_Local) {
+            m_Local->DebugDump(ddc, depth);
+        }
+        if (m_Remote) {
+            m_Remote->DebugDump(ddc, depth);
+        }
+    }
+    
+    void DoneDefaults() const
+    {
+        if (m_Remote) {
+            m_Remote->DoneDefaults();
+        }
+    }
+    
+//     typedef ncbi::objects::CBlast4_queue_search_request TBlast4Req;
+//     CRef<TBlast4Req> GetBlast4Request() const
+//     {
+//         CRef<TBlast4Req> result;
+        
+//         if (m_Remote) {
+//             result = m_Remote->GetBlast4Request();
+//         }
+        
+//         return result;
+//     }
+    
+    // the "new paradigm"
+    typedef ncbi::objects::CBlast4_parameters TBlast4Opts;
+    TBlast4Opts * GetBlast4AlgoOpts()
+    {
+        TBlast4Opts * result(0);
+        
+        if (m_Remote) {
+            result = m_Remote->GetBlast4AlgoOpts();
+        }
+        
+        return result;
+    }
+    
+protected:
+    QuerySetUpOptions * GetQueryOpts() const
+    {
+        return m_Local ? m_Local->GetQueryOpts() : 0;
+    }
+    
+    LookupTableOptions * GetLutOpts() const
+    {
+        return m_Local ? m_Local->GetLutOpts() : 0;
+    }
+    
+    BlastInitialWordOptions * GetInitWordOpts() const
+    {
+        return m_Local ? m_Local->GetInitWordOpts() : 0;
+    }
+    
+    BlastExtensionOptions * GetExtnOpts() const
+    {
+        return m_Local ? m_Local->GetExtnOpts() : 0;
+    }
+    
+    BlastHitSavingOptions * GetHitSaveOpts() const
+    {
+        return m_Local ? m_Local->GetHitSaveOpts() : 0;
+    }
+    
+    PSIBlastOptions * GetProtOpts() const
+    {
+        return m_Local ? m_Local->GetProtOpts() : 0;
+    }
+    
+    BlastDatabaseOptions * GetDbOpts() const
+    {
+        return m_Local ? m_Local->GetDbOpts() : 0;
+    }
+    
+    BlastScoringOptions * GetScoringOpts() const
+    {
+        return m_Local ? m_Local->GetScoringOpts() : 0;
+    }
+    
+    BlastEffectiveLengthsOptions * GetEffLenOpts() const
+    {
+        return m_Local ? m_Local->GetEffLenOpts() : 0;
+    }
+    
+private:
+    /// Prohibit copy c-tor 
     CBlastOptions(const CBlastOptions& bo);
     /// Prohibit assignment operator
     CBlastOptions& operator=(const CBlastOptions& bo);
@@ -299,32 +1707,44 @@ private:
 
     friend bool operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
     friend bool operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs);
+    
+    // Pointers to local and remote objects
+    
+    CBlastOptionsLocal  * m_Local;
+    CBlastOptionsRemote * m_Remote;
+    
+    void x_Throwx(string strang) const
+    {
+        cout << "thrown: " << strang << endl;
+        throw runtime_error(strang);
+    }
 };
 
+
 bool 
-operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
+operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs);
 
 inline EProgram
-CBlastOptions::GetProgram() const
+CBlastOptionsLocal::GetProgram() const
 {
     return m_Program;
 }
 
 inline void
-CBlastOptions::SetProgram(EProgram p)
+CBlastOptionsLocal::SetProgram(EProgram p)
 {
     _ASSERT(p >= eBlastn && p < eBlastProgramMax);
     m_Program = p;
 }
 
 inline const char*
-CBlastOptions::GetMatrixName() const
+CBlastOptionsLocal::GetMatrixName() const
 {
     return m_ScoringOpts->matrix;
 }
 
 inline void
-CBlastOptions::SetMatrixName(const char* matrix)
+CBlastOptionsLocal::SetMatrixName(const char* matrix)
 {
     if (!matrix)
         return;
@@ -334,13 +1754,13 @@ CBlastOptions::SetMatrixName(const char* matrix)
 }
 
 inline const char* 
-CBlastOptions::GetMatrixPath() const
+CBlastOptionsLocal::GetMatrixPath() const
 {
     return m_ScoringOpts->matrix_path;
 }
 
 inline void 
-CBlastOptions::SetMatrixPath(const char* path)
+CBlastOptionsLocal::SetMatrixPath(const char* path)
 {
     if (!path)
         return;
@@ -350,25 +1770,25 @@ CBlastOptions::SetMatrixPath(const char* path)
 }
 
 inline int
-CBlastOptions::GetWordThreshold() const
+CBlastOptionsLocal::GetWordThreshold() const
 {
     return m_LutOpts->threshold;
 }
 
 inline void
-CBlastOptions::SetWordThreshold(int w)
+CBlastOptionsLocal::SetWordThreshold(int w)
 {
     m_LutOpts->threshold = w;
 }
 
 inline int
-CBlastOptions::GetLookupTableType() const
+CBlastOptionsLocal::GetLookupTableType() const
 {
     return m_LutOpts->lut_type;
 }
 
 inline void
-CBlastOptions::SetLookupTableType(int type)
+CBlastOptionsLocal::SetLookupTableType(int type)
 {
     m_LutOpts->lut_type = type;
     if (type == MB_LOOKUP_TABLE) {
@@ -378,86 +1798,86 @@ CBlastOptions::SetLookupTableType(int type)
 }
 
 inline short
-CBlastOptions::GetWordSize() const
+CBlastOptionsLocal::GetWordSize() const
 {
     return m_LutOpts->word_size;
 }
 
 inline void
-CBlastOptions::SetWordSize(short ws)
+CBlastOptionsLocal::SetWordSize(short ws)
 {
     m_LutOpts->word_size = ws;
 }
 
 inline int
-CBlastOptions::GetAlphabetSize() const
+CBlastOptionsLocal::GetAlphabetSize() const
 {
     return m_LutOpts->alphabet_size;
 }
 
 inline void
-CBlastOptions::SetAlphabetSize(int s)
+CBlastOptionsLocal::SetAlphabetSize(int s)
 {
     m_LutOpts->alphabet_size = s;
 }
 
 inline unsigned char
-CBlastOptions::GetScanStep() const
+CBlastOptionsLocal::GetScanStep() const
 {
     return m_LutOpts->scan_step;
 }
 
 inline void
-CBlastOptions::SetScanStep(unsigned char s)
+CBlastOptionsLocal::SetScanStep(unsigned char s)
 {
     m_LutOpts->scan_step = s;
 }
 
 inline unsigned char
-CBlastOptions::GetMBTemplateLength() const
+CBlastOptionsLocal::GetMBTemplateLength() const
 {
     return m_LutOpts->mb_template_length;
 }
 
 inline void
-CBlastOptions::SetMBTemplateLength(unsigned char len)
+CBlastOptionsLocal::SetMBTemplateLength(unsigned char len)
 {
     m_LutOpts->mb_template_length = len;
 }
 
 inline unsigned char
-CBlastOptions::GetMBTemplateType() const
+CBlastOptionsLocal::GetMBTemplateType() const
 {
     return m_LutOpts->mb_template_type;
 }
 
 inline void
-CBlastOptions::SetMBTemplateType(unsigned char type)
+CBlastOptionsLocal::SetMBTemplateType(unsigned char type)
 {
     m_LutOpts->mb_template_type = type;
 }
 
 inline int
-CBlastOptions::GetMBMaxPositions() const
+CBlastOptionsLocal::GetMBMaxPositions() const
 {
     return m_LutOpts->max_positions;
 }
 
 inline void
-CBlastOptions::SetMBMaxPositions(int m)
+CBlastOptionsLocal::SetMBMaxPositions(int m)
 {
     m_LutOpts->max_positions = m;
 }
 
 /******************* Query setup options ************************/
 inline const char*
-CBlastOptions::GetFilterString() const
+CBlastOptionsLocal::GetFilterString() const
 {
     return m_QueryOpts->filter_string;
 }
 
 inline void
-CBlastOptions::SetFilterString(const char* f)
+CBlastOptionsLocal::SetFilterString(const char* f)
 {
     if (!f)
         return;
@@ -477,502 +1897,502 @@ CBlastOptions::SetFilterString(const char* f)
 }
 
 inline objects::ENa_strand
-CBlastOptions::GetStrandOption() const
+CBlastOptionsLocal::GetStrandOption() const
 {
     return (objects::ENa_strand) m_QueryOpts->strand_option;
 }
 
 inline void
-CBlastOptions::SetStrandOption(objects::ENa_strand s)
+CBlastOptionsLocal::SetStrandOption(objects::ENa_strand s)
 {
     m_QueryOpts->strand_option = (unsigned char) s;
 }
 
 inline int
-CBlastOptions::GetQueryGeneticCode() const
+CBlastOptionsLocal::GetQueryGeneticCode() const
 {
     return m_QueryOpts->genetic_code;
 }
 
 inline void
-CBlastOptions::SetQueryGeneticCode(int gc)
+CBlastOptionsLocal::SetQueryGeneticCode(int gc)
 {
     m_QueryOpts->genetic_code = gc;
 }
 
 /******************* Initial word options ***********************/
 inline int
-CBlastOptions::GetWindowSize() const
+CBlastOptionsLocal::GetWindowSize() const
 {
     return m_InitWordOpts->window_size;
 }
 
 inline void
-CBlastOptions::SetWindowSize(int s)
+CBlastOptionsLocal::SetWindowSize(int s)
 {
     m_InitWordOpts->window_size = s;
 }
 
 inline SeedContainerType
-CBlastOptions::GetSeedContainerType() const
+CBlastOptionsLocal::GetSeedContainerType() const
 {
     return m_InitWordOpts->container_type;
 }
 
 inline void 
-CBlastOptions::SetSeedContainerType(SeedContainerType type)
+CBlastOptionsLocal::SetSeedContainerType(SeedContainerType type)
 {
     ASSERT(type < eMaxContainerType);
     m_InitWordOpts->container_type = type;
 }
 
 inline SeedExtensionMethod
-CBlastOptions::GetSeedExtensionMethod() const
+CBlastOptionsLocal::GetSeedExtensionMethod() const
 {
     return m_InitWordOpts->extension_method;
 }
 
 inline void 
-CBlastOptions::SetSeedExtensionMethod(SeedExtensionMethod method)
+CBlastOptionsLocal::SetSeedExtensionMethod(SeedExtensionMethod method)
 {
     ASSERT(method < eMaxSeedExtensionMethod);
     m_InitWordOpts->extension_method = method;
 }
 
 inline bool
-CBlastOptions::GetVariableWordSize() const
+CBlastOptionsLocal::GetVariableWordSize() const
 {
     return m_InitWordOpts->variable_wordsize ? true: false;
 }
 
 inline void 
-CBlastOptions::SetVariableWordSize(bool val)
+CBlastOptionsLocal::SetVariableWordSize(bool val)
 {
     m_InitWordOpts->variable_wordsize = val;
 }
 
 inline bool
-CBlastOptions::GetUngappedExtension() const
+CBlastOptionsLocal::GetUngappedExtension() const
 {
     return m_InitWordOpts->ungapped_extension ? true : false;
 }
 
 inline void 
-CBlastOptions::SetUngappedExtension(bool val)
+CBlastOptionsLocal::SetUngappedExtension(bool val)
 {
     m_InitWordOpts->ungapped_extension = val;
 }
 
 inline double
-CBlastOptions::GetXDropoff() const
+CBlastOptionsLocal::GetXDropoff() const
 {
     return m_InitWordOpts->x_dropoff;
 }
 
 inline void
-CBlastOptions::SetXDropoff(double x)
+CBlastOptionsLocal::SetXDropoff(double x)
 {
     m_InitWordOpts->x_dropoff = x;
 }
 
 /******************* Gapped extension options *******************/
 inline double
-CBlastOptions::GetGapXDropoff() const
+CBlastOptionsLocal::GetGapXDropoff() const
 {
     return m_ExtnOpts->gap_x_dropoff;
 }
 
 inline void
-CBlastOptions::SetGapXDropoff(double x)
+CBlastOptionsLocal::SetGapXDropoff(double x)
 {
     m_ExtnOpts->gap_x_dropoff = x;
 }
 
 inline double
-CBlastOptions::GetGapXDropoffFinal() const
+CBlastOptionsLocal::GetGapXDropoffFinal() const
 {
     return m_ExtnOpts->gap_x_dropoff_final;
 }
 
 inline void
-CBlastOptions::SetGapXDropoffFinal(double x)
+CBlastOptionsLocal::SetGapXDropoffFinal(double x)
 {
     m_ExtnOpts->gap_x_dropoff_final = x;
 }
 
 inline double
-CBlastOptions::GetGapTrigger() const
+CBlastOptionsLocal::GetGapTrigger() const
 {
     return m_ExtnOpts->gap_trigger;
 }
 
 inline void
-CBlastOptions::SetGapTrigger(double g)
+CBlastOptionsLocal::SetGapTrigger(double g)
 {
     m_ExtnOpts->gap_trigger = g;
 }
 
 inline int
-CBlastOptions::GetGapExtnAlgorithm() const
+CBlastOptionsLocal::GetGapExtnAlgorithm() const
 {
     return m_ExtnOpts->algorithm_type;
 }
 
 inline void
-CBlastOptions::SetGapExtnAlgorithm(int a)
+CBlastOptionsLocal::SetGapExtnAlgorithm(int a)
 {
     m_ExtnOpts->algorithm_type = a;
 }
 
 inline void 
-CBlastOptions::SetSkipTraceback()
+CBlastOptionsLocal::SetSkipTraceback()
 {
     m_ExtnOpts->skip_traceback = TRUE;
 }
 
 /******************* Hit saving options *************************/
 inline int
-CBlastOptions::GetHitlistSize() const
+CBlastOptionsLocal::GetHitlistSize() const
 {
     return m_HitSaveOpts->hitlist_size;
 }
 
 inline void
-CBlastOptions::SetHitlistSize(int s)
+CBlastOptionsLocal::SetHitlistSize(int s)
 {
     m_HitSaveOpts->hitlist_size = s;
 }
 
 inline int
-CBlastOptions::GetMaxNumHspPerSequence() const
+CBlastOptionsLocal::GetMaxNumHspPerSequence() const
 {
     return m_HitSaveOpts->hsp_num_max;
 }
 
 inline void
-CBlastOptions::SetMaxNumHspPerSequence(int m)
+CBlastOptionsLocal::SetMaxNumHspPerSequence(int m)
 {
     m_HitSaveOpts->hsp_num_max = m;
 }
 
 inline int
-CBlastOptions::GetTotalHspLimit() const
+CBlastOptionsLocal::GetTotalHspLimit() const
 {
     return m_HitSaveOpts->total_hsp_limit;
 }
 
 inline void
-CBlastOptions::SetTotalHspLimit(int l)
+CBlastOptionsLocal::SetTotalHspLimit(int l)
 {
     m_HitSaveOpts->total_hsp_limit = l;
 }
 
 inline bool
-CBlastOptions::GetCullingMode() const
+CBlastOptionsLocal::GetCullingMode() const
 {
     return m_HitSaveOpts->perform_culling ? true : false;
 }
 
 inline void
-CBlastOptions::SetCullingMode(bool m)
+CBlastOptionsLocal::SetCullingMode(bool m)
 {
     m_HitSaveOpts->perform_culling = m;
 }
 
 inline int
-CBlastOptions::GetRequiredStart() const
+CBlastOptionsLocal::GetRequiredStart() const
 {
     return m_HitSaveOpts->required_start;
 }
 
 inline void
-CBlastOptions::SetRequiredStart(int s)
+CBlastOptionsLocal::SetRequiredStart(int s)
 {
     m_HitSaveOpts->required_start = s;
 }
 
 inline int
-CBlastOptions::GetRequiredEnd() const
+CBlastOptionsLocal::GetRequiredEnd() const
 {
     return m_HitSaveOpts->required_end;
 }
 
 inline void
-CBlastOptions::SetRequiredEnd(int e)
+CBlastOptionsLocal::SetRequiredEnd(int e)
 {
     m_HitSaveOpts->required_end = e;
 }
 
 inline double
-CBlastOptions::GetEvalueThreshold() const
+CBlastOptionsLocal::GetEvalueThreshold() const
 {
     return m_HitSaveOpts->expect_value;
 }
 
 inline void
-CBlastOptions::SetEvalueThreshold(double eval)
+CBlastOptionsLocal::SetEvalueThreshold(double eval)
 {
     m_HitSaveOpts->expect_value = eval;
 }
 
 inline double
-CBlastOptions::GetOriginalEvalue() const
+CBlastOptionsLocal::GetOriginalEvalue() const
 {
     return m_HitSaveOpts->original_expect_value;
 }
 
 #if 0
 void
-CBlastOptions::SetOriginalEvalue(double e)
+CBlastOptionsLocal::SetOriginalEvalue(double e)
 {
     m_HitSaveOpts->original_expect_value = e;
 }
 #endif
 
 inline int
-CBlastOptions::GetCutoffScore() const
+CBlastOptionsLocal::GetCutoffScore() const
 {
     return m_HitSaveOpts->cutoff_score;
 }
 
 inline void
-CBlastOptions::SetCutoffScore(int s)
+CBlastOptionsLocal::SetCutoffScore(int s)
 {
     m_HitSaveOpts->cutoff_score = s;
 }
 
 inline double
-CBlastOptions::GetPercentIdentity() const
+CBlastOptionsLocal::GetPercentIdentity() const
 {
     return m_HitSaveOpts->percent_identity;
 }
 
 inline void
-CBlastOptions::SetPercentIdentity(double p)
+CBlastOptionsLocal::SetPercentIdentity(double p)
 {
     m_HitSaveOpts->percent_identity = p;
 }
 
 inline bool
-CBlastOptions::GetSumStatisticsMode() const
+CBlastOptionsLocal::GetSumStatisticsMode() const
 {
     return m_HitSaveOpts->do_sum_stats ? true : false;
 }
 
 inline void
-CBlastOptions::SetSumStatisticsMode(bool m)
+CBlastOptionsLocal::SetSumStatisticsMode(bool m)
 {
     m_HitSaveOpts->do_sum_stats = m;
 }
 
 inline double
-CBlastOptions::GetSingleHSPEvalueThreshold() const
+CBlastOptionsLocal::GetSingleHSPEvalueThreshold() const
 {
     return m_HitSaveOpts->single_hsp_evalue;
 }
 
 inline void
-CBlastOptions::SetSingleHSPEvalueThreshold(double e)
+CBlastOptionsLocal::SetSingleHSPEvalueThreshold(double e)
 {
     m_HitSaveOpts->single_hsp_evalue = e;
 }
 
 inline int
-CBlastOptions::GetSingleHSPCutoffScore() const
+CBlastOptionsLocal::GetSingleHSPCutoffScore() const
 {
     return m_HitSaveOpts->single_hsp_score;
 }
 
 inline void
-CBlastOptions::SetSingleHSPCutoffScore(int s)
+CBlastOptionsLocal::SetSingleHSPCutoffScore(int s)
 {
     m_HitSaveOpts->single_hsp_score = s;
 }
 
 inline int
-CBlastOptions::GetLongestIntronLength() const
+CBlastOptionsLocal::GetLongestIntronLength() const
 {
     return m_HitSaveOpts->longest_intron;
 }
 
 inline void
-CBlastOptions::SetLongestIntronLength(int l)
+CBlastOptionsLocal::SetLongestIntronLength(int l)
 {
     m_HitSaveOpts->longest_intron = l;
 }
 
 inline bool
-CBlastOptions::GetGappedMode() const
+CBlastOptionsLocal::GetGappedMode() const
 {
     return m_ScoringOpts->gapped_calculation ? true : false;
 }
 
 inline void
-CBlastOptions::SetGappedMode(bool m)
+CBlastOptionsLocal::SetGappedMode(bool m)
 {
     m_ScoringOpts->gapped_calculation = m;
 }
 
 inline bool
-CBlastOptions::GetNeighboringMode() const
+CBlastOptionsLocal::GetNeighboringMode() const
 {
     return m_HitSaveOpts->is_neighboring ? true : false;
 }
 
 inline void
-CBlastOptions::SetNeighboringMode(bool m)
+CBlastOptionsLocal::SetNeighboringMode(bool m)
 {
     m_HitSaveOpts->is_neighboring = m;
 }
 
 /************************ Scoring options ************************/
 inline int 
-CBlastOptions::GetMatchReward() const
+CBlastOptionsLocal::GetMatchReward() const
 {
     return m_ScoringOpts->reward;
 }
 
 inline void 
-CBlastOptions::SetMatchReward(int r)
+CBlastOptionsLocal::SetMatchReward(int r)
 {
     m_ScoringOpts->reward = r;
 }
 
 inline int 
-CBlastOptions::GetMismatchPenalty() const
+CBlastOptionsLocal::GetMismatchPenalty() const
 {
     return m_ScoringOpts->penalty;
 }
 
 inline void 
-CBlastOptions::SetMismatchPenalty(int p)
+CBlastOptionsLocal::SetMismatchPenalty(int p)
 {
     m_ScoringOpts->penalty = p;
 }
 
 inline int 
-CBlastOptions::GetGapOpeningCost() const
+CBlastOptionsLocal::GetGapOpeningCost() const
 {
     return m_ScoringOpts->gap_open;
 }
 
 inline void 
-CBlastOptions::SetGapOpeningCost(int g)
+CBlastOptionsLocal::SetGapOpeningCost(int g)
 {
     m_ScoringOpts->gap_open = g;
 }
 
 inline int 
-CBlastOptions::GetGapExtensionCost() const
+CBlastOptionsLocal::GetGapExtensionCost() const
 {
     return m_ScoringOpts->gap_extend;
 }
 
 inline void 
-CBlastOptions::SetGapExtensionCost(int e)
+CBlastOptionsLocal::SetGapExtensionCost(int e)
 {
     m_ScoringOpts->gap_extend = e;
 }
 
 inline int 
-CBlastOptions::GetFrameShiftPenalty() const
+CBlastOptionsLocal::GetFrameShiftPenalty() const
 {
     return m_ScoringOpts->shift_pen;
 }
 
 inline void 
-CBlastOptions::SetFrameShiftPenalty(int p)
+CBlastOptionsLocal::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
 }
 
 inline int 
-CBlastOptions::GetDecline2AlignPenalty() const
+CBlastOptionsLocal::GetDecline2AlignPenalty() const
 {
     return m_ScoringOpts->decline_align;
 }
 
 inline void 
-CBlastOptions::SetDecline2AlignPenalty(int p)
+CBlastOptionsLocal::SetDecline2AlignPenalty(int p)
 {
     m_ScoringOpts->decline_align = p;
 }
 
 inline bool 
-CBlastOptions::GetOutOfFrameMode() const
+CBlastOptionsLocal::GetOutOfFrameMode() const
 {
     return m_ScoringOpts->is_ooframe ? true : false;
 }
 
 inline void 
-CBlastOptions::SetOutOfFrameMode(bool m)
+CBlastOptionsLocal::SetOutOfFrameMode(bool m)
 {
     m_ScoringOpts->is_ooframe = m;
 }
 
 /******************** Effective Length options *******************/
 inline Int8 
-CBlastOptions::GetDbLength() const
+CBlastOptionsLocal::GetDbLength() const
 {
     return m_EffLenOpts->db_length;
 }
 
 inline void 
-CBlastOptions::SetDbLength(Int8 l)
+CBlastOptionsLocal::SetDbLength(Int8 l)
 {
     m_EffLenOpts->db_length = l;
 }
 
 inline unsigned int 
-CBlastOptions::GetDbSeqNum() const
+CBlastOptionsLocal::GetDbSeqNum() const
 {
     return (unsigned int) m_EffLenOpts->dbseq_num;
 }
 
 inline void 
-CBlastOptions::SetDbSeqNum(unsigned int n)
+CBlastOptionsLocal::SetDbSeqNum(unsigned int n)
 {
     m_EffLenOpts->dbseq_num = (Int4) n;
 }
 
 inline Int8 
-CBlastOptions::GetEffectiveSearchSpace() const
+CBlastOptionsLocal::GetEffectiveSearchSpace() const
 {
     return m_EffLenOpts->searchsp_eff;
 }
  
 inline void 
-CBlastOptions::SetEffectiveSearchSpace(Int8 eff)
+CBlastOptionsLocal::SetEffectiveSearchSpace(Int8 eff)
 {
     m_EffLenOpts->searchsp_eff = eff;
 }
 
 inline bool 
-CBlastOptions::GetUseRealDbSize() const
+CBlastOptionsLocal::GetUseRealDbSize() const
 {
     return m_EffLenOpts->use_real_db_size ? true : false;
 }
 
 inline void 
-CBlastOptions::SetUseRealDbSize(bool u)
+CBlastOptionsLocal::SetUseRealDbSize(bool u)
 {
     m_EffLenOpts->use_real_db_size = u;
 }
 
 inline int 
-CBlastOptions::GetDbGeneticCode() const
+CBlastOptionsLocal::GetDbGeneticCode() const
 {
     return m_DbOpts->genetic_code;
 }
 
 inline const char* 
-CBlastOptions::GetPHIPattern() const
+CBlastOptionsLocal::GetPHIPattern() const
 {
     return m_LutOpts->phi_pattern;
 }
 
 inline void 
-CBlastOptions::SetPHIPattern(const char* pattern, bool is_dna)
+CBlastOptionsLocal::SetPHIPattern(const char* pattern, bool is_dna)
 {
     if (!pattern)
         return;
@@ -994,6 +2414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/01/16 21:40:01  bealer
+* - Add Blast4 API support to the CBlastOptions class.
+*
 * Revision 1.37  2004/01/13 14:54:54  dondosha
 * Grant friendship to class CBlastGapAlignTest for gapped alignment unit test
 *
