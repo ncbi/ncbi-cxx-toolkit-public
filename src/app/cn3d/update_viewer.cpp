@@ -65,13 +65,8 @@
 #include <memory>
 #include <algorithm>
 
-// C stuff
-#include <stdio.h>
-#include <tofasta.h>
-#include <objseq.h>
-#include <objsset.h>
-
 #include "cn3d/update_viewer.hpp"
+#include "cn3d/asn_reader.hpp"
 #include "cn3d/update_viewer_window.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/sequence_display.hpp"
@@ -83,12 +78,17 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/cn3d_blast.hpp"
-#include "cn3d/asn_reader.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cn3d_cache.hpp"
 #include "cn3d/cn3d_ba_interface.hpp"
 
 #include <wx/tokenzr.h>
+
+// C stuff
+#include <stdio.h>
+#include <tofasta.h>
+#include <objseq.h>
+#include <objsset.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1178,6 +1178,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/08/21 18:27:40  thiessen
+* change header order for Mac compilation
+*
 * Revision 1.64  2003/07/14 18:37:08  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *
