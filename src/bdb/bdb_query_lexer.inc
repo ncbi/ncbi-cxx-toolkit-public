@@ -55,8 +55,8 @@ CBDB_Query::TQueryClause* LexerMakeTokenNode(CBDB_QueryParserEnvironment* env,
 static 
 int yylex(YYSTYPE *lvalp, void* param)
 {
-    static int char_tokens[]      = { '&', '|', '=' };
-    static int char_token_codes[] = { AND, OR,  EQ };
+    static int char_tokens[]      = { '&', '|', '='  };
+    static int char_token_codes[] = { AND, OR,  EQ  };
 
     char c;
     unsigned int  i;
@@ -74,9 +74,10 @@ int yylex(YYSTYPE *lvalp, void* param)
         }
     }
 
+    const char* tok_start = env->GetBufPtr() - 1;
+
     // Process string tokens in apostrophes
     if (c == '\'') {
-        const char* tok_start = env->GetBufPtr() - 1;
         do {
             c = env->GetChar();
             if (c == 0) {
@@ -92,6 +93,36 @@ int yylex(YYSTYPE *lvalp, void* param)
         *lvalp = LexerMakeTokenNode(env, token);
 
         return STRING;
+    }
+
+    // Process operators tokens
+    if (c == '<') {
+        if (tok_start[1] == '>') { // <>
+            env->Skip(2);
+            return NOTEQ;
+        }
+        if (tok_start[1] == '=') { // <=
+            env->Skip(2);
+            return LE;
+        }
+        return LT; // <
+    }
+    if (c == '!') {
+        if (tok_start[1] == '=') {
+            env->Skip(2);
+            return NOTEQ;
+        }
+    }
+    if (c == '>') {
+        if (tok_start[1] == '<') { // ><
+            env->Skip(2);
+            return NOTEQ;
+        }
+        if (tok_start[1] == '=') { // >=
+            env->Skip(2);
+            return GE;
+        }
+        return GT;
     }
 
     // Process AND token
@@ -151,6 +182,9 @@ int yylex(YYSTYPE *lvalp, void* param)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/23 14:51:19  kuznets
+ * Implemented logical NOT, <, <=, >, >=
+ *
  * Revision 1.5  2004/03/18 17:24:36  kuznets
  * Minor bug fix
  *

@@ -316,6 +316,7 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     CBDB_Env env;
     env.OpenWithLocks(0);
+    env.OpenErrFile("err_test.txt");
 
     TestDBF1  dbf1;
 
@@ -439,7 +440,7 @@ static void s_TEST_BDB_IdTable_FillStress(void)
     cout << "======== Id table filling stress test." << endl;
 
     CBDB_Env env;
-    env.SetCacheSize(64 * (1024 * 1024));
+    env.SetCacheSize(150 * (1024 * 1024));
     env.OpenWithLocks(0);
 
     TestDBF1  dbf1;
@@ -562,15 +563,54 @@ static void s_TEST_BDB_Query(void)
     BDB_PrintQueryTree(cout, query);
     }}
 
-    {{    
+    {{
     const char* ch = "'1' = 2";
     BDB_ParseQuery(ch, &query);
     bres = scanner.StaticEvaluate(query);
     assert(!bres);
     }}
 
+    {{
+    const char* ch = "'1' != 2";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
 
+    {{
+    const char* ch = "'1' <> 2";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
 
+    {{
+    const char* ch = "'1' < 2";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+    {{
+    const char* ch = "'1' <= 1";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+    {{
+    const char* ch = "'1' >= 1";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
+
+    {{
+    const char* ch = "'2' > 1";
+    BDB_ParseQuery(ch, &query);
+    bres = scanner.StaticEvaluate(query);
+    assert(bres);
+    }}
 
     // "2" == "2" => true
     {{
@@ -582,6 +622,7 @@ static void s_TEST_BDB_Query(void)
 
     assert(bres);
     }}
+
 
     {{    
     const char* ch = "2 = 2";
@@ -1828,6 +1869,7 @@ int CBDB_Test::Run(void)
 
     try
     {
+
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1892,6 +1934,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/03/23 14:51:19  kuznets
+ * Implemented logical NOT, <, <=, >, >=
+ *
  * Revision 1.41  2004/03/12 12:41:50  kuznets
  * + stress test for cursors
  *

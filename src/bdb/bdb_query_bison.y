@@ -1,4 +1,4 @@
-/*  $Id: bdb_query_bison.y,v 1.1 2004/02/24 16:37:38 kuznets Exp $
+/*  $Id: bdb_query_bison.y,v 1.2 2004/03/23 14:51:19 kuznets Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -75,6 +75,12 @@ void BisonSaveStageResult(YYSTYPE res, void* parm)
 %left AND
 %left OR
 %left EQ
+%left NOTEQ
+%left GT
+%left GE
+%left LT
+%left LE
+
 
 
 /* Grammar follows */
@@ -118,6 +124,35 @@ exp:    NUM
             $$ = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, $1, $3);
             BisonSaveStageResult($$, parm);
         }
-        | '(' exp ')'        { $$ = $2;         }
+        | exp NOTEQ exp
+        {
+            $$ = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eEQ, $1, $3);
+            $$->GetValue().SetNot();
+            BisonSaveStageResult($$, parm);
+        }
+        | exp GT exp
+        {
+            $$ = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eGT, $1, $3);
+            BisonSaveStageResult($$, parm);
+        }
+        | exp GE exp
+        {
+            $$ = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eGE, $1, $3);
+            BisonSaveStageResult($$, parm);
+        }
+        | exp LT exp
+        {
+            $$ = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eLT, $1, $3);
+            BisonSaveStageResult($$, parm);
+        }
+        | exp LE exp
+        {
+            $$ = CBDB_Query::NewOperatorNode(CBDB_QueryNode::eLE, $1, $3);
+            BisonSaveStageResult($$, parm);
+        }
+        | '(' exp ')'
+        { 
+            $$ = $2;
+        }
 ;
 %%

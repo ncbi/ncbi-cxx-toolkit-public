@@ -56,8 +56,10 @@ CBDB_QueryNode::CBDB_QueryNode(ELogicalType  ltype)
 }
 
 
-CBDB_QueryNode::CBDB_QueryNode(EOperatorType otype)
- : m_NodeType(eOperator)
+CBDB_QueryNode::CBDB_QueryNode(EOperatorType otype,
+                               bool          not_flag)
+ : m_NodeType(eOperator),
+   m_NotFlag(not_flag)
 {
     m_SubType.OperatorType = otype;
 }
@@ -68,6 +70,7 @@ CBDB_QueryNode::CBDB_QueryNode(const CBDB_QueryNode& qnode)
     m_NodeType = qnode.m_NodeType;
     m_Value = qnode.m_Value;
     m_SubType.LogicalType = qnode.m_SubType.LogicalType;
+    m_NotFlag = qnode.m_NotFlag;
 }
 
 
@@ -76,6 +79,7 @@ CBDB_QueryNode& CBDB_QueryNode::operator=(const CBDB_QueryNode& qnode)
     m_NodeType = qnode.m_NodeType;
     m_Value = qnode.m_Value;
     m_SubType.LogicalType = qnode.m_SubType.LogicalType;
+    m_NotFlag = qnode.m_NotFlag;
 
     return *this;
 }
@@ -433,6 +437,15 @@ public:
         return m_FieldVector[idx];
     }
 
+    void SetResult(CBDB_QueryNode& qnode, bool res)
+    {
+        if (res) {
+            qnode.SetValue("1");
+        } else {
+            qnode.SetValue("0");
+        }
+    }
+
 private:
 
     /// Syncronously resize all arguments vectors
@@ -488,9 +501,12 @@ CScannerFunctorArgN::~CScannerFunctorArgN()
 class CScannerFunctorEQ : public CScannerFunctorArgN
 {
 public:
-    CScannerFunctorEQ(CQueryExecEnv& env)
-     : CScannerFunctorArgN(env)
+    CScannerFunctorEQ(CQueryExecEnv& env, bool not_flag)
+     : CScannerFunctorArgN(env),
+       m_NotFlag(not_flag)
     {}
+
+    bool IsNot() const { return m_NotFlag; }
 
     void Eval(CTreeNode<CBDB_QueryNode>& tr)
     {
@@ -532,11 +548,112 @@ public:
 
         // Plain equal
 
-        if (*arg0 == *arg1) {
-            qnode.SetValue("1");
-        } else {
-            qnode.SetValue("0");
-        }
+        bool res = (*arg0 == *arg1);
+        if (IsNot())
+            res = !res;
+        SetResult(qnode, res);
+    }
+protected:
+    bool   m_NotFlag;
+};
+
+/// Basic class for all comparison (GT, LT, etc) functors
+///
+/// @internal
+class CScannerFunctorComp : public CScannerFunctorArgN
+{
+public:
+    CScannerFunctorComp(CQueryExecEnv& env)
+     : CScannerFunctorArgN(env)
+    {}
+
+    int CmpEval(CTreeNode<CBDB_QueryNode>& tr)
+    {
+        GetArguments(tr);
+
+        const string* arg0 = GetArg(0);
+        const string* arg1 = GetArg(1);
+
+        int cmpres = arg0->compare(*arg1);
+        return cmpres;
+    }
+};
+
+
+/// GT function 
+///
+/// @internal
+class CScannerFunctorGT : public CScannerFunctorComp
+{
+public:
+    CScannerFunctorGT(CQueryExecEnv& env)
+     : CScannerFunctorComp(env)
+    {}
+
+    void Eval(CTreeNode<CBDB_QueryNode>& tr)
+    {
+        int cmpres = CmpEval(tr);
+
+        bool res = cmpres > 0;
+        SetResult(tr.GetValue(), res);
+    }
+};
+
+/// GE function 
+///
+/// @internal
+class CScannerFunctorGE : public CScannerFunctorComp
+{
+public:
+    CScannerFunctorGE(CQueryExecEnv& env)
+     : CScannerFunctorComp(env)
+    {}
+
+    void Eval(CTreeNode<CBDB_QueryNode>& tr)
+    {
+        int cmpres = CmpEval(tr);
+
+        bool res = cmpres >= 0;
+        SetResult(tr.GetValue(), res);
+    }
+};
+
+/// LT function 
+///
+/// @internal
+class CScannerFunctorLT : public CScannerFunctorComp
+{
+public:
+    CScannerFunctorLT(CQueryExecEnv& env)
+     : CScannerFunctorComp(env)
+    {}
+
+    void Eval(CTreeNode<CBDB_QueryNode>& tr)
+    {
+        int cmpres = CmpEval(tr);
+
+        bool res = cmpres < 0;
+        SetResult(tr.GetValue(), res);
+    }
+};
+
+
+/// LE function 
+///
+/// @internal
+class CScannerFunctorLE : public CScannerFunctorComp
+{
+public:
+    CScannerFunctorLE(CQueryExecEnv& env)
+     : CScannerFunctorComp(env)
+    {}
+
+    void Eval(CTreeNode<CBDB_QueryNode>& tr)
+    {
+        int cmpres = CmpEval(tr);
+
+        bool res = cmpres <= 0;
+        SetResult(tr.GetValue(), res);
     }
 };
 
@@ -737,7 +854,31 @@ CScannerEvaluateFunc::operator()(CTreeNode<CBDB_QueryNode>& tr, int delta)
             switch (eop) {
             case CBDB_QueryNode::eEQ:
             {
-                CScannerFunctorEQ func(m_QueryEnv);
+                CScannerFunctorEQ func(m_QueryEnv, qnode.IsNot());
+                func.Eval(tr);
+            }
+            break;
+            case CBDB_QueryNode::eGT:
+            {
+                CScannerFunctorGT func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
+            case CBDB_QueryNode::eGE:
+            {
+                CScannerFunctorGE func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
+            case CBDB_QueryNode::eLT:
+            {
+                CScannerFunctorLT func(m_QueryEnv);
+                func.Eval(tr);
+            }
+            break;
+            case CBDB_QueryNode::eLE:
+            {
+                CScannerFunctorLE func(m_QueryEnv);
                 func.Eval(tr);
             }
             break;
@@ -858,7 +999,23 @@ public:
                 CBDB_QueryNode::EOperatorType eop = qnode.GetOperatorType();
                 switch (eop) {
                 case CBDB_QueryNode::eEQ:
-                    m_OStream << "EQ";
+                    if (qnode.IsNot()) {
+                        m_OStream << "NOT EQ";
+                    } else {
+                        m_OStream << "EQ";
+                    }
+                    break;
+                case CBDB_QueryNode::eGT:
+                    m_OStream << "GT";
+                    break;
+                case CBDB_QueryNode::eGE:
+                    m_OStream << "GE";
+                    break;
+                case CBDB_QueryNode::eLT:
+                    m_OStream << "LT";
+                    break;
+                case CBDB_QueryNode::eLE:
+                    m_OStream << "LE";
                     break;
                 default:
                     _ASSERT(0);
@@ -929,6 +1086,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/23 14:51:19  kuznets
+ * Implemented logical NOT, <, <=, >, >=
+ *
  * Revision 1.9  2004/03/17 16:35:42  kuznets
  * EQ functor improved to enable substring searches
  *
