@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/02/25 21:41:50  kans
+ * Include <cstring> on Mac to get memset
+ *
  * Revision 6.7  2001/02/09 17:34:18  lavr
  * CONN_GetType added; severities of some messages changed
  *
@@ -76,6 +79,10 @@
 
 #include <stdlib.h>
 #include <memory.h>
+
+#if defined(__POWERPC__) || defined(powerc) || defined(__powerc) || defined(__POWERPC)
+#include <cstring>
+#endif
 
 
 /* Standard logging message
