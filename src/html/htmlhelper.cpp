@@ -111,14 +111,22 @@ string CHTMLHelper::HTMLEncode(const string& input)
     string output;
     string::size_type last = 0;
 
-    // Find first symbol to encode
+    // Reserve memory.
+    output.reserve(input.size());
+
+    // Find first symbol to encode.
     string::size_type ptr = input.find_first_of("\"&<>", last);
     while ( ptr != string::npos ) {
-        // Copy plain part of input
+        // We don't know how big output str  will need to be, so we grow it
+        // exponentially to avoid O(N^2) behavior from copying.
+        if ( output.size() == output.capacity()) {
+            output.reserve(output.size() + output.size() / 2);
+        }
+        // Copy plain part of input.
         if ( ptr != last ) {
             output.append(input, last, ptr - last);
         }
-        // Append encoded symbol
+        // Append encoded symbol.
         switch ( input[ptr] ) {
         case '"':
             output.append("&quot;");
@@ -178,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/01/14 13:47:45  ivanov
+ * HTMLEncode() performance improvement
+ *
  * Revision 1.11  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *
