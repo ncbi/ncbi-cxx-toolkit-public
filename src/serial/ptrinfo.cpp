@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/09/13 15:10:15  vasilche
+* Fixed type detection in type iterators.
+*
 * Revision 1.26  2000/09/01 13:16:20  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -196,6 +199,16 @@ size_t CPointerTypeInfo::GetSize(void) const
 TObjectPtr CPointerTypeInfo::Create(void) const
 {
     return new void*(0);
+}
+
+bool CPointerTypeInfo::MayContainType(TTypeInfo type) const
+{
+    return GetDataTypeInfo()->IsOrMayContainType(type);
+}
+
+bool CPointerTypeInfo::IsOrMayContainType(TTypeInfo type) const
+{
+    return this == type || GetDataTypeInfo()->IsOrMayContainType(type);
 }
 
 bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const

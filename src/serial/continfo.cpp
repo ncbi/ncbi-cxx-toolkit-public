@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/13 15:10:15  vasilche
+* Fixed type detection in type iterators.
+*
 * Revision 1.2  2000/09/01 13:16:15  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -59,6 +62,16 @@ CContainerTypeInfo::CIterator* CContainerTypeInfo::NewIterator(void) const
     _ASSERT(RandomElementsOrder());
     THROW1_TRACE(runtime_error,
                  "cannot use non const iterator for unique container");
+}
+
+bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
+{
+    return GetElementType()->IsOrMayContainType(type);
+}
+
+bool CContainerTypeInfo::IsOrMayContainType(TTypeInfo type) const
+{
+    return this == type || GetElementType()->IsOrMayContainType(type);
 }
 
 void CContainerTypeInfo::Assign(TObjectPtr dst,

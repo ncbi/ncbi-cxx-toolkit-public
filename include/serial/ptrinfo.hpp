@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/09/13 15:10:13  vasilche
+* Fixed type detection in type iterators.
+*
 * Revision 1.21  2000/09/01 13:16:02  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -161,6 +164,9 @@ public:
     virtual size_t GetSize(void) const;
 
     virtual TObjectPtr Create(void) const;
+
+    virtual bool MayContainType(TTypeInfo type) const;
+    virtual bool IsOrMayContainType(TTypeInfo type) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
