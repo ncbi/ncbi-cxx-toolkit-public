@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_ncbi.bat,v 1.4 2004/03/16 17:51:50 ivanov Exp $
+REM $Id: all_ncbi.bat,v 1.5 2004/04/06 12:20:53 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -35,11 +35,11 @@ IF _%1% == _ALL GOTO BUILDALL
 GOTO CONFIG
 
 :BUILDALL
-CALL %0 DebugDLL
+CALL %0 Debug DebugDLL Release ReleaseDLL
 GOTO EXIT
 
 :CONFIG
-devenv ncbi_cpp.sln /rebuild ReleaseDLL /project "-CONFIGURE-"
+devenv ncbi_cpp.sln /rebuild DebugDLL /project "-CONFIGURE-"
 IF ERRORLEVEL 1 GOTO ABORT
 
 SET CFG=%1%
