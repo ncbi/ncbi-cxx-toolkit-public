@@ -140,7 +140,8 @@ public:
     typedef vector<ETranscriptSymbol> TTranscript;
 
     // raw transcript
-    TTranscript GetTranscript(bool reversed = true) const;
+    TTranscript   GetTranscript(bool reversed = true) const;
+    void          SetTranscript(const TTranscript& transcript);
 
     // transcript as a string
     string GetTranscriptString(void) const;
@@ -279,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/02/23 16:57:24  kapustin
+ * +SetTranscript
+ *
  * Revision 1.38  2004/12/06 22:11:24  kapustin
  * File header update
  *
