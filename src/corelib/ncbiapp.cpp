@@ -913,6 +913,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2004/06/15 14:20:31  lavr
+ * Spelling fix for "caught"
+ *
  * Revision 1.85  2004/06/02 20:45:27  vakatov
  * CNcbiApplication::AppMain() not to printout line of '=' before USAGE
  *
@@ -1009,7 +1012,7 @@ END_NCBI_SCOPE
  * path. Handle Mac special arg handling better.
  *
  * Revision 1.58  2003/04/07 21:22:54  gouriano
- * correct App exit codes when CException was catched
+ * correct App exit codes when CException was caught
  *
  * Revision 1.57  2003/03/19 19:37:10  gouriano
  * added optional adjustment of stdio streams
