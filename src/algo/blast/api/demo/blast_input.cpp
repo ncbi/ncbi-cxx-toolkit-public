@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 CBl2Seq::TSeqLocVector
-BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope, 
+BLASTGetSeqLocFromStream(CNcbiIstream& in, CScope* scope, 
     ENa_strand strand, int from, int to, int *counter, 
     BlastMask** lcase_mask)
 {
@@ -48,8 +48,6 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope,
     CBl2Seq::TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
     vector <CConstRef<CSeq_loc> > mask_loc;
-    BlastMask* last_mask, *new_mask;
-    int index = 0, num_queries = 0;
 
     if (lcase_mask) {
         if ( !(seq_entry = ReadFasta(in, fReadFasta_AllSeqIds, counter, &mask_loc)))
@@ -63,20 +61,23 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CRef<CScope>& scope,
 
         CSeq_loc* seqloc = new CSeq_loc();
         seqloc->SetWhole(*(const_cast<CSeq_id*>(&*itr->GetId().front())));
-        retval.push_back(make_pair(seqloc, &*scope));
-        ++num_queries;
+        retval.push_back(make_pair(static_cast<const CSeq_loc*>(seqloc), 
+                                   scope));
 
         // Check if this seqentry has been added to the scope already
         CBioseq_Handle bh = scope->GetBioseqHandle(*seqloc);
-        if (!bh)
+        if (!bh) {
             scope->AddTopLevelSeqEntry(*seq_entry);
+        }
     }
 
     if (lcase_mask) {
         *lcase_mask = NULL;
-        for (index = 0; index < num_queries; ++index) {
-            new_mask = CSeqLoc2BlastMask(mask_loc[index], index);
-            if (!last_mask)
+        BlastMask* last_mask = NULL, *new_mask = NULL;
+
+        for (unsigned int i = 0; i < retval.size(); i++) {
+            new_mask = CSeqLoc2BlastMask(mask_loc[i], i);
+            if ( !last_mask )
                 *lcase_mask = last_mask = new_mask;
             else {
                 last_mask->next = new_mask;
