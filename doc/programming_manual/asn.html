@@ -1,36 +1,33 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
 <head>
-  <title> Processing ASN.1 Data. </title>
+  <title> Processing Serial Data. </title>
 </head>
 <body BGCOLOR="white">
 
-<h1> Processing ASN.1 Data </h1>
-
-Although this discussion refers specifically to ASN.1 formated data, the data
-structures and tools described here have been designed to (potentially) support
-any formalized specification, including for example, XML. Many of the tools 
-and objects have open-ended abstract or template implementations that can be 
-instantiated differently to fit various specifications. This discussion however,
-will only refer to ASN.1 data. <p>
+<h1> Processing Serial Data </h1>
 
 <ul>
-  <li> <a href="#headersandlibs"> Using the ASN Header Files and Serialization Libraries </a>
-  <li> <a href="#example1"> Reading and Writing ASN.1 Data: An Example Application </a>
-  <li> <a href="#includes"> Determining Which Header Files to Include</a>
-  <li> <a href="#linklibs"> Determining Which Libraries to Link To</a>
-  <li> <a href="#general"> Generalizing the Input/Output Formats </a>
-  <li> <a href="traverse.html"> Traversing an ASN.1 Data Structure. </a>
+  <li> <a href="#headersandlibs"> Accessing the object header files and serialization libraries </a>
+  <li> <a href="#example1"> Reading and writing serial data: An Example Application </a>
+  <li> <a href="#includes"> Determining which header files to include</a>
+  <li> <a href="#linklibs"> Determining which libraries to link to</a>
 </ul>
 
-<a name="headersandlibs">
-<h3> Using the ASN Header Files and Serialization Libraries </h3> 
+Although this discussion focuses on ASN.1 and XML formatted data, the data structures and tools
+described here have been designed to (potentially) support any formalized serial data
+specification.  Many of the tools and objects have open-ended abstract or template
+implementations that can be instantiated differently to fit various specifications. <p>
 
-Reading and writing ASN.1 data is implemented by an integrated set of streams, filters,
-and ASN.1 object types. Writing an application to read, write or otherwise interpret ASN.1
-data will require <i>#include</i> statements in your source files as well as specific library
-names to link to in your makefiles.  The ASN.1 object header and implementation files are
-located in the 
+<a name="headersandlibs">
+<h3> Accessing the object header files and serialization libraries </h3> 
+
+Reading and writing serialized data is implemented by an integrated set of streams, filters,
+and object types. An application that reads encoded data files will require the object header
+files and libraries which define how these serial streams of data should be loaded into
+memory. This entails <i>#include</i> statements in your source files, as well as the associated
+library specifications in your makefiles.  The object header and implementation files are
+located in the
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/">
 <i>include/objects</i></a> and 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/">
@@ -41,21 +38,22 @@ information are in the
 <i>include/serial</i></a> and 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/serial/">
 <i>src/serial</i></a> directories.
-
 <p>
 
-If you have checked out the <i> objects</i> directories, but not explicitly run the 
+If you have checked out the <i> objects</i> directories, but not explicitly run the
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/tools/datatool/datatool.html">
 <i>datatool</i></a> code generator, then you will find that your <i>include/objects</i>
-subdirectories are (almost) empty, and the source subdirectories contain only ASN.1 specifications.
-However, building your own local copies of these header and implementation files is
-neither necessary nor recommended, as it is simpler to use the pre-generated header files and
-prebuilt libraries. <p>
+subdirectories are (almost) empty, and the source subdirectories contain only makefiles and
+ASN.1 specifications. These makefiles and ASN.1 specifications can be used to build your own
+copies of the objects' header and implementation files, using <i>make all_r</i> (if you
+configured using the <i>--with-objects</i> flag), or running datatool explicitly.<p>
 
-The pre-built header and implementation files can be found in <i>
-$NCBI/c++/include/objects/</i> and <i> $NCBI/c++/src/objects/</i>, respectively.
-Assuming your makefile defines an include path to <i>$NCBI/c++/include</i>, selected ASN.1
-header files such as 
+However, building your own local copies of these header and implementation files is neither
+necessary nor recommended, as it is simpler to use the pre-generated header files and prebuilt
+libraries.  The pre-built header and implementation files can be found in <i>
+$NCBI/c++/include/objects/</i> and <i> $NCBI/c++/src/objects/</i>, respectively.  Assuming your
+makefile defines an include path to <i>$NCBI/c++/include</i>, selected object header files such
+as
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/general/Date.hpp">
 <i> Date.hpp</i></a>, can be included as:
 <center>
@@ -70,45 +68,61 @@ generated by <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/tools/
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/general/general.asn">
 <i>src/objects/general/general.asn</i></a>. In order to use the classes defined in the <i>objects</i>
 directories, your source code should begin with the statements:
-<font color=green><pre>    USING_NCBI_SCOPE;
+<font color="gray"><pre>    USING_NCBI_SCOPE;
     using namespace objects; 
 </pre></font>
 
-<a name="example1">
-<h3> Reading and Writing ASN.1 Data </h3>
-
-Let's consider a program <a href="asntrans_cpp.html"> <i>asntrans.cpp</i></a> that translates an
-ASN.1 data file containing an object of type 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/mmdb1/mmdb1.asn">
-<i>Biostruc</i></a> from binary to text format.  In <i>main()</i>, we begin by
-initializing the diagnostic stream to write errors to a local file called <i>
-asntrans.log</i>. First, the file is opened with the definition of <i> diag</i> as an
-instance of <i> CNcbiOfstream</i>. The subsequent call to <a href="diag.html#setStream">
-<i>SetDiagStream()</i> </a> then establishes this stream as the one to log messages to.
-Exception handling, program tracing, and error logging are described in the
-<a href="diag.html">
-Diagnostic Streams </a> section.<p>
-
-An instance of the <i>CTestAsn</i> class is then created, and its (inherited) member 
-function <i>AppMain()</i> is invoked. This function in turn calls <i>CTestAsn::Run()</i>.
-The first two blocks of code there define the binary input and text output streams.
-The two streams are referenced in the program via <a href="cref.html"> <i>auto_ptr</i></a>s, to
-ensure automatic destruction of these objects when the function returns or an exception occurs.<p>
-
-The streams now need to have <i> CObject[I/O]Stream</i>s associated with them in order to provide
-the proper data serialization mechanisms.
+All of the objects' header and implementation files are generated by <i>datatool</i>, as specified
+in the ASN.1 specification files. The resulting object definitions however, are <i>not</i> in any
+way dependent on ASN.1 format, as they simply specify the in-memory representation of the defined
+data types. Accordingly, the objects themselves can be used to read, interpret, and write any
+type of serialized data. Format specializations on the input stream are implemented via 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream.html">
-<i> CObjectIStream</i></a> and 
+<i>CObjectIStream</i></a> objects, which extract the required tags and values from the input data
+according to the format specified. Similarly, Format specializations on an output stream are implemented via 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream.html">
-<i> CObjectOStream</i></a> are base classes which provide generic interfaces between the
-object-specific type information associated with a serializable object's class and an I/O stream. The object
-stream classes used in this application,
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStreamAsnBinary.html">
-(<i>CObjectIStreamAsnBinary</i></a> and
+<i>CObjectOStream</i></a> objects.
+
+<a name="example1">
+<h3> Reading and writing serial data </h3>
+
+Let's consider a program <a href="xml2asn_cpp.html"> <i>xml2asn.cpp</i></a> that translates an
+XML data file containing an object of type 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/mmdb1/mmdb1.asn">
+<i>Biostruc</i></a>, to ASN.1 text and binary formats.
+
+In <i>main()</i>, we begin by initializing the diagnostic stream to write errors to a local
+file called <i> xml2asn.log</i>. (Exception handling, program tracing, and error logging are
+described in the <a href="diag.html"> Diagnostic Streams </a> section).<p>
+
+An instance of the <i>CTestAsn</i> class is then created, and its member function
+<i>AppMain()</i> is invoked. This function in turn calls <i>CTestAsn::Run()</i>.  The first
+three lines of code there define the XML input and ASN.1 output streams, using <a
+href="cref.html"> <i>auto_ptr</i></a>s, to ensure automatic destruction of these objects.<p>
+
+Each stream is associated with data serialization mechanisms appropriate to the
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ESerialDataFormat">
+<i>ESerialDataFormat</i></a> provided to the constructor:
+
+<font color=gray><pre>
+enum ESerialDataFormat {
+    eSerial_None         = 0,
+    eSerial_AsnText      = 1,      // open ASN.1 text format
+    eSerial_AsnBinary    = 2,      // open ASN.1 binary format
+    eSerial_Xml          = 3       // open XML format (not supported yet)
+};
+</pre></font>
+
+<i> CObjectIStream</i> and <i>CObjectOStream</i> are base classes which provide generic
+interfaces between the specific type information of a serializable object and an I/O
+stream. The object stream classes that will actually be instantiated by this application,
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStreamXml.html">
+<i>CObjectIStreamXml</i></a>, 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStreamAsn.html">
-<i>CObjectOStreamAsn</i></a>)
-are descendants of these base classes with specialized serialization methods for ASN.1 binary 
-input and ASN.1 text output.
+<i>CObjectOStreamAsn</i></a>, and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStreamAsnBinary.html">
+<i>CObjectOStreamAsnBinary</i></a>,
+are descendants of these base classes.
 <p>
 
 Finally, a variable for the object type that will be generated from the input stream (in this
@@ -124,115 +138,57 @@ serialization format (text ASN, binary ASN, XML, etc.). In contrast, the
 nothing about I/O and serialization formats, but it contains explicit type information about
 itself.  Thus, the <i>CObject[I/O]Stream</i>s can apply their specialized serialization methods to
 the data members of 
-<i>CBiostruc</i> using the type information associated with that object's
+<i>CBiostruc</i> using the <a href="typeinfo.html">type information</a> associated with that object's
 class.
 
 <a name="includes">
 <h3>Determining Which Header Files to Include </h3>
 
-As always, you will need to include your own local header file defining the current
-application class. In this example, <a href="asntrans_hpp.html"> <i>asntrans.hpp</i></a> defines the
-<i>CTestAsn</i> class (and in turn, includes the necessary <i>corelib</i> header file for
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CNcbiApplication.html">
-<i> CNcbiApplication</i>)</a>.<p>
+As always, we include the <i>corelib</i> header files, <i>ncbistd.hpp</i> and <i>ncbiapp.hpp</i>.
+In addition, the <i>serial</i> header files that define the generic <i>CObject[IO]Stream</i>
+objects are included, along with <i>serial.hpp</i>, which defines generalized serialization 
+mechanisms. Finally, we need to include the header file for the object type we will be using.<p>
 
-Determining what additional header files should be included is fairly straightforward: look
-at the objects defined in your source code and locate the files which define these
-classes or specify type definitions for these names. In this case, the objects include:
-<ol>
-<li> <i>CNcbiIfstream</i>
-<li> <i>CNcbiIstream </i>
-<li> <i>CNcbiOfstream</i>
-<li> <i>CNcbiOstream</i>
-<li> <i>CObjectIStream</i>
-<li> <i>CObjectOStream </i>
-<li> <i>CObjectIStreamAsnBinary</i>
-<li> <i>CObjectOStreamAsn</i>
-<li> <i>CBiostruc</i>
-</ol>
-
-Since the first four of these are standard C++ streams independent of data format, a likely
-place to find their definitions is in the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/">
-<i>corelib</i></a> directory. Looking at 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbistre.hpp"><i>
-ncbistre.hpp</i></a>, we see that all of these are typedefs in that file. As it turns out however,
-this header file is already included indirectly, by a chain of <i>#include</i>s, starting
-with the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbistd.hpp">
-<i>ncbistd.hpp</i></a> header file. In general, all of your applications should
-begin by including this file. (See also the section on
-<a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/new_mod.html"> 
-<i>Starting a new C++ module</i></a> in the
-Reference Manual.)
-
-<p>
-
-The next four items refer to <i>CObject[I/O]Stream</i> classes - two of which specialize for ASN
-formatted data, so a likely place to search for these is in the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/">
-<i>serial</i></a> directory. Lacking any clues for where to look however, the <a
-href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident">
-<i>identifier search</i></a> tool in the source code
-navigator should allow you to find whatever class you are looking for.<p>
-
-In the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/">
-<i>serial</i></a> directory, we find three files that must be included: 
-
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objistrasnb.hpp">
-<i>objistrasnb.hpp</i></a>,
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/objostrasn.hpp">
-<i>objostrasn.hpp</i></a>, and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serial.hpp">
-<i> serial.hpp</i></a>. 
-
-The names of the first two files are self-documenting: the first defines objects associated
-with input streams containing binary ASN data; the second defines objects associated with
-output streams containing ASN text. The last file, 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serial.hpp">
-<i>serial.hpp</i></a>, defines the input and output operators on the generic object serialization streams 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIStream.html">
-<i>CObjectIStream</i></a> and 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectOStream.html">
-<i>CObjectOStream</i></a> respectively.<p>
-
-Finally, we must include headers for the ASN type we are using. The easiest way to locate
-appropriate header files is to use the source code navigator's
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident">
-identifier search</a> tool. Alternatively, you can browse the 
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects">
-<i>include/objects</i></a> directories.
-For example, the <i>CBiostruc</i> class is defined in 
-
+There are two source browsers that can be used to locate the appropriate header file for a
+particular object type. All class names in the NCBI C++ Toolkit begin with the letter
+"C". Using the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/HIER.html"> class
+hierarchy browser</a>, we find <i>CBiostruc</i>, derived from <i>CBiostruc_Base</i>, which is
+in turn derived from <i>CObject</i>. Following the <i>CBiostruc</i> link, we can then use the
+<i>locate</i> button to move to the <i>LXR</i> source code navigator, and there, find the name
+of the header file. In this case, we find 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects/mmdb1/Biostruc.hpp">
-<i> include/objects/mmdb1/Biostruc.hpp</i></a>. In summary, the
-following <i>#include</i> statements appear at the top of <a href="asntrans_cpp.html"><i>asntrans.cpp</i></a>:
+<i>CBiostruc.hpp</i></a> is located in
+<i>include/objects/mmdb1</i>.  Alternatively, if we know the name of the C++ class, the source
+code navigator's <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident">
+identifier search</a> tool can be used directly. In summary, the
+following <i>#include</i> statements appear at the top of <a href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a>:
 
 <xmp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiapp.hpp>
 #include <serial/serial.hpp>          
-#include <serial/objistrasnb.hpp>     
-#include <serial/objostrasn.hpp>
+#include <serial/objistr.hpp>     
+#include <serial/objostr.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
-#include "asntrans.hpp" 
 </xmp>
 
 <a name="linklibs">
 <h3>Determining Which Libraries to Link To </h3>
 Determining which libraries must be linked to requires a bit more work and may involve
-some trial and error. The list of available libraries currently includes:
-<pre>
-access	 medlars  ncbimime  seq	      seqloc  xconnect
-biblio	 medline  objprt    seqalign  seqres  xfcgi
-cdd	 mmdb1	  proj	    seqblock  seqset  xhtml
-featdef	 mmdb2	  pub	    seqcode   submit  xncbi
-general	 mmdb3    pubmed    seqfeat   xcgi    xser
-</pre>
+some trial and error. The list of available libraries currently includes:<p>
+<table border=0>
+<tr><td>access	<td>medlars	<td>ncbimime	<td>seq		<td>seqloc	<td>xconnect </tr>
+<tr><td>biblio	<td>medline	<td>objprt	<td>seqalign	<td>seqres	<td>xfcgi </tr>
+<tr><td>cdd	<td>mmdb1	<td>proj	<td>seqblock	<td>seqset	<td>xhtml </tr>
+<tr><td>featdef	<td>mmdb2	<td>pub		<td>seqcode	<td>submit	<td>xncbi </tr>
+<tr><td>general	<td>mmdb3	<td>pubmed	<td>seqfeat	<td>xcgi	<td>xser </tr>
+</table><p>
 
 It should be clear that we will need to link to the core library, 
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs.html#ref_TableXNCBI"><i>xncbi</i></a>, as
-well as the serial library, 
+well as to the serial library, 
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/libs.html#ref_TableXSERIAL">
-<i>xser</i></a>. In addition we will need to link to whatever object libraries are
+<i>xser</i></a>. In addition, we will need to link to whatever object libraries are
 entailed by using a 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CBiostruc.html">
 <i>CBiostruc.</i></a> object. Minimally, one would
@@ -241,24 +197,17 @@ as the <i>CBiostruc</i> class embeds other types of objects, including PubMed ci
 features, and sequences, which in turn embed additional objects such as 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CDate.html">
 <i>Date</i></a>.
-The makefile for <i>asntrans.cpp</i>, <a href="make_asntrans.html"> <i>Makefile.asntrans.app</i></a> lists 
+The makefile for <i>xml2asn.cpp</i>, <a href="make_xml2asn.html"> <i>Makefile.xml2asn.app</i></a> lists 
 the libraries required for linking in the make variable <i>LIB</i>.
 <p>
 
-<a name="general"> 
-<h3> Generalizing the Input/Output Formats </h3>
-
-The previous application can easily be generalized to allow binary or text input as well
-as output. <a href="asn2asn_cpp.html"> <i> asn2asn.cpp</i></a> works on <i> Seq-entry</i> and
+See also the example program, 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">
+<i>asn2asn.cpp</i></a> which demonstrates more generalized translation of <i> Seq-entry</i> and
 <i> Bioseq-set</i> types (defined in 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/seqset/seqset.asn">
-<i>seqset.asn</i></a>).  Because we now support binary/text input and output, the number
-of header files has increased to support the additional stream types entailed.
-Comparing the two <a href="make_asn2asn.html"> <i>Makefiles</i></a>, we see that the differences
-between them is in the object libraries linked to, as each specializes for different ASN.1
-types.
-<br>
-<br>
+<i>seqset.asn</i></a>).  
+
 <p>
 </body>
 <a href="webpgs.html"> <i> previous</i> </a>

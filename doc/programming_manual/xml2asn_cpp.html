@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title> asntrans.cpp </title>
+</head>
+<body BGCOLOR="#FFFFFF">
+
+<pre><font color = "red">// File name: xml2asn.cpp
+// Description: Reads an XML Biostruc file into memory
+//		and saves it in ASN.1 text and binary formats.
+<font color = "green">
+#include &lt;corelib/ncbistd.hpp&gt;
+#include &lt;corelib/ncbiapp.hpp&gt;
+#include &lt;serial/serial.hpp&gt;		
+#include &lt;serial/objistr.hpp&gt;	
+#include &lt;serial/objostr.hpp&gt;
+#include &lt;objects/mmdb1/Biostruc.hpp&gt;
+
+<font color = "blue">USING_NCBI_SCOPE;
+<font color = "black">
+class CTestAsn : public CNcbiApplication {
+public:
+    virtual int Run ();
+};
+
+<font color = "blue">using namespace objects;</font>
+
+int CTestAsn::Run() {
+
+    auto_ptr&lt;CObjectIStream>
+      xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
+
+    auto_ptr&lt;CObjectOStream>
+      txt_out(CObjectOStream::Open("1001.asntxt", eSerial_AsnText));
+
+    auto_ptr&lt;CObjectOStream>
+      bin_out(CObjectOStream::Open("1001.asnbin", eSerial_AsnBinary));
+
+    CBiostruc bs;
+    *xml_in >> bs;
+    *txt_out << bs;
+    *bin_out << bs;
+    return 0;
+}
+
+int main(int argc, const char* argv[]) 
+{
+    CNcbiOfstream diag("asntrans.log");
+    SetDiagStream(&diag);
+
+    CTestAsn theTestApp;
+    return theTestApp.AppMain(argc, argv);
+}
+</pre>
+</body>
+</html>
