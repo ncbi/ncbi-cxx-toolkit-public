@@ -101,7 +101,7 @@ public:
     }
 
     /// Specifies that a byte at a time should be scanned.
-   /// @param val scan one byte at a time if true, one letter if false [in]
+    /// @param val scan one byte at a time if true, one letter if false [in]
     void SetFullByteScan(bool val) 
     {
       m_Opts->SetFullByteScan(val);
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/01/24 14:20:34  camacho
+ * doxygen fix
+ *
  * Revision 1.14  2005/01/10 14:57:09  madden
  * Fix typo for SetFullByteScan, add method GetFullByteScan
  *
