@@ -8,7 +8,7 @@
 
 APP = asn2asn
 OBJ = asn2asn
-LIB = xobjmgr seqset seq seqres seqloc seqalign seqfeat seqblock xobjmgr \
+LIB = seqset seq seqres seqloc seqalign seqfeat seqblock \
 	pub medline biblio general xser xncbi
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
