@@ -494,6 +494,7 @@ private:
 
 class NCBI_DBAPIDRIVER_EXPORT I_Connection : public CDB_BaseEnt
 {
+    friend class I_DriverContext;
 protected:
     // Check out if connection is alive (this function doesn't ping the server,
     // it just checks the status of connection which was set by the last
@@ -595,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/07/17 22:08:02  soussov
+ * I_DriverContext to be friend of I_Connection
+ *
  * Revision 1.23  2003/07/17 20:41:37  soussov
  * connections pool improvements
  *
