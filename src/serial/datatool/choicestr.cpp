@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/03 20:16:15  vasilche
+* Fixed bug in type info generation for templates.
+*
 * Revision 1.2  2000/02/02 14:57:06  vasilche
 * Added missing NCBI_NS_NSBI and NSBI_NS_STD macros to generated code.
 *
@@ -132,13 +135,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                                            const string& methodPrefix,
                                            const string& codeClassName) const
 {
+    bool havePointers = false;
     // generate variants code
     {
         iterate ( TVariants, i, m_Variants ) {
-        if ( i->memberType != ePointerMember )
-            i->type->GeneratePointerTypeCode(code);
-        else
-            i->type->GenerateTypeCode(code);
+            if ( i->memberType != ePointerMember ) {
+                i->type->GeneratePointerTypeCode(code);
+                havePointers = true;
+            }
+            else {
+                i->type->GenerateTypeCode(code);
+            }
         }
     }
 
@@ -200,38 +207,41 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.Methods() <<
             "void "<<methodPrefix<<"Reset(void)\n"
-            "{\n"
-            "    switch ( "<<STATE_MEMBER<<" ) {\n";
-        // generate destruction code for pointers
-        iterate ( TVariants, i, m_Variants ) {
-            if ( i->memberType == ePointerMember ) {
-                code.Methods() <<
-                    "    case e"<<i->cName<<":\n";
-                WriteTabbed(code.Methods(), 
-                            i->type->GetDestructionCode(i->memberRef),
-                            "        ");
-                code.Methods() <<
-                    "        delete m_"<<i->cName<<";\n"
-                    "        break;\n";
-            }
-            
-        }
-        if ( m_HaveString ) {
-            // generate destruction code for string
+            "{\n";
+        if ( havePointers || m_HaveString ) {
+            code.Methods() <<
+                "    switch ( "<<STATE_MEMBER<<" ) {\n";
+            // generate destruction code for pointers
             iterate ( TVariants, i, m_Variants ) {
-                if ( i->memberType == eStringMember ) {
+                if ( i->memberType == ePointerMember ) {
                     code.Methods() <<
                         "    case e"<<i->cName<<":\n";
+                    WriteTabbed(code.Methods(), 
+                                i->type->GetDestructionCode(i->memberRef),
+                                "        ");
+                    code.Methods() <<
+                        "        delete m_"<<i->cName<<";\n"
+                        "        break;\n";
                 }
             }
+            if ( m_HaveString ) {
+                // generate destruction code for string
+                iterate ( TVariants, i, m_Variants ) {
+                    if ( i->memberType == eStringMember ) {
+                        code.Methods() <<
+                            "    case e"<<i->cName<<":\n";
+                    }
+                }
+                code.Methods() <<
+                    "        "<<STRING_MEMBER<<".erase();\n"
+                    "        break;\n";
+            }
             code.Methods() <<
-                "        "<<STRING_MEMBER<<".erase();\n"
-                "        break;\n";
+                "    default:\n"
+                "        break;\n"
+                "    }\n";
         }
         code.Methods() <<
-            "    default:\n"
-            "        break;\n"
-            "    }\n"
             "    "<<STATE_MEMBER<<" = "<<NOT_SET_VALUE<<";\n"
             "}\n"
             "\n";
@@ -244,27 +254,31 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "{\n"
             "    if ( "<<STATE_MEMBER<<" == index )\n"
             "        return;\n"
-            "    Reset();\n"
-            "    switch ( index ) {\n";
-        iterate ( TVariants, i, m_Variants ) {
-            if ( i->memberType == eSimpleMember ) {
-                string init = i->type->GetInitializer();
-                code.Methods() <<
-                    "    case e"<<i->cName<<":\n"
-                    "        m_"<<i->cName<<" = "<<init<<";\n"
-                    "        break;\n";
+            "    Reset();\n";
+        if ( m_UnionVariants != 0 ) {
+            code.Methods() <<
+                "    switch ( index ) {\n";
+            iterate ( TVariants, i, m_Variants ) {
+                if ( i->memberType == eSimpleMember ) {
+                    string init = i->type->GetInitializer();
+                    code.Methods() <<
+                        "    case e"<<i->cName<<":\n"
+                        "        m_"<<i->cName<<" = "<<init<<";\n"
+                        "        break;\n";
+                }
+                else if ( i->memberType == ePointerMember ) {
+                    code.Methods() <<
+                        "    case e"<<i->cName<<":\n"
+                        "        m_"<<i->cName<<" = new "<<i->cType<<";\n"
+                        "        break;\n";
+                }
             }
-            else if ( i->memberType == ePointerMember ) {
-                code.Methods() <<
-                    "    case e"<<i->cName<<":\n"
-                    "        m_"<<i->cName<<" = new "<<i->cType<<";\n"
-                    "        break;\n";
-            }
+            code.Methods() <<
+                "    default:\n"
+                "        break;\n"
+                "    }\n";
         }
         code.Methods() <<
-            "    default:\n"
-            "        break;\n"
-            "    }\n"
             "    "<<STATE_MEMBER<<" = index;\n"
             "}\n"
             "\n";

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/02/03 20:16:20  vasilche
+* Fixed bug in type info generation for templates.
+*
 * Revision 1.2  2000/02/02 16:23:41  vasilche
 * Added missing namespace macros to generated files.
 *
@@ -179,6 +182,9 @@ public:
     string GetRef(void) const;
 
     void GenerateTypeCode(CClassContext& ctx) const;
+
+protected:
+    virtual string GetRefTemplate(void) const;
 
 private:
     AutoPtr<CTypeStrings> m_Arg2Type;

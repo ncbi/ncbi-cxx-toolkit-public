@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/02/03 20:16:15  vasilche
+* Fixed bug in type info generation for templates.
+*
 * Revision 1.3  2000/02/02 19:08:20  vasilche
 * Fixed variable conflict in generated files on MSVC.
 *
@@ -109,7 +112,7 @@ string CTemplate1TypeStrings::GetRef(void) const
 
 string CTemplate1TypeStrings::GetRefTemplate(void) const
 {
-    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetCType()+" >::GetTypeInfo";
+    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >::GetTypeInfo";
 }
 
 bool CTemplate1TypeStrings::CanBeKey(void) const
@@ -182,6 +185,11 @@ string CTemplate2TypeStrings::GetCType(void) const
 string CTemplate2TypeStrings::GetRef(void) const
 {
     return CParent::GetRef()+", "+GetArg2Type()->GetRef();
+}
+
+string CTemplate2TypeStrings::GetRefTemplate(void) const
+{
+    return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType()+", "+GetArg2Type()->GetCType()+" >::GetTypeInfo";
 }
 
 void CTemplate2TypeStrings::GenerateTypeCode(CClassContext& ctx) const
@@ -300,7 +308,7 @@ CListTypeStrings::~CListTypeStrings(void)
 string CListTypeStrings::GetRefTemplate(void) const
 {
     if ( m_ExternalSet )
-        return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetCType()+" >::GetSetTypeInfo";
+        return "&NCBI_NS_NCBI::CStlClassInfo_"+GetTemplateName()+"< "+GetArg1Type()->GetCType()+" >::GetSetTypeInfo";
     return CParent::GetRefTemplate();
 }
 
