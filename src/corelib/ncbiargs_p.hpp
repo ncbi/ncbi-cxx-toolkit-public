@@ -183,32 +183,6 @@ private:
 //
 
 
-class CArgDesc
-{
-public:
-    CArgDesc(const string& name, const string& comment);
-    virtual ~CArgDesc(void);
-
-    const string& GetName   (void) const { return m_Name; }
-    const string& GetComment(void) const { return m_Comment; }
-
-    virtual string GetUsageSynopsis(bool name_only = false) const = 0;
-    virtual string GetUsageCommentAttr(void) const = 0;
-
-    virtual CArgValue* ProcessArgument(const string& value) const = 0;
-    virtual CArgValue* ProcessDefault(void) const = 0;
-    virtual void       VerifyDefault (void) const;
-
-    virtual void             SetConstraint(CArgAllow* constraint);
-    virtual const CArgAllow* GetConstraint(void) const;
-    string                   GetUsageConstraint(void) const;
-
-private:
-    string m_Name;
-    string m_Comment;
-};
-
-
 
 class CArgDescMandatory : public CArgDesc
 {
@@ -404,6 +378,10 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/12/18 22:54:48  dicuccio
+ * Shuffled some headers to avoid a potentially serious compiler warning
+ * (deletion of incomplete type in Windows).
+ *
  * Revision 1.4  2002/07/11 14:18:26  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

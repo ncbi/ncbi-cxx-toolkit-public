@@ -31,11 +31,11 @@
  *
  */
 
-#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbiapp.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -654,6 +654,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2002/12/18 22:54:48  dicuccio
+ * Shuffled some headers to avoid a potentially serious compiler warning
+ * (deletion of incomplete type in Windows).
+ *
  * Revision 1.49  2002/08/08 18:36:50  gouriano
  * added HideStdArgs function
  *
