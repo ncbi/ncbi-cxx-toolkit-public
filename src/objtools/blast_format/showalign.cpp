@@ -1026,7 +1026,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
                         isFirstAln = false;
                         previousId = subid;
                     }                
-                } catch (CException& e){
+                } catch (const CException&){
                     continue;
                 }
             }
@@ -1101,7 +1101,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
                     } else {
                         mix[i]->Add(*ds);
                     }
-                } catch (CException& e){
+                } catch (const CException&){
                     continue;
                 }
                 hasAln = true;
@@ -2207,6 +2207,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.51  2004/11/29 21:24:59  camacho
+*use anonymous exceptions to avoid msvc warnings
+*
 *Revision 1.50  2004/11/18 21:27:40  grichenk
 *Removed default value for scope argument in seq-loc related functions.
 *
