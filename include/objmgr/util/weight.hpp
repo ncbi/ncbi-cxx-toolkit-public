@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/04/19 17:50:03  ucko
+* Add forward declaration for CBioseqHandle.
+*
 * Revision 1.1  2002/03/06 22:08:39  ucko
 * Add code to calculate protein weights.
 *
@@ -45,6 +48,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CBioseqHandle;
 class CScope;
 class CSeq_loc;
 class CSeq_vector;
