@@ -45,6 +45,8 @@
 #include <objects/seqloc/Seq_point.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -1074,6 +1076,13 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
     CSeq_loc_mix *mix = 0;
     int pos;
 
+    if (! annotname.empty ()) {
+      CAnnot_descr& descr = sap->SetDesc ();
+      CRef<CAnnotdesc> annot(new CAnnotdesc);
+      annot->SetName (annotname);
+      descr.Set().push_back (annot);
+    }
+
     while (ifs.good ()) {
 
         pos = ifs.tellg ();
@@ -1189,7 +1198,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& ifs)
 {
-    string line, seqid, annotname;
+    string line, fst, scd, seqid, annotname;
     int pos;
 
     // first look for >Feature line, extract seqid and optional annotname
@@ -1202,16 +1211,8 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& i
         if (! line.empty ()) {
             if (line [0] == '>') {
                 if (NStr::StartsWith (line, ">Feature")) {
-                    vector<string> tkns;
-                    tkns.clear ();
-                    NStr::Tokenize (line, " ", tkns, NStr::eMergeDelims);
-                    SIZE_TYPE numtkns = tkns.size ();
-                    if (numtkns > 1) {
-                        seqid = tkns [1];
-                        if (numtkns > 2) {
-                            annotname = tkns [2];
-                        }
-                    }
+                    NStr::SplitInTwo (line, " ", fst, scd);
+                    NStr::SplitInTwo (scd, " ", seqid, annotname);
                 }
             }
         }
