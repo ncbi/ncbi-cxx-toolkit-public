@@ -40,6 +40,12 @@
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ddumpable.hpp>
 
+/// this relieves us of some nastiness with Win32's version of GetObject(),
+/// which prevents us from using CRef<>::GetObject in lots of places
+#if defined(NCBI_OS_MSWIN)
+#  include <corelib/ncbi_os_mswin.hpp>
+#endif
+
 
 /** @addtogroup Object
  *
@@ -1402,6 +1408,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2004/12/08 14:40:05  dicuccio
+ * Added conditional includ eof ncbi_os_mswin.hpp to work around Win32's
+ * definitions of GetObject(), which clash with CRef<>::GetObject()
+ *
  * Revision 1.56  2004/04/06 20:34:23  grichenk
  * Added atomic release and reset to CRef.
  *
