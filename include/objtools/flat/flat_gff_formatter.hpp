@@ -66,7 +66,7 @@ public:
 
     CFlatGFFFormatter(IFlatTextOStream& stream, CScope& scope,
                       EMode mode = eMode_Dump, TGFFFlags gff_flags = 0,
-                      EStyle style = eStyle_Normal, TFlags flags = 0);
+                      EStyle style = eStyle_Master, TFlags flags = 0);
 
 protected: // mostly no-ops
     EDatabase GetDatabase(void) const { return eDB_NCBI; }
@@ -118,6 +118,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/04 19:39:45  ucko
+ * Default style changed from normal to master now that the OM no longer
+ * splits remapped features.
+ *
  * Revision 1.3  2003/10/17 21:01:54  ucko
  * +x_AddFeature (helper factored out of FormatFeature)
  *
