@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/17 21:08:49  vasilche
+* Fixed bug with unget()
+*
 * Revision 1.2  1999/06/17 20:42:01  vasilche
 * Fixed storing/loading of pointers.
 *
@@ -107,7 +110,7 @@ private:
     // low level methods
     char GetChar(bool skipWhiteSpace = false);
     bool GetChar(char c, bool skipWhiteSpace = false);
-    void UngetChar(char c);
+    void UngetChar(void);
     void Expect(char c, bool skipWhiteSpace = false);
     bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
     void ExpectString(const string& s, bool skipWhiteSpace = false);

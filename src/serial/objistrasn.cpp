@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/17 21:08:51  vasilche
+* Fixed bug with unget()
+*
 * Revision 1.3  1999/06/17 20:42:05  vasilche
 * Fixed storing/loading of pointers.
 *
@@ -97,11 +100,13 @@ inline char CObjectIStreamAsn::GetChar(bool skipWhiteSpace)
     if ( !m_Input.get(c) ) {
         THROW1_TRACE(runtime_error, "unexpected EOF");
     }
+    _TRACE("GET '" << c << "'");
     return c;
 }
 
-void CObjectIStreamAsn::UngetChar(char )
+void CObjectIStreamAsn::UngetChar()
 {
+    _TRACE("UNGET");
     if ( !m_Input.unget() ) {
         THROW1_TRACE(runtime_error, "cannot unget");
     }
@@ -109,12 +114,10 @@ void CObjectIStreamAsn::UngetChar(char )
 
 bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 {
-    char c = GetChar(skipWhiteSpace);
-    if ( c != expect ) {
-        UngetChar(c);
-        return false;
-    }
-    return true;
+    if ( GetChar(skipWhiteSpace) == expect )
+        return true;
+    UngetChar();
+    return false;
 }
 
 inline void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
@@ -133,8 +136,9 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
     else if ( c == choiceFalse )
         return false;
     else {
-        UngetChar(c);
-        THROW1_TRACE(runtime_error, string("'") + choiceTrue + "' or '" + choiceFalse + "' expected");
+        UngetChar();
+        THROW1_TRACE(runtime_error, string("'") + choiceTrue +
+                     "' or '" + choiceFalse + "' expected");
     }
 }
 
@@ -149,16 +153,15 @@ void CObjectIStreamAsn::ExpectString(const string& s, bool skipWhiteSpace)
 
 void CObjectIStreamAsn::SkipWhiteSpace(void)
 {
-    char c;
-    while ( m_Input.get(c) ) {
-        switch ( c ) {
+    for ( ;; ) {
+        switch ( GetChar() ) {
         case ' ':
         case '\r':
         case '\t':
         case '\n':
             break;
         default:
-            UngetChar(c);
+            UngetChar();
             return;
         }
     }
@@ -189,7 +192,7 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
                         c = (c << 3) + (cc - '0');
                     }
                     else {
-                        UngetChar(cc);
+                        UngetChar();
                         break;
                     }
                 }
@@ -212,9 +215,8 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
 
 void CObjectIStreamAsn::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
-    char start = typeInfo->GetName()[0];
-    if ( GetChar(start, true) ) {
-        UngetChar(start);
+    if ( GetChar(typeInfo->GetName()[0], true) ) {
+        UngetChar();
         string id = ReadId();
         if ( id != typeInfo->GetName() ) {
             THROW1_TRACE(runtime_error, "invalid object type: " + id +
@@ -347,7 +349,7 @@ string CObjectIStreamAsn::ReadId(void)
 {
     char c = GetChar(true);
     if ( !IsAlpha(c) ) {
-        UngetChar(c);
+        UngetChar();
         THROW1_TRACE(runtime_error, "unexpected char in id");
     }
     string s;
@@ -355,7 +357,7 @@ string CObjectIStreamAsn::ReadId(void)
     while ( IsAlphaNum(c = GetChar()) ) {
         s += c;
     }
-    UngetChar(c);
+    UngetChar();
     return s;
 }
 
@@ -398,7 +400,7 @@ CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        UngetChar(c);
+        UngetChar();
         if ( IsAlpha(c) ) {
             string className = ReadId();
             ExpectString("::=", true);
@@ -428,7 +430,6 @@ CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
         info = CIObjectInfo(memberInfo->GetMember(info.GetObject()),
                             memberInfo->GetTypeInfo());
     }
-    UngetChar(c);
     if ( info.GetTypeInfo() != declaredType ) {
         THROW1_TRACE(runtime_error, "incompatible member type");
     }
@@ -451,14 +452,14 @@ void CObjectIStreamAsn::SkipValue()
             break;
         case '}':
             if ( blockLevel == 0 ) {
-                UngetChar(c);
+                UngetChar();
                 return;
             }
             --blockLevel;
             break;
         case ',':
             if ( blockLevel == 0 ) {
-                UngetChar(c);
+                UngetChar();
                 return;
             }
             break;
