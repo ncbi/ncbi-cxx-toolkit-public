@@ -81,5 +81,11 @@ Culture=
 PreprocessorDefinitions=
 
 
+###############################################################################
+# Precompiled headers
 
+[UsePch]
+UsePch      = FALSE
+corelib     = ncbi_pch.hpp
+DoNotUsePch = test_mt
 
