@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = NNI bNNI bme fastme gme graph heap inputs newickstring traverse
+LIB = fastme
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)

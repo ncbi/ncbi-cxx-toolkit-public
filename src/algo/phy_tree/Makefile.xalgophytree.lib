@@ -1,0 +1,7 @@
+# $Id$
+
+SRC = phy_node dist_methods phy_tree_serial
+LIB = xalgophytree
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)

@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("FASTME" project)
+#################################
+
+LIB_PROJ = fastme
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
