@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/04/24 21:20:01  lavr
+ * Introduced CONN_DEFAULT_TIMEOUT and CONN_INFINITE_TIMEOUT
+ *
  * Revision 6.6  2001/03/02 20:07:18  lavr
  * Typos fixed
  *
@@ -64,6 +67,10 @@
 
 #include <connect/ncbi_core.h>
 
+#define CONN_DEFAULT_TIMEOUT  ((STimeout*) (-1))
+#define CONN_INFINITE_TIMEOUT ((STimeout*) 0)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -79,6 +86,11 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
  * (see in "ncbi_connection.h").
  * First argument of these functions accepts a real connector handle
  * rather than a connection handle("CONN").
+ * In every call, which has STimeout as an argument, this argument
+ * can be either NULL, CONN_DEFAULT_TIMEOUT, or other non-NULL pointer,
+ * pointing to finite timeout structure. NULL is treated as an infinite
+ * timeout, while CONN_DEFAULT_TIMEOUT means to use any timeout, which
+ * is somehow pre-defined by the connector itself.
  */
 
 
