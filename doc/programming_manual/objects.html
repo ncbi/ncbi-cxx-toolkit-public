@@ -155,33 +155,31 @@ the <span class="ncbi_conf_flag">--with-objects</span> flag in invoking the <spa
 
 <br>&nbsp;
 <li>
-Build the <span class="ncbi_lib">xncbi</span> and <span class="ncbi_lib">xser</span> libraries, e.g,:</li>
-
+Build the <span class="ncbi_lib">xncbi</span>, <span class="ncbi_lib">xutil</span>&nbsp; and <span class="ncbi_lib">xser</span> libraries, 
+and run <span class="ncbi_app">datatool</span> to create the objects header and 
+source files, and build all of the object module libraries:
 <blockquote>
 <pre class="ncbi_cmd">
-cd ~/Work/internal/c++/GCC-Debug/build/corelib     # build <span class="ncbi_lib">xncbi</span> library
-make
-cd ~/Work/internal/c++/GCC-Debug/build/serial      # build <span class="ncbi_lib">xser </span>library
-make
-</pre></blockquote>
-
-<li>
-Run <span class="ncbi_app">datatool</span> to create the objects header and source files, and
-build all of the object module libraries:</li>
-
-<blockquote>
-<pre class="ncbi_code">
-cd ~/Work/internal/c++/GCC-Debug/build/objects
-make all_r
+<p>cd <i>path_to_compile_dir</i>/build/corelib</p>
+<p>make</p>
+<p>cd <i>path_to_compile_dir</i>/build/util</p>
+<p>make</p>
+<p>cd <i>path_to_compile_dir</i>/build/serial</p>
+<p>make all_r # might as well build datatool and avoid possible version skew </p>
+<p>cd <i>path_to_compile_dir</i>/build/connect</p>
+<p>make # needed for a few projects </p>
+<p>cd <i>path_to_compile_dir</i>/build/objects</p>
+<p>make all_r</p>
 </pre>
-</blockquote>
-
-<p>In addition to creating the header and source files, using <span class="ncbi_cmd">make all_r
+<p>Here <i>path_to_compile_dir </i>is set to the compile work directory which 
+depends on the compiler settings (e.g: ~/Work/internal/GCC-Debug). In addition to creating the header and source files, using <span class="ncbi_cmd">make all_r
 </span>(instead
 of just <span class="ncbi_util">make</span>) will build all the libraries. All libraries that are
 built are also copied to the <span class="ncbi_dir">lib</span> dir, e.g.: <span class="ncbi_dir">~/Work/internal/c++/GCC-Debug/lib</span>.
 Similarly, all executables (such as <span class="ncbi_app">asn2asn</span>) are copied to the bin
-dir, e.g.: <span class="ncbi_dir">~/Work/internal/c++/GCC-Debug/bin</span>.</ol>
+dir, e.g.: <span class="ncbi_dir">~/Work/internal/c++/GCC-Debug/bin</span>.</blockquote>
+
+</ol>
 You are now ready to edit the user class files and add methods.
 
 <h4>Adding methods</h4>
@@ -193,8 +191,7 @@ We begin by adding a declaration of this method to the public section of
 the user class definition in <span class="ncbi_file">Seq_inst.hpp</span>:
 
 <blockquote>
-<pre class="ncbi_code">
-class CSeq_inst : public CSeq_inst_Base
+<pre class="ncbi_code">class CSeq_inst : public CSeq_inst_Base
 {
 public:
     CSeq_inst(void);
@@ -215,8 +212,7 @@ protected:
 and in the source file, <span class="ncbi_file">Seq_inst.cpp</span>, we implement
 
 <blockquote>
-<pre class="ncbi_code">
-int CSeq_inst::CalculateLength() const
+<pre class="ncbi_code">int CSeq_inst::CalculateLength() const
 {
     // implementation goes here
 }
@@ -230,13 +226,12 @@ respectively. Once you have made the modifications to the files, you need
 to recompile the <span class="ncbi_lib">seq</span> library,<span class="ncbi_lib"> libseq.a</span>, i.e.:
 
 <blockquote>
-<pre class="ncbi_cmd">
-cd ~/Work/internal/c++/GCC-Debug/build/objects/seq
+<pre class="ncbi_cmd">cd <i>path_to_compile_dir</i>/build/objects/seq
 make
 </pre>
 </blockquote>
 
-<p>The new method can now be invoked from within a <span class="ncbi_class">CBioseq</span> object
+<p>Here <i>path_to_compile_dir</i> is set to the compile work directory which depends on the compiler settings (e.g: ~/Work/internal/GCC-Debug). The new method can now be invoked from within a <span class="ncbi_class">CBioseq</span> object
 as: <span class="ncbi_ccode">myBioseq.GetInst().CalculateLength().</span>
 <p>The key issue that determines whether or not you will need to rebuild
 any <span class="ncbi_term">external</span> libraries that use the modified user class involves
