@@ -5,7 +5,7 @@
 
 LIB_PROJ = ncbi_xloader_lds
 SUB_PROJ = 
-REQUIRES = bdb lds
+REQUIRES = bdb
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
