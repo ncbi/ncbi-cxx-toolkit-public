@@ -55,7 +55,7 @@ static BlastCoreAuxStruct*
 BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
 {
    BlastExtendWordFree(aux_struct->ewp);
-   BLAST_InitHitListDestruct(aux_struct->init_hitlist);
+   BLAST_InitHitListFree(aux_struct->init_hitlist);
    BlastHSPListFree(aux_struct->hsp_list);
    sfree(aux_struct->query_offsets);
    sfree(aux_struct->subject_offsets);
@@ -146,7 +146,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    Int4* frame_offsets = NULL;
    Int4 num_chunks, chunk, total_subject_length, offset;
    BlastHitSavingOptions* hit_options = hit_params->options;
-   BlastHSPList* combined_hsp_list;
+   BlastHSPList* combined_hsp_list = NULL;
    Int2 status = 0;
    Boolean translated_subject;
    Int4 context, first_context, last_context;
@@ -166,6 +166,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
             orig_length, db_options->gen_code_string, &translation_buffer,
             &frame_offsets, &subject->oof_sequence);
+         subject->oof_sequence_allocated = TRUE;
       } else {
          BLAST_GetAllTranslations(orig_sequence, NCBI2NA_ENCODING,
             orig_length, db_options->gen_code_string, &translation_buffer,
@@ -205,7 +206,6 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          (MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP) + 1;
       offset = 0;
       total_subject_length = subject->length;
-      combined_hsp_list = NULL;
       
       for (chunk = 0; chunk < num_chunks; ++chunk) {
          if (chunk > 0) {
@@ -220,7 +220,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          subject->length = MIN(total_subject_length - offset, 
                                MAX_DBSEQ_LEN);
          
-         init_hitlist->total = 0;
+         BlastInitHitListReset(init_hitlist);
          
          return_stats->db_hits +=
             aux_struct->WordFinder(subject, query, lookup, 
@@ -278,6 +278,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       } /* End loop on chunks of subject sequence */
       
       AppendHSPList(combined_hsp_list, hsp_list_out, hsp_num_max);
+      combined_hsp_list = BlastHSPListFree(combined_hsp_list);
    } /* End loop on frames */
 
    hsp_list = *hsp_list_out;

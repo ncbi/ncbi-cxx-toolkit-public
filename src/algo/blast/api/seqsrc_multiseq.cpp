@@ -417,14 +417,18 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
     seq_src = BlastSeqSrcNew(&bssn_info);
     ListNode* error_wrap = BLASTSeqSrcGetError(seq_src);
     Blast_Message* error_msg = NULL;
-    if (error_wrap && error_wrap->choice == BLAST_SEQSRC_MESSAGE)
+    if (error_wrap && error_wrap->choice == BLAST_SEQSRC_MESSAGE) {
         error_msg = (Blast_Message*) error_wrap->ptr;
+        ListNodeFree(error_wrap);
+    }
     if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
         seq_src = BlastSeqSrcFree(seq_src);
-        throw CBlastException(__FILE__, __LINE__, 0,
-                              (CBlastException::EErrCode) error_msg->code,
-                              error_msg->message);
+        CBlastException::EErrCode code = (CBlastException::EErrCode) error_msg->code;
+        string message(error_msg->message);
+        Blast_MessageFree(error_msg);
+        throw CBlastException(__FILE__, __LINE__, 0, code, message.c_str());
     }
+    Blast_MessageFree(error_msg);
     return seq_src;
 }
 
@@ -438,6 +442,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/03/24 19:14:48  dondosha
+ * Fixed memory leaks
+ *
  * Revision 1.10  2004/03/23 21:48:34  camacho
  * Avoid memory leak in exceptional conditions
  *

@@ -202,17 +202,19 @@ CBl2Seq::SetupSearch()
                              mi_clsQueryInfo, &mi_pLookupSegments, 
                              &filter_mask, &mi_pScoreBlock, &blmsg);
 
-        // TODO: Check that lookup_segments are not filtering the whole 
-        // sequence (DoubleInt set to -1 -1)
-        if (st != 0) {
-            string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
-            NCBI_THROW(CBlastException, eInternal, msg.c_str());
-        }
-
         // Convert the BlastMaskLoc* into a CSeq_loc
         // TODO: Implement this! 
         //mi_vFilteredRegions = BLASTBlastMaskLoc2SeqLoc(filter_mask);
         BlastMaskLocFree(filter_mask); // FIXME, return seqlocs for formatter
+
+        // TODO: Check that lookup_segments are not filtering the whole 
+        // sequence (DoubleInt set to -1 -1)
+        if (st != 0) {
+            string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
+            Blast_MessageFree(blmsg);
+            NCBI_THROW(CBlastException, eInternal, msg.c_str());
+        }
+        Blast_MessageFree(blmsg);
 
         LookupTableWrapInit(mi_clsQueries, 
                             m_OptsHandle->GetOptions().GetLutOpts(),
@@ -314,6 +316,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2004/03/24 19:14:48  dondosha
+ * Fixed memory leaks
+ *
  * Revision 1.46  2004/03/19 19:22:55  camacho
  * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
  *

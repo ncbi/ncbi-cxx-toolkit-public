@@ -168,7 +168,11 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
    ASSERT(copy);
    ASSERT(src);
    
-   *copy = BlastMemDup(src, sizeof(BLAST_SequenceBlk));
+   if (*copy)
+      memcpy(*copy, src, sizeof(BLAST_SequenceBlk));
+   else 
+      *copy = BlastMemDup(src, sizeof(BLAST_SequenceBlk));
+
    (*copy)->sequence_allocated = FALSE;
    (*copy)->sequence_start_allocated = FALSE;
    (*copy)->oof_sequence_allocated = FALSE;

@@ -464,6 +464,7 @@ SetupSubjects(const TSeqLocVector& subjects,
                 BlastSeqBlkSetCompressedSequence(subj, 
                                                  comp_seqbuf.first.release());
             } catch (const CSeqVectorException&) {
+                BlastSequenceBlkFree(subj);
                 NCBI_THROW(CBlastException, eInvalidCharacter, 
                            "Gaps found in subject sequence");
             }
@@ -861,6 +862,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2004/03/24 19:14:48  dondosha
+* Fixed memory leaks
+*
 * Revision 1.62  2004/03/19 19:22:55  camacho
 * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
 *

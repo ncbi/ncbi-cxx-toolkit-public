@@ -3866,8 +3866,15 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
    BlastInitHSP* init_hsp;
    Int4 context;
 
+   /* The BlastHSPList structure can be allocated and passed from outside */
+   if (*hsp_list_ptr != NULL)
+      hsp_list = *hsp_list_ptr;
+
    if (!init_hitlist) {
-      *hsp_list_ptr = NULL;
+      if (!hsp_list)
+         *hsp_list_ptr = NULL;
+      else
+         hsp_list->hspcnt = 0;
       return 0;
    }
 
@@ -3880,13 +3887,14 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
          multiple queries/strands/frames */
       GetRelativeCoordinates(NULL, query_info, init_hsp, NULL, 
                              NULL, &context);
-      if (!hsp_list)
+      if (!hsp_list) {
          hsp_list = BlastHSPListNew();
+         *hsp_list_ptr = hsp_list;
+      }
       BLAST_SaveHsp(NULL, init_hsp, hsp_list, hit_options, context,
                     subject->frame);
    }
 
-   *hsp_list_ptr = hsp_list;
    return 0;
 }
 

@@ -847,6 +847,9 @@ BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list)
 {
    Int4 index;
 
+   if (!hsp_list)
+      return hsp_list;
+
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       BlastHSPFree(hsp_list->hsp_array[index]);
    }
@@ -1470,6 +1473,7 @@ CombineHSPListsByScore(BlastHSPList* hsp_list, BlastHSPList* combined_hsp_list,
             BlastHSPFree(hsp_list->hsp_array[index2]);
       }
       /* Point combined_hsp_list's HSP array to the new one */
+      sfree(combined_hsp_list->hsp_array);
       combined_hsp_list->hsp_array = new_hsp_array;
    }
    
@@ -1477,8 +1481,6 @@ CombineHSPListsByScore(BlastHSPList* hsp_list, BlastHSPList* combined_hsp_list,
    /* Second HSP list now does not own any HSPs */
    hsp_list->hspcnt = 0;
 }
-
-
 
 Int2 AppendHSPList(BlastHSPList* hsp_list,
         BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max)
@@ -1490,9 +1492,10 @@ Int2 AppendHSPList(BlastHSPList* hsp_list,
    if (!hsp_list || hsp_list->hspcnt == 0)
       return 0;
 
-   /* If no previous HSP list, just return the new one or its copy */
+   /* If no previous HSP list, just return a copy of the new one. */
    if (!combined_hsp_list) {
-      *combined_hsp_list_ptr = hsp_list;
+      *combined_hsp_list_ptr = BlastHSPListDup(hsp_list);
+      hsp_list->hspcnt = 0;
       return 0;
    }
    /* Just append new list to the end of the old list, in case of 
@@ -1535,7 +1538,7 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    if (!hsp_list || hsp_list->hspcnt == 0)
       return 0;
 
-   /* If no previous HSP list, just return the new one or its copy */
+   /* If no previous HSP list, just return a copy of the new one. */
    if (!combined_hsp_list) {
       *combined_hsp_list_ptr = BlastHSPListDup(hsp_list);
       hsp_list->hspcnt = 0;
