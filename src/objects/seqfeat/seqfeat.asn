@@ -1,4 +1,4 @@
---$Revision: 3.0 $
+--$Revision: 3.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -422,14 +422,14 @@ SubSource ::= SEQUENCE {
         cell-line (8) ,
         cell-type (9) ,
         tissue-type (10) ,
-        cultivar (11) ,
+        cultivar (11) ,   --OBSOLETE.. use only the one in Org-mod
         dev-stage (12) ,
         frequency (13) ,
         germline (14) ,
         rearranged (15) ,
         lab-host (16) ,
         pop-variant (17) ,
-        variety (18) ,
+        variety (18) ,   --OBSOLETE.. use only the one in Org-mod
         plasmid-name (19) ,
         transposon-name (20) ,
         insertion-seq-name (21) ,
