@@ -1185,6 +1185,12 @@
 #endif
 
 
+/*
+ * Static library test_mt.lib
+ */
+#define NCBI_TEST_MT_EXPORT
+
+
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
 /*
@@ -1300,6 +1306,7 @@
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
+#  define NCBI_TEST_MT_EXPORT
 
 #endif
 
@@ -1309,6 +1316,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.61  2004/03/10 20:21:33  gorelenk
+ * Added defines for NCBI_TEST_MT_EXPORT (static lib test_mt.lib) .
+ *
  * Revision 1.60  2004/02/13 16:58:30  tereshko
  * Added NCBI_GUIWIDGETS_PHYLO_TREE_EXPORT for Phylogenetic Tree widget / viewer
  *
