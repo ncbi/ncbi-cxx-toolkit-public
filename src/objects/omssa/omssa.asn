@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.13 2004/09/15 18:35:55 lewisg Exp $
+-- $Id: omssa.asn,v 1.14 2004/09/29 19:43:52 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -115,7 +115,9 @@ MSSearchType ::= INTEGER {
 
 
 MSSearchSettings ::= SEQUENCE {
-	searchtype MSSearchType,  -- average or monoisotopic?
+	precursorsearchtype MSSearchType,  -- average or monoisotopic?
+	productsearchtype MSSearchType,  -- average or monoisotopic?
+	ionstosearch SEQUENCE OF MSIonType,  -- which ions to search?
 	peptol REAL,  -- peptide mass tolerance
 	msmstol REAL, -- msms mass tolerance
           -- next 3 fields define intensity fraction below
@@ -162,7 +164,8 @@ MSIonType ::= INTEGER {
         c (2),
 	x (3),
 	y (4),
-	z (5)
+	z (5),
+	max (6)
 	}
 	
 

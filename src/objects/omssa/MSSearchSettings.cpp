@@ -62,295 +62,300 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
     int retval(0);
 
 
-    if(CanGetSearchtype()) {
-	if(GetSearchtype() < 0 || GetSearchtype() > 1 ) {
-	    Error.push_back("Invalid search type");
-	    retval = 1;
-	}
+    if (CanGetPrecursorsearchtype()) {
+        if (GetPrecursorsearchtype() < 0 || GetPrecursorsearchtype() > 1 ) {
+            Error.push_back("Invalid precursor search type");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Precursor search type missing");
+        retval = 1;
     }
-    else {
-	Error.push_back("Search type missing");
-	retval = 1;
-    }
-	
 
-    if(CanGetPeptol()) {
-	if( GetPeptol() < 0) {
-	    Error.push_back("Precursor mass tolerance less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Precursor mass tolerance missing");
-	retval = 1;
+    if (CanGetProductsearchtype()) {
+        if (GetProductsearchtype() < 0 || GetProductsearchtype() > 1 ) {
+            Error.push_back("Invalid Product search type");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Product search type missing");
+        retval = 1;
     }
 
 
-    if(CanGetMsmstol()) {
-	if(GetMsmstol() < 0) {
-	    Error.push_back("Product mass tolerance less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Product mass tolerance missing");
-	retval = 1;
-    }
-
-
-    if(CanGetCutlo()) {
-	if(GetCutlo() < 0 || GetCutlo() > 1) {
-	    Error.push_back("Low cut value out of range");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Low cut value missing");
-	retval = 1;
+    if (CanGetIonstosearch()) {
+        TIonstosearch::const_iterator i;
+        for (i = GetIonstosearch().begin(); i != GetIonstosearch().end(); i++)
+            if ( *i < 0 || *i >= eMSIonType_max ) {
+                Error.push_back("Unknown search ion");
+                retval = 1;
+            }
+    } else {
+        Error.push_back("Ion search type missing");
+        retval = 1;
     }
 
 
-    if(CanGetCuthi()) {
-	if(GetCuthi() < 0 || GetCuthi() > 1) {
-	    Error.push_back("Hi cut value out of range");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Hi cut value missing");
-	retval = 1;
-    }
 
 
-    if(CanGetCuthi() && CanGetCutlo()) {
-	if(GetCutlo() > GetCuthi()) {
-	    Error.push_back("Lo cut exceeds Hi cut value");
-	    retval = 1;
-	}
-	else if (CanGetCutinc() && GetCutinc() <= 0) {
-	    Error.push_back("Cut increment too small");
-	    retval = 1;
-	}
-    }
-
-    if(CanGetCutinc()) {
-	if(GetCutinc() < 0) {
-	    Error.push_back("Cut increment less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Cut increment missing");
-	retval = 1;
+    if (CanGetPeptol()) {
+        if ( GetPeptol() < 0) {
+            Error.push_back("Precursor mass tolerance less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Precursor mass tolerance missing");
+        retval = 1;
     }
 
 
-    if(CanGetSinglewin()) {
-	if(GetSinglewin() < 0) {
-	    Error.push_back("Single win size less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Single win size missing");
-	retval = 1;
-    }
-
-
-    if(CanGetDoublewin()) {
-	if(GetDoublewin() < 0) {
-	    Error.push_back("Double win size less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Double win size missing");
-	retval = 1;
+    if (CanGetMsmstol()) {
+        if (GetMsmstol() < 0) {
+            Error.push_back("Product mass tolerance less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Product mass tolerance missing");
+        retval = 1;
     }
 
 
-    if(CanGetSinglenum()) {
-	if(GetSinglenum() < 0) {
-	    Error.push_back("Single num less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Single num missing");
-	retval = 1;
-    }
-
-
-    if(CanGetDoublenum()) {
-	if(GetDoublenum() < 0) {
-	    Error.push_back("Double num less than 0");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Double num missing");
-	retval = 1;
+    if (CanGetCutlo()) {
+        if (GetCutlo() < 0 || GetCutlo() > 1) {
+            Error.push_back("Low cut value out of range");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Low cut value missing");
+        retval = 1;
     }
 
 
-    if(CanGetFixed()) {
-	TFixed::const_iterator i;
-	for(i = GetFixed().begin(); i != GetFixed().end(); i++)
-	    if( *i < 0 ) {
-		Error.push_back("Unknown fixed mod");
-		retval = 1;
-	    }
+    if (CanGetCuthi()) {
+        if (GetCuthi() < 0 || GetCuthi() > 1) {
+            Error.push_back("Hi cut value out of range");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Hi cut value missing");
+        retval = 1;
     }
 
 
-    if(CanGetVariable()) {
-	TVariable::const_iterator i;
-	for(i = GetVariable().begin(); i != GetVariable().end(); i++)
-	    if( *i < 0 ) {
-		Error.push_back("Unknown variable mod");
-		retval = 1;
-	    }
+    if (CanGetCuthi() && CanGetCutlo()) {
+        if (GetCutlo() > GetCuthi()) {
+            Error.push_back("Lo cut exceeds Hi cut value");
+            retval = 1;
+        } else if (CanGetCutinc() && GetCutinc() <= 0) {
+            Error.push_back("Cut increment too small");
+            retval = 1;
+        }
+    }
+
+    if (CanGetCutinc()) {
+        if (GetCutinc() < 0) {
+            Error.push_back("Cut increment less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Cut increment missing");
+        retval = 1;
     }
 
 
-    if(CanGetEnzyme()) {
-	if(GetEnzyme() < 0) {
-	    Error.push_back("Unknown enzyme");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Enzyme missing");
-	retval = 1;
-    }
-
-
-    if(CanGetMissedcleave()) {
-	if(GetMissedcleave() < 0) {
-	    Error.push_back("Invalid missed cleavage value");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Missed cleavage value missing");
-	retval = 1;
+    if (CanGetSinglewin()) {
+        if (GetSinglewin() < 0) {
+            Error.push_back("Single win size less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Single win size missing");
+        retval = 1;
     }
 
 
-    if(CanGetHitlistlen()) {
-	if(GetHitlistlen() < 1) {
-	    Error.push_back("Invalid hit list length");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Hit list length missing");
-	retval = 1;
-    }
-
-
-    if(CanGetDb()) {
-	if(GetDb().empty()) {
-	    Error.push_back("Empty BLAST library name");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("BLAST library name missing");
-	retval = 1;
+    if (CanGetDoublewin()) {
+        if (GetDoublewin() < 0) {
+            Error.push_back("Double win size less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Double win size missing");
+        retval = 1;
     }
 
 
-    if(CanGetTophitnum()) {
-	if(GetTophitnum() < 1) {
-	    Error.push_back("Less than one top hit needed");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Missing top hit value");
-	retval = 1;
-    }
-
-
-    if(CanGetMinhit()) {
-	if(GetMinhit() < 1) {
-	    Error.push_back("Less than one match need for hit");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Missing minimum number of matches");
-	retval = 1;
+    if (CanGetSinglenum()) {
+        if (GetSinglenum() < 0) {
+            Error.push_back("Single num less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Single num missing");
+        retval = 1;
     }
 
 
-    if(CanGetMinspectra()) {
-	if(GetMinspectra() < 2) {
-	    Error.push_back("Less than two peaks required in input spectra");
-	    retval = 1;
-	}
-    }
-    else {
-	Error.push_back("Missing minimum peaks value for valid spectra");
-	retval = 1;
+    if (CanGetDoublenum()) {
+        if (GetDoublenum() < 0) {
+            Error.push_back("Double num less than 0");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Double num missing");
+        retval = 1;
     }
 
 
-    if(CanGetScale()) {
-	if(GetScale() < 1) {
-	    Error.push_back("m/z scaling value less than one");
-	    retval = 1;
-	}
+    if (CanGetFixed()) {
+        TFixed::const_iterator i;
+        for (i = GetFixed().begin(); i != GetFixed().end(); i++)
+            if ( *i < 0 ) {
+                Error.push_back("Unknown fixed mod");
+                retval = 1;
+            }
     }
-    else {
-	Error.push_back("missing m/z scaling value");
-	retval = 1;
+
+
+    if (CanGetVariable()) {
+        TVariable::const_iterator i;
+        for (i = GetVariable().begin(); i != GetVariable().end(); i++)
+            if ( *i < 0 ) {
+                Error.push_back("Unknown variable mod");
+                retval = 1;
+            }
+    }
+
+
+    if (CanGetEnzyme()) {
+        if (GetEnzyme() < 0) {
+            Error.push_back("Unknown enzyme");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Enzyme missing");
+        retval = 1;
+    }
+
+
+    if (CanGetMissedcleave()) {
+        if (GetMissedcleave() < 0) {
+            Error.push_back("Invalid missed cleavage value");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Missed cleavage value missing");
+        retval = 1;
+    }
+
+
+    if (CanGetHitlistlen()) {
+        if (GetHitlistlen() < 1) {
+            Error.push_back("Invalid hit list length");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Hit list length missing");
+        retval = 1;
+    }
+
+
+    if (CanGetDb()) {
+        if (GetDb().empty()) {
+            Error.push_back("Empty BLAST library name");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("BLAST library name missing");
+        retval = 1;
+    }
+
+
+    if (CanGetTophitnum()) {
+        if (GetTophitnum() < 1) {
+            Error.push_back("Less than one top hit needed");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Missing top hit value");
+        retval = 1;
+    }
+
+
+    if (CanGetMinhit()) {
+        if (GetMinhit() < 1) {
+            Error.push_back("Less than one match need for hit");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Missing minimum number of matches");
+        retval = 1;
+    }
+
+
+    if (CanGetMinspectra()) {
+        if (GetMinspectra() < 2) {
+            Error.push_back("Less than two peaks required in input spectra");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("Missing minimum peaks value for valid spectra");
+        retval = 1;
+    }
+
+
+    if (CanGetScale()) {
+        if (GetScale() < 1) {
+            Error.push_back("m/z scaling value less than one");
+            retval = 1;
+        }
+    } else {
+        Error.push_back("missing m/z scaling value");
+        retval = 1;
     }
 
     // optional arguments
 
-    if(IsSetTaxids()) {
-	TTaxids::const_iterator i;
-	for(i = GetTaxids().begin(); i != GetTaxids().end(); i++)
-	    if( *i < 0 ) {
-		Error.push_back("taxid < 0");
-		retval = 1;
-	    }
+    if (IsSetTaxids()) {
+        TTaxids::const_iterator i;
+        for (i = GetTaxids().begin(); i != GetTaxids().end(); i++)
+            if ( *i < 0 ) {
+                Error.push_back("taxid < 0");
+                retval = 1;
+            }
     }
 
-    if(IsSetChargehandling()) {
-		if(!GetChargehandling().CanGetMaxcharge() ||
-			!GetChargehandling().CanGetMincharge() ||
-			!GetChargehandling().CanGetCalccharge() ||
-			!GetChargehandling().CanGetCalcplusone() ||
-			!GetChargehandling().CanGetConsidermult()) {
-			Error.push_back("unknown chargehandling option");
-			retval = 1;
-		}
-		else {
-			if(GetChargehandling().GetMaxcharge() < 1 ||
-			   GetChargehandling().GetMincharge() < 1) {
-				Error.push_back("invalid min/max charge value");
-				retval = 1;
-			}
-			if(GetChargehandling().GetConsidermult() < 0) {
-				 Error.push_back("consider multiply charge product ions value out of range");
-				 retval = 1;
-			 }
-			if(GetChargehandling().GetCalccharge() < 0 ||
-			   GetChargehandling().GetCalccharge() > 2) {
-				Error.push_back("invalid calc charge setting");
-				retval = 1;
-			}
-			if(GetChargehandling().GetCalcplusone() < 0 ||
-				 GetChargehandling().GetCalcplusone() > 1) {
-				Error.push_back("invalid 1+ charge calc setting");
-				retval = 1;
-			}
-		}
+    if (IsSetChargehandling()) {
+        if (!GetChargehandling().CanGetMaxcharge() ||
+            !GetChargehandling().CanGetMincharge() ||
+            !GetChargehandling().CanGetCalccharge() ||
+            !GetChargehandling().CanGetCalcplusone() ||
+            !GetChargehandling().CanGetConsidermult()) {
+            Error.push_back("unknown chargehandling option");
+            retval = 1;
+        } else {
+            if (GetChargehandling().GetMaxcharge() < 1 ||
+                GetChargehandling().GetMincharge() < 1) {
+                Error.push_back("invalid min/max charge value");
+                retval = 1;
+            }
+            if (GetChargehandling().GetConsidermult() < 0) {
+                Error.push_back("consider multiply charge product ions value out of range");
+                retval = 1;
+            }
+            if (GetChargehandling().GetCalccharge() < 0 ||
+                GetChargehandling().GetCalccharge() > 2) {
+                Error.push_back("invalid calc charge setting");
+                retval = 1;
+            }
+            if (GetChargehandling().GetCalcplusone() < 0 ||
+                GetChargehandling().GetCalcplusone() > 1) {
+                Error.push_back("invalid 1+ charge calc setting");
+                retval = 1;
+            }
+        }
     }
-    
+
     return retval;
 }
 
@@ -364,6 +369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/09/29 19:43:52  lewisg
+* allow setting of ions
+*
 * Revision 1.2  2004/09/15 18:35:55  lewisg
 * cz ions
 *

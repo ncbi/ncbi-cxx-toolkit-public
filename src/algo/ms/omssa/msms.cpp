@@ -456,12 +456,12 @@ CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
 //  Holds AA indexed mass array
 //
 
-void CMassArray::Init(const CMSSearchSettings::TSearchtype &SearchType)
+void CMassArray::Init(const CMSSearchSettings::TProductsearchtype &SearchType)
 {
     x_Init(SearchType);
 }
 
-void CMassArray::x_Init(const CMSSearchSettings::TSearchtype &SearchType)
+void CMassArray::x_Init(const CMSSearchSettings::TProductsearchtype &SearchType)
 {
     int i;
     if(SearchType == eMSSearchType_average) {
@@ -482,7 +482,7 @@ void CMassArray::x_Init(const CMSSearchSettings::TSearchtype &SearchType)
 
 // set up the mass array with fixed mods
 void CMassArray::Init(const CMSMod &Mods, 
-		      const CMSSearchSettings::TSearchtype &SearchType)
+		      const CMSSearchSettings::TProductsearchtype &SearchType)
 {
     x_Init(SearchType);
     CMSSearchSettings::TVariable::const_iterator i;  // iterate thru fixed mods
@@ -499,6 +499,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.11  2004/09/29 19:43:09  lewisg
+  allow setting of ions
+
   Revision 1.10  2004/07/22 22:22:58  lewisg
   output mods
 

@@ -104,47 +104,24 @@ int CSearch::CreateLadders(unsigned char *Sequence, int iSearch, int position,
 			   unsigned ModMask,
 			   const char **Site,
 			   int *DeltaMass,
-			   int NumMod)
+			   int NumMod,
+               int ForwardIon,
+               int BackwardIon)
 {
-    if(!BLadder.CreateLadder(
-#define _HUNT
-#ifndef _HUNT
-		kCIon
-#else
-		kBIon
-#endif
-		, 1, (char *)Sequence, iSearch,
+    if(!BLadder.CreateLadder(ForwardIon, 1, (char *)Sequence, iSearch,
 			     position, endposition, Masses[iMissed], 
 			     MassArray, AA, ModMask, Site, DeltaMass,
 			     NumMod)) return 1;
-    if(!YLadder.CreateLadder(
-#ifndef _HUNT
-		kZIon
-#else
-		kYIon
-#endif
-		, 1, (char *)Sequence, iSearch,
+    if(!YLadder.CreateLadder(BackwardIon, 1, (char *)Sequence, iSearch,
 			 position, endposition, Masses[iMissed], 
 			     MassArray, AA, ModMask, Site, DeltaMass,
 			     NumMod)) return 1;
-    B2Ladder.CreateLadder(
-#ifndef _HUNT
-		kCIon
-#else
-		kBIon
-#endif
-		, 2, (char *)Sequence, iSearch,
+    B2Ladder.CreateLadder(ForwardIon, 2, (char *)Sequence, iSearch,
 			  position, endposition, 
 			  Masses[iMissed], 
 			  MassArray, AA, ModMask, Site, DeltaMass,
 			  NumMod);
-    Y2Ladder.CreateLadder(
-#ifndef _HUNT
-		kZIon
-#else
-		kYIon
-#endif
-		, 2, (char *)Sequence, iSearch,
+    Y2Ladder.CreateLadder(BackwardIon, 2, (char *)Sequence, iSearch,
 			  position, endposition,
 			  Masses[iMissed], 
 			  MassArray, AA, ModMask, Site, DeltaMass,
@@ -407,6 +384,20 @@ void CSearch::CreateModCombinations(int Missed,
 
 //#define MSSTATRUN
 
+// set up the ions to search
+void CSearch::SetIons(CMSRequest& MyRequest, int& ForwardIon, int& BackwardIon)
+{
+    if(MyRequest.GetSettings().GetIonstosearch().size() != 2) {
+        ERR_POST(Fatal << "omssa: two search ions need to be specified");
+    }
+    CMSSearchSettings::TIonstosearch::const_iterator i;
+    i = MyRequest.GetSettings().GetIonstosearch().begin();
+    ForwardIon = *i;
+    i++;
+    BackwardIon = *i;
+}
+
+
 int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 {
 
@@ -427,6 +418,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	int MaxModPerPep = MyRequest.GetSettings().GetMaxmods();
 	if(MaxModPerPep > MAXMOD2) MaxModPerPep = MAXMOD2;
 
+    int ForwardIon(1), BackwardIon(4);
+    SetIons(MyRequest, ForwardIon, BackwardIon);
 	CLadder BLadder[MAXMOD2], YLadder[MAXMOD2], B2Ladder[MAXMOD2],
 	    Y2Ladder[MAXMOD2];
 	bool LadderCalc[MAXMOD2];  // have the ladders been calculated?
@@ -439,7 +432,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	unsigned char *Sequence;  // start position
 	int endposition, position;
 	FixedMods.Init(MyRequest.GetSettings().GetFixed());
-	MassArray.Init(FixedMods, MyRequest.GetSettings().GetSearchtype());
+	MassArray.Init(FixedMods, MyRequest.GetSettings().GetProductsearchtype());
 	VariableMods.Init(MyRequest.GetSettings().GetVariable());
 	const int *IntMassArray = MassArray.GetIntMass();
 	const char *PepStart[MAXMISSEDCLEAVE];
@@ -644,8 +637,10 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 						 MassAndMask[iMissed][iMod].Mask,
 						 Site[iMissed],
 						 DeltaMass[iMissed],
-						 NumMod[iMissed]) != 
-				   0) continue;
+						 NumMod[iMissed],
+                         ForwardIon,
+                         BackwardIon
+                         ) != 0) continue;
 				// continue to next sequence if ladders not successfully made
 			    }
 			    else {
@@ -1175,6 +1170,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.27  2004/09/29 19:43:09  lewisg
+allow setting of ions
+
 Revision 1.26  2004/09/15 18:35:00  lewisg
 cz ions
 

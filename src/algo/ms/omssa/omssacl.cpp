@@ -77,8 +77,8 @@ private:
     virtual void Init();
     void PrintMods(void);
     void PrintEnzymes(void);
-    void InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods);
-    void InsertTax(TStringList& List, CMSSearchSettings:: TTaxids& TaxIds);
+    void PrintIons(void);
+    template <class T> void InsertList(const string& List, T& ToInsert, string error); 
 };
 
 COMSSA::COMSSA()
@@ -86,42 +86,23 @@ COMSSA::COMSSA()
     SetVersion(CVersionInfo(0, 9, 3));
 }
 
-///
-/// Insert modifications
-///
-void COMSSA::InsertMods(TStringList& List, CMSSearchSettings::TVariable& Mods)
+
+template <class T> void COMSSA::InsertList(const string& Input, T& ToInsert, string error) 
 {
+    TStringList List;
+    NStr::Split(Input, ",", List);
+
     TStringList::iterator iList(List.begin());
-    int ModNum;
+    int Num;
 
     for(;iList != List.end(); iList++) {
 	try {
-	    ModNum = NStr::StringToInt(*iList);
+	    Num = NStr::StringToInt(*iList);
 	} catch (CStringException &e) {
-	    ERR_POST(Info << "omssacl: unrecognized modification number");
+	    ERR_POST(Info << error);
 	    continue;
 	}
-	Mods.push_back(ModNum);
-    }
-}
-
-
-///
-/// Insert taxids
-///
-void COMSSA::InsertTax(TStringList& List, CMSSearchSettings::TTaxids& TaxIds)
-{
-    TStringList::iterator iList(List.begin());
-    int TaxNum;
-
-    for(;iList != List.end(); iList++) {
-	try {
-	    TaxNum = NStr::StringToInt(*iList);
-	} catch (CStringException &e) {
-	    ERR_POST(Info << "omssacl: unrecognized taxid number");
-	    continue;
-	}
-	TaxIds.push_back(TaxNum);
+	ToInsert.push_back(Num);
     }
 }
 
@@ -145,6 +126,16 @@ void COMSSA::PrintEnzymes(void)
     int i;
     for(i = 0; i < eMSEnzymes_max; i++)
 	cout << i << ": " << kEnzymeNames[i] << endl;
+}
+
+///
+/// print out a list of ions that can be used in OMSSA
+///
+void COMSSA::PrintIons(void)
+{
+    int i;
+    for(i = 0; i < eMSIonType_max; i++)
+	cout << i << ": " << kIonLabels[i] << endl;
 }
 
 
@@ -181,6 +172,18 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
+    argDesc->AddDefaultKey("tom", "premass", "product ion search type (0 = mono, 1 = avg)",
+                CArgDescriptions::eInteger, "0");
+    argDesc->AddDefaultKey("tem", "promass", "precursor ion search type (0 = mono, 1 = avg)",
+                CArgDescriptions::eInteger, "0");
+
+    argDesc->AddDefaultKey("i", "ions", 
+               "id numbers of ions to search (comma delimited, no spaces)",
+               CArgDescriptions::eString, 
+               "1,4");
+    argDesc->AddFlag("il", "print a list of ions and their corresponding id number");
+
+
     argDesc->AddDefaultKey("cl", "cutlo", "low intensity cutoff as a fraction of max peak",
 			   CArgDescriptions::eDouble, "0.0");
     argDesc->AddDefaultKey("ch", "cuthi", "high intensity cutoff as a fraction of max peak",
@@ -224,11 +227,11 @@ void COMSSA::Init()
 			   "the minimum number of m/z values a spectrum must have to be searched",
 			   CArgDescriptions::eInteger, "4");
     argDesc->AddDefaultKey("mf", "fixedmod", 
-			   "comma delimited list of id numbers for fixed modifications",
+			   "comma delimited (no spaces) list of id numbers for fixed modifications",
 			   CArgDescriptions::eString,
 			   "");
     argDesc->AddDefaultKey("mv", "variablemod", 
-			   "comma delimited list of id numbers for variable modifications",
+			   "comma delimited (no spaces) list of id numbers for variable modifications",
 			   CArgDescriptions::eString,
 			   "");
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
@@ -285,6 +288,12 @@ int COMSSA::Run()
 	    PrintEnzymes();
 	    return 0;
 	}
+
+    // print out the ions list
+     if(args["il"]) {
+         PrintIons();
+         return 0;
+     }
 
 	_TRACE("omssa: initializing score");
 	CSearch Search;
@@ -343,9 +352,11 @@ int COMSSA::Run()
 
 	CMSResponse Response;
 	CMSRequest Request;
-	Request.SetSettings().SetSearchtype(eMSSearchType_monoisotopic);
+	Request.SetSettings().SetPrecursorsearchtype(args["tem"].AsInteger());
+	Request.SetSettings().SetProductsearchtype(args["tom"].AsInteger());
 	Request.SetSettings().SetPeptol(args["te"].AsDouble());
 	Request.SetSettings().SetMsmstol(args["to"].AsDouble());
+	InsertList(args["i"].AsString(), Request.SetSettings().SetIonstosearch(), "unknown ion");
 	Request.SetSettings().SetCutlo(args["cl"].AsDouble());
 	Request.SetSettings().SetCuthi(args["ch"].AsDouble());
 	Request.SetSettings().SetCutinc(args["ci"].AsDouble());
@@ -356,14 +367,8 @@ int COMSSA::Run()
 	Request.SetSettings().SetEnzyme(args["e"].AsInteger());
 	Request.SetSettings().SetMissedcleave(args["v"].AsInteger());
 	Request.SetSpectra(*Spectrumset);
-	{
-	    TStringList List;
-	    NStr::Split(args["mv"].AsString(), ",", List);
-	    InsertMods(List, Request.SetSettings().SetVariable());
-	    List.clear();
-	    NStr::Split(args["mf"].AsString(), ",", List);
-	    InsertMods(List, Request.SetSettings().SetFixed());
-	}
+	InsertList(args["mv"].AsString(), Request.SetSettings().SetVariable(), "unknown variable mod");
+	InsertList(args["mf"].AsString(), Request.SetSettings().SetFixed(), "unknown fixed mod");
 	Request.SetSettings().SetDb(args["d"].AsString());
 	//	Request.SetCull(args["u"].AsInteger());
 	Request.SetSettings().SetHitlistlen(args["hl"].AsInteger());
@@ -373,9 +378,7 @@ int COMSSA::Run()
 	Request.SetSettings().SetMaxmods(args["mm"].AsInteger());
 
 	if(args["x"].AsString() != "0") {
-	    TStringList List;
-	    NStr::Split(args["x"].AsString(), ",", List);
-	    InsertTax(List, Request.SetSettings().SetTaxids());
+	    InsertList(args["x"].AsString(), Request.SetSettings().SetTaxids(), "unknown tax id");
 	}
 
 	Request.SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
@@ -502,6 +505,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.18  2004/09/29 19:43:09  lewisg
+  allow setting of ions
+
   Revision 1.17  2004/09/15 18:35:00  lewisg
   cz ions
 

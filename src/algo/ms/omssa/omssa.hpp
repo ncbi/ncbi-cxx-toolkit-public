@@ -95,6 +95,8 @@ public:
     void Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet);
     int Search(CMSRequest& MyRequest, CMSResponse& MyResponse);
 
+    // set up the ions to use
+    void SetIons(CMSRequest& MyRequest, int& ForwardIon, int& BackwardIon);
     // create the ladders from sequence
     int CreateLadders(unsigned char *Sequence, int iSearch, int position,
 		      int endposition,
@@ -105,7 +107,10 @@ public:
 		      unsigned ModMask,
 		      const char **Site,
 		      int *DeltaMass,
-		      int NumMod);
+		      int NumMod,
+              int ForwardIon,  // a,b,c series
+              int BackwardIon  // x,y,z series
+              );
 
     // compare ladders to experiment
     int CompareLadders(CLadder& BLadder,
@@ -260,6 +265,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.16  2004/09/29 19:43:09  lewisg
+  allow setting of ions
+
   Revision 1.15  2004/09/15 18:35:00  lewisg
   cz ions
 

@@ -71,6 +71,7 @@ const int kNumAAIntervals = 19;
 const int kAIon = 0, kBIon = 1, kCIon = 2, kXIon = 3, kYIon = 4,
     kZIon = 5;
 const int kIonTypes = 6;
+
 // proton mass
 const double kProton = 1.008;
 // direction.  1 = N->C, -1 = C->N
@@ -108,13 +109,13 @@ public:
     const int* GetIntMass(void);
 
     // initialize mass arrays
-    void Init(const CMSSearchSettings::TSearchtype &SearchType);
+    void Init(const CMSSearchSettings::TProductsearchtype &SearchType);
     // initialize mass arrays with fixed mods
     void Init(const CMSMod &Mods, 
-	      const CMSSearchSettings::TSearchtype &SearchType);
+	      const CMSSearchSettings::TProductsearchtype &SearchType);
 private:
     // inits mass arrays
-    void x_Init(const CMSSearchSettings::TSearchtype &SearchType);
+    void x_Init(const CMSSearchSettings::TProductsearchtype &SearchType);
     // masses as doubles
     double CalcMass[kNumUniqueAA];
     // mass in scaled integer Daltons
@@ -447,6 +448,15 @@ char const * const kEnzymeNames[eMSEnzymes_max] = {
 };
 
 
+char const * const kIonLabels[eMSIonType_max] = { 
+    "a",
+    "b", 
+    "c",
+    "x", 
+    "y", 
+    "z"
+};
+
 // used to scale all float masses into ints
 #define MSSCALE 100
 
@@ -458,6 +468,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.12  2004/09/29 19:43:09  lewisg
+  allow setting of ions
+
   Revision 1.11  2004/09/15 18:35:00  lewisg
   cz ions
 
