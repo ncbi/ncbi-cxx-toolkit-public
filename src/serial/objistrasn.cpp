@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/01/11 14:16:45  vasilche
+* Fixed pow ambiguity.
+*
 * Revision 1.32  2000/01/10 19:46:40  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -601,7 +604,7 @@ double CObjectIStreamAsn::ReadDouble(void)
     		return 0;
     }
 
-	return im * pow(base, ic);
+	return im * pow(double(base), ic);
 }
 
 void CObjectIStreamAsn::ReadString(string& s)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/01/11 14:16:46  vasilche
+* Fixed pow ambiguity.
+*
 * Revision 1.30  2000/01/10 19:46:41  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -257,7 +260,7 @@ void CObjectOStreamAsn::WriteDouble(double data)
     else
         characteristic = 8 + int(ceil(-thelog));
     
-    double mantissa = data * pow(10.0, characteristic);
+    double mantissa = data * pow(double(10), characteristic);
     int ic = -characteristic; /* reverse direction */
     
     long im;
