@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2002/07/01 13:15:11  kholodov
+* Added ITDescriptor diagnostics
+*
 * Revision 1.8  2002/06/24 19:10:03  kholodov
 * Added more trace diagnostics
 *
@@ -200,6 +203,17 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
 
     // Call ReadItem(0, 0) before getting text/image descriptor
     m_rs->ReadItem(0, 0);
+
+    
+    I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
+    if( desc == 0 ) {
+        _TRACE("CResultSet::GetBlobOStream(): zero IT Descriptor");
+#ifdef _DEBUG
+        _ASSERT(0);
+#else
+        throw CDB_Exception("CResultSet::GetBlobOStream(): Invalid IT Descriptor");
+#endif
+    }
 
     m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
                               m_rs->GetImageOrTextDescriptor(),
