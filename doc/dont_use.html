@@ -1,16 +1,17 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <title>Prohibited and discouraged C++/STL features</title>
+    <title>C++/STL pit-falls and discouraged/prohibited features</title>
   </head>
 
   <body>
-	 <h1>Prohibited and discouraged C++/STL features</h1>
+	 <h1>C++/STL pit-falls and discouraged/prohibited features</h1>
 
 	 <ul>
-		<li> <a href="#ref_STL">STL bad guys</a>
+		<li> <a href="#ref_STL">STL and standard C++ library's bad guys</a>
 	 <ul>
-		<li> <a href="#ref_STL_NonStd">Non-standard STL classes</a>
+		<li> <a href="#ref_STL_Stream">Old vs. new stream classes</a>
+		<li> <a href="#ref_STL_NonStd">Non-standard classes</a>
 	 </ul>
 		<li> <a href="#ref_CPP">C++ bad guys</a>
 	 <ul>
@@ -23,8 +24,61 @@
 	 <br></br>
 
 	 <a name="ref_STL">
-	 <h2><u>STL bad guys</u></h2>
+	 <h2><u>STL and standard C++ library's bad guys</u></h2>
 
+	 <br></br>
+	 <a name="ref_STL_Stream"> <h3>Old vs. new stream classes</h3> <p>
+	 <p> <i>#include &lt;ncbistre.hpp&gt;</i>
+
+	 <p>
+	 It was a big question if we should use "old-fashioned" C++ stream
+	 classes(from <i>#include &lt;iostream.h&gt;, etc.</i>) or
+	 "templated" ones(from <i>#include &lt;iostream&gt;, etc.</i>).
+	 Some platforms do not support "new" streams yet; and although
+	 there is a way to import most STL classes and string template class
+	 using package like <a href="tips.html#ref_STL">STLport</a>, however
+	 C++ stream classes usually cannot be implemented formally(yet in full)
+	 by a third party because of their close interaction with the underlying
+	 file system.
+
+	 <p>
+	 The solution is to use an "<b>intersection</b>" between the new and old
+	 stream functionality, and thus allow one to use either
+	 old or new streams depending on whether the given platform supports
+	 new streams or not. Thus, for the reason of the "old/new streams"
+	 portability, one <b>must</b> use:
+	 <ul>
+		<li> <i>#include &lt;ncbistre.hpp&gt;</i>
+	 </ul>
+	 and <b>must never</b> do directly:
+	 <ul>
+		<li> <i>#include &lt;iostream&gt;, etc.</i>
+		<li> <i>#include &lt;iostream.h&gt;, etc.</i>
+	 </ul>
+
+	 Then, <b>always</b> use:
+	 <ul>
+		<li> <i>"CNcbiIstream", "CNcbiOstream", etc.</i>
+	 </ul>
+	 and <b>never</b> use:
+	 <ul>
+		<li> <i>"istream", "ostream", etc.</i> or even
+		<li> <i>"::istream", "::ostream", etc.</i> or <i>"std::istream", "std::ostream", etc.</i>
+	 </ul>
+	 and, of course, the use of stream iterators is not allowed as well.
+
+	 <p>
+	 Following this approach we should be able to use both "new" and "old"
+	 stream libs now "for free". The needed code discipline will be maintained
+	 "automagically" as any "old streams"-only and "new streams"-only code
+	 would not compile immediately. On the other hand, we reserve a possibility
+	 to replace "<i>typedef</i>"s by derived classes with added functionality
+	 (e.g. in order to extend the new/old stream API intersection area, or to
+	 add some features like overriden <i>overflow()</i>/<i>underflow()</i> callbacks).
+
+
+	 <br></br>
+	 <br></br>
 	 <a name="ref_STL_NonStd"> <h3>Non-standard STL classes</h3> <p>
 	 Don't use <i>hash</i> or the <i>rope</i> classes from
 	 some versions of the STL.
@@ -79,7 +133,7 @@ class CFoo {
 	 Do not engage foreign namespaces(with <i>"using namespace XXX;"</i>)
 	 unless this is practically unavoidable.
 	 For the use of STL namespace see the
-	 <a href="tips.html#STL_tips">NCBI_USING_STL preprocessor macro</a>.
+	 <a href="tips.html#STL_tips">NCBI_USING_STL</a> preprocessor macro.
 
 	 <a name="ref_CPP_NoArg"> <h3>Omitting <i>"void"</i> in a no-arg function proto</h3> <p>
 	 Do not omit <i>"void"</i> in prototype of a function without arguments
