@@ -1,15 +1,15 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <title>Prohibited C++ and STL features</title>
+    <title>Prohibited and discouraged C++/STL features</title>
   </head>
 
   <body>
-	 <h1>Prohibited C++ and STL features</h1>
+	 <h1>Prohibited and discouraged C++/STL features</h1>
 
 
 	 <br></br>
-	 <h2>Prohibited STL features</h2>
+	 <h2>STL bad guys</h2>
 
 	 <p>
 	 Don't use <i>hash</i> or the <i>rope</i> classes from
@@ -20,7 +20,7 @@
 
 
 	 <br></br>
-	 <h2>Prohibited C++ features</h2>
+	 <h2>C++ bad guys</h2>
 
 	 <p>
 	 Don't use operator overloading, unless you are writing a very basic class, 
@@ -30,10 +30,19 @@
 	 For example, what exactly does <i>"string1 = string2;"</i> mean? </p>
 
 	 <p>
-	 Never use <i>"using namespace XXX;"</i>.
+	 Do not define your own namespaces at all.
 	 Instead, if you want to ensure that you will not get into a name conflict,
 	 see the workaround (<a href="style.html#ref_Prefix">quasi-namespace</a>)
 	 technique.
+	 Do not engage foreign namespaces(with <i>"using namespace XXX;"</i>)
+	 unless this is practically unavoidable.
+	 For the use of STL namespace see the
+	 <a href="tips.html#STL_tips">NCBI_USING_STL preprocessor macro</a>.
+
+	 <p>
+	 Do not omit <i>"void"</i> in prototype of a function without arguments
+	 (e.g. always write <i>"int f(<b>void</b>)"</i>
+	 rather than just <i>"int f()"</i>).
 
 	 <br></br>
 	 <hr>
