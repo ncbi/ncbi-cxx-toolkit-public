@@ -180,6 +180,7 @@ public:
             m_Log << NcbiFlush;
         }
     }
+    void Rotate() { m_Log.Rotate(); }
 private:
     CRotatingLogStream m_Log;
 };
@@ -534,7 +535,7 @@ void CNetCacheServer::ProcessShutdown()
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
-    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2.1");
+    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2.2");
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -982,8 +983,11 @@ void CNetCacheServer::ProcessLog(CSocket&  sock, const Request&  req)
     const char* str = req.req_id.c_str();
     if (NStr::strcasecmp(str, "ON")==0) {
         CFastMutexGuard guard(x_NetCacheMutex);
-        m_LogFlag = true;
-    } 
+        if (!m_LogFlag) {
+            m_LogFlag = true;
+            m_Logger->Rotate();
+        }
+    }
     if (NStr::strcasecmp(str, "OFF")==0) {
         CFastMutexGuard guard(x_NetCacheMutex);
         m_LogFlag = false;
@@ -1012,7 +1016,7 @@ void CNetCacheServer::x_CreateLog()
         return; // nothing to do
     }
     m_Logger.reset(
-        new CNetCache_Logger("netcached.log", 512 * 1024 * 1024));
+        new CNetCache_Logger("netcached.log", 100 * 1024 * 1024));
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1222,6 +1226,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/02/09 13:36:14  kuznets
+ * Limit log size to 100M, rotate log every time its turned ON
+ *
  * Revision 1.38  2005/02/07 18:55:40  kuznets
  * REmoved port number from the connection log
  *
