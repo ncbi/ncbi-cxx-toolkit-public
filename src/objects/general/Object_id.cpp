@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/08 19:53:15  ostell
+ * added MakeString()
+ *
  * Revision 6.1  2000/11/21 18:58:21  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
@@ -82,6 +85,24 @@ bool CObject_id::Match(const CObject_id& oid2) const
 	}
 	return false;
 }
+
+    // format contents into a string
+void CObject_id::MakeString(string &s) const
+{
+	switch (Which())
+	{
+		case e_Id:
+			s += NStr::IntToString(GetId());
+			break;
+		case e_Str:
+			s += GetStr();
+			break;
+		default:
+			break;
+	}
+	return;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/12/08 19:53:00  ostell
+ * added MakeString()
+ *
  * Revision 1.1  2000/11/21 18:58:05  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
@@ -66,6 +69,9 @@ public:
 
     // identical ids?
     bool Match(const CObject_id& oid2) const;
+
+    // format contents into a string
+    void MakeString(string &s) const;
 };
 
 
