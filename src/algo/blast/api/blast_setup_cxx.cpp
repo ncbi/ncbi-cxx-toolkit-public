@@ -231,11 +231,13 @@ GetQueryEncoding(EProgram program)
 
     case eBlastp: 
     case eTblastn:
+    case eRPSBlast: 
         retval = BLASTP_ENCODING; 
         break;
 
     case eBlastx:
     case eTblastx:
+    case eRPSTblastn:
         retval = NCBI4NA_ENCODING;
         break;
 
@@ -902,7 +904,9 @@ GetNumberOfFrames(EProgram p)
         retval = 2;
         break;
     case eBlastp:
+    case eRPSBlast:
     case eTblastn: 
+    case eRPSTblastn: 
         retval = 1;
         break;
     case eBlastx:
@@ -925,6 +929,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2004/04/16 14:28:49  papadopo
+* add use of eRPSBlast and eRPSTblastn programs
+*
 * Revision 1.65  2004/04/07 03:06:15  camacho
 * Added blast_encoding.[hc], refactoring blast_stat.[hc]
 *
