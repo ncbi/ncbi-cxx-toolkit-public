@@ -35,14 +35,7 @@ FD allows network client to establish a persistent TCP/IP connection
 to any of publicly advertised NCBI services, provided that the client
 is allowed to make outgoing network connection to any of the following
 FD addresses (on front-end NCBI machines):
-<!-- pre -->
-<!--   130.14.22.1,  port 5853 SERVER RETIRED -->
-<!--   130.14.22.2,  port 5859 SERVER RETIRED -->
-<!--   130.14.22.8,  port 5840 SERVER RETIRED -->
-<!--   130.14.22.30, port 5810 SERVER RETIRED -->
 <blockquote><pre class="ncbi_code">
-130.14.22.31, port 5812
-130.14.22.32, port 5811
 130.14.29.112, ports 5860..5870
 </pre>
 </blockquote>
@@ -71,14 +64,7 @@ in the client configuration (<a href="../../libs/conn.html#ref_ProxyHost">CONN_P
 
 <p>
 The mapping on your non-transparent firewall server should look like this:
-<!-- pre -->
-<!-- CONN_PROXY_HOST:5853    --&gt;    130.14.22.1:5853  SERVER RETIRED -->
-<!-- CONN_PROXY_HOST:5859    --&gt;    130.14.22.2:5859  SERVER RETIRED -->
-<!-- CONN_PROXY_HOST:5840    --&gt;    130.14.22.8:5840  SERVER RETIRED -->
-<!-- CONN_PROXY_HOST:5810    --&gt;    130.14.22.30:5810 SERVER RETIRED -->
 <blockquote><pre class="ncbi_code">
-CONN_PROXY_HOST:5812          --&gt;    130.14.22.31:5812
-CONN_PROXY_HOST:5811          --&gt;    130.14.22.32:5811
 CONN_PROXY_HOST:5860..5870    --&gt;    130.14.29.112:5860..5870
 </pre>
 </blockquote>
@@ -96,7 +82,7 @@ You can test if the FD ports are accessible from your host by just running,
 for example:
 
 <blockquote><pre class="ncbi_cmd">
-telnet 130.14.22.31 5812
+telnet 130.14.29.112 5861
 </pre>
 </blockquote>
 
@@ -105,9 +91,9 @@ If everything is fine, your TELNET session will look as follows
 (the line "test" is your input here):
 
 <blockquote><pre class="ncbi_cmd">
-&gt; telnet 130.14.22.31 5812
-Trying 130.14.22.31...
-Connected to 130.14.22.31.
+&gt; telnet 130.14.29.112 5861
+Trying 130.14.29.112...
+Connected to 130.14.29.112.
 Escape character is '^]'.
 test
 NCBI Firewall Daemon:  Invalid ticket. Connection closed.
