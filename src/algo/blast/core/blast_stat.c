@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.51  2004/03/31 17:50:09  papadopo
+ * Mike Gertz' changes for length adjustment calculations
+ *
  * Revision 1.50  2004/03/11 18:52:41  camacho
  * Remove THREADS_IMPLEMENTED
  *
@@ -3538,4 +3541,130 @@ RPSFreePSSM(Int4 **posMatrix, Int4 num_rows)
     for (i = 0; i < (num_rows + 1); i++)
         sfree(posMatrix[i]);
     sfree(posMatrix);
+}
+
+
+/** 
+ * Computes the adjustment to the lengths of the query and database sequences
+ * that is used to compensate for edge effects when computing evalues. 
+ *
+ * The length adjustment is an integer-valued approximation to the fixed
+ * point of the function
+ *
+ *    f(ell) = beta + 
+ *               (alpha/lambda) * (log K + log((m - ell)*(n - N ell)))
+ *
+ * where m is the query length n is the length of the database and N is the
+ * number of sequences in the database. The values beta, alpha, lambda and
+ * K are statistical, Karlin-Altschul parameters.
+ * 
+ * The value of the length adjustment computed by this routine, A, 
+ * will always be an integer smaller than the fixed point of
+ * f(ell). Usually, it will be the largest such integer.  However, the
+ * computed length adjustment, A, will also be so small that 
+ *
+ *    K * (m - A) * (n - N * A) > MAX(m,n).
+ *
+ * Moreover, an iterative method is used to compute A, and under
+ * unusual circumstances the iterative method may not converge. 
+ *
+ * @param K      the statistical parameter K
+ * @param logK   the natural logarithm of K
+ * @param alpha_d_lambda    the ratio of the statistical parameters 
+ *                          alpha and lambda (for ungapped alignments, the
+ *                          value 1/H should be used)
+ * @param beta              the statistical parameter beta (for ungapped
+ *                          alignments, beta == 0)
+ * @param query_length      the length of the query sequence
+ * @param db_length         the length of the database
+ * @param db_num_seq        the number of sequences in the database
+ * @param length_adjustment the computed value of the length adjustment [out]
+ *
+ * @return   0 if length_adjustment is known to be the largest integer less
+ *           than the fixed point of f(ell); 1 otherwise.
+ */
+Int4
+BLAST_ComputeLengthAdjustment(double K,
+                             double logK,
+                             double alpha_d_lambda,
+                             double beta,
+                             Int4 query_length,
+                             Int8 db_length,
+                             Int4 db_num_seqs,
+                             Int4 * length_adjustment)
+{
+    Int4 i;                     /* iteration index */
+    const Int4 maxits = 20;     /* maximum allowed iterations */
+    double m = query_length, n = db_length, N = db_num_seqs;
+
+    double ell;                 /* A float value of the length adjustment */
+    double ss;                  /* effective size of the search space */
+    double ell_min = 0, ell_max;   /* At each iteration i,
+                                         * ell_min <= ell <= ell_max. */
+    Boolean converged    = FALSE;       /* True if the iteration converged */
+    double ell_next = 0;        /* Value the variable ell takes at iteration
+                                 * i + 1 */
+    /* Choose ell_max to be the largest nonnegative value that satisfies
+     *
+     *    K * (m - ell) * (n - N * ell) > MAX(m,n)
+     *
+     * Use quadratic formula: 2 c /( - b + sqrt( b*b - 4 * a * c )) */
+    { /* scope of a, mb, and c, the coefficients in the quadratic formula
+       * (the variable mb is -b) */
+        double a  = N;
+        double mb = m * N + n;
+        double c  = n * m - MAX(m, n) / K;
+
+        if(c < 0) {
+            *length_adjustment = 0;
+            return 1;
+        } else {
+            ell_max = 2 * c / (mb + sqrt(mb * mb - 4 * a * c));
+        }
+    } /* end scope of a, mb and c */
+
+    for(i = 1; i <= maxits; i++) {      /* for all iteration indices */
+        double ell_bar;         /* proposed next value of ell */
+        ell      = ell_next;
+        ss       = (m - ell) * (n - N * ell);
+        ell_bar  = alpha_d_lambda * (logK + log(ss)) + beta;
+        if(ell_bar >= ell) { /* ell is no bigger than the true fixed point */
+            ell_min = ell;
+            if(ell_bar - ell_min <= 1.0) {
+                converged = TRUE;
+                break;
+            }
+            if(ell_min == ell_max) { /* There are no more points to check */
+                break;
+            }
+        } else { /* else ell is greater than the true fixed point */
+            ell_max = ell;
+        }
+        if(ell_min <= ell_bar && ell_bar <= ell_max) { 
+          /* ell_bar is in range. Accept it */
+            ell_next = ell_bar;
+        } else { /* else ell_bar is not in range. Reject it */
+            ell_next = (i == 1) ? ell_max : (ell_min + ell_max) / 2;
+        }
+    } /* end for all iteration indices */
+    if(converged) { /* the iteration converged */
+        /* If ell_fixed is the (unknown) true fixed point, then we
+         * wish to set (*length_adjustment) to floor(ell_fixed).  We
+         * assume that floor(ell_min) = floor(ell_fixed) */
+        *length_adjustment = (Int4) ell_min;
+        /* But verify that ceil(ell_min) != floor(ell_fixed) */
+        ell = ceil(ell_min);
+        if( ell <= ell_max ) {
+          ss = (m - ell) * (n - N * ell);
+          if(alpha_d_lambda * (logK + log(ss)) + beta >= ell) {
+            /* ceil(ell_min) == floor(ell_fixed) */
+            *length_adjustment = (Int4) ell;
+          }
+        }
+    } else { /* else the iteration did not converge. */
+        /* Use the best value seen so far */
+        *length_adjustment = (Int4) ell_min;
+    }
+
+    return converged ? 0 : 1;
 }

@@ -309,6 +309,16 @@ Int4 ** RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
 void RPSFreePSSM(Int4 **posMatrix, Int4 num_rows);
 
+Int4
+BLAST_ComputeLengthAdjustment(double K,
+                              double logK,
+                              double alpha_d_lambda,
+                              double beta,
+                              Int4 query_length,
+                              Int8 db_length,
+                              Int4 db_num_seqs,
+                              Int4 * length_adjustment);
+
 #ifdef __cplusplus
 }
 #endif
