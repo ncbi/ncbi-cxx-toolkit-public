@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/09/29 22:22:37  vakatov
+* [auto_ptr] Use "mutable" rather than "static_cast" on m_Owns; fixed a
+*            double "delete" bug in reset().
+*
 * Revision 1.26  1999/09/14 18:49:40  vasilche
 * Added forward declaration of CTypeInfo class.
 *
@@ -216,7 +220,7 @@ public:
     X*  get(void)               const { return m_Ptr; }
 
     X* release(void) const {
-        const_cast<auto_ptr<X>*>(this)->m_Owns = false;
+        m_Owns = false;
         return m_Ptr;
     }
 
@@ -224,15 +228,14 @@ public:
         if (m_Ptr != p) {
             if ( m_Owns )
                 delete m_Ptr;
-            delete m_Ptr;
             m_Ptr = p;
             m_Owns = (m_Ptr != 0);
         }
     }
 
 private:
-    bool m_Owns;
-    X*   m_Ptr;
+    mutable bool m_Owns;
+    X*           m_Ptr;
 };
 #endif /* HAVE_NO_AUTO_PTR */
 
