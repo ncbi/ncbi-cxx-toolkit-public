@@ -731,6 +731,11 @@ entirely up to the <a href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 <a name="ref_Outside"></a>
 <h2>Developing a project(lib, application) outside of the NCBI C++ tree</h2>
 
+NOTE:  in NCBI, you can use scripts located in the pre-built NCBI C++
+toolkit directory <b><i>$NCBI/ver0.0/c++/scripts/.</i></b>
+
+<p>
+<br>
 <a name="ref_OutsideImport"></a>
 <h3><b><i>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</i></b></h3>
 
@@ -797,8 +802,8 @@ EXAMPLE</a>:
 <br>
 will create a model makefile <b><i>Makefile.foo_lib</i></b> to build
 a library using tools and flags hard-coded in
-<b><i>$(NCBI)/ver0.0/c++/Debug/build/Makefile.mk</i></b>,
-and headers from <b><i>$(NCBI)/ver0.0/c++/include/</i></b>.
+<b><i>$NCBI/ver0.0/c++/Debug/build/Makefile.mk</i></b>,
+and headers from <b><i>$NCBI/ver0.0/c++/include/</i></b>.
 Now, after specifying the library name, list of source files, etc.,
 you can just go to the created working directory
 <b><i>foo/</i></b> and build your library using:
