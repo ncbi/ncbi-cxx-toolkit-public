@@ -159,12 +159,25 @@ struct SSystemFastMutex
     };
     volatile EMagic m_Magic;
 
-#if defined(NCBI_NO_THREADS)
-    // initialize for Win32 no threads
-    SSystemFastMutex(void) : m_Handle(0), m_Magic(eMutexInitialized) {}
+    // Acquire mutex for the current thread (no nesting checks)
+    void Lock(void);
+    // Release mutex (no owner or nesting checks)
+    void Unlock(void);
+    // Try to lock, return "true" on success
+    bool TryLock(void);
+
+    // Methods for throwing exceptions, to make inlined methods lighter
+    void CheckInitialized(void) const;
+    static void ThrowUninitialized(void);
+    static void ThrowLockFailed(void);
+    static void ThrowUnlockFailed(void);
+    static void ThrowTryLockFailed(void);
+
+#if !defined(NCBI_OS_MSWIN)
+    // MS VC 6 treats classes with any non-public member as non-POD
+protected:
 #endif
 
-protected:
     // check if mutex is initialized
     bool IsInitialized(void) const;
     // check if mutex is initialized
@@ -178,29 +191,12 @@ protected:
     // Destroy mutex
     void Destroy(void);
 
-public:
-    // Acquire mutex for the current thread (no nesting checks)
-    void Lock(void);
-    // Release mutex (no owner or nesting checks)
-    void Unlock(void);
-    // Try to lock, return "true" on success
-    bool TryLock(void);
-
-private:
     // Initialize mutex structure.
     // Must be called only once.
     void InitializeHandle(void);
     // Destroy mutex structure.
     // Must be called only once.
     void DestroyHandle(void);
-
-public:
-    // Method for throwing exceptions, to make inlined method lighter
-    void CheckInitialized(void) const;
-    static void ThrowUninitialized(void);
-    static void ThrowLockFailed(void);
-    static void ThrowUnlockFailed(void);
-    static void ThrowTryLockFailed(void);
 
     friend struct SSystemMutex;
     friend class CAutoInitializeStaticFastMutex;
@@ -226,12 +222,20 @@ struct SSystemMutex
     CThreadSystemID  m_Owner;  // platform-dependent thread ID
     int              m_Count;  // # of recursive (in the same thread) locks
 
-#if defined(NCBI_NO_THREADS)
-    // initialize for Win32 no threads
-    SSystemMutex(void) : m_Count(0) {}
-#endif
+    // Acquire mutex for the current thread
+    void Lock(void);
+    // Release mutex
+    void Unlock(void);
+    // Try to lock, return "true" on success
+    bool TryLock(void);
 
+    // Methods for throwing exceptions, to make inlined methods lighter
+    // throw exception eOwner
+    static void ThrowNotOwned(void);
+
+#if !defined(NCBI_OS_MSWIN)
 protected:
+#endif
     // check if mutex is initialized
     bool IsInitialized(void) const;
     // check if mutex is initialized
@@ -245,41 +249,13 @@ protected:
     // Destroy mutex
     void Destroy(void);
 
-public:
-    // Acquire mutex for the current thread
-    void Lock(void);
-    // Release mutex
-    void Unlock(void);
-    // Try to lock, return "true" on success
-    bool TryLock(void);
-
-public:
-    // throw exception eOwner
-    static void ThrowNotOwned(void);
-
     friend class CAutoInitializeStaticMutex;
 
     friend class CMutex;
     friend class CMutexGuard;
 };
 
-#if defined(NCBI_NO_THREADS)
-
-#   define DEFINE_STATIC_FAST_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemFastMutex id
-#   define DECLARE_CLASS_STATIC_FAST_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemFastMutex id
-#   define DEFINE_CLASS_STATIC_FAST_MUTEX(id) \
-NCBI_NS_NCBI::SSystemFastMutex id
-
-#   define DEFINE_STATIC_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemMutex id
-#   define DECLARE_CLASS_STATIC_MUTEX(id) \
-static NCBI_NS_NCBI::SSystemMutex id
-#   define DEFINE_CLASS_STATIC_MUTEX(id) \
-NCBI_NS_NCBI::SSystemMutex id
-
-#elif defined(SYSTEM_MUTEX_INITIALIZER)
+#if defined(SYSTEM_MUTEX_INITIALIZER)
 
 #   define STATIC_FAST_MUTEX_INITIALIZER \
     { SYSTEM_MUTEX_INITIALIZER, NCBI_NS_NCBI::SSystemFastMutex::eMutexInitialized }
@@ -811,6 +787,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/09/23 13:47:23  vasilche
+ * Made static mutex structures POD-types on Win32
+ *
  * Revision 1.16  2002/09/20 20:02:07  vasilche
  * Added public Lock/Unlock/TryLock
  *

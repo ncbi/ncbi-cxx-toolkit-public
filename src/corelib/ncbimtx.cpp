@@ -72,6 +72,7 @@ void SSystemFastMutex::DestroyHandle(void)
 
 void SSystemFastMutex::InitializeStatic(void)
 {
+#if !defined(NCBI_NO_THREADS)
     switch ( m_Magic ) {
     case eMutexUninitialized: // ok
         break;
@@ -84,6 +85,7 @@ void SSystemFastMutex::InitializeStatic(void)
     }
 
     InitializeHandle();
+#endif
 
     m_Magic = eMutexInitialized;
 }
@@ -91,9 +93,11 @@ void SSystemFastMutex::InitializeStatic(void)
 
 void SSystemFastMutex::InitializeDynamic(void)
 {
+#if !defined(NCBI_NO_THREADS)
     xncbi_Validate(!IsInitialized(), "Double initialization of mutex");
 
     InitializeHandle();
+#endif
 
     m_Magic = eMutexInitialized;
 }
@@ -101,7 +105,9 @@ void SSystemFastMutex::InitializeDynamic(void)
 
 void SSystemFastMutex::Destroy(void)
 {
+#if !defined(NCBI_NO_THREADS)
     xncbi_Validate(IsInitialized(), "Destruction of uninitialized mutex");
+#endif
 
     m_Magic = eMutexUninitialized;
 
@@ -919,6 +925,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/09/23 13:47:23  vasilche
+ * Made static mutex structures POD-types on Win32
+ *
  * Revision 1.7  2002/09/20 18:46:24  vasilche
  * Fixed volatile incompatibility on Win32
  *
