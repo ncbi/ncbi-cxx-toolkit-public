@@ -494,7 +494,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             CTypeStrings::EKind kind = i->type->GetKind();
 
             // generate getter
-            inl = !i->ref;
+            inl = true;//!i->ref;
             if (i->dataType && i->dataType->IsPrimitive()) {
                 code.ClassPublic() <<
                     "    "<<i->tName<<" Get"<<i->cName<<"(void) const;\n";
@@ -1191,6 +1191,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2003/05/06 13:34:36  gouriano
+* inline trivial Get methods
+*
 * Revision 1.54  2003/05/05 20:10:28  gouriano
 * removed CanGet check for members which are always "gettable"
 *
