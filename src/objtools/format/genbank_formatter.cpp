@@ -514,7 +514,7 @@ void CGenbankFormatter::FormatFeature
                    GetFeatIndent() + qual);
     }
     NON_CONST_ITERATE (list<string>, it, l) {
-        NStr::TruncateSpaces(*it, NStr::eTrunc_End);
+        NStr::TruncateSpacesInPlace(*it, NStr::eTrunc_End);
     }
     text_os.AddParagraph(l);
 }
@@ -708,6 +708,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/10/05 18:06:28  shomrat
+* in place TruncateSpaces ->TruncateSpacesInPlace
+*
 * Revision 1.18  2004/10/05 15:57:20  shomrat
 * Use non-const NStr::TruncateSpaces
 *

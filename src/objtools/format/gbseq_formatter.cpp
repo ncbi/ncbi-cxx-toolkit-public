@@ -79,7 +79,7 @@ static void s_GBSeqStringCleanup(string& str, bool location = false)
     if ( location ) {
         str = NStr::Replace(str, ", ", ",");
     }
-    NStr::TruncateSpaces(str);
+    NStr::TruncateSpacesInPlace(str);
 }
 
 
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/10/05 18:06:28  shomrat
+* in place TruncateSpaces ->TruncateSpacesInPlace
+*
 * Revision 1.6  2004/10/05 16:04:22  shomrat
 * Use non-const TruncateSpaces
 *

@@ -1122,7 +1122,7 @@ void CReferenceItem::x_CleanData(void)
 
     // journal
     StripSpaces(m_Journal);  // internal spaces
-    NStr::TruncateSpaces(m_Journal);
+    NStr::TruncateSpacesInPlace(m_Journal);
 }
 
 
@@ -1376,6 +1376,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/10/05 18:06:28  shomrat
+* in place TruncateSpaces ->TruncateSpacesInPlace
+*
 * Revision 1.21  2004/10/05 15:47:57  shomrat
 * Fixed reference formatting
 *
