@@ -8,7 +8,7 @@ property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- do test/demo applications
-property pBuildDemos : true
+property pBuildDemos : false
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -287,7 +287,7 @@ on SetProjectData()
 	
 	---------- GENOME WORK BENCH ----------
 	AddAppProjectExcept("gbench", {"fltk", "sockets", "libdl"}, "gui:gbench", {"windows_registry.cpp"}, Â
-		{"w_table", "w_fltable", "w_workspace"}, {"gui_core"})
+		{"w_table", "w_fltable", "w_workspace", "w_aln_multi"}, {"gui_core"})
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
