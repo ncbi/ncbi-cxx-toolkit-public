@@ -1288,6 +1288,8 @@ bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const
 
 CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 {
+    CConstRef<CSeq_feat> feat;
+
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     if ( bsh ) {
         CFeat_CI fi(bsh, 
@@ -1299,11 +1301,11 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
         if ( fi ) {
             // return the first one (should be the one packaged on the
             // nuc-prot set).
-            return &(*fi);
+            feat.Reset(&(*fi));
         }
     }
 
-    return 0;
+    return feat;
 }
 
 
@@ -1703,6 +1705,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/02/04 01:41:24  ucko
+* Fix compilation errors caused by trying to return a pointer as a CRef
+* without explicit conversion (required these days).
+*
 * Revision 1.12  2003/02/03 20:20:19  shomrat
 * If performance flag set skip check for far location (testing)
 *
