@@ -226,8 +226,8 @@ s_PSISavePssm(const _PSIInternalPssmData* internal_pssm,
     ASSERT(sbp);
     ASSERT(pssm);
 
-    _PSICopyIntMatrix(pssm->pssm, internal_pssm->pssm,
-                      pssm->ncols, pssm->nrows);
+    _PSICopyMatrix_int(pssm->pssm, internal_pssm->pssm,
+                       pssm->ncols, pssm->nrows);
 
     pssm->lambda = sbp->kbp_gap_psi[0]->Lambda;
     pssm->kappa = sbp->kbp_gap_psi[0]->K;
