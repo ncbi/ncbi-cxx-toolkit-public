@@ -140,6 +140,19 @@ void CNetServiceClient::SetSocket(CSocket* sock, EOwnership own)
     }
 }
 
+EIO_Status CNetServiceClient::Connect(unsigned int addr, unsigned short port)
+{
+    if (m_Sock) {
+
+        m_Host = CSocketAPI::gethostbyaddr(addr);
+        m_Port = port;
+        m_Sock->Connect(m_Host, m_Port);
+    } else {
+        SetSocket(new CSocket(addr, port), eTakeOwnership);
+    }
+    return m_Sock->GetStatus(eIO_Open);
+}
+
 CSocket* CNetServiceClient::DetachSocket() 
 {
     CSocket* s = m_Sock; m_Sock = 0; return s; 
@@ -253,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/17 17:17:29  kuznets
+ * +Connect()
+ *
  * Revision 1.5  2005/02/28 12:19:15  kuznets
  * +Unescaping error messages
  *

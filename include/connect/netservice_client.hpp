@@ -96,6 +96,9 @@ public:
     ///
     void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
 
+    /// Connect using specified address (addr - network bo, port - host bo)
+    EIO_Status Connect(unsigned int addr, unsigned short port);
+
     /// Detach and return current socket.
     /// Caller is responsible for deletion.
     CSocket* DetachSocket();
@@ -182,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/17 17:16:59  kuznets
+ * +Connect()
+ *
  * Revision 1.2  2005/02/09 18:58:33  kuznets
  * +TrimErr() method
  *
