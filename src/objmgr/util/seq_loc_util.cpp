@@ -77,7 +77,6 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
 
 
 TSeqPos GetLength(const CSeq_loc& loc, CScope* scope)
-    THROWS((CObjmgrUtilException))
 {
     switch (loc.Which()) {
     case CSeq_loc::e_Pnt:
@@ -107,7 +106,6 @@ TSeqPos GetLength(const CSeq_loc& loc, CScope* scope)
 
 
 TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope)
-    THROWS((CObjmgrUtilException))
 {
     TSeqPos length = 0;
 
@@ -193,7 +191,6 @@ bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
 
 
 const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope)
-    THROWS((CObjmgrUtilException))
 {
     CTypeConstIterator<CSeq_id> cur = ConstBegin(loc);
     CTypeConstIterator<CSeq_id> first = ConstBegin(loc);
@@ -333,7 +330,6 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
 
 
 TSeqPos GetStart(const CSeq_loc& loc, CScope* scope)
-    THROWS((CObjmgrUtilException))
 {
     // Throw CObjmgrUtilException if loc does not represent one CBioseq
     GetId(loc, scope);
@@ -344,7 +340,6 @@ TSeqPos GetStart(const CSeq_loc& loc, CScope* scope)
 
 
 TSeqPos GetStop(const CSeq_loc& loc, CScope* scope)
-    THROWS((CObjmgrUtilException))
 {
     // Throw CObjmgrUtilException if loc does not represent one CBioseq
     GetId(loc, scope);
@@ -2806,6 +2801,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2004/11/18 15:56:51  grichenk
+* Added Doxigen comments, removed THROWS.
+*
 * Revision 1.3  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.

@@ -512,6 +512,22 @@
 /* ========================================================================= */
 
 
+/** @defgroup OBJUTIL
+ *  Object Manager utilities
+ */
+
+/** @defgroup ObjUtilSequence Sequence utilities
+ *  @ingroup OBJECTMANAGER
+ */
+
+/** @defgroup ObjUtilSeqLoc Seq-loc utilities
+ *  @ingroup OBJECTMANAGER
+ */
+
+
+/* ========================================================================= */
+
+
 /** @defgroup CTOOLS
  *  Ctool members
  */

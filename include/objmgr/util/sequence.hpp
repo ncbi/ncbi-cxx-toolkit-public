@@ -65,20 +65,27 @@ class CGenetic_code;
 
 BEGIN_SCOPE(sequence)
 
+
+/** @addtogroup ObjUtilSequence
+ *
+ * @{
+ */
+
+
 NCBI_XOBJUTIL_EXPORT
 int GetGiForAccession(const string& acc, CScope& scope);
 
 NCBI_XOBJUTIL_EXPORT
 string GetAccessionForGi(int gi, CScope& scope, bool with_version = true);
 
-// Get sequence's title (used in various flat-file formats.)
-// This function is here rather than in CBioseq because it may need
-// to inspect other sequences.  The reconstruct flag indicates that it
-// should ignore any existing title Seqdesc.
+/// Get sequence's title (used in various flat-file formats.)
+/// This function is here rather than in CBioseq because it may need
+/// to inspect other sequences.  The reconstruct flag indicates that it
+/// should ignore any existing title Seqdesc.
 enum EGetTitleFlags {
-    fGetTitle_Reconstruct = 0x1, // ignore existing title Seqdesc.
-    fGetTitle_Organism    = 0x2, // append [organism]
-    fGetTitle_AllProteins = 0x4  // normally just names the first
+    fGetTitle_Reconstruct = 0x1, ///< ignore existing title Seqdesc.
+    fGetTitle_Organism    = 0x2, ///< append [organism]
+    fGetTitle_AllProteins = 0x4  ///< normally just names the first
 };
 typedef int TGetTitleFlags;
 NCBI_XOBJUTIL_EXPORT
@@ -88,12 +95,12 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags = 0);
 /// Retrieve a particular seq-id from a given bioseq handle.  This uses
 /// CSynonymsSet internally to decide which seq-id should be used.
 enum EGetIdType {
-    eGetId_ForceGi,         // return only a gi-based seq-id
-    eGetId_ForceAcc,        // return only an accession based seq-id
-    eGetId_Best,            // return the "best" gi (uses FindBestScore(),
-                            // with CSeq_id::CalculateScore() as the score
-                            // function
-    eGetId_HandleDefault,   // returns the ID associated with a bioseq-handle
+    eGetId_ForceGi,         ///< return only a gi-based seq-id
+    eGetId_ForceAcc,        ///< return only an accession based seq-id
+    eGetId_Best,            ///< return the "best" gi (uses FindBestScore(),
+                            ///< with CSeq_id::CalculateScore() as the score
+                            ///< function
+    eGetId_HandleDefault,   ///< returns the ID associated with a bioseq-handle
 
     eGetId_Default = eGetId_Best
 };
@@ -112,19 +119,21 @@ const CSeq_id& GetId(const CSeq_id_Handle& id, CScope& scope,
 
 
 enum ES2PFlags {
-    fS2P_NoMerge  = 0x1, // don't merge adjacent intervals on the product
-    fS2P_AllowTer = 0x2  // map the termination codon as a legal location
+    fS2P_NoMerge  = 0x1, ///< don't merge adjacent intervals on the product
+    fS2P_AllowTer = 0x2  ///< map the termination codon as a legal location
 };
 typedef int TS2PFlags; // binary OR of ES2PFlags
+
 NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
                                const CSeq_loc& source_loc, TS2PFlags flags = 0,
                                CScope* scope = 0, int* frame = 0);
 
 enum EP2SFlags {
-    fP2S_Extend = 0x1  // if hitting ends, extend to include partial codons
+    fP2S_Extend = 0x1  ///< if hitting ends, extend to include partial codons
 };
 typedef int TP2SFlags; // binary OR of ES2PFlags
+
 NCBI_XOBJUTIL_EXPORT
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
@@ -180,7 +189,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
                                             CScope& scope);
 
 
-// Convenience functions for popular overlapping types
+/// Convenience functions for popular overlapping types
 
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingGene(const CSeq_loc& loc, CScope& scope);
@@ -206,48 +215,48 @@ NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope);
 
 
-// Get the encoding CDS feature of a given protein sequence.
+/// Get the encoding CDS feature of a given protein sequence.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& product);
 
 
-// Get the mature peptide feature of a protein
+/// Get the mature peptide feature of a protein
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetPROTForProduct(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetPROTForProduct(const CBioseq_Handle& product);
 
 
-// Get the encoding mRNA feature of a given mRNA (cDNA) bioseq.
+/// Get the encoding mRNA feature of a given mRNA (cDNA) bioseq.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetmRNAForProduct(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& product);
 
 
-// Get the encoding nucleotide sequnce of a protein.
+/// Get the encoding nucleotide sequnce of a protein.
 NCBI_XOBJUTIL_EXPORT
 const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope);
 NCBI_XOBJUTIL_EXPORT
 CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& product);
 
 
-// return the org-ref associated with a given sequence.  This will throw
-// a CException if there is no org-ref associated with the sequence
+/// Return the org-ref associated with a given sequence.  This will throw
+/// a CException if there is no org-ref associated with the sequence
 NCBI_XOBJUTIL_EXPORT
 const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle);
 
-// return the tax-id associated with a given sequence.  This will return 0
-// if no tax-id can be found.
+/// return the tax-id associated with a given sequence.  This will return 0
+/// if no tax-id can be found.
 NCBI_XOBJUTIL_EXPORT
 int GetTaxId(const CBioseq_Handle& handle);
 
 
 END_SCOPE(sequence)
 
-// FASTA-format output; see also ReadFasta in <objtools/readers/fasta.hpp>
+/// FASTA-format output; see also ReadFasta in <objtools/readers/fasta.hpp>
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
@@ -258,21 +267,21 @@ public:
 
     CFastaOstream(CNcbiOstream& out) : m_Out(out), m_Width(70), m_Flags(0) { }
 
-    // Unspecified locations designate complete sequences
+    /// Unspecified locations designate complete sequences
     void Write        (const CBioseq_Handle& handle,
                        const CSeq_loc* location = 0);
     void WriteTitle   (const CBioseq_Handle& handle);
     void WriteSequence(const CBioseq_Handle& handle,
                        const CSeq_loc* location = 0);
 
-    // These versions set up a temporary object manager
+    /// These versions set up a temporary object manager
     void Write(CSeq_entry& entry, const CSeq_loc* location = 0);
     void Write(CBioseq&    seq,   const CSeq_loc* location = 0);
 
-    // Used only by Write(CSeq_entry, ...); permissive by default
+    /// Used only by Write(CSeq_entry, ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
 
-    // To adjust various parameters...
+    /// To adjust various parameters...
     TSeqPos GetWidth   (void) const    { return m_Width;   }
     void    SetWidth   (TSeqPos width) { m_Width = width;  }
     TFlags  GetAllFlags(void) const    { return m_Flags;   }
@@ -286,17 +295,16 @@ private:
     TFlags        m_Flags;
 };
 
-// public interface for coding region translation function
-
-// uses CTrans_table in <objects/seqfeat/Genetic_code_table.hpp>
-// for rapid translation from a given genetic code, allowing all
-// of the iupac nucleotide ambiguity characters
+/// Public interface for coding region translation function
+/// Uses CTrans_table in <objects/seqfeat/Genetic_code_table.hpp>
+/// for rapid translation from a given genetic code, allowing all
+/// of the iupac nucleotide ambiguity characters
 
 class NCBI_XOBJUTIL_EXPORT CCdregion_translate
 {
 public:
 
-    // translation coding region into ncbieaa protein sequence
+    /// translation coding region into ncbieaa protein sequence
     static void TranslateCdregion (string& prot,
                                    const CBioseq_Handle& bsh,
                                    const CSeq_loc& loc,
@@ -312,7 +320,7 @@ public:
                                   bool remove_trailing_X = false,
                                   bool* alt_start = 0);
 
-    // return iupac sequence letters under feature location
+    /// return iupac sequence letters under feature location
     static void ReadSequenceByLocation (string& seq,
                                         const CBioseq_Handle& bsh,
                                         const CSeq_loc& loc);
@@ -324,23 +332,23 @@ class NCBI_XOBJUTIL_EXPORT CSeqTranslator
 {
 public:
 
-    // translate a string using a specified genetic code
-    // if the code is NULL, then the default genetic code is used
+    /// translate a string using a specified genetic code
+    /// if the code is NULL, then the default genetic code is used
     static void Translate(const string& seq,
                           string& prot,
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
                           bool remove_trailing_X = false);
 
-    // translate a seq-vector using a specified genetic code
-    // if the code is NULL, then the default genetic code is used
+    /// translate a seq-vector using a specified genetic code
+    /// if the code is NULL, then the default genetic code is used
     static void Translate(const CSeqVector& seq,
                           string& prot,
                           const CGenetic_code* code = NULL,
                           bool include_stop = true,
                           bool remove_trailing_X = false);
 
-    // utility function: translate a given location on a sequence
+    /// utility function: translate a given location on a sequence
     static void Translate(const CSeq_loc& loc,
                           const CBioseq_Handle& handle,
                           string& prot,
@@ -353,7 +361,7 @@ public:
 
 /// Location relative to a base Seq-loc: one (usually) or more ranges
 /// of offsets.
-// XXX - handle fuzz?
+/// XXX - handle fuzz?
 struct NCBI_XOBJUTIL_EXPORT SRelLoc
 {
     enum EFlags {
@@ -385,27 +393,23 @@ struct NCBI_XOBJUTIL_EXPORT SRelLoc
 
 
 
-//============================================================================//
-//                             Sequence Search                                //
-//============================================================================//
+///============================================================================//
+///                             Sequence Search                                //
+///============================================================================//
 
-// CSeqSearch
-// ==========
-//
-// Search a nucleotide sequence for one or more patterns
-//
-//
-//
-//
-//
-//
+/// CSeqSearch
+/// ==========
+///
+/// Search a nucleotide sequence for one or more patterns
+///
+
 class NCBI_XOBJUTIL_EXPORT CSeqSearch
 {
 public:
 
     
-    // Holds information associated with a match, such as the name of the
-    // restriction enzyme, location of cut site etc.
+    /// Holds information associated with a match, such as the name of the
+    /// restriction enzyme, location of cut site etc.
     class CMatchInfo
     {
     public:
@@ -438,11 +442,11 @@ public:
     };  // end of CMatchInfo
 
 
-    // Client interface:
-    // ==================
-    // A class that uses the SeqSearch facility should implement the Client 
-    // interface and register itself with the search utility to be notified 
-    // of matches detection.
+    /// Client interface:
+    /// ==================
+    /// A class that uses the SeqSearch facility should implement the Client 
+    /// interface and register itself with the search utility to be notified 
+    /// of matches detection.
     class IClient
     {
     public:
@@ -454,23 +458,23 @@ public:
     CSeqSearch(IClient *client = 0, bool allow_mismatch = false);
     ~CSeqSearch(void);
 
-    // Add nucleotide pattern or restriction site to sequence search.
-    // Uses ambiguity codes, e.g., R = A and G, H = A, C and T
+    /// Add nucleotide pattern or restriction site to sequence search.
+    /// Uses ambiguity codes, e.g., R = A and G, H = A, C and T
     void AddNucleotidePattern(const string& name,
                               const string& pattern, 
                               int cut_site,
                               int overhang);
 
-    // This is a low level search method.
-    // The user is responsible for feeding each character in turn,
-    // keep track of the position in the text and provide the length in case of
-    // a circular topoloy.
+    /// This is a low level search method.
+    /// The user is responsible for feeding each character in turn,
+    /// keep track of the position in the text and provide the length in case of
+    /// a circular topoloy.
     int Search(int current_state, char ch, int position, int length = INT_MAX);
 
-    // Search an entire bioseq.
+    /// Search an entire bioseq.
     void Search(const CBioseq_Handle& bsh);
 
-    // Get / Set the Client.
+    /// Get / Set the Client.
     const IClient* GetClient() const { return m_Client; }
     void SetClient(IClient* client) { m_Client = client; }
 
@@ -509,6 +513,7 @@ private:
 }; // end of CSeqSearch
 
 
+/* @} */
 
 
 END_SCOPE(objects)
@@ -517,6 +522,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.51  2004/11/18 15:56:51  grichenk
+* Added Doxigen comments, removed THROWS.
+*
 * Revision 1.50  2004/11/17 21:25:13  grichenk
 * Moved seq-loc related functions to seq_loc_util.[hc]pp.
 * Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
