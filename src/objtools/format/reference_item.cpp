@@ -39,6 +39,7 @@
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
 #include <objects/medline/Medline_entry.hpp>
+#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub_set.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
@@ -1026,6 +1027,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/24 17:24:27  vasilche
+* Added missing include <Pub.hpp>
+*
 * Revision 1.4  2004/02/11 22:55:44  shomrat
 * use IsModeRelease method
 *
