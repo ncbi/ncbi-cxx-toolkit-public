@@ -34,7 +34,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <algo/align/nw_spliced_aligner.hpp>
+#include <algo/align/nw/nw_spliced_aligner.hpp>
 #include <algo/align/splign/splign_hit.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -227,6 +227,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/12/16 23:03:47  kapustin
+ * Fix #include
+ *
  * Revision 1.17  2004/12/01 14:54:38  kapustin
  * typedef public std types
  *
