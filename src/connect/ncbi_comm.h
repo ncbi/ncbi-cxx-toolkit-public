@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/08 22:34:45  lavr
+ * Request-Failed added to protocol
+ *
  * Revision 6.1  2000/12/29 18:20:26  lavr
  * Initial revision
  *
@@ -41,7 +44,8 @@
  */
 
 #define NCBID_NAME              "/Service/ncbid.cgi"
-#define CONNECTION_INFO         "Connection-Info:"
+#define HTTP_CONNECTION_INFO    "Connection-Info:"
+#define HTTP_REQUEST_FAILED     "Request-Failed:"
 
 typedef unsigned int ticket_t;
 
