@@ -472,7 +472,7 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 		     Int4 startQueryPosition, Int4 endQueryPosition,
 		     Int4 numBlocks,
                      Int4 *blockStarts, Int4 *blockEnds, Int4 masterLength,
-		     BLAST_Score **posMatrix, BLAST_Score scoreThreshold,
+		     BLAST_Score **posMatrix, Int4 *scoreThresholds,
 		     Int4 *frozenBlocks, Boolean localAlign)
 {
 
@@ -531,7 +531,7 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 	   score += posMatrix[dbPos][convertedQuery[incrementedQueryPos]];
 	 }
 	 candidateQueryEnd = queryPos + blockEnds[blockIndex] -   blockStarts[blockIndex];
-       if (((score >= scoreThreshold) || (-1 != frozenBlocks[blockIndex])) 
+       if (((score >= scoreThresholds[blockIndex]) || (-1 != frozenBlocks[blockIndex])) 
 	   && (candidateQueryEnd < endQueryPosition)) {
 	 if ((score < 0) && (-1 != frozenBlocks[blockIndex]))
 	   ErrPostEx(SEV_WARNING, 0, 0, "in frozen block %d score is %d",blockIndex+1,score);
@@ -1061,11 +1061,12 @@ alignBlocks *copyAlignBlock(alignBlocks *oldAlignBlock, Int4 numBlocks)
 SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength, 
     SeqIdPtr subject_id, SeqIdPtr query_id, Uint1Ptr seq, 
     alignBlocks *lastAlignBlock, Int4 numBlocks, Int4 *blockStarts,
-    Int4 *blockEnds, Nlm_FloatHi Lambda, Nlm_FloatHi K, Int4 searchSpaceSize)
+    Int4 *blockEnds, Nlm_FloatHi Lambda, Nlm_FloatHi K, Int4 searchSpaceSize,
+     Nlm_FloatHi * evalue)
 {
    GapXEditBlockPtr nextEditBlock;  /*intermediate structure towards seqlign*/
    SeqAlignPtr nextSeqAlign; /*seqAlign to return*/
-   Nlm_FloatHi eValue = 0.0,  logK = 0.0;
+   Nlm_FloatHi  logK = 0.0;
    Boolean done; /*used to move across blocks*/
    Int4 blockIndex;
    Int4 overallQueryStart, overallSeqStart;
@@ -1077,6 +1078,7 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
 
    done = FALSE;
    blockIndex = 0;
+   *evalue = 0.0;
    if (0 != K)
      logK = log(K);
    data.sapp = (Int4 *) MemNew((2 * queryLength) * sizeof(Int4));
@@ -1126,11 +1128,11 @@ SeqAlign *convertAlignBlockToSeqAlign(Uint1Ptr query, Int4 queryLength,
    nextEditBlock->discontinuous = TRUE;
    nextSeqAlign = GapXEditBlockToSeqAlign(nextEditBlock, subject_id, query_id);
    if ((0.0 == Lambda) || (0.0 == K))
-     eValue = 0;
+     *evalue = 0;
    else
-     eValue = K * searchSpaceSize * exp(-(lastAlignBlock->score) * Lambda +logK);
+     *evalue = searchSpaceSize * exp(-(lastAlignBlock->score) * Lambda +logK);
    nextSeqAlign->score = addScoresToSeqAlign(lastAlignBlock->score, 
-                     eValue, Lambda, logK);
+                     *evalue, Lambda, logK);
    nextEditBlock = GapXEditBlockDelete(nextEditBlock);
    if (NULL != data.sapp)
      MemFree(data.sapp);
@@ -1142,7 +1144,8 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
 				     Uint1Ptr seq, Int4 seqLength,
     Int4 numBlocks, Int4 queryLength, Int4 *blockStarts, Int4 *blockEnds,
     Int4 *bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda, 
-    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment)
+    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment,
+				     Nlm_FloatHi Ethreshold)
 {
   Int4 blockIndex1, blockIndex2;
   alignBlocks *oldAlignBlock, *newAlignBlock, *lastAlignBlock;
@@ -1152,7 +1155,7 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
   Int4 actualSearchSpace;
   Int4 startLoop1, endLoop1, startLoop2, endLoop2; /*loop bounds that
       depend on whether we are doing local or global alignment*/
-            
+  Nlm_FloatHi evalue; /*e-value of one match*/          
 
 
   *bestFirstBlock = -1;
@@ -1207,23 +1210,25 @@ SeqAlign *getAlignmentsFromBestPairs(Uint1Ptr query, SeqIdPtr subject_id,
     newSeqAlign = convertAlignBlockToSeqAlign(query, queryLength, 
            subject_id, query_id, 
            seq, lastAlignBlock,numBlocks, blockStarts, blockEnds,
-           Lambda, K, actualSearchSpace);
-    if (NULL == lastSeqAlign) {
-      for (i = 0; i < numBlocks; i++)
-	if (-1 != lastAlignBlock->queryStarts[i]) {
-	  (*bestFirstBlock) = i;
-	  break;
-	}
-      for (i = numBlocks-1; i >= 0; i--)
-	if (-1 != lastAlignBlock->queryStarts[i]) {
-	  (*bestLastBlock) = i;
-	  break;
-	}
-      listToReturn = lastSeqAlign = newSeqAlign;
-    }
-    else {
-      lastSeqAlign->next = newSeqAlign;
-      lastSeqAlign = newSeqAlign;
+           Lambda, K, actualSearchSpace, &evalue);
+    if (evalue <= Ethreshold) {
+      if (NULL == lastSeqAlign) {
+	for (i = 0; i < numBlocks; i++)
+	  if (-1 != lastAlignBlock->queryStarts[i]) {
+	    (*bestFirstBlock) = i;
+	    break;
+	  }
+	for (i = numBlocks-1; i >= 0; i--)
+	  if (-1 != lastAlignBlock->queryStarts[i]) {
+	    (*bestLastBlock) = i;
+	    break;
+	  }
+	listToReturn = lastSeqAlign = newSeqAlign;
+      }
+      else {
+	lastSeqAlign->next = newSeqAlign;
+	lastSeqAlign = newSeqAlign;
+      }
     }
     lastAlignBlock = lastAlignBlock->next;
   }
@@ -1237,7 +1242,8 @@ SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks,
 				   SeqIdPtr query_id, Int4* bestFirstBlock,
                                    Int4 *bestLastBlock, Nlm_FloatHi Lambda,
                                    Nlm_FloatHi K, Int4 searchSpaceSize,
-				   Boolean localAlignment)
+				   Boolean localAlignment, 
+				   Nlm_FloatHi Ethreshold)
 {
    SeqAlign *returnValue;
 
@@ -1250,12 +1256,12 @@ SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks,
    returnValue = getAlignmentsFromBestPairs(query, subject_id, 
          query_id, seq, seqLength, numBlocks, queryLength, 
          blockStarts, blockEnds, bestFirstBlock, bestLastBlock,
-         Lambda,K,searchSpaceSize, localAlignment);
+         Lambda,K,searchSpaceSize, localAlignment, Ethreshold);
    return(returnValue);
 }
 
  
-Int4 getSearchSpaceSize(Int4 masterLength, Int4 databaseLength, Int4 initSearchSpaceSize)
+Int4 getSearchSpaceSize(Int4 masterLength, Int4 queryLength, Int4 databaseLength, Int4 initSearchSpaceSize)
 {
 
    if ((0 != databaseLength) && (0 != initSearchSpaceSize))
@@ -1266,8 +1272,52 @@ Int4 getSearchSpaceSize(Int4 masterLength, Int4 databaseLength, Int4 initSearchS
      if (0 != databaseLength)
        return(masterLength * databaseLength);
      else
-       return(0);
+       return(masterLength * queryLength);
    }
+}
+
+/*parse a string describing block-specific score thresholds, which
+  is either a specific number or a file to read from*/
+int *parseBlockThresholds(Char *stringToParse, Int4 numBlocks, Boolean localAlignment)
+{
+  Int4 *returnArray; /*array of block specific thresholds to return*/
+  Int4 c; /*index over characters*/
+  Int4 i; /*index over blocks*/
+  FILE *fileWithValues;
+  Boolean isNumeric; /*is the first argument a number*/
+  Int4 argLength; /*length of the first argument as a string*/
+  Int4 numericalValue; /*value assuming first argument is a number*/
+
+  returnArray = (Int4 *) MemNew(numBlocks * sizeof(Int4));
+  if (localAlignment) {
+    isNumeric = TRUE;
+    argLength = strlen(stringToParse);
+    for(c = 0; c < argLength; c++)
+      if(!isdigit(stringToParse[c])) {
+	isNumeric = FALSE;
+	break;
+      }
+    if(isNumeric) {
+      numericalValue = atoi(stringToParse);
+      for(i = 0; i < numBlocks; i++)
+	returnArray[i] = numericalValue;
+    }
+    else {
+      if ((fileWithValues = FileOpen(stringToParse, "r")) == NULL) {
+        ErrPostEx(SEV_FATAL, 0, 0, "blockalign: Unable to file with block-specific score thresholds %s\n", stringToParse);;
+      }
+      else {
+	for(i = 0; i < numBlocks; i++) {
+	  fscanf(fileWithValues,"%d", &(returnArray[i]));
+	}
+      }
+    }
+  }
+  else {
+    for(i = 0; i < numBlocks; i++)
+      returnArray[i] = NEG_INFINITY;
+  }
+  return(returnArray);
 }
 
 /* Parse inputBlockString, which describes the blocks to be frozen.
@@ -1370,6 +1420,31 @@ Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
     return TRUE;
 }
 
+static SeqAlign * ShortenSeqAlignList(SeqAlign *inputList, int number_of_alignments)
+{
+  SeqAlign *listToReturn; /*list to pass back*/
+  SeqAlign *listRemaining; /*rest of list to traverse and free*/
+  SeqAlign *lastSeqAlign, *thisSeqAlign;  /*single entries to hold places 
+                                            in the list*/
+  int counter; /*counts number of seq aligns*/
+
+  listToReturn = inputList;
+  thisSeqAlign = inputList;
+  counter = 0;
+  while(thisSeqAlign && (counter < number_of_alignments)) {
+    lastSeqAlign = thisSeqAlign;
+    thisSeqAlign = thisSeqAlign ->next;
+    counter++;
+  }
+  listRemaining = thisSeqAlign;
+  lastSeqAlign->next = NULL;
+  SeqAlignSetFree(listRemaining);
+  if (0 == number_of_alignments)
+    return(NULL);
+  else
+    return(listToReturn);
+}
+
 #define NUMARG (sizeof(myargs)/sizeof(myargs[0]))
 
 static Args myargs [] = {
@@ -1407,8 +1482,8 @@ static Args myargs [] = {
       "0", NULL, NULL, FALSE, 'Y', ARG_INT, 0.0, 0, NULL},
     { "Produce HTML output",  /* 16 */
       "F", NULL, NULL, FALSE, 'T', ARG_BOOLEAN, 0.0, 0, NULL},
-    { "Score threshold for 1 block",  /* 17 */
-      "11", NULL, NULL, FALSE, 'f', ARG_INT, 0.0, 0, NULL},
+    { "Score threshold for each block, could be file or single number",  /* 17 */
+      "11", NULL, NULL, FALSE, 'f', ARG_STRING, 0.0, 0, NULL},
     { "Score thresholds for multiple blocks",  /* 18 */
       "11", NULL, NULL, FALSE, 't', ARG_INT, 0.0, 0, NULL},
     { "Number of one-line descriptions to print", /* 19 */
@@ -1436,6 +1511,7 @@ static Args myargs [] = {
     { "Frozen blocks", /* 30 */
       "none", NULL, NULL, FALSE, 'N', ARG_STRING, 0.0, 0, NULL}
 };
+/*-t will be interpreted as a string, which could be a file with numbers*/
 
 Int2  Main(void)
 {
@@ -1491,6 +1567,7 @@ Int2  Main(void)
    Boolean localAlignment; /*should the alignment be local or global*/
    Int4 *frozenBlocks = NULL; /*locations in query of start of frozen blocks
                                 -1, if not frozen*/
+   Int4 *perBlockThresholds; /*score thesholds for each block*/
 
    if (! GetArgs ("blockalign", NUMARG, myargs))
      {
@@ -1628,7 +1705,8 @@ Int2  Main(void)
        query_bsp->id = SeqIdSetFree(query_bsp->id);
      }
  
-   searchSpaceSize = getSearchSpaceSize(masterLength,myargs[14].intvalue,myargs[15].intvalue);
+
+   searchSpaceSize = getSearchSpaceSize(masterLength,queryLength, myargs[14].intvalue,myargs[15].intvalue);
 
    if (believe_query)
      query_id = query_bsp->id;
@@ -1640,17 +1718,16 @@ Int2  Main(void)
 
    allocateAlignPieceMemory(numBlocks);
    localAlignment = (Boolean) myargs[29].intvalue;
-   if (localAlignment)
-     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue, frozenBlocks, localAlignment);
-   else
-     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, 
-NEG_INFINITY, frozenBlocks, localAlignment);
+   perBlockThresholds = parseBlockThresholds(myargs[17].strvalue,numBlocks, localAlignment);
+   findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, perBlockThresholds, frozenBlocks, localAlignment);
+   MemFree(perBlockThresholds);
    sortAlignPieces(numBlocks);
    results = makeMultiPieceAlignments(convertedQuery, numBlocks, 
       queryLength, masterSequence, masterLength,
    blockStarts, blockEnds, allowedGaps, myargs[18].intvalue,
    subject_id,query_id, &bestFirstBlock,&bestLastBlock,myargs[24].floatvalue,
-   myargs[25].floatvalue,searchSpaceSize, localAlignment);
+   myargs[25].floatvalue,searchSpaceSize, localAlignment,
+				      myargs[2].floatvalue);
    
    
 #ifdef OS_UNIX
@@ -1687,7 +1764,7 @@ NEG_INFINITY, frozenBlocks, localAlignment);
        align_options += TXALIGN_SHOW_QS;
      }
    
-   number_of_descriptions = myargs[19].intvalue;
+   number_of_descriptions = MAX(myargs[19].intvalue, myargs[20].intvalue);
    number_of_alignments = myargs[20].intvalue;
 
    /*matrix?*/
@@ -1706,13 +1783,13 @@ NEG_INFINITY, frozenBlocks, localAlignment);
      if (outfp)
        {
 	 fprintf(outfp, "\nResults from blockalign search\n");
-	 prune = BlastPruneHitsFromSeqAlign(results, number_of_descriptions, NULL);
+	 results = ShortenSeqAlignList(results, number_of_descriptions);
 	 ObjMgrSetHold();
 	 init_buff_ex(85);
-	 PrintDefLinesFromSeqAlign(prune->sap, 80, outfp, print_options, FIRST_PASS, NULL);
+	 PrintDefLinesFromSeqAlign(results, 80, outfp, print_options, FIRST_PASS, NULL);
 	 free_buff();
-	 prune = BlastPruneHitsFromSeqAlign(results, number_of_alignments, prune);
-	 if(!DDV_DisplayBlastPairList(prune->sap, NULL, 
+	 results = ShortenSeqAlignList(results, number_of_alignments);
+	 if(!DDV_DisplayBlastPairList(results, NULL, 
                                          outfp, FALSE, 
                                          align_options,
                                          (Uint1)(align_options & TXALIGN_HTML ? 6 : 1))) {
@@ -1724,7 +1801,7 @@ NEG_INFINITY, frozenBlocks, localAlignment);
             }
        }
      seqannot->data = results;
-     prune = BlastPruneSapStructDestruct(prune);
+     /*prune = BlastPruneSapStructDestruct(prune);*/
      ObjMgrClearHold();
      ObjMgrFreeCache(0);
    }
