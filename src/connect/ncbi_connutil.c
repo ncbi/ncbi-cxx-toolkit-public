@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/09/27 19:37:40  lavr
+ * ncbi_ansi_ext.h included
+ *
  * Revision 6.4  2000/09/26 22:01:33  lavr
  * Registry entries changed, HTTP request method added
  *
@@ -50,6 +53,7 @@
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
+#include <connect/ncbi_ansi_ext.h>
 
 #include <stdlib.h>
 #include <string.h>
