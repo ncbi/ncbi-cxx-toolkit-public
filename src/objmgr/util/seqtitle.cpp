@@ -31,37 +31,40 @@
 */
 
 #include <serial/iterator.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
+
 #include <objects/biblio/Id_pat.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seg_ext.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
-#include <objects/seqblock/PDB_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seqblock/PDB_block.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/Prot_ref.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqloc/Patent_seq_id.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seqdesc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
 #include <objects/util/feature.hpp>
 #include <objects/util/sequence.hpp>
 
@@ -98,6 +101,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     bool                      third_party = false;
     bool                      is_nc       = false;
     bool                      is_nm       = false;
+    bool                      is_nr       = false;
     bool                      wgs_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
@@ -124,6 +128,8 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
                     is_nc = true;
                 } else if (type == CSeq_id::eAcc_refseq_mrna) {
                     is_nm = true;
+                } else if (type == CSeq_id::eAcc_refseq_ncrna) {
+                    is_nr = true;
                 }
             }
             break;
@@ -254,6 +260,28 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
             feature::GetLabel(*gene, &title, feature::eContent,
                               &hnd.GetScope());
             title += "), mRNA";
+        }
+    } else if (title.empty()  &&  is_nr  &&  source.NotEmpty()
+               &&  source->GetOrg().IsSetTaxname()) {
+        for (CTypeConstIterator<CSeq_feat> it(hnd.GetTopLevelSeqEntry());
+             it;  ++it) {
+            if (it->GetData().IsGene()) {
+                title = source->GetOrg().GetTaxname() + ' ';
+                feature::GetLabel(*it, &title, feature::eContent);
+                title += ", ";
+                switch (mol_info->GetBiomol()) {
+                case CMolInfo::eBiomol_pre_RNA: title += "precursorRNA"; break;
+                case CMolInfo::eBiomol_mRNA:    title += "mRNA";         break;
+                case CMolInfo::eBiomol_rRNA:    title += "rRNA";         break;
+                case CMolInfo::eBiomol_tRNA:    title += "tRNA";         break;
+                case CMolInfo::eBiomol_snRNA:   title += "snRNA";        break;
+                case CMolInfo::eBiomol_scRNA:   title += "scRNA";        break;
+                case CMolInfo::eBiomol_cRNA:    title += "cRNA";         break;
+                case CMolInfo::eBiomol_snoRNA:  title += "snoRNA";       break;
+                default:                        title += "miscRNA";      break;
+                }
+                BREAK(it);
+            }
         }
     }
 
@@ -816,6 +844,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2003/05/02 20:52:22  ucko
+* Sort #include directives to ease maintainability.
+* Add support for constructing NR_ titles.
+*
 * Revision 1.20  2003/04/24 16:15:58  vasilche
 * Added missing includes and forward class declarations.
 *
