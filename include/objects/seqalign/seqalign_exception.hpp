@@ -46,7 +46,8 @@ public:
         eInvalidAlignment,
         eInvalidInputAlignment,
         eInvalidRowNumber,
-        eOutOfRange
+        eOutOfRange,
+        eInvalidInputData
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -57,6 +58,7 @@ public:
         case eInvalidInputAlignment: return "eInvalidInputAlignment";
         case eInvalidRowNumber:      return "eInvalidRowNumber";
         case eOutOfRange:            return "eOutOfRange";
+        case eInvalidInputData:      return "eInvalidInputData";
         default:                     return CException::GetErrCodeString();
         }
     }
@@ -72,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/11/04 14:45:54  todorov
+* +eInvalidInputData
+*
 * Revision 1.4  2003/09/16 15:31:59  todorov
 * Added validation methods. Added seq range methods
 *
