@@ -69,7 +69,10 @@ public:
 
     /// Control field names printing
     void SetColumnNames(EPrintFieldNames print_names);
-    
+
+    /// Field value formatting controls
+    /// @sa SetValueFormatting
+    ///
     enum EValueFormatting
     {
         eNoQuotes,
@@ -78,6 +81,22 @@ public:
     };
         
     void SetValueFormatting(EValueFormatting vf);
+    
+    /// BLOB value formatting controls
+    /// @sa SetBlobFormatting
+    ///
+    enum EBlobFormatting
+    {
+        eBlobSummary = (1 << 0),
+        eBlobAll     = (1 << 1),
+        eBlobAsHex   = (1 << 2),
+        eBlobAsTxt   = (1 << 3)
+    };
+        
+    typedef unsigned int   TBlobFormat;
+    
+    void SetBlobFormat(TBlobFormat bf);   
+    TBlobFormat GetBlobFormat() const { return m_BlobFormat; }
 	
     /// Convert BDB file into text file
     void Dump(const string& dump_file_name, CBDB_File& db);
@@ -101,12 +120,12 @@ private:
                       const CBDB_BufferManager& bman,
                       const vector<unsigned>&   quote_flags, 
                       bool                      is_key);
-	
         
 protected:
     string               m_ColumnSeparator;
     EPrintFieldNames     m_PrintNames;
     EValueFormatting     m_ValueFormatting;
+    TBlobFormat          m_BlobFormat;
 }; 
 
 /* @} */
@@ -130,6 +149,11 @@ void CBDB_FileDumper::SetValueFormatting(EValueFormatting vf)
     m_ValueFormatting = vf;
 }
 
+inline
+void CBDB_FileDumper::SetBlobFormat(TBlobFormat bf)
+{
+    m_BlobFormat = bf;
+}
 
 END_NCBI_SCOPE
 
@@ -138,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/22 18:28:22  kuznets
+ * Added BLOB dumping flags
+ *
  * Revision 1.4  2004/06/21 15:08:27  kuznets
  * file dumper changed to work with cursors
  *
