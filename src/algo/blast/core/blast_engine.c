@@ -122,11 +122,10 @@ static Int2
 BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
-   const BlastScoringOptions* score_options, 
+   BlastScoringParameters* score_params, 
    BlastInitialWordParameters* word_params, 
    BlastExtensionParameters* ext_params, 
    BlastHitSavingParameters* hit_params, 
-   const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
    BlastReturnStat* return_stats,
    BlastCoreAuxStruct* aux_struct,
@@ -141,6 +140,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    Int4* frame_offsets = NULL;
    Int4 num_chunks, chunk, total_subject_length, offset;
    BlastHitSavingOptions* hit_options = hit_params->options;
+   BlastScoringOptions* score_options = score_params->options;
    BlastHSPList* combined_hsp_list = NULL;
    Int2 status = 0;
    Boolean translated_subject;
@@ -245,7 +245,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
              * are saved.
             */
             aux_struct->GetGappedScore(program_number, query, query_info, 
-               subject, gap_align, score_options, ext_params, hit_params, 
+               subject, gap_align, score_params, ext_params, hit_params, 
                init_hitlist, &hsp_list);
             if (score_options->is_ooframe && translated_subject)
                subject->length = prot_length;
@@ -317,16 +317,23 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
 
 static Int2 
 FillReturnXDropoffsInfo(BlastReturnStat* return_stats, 
+   BlastScoringParameters* score_params, 
    BlastInitialWordParameters* word_params, 
    BlastExtensionParameters* ext_params)
 {
+   /* since the cutoff score here will be used for display
+      putposes, strip out any internal scaling of the scores */
+
+   Int4 scale_factor = (Int4)score_params->scale_factor;
+
    if (!return_stats)
       return -1;
 
-   return_stats->x_drop_ungapped = word_params->x_dropoff;
-   return_stats->x_drop_gap = ext_params->gap_x_dropoff;
-   return_stats->x_drop_gap_final = ext_params->gap_x_dropoff_final;
-   return_stats->gap_trigger = ext_params->gap_trigger;
+   return_stats->x_drop_ungapped = word_params->x_dropoff / scale_factor;
+   return_stats->x_drop_gap = ext_params->gap_x_dropoff / scale_factor;
+   return_stats->x_drop_gap_final = ext_params->gap_x_dropoff_final / 
+                                                        scale_factor;
+   return_stats->gap_trigger = ext_params->gap_trigger / scale_factor;
 
    return 0;
 }
@@ -346,6 +353,7 @@ FillReturnXDropoffsInfo(BlastReturnStat* return_stats,
  * @param query_info The query information block [in]
  * @param sbp Contains scoring information. [in]
  * @param gap_align Gapped alignment information and allocated memory [out]
+ * @param score_params Parameters for scoring [out]
  * @param word_params Parameters for initial word processing [out]
  * @param ext_params Parameters for gapped extension [out]
  * @param hit_params Parameters for saving hits [out]
@@ -365,6 +373,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, 
    BlastGapAlignStruct** gap_align, 
+   BlastScoringParameters** score_params,
    BlastInitialWordParameters** word_params,
    BlastExtensionParameters** ext_params,
    BlastHitSavingParameters** hit_params,
@@ -395,7 +404,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
 
    if ((status = BLAST_GapAlignSetUp(program_number, seq_src, 
                     scoring_options, eff_len_options, ext_options, 
-                    hit_options, query_info, sbp,
+                    hit_options, query_info, sbp, score_params,
                     ext_params, hit_params, eff_len_params, gap_align)) != 0)
       return status;
       
@@ -451,25 +460,17 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 {
    BlastCoreAuxStruct* aux_struct = NULL;
    BlastHSPList* hsp_list;
-   BlastInitialWordParameters* word_params;
-   BlastExtensionParameters* ext_params;
-   BlastHitSavingParameters* hit_params;
+   BlastScoringParameters* score_params = NULL;
+   BlastInitialWordParameters* word_params = NULL;
+   BlastExtensionParameters* ext_params = NULL;
+   BlastHitSavingParameters* hit_params = NULL;
    BlastEffectiveLengthsParameters* eff_len_params = NULL;
    BlastGapAlignStruct* gap_align;
    Int2 status = 0;
-
-   BlastHitSavingOptions *internal_hit_options = 
-				(BlastHitSavingOptions *)hit_options;
-   BlastScoringOptions *internal_score_options = 
-				(BlastScoringOptions *)score_options;
-   PSIBlastOptions *internal_psi_options = 
-				(PSIBlastOptions *)psi_options;
-
    Int8 dbsize;
    Int4 num_db_seqs;
    Uint4 avg_subj_length = 0;
    RPSLookupTable *lookup = (RPSLookupTable *)lookup_wrap->lut;
-   double scale_factor;
    BlastQueryInfo concat_db_info;
    BLAST_SequenceBlk concat_db;
    RPSAuxInfo *rps_info;
@@ -484,47 +485,21 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    if ((status =
        BLAST_SetUpAuxStructures(program_number, seq_src,
-          internal_score_options, eff_len_options, lookup_wrap, word_options,
-          ext_options, internal_hit_options, query, query_info, sbp,
-          &gap_align, &word_params, &ext_params,
+          score_options, eff_len_options, lookup_wrap, word_options,
+          ext_options, hit_options, query, query_info, sbp,
+          &gap_align, &score_params, &word_params, &ext_params,
           &hit_params, &eff_len_params, &aux_struct)) != 0)
       return status;
 
-   FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
+   FillReturnXDropoffsInfo(return_stats, score_params, 
+                           word_params, ext_params);
 
    /* modify scoring and gap alignment structures for
-      use with RPS blast.
-
-      FIXME these should not all be done here, but scattered
-      among the relevant initialization functions */
+      use with RPS blast. */
 
    rps_info = lookup->rps_aux_info;
-   scale_factor = rps_info->scale_factor;
-   internal_psi_options->scalingFactor = scale_factor;
    gap_align->positionBased = TRUE;
    gap_align->sbp->posMatrix = lookup->rps_pssm;
-   word_params->cutoff_score = (Int4)(scale_factor *
-                                     (double)word_params->cutoff_score);
-   word_params->x_dropoff = (Int4)(scale_factor *
-                                     (double)word_params->x_dropoff);
-   internal_hit_options->cutoff_score = (Int4)(scale_factor *
-                             (double)internal_hit_options->cutoff_score);
-   internal_score_options->gap_open = (Int4)(scale_factor *
-                                   (double)rps_info->gap_open_penalty);
-   internal_score_options->gap_extend = (Int4)(scale_factor *
-                                   (double)rps_info->gap_extend_penalty);
-   hit_params->cutoff_score = (Int4)(scale_factor *
-                                   (double)hit_params->cutoff_score);
-   hit_params->cutoff_small_gap = (Int4)(scale_factor *
-                                   (double)hit_params->cutoff_small_gap);
-   hit_params->cutoff_big_gap = (Int4)(scale_factor *
-                                   (double)hit_params->cutoff_big_gap);
-   gap_align->gap_x_dropoff = (Int4)(scale_factor *
-                                   (double)gap_align->gap_x_dropoff);
-   ext_params->gap_x_dropoff = (Int4)(scale_factor *
-                                   (double)ext_params->gap_x_dropoff);
-   ext_params->gap_x_dropoff_final = (Int4)(scale_factor *
-                                   (double)ext_params->gap_x_dropoff_final);
 
    /* determine the total number of residues in the db.
       This figure must also include one trailing NULL for
@@ -584,9 +559,9 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       E-values cannot be calculated after hits are found. */
 
    BLAST_SearchEngineCore(program_number, &concat_db, &concat_db_info, 
-         query, lookup_wrap, gap_align, internal_score_options, 
-         word_params, ext_params, hit_params, internal_psi_options, 
-         db_options, return_stats, aux_struct, &hsp_list);
+         query, lookup_wrap, gap_align, score_params, 
+         word_params, ext_params, hit_params, db_options, 
+         return_stats, aux_struct, &hsp_list);
 
    /* save the resulting list of HSPs. 'query' and 'subject' are
       still reversed */
@@ -617,8 +592,8 @@ BLAST_RPSSearchEngine(Uint1 program_number,
 
    BLAST_RPSTraceback(program_number, results, &concat_db, 
             &concat_db_info, query, query_info, gap_align, 
-            internal_score_options, ext_params, hit_params, db_options, 
-            internal_psi_options, rps_info->karlin_k);
+            score_params, ext_params, hit_params, db_options, 
+            rps_info->karlin_k);
 
    /* The traceback calculated the E values, so it's safe
       to sort the results now */
@@ -638,6 +613,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
+   sfree(score_params);
    sfree(hit_params);
    sfree(ext_params);
    sfree(word_params);
@@ -660,6 +636,7 @@ BLAST_SearchEngine(Uint1 program_number,
 {
    BlastCoreAuxStruct* aux_struct = NULL;
    BlastHSPList* hsp_list; 
+   BlastScoringParameters* score_params = NULL;
    BlastInitialWordParameters* word_params = NULL;
    BlastExtensionParameters* ext_params = NULL;
    BlastHitSavingParameters* hit_params = NULL;
@@ -674,11 +651,12 @@ BLAST_SearchEngine(Uint1 program_number,
        BLAST_SetUpAuxStructures(program_number, seq_src,
           score_options, eff_len_options, lookup_wrap, word_options, 
           ext_options, hit_options, query, query_info, sbp, 
-          &gap_align, &word_params, &ext_params, 
+          &gap_align, &score_params, &word_params, &ext_params, 
           &hit_params, &eff_len_params, &aux_struct)) != 0)
       return status;
 
-   FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
+   FillReturnXDropoffsInfo(return_stats, score_params,
+                           word_params, ext_params);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    /* Encoding is set so there are no sentinel bytes, and protein/nucleotide
@@ -715,21 +693,20 @@ BLAST_SearchEngine(Uint1 program_number,
       /* Calculate cutoff scores for linking HSPs */
       if (hit_params->do_sum_stats) {
          CalculateLinkHSPCutoffs(program_number, query_info, sbp, 
-                                 hit_params, db_length, seq_arg.seq->length, 
-                                 psi_options);
+                                 hit_params, db_length, seq_arg.seq->length);
       }
 
       BLAST_SearchEngineCore(program_number, query, query_info,
-         seq_arg.seq, lookup_wrap, gap_align, score_options, word_params, 
-         ext_params, hit_params, psi_options, db_options,
-         return_stats, aux_struct, &hsp_list);
+         seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
+         ext_params, hit_params, db_options, return_stats, aux_struct, 
+         &hsp_list);
  
       if (hsp_list && hsp_list->hspcnt > 0) {
          return_stats->prelim_gap_passed += hsp_list->hspcnt;
          if (program_number == blast_type_blastn) {
             status = 
                Blast_HSPListReevaluateWithAmbiguities(hsp_list, query, 
-                  seq_arg.seq, hit_options, query_info, sbp, score_options, 
+                  seq_arg.seq, hit_options, query_info, sbp, score_params, 
                   seq_src);
          }
          /* Save the HSPs into a hit list */
@@ -755,8 +732,8 @@ BLAST_SearchEngine(Uint1 program_number,
    if (!ext_options->skip_traceback && score_options->gapped_calculation) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
-            seq_src, gap_align, score_options, ext_params, hit_params,
-            eff_len_params, db_options, psi_options);
+            seq_src, gap_align, score_params, ext_params, hit_params,
+            eff_len_params, db_options);
    }
 
    /* Do not destruct score block here */
@@ -764,6 +741,7 @@ BLAST_SearchEngine(Uint1 program_number,
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
 
+   sfree(score_params);
    sfree(hit_params);
    sfree(ext_params);
    sfree(word_params);
