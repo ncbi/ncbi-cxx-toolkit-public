@@ -99,11 +99,7 @@ static char* s_GetArgs(const char* client_host)
         if (!strchr(client_host, '.')                   &&
             (ip = SOCK_gethostbyname(client_host)) != 0 &&
             SOCK_ntoa(ip, addr, sizeof(addr))      == 0) {
-            buflen += strlen(addr) + 1;
-            for (p = addr; *p; p++) {
-                if (*p == '.')
-                    *p = '_';
-            }
+            buflen += strlen(addr) + 2;
         } else
             *addr = 0;
     } else
@@ -122,7 +118,7 @@ static char* s_GetArgs(const char* client_host)
         strcpy(&p[buflen], client_host);
         buflen += nodelen;
         if (*addr)
-            buflen += sprintf(&p[buflen], "_%s", addr);
+            buflen += sprintf(&p[buflen], "(%s)", addr);
     }
     if (archlen) {
         strcpy(&p[buflen], nodelen ? platform : platform + 1);
@@ -850,6 +846,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2003/05/14 15:43:45  lavr
+ * Modify format of host address in dispatcher's CGI query
+ *
  * Revision 6.55  2003/05/14 13:55:06  lavr
  * BUGFIX: Buffer overrun in s_GetArgs()
  *
