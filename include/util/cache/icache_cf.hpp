@@ -68,7 +68,7 @@ public:
         static const string kCFParam_timestamp = "timestamp";
         
         const string& ts_flags_str = 
-            TParent::GetParam(params, kCFParam_timestamp, false, "");
+            this->GetParam(params, kCFParam_timestamp, false, "");
 
         if (!ts_flags_str.empty()) {
             ConfigureTimeStamp(icache, params, ts_flags_str);
@@ -80,7 +80,7 @@ public:
         static const string kCFParam_keep_versions = "keep_versions";
 
         const string& keep_versions_str = 
-            TParent::GetParam(params, kCFParam_keep_versions, false, "");
+            this->GetParam(params, kCFParam_keep_versions, false, "");
         if (!keep_versions_str.empty()) {
             static const string kCFParam_keep_versions_all = "all";
             static const string kCFParam_keep_versions_drop_old = "drop_old";
@@ -165,7 +165,7 @@ public:
 
 
         int timeout = 60 * 60; // timeout in seconds
-            TParent::GetParamInt(params, kCFParam_timeout, false, 60 * 60);
+            this->GetParamInt(params, kCFParam_timeout, false, 60 * 60);
 
         if (ts_flag) {
             icache->SetTimeStampPolicy(ts_flag, timeout);
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/09/21 15:28:45  kuznets
+ * Use this-> instead of TParent:: when calling parent functions
+ *
  * Revision 1.2  2004/09/21 14:39:56  kuznets
  * Fixed minor GCC bug
  *
