@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/04/30 15:38:43  gouriano
+* added Flush stream when throwing an exception
+*
 * Revision 1.78  2003/04/29 18:30:37  gouriano
 * object data member initialization verification
 *
@@ -445,8 +448,8 @@ bool CObjectOStream::x_GetVerifyDataDefault(void)
             if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
 
                 // change the default here, if you wish
-                //ms_VerifyDataDefault = eSerialVerifyData_Yes;
-                ms_VerifyDataDefault = eSerialVerifyData_No;
+                ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                //ms_VerifyDataDefault = eSerialVerifyData_No;
 
                 const char* str = getenv(SERIAL_VERIFY_DATA_WRITE);
                 if (str) {
@@ -559,6 +562,7 @@ void CObjectOStream::ThrowError1(const char* file, int line,
 {
     CSerialException::EErrCode err;
     SetFailFlags(fail, message.c_str());
+    Flush();
     switch(fail)
     {
     case fNoError:
