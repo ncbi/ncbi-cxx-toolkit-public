@@ -27,14 +27,6 @@
 *
 * File Description:
 *   Type info for aliased type generation: includes, used classes, C code etc.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2003/10/21 13:45:23  grichenk
-* Initial revision
-*
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbiutil.hpp>
@@ -386,8 +378,7 @@ string CAliasRefTypeStrings::GetResetCode(const string& var) const
 {
     return m_IsObject ?
         var + ".Reset();\n" :
-        m_RefType->GetResetCode(
-            m_RefType->GetCType(GetNamespace()) + "(" + var + ")");
+        m_RefType->GetResetCode(var + ".Set()");
 }
 
 void CAliasRefTypeStrings::GenerateCode(CClassContext& ctx) const
@@ -407,3 +398,18 @@ void CAliasRefTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
 
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2003/10/31 21:33:05  ucko
+* GetResetCode: tweak generated code so that it doesn't simply end up
+* resetting a temporary copy of the data.
+* Change log moved to end per current practice.
+*
+* Revision 1.1  2003/10/21 13:45:23  grichenk
+* Initial revision
+*
+* ===========================================================================
+*/
