@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/02/11 21:49:06  lavr
+ * +CORE_GetPlatform()
+ *
  * Revision 6.10  2001/08/09 16:23:34  lavr
  * Added: fLOG_OmitNoteLevel to log message format flags
  *
@@ -240,6 +243,16 @@ extern char* MessagePlusErrno
  */
 extern void CORE_SetREG(REG rg);
 extern REG  CORE_GetREG(void);
+
+
+
+/******************************************************************************
+ *  MISC
+ */
+
+/* Return read-only textual but machine-readable platform description.
+ */
+extern const char* CORE_GetPlatform(void);
 
 
 #ifdef __cplusplus
