@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/01/21 20:06:53  pubmed
+* Volodya: support of non-existing documents for Sequences
+*
 * Revision 1.3  1999/03/15 19:57:56  vasilche
 * CIDs now use set instead of map.
 *
@@ -58,29 +61,19 @@ inline CIDs::~CIDs(void)
 {
 }
 
-inline bool CIDs::HaveID(int id) const
+inline void CIDs::AddID(int id)
 {
-    // TW_01
-    return const_cast<CIDs&>(*this).find(id) != const_cast<CIDs&>(*this).end();
+    push_back(id);
 }
 
 inline bool CIDs::ExtractID(int id)
 {
-    iterator i = find(id);
-    if ( i == end() )
-        return false;
-    erase(i);
-    return true;
-}
-
-inline void CIDs::AddID(int id)
-{
-    insert(id);
-}
-
-inline void CIDs::RemoveID(int id)
-{
-    erase(id);
+    iterator i = find(begin(), end(), id);
+    if ( i != end() ) {
+        erase(i);
+        return true;
+    }
+    return false;
 }
 
 inline int CIDs::CountIDs(void) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/01/21 20:06:53  pubmed
+* Volodya: support of non-existing documents for Sequences
+*
 * Revision 1.5  1999/05/20 16:49:12  pubmed
 * Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
 *
@@ -60,6 +63,7 @@
 #include <corelib/ncbistd.hpp>
 #include <map>
 #include <set>
+#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -68,15 +72,12 @@ class CHTML_form;
 
 // utility functions
 
-class CIDs : public set<int>
+class CIDs : public list<int>
 {
 public:
     CIDs(void);
 
     ~CIDs(void);
-
-    // return true if 'id' is in list
-    bool HaveID(int id) const;
 
     // if 'id' is not in list, return false
     // if 'id' in list - return true and remove 'id' from list
@@ -84,9 +85,6 @@ public:
 
     // add 'id' to list
     void AddID(int id);
-
-    // remove 'id' from list
-    void RemoveID(int id);
 
     // return number of ids in list
     int CountIDs(void) const;
@@ -101,6 +99,7 @@ private:
     // decoder helpers
     int GetNumber(const string& str);
     int AddID(char cmd, int id, int number);
+    
 };
 
 class CHTMLHelper
