@@ -166,8 +166,7 @@ public:
     CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                              const string& seqid,
                                              const string& annotname,
-                                             const bool reportBadKeys,
-                                             const bool keepBadKeys);
+                                             const CFeature_table_reader::TFlags flags);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -1294,8 +1293,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
   CNcbiIstream& ifs,
   const string& seqid,
   const string& annotname,
-  const bool reportBadKeys,
-  const bool keepBadKeys
+  const CFeature_table_reader::TFlags flags
 )
 
 {
@@ -1411,11 +1409,11 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                         // unrecognized feature key
 
-                        if (reportBadKeys) {
+                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                             ERR_POST (Warning << "Unrecognized feature " << feat);
                         }
 
-                        if (keepBadKeys) {
+                        if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
                             sfp.Reset (new CSeq_feat);
                             sfp->ResetLocation ();
                             sfp->SetData ().Select (CSeqFeatData::e_Imp);
@@ -1444,11 +1442,11 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                         // unrecognized qualifier key
 
-                        if (reportBadKeys) {
+                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
                             ERR_POST (Warning << "Unrecognized qualifier " << qual);
                         }
 
-                        if (keepBadKeys) {
+                        if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
                             CSeq_feat::TQual& qlist = sfp->SetQual ();
                             CRef<CGb_qual> gbq (new CGb_qual);
                             gbq->SetQual (qual);
@@ -1478,35 +1476,15 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
   CNcbiIstream& ifs,
-  const bool reportBadKeys,
-  const bool keepBadKeys
+  const string& seqid,
+  const string& annotname,
+  const TFlags flags
 )
 
 {
-    string line, fst, scd, seqid, annotname;
-    int pos;
+    // just read features from 5-column table
 
-    // first look for >Feature line, extract seqid and optional annotname
-
-    while (seqid.empty () && ifs.good ()) {
-
-        pos = ifs.tellg ();
-        NcbiGetlineEOL (ifs, line);
-
-        if (! line.empty ()) {
-            if (line [0] == '>') {
-                if (NStr::StartsWith (line, ">Feature")) {
-                    NStr::SplitInTwo (line, " ", fst, scd);
-                    NStr::SplitInTwo (scd, " ", seqid, annotname);
-                }
-            }
-        }
-    }
-
-    // then read features from 5-column table
-
-    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname,
-                                                                          reportBadKeys, keepBadKeys);
+    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname, flags);
 
     // go through all features and demote single interval seqlocmix to seqlocint
 
@@ -1533,39 +1511,34 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
   CNcbiIstream& ifs,
-  const string& seqid,
-  const string& annotname,
-  const bool reportBadKeys,
-  const bool keepBadKeys
+  const TFlags flags
 )
 
 {
-    // just read features from 5-column table
+    string line, fst, scd, seqid, annotname;
+    int pos;
 
-    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname,
-                                                                          reportBadKeys, keepBadKeys);
+    // first look for >Feature line, extract seqid and optional annotname
 
-    // go through all features and demote single interval seqlocmix to seqlocint
+    while (seqid.empty () && ifs.good ()) {
 
-    for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
-        CSeq_feat& feat = *fi;
-        CSeq_loc& location = feat.SetLocation ();
-        if (location.IsMix ()) {
-            CSeq_loc_mix& mx = location.SetMix ();
-            switch (mx.Get ().size ()) {
-                case 0:
-                    location.SetNull ();
-                    break;
-                case 1:
-                    feat.SetLocation (*mx.Set ().front ());
-                    break;
-                default:
-                    break;
+        pos = ifs.tellg ();
+        NcbiGetlineEOL (ifs, line);
+
+        if (! line.empty ()) {
+            if (line [0] == '>') {
+                if (NStr::StartsWith (line, ">Feature")) {
+                    NStr::SplitInTwo (line, " ", fst, scd);
+                    NStr::SplitInTwo (scd, " ", seqid, annotname);
+                }
             }
         }
     }
 
-    return sap;
+    // then read features from 5-column table
+
+    return ReadSequinFeatureTable (ifs, seqid, annotname, flags);
+
 }
 
 END_objects_SCOPE
