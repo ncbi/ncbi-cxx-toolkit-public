@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.98  2004/04/22 22:18:03  dondosha
+ * Set lookup table type correctly in BLAST_FillLookupTableOptions - needed for C driver only
+ *
  * Revision 1.97  2004/04/21 17:00:59  madden
  * Removed set but not read variable
  *
@@ -1115,6 +1118,8 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
          options->lut_type = NA_LOOKUP_TABLE;
          options->word_size = BLAST_WORDSIZE_NUCL;
       }
+   } else {
+      options->lut_type = AA_LOOKUP_TABLE;
    }
 
    /* if the supplied threshold is -1, disable neighboring words */
