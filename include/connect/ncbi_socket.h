@@ -335,9 +335,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Close(SOCK sock);
 
 /* Block on the socket until either read/write (dep. on the "event" arg) is
  * available or timeout expires (if "timeout" is NULL then assume it infinite).
- * For datagram sockets this call never blocks but return immediately
- * whether the portion of a message is ready for the read operation from
- * the internal buffer or not, or write operation can be attempted.
+ * For a datagram socket, eIO_Closed is returned if the internally latched
+ * message was entirely read out, and eIO_Read was requested as the "event".
+ * Both eIO_Write and eIO_ReadWrite events always immediately succeed for
+ * the datagram socket.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
 (SOCK            sock,
@@ -351,15 +352,20 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Wait
  * or until timeout expires (wait indefinitely if timeout is passed NULL).
  * Return eIO_Success if at least one socket was found ready; eIO_Timeout
  * if timeout expired; eIO_Unknown if underlying system call(s) failed.
- * NOTE1: for a socket found not ready for an operation, eIO_Open is returned
+ * NOTE1: For a socket found not ready for an operation, eIO_Open is returned
  *        in its "revent"; for a failing socket, eIO_Close is returned;
- * NOTE2: this call can return eIO_InvalidArg if a non-NULL socket polled with
- *        a bad "event" (like eIO_Open or eIO_Close);
- * NOTE3: if either both "n" and "polls" are NULL, or all sockets in "polls"
+ * NOTE2: This call may return eIO_InvalidArg if
+ *        - parameters to the call are inconsistent;
+ *        - a non-NULL socket polled with a bad "event" (eIO_Open, eIO_Close).
+ *        With this return code, the calling program cannot rely on "revent"
+ *        fields the "polls" array as they might not be properly updated.
+ * NOTE3: If either both "n" and "polls" are NULL, or all sockets in "polls"
  *        are NULL, then the returned result is either
  *        eIO_Timeout (after the specified amount of time was spent idle), or
  *        eIO_Interrupted (if signal came while the waiting was in progress).
- * NOTE4: For datagram sockets...
+ * NOTE4: For datagram sockets, the readiness for reading is determined by
+ *        message data latched since last message receive call (DSOCK_RecvMsg).
+ * NOTE5: This call allows intermixture of stream and datagram sockets.
  */
 
 typedef struct {
@@ -372,7 +378,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Poll
 (size_t          n,         /* [in]      # of SSOCK_Poll elems in "polls"    */
  SSOCK_Poll      polls[],   /* [in|out]  array of query/result structures    */
  const STimeout* timeout,   /* [in]      max time to wait (infinite if NULL) */
- size_t*         n_ready    /* [out]     # of ready sockets  (can be NULL)   */
+ size_t*         n_ready    /* [out]     # of ready sockets  (may be NULL)   */
  );
 
 
@@ -406,11 +412,17 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * If "buf" is passed NULL, then:
  *   1) if PEEK -- read up to "size" bytes and store them in internal buffer;
  *   2) else -- discard up to "size" bytes from internal buffer and socket.
- * NOTE1: Theoretically, eIO_Closed may indicate an empty message
- *        rather than a real closure of the connection...
+ * NOTE1: "Read" and "Peek" methods differ:  if "read" is performed and not
+ *        enough but some data available immediately from the internal buffer,
+ *        then the call completes with eIO_Success status. For "peek", if
+ *        not all requested data are available, the real I/O occurs to pick up
+ *        additional data (if any) from the system. Keep this difference in
+ *        mind when programming loops that heavily use "peek"s without "read"s.
  * NOTE2: If on input "size" == 0, then "*n_read" is set to 0, and
  *        return value can be either of eIO_Success, eIO_Closed or
  *        eIO_Unknown depending on connection status of the socket.
+ * NOTE3: Theoretically, eIO_Closed may indicate an empty message
+ *        rather than a real closure of the connection...
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 (SOCK           sock,
@@ -532,13 +544,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_CreateEx
  );
 
 
+#define DSOCK_Connect(s, h, p) SOCK_Reconnect(s, h, p, 0)
+
+
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
  const STimeout* timeout                /* [in]  time to wait for message    */
  );
 
 
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SendMsg
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
  const char*     host,                  /* [in]  hostname or dotted IP       */
  unsigned short  port,                  /* [in]  port number, host byte order*/
@@ -547,15 +562,21 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SendMsg
  );
 
 
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_RecvMsg
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
- size_t          msgsize,               /* [in]  msg size expected, 0 for max*/
+ size_t          msgsize,               /* [in]  expected msg size, 0 for max*/
  void*           buf,                   /* [in]  buf to store msg at,m.b.NULL*/
  size_t          buflen,                /* [in]  buf length provided         */
  size_t*         msglen,                /* [out] actual msg size, may be NULL*/
  unsigned int*   sender_addr,           /* [out] net byte order, may be NULL */
  unsigned short* sender_port            /* [out] host byte order, may be NULL*/
 );
+
+
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SetBroadcast
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ int/*bool*/     broadcast              /* [in]  set(1)/unset(0) bcast capab.*/
+ );
 
 
 
@@ -660,6 +681,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/01/15 19:50:45  lavr
+ * Datagram socket interface revised
+ *
  * Revision 6.28  2003/01/08 01:59:33  lavr
  * DLL-ize CONNECT library for MSVC (add NCBI_XCONNECT_EXPORT)
  *
