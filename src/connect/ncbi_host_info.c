@@ -26,7 +26,7 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   NCBI host info contstuctor and getters
+ *   NCBI host info constructor and getters
  *
  */
 
@@ -58,7 +58,7 @@ HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env)
         return 0;
     if (env && !*env)
         env = 0;
-    size = hinfo_size + sizeof(*host_info);
+    size = sizeof(*host_info) + hinfo_size;
     if (!(host_info = (SHOST_Info*) malloc(size + (env ? strlen(env) : 0))))
         return 0;
     host_info->env = env ? strcpy((char*) host_info + size - 1, env) : 0;
@@ -119,6 +119,9 @@ const char* HINFO_Environment(HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/10/29 22:19:07  lavr
+ * Fix typo in the file description
+ *
  * Revision 6.4  2002/10/29 00:31:08  lavr
  * Fixed hinfo overflow from the use of precalculated size
  *
