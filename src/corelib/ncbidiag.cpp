@@ -536,7 +536,7 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CNcbiException& ex) const
 {
     {
         ostrstream os;
-        os << " NCBI C++ Exception:" << endl << '\0';
+        os << endl << "NCBI C++ Exception:" << endl << '\0';
         *this << os.str();
     }
     const CNcbiException* pex;
@@ -712,6 +712,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.56  2002/06/27 18:56:16  gouriano
+ * added "title" parameter to report functions
+ *
  * Revision 1.55  2002/06/26 18:38:04  gouriano
  * added CNcbiException class
  *

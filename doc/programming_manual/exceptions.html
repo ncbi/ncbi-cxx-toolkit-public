@@ -160,7 +160,7 @@ is meaningless - one should also know the the exception class, which produced it
 <pre>
     // When throwing an exception initially, "prev_exception" must be 0
     CNcbiException(const char* file, int line, EErrCode err_code,
-                   const char* message,
+                   const string& message,
                    const CNcbiException* prev_exception=0) throw();
 </pre>
 </p>
@@ -186,7 +186,7 @@ The class has also numerous reporting methods:
     // if "reporter" is not specified (passed 0), then use the default reporter
     // (as set with CExceptionReporter::SetDefault)
     void Report(const char* file, int line,
-                CExceptionReporter* reporter = 0) const;
+                const string&amp; title, CExceptionReporter* reporter = 0) const;
 
     // Report as a string
     string ReportThis(void) const;  // this exception only, no backlog attached
@@ -206,7 +206,7 @@ The class has also numerous reporting methods:
 </pre>
 Also, the following macro is defined:
 <pre>
-    REPORT_NCBI_EXCEPTION(e)
+    REPORT_NCBI_EXCEPTION(title,e)
 </pre>
 Finally, the following data access functions help to analyze exception
 from a program:
@@ -276,11 +276,13 @@ the standard NCBI diagnostic mechanism is used).<br />
     static  bool EnableDefault( bool enable);
     // Report exception using default reporter
     static  void Default(const char* file, int line,
-	                     const CNcbiException&amp; ex);
+                         const string&amp; title,
+                         const CNcbiException&amp; ex);
 
     // Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
-	                    const CNcbiException&amp; ex) const = 0;
+                        const string&amp; title, 
+                        const CNcbiException&amp; ex) const = 0;
 </pre>
 </p>
 
@@ -411,15 +413,15 @@ There is a number of ways to report <var>CNcbiException</var>, for example:
     try {
         ... // your code
     } catch (CExceptSubsystem&amp; e) {
-        REPORT_NCBI_EXCEPTION(e);
+        REPORT_NCBI_EXCEPTION("your message here",e);
         ERR_POST(e);
         cerr << e.ReportAll();
         cerr << e.what();
-        e.Report(__FILE__,__LINE__);
+        e.Report(__FILE__,__LINE__,"your message here");
     }
 </pre>
-We suggest using <var>REPORT_NCBI_EXCEPTION(e)</var> macro
-(which is equivalent to calling <var>e.Report(__FILE__,__LINE__)</var>) -
+We suggest using <var>REPORT_NCBI_EXCEPTION(title,e)</var> macro
+(which is equivalent to calling <var>e.Report(__FILE__,__LINE__,title)</var>) -
 it redirects the output into standard diagnostic channels
 and is highly configurable.
 </p>

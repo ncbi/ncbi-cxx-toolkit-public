@@ -92,6 +92,7 @@ private:
     void f2(void);
     void f3(void);
     void f4(void);
+
 private:
     virtual int  Run(void);
 };
@@ -227,10 +228,8 @@ int CExceptApplication::Run(void)
 
 
 // Reporting
-        cerr << endl
-            << "****** ERR_POST ******"
-            << endl;
-        ERR_POST("err_post begins " << e << "err_post ends");
+        cerr << endl;
+        ERR_POST("****** ERR_POST ******" << e << "err_post ends");
 
         cerr << endl << "****** e.ReportAll() ******" << endl;
         cerr << e.ReportAll();
@@ -239,18 +238,22 @@ int CExceptApplication::Run(void)
         CExceptionReporter::SetDefault(&reporter);
         CExceptionReporter::EnableDefault(false);
 
-        cerr << endl << "****** stream reporter ******" << endl;
-        e.Report(__FILE__, __LINE__,&reporter);
-        cerr << endl << "****** default reporter (stream, disabled) ******" << endl;
-        REPORT_NCBI_EXCEPTION(e);
+        cerr << endl;
+        e.Report(__FILE__, __LINE__,
+            "****** stream reporter ******", &reporter);
+        cerr << endl;
+        REPORT_NCBI_EXCEPTION(
+            "****** default reporter (stream, disabled) ******",e);
 
         CExceptionReporter::EnableDefault(true);
-        cerr << endl << "****** default reporter (stream) ******" << endl;
-        REPORT_NCBI_EXCEPTION(e);
+        cerr << endl;
+        REPORT_NCBI_EXCEPTION(
+            "****** default reporter (stream) ******",e);
 
         CExceptionReporter::SetDefault(0);
-        cerr << endl << "****** default reporter (diag) ******" << endl;
-        REPORT_NCBI_EXCEPTION(e);
+        cerr << endl;
+        REPORT_NCBI_EXCEPTION(
+            "****** default reporter (diag) ******",e);
     }
     catch (exception& /*e*/) {
         _ASSERT(0);
@@ -275,6 +278,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2002/06/27 18:56:16  gouriano
+ * added "title" parameter to report functions
+ *
  * Revision 6.2  2002/06/27 13:53:40  gouriano
  * added standard NCBI info
  *

@@ -261,8 +261,8 @@ STD_CATCH(message) \
     do { prev_exception.AddBacklog(__FILE__, __LINE__, message); \
     throw; }  while (0)
 
-#define REPORT_NCBI_EXCEPTION(e) \
-    CExceptionReporter::ReportDefault(__FILE__, __LINE__, e)
+#define REPORT_NCBI_EXCEPTION(title,ex) \
+    CExceptionReporter::ReportDefault(__FILE__, __LINE__, title, ex)
 
 
 
@@ -283,14 +283,14 @@ public:
 
     // When throwing an exception initially, "prev_exception" must be 0
     CNcbiException(const char* file, int line, EErrCode err_code,
-                   const char* message,
+                   const string& message,
                    const CNcbiException* prev_exception = 0) throw();
 
     // Copy constructor
     CNcbiException(const CNcbiException& other) throw();
 
     // Add a message to backlog (to re-throw the same exception then)
-    void AddBacklog(const char* file, int line,const char* message);
+    void AddBacklog(const char* file, int line,const string& message);
 
 
     // ---- Reporting --------------
@@ -302,7 +302,7 @@ public:
     // if "reporter" is not specified (passed 0), then use the default reporter
     // (as set with CExceptionReporter::SetDefault)
     void Report(const char* file, int line,
-                CExceptionReporter* reporter = 0) const;
+                const string& title, CExceptionReporter* reporter = 0) const;
 
     // Report as a string
     string ReportThis(void) const;  // this exception only, no backlog attached
@@ -392,7 +392,7 @@ const TTo* UppermostCast(const TFrom& from)
 #define NCBI_EXCEPTION_DEFAULT(exception_class, base_class) \
 public: \
     exception_class(const char* file,int line,EErrCode err_code,\
-        const char* message, const base_class* prev_exception=0) throw() \
+        const string& message, const base_class* prev_exception=0) throw() \
         : base_class(file, line, \
             (base_class::EErrCode) CNcbiException::eInvalid, \
             message, prev_exception) \
@@ -442,10 +442,12 @@ public:
 
     // Report exception using default reporter
     static void ReportDefault(const char* file, int line,
+                              const string& title,
                               const CNcbiException& ex);
 
     // Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
+                        const string& title,
                         const CNcbiException& ex) const = 0;
 
 private:
@@ -465,6 +467,7 @@ public:
     virtual ~CExceptionReporterStream(void);
 
     virtual void Report(const char* file, int line,
+                        const string& title,
                         const CNcbiException& ex) const;
 private:
     ostream& m_Out;
@@ -508,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2002/06/27 18:55:32  gouriano
+ * added "title" parameter to report functions
+ *
  * Revision 1.29  2002/06/27 18:26:23  vakatov
  * Explicitly qualify "exception" with "std::" to avoid a silly name conflict
  * with <math.h> for SUN Forte6u2 compiler

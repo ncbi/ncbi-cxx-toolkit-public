@@ -103,7 +103,7 @@ bool CNcbiException::sm_BkgrEnabled=true;
 
 
 CNcbiException::CNcbiException(const char* file, int line, EErrCode err_code,
-                               const char* message,
+                               const string& message,
                                const CNcbiException* prev_exception) throw()
     :   m_File(file),
         m_Line(line),
@@ -129,7 +129,8 @@ CNcbiException::~CNcbiException(void) throw()
     }
 }
 
-void CNcbiException::AddBacklog(const char* file,int line,const char* message)
+void CNcbiException::AddBacklog(const char* file,int line,
+                                const string& message)
 {
     const CNcbiException* prev = m_Predecessor;
     m_Predecessor = x_Clone();
@@ -152,13 +153,14 @@ const char* CNcbiException::what(void) const throw()
 
 
 void CNcbiException::Report(const char* file, int line,
+                            const string& title,
                             CExceptionReporter* reporter) const
 {
     if (reporter ) {
-        reporter->Report(file, line, *this);
+        reporter->Report(file, line, title, *this);
     }
     // unconditionally ...
-    CExceptionReporter::ReportDefault(file, line, *this);
+    CExceptionReporter::ReportDefault(file, line, title, *this);
 }
 
 
@@ -184,7 +186,7 @@ string CNcbiException::ReportAll(void) const
     os << '\0';
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
-        CExceptionReporter::ReportDefault(0,0,*this);
+        CExceptionReporter::ReportDefault(0,0,"",*this);
         m_InReporter = false;
     }
     return os.str();
@@ -324,15 +326,16 @@ bool CExceptionReporter::EnableDefault(bool enable)
 
 
 void CExceptionReporter::ReportDefault(const char* file, int line,
+                                       const string& title,
                                        const CNcbiException& ex)
 {
     if ( !sm_DefEnabled )
         return;
 
     if ( sm_DefHandler ) {
-        sm_DefHandler->Report(file, line, ex);
+        sm_DefHandler->Report(file, line, title, ex);
     } else {
-        CNcbiDiag(file, line) << ex;
+        CNcbiDiag(file, line) << title << ex;
     }
 }
 
@@ -355,9 +358,13 @@ CExceptionReporterStream::~CExceptionReporterStream(void)
 
 
 void CExceptionReporterStream::Report(const char* file, int line,
+                                      const string& title,
                                       const CNcbiException& ex) const
 {
     const CNcbiException* pex;
+    if (!title.empty()) {
+        m_Out << title << endl;
+    }
     m_Out << "NCBI C++ Exception";
     if (file) {
         m_Out << " at \"" << file << "\", line " << line; 
@@ -406,6 +413,7 @@ static string s_ComposeParse(const string& what, string::size_type pos)
     return str.append("{").append(s).append("} ").append(what);
 }
 
+
 CParseException::CParseException(const string& what, string::size_type pos)
     THROWS_NONE
 : runtime_error(s_ComposeParse(what,pos)), m_Pos(pos)
@@ -416,13 +424,15 @@ CParseException::~CParseException(void) THROWS_NONE
 {
 }
 
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2002/06/27 18:56:16  gouriano
+ * added "title" parameter to report functions
+ *
  * Revision 1.21  2002/06/26 18:38:04  gouriano
  * added CNcbiException class
  *
