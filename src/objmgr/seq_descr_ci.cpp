@@ -34,6 +34,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/objmgr/impl/annot_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -145,6 +146,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/03/13 13:02:36  dicuccio
+* Added #include for annot_object.hpp - fixes obtuse error for Win32 builds
+*
 * Revision 1.6  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

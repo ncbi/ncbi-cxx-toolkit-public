@@ -32,6 +32,7 @@
 
 #include <objects/objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/objmgr/impl/annot_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -139,6 +140,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/03/13 13:02:36  dicuccio
+* Added #include for annot_object.hpp - fixes obtuse error for Win32 builds
+*
 * Revision 1.6  2002/12/05 19:28:32  grichenk
 * Prohibited postfix operator ++()
 *
