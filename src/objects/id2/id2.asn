@@ -1,4 +1,4 @@
---$Revision: 1.11 $
+--$Revision: 1.12 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -279,7 +279,10 @@ ID2-Reply-Get-Seq-id ::= SEQUENCE {
 
         -- resolved Seq-id
         -- not set if error occurred
-        seq-id          SEQUENCE OF Seq-id OPTIONAL
+        seq-id          SEQUENCE OF Seq-id OPTIONAL,
+
+        -- this Seq-id is the last one in the request
+        end-of-reply    NULL OPTIONAL
 }
 
 
@@ -297,7 +300,10 @@ ID2-Reply-Get-Blob-Id ::= SEQUENCE {
 
         -- annotation types in this blob
         -- annotation are unknown if this field is omitted
-        annot-info      SEQUENCE OF ID2S-Seq-annot-Info OPTIONAL
+        annot-info      SEQUENCE OF ID2S-Seq-annot-Info OPTIONAL,
+
+        -- this Blob-id is the last one in the request
+        end-of-reply    NULL OPTIONAL
 }
 
 
