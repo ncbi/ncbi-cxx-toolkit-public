@@ -1,6 +1,7 @@
 # $Id$
 
-APP_PROJ = ctl_sp_who ctl_lang
+APP_PROJ = ctl_sp_who ctl_lang \
+           dbl_sp_who dbl_lang
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
