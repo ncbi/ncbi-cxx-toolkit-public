@@ -107,9 +107,8 @@ const CSeq_align& CAlign_CI::GetOriginalSeq_align(void) const
 
 CSeq_align_Handle CAlign_CI::GetSeq_align_Handle(void) const
 {
-    return CSeq_align_Handle(GetScope(),
-        GetIterator()->GetSeq_annot_Info(),
-        GetIterator()->GetAnnotObjectIndex());
+    return CSeq_align_Handle(GetAnnot(),
+                             GetIterator()->GetAnnotObjectIndex());
 }
 
 
@@ -171,6 +170,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/12/22 15:56:08  vasilche
+* Used CSeq_annot_Handle GetAnnot() to get annotation handle.
+*
 * Revision 1.28  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *
