@@ -32,10 +32,10 @@
  */
 
 #include <connect/ncbi_socket.hpp>
-#ifdef NCBI_OS_MSWIN
-#  define _POSIX_                       // causes PATH_MAX to define on MS-Win
-#endif
 #include <limits.h>                     // for PATH_MAX
+#if defined(NCBI_OS_MSWIN) && !defined(PATH_MAX)
+#  define PATH_MAX 512                  // will actually use less than 32 chars
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -515,6 +515,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/07/15 19:04:04  lavr
+ * Yet another fix for MS-Win compilation
+ *
  * Revision 6.18  2003/07/15 18:16:44  lavr
  * Fix MS-Win compilation
  *
