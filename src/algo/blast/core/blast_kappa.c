@@ -74,7 +74,6 @@ typedef struct SWResults {
     Int4 seqEnd;
     Int4 queryStart;
     Int4 queryEnd;
-    Int4 *reverseAlignScript;
     Int4 score;
     double eValue;
     double eValueThisAlign;
@@ -84,6 +83,27 @@ typedef struct SWResults {
     Int4 subject_index;  /* needed to break ties on rare occasions */
     BlastHSP* hsp; /* tracks alignment/hit. */
 } SWResults;
+
+/**
+ * Frees the linked-list of SWResults.  Does not deallocate the BlastHSP 
+ * on the SWResults as that is saved elsewhere.
+ * @param sw_results the head of the linked list to be freed [in]
+ * @return NULL pointer 
+*/
+static SWResults* SWResultsFree(SWResults* sw_results)
+{
+    SWResults *current, *next;
+
+    next = current = sw_results;
+    while (current)
+    {
+       next = current->next;
+       sfree(current);
+       current = next;
+    }
+
+    return NULL;
+}
 
 /**
  * SWResultsNew Create a new instance of the SWResults struct, initializing
@@ -304,9 +324,7 @@ Kappa_MatchRecordInsertSwAlign(
   newSW->queryStart = queryStart;
   newSW->queryEnd   = queryStart + queryAlignmentExtent;
   newSW->next       = self->alignments;
-  newSW->reverseAlignScript = reverseAlignScript;
 
-  /* FIXME does reverseAlignScript need to be kept around after this, is other stuff needed on newSW? */
   BLAST_TracebackToGapEditBlock(reverseAlignScript, queryAlignmentExtent, matchAlignmentExtent, 
      queryStart, matchStart, &editBlock);
  
@@ -642,8 +660,6 @@ SWheapInsert(SWheap * self,
                                        * discarded alignments */
         thisAlignment        = discardedAlignments;
         discardedAlignments  = thisAlignment->next;
-
-        sfree(thisAlignment->reverseAlignScript);
         sfree(thisAlignment);
       }
       /* end while there are discarded alignments that have not been freed */
@@ -2565,7 +2581,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
             Int4 queryAlignmentExtent, matchAlignmentExtent;
             /* Alignment information (script) returned by a x-drop
              * alignment algorithm */
-            Int4 *reverseAlignScript;   
+            Int4 *reverseAlignScript=NULL;   
 
             gapAlign->gap_x_dropoff =
               extendParams->gap_x_dropoff_final * localScalingFactor;
@@ -2586,6 +2602,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                                            matchStart, matchAlignmentExtent,
                                            queryStart, queryAlignmentExtent,
                                            reverseAlignScript, query);
+            sfree(reverseAlignScript);
 
             Kappa_ForbiddenRangesPush(&forbidden, queryStart, queryAlignmentExtent,
                                       matchStart, matchAlignmentExtent);
@@ -2699,6 +2716,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
     if(SWAligns != NULL) {
       newConvertSWalignsUpdateHitList(SWAligns, hitList);
     }
+    SWAligns = SWResultsFree(SWAligns);
   }
   /* Clean up */
   SWheapRelease(&significantMatches);
