@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2000/10/20 17:05:48  lavr
+ * TServType made 'unsigned'
+ *
  * Revision 6.10  2000/10/05 21:25:45  lavr
  * ncbiconf.h removed
  *
@@ -89,7 +92,7 @@ typedef enum {
     fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost
 #define fSERV_StatelessOnly 0x80
 } ESERV_Type;
-typedef int TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
+typedef unsigned TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 
 
 /* Flags to specify the algorithm for selecting the most preferred
@@ -148,7 +151,7 @@ typedef struct {
     ESERV_Type     type;        /* type of server */
     unsigned int   host;        /* host the server running on */
     unsigned short port;        /* port the server running on */
-    unsigned short stat;        /* true, when stateful connection only */
+    unsigned short sful;        /* true if this is a stateful server */
     ESERV_Flags    flag;        /* algorithm flag for the server */
     time_t         time;        /* relaxation/expiration time/period */
     double         rate;        /* rate of the server */
