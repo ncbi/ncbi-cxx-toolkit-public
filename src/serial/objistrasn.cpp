@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2001/01/22 23:12:05  vakatov
+* CObjectIStreamAsn::{Read,Skip}ClassSequential() -- use curr.member "pos"
+*
 * Revision 1.65  2001/01/05 20:10:51  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -1142,7 +1145,7 @@ void CObjectIStreamAsn::ReadClassSequential(const CClassTypeInfo* classType,
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
-        TMemberIndex index = classType->GetMembers().Find(id);
+        TMemberIndex index = classType->GetMembers().Find(id, *pos);
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
@@ -1182,7 +1185,7 @@ void CObjectIStreamAsn::SkipClassSequential(const CClassTypeInfo* classType)
 
     while ( NextElement() ) {
         CLightString id = ReadMemberId(SkipWhiteSpace());
-        TMemberIndex index = classType->GetMembers().Find(id);
+        TMemberIndex index = classType->GetMembers().Find(id, *pos);
         if ( index == kInvalidMember )
             UnexpectedMember(id, classType->GetMembers());
 
