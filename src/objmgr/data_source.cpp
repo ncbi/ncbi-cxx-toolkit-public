@@ -62,7 +62,9 @@ BEGIN_SCOPE(objects)
 
 CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
 CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
+EMPTY_TEMPLATE
 CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize];
+EMPTY_TEMPLATE
 CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize];
 
 
@@ -1907,6 +1909,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2002/08/08 14:28:00  ucko
+* Add EMPTY_TEMPLATE to explicit instantiations.
+*
 * Revision 1.58  2002/08/07 18:22:48  ucko
 * Explicitly instantiate CMutexPool_Base<{CDataSource,TTSESet}>::sm_Pool
 *

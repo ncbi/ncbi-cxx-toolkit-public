@@ -54,6 +54,7 @@ BEGIN_SCOPE(objects)
 
 
 CMutexPool_Base<CScope> CScope::sm_Scope_MP;
+EMPTY_TEMPLATE
 CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize];
 
 CScope::CScope(CObjectManager& objmgr)
@@ -373,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/08/08 14:28:00  ucko
+* Add EMPTY_TEMPLATE to explicit instantiations.
+*
 * Revision 1.24  2002/08/07 18:21:57  ucko
 * Explicitly instantiate CMutexPool_Base<CScope>::sm_Pool
 *
