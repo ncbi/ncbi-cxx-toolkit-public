@@ -162,7 +162,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = 0;
+    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1);
 #endif
 
     // read
@@ -274,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2003/11/04 13:38:29  lavr
+ * Unique value of visited MIPSPro-special gptr() is changed to (-1)
+ *
  * Revision 1.3  2003/11/04 03:09:29  lavr
  * xsgetn() fixed to advance buffer pointer when reading
  *
