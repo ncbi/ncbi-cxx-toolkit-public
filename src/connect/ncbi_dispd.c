@@ -335,11 +335,13 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         status = info->rate;
         assert(status != 0.0);
 
-        if (info->host == iter->preferred_host) {
-            if (info->coef <= 0.0 || iter->preference) {
+        if (iter->preferred_host == info->host  ||
+            (!iter->preferred_host  &&
+             info->locl  &&  info->coef < 0.0)) {
+            if (iter->preference  ||  info->coef <= 0.0) {
                 status *= SERV_DISPD_LOCAL_SVC_BONUS;
                 if (access < status &&
-                    (iter->preference || info->coef < 0.0)) {
+                    (iter->preference  ||  info->coef < 0.0)) {
                     access =  status;
                     point  =  total + status; /* Latch this local server */
                     p      = -info->coef;
@@ -352,19 +354,35 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         data->s_node[i].status = total;
     }
 
-    if (point > 0.0 && iter->preference) {
+    if (point > 0.0  &&  iter->preference) {
         if (total != access) {
             p = SERV_Preference(iter->preference, access/total, data->n_node);
+#if 0
+            CORE_LOGF(eLOG_Note, ("(P = %lf, A = %lf, T = %lf, N = %d)"
+                                  " -> Pref = %lf", iter->preference,
+                                  access, total, (int) data->n_node, p));
+#endif
             status = total*p;
             p = total*(1.0 - p)/(total - access);
             for (i = 0; i < data->n_node; i++) {
                 data->s_node[i].status *= p;
-                if (p*point <= data->s_node[i].status)
+                if (p*point <= data->s_node[i].status) 
                     data->s_node[i].status += status - p*access;
             }
+#if 0
+            for (i = 0; i < data->n_node; i++) {
+                char addr[16];
+                SOCK_ntoa(data->s_node[i].info->host, addr, sizeof(addr));
+                status = data->s_node[i].status -
+                    (i ? data->s_node[i-1].status : 0.0);
+                CORE_LOGF(eLOG_Note, ("%s %lf %.2lf%%", addr,
+                                      status, status/total*100.0));
+            }
+#endif
         }
         point = -1.0;
     }
+
     /* We take pre-chosen local server only if its status is not less than
        p% of the average remaining status; otherwise, we ignore the server,
        and apply the generic procedure by seeding a random point. */
@@ -467,6 +485,9 @@ void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.64  2005/03/16 20:15:25  lavr
+ * Allow local B services to have a preference
+ *
  * Revision 6.63  2005/01/27 19:00:05  lavr
  * Explicit cast of malloc()ed memory
  *
