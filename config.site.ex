@@ -1,103 +1,119 @@
 #!/bin/sh
+# $Id: config.site.ex,v 1.2 2003/04/29 21:39:36 ucko Exp $
 
-# You can control where the C++ Toolkit's configure script looks for
-# various packages by copying or renaming this file to "config.site" and
-# then uncommenting and adjusting the relevant settings.
+### You can control where the C++ Toolkit's configure script looks for
+### various packages by copying or renaming this file to "config.site"
+### and then uncommenting and adjusting the relevant settings.
 
-# NOTE: configure reads this file after parsing arguments but before
-# setting anything else, so any configuration-dependent settings will have
-# to manage with only $with_xxx and the original environment.
+### NOTE: configure reads this file after parsing arguments but before
+### setting anything else, so any configuration-dependent settings
+### will have to manage with only $with_xxx and the original
+### environment.
 
 
-## Read in systemwide defaults
+### Read in systemwide defaults
+
 # . /usr/local/etc/config.site
 
 
-## Make sure configure can find your favorite development toolchain.  (It
-## then hardcodes programs' paths in makefiles, so setting PATH here should
-## be sufficient as long as the compiler doesn't rely on finding auxiliary
-## programs in $PATH.)
+### Make sure configure can find your favorite development toolchain.  (It
+### then hardcodes programs' paths in makefiles, so setting PATH here should
+### be sufficient as long as the compiler doesn't rely on finding auxiliary
+### programs in $PATH.)
 
 # PATH=/usr/foo/bin:$PATH
 
 
-## Paths to various external libraries; the defaults are often relative to
-## $NCBI, per our in-house setup.  Most of these also have --with-...
-##  options that take a path.
+### Paths to various external libraries; the defaults are often relative to
+### $NCBI, per our in-house setup.  Most of these also have --with-...
+###  options that take a path.
 
-# NCBI=/netopt/ncbi_tools
+# NCBI="/netopt/ncbi_tools"
 
-## Sybase
-# SYBASE_PATH=/netopt/Sybase/clients/current
-# SYBASE_LOCAL_PATH=/export/home/sybase/clients/current
+### Sybase
 
-## FreeTDS (we recommend just using the bundled version)
-# FTDS_PATH=/netopt/Sybase/clients-mssql/current
+# SYBASE_PATH="/netopt/Sybase/clients/current"
+# SYBASE_LOCAL_PATH="/export/home/sybase/clients/current"
+
+### FreeTDS (we recommend just using the bundled version)
+
+# FTDS_PATH="/netopt/Sybase/clients-mssql/current"
 ## -L$FTDS_PATH/lib automatically prepended
-# FTDS_LIBS=-lsybdb -ltds
+# FTDS_LIBS="-lsybdb -ltds"
 
-## MySQL (also looks for mysql_config in $PATH)
-# MYSQL_PATH=/netopt/mysql/current
-# MYSQL_BINPATH=$MYSQL_PATH/bin
-# mysql_config=$MYSQL_BINPATH/mysql_config
+### MySQL (also looks for mysql_config in $PATH)
+
+# MYSQL_PATH="/netopt/mysql/current"
+# MYSQL_BINPATH="$MYSQL_PATH/bin"
+# mysql_config="$MYSQL_BINPATH/mysql_config"
 ## Normally obtained from mysql_config, but still settable if necessary...
-# MYSQL_INCLUDE=-I$MYSQL_PATH/include
-# MYSQL_LIBS=-L$MYSQL_PATH/lib -lmysqlclient
+# MYSQL_INCLUDE="-I$MYSQL_PATH/include"
+# MYSQL_LIBS="-L$MYSQL_PATH/lib -lmysqlclient"
 
-## Berkeley DB
-# BERKELEYDB_PATH=$NCBI/BerkeleyDB
+### Berkeley DB
 
-## NCBI C Toolkit
-# NCBI_C_PATH=$NCBI
+# BERKELEYDB_PATH="$NCBI/BerkeleyDB"
 
-## FLTK 1.1.x
-# FLTK_PATH=$NCBI/fltk
-# FLTK_ARCH_PATH=$FLTK_PATH/...
-# FLTK_BINPATH=$FLTK_ARCH_PATH/bin
-# FLTK_LIBPATH=$FLTK_ARCH_PATH/lib
+### NCBI C Toolkit
 
-## wxWindows
-# WXWIN_PATH=$NCBI/wxwin
-# WXWIN_ARCH_PATH=$WXWIN_PATH/...
-# WXWIN_BINPATH=$WXWIN_ARCH_PATH/bin
-# WXWIN_LIBPATH=$WXWIN_ARCH_PATH/lib
+# NCBI_C_PATH="$NCBI"
 
-## FastCGI
-# FASTCGI_PATH=$NCBI/fcgi-current
+### FLTK 1.1.x
 
-## SP
-# SP_PATH=$NCBI/SP
+# FLTK_PATH="$NCBI/fltk"
+# FLTK_ARCH_PATH="$FLTK_PATH/..."
+# FLTK_BINPATH="$FLTK_ARCH_PATH/bin"
+# FLTK_LIBPATH="$FLTK_ARCH_PATH/lib"
 
-## NCBI SSS libraries
-# NCBI_SSS_PATH=$NCBI/sss/BUILD
-# NCBI_SSS_INCLUDE=$NCBI_SSS_PATH/include
+### wxWindows
 
-## NCBI GEO libraries
-# NCBI_GEO_PATH=$NCBI/geo
-# NCBI_GEO_INCLUDE=$NCBI_GEO_PATH/include
+# WXWIN_PATH="$NCBI/wxwin"
+# WXWIN_ARCH_PATH="$WXWIN_PATH/..."
+# WXWIN_BINPATH="$WXWIN_ARCH_PATH/bin"
+# WXWIN_LIBPATH="$WXWIN_ARCH_PATH/lib"
 
-## NCBI PubMed libraries ($bit64_sfx automatically added unless present)
-# NCBI_PM_PATH=$NCBI/pubmed
+### FastCGI
 
-## ORBacus (CORBA implementation)
-# ORBACUS_PATH=$NCBI/corba/OB-4.0.1
+# FASTCGI_PATH="$NCBI/fcgi-current"
 
+### SP
 
-## You shouldn't normally need to set anything below this point.
+# SP_PATH="$NCBI/SP"
 
-## Hand-pick particular programs (may include flags; may be overridden in
-## some cases)
+### NCBI SSS libraries
 
-# CC=mycc
-# CXX=myCC
-# AR=ar
-# RANLIB=ranlib
-# STRIP=strip
-# LORDER=lorder
-# TSORT=tsort
+# NCBI_SSS_PATH="$NCBI/sss/BUILD"
+# NCBI_SSS_INCLUDE="$NCBI_SSS_PATH/include"
+
+### NCBI GEO libraries
+
+# NCBI_GEO_PATH="$NCBI/geo"
+# NCBI_GEO_INCLUDE="$NCBI_GEO_PATH/include"
+
+### NCBI PubMed libraries ($bit64_sfx automatically added unless present)
+
+# NCBI_PM_PATH="$NCBI/pubmed"
+
+### ORBacus (CORBA implementation)
+
+# ORBACUS_PATH="$NCBI/corba/OB-4.0.1"
 
 
-## Set special flags (normally not needed)
+### You shouldn't normally need to set anything below this point.
+
+### Hand-pick particular programs (may include flags; may be overridden in
+### some cases)
+
+# CC="mycc"
+# CXX="myCC"
+# AR="ar"
+# RANLIB="ranlib"
+# STRIP="strip"
+# LORDER="lorder"
+# TSORT="tsort"
+
+
+### Set special flags (normally not needed)
 
 # CPPFLAGS="-DFOO -I/bar"
 # LDFLAGS="-L/baz"
@@ -108,7 +124,7 @@
 # CFLAGS_DLL="-fPIC"
 # CXXFLAGS_DLL="-fPIC"
 
-## Libraries for various things (normally autodetected)
+### Libraries for various things (normally autodetected)
 
 # THREAD_LIBS="-lpthread"
 # NETWORK_LIBS="-lsocket -lnsl"
