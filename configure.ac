@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.29 2002/01/31 23:22:47 vakatov Exp $
+#  $Id: configure.ac,v 1.30 2002/02/01 15:40:54 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -682,7 +682,7 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    pure_runpath=$with_runpath
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
    runpath="${CONF_f_runpath}\$(libdir)"
-   pure_runpath=$libdir
+   pure_runpath='${build_root}/lib'
 else
    runpath=
    pure_runpath=
