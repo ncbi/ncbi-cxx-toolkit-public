@@ -201,10 +201,11 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
  * the sequence.
  * @param prog_number Integer corresponding to the BLAST program
  * @param context_number Context number 
- * @return Sequence frame (+-1 for nucleotides, -3..3 for translations)
+ * @return Sequence frame: -1,1 for nucleotides, -3,-2,-1,1,2,3 for translations, 
+ * 0 for proteins and 256 in case of error
 */
 NCBI_XBLAST_EXPORT
-Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number);
+Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number);
 
 /** Given a context from BLAST engine core, return the query index.
  * @param context Context saved in a BlastHSP structure [in]

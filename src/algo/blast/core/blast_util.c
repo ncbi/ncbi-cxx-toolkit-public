@@ -632,9 +632,9 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
    return 0;
 }
 
-Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number)
+Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
 {
-   Int2 frame=255;
+   Int1 frame = 256;	/* 256 is used to indicate error */
 
    if (prog_number == eBlastTypeBlastn) {
       if (context_number % NUM_STRANDS == 0)
@@ -650,7 +650,15 @@ Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number)
    } else if (prog_number == eBlastTypeBlastx || 
               prog_number == eBlastTypeTblastx) {
       context_number = context_number % NUM_FRAMES;
-      frame = (context_number < 3) ? context_number+1 : -context_number+2;
+	  switch (context_number) {
+	  case 0: frame = 1; break;
+	  case 1: frame = 2; break;
+	  case 2: frame = 3; break;
+	  case 3: frame = -1; break;
+	  case 4: frame = -2; break;
+	  case 5: frame = -3; break;
+	  default: abort(); /* should never happen */  break;
+	  }
    }
    
    return frame;
