@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/05/14 16:23:18  vakatov
+* CDiagBuffer::Reset: easy fix
+*
 * Revision 1.11  1999/05/12 21:11:42  vakatov
 * Minor fixes to copile by the Mac CodeWarrior C++ compiler
 *
@@ -312,9 +315,8 @@ inline void CDiagBuffer::Flush(void) {
 }
 
 inline void CDiagBuffer::Reset(const CNcbiDiag& diag) {
-    if (&diag == m_Diag  &&
-        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out) != 0)
-        ::abort();
+    if (&diag == m_Diag)
+        m_Stream.rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
 }
 
 inline void CDiagBuffer::EndMess(const CNcbiDiag& diag) {
