@@ -170,8 +170,7 @@ BlastInitHitList* BLAST_InitHitListFree(BlastInitHitList* init_hitlist);
  * @param matrix The scoring matrix [in]
  * @param word_params Parameters for the initial word extension [in]
  * @param ewp Structure needed for initial word information maintenance [in]
- * @param q_offsets pointer to previously-allocated query offset array [in]
- * @param s_offsets pointer to previously-allocated query offset array [in]
+ * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
@@ -183,8 +182,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   Int4** matrix, 
 		   const BlastInitialWordParameters* word_params,
 		   Blast_ExtendWord* ewp,
-		   Uint4* q_offsets,
-		   Uint4* s_offsets,
+                   BlastOffsetPair* offset_pairs,
 		   Int4 max_hits,
 		   BlastInitHitList* init_hitlist, 
          BlastUngappedStats* ungapped_stats);
@@ -199,8 +197,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
  * @param matrix The scoring matrix [in]
  * @param word_params Parameters for the initial word extension [in]
  * @param ewp Structure needed for initial word information maintenance [in]
- * @param q_offsets pointer to previously-allocated query offset array [in]
- * @param s_offsets pointer to previously-allocated subject offset array [in]
+ * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
@@ -212,8 +209,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 		       Int4** matrix,
 		       const BlastInitialWordParameters* word_params, 
 		       Blast_ExtendWord* ewp,
-		       Uint4* q_offsets,
-		       Uint4* s_offsets,
+                       BlastOffsetPair* offset_pairs,
 		       Int4 max_hits,
 		       BlastInitHitList* init_hitlist, 
              BlastUngappedStats* ungapped_stats);
@@ -229,8 +225,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
  * @param matrix The scoring matrix [in]
  * @param word_params Parameters for the initial word extension [in]
  * @param ewp Structure needed for initial word information maintenance [in]
- * @param q_offsets pointer to previously-allocated query offset array [in]
- * @param s_offsets pointer to previously-allocated subject offset array [in]
+ * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param max_hits size of offset arrays [in]
  * @param init_hitlist Structure to hold all hits information. Has to be 
  *        allocated up front [out]
@@ -242,8 +237,7 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 			  Int4** matrix,
 			  const BlastInitialWordParameters* word_params, 
 			  Blast_ExtendWord* ewp,
-			  Uint4* q_offsets,
-			  Uint4* s_offsets,
+                          BlastOffsetPair* offset_pairs,
 			  Int4 max_hits,
 			  BlastInitHitList* init_hitlist, 
            BlastUngappedStats* ungapped_stats);

@@ -202,8 +202,7 @@ typedef Int2 (*BlastWordFinderType)
       Int4**, 
       const BlastInitialWordParameters*,
       Blast_ExtendWord*, 
-      Uint4*, 
-      Uint4*, 
+      BlastOffsetPair*,
       Int4, 
       BlastInitHitList*,
       BlastUngappedStats*);

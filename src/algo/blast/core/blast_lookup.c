@@ -391,8 +391,7 @@ for(i=0;i<lookup->backbone_size;i++)
 Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *subject,
                         Int4* offset,
-                        Uint4 * NCBI_RESTRICT query_offsets,
-                        Uint4 * NCBI_RESTRICT subject_offsets,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                         Int4 array_size
 		   )
 {
@@ -444,8 +443,8 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
 	      /* copy the hits. */
 	      for(i=0;i<numhits;i++)
 		{
-		  query_offsets[i + totalhits] = src[i];
-		  subject_offsets[i + totalhits] = s - subject->sequence;
+		  offset_pairs[i + totalhits].qs_offsets.q_off = src[i];
+		  offset_pairs[i + totalhits].qs_offsets.s_off = s - subject->sequence;
 		}
 
 	      totalhits += numhits;
@@ -471,8 +470,7 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
 Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *sequence,
                         Int4* offset,
-                        Uint4 * table_offsets,
-                        Uint4 * sequence_offsets,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                         Int4 array_size
 		   )
 {
@@ -508,7 +506,8 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
   for(s=s_first; s <= s_last; s++)
     {
       /* compute the index value */
-      _ComputeIndexIncremental(lookup->wordsize,lookup->charsize,lookup->mask, s, &index);
+      _ComputeIndexIncremental(lookup->wordsize,lookup->charsize,lookup->mask,
+                               s, &index);
 
       /* if there are hits... */
       if (PV_TEST(lookup, index))
@@ -526,20 +525,24 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
 		/* hits live in thick_backbone */
 	        for(i=0;i<numhits;i++)
 		  {
-		    table_offsets[i + totalhits] = cell->entries[i] -
-                                                table_correction;
-		    sequence_offsets[i + totalhits] = s - sequence->sequence;
+		    offset_pairs[i + totalhits].qs_offsets.q_off = 
+                        cell->entries[i] - table_correction;
+		    offset_pairs[i + totalhits].qs_offsets.s_off = 
+                        s - sequence->sequence;
 		  }
               }
 	      else {
 		/* hits (past the first) live in overflow array */
 		src = lookup->overflow + (cell->entries[1] / sizeof(Int4));
-		table_offsets[totalhits] = cell->entries[0] - table_correction;
-		sequence_offsets[totalhits] = s - sequence->sequence;
+		offset_pairs[totalhits].qs_offsets.q_off = 
+                    cell->entries[0] - table_correction;
+		offset_pairs[totalhits].qs_offsets.s_off = s - sequence->sequence;
 	        for(i=0;i<(numhits-1);i++)
 		  {
-		    table_offsets[i+totalhits+1] = src[i] - table_correction;
-		    sequence_offsets[i+totalhits+1] = s - sequence->sequence;
+		    offset_pairs[i+totalhits+1].qs_offsets.q_off = 
+                        src[i] - table_correction;
+		    offset_pairs[i+totalhits+1].qs_offsets.s_off = 
+                        s - sequence->sequence;
 		  }
 	      }
 
@@ -947,12 +950,10 @@ static void _AddPSSMWordHits(NeighborInfo *info, Int4 score, Int4 current_pos)
 
 /* Description in na_lookup.h */
 Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
-			   const BLAST_SequenceBlk* subject,
-			   Int4 start_offset,
-			   Uint4* NCBI_RESTRICT q_offsets,
-			   Uint4* NCBI_RESTRICT s_offsets,
-			   Int4 max_hits,  
-       Int4* end_offset)
+                           const BLAST_SequenceBlk* subject,
+                           Int4 start_offset,
+                           BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                           Int4 max_hits, Int4* end_offset)
 {
    BlastLookupTable* lookup;
    Uint1* s;
@@ -1008,8 +1009,8 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                lookup_pos++;
                num_hits--;
                
-               q_offsets[total_hits] = q_off;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
             }
          }
       }
@@ -1049,8 +1050,8 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                lookup_pos++;
                num_hits--;
                
-               q_offsets[total_hits] = q_off;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
             }
          }
       }
@@ -1062,9 +1063,10 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
 
 /* Description in blast_lookup.h */
 Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
-       const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* NCBI_RESTRICT q_offsets, Uint4* NCBI_RESTRICT s_offsets, 
-       Int4 max_hits, Int4* end_offset)
+                        const BLAST_SequenceBlk* subject, 
+                        Int4 start_offset,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                        Int4 max_hits, Int4* end_offset)
 {
    Uint1* s;
    Uint1* abs_start,* s_end;
@@ -1117,8 +1119,8 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
             lookup_pos++;
             num_hits--;
             
-            q_offsets[total_hits] = q_off;
-            s_offsets[total_hits++] = s_off;
+            offset_pairs[total_hits].qs_offsets.q_off = q_off;
+            offset_pairs[total_hits++].qs_offsets.s_off = s_off;
          }
       }
 

@@ -613,7 +613,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
 Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
        const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,  
        Int4* end_offset)
 {
    BlastMBLookupTable* mb_lt;
@@ -659,8 +659,8 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             q_off = mb_lt->hashtable[index];
             s_off = (s - abs_start)*COMPRESSION_RATIO;
             while (q_off) {
-               q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
@@ -684,8 +684,8 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
                break;
             q_off = mb_lt->hashtable[adjusted_index];
             while (q_off) {
-               q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
@@ -698,7 +698,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
 
 Int4 MB_ScanSubject(const LookupTableWrap* lookup,
        const BLAST_SequenceBlk* subject, Int4 start_offset, 
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,
        Int4* end_offset) 
 {
    Uint1* abs_start,* s_end;
@@ -738,8 +738,8 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
          q_off = mb_lt->hashtable[index];
          s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
          while (q_off) {
-            q_offsets[total_hits] = q_off - 1;
-            s_offsets[total_hits++] = s_off;
+            offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+            offset_pairs[total_hits++].qs_offsets.s_off = s_off;
             q_off = mb_lt->next_pos[q_off];
          }
       }
@@ -757,7 +757,7 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
 
 Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup, 
        const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits, 
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits, 
        Int4* end_offset)
 {
    Uint1* s;
@@ -808,8 +808,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             q_off = mb_lt->hashtable[index];
             s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
             while (q_off) {
-               q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
@@ -817,8 +817,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             q_off = mb_lt->hashtable2[index2];
             s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
             while (q_off) {
-               q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos2[q_off];
             }
          }
@@ -855,8 +855,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
             while (q_off) {
-               q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
          }
@@ -865,8 +865,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             s_off = ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
             while (q_off) {
-               q_offsets[total_hits] = q_off - 1;
-               s_offsets[total_hits++] = s_off;
+               offset_pairs[total_hits].qs_offsets.q_off = q_off - 1;
+               offset_pairs[total_hits++].qs_offsets.s_off = s_off;
                q_off = mb_lt->next_pos2[q_off];
             }
          }

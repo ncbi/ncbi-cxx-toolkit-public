@@ -42,8 +42,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                        Int4** matrix,
                        const BlastInitialWordParameters* word_params,
                        Blast_ExtendWord* ewp,
-                       Uint4* query_offsets,
-                       Uint4* subject_offsets,
+                       BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                        Int4 offset_array_size,
                        BlastInitHitList* init_hitlist, 
                        BlastUngappedStats* ungapped_stats)
@@ -59,7 +58,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                                         matrix,
                                         word_params->cutoff_score,
                                         word_params->x_dropoff,
-                                        query_offsets, subject_offsets,
+                                        offset_pairs,
                                         offset_array_size,
                                         init_hitlist, ungapped_stats);
     }
@@ -70,7 +69,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                                         matrix,
                                         word_params->cutoff_score,
                                         word_params->x_dropoff,
-                                        query_offsets, subject_offsets,
+                                        offset_pairs,
                                         offset_array_size,
                                         init_hitlist, ungapped_stats);
     }
@@ -80,18 +79,18 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
   return status;
 }
 
-Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
-			      const BLAST_SequenceBlk* query,
-			      const LookupTableWrap* lookup_wrap,
-			      BLAST_DiagTable* diag,
-			      Int4 ** matrix,
-			      Int4 cutoff,
-			      Int4 dropoff,
-			      Uint4 * NCBI_RESTRICT query_offsets,
-			      Uint4 * NCBI_RESTRICT subject_offsets,
-			      Int4 array_size,
-			      BlastInitHitList* ungapped_hsps, 
-               BlastUngappedStats* ungapped_stats)
+Int2 
+BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
+                         const BLAST_SequenceBlk* query,
+                         const LookupTableWrap* lookup_wrap,
+                         BLAST_DiagTable* diag,
+                         Int4 ** matrix,
+                         Int4 cutoff,
+                         Int4 dropoff,
+                         BlastOffsetPair* NCBI_RESTRICT offset_pairs,
+                         Int4 array_size,
+                         BlastInitHitList* ungapped_hsps, 
+                         BlastUngappedStats* ungapped_stats)
 {
    BlastLookupTable* lookup=NULL;
    BlastRPSLookupTable* rps_lookup=NULL;
@@ -110,6 +109,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    DiagStruct* diag_array;
    Boolean right_extend;
    Int4 hits_extended = 0;
+   Uint4 subject_offset, query_offset;
 
    ASSERT(diag != NULL);
 
@@ -136,28 +136,31 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
       /* scan the subject sequence for hits */
       if (rps_lookup)
          hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
-                                query_offsets, subject_offsets, array_size);
+                                    offset_pairs, array_size);
       else
          hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset, 
-                                query_offsets, subject_offsets, array_size);
+                                   offset_pairs, array_size);
 
       totalhits += hits;
       /* for each hit, */
       for (i = 0; i < hits; ++i)
       {
+         query_offset = offset_pairs[i].qs_offsets.q_off;
+         subject_offset = offset_pairs[i].qs_offsets.s_off;
+         
          /* calculate the diagonal associated with this query-subject
             pair, and find the distance to the last hit on this diagonal */
 
          diag_coord = 
-            (subject_offsets[i]  - query_offsets[i]) & diag_mask;
+            (query_offset  - subject_offset) & diag_mask;
          
          last_hit = diag_array[diag_coord].last_hit - diag_offset;
-         diff = subject_offsets[i] - last_hit;
+         diff = subject_offset - last_hit;
 
          if (diff >= window) {
             /* We are beyond the window for this diagonal; start a new hit */
-            diag_array[diag_coord].last_hit = subject_offsets[i] + diag_offset;
-         } 
+            diag_array[diag_coord].last_hit = subject_offset + diag_offset;
+         }
          else {
             /* If the difference is negative, or is less than the 
                wordsize (i.e. last hit and this hit overlap), give up */
@@ -170,7 +173,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                sequences, do the ungapped extension */
 
             right_extend = TRUE;
-            if ((Int4)(subject_offsets[i] + diag_offset) >= 
+            if ((Int4)(subject_offset + diag_offset) >= 
                 diag_array[diag_coord].diag_level) {
 
                /* Extend this pair of hits. The extension to the left must 
@@ -179,7 +182,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                hsp_len = 0;
                score = BlastAaExtendTwoHit(matrix, subject, query,
                                         last_hit + wordsize, 
-                                        subject_offsets[i], query_offsets[i], 
+                                        subject_offset, query_offset, 
                                         dropoff, &hsp_q, &hsp_s, 
                                         &hsp_len, use_pssm,
                                         wordsize, &right_extend, &s_last_off);
@@ -189,7 +192,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                /* if the hsp meets the score threshold, report it */
                if (score >= cutoff)
                   BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
-                        query_offsets[i], subject_offsets[i], hsp_len, score);
+                        query_offset, subject_offset, hsp_len, score);
 
                /* whether or not the score was high enough, remember
                   the rightmost subject word offset examined. Future hits must
@@ -207,7 +210,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                diag_array[diag_coord].last_hit = 0;
             else
                diag_array[diag_coord].last_hit = 
-                        subject_offsets[i] + diag_offset;
+                        subject_offset + diag_offset;
          } 
       }/* end for - done with this batch of hits, call scansubject again. */
    } /* end while - done with the entire sequence. */
@@ -227,8 +230,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
-			      Uint4 * NCBI_RESTRICT query_offsets,
-			      Uint4 * NCBI_RESTRICT subject_offsets,
+                              BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 			      Int4 array_size,
                BlastInitHitList* ungapped_hsps, 
                BlastUngappedStats* ungapped_stats)
@@ -273,17 +275,19 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
       /* scan the subject sequence for hits */
       if (rps_lookup)
          hits = BlastRPSScanSubject(lookup_wrap, subject, &first_offset, 
-                                query_offsets, subject_offsets, array_size);
+                                    offset_pairs, array_size);
       else
          hits = BlastAaScanSubject(lookup_wrap, subject, &first_offset,
-				query_offsets, subject_offsets, array_size);
+				   offset_pairs, array_size);
 
       totalhits += hits;
       /* for each hit, */
       for (i = 0; i < hits; ++i) {
+         Uint4 subject_offset = offset_pairs[i].qs_offsets.s_off;
+         Uint4 query_offset = offset_pairs[i].qs_offsets.q_off;
          diag_coord = 
-            (subject_offsets[i]  - query_offsets[i]) & diag_mask;
-         diff = subject_offsets[i] - 
+            (subject_offset  - query_offset) & diag_mask;
+         diff = subject_offset - 
             (diag_array[diag_coord].diag_level - diag_offset);
 
          /* do an extension, but only if we have not already extended
@@ -291,13 +295,13 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
          if (diff >= 0) {
             ++hits_extended;
             score=BlastAaExtendOneHit(matrix, subject, query,
-                     subject_offsets[i], query_offsets[i], dropoff,
+                     subject_offset, query_offset, dropoff,
                      &hsp_q, &hsp_s, &hsp_len, wordsize, use_pssm, &s_last_off);
 
             /* if the hsp meets the score threshold, report it */
             if (score >= cutoff) {
                BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
-                  query_offsets[i], subject_offsets[i], hsp_len, score);
+                  query_offset, subject_offset, hsp_len, score);
             }
             diag_array[diag_coord].diag_level = 
                   s_last_off - (wordsize - 1) + diag_offset;

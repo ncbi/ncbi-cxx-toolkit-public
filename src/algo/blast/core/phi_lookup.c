@@ -769,38 +769,19 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
    return lookup->num_matches;
 }
 
-/** Check if two sequences segments are identical.
- * @param subject Subject sequence [in]
- * @param query Query sequence [in]
- * @param length Length to match [in]
- * @return Do the two sequences match? 
- */
-static Boolean 
-s_PHIBlastMatchPatterns(Uint1* subject, Uint1* query, Int4 length)
-{
-   Int4 index;
-
-   for (index = 0; index < length; ++index) {
-      if (subject[index] != query[index])
-         break;
-   }
-   return (index == length);
-}
-
 /** Implementation of the ScanSubject function for PHI BLAST.
  */
 Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         const BLAST_SequenceBlk *query_blk, 
         const BLAST_SequenceBlk *subject_blk, 
-        Int4* offset_ptr, Uint4 * query_offsets, Uint4 * subject_offsets, 
+        Int4* offset_ptr, BlastOffsetPair* NCBI_RESTRICT offset_pairs,
         Int4 array_size)
 {
    Uint1* subject, *query;
    BlastPHILookupTable* lookup;
-   Int4 index, count = 0, twiceNumHits, i;
+   Int4 count = 0, twiceNumHits, i;
    Int4 *start_offsets;
    Int4 *pat_lengths;
-   Int4 offset, length;
    Int4 hitArray[MAX_HIT];
 
    ASSERT(lookup_wrap->lut_type == PHI_NA_LOOKUP ||
@@ -827,9 +808,13 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
       if (count > array_size - lookup->num_matches)
             break;
 #endif
+#if 0
       length = hitArray[i] - hitArray[i+1] + 1;
       offset = hitArray[i+1];
-
+#endif
+      offset_pairs[count].phi_offsets.s_start = hitArray[i+1];
+      offset_pairs[count].phi_offsets.s_end = hitArray[i];
+#if 0
       for (index = 0; index < lookup->num_matches; ++index) {
          /* Match pattern lengths in subject in query first; then 
             check for identical match of pattern */
@@ -846,6 +831,7 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
             ++count;
          }
       }
+#endif
    }
    return count;
 }

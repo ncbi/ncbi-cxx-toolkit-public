@@ -53,8 +53,7 @@ extern "C" {
 
 /** Extend the lookup table exact match hit in one direction and 
  * update the diagonal structure.
- * @param q_offsets Array of query offsets [in]
- * @param s_offsets Array of subject offsets [in]
+ * @param offset_pairs Array of query and subject offsets. [in]
  * @param num_hits Size of the above arrays [in]
  * @param word_params Parameters for word extension [in]
  * @param lookup_wrap Lookup table wrapper structure [in]
@@ -68,7 +67,7 @@ extern "C" {
  * @return Number of hits extended. 
  */
 Int4
-BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits, 
+BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
                    const BlastInitialWordParameters* word_params,
                    LookupTableWrap* lookup_wrap,
                    BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
@@ -77,8 +76,7 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
 
 /** Extend the lookup table exact match hit in both directions and 
  * update the diagonal structure.
- * @param q_offsets Array of query offsets [in]
- * @param s_offsets Array of subject offsets [in]
+ * @param offset_pairs Array of query and subject offsets [in]
  * @param num_hits Size of the above arrays [in]
  * @param word_params Parameters for word extension [in]
  * @param lookup_wrap Lookup table wrapper structure [in]
@@ -92,7 +90,7 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
  * @return Number of hits extended. 
  */
 Int4 
-BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits, 
+BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits, 
                           const BlastInitialWordParameters* word_params,
                           LookupTableWrap* lookup_wrap,
                           BLAST_SequenceBlk* query, BLAST_SequenceBlk* subject,
@@ -106,14 +104,13 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
  * @param word_params The parameters related to initial word extension [in]
  * @param matrix the substitution matrix for ungapped extension [in]
  * @param ewp The structure containing word extension information [in]
- * @param q_off The offset in the query sequence [in]
- * @param s_off The offset in the subject sequence [in]
+ * @param offset_pairs Array of query and subject offsets [in]
  * @param init_hitlist The structure containing information about all 
  *                     initial hits [in] [out]
  * @return Has this hit been extended? 
  */
 Boolean
-MB_ExtendInitialHits(const Uint4* query_offsets, const Uint4* subject_offsets,
+MB_ExtendInitialHits(const BlastOffsetPair* offset_pairs,
                      Int4 num_hits, BLAST_SequenceBlk* query, 
                      BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
                      const BlastInitialWordParameters* word_params, 

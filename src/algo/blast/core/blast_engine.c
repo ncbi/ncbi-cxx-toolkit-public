@@ -84,10 +84,7 @@ typedef struct BlastCoreAuxStruct {
                                         ungapped extension */
    BlastHSPList* hsp_list; /**< Placeholder for HSPs after gapped 
                                 extension */
-   Uint4* query_offsets; /**< Placeholder for initial word match query 
-                              offsets */
-   Uint4* subject_offsets; /**< Placeholder for initial word match  
-                              subject offsets */
+   BlastOffsetPair* offset_pairs; /**< Array of offset pairs for initial seeds. */
    Uint1* translation_buffer; /**< Placeholder for translated subject
                                    sequences */
    Uint1* translation_table; /**< Translation table for forward strand */
@@ -102,8 +99,7 @@ s_BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
    BlastExtendWordFree(aux_struct->ewp);
    BLAST_InitHitListFree(aux_struct->init_hitlist);
    Blast_HSPListFree(aux_struct->hsp_list);
-   sfree(aux_struct->query_offsets);
-   sfree(aux_struct->subject_offsets);
+   sfree(aux_struct->offset_pairs);
    
    sfree(aux_struct);
    return NULL;
@@ -343,10 +339,10 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
          
          BlastInitHitListReset(init_hitlist);
          
-         aux_struct->WordFinder(subject, query, lookup, 
-            matrix, word_params, aux_struct->ewp, aux_struct->query_offsets, 
-            aux_struct->subject_offsets, GetOffsetArraySize(lookup), 
-            init_hitlist, ungapped_stats);
+         aux_struct->WordFinder(subject, query, lookup, matrix, word_params, 
+                                aux_struct->ewp, aux_struct->offset_pairs, 
+                                GetOffsetArraySize(lookup), 
+                                init_hitlist, ungapped_stats);
             
          if (init_hitlist->total == 0)
             continue;
@@ -548,10 +544,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
       aux_struct->WordFinder = BlastNaWordFinder;
    }
    
-   aux_struct->query_offsets = 
-      (Uint4*) malloc(offset_array_size * sizeof(Uint4));
-   aux_struct->subject_offsets = 
-      (Uint4*) malloc(offset_array_size * sizeof(Uint4));
+   aux_struct->offset_pairs = 
+      (BlastOffsetPair*) malloc(offset_array_size * sizeof(BlastOffsetPair));
    
    aux_struct->init_hitlist = BLAST_InitHitListNew();
    /* Pick which gapped alignment algorithm to use. */

@@ -153,8 +153,8 @@ Int4 BlastAaLookupAddWordHit(BlastLookupTable* lookup,
  * @param lookup the lookup table [in]
  * @return Zero.
  */
-
 Int4 _BlastAaLookupFinalize(BlastLookupTable* lookup);
+
 /**
  * Scans the subject sequence from "offset" to the end of the sequence.
  * Copies at most array_size hits.
@@ -165,16 +165,14 @@ Int4 _BlastAaLookupFinalize(BlastLookupTable* lookup);
  * @param lookup_wrap the lookup table [in]
  * @param subject the subject sequence [in]
  * @param offset the offset in the subject at which to begin scanning [in/out]
- * @param query_offsets array to which hits will be copied [out]
- * @param subject_offsets array to which hits will be copied [out]
+ * @param offset_pairs Array to which hits will be copied [out]
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
 Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *subject,
                         Int4* offset,
-                        Uint4 * NCBI_RESTRICT query_offsets,
-                        Uint4 * NCBI_RESTRICT subject_offsets,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                         Int4 array_size);
 
 /**
@@ -187,16 +185,14 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
  * @param lookup_wrap the lookup table [in]
  * @param sequence the subject sequence [in]
  * @param offset the offset in the subject at which to begin scanning [in/out]
- * @param table_offsets array to which hits will be copied [out]
- * @param sequence_offsets array to which hits will be copied [out]
+ * @param offset_pairs array to which hits will be copied [out]
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
 Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk *sequence,
                         Int4* offset,
-		        Uint4 * table_offsets,
-                        Uint4 * sequence_offsets,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 		        Int4 array_size);
 
 /** Create a new protein lookup table.
@@ -364,17 +360,16 @@ BlastRPSLookupTable* RPSLookupTableDestruct(BlastRPSLookupTable* lookup);
  * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
  * @param subject The (compressed) sequence to be scanned for words [in]
  * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param q_offsets Array of query positions where words are found [out]
- * @param s_offsets Array of subject positions where words are found [out]
- * @param max_hits The allocated size of the above arrays - how many offsets 
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                found [out]
+ * @param max_hits The allocated size of the above array - how many offsets 
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk* subject,
                         Int4 start_offset,
-                        Uint4* NCBI_RESTRICT q_offsets,
-                        Uint4* NCBI_RESTRICT s_offsets,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                         Int4 max_hits, 
                         Int4* end_offset);
 
@@ -384,9 +379,9 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
  * @param lookup_wrap Pointer to the (wrapper to) lookup table [in]
  * @param subject The (compressed) sequence to be scanned for words [in]
  * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param q_offsets Array of query positions where words are found [out]
- * @param s_offsets Array of subject positions where words are found [out]
- * @param max_hits The allocated size of the above arrays - how many offsets 
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                     found [out]
+ * @param max_hits The allocated size of the above array - how many offsets 
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
  * @return The number of hits found from the lookup table
@@ -394,8 +389,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
 Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
                         const BLAST_SequenceBlk* subject,
                         Int4 start_offset,
-                        Uint4* NCBI_RESTRICT q_offsets,
-                        Uint4* NCBI_RESTRICT s_offsets,
+                        BlastOffsetPair* NCBI_RESTRICT offset_pairs,
                         Int4 max_hits, 
                         Int4* end_offset);
 

@@ -48,8 +48,7 @@ extern "C" {
  * @param matrix the substitution matrix [in]
  * @param word_params word parameters, needed for cutoff and dropoff [in]
  * @param ewp extend parameters, needed for diagonal tracking [in]
- * @param query_offsets array for storing query offsets [out]
- * @param subject_offsets array for storing subject offsets [out]
+ * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param offset_array_size the number of elements in each offset array [in]
  * @param init_hitlist hsps resulting from the ungapped extension [out]
  * @param ungapped_stats Various hit counts. Not filled if NULL [out]
@@ -60,8 +59,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
 		       Int4** matrix,
 		       const BlastInitialWordParameters* word_params,
 		       Blast_ExtendWord* ewp,
-		       Uint4* NCBI_RESTRICT query_offsets,
-		       Uint4* NCBI_RESTRICT subject_offsets,
+                       BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 		       Int4 offset_array_size,
 		       BlastInitHitList* init_hitlist, 
              BlastUngappedStats* ungapped_stats);
@@ -75,8 +73,7 @@ Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
  * @param matrix the substitution matrix [in]
  * @param cutoff cutoff score for saving ungapped HSPs [in]
  * @param dropoff x dropoff [in]
- * @param query_offsets array for storing query offsets [out]
- * @param subject_offsets array for storing subject offsets [out]
+ * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param array_size the number of elements in each offset array [in]
  * @param ungapped_hsps hsps resulting from the ungapped extension [out]
  * @param ungapped_stats Various hit counts. Not filled if NULL [out]
@@ -89,11 +86,10 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
-			      Uint4 * NCBI_RESTRICT query_offsets,
-			      Uint4 * NCBI_RESTRICT subject_offsets,
+                              BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 			      Int4 array_size,
-	            BlastInitHitList* ungapped_hsps, 
-               BlastUngappedStats* ungapped_stats);
+	                      BlastInitHitList* ungapped_hsps, 
+                              BlastUngappedStats* ungapped_stats);
 
 /** Scan a subject sequence for word hits and trigger one-hit extensions.
  *
@@ -104,8 +100,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
  * @param matrix the substitution matrix [in]
  * @param cutoff cutoff score for saving ungapped HSPs [in]
  * @param dropoff x dropoff [in]
- * @param query_offsets array for storing query offsets
- * @param subject_offsets array for storing subject offsets
+ * @param offset_pairs Array for storing query and subject offsets. [in]
  * @param array_size the number of elements in each offset array
  * @param ungapped_hsps hsps resulting from the ungapped extensions [out]
  * @param ungapped_stats Various hit counts. Not filled if NULL [out]
@@ -117,8 +112,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 			      Int4 ** matrix,
 			      Int4 cutoff,
 			      Int4 dropoff,
-			      Uint4 * NCBI_RESTRICT query_offsets,
-			      Uint4 * NCBI_RESTRICT subject_offsets,
+                              BlastOffsetPair* NCBI_RESTRICT offset_pairs,
 			      Int4 array_size,
 	            BlastInitHitList* ungapped_hsps, 
                BlastUngappedStats* ungapped_stats);

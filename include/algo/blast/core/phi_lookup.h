@@ -95,14 +95,13 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
  * @param query_blk the query sequence [in]
  * @param subject the subject sequence [in]
  * @param offset the offset in the subject at which to begin scanning [in/out]
- * @param query_offsets array to which hits will be copied [out]
- * @param subject_offsets array to which hits will be copied [out]
+ * @param offset_pairs Array of start and end positions of pattern in subject [out]
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
 Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         const BLAST_SequenceBlk *query_blk, const BLAST_SequenceBlk *subject, 
-        Int4* offset, Uint4 * query_offsets, Uint4 * subject_offsets, 
+        Int4* offset, BlastOffsetPair* NCBI_RESTRICT offset_pairs,
         Int4 array_size);
 
 #ifdef __cplusplus

@@ -45,7 +45,7 @@ extern "C" {
 Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
         BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
         Int4** matrix, const BlastInitialWordParameters* word_params,
-        Blast_ExtendWord* ewp, Uint4* q_offsets, Uint4* s_offsets,
+        Blast_ExtendWord* ewp, BlastOffsetPair* NCBI_RESTRICT offset_pairs,
         Int4 max_hits, BlastInitHitList* init_hitlist, 
         BlastUngappedStats* ungapped_stats);
 

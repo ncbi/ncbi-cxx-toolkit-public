@@ -367,15 +367,15 @@ typedef enum {
  * @param lookup Pointer to the (wrapper to) lookup table [in]
  * @param subject The (compressed) sequence to be scanned for words [in]
  * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param q_offsets Array of query positions where words are found [out]
- * @param s_offsets Array of subject positions where words are found [out]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                     found [out]
  * @param max_hits The allocated size of the above arrays - how many offsets 
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 Int4 MB_ScanSubject(const LookupTableWrap* lookup,
        const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,
        Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, looking up 
@@ -384,15 +384,15 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
  * @param lookup Pointer to the (wrapper to) lookup table [in]
  * @param subject The (compressed) sequence to be scanned for words [in]
  * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param q_offsets Array of query positions where words are found [out]
- * @param s_offsets Array of subject positions where words are found [out]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                     found [out]
  * @param max_hits The allocated size of the above arrays - how many offsets 
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        const BLAST_SequenceBlk* subject, Int4 start_offset, 
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,     
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,     
        Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, using the 
@@ -401,15 +401,15 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
  * @param lookup Pointer to the (wrapper to) lookup table [in]
  * @param subject The (compressed) sequence to be scanned for words [in]
  * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param q_offsets Array of query positions where words are found [out]
- * @param s_offsets Array of subject positions where words are found [out]
+ * @param offset_pairs Array of query and subject positions where words are 
+ *                     found [out]
  * @param max_hits The allocated size of the above arrays - how many offsets 
  *        can be returned [in]
  * @param end_offset Where the scanning should stop [in], has stopped [out]
 */
 Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup,
        const BLAST_SequenceBlk* subject, Int4 start_offset,
-       Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,
+       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,
        Int4* end_offset); 
 
 #ifdef __cplusplus
