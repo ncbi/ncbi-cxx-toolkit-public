@@ -3,7 +3,7 @@
 REQUIRES = objects dbapi
 
 LIB_PROJ = objmgr
-SUB_PROJ = test demo util
+SUB_PROJ = test demo util split
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
