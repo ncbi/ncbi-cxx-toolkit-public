@@ -21,8 +21,8 @@ copy_times=false
 for x_arg in "$@" ; do
   case "$x_arg" in
     --drop-suffix )  extra_sed='s%/c[+][+][^;/ '\''"]*%/c++%g' ;;
-    --copy-times  )  copy_times=true
-    * )  Usage "Unknown argument \"$x_arg\""
+    --copy-times  )  copy_times=true ;;
+    * )  Usage "Unknown argument \"$x_arg\"" ;;
   esac
 done
 
