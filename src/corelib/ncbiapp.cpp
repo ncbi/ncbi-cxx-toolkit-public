@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/12/23 05:50:53  vakatov
+* AppMain() -- check m_ArgDesc for NULL
+*
 * Revision 1.26  2000/11/29 17:00:25  vakatov
 * Use LOG_POST instead of ERR_POST to print cmd.-line arg usage
 *
@@ -287,7 +290,9 @@ int CNcbiApplication::AppMain
         // Print USAGE and the exception error message
         string str;
         LOG_POST(string(72, '='));
-        LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
+        if ( m_ArgDesc.get() ) {
+            LOG_POST(m_ArgDesc->PrintUsage(str) << string(72, '='));
+        }
         LOG_POST(" ERROR:  " << e.what());
         exit_code = -1;
     }
