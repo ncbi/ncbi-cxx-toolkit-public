@@ -1097,7 +1097,6 @@ string CReference::GetLocString(const string& length_unit) const
             return (length_unit + ' ' + NStr::IntToString(range.GetFrom() + 1)
                     + " to " + NStr::IntToString(range.GetTo() + 1));
         }
-        break;
     }
 }
 
@@ -2849,6 +2848,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2003/01/24 20:15:26  vasilche
+* Removed warning on GCC.
+*
 * Revision 1.30  2003/01/22 20:16:51  vasilche
 * Optimized WriteSequence() method.
 * Optimized Wrap() method.
