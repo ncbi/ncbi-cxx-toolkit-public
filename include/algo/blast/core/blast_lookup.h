@@ -126,11 +126,6 @@ typedef struct BlastLookupTable {
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
-    Uint1* neighbors;      /**< neighboring word array, used during lookup 
-                                table construction to hold the complete set 
-                                of subject words that can occur during the 
-                                search*/
-    Int4 neighbors_length; /**< length of neighboring word array */
     Boolean use_pssm;      /**< if TRUE, lookup table construction will assume
                                 that the underlying score matrix is position-
                                 specific */
@@ -255,38 +250,42 @@ Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			      ListNode* unmasked_regions,
                               Int4 query_bias);
 
-/** Create a sequence containing all possible words as subsequences.
- *
- * @param lookup the lookup table [in]
- * @return Zero.
- */
-
-Int4 MakeAllWordSequence(BlastLookupTable* lookup);
-
 /**
- * Find the words in the neighborhood of w, that is, those whose
- * score is greater than t.
- *
- * For typical searches against a database, a sequence containing
- * all possible words (as created by MakeAllWordSequence() is used.
- *
- * For blast-two-sequences type applications, it is not necessary to
- * find all neighboring words; it is sufficient to use the words
- * occurring in the subject sequence.
+ * Index a query sequence; i.e. fill a lookup table with the offsets
+ * of query words score exceeds a threshold.
  *
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the query sequence [in]
- * @param offset the offset of the word
- * @param query_bias number added to each offset put into lookup table (only used for RPS blast database creation, otherwise 0) [in]
+ * @param query_bias number added to each offset put into lookup table
+ *                      (ordinarily 0; a nonzero value allows a succession of
+ *                      query sequences to update the same lookup table)
+ * @param locations the list of ranges of query offsets to examine for indexing [in]
  * @return Zero.
  */
-
 Int4 AddNeighboringWords(BlastLookupTable* lookup,
 			 Int4 ** matrix,
 			 BLAST_SequenceBlk* query,
-			 Int4 offset,
-                         Int4 query_bias);
+                         Int4 query_bias,
+                         ListNode* locations);
+
+/**
+ * A position-specific version of AddNeighboringWords. Note that
+ * only the score matrix matters for indexing purposes, so an
+ * actual query sequence is unneccessary
+ *
+ * @param lookup the lookup table [in/modified]
+ * @param matrix the substitution matrix [in]
+ * @param query_bias number added to each offset put into lookup table
+ *                      (ordinarily 0; a nonzero value allows a succession of
+ *                      query sequences to update the same lookup table)
+ * @param locations the list of ranges of query offsets to examine for indexing
+ * @return Zero.
+ */
+Int4 AddPSSMNeighboringWords(BlastLookupTable* lookup,
+			 Int4 ** matrix,
+                         Int4 query_bias,
+                         ListNode* locations);
 
 /* RPS blast structures and functions */
 
