@@ -81,7 +81,7 @@ public:
     CSocket(const string&   host,
             unsigned short  port,      // always in host byte order
             const STimeout* timeout = kInfiniteTimeout,
-            ESwitch         do_log  = eDefault);
+            ESwitch         log     = eDefault);
 
     // Call Close(), then self-destruct
     ~CSocket(void);
@@ -100,7 +100,7 @@ public:
     EIO_Status Connect(const string&   host,
                        unsigned short  port,      // always in host byte order
                        const STimeout* timeout = kDefaultTimeout,
-                       ESwitch         do_log  = eDefault);
+                       ESwitch         log     = eDefault);
 
     // Reconnect to the same address.
     // NOTE 1:  the socket must not be closed by the time this call is made;
@@ -147,7 +147,7 @@ public:
     // NOTE:  use CSocketAPI::SetReadOnWrite() to set the default value
     void SetReadOnWrite(ESwitch read_on_write = eOn);
     // NOTE:  use CSocketAPI::SetDataLogging() to set the default value
-    void SetDataLogging(ESwitch log_data = eOn);
+    void SetDataLogging(ESwitch log = eOn);
     // NOTE:  use CSocketAPI::SetInterruptOnSignal() to set the default value
     void SetInterruptOnSignal(ESwitch interrupt = eOn);
 
@@ -194,19 +194,16 @@ private:
 class NCBI_XCONNECT_EXPORT CDatagramSocket : public CSocket
 {
 public:
-    CDatagramSocket(void);
-
     // NOTE:  the created underlying "SOCK" will be owned by the object
-    CDatagramSocket(unsigned short port,  // always in host byte order
-                    ESwitch        do_log = eDefault);
+    CDatagramSocket(ESwitch do_log = eDefault);
 
-    EIO_Status Bind(unsigned short port, ESwitch do_log = eDefault);
+    EIO_Status Bind(unsigned short port);
 
     // NOTE:  unlike system's connect() this method only specifies the default
     // destination, and does not restrict the source of the incoming messages.
     EIO_Status Connect(const string& host, unsigned short port);
 
-    EIO_Status Wait(const STimeout* timeout = 0);
+    EIO_Status Wait(const STimeout* timeout = kInfiniteTimeout);
 
     EIO_Status Send(const void*     data    = 0,
                     size_t          datalen = 0,
@@ -249,6 +246,8 @@ private:
 class NCBI_XCONNECT_EXPORT CListeningSocket
 {
 public:
+    static const STimeout *const kInfiniteTimeout; // ad infinitum
+
     CListeningSocket(void);
     // NOTE:  "port" ought to be in host byte order
     CListeningSocket(unsigned short port, unsigned short backlog = 5);
@@ -264,8 +263,10 @@ public:
     EIO_Status Listen(unsigned short port, unsigned short backlog = 5);
 
     // NOTE: the created "CSocket" will own its underlying "SOCK"
-    EIO_Status Accept(CSocket*& sock, const STimeout* timeout = 0) const;
-    EIO_Status Accept(CSocket&  sock, const STimeout* timeout = 0) const;
+    EIO_Status Accept(CSocket*& sock,
+                      const STimeout* timeout = kInfiniteTimeout) const;
+    EIO_Status Accept(CSocket&  sock,
+                      const STimeout* timeout = kInfiniteTimeout) const;
 
     // NOTE:  closes the undelying SOCK only if it is owned by this "CSocket"!
     EIO_Status Close(void);
@@ -308,7 +309,7 @@ public:
 
     // Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     static void SetReadOnWrite       (ESwitch read_on_write);
-    static void SetDataLogging       (ESwitch log_data);
+    static void SetDataLogging       (ESwitch log);
     static void SetInterruptOnSignal (ESwitch interrupt);
 
     // NOTE:  use CSocket::Wait() to wait for I/O event(s) on a single socket
@@ -317,7 +318,7 @@ public:
             : m_Socket(sock), m_Event(event), m_REvent(revent) {}
         CSocket&  m_Socket;
         EIO_Event m_Event;
-        EIO_Event m_REvent;        
+        EIO_Event m_REvent;
     };
     static EIO_Status Poll(vector<SPoll>&  polls,
                            const STimeout* timeout,
@@ -403,10 +404,10 @@ inline void CSocket::SetReadOnWrite(ESwitch read_on_write)
 }
 
 
-inline void CSocket::SetDataLogging(ESwitch log_data)
+inline void CSocket::SetDataLogging(ESwitch log)
 {
     if ( m_Socket )
-        SOCK_SetDataLogging(m_Socket, log_data);
+        SOCK_SetDataLogging(m_Socket, log);
 }
 
 
@@ -520,9 +521,9 @@ inline void CSocketAPI::SetReadOnWrite(ESwitch read_on_write)
 }
 
 
-inline void CSocketAPI::SetDataLogging(ESwitch log_data)
+inline void CSocketAPI::SetDataLogging(ESwitch log)
 {
-    SOCK_SetDataLoggingAPI(log_data);
+    SOCK_SetDataLoggingAPI(log);
 }
 
 
@@ -565,6 +566,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/05/14 03:46:44  lavr
+ * Match revised datagram socket API
+ *
  * Revision 6.23  2003/04/30 17:03:22  lavr
  * Modified prototypes for CDatagramSocket::Send() and CDatagramSocket::Recv()
  *
