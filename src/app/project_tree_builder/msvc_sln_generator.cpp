@@ -325,6 +325,10 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
     ITERATE(TProjects, p, m_Projects) {
 //        const CProjKey&    id    = p->first;
         const CPrjContext& prj_i = p->second;
+        if (prj_i.m_Project.m_MakeType == eMakeType_Excluded) {
+            LOG_POST(Info << "For reference only: " << prj_i.m_ProjectName);
+            continue;
+        }
 
         ofs << '\t' << '\t' 
             << prj_i.m_GUID 
@@ -406,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/01/31 16:36:43  gouriano
+ * Do not include certain projects into BUILD-ALL one
+ *
  * Revision 1.24  2005/01/19 15:16:29  gouriano
  * Check user projects when generating dependencies
  *
