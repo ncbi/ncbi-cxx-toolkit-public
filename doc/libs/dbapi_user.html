@@ -4,24 +4,45 @@
 
 
 <!--<B><FONT FACE="Arial" SIZE=4><P>DBAPI Interface Overview.</P></B></FONT><P>&nbsp;</P>-->
-<h3>NCBI C++ Toolkit:  DBAPI User-Layer Interface Reference</h3>
+<h1>
+NCBI DBAPI User-Layer Reference</h3>
 
+<h2>Contents</h2>
+
+<ul>
+    <li> <a href="#ref_ObjHierarchy">Object Hierarchy</a> </li>
+    <li> <a href="#ref_Includes">Includes</a> </li>
+    <li> <a href="#ref_Objects">Objects</a> </li>
+    <li> <a href="#ref_ObjLifeCycle">Object Life Cycle</a> </li>
+    <li> <a href="#ref_CVariant">CVariant Type</a> </li>
+    <li> <a href="#ref_ChooseDriver">Choosing the Driver</a> </li>
+    <li> <a href="#ref_SrcCnxns">Data Source and Connections</a> </li>
+    <li> <a href="#ref_MainLoop">Main Loop</a> </li>
+	<li> <a href="#ref_IOParams">Input and Output Parameters</a> </li>
+	<li> <a href="#ref_StoredProcs">Stored Procedures</a> </li>
+	<li> <a href="#ref_Cursors">Cursors</a> </li>
+	<li> <a href="#ref_Libraries">Libraries</a> </li>
+</ul>
+
+<p></p>
+<hr>
 
 <!-- List of different sections to get indentation of text from heading
      NOTE:  spacing is preserved in PRE blocks, so that is *not* indented here!
 	 NOTE:  <blockquote> converts <TAB> to 8 spaces in NS4.78; untabify those regions-->
 
+
 <dl>
 
 <a name="ref_ObjHierarchy"></a>
-<dt><B><FONT FACE="Arial"><P>Object hierarchy</P></FONT></B></dt>
+<dt><h3>Object hierarchy</h3></dt>
 	<dd>
 		<P><IMG SRC="dbapi_user.gif" WIDTH=681 HEIGHT=464></P>
 	</dd>
 
 <P>&nbsp;</P>
 <a name="ref_Includes"></a>
-<dt><B><FONT FACE="Arial"><P>Includes</P></FONT></B></dt>
+<dt><h3>Includes</h3></dt>
 	<dd>
 		<P>For most purposes it is sufficient to include one file in the user source file: dbapi.hpp.</P>
 
@@ -33,7 +54,7 @@
 	</dd>
 
 <a name="ref_Objects"></a>
-<dt><B><FONT FACE="Arial"><P>Objects</P></FONT></B></dt>
+<dt><h3>Objects</h3></dt>
 	<dd>
 		<P>All objects are returned by pointers to their respective
 		interfaces. The null (0) value is valid, meaning that no object was
@@ -41,7 +62,7 @@
 	</dd>
 
 <a name="ref_ObjLifeCycle"></a>
-<dt><B><FONT FACE="Arial"><P>Object Life Cycle</P></FONT></B></dt>
+<dt><h3>Object Life Cycle</h3></dt>
 <dd>
 	<P>In general, any child object is valid only in the
 	scope of its parent object. This is  because most of the objects share
@@ -50,7 +71,7 @@
 </dd>
 
 <a name="ref_CVariant"></a>
-<dt><B><FONT FACE="Arial"><P>CVariant type</P></FONT></B></dt>
+<dt><h3>CVariant type</h3></dt>
 	<dd>
 		<P></P>
 		The <a href="../docxx/CVariant.html"><tt>CVariant</tt></a> type is used to represent any database data
@@ -72,7 +93,7 @@
 
 <P></P>
 <a name="ref_ChooseDriver"></a>
-<dt><B><FONT FACE="Arial"><P>Choosing the driver</P></FONT></B></dt>
+<dt><h3>Choosing the driver</h3></dt>
 	<dd>
 		<P>There are several drivers for working with different SQL servers on
 		different platforms.  The ones presently implemented are "<b>ctlib</b>"
@@ -93,7 +114,7 @@ DBAPI_RegisterDriver_DBLIB(dm);
 	</dd>
 
 <a name="ref_SrcCnxns"></a>
-<dt><B><FONT FACE="Arial"><P>Data Source and Connections</P></FONT></B></dt>
+<dt><h3>Data Source and Connections</h3></dt>
 	<dd>
 		<P>The <a href="../docxx/IDataSource.html"><tt>IDataSource</tt></a> interface defines the database platform.
 		To create an object implementing this
@@ -128,7 +149,7 @@ IStatement *stmt = conn-&gt;CreateStatement();
 	</dd>
 
 <a name="ref_MainLoop"></a>
-<dt><B><FONT FACE="Arial"><P>Main loop</P></FONT></B></dt>
+<dt><h3>Main loop</h3></dt>
 	<dd>
 		<P>The library simulates the main result-retrieving loop of
 		the Sybase client library by using the <tt><a href="../docxx/IStatement.html">IStatement</a>::HasMoreResults()</tt> method:</P>
@@ -180,7 +201,7 @@ int rows = stmt-&gt;GetRowCount();
 	</dd>
 
 <a name="ref_IOParams"></a>
-<dt><B><FONT FACE="Arial"><P>Input and Output Parameters</P></FONT></B></dt>
+<dt><h3>Input and Output Parameters</h3></dt>
 	<dd>
 		<P>The method <tt><a href="../docxx/ICallableStatement.html">ICallableStatement</a>::SetParam(const
 		CVariant&amp; v, const string&amp; name)</tt> is used to pass parameters to
@@ -204,7 +225,7 @@ int rows = stmt-&gt;GetRowCount();
 	</dd>
 
 <a name="ref_StoredProcs"></a>
-<dt><B><FONT FACE="Arial"><P>Stored Procedures</P></FONT></B></dt>
+<dt><h3>Stored Procedures</h3></dt>
 	<dd>
 		<P>The <a href="../docxx/ICallableStatement.html"><tt>ICallableStatement</tt></a> object is used for calling stored
 		procedures. Fist get the object itself by calling
@@ -254,7 +275,7 @@ int status = cstmt-&gt;GetReturnStatus();
 	</dd>
 
 <a name="ref_Cursors"></a>
-<dt><B><FONT FACE="Arial"><P>Cursors</P></FONT></B></dt>
+<dt><h3>Cursors</h3></dt>
 	<dd>
 		<P>The library currently supports basic cursor features
 		such as setting parameters and cursor update and delete
@@ -276,7 +297,7 @@ cur-&gt;Close();
 	</dd>
 
 <a name="ref_Libraries"></a>
-<dt><B><FONT FACE="Arial"><P>Libraries</P></FONT></B></dt>
+<dt><h3>Libraries</h3></dt>
 	<dd>
 		<FONT FACE="Courier New">
 		</FONT><P>The following libraries should be used (the order is significant):</P>
