@@ -8,7 +8,7 @@ property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- do test/demo applications
-property pBuildDemos : true
+property pBuildDemos : false
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -264,7 +264,7 @@ on SetProjectData()
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "ncbi_xloader_genbank", "ncbi_xreader_id1"} & CompressLibs
+			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2"} & CompressLibs
 		
 		-- datatool
 		set myName to "datatool"
@@ -311,12 +311,9 @@ on SetProjectData()
 		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
-		AddAppProject("test_density_map", {"libdl"}, "gui:utils:demo:test_density_map", Â
-			{"gui_utils", "xalnmgr", "tables"} & objMgrLibs, {})
-		
 		AddAppProject("demo_config_dlg", {"fltk"}, "gui:dialogs:config:demo", {"w_seq_graphic", "gui_dlg_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils"} & objMgrLibs, {})
 		
-		AddAppProject("demo_seqgraphic", {"fltk", "libdl"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
+		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
 		(*
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
