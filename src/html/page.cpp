@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/02/23 04:08:25  vakatov
+* Commented out "// template struct TagMapper<CHTMLPage>;" to see if it's
+* still needed for any compiler
+*
 * Revision 1.26  2002/02/13 20:16:45  ivanov
 * Added support of dynamic popup menus. Changed EnablePopupMenu().
 *
@@ -119,12 +123,14 @@ CHTMLBasicPage::CHTMLBasicPage(void)
     : m_CgiApplication(0),
       m_Style(0)
 {
+    return;
 }
 
 CHTMLBasicPage::CHTMLBasicPage(CCgiApplication* application, int style)
     : m_CgiApplication(application),
       m_Style(style)
 {
+    return;
 }
 
 CHTMLBasicPage::~CHTMLBasicPage(void)
@@ -135,7 +141,6 @@ CHTMLBasicPage::~CHTMLBasicPage(void)
     for (TTagMap::iterator i = m_TagMap.begin();  i != m_TagMap.end();  ++i) {
         delete i->second;
     }
-
 }
 
 void CHTMLBasicPage::SetApplication(CCgiApplication* App)
@@ -172,7 +177,7 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 /////////////////////////////////////////////////////////////////////////////
 // CHTMLPage
 
-template struct TagMapper<CHTMLPage>;
+// template struct TagMapper<CHTMLPage>;
 
 CHTMLPage::CHTMLPage(const string& title, const string& template_file)
     : m_Title(title),
@@ -209,8 +214,8 @@ void CHTMLPage::CreateSubNodes(void)
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
-    if (m_TemplateFile.compare(NcbiEmptyString) == 0)
-        return new CHTMLText(NcbiEmptyString);
+    if (m_TemplateFile.compare(kEmptyStr) == 0)
+        return new CHTMLText(kEmptyStr);
 
     string        str;
     char          buf[1024];
