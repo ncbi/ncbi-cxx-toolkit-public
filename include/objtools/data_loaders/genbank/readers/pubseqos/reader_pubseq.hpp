@@ -93,7 +93,7 @@ private:
     string                    m_Server;
     string                    m_User;
     string                    m_Password;
-    auto_ptr<I_DriverContext> m_Context;
+    I_DriverContext*          m_Context;
     vector<CDB_Connection *>  m_Pool;
     bool                      m_NoMoreConnections;
 };

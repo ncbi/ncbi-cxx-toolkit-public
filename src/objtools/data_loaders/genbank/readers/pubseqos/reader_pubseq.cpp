@@ -80,7 +80,7 @@ CPubseqReader::CPubseqReader(TConn noConn,
                              const string& server,
                              const string& user,
                              const string& pswd)
-    : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL),
+    : m_Server(server) , m_User(user), m_Password(pswd), m_Context(0),
       m_NoMoreConnections(false)
 {
 #if defined(NCBI_NO_THREADS) || !defined(HAVE_SYBASE_REENTRANT)
@@ -168,7 +168,7 @@ void CPubseqReader::Reconnect(TConn conn)
 CDB_Connection *CPubseqReader::x_NewConnection(void)
 {
     for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
-        if ( m_Context.get() == NULL ) {
+        if ( !m_Context ) {
             C_DriverMgr drvMgr;
             //DBAPI_RegisterDriver_CTLIB(drvMgr);
             //DBAPI_RegisterDriver_DBLIB(drvMgr);
@@ -193,8 +193,11 @@ CDB_Connection *CPubseqReader::x_NewConnection(void)
             }
             map<string,string> args;
             args["packet"]="3584"; // 7*512
-            m_Context.reset((*createContextFunc)(&args));
-            //m_Context.reset((*createContextFunc)(0));
+            m_Context = (*createContextFunc)(&args);
+            if ( !m_Context ) {
+                NCBI_THROW(CLoaderException, eNoConnection,
+                           "Cannot create dbapi context");
+            }
         }
         try {
             auto_ptr<CDB_Connection> conn(m_Context->Connect(m_Server,
