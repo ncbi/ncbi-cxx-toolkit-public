@@ -105,7 +105,7 @@ BLAST_DiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 /* Description in blast_extend.h */
 Int2 BLAST_ExtendWordInit(Uint4 query_length,
    const BlastInitialWordOptions* word_options,
-   Int8 dblen, Int4 dbseq_num, BLAST_ExtendWord** ewp_ptr)
+   Uint4 subject_length, BLAST_ExtendWord** ewp_ptr)
 {
    BLAST_ExtendWord* ewp;
    Int4 index, i;
@@ -117,16 +117,16 @@ Int2 BLAST_ExtendWordInit(Uint4 query_length,
    }
 
    if (word_options->container_type == eMbStacks) {
-      double av_search_space;
+      double search_space;
       Int4 stack_size, num_stacks;
       MB_StackTable* stack_table;
 
       ewp->stack_table = stack_table = 
          (MB_StackTable*) malloc(sizeof(MB_StackTable));
 
-      av_search_space = 
-         ((double) query_length) * dblen / dbseq_num;
-      num_stacks = MIN(1 + (Int4) (sqrt(av_search_space)/100), 500);
+      search_space = 
+         ((double) query_length) * subject_length;
+      num_stacks = MIN(1 + (Int4) (sqrt(search_space)/100), 500);
       stack_size = 5000/num_stacks;
       stack_table->stack_index = (Int4*) calloc(num_stacks, sizeof(Int4));
       stack_table->stack_size = (Int4*) malloc(num_stacks*sizeof(Int4));
