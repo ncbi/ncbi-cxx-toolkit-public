@@ -43,10 +43,45 @@ int main()
         CDBLibContext my_context;
 
 #ifdef NCBI_OS_MSWIN
-       SampleDBAPI_SpWho(my_context, "NLMSQL");
+        CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
 #else
-       SampleDBAPI_SpWho(my_context, "MOZART");
+        CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
 #endif
+
+        CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
+        rcmd->Send();
+        
+        while (rcmd->HasMoreResults()) {
+            CDB_Result* r = rcmd->Result();
+            if (!r)
+                continue;
+            
+            if (r->ResultType() == eDB_RowResult) {
+                while (r->Fetch()) {
+                    for (unsigned int j = 0;  j < r->NofItems(); j++) {
+                        EDB_Type rt = r->ItemDataType(j);
+                        if (rt == eDB_Char || rt == eDB_VarChar) {
+                            CDB_VarChar r_vc;
+                            r->GetItem(&r_vc);
+                            cout << r->ItemName(j) << ": "
+                                 << (r_vc.IsNULL()? "" : r_vc.Value()) 
+                                 << " \t";
+                        } else if (rt == eDB_Int ||
+                                   rt == eDB_SmallInt ||
+                                   rt == eDB_TinyInt) {
+                            CDB_Int r_in;
+                            r->GetItem(&r_in);
+                            cout << r->ItemName(j) << ": " << r_in.Value() << ' ';
+                        } else
+                            r->SkipItem();
+                    }
+                    cout << endl;
+                }
+                delete r;
+            }
+        }
+        delete rcmd;
+        delete con;
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
 
@@ -61,6 +96,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/04/25 20:36:42  soussov
+ * makes it plain
+ *
  * Revision 1.6  2002/01/03 17:01:57  sapojnik
  * fixing CR/LF mixup
  *
