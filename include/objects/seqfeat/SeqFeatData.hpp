@@ -96,6 +96,7 @@ public:
         eSubtype_D_segment,
         eSubtype_enhancer,
         eSubtype_exon,
+        eSubtype_EC_number,
         eSubtype_GC_signal,
         eSubtype_iDNA,
         eSubtype_intron,
@@ -188,6 +189,7 @@ public:
         eQual_clone_lib,
         eQual_codon,
         eQual_codon_start,
+        eQual_compare,
         eQual_cons_splice,
         eQual_country,
         eQual_cultivar,
@@ -218,6 +220,7 @@ public:
         eQual_mol_type,
         eQual_note,
         eQual_number,
+        eQual_old_locus_tag,
         eQual_operon,
         eQual_organelle,
         eQual_organism,
@@ -346,6 +349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/08/19 14:56:02  shomrat
+* Added qualifiers old_locus_tag and compare
+*
 * Revision 1.6  2004/05/19 14:39:42  shomrat
 * Added list of qualifiers
 *

@@ -404,6 +404,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
@@ -431,6 +432,7 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
@@ -453,6 +455,7 @@ START_SUBTYPE(prot)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -471,6 +474,7 @@ START_SUBTYPE(preprotein)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -488,6 +492,7 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -506,6 +511,7 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -524,6 +530,7 @@ START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -540,6 +547,7 @@ START_SUBTYPE(preRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
@@ -559,6 +567,7 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
@@ -578,6 +587,7 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -595,6 +605,7 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -612,6 +623,7 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -629,6 +641,7 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -646,14 +659,30 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
-//START_SUBTYPE(otherRNA)
-//END_SUBTYPE
+START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
+    ADD_QUAL(allele);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(product);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
 
 //START_SUBTYPE(pub)
 //END_SUBTYPE
@@ -677,6 +706,7 @@ START_SUBTYPE(attenuator)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(usedin);
@@ -692,6 +722,7 @@ START_SUBTYPE(C_region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -708,6 +739,7 @@ START_SUBTYPE(CAAT_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -727,6 +759,7 @@ START_SUBTYPE(Imp_CDS)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
@@ -741,6 +774,7 @@ END_SUBTYPE
 START_SUBTYPE(conflict)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
+    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(gene);
@@ -748,6 +782,7 @@ START_SUBTYPE(conflict)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(replace);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -762,6 +797,7 @@ START_SUBTYPE(D_loop)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -775,6 +811,7 @@ START_SUBTYPE(D_segment)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -791,6 +828,7 @@ START_SUBTYPE(enhancer)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -808,6 +846,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -824,6 +863,7 @@ START_SUBTYPE(GC_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -839,6 +879,7 @@ START_SUBTYPE(iDNA)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -856,6 +897,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -870,6 +912,7 @@ START_SUBTYPE(J_segment)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -887,6 +930,7 @@ START_SUBTYPE(LTR)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -903,6 +947,7 @@ START_SUBTYPE(mat_peptide)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -922,6 +967,7 @@ START_SUBTYPE(misc_binding)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -929,6 +975,7 @@ START_SUBTYPE(misc_difference)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(clone);
+    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(gene);
@@ -936,6 +983,7 @@ START_SUBTYPE(misc_difference)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(phenotype);
     ADD_QUAL(replace);
     ADD_QUAL(standard_name);
@@ -954,6 +1002,7 @@ START_SUBTYPE(misc_feature)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(number);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
@@ -971,6 +1020,7 @@ START_SUBTYPE(misc_recomb)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(organism);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -987,6 +1037,7 @@ START_SUBTYPE(misc_RNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(standard_name);
@@ -1004,6 +1055,7 @@ START_SUBTYPE(misc_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(standard_name);
@@ -1021,6 +1073,7 @@ START_SUBTYPE(misc_structure)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1037,6 +1090,7 @@ START_SUBTYPE(modified_base)
     ADD_QUAL(map);
     ADD_QUAL(mod_base);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1053,6 +1107,7 @@ START_SUBTYPE(N_region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1062,6 +1117,7 @@ END_SUBTYPE
 START_SUBTYPE(old_sequence)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
+    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(gene);
@@ -1069,6 +1125,7 @@ START_SUBTYPE(old_sequence)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(replace);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1083,6 +1140,7 @@ START_SUBTYPE(polyA_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1096,6 +1154,7 @@ START_SUBTYPE(polyA_site)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1110,6 +1169,7 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(standard_name);
@@ -1127,6 +1187,7 @@ START_SUBTYPE(prim_transcript)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -1143,6 +1204,7 @@ START_SUBTYPE(primer_bind)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1158,6 +1220,7 @@ START_SUBTYPE(promoter)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(phenotype);
     ADD_QUAL(pseudo);
@@ -1177,6 +1240,7 @@ START_SUBTYPE(protein_bind)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1191,6 +1255,7 @@ START_SUBTYPE(RBS)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1207,6 +1272,7 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
@@ -1226,6 +1292,7 @@ START_SUBTYPE(repeat_unit)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
@@ -1243,6 +1310,7 @@ START_SUBTYPE(rep_origin)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1257,6 +1325,7 @@ START_SUBTYPE(S_region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1273,6 +1342,7 @@ START_SUBTYPE(satellite)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
@@ -1291,6 +1361,7 @@ START_SUBTYPE(sig_peptide)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
@@ -1358,6 +1429,7 @@ START_SUBTYPE(stem_loop)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -1373,6 +1445,7 @@ START_SUBTYPE(STS)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1387,6 +1460,7 @@ START_SUBTYPE(TATA_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1401,6 +1475,7 @@ START_SUBTYPE(terminator)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(operon);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1416,6 +1491,7 @@ START_SUBTYPE(transit_peptide)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1432,6 +1508,7 @@ START_SUBTYPE(unsure)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(replace);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1446,6 +1523,7 @@ START_SUBTYPE(V_region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1462,6 +1540,7 @@ START_SUBTYPE(V_segment)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1471,6 +1550,7 @@ END_SUBTYPE
 START_SUBTYPE(variation)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
+    ADD_QUAL(compare);
     ADD_QUAL(db_xref);
     ADD_QUAL(evidence);
     ADD_QUAL(frequency);
@@ -1479,6 +1559,7 @@ START_SUBTYPE(variation)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(phenotype);
     ADD_QUAL(product);
     ADD_QUAL(replace);
@@ -1499,6 +1580,7 @@ START_SUBTYPE(3clip)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1514,6 +1596,7 @@ START_SUBTYPE(3UTR)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1529,6 +1612,7 @@ START_SUBTYPE(5clip)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1544,6 +1628,7 @@ START_SUBTYPE(5UTR)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1558,6 +1643,7 @@ START_SUBTYPE(10_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -1573,6 +1659,7 @@ START_SUBTYPE(35_signal)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(operon);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
@@ -1610,6 +1697,7 @@ START_SUBTYPE(oriT)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
@@ -1630,6 +1718,7 @@ START_SUBTYPE(region)
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
     ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
@@ -1714,6 +1803,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_clone_lib, "clone_lib"),
     TQualPair(CSeqFeatData::eQual_codon, "codon"),
     TQualPair(CSeqFeatData::eQual_codon_start, "cons_splice"),
+    TQualPair(CSeqFeatData::eQual_compare, "compare"),
     TQualPair(CSeqFeatData::eQual_cons_splice, "cons_splice"),
     TQualPair(CSeqFeatData::eQual_country, "country"),
     TQualPair(CSeqFeatData::eQual_cultivar, "cultivar"),
@@ -1744,6 +1834,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_mol_type, "mol_type"),
     TQualPair(CSeqFeatData::eQual_note, "note"),
     TQualPair(CSeqFeatData::eQual_number, "number"),
+    TQualPair(CSeqFeatData::eQual_old_locus_tag, "old_locus_tag"),
     TQualPair(CSeqFeatData::eQual_operon, "operon"),
     TQualPair(CSeqFeatData::eQual_organelle, "organelle"),
     TQualPair(CSeqFeatData::eQual_organism, "organism"),
@@ -1803,6 +1894,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.14  2004/08/19 14:56:28  shomrat
+* Added qualifiers old_locus_tag and compare
+*
 * Revision 6.13  2004/05/19 17:26:04  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
