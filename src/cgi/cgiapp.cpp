@@ -272,7 +272,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
     os << e.what();
     if ( !os.good() ) {
         ERR_POST("CCgiApplication::OnException() failed to send error page"
-                 "back to the client");
+                 " back to the client");
         return -1;
     }
     return 0;
@@ -718,6 +718,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.49  2004/01/30 14:02:22  lavr
+* Insert a space between "page" and "back" in the exception report
+*
 * Revision 1.48  2003/05/22 21:02:56  vakatov
 * [UNIX]  Show ProcessID in diagnostic messages (as prefix)
 *
