@@ -33,7 +33,7 @@
 #ifndef ALGO_BLAST_API___BL2SEQ__HPP
 #define ALGO_BLAST_API___BL2SEQ__HPP
 
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/11/26 18:36:44  camacho
+* Renaming blast_option*pp -> blast_options*pp
+*
 * Revision 1.23  2003/11/26 18:22:13  camacho
 * +Blast Option Handle classes
 *

@@ -46,7 +46,7 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include "blast_input.hpp"
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -534,6 +534,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/11/26 18:36:45  camacho
+ * Renaming blast_option*pp -> blast_options*pp
+ *
  * Revision 1.30  2003/11/26 18:24:32  camacho
  * +Blast Option Handle classes
  *

@@ -37,7 +37,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <algo/blast/api/db_blast.hpp>
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
 
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2003/11/26 18:36:45  camacho
+ * Renaming blast_option*pp -> blast_options*pp
+ *
  * Revision 1.2  2003/10/30 21:41:12  dondosha
  * Removed unneeded extra argument from call to BLAST_Results2CSeqAlign
  *

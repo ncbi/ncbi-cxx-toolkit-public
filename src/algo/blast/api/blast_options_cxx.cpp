@@ -31,7 +31,7 @@
 * ===========================================================================
 */
 
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include "blast_setup.hpp"
 
 // NewBlast includes
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/11/26 18:36:45  camacho
+* Renaming blast_option*pp -> blast_options*pp
+*
 * Revision 1.28  2003/11/26 18:23:59  camacho
 * +Blast Option Handle classes
 *

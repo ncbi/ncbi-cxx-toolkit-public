@@ -37,7 +37,7 @@
 #include <corelib/ncbistd.hpp>
 
 // NewBlast includes
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
 
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/11/26 18:36:45  camacho
+* Renaming blast_option*pp -> blast_options*pp
+*
 * Revision 1.16  2003/10/30 21:40:36  dondosha
 * Removed unneeded extra argument from BLAST_Results2CSeqAlign
 *

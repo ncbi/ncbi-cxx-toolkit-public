@@ -33,7 +33,7 @@
 #ifndef ALGO_BLAST_API___DBBLAST__HPP
 #define ALGO_BLAST_API___DBBLAST__HPP
 
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 
 BEGIN_NCBI_SCOPE
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/11/26 18:36:44  camacho
+* Renaming blast_option*pp -> blast_options*pp
+*
 * Revision 1.1  2003/10/29 22:37:21  dondosha
 * Database BLAST search class
 *

@@ -33,7 +33,7 @@
 /// @file blast_options_handle.hpp
 /// Declares the CBlastOptionsHandle and CBlastOptionsFactory classes.
 
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 
 /** @addtogroup Miscellaneous
  *
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/26 18:36:44  camacho
+ * Renaming blast_option*pp -> blast_options*pp
+ *
  * Revision 1.1  2003/11/26 18:22:15  camacho
  * +Blast Option Handle classes
  *

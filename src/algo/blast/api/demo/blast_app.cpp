@@ -46,7 +46,7 @@ Contents: C++ driver for running BLAST
 #include <objmgr/gbloader.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/db_blast.hpp>
 #include <blast_setup.hpp>
 #include <algo/blast/api/blast_aux.hpp>

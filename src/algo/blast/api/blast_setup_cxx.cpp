@@ -48,7 +48,7 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include "blast_setup.hpp"
 
@@ -842,6 +842,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2003/11/26 18:36:45  camacho
+* Renaming blast_option*pp -> blast_options*pp
+*
 * Revision 1.50  2003/11/26 18:24:00  camacho
 * +Blast Option Handle classes
 *
