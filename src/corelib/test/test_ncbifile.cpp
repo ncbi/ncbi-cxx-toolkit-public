@@ -444,7 +444,8 @@ static void s_TEST_MemoryFile(void)
         // Map second copy of file into memory
         CMemoryFile fm2(s_FileName);
         assert( fm1.GetSize() == fm2.GetSize() );
-        assert( memcmp(fm1.GetPtr(), fm2.GetPtr(), fm2.GetSize()) == 0 );
+        assert( memcmp(fm1.GetPtr(), fm2.GetPtr(),
+                       (size_t) fm2.GetSize()) == 0 );
 
         // Unmap second copy
         assert( fm2.Unmap() );
@@ -518,6 +519,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/06/29 06:45:50  vakatov
+ * Get rid of some compilation warnings
+ *
  * Revision 1.16  2002/06/07 16:11:38  ivanov
  * Chenget GetTime() -- using CTime instead time_t, modification time by default
  *

@@ -77,10 +77,10 @@ int CTest::Run(void)
 
     //char *app_p  = "echo";
     //char *app_pp = "This message is from child process";
-    char *app_p  = "ls";
-    char *app_pp = "-l";
+    const char* app_p  = "ls";
+    const char* app_pp = "-l";
 
-    char *my_env[] =   // Environment for Spawn*E
+    const char* my_env[] =   // Environment for Spawn*E
     {
         "THIS=environment will be",
         "PASSED=to new process by",
@@ -89,11 +89,11 @@ int CTest::Run(void)
         0
     };
 
-    char *args_c[3];   // Arguments for SpawnV[E]
+    const char* args_c[3];   // Arguments for SpawnV[E]
     args_c[1] = "SpawnV[E]";
     args_c[2] = 0;
 
-    char *args_p[3];   // Arguments for SpawnVP[E]
+    const char* args_p[3];   // Arguments for SpawnVP[E]
     args_p[1] = app_pp;
     args_p[2] = 0;
 
@@ -191,6 +191,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2002/06/29 06:45:50  vakatov
+ * Get rid of some compilation warnings
+ *
  * Revision 6.2  2002/06/25 20:17:58  ivanov
  * Changed default exit code from 0 to 1
  *
