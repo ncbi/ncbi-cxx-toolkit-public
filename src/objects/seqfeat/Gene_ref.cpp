@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/11/15 17:40:35  ucko
+ * Before using syn, make sure it's not only set but non-empty.
+ *
  * Revision 6.1  2002/01/10 19:58:38  clausen
  * Added GetLabel
  *
@@ -67,7 +70,7 @@ void CGene_ref::GetLabel(string* label) const
         *label += GetLocus();
     } else if (IsSetDesc()) {
         *label += GetDesc();
-    } else if (IsSetSyn()) {
+    } else if (IsSetSyn() && !GetSyn().empty()) {
         *label += *GetSyn().begin();
     } else if (IsSetDb() && GetDb().size() > 0) {
         GetDb().front()->GetLabel(label);
