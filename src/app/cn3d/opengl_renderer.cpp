@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/08/15 20:52:15  juran
+* On the Mac, include OpenGL headers that can actually be located.
+*
 * Revision 1.45  2001/08/13 22:30:59  thiessen
 * add structure window mouse drag/zoom; add highlight option to render settings
 *
@@ -178,12 +181,20 @@
 #elif defined(__WXGTK__)
 #include <GL/glx.h>
 
+#elif defined(__WXMAC__)
+#define DONT_USE_GL_DIR
+
 #else
 #error unsupported platform!
 #endif
 
+#ifdef DONT_USE_GL_DIR
+#include <gl.h>
+#include <glu.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 #include <math.h>
 #include <stdlib.h> // for rand, srand
 
