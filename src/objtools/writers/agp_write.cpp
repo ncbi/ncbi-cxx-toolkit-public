@@ -35,12 +35,10 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objmgr/bioseq_handle.hpp>
-#include <objmgr/object_manager.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqblock/GB_block.hpp>
-//#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/seq_map_ci.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -105,22 +103,6 @@ void AgpWrite(CNcbiOstream& os,
         }
         os << endl;
     }
-}
-
-
-// Make a scope using the object manager we're handed,
-// add default loaders, and call version of AgpWrite
-// that takes a scope.
-void AgpWrite(CNcbiOstream& os,
-              const CSeqMap& seq_map,
-              const string& object_id,
-              const string& gap_type,
-              bool linkage,
-              objects::CObjectManager& om)
-{
-    CScope scope(om);
-    scope.AddDefaults();
-    AgpWrite(os, seq_map, object_id, gap_type, linkage, scope);
 }
 
 
@@ -205,6 +187,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/09 11:54:52  dicuccio
+ * Dropped version of AgpWrite() that takes the object manager - use only one API,
+ * taking a CScope
+ *
  * Revision 1.4  2004/07/08 16:53:31  yazhuk
  * commented #include <objtools/data_loaders/genbank/gbloader.hpp>
  *

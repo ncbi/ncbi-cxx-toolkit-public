@@ -36,18 +36,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/// This version takes an object manager instance.
-/// This is useful to prevent another object manager
-/// from being instantiated when the caller has access
-/// to one that already exists.  It would also be useful
-/// if the caller wanted to use an object manager with
-/// a different set of default loaders than {CGBDataLoader}.
-void NCBI_XOBJWRITE_EXPORT AgpWrite(CNcbiOstream& os,
-                                    const objects::CSeqMap& seq_map,
-                                    const string& object_id,
-                                    const string& gap_type,
-                                    bool linkage,
-                                    objects::CObjectManager& om);
 /// This version takes a scope.  This is useful when
 /// the sequence being written has components that
 /// are not in the database but have been added to
@@ -66,6 +54,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/09 11:54:52  dicuccio
+ * Dropped version of AgpWrite() that takes the object manager - use only one API,
+ * taking a CScope
+ *
  * Revision 1.3  2004/07/07 21:45:07  jcherry
  * Removed form of AgpWrite that creates its own object manager
  *
