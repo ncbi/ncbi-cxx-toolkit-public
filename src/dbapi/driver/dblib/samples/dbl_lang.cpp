@@ -44,7 +44,7 @@ int main()
 #ifdef NCBI_OS_MSWIN
         CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
 #else
-        CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("BARTOK", "anyone", "allowed", 0);
 #endif
 
         CDB_LangCmd* lcmd =
@@ -91,6 +91,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/01 21:31:29  vakatov
+ * Use BARTOK instead of MOZART as the test Sybase-11.0.3 SQL server
+ *
  * Revision 1.8  2004/05/17 21:13:08  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
