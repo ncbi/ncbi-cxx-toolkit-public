@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/18 20:47:27  vasilche
+* Updated to new headers.
+*
 * Revision 1.19  2000/09/01 13:16:41  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -92,9 +95,10 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include "asn2asn.hpp"
 #include <corelib/ncbiutil.hpp>
-#include <corelib/ncbienv.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <serial/objistr.hpp>
@@ -102,94 +106,15 @@
 #include <serial/objcopy.hpp>
 #include <serial/serial.hpp>
 #include <serial/objhook.hpp>
+#include <serial/iterator.hpp>
 
 USING_NCBI_SCOPE;
 
 using namespace NCBI_NS_NCBI::objects;
 
-class CNcbiDiagStream
-{
-public:
-    CNcbiDiagStream(CNcbiOstream* afterClose = 0)
-        : m_AfterClose(afterClose)
-        {
-            SetDiagStream(afterClose);
-        }
-    ~CNcbiDiagStream(void)
-        {
-            Reset();
-        }
-
-    void Reset(void)
-        {
-            SetDiagStream(m_AfterClose);
-            m_CloseStream.reset(0);
-        }
-    void AssignTo(CNcbiOstream* out, bool deleteOnClose = false)
-        {
-            SetDiagStream(out);
-            if ( deleteOnClose )
-                m_CloseStream.reset(out);
-        }
-    void AssignToNull(void)
-        {
-            AssignTo(0, true);
-        }
-    bool AssignToFile(const string& fileName)
-        {
-            CNcbiOstream* out = new CNcbiOfstream(fileName.c_str());
-            if ( !*out ) {
-                delete out;
-                return false;
-            }
-            AssignTo(out, true);
-            return true;
-        }
-
-private:
-    auto_ptr<CNcbiOstream> m_CloseStream;
-    CNcbiOstream* m_AfterClose;
-};
-
 int main(int argc, char** argv)
 {
     return CAsn2Asn().AppMain(argc, argv);
-}
-
-static
-void PrintUsage(void)
-{
-    NcbiCout <<
-        "Arguments:\n"
-        "  -i  Filename for asn.1 input\n"
-        "  -e  Input is a Seq-entry\n"
-        "  -b  Input asnfile in binary mode\n"
-        "  -X  Input XML file\n"
-        "  -S  Skip value in file without reading it in memory (no write)\n"
-        "  -o  Filename for asn.1 output\n"
-        "  -s  Output asnfile in binary mode\n"
-        "  -x  Output XML file\n"
-        "  -C  Convert data without full read in memory\n"
-        "  -l  Log errors to file named\n"
-        "  -c <number>  Repeat action <number> times\n"
-        "  -hi Read Bioseq-set via Seq-entry hook\n"
-        "  -ho Write Bioseq-set from Seq-entry hook\n";
-    exit(1);
-}
-
-static
-void InvalidArgument(const string& arg)
-{
-    ERR_POST(Error << "Invalid argument: " << arg);
-    PrintUsage();
-}
-
-static
-const string& StringArgument(const CNcbiArguments& args, size_t index)
-{
-    if ( index >= args.Size() || args[index].empty() )
-        InvalidArgument("Argument required");
-    return args[index];
 }
 
 static
@@ -228,130 +153,94 @@ public:
 *****************************************************************************/
 int CAsn2Asn::Run(void)
 {
-    string inFile;
-    bool skip = false; 
-    bool inSeqEntry = false;
-    ESerialDataFormat inFormat = eSerial_AsnText;
-    string outFile;
-    ESerialDataFormat outFormat = eSerial_AsnText;
-    string logFile;
-    int count = 1;
-    bool readHook = false;
-    bool writeHook = false;
-    bool convert = false;
-
-    CNcbiDiagStream logStream(&NcbiCerr);
 	SetDiagPostLevel(eDiag_Error);
 
-    if ( GetArguments().Size() == 1 )
-        PrintUsage();
+    auto_ptr<CArgs> args;
 
+    // read arguments
     {
-        for ( size_t i = 1; i < GetArguments().Size(); ++i ) {
-            const string& arg = GetArguments()[i];
-            if ( arg[0] == '-' ) {
-                switch ( arg[1] ) {
-                case 'i':
-                    inFile = StringArgument(GetArguments(), ++i);
-                    break;
-                case 'e':
-                    inSeqEntry = true;
-                    break;
-                case 'b':
-                    inFormat = eSerial_AsnBinary;
-                    break;
-                case 'X':
-                    inFormat = eSerial_Xml;
-                    break;
-                case 'o':
-                    outFile = StringArgument(GetArguments(), ++i);
-                    break;
-                case 's':
-                    outFormat = eSerial_AsnBinary;
-                    break;
-                case 'x':
-                    outFormat = eSerial_Xml;
-                    break;
-                case 'S':
-                    skip = true;
-                    break;
-                case 'C':
-                    convert = true;
-                    break;
-                case 'l':
-                    logFile = StringArgument(GetArguments(), ++i);
-                    break;
-                case 'c':
-                    count = NStr::StringToInt(StringArgument(GetArguments(),
-                                                             ++i));
-                    break;
-                case 'h':
-                    switch ( arg[2] ) {
-                    case 'i':
-                        readHook = true;
-                        break;
-                    case 'o':
-                        writeHook = true;
-                        break;
-                    default:
-                        InvalidArgument(arg);
-                        break;
-                    }
-                    break;
-                default:
-                    InvalidArgument(arg);
-                    break;
-                }
-            }
-            else {
-                InvalidArgument(arg);
-                break;
-            }
-        }
+        CArgDescriptions argDesc;
+        argDesc.AddKey("i", "inputFile", "input data file",
+                       argDesc.eInputFile, argDesc.fDelayOpen);
+        argDesc.AddOptionalKey("o", "outputFile", "output data file",
+                               argDesc.eOutputFile, argDesc.fDelayOpen);
+        argDesc.AddFlag("e", "treat data as Seq-entry");
+        argDesc.AddFlag("b", "binary ASN.1 input format");
+        argDesc.AddFlag("X", "XML input format");
+        argDesc.AddFlag("s", "binary ASN.1 output format");
+        argDesc.AddFlag("x", "XML output format");
+        argDesc.AddFlag("C", "Convert data without reading in memory");
+        argDesc.AddFlag("S", "Skip data without reading in memory");
+        argDesc.AddOptionalKey("l", "logFile", "log errors to <logFile>",
+                               argDesc.eOutputFile);
+        argDesc.AddOptionalKey("c", "count", "perform command <count> times",
+                               argDesc.eInteger, 0, "1");
+        
+        argDesc.AddFlag("ih", "Use read hooks");
+        argDesc.AddFlag("oh", "Use write hooks");
+
+        args.reset(argDesc.CreateArgs(GetArguments()));
     }
 
+    if ( args->Exist("l") )
+        SetDiagStream(&(*args)["l"].AsOutputFile());
 
-    if ( !logFile.empty() ) {
-        if ( logFile == "stderr" || logFile == "-" ) {
-            logStream.AssignTo(&NcbiCerr);
-        }
-        else if ( logFile == "null" ) {
-            logStream.AssignToNull();
-        }
-        else if ( !logStream.AssignToFile(logFile) ) {
-            ERR_POST(Fatal << "Cannot open log file: " << logFile);
-        }
+    string inFile = (*args)["i"].AsString();
+    ESerialDataFormat inFormat = eSerial_AsnText;
+    if ( args->Exist("b") )
+        inFormat = eSerial_AsnBinary;
+    else if ( args->Exist("X") )
+        inFormat = eSerial_Xml;
+
+    bool haveOutput = args->Exist("o");
+    string outFile;
+    ESerialDataFormat outFormat = eSerial_AsnText;
+    if ( haveOutput ) {
+        outFile = (*args)["o"].AsString();
+        if ( args->Exist("s") )
+            outFormat = eSerial_AsnBinary;
+        else if ( args->Exist("x") )
+            outFormat = eSerial_Xml;
     }
 
-    for ( int i = 0; i < count; ++i ) {
-        if ( count != 1 )
-            NcbiCerr << "Step " << (i + 1) << ':' << NcbiEndl;
+    bool inSeqEntry = args->Exist("e");
+    bool skip = args->Exist("S");
+    bool convert = args->Exist("C");
+    bool readHook = args->Exist("ih");
+    bool writeHook = args->Exist("oh");
+
+    size_t count = (*args)["c"].AsInteger();
+
+    for ( size_t i = 1; i <= count; ++i ) {
+        bool displayMessages = count != 1;
+        if ( displayMessages )
+            NcbiCerr << "Step " << i << ':' << NcbiEndl;
         auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFormat, inFile,
                                                          eSerial_StdWhenAny));
-        auto_ptr<CObjectOStream> out(outFile.empty()? 0:
+        auto_ptr<CObjectOStream> out(!haveOutput? 0:
                                      CObjectOStream::Open(outFormat, outFile,
                                                           eSerial_StdWhenAny));
 
         if ( inSeqEntry ) { /* read one Seq-entry */
             if ( skip ) {
-                if ( count != 1 )
+                if ( displayMessages )
                     NcbiCerr << "Skipping Seq-entry..." << NcbiEndl;
-                in->Skip(CSeq_entry::GetTypeInfo());
+                in->Skip(Type<CSeq_entry>());
             }
-            else if ( convert && out.get() ) {
-                if ( count != 1 )
+            else if ( convert && haveOutput ) {
+                if ( displayMessages )
                     NcbiCerr << "Copying Seq-entry..." << NcbiEndl;
                 CObjectStreamCopier copier(*in, *out);
-                copier.Copy(CSeq_entry::GetTypeInfo());
+                copier.Copy(Type<CSeq_entry>());
             }
             else {
                 CSeq_entry entry;
-                if ( count != 1 )
+                if ( displayMessages )
                     NcbiCerr << "Reading Seq-entry..." << NcbiEndl;
                 *in >> entry;
                 SeqEntryProcess(entry);     /* do any processing */
-                if ( out.get() ) {
-                    if ( count != 1 )
+                if ( haveOutput ) {
+                    if ( displayMessages )
                         NcbiCerr << "Writing Seq-entry..." << NcbiEndl;
                     *out << entry;
                 }
@@ -359,29 +248,28 @@ int CAsn2Asn::Run(void)
         }
         else {              /* read Seq-entry's from a Bioseq-set */
             if ( skip ) {
-                if ( count != 1 )
+                if ( displayMessages )
                     NcbiCerr << "Skipping Bioseq-set..." << NcbiEndl;
-                in->Skip(CBioseq_set::GetTypeInfo());
+                in->Skip(Type<CBioseq_set>());
             }
-            else if ( convert && out.get() ) {
-                if ( count != 1 )
+            else if ( convert && haveOutput ) {
+                if ( displayMessages )
                     NcbiCerr << "Copying Bioseq-set..." << NcbiEndl;
                 CObjectStreamCopier copier(*in, *out);
-                copier.Copy(CBioseq_set::GetTypeInfo());
+                copier.Copy(Type<CBioseq_set>());
             }
             else {
                 CBioseq_set entries;
-                if ( count != 1 )
+                if ( displayMessages )
                     NcbiCerr << "Reading Bioseq-set..." << NcbiEndl;
                 if ( readHook ) {
-                    CObjectTypeInfo hookType(CBioseq_set::GetTypeInfo());
-                    TMemberIndex memberIndex = hookType.FindMember("seq-set");
+                    CObjectTypeInfo bioseqSetType = Type<CBioseq_set>();
+                    CObjectTypeInfo::CMemberIterator member =
+                        bioseqSetType.FindMember("seq-set");
                     CReadSeqSetHook hook;
-                    in->SetReadClassMemberHook(hookType.GetClassTypeInfo(),
-                                               memberIndex, &hook);
+                    const_cast<CMemberInfo*>(member.GetMemberInfo())->SetLocalReadHook(*in, &hook);
                     *in >> entries;
-                    in->ResetReadClassMemberHook(hookType.GetClassTypeInfo(),
-                                                 memberIndex);
+                    const_cast<CMemberInfo*>(member.GetMemberInfo())->ResetLocalReadHook(*in);
                 }
                 else {
                     *in >> entries;
@@ -390,8 +278,8 @@ int CAsn2Asn::Run(void)
                         SeqEntryProcess(**seqi);     /* do any processing */
                     }
                 }
-                if ( out.get() ) {
-                    if ( count != 1 )
+                if ( haveOutput ) {
+                    if ( displayMessages )
                         NcbiCerr << "Writing Bioseq-set..." << NcbiEndl;
                     if ( writeHook ) {
                     }
@@ -425,11 +313,10 @@ void CReadSeqSetHook::ReadClassMember(CObjectIStream& in,
     //    NcbiCerr << "+Level: " << m_Level << NcbiEndl;
     if ( m_Level == 1 ) {
         CReadSeqEntryHook hook;
-        in.ReadContainer(*CObjectInfo::CMemberIterator(object, memberIndex),
-                         hook);
+        (*object.GetClassMemberIterator(memberIndex)).ReadContainer(in, hook);
     }
     else {
-        in.ReadObject(*CObjectInfo::CMemberIterator(object, memberIndex));
+        in.ReadObject(*object.GetClassMemberIterator(memberIndex));
     }
     //    NcbiCerr << "-Level: " << m_Level << NcbiEndl;
     --m_Level;

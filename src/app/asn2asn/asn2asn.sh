@@ -7,7 +7,7 @@ mainDir=/net/hawthorn/export/home/vasilche/c++/src/objects/asn2asn
 d=$mainDir/data
 r=$mainDir/res
 
-tool=./asn2asn
+tool="./asn2asn $@"
 
 do_test() {
     cmd="$tool -i $d/$1 -o out"
