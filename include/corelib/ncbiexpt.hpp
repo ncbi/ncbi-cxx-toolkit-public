@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/12/03 22:03:37  juran
+* #include <corelib/ncbistl.hpp>
+*
 * Revision 1.24  2001/07/30 14:40:57  lavr
 * eDiag_Trace and eDiag_Fatal always print as much as possible
 *
@@ -121,6 +124,7 @@
 */
 
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbistl.hpp>
 #include <string>
 #include <stdexcept>
 
