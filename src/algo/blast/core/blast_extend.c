@@ -936,7 +936,7 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
       
       if (BlastNaExactMatchExtend(q, s, max_bases_left, 
                                   max_bases_right, word_length, 
-                                  !variable_wordsize, &extended_right)) 
+                                  (Boolean) !variable_wordsize, &extended_right)) 
       {
          /* Check if this diagonal has already been explored and save
             the hit if needed. */

@@ -902,7 +902,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
 {
 
     Int2 status = 0;
-    Int4 context = 0; /* loop variable. */
+    Int2 context = 0; /* loop variable. */
     const Boolean k_is_na = (program_number == blast_type_blastn);
     BlastMaskLoc *last_maskloc = NULL;
     BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */

@@ -2721,7 +2721,7 @@ below.
 static Int4
 BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	Blast_KarlinBlk*	kbp,
-	double	searchsp)	/* size of search space */
+	Int8	searchsp)	/* size of search space */
 {
 
 	double	Lambda, K, H; /* parameters for Karlin statistics */
@@ -3438,7 +3438,7 @@ BLAST_ComputeLengthAdjustment(double K,
 {
     Int4 i;                     /* iteration index */
     const Int4 maxits = 20;     /* maximum allowed iterations */
-    double m = query_length, n = db_length, N = db_num_seqs;
+    double m = (double) query_length, n = (double) db_length, N = (double) db_num_seqs;
 
     double ell;                 /* A float value of the length adjustment */
     double ss;                  /* effective size of the search space */
@@ -3516,6 +3516,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.76  2004/05/24 13:26:27  madden
+ * Fix PC compiler warnings
+ *
  * Revision 1.75  2004/05/20 16:29:30  madden
  * Make searchsp an Int8 consistent with rest of blast
  *

@@ -255,7 +255,7 @@ Kappa_MatchRecordInsertHSP(
 
   newSW =
     SWResultsNew(self->sequence, self->score, 
-                 (*hsp)->evalue, self->eValue, (NULL == self->alignments),
+                 (*hsp)->evalue, self->eValue, (Boolean) (NULL == self->alignments),
                  localScalingFactor * lambda, logK,
                  self->subject_index);
 
@@ -317,7 +317,7 @@ Kappa_MatchRecordInsertSwAlign(
   }
   newSW =
     SWResultsNew(self->sequence, self->score, newEvalue,
-                 self->eValue, (NULL == self->alignments),
+                 self->eValue, (Boolean) (NULL == self->alignments),
                  lambda * localScalingFactor, logK, self->subject_index);
 
   newSW->seqStart   = matchStart;
@@ -621,7 +621,7 @@ SWheapInsert(SWheap * self,
         Int4 newCapacity;       /* capacity the heap will have after
                                  * it is resized */
         newCapacity      = MAX(SWHEAP_MIN_RESIZE + self->capacity,
-                               SWHEAP_RESIZE_FACTOR * self->capacity);
+                               (Int4) (SWHEAP_RESIZE_FACTOR * self->capacity));
         self->heapArray  = (SWheapRecord *)
           realloc(self->heapArray, (newCapacity + 1) * sizeof(SWheapRecord));
         self->capacity   = newCapacity;
@@ -2561,7 +2561,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
             Int4 *reverseAlignScript=NULL;   
 
             gapAlign->gap_x_dropoff =
-              extendParams->gap_x_dropoff_final * localScalingFactor;
+              (Int4) (extendParams->gap_x_dropoff_final * localScalingFactor);
 
             Kappa_SWFindFinalEndsUsingXdrop(query, queryLength, queryStart,
                                             queryEnd,
@@ -2625,7 +2625,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
       } else {
         /* We are not doing a Smith-Waterman alignment */
         gapAlign->gap_x_dropoff = 
-          extendParams->gap_x_dropoff_final * localScalingFactor;
+          (Int4) (extendParams->gap_x_dropoff_final * localScalingFactor);
         /* recall that index is the counter corresponding to
          * thisMatch; by aliasing, thisMatch will get updated during
          * the following call to BlastGetGapAlgnTbck, so that
