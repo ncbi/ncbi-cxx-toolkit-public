@@ -404,7 +404,7 @@ static LookupTablePtr LookupTableDestruct(LookupTablePtr lookup)
 }
 
 /* Description in na_lookup.h */
-LookupTableWrapPtr BlastNaLookupTableDestruct(LookupTableWrapPtr lookup)
+LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup)
 {
    if (lookup->lut_type == MB_LOOKUP_TABLE) {
       lookup->lut = (VoidPtr) 

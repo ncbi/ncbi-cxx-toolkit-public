@@ -135,7 +135,7 @@ Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup,
        Int4Ptr end_offset); 
 
 /** Deallocate memory for the lookup table */
-LookupTableWrapPtr BlastNaLookupTableDestruct(LookupTableWrapPtr lookup);
+LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup);
 
 /** Fill the lookup table for a given query sequence or partial sequence.
  * @param lookup Pointer to the lookup table structure [in] [out]
