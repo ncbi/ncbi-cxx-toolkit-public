@@ -27,7 +27,6 @@
  *
  * File Description:  Driver for DBLib server
  *
- *
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
@@ -70,7 +69,7 @@ extern "C" {
 CDBLibContext* CDBLibContext::m_pDBLibContext = 0;
 
 
-CDBLibContext::CDBLibContext(DBINT version) :
+CDBLibContext::CDBLibContext(DBINT /*version*/) :
     m_AppName("DBLibDriver"), m_HostName(""), m_PacketSize(0)
 {
     if (m_pDBLibContext != 0) {
@@ -243,10 +242,12 @@ bool CDBLibContext::DBLIB_SetMaxNofConns(int n)
 }
 
 
-int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,   int severity,
-                                       int           dberr,    int oserr,
+int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
+                                       int           severity,
+                                       int           dberr,
+                                       int           /*oserr*/,
                                        const string& dberrstr,
-                                       const string& oserrstr)
+                                       const string& /*oserrstr*/)
 {
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -301,8 +302,10 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,   int severity,
 }
 
 
-void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
-                                        int           msgstate, int   severity,
+void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
+                                        DBINT         msgno,
+                                        int           /*msgstate*/,
+                                        int           severity,
                                         const string& msgtxt,
                                         const string& srvname,
                                         const string& procname,
@@ -370,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/24 16:40:00  lavr
+ * Comment out unused function arguments
+ *
  * Revision 1.2  2001/10/22 18:38:49  soussov
  * sending NULL instead of emty string fixed
  *
