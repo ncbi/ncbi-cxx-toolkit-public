@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/12 19:32:20  grichenk
+* Removed temp. patch for SerialAssign<>()
+*
 * Revision 1.12  2002/04/11 12:07:29  grichenk
 * Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
 *
@@ -85,10 +88,6 @@
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
 #include <serial/typeinfo.hpp>
-
-#include <serial/serial.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -323,18 +322,7 @@ CAnnotTypes_CI::x_ConvertAnnotToMaster(CAnnotObject& annot_obj) const
             const CSeq_feat& fsrc = annot_obj.GetFeat();
             // Process feature location
             CRef<CSeq_feat> fcopy = new CSeq_feat;
-            //SerialAssign<CSeq_feat>(*fcopy, fsrc);
-            CNcbiStrstream ostr;
-            {{
-                CObjectOStream& os = *CObjectOStream::Open
-                    (eSerial_AsnText, ostr);
-                os << fsrc;
-            }}
-            {{
-                CObjectIStream& is = *CObjectIStream::Open
-                    (eSerial_AsnText, ostr);
-                is >> *fcopy;
-            }}
+            SerialAssign<CSeq_feat>(*fcopy, fsrc);
             x_ConvertLocToMaster(fcopy->SetLocation());
             if ( fcopy->IsSetProduct() )
                 x_ConvertLocToMaster(fcopy->SetProduct());
