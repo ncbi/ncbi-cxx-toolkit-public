@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/04/24 21:29:43  lavr
+ * Special text value "infinite" accepted as infinite timeout from environment
+ *
  * Revision 6.18  2001/03/26 18:37:09  lavr
  * #include <ctype.h> not used, removed
  *
@@ -207,12 +210,18 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
-    dbl = atof(str);
-    if (dbl <= 0.0)
-        dbl = DEF_CONN_TIMEOUT;
-    info->timeout.sec  = (unsigned int) dbl;
-    info->timeout.usec = (unsigned int) ((dbl - info->timeout.sec) * 1000000);
-
+    if (*str && strncasecmp(str, "infinite", strlen(str)) == 0)
+        info->timeout = 0;
+    else {
+        info->timeout = &info->tmo;
+        dbl = atof(str);
+        if (dbl <= 0.0)
+            dbl = DEF_CONN_TIMEOUT;
+        info->timeout->sec  = (unsigned int) dbl;
+        info->timeout->usec = (unsigned int)
+            ((dbl - info->timeout->sec) * 1000000);
+    }
+    
     /* max. # of attempts to establish a connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
     val = atoi(str);
@@ -327,6 +336,10 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     x_info = (SConnNetInfo*) malloc(sizeof(SConnNetInfo));
     *x_info = *info;
+    if (info->timeout && info->timeout != CONN_DEFAULT_TIMEOUT) {
+        x_info->tmo = *info->timeout;
+        x_info->timeout = &x_info->tmo;
+    }
     x_info->http_user_header = 0;
     ConnNetInfo_SetUserHeader(x_info, info->http_user_header);
     return x_info;
@@ -363,8 +376,11 @@ extern void ConnNetInfo_Print(const SConnNetInfo* info, FILE* fp)
                        ? "GET" :
                        (info->req_method == eReqMethod_Post
                         ? "POST" : "Unknown")));
-        s_PrintULong (fp, "timeout(sec)",    info->timeout.sec);
-        s_PrintULong (fp, "timeout(usec)",   info->timeout.usec);
+        if (info->timeout) {
+            s_PrintULong (fp, "timeout(sec)", info->timeout->sec);
+            s_PrintULong (fp, "timeout(usec)",info->timeout->usec);
+        } else
+            s_PrintString(fp, "timeout",     "infinite");
         s_PrintULong (fp, "max_try",         info->max_try);
         s_PrintString(fp, "http_proxy_host", info->http_proxy_host);
         s_PrintULong (fp, "http_proxy_port", info->http_proxy_port);
@@ -451,7 +467,9 @@ extern SOCK URL_Connect
 
     /* connect to HTTPD */
     if (SOCK_Create(host, port, c_timeout, &sock) != eIO_Success) {
-        CORE_LOG(eLOG_Error, "[URL_Connect]  Socket connect failed");
+        CORE_LOGF(eLOG_Error,
+                  ("[URL_Connect]  Socket connect to %s:%hu failed",
+                   host, port));
         return 0/*error*/;
     }
     
@@ -512,7 +530,9 @@ extern SOCK URL_Connect
         SOCK_Write(sock, (const void*) "\r\n", 2, 0)
         != eIO_Success)
         {
-            CORE_LOG(eLOG_Error, "[URL_Connect]  Error sending HTTP header");
+            CORE_LOGF(eLOG_Error,
+                      ("[URL_Connect]  Error sending HTTP header to %s:%hu",
+                       host, port));
             if ( x_args )
                 free(x_args);
             SOCK_Close(sock);
