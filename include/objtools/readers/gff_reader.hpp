@@ -70,16 +70,22 @@ class NCBI_XOBJREAD_EXPORT CGFFReader
 public:
     enum EFlags {
         ///< don't honor/recognize GTF conventions
-        fNoGTF      = 0x1,
+        fNoGTF              = 0x01,
 
         ///< attribute tags are GenBank qualifiers
-        fGBQuals    = 0x2,
+        fGBQuals            = 0x02,
 
         ///< merge exons with the same transcript_id
-        fMergeExons = 0x4,
+        fMergeExons         = 0x04,
 
         ///< restrict merging to just CDS and mRNA features
-        fMergeOnyCdsMrna = 0x8,
+        fMergeOnyCdsMrna    = 0x08,
+
+        ///< move protein_id and transcript_id to products for mRNA and CDS features
+        fSetProducts        = 0x10,
+
+        ///< create gene features for mRNAs and CDSs if none exist already
+        fCreateGeneFeats    = 0x20,
 
         fDefaults = 0
     };
@@ -218,6 +224,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/02 15:00:06  dicuccio
+ * Added additional options: fCreateGeneFeats (create gene features if non exist);
+ * fSetProducts (promote transcript_id and protein_id to products on mRNA and CDS
+ * features)
+ *
  * Revision 1.7  2005/01/18 17:56:17  dicuccio
  * Added additional flags: permit merging of intervals in non-CDS and non-mRNA
  * features.  Added enum for default options.
