@@ -127,9 +127,7 @@ extern "C" {
 
 /** Defaults for PSI-BLAST options */
 #define PSI_ETHRESH 0.005
-#define PSI_MAX_NUM_PASSES 1
 #define PSI_PSEUDO_COUNT_CONST 9
-#define PSI_SCALING_FACTOR 32
 
 /** Default genetic code for query and/or database */
 #define BLAST_GENETIC_CODE 1
@@ -215,6 +213,14 @@ typedef struct BlastInitialWordParameters {
    Int4 cutoff_score; /**< Cutoff score for saving ungapped hits. */
 } BlastInitialWordParameters;
 	
+
+typedef enum EBlastTbackExt {
+    eDynProg,          /**< standard affine gapping */
+    eGreedy,           /**< Greedy extension (megaBlast) */
+    eSmithWaterman     /**< Smith-waterman finds optimal scores, then ALIGN_EX
+                            to find alignment. */
+} EBlastTbackExt;
+
 /** Options used for gapped extension 
  *  These include:
  *  a. Penalties for various types of gapping;
@@ -229,6 +235,8 @@ typedef struct BlastExtensionOptions {
    double gap_trigger;/**< Score in bits for starting gapped extension */
    Int4 algorithm_type; /**< E.g. for blastn: dynamic programming; 
                            greedy without traceback; greedy with traceback */
+   EBlastTbackExt eTbackExt; /**< type of traceback extension. */
+   Boolean compositionBasedStats; /**< if TRUE use composition-based stats. */
    Boolean skip_traceback; /**< Is traceback information needed in results? */
 } BlastExtensionOptions;
 
@@ -377,17 +385,8 @@ typedef struct BlastEffectiveLengthsParameters {
  *  Some of these possibly should be transfered elsewhere  
  */
 typedef struct PSIBlastOptions {
-   double ethresh;       /**< PSI-BLAST */
-   Int4 maxNumPasses;     /**< PSI-BLAST */
-   Int4 pseudoCountConst; /**< PSI-BLAST */
-   Boolean composition_based_stat;/**< PSI-BLAST */
-   double scalingFactor; /**< Scaling factor used when constructing PSSM for
-                             RPS-BLAST */
-   Boolean use_best_align; /**< Use only alignments chosen by user for PSSM
-                              computation: WWW PSI-BLAST only */
-   Boolean smith_waterman;  /**< PSI-BLAST */
-   Boolean discontinuous;   /**< PSI-BLAST */
-   Boolean is_rps_blast;    /**< RPS-BLAST */
+   double inclusion_ethresh; /**< minimum evalue for inclusion in PSSM calc. */
+   Int4 pseudo_count;      /**< pseudo count constant */
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 

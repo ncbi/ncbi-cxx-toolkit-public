@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.104  2004/05/12 12:18:06  madden
+ * Clean out PSIBlast options, add fields to ExtensionOptions to support smith-waterman and composition-based stats
+ *
  * Revision 1.103  2004/05/10 14:27:23  madden
  * Correction to CalculateLinkHSPCutoffs to use gap_trigger in calculation of small cutoff
  *
@@ -1540,10 +1543,8 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
       return 0;
    options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
    *psi_options = options;
-   options->ethresh = PSI_ETHRESH;
-   options->maxNumPasses = PSI_MAX_NUM_PASSES;
-   options->pseudoCountConst = PSI_PSEUDO_COUNT_CONST;
-   options->scalingFactor = PSI_SCALING_FACTOR;
+   options->inclusion_ethresh = PSI_ETHRESH;
+   options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
    
    return 0;
 }
