@@ -158,11 +158,15 @@ public:
 
         CConstRef<CAlnChunk> operator[] (TNumchunk i) const;
         TNumchunk            size       (void)        const { return m_Size; };
+
+    private:
+#ifdef NCBI_COMPILER_MSVC // kludge
         friend class CAlnMap;
 #else
         friend
         CRef<CAlnChunkVec> CAlnMap::GetAlnChunks(TNumrow row,
                                                  const TSignedRange& range,
+                                                 TGetChunkFlags flags = 0)
             const;
 #endif
 
@@ -460,10 +464,10 @@ CAlnMap::GetTypeAtAlnPos(TNumrow row, TSeqPos aln_pos) const
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
-* $Log$
-* Revision 1.1  2002/08/23 14:43:50  ucko
-* Add the new C++ alignment manager to the public tree (thanks, Kamen!)
+
 *
+* Revision 1.3  2002/09/05 19:31:18  dicuccio
+* - added ability to reference a consensus sequence for a given alignment
 * - added caching of CSeqVector (big performance win)
 * - many small bugs fixed
 *
