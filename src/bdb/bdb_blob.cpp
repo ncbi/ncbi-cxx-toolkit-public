@@ -105,6 +105,77 @@ size_t CBDB_BLobFile::LobSize() const
 }
 
 
+CBDB_BLobStream* CBDB_BLobFile::CreateStream()
+{
+    DBT* dbt = CloneDBT_Key();
+    return new CBDB_BLobStream(m_DB, dbt);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//  CBDB_BLobFile::
+//
+
+CBDB_BLobStream::CBDB_BLobStream(DB* db, DBT* dbt_key)
+: m_DB(db),
+  m_DBT_Key(dbt_key),
+  m_DBT_Data(0),
+  m_Pos(0)
+{
+    m_DBT_Data = new DBT;
+    ::memset(m_DBT_Data, 0, sizeof(DBT));
+}
+
+
+CBDB_BLobStream::~CBDB_BLobStream()
+{
+    CBDB_File::DestroyDBT_Clone(m_DBT_Key);
+    delete m_DBT_Data;
+}
+
+void CBDB_BLobStream::Read(void *buf, size_t buf_size, size_t *bytes_read)
+{
+    m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
+
+    m_DBT_Data->data = buf;
+    m_DBT_Data->ulen = buf_size;
+    m_DBT_Data->dlen = buf_size;
+    m_DBT_Data->doff = m_Pos;
+    m_DBT_Data->size = 0;
+    
+    int ret = m_DB->get(m_DB,
+                        0,         // DB_TXN*
+                        m_DBT_Key,
+                        m_DBT_Data,
+                        0);
+    BDB_CHECK(ret, "BLOBStream");
+
+    m_Pos += m_DBT_Data->size;
+    *bytes_read = m_DBT_Data->size;
+}
+
+void CBDB_BLobStream::Write(const void* buf, size_t buf_size)
+{
+/*    if (m_Pos == 0)
+        m_DBT_Data->flags = 0;
+    else*/
+        m_DBT_Data->flags = DB_DBT_USERMEM | DB_DBT_PARTIAL;
+
+    m_DBT_Data->data = const_cast<void*> (buf);
+    m_DBT_Data->size = buf_size;
+    m_DBT_Data->ulen = buf_size;
+    m_DBT_Data->doff = m_Pos;
+    m_DBT_Data->dlen = buf_size;
+
+    int ret = m_DB->put(m_DB,
+                        0,         // DB_TXN*
+                        m_DBT_Key,
+                        m_DBT_Data,
+                        0);
+    BDB_CHECK(ret, "BLOBStream");
+
+    m_Pos += buf_size;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_LobFile::
 //
@@ -263,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/09/17 18:18:42  kuznets
+ * Implemented BLOB streaming
+ *
  * Revision 1.8  2003/07/02 17:55:34  kuznets
  * Implementation modifications to eliminated direct dependency from <db.h>
  *
