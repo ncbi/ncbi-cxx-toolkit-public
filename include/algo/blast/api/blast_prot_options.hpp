@@ -56,7 +56,7 @@ class NCBI_XBLAST_EXPORT CBlastProteinOptionsHandle :
 public:
     
     /// Creates object with default options set
-    CBlastProteinOptionsHandle();
+    CBlastProteinOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
     ~CBlastProteinOptionsHandle() {}
     CBlastProteinOptionsHandle(const CBlastProteinOptionsHandle& rhs);
     CBlastProteinOptionsHandle& operator=(const CBlastProteinOptionsHandle& rhs);
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/16 20:44:08  bealer
+ * - Add locality flag for options handle classes.
+ *
  * Revision 1.3  2003/12/15 23:41:36  dondosha
  * Added [gs]etters of database (subject) length and number of sequences to general options handle
  *
