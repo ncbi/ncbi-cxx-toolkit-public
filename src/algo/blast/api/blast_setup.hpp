@@ -121,7 +121,7 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
             std::string* warnings = NULL);
 
 /** Calculates the length of the buffer to allocate given the desired encoding,
- * strand (if applicable) and use of sentinel bytes around sequence
+ * strand (if applicable) and use of sentinel bytes around sequence.
  * @param sequence_length Length of the sequence [in]
  * @param encoding Desired encoding for calculation (supported encodings are
  *        listed in GetSequence()) [in]
@@ -129,7 +129,8 @@ GetSequence(const objects::CSeq_loc& sl, Uint1 encoding,
  * @param sentinel Whether to include or not sentinels in calculation. Same
  *        criteria as GetSequence() applies [in]
  * @return Length of the buffer to allocate to contain original sequence of
- *        length sequence_length for given encoding and parameter constraints
+ *        length sequence_length for given encoding and parameter constraints.
+ *        If the sequence_length is 0, the return value will be 0 too
  */
 NCBI_XBLAST_EXPORT
 TSeqPos
@@ -196,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/01/21 17:38:36  camacho
+* Update documentation
+*
 * Revision 1.29  2005/01/06 16:07:55  camacho
 * + warnings output parameter to blast::GetSequence
 *
