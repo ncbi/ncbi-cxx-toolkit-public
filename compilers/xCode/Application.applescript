@@ -396,7 +396,9 @@ on ValidatePaths()
 	end if
 	
 	if (do shell script "file " & TheOUTPath) does not contain ": directory" then
-		return "The Output folder was not found at: " & TheOUTPath
+		do shell script "mkdir " & TheOUTPath
+		x_AddtoLog("The Output folder was created at: " & TheOUTPath)
+		--return "The Output folder was not found at: " & TheOUTPath
 	end if
 	
 	set libTypeDLL to content of button "libType" of window "Main" -- DLL or Static
@@ -419,6 +421,9 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/09/24 17:56:52  lebedev
+ * Create output directory of it's not exist
+ *
  * Revision 1.8  2004/09/23 12:05:33  lebedev
  * Help button added with link to NCBI C++ Toolkit reference page
  *
