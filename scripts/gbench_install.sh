@@ -190,4 +190,4 @@ COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
 
 echo "Configuring plugin cache"
 COMMON_AddRunpath ${target_dir}/lib
-COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -dir ${target_dir}/plugins
+COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan ${target_dir}/plugins
