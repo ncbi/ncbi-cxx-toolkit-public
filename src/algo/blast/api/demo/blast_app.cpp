@@ -679,6 +679,12 @@ int CBlastApplication::Run(void)
     Int4 first_oid = 0;
     Int4 last_oid = 0;
 
+    if (strand == eNa_strand_unknown &&
+        (program != eBlastp &&
+         program != eTblastn &&
+         program != eRPSBlast))
+        strand = eNa_strand_both;
+
     InitScope();
 
     int id_counter = 0;
