@@ -1172,60 +1172,87 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
         return 0;
 }
 
+typedef enum EHSPInclusionStatus {
+   eEqual = 0,      /**< Identical */
+   eFirstInSecond,  /**< First included in rectangle formed by second */
+   eSecondInFirst,  /**< Second included in rectangle formed by first */
+   eDiagNear,       /**< Diagonals are near, but neither HSP is included in
+                       the other. */
+   eDiagDistant     /**< Diagonals are far apart, or different contexts */
+} EHSPInclusionStatus;
+
 /** Are the two HSPs within a given diagonal distance of each other? */
 #define MB_HSP_CLOSE(q1, q2, s1, s2, c) (ABS(((q1)-(s1)) - ((q2)-(s2))) < (c))
 #define MIN_DIAG_DIST 60
 
+/** HSP inclusion criterion for megablast: one HSP must be included in a
+ * diagonal strip of a certain width around the other, and also in a rectangle
+ * formed by the other HSP's endpoints.
+ */
+static EHSPInclusionStatus 
+Blast_HSPInclusionTest(BlastHSP* hsp1, BlastHSP* hsp2)
+{
+   if (hsp1->context != hsp2->context || 
+       !MB_HSP_CLOSE(hsp1->query.offset, hsp2->query.offset,
+                     hsp1->subject.offset, hsp2->subject.offset, 
+                     MIN_DIAG_DIST))
+      return eDiagDistant;
+
+   if (hsp1->query.offset == hsp2->query.offset && 
+       hsp1->query.end == hsp2->query.end &&  
+       hsp1->subject.offset == hsp2->subject.offset && 
+       hsp1->subject.end == hsp2->subject.end && 
+       hsp1->score == hsp2->score) {
+      return eEqual;
+   } else if (hsp1->query.offset >= hsp2->query.offset && 
+       hsp1->query.end <= hsp2->query.end &&  
+       hsp1->subject.offset >= hsp2->subject.offset && 
+       hsp1->subject.end <= hsp2->subject.end && 
+       hsp1->score < hsp2->score) { 
+      return eFirstInSecond;
+   } else if (hsp1->query.offset <= hsp2->query.offset &&  
+              hsp1->query.end >= hsp2->query.end &&  
+              hsp1->subject.offset <= hsp2->subject.offset && 
+              hsp1->subject.end >= hsp2->subject.end && 
+              hsp1->score >= hsp2->score) { 
+      return eSecondInFirst;
+   }
+   return eDiagNear;
+}
+
+/** How many HSPs to check for inclusion for each new HSP? */
+#define MAX_NUM_CHECK_INCLUSION 20
+
 /** Sort the HSPs in an HSP list by diagonal and remove redundant HSPs */
-static Int2
+Int2
 Blast_HSPListUniqSort(BlastHSPList* hsp_list)
 {
-   Int4 index, new_hspcnt, index1, q_off, s_off, q_end, s_end, index2;
+   Int4 index, new_hspcnt, index1, index2;
    BlastHSP** hsp_array = hsp_list->hsp_array;
    Boolean shift_needed = FALSE;
-   Int4 context;
-   double evalue;
+   EHSPInclusionStatus inclusion_status = eDiagNear;
+
+   if (hsp_list->hspcnt <= 1)
+      return 0;
 
    qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-         diag_uniq_compare_hsps);
-   /* Delete all HSPs that were flagged in qsort */
-   for (index = 0; index < hsp_list->hspcnt; ++index) {
-      if (hsp_array[index]->score == 0) {
-         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-      }
-   }      
-   /* Move all nulled out HSPs to the end */
-   qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
-         null_compare_hsps);
+         diag_compare_hsps);
 
    for (index=1, new_hspcnt=0; index<hsp_list->hspcnt; index++) {
       if (!hsp_array[index])
          break;
-
-      q_off = hsp_array[index]->query.offset;
-      s_off = hsp_array[index]->subject.offset;
-      q_end = hsp_array[index]->query.end;
-      s_end = hsp_array[index]->subject.end;
-      evalue = hsp_array[index]->evalue;
-      context = hsp_array[index]->context;
-      for (index1 = new_hspcnt; index1 >= 0 && 
-           hsp_array[index1]->context == context && new_hspcnt-index1 < 10 && 
-           MB_HSP_CLOSE(q_off, hsp_array[index1]->query.offset,
-                        s_off, hsp_array[index1]->subject.offset, 
-                        MIN_DIAG_DIST);
+      inclusion_status = eDiagNear;
+      for (index1 = new_hspcnt; inclusion_status != eDiagDistant &&
+           index1 >= 0 && new_hspcnt-index1 < MAX_NUM_CHECK_INCLUSION;
            index1--) {
-         if (q_off >= hsp_array[index1]->query.offset && 
-             s_off >= hsp_array[index1]->subject.offset && 
-             q_end <= hsp_array[index1]->query.end && 
-             s_end <= hsp_array[index1]->subject.end &&
-             evalue >= hsp_array[index1]->evalue) {
+         inclusion_status = 
+            Blast_HSPInclusionTest(hsp_array[index], hsp_array[index1]);
+         if (inclusion_status == eFirstInSecond || 
+             inclusion_status == eEqual) {
+            /* Free the new HSP and break out of the inclusion test loop */
             hsp_array[index] = Blast_HSPFree(hsp_array[index]);
             break;
-         } else if (q_off <= hsp_array[index1]->query.offset && 
-             s_off <= hsp_array[index1]->subject.offset && 
-             q_end >= hsp_array[index1]->query.end && 
-             s_end >= hsp_array[index1]->subject.end &&
-             evalue <= hsp_array[index1]->evalue) {
+         } else if (inclusion_status == eSecondInFirst) {
             hsp_array[index1] = Blast_HSPFree(hsp_array[index1]);
             shift_needed = TRUE;
          }
