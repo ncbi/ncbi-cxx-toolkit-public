@@ -63,7 +63,7 @@
 //#include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbi_limits.hpp>
 //#include <corelib/ncbi_process.hpp>
-#include <corelib/ncbi_safe_static.hpp>
+//#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_tree.hpp>
 //#include <corelib/plugin_manager.hpp>
@@ -79,6 +79,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/26 19:32:35  gorelenk
+ * Commented accidentaly restored include of ncbi_safe_static.hpp
+ *
  * Revision 1.5  2004/05/26 18:45:10  gorelenk
  * Added section for using wxWindows headers in PCH .
  *
