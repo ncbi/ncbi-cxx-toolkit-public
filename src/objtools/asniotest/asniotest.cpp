@@ -60,10 +60,10 @@ USING_SCOPE(objects);
 #define ERRORMSG(stream) ERR_POST(Error << stream << '!')
 
 // directory that contains test files (default overridden by env. var. ASNIOTEST_FILES)
-static string pathToFiles(".");
+string pathToFiles(".");
 
 // keep track of files created, to remove them at the end
-static list < string > filesCreated;
+list < string > filesCreated;
 
 // a utility function for reading different types of ASN data from a file
 template < class ASNClass >
@@ -293,6 +293,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/11/25 20:53:02  ucko
+* Make template-accessed variables non-static to fix compilation on WorkShop.
+*
 * Revision 1.3  2003/11/25 14:36:16  thiessen
 * restructure macros
 *
