@@ -343,33 +343,33 @@ CSeqDBIter & CSeqDBIter::operator++(void)
 }
 
 CRef<CBioseq>
-CSeqDB::GiToBioseq(TGI gi, TGI target_gi) const
+CSeqDB::GiToBioseq(TGI gi) const
 {
     TOID oid(0);
     CRef<CBioseq> bs;
     
     if (m_Impl->GiToOid(gi, oid)) {
-        bs = m_Impl->GetBioseq(oid, target_gi);
+        bs = m_Impl->GetBioseq(oid, 0);
     }
     
     return bs;
 }
 
 CRef<CBioseq>
-CSeqDB::PigToBioseq(TPIG pig, TGI target_gi) const
+CSeqDB::PigToBioseq(TPIG pig) const
 {
     TOID oid(0);
     CRef<CBioseq> bs;
     
     if (m_Impl->PigToOid(pig, oid)) {
-        bs = m_Impl->GetBioseq(oid, target_gi);
+        bs = m_Impl->GetBioseq(oid, 0);
     }
     
     return bs;
 }
 
 CRef<CBioseq>
-CSeqDB::SeqidToBioseq(const CSeq_id & seqid, TGI target_gi) const
+CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
 {
     vector<TOID> oids;
     CRef<CBioseq> bs;
@@ -377,7 +377,7 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid, TGI target_gi) const
     m_Impl->SeqidToOids(seqid, oids);
     
     if (! oids.empty()) {
-        bs = m_Impl->GetBioseq(oids[0], target_gi);
+        bs = m_Impl->GetBioseq(oids[0], 0);
     }
     
     return bs;

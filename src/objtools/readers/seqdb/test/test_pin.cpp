@@ -403,7 +403,7 @@ int test1(int argc, char ** argv)
             {
                 cout << "--- gi " << gi << " ---" << endl;
                 
-                CRef<CBioseq> bs = db.GiToBioseq(gi, 0);
+                CRef<CBioseq> bs = db.GiToBioseq(gi);
                 
                 auto_ptr<CObjectOStream>
                     outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
@@ -413,7 +413,7 @@ int test1(int argc, char ** argv)
             {
                 cout << "\n--- pig " << pig << " ---" << endl;
                 
-                CRef<CBioseq> bs = db.PigToBioseq(pig, 0);
+                CRef<CBioseq> bs = db.PigToBioseq(pig);
                 
                 auto_ptr<CObjectOStream>
                     outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
@@ -423,7 +423,7 @@ int test1(int argc, char ** argv)
             {
                 cout << "\n--- seqid " << str << " ---" << endl;
                 
-                CRef<CBioseq> bs = db.SeqidToBioseq(seqid, 0);
+                CRef<CBioseq> bs = db.SeqidToBioseq(seqid);
                 
                 auto_ptr<CObjectOStream>
                     outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
