@@ -2113,6 +2113,9 @@ static EIO_Status s_Send(SOCK        sock,
                          size_t*     n_written,
                          int/*bool*/ oob)
 {
+#ifdef NCBI_OS_MSWIN
+    int no_buffer_count = 0;
+#endif /*NCBI_OS_MSWIN*/
     char _id[32];
 
     assert(size > 0  &&  sock->type != eSOCK_Datagram  &&  *n_written == 0);
@@ -2124,9 +2127,8 @@ static EIO_Status s_Send(SOCK        sock,
         if (x_written > 0) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
-                s_DoLog(sock, eIO_Write, buf, (size_t) x_written, oob ? "" : 0);
+                s_DoLog(sock, eIO_Write, buf, (size_t) x_written, oob? "" : 0);
             sock->n_written += x_written;
-
             *n_written = x_written;
             sock->w_status = eIO_Success;
             break/*done*/;
@@ -2139,10 +2141,24 @@ static EIO_Status s_Send(SOCK        sock,
 
         /* blocked -- retry if unblocked before the timeout expires */
         /* (use stall protection if specified) */
-        if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
+        if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN
+#ifdef NCBI_OS_MSWIN
+            ||  x_errno == WSAENOBUFS
+#endif /*NCBI_OS_MSWIN*/
+            ) {
             EIO_Status status;
             SSOCK_Poll poll;
 
+#ifdef NCBI_OS_MSWIN
+            if (x_errno == WSAENOBUFS) {
+                int ms = ((1 << no_buffer_count++) - 1) * 10;
+                if (ms)
+                    Sleep(ms);
+                if (no_buffer_count > 4)
+                    no_buffer_count = 4;
+            } else
+                no_buffer_count = 0;
+#endif /*NCBI_OS_MSWIN*/
             poll.sock   = sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
@@ -4411,6 +4427,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.171  2005/04/06 19:37:53  lavr
+ * Use adaptive wait-off in case of MS-Win's WSAENOBUFS error on send()
+ *
  * Revision 6.170  2005/03/11 20:01:55  lavr
  * Document SOCK::myport byte order
  *
