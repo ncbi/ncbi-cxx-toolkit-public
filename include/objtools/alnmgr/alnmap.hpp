@@ -72,6 +72,12 @@ public:
     enum EGetChunkFlags {
         fAllChunks           = 0x0000,
         fIgnoreUnaligned     = 0x0001,
+        // fInsertSameAsSeq, fDeletionSameAsGap and fIgnoreAnchor
+        // are used to consolidate adjacent segments which whose type
+        // only differs in how they relate to the anchor.
+        // Still, when obtaining the type of the chunks, the info about
+        // the relationship to anchor (fNotAlignedToSeqOnAnchor) will be
+        // present.
         fInsertSameAsSeq     = 0x0002,
         fDeletionSameAsGap   = 0x0004,
         fIgnoreAnchor        = fInsertSameAsSeq | fDeletionSameAsGap,
@@ -652,6 +658,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/12/31 17:26:18  todorov
+* +fIgnoreAnchore usage comment
+*
 * Revision 1.30  2003/09/18 23:05:11  todorov
 * Optimized GetSeqAln{Start,Stop}
 *
