@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.123 2002/08/30 20:48:50 ucko Exp $
+#  $Id: configure.ac,v 1.124 2002/09/06 16:14:52 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -551,8 +551,8 @@ case "$host_os:$compiler" in
    with_bincopy=${with_bincopy:="no"}
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
-   LDFLAGS="-xildoff $LDFLAGS"
-   AR=${AR:="$CXX $MT_FLAG -xar -o"}
+   LDFLAGS="-xildoff -xs $LDFLAGS"
+   AR=${AR:="$CXX $MT_FLAG -xar -xs -o"}
    STRIP=":"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
@@ -1538,8 +1538,8 @@ if test -z "${NETWORK_LIBS+set}"; then
    AC_CHECK_LIB(nsl, gethostbyname, [libnsl=-lnsl], [libnsl=])
    AC_CHECK_LIB(socket, connect, [NETWORK_LIBS="-lsocket $libnsl"],
       [NETWORK_LIBS=$libnsl])
-   AC_CHECK_LIB(resolv, res_search, [NETWORK_LIBS="-lresolv $NETWORK_LIBS"])
 fi
+AC_CHECK_LIB(resolv, res_search, [RESOLVER_LIBS="-lresolv"], [RESOLVER_LIBS=])
 
 if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
    AC_MSG_NOTICE([Skipping checks for get{addr,name}info (new in Solaris 8).])
@@ -2750,6 +2750,7 @@ AC_SUBST(f_outexe)
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)
+AC_SUBST(RESOLVER_LIBS)
 AC_SUBST(MATH_LIBS)
 AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)

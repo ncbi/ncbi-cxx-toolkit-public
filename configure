@@ -3220,8 +3220,8 @@ case "$host_os:$compiler" in
    with_bincopy=${with_bincopy:="no"}
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
-   LDFLAGS="-xildoff $LDFLAGS"
-   AR=${AR:="$CXX $MT_FLAG -xar -o"}
+   LDFLAGS="-xildoff -xs $LDFLAGS"
+   AR=${AR:="$CXX $MT_FLAG -xar -xs -o"}
    STRIP=":"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
@@ -8369,7 +8369,8 @@ else
   NETWORK_LIBS=$libnsl
 fi
 
-   echo "$as_me:$LINENO: checking for res_search in -lresolv" >&5
+fi
+echo "$as_me:$LINENO: checking for res_search in -lresolv" >&5
 echo $ECHO_N "checking for res_search in -lresolv... $ECHO_C" >&6
 if test "${ac_cv_lib_resolv_res_search+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -8425,10 +8426,11 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_resolv_res_search" >&5
 echo "${ECHO_T}$ac_cv_lib_resolv_res_search" >&6
 if test $ac_cv_lib_resolv_res_search = yes; then
-  NETWORK_LIBS="-lresolv $NETWORK_LIBS"
+  RESOLVER_LIBS="-lresolv"
+else
+  RESOLVER_LIBS=
 fi
 
-fi
 
 if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
    { echo "$as_me:$LINENO: Skipping checks for get{addr,name}info (new in Solaris 8)." >&5
@@ -14831,6 +14833,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -15531,6 +15534,7 @@ s,@f_outexe@,$f_outexe,;t t
 s,@THREAD_LIBS@,$THREAD_LIBS,;t t
 s,@NETWORK_LIBS@,$NETWORK_LIBS,;t t
 s,@NETWORK_PURE_LIBS@,$NETWORK_PURE_LIBS,;t t
+s,@RESOLVER_LIBS@,$RESOLVER_LIBS,;t t
 s,@MATH_LIBS@,$MATH_LIBS,;t t
 s,@KSTAT_LIBS@,$KSTAT_LIBS,;t t
 s,@RPCSVC_LIBS@,$RPCSVC_LIBS,;t t
