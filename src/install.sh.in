@@ -183,7 +183,7 @@ status/config.cache status/config.status"
 
 # Copy files to the install build dir...
 install_builddir="$install_dir/build"
-
+set -xv
 mkdir "$install_builddir"  ||  Usage "Failed to create dir:  $install_builddir"
 for f in Makefile.* install.sh relocate.sh ; do
    cp -p $script_dir/$f "$install_builddir/$f"  ||  \
