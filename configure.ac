@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.261 2004/01/29 19:55:37 ucko Exp $
+#  $Id: configure.ac,v 1.262 2004/01/29 22:50:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2951,7 +2951,7 @@ if test "$with_sssdb" = "no"  -o  "$with_sssutils" = "no" ; then
 fi
 
 if test "$with_geo" != "no" ; then
-   NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/BUILD"}
+   NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/production"}
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
       NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${release_debug}${bit64_sfx}"
@@ -2973,7 +2973,8 @@ if test "$with_geo" = "no" ; then
    LIBGEODB=
 else
    NCBI_GEO_LIBPATH="-L${NCBI_GEO_LIBPATH}"
-   NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE}"
+   # GEO_API defaults to GeoTest, leading to link errors.
+   NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE} -DGEO_API=Geo"
    LIBGEODB="-lgeodb"
 
    # We have to be careful here, since GEO uses our libxncbi...
