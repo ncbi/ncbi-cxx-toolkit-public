@@ -278,7 +278,7 @@ private:
         
         void GetMaskFiles(list<string> & mask_files) const
         {
-            set<string>::iterator i = m_MaskFiles.begin();
+            set<string>::const_iterator i = m_MaskFiles.begin();
             
             while(i != m_MaskFiles.end()) {
                 mask_files.push_back(*i);
