@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Implement CONNECTOR for a network socket(based on the NCBI "SOCK").
@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/29 18:16:26  lavr
+ * Adapted for use of new connector structure.
+ *
  * Revision 6.1  2000/04/07 20:05:38  vakatov
  * Initial revision
  *
@@ -61,60 +64,62 @@ typedef struct {
 } SSockConnector;
 
 
-
 /***********************************************************************
  *  INTERNAL -- "s_VT_*" functions for the "virt. table" of connector methods
  ***********************************************************************/
 
-
 #ifdef __cplusplus
 extern "C" {
-    static const char* s_VT_GetType(void* connector);
-    static EIO_Status s_VT_Connect(void*           connector,
-                                   const STimeout* timeout);
-    static EIO_Status s_VT_Wait(void*           connector,
-                                EIO_Event       event,
-                                const STimeout* timeout);
+#endif /* __cplusplus */
+    static const char* s_VT_GetType(CONNECTOR       connector);
+    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Wait   (CONNECTOR       connector,
+                                    EIO_Event       event,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Write  (CONNECTOR       connector,
+                                    const void*     buf,
+                                    size_t          size,
+                                    size_t*         n_written,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Flush  (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Read   (CONNECTOR       connector,
+                                    void*           buf,
+                                    size_t          size,
+                                    size_t*         n_read,
+                                    const STimeout* timeout);
+    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
+                                    const STimeout* timeout);
+    static void        s_Setup     (SMetaConnector* meta,
+                                    CONNECTOR       connector);
+    static void        s_Destroy   (CONNECTOR       connector);
 #  ifdef IMPLEMENTED__CONN_WaitAsync
     static EIO_Status s_VT_WaitAsync(void*                   connector,
                                      FConnectorAsyncHandler  func,
                                      SConnectorAsyncHandler* data);
 #  endif
-    static EIO_Status s_VT_Write(void*           connector,
-                                 const void*     buf,
-                                 size_t          size,
-                                 size_t*         n_written,
-                                 const STimeout* timeout);
-    static EIO_Status s_VT_Flush(void*           connector,
-                                 const STimeout* timeout);
-    static EIO_Status s_VT_Read(void*           connector,
-                                void*           buf,
-                                size_t          size,
-                                size_t*         n_read,
-                                const STimeout* timeout);
-    static EIO_Status s_VT_Close(CONNECTOR       connector,
-                                 const STimeout* timeout);
+#ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
 
 
-
 static const char* s_VT_GetType
-(void* connector)
+(CONNECTOR connector)
 {
     return "SOCK";
 }
 
 
-static EIO_Status s_VT_Connect
-(void*           connector,
+static EIO_Status s_VT_Open
+(CONNECTOR       connector,
  const STimeout* timeout)
 {
-    SSockConnector* xxx = (SSockConnector*) connector;
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
     EIO_Status   status = eIO_Success;
 
     unsigned int i;
-    for (i = 0;  i < xxx->max_try;  i++) {
+    for (i = 0; i < xxx->max_try; i++) {
         /* connect */
         status = xxx->sock ?
             SOCK_Reconnect(xxx->sock, 0, 0, timeout) :
@@ -123,7 +128,7 @@ static EIO_Status s_VT_Connect
         if (status == eIO_Success) {
             /* write init data, if any */
             size_t n_written = 0;
-            if ( !xxx->init_data )
+            if (!xxx->init_data)
                 return eIO_Success;
             status = SOCK_Write(xxx->sock, xxx->init_data, xxx->init_size,
                                 &n_written);
@@ -132,7 +137,7 @@ static EIO_Status s_VT_Connect
         }
 
         /* error: close socket and continue trying */
-        if ( xxx->sock ) {
+        if (xxx->sock) {
             SOCK_Close(xxx->sock);
             xxx->sock = 0;
         }
@@ -144,14 +149,68 @@ static EIO_Status s_VT_Connect
 
 
 static EIO_Status s_VT_Wait
-(void*           connector,
+(CONNECTOR       connector,
  EIO_Event       event,
  const STimeout* timeout)
 {
-    SSockConnector* xxx = (SSockConnector*)connector;
-    assert(event == eIO_Read  ||  event == eIO_Write);
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+    assert(event == eIO_Read || event == eIO_Write);
+    return xxx->sock ? SOCK_Wait(xxx->sock, event, timeout) : eIO_Closed;
+}
 
-    return SOCK_Wait(xxx->sock, event, timeout);
+
+static EIO_Status s_VT_Write
+(CONNECTOR       connector,
+ const void*     buf,
+ size_t          size,
+ size_t*         n_written,
+ const STimeout* timeout)
+{
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+
+    if (!xxx->sock)
+        return eIO_Closed;
+    SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
+    return SOCK_Write(xxx->sock, buf, size, n_written);
+}
+
+
+static EIO_Status s_VT_Flush
+(CONNECTOR       connector,
+ const STimeout* timeout)
+{
+    return eIO_Success;
+}
+
+
+static EIO_Status s_VT_Read
+(CONNECTOR       connector,
+ void*           buf,
+ size_t          size,
+ size_t*         n_read,
+ const STimeout* timeout)
+{
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+    if (!xxx->sock)
+        return eIO_Closed;
+    SOCK_SetTimeout(xxx->sock, eIO_Read, timeout);
+    return SOCK_Read(xxx->sock, buf, size, n_read, eIO_Plain);
+}
+
+
+static EIO_Status s_VT_Close
+(CONNECTOR       connector,
+ const STimeout* timeout)
+{
+    SSockConnector* xxx = (SSockConnector*) connector->handle;
+    EIO_Status status = eIO_Success;
+
+    if (xxx->sock) {
+        SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
+        status = SOCK_Close(xxx->sock);
+        xxx->sock = 0;
+    }
+    return status;
 }
 
 
@@ -166,70 +225,40 @@ static EIO_Status s_VT_WaitAsync
 #endif
 
 
-static EIO_Status s_VT_Write
-(void*           connector,
- const void*     buf,
- size_t          size,
- size_t*         n_written,
- const STimeout* timeout)
+static void s_Setup
+(SMetaConnector* meta,
+ CONNECTOR       connector)
 {
-    SSockConnector* xxx = (SSockConnector*)connector;
-
-    SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
-
-    return SOCK_Write(xxx->sock, buf, size, n_written);
+    /* initialize virtual table */
+    CONN_SET_METHOD(meta, get_type,   s_VT_GetType,   connector);
+    CONN_SET_METHOD(meta, open,       s_VT_Open,      connector);
+    CONN_SET_METHOD(meta, wait,       s_VT_Wait,      connector);
+    CONN_SET_METHOD(meta, write,      s_VT_Write,     connector);
+    CONN_SET_METHOD(meta, flush,      s_VT_Flush,     connector);
+    CONN_SET_METHOD(meta, read,       s_VT_Read,      connector);
+    CONN_SET_METHOD(meta, close,      s_VT_Close,     connector);
+#ifdef IMPLEMENTED__CONN_WaitAsync
+    CONN_SET_METHOD(meta, wait_async, s_VT_WaitAsync, connector);
+#endif
 }
 
 
-static EIO_Status s_VT_Flush
-(void*           connector,
- const STimeout* timeout)
-{
-    return eIO_Success;
-}
-
-
-static EIO_Status s_VT_Read
-(void*           connector,
- void*           buf,
- size_t          size,
- size_t*         n_read,
- const STimeout* timeout)
-{
-    SSockConnector* xxx = (SSockConnector*) connector;
-
-    SOCK_SetTimeout(xxx->sock, eIO_Read, timeout);
-
-    return SOCK_Read(xxx->sock, buf, size, n_read, eIO_Plain);
-}
-
-
-static EIO_Status s_VT_Close
-(CONNECTOR       connector,
- const STimeout* timeout)
+static void s_Destroy
+(CONNECTOR connector)
 {
     SSockConnector* xxx = (SSockConnector*) connector->handle;
-    EIO_Status status = eIO_Success;
-
-    if ( xxx->sock ) {
-        SOCK_SetTimeout(xxx->sock, eIO_Write, timeout);
-        status = SOCK_Close(xxx->sock);
-    }
 
     free(xxx->host);
-    if ( xxx->init_data )
+    if (xxx->init_data)
         free(xxx->init_data);
     free(xxx);
     free(connector);
-    return status;
 }
-
 
 
 /***********************************************************************
  *  EXTERNAL -- the connector's "constructors"
  ***********************************************************************/
-
 
 extern CONNECTOR SOCK_CreateConnector
 (const char*    host,
@@ -251,34 +280,25 @@ extern CONNECTOR SOCK_CreateConnectorEx
     SSockConnector* xxx = (SSockConnector*) malloc(sizeof(SSockConnector));
 
     /* initialize internal data structures */
-    xxx->sock = 0;
-    xxx->host = strcpy((char*) malloc(strlen(host) + 1), host);
-    xxx->port = port;
-    xxx->max_try  = max_try  ? max_try  : 1;
+    xxx->sock      = 0;
+    xxx->host      = strcpy((char*) malloc(strlen(host) + 1), host);
+    xxx->port      = port;
+    xxx->max_try   = max_try ? max_try : 1;
 
     xxx->init_size = init_data ? init_size : 0;
-    if ( xxx->init_size ) {
+    if (xxx->init_size) {
         xxx->init_data = malloc(init_size);
         memcpy(xxx->init_data, init_data, xxx->init_size);
     } else {
         xxx->init_data = 0;
     }
 
-    /* initialize handle */
-    ccc->handle = xxx;
+    /* initialize connector data */
+    ccc->handle  = xxx;
+    ccc->next    = 0;
+    ccc->meta    = 0;
+    ccc->setup   = s_Setup;
+    ccc->destroy = s_Destroy;
 
-    /* initialize virtual table */ 
-    ccc->vtable.get_type   = s_VT_GetType;
-    ccc->vtable.connect    = s_VT_Connect;
-    ccc->vtable.wait       = s_VT_Wait;
-#ifdef IMPLEMENTED__CONN_WaitAsync
-    ccc->vtable.wait_async = s_VT_WaitAsync;
-#endif
-    ccc->vtable.write      = s_VT_Write;
-    ccc->vtable.flush      = s_VT_Flush;
-    ccc->vtable.read       = s_VT_Read;
-    ccc->vtable.close      = s_VT_Close;
-
-    /* done */
     return ccc;
 }
