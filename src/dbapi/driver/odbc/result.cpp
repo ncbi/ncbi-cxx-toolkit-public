@@ -74,9 +74,17 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
 //
 
 
-CODBC_RowResult::CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd,
-                                 CODBC_Reporter& r) :
-    m_Cmd(cmd), m_Reporter(r), m_CurrItem(-1), m_EOR(false)
+CODBC_RowResult::CODBC_RowResult(
+    SQLSMALLINT nof_cols,
+    SQLHSTMT cmd,
+    CODBC_Reporter& r,
+    int* row_count
+    )
+    : m_Cmd(cmd)
+    , m_Reporter(r)
+    , m_CurrItem(-1)
+    , m_EOR(false)
+    , m_RowCountPtr( row_count )
 {
     m_NofCols = nof_cols;
 
@@ -145,6 +153,9 @@ bool CODBC_RowResult::Fetch()
             m_Reporter.ReportErrors();
         case SQL_SUCCESS:
             m_CurrItem = 0;
+            if ( m_RowCountPtr != NULL ) {
+                ++(*m_RowCountPtr);
+            }
             return true;
         case SQL_NO_DATA:
             m_EOR = true;
@@ -1049,6 +1060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/02/15 16:07:51  ssikorsk
+ * Fixed a bug with GetRowCount plus SELECT statement
+ *
  * Revision 1.14  2005/02/01 18:01:20  soussov
  * fixes copy-paste bug
  *

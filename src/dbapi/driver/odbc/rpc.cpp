@@ -270,7 +270,7 @@ CDB_Result* CODBC_RPCCmd::Result()
 				m_Res= new CODBC_ParamResult(nof_cols, m_Cmd, m_Reporter);
 			}	
 			else {
-				m_Res = new CODBC_RowResult(nof_cols, m_Cmd, m_Reporter);
+				m_Res = new CODBC_RowResult(nof_cols, m_Cmd, m_Reporter, &m_RowCount);
 			}
 		}
 		return Create_Result(*m_Res);
@@ -561,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/15 16:07:51  ssikorsk
+ * Fixed a bug with GetRowCount plus SELECT statement
+ *
  * Revision 1.9  2004/05/17 21:16:06  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
