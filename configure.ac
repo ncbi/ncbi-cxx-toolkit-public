@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.124 2002/09/06 16:14:52 ucko Exp $
+#  $Id: configure.ac,v 1.125 2002/09/06 19:18:10 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -551,8 +551,8 @@ case "$host_os:$compiler" in
    with_bincopy=${with_bincopy:="no"}
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
-   LDFLAGS="-xildoff -xs $LDFLAGS"
-   AR=${AR:="$CXX $MT_FLAG -xar -xs -o"}
+   LDFLAGS="-xildoff $LDFLAGS"
+   AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP=":"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
