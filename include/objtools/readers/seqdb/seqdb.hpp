@@ -396,9 +396,6 @@ public:
     /// Translate a PIG to a GI.
     bool PigToGi(TPIG pig, TGI & gi) const;
     
-    /// Translate an Accession to a single OID.
-    bool AccessionToOid(const string & acc, TOID & oid) const;
-    
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<TOID> & oids) const;
     

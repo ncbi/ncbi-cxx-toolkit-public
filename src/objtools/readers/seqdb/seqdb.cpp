@@ -212,14 +212,11 @@ bool CSeqDB::GiToPig(TGI gi, TPIG & pig) const
     return false;
 }
 
-bool CSeqDB::AccessionToOid(const string & acc, TOID & oid) const
-{
-    return m_Impl->AccessionToOid(acc, oid);
-}
-
 void CSeqDB::AccessionToOids(const string & acc, vector<TOID> & oids) const
 {
-    // Temporary shim version.
+    // Temporary shim version -- actually this is the worst of both
+    // worlds, but for now I want to stabilize the interfaces,
+    // implementation smoothing can come later.
     
     TOID oid(0);
     
