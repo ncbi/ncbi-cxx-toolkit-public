@@ -888,7 +888,17 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
         if (!ReadStr(*m_Sock, &m_Tmp)) {
             break;
         }
-        TrimPrefix(&m_Tmp);
+        if (m_Tmp.find("OK:") != 0) {
+            if (m_Tmp.find("ERR:") == 0) {
+                string msg = "Server error:";
+                TrimErr(&m_Tmp);
+                msg += m_Tmp;
+                NCBI_THROW(CNetServiceException, eCommunicationError, msg);
+            }
+        } else {
+            m_Tmp.erase(0, 3); // "OK:"
+        }
+
         if (m_Tmp == "END")
             break;
         out << m_Tmp << "\n";
@@ -1112,6 +1122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/22 16:14:12  kuznets
+ * Minor improvement in PrintStatistics
+ *
  * Revision 1.15  2005/03/21 16:46:35  didenko
  * + creating from PluginManager
  *
