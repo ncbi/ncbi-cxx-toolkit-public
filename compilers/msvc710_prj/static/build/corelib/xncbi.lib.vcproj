@@ -1783,6 +1783,108 @@
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 			</File>
+                        <File
+                                RelativePath="..\..\..\..\..\src\corelib\obj_store.cpp">
+                                <FileConfiguration
+                                        Name="Debug|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="DebugDLL|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="DebugMT|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="Release|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="ReleaseDLL|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="ReleaseMT|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                        </File>
+                        <File
+                                RelativePath="..\..\..\..\..\src\corelib\plugin_manager_store.cpp">
+                                <FileConfiguration
+                                        Name="Debug|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="DebugDLL|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="DebugMT|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="Release|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="ReleaseDLL|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                                <FileConfiguration
+                                        Name="ReleaseMT|Win32">
+                                        <Tool
+                                                Name="VCCLCompilerTool"
+                                                PreprocessorDefinitions="NCBI_USE_PCH"
+                                                UsePrecompiledHeader="3"
+                                                PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+                                </FileConfiguration>
+                        </File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -1922,6 +2024,12 @@
 			<File
 				RelativePath="..\..\..\..\..\include\corelib\version.hpp">
 			</File>
+                        <File
+                                RelativePath="..\..\..\..\..\include\corelib\obj_store.hpp">
+                        </File>
+                        <File
+                                RelativePath="..\..\..\..\..\include\corelib\plugin_manager_store.hpp">
+                        </File>
 			<Filter
 				Name="Private"
 				Filter="h;hpp;hxx;hm;inc;xsd">

@@ -478,46 +478,6 @@
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
         </FileConfiguration>
       </File>
-      <File RelativePath="..\..\..\..\..\src\util\obj_store.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
-      <File RelativePath="..\..\..\..\..\src\util\plugin_manager_store.cpp">
-        <FileConfiguration Name="Debug|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="DebugMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="Release|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseDLL|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-        <FileConfiguration Name="ReleaseMT|Win32">
-          <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
-        </FileConfiguration>
-      </File>
       <File RelativePath="..\..\..\..\..\src\util\thread_nonstop.cpp">
         <FileConfiguration Name="Debug|Win32">
           <Tool Name="VCCLCompilerTool" PreprocessorDefinitions="NCBI_USE_PCH" UsePrecompiledHeader="3" PrecompiledHeaderThrough="ncbi_pch.hpp"></Tool>
@@ -553,8 +513,6 @@
       <File RelativePath="..\..\..\..\..\include\util\logrotate.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\util\md5.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\util\ncbi_table.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\util\obj_store.hpp"></File>
-      <File RelativePath="..\..\..\..\..\include\util\plugin_manager_store.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\util\random_gen.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\util\range.hpp"></File>
       <File RelativePath="..\..\..\..\..\include\util\rangemap.hpp"></File>
