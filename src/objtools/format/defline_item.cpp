@@ -38,6 +38,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/context.hpp>
+#include "utils.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -74,9 +75,8 @@ const string& CDeflineItem::GetDefline(void) const
 void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
 {
     m_Defline = sequence::GetTitle(ctx.GetHandle());
-    if ( !NStr::EndsWith(m_Defline, ".") ) {
-        m_Defline += '.';
-    }
+    ConvertQuotes(m_Defline);
+    AddPeriod(m_Defline);
 }
 
 
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/08/19 16:29:34  shomrat
+* Fixed defline format
+*
 * Revision 1.4  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
