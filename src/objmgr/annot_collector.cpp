@@ -518,8 +518,8 @@ void CAnnot_Collector::x_Clear(void)
     if ( m_MappingCollector.get() ) {
         m_MappingCollector.reset();
     }
-    m_Scope = CHeapScope();
     m_TSE_LockSet.clear();
+    m_Scope = CHeapScope();
 }
 
 
@@ -1350,6 +1350,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/13 21:14:27  vasilche
+* Fixed wrong order of object deletion causing "tse is locked" error.
+*
 * Revision 1.2  2004/04/13 15:59:35  grichenk
 * Added CScope::GetBioseqHandle() with id resolving flag.
 *

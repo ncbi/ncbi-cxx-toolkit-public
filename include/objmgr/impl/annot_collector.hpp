@@ -245,12 +245,12 @@ private:
     size_t x_GetAnnotCount(void) const;
 
     SAnnotSelector                   m_Selector;
-    // Set of all the annotations found
-    TAnnotSet                        m_AnnotSet;
+    CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockSet                     m_TSE_LockSet;
-    CHeapScope                       m_Scope;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
+    // Set of all the annotations found
+    TAnnotSet                        m_AnnotSet;
 
     // Temporary objects to be re-used by iterators
     CRef<CSeq_feat>      m_CreatedOriginalSeq_feat;
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/13 21:14:27  vasilche
+* Fixed wrong order of object deletion causing "tse is locked" error.
+*
 * Revision 1.2  2004/04/07 13:20:17  grichenk
 * Moved more data from iterators to CAnnot_Collector
 *
