@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/08/09 16:25:28  lavr
+ * Remove last (unneeded) parameter from LOG_Reset() and its test
+ *
  * Revision 6.5  2001/05/17 17:59:03  vakatov
  * TEST_UTIL_Log::  Set "errno" to zero before testing LOG_WRITE_ERRNO()
  *
@@ -268,13 +271,8 @@ static void TEST_CORE_Log(void)
   assert(TEST_CORE_LogUserData == 1);
 
   /* reset to "real" logging */
-  LOG_Reset(x_log,
-            &TEST_CORE_LogUserData, TEST_CORE_LogHandler, TEST_CORE_LogCleanup,
-            0/*false*/);
-  assert(TEST_CORE_LogUserData == 1);
-  LOG_Reset(x_log,
-            &TEST_CORE_LogUserData, TEST_CORE_LogHandler, TEST_CORE_LogCleanup,
-            1/*true*/);
+  LOG_Reset(x_log, &TEST_CORE_LogUserData,
+            TEST_CORE_LogHandler, TEST_CORE_LogCleanup);
   assert(TEST_CORE_LogUserData == 444);
   TEST_CORE_LogUserData = 2;
 
