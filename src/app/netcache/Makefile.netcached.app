@@ -5,7 +5,7 @@
 APP = netcached
 SRC = netcached
 
-REQUIRES = MT
+REQUIRES = MT bdb
 
 
 LIB = bdb xthrserv xconnect xutil xncbi
