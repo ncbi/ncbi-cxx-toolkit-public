@@ -404,7 +404,7 @@ void CObjectOStreamAsnBinary::WriteNumberValue(Int8 data)
         // three bytes
         length = 3;
     }
-    else if ( data >= Int8(-0x80000000L) && data <= Int8(0x7fffffffL) ) {
+    else if ( data >= Int8(-0x7fffffffL-1) && data <= Int8(0x7fffffffL) ) {
         // four bytes
         length = 4;
     }
@@ -1136,6 +1136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.90  2004/08/04 14:45:25  vasilche
+* Fixed wrong constant.
+*
 * Revision 1.89  2004/06/08 20:26:05  gouriano
 * Made functions, that are not visible from the outside, protected
 *
