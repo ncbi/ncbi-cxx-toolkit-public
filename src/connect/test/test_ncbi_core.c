@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.6  2001/08/09 16:25:28  lavr
  * Remove last (unneeded) parameter from LOG_Reset() and its test
  *
@@ -53,9 +56,7 @@
  * ===========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include <connect/ncbi_util.h>
 #include <stdlib.h>

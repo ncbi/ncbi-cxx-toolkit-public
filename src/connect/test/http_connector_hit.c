@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/01/16 21:23:14  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.5  2001/01/11 16:42:45  lavr
  * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
  *
@@ -48,10 +51,7 @@
  * ==========================================================================
  */
 
-
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>

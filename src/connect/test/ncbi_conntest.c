@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/01/16 21:23:14  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.4  2001/03/02 20:03:34  lavr
  * Typos fixed
  *
@@ -46,9 +49,7 @@
  * ==========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include "ncbi_conntest.h"
 #include "../ncbi_priv.h"

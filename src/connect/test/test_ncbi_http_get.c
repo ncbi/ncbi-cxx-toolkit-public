@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.1  2001/12/30 19:42:06  lavr
  * Initial revision
  *
@@ -37,9 +40,7 @@
  */
 
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_http_connector.h>

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/01/16 21:23:14  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 1.2  2001/12/17 22:18:56  ucko
  * Make wrapper for read() more robust, and enable it on more platforms.
  *
@@ -39,9 +42,7 @@
  * ==========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_conn_stream.hpp>

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.3  2001/12/04 15:55:33  lavr
  * +Test for SOCK_CreateConnectorOnTop()
  *
@@ -42,9 +45,7 @@
  * ==========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include "ncbi_conntest.h"
 #include "../ncbi_priv.h"

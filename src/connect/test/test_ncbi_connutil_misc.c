@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.4  2000/11/07 23:24:43  vakatov
  * [MIME]  In-sync with the C Toolkit "connutil.c:R6.15"
  *
@@ -45,9 +48,7 @@
  * ===========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_connutil.h>

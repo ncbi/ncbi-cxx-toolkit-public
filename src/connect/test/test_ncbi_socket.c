@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.11  2001/07/11 00:44:33  vakatov
  * Added TEST_gethostby***() -- tests for SOCK_gethostby{addr,name}()
  *
@@ -72,9 +75,7 @@
  * ===========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_util.h>

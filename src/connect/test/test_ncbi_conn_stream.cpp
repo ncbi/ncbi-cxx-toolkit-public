@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
  * Revision 6.13  2001/12/30 19:45:50  lavr
  * 'static' added to every file-scope identifiers
  *
@@ -74,9 +77,7 @@
  * ==========================================================================
  */
 
-#if defined(NDEBUG)
-#  undef NDEBUG
-#endif 
+#include "test_assert.h"
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <connect/ncbi_util.h>
