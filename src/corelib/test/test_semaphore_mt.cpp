@@ -27,7 +27,7 @@
 *
 * File Description:
 *   Test CSemaphore class in multithreaded environment
-*   in order to run correctly the number of threads MUST be even!
+*   NOTE: in order to run correctly the number of threads MUST be even!
 *
 *   the test is a very simple producer/consumer model
 *   one thread produces "items" (increments integer counter)
@@ -37,17 +37,20 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2001/12/13 19:48:23  gouriano
+* *** empty log message ***
+*
 * Revision 6.1  2001/12/10 18:37:29  gouriano
 * *** empty log message ***
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbidiag.hpp>
 #include <corelib/ncbithr.hpp>
 #include "test_mt.hpp"
 
 USING_NCBI_SCOPE;
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
@@ -62,111 +65,108 @@ protected:
     virtual bool TestApp_Exit(void);
 
 private:
+    // produce Num items
     void Produce( int Num);
+    // consume Num items
     void Consume( int Num);
-    void Sleep(void);
+    // sleep for, like, "msec" milliseconds
+    void Sleep(unsigned int msec);
 
     static CSemaphore s_semContent, s_semStorage;
     static int s_Counter, s_Id;
 };
 
+
 /////////////////////////////////////////////////////////////////////////////
 
-CSemaphore CTestSemaphoreApp::s_semContent(0,20);
+CSemaphore CTestSemaphoreApp::s_semContent(0,10);
 CSemaphore CTestSemaphoreApp::s_semStorage(1,1);
 int CTestSemaphoreApp::s_Counter=0;
 int CTestSemaphoreApp::s_Id=0;
 
+
 /////////////////////////////////////////////////////////////////////////////
-//  implementation
+//  IMPLEMENTATION
 
 void CTestSemaphoreApp::Produce( int Num)
-// produce Num items
 {
-// Storage semaphore acts as a kind of mutex - its only purpose
-// is to protect Counter
+    // Storage semaphore acts as a kind of mutex - its only purpose
+    // is to protect Counter
     s_semStorage.Wait();
     s_Counter += Num;
     NcbiCout << "+" << Num << "=" << s_Counter << NcbiEndl;
     s_semStorage.Post();
 
-// Content semaphore notifies consumer threads of how many items can be
-// consumed. Slow consumption with fast production causes Content semaphore
-// to overflow from time to time. We catch exception and wait for consumers
-// to consume something
-    for (bool Posted=false; !Posted;)
-    {
-        try
-        {
+    // Content semaphore notifies consumer threads of how many items can be
+    // consumed. Slow consumption with fast production causes Content semaphore
+    // to overflow from time to time. We catch exception and wait for consumers
+    // to consume something
+    for (bool Posted=false; !Posted;) {
+        try {
             s_semContent.Post( Num);
             Posted = true;
         }
-        catch (exception& e)
-        {
+        catch (exception& e) {
             NcbiCout << e.what() << NcbiEndl;
-#if defined(NCBI_OS_MSWIN)
-    		::Sleep(500);
-#else
-//            ::sleep(1);
-#endif
+            Sleep(500);
         }
     }
 }
 
 void CTestSemaphoreApp::Consume( int Num)
-// consume Num items
 {
-    for (int i = Num; i > 0; --i )
-    {
-// we can only consume one by one
+    for (int i = Num; i > 0; --i ) {
+        // we can only consume one by one
         s_semContent.Wait();
         s_semStorage.Wait();
         --s_Counter;
         NcbiCout << "-1=" << s_Counter << NcbiEndl;
         s_semStorage.Post();
-
-#if defined(NCBI_OS_MSWIN)
-		::Sleep(500);
-#else
-//        Sleep();
-//        ::sleep(1);
-#endif
+        Sleep(500);
     }
 }
 
-void CTestSemaphoreApp::Sleep(void)
+
+void CTestSemaphoreApp::Sleep(unsigned int msec)
 {
-    // do some silly stuff
-    char cBuf[32];
-    for (int j = 20000; j > 0; --j)
-    {
-        strcpy(cBuf, "blahblah");
-        strcpy(cBuf, "");
-    }
+#if defined(NCBI_OS_MSWIN)
+        ::Sleep(msec);
+#else
+        //        ::sleep(1);
+        char cBuf[32];
+        for (Uint8 j = msec * 100; j > 0; --j) {
+            strcpy(cBuf, "blahblah");
+            strcpy(cBuf, "");
+        }
+#endif
 }
 
-bool CTestSemaphoreApp::Thread_Init(int idx)
+
+bool CTestSemaphoreApp::Thread_Init(int /*idx*/)
 {
     return true;
 }
+
 
 bool CTestSemaphoreApp::Thread_Run(int idx)
 {
-//  one thread produces, next - consumes
-//  production is fast, consumption is slow (because of Sleep)
+    //  One thread produces, next - consumes;
+    //  production is fast, consumption is slow (because of Sleep).
+    //  NOTE:  In order to run correctly the number of threads MUST be even!
 
-//  in order to run correctly the number of threads MUST be even!
+    xncbi_SetValidateAction(eValidate_Throw);
 
     if ( idx % 2 != 1)
-    {
-        Consume( (idx/2)%3 + 1);
-    }
+        {
+            Consume( (idx/2)%3 + 1);
+        }
     else
-    {
-        Produce( (idx/2)%3 + 1);
-    }
+        {
+            Produce( (idx/2)%3 + 1);
+        }
     return true;
 }
+
 
 bool CTestSemaphoreApp::TestApp_Init(void)
 {
@@ -179,6 +179,7 @@ bool CTestSemaphoreApp::TestApp_Init(void)
     return true;
 }
 
+
 bool CTestSemaphoreApp::TestApp_Exit(void)
 {
     NcbiCout
@@ -186,9 +187,9 @@ bool CTestSemaphoreApp::TestApp_Exit(void)
         << NcbiEndl
         << " counter = " << s_Counter
         << NcbiEndl;
-// storage must be available
+    // storage must be available
     _ASSERT( s_semStorage.TryWait());
-// content must be empty
+    // content must be empty
     _ASSERT( !s_semContent.TryWait());
 	_ASSERT( s_Counter == 0);
     return true;
