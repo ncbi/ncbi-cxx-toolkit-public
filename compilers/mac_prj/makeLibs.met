@@ -9,11 +9,11 @@ property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- Whether to create projects in the specified category.
-property pCreateCoreLibs : true
-property pCreateSocketLibs : true (* whether to create/compile socket libs *)
-property pCreateObjectLibs : true (* whether to create/compile object libraries *)
-property pCreateObjToolsLibs : true
-property pCreateGuiLibs : true
+property pCreateCoreLibs : false
+property pCreateSocketLibs : false (* whether to create/compile socket libs *)
+property pCreateObjectLibs : false (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : false
+property pCreateGuiLibs : false
 property pCreatePluginLibs : true
 
 -- true if we want to save compilation errors in a file and continue.
