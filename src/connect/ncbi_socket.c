@@ -2057,22 +2057,22 @@ static EIO_Status s_Write(SOCK        sock,
     }
 
     if (sock->w_status == eIO_Closed) {
-        char _id[32];
-        CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Write]  Socket has been shut "
-                                 "down for writing", s_ID(sock, _id)));
+        if (size != 0) {
+            char _id[32];
+            CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Write]  Socket has been shut "
+                                     "down for writing", s_ID(sock, _id)));
+        }
         return eIO_Closed;
     }
-    if (size == 0)
-        return eIO_Success;
 
     if ((status = s_WritePending(sock, sock->w_timeout, 0)) != eIO_Success) {
         if (status != eIO_Timeout)
             sock->w_status = status;
-        return status;
+        return size == 0  &&  status != eIO_Timeout ? eIO_Success : status;
     }
-    assert(sock->w_len == 0);
 
-    return s_WriteSliced(sock, buf, size, n_written);
+    assert(sock->w_len == 0);
+    return size ? s_WriteSliced(sock, buf, size, n_written) : eIO_Success;
 }
 
 
@@ -3701,6 +3701,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.110  2003/05/20 21:20:41  lavr
+ * Special treatment of size==0 in SOCK_Write()
+ *
  * Revision 6.109  2003/05/20 16:47:56  lavr
  * More accurate checks for pending connections/data
  *
