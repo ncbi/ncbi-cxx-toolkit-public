@@ -319,6 +319,27 @@ bool SerialEquals(const C& object1, const C& object2)
     return C::GetTypeInfo()->Equals(&object1, &object2);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  I/O stream manipulators and helpers for serializable objects
+//
+
+// Formatting
+CNcbiIos& MSerial_AsnText(CNcbiIos& io);
+CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
+CNcbiIos& MSerial_Xml(CNcbiIos& io);
+
+// Class member assignment verification
+CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io);
+CNcbiIos& MSerial_VerifyNo(CNcbiIos& io);
+CNcbiIos& MSerial_VerifyYes(CNcbiIos& io);
+CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io);
+
+// Input/output
+CNcbiOstream& operator<< (CNcbiOstream& str, const CSerialObject& obj);
+CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject& obj);
+
+
 
 END_NCBI_SCOPE
 
@@ -403,6 +424,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/01/16 19:55:23  gouriano
+* Added I/O stream manipulators for serializable objects
+*
 * Revision 1.25  2003/11/13 14:06:44  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *

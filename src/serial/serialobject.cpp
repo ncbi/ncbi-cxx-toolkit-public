@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/01/16 19:56:09  gouriano
+* Added I/O stream manipulators for serializable objects
+*
 * Revision 1.20  2003/11/21 16:17:44  vasilche
 * Correct closing of ASN.1 stream in DebugDump.
 *
@@ -99,6 +102,7 @@
 #include <serial/typeinfo.hpp>
 
 #include <serial/objostr.hpp>
+#include <serial/objistr.hpp>
 
 #include <serial/classinfob.hpp>
 
@@ -423,5 +427,112 @@ CAnyContentObject::GetAttributes(void) const
 }
 
 /////////////////////////////////////////////////////////////////////////////
+//  I/O stream manipulators and helpers for serializable objects
+
+#define  eFmt_AsnText     (1l <<  0)
+#define  eFmt_AsnBinary   (1l <<  1)
+#define  eFmt_Xml         (1l <<  2)
+#define  eFmt_All         (eFmt_AsnText | eFmt_AsnBinary | eFmt_Xml)
+#define  eVerify_No       (1l <<  8)
+#define  eVerify_Yes      (1l <<  9)
+#define  eVerify_DefValue (1l << 10)
+#define  eVerify_All      (eVerify_No | eVerify_Yes | eVerify_DefValue)
+
+static
+long& s_SerFlags(CNcbiIos& io)
+{
+    static int s_SerIndex;
+
+    {{  // Make sure to get a unique IOS index
+        static bool s_HaveIndex = false;
+        if ( !s_HaveIndex ) {
+            s_SerIndex = CNcbiIos::xalloc();
+            s_HaveIndex = true;
+        }
+    }}
+
+    return io.iword(s_SerIndex);
+}
+static
+ESerialDataFormat s_SerFormat(CNcbiIos& io)
+{
+    switch (s_SerFlags(io) & eFmt_All) {
+    case eFmt_AsnText:     return eSerial_AsnText;
+    case eFmt_AsnBinary:   return eSerial_AsnBinary;
+    case eFmt_Xml:         return eSerial_Xml;
+    default:               return eSerial_None;
+    }
+}
+
+static
+ESerialVerifyData s_SerVerify(CNcbiIos& io)
+{
+    switch (s_SerFlags(io) & eVerify_All) {
+    case eVerify_No:       return eSerialVerifyData_No;
+    case eVerify_Yes:      return eSerialVerifyData_Yes;
+    case eVerify_DefValue: return eSerialVerifyData_DefValue;
+    default:               return eSerialVerifyData_Default;
+    }
+}
+
+
+// Formatting
+CNcbiIos& MSerial_AsnText(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_AsnText;
+    return io;
+}
+CNcbiIos& MSerial_AsnBinary(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_AsnBinary;
+    return io;
+}
+CNcbiIos& MSerial_Xml(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eFmt_All) | eFmt_Xml;
+    return io;
+}
+
+
+// Class member assignment verification
+CNcbiIos& MSerial_VerifyDefault(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All);
+    return io;
+}
+CNcbiIos& MSerial_VerifyNo(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All) | eVerify_No;
+    return io;
+}
+CNcbiIos& MSerial_VerifyYes(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All) | eVerify_Yes;
+    return io;
+}
+CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io)
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~eVerify_All) | eVerify_DefValue;
+    return io;
+}
+
+
+// Input/output
+CNcbiOstream& operator<< (CNcbiOstream& os, const CSerialObject& obj)
+{
+    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open(s_SerFormat(os), os) );
+    ostr->SetVerifyData(s_SerVerify(os));
+    ostr->Write(&obj,obj.GetThisTypeInfo());
+    return os;
+}
+
+CNcbiIstream& operator>> (CNcbiIstream& is, CSerialObject& obj)
+{
+    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_SerFormat(is), is) );
+    istr->SetVerifyData(s_SerVerify(is));
+    istr->Read(&obj,obj.GetThisTypeInfo());
+    return is;
+}
+
 
 END_NCBI_SCOPE
