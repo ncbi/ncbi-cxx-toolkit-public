@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/10 17:58:42  vakatov
+* [UNIX] Removed extra #define's (POSIX... and EXTENTIONS...)
+* Allow adding strings in CNcbiErrnoException(must have used "CC -xar"
+* instead of just "ar" when building a library;  otherwise -- link error)
+*
 * Revision 1.1  1998/11/10 01:20:01  vakatov
 * Initial revision(derived from former "ncbiexcp.cpp")
 *
@@ -40,8 +45,6 @@
 #include <ncbiexpt.hpp>
 
 #if defined(UNIX)
-#  define _POSIX_C_SOURCE 199506L
-#  define __EXTENSIONS__
 #  include <signal.h>
 #  include <siginfo.h>
 #elif defined(WIN32)
@@ -63,7 +66,7 @@ BEGIN_NCBI_SCOPE
 //  CNcbiErrnoException
 
 CNcbiErrnoException::CNcbiErrnoException(const string& what) throw()
-        : runtime_error(what/* + ":  " + strerror(errno)*/) {
+        : runtime_error(what + ":  " + strerror(errno)) {
 }
 
 
@@ -165,4 +168,3 @@ void CNcbiOSException::Initialize(void)
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
-
