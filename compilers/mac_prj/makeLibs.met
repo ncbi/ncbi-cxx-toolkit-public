@@ -1,6 +1,7 @@
 
 
 
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -381,6 +382,8 @@ on SetProjectData()
 		-- GuiProject's automatically have 'fltk' feature.
 		
 		AddGuiProject("gui_utils", {}, "utils")
+		AddProject(ProjectData("gui_config", {"fltk"}, Â
+			{GuiFileDataList("config", {"config_dlg.cpp", "config_items.cpp", "config_mediator.cpp", "settings_set.cpp", "config___.cpp", "config__.cpp"})}))
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_feature", {}, "dialogs:feature")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
@@ -443,7 +446,8 @@ on SetProjectData()
 			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
 			GuiFileData("gui:core")}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
+		
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
@@ -459,7 +463,9 @@ on SetProjectData()
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"w_fltable", "w_table"})
-		AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
+		
+		-- until we have sqlite 
+		-- AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
 		
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
 			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table"})
