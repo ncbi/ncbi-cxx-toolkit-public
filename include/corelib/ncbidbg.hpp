@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/12/13 19:38:01  gouriano
+* *** empty log message ***
+*
 * Revision 1.23  2001/07/30 14:40:47  lavr
 * eDiag_Trace and eDiag_Fatal always print as much as possible
 *
@@ -106,7 +109,7 @@
 
 #include <corelib/ncbidiag.hpp>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+
 BEGIN_NCBI_SCOPE
 
 
@@ -129,6 +132,7 @@ BEGIN_NCBI_SCOPE
 
 #  define _DEBUG_ARG(arg) arg
 
+
 #else  /* _DEBUG */
 
 #  define _TRACE(message)  ((void)0)
@@ -140,7 +144,19 @@ BEGIN_NCBI_SCOPE
 #endif  /* else!_DEBUG */
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+
+// Set the action to be performed when expression under
+// "xncbi_Validate(expr, ...)" evaluates to FALSE
+enum EValidateAction {
+    eValidate_Default = 0,  // default action
+    eValidate_Abort,    // abort() if not valid
+    eValidate_Throw     // throw an exception if not valid
+};
+
+extern void            xncbi_SetValidateAction(EValidateAction action);
+extern EValidateAction xncbi_GetValidateAction(void);
+
+
 END_NCBI_SCOPE
 
 #endif  /* NCBIDBG__HPP */
