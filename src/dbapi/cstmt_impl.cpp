@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/05/16 22:11:11  kholodov
+* Improved: using minimum connections possible
+*
 * Revision 1.4  2002/04/05 19:33:08  kholodov
 * Added: ExecuteUpdate() to skip all resultsets returned (if any)
 *
@@ -62,7 +65,7 @@ CCallableStatement::CCallableStatement(const string& proc,
 				       CConnection* conn)
   : CStatement(conn), m_status(0), m_nofParams(nofArgs)
 {
-  SetBaseCmd(conn->GetConnection()->RPC(proc.c_str(), nofArgs));
+  SetBaseCmd(conn->GetCDB_Connection()->RPC(proc.c_str(), nofArgs));
 }
 
 CCallableStatement::~CCallableStatement()

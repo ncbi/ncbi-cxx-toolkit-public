@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/05/16 22:11:12  kholodov
+* Improved: using minimum connections possible
+*
 * Revision 1.2  2002/02/08 17:38:26  kholodov
 * Moved listener registration to parent objects
 *
@@ -48,109 +51,119 @@
 #include <dbapi/driver/public.hpp>
 
 
+BEGIN_NCBI_SCOPE
+
 // implementation
 CStatement::CStatement(CConnection* conn)
-  : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1)
+    : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1)
 {
 }
 
 CStatement::~CStatement()
 {
-  Close();
-  Notify(CDbapiDeletedEvent(this));
+    Close();
+    Notify(CDbapiDeletedEvent(this));
 }
 
 void CStatement::SetRs(CDB_Result *rs) 
 { 
-  delete m_rs;
-  m_rs = rs;
+    delete m_rs;
+    m_rs = rs;
 }
 
 bool CStatement::HasMoreResults() 
 {
-  CheckValid();
+    CheckValid();
 
-  bool more = GetBaseCmd()->HasMoreResults();
-  if( more ) {
-    //delete m_rs;
-    m_rs = GetBaseCmd()->Result(); 
-    if( m_rs == 0 )
-      m_rowCount = GetBaseCmd()->RowCount();
-  }
-  return more;
+    bool more = GetBaseCmd()->HasMoreResults();
+    if( more ) {
+        //delete m_rs;
+        m_rs = GetBaseCmd()->Result(); 
+        if( m_rs == 0 )
+            m_rowCount = GetBaseCmd()->RowCount();
+    }
+    return more;
 }
 
 void CStatement::SetParam(const CVariant& v, 
-			  const string& name)
+                          const string& name)
 {
-  CheckValid();
+    CheckValid();
 
-  GetLangCmd()->SetParam(name.empty() ? 0 : name.c_str(),
-			v.GetData());
+    GetLangCmd()->SetParam(name.empty() ? 0 : name.c_str(),
+                           v.GetData());
 }
 
 void CStatement::Execute(const string& sql)
 {
-  CheckValid();
-  if( m_cmd != 0 ) {
-    delete m_cmd;
-    m_cmd = 0;
-    m_rowCount = -1;
-  }
+    CheckValid();
+    if( m_cmd != 0 ) {
+        delete m_cmd;
+        m_cmd = 0;
+        m_rowCount = -1;
+    }
 
-  SetBaseCmd(m_conn->GetConnection()->LangCmd(sql.c_str()));
-  GetBaseCmd()->Send();
+    SetBaseCmd(m_conn->GetCDB_Connection()->LangCmd(sql.c_str()));
+    GetBaseCmd()->Send();
 }
 
 void CStatement::ExecuteUpdate(const string& sql)
 {
-  Execute(sql);
-  while( HasMoreResults() );
+    Execute(sql);
+    while( HasMoreResults() );
 }
 
 void CStatement::Close()
 {
-  delete m_cmd;
-  m_cmd = 0;
-  m_rowCount = -1;
-  SetValid(false);
+    delete m_cmd;
+    m_cmd = 0;
+    m_rowCount = -1;
+    if( m_conn != 0 ) {
+        if( m_conn->IsAux() ) {
+            delete m_conn;
+            m_conn = 0;
+        }
+        Notify(CDbapiClosedEvent(this));
+    }
+
 }
   
 void CStatement::Cancel()
 {
-  CheckValid();
-  GetBaseCmd()->Cancel();
-  m_rowCount = -1;
+    CheckValid();
+    GetBaseCmd()->Cancel();
+    m_rowCount = -1;
 }
 
 IResultSet* CStatement::GetResultSet()
 {
-  CheckValid();
-  if( m_rs != 0 ) {
-    CResultSet *ri = new CResultSet(m_conn, m_rs);
-    ri->AddListener(this);
-    AddListener(ri);
-    return ri;
-  }
-  else
-    return 0;
+    CheckValid();
+    if( m_rs != 0 ) {
+        CResultSet *ri = new CResultSet(m_conn, m_rs);
+        ri->AddListener(this);
+        AddListener(ri);
+        return ri;
+    }
+    else
+        return 0;
 }
 
 CDB_LangCmd* CStatement::GetLangCmd() 
 {
-  //if( m_cmd == 0 )
-  //throw CDbException("CStatementImpl::GetLangCmd(): no cmd structure");
-  return dynamic_cast<CDB_LangCmd*>(m_cmd);
+    //if( m_cmd == 0 )
+    //throw CDbException("CStatementImpl::GetLangCmd(): no cmd structure");
+    return dynamic_cast<CDB_LangCmd*>(m_cmd);
 }
 
 void CStatement::Action(const CDbapiEvent& e) 
 {
-  if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-    RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
-    if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
-      delete this;
-      //SetValid(false);
+    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+        if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
+            delete this;
+            //SetValid(false);
+        }
     }
-  }
 }
 
+END_NCBI_SCOPE

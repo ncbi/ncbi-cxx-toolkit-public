@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/05/16 22:11:11  kholodov
+* Improved: using minimum connections possible
+*
 * Revision 1.4  2002/02/08 22:43:11  kholodov
 * Set/GetDataBase() renamed to Set/GetDatabase() respectively
 *
@@ -63,8 +66,6 @@ class CConnection : public CActiveObject,
 {
 public:
     CConnection(CDataSource* ds);
-    CConnection(class CDB_Connection *conn, 
-                CDataSource* ds);
 
 public:
     virtual ~CConnection();
@@ -86,29 +87,37 @@ public:
 
     CConnection* Clone();
 
-    CDB_Connection* GetConnection() {
+    CDB_Connection* GetCDB_Connection() {
         return m_connection;
     }
 
-    CDB_Connection* GetConnAux();
+    CDB_Connection* CloneCDB_Conn();
 
     virtual void SetDatabase(const string& name);
     virtual string GetDatabase();
 
     void SetDbName(const string& name, CDB_Connection* conn = 0);
 
+    bool IsAux() {
+        return m_connCounter < 0;
+    }
+
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);
 
 protected:
+    CConnection(class CDB_Connection *conn, 
+                CDataSource* ds);
     // Clone connection, if the original cmd structure is taken
-    CConnection* GetFreeConn();
+    CConnection* GetAuxConn();
+    // void DeleteConn(CConnection* conn);
 
 private:
     string m_database;
     class CDataSource* m_ds;
     CDB_Connection *m_connection;
-    bool m_cmdUsed;
+    int m_connCounter;
+    bool m_connUsed;
 };
 
 //====================================================================

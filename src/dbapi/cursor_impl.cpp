@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/05/16 22:11:12  kholodov
+* Improved: using minimum connections possible
+*
 * Revision 1.2  2002/02/08 17:38:26  kholodov
 * Moved listener registration to parent objects
 *
@@ -54,89 +57,97 @@ BEGIN_NCBI_SCOPE
 
 // implementation
 CCursor::CCursor(const string& name,
-		 const string& sql,
-		 int nofArgs,
-		 int batchSize,
-		 CConnection* conn)
-  : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn)
+                 const string& sql,
+                 int nofArgs,
+                 int batchSize,
+                 CConnection* conn)
+    : m_nofArgs(nofArgs), m_cmd(0), m_conn(conn)
 {
-  m_cmd = m_conn->GetConnection()->Cursor(name.c_str(), sql.c_str(),
-					  nofArgs, batchSize);
+    m_cmd = m_conn->GetCDB_Connection()->Cursor(name.c_str(), sql.c_str(),
+                                            nofArgs, batchSize);
 }
 
 CCursor::~CCursor()
 {
-  Close();
-  Notify(CDbapiDeletedEvent(this));
-  delete m_cmd;
+    Close();
+    Notify(CDbapiDeletedEvent(this));
 }
 
   
 void CCursor::SetParam(const CVariant& v, 
-		       const string& name)
+                       const string& name)
 {
 
-  CheckValid();
+    CheckValid();
 
-  Parameters::iterator cur = m_params.find(name);
-  if( cur != m_params.end() ) {
-    *((*cur).second) = v;
-  }
-  else {
-    pair<Parameters::iterator, bool> 
-      ins = m_params.insert(make_pair(name, new CVariant(v)));
+    Parameters::iterator cur = m_params.find(name);
+    if( cur != m_params.end() ) {
+        *((*cur).second) = v;
+    }
+    else {
+        pair<Parameters::iterator, bool> 
+            ins = m_params.insert(make_pair(name, new CVariant(v)));
 
-    cur = ins.first;
-  }
+        cur = ins.first;
+    }
 
 
-  GetCursorCmd()->BindParam((*cur).first.c_str(),
-			    (*cur).second->GetData());
+    GetCursorCmd()->BindParam((*cur).first.c_str(),
+                              (*cur).second->GetData());
 }
 		
 		
 IResultSet* CCursor::Open()
 {
-  CheckValid();
-  CResultSet *ri = new CResultSet(m_conn, GetCursorCmd()->Open());
-  ri->AddListener(this);
-  AddListener(ri);
-  return ri;
+    CheckValid();
+    CResultSet *ri = new CResultSet(m_conn, GetCursorCmd()->Open());
+    ri->AddListener(this);
+    AddListener(ri);
+    return ri;
 }
 
 void CCursor::Update(const string& table, const string& updateSql) 
 {
-  CheckValid();
-  GetCursorCmd()->Update(table.c_str(), updateSql.c_str());
+    CheckValid();
+    GetCursorCmd()->Update(table.c_str(), updateSql.c_str());
 }
 
 void CCursor::Delete(const string& table)
 {
-  CheckValid();
-  GetCursorCmd()->Delete(table.c_str());
+    CheckValid();
+    GetCursorCmd()->Delete(table.c_str());
 }
 
 void CCursor::Close()
 {
 
-  Parameters::iterator i = m_params.begin();
-  for( ; i != m_params.end(); ++i ) {
-    delete (*i).second;
-  }
+    Parameters::iterator i = m_params.begin();
+    for( ; i != m_params.end(); ++i ) {
+        delete (*i).second;
+    }
 
-  m_params.clear();
-
+    m_params.clear();
+    delete m_cmd;
+    m_cmd = 0;
+    if( m_conn != 0 ) {
+        if( m_conn->IsAux() ) {
+            delete m_conn;
+            m_conn = 0;
+        }
+        Notify(CDbapiClosedEvent(this));
+    }
+  
 }
 
 void CCursor::Action(const CDbapiEvent& e) 
 {
-  if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-    RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
-    if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
-      delete this;
-      //SetValid(false);
+    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+        if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
+            delete this;
+            //SetValid(false);
+        }
     }
-  }
 }
 
 END_NCBI_SCOPE

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/05/16 22:11:12  kholodov
+* Improved: using minimum connections possible
+*
 * Revision 1.1  2002/01/30 14:51:23  kholodov
 * User DBAPI implementation, first commit
 *
@@ -49,67 +52,68 @@
 #include "dbexception.hpp"
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CStatement : public CActiveObject, 
-		   public IEventListener,
-		   public virtual IStatement
+                   public IEventListener,
+                   public virtual IStatement
 {
 public:
-  CStatement(class CConnection* conn);
+    CStatement(class CConnection* conn);
 
-  virtual ~CStatement();
+    virtual ~CStatement();
   
-  virtual IResultSet* GetResultSet();
+    virtual IResultSet* GetResultSet();
 
-  virtual bool HasMoreResults();
+    virtual bool HasMoreResults();
 
-  virtual bool HasRows() {
-    return m_rs != 0;
-  }
+    virtual bool HasRows() {
+        return m_rs != 0;
+    }
   
     
-  virtual void Execute(const string& sql);
-  virtual void ExecuteUpdate(const string& sql);
-  virtual void Cancel();
-  virtual void Close();
+    virtual void Execute(const string& sql);
+    virtual void ExecuteUpdate(const string& sql);
+    virtual void Cancel();
+    virtual void Close();
 
-  virtual void SetParam(const CVariant& v, 
-			const string& name);
+    virtual void SetParam(const CVariant& v, 
+                          const string& name);
 
-  virtual int GetRowCount() {
-    return m_rowCount;
-  }
+    virtual int GetRowCount() {
+        return m_rowCount;
+    }
 
-  CDB_Result* GetResult() {
-    if( m_rs == 0 )
-      throw CDbapiException("CStatementImpl::GetResult(): no resultset returned");
-    return m_rs;
-  }
+    CDB_Result* GetResult() {
+        if( m_rs == 0 )
+            throw CDbapiException("CStatementImpl::GetResult(): no resultset returned");
+        return m_rs;
+    }
 
-  CDB_LangCmd* GetLangCmd();
+    CDB_LangCmd* GetLangCmd();
 
-  class CConnection* GetConnection() {
-    return m_conn;
-  }
+    class CConnection* GetConnection() {
+        return m_conn;
+    }
 
-  // Interface IEventListener implementation
-  virtual void Action(const CDbapiEvent& e);
+    // Interface IEventListener implementation
+    virtual void Action(const CDbapiEvent& e);
 
 protected:    
-  void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
-  I_BaseCmd* GetBaseCmd() { return m_cmd; }
+    void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
+    I_BaseCmd* GetBaseCmd() { return m_cmd; }
 
-  void SetRs(CDB_Result *rs);
+    void SetRs(CDB_Result *rs);
 
 private:
-  class CConnection* m_conn;
-  I_BaseCmd *m_cmd;
-  CDB_Result *m_rs;
-  int m_rowCount;
+    class CConnection* m_conn;
+    I_BaseCmd *m_cmd;
+    CDB_Result *m_rs;
+    int m_rowCount;
 
 };
 
+END_NCBI_SCOPE
 //====================================================================
 
 #endif // _STMT_IMPL_HPP_

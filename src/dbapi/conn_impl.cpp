@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/05/16 22:11:11  kholodov
+* Improved: using minimum connections possible
+*
 * Revision 1.7  2002/04/15 19:08:55  kholodov
 * Changed GetContext() -> GetDriverContext
 *
@@ -71,13 +74,13 @@ BEGIN_NCBI_SCOPE
 
 // Implementation
 CConnection::CConnection(CDataSource* ds)
-    : m_ds(ds), m_connection(0), m_cmdUsed(false)
+    : m_ds(ds), m_connection(0), m_connCounter(1), m_connUsed(false)
 {
 
 }
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
-    : m_ds(ds), m_connection(conn), m_cmdUsed(false)
+    : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false)
 {
 
 }
@@ -136,14 +139,14 @@ void CConnection::SetDbName(const string& name,
     delete cmd;
 }
 
-CDB_Connection* CConnection::GetConnAux()
+CDB_Connection* CConnection::CloneCDB_Conn()
 {
     CDB_Connection *temp = m_ds->
-   GetDriverContext()->Connect(GetConnection()->ServerName(),
-                              GetConnection()->UserName(),
-                              GetConnection()->Password(),
-                              0,
-                              true);
+   GetDriverContext()->Connect(GetCDB_Connection()->ServerName(),
+                               GetCDB_Connection()->UserName(),
+                               GetCDB_Connection()->Password(),
+                               0,
+                               true);
     SetDbName(m_database, temp);
     return temp;
 }
@@ -156,16 +159,18 @@ void CConnection::Close()
   
 CConnection* CConnection::Clone()
 {
-    CConnection *conn = new CConnection(GetConnAux(), m_ds);
-    conn->AddListener(m_ds);
-    m_ds->AddListener(conn);
+    CConnection *conn = new CConnection(CloneCDB_Conn(), m_ds);
+    //conn->AddListener(m_ds);
+    //m_ds->AddListener(conn);
+    conn->SetDbName(GetDatabase());
+    ++m_connCounter;
     return conn;
 }
 
 IStatement* CConnection::CreateStatement()
 {
 
-    CStatement *stmt = new CStatement(GetFreeConn());
+    CStatement *stmt = new CStatement(GetAuxConn());
     AddListener(stmt);
     stmt->AddListener(this);
     return stmt;
@@ -175,7 +180,7 @@ ICallableStatement*
 CConnection::PrepareCall(const string& proc,
                          int nofArgs)
 {
-    CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetFreeConn());
+    CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, GetAuxConn());
     AddListener(cstmt);
     cstmt->AddListener(this);
     return cstmt;
@@ -186,7 +191,7 @@ ICursor* CConnection::CreateCursor(const string& name,
                                    int nofArgs,
                                    int batchSize)
 {
-    CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetFreeConn());
+    CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, GetAuxConn());
     AddListener(cur);
     cur->AddListener(this);
     return cur;
@@ -194,24 +199,54 @@ ICursor* CConnection::CreateCursor(const string& name,
 
 void CConnection::Action(const CDbapiEvent& e) 
 {
+    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
+        if( m_connCounter > 1 ) {
+            --m_connCounter;
+            _TRACE("Server: " << GetCDB_Connection()->ServerName()
+                   <<", connections left: " << m_connCounter);
+        }
+        else
+            m_connUsed = false;
+    }
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
         if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
             delete this;
-            //SetValid(false);
+            
         }
     }
 }
 
-CConnection* CConnection::GetFreeConn()
+CConnection* CConnection::GetAuxConn()
 {
+    if( m_connCounter < 0 )
+        return 0;
+
     CConnection *conn = this;
-    if( !m_cmdUsed ) 
-        m_cmdUsed = true;
-    else
+    if( m_connUsed ) {
         conn = Clone();
+    }
+    else
+        m_connUsed = true;
+
+    _TRACE("GetAuxconn(): server: " << GetCDB_Connection()->ServerName()
+           << ", total connections: " << m_connCounter);
+
+
 
     return conn;
-}
 
+}
+/*
+void CConnection::DeleteConn(CConnection* conn)
+{
+    if( m_connCounter > 1) {
+        delete conn;
+        --m_connCounter;
+    }
+
+    _TRACE("Connection deleted, total left: " << m_connCounter);
+    return;
+}
+*/
 END_NCBI_SCOPE
