@@ -46,11 +46,12 @@ BEGIN_NCBI_SCOPE
 
 struct SLibInfo
 {
-    string       m_IncludeDir;
+    list<string> m_IncludeDir;
     list<string> m_LibDefines;
     string       m_LibPath;
     list<string> m_Libs;
-    list<string>  m_Macro;
+    list<string> m_StdLibs;
+    list<string> m_Macro;
 
     bool IsEmpty(void) const
     {
@@ -58,14 +59,16 @@ struct SLibInfo
                m_LibDefines.empty() &&
                m_LibPath.empty()    && 
                m_Libs.empty()       &&
+               m_StdLibs.empty()    &&
                m_Macro.empty();
     }
     void Clear(void)
     {
-        m_IncludeDir.erase();
+        m_IncludeDir.clear();
         m_LibDefines.clear();
         m_LibPath.erase();
         m_Libs.clear();
+        m_StdLibs.clear();
         m_Macro.clear();
     }
 };
@@ -183,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/30 17:46:46  gouriano
+ * Added StdLibs list
+ *
  * Revision 1.20  2004/11/23 20:12:48  gouriano
  * Tune libraries with the choice for each configuration independently
  *
