@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.262 2004/01/29 22:50:20 ucko Exp $
+#  $Id: configure.ac,v 1.263 2004/01/30 16:53:38 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2856,18 +2856,7 @@ if test "$with_sss" != "no" ; then
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
-      NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${release_debug}"
-      if test "$compiler" = "GCC" ; then
-         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
-         if test -d "$NCBI_SSS_LIBPATH$ncbi_compiler_ver"; then
-            NCBI_SSS_LIBPATH=$NCBI_SSS_LIBPATH$ncbi_compiler_ver
-         fi
-      elif test "$compiler" = "KCC" ; then
-         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}KAI"
-      elif test "$compiler" = "ICC" ; then
-         NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}ICC"
-      fi
-      NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}${bit64_sfx}"
+      NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${release_debug}${bit64_sfx}"
       if test "$with_mt" = "yes" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
@@ -2954,9 +2943,7 @@ if test "$with_geo" != "no" ; then
    NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/production"}
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
-      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${release_debug}${bit64_sfx}"
-      vpath=$NCBI_GEO_LIBPATH$ncbi_compiler_ver
-      test -d "$vpath"  &&  NCBI_GEO_LIBPATH=$vpath
+      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_vpfx}${release_debug}${bit64_sfx}"
    fi
    AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
    if test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
