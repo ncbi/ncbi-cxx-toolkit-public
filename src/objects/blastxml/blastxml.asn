@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.4 2000/11/08 20:07:20 shavirin Exp $
+--$Id: blastxml.asn,v 6.5 2000/11/08 20:49:04 shavirin Exp $
 --
---$Revision: 6.4 $
+--$Revision: 6.5 $
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML
@@ -8,6 +8,10 @@
 --
 --
 -- $Log: blastxml.asn,v $
+-- Revision 6.5  2000/11/08 20:49:04  shavirin
+-- Added paramter "score" as in Traditional Blast Output. Previous score
+-- changed to "bit_score".
+--
 -- Revision 6.4  2000/11/08 20:07:20  shavirin
 -- Added new parameter align_len analogos to the number reported in
 -- the Traditional Blast Output.
@@ -78,7 +82,8 @@ Hit ::= SEQUENCE {
 
 Hsp ::= SEQUENCE {
 	num INTEGER ,			-- HSP number
-	score REAL ,			-- score (in bits) of HSP
+	bit-score REAL ,		-- score (in bits) of HSP
+	score REAL ,			-- score of HSP
 	evalue REAL ,			-- e-value of HSP
 	query-from INTEGER ,		-- start of HSP in query
 	query-to INTEGER ,		-- end of HSP
