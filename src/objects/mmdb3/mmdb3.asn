@@ -1,9 +1,9 @@
---$Revision: 1.2 $
 --**********************************************************************
 --
---  Biological Macromolecule 3-D Structure Data Types for MMDB
+--  Biological Macromolecule 3-D Structure Data Types for MMDB,
+--                A Molecular Modeling Database
 --
---  Definitions for structural features 
+--  Definitions for structural features
 --
 --  By Hitomi Ohkawa, Jim Ostell, and Steve Bryant 
 --
@@ -11,7 +11,7 @@
 --  National Institutes of Health
 --  Bethesda, MD 20894 USA
 --
---  October, 1994
+--  February, 1995
 --
 --**********************************************************************
 
@@ -19,22 +19,25 @@ MMDB-Structural-features DEFINITIONS ::=
 
 BEGIN
 
-EXPORTS Model-feature, Density-coordinate-set, Surface-coordinate-set, Residue-pntrs, RealValue;
+EXPORTS Model-feature, Density-coordinate-set, Surface-coordinate-set, 
+	Residue-pntrs, RealValue;
 
 IMPORTS Molecule-id, Residue-id FROM MMDB-Chemical-graph
 	Model-descr, Atom-pntrs, Component-pntr FROM MMDB-Structural-model;
 
 -- Named model features refer to sets of residues or atoms, or a region in 
 -- the model space.  A few specific feature types are allowed for compatibility
--- with common usage, but the purpose of a named model feature is simply to
--- associate a text and citation-based description with a set of atoms or 
--- residues, or a spatially-defined region of the model structure. 
+-- with PDB usage, but the purpose of a named model feature is simply to
+-- associate a text and/or citation-based description with a set of atoms or 
+-- residues, or a spatially-defined region of the model structure.  They also
+-- support association of numeric or character-defined properties with each
+-- residue or atom of a set.
 
 -- PDB-derived secondary structure defines a single feature, represented as a
 -- sequence of residue motifs.  The contents of PDB SITE and FTNOTE records
--- define features represented as sequences of atom motifs.  NCBI-assigned core 
--- substructure descriptions are represented as a sequence of residue motifs,
--- and cited as a data deposition in the feature description.
+-- define features represented as sequences of atom motifs.  NCBI-assigned core
+-- and secondary structure descriptions are represented as a sequence of 
+-- residue motifs, and cited as a data deposition in the feature description.
 
 Model-feature ::= SEQUENCE{
 	descr			Model-descr,
@@ -45,11 +48,10 @@ Structural-motif ::=	CHOICE {
 	atom-motif	Atom-motif,
 	region-motif	Region-motif } 
 
-
 -- Residue motifs describe secondary structure or other features defined on a 
 -- set of residues.  PDB secondary structure classifications from HELIX, SHEET,
--- and TURN records appear as residue motifs.  The residue motif name is 
--- derived from the PDB "identifier" field.
+-- and TURN records appear as residue motifs.  The residue motif name is in this
+-- case derived from the PDB "identifier" field.
 
 Residue-motif ::= SEQUENCE {
 	descr			Model-descr,
@@ -59,7 +61,8 @@ Residue-motif ::= SEQUENCE {
 					sheet(3),
 					turn(4),
 					other(255) },
-	residue-id		Residue-pntrs }
+	residue-ids		Residue-pntrs,
+	residue-props		SEQUENCE OF Properties OPTIONAL }
 
 
 Residue-pntrs ::= SEQUENCE {
@@ -67,6 +70,27 @@ Residue-pntrs ::= SEQUENCE {
 	molecule-ids		SEQUENCE OF Molecule-id,
 	residue-ids		SEQUENCE OF Residue-id }
 
+-- Properties are intended to represent anything describable by numbers or
+-- text, for example the surface accessibility of a residue, the chemical
+-- shift of an atom, or a code for a local environment category.  The intended
+-- meaning must be specified by the name and description.  The number of
+-- properties with a given description is assumed to be the same as the number
+-- of residues, atoms, or surface points they describe, but this is not a
+-- requirement of the specification.  No properties are defined for PDB-derived
+-- structural features.
+
+Properties ::= SEQUENCE {
+	name			VisibleString,
+	descr			SEQUENCE OF VisibleString OPTIONAL,
+	number-of-props		INTEGER,
+	props			CHOICE {
+					numeric		Num-props,
+					text		Text-props } }
+Num-props ::= SEQUENCE {
+	scale-factor		INTEGER,
+	property		SEQUENCE OF INTEGER }
+
+Text-props ::= SEQUENCE OF VisibleString
 
 -- Atom motifs describe binding sites, catalytic sites, or other features
 -- defined on a set of atoms.  For PDB SITE and FTNOTE records atom motifs
@@ -76,8 +100,8 @@ Residue-pntrs ::= SEQUENCE {
 
 Atom-motif ::= SEQUENCE {
 	descr			Model-descr,
-	atom-ids		Atom-pntrs }
-
+	atom-ids		Atom-pntrs,
+	atom-props		SEQUENCE OF Properties OPTIONAL }
 
 -- Region motifs describe features of substructures defined by spatial location,
 -- such as the portion of a density grid believed to contain a binding site.
@@ -88,52 +112,12 @@ Region-motif ::= SEQUENCE {
 					sphere		Sphere,
 					cylinder	Cylinder,
 					brick		Brick,
-					surface		Surface-grid }}
+					surface		Surface-grid },
+	region-props		SEQUENCE OF Properties OPTIONAL	}
 
-
--- Literal density coordinates define the chemical components whose structure
--- is described by a density grid, parameters of this grid, and density values.
--- density values are represented as scaled integers to save space.  They are
--- converted to real values in the units defined in model-space by dividing
--- by scale-factor.
-
-Density-coordinate-set ::= SEQUENCE {
-	descr			Model-descr,
-	contents		Component-pntr,
-	grid-corners		Brick,
-	grid-steps-x		INTEGER,
-	grid-steps-y		INTEGER,
-	grid-steps-z		INTEGER,
-	fastest-varying		ENUMERATED {
-					x(1),
-					y(2),
-					z(3)},
-	slowest-varying		ENUMERATED {
-					x(1),
-					y(2),
-					z(3)},
-	scale-factor		INTEGER,
-	density			SEQUENCE OF INTEGER }
-
-
-
--- Literal surface coordinates define the chemical components whose structure
--- is described by a surface, and the surface itself.  The surface may be
--- either a regular geometric solid or a triangle-mesh of arbitrary shape.
-
-Surface-coordinate-set ::= SEQUENCE {
-	descr			Model-descr,
-	contents		Component-pntr,
-	surface			CHOICE {
-		sphere		Sphere,
-		cylinder	Cylinder,
-		brick		Brick,
-		surface		Surface-grid } }
-
-
--- Geometrical primitives are used in the definition of non-atomic coordinates
--- and region motifs.  Spheres, cylinders and bricks are defined by a few 
--- points in the model space.
+-- Geometrical primitives are used in the definition of region motifs, and 
+-- also non-atomic coordinates.  Spheres, cylinders and bricks are defined by 
+-- a few points in the model space.
 
 Sphere ::= SEQUENCE { 
 	center			Model-space-point,
@@ -162,7 +146,12 @@ Brick ::= SEQUENCE {
 -- A grid boundary is a set of points which are assumed to define a triangle
 -- mesh surface when each is connected to it's 3 nearest neighbors.
 
-Surface-grid ::= SEQUENCE OF Model-space-point
+Surface-grid ::= SEQUENCE {
+	number-of-points	INTEGER,
+	scale-factor		INTEGER,
+	x			SEQUENCE OF INTEGER,
+	y			SEQUENCE OF INTEGER,
+	z			SEQUENCE OF INTEGER }
 
 Model-space-point ::= SEQUENCE {
 	x			RealValue,
@@ -173,6 +162,40 @@ RealValue ::= SEQUENCE {
 	scale-factor		INTEGER,
 	scaled-integer-value	INTEGER }
 
+-- Literal density coordinates define the chemical components whose structure
+-- is described by a density grid, parameters of this grid, and density values.
+
+Density-coordinate-set ::= SEQUENCE {
+	descr			Model-descr,
+	contents		Component-pntr,
+	grid-corners		Brick,
+	grid-steps-x		INTEGER,
+	grid-steps-y		INTEGER,
+	grid-steps-z		INTEGER,
+	fastest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	slowest-varying		ENUMERATED {
+					x(1),
+					y(2),
+					z(3)},
+	scale-factor		INTEGER,
+	density			SEQUENCE OF INTEGER }
+
+-- Literal surface coordinates define the chemical components whose structure
+-- is described by a surface, and the surface itself.  The surface may be
+-- either a regular geometric solid or a triangle-mesh of arbitrary shape.
+
+Surface-coordinate-set ::= SEQUENCE {
+	descr			Model-descr,
+	contents		Component-pntr,
+	surface			CHOICE {
+		sphere		Sphere,
+		cylinder	Cylinder,
+		brick		Brick,
+		surface		Surface-grid } ,
+	surface-props		SEQUENCE OF Properties OPTIONAL	}
+
+
 END
-
-
