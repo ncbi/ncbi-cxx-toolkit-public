@@ -3115,9 +3115,11 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
                        sbp, hitParams->link_hsp_params, TRUE);
       } else {
         Blast_HSPListGetEvalues(queryInfo, hsp_list, TRUE, sbp,
-                                0.0 /* use a non-zero gap decay only when
+                                0.0, /* use a non-zero gap decay only when
                                        linking hsps */
-                                );
+                                1.0); /* Use scaling factor equal to 1, because 
+                                         both scores and Lambda are scaled, so 
+                                         they will cancel each other. */
       }
       bestEvalue = hsp_list->best_evalue;
 
