@@ -25,15 +25,21 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   C++ Wrappers to NewBlast structures
-*
 */
+
+/// @file blast_aux.cpp
+/// Implements C++ wrapper classes for structures in algo/blast/core as well as
+/// some auxiliary functions to convert CSeq_loc to/from BlastMask structures.
 
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -392,3 +398,16 @@ void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
+
+/* @} */
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.36  2004/03/19 19:22:55  camacho
+ * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+ *
+ *
+ * ===========================================================================
+ */

@@ -31,15 +31,23 @@
 * ===========================================================================
 */
 
+/// @file blast_options_cxx.cpp
+/// Implements the CBlastOptions class, which encapsulates options structures
+/// from algo/blast/core
+
 #include <algo/blast/api/blast_options.hpp>
 #include "blast_setup.hpp"
 
-// NewBlast includes
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/blast/Blast4_cutoff.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -579,10 +587,15 @@ CBlastOptions::operator!=(const CBlastOptions& rhs) const
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/03/19 19:22:55  camacho
+* Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+*
 * Revision 1.39  2004/02/17 23:53:31  dondosha
 * Added setting of preliminary hitlist size
 *

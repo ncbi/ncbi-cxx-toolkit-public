@@ -38,6 +38,10 @@
 #include "blast_setup.hpp"
 #include <algo/blast/api/blast_exception.hpp>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -430,3 +434,17 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
+
+
+/* @} */
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.6  2004/03/19 19:22:55  camacho
+ * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+ *
+ *
+ * ===========================================================================
+ */

@@ -25,11 +25,11 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   Auxiliary setup functions for Blast objects interface
-*
 * ===========================================================================
 */
+
+/// @file blast_setup_cxx.cpp
+/// Auxiliary setup functions for Blast objects interface.
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
@@ -48,14 +48,17 @@
 #include <objects/seq/NCBIstdaa.hpp>
 
 #include <algo/blast/api/blast_options.hpp>
-#include <algo/blast/api/blast_exception.hpp>
 #include "blast_setup.hpp"
 
-// NewBlast includes
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_stat.h>
 
 #include <algorithm>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -69,13 +72,6 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     ASSERT(qinfo);
 
     // Allocate and initialize the query info structure
-    // implement assignment operator for wrappers?
-#if 0
-    qinfo->Reset((BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)));
-    if ( !(qinfo->operator->()) ) { // FIXME!
-        NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
-    }
-#endif
     if ( !((*qinfo) = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo)))) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
     }
@@ -859,10 +855,15 @@ GetNumberOfFrames(EProgram p)
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/03/19 19:22:55  camacho
+* Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+*
 * Revision 1.61  2004/03/15 19:57:52  dondosha
 * SetupSubjects takes just program argument instead of CBlastOptions*
 *

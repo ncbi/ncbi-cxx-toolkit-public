@@ -25,21 +25,25 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   Utility function to convert internal BLAST result structures into
-*   objects::CSeq_align_set objects
-*
 */
+
+/// @file blast_seqalign.hpp
+/// Utility function to convert internal BLAST result structures into
+/// objects::CSeq_align_set objects.
 
 #ifndef ALGO_BLAST_API___BLAST_SEQALIGN__HPP
 #define ALGO_BLAST_API___BLAST_SEQALIGN__HPP
 
 #include <corelib/ncbistd.hpp>
 
-// NewBlast includes
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 
@@ -94,10 +98,15 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/03/19 19:22:55  camacho
+* Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+*
 * Revision 1.19  2004/03/15 19:58:55  dondosha
 * Added BLAST_OneSubjectResults2CSeqalign function to retrieve single subject results from BlastHSPResults
 *

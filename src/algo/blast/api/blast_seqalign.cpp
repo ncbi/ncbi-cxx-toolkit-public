@@ -25,12 +25,12 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   Utility function to convert internal BLAST result structures into
-*   CSeq_align_set objects
-*
 * ===========================================================================
 */
+
+/// @file blast_seqalign.hpp
+/// Utility function to convert internal BLAST result structures into
+/// CSeq_align_set objects.
 
 #include "blast_seqalign.hpp"
 
@@ -47,17 +47,21 @@
 #include <objmgr/util/sequence.hpp>
 #include <serial/iterator.hpp>
 
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+BEGIN_SCOPE(blast)
+
 #ifndef SMALLEST_EVALUE
 #define SMALLEST_EVALUE 1.0e-180
 #endif
 #ifndef GAP_VALUE
 #define GAP_VALUE -1
 #endif
-
-
-BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-BEGIN_SCOPE(blast)
 
 // Converts a frame into the appropriate strand
 static ENa_strand
@@ -1347,10 +1351,15 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/03/19 19:22:55  camacho
+* Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+*
 * Revision 1.31  2004/03/16 22:03:38  camacho
 * Remove dead code
 *

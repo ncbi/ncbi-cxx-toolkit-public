@@ -25,11 +25,11 @@
 *
 * Author:  Kevin Bealer
 *
-* File Description:
-*   Queueing and Polling code for Remote Blast API
-*
 * ===========================================================================
 */
+
+/// @file remote_blast.cpp
+/// Queueing and Polling code for Remote Blast API.
 
 #include <corelib/ncbi_system.hpp>
 #include <algo/blast/api/remote_blast.hpp>
@@ -44,6 +44,11 @@
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
 #endif
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -605,10 +610,15 @@ void CRemoteBlast::x_SetOneParam(const char * name, objects::CScore_matrix_param
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/19 19:22:55  camacho
+* Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+*
 * Revision 1.5  2004/03/12 22:07:03  camacho
 * Remove unused variables
 *

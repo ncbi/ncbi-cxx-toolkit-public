@@ -25,11 +25,11 @@
  *
  * Author:  Christiam Camacho
  *
- * File Description:
- *   Blast2Sequences class interface
- *
  * ===========================================================================
  */
+
+/// @file bl2seq.cpp
+/// Implementation of CBl2Seq class.
 
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -49,6 +49,11 @@
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -303,10 +308,15 @@ CBl2Seq::x_Results2SeqAlign()
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2004/03/19 19:22:55  camacho
+ * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+ *
  * Revision 1.45  2004/03/15 19:56:03  dondosha
  * Use sequence source instead of accessing subjects directly
  *
