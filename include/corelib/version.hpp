@@ -197,6 +197,25 @@ It FindVersion(It first, It last, const CVersionInfo& info)
     return best_version;
 }
 
+
+/// Algorithm function to find version in the container
+///
+/// Scans the provided container for version with the same major and
+/// minor version and the newest patch level.
+///
+/// @param container
+///    container object to search in 
+/// @return 
+///    iterator on the best fit version (last if no version found)
+template<class TClass>
+typename TClass::const_iterator FindVersion(const TClass& cont, 
+                                            const CVersionInfo& info)
+{
+    typename TClass::const_iterator it = cont.begin();
+    typename TClass::const_iterator it_end = cont.end();
+    return FindVersion(it, it_end, info);
+}
+
 /* @} */
 
 
@@ -208,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/17 16:46:50  kuznets
+ * + container based FindVersion template
+ *
  * Revision 1.7  2003/11/07 16:29:15  kuznets
  * Added CVersionInfo::IsAny(), IsLatest()
  *
