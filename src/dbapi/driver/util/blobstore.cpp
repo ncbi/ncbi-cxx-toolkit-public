@@ -125,11 +125,14 @@ ERW_Result CBlobReader::Read(void* buf, size_t count, size_t* bytes_read)
                 else ++m_ItemNum;
             }
             else m_ItemNum= m_Res->CurrentItemNo();
-            if((m_ItemNum < 0 || m_ItemNum >= m_Res->NofItems())&& m_Res->Fetch()) {
+            if((m_ItemNum < 0 || 
+                (unsigned int)m_ItemNum >= m_Res->NofItems()) && 
+               m_Res->Fetch()) {
                 m_ItemNum= 0; // starting next row
             }
         }
-        while(m_ItemNum >= 0 && m_ItemNum < m_Res->NofItems());
+        while(m_ItemNum >= 0 && 
+              (unsigned int)m_ItemNum < m_Res->NofItems());
 
         m_AllDone= true; // nothing to read any more
 
@@ -367,7 +370,7 @@ I_ITDescriptor& CSimpleBlobStore::ItDescriptor(void)
         s.append(m_Key.Value());
         s+= "' AND " + m_NumColName + "=";
         char buf[32];
-        sprintf(buf,"%ld",m_RowNum.Value());
+        sprintf(buf, "%ld", (long) m_RowNum.Value());
         s.append(buf);
             
         m_Desc.SetSearchConditions(s);
