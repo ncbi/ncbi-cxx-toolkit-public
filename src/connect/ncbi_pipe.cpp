@@ -434,7 +434,6 @@ void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
         // fork failed
         NCBI_THROW(CPipeException, eRun,
                   "Pipe has failed to fork the current process");
-        break; /*NOTREACHED*/
     case 0:
         // Now we are in the child process
         int status = -1;
@@ -825,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/05/19 21:21:38  vakatov
+ * Get rid of unnecessary unreached statement
+ *
  * Revision 1.19  2003/05/08 20:13:35  ivanov
  * Cleanup #include <util/...>
  *
