@@ -85,9 +85,6 @@ typedef struct BlastHSPList {
                               this list? */
 } BlastHSPList;
 
-/** Creates HSP list structure with a default size HSP array */
-BlastHSPList* BlastHSPListNew(void);
-
 /** The structure to contain all BLAST results for one query sequence */
 typedef struct BlastHitList {
    Int4 hsplist_count; /**< Filled size of the HSP lists array */
@@ -193,6 +190,8 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
            const BlastHitSavingOptions* hit_options, 
            const BlastScoringOptions* score_options, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp);
+
+
 /** Calculate number of identities in an HSP.
  * @param query The query sequence [in]
  * @param subject The uncompressed subject sequence [in]
@@ -218,15 +217,6 @@ Int2
 BlastOOFGetNumIdentities(Uint1* query, Uint1* subject, 
    BlastHSP* hsp, Uint1 program, 
    Int4* num_ident_ptr, Int4* align_length_ptr);
-
-/** Cleans out the NULLed out HSP's from the HSP array,
- *	moving the BLAST_HSPPtr's up to fill in the gaps.
- * @param hsp_array Array of pointers to HSP structures [in]
- * @param hspcnt Size of the array [in]
- * @return Number of remaining HSPs.
-*/
-Int4
-BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt);
 
 /** Assign frames in all HSPs in the HSP list.
  * @param program_number Type of BLAST program [in]
@@ -254,6 +244,92 @@ typedef struct BLASTHSPSegment {
 /* By how much should the chunks of a subject sequence overlap if it is 
    too long and has to be split */
 #define DBSEQ_CHUNK_OVERLAP 100
+/************************************************************************************
+
+The following section has three sets of functions (or "APIs").  The first is to manipulate
+an BlastHSP which is the basic unit to record one alignment.  The second is to manipulate a 
+BlastHSPList, which is a list of BlastHSP's for one database sequence.  Finally there is the 
+BlastHitList which is all the HSPList's for a given query.  The naming conventions for the 
+functions are the following:
+
+1.) All routines start with "Blast_"
+
+2.) After "Blast_" comes the structure being manipulated, that should be either HSP (all capitals all the time!), HSPList (exactly this capitalization), or HitList (capital H and L, all others lower-case).
+
+3.) finally the task being done, e.g., "Free", "New", "Init".
+
+************************************************************************************/
+/*
+     HSP API
+*/
+
+/** Deallocate memory for an HSP structure */
+BlastHSP* Blast_HSPFree(BlastHSP* hsp);
+
+/** Allocate and zeros out memory for an HSP structure */
+BlastHSP* Blast_HSPNew(void);
+
+/** Allocates BlastHSP and inits with information from input.
+ * structure
+ * @param query_start Start of query alignment [in]
+ * @param query_end End of query alignment [in]
+ * @param subject_start Start of subject alignment [in]
+ * @param subject_end End of subject alignment [in]
+ * @param query_gapped_start Where gapped alignment started on query [in]
+ * @param subject_gapped_start Where gapped alignment started on subject [in]
+ * @param query_context The index of the query containing this HSP [in]
+ * @param subject_frame Subject frame: -3..3 for translated sequence, 
+ *        1 for blastn, 0 for blastp [in]
+ * @param score score of alignment [in]
+ * @param gap_edit Will be transferred to HSP and nulled out 
+ *    if a traceback was not calculated may be NULL [in] [out]
+ * @param ret_hsp allocated and filled in BlastHSP [out]
+ */
+Int2
+Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject_end,
+          Int4 query_gapped_start, Int4 subject_gapped_start,
+          Int4 query_context, Int2 subject_frame, Int4 score,
+          GapEditBlock* *gap_edit, BlastHSP** ret_hsp);
+
+
+/** Modifies the HSP data after the final gapped alignment.
+ *   Input includes only data that likely needs modification.
+ * @param query_start start of alignment on query [in]
+ * @param query_end end of alignment on query [in]
+ * @param subject_start start of alignment on subject [in]
+ * @param subject_end end of alignment on subject [in]
+ * @param program_number Which BLAST program is this done for? [in]
+ * @param gap_edit traceback from final gapped alignment [in] [out]
+ * @param hsp Original HSP from the preliminary stage [in] [out]
+ */
+Int2
+Blast_HSPReset(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject_end,
+          Int4 score, GapEditBlock* *gap_edit, BlastHSP* hsp);
+
+/*
+    HSPList API
+*/
+
+/** Deallocate memory for an HSP list structure 
+ *  as well as all it's components.
+ * @param hsp_list the BlastHSPList to be freed [in]. 
+*/
+BlastHSPList* Blast_HSPListFree(BlastHSPList* hsp_list);
+
+/** Creates HSP list structure with a default size HSP array 
+ * @param hsp_max the maximum number of HSP's that can ever be
+ *    saved at once [in].
+*/
+BlastHSPList* Blast_HSPListNew(Int4 hsp_max);
+
+
+/** Saves HSP information into a BlastHSPList structure
+ * @param hsp_list Structure holding all HSPs with full gapped alignment 
+ *        information [in] [out]
+ * @param new_hsp The new HSP to be inserted into the HSPList [in]
+*/
+Int2
+Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
 
 /** Merge an HSP list from a chunk of the subject sequence into a previously
  * computed HSP list.
@@ -264,7 +340,7 @@ typedef struct BLASTHSPSegment {
  * @param merge_hsps Should the overlapping HSPs be merged into one? [in]
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
  */
-Int2 MergeHSPLists(BlastHSPList* hsp_list, 
+Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list, 
                    BlastHSPList** combined_hsp_list_ptr, 
                    Int4 hsp_num_max, Int4 start, Boolean merge_hsps);
 
@@ -276,14 +352,47 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
  * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if 0) [in]
  * @return Status: 0 on success, -1 on failure.
  */ 
-Int2 AppendHSPList(BlastHSPList* hsp_list, BlastHSPList** combined_hsp_list_ptr, 
+Int2 Blast_HSPListAppend(BlastHSPList* hsp_list, BlastHSPList** combined_hsp_list_ptr, 
                    Int4 hsp_num_max);
 
-/** Deallocate memory for an HSP structure */
-BlastHSP* BlastHSPFree(BlastHSP* hsp);
+/** Cleans out the NULLed out HSP's from the HSP array that
+    is part of the BlastHSPList.
+ * @param hsp_list Contains array of pointers to HSP structures [in]
+ * @return status of function call.
+*/
+Int2
+Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
 
-/** Deallocate memory for an HSP list structure */
-BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list);
+/*
+   HitList API.
+*/
+/** Deallocate memory for the hit list */
+BlastHitList* Blast_HitListFree(BlastHitList* hitlist);
+
+/** Allocate memory for a hit list of a given size.
+ * @param hitlist_size Size of the hit list (number of HSP lists) [in]
+ */
+BlastHitList* Blast_HitListNew(Int4 hitlist_size);
+
+/** Insert a new HSP list into the hit list.
+ * Before capacity of the hit list is reached, just add to the end;
+ * After that, store in a heap, to ensure efficient insertion and deletion.
+ * The heap order is reverse, with worst e-value on top, for convenience
+ * of deletion.
+ * @param hit_list Contains all HSP lists saved so far [in] [out]
+ * @param hsp_list A new HSP list to be inserted into the hit list [in]
+*/
+Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
+
+
+/** Deallocate memory for every HSP list on BlastHitList,
+ *  as well as all their components.
+ * @param hitlist contains the BlastHSPList array to be freed [in/out]. 
+*/
+Int2 Blast_HSPListArrayFree(BlastHitList* hitlist);
+
+
+
 
 /** Deallocate memory for BLAST results */
 BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);

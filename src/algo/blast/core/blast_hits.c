@@ -76,7 +76,7 @@ HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list,
    }
 }
 
-BlastHSP* BlastHSPFree(BlastHSP* hsp)
+BlastHSP* Blast_HSPFree(BlastHSP* hsp)
 {
    if (!hsp)
       return NULL;
@@ -166,7 +166,7 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list,
       ASSERT(hsp != NULL);
       
       if (hsp->evalue > cutoff) {
-         hsp_array[index] = BlastHSPFree(hsp_array[index]);
+         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
       } else {
          if (index > hsp_cnt)
             hsp_array[hsp_cnt] = hsp_array[index];
@@ -181,14 +181,19 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list,
 
 /* See description in blast_hits.h */
 
-Int4
-BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt)
+Int2
+Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
 
 {
-	Int4 index, index1;
+        Int4 index, index1; /* loop indices. */
+        Int4 hspcnt; /* total number of HSP's to iterate over. */
+        BlastHSP** hsp_array;  /* hsp_array to purge. */
 
-	if (hspcnt == 0 || hsp_array == NULL)
+	if (hsp_list == NULL || hsp_list->hspcnt == 0)
 		return 0;
+
+        hsp_array = hsp_list->hsp_array;
+        hspcnt = hsp_list->hspcnt;
 
 	index1 = 0;
 	for (index=0; index<hspcnt; index++)
@@ -205,9 +210,9 @@ BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt)
 		hsp_array[index] = NULL;
 	}
 
-	hspcnt = index1;
+	hsp_list->hspcnt = index1;
 
-	return index1;
+        return 0;
 }
 
 Int2
@@ -460,7 +465,7 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    /* Delete all HSPs that were flagged in qsort */
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       if (hsp_array[index]->score == 0) {
-         hsp_array[index] = BlastHSPFree(hsp_array[index]);
+         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
       }
    }      
    /* Move all nulled out HSPs to the end */
@@ -488,14 +493,14 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
              q_end <= hsp_array[index1]->query.end && 
              s_end <= hsp_array[index1]->subject.end &&
              evalue >= hsp_array[index1]->evalue) {
-            hsp_array[index] = BlastHSPFree(hsp_array[index]);
+            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
             break;
          } else if (q_off <= hsp_array[index1]->query.offset && 
              s_off <= hsp_array[index1]->subject.offset && 
              q_end >= hsp_array[index1]->query.end && 
              s_end >= hsp_array[index1]->subject.end &&
              evalue <= hsp_array[index1]->evalue) {
-            hsp_array[index1] = BlastHSPFree(hsp_array[index1]);
+            hsp_array[index1] = Blast_HSPFree(hsp_array[index1]);
             shift_needed = TRUE;
          }
       }
@@ -780,14 +785,13 @@ ReevaluateHSPListWithAmbiguities(BlastHSPList* hsp_list,
             hit_options, score_options, query_info, sbp);
       
       if (delete_hsp) { /* This HSP is now below the cutoff */
-         hsp_array[index] = BlastHSPFree(hsp_array[index]);
+         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
          purge = TRUE;
       }
    }
     
    if (purge) {
-      index = BlastHSPArrayPurge(hsp_array, hspcnt);
-      hsp_list->hspcnt = index;	
+      Blast_HSPListPurgeNullHSPs(hsp_list);
    }
    
    /* Check for HSP inclusion once more */
@@ -897,19 +901,25 @@ evalue_compare_hsp_lists(const void* v1, const void* v2)
    return 0;
 }
 
-#define MIN_HSP_ARRAY_SIZE 100
-BlastHSPList* BlastHSPListNew()
+BlastHSPList* Blast_HSPListNew(Int4 hsp_max)
 {
    BlastHSPList* hsp_list = (BlastHSPList*) calloc(1, sizeof(BlastHSPList));
+   const Int4 k_default_allocated=100;
+
+   /* hsp_max is max number of HSP's ever allowed, INT4_MAX taken as infinity. */
+   hsp_list->hsp_max = INT4_MAX; 
+   if (hsp_max > 0)
+      hsp_list->hsp_max = hsp_max;
+
+   hsp_list->allocated = MIN(k_default_allocated, hsp_list->hsp_max);
+
    hsp_list->hsp_array = (BlastHSP**) 
-      calloc(MIN_HSP_ARRAY_SIZE, sizeof(BlastHSP*));
-   hsp_list->hsp_max = INT4_MAX;
-   hsp_list->allocated = MIN_HSP_ARRAY_SIZE;
+      calloc(hsp_list->allocated, sizeof(BlastHSP*));
 
    return hsp_list;
 }
 
-BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list)
+BlastHSPList* Blast_HSPListFree(BlastHSPList* hsp_list)
 {
    Int4 index;
 
@@ -917,7 +927,7 @@ BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list)
       return hsp_list;
 
    for (index = 0; index < hsp_list->hspcnt; ++index) {
-      BlastHSPFree(hsp_list->hsp_array[index]);
+      Blast_HSPFree(hsp_list->hsp_array[index]);
    }
    sfree(hsp_list->hsp_array);
 
@@ -933,7 +943,7 @@ BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list)
 static void InsertBlastHSPListInHeap(BlastHitList* hit_list, 
                                      BlastHSPList* hsp_list)
 {
-      BlastHSPListFree(hit_list->hsplist_array[0]);
+      Blast_HSPListFree(hit_list->hsplist_array[0]);
       hit_list->hsplist_array[0] = hsp_list;
       if (hit_list->hsplist_count >= 2) {
          heapify((char*)hit_list->hsplist_array, (char*)hit_list->hsplist_array, 
@@ -946,15 +956,7 @@ static void InsertBlastHSPListInHeap(BlastHitList* hit_list,
       hit_list->low_score = hit_list->hsplist_array[0]->hsp_array[0]->score;
 }
 
-/** Insert a new HSP list into the hit list.
- * Before capacity of the hit list is reached, just add to the end;
- * After that, store in a heap, to ensure efficient insertion and deletion.
- * The heap order is reverse, with worst e-value on top, for convenience
- * of deletion.
- * @param hit_list Contains all HSP lists saved so far [in] [out]
- * @param hsp_list A new HSP list to be inserted into the hit list [in]
-*/
-static Int2 BLAST_UpdateHitList(BlastHitList* hit_list, 
+Int2 Blast_HitListUpdate(BlastHitList* hit_list, 
                                 BlastHSPList* hsp_list)
 {
    if (hit_list->hsplist_count < hit_list->hsplist_max) {
@@ -974,7 +976,7 @@ static Int2 BLAST_UpdateHitList(BlastHitList* hit_list,
                (hsp_list->hsp_array[0]->score <= hit_list->low_score))) {
       /* This hit list is less significant than any of those already saved;
          discard it */
-      BlastHSPListFree(hsp_list);
+      Blast_HSPListFree(hsp_list);
    } else {
       if (!hit_list->heapified) {
          CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count, 
@@ -987,10 +989,10 @@ static Int2 BLAST_UpdateHitList(BlastHitList* hit_list,
    return 0;
 }
 
-/** Allocate memory for a hit list of a given size.
- * @param hitlist_size Size of the hit list (number of HSP lists) [in]
+/*
+   description in blast_hits.h
  */
-static BlastHitList* BLAST_HitListNew(Int4 hitlist_size)
+BlastHitList* Blast_HitListNew(Int4 hitlist_size)
 {
    BlastHitList* new_hitlist = (BlastHitList*) 
       calloc(1, sizeof(BlastHitList));
@@ -999,19 +1001,36 @@ static BlastHitList* BLAST_HitListNew(Int4 hitlist_size)
    return new_hitlist;
 }
 
-/** Deallocate memory for the hit list */
-static BlastHitList* BLAST_HitListFree(BlastHitList* hitlist)
+/*
+   description in blast_hits.h
+*/
+BlastHitList* Blast_HitListFree(BlastHitList* hitlist)
 {
-   Int4 index;
-
    if (!hitlist)
       return NULL;
 
-   for (index = 0; index < hitlist->hsplist_count; ++index)
-      BlastHSPListFree(hitlist->hsplist_array[index]);
-   sfree(hitlist->hsplist_array);
+   Blast_HSPListArrayFree(hitlist);
    sfree(hitlist);
    return NULL;
+}
+
+/** Deallocate memory for the HSPListArray on hitlist. */
+Int2 Blast_HSPListArrayFree(BlastHitList* hitlist)
+{
+   Int4 index;
+   
+   if (!hitlist)
+	return 0;
+
+   for (index = 0; index < hitlist->hsplist_count; ++index)
+      hitlist->hsplist_array[index] =
+             Blast_HSPListFree(hitlist->hsplist_array[index]);
+
+   sfree(hitlist->hsplist_array);
+
+   hitlist->hsplist_count = 0;
+
+   return 0;
 }
 
 static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
@@ -1068,7 +1087,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
 
          if (!tmp_hsp_list) {
             hsp_list_array[hsp->context/context_factor] = tmp_hsp_list = 
-               BlastHSPListNew();
+               Blast_HSPListNew(hit_options->hsp_num_max);
             tmp_hsp_list->oid = hsp_list->oid;
             tmp_hsp_list->traceback_done = hsp_list->traceback_done;
          }
@@ -1096,7 +1115,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
             tmp_hsp_list->hsp_array[tmp_hsp_list->hspcnt++] = hsp;
          } else {
             /* Cannot add more HSPs; free the memory */
-            hsp_list->hsp_array[index] = BlastHSPFree(hsp);
+            hsp_list->hsp_array[index] = Blast_HSPFree(hsp);
          }
       }
 
@@ -1106,9 +1125,9 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
          if (hsp_list_array[index]) {
             if (!results->hitlist_array[index]) {
                results->hitlist_array[index] = 
-                  BLAST_HitListNew(hit_options->prelim_hitlist_size);
+                  Blast_HitListNew(hit_options->prelim_hitlist_size);
             }
-            BLAST_UpdateHitList(results->hitlist_array[index], 
+            Blast_HitListUpdate(results->hitlist_array[index], 
                                 hsp_list_array[index]);
          }
       }
@@ -1116,15 +1135,15 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
       /* All HSPs from the hsp_list structure are now moved to the results 
          structure, so set the HSP count back to 0 */
       hsp_list->hspcnt = 0;
-      BlastHSPListFree(hsp_list);
+      Blast_HSPListFree(hsp_list);
    } else if (hsp_list->hspcnt > 0) {
       /* Single query; save the HSP list directly into the results 
          structure */
       if (!results->hitlist_array[0]) {
          results->hitlist_array[0] = 
-            BLAST_HitListNew(hit_options->prelim_hitlist_size);
+            Blast_HitListNew(hit_options->prelim_hitlist_size);
       }
-      BLAST_UpdateHitList(results->hitlist_array[0], 
+      Blast_HitListUpdate(results->hitlist_array[0], 
                           hsp_list);
    }
    
@@ -1154,7 +1173,7 @@ BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results)
        return NULL;
 
    for (index = 0; index < results->num_queries; ++index)
-      BLAST_HitListFree(results->hitlist_array[index]);
+      Blast_HitListFree(results->hitlist_array[index]);
    sfree(results->hitlist_array);
    sfree(results);
    return NULL;
@@ -1174,7 +1193,7 @@ static void BlastHitListPurge(BlastHitList* hit_list)
    hit_list->hsplist_count = index;
    /* Free all empty HSP lists */
    for ( ; index < hsplist_count; ++index) {
-      BlastHSPListFree(hit_list->hsplist_array[index]);
+      Blast_HSPListFree(hit_list->hsplist_array[index]);
    }
 }
 
@@ -1540,11 +1559,11 @@ CombineHSPListsByScore(BlastHSPList* hsp_list, BlastHSPList* combined_hsp_list,
       /* Free the extra HSPs that could not be saved */
       for ( ; index1 < combined_hsp_list->hspcnt; ++index1) {
          combined_hsp_list->hsp_array[index1] = 
-            BlastHSPFree(combined_hsp_list->hsp_array[index1]);
+            Blast_HSPFree(combined_hsp_list->hsp_array[index1]);
       }
       for ( ; index2 < hsp_list->hspcnt; ++index2) {
          hsp_list->hsp_array[index2] = 
-            BlastHSPFree(hsp_list->hsp_array[index2]);
+            Blast_HSPFree(hsp_list->hsp_array[index2]);
       }
       /* Point combined_hsp_list's HSP array to the new one */
       sfree(combined_hsp_list->hsp_array);
@@ -1556,7 +1575,7 @@ CombineHSPListsByScore(BlastHSPList* hsp_list, BlastHSPList* combined_hsp_list,
    hsp_list->hspcnt = 0;
 }
 
-Int2 AppendHSPList(BlastHSPList* hsp_list,
+Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
         BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max)
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
@@ -1598,7 +1617,7 @@ Int2 AppendHSPList(BlastHSPList* hsp_list,
    return 0;
 }
 
-Int2 MergeHSPLists(BlastHSPList* hsp_list, 
+Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list, 
                    BlastHSPList** combined_hsp_list_ptr,
                    Int4 hsp_num_max, Int4 start, Boolean merge_hsps)
 {
@@ -1662,7 +1681,7 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
             if (merge_hsps) {
                if (BLAST_MergeHsps(hspp1[index], hspp2[index1], start)) {
                   /* Free the second HSP. */
-                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
+                  hspp2[index1] = Blast_HSPFree(hspp2[index1]);
                }
             } else { /* No gap information available */
                if (BLASTHspContained(hspp1[index], hspp2[index1])) {
@@ -1676,7 +1695,7 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
                   break;
                } else if (BLASTHspContained(hspp2[index1], hspp1[index])) {
                   /* Just free the second HSP */
-                  hspp2[index1] = BlastHSPFree(hspp2[index1]);
+                  hspp2[index1] = Blast_HSPFree(hspp2[index1]);
                }
             }
          } else {
@@ -1688,8 +1707,7 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
    }
 
    /* Purge the nulled out HSPs from the new HSP list */
-   hsp_list->hspcnt = 
-      BlastHSPArrayPurge(hsp_list->hsp_array, hsp_list->hspcnt);
+      Blast_HSPListPurgeNullHSPs(hsp_list);
 
    /* The new number of HSPs is now the sum of the remaining counts in the 
       two lists, but if there is a restriction on the number of HSPs to keep,
@@ -1733,7 +1751,7 @@ void RPSUpdateResults(BlastHSPResults *final_result,
       if it hasn't been allocated already */
 
    if (!final_result->hitlist_array[0])
-      final_result->hitlist_array[0] = BLAST_HitListNew(500);
+      final_result->hitlist_array[0] = Blast_HitListNew(500);
 
    /* For each DB sequence... */
 
@@ -1764,16 +1782,191 @@ void RPSUpdateResults(BlastHSPResults *final_result,
            /* Add the modified HSPList to the new set of results */
 
            if (hsplist[j]->hspcnt)
-               BLAST_UpdateHitList(final_result->hitlist_array[0], 
+               Blast_HitListUpdate(final_result->hitlist_array[0], 
                                    hsplist[j]);
            else
-               hsplist[j] = BlastHSPListFree(hsplist[j]);
+               hsplist[j] = Blast_HSPListFree(hsplist[j]);
        }
 
        /* Remove the original hit list (all of its contents
           have been moved) */
 
        hitlist[i]->hsplist_count = 0;
-       init_result->hitlist_array[i] = BLAST_HitListFree(hitlist[i]);
+       init_result->hitlist_array[i] = Blast_HitListFree(hitlist[i]);
    }
+}
+
+/*
+   Comments in blast_hits.h
+*/
+
+Int2
+Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject_end,
+          Int4 query_gapped_start, Int4 subject_gapped_start, 
+          Int4 query_context, Int2 subject_frame, Int4 score, 
+          GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
+{
+   *ret_hsp = NULL;
+   BlastHSP* new_hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+   if (new_hsp == NULL)
+	return -1;
+
+   new_hsp->query.offset = query_start;
+   new_hsp->subject.offset = subject_start;
+   new_hsp->query.length = query_end - query_start;
+   new_hsp->subject.length = subject_end - subject_start;
+   new_hsp->query.end = query_end;
+   new_hsp->subject.end = subject_end;
+   new_hsp->query.gapped_start = query_gapped_start;
+   new_hsp->subject.gapped_start = subject_gapped_start;
+   new_hsp->context = query_context;
+   new_hsp->subject.frame = subject_frame;
+   new_hsp->score = score;
+   if (gap_edit && *gap_edit)
+   { /* If this is non-NULL transfer ownership. */
+        new_hsp->gap_info = *gap_edit;
+        *gap_edit = NULL;
+   }
+
+   *ret_hsp = new_hsp;
+
+   return 0;
+}
+
+
+
+/*
+
+ Comments in blast_hits.h
+
+*/
+Int2
+Blast_HSPReset(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject_end,
+          Int4 score, GapEditBlock* *gap_edit, BlastHSP* hsp)
+{
+
+   if (hsp == NULL)
+     return -1;
+
+   hsp->score = score;
+   hsp->query.offset = query_start;
+   hsp->subject.offset = subject_start;
+   hsp->query.length = query_end - query_start;
+   hsp->subject.length = subject_end - subject_start;
+   hsp->query.end = query_end;
+   hsp->subject.end = subject_end;
+   if (gap_edit && *gap_edit)
+   { /* If this is non-NULL transfer ownership. */
+        hsp->gap_info = *gap_edit;
+        *gap_edit = NULL;
+   }
+   return 0;
+}
+
+/* Comments in blast_gapalign.h
+ */
+Int2 
+Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
+{
+   BlastHSP** hsp_array;
+   Int4 highscore, lowscore, score = 0;
+   Int4 hspcnt, new_index, old_index;
+   Int4 hsp_allocated; /* how many hsps are in the array. */
+
+   hspcnt = hsp_list->hspcnt;
+   hsp_allocated = hsp_list->allocated;
+   
+   /* Check if list is already full, then reallocate. */
+   if (hspcnt >= hsp_allocated-1 && hsp_list->do_not_reallocate == FALSE)
+   {
+      Int4 new_allocated = MIN(2*hsp_list->allocated, hsp_list->hsp_max);
+      if (new_allocated <= hsp_list->hsp_max) {
+         hsp_array = (BlastHSP**)
+            realloc(hsp_list->hsp_array, new_allocated*sizeof(BlastHSP*));
+         if (hsp_array == NULL)
+         {
+#ifdef ERR_POST_EX_DEFINED
+            ErrPostEx(SEV_WARNING, 0, 0, 
+               "UNABLE to reallocate in BLAST_SaveHsp,"
+               " continuing with fixed array of %ld HSP's", 
+                      (long) hsp_allocated);
+#endif
+            hsp_list->do_not_reallocate = TRUE; 
+         } else {
+            hsp_list->hsp_array = hsp_array;
+            hsp_list->allocated = new_allocated;
+            hsp_allocated = new_allocated;
+         }
+      } else {
+         hsp_list->do_not_reallocate = TRUE; 
+      }
+   }
+
+   hsp_array = hsp_list->hsp_array;
+
+   /* If we are saving ALL HSP's, simply save and sort later. */
+   if (hsp_list->do_not_reallocate == FALSE)
+   {
+      hsp_array[hsp_list->hspcnt] = new_hsp;
+      (hsp_list->hspcnt)++;
+      return 0;
+   }
+
+   /* Use a binary search to insert the HSP. */
+   score = new_hsp->score;
+    
+
+   if (hspcnt != 0) {
+      highscore = hsp_array[0]->score;
+      lowscore = hsp_array[hspcnt-1]->score;
+   } else {
+      highscore = 0;
+      lowscore = 0;
+   }
+
+   if (score >= highscore) {
+      new_index = 0;
+   } else if (score <= lowscore) {
+      new_index = hspcnt;
+   } else {
+      const Int4 k_MaxIter=30;
+      Int4 index;
+      Int4 low_index = 0;
+      Int4 high_index = hspcnt-1;
+
+      new_index = (low_index+high_index)/2;
+      old_index = new_index;
+      
+      for (index=0; index<k_MaxIter; index++)
+      {
+         if (score > hsp_array[new_index]->score)
+            high_index = new_index;
+         else
+            low_index = new_index;
+         new_index = (low_index+high_index)/2;
+         if (new_index == old_index) { 
+            /* Perform this check as new_index get rounded DOWN above.*/
+            if (score < hsp_array[new_index]->score)
+               new_index++;
+            break;
+         }
+         old_index = new_index;
+      }
+   }
+
+   if (hspcnt >= hsp_allocated-1) {
+      if (new_index >= hspcnt) { 
+         /* this HSP is less significant than others on a full list.*/
+         sfree(new_hsp);
+         return 0;
+      } else { /* Delete the last HSP on the list. */
+         hspcnt = hsp_list->hspcnt--;
+         sfree(hsp_array[hspcnt-1]);
+      }
+   }
+   hsp_list->hspcnt++;
+   memmove((hsp_array+new_index+1), (hsp_array+new_index), (hspcnt-new_index)*sizeof(hsp_array[0]));
+   hsp_array[new_index] = new_hsp;
+   
+   return 0;
 }
