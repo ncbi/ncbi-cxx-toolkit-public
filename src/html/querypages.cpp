@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/12 00:06:19  lewisg
+* *** empty log message ***
+*
 * Revision 1.2  1998/12/11 22:52:01  lewisg
 * added docsum page
 *
@@ -65,17 +68,10 @@ void CPmFrontPage::InitMembers(int style)
 
 CHTMLNode * CPmFrontPage::CreateView(void) 
 {
-    return new CQueryBox;
-}
-
-
-void CPmFrontPage::Finish(int Style)
-{
-    
     //
     // demo purposes only
     //
-    CQueryBox * QueryBox = (CQueryBox *) m_View;
+    CQueryBox * QueryBox = new CQueryBox;
     QueryBox->InitMembers();
     QueryBox->m_Width = 400;
     QueryBox->m_BgColor = "#CCCCCFF";
@@ -101,13 +97,10 @@ void CPmFrontPage::Finish(int Style)
     QueryBox->m_HiddenValues["form"] = "4";
     QueryBox->InitSubPages();
     QueryBox->Finish();
-    
-    //
-    // end demo
-    //
-    
-    CHTMLPage::Finish(Style);
+
+    return QueryBox;
 }
+
 
 //
 // Docsum page
@@ -148,31 +141,11 @@ void CPmDocSumPage::InitSubPages(int style)
 
 CHTMLNode * CPmDocSumPage::CreatePager(void) 
 {
-    return new CPagerBox;
-}
-
-
-CHTMLNode * CPmDocSumPage::CreateQueryBox(void) 
-{
-    return new CQueryBox;
-}
-
-
-CHTMLNode * CPmDocSumPage::CreateView(void) 
-{
-   return NULL;
-}
-
-
-void CPmDocSumPage::Finish(int Style)
-{
-
-    CHTMLPage::Finish(Style);
-
     //
     //  demo only
     //
-    CPagerBox * Pager = (CPagerBox *) m_Pager;
+
+    CPagerBox * Pager = new CPagerBox;
     Pager->InitMembers();
     Pager->m_Width = 600;
     Pager->m_TopButton->m_Name = "Display";
@@ -194,8 +167,17 @@ void CPmDocSumPage::Finish(int Style)
     Pager->m_PageList->m_Forward = "http://forward";
     Pager->m_PageList->m_Backward = "http://backward";
     Pager->Finish();
+    return Pager;
+}
 
-    CQueryBox * QueryBox = (CQueryBox *) m_QueryBox;
+
+CHTMLNode * CPmDocSumPage::CreateQueryBox(void) 
+{
+    //
+    // demo only
+    //
+
+    CQueryBox * QueryBox = new CQueryBox;
     QueryBox->InitMembers(1);
     QueryBox->m_Width = 600;
     QueryBox->m_BgColor = "#FFFFFF";
@@ -222,17 +204,35 @@ void CPmDocSumPage::Finish(int Style)
     QueryBox->InitSubPages(1);
     QueryBox->Finish(1);
 
-    //
-    //   end of demo
-    //
-    CHTML_form * Form = new CHTML_form;
-    Form->AppendChild(m_Pager);
+    return QueryBox;
+}
 
-    if(!(Style & kNoPAGER) && m_Pager) 
-        Rfind("<@PAGER@>", Form);
 
-    if(!(Style & kNoQUERYBOX) && m_QueryBox) 
-        Rfind("<@QUERYBOX@>", m_QueryBox);
+CHTMLNode * CPmDocSumPage::CreateView(void) 
+{
+   return NULL;
+}
+
+
+void CPmDocSumPage::Finish(int Style)
+{
+
+    CHTMLPage::Finish(Style);
+
+    CHTML_form * Form;
+    try {
+	Form = new CHTML_form;
+	Form->AppendChild(m_Pager);
+
+	if(!(Style & kNoPAGER) && m_Pager) 
+	    Rfind("<@PAGER@>", Form);
+
+	if(!(Style & kNoQUERYBOX) && m_QueryBox) 
+	    Rfind("<@QUERYBOX@>", m_QueryBox);
+    } 
+    catch (...) {
+	delete Form;
+    }
 
 }
 

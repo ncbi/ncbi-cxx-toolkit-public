@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/12/12 00:06:56  lewisg
+* *** empty log message ***
+*
 * Revision 1.2  1998/12/11 22:53:41  lewisg
 * added docsum page
 *
@@ -58,7 +61,6 @@ class CPmFrontPage: public CHTMLPage {
 public:
     virtual void InitMembers(int Style = 0);
     virtual CHTMLNode * CreateView(void);
-    virtual void Finish(int Style = 0);
 
     CPmFrontPage();
     static CHTMLBasicPage * New(void) { return new CPmFrontPage;}
