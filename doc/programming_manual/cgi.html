@@ -741,6 +741,18 @@ in the <span class="ncbi_reg">[CGI]</span> section.</p>
 	</td>
   </tr>
 
+  <tr>
+	<td><span class="ncbi_reg_var">DiagPrefixEnv</span></td> 
+	<td>Name of environment variable</td>
+	<td>The value of specified environment variable will be added (as prefix)
+       to all diagnostic messages isued during the HTTP request processing. 
+	<br><br> 
+
+        Example:<br>
+	<pre class="ncbi_code">[CGI]<br>DiagPrefixEnv = PROXIED_IP</pre>
+	</td>
+  </tr>
+
 </table>
 
 <p>Fast CGI settings.<span class="ncbi_reg">[FastCGI]</span> section.</p>
@@ -767,6 +779,22 @@ in the <span class="ncbi_reg">[CGI]</span> section.</p>
 	<td><span class="ncbi_reg_var">Debug</span></td> 
 	<td>true | false</td>
 	<td>"true" - logs fast CGI debug information into the output context
+	</td>
+  </tr>
+
+  <tr>
+	<td><span class="ncbi_reg_var">StandaloneServer</span></td> 
+	<td>Unix domain socket (named pipe for WinNT), or a colon followed by a port number</td>
+	<td>Run FastCGI as a standalone server on the local port, without
+       Web server.<br>
+       You can also use environment variable
+       <span class="ncbi_env_var">$FCGI_STANDALONE_SERVER</span>.
+	<br><br> 
+
+        Example:<br>
+	<pre class="ncbi_code">[FastCGI]<br>StandaloneServer = :5000</pre>
+        or:
+	<pre class="ncbi_code">[FastCGI]<br>StandaloneServer = /tmp/fcgi/mysocket</pre>
 	</td>
   </tr>
 
