@@ -79,6 +79,8 @@ public:
 
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
+    
+    string ResolveDefine(const string& define) const;
 
 private:
     const CNcbiRegistry& m_Registry;
@@ -96,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/04 23:16:25  gorelenk
+ * To class CMsvcSite added member function ResolveDefine.
+ *
  * Revision 1.3  2004/02/03 17:06:44  gorelenk
  * Removed members from class CMsvcSite.
  *
