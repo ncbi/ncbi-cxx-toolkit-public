@@ -46,18 +46,21 @@ BEGIN_NCBI_SCOPE
 struct SLibInfo
 {
     string       m_IncludeDir;
+    list<string> m_LibDefines;
     string       m_LibPath;
     list<string> m_Libs;
 
     bool IsEmpty(void) const
     {
-        return m_IncludeDir.empty() && 
+        return m_IncludeDir.empty() &&
+               m_LibDefines.empty() &&
                m_LibPath.empty()    && 
                m_Libs.empty();
     }
     void Clear(void)
     {
         m_IncludeDir.erase();
+        m_LibDefines.clear();
         m_LibPath.erase();
         m_Libs.clear();
     }
@@ -118,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/03/22 14:45:38  gorelenk
+ * Added member m_LibDefines to struct SLibInfo.
+ *
  * Revision 1.9  2004/02/24 20:48:49  gorelenk
  * Added declaration of member-function IsLibEnabledInConfig
  * to class CMsvcSite.
