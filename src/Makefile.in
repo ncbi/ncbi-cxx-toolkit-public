@@ -16,7 +16,7 @@ MANDATORY_PROJ  = corelib connect util cgi html hello
 OPTIONAL_PROJ   = @serial@ @objects@ @app@ \
    $(OPT_GROUPS)
 X_OPTIONAL_PROJ =  serial   objects   app   cddalignview \
-   ctools gui gui_ctools internal
+   ctools gui internal
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
 include ./Makefile.meta
