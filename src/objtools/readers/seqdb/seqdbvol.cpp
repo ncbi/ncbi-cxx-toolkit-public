@@ -674,36 +674,12 @@ CSeqDBVol::x_GetTaxDefline(Uint4            oid,
     typedef TBDLL::iterator               TBDLLIter;
     typedef TBDLL::const_iterator         TBDLLConstIter;
     
-    // 1. read a defline set w/ gethdr.
+    // 1. read a defline set w/ gethdr, filtering by membership bit
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrText(oid, locked);
+    CRef<CBlast_def_line_set> BDLS =
+        x_GetHdrMembBit(oid, have_oidlist, membership_bit, locked);
     
-    // 2. filter based on "rdfp->membership_bit" or similar.
-    
-    if (have_oidlist && (membership_bit != 0)) {
-        // Create the memberships mask (should this be fixed to allow
-        // membership bits greater than 32?)
-        
-        Uint4 memb_mask = 0x1 << (membership_bit-1);
-        
-        TBDLL & dl = BDLS->Set();
-        
-        for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
-            const CBlast_def_line & defline = **iter;
-            
-            if ((defline.CanGetMemberships() == false) ||
-                ((defline.GetMemberships().front() & memb_mask)) == 0) {
-                
-                TBDLLIter eraseme = iter++;
-                
-                dl.erase(eraseme);
-            } else {
-                iter++;
-            }
-        }
-    }
-    
-    // 3. if there is a preferred gi, bump it to the top.
+    // 2. if there is a preferred gi, bump it to the top.
     
     if (preferred_gi != 0) {
         CSeq_id seqid(CSeq_id::e_Gi, preferred_gi);
@@ -925,12 +901,13 @@ CSeqDBVol::GetBioseq(Uint4                 oid,
     typedef list< CRef<CBlast_def_line> > TDeflines;
     CRef<CBioseq> null_result;
     
-    // Get the defline set.  Probably this is like the function above
-    // that gets asn, but split it up more when returning it.
-    
-    CRef<CBlast_def_line_set> defline_set(x_GetHdrText(oid, locked));
+    CRef<CBlast_def_line_set> defline_set;
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
+    
+    // Get the defline set
+    
+    defline_set = x_GetHdrMembBit(oid, have_oidlist, memb_bit, locked);
     
     if (target_gi != 0) {
         CSeq_id seqid(CSeq_id::e_Gi, target_gi);
@@ -1240,7 +1217,7 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) c
 {
     list< CRef< CSeq_id > > seqids;
     
-    CRef<CBlast_def_line_set> defline_set(x_GetHdrText(oid, locked));
+    CRef<CBlast_def_line_set> defline_set(x_GetHdrAsn1(oid, locked));
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
@@ -1265,11 +1242,50 @@ Uint8 CSeqDBVol::GetVolumeLength(void) const
 CRef<CBlast_def_line_set>
 CSeqDBVol::GetHdr(Uint4 oid, CSeqDBLockHold & locked) const
 {
-    return x_GetHdrText(oid, locked);
+    return x_GetHdrAsn1(oid, locked);
 }
 
 CRef<CBlast_def_line_set>
-CSeqDBVol::x_GetHdrText(Uint4 oid, CSeqDBLockHold & locked) const
+CSeqDBVol::x_GetHdrMembBit(Uint4            oid,
+                           bool             have_oidlist,
+                           Uint4            membership_bit,
+                           CSeqDBLockHold & locked) const
+{
+    typedef list< CRef<CBlast_def_line> > TBDLL;
+    typedef TBDLL::iterator               TBDLLIter;
+    
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
+    
+    // 2. filter based on "rdfp->membership_bit" or similar.
+    
+    if (have_oidlist && (membership_bit != 0)) {
+        // Create the memberships mask (should this be fixed to allow
+        // membership bits greater than 32?)
+        
+        Uint4 memb_mask = 0x1 << (membership_bit-1);
+        
+        TBDLL & dl = BDLS->Set();
+        
+        for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
+            const CBlast_def_line & defline = **iter;
+            
+            if ((defline.CanGetMemberships() == false) ||
+                ((defline.GetMemberships().front() & memb_mask)) == 0) {
+                
+                TBDLLIter eraseme = iter++;
+                
+                dl.erase(eraseme);
+            } else {
+                iter++;
+            }
+        }
+    }
+    
+    return BDLS;
+}
+
+CRef<CBlast_def_line_set>
+CSeqDBVol::x_GetHdrAsn1(Uint4 oid, CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> nullret;
     
@@ -1405,7 +1421,7 @@ bool CSeqDBVol::GetPig(Uint4 oid, Uint4 & pig, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrText(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
     
     if (BDLS.Empty() || (! BDLS->CanGet())) {
         return false;
@@ -1450,7 +1466,7 @@ bool CSeqDBVol::GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const
         return false;
     }
     
-    CRef<CBlast_def_line_set> BDLS = x_GetHdrText(oid, locked);
+    CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, locked);
     
     if (BDLS.Empty() || (! BDLS->CanGet())) {
         return false;

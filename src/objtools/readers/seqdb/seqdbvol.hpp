@@ -344,13 +344,59 @@ public:
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
     
 private:
+    /// Get sequence header object
+    /// 
+    /// This method reads the sequence header information into an
+    /// ASN.1 object and returns that object.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   The Blast-def-line-set describing this sequence.
     CRef<CBlast_def_line_set>
-    x_GetHdrText(Uint4 oid,
+    x_GetHdrAsn1(Uint4 oid,
                  CSeqDBLockHold & locked) const;
     
+    /// Get binary sequence header information
+    /// 
+    /// This method reads the sequence header information (as binary
+    /// encoded ASN.1) into a supplied char vector.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @return
+    ///   The binary asn.1 of the Blast-def-line-set.
+    /// @param locked
+    ///   The lock holder object for this thread
     void x_GetHdrBinary(Uint4            oid,
                         vector<char>   & hdr_data,
                         CSeqDBLockHold & locked) const;
+    
+    /// Get sequence header information
+    /// 
+    /// This method returns the set of Blast-def-line objects stored
+    /// for each sequence.  These contain descriptive information
+    /// related to the sequence.  If have_oidlist is true, and
+    /// memb_bit is nonzero, only deflines with that membership bit
+    /// set will be returned.
+    /// 
+    /// @param oid
+    ///   The OID of the sequence
+    /// @param have_oidlist
+    ///   True if the database is filtered.
+    /// @param membership_bit
+    ///   Membership bit to filter deflines.
+    /// @param locked
+    ///   The lock holder object for this thread
+    /// @return
+    ///   The set of blast-def-lines describing this sequence.
+    CRef<CBlast_def_line_set>
+    x_GetHdrMembBit(Uint4            oid,
+                    bool             have_oidlist,
+                    Uint4            membership_bit,
+                    CSeqDBLockHold & locked) const;
     
     CRef<CSeqdesc> x_GetAsnDefline(Uint4 oid, CSeqDBLockHold & locked) const;
     
