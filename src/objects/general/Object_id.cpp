@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/12/15 19:22:10  ostell
+ * made AsString do Upcase, and switched to using PNocase().Equals()
+ *
  * Revision 6.3  2000/12/08 21:49:29  ostell
  * changed MakeString to AsString and to use ostream instead of string
  *
@@ -82,7 +85,7 @@ bool CObject_id::Match(const CObject_id& oid2) const
 			else
 				return false;
 		case e_Str:
-			return AStrEquiv(GetStr(), oid2.GetStr(), PNocase());
+			return PNocase().Equals(GetStr(), oid2.GetStr());
 		default:
 			break;
 	}
@@ -98,7 +101,7 @@ ostream& CObject_id::AsString(ostream &s) const
 			s << GetId();
 			break;
 		case e_Str:
-			s << GetStr();
+			s << Upcase(GetStr());
 			break;
 		default:
 			break;

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/15 19:22:10  ostell
+ * made AsString do Upcase, and switched to using PNocase().Equals()
+ *
  * Revision 6.1  2000/11/21 18:58:20  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
@@ -61,7 +64,7 @@ CDbtag::~CDbtag(void)
 
 bool CDbtag::Match(const CDbtag& dbt2) const
 {
-	if (! AStrEquiv(GetDb(), dbt2.GetDb(), PNocase()))
+	if (! PNocase().Equals(GetDb(), dbt2.GetDb()))
 		return false;
 	return ((GetTag()).Match((dbt2.GetTag())));
 }
