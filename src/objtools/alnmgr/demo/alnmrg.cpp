@@ -159,7 +159,6 @@ void CAlnMrgApp::LoadInputAlignments(void)
     CArgs args = GetArgs();
 
     CNcbiIstream& is = args["in"].AsInputFile();
-    bool done = false;
     
     bool binary = args["b"];
 
@@ -376,6 +375,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/09/08 19:33:12  todorov
+* - unused var
+*
 * Revision 1.10  2003/09/08 17:05:57  todorov
 * ability to read binary files
 *
