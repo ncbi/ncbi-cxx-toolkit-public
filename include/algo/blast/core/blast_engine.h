@@ -57,9 +57,7 @@ extern "C" {
  * @param rdfp Structure containing BLAST database [in]
  * @param sbp Scoring and statistical parameters [in]
  * @param score_options Hit scoring options [in]
- * @param lookup_options Options for creation of lookup table [in]
- * @param lookup_segments Query segments for which lookup table has to be 
- *                        built [in]
+ * @param lookup_wrap The lookup table, constructed earlier [in] 
  * @param word_options Options for processing initial word hits [in]
  * @param ext_options Options and parameters for the gapped extension [in]
  * @param hit_options Options for saving the HSPs [in]
@@ -75,8 +73,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info,
    ReadDBFILEPtr rdfp, BLAST_ScoreBlkPtr sbp, 
    const BlastScoringOptionsPtr score_options, 
-   const LookupTableOptionsPtr lookup_options,
-   ValNodePtr lookup_segments, 
+   LookupTableWrapPtr lookup_wrap, 
    const BlastInitialWordOptionsPtr word_options, 
    const BlastExtensionOptionsPtr ext_options, 
    const BlastHitSavingOptionsPtr hit_options,
@@ -93,9 +90,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
  * @param subject Subject sequence [in]
  * @param sbp Scoring and statistical parameters [in]
  * @param score_options Hit scoring options [in]
- * @param lookup_options Options for creation of lookup table [in]
- * @param lookup_segments Query segments for which lookup table has to be 
- *                        built [in]
+ * @param lookup_wrap The lookup table, constructed earlier [in]
  * @param word_options Options for processing initial word hits [in]
  * @param ext_options Options and parameters for the gapped extension [in]
  * @param hit_options Options for saving the HSPs [in]
@@ -110,8 +105,7 @@ Int4
 BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query, 
    BlastQueryInfoPtr query_info, BLAST_SequenceBlkPtr subject, 
    BLAST_ScoreBlkPtr sbp, const BlastScoringOptionsPtr score_options, 
-   const LookupTableOptionsPtr lookup_options,
-   ValNodePtr lookup_segments, 
+   LookupTableWrapPtr lookup_wrap, 
    const BlastInitialWordOptionsPtr word_options, 
    const BlastExtensionOptionsPtr ext_options, 
    const BlastHitSavingOptionsPtr hit_options, 
@@ -119,6 +113,69 @@ BLAST_TwoSequencesEngine(Uint1 program_number, BLAST_SequenceBlkPtr query,
    const PSIBlastOptionsPtr psi_options, 
    const BlastDatabaseOptionsPtr db_options,
    BlastResultsPtr results, BlastReturnStatPtr return_stats);
+
+/** Create the lookup table for all query words.
+ * @param query The query sequence [in]
+ * @param lookup_options What kind of lookup table to build? [in]
+ * @param lookup_segments Locations on query to be used for lookup table
+ *                        construction [in]
+ * @param sbp Scoring block containing matrix [in]
+ * @param lookup_wrap_ptr The initialized lookup table [out]
+ */
+Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query, 
+        const LookupTableOptionsPtr lookup_options,	
+        ValNodePtr lookup_segments, BLAST_ScoreBlkPtr sbp, 
+        LookupTableWrapPtr PNTR lookup_wrap_ptr);
+
+/** Function to calculate effective query length and db length as well as
+ * effective search space. 
+ * @param program_number blastn, blastp, blastx, etc. [in]
+ * @param scoring_options options for scoring. [in]
+ * @param eff_len_options used to calc. effective lengths [in]
+ * @param sbp Karlin-Altschul parameters [out]
+ * @param query_info The query information block, which stores the effective
+ *                   search spaces for all queries [in] [out]
+*/
+Int2 BLAST_CalcEffLengths (Uint1 program_number, 
+   const BlastScoringOptionsPtr scoring_options,
+   const BlastEffectiveLengthsOptionsPtr eff_len_options, 
+   const BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info);
+
+/** Gapped extension function pointer type */
+typedef Int2 (LIBCALLBACK *BlastGetGappedScoreType) 
+     (Uint1, BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr, 
+      BlastGapAlignStructPtr, BlastScoringOptionsPtr,
+      BlastExtensionParametersPtr, BlastHitSavingParametersPtr,
+      BlastInitHitListPtr, BlastHSPListPtr PNTR);
+     
+/** Word finder function pointer type */
+typedef Int4 (LIBCALLBACK *BlastWordFinderType) 
+     (BLAST_SequenceBlkPtr, BLAST_SequenceBlkPtr,
+      LookupTableWrapPtr, Int4Ptr PNTR, BlastInitialWordParametersPtr,
+      BLAST_ExtendWordPtr, Uint4Ptr, Uint4Ptr, Int4, BlastInitHitListPtr);
+
+/** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
+    to various preallocated structures and arrays. */
+typedef struct BlastCoreAuxStruct {
+   BLAST_ExtendWordPtr ewp; /**< Structure for keeping track of diagonal
+                               information for initial word matches */
+   BlastWordFinderType WordFinder; /**< Word finder function pointer */
+   BlastGetGappedScoreType GetGappedScore; /**< Gapped extension function
+                                              pointer */
+   BlastInitHitListPtr init_hitlist; /**< Placeholder for HSPs after 
+                                        ungapped extension */
+   BlastHSPListPtr hsp_list; /**< Placeholder for HSPs after gapped 
+                                extension */
+   Uint4Ptr query_offsets; /**< Placeholder for initial word match query 
+                              offsets */
+   Uint4Ptr subject_offsets; /**< Placeholder for initial word match  
+                              subject offsets */
+   Uint1Ptr translation_buffer; /**< Placeholder for translated subject
+                                   sequences */
+   Uint1Ptr translation_table; /**< Translation table for forward strand */
+   Uint1Ptr translation_table_rc; /**< Translation table for reverse 
+                                     strand */
+} BlastCoreAuxStruct, PNTR BlastCoreAuxStructPtr;
 
 #ifdef __cplusplus
 }
