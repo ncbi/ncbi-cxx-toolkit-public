@@ -466,7 +466,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
     x_Initialize(master_loc);
-    m_DataCollector.reset();
 }
 
 
@@ -478,7 +477,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
       m_DataCollector(new CAnnotDataCollector)
 {
     x_Initialize(bioseq, start, stop);
-    m_DataCollector.reset();
 }
 
 
@@ -491,7 +489,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CSeq_annot_Handle& annot,
     SetResolveNone(); // nothing to resolve
     SetLimitSeqAnnot(&annot.GetSeq_annot());
     x_Initialize();
-    m_DataCollector.reset();
 }
 
 
@@ -506,7 +503,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
     SetSortOrder(eSortOrder_None);
     SetLimitSeqEntry(&entry);
     x_Initialize();
-    m_DataCollector.reset();
 }
 
 
@@ -526,7 +522,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
     x_Initialize(master_loc);
-    m_DataCollector.reset();
 }
 
 
@@ -544,7 +539,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
       m_DataCollector(new CAnnotDataCollector)
 {
     x_Initialize(bioseq, start, stop);
-    m_DataCollector.reset();
 }
 
 
@@ -553,20 +547,6 @@ size_t CAnnotTypes_CI::x_GetAnnotCount(void) const
 {
     return m_AnnotSet.size() +
         (m_DataCollector.get() ? m_DataCollector->m_AnnotMappingSet.size() : 0);
-}
-
-
-void CAnnotTypes_CI::x_Initialize(const CBioseq_Handle& bioseq,
-                                  TSeqPos start, TSeqPos stop)
-{
-    if ( start == 0 && stop == 0 ) {
-        stop = bioseq.GetBioseqLength()-1;
-    }
-    CHandleRangeMap master_loc;
-    master_loc.AddRange(bioseq.GetSeq_id_Handle(),
-                        CHandleRange::TRange(start, stop),
-                        eNa_strand_unknown);
-    x_Initialize(master_loc);
 }
 
 
@@ -586,9 +566,11 @@ void CAnnotTypes_CI::x_Clear(void)
 {
     m_AnnotSet.clear();
     if ( m_DataCollector.get() ) {
-        m_DataCollector->m_AnnotMappingSet.clear();
+        m_DataCollector.reset();
     }
     m_CurAnnot = m_AnnotSet.begin();
+    m_Scope = CHeapScope();
+    m_TSE_LockSet.clear();
 }
 
 
@@ -601,13 +583,32 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
         m_TSE_LockSet = it.m_TSE_LockSet;
         static_cast<SAnnotSelector&>(*this) = it;
         m_AnnotSet = it.m_AnnotSet;
-        m_DataCollector.reset();
         size_t index = it.m_CurAnnot - it.m_AnnotSet.begin();
         _ASSERT(index < x_GetAnnotCount());
         m_CurAnnot = m_AnnotSet.begin()+index;
     }
     return *this;
 }
+
+void CAnnotTypes_CI::x_Initialize(const CBioseq_Handle& bioseq,
+                                  TSeqPos start, TSeqPos stop)
+{
+    try {
+        if ( start == 0 && stop == 0 ) {
+            stop = bioseq.GetBioseqLength()-1;
+        }
+        CHandleRangeMap master_loc;
+        master_loc.AddRange(bioseq.GetSeq_id_Handle(),
+                            CHandleRange::TRange(start, stop),
+                            eNa_strand_unknown);
+        x_Initialize(master_loc);
+    } catch (...) {
+        // clear all members - GCC 3.0.4 does not do it
+        x_Clear();
+        throw;
+    }
+}
+
 
 void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 {
@@ -671,8 +672,10 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
         m_DataCollector->m_AnnotMappingSet.clear();
         x_Sort();
         Rewind();
+        m_DataCollector.reset();
     }
     catch (...) {
+        // clear all members - GCC 3.0.4 does not do it
         x_Clear();
         throw;
     }
@@ -691,8 +694,10 @@ void CAnnotTypes_CI::x_Initialize(void)
         x_SearchAll();
         x_Sort();
         Rewind();
+        m_DataCollector.reset();
     }
     catch (...) {
+        // clear all members - GCC 3.0.4 does not do it
         x_Clear();
         throw;
     }
@@ -1022,7 +1027,7 @@ bool CAnnotTypes_CI::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
         m_DataCollector->m_AnnotMappingSet[object_ref];
     mapping_set.SetScope(m_Scope);
     CRef<CSeq_loc_Conversion> cvt_copy(new CSeq_loc_Conversion(*cvt));
-    mapping_set.Get().push_back(cvt_copy);
+    mapping_set.Add(*cvt_copy);
     return x_GetAnnotCount() >= m_MaxSize;
 }
 
@@ -1327,17 +1332,44 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_loc_Conversion_Set
+/////////////////////////////////////////////////////////////////////////////
+
+
 CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(void)
 : m_Partial(false), m_TotalRange(TRange::GetEmpty())
 {
 }
 
 
+inline
+void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt)
+{
+    TRangeMap& ranges = m_IdMap[cvt.m_Src_id_Handle];
+    ranges[TRange(cvt.m_Src_from, cvt.m_Src_to)] = Ref(&cvt);
+}
+
+
+inline
+CSeq_loc_Conversion_Set::TRangeIterator
+CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
+                                     TSeqPos from,
+                                     TSeqPos to)
+{
+    TIdMap::iterator ranges = m_IdMap.find(id);
+    if (ranges == m_IdMap.end()) {
+        return TRangeIterator();
+    }
+    return ranges->second.begin(TRange(from, to));
+}
+
+
 void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref, int index)
 {
-    if (m_MappingSet.size() == 1) {
+    if (m_IdMap.size() == 1  &&  m_IdMap.begin()->second.size() == 1) {
         // No multiple mappings
-        m_MappingSet[0]->Convert(ref, index);
+        m_IdMap.begin()->second.begin()->second->Convert(ref, index);
         return;
     }
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
@@ -1369,11 +1401,14 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
 {
     _ASSERT(dst);
     bool res = false;
-    NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
-        (*mit)->Reset();
-        if ((*mit)->ConvertPoint(src)) {
-            dst->SetPnt(*(*mit)->GetDstPoint());
-            m_TotalRange += (*mit)->GetTotalRange();
+    TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
+        src.GetPoint(), src.GetPoint());
+    for ( ; mit; ++mit) {
+        CSeq_loc_Conversion& cvt = *mit->second;
+        cvt.Reset();
+        if (cvt.ConvertPoint(src)) {
+            dst->SetPnt(*cvt.GetDstPoint());
+            m_TotalRange += cvt.GetTotalRange();
             res = true;
             break;
         }
@@ -1393,16 +1428,19 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
     bool revert_order = (src.IsSetStrand()
         && src.GetStrand() == eNa_strand_minus);
     bool res = false;
-    NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
-        (*mit)->Reset();
-        if ((*mit)->ConvertInterval(src)) {
+    TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
+        src.GetFrom(), src.GetTo());
+    for ( ; mit; ++mit) {
+        CSeq_loc_Conversion& cvt = *mit->second;
+        cvt.Reset();
+        if (cvt.ConvertInterval(src)) {
             if (revert_order) {
-                ints.push_front((*mit)->GetDstInterval());
+                ints.push_front(cvt.GetDstInterval());
             }
             else {
-                ints.push_back((*mit)->GetDstInterval());
+                ints.push_back(cvt.GetDstInterval());
             }
-            total_range += (*mit)->GetTotalRange();
+            total_range += cvt.GetTotalRange();
             res = true;
         }
     }
@@ -1439,10 +1477,13 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     }
     case CSeq_loc::e_Empty:
     {
-        NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
-            (*mit)->Reset();
-            if ( (*mit)->GoodSrcId(src.GetEmpty()) ) {
-                dst->SetEmpty((*mit)->GetDstId());
+        TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
+            TRange::GetWhole().GetFrom(), TRange::GetWhole().GetTo());
+        for ( ; mit; ++mit) {
+            CSeq_loc_Conversion& cvt = *mit->second;
+            cvt.Reset();
+            if ( cvt.GoodSrcId(src.GetEmpty()) ) {
+                dst->SetEmpty(cvt.GetDstId());
                 res = true;
                 break;
             }
@@ -1487,7 +1528,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
                     dst_ints.merge(splitted);
                 }
                 else {
-                    _ASSERT("this cannot happen" || 0);
+                    _ASSERT("this cannot happen" && 0);
                 }
             }
             m_Partial |= !mapped;
@@ -1505,17 +1546,20 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
         CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
         ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
             bool mapped = false;
-            NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
-                (*mit)->Reset();
-                if ( !(*mit)->GoodSrcId(src_pack_pnts.GetId()) ) {
+            TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
+                *i, *i);
+            for ( ; mit; ++mit) {
+                CSeq_loc_Conversion& cvt = *mit->second;
+                cvt.Reset();
+                if ( !cvt.GoodSrcId(src_pack_pnts.GetId()) ) {
                     continue;
                 }
-                TSeqPos dst_pos = (*mit)->ConvertPos(*i);
+                TSeqPos dst_pos = cvt.ConvertPos(*i);
                 if ( dst_pos != kInvalidSeqPos ) {
                     CRef<CSeq_loc> pnt(new CSeq_loc);
-                    pnt->SetPnt(*(*mit)->GetDstPoint());
+                    pnt->SetPnt(*cvt.GetDstPoint());
                     locs.push_back(pnt);
-                    m_TotalRange += (*mit)->GetTotalRange();
+                    m_TotalRange += cvt.GetTotalRange();
                     mapped = true;
                     break;
                 }
@@ -1562,21 +1606,29 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
         dst->SetBond();
         CRef<CSeq_point> pntA(0);
         CRef<CSeq_point> pntB(0);
-        NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
-            (*mit)->Reset();
-            if (!bool(pntA)  &&  (*mit)->ConvertPoint(src_bond.GetA())) {
-                pntA.Reset((*mit)->GetDstPoint());
-                m_TotalRange += (*mit)->GetTotalRange();
+        TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
+            src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint());
+        for ( ; mit  &&  !bool(pntA); ++mit) {
+            CSeq_loc_Conversion& cvt = *mit->second;
+            cvt.Reset();
+            if (cvt.ConvertPoint(src_bond.GetA())) {
+                pntA.Reset(cvt.GetDstPoint());
+                m_TotalRange += cvt.GetTotalRange();
                 res = true;
             }
-            if ( src_bond.IsSetB() ) {
-                if (!bool(pntB)  &&  (*mit)->ConvertPoint(src_bond.GetB())) {
-                    pntB.Reset((*mit)->GetDstPoint());
-                    m_TotalRange += (*mit)->GetTotalRange();
+        }
+        if ( src_bond.IsSetB() ) {
+            TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
+                src_bond.GetB().GetPoint(), src_bond.GetB().GetPoint());
+            for ( ; mit  &&  !bool(pntB); ++mit) {
+                CSeq_loc_Conversion& cvt = *mit->second;
+                cvt.Reset();
+                if (!bool(pntB)  &&  cvt.ConvertPoint(src_bond.GetB())) {
+                    pntB.Reset(cvt.GetDstPoint());
+                    m_TotalRange += cvt.GetTotalRange();
                     res = true;
                 }
             }
-            m_TotalRange += (*mit)->GetTotalRange();
         }
         CSeq_bond& dst_bond = dst->SetBond();
         if ( bool(pntA)  ||  bool(pntB) ) {
@@ -1610,6 +1662,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2003/11/04 21:10:01  grichenk
+* Optimized feature mapping through multiple segments.
+* Fixed problem with CAnnotTypes_CI not releasing scope
+* when exception is thrown from constructor.
+*
 * Revision 1.98  2003/11/04 16:21:37  grichenk
 * Updated CAnnotTypes_CI to map whole features instead of splitting
 * them by sequence segments.

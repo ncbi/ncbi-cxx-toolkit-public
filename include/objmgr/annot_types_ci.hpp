@@ -41,6 +41,8 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
+#include <util/rangemap.hpp>
+
 #include <set>
 #include <map>
 #include <vector>
@@ -152,12 +154,13 @@ class CSeq_loc_Conversion_Set
 public:
     CSeq_loc_Conversion_Set(void);
 
-    typedef vector< CRef<CSeq_loc_Conversion> > TMappingSet;
-    typedef TMappingSet::iterator iterator;
-    typedef TMappingSet::const_iterator const_iterator;
     typedef CRange<TSeqPos> TRange;
+    typedef CRangeMap<CRef<CSeq_loc_Conversion>, TSeqPos> TRangeMap;
+    typedef TRangeMap::iterator TRangeIterator;
+    typedef map<CSeq_id_Handle, TRangeMap> TIdMap;
 
-    TMappingSet& Get(void) { return m_MappingSet; }
+    void Add(CSeq_loc_Conversion& cvt);
+    TRangeIterator BeginRanges(CSeq_id_Handle id, TSeqPos from, TSeqPos to);
     void Convert(CAnnotObject_Ref& obj, int index);
     void SetScope(CHeapScope& scope)
         {
@@ -169,7 +172,7 @@ private:
     bool ConvertPoint(const CSeq_point& src, CRef<CSeq_loc>& dst);
     bool ConvertInterval(const CSeq_interval& src, CRef<CSeq_loc>& dst);
 
-    TMappingSet    m_MappingSet;
+    TIdMap         m_IdMap;
     bool           m_Partial;
     TRange         m_TotalRange;
     CHeapScope     m_Scope;
@@ -543,6 +546,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/11/04 21:10:00  grichenk
+* Optimized feature mapping through multiple segments.
+* Fixed problem with CAnnotTypes_CI not releasing scope
+* when exception is thrown from constructor.
+*
 * Revision 1.57  2003/11/04 16:21:36  grichenk
 * Updated CAnnotTypes_CI to map whole features instead of splitting
 * them by sequence segments.
