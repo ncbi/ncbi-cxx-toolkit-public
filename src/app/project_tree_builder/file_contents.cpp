@@ -30,6 +30,7 @@
 
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 #include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -217,7 +218,7 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
 	    return;
 
     list<string> values;
-    NStr::Split(kv.m_Value, " \t\n\r", values);
+    NStr::Split(kv.m_Value, LIST_SEPARATOR, values);
 
     m_Contents[kv.m_Key] = values;
 }
@@ -228,6 +229,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/06 23:14:58  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.7  2004/01/30 20:45:03  gorelenk
  * Second revision.
  *

@@ -30,7 +30,9 @@
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 
+#include <algorithm>
 
 #include <corelib/ncbistr.hpp>
 
@@ -41,16 +43,31 @@ BEGIN_NCBI_SCOPE
 CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     :m_Registry(registry)
 {
-    ITERATE(list<string>, p, GetApp().GetRegSettings().m_NotProvidedRequests) {
-        const string& request = *p;
-        m_NotProvidedThing.insert(request);
-    }
+    // Not provided requests
+    string not_provided_requests_str = 
+        m_Registry.GetString("Configure", "NotProvidedRequests", "");
+    
+    list<string> not_provided_requests_list;
+    NStr::Split(not_provided_requests_str, LIST_SEPARATOR, 
+                not_provided_requests_list);
+
+    copy(not_provided_requests_list.begin(),
+         not_provided_requests_list.end(),
+         inserter(m_NotProvidedThing, m_NotProvidedThing.end()));
 }
 
 
 bool CMsvcSite::IsProvided(const string& thing) const
 {
     return m_NotProvidedThing.find(thing) == m_NotProvidedThing.end();
+}
+
+
+bool CMsvcSite::IsDescribed(const string& section) const
+{
+    list<string> sections;
+    m_Registry.EnumerateSections(&sections);
+    return find(sections.begin(), sections.end(), section) != sections.end();
 }
 
 
@@ -72,7 +89,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
     libinfo->m_LibPath    = GetOpt(m_Registry, lib, "LIBPATH", config);
 
     string libs_str = GetOpt(m_Registry, lib, "LIB", config);
-    NStr::Split(libs_str, " \t,", libinfo->m_Libs); //TODO
+    NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs); //TODO
 }
 
 string CMsvcSite::ResolveDefine(const string& define) const
@@ -83,21 +100,25 @@ string CMsvcSite::ResolveDefine(const string& define) const
 
 string CMsvcSite::GetConfigureDefinesPath(void) const
 {
-    return m_Registry.GetString("msvc7", "ConfigureDefinesPath", "");
+    return m_Registry.GetString("Configure", "DefinesPath", "");
 }
 
 
 void CMsvcSite::GetConfigureDefines(list<string>* defines) const
 {
     defines->clear();
-    string defines_str = m_Registry.GetString("msvc7", "ConfigureDefines", "");
-    NStr::Split(defines_str, " \t,", *defines);
+    string defines_str = m_Registry.GetString("Configure", "Defines", "");
+    NStr::Split(defines_str, LIST_SEPARATOR, *defines);
 }
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/06 23:14:59  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.6  2004/02/05 16:31:19  gorelenk
  * Added definition of function GetComponents.
  *

@@ -61,7 +61,8 @@ void SaveToXmlFile  (const string&               file_path,
     CDirEntry::SplitPath(file_path, &dir);
     CDir(dir).CreatePath();
 
-    CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    CNcbiOfstream  ofs(file_path.c_str(), 
+                       IOS_BASE::out | IOS_BASE::trunc );
     if ( !ofs )
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
@@ -277,6 +278,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/06 23:14:59  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.9  2004/02/05 16:29:49  gorelenk
  * GetComponents was moved to class CMsvcSite.
  *

@@ -126,13 +126,15 @@ public:
                       const string&               runtimeLibraryOption,
                       const CMsvcMetaMakefile&    meta_makefile,
                       const SConfigInfo&          config,
-                      CMsvcPrjGeneralContext::TTargetType target_type)
+                      CMsvcPrjGeneralContext::TTargetType target_type,
+                      const list<string>&         defines)
 	    :m_AdditionalIncludeDirectories(additional_include_dirs),
          m_MsvcProjectMakefile         (project_makefile),
          m_RuntimeLibraryOption        (runtimeLibraryOption),
          m_MsvcMetaMakefile            (meta_makefile),
          m_Config                      (config),
-         m_TargetType                  (target_type)
+         m_TargetType                  (target_type),
+         m_Defines                     (defines)
     {
     }
 
@@ -162,6 +164,12 @@ public:
     {
         string defines = 
             s_GetDefaultPreprocessorDefinitions(m_Config, m_TargetType);
+
+        ITERATE(list<string>, p, m_Defines) {
+            const string& define = *p;
+            defines += define;
+            defines += ';';
+        }
 
         defines += GetCompilerOpt(m_MsvcMetaMakefile,
                                   m_MsvcProjectMakefile,
@@ -210,9 +218,11 @@ private:
     string                      m_RuntimeLibraryOption;
     const CMsvcMetaMakefile&    m_MsvcMetaMakefile;
     SConfigInfo                 m_Config;
+    list<string>                m_Defines;
 
     CMsvcPrjGeneralContext::TTargetType m_TargetType;
 
+    // No value-type semantics
     CCompilerToolImpl(void);
     CCompilerToolImpl(const CCompilerToolImpl&);
     CCompilerToolImpl& operator= (const CCompilerToolImpl&);
@@ -595,6 +605,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.5  2004/01/28 17:55:06  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,

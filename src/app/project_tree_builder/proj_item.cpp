@@ -35,9 +35,6 @@
 BEGIN_NCBI_SCOPE
 
 
-static CProjItem::TProjType s_GetAsnProjectType(const string& base_dir,
-                                                const string& projname);
-
 
 //-----------------------------------------------------------------------------
 CProjItem::CProjItem(void)
@@ -69,7 +66,8 @@ CProjItem::CProjItem(TProjType type,
                      const list<string>& depends,
                      const list<string>& requires,
                      const list<string>& libs_3_party,
-                     const list<string>& include_dirs)
+                     const list<string>& include_dirs,
+                     const list<string>& defines)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
@@ -78,7 +76,8 @@ CProjItem::CProjItem(TProjType type,
     m_Depends (depends),
     m_Requires(requires),
     m_Libs3Party (libs_3_party),
-    m_IncludeDirs(include_dirs)
+    m_IncludeDirs(include_dirs),
+    m_Defines (defines)
 {
 }
 
@@ -106,6 +105,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_Libs3Party     = item.m_Libs3Party;
     m_IncludeDirs    = item.m_IncludeDirs;
     m_DatatoolSources= item.m_DatatoolSources;
+    m_Defines        = item.m_Defines;
 }
 
 
@@ -171,14 +171,17 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
 
     ITERATE(TFiles, p, makein) {
 
+        const string& fc_path = p->first;
+        const CSimpleMakeFileContents& fc_makein = p->second;
+
         string source_base_dir;
-        CDirEntry::SplitPath(p->first, &source_base_dir);
+        CDirEntry::SplitPath(fc_path, &source_base_dir);
 
-        TMakeInInfoList list_info;
-        AnalyzeMakeIn(p->second, &list_info);
-        ITERATE(TMakeInInfoList, i, list_info) {
+        SMakeProjectT::TMakeInInfoList list_info;
+        SMakeProjectT::AnalyzeMakeIn(fc_makein, &list_info);
+        ITERATE(SMakeProjectT::TMakeInInfoList, i, list_info) {
 
-            const SMakeInInfo& info = *i;
+            const SMakeProjectT::SMakeInInfo& info = *i;
 
             //Iterate all project_name(s) from makefile.in 
             ITERATE(list<string>, n, info.m_ProjNames) {
@@ -188,26 +191,52 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
         
                 string applib_mfilepath = 
                     CDirEntry::ConcatPath(source_base_dir,
-                         CreateMakeAppLibFileName(source_base_dir, 
-                                                  info.m_Type, proj_name));
+                    SMakeProjectT::CreateMakeAppLibFileName(source_base_dir, 
+                                                            proj_name));
                 if ( applib_mfilepath.empty() )
                     continue;
             
-                if (info.m_Type == SMakeInInfo::eApp) {
+                if (info.m_Type == SMakeProjectT::SMakeInInfo::eApp) {
 
-                    DoCreateAppProject(source_base_dir, 
-                                       proj_name, 
-                                       applib_mfilepath, makeapp, tree);
+                    SAsnProjectT::TAsnType asn_type = 
+                        SAsnProjectT::GetAsnProjectType(applib_mfilepath,
+                                                        makeapp,
+                                                        makelib);
+
+                    if (asn_type == SAsnProjectT::eMultiple) {
+                        SAsnProjectT::DoCreate(source_base_dir, 
+                                               proj_name, 
+                                               applib_mfilepath, 
+                                               makeapp, makelib, tree);
+                    } else {
+                        SAppProjectT::DoCreate(source_base_dir, 
+                                               proj_name, 
+                                               applib_mfilepath, 
+                                               makeapp, tree);
+                    }
                 }
-                else if (info.m_Type == SMakeInInfo::eLib) {
+                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eLib) {
 
-                    DoCreateLibProject(source_base_dir, 
-                                       proj_name, 
-                                       applib_mfilepath, makelib, tree);
+                    SAsnProjectT::TAsnType asn_type = 
+                        SAsnProjectT::GetAsnProjectType(applib_mfilepath,
+                                                        makeapp,
+                                                        makelib);
+
+                    if (asn_type == SAsnProjectT::eMultiple) {
+                        SAsnProjectT::DoCreate(source_base_dir, 
+                                               proj_name, 
+                                               applib_mfilepath, 
+                                               makeapp, makelib, tree);
+                    } else {
+                        SLibProjectT::DoCreate(source_base_dir, 
+                                               proj_name, 
+                                               applib_mfilepath, 
+                                               makelib, tree);
+                    }
                 }
-                else if (info.m_Type == SMakeInInfo::eAsn) {
+                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eAsn) {
 
-                    DoCreateAsnProject(source_base_dir, 
+                    SAsnProjectT::DoCreate(source_base_dir, 
                                        proj_name, 
                                        applib_mfilepath, 
                                        makeapp, makelib, tree);
@@ -246,7 +275,119 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
     }}
 }
 
-static string s_GetOneIncludeDir(const string& flag, const string& token)
+
+void CProjectItemsTree::GetInternalDepends(list<string>* depends) const
+{
+    depends->clear();
+
+    set<string> depends_set;
+
+    ITERATE(TProjects, p, m_Projects) {
+        const CProjItem& proj_item = p->second;
+        ITERATE(list<string>, n, proj_item.m_Depends) {
+            depends_set.insert(*n);
+        }
+    }
+
+    copy(depends_set.begin(), depends_set.end(), back_inserter(*depends));
+}
+
+
+void 
+CProjectItemsTree::GetExternalDepends(list<string>* external_depends) const
+{
+    external_depends->clear();
+
+    list<string> depends;
+    GetInternalDepends(&depends);
+    ITERATE(list<string>, p, depends) {
+        const string& depend_id = *p;
+        if (m_Projects.find(depend_id) == m_Projects.end())
+            external_depends->push_back(depend_id);
+    }
+}
+
+//-----------------------------------------------------------------------------
+CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
+                                                  const string& projname)
+{
+    string fname = "Makefile." + projname;
+    
+    if ( CDirEntry(CDirEntry::ConcatPath
+               (base_dir, fname + ".lib")).Exists() )
+        return CProjItem::eLib;
+    else if (CDirEntry(CDirEntry::ConcatPath
+               (base_dir, fname + ".app")).Exists() )
+        return CProjItem::eApp;
+
+    LOG_POST(Error << "Inconsistent ASN project: " + projname);
+    return CProjItem::eNoProj;
+}
+
+
+bool SMakeProjectT::IsMakeInFile(const string& name)
+{
+    return name == "Makefile.in";
+}
+
+
+bool SMakeProjectT::IsMakeLibFile(const string& name)
+{
+    return NStr::StartsWith(name, "Makefile")  &&  
+	       NStr::EndsWith(name, ".lib");
+}
+
+
+bool SMakeProjectT::IsMakeAppFile(const string& name)
+{
+    return NStr::StartsWith(name, "Makefile")  &&  
+	       NStr::EndsWith(name, ".app");
+}
+
+
+void SMakeProjectT::DoResolveDefs(CSymResolver& resolver, 
+                                  TFiles& files,
+                                  const set<string>& keys)
+{
+    NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
+	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
+                          n, 
+                          p->second.m_Contents) {
+            
+            const string& key    = n->first;
+            list<string>& values = n->second;
+		    if (keys.find(key) != keys.end()) {
+                list<string> new_vals;
+                bool modified = false;
+                NON_CONST_ITERATE(list<string>, k, values) {
+                    //iterate all values and try to resolve 
+                    const string& val = *k;
+                    if( !CSymResolver::IsDefine(val) ) {
+                        new_vals.push_back(val);
+                    } else {
+                        list<string> resolved_def;
+                        string val_define = FilterDefine(val);
+	                    resolver.Resolve(val_define, &resolved_def);
+	                    if ( resolved_def.empty() )
+		                    new_vals.push_back(val); //not resolved - keep old val
+                        else {
+                            //was resolved
+		                    copy(resolved_def.begin(), 
+			                     resolved_def.end(), 
+			                     back_inserter(new_vals));
+		                    modified = true;
+                        }
+                    }
+                }
+                if (modified)
+                    values = new_vals; // by ref!
+		    }
+        }
+    }
+}
+
+
+string SMakeProjectT::GetOneIncludeDir(const string& flag, const string& token)
 {
     size_t token_pos = flag.find(token);
     if (token_pos != NPOS && 
@@ -256,7 +397,8 @@ static string s_GetOneIncludeDir(const string& flag, const string& token)
     return "";
 }
 
-static void s_CreateIncludeDirs(const list<string>& cpp_flags,
+
+void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
                                 const string&       source_base_dir,
                                 list<string>*       include_dirs)
 {
@@ -267,7 +409,7 @@ static void s_CreateIncludeDirs(const list<string>& cpp_flags,
 
         // process -I$(includedir)
         string token_val;
-        token_val = s_GetOneIncludeDir(flag, "-I$(includedir)");
+        token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I$(includedir)");
         if ( !token_val.empty() ) {
             string dir = 
                 CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include,
@@ -279,7 +421,7 @@ static void s_CreateIncludeDirs(const list<string>& cpp_flags,
         }
 
         // process -I$(srcdir)
-        token_val = s_GetOneIncludeDir(flag, "-I$(srcdir)");
+        token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I$(srcdir)");
         if ( !token_val.empty() )  {
             string dir = 
                 CDirEntry::ConcatPath(source_base_dir,
@@ -301,7 +443,22 @@ static void s_CreateIncludeDirs(const list<string>& cpp_flags,
     }
 }
 
-static void s_Create3PartyLibs(const list<string>& libs_flags, 
+
+void SMakeProjectT::CreateDefines(const list<string>& cpp_flags,
+                                  list<string>*       defines)
+{
+    defines->clear();
+
+    ITERATE(list<string>, p, cpp_flags) {
+        const string& flag = *p;
+        if ( NStr::StartsWith(flag, "-D") ) {
+            defines->push_back(flag.substr(2));
+        }
+    }
+}
+
+
+void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags, 
                                list<string>*       libs_list)
 {
     libs_list->clear();
@@ -314,13 +471,69 @@ static void s_Create3PartyLibs(const list<string>& libs_flags,
     }
 }
 
-string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
+
+void SMakeProjectT::AnalyzeMakeIn
+    (const CSimpleMakeFileContents& makein_contents,
+     TMakeInInfoList*               info)
+{
+    info->clear();
+
+    CSimpleMakeFileContents::TContents::const_iterator p = 
+        makein_contents.m_Contents.find("LIB_PROJ");
+
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second)); 
+    }
+
+    p = makein_contents.m_Contents.find("APP_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second)); 
+    }
+
+    p = makein_contents.m_Contents.find("ASN_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second)); 
+    }
+
+    //TODO - DLL_PROJ
+}
+
+
+string SMakeProjectT::CreateMakeAppLibFileName
+                (const string&            base_dir,
+                 const string&            projname)
+{
+    CProjItem::TProjType proj_type = 
+            SMakeProjectT::GetProjType(base_dir, projname);
+
+    string fname = "Makefile." + projname;
+    fname += proj_type==CProjItem::eLib? ".lib": ".app";
+    return fname;
+}
+
+
+void SMakeProjectT::CreateFullPathes(const string&      dir, 
+                                         const list<string> files,
+                                         list<string>*      full_pathes)
+{
+    ITERATE(list<string>, p, files) {
+        string full_path = CDirEntry::ConcatPath(dir, *p);
+        full_pathes->push_back(full_path);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+string SAppProjectT::DoCreate(const string& source_base_dir,
                                              const string& proj_name,
                                              const string& applib_mfilepath,
                                              const TFiles& makeapp , 
                                              CProjectItemsTree* tree)
 {
-    TFiles::const_iterator m = makeapp.find(applib_mfilepath);
+    CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
 
         LOG_POST(Info << "No Makefile.*.app for Makefile.in :"
@@ -370,18 +583,19 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
     //LIBS
     list<string> libs_3_party;
     k = m->second.m_Contents.find("LIBS");
-    if (k != m->second.m_Contents.end())
-    {
+    if (k != m->second.m_Contents.end()) {
         const list<string> libs_flags = k->second;
-        s_Create3PartyLibs(libs_flags, &libs_3_party);
+        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
     }
     //CPPFLAGS
     list<string> include_dirs;
+    list<string> defines;
     k = m->second.m_Contents.find("CPPFLAGS");
-    if (k != m->second.m_Contents.end())
-    {
+    if (k != m->second.m_Contents.end()) {
         const list<string> cpp_flags = k->second;
-        s_CreateIncludeDirs(cpp_flags, source_base_dir, &include_dirs);
+        SMakeProjectT::CreateIncludeDirs(cpp_flags, 
+                                         source_base_dir, &include_dirs);
+        SMakeProjectT::CreateDefines(cpp_flags, &defines);
     }
 
 
@@ -393,12 +607,14 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
                                            depends,
                                            requires,
                                            libs_3_party,
-                                           include_dirs);
+                                           include_dirs,
+                                           defines);
     return proj_id;
 }
 
 
-string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
+//-----------------------------------------------------------------------------
+string SLibProjectT::DoCreate(const string& source_base_dir,
                                              const string& proj_name,
                                              const string& applib_mfilepath,
                                              const TFiles& makelib , 
@@ -451,18 +667,20 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
     //LIBS
     list<string> libs_3_party;
     k = m->second.m_Contents.find("LIBS");
-    if (k != m->second.m_Contents.end())
-    {
+    if (k != m->second.m_Contents.end()) {
         const list<string> libs_flags = k->second;
-        s_Create3PartyLibs(libs_flags, &libs_3_party);
+        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
     }
     //CPPFLAGS
     list<string> include_dirs;
+    list<string> defines;
     k = m->second.m_Contents.find("CPPFLAGS");
-    if (k != m->second.m_Contents.end())
-    {
+    if (k != m->second.m_Contents.end()) {
         const list<string> cpp_flags = k->second;
-        s_CreateIncludeDirs(cpp_flags, source_base_dir, &include_dirs);
+        SMakeProjectT::CreateIncludeDirs(cpp_flags, 
+                                         source_base_dir, &include_dirs);
+        SMakeProjectT::CreateDefines(cpp_flags, &defines);
+
     }
 
     tree->m_Projects[proj_id] =  CProjItem(CProjItem::eLib,
@@ -473,31 +691,91 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
                                            depends,
                                            requires,
                                            libs_3_party,
-                                           include_dirs);
+                                           include_dirs,
+                                           defines);
     return proj_id;
 }
 
 
-string CProjectItemsTree::DoCreateAsnProject(const string& source_base_dir,
-                                             const string& proj_name,
-                                             const string& applib_mfilepath,
-                                             const TFiles& makeapp, 
-                                             const TFiles& makelib, 
-                                             CProjectItemsTree* tree)
+//-----------------------------------------------------------------------------
+string SAsnProjectT::DoCreate(const string& source_base_dir,
+                              const string& proj_name,
+                              const string& applib_mfilepath,
+                              const TFiles& makeapp, 
+                              const TFiles& makelib, 
+                              CProjectItemsTree* tree)
+{
+    TAsnType asn_type = GetAsnProjectType(applib_mfilepath, makeapp, makelib);
+    if (asn_type == eMultiple) {
+        return SAsnProjectMultipleT::DoCreate(source_base_dir,
+                                              proj_name,
+                                              applib_mfilepath,
+                                              makeapp, 
+                                              makelib, 
+                                              tree);
+    }
+    if(asn_type == eSingle) {
+        return SAsnProjectSingleT::DoCreate(source_base_dir,
+                                              proj_name,
+                                              applib_mfilepath,
+                                              makeapp, 
+                                              makelib, 
+                                              tree);
+    }
+
+    LOG_POST(Error << "Unsupported ASN project" + NStr::IntToString(asn_type));
+    return "";
+}
+
+
+SAsnProjectT::TAsnType SAsnProjectT::GetAsnProjectType(const string& applib_mfilepath,
+                                                       const TFiles& makeapp,
+                                                       const TFiles& makelib)
+{
+    TFiles::const_iterator p = makeapp.find(applib_mfilepath);
+    if ( p != makeapp.end() ) {
+        const CSimpleMakeFileContents& fc = p->second;
+        if (fc.m_Contents.find("ASN") != fc.m_Contents.end() )
+            return eMultiple;
+        else
+            return eSingle;
+    }
+
+    p = makelib.find(applib_mfilepath);
+    if ( p != makelib.end() ) {
+        const CSimpleMakeFileContents& fc = p->second;
+        if (fc.m_Contents.find("ASN") != fc.m_Contents.end() )
+            return eMultiple;
+        else
+            return eSingle;
+    }
+
+    LOG_POST(Error << "Can not define ASN project: " + applib_mfilepath);
+    return eNoAsn;
+}
+
+
+//-----------------------------------------------------------------------------
+string SAsnProjectSingleT::DoCreate(const string& source_base_dir,
+                                    const string& proj_name,
+                                    const string& applib_mfilepath,
+                                    const TFiles& makeapp, 
+                                    const TFiles& makelib, 
+                                    CProjectItemsTree* tree)
 {
     CProjItem::TProjType proj_type = 
-        s_GetAsnProjectType(source_base_dir, proj_name);
+        SMakeProjectT::GetProjType(source_base_dir, proj_name);
     
     string proj_id = 
         proj_type == CProjItem::eLib? 
-            DoCreateLibProject(source_base_dir, 
+            SLibProjectT::DoCreate(source_base_dir, 
                                proj_name, applib_mfilepath, makelib, tree) : 
-            DoCreateAppProject(source_base_dir, 
+            SAppProjectT::DoCreate(source_base_dir, 
                                proj_name, applib_mfilepath, makeapp, tree);
     if ( proj_id.empty() )
         return "";
     
-    CProjectItemsTree::TProjects::iterator p = tree->m_Projects.find(proj_id);
+    TProjects::iterator p = tree->m_Projects.find(proj_id);
     if (p == tree->m_Projects.end()) {
         LOG_POST(Error << "Can not find ASN project with id : " + proj_id);
         return "";
@@ -523,142 +801,124 @@ string CProjectItemsTree::DoCreateAsnProject(const string& source_base_dir,
 }
 
 
-void CProjectItemsTree::AnalyzeMakeIn
-    (const CSimpleMakeFileContents& makein_contents,
-     TMakeInInfoList*               info)
-{
-    info->clear();
-
-    CSimpleMakeFileContents::TContents::const_iterator p = 
-        makein_contents.m_Contents.find("LIB_PROJ");
-
-    if (p != makein_contents.m_Contents.end()) {
-
-        info->push_back(SMakeInInfo(SMakeInInfo::eLib, p->second)); 
-    }
-
-    p = makein_contents.m_Contents.find("APP_PROJ");
-    if (p != makein_contents.m_Contents.end()) {
-
-        info->push_back(SMakeInInfo(SMakeInInfo::eApp, p->second)); 
-    }
-
-    p = makein_contents.m_Contents.find("ASN_PROJ");
-    if (p != makein_contents.m_Contents.end()) {
-
-        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second)); 
-    }
-
-    //TODO - DLL_PROJ
-}
-
-
-static CProjItem::TProjType s_GetAsnProjectType(const string& base_dir,
-                                                const string& projname)
-{
-    string fname = "Makefile." + projname;
-    
-    if ( CDirEntry(CDirEntry::ConcatPath
-               (base_dir, fname + ".lib")).Exists() )
-        return CProjItem::eLib;
-    else if (CDirEntry(CDirEntry::ConcatPath
-               (base_dir, fname + ".app")).Exists() )
-        return CProjItem::eApp;
-
-    LOG_POST(Error << "Inconsistent ASN project: " + projname);
-    return CProjItem::eNoProj;
-}
-
-
-string CProjectItemsTree::CreateMakeAppLibFileName
-    (const string&            base_dir,
-     SMakeInInfo::TMakeinType makeintype,
-     const string&            projname)
-{
-    string fname = "Makefile." + projname;
-
-    switch (makeintype) {
-    case SMakeInInfo::eApp:
-        fname += ".app";
-        break;
-    case SMakeInInfo::eLib:
-        fname += ".lib";
-        break;
-    case SMakeInInfo::eAsn: {
-        CProjItem::TProjType proj_type = 
-            s_GetAsnProjectType(base_dir, projname);
-        
-        if (proj_type == CProjItem::eNoProj)
-            return "";
-        
-        fname += proj_type==CProjItem::eLib? ".lib": ".app";
-        break;
-    }
-    }
-    return fname;
-}
-
-
-void CProjectItemsTree::CreateFullPathes(const string&      dir, 
-                                         const list<string> files,
-                                         list<string>*      full_pathes)
-{
-    ITERATE(list<string>, p, files) {
-        string full_path = CDirEntry::ConcatPath(dir, *p);
-        full_pathes->push_back(full_path);
-    }
-}
-
-
-void CProjectItemsTree::GetInternalDepends(list<string>* depends) const
-{
-    depends->clear();
-
-    set<string> depends_set;
-
-    ITERATE(TProjects, p, m_Projects) {
-        const CProjItem& proj_item = p->second;
-        ITERATE(list<string>, n, proj_item.m_Depends) {
-            depends_set.insert(*n);
-        }
-    }
-
-    copy(depends_set.begin(), depends_set.end(), back_inserter(*depends));
-}
-
-
-void 
-CProjectItemsTree::GetExternalDepends(list<string>* external_depends) const
-{
-    external_depends->clear();
-
-    list<string> depends;
-    GetInternalDepends(&depends);
-    ITERATE(list<string>, p, depends) {
-        const string& depend_id = *p;
-        if (m_Projects.find(depend_id) == m_Projects.end())
-            external_depends->push_back(depend_id);
-    }
-}
-
 //-----------------------------------------------------------------------------
-static bool s_IsMakeInFile(const string& name)
+string SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
+                                    const string& proj_name,
+                                    const string& applib_mfilepath,
+                                    const TFiles& makeapp, 
+                                    const TFiles& makelib, 
+                                    CProjectItemsTree* tree)
 {
-    return name == "Makefile.in";
-}
+    CProjItem::TProjType proj_type = 
+        SMakeProjectT::GetProjType(source_base_dir, proj_name);
+    
 
+    const TFiles& makefile = proj_type == CProjItem::eLib? makelib : makeapp;
+    TFiles::const_iterator m = makefile.find(applib_mfilepath);
+    if (m == makefile.end()) {
 
-static bool s_IsMakeLibFile(const string& name)
-{
-    return NStr::StartsWith(name, "Makefile")  &&  
-	       NStr::EndsWith(name, ".lib");
-}
+        LOG_POST(Info << "No Makefile.*.lib/app  for Makefile.in :"
+                  + applib_mfilepath);
+        return "";
+    }
+    const CSimpleMakeFileContents& fc = m->second;
 
+    // ASN
+    CSimpleMakeFileContents::TContents::const_iterator k = 
+        fc.m_Contents.find("ASN");
+    if (k == fc.m_Contents.end()) {
 
-static bool s_IsMakeAppFile(const string& name)
-{
-    return NStr::StartsWith(name, "Makefile")  &&  
-	       NStr::EndsWith(name, ".app");
+        LOG_POST(Error << "No ASN key in multiple ASN  project:"
+                  + applib_mfilepath);
+        return "";
+    }
+    const list<string> asn_names = k->second;
+
+    string parent_dir_abs = ParentDir(source_base_dir);
+    list<CDataToolGeneratedSrc> datatool_sources;
+    ITERATE(list<string>, p, asn_names) {
+        const string& asn = *p;
+        // one level up
+        string asn_dir_abs = CDirEntry::ConcatPath(parent_dir_abs, asn);
+        asn_dir_abs = CDirEntry::NormalizePath(asn_dir_abs);
+        asn_dir_abs = CDirEntry::AddTrailingPathSeparator(asn_dir_abs);
+    
+        string asn_path_abs = CDirEntry::ConcatPath(asn_dir_abs, asn);
+        if ( CDirEntry(asn_path_abs + ".asn").Exists() )
+            asn_path_abs += ".asn";
+        else if ( CDirEntry(asn_dir_abs + ".dtd").Exists() )
+            asn_path_abs += ".dtd";
+
+        CDataToolGeneratedSrc data_tool_src;
+        CDataToolGeneratedSrc::LoadFrom(asn_path_abs, &data_tool_src);
+        if ( !data_tool_src.IsEmpty() )
+            datatool_sources.push_back(data_tool_src);
+
+    }
+
+    // SRC
+    k = fc.m_Contents.find("SRC");
+    if (k == fc.m_Contents.end()) {
+
+        LOG_POST(Error << "No SRC key in multiple ASN  project:"
+                  + applib_mfilepath);
+        return "";
+    }
+    const list<string> src_list = k->second;
+    list<string> sources;
+    ITERATE(list<string>, p, src_list) {
+        const string& src = *p;
+        if ( !CSymResolver::IsDefine(src) )
+            sources.push_back(src);
+    }
+
+    string proj_id = 
+        proj_type == CProjItem::eLib? 
+        SLibProjectT::DoCreate(source_base_dir, 
+                               proj_name, applib_mfilepath, makelib, tree) : 
+        SAppProjectT::DoCreate(source_base_dir, 
+                               proj_name, applib_mfilepath, makeapp, tree);
+    if ( proj_id.empty() )
+        return "";
+    
+    TProjects::iterator p = tree->m_Projects.find(proj_id);
+    if (p == tree->m_Projects.end()) {
+        LOG_POST(Error << "Can not find ASN project with id : " + proj_id);
+        return "";
+    }
+    CProjItem& project = p->second;
+
+    // Adjust created proj item
+    //SRC - 
+    project.m_Sources.clear();
+    ITERATE(list<string>, p, src_list) {
+        const string& src = *p;
+        if ( !CSymResolver::IsDefine(src) )
+            project.m_Sources.push_front(src);    
+    }
+    project.m_Sources.push_back(proj_name + "__");
+    project.m_Sources.push_back(proj_name + "___");
+    ITERATE(list<string>, p, asn_names) {
+        const string& asn = *p;
+        if (asn == proj_name)
+            continue;
+        string src(1, CDirEntry::GetPathSeparator());
+        src += "..";
+        src += CDirEntry::GetPathSeparator();
+        src += asn;
+        src += CDirEntry::GetPathSeparator();
+        src += asn;
+
+        project.m_Sources.push_back(src + "__");
+        project.m_Sources.push_back(src + "___");
+    }
+
+    project.m_DatatoolSources = datatool_sources;
+
+    //Add depends from datatoool for ASN projects
+    project.m_Depends.push_back(GetApp().GetDatatoolId());
+
+    return proj_id;
 }
 
 
@@ -760,11 +1020,11 @@ void CProjectTreeBuilder::ProcessDir(const string& dir_name,
         string path = (*i)->GetPath();
 
         if ( (*i)->IsFile()  &&  !is_root) {
-            if ( s_IsMakeInFile(name) )
+            if ( SMakeProjectT::IsMakeInFile(name) )
 	            ProcessMakeInFile(path, makefiles);
-            else if ( s_IsMakeLibFile(name) )
+            else if ( SMakeProjectT::IsMakeLibFile(name) )
 	            ProcessMakeLibFile(path, makefiles);
-            else if ( s_IsMakeAppFile(name) )
+            else if ( SMakeProjectT::IsMakeAppFile(name) )
 	            ProcessMakeAppFile(path, makefiles);
         } 
         else if ( (*i)->IsDir() ) {
@@ -807,47 +1067,6 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
 }
 
 
-static void s_DoResolveDefs(CSymResolver& resolver, 
-                            CProjectTreeBuilder::TFiles& files,
-                            const set<string>& keys)
-{
-    NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
-	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
-                          n, 
-                          p->second.m_Contents) {
-            
-            const string& key    = n->first;
-            list<string>& values = n->second;
-		    if (keys.find(key) != keys.end()) {
-                list<string> new_vals;
-                bool modified = false;
-                NON_CONST_ITERATE(list<string>, k, values) {
-                    //iterate all values and try to resolve 
-                    const string& val = *k;
-                    if( !CSymResolver::IsDefine(val) ) {
-                        new_vals.push_back(val);
-                    } else {
-                        list<string> resolved_def;
-                        string val_define = FilterDefine(val);
-	                    resolver.Resolve(val_define, &resolved_def);
-	                    if ( resolved_def.empty() )
-		                    new_vals.push_back(val); //not resolved - keep old val
-                        else {
-                            //was resolved
-		                    copy(resolved_def.begin(), 
-			                     resolved_def.end(), 
-			                     back_inserter(new_vals));
-		                    modified = true;
-                        }
-                    }
-                }
-                if (modified)
-                    values = new_vals; // by ref!
-		    }
-        }
-    }
-}
-
 //recursive resolving
 void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver, 
                                       SMakeFiles&   makefiles)
@@ -857,14 +1076,14 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
         set<string> keys;
         keys.insert("LIB");
         keys.insert("LIBS");
-        s_DoResolveDefs(resolver, makefiles.m_App, keys);
+        SMakeProjectT::DoResolveDefs(resolver, makefiles.m_App, keys);
     }}
 
     {{
         //Lib
         set<string> keys;
         keys.insert("LIBS");
-        s_DoResolveDefs(resolver, makefiles.m_Lib, keys);
+        SMakeProjectT::DoResolveDefs(resolver, makefiles.m_Lib, keys);
     }}
 }
 
@@ -953,6 +1172,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/06 23:15:00  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.9  2004/02/04 23:58:29  gorelenk
  * Added support of include dirs and 3-rd party libs.
  *

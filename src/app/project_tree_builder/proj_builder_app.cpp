@@ -34,6 +34,8 @@
 #include <app/project_tree_builder/msvc_sln_generator.hpp>
 #include <app/project_tree_builder/msvc_masterproject_generator.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
+#include <app/project_tree_builder/msvc_configure.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -107,7 +109,6 @@ void CProjBulderApp::Init(void)
 
 int CProjBulderApp::Run(void)
 {
-    LOG_POST(Info << "Started.");
     // Get and check arguments
     ParseArguments();
 
@@ -116,6 +117,12 @@ int CProjBulderApp::Run(void)
 	SetDiagPostFlag(eDPF_Default);
 	SetDiagPostLevel(eDiag_Info);
 
+    // Start 
+    LOG_POST(Info << "Started.");
+
+    // Configure 
+    CMsvcConfigure configure;
+    configure(GetSite(), GetRegSettings().m_ConfigInfo, GetProjectTreeInfo().m_Root);
 
     // Build projects tree
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
@@ -211,7 +218,7 @@ void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 {
     files->clear();
     string files_str = GetConfig().GetString("ProjectTree", "MetaData", "");
-    NStr::Split(files_str, " \t,", *files);
+    NStr::Split(files_str, LIST_SEPARATOR, *files);
 }
 
 
@@ -220,7 +227,7 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
     configs->clear();
     string config_str = GetConfig().GetString("msvc7", "Configurations", "");
     list<string> configs_list;
-    NStr::Split(config_str, " \t,", configs_list);
+    NStr::Split(config_str, LIST_SEPARATOR, configs_list);
     ITERATE(list<string>, p, configs_list) {
 
         const string& config_name = *p;
@@ -262,19 +269,6 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
         m_MsvcRegSettings->m_MetaMakefile = 
             GetConfig().GetString("msvc7", "MetaMakefile", "");
  
-        // Not provided requests
-        string not_provided_requests_str = 
-            GetConfig().GetString("msvc7", "NotProvidedRequests", "");
-        NStr::Split(not_provided_requests_str, " \t,", 
-                    m_MsvcRegSettings->m_NotProvidedRequests);
-
-        m_MsvcRegSettings->m_ConfigureDefines = 
-            GetConfig().GetString("msvc7", "ConfigureDefines", "");
-
-        string configure_str = 
-            GetConfig().GetString("msvc7", "Configure", "");
-        NStr::Split(configure_str, " \t,", 
-                    m_MsvcRegSettings->m_Configure);
     }
     return *m_MsvcRegSettings;
 }
@@ -422,6 +416,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/06 23:14:59  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.11  2004/02/04 23:59:52  gorelenk
  * Changed log messages generation.
  *

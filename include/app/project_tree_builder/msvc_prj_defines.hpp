@@ -51,10 +51,17 @@
 
 #define MSVC_DEFAULT_LIBS_TAG       "DefaultLibs"
 
+/// Separator for list values in registry
+#define LIST_SEPARATOR      " \t\n\r,;"
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.3  2004/01/29 15:41:23  gorelenk
  * Added "DefaultLibs" define
  *

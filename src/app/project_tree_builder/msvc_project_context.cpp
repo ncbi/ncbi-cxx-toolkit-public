@@ -129,6 +129,9 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     // LIBS from Makefiles
     m_ProjectLibs = project.m_Libs3Party;
+
+    // Proprocessor definitions from makefiles:
+    m_Defines = project.m_Defines;
 }
 
 
@@ -558,7 +561,8 @@ s_CreateCompilerTool(const CMsvcPrjGeneralContext& general_context,
         general_context.m_Config.m_RuntimeLibrary,
         general_context.GetMsvcMetaMakefile(),
         general_context.m_Config,
-        general_context.m_Type);
+        general_context.m_Type,
+        project_context.Defines());
 }
 
 
@@ -643,6 +647,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/06 23:14:59  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.10  2004/02/05 16:28:47  gorelenk
  * GetComponents was moved to class CMsvcSite.
  *

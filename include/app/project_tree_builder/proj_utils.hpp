@@ -67,11 +67,18 @@ struct SProjectTreeInfo
     string m_Compilers;
 };
 
+// Get parent directory
+string ParentDir (const string& dir_abs);
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.6  2004/02/04 23:13:24  gorelenk
  * struct SProjectTreeInfo redesigned.
  *

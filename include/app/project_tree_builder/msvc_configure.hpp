@@ -38,21 +38,45 @@
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
 
+class CMsvcConfigure
+{
+public:
+    CMsvcConfigure(void);
+    ~CMsvcConfigure(void);
+    
+    void operator()   (const CMsvcSite&         site, 
+                       const list<SConfigInfo>& configs,
+                       const string&            root_dir);
 
-//TODO
-//TODO
-//TODO
-//TODO
-//TODO
-//TODO
-//TODO
+private:
+    string       m_ConfigureDefinesPath;
+    list<string> m_ConfigureDefines;
 
+    void InitializeFrom(const CMsvcSite& site);
+
+    bool ProcessDefine (const string& define, 
+                        const CMsvcSite& site, 
+                        const list<SConfigInfo>& configs) const;
+
+    typedef map<string, char> TConfigSite;
+    TConfigSite m_ConfigSite;
+    void WriteNcbiconfMsvcSite(const string& full_path) const;
+
+    // No value semantics
+    CMsvcConfigure(const CMsvcConfigure&);
+    CMsvcConfigure& operator= (CMsvcConfigure&);
+
+};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/06 23:15:39  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.1  2004/02/04 23:05:48  gorelenk
  * Initial revision
  *

@@ -30,6 +30,7 @@
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_makefile.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/msvc_prj_defines.hpp>
 
 #include <corelib/ncbistr.hpp>
 
@@ -126,7 +127,7 @@ void CMsvcProjectMakefile::GetAdditionalSourceFiles(const SConfigInfo& config,
     string files_string = 
         GetOpt(m_MakeFile, "AddToProject", "SourceFiles", config);
     
-    NStr::Split(files_string, " \t,", *files);
+    NStr::Split(files_string, LIST_SEPARATOR, *files);
 }
 
 
@@ -137,7 +138,7 @@ void CMsvcProjectMakefile::GetExcludedSourceFiles(const SConfigInfo& config,
         GetOpt(m_MakeFile, 
                "ExcludedFromProject", "SourceFiles", config);
     
-    NStr::Split(files_string, " \t,", *files);
+    NStr::Split(files_string, LIST_SEPARATOR, *files);
 }
 
 
@@ -147,7 +148,7 @@ void CMsvcProjectMakefile::GetAdditionalIncludeDirs(const SConfigInfo& config,
     string dirs_string = 
         GetOpt(m_MakeFile, "AddToProject", "IncludeDirs", config);
     
-    NStr::Split(dirs_string, " \t,", *dirs);
+    NStr::Split(dirs_string, LIST_SEPARATOR, *dirs);
 }
 
 
@@ -160,7 +161,7 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
         m_MakeFile.GetString("CustomBuild", "SourceFiles", "");
     
     list<string> source_files;
-    NStr::Split(source_files_str, " \t,", source_files);
+    NStr::Split(source_files_str, LIST_SEPARATOR, source_files);
 
     ITERATE(list<string>, p, source_files){
         const string& source_file = *p;
@@ -226,6 +227,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/06 23:14:59  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.2  2004/01/28 17:55:48  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,

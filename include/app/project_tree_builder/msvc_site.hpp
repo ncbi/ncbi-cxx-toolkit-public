@@ -81,13 +81,15 @@ public:
     /// Get components from site
     void GetComponents(const string& entry, list<string>* components) const;
 
+    /// Is section present in site registry?
+    bool IsDescribed(const string& section) const;
+
     // Get library (LIBS) description
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
     
     // Resolve define (now from CPPFLAGS)
     string ResolveDefine(const string& define) const;
-
 
     // Configure related:
     // Path from tree root to file where configure defines must be.
@@ -111,6 +113,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.6  2004/02/05 16:32:22  gorelenk
  * Added declaration of function GetComponents.
  *

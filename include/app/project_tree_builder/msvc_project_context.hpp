@@ -113,6 +113,12 @@ public:
         return m_CustomBuildInfo;
     }
 
+
+    const list<string>& Defines(void) const
+    {
+        return m_Defines;
+    }
+
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
@@ -142,6 +148,8 @@ private:
     list<string> m_Requires;
 
     list<SCustomBuildInfo> m_CustomBuildInfo;
+
+    list<string> m_Defines;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -485,6 +493,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.6  2004/02/03 17:08:07  gorelenk
  * Changed declaration of class CMsvcPrjProjectContext.
  *

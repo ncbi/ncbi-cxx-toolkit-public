@@ -153,8 +153,6 @@ public:
     string            m_MakefilesExt;
     string            m_MetaMakefile;
     list<string>      m_NotProvidedRequests;
-    string            m_ConfigureDefines;
-    list<string>      m_Configure;
 
 private:
     CMsvc7RegSettings(const CMsvc7RegSettings&);
@@ -213,6 +211,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.8  2004/02/05 16:26:43  gorelenk
  * Function GetComponents moved to class CMsvcSite member.
  *

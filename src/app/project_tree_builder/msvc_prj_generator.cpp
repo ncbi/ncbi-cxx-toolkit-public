@@ -506,7 +506,7 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 }
 
 static 
-void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
+void CreateDatatoolCustomBuildInfo(const CProjItem&             prj,
                                    const CDataToolGeneratedSrc& src,                                   
                                    SCustomBuildInfo*            build_info)
 {
@@ -514,7 +514,7 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
 
     //SourceFile
     build_info->m_SourceFile = 
-        CDirEntry::ConcatPath(prj.m_SourcesBaseDir, src.m_SourceFile);
+        CDirEntry::ConcatPath(src.m_SourceBaseDir, src.m_SourceFile);
 
     //CommandLine
     //exe location
@@ -543,18 +543,14 @@ void CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
 
     //Outputs
-    string outputs("");
-    ITERATE(list<string>, p, prj.m_Sources) {
-        string src_base;
-        CDirEntry::SplitPath(*p, NULL, &src_base);
-        outputs += "$(InputDir)";
-        outputs += src_base;
-        outputs +=".cpp;";
-    }
+    string data_tool_src_base;
+    CDirEntry::SplitPath(prj.m_Name, NULL, &data_tool_src_base);
+    string outputs = "$(InputDir)" + data_tool_src_base + "__.cpp;";
+    outputs += "$(InputDir)" + data_tool_src_base + "___.cpp;";
     build_info->m_Outputs = outputs;
 
     //Additional Dependencies
-    build_info->m_AdditionalDependencies = tool_exe_location;
+    //build_info->m_AdditionalDependencies = tool_exe_location;
 }
 
 struct PSourcesExclude
@@ -576,6 +572,36 @@ struct PSourcesExclude
 private:
     PSourcesExclude();
 };
+
+
+static bool s_IsProducedByDatatool(const string&    src_path_abs,
+                                   const CProjItem& project)
+{
+    if ( project.m_DatatoolSources.empty() )
+        return false;
+
+    string src_base;
+    CDirEntry::SplitPath(src_path_abs, NULL, &src_base);
+
+    // guess name.asn file name from name__ or name___
+    string asn_base;
+    if ( NStr::EndsWith(src_base, "___") ) {
+        asn_base = src_base.substr(0, src_base.length() -3);
+    } else if ( NStr::EndsWith(src_base, "__") ) {
+        asn_base = src_base.substr(0, src_base.length() -2);
+    } else {
+        return false;
+    }
+    string asn_name = asn_base + ".asn";
+
+    //try to find this name in datatool generated sources container
+    ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
+        const CDataToolGeneratedSrc& asn = *p;
+        if (asn.m_SourceFile == asn_name)
+            return true;
+    }
+    return false;
+}
 
 
 void 
@@ -608,7 +634,7 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
 
     list<string> excluded_sources;
     context.GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
-                                            (SConfigInfo(), &included_sources);
+                                            (SConfigInfo(), &excluded_sources);
     PSourcesExclude pred(excluded_sources);
     EraseIf(sources, pred);
 
@@ -623,6 +649,12 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
             rel_pathes->push_back(
                 CDirEntry::CreateRelativePath(context.ProjectDir(), 
                                               source_file_abs_path));
+        } 
+        else if ( s_IsProducedByDatatool(abs_path, project) ) {
+            // .cpp file extension
+            rel_pathes->push_back(
+                CDirEntry::CreateRelativePath(context.ProjectDir(), 
+                                              abs_path + ".cpp"));
         } else {
             LOG_POST(Warning <<"Can not resolve/find source file : " + abs_path);
         }
@@ -705,6 +737,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/06 23:14:59  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.12  2004/02/05 00:02:08  gorelenk
  * Added support of user site and  Makefile defines.
  *

@@ -73,7 +73,8 @@ public:
               const list<string>& depends,
               const list<string>& requires,
               const list<string>& libs_3_party,
-              const list<string>& include_dirs);
+              const list<string>& include_dirs,
+              const list<string>& defines);
     
     ~CProjItem(void);
 
@@ -108,6 +109,9 @@ public:
 
     /// Source files *.asn , *.dtd to be processed by datatool app
     list<CDataToolGeneratedSrc> m_DatatoolSources;
+
+    /// Defines like USE_MS_DBLIB
+    list<string>  m_Defines;
 
 
 private:
@@ -164,6 +168,16 @@ private:
 
     void Clear(void);
     void SetFrom(const CProjectItemsTree& projects);
+};
+
+// Traits classes - creation helpers for CProjectTreeBuilder
+
+struct SMakeProjectT
+{
+    typedef CProjectItemsTree::TFiles TFiles;
+
+    static CProjItem::TProjType GetProjType(const string& base_dir,
+                                            const string& projname);
 
     struct SMakeInInfo
     {
@@ -183,40 +197,107 @@ private:
         TMakeinType   m_Type;
         list<string>  m_ProjNames;
     };
+
     typedef list<SMakeInInfo> TMakeInInfoList;
-    static void AnalyzeMakeIn(const CSimpleMakeFileContents& makein_contents, 
+    static void AnalyzeMakeIn(const CSimpleMakeFileContents& makein_contents,
                               TMakeInInfoList*               info);
 
     
-    static string CreateMakeAppLibFileName(const string&            base_dir,
-                                           SMakeInInfo::TMakeinType makeintype,
-                                           const string&            projname);
+    static string CreateMakeAppLibFileName(const string& base_dir,
+                                           const string& projname);
 
     static void CreateFullPathes(const string&      dir, 
                                  const list<string> files,
                                  list<string>*      full_pathes);
 
-    /// Helpers for project creation
-    static string DoCreateAppProject(const string& source_base_dir,
-                                     const string& proj_name,
-                                     const string& applib_mfilepath,
-                                     const TFiles& makeapp, 
-                                     CProjectItemsTree* tree);
+    static string GetOneIncludeDir(const string& flag, const string& token);
+    
+    
+    static void CreateIncludeDirs(const list<string>& cpp_flags,
+                                  const string&       source_base_dir,
+                                  list<string>*       include_dirs);
 
-    static string DoCreateLibProject(const string& source_base_dir,
-                                     const string& proj_name,
-                                     const string& applib_mfilepath,
-                                     const TFiles& makelib, 
-                                     CProjectItemsTree* tree);
+    static void CreateDefines(const list<string>& cpp_flags,
+                              list<string>*       defines);
 
-    static string DoCreateAsnProject(const string& source_base_dir,
-                                     const string& proj_name,
-                                     const string& applib_mfilepath,
-                                     const TFiles& makeapp, 
-                                     const TFiles& makelib, 
-                                     CProjectItemsTree* tree);
+    
+    static void Create3PartyLibs(const list<string>& libs_flags, 
+                                 list<string>*       libs_list);
+
+    static void DoResolveDefs(CSymResolver& resolver, 
+                              CProjectItemsTree::TFiles& files,
+                              const set<string>& keys);
+
+    static bool IsMakeInFile(const string& name);
+
+    static bool IsMakeLibFile(const string& name);
+
+
+    static bool IsMakeAppFile(const string& name);
+
 };
 
+
+struct SAppProjectT : public SMakeProjectT
+{
+    static string DoCreate(const string& source_base_dir,
+                           const string& proj_name,
+                           const string& applib_mfilepath,
+                           const TFiles& makeapp, 
+                           CProjectItemsTree* tree);
+};
+
+struct SLibProjectT : public SMakeProjectT
+{
+    static string DoCreate(const string& source_base_dir,
+                           const string& proj_name,
+                           const string& applib_mfilepath,
+                           const TFiles& makeapp, 
+                           CProjectItemsTree* tree);
+};
+
+struct SAsnProjectT : public SMakeProjectT
+{
+    typedef CProjectItemsTree::TProjects TProjects;
+
+    static string DoCreate(const string& source_base_dir,
+                           const string& proj_name,
+                           const string& applib_mfilepath,
+                           const TFiles& makeapp, 
+                           const TFiles& makelib, 
+                           CProjectItemsTree* tree);
+    
+    typedef enum {
+            eNoAsn,
+            eSingle,
+            eMultiple,
+        } TAsnType;
+
+    static TAsnType GetAsnProjectType(const string& applib_mfilepath,
+                                       const TFiles& makeapp,
+                                       const TFiles& makelib);
+};
+
+
+struct SAsnProjectSingleT : public SAsnProjectT
+{
+    static string DoCreate(const string& source_base_dir,
+                           const string& proj_name,
+                           const string& applib_mfilepath,
+                           const TFiles& makeapp, 
+                           const TFiles& makelib, 
+                           CProjectItemsTree* tree);
+};
+
+struct SAsnProjectMultipleT : public SAsnProjectT
+{
+    static string DoCreate(const string& source_base_dir,
+                           const string& proj_name,
+                           const string& applib_mfilepath,
+                           const TFiles& makeapp, 
+                           const TFiles& makelib, 
+                           CProjectItemsTree* tree);
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -330,6 +411,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/06 23:15:40  gorelenk
+ * Implemented support of ASN projects, semi-auto configure,
+ * CPPFLAGS support. Second working version.
+ *
  * Revision 1.8  2004/02/04 23:15:27  gorelenk
  * To class CProjItem added members m_Libs3Party and m_IncludeDirs.
  * Redesigned constructors of class CProjItem.
