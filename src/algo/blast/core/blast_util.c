@@ -673,7 +673,7 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
 Int4 
 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program)
 {
-   Int4 index = 0;
+   Int4 index = -1;     /* -1 is used to indicate error */
    switch (program) {
    case eBlastTypeBlastn:
       index = context/NUM_STRANDS; 
