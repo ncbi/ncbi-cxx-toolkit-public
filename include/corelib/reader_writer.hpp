@@ -49,6 +49,7 @@ BEGIN_NCBI_SCOPE
 enum ERW_Result {
     eRW_NotImplemented = -1,
     eRW_Success = 0,
+    eRW_Timeout,
     eRW_Error,
     eRW_Eof
 };
@@ -119,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/11/03 20:01:52  lavr
+ * Add ERW_Result::eRW_Timeout
+ *
  * Revision 1.8  2003/10/22 18:14:47  lavr
  * IWriter::Flush() added
  *
