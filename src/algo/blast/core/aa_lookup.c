@@ -235,19 +235,6 @@ for(i=0;i<lookup->backbone_size;i++)
  return 0;
 }
 
-Int4 BlastAaLookupDestruct(LookupTablePtr lookup)
-{
-  Free(lookup->thick_backbone);
-  lookup->thick_backbone=NULL;
-
-  Free(lookup->overflow);
-  lookup->overflow=NULL;
-
-  Free(lookup->pv);
-  lookup->pv=NULL;
-  return 0;
-}
-
 /** Given a word, compute its index value from scratch.
  *
  * @param wordsize length of the word, in residues [in]

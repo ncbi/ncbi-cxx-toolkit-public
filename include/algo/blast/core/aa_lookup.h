@@ -155,13 +155,6 @@ Int4 BlastAaLookupNew(LookupTableOptionsPtr opt, LookupTablePtr * lut);
 Int4 LookupTableNew(LookupTableOptionsPtr opt, LookupTablePtr * lut, 
 		    Boolean is_protein);
 
-/** Free a lookup table.
-  * @param lookup pointer to lookup table structure to be freed [in]
-  */
-  
-Int4 BlastAaLookupDestruct(LookupTablePtr lookup);
-
-
 /** Index an array of queries.
  *
  * @param lookup the lookup table [in/modified]
