@@ -320,13 +320,22 @@ string CBioseq_Handle::GetTitle(TGetTitleFlags flags) const
                     break;
                 }
             }
-            suffix += (", " + NStr::IntToString(pieces)
-                       + ' ' + un + "ordered pieces");
+            if (pieces == 1) {
+                suffix += (", 1 " + un + "ordered piece");
+            } else {
+                suffix += (", " + NStr::IntToString(pieces)
+                           + ' ' + un + "ordered pieces");
+            }
         } else {
             suffix += ", in " + un + "ordered pieces";
         }
         break;
     }
+    case CMolInfo::eTech_htgs_3:
+        if (title.find("complete sequence") == NPOS) {
+            suffix = ", complete sequence";
+        }
+        break;
 
     case CMolInfo::eTech_est:
         if (title.find("mRNA sequence") == NPOS) {
@@ -748,6 +757,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2002/05/14 18:36:55  ucko
+* More HTG title fixes: avoid "1 ... pieces"; phase 3 = "complete sequence"
+*
 * Revision 1.12  2002/05/08 19:26:53  ucko
 * More changes from C version: give more info about WGS sequences,
 * fix count of segments to use #gaps + 1 rather than # non-gap pieces.
