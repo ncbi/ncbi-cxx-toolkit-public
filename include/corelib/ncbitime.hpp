@@ -992,7 +992,7 @@ public:
     ///   String representation of time span in format "fmt".
     /// @param fmt
     ///   Format in which "str" is presented. Default value of kEmptyStr,
-    ///   implies the "S.n" format.
+    ///   implies the "-S.n" format.
     explicit CTimeSpan(const string& str, const string& fmt = kEmptyStr);
 
     /// Copy constructor.
@@ -1012,12 +1012,12 @@ public:
 
     /// Set the current time span format.
     /// 
-    /// The default format is: "S.n".
+    /// The default format is: "-S.n".
     /// @param fmt
     ///   String of letters describing the time span format.
     ///   The letters having the following meanings:
+    ///   - - = add minus for negative time spans
     ///   - d = days
-    ///   - D = total number of days
     ///   - h = hours (-23 - 23)
     ///   - H = total number of hour
     ///   - m = minutes (-59 - 59)
@@ -1032,7 +1032,7 @@ public:
 
     /// Get the current time span format.
     /// 
-    /// The default format is: "S.n".
+    /// The default format is: "-S.n".
     /// @return
     ///   A string of letters describing the time span format.
     /// @sa
@@ -1248,14 +1248,14 @@ public:
 
     /// Set the current stopwatch time format.
     /// 
-    /// The default format is: "S.n".
+    /// The default format is: "-S.n".
     /// @sa
     ///   CTimeSpan::GetFormat, GetFormat
     static void SetFormat(const string& fmt);
 
     /// Get the current stopwatch time format.
     /// 
-    /// The default format is: "S.n".
+    /// The default format is: "-S.n".
     /// @return
     ///   A string of letters describing the time span format.
     ///   The letters having the same means that for CTimeSpan.
@@ -1934,6 +1934,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/01/06 16:37:24  ivanov
+ * Fixed comments for CTimeSpan
+ *
  * Revision 1.41  2004/09/27 13:53:36  ivanov
  * + CTimeSpan::AsSmartString()
  *
