@@ -62,6 +62,7 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 
 # include <fcgiapp.h>
 # include <unistd.h>
+# include <fcntl.h>
 
 // Normal FCGX_Accept ignores interrupts, so alarm() won't do much good
 // unless we use the reentrant version. :-/
@@ -341,6 +342,12 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
 #   endif
         accept_errcode = FCGX_Accept_r(&request); 
+        if (request.ipcFd >= 0) {
+            // Hide it from any children we spawn, which have no use
+            // for it and shouldn't be able to tie it open.
+            fcntl(request.ipcFd, F_SETFD,
+                  fcntl(request.ipcFd, F_GETFD) | FD_CLOEXEC);
+        }
 #   ifdef USE_ALARM
         if ( watch_timeout ) {
             if ( !s_AcceptTimedOut ) {
@@ -539,6 +546,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.49  2004/10/25 15:23:28  ucko
+ * Mark the Fast-CGI IPC file descriptor as close-on-exec, since
+ * children have no use for it and shouldn't be able to tie it open.
+ *
  * Revision 1.48  2004/09/27 23:49:15  vakatov
  * Warning fix:  removed unused local variable
  *
