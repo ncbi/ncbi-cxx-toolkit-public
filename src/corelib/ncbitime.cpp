@@ -89,8 +89,10 @@ BEGIN_NCBI_SCOPE
 DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
 DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
 
-// Store global time format in TLS
-static CSafeStaticRef< CTls<string> > s_TlsFormat;
+// Store global time/timespan formats in TLS
+static CSafeStaticRef< CTls<string> > s_TlsFormatTime;
+static CSafeStaticRef< CTls<string> > s_TlsFormatSpan;
+static CSafeStaticRef< CTls<string> > s_TlsFormatStopWatch;
 
 static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 {
@@ -98,13 +100,7 @@ static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 }
 
 
-
 //============================================================================
-//
-//  CTime
-//
-//============================================================================
-
 
 // Number of days per month
 static int s_DaysInMonth[12] = {
@@ -130,15 +126,19 @@ static const char* kWeekdayFull [7] = {
     "Thursday", "Friday", "Saturday"
 };
  
-// Default value for time format
-static const char* kDefaultFormat = "M/D/Y h:m:s";
+// Default value for time/timespan format
+static const char* kDefaultFormatTime = "M/D/Y h:m:s";
+static const char* kDefaultFormatSpan = "-S.n";
+static const char* kDefaultFormatStopWatch = "-S.n";
 
-// Set of the checked format symbols (w,W not included)
-static const char* kFormatSymbols = "yYMbBDhmsSzZwW";
+// Set of the checked format symbols.
+// For CStopWatch class the format symbols are equal
+// to kFormatSymbolsSpan also.
+static const char* kFormatSymbolsTime = "yYMbBDdhmsSzZwW";
+static const char* kFormatSymbolsSpan = "-dhHmMsSnN";
 
 // Error messages
 static const string kMsgInvalidTime = "CTime:  invalid";
-
 
 
 // Get number of days in "date"
@@ -212,6 +212,13 @@ static void s_Offset(long *value, long offset, long bound, int *major)
 }
 
 
+
+//============================================================================
+//
+// CTime
+//
+//============================================================================
+
 CTime::CTime(const CTime& t)
 {
     *this = t;
@@ -232,27 +239,9 @@ CTime::CTime(int year, int yearDayNumber, ETimeZone tz, ETimeZonePrecision tzp)
 }
 
 
-void CTime::x_VerifyFormat(const string& fmt)
-{
-    // Check for duplicated format symbols...
-    const int kSize = 256;
-    int count[kSize];
-    for (int i = 0;  i < kSize;  i++) {
-        count[i] = 0;
-    }
-    ITERATE(string, it, fmt) {
-        if (strchr(kFormatSymbols, *it) != 0  &&
-            ++count[(unsigned int) *it] > 1) {
-            NCBI_THROW(CTimeException, eFormat, "CTime's format is incorrect");
-        }
-    }
-}
-
-
 void CTime::x_Init(const string& str, const string& fmt)
 {
     Clear();
-
     if ( str.empty() ) {
         return;
     }
@@ -268,7 +257,7 @@ void CTime::x_Init(const string& str, const string& fmt)
     for (fff = fmt.c_str();  *fff != '\0';  fff++) {
 
         // Non-format symbols
-        if (strchr(kFormatSymbols, *fff) == 0) {
+        if (strchr(kFormatSymbolsTime, *fff) == 0) {
 
             if (*fff == *sss) {
                 sss++;
@@ -347,7 +336,8 @@ void CTime::x_Init(const string& str, const string& fmt)
 
             char value_str[3];
             char* s = value_str;
-            for (size_t len = 2; len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
+            for (size_t len = 2;
+	         len != 0  &&  *sss != '\0'  &&  isdigit(*sss);  len--) {
                 *s++ = *sss++; 
             }
             *s = '\0';
@@ -403,6 +393,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             m_Month = (unsigned char) value;
             break;
         case 'D':
+        case 'd':
             m_Day = (unsigned char) value;
             break;
         case 'h':
@@ -640,26 +631,6 @@ int CTime::DaysInMonth(void) const
 }
 
 
-void CTime::SetFormat(const string& fmt)
-{
-    x_VerifyFormat(fmt);
-    // Here we do not need to delete a previous value stored in the TLS.
-    // The TLS will destroy it using s_TlsFormatCleanup().
-    string* format = new string(fmt);
-    s_TlsFormat->SetValue(format, s_TlsFormatCleanup);
-}
-
-
-string CTime::GetFormat(void)
-{
-    string* format = s_TlsFormat->GetValue();
-    if ( !format ) {
-        return kDefaultFormat;
-    }
-    return *format;
-}
-
-
 int CTime::MonthNameToNum(const string& month)
 {
     const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull; 
@@ -722,6 +693,40 @@ static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
     str += s_value;
 }
 
+void CTime::x_VerifyFormat(const string& fmt)
+{
+    // Check for duplicated format symbols...
+    const int kSize = 256;
+    int count[kSize];
+    for (int i = 0;  i < kSize;  i++) {
+        count[i] = 0;
+    }
+    ITERATE(string, it, fmt) {
+        if (strchr(kFormatSymbolsTime, *it) != 0  &&
+            ++count[(unsigned int) *it] > 1) {
+            NCBI_THROW(CTimeException, eFormat, "CTime's format is incorrect");
+        }
+    }
+}
+
+void CTime::SetFormat(const string& fmt)
+{
+    x_VerifyFormat(fmt);
+    // Here we do not need to delete a previous value stored in the TLS.
+    // The TLS will destroy it using s_TlsFormatCleanup().
+    string* format = new string(fmt);
+    s_TlsFormatTime->SetValue(format, s_TlsFormatCleanup);
+}
+
+
+string CTime::GetFormat(void)
+{
+    string* format = s_TlsFormatTime->GetValue();
+    if ( !format ) {
+        return kDefaultFormatTime;
+    }
+    return *format;
+}
 
 string CTime::AsString(const string& fmt, long out_tz) const
 {
@@ -751,9 +756,9 @@ string CTime::AsString(const string& fmt, long out_tz) const
             t_out->AddSecond(TimeZone() - out_tz);
             t = t_out;
         }
+    
 #endif
     }
-    
     string str;
     ITERATE(string, it, fmt) {
         switch ( *it ) {
@@ -763,6 +768,7 @@ string CTime::AsString(const string& fmt, long out_tz) const
         case 'b': str += kMonthAbbr[t->Month()-1];          break;
         case 'B': str += kMonthFull[t->Month()-1];          break;
         case 'D': s_AddZeroPadInt(str, t->Day());           break;
+        case 'd': s_AddZeroPadInt(str, t->Day(),1);         break;
         case 'h': s_AddZeroPadInt(str, t->Hour());          break;
         case 'm': s_AddZeroPadInt(str, t->Minute());        break;
         case 's': s_AddZeroPadInt(str, t->Second());        break;
@@ -1142,6 +1148,17 @@ CTime& CTime::AddNanoSecond(long ns)
 }
 
 
+CTime& CTime::AddTimeSpan(const CTimeSpan& ts)
+{
+    if ( ts.GetSign() == eZero ) {
+        return *this;
+    }
+    AddSecond(ts.GetTotalSeconds());
+    AddNanoSecond(ts.GetNanoSecondsAfterSecond());
+    return *this;
+}
+
+
 bool CTime::IsValid(void) const
 {
     if ( IsEmpty() ) 
@@ -1206,7 +1223,7 @@ CTime& CTime::ToTime(ETimeZone tz)
 }
 
 
-bool CTime::operator == (const CTime& t) const
+bool CTime::operator== (const CTime& t) const
 {
     CTime tmp(t);
     tmp.ToTime(GetTimeZoneFormat());
@@ -1221,7 +1238,7 @@ bool CTime::operator == (const CTime& t) const
 }
 
 
-bool CTime::operator > (const CTime& t) const
+bool CTime::operator> (const CTime& t) const
 {
     CTime tmp(t);
     tmp.ToTime(GetTimeZoneFormat());
@@ -1257,7 +1274,7 @@ bool CTime::operator > (const CTime& t) const
 }
 
 
-bool CTime::operator < (const CTime& t) const
+bool CTime::operator< (const CTime& t) const
 {
     CTime tmp(t);
     tmp.ToTime(GetTimeZoneFormat());
@@ -1330,6 +1347,16 @@ int CTime::DiffSecond(const CTime& t) const
     return dSec + 60 * dMin + 60 * 60 * dHour + 60 * 60 * 24 * dDay;
 }
 
+
+CTimeSpan CTime::DiffTimeSpan(const CTime& t) const
+{
+    CTimeSpan ts((*this)  - t,
+                 Hour()   - t.Hour(),
+                 Minute() - t.Minute(),
+                 Second() - t.Second(),
+                 NanoSecond() - t.NanoSecond());
+    return ts;
+}
 
 void CTime::x_AdjustDay()
 {
@@ -1422,10 +1449,197 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
 
 //=============================================================================
 //
-//  CStopWatch
+//  CTimeSpan
 //
 //=============================================================================
 
+CTimeSpan::CTimeSpan(const string& str, const string& fmt)
+{
+    if (fmt.empty()) {
+        x_Init(str, GetFormat());
+    } else {
+        x_VerifyFormat(fmt);
+        x_Init(str, fmt);
+    }
+}
+
+void CTimeSpan::x_Init(const string& str, const string& fmt)
+{
+    Clear();
+    if ( str.empty() ) {
+        return;
+    }
+   
+    const char* fff;
+    const char* sss = str.c_str();
+    int   sign = 1;
+
+    for (fff = fmt.c_str();  *fff != '\0';  fff++) {
+
+        // Non-format symbols
+        if (strchr(kFormatSymbolsSpan, *fff) == 0) {
+            if (*fff == *sss) {
+                sss++;
+                continue;  // skip matching non-format symbols
+            }
+            break;  // error: non-matching non-format symbols
+        }
+
+        // Sign: if specified that the time span is negative
+        if (*fff == '-') {
+            if (*sss == '-') {
+                sign = -1;
+                sss++;
+            }
+            continue;
+        }
+        // Other format symbols -- read the next data ingredient
+        char value_str[21];
+        char* s = value_str;
+        for (size_t len = 20; 
+             len != 0  &&  *sss != '\0'  && isdigit(*sss);  len--) {
+            *s++ = *sss++; 
+        }
+        *s = '\0';
+        long value = NStr::StringToLong(value_str);
+
+        switch ( *fff ) {
+        case 'd':
+            m_Sec += value * 86400L;
+            break;
+        case 'h':
+            m_Sec += value * 3600L;
+            break;
+        case 'H':
+            m_Sec = value * 3600L;
+            break;
+        case 'm':
+            m_Sec += value * 60L;
+            break;
+        case 'M':
+            m_Sec = value * 60L;
+            break;
+        case 's':
+            m_Sec += value;
+            break;
+        case 'S':
+            m_Sec = value;
+            break;
+        case 'n':
+            m_NanoSec = value;
+            break;
+        default:
+            NCBI_THROW(CTimeException, eFormat, "CTimeSpan:  format is incorrect");
+        }
+    }
+    // Normalize time span
+    if ( sign < 0 ) {
+        Invert();
+    }
+    x_Normalize();
+
+    // Check on errors
+    if (*fff != '\0'  ||  *sss != '\0') {
+        NCBI_THROW(CTimeException, eFormat, "CTimeSpan:  format is incorrect");
+    }
+}
+
+
+void CTimeSpan::x_Normalize(void)
+{
+    // If signs is different, than make timespan correction
+    if ( (m_Sec > 0) && (m_NanoSec < 0)) {
+        m_Sec--;
+        m_NanoSec = kNanoSecondsPerSecond + m_NanoSec;
+    } else  if ((m_Sec < 0) && (m_NanoSec > 0)) {
+        m_Sec++;
+        m_NanoSec = m_NanoSec - kNanoSecondsPerSecond;
+    }
+    m_Sec += (m_NanoSec / kNanoSecondsPerSecond);
+    m_NanoSec %= kNanoSecondsPerSecond;
+}
+
+
+void CTimeSpan::x_VerifyFormat(const string& fmt)
+{
+    // Check for duplicated format symbols...
+    const int kSize = 256;
+    int count[kSize];
+    for (int i = 0;  i < kSize;  i++) {
+        count[i] = 0;
+    }
+    ITERATE(string, it, fmt) {
+        if (strchr(kFormatSymbolsSpan, *it) != 0  &&
+            ++count[(unsigned int) *it] > 1) {
+            NCBI_THROW(CTimeException, eFormat, "CTimeSpan's format is incorrect");
+        }
+    }
+}
+
+
+void CTimeSpan::SetFormat(const string& fmt)
+{
+    x_VerifyFormat(fmt);
+    // Here we do not need to delete a previous value stored in the TLS.
+    // The TLS will destroy it using s_TlsFormatCleanup().
+    string* format = new string(fmt);
+    s_TlsFormatSpan->SetValue(format, s_TlsFormatCleanup);
+}
+
+
+string CTimeSpan::GetFormat(void)
+{
+    string* format = s_TlsFormatSpan->GetValue();
+    if ( !format ) {
+        return kDefaultFormatSpan;
+    }
+    return *format;
+}
+
+
+string CTimeSpan::AsString(const string& fmt) const
+{
+    if ( fmt.empty() ) {
+        return AsString(GetFormat());
+    }
+    x_VerifyFormat(fmt);
+
+    string str;
+    ITERATE(string, it, fmt) {
+        switch ( *it ) {
+        case '-': if (GetSign() == eNegative) {
+                      str += "-";
+                  }
+                  break;
+        case 'd': s_AddZeroPadInt(str, abs(GetTotalDays()));
+                  break;
+        case 'h': s_AddZeroPadInt(str, abs(x_Hour()));
+                  break;
+        case 'H': s_AddZeroPadInt(str, abs(GetTotalHours()), 0);
+                  break;
+        case 'm': s_AddZeroPadInt(str, abs(x_Minute()));
+                  break;
+        case 'M': s_AddZeroPadInt(str, abs(GetTotalMinutes()), 0);
+                  break;
+        case 's': s_AddZeroPadInt(str, abs(x_Second()));
+                  break;
+        case 'S': s_AddZeroPadInt(str, abs(GetTotalSeconds()), 0);
+                  break;
+        case 'n': s_AddZeroPadInt(str, abs(GetNanoSecondsAfterSecond()), 9);
+                  break;
+        default : str += *it;
+                  break;
+        }
+    }
+    return str;
+}
+
+
+//=============================================================================
+//
+//  CStopWatch
+//
+//=============================================================================
 
 double CStopWatch::GetTimeMark()
 {
@@ -1460,102 +1674,52 @@ double CStopWatch::GetTimeMark()
 }
 
 
+void CStopWatch::SetFormat(const string& fmt)
+{
+    // Here we do not need to delete a previous value stored in the TLS.
+    // The TLS will destroy it using s_TlsFormatCleanup().
+    string* format = new string(fmt);
+    s_TlsFormatStopWatch->SetValue(format, s_TlsFormatCleanup);
+}
+
+
+string CStopWatch::GetFormat(void)
+{
+    string* format = s_TlsFormatStopWatch->GetValue();
+    if ( !format ) {
+        return kDefaultFormatStopWatch;
+    }
+    return *format;
+}
+
+
+string CStopWatch::AsString(const string& fmt) const
+{
+    if ( fmt.empty() ) {
+        return AsString(GetFormat());
+    }
+    CTimeSpan ts(Elapsed());
+    return ts.AsString(fmt);
+}
+
+
 //============================================================================
 //
 //  Extern
 //
 //============================================================================
 
-// Return difference between times <t1> and <t2> as number of days
-int operator - (const CTime& t1, const CTime& t2)
-{
-    return (int) (s_Date2Number(t1) - s_Date2Number(t2));
-}
-
-
-CTime AddYear(const CTime& t, int years)
-{
-    CTime tmp(t);
-    return tmp.AddYear(years);
-}
-
  
-CTime AddMonth(const CTime& t, int months)
-{
-    CTime tmp(t);
-    return tmp.AddMonth(months);
-}
-
- 
-CTime AddDay(const CTime& t, int days)
-{
-    CTime tmp(t);
-    return tmp.AddDay(days);
-}
-
- 
-CTime AddHour(const CTime& t, int hours)
-{
-    CTime tmp(t);
-    return tmp.AddHour(hours);
-}
-
- 
-CTime AddMinute(const CTime& t, int minutes)
-{
-    CTime tmp(t);
-    return tmp.AddMinute(minutes);
-}
-
- 
-CTime AddSecond(const CTime& t, int seconds)
-{
-    CTime tmp(t);
-    return tmp.AddSecond(seconds);
-}
-
- 
-CTime AddNanoSecond(const CTime& t, long nanoseconds)
-{
-    CTime tmp(t);
-    return tmp.AddNanoSecond(nanoseconds);
-}
-
-
-CTime operator + (const CTime& t, int days)
+CTime operator+ (int days, const CTime& t)
 {
     CTime tmp = s_Number2Date(s_Date2Number(t) + days, t);
     tmp.x_AdjustTime(t);
     return tmp;
 }
 
- 
-CTime operator + (int days, const CTime& t)
+int operator- (const CTime& t1, const CTime& t2)
 {
-    CTime tmp = s_Number2Date(s_Date2Number(t) + days, t);
-    tmp.x_AdjustTime(t);
-    return tmp;
-}
-
- 
-CTime operator - (const CTime& t, int days)
-{
-    CTime tmp = s_Number2Date(s_Date2Number(t) - days, t);
-    tmp.x_AdjustTime(t);
-    return tmp;
-}
-
- 
-CTime CurrentTime(CTime::ETimeZone tz, CTime::ETimeZonePrecision tzp)
-{
-    return CTime(CTime::eCurrent,tz,tzp);
-}
-
- 
-CTime Truncate(const CTime& t)
-{
-    CTime tmp(t);
-    return tmp.Truncate();
+    return (int)(s_Date2Number(t1) - s_Date2Number(t2));
 }
 
 
@@ -1565,6 +1729,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2004/09/07 16:31:51  ivanov
+ * Added CTimeSpan class and its support to CTime class (addition/subtraction)
+ * CTime:: added new format letter support 'd', day without leading zero.
+ * CStopWatch:: added operatir << to dumps the current stopwatch time to an
+ * output stream.
+ * Comments and other cosmetic changes.
+ *
  * Revision 1.50  2004/08/09 20:48:41  vakatov
  * Type conv warning fix
  *

@@ -34,10 +34,12 @@
  */
 
 /// @file ncbitime.hpp
-/// Defines CTime, the standard Date/Time class which also can be used
-/// to span time (to represent elapsed time).
+/// Defines:
+///   CTime      - standard Date/Time class to represent an absolute time.
+///   CTimeSpan  - class to represents a relative time span.
+///   CStopWatch - stop watch class to measure elasped time.
 ///
-/// NOTE: 
+/// NOTE about CTime: 
 ///   - Do not use Local time and time_t and its dependent functions with
 ///     dates outside range January 1, 1970 to January 18, 2038.
 ///     Also avoid to use GMT -> Local time conversion functions.
@@ -52,6 +54,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitype.h>
 #include <time.h>
+#include <math.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -60,6 +63,9 @@ BEGIN_NCBI_SCOPE
  *
  * @{
  */
+
+// Forward declarations
+class CTimeSpan;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -125,7 +131,6 @@ typedef struct {
     Int4  days;   ///< days from 1/1/1900
     Int4  time;   ///< x/300 seconds from begin of current day
 } TDBTimeI, *TDBTimeIPtr;
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -254,6 +259,10 @@ public:
     ///   Month part of time. Note month starts from 1.
     /// @param day
     ///   Day part of time. Note day starts from 1.
+    /// @param hour
+    ///   Hour part of time.
+    /// @param minute
+    ///   Minute part of time.
     /// @param second
     ///   Second part of time.
     /// @param nanosecond
@@ -304,16 +313,16 @@ public:
     CTime(const CTime& t);
 
     /// Assignment operator.
-    CTime& operator = (const CTime& t);
+    CTime& operator= (const CTime& t);
 
-    /// Assignment operator -- rhs is string.
+    /// Assignment operator.
     ///
     /// If current format contains 'Z', then TimeZone will be set to:
     /// - eGMT if "str" has word "GMT" in the appropriate position;
     /// - eLocal otherwise.
     ///
     /// If current format does not contain 'Z', TimeZone will not be changed.
-    CTime& operator = (const string& str);
+    CTime& operator= (const string& str);
 
     /// Set time using time_t time value.
     ///
@@ -398,30 +407,16 @@ public:
     ///   - W = full day of week name
     ///   - w = abbreviated day of week name
     /// @sa
-    ///   GetFormat()
+    ///   GetFormat
     static void SetFormat(const string& fmt);
 
     /// Get the current time format.
     /// 
     /// The default format is: "M/D/Y h:m:s".
     /// @return
-    ///   A string of letters describing the time format. The letters having
-    ///   the following meanings:
-    ///   - Y = year with century
-    ///   - y = year without century (00-99)
-    ///   - M = month as decimal number (01-12)
-    ///   - B = full month name
-    ///   - b = abbeviated month name
-    ///   - D = day as decimal number (01-31)
-    ///   - h = hour in 24-hour format (00-23)
-    ///   - m = minute as decimal number (00-59)
-    ///   - s = second as decimal number (00-59)
-    ///   - S = nanosecond as decimal number (000000000-999999999)
-    ///   - Z = timezone format (GMT or none) 
-    ///   - W = full day of week name
-    ///   - w = abbreviated day of week name
+    ///   A string of letters describing the time format. 
     /// @sa
-    ///   SetFormat()
+    ///   SetFormat
     static string GetFormat(void);
 
     /// Get numerical value of the month by name.
@@ -431,7 +426,7 @@ public:
     /// @return
     ///   Numerical value of a given month (1..12).
     /// @sa
-    ///   MonthNumToName(), Month()
+    ///   MonthNumToName, Month
     static int MonthNameToNum(const string& month);
 
     /// Get name of the month by numerical value.
@@ -443,7 +438,7 @@ public:
     /// @return
     ///   Name of the month.
     /// @sa
-    ///   MonthNameToNum(), Month()
+    ///   MonthNameToNum, Month
     static string MonthNumToName(int month, ENameFormat format = eFull);
 
     /// Get numerical value of the day of week by name.
@@ -453,7 +448,7 @@ public:
     /// @return
     ///   Numerical value of a given day of week (0..6).
     /// @sa
-    ///   DayOfWeekNumToName(), DayOfWeek()
+    ///   DayOfWeekNumToName, DayOfWeek
     static int DayOfWeekNameToNum(const string& day);
 
     /// Get name of the day of week by numerical value.
@@ -465,14 +460,14 @@ public:
     /// @return
     ///   Name of the day of week.
     /// @sa
-    ///   DayOfWeekNameToNum(), DayOfWeek()
+    ///   DayOfWeekNameToNum, DayOfWeek
     static string DayOfWeekNumToName(int day, ENameFormat format = eFull);
     
     /// Transform time to string.
     ///
-    /// Use GetFormat() to obtain format, if "fmt" is not defined (=kEmptyStr).
     /// @param fmt
-    ///   Format specifier used to convert time to string.
+    ///   Format specifier used to convert time span to string.
+    ///   If "fmt" is not defined, then GetFormat() will be used.
     /// @param out_tz
     ///   Output timezone. This is a difference in seconds between GMT time
     ///   and local time for some place (for example, for EST5 timezone
@@ -482,7 +477,7 @@ public:
     ///   timezone. Timezone can be printed as string 'GMT[+|-]HHMM' using
     ///   format symbol 'z'. By default current timezone is used.
     /// @sa
-    ///   GetFormat(), SetFormat()
+    ///   GetFormat, SetFormat
     string AsString(const string& fmt = kEmptyStr,
                     long out_tz       = eCurrentTimeZone) const;
 
@@ -495,40 +490,46 @@ public:
 
     /// Get year.
     ///
-    /// Year = 1900 ..  
+    /// Year = 1900 ..
+    /// AsString() format symbols "Y", "y".
     int Year(void) const;
 
     /// Get month.
     ///
-    /// Month number = 1..12
+    /// Month number = 1..12.
+    /// AsString() format symbols "M", "B", "b".
     int Month(void) const;
 
     /// Get day.
     ///
     /// Day of the month = 1..31
+    /// AsString() format symbol "D".
     int Day(void) const;
 
     /// Get hour.
     ///
-    /// Hours since midnight = 0..23
+    /// Hours since midnight = 0..23.
+    /// AsString() format symbol "h".
     int Hour(void) const;
 
     /// Get minute.
     ///
     /// Minutes after the hour = 0..59
+    /// AsString() format symbol "m".
     int Minute(void) const;
 
     /// Get second.
     ///
     /// Seconds after the minute = 0..59
+    /// AsString() format symbol "s".
     int Second(void) const;
 
     /// Get nano seconds.
     ///
     /// Nanoseconds after the second = 0..999999999
+    /// AsString() format symbol "S".
     long NanoSecond(void) const;
 
-   
     //
     // Set various components of time.
     //
@@ -543,7 +544,7 @@ public:
     /// @param year
     ///   Year to set.
     /// @sa
-    ///   Year()
+    ///   Year
     void SetYear(int year);
 
     /// Set month.
@@ -556,7 +557,7 @@ public:
     /// @param month
     ///   Month number to set. Month number = 1..12.
     /// @sa
-    ///   Month()
+    ///   Month
     void SetMonth(int month);
 
     /// Set day.
@@ -568,7 +569,7 @@ public:
     /// @param day
     ///   Day to set. Day of the month = 1..31.
     /// @sa
-    ///   Day()
+    ///   Day
     void SetDay(int day);
 
     /// Set hour.
@@ -576,7 +577,7 @@ public:
     /// @param day
     ///   Hours since midnight = 0..23.
     /// @sa
-    ///   Hour()
+    ///   Hour
     void SetHour(int hour);
 
     /// Set minute.
@@ -584,7 +585,7 @@ public:
     /// @param minute
     ///   Minutes after the hour = 0..59.
     /// @sa
-    ///   Minute()
+    ///   Minute
     void SetMinute(int minute);
 
     /// Set second.
@@ -592,7 +593,7 @@ public:
     /// @param day
     ///   Seconds after the minute = 0..59.
     /// @sa
-    ///   Second()
+    ///   Second
     void SetSecond(int second);
 
     /// Set nano seconds.
@@ -600,9 +601,8 @@ public:
     /// @param day
     ///   Nanoseconds after the second = 0..999999999.
     /// @sa
-    ///   NanoSecond()
+    ///   NanoSecond
     void SetNanoSecond(long nanosecond);
-
 
     /// Get year's day number.
     ///
@@ -622,18 +622,18 @@ public:
     ///   Week number = 1..54.
     int YearWeekNumber(EDayOfWeek first_day_of_week = eSunday) const;
 
-
     /// Get week number in current month.
     ///
     /// @return
     ///   Week number in current month = 1..6.
     /// @sa
-    ///   YearWeekNumber()
+    ///   YearWeekNumber
     int MonthWeekNumber(EDayOfWeek first_day_of_week = eSunday) const;
 
     /// Get day of week.
     ///
     /// Days since Sunday = 0..6
+    /// AsString() format symbols "W", "w".
     int DayOfWeek(void) const;
 
     /// Get number of days in the current month.
@@ -645,7 +645,7 @@ public:
     ///
     /// It is an exact equivalent of calling AddMonth(years * 12).
     /// @sa
-    ///   AddMonth()
+    ///   AddMonth
     CTime& AddYear(int years = 1, EDaylight adl = eDaylightDefault);
 
     /// Add specified months and adjust for day light savings time.
@@ -712,47 +712,85 @@ public:
     ///   If negative, it will result in a "subtraction" operation.
     CTime& AddNanoSecond(long nanoseconds = 1);
 
+    /// Add specified time span.
+    ///
+    /// @param timespan
+    ///   Object of CTimeSpan class to add. 
+    ///   If negative, it will result in a "subtraction" operation.
+    CTime& AddTimeSpan(const CTimeSpan& timespan);
+
+    //
     // Add/subtract days
+    //
 
     /// Operator to add days.
-    CTime& operator += (const int days);
+    CTime& operator+= (int days);
 
     /// Operator to subtract days.
-    CTime& operator -= (const int days);
+    CTime& operator-= (int days);
 
     /// Operator to increment days.
-    CTime& operator ++ (void);
+    CTime& operator++ (void);
 
     /// Operator to decrement days.
-    CTime& operator -- (void);
+    CTime& operator-- (void);
 
     /// Operator to increment days.
-    CTime  operator ++ (int);
+    CTime  operator++ (int);
 
     /// Operator to decrement days.
-    CTime  operator -- (int);
+    CTime  operator-- (int);
 
+    /// Operator to increment days.
+    CTime operator+ (int days);
+
+    /// Operator to decrement days.
+    CTime operator- (int days);
+
+    //
+    // Add/subtract time span
+    //
+
+    // Operator to add time span.
+    CTime& operator+= (const CTimeSpan& ts);
+
+    /// Operator to subtract time span.
+    CTime& operator-= (const CTimeSpan& ts);
+
+    // Operator to add time span.
+    CTime operator+ (const CTimeSpan& ts);
+
+    /// Operator to subtract time span.
+    CTime operator- (const CTimeSpan& ts);
+
+    /// Operator to subtract times.
+    CTimeSpan operator- (const CTime& t);
+
+    //
     // Time comparison ('>' means "later", '<' means "earlier")
+    //
 
     /// Operator to test equality of time.
-    bool operator == (const CTime& t) const;
+    bool operator== (const CTime& t) const;
 
     /// Operator to test in-equality of time.
-    bool operator != (const CTime& t) const;
+    bool operator!= (const CTime& t) const;
 
     /// Operator to test if time is later.
-    bool operator >  (const CTime& t) const;
+    bool operator>  (const CTime& t) const;
 
     /// Operator to test if time is earlier.
-    bool operator <  (const CTime& t) const;
+    bool operator<  (const CTime& t) const;
 
     /// Operator to test if time is later or equal.
-    bool operator >= (const CTime& t) const;
+    bool operator>= (const CTime& t) const;
 
     /// Operator to test if time is earlier or equal.
-    bool operator <= (const CTime& t) const;
+    bool operator<= (const CTime& t) const;
 
+    //
     // Time difference
+    //
 
     /// Difference in days from specified time.
     double DiffDay(const CTime& t) const;
@@ -769,7 +807,12 @@ public:
     /// Difference in nanoseconds from specified time.
     double DiffNanoSecond(const CTime& t) const;
 
+    /// Difference in nanoseconds from specified time.
+    CTimeSpan DiffTimeSpan(const CTime& t) const;
+
+    //
     // Checks
+    //
 
     /// Is time empty?
     bool IsEmpty     (void) const;
@@ -786,7 +829,9 @@ public:
     /// Is time GMT time?
     bool IsGmtTime   (void) const;
 
+    //
     // Timezone functions
+    //
 
     /// Get time zone format.
     ETimeZone GetTimeZoneFormat(void) const;
@@ -819,13 +864,12 @@ public:
     CTime& ToGmtTime(void);
 
 private:
-  
-    /// Helper method to check if time format "fmt" is valid.
-    static void x_VerifyFormat(const string& fmt);
-
     /// Helper method to set time value from string "str" using format "fmt".
     void x_Init(const string& str, const string& fmt);
 
+    /// Helper method to check if time format "fmt" is valid.
+    static void x_VerifyFormat(const string& fmt);    
+    
     /// Helper method to set time from 'time_t' -- If "t" not specified,
     /// then set to current time.
     CTime& x_SetTime(const time_t* t = 0);
@@ -875,13 +919,224 @@ private:
     /// as stored during the last call to x_AdjustTime***().
     int m_AdjustTimeDiff;
 
-    // Friend operators
+    // Friend left-hand operators
     NCBI_XNCBI_EXPORT
-    friend CTime operator + (int days, const CTime& t);
+    friend CTime operator+ (int days, const CTime& t);
     NCBI_XNCBI_EXPORT
-    friend CTime operator + (const CTime& t, int days);
-    NCBI_XNCBI_EXPORT
-    friend CTime operator - (const CTime& t, int days);
+    friend CTime operator+ (const CTimeSpan& ts, const CTime& t);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CTimeSpan
+///
+/// Defines a class to represents a relative time span.
+/// Time span can be both positive and negative.
+///
+/// Throw exception of type CTimeException on errors.
+
+class NCBI_XNCBI_EXPORT CTimeSpan
+{
+public:
+    /// Default constructor.
+    CTimeSpan(void);
+
+    /// Constructor.
+    ///
+    /// Construct time span given the number of days, hours, minutes, seconds,
+    /// nanoseconds parts of a time span value.
+    /// @param days
+    ///   Day part of time. Note day starts from 1.
+    /// @param hours
+    ///   Hour part of time.
+    /// @param minutes
+    ///   Minute part of time.
+    /// @param seconds
+    ///   Second part of time.
+    /// @param nanoseconds
+    ///   Nanosecond part of time.
+    CTimeSpan(long days, long hours = 0, long minutes = 0,
+              long seconds = 0, long nanoseconds = 0);
+
+    /// Constructor.
+    ///
+    /// Construct time span from number of seconds.
+    /// Please, use this constructor as rarely as possible, because after
+    /// doing some arithmetical operations and conversion with it,
+    /// the time span can differ at some nanoseconds from expected value.
+    /// @param seconds
+    ///   Second part of time. The fractional part is used to compute
+    ///   nanoseconds.
+    CTimeSpan(double seconds);
+
+    /// Explicit conversion constructor for string representation of time span.
+    ///
+    /// Construct time span object from string representation of time.
+    ///
+    /// @param str
+    ///   String representation of time span in format "fmt".
+    /// @param fmt
+    ///   Format in which "str" is presented. Default value of kEmptyStr,
+    ///   implies the "S.n" format.
+    explicit CTimeSpan(const string& str, const string& fmt = kEmptyStr);
+
+    /// Copy constructor.
+    CTimeSpan(const CTimeSpan& t);
+
+    /// Assignment operator.
+    CTimeSpan& operator= (const CTimeSpan& t);
+
+    /// Assignment operator.
+    CTimeSpan& operator= (const string& str);
+
+    /// Make the time span "empty",
+    CTimeSpan& Clear(void);
+
+    /// Get sign of time span.
+    ESign GetSign(void) const;
+
+    /// Set the current time span format.
+    /// 
+    /// The default format is: "S.n".
+    /// @param fmt
+    ///   String of letters describing the time span format.
+    ///   The letters having the following meanings:
+    ///   - d = days
+    ///   - D = total number of days
+    ///   - h = hours (-23 - 23)
+    ///   - H = total number of hour
+    ///   - m = minutes (-59 - 59)
+    ///   - M = total number of minutes
+    ///   - s = seconds (-59 - 59)
+    ///   - S = total number of seconds
+    ///   - n = nanosecond (-999999999 - 999999999)
+    ///   - N = total number of nanoseconds
+    /// @sa
+    ///   GetFormat
+    static void SetFormat(const string& fmt);
+
+    /// Get the current time span format.
+    /// 
+    /// The default format is: "S.n".
+    /// @return
+    ///   A string of letters describing the time span format.
+    /// @sa
+    ///   SetFormat
+    static string GetFormat(void);
+
+    /// Transform time span to string.
+    ///
+    /// @param fmt
+    ///   Format specifier used to convert time span to string.
+    ///   If "fmt" is not defined, then GetFormat() will be used.
+    /// @sa
+    ///   GetFormat, SetFormat
+    string AsString(const string& fmt = kEmptyStr) const;
+
+    /// Return span time as string using the format returned by GetFormat().
+    operator string(void) const;
+
+    //
+    // Get various components of time span.
+    //
+
+    /// Get total number of complete days.
+    long GetTotalDays(void) const;
+
+    /// Get total number of complete hours.
+    long GetTotalHours(void) const;
+
+    /// Get total number of complete minutes.
+    long GetTotalMinutes(void) const;
+
+    /// Get total number of complete seconds.
+    long GetTotalSeconds(void) const;
+
+    /// Get total number of nanoseconds.
+    long GetNanoSecondsAfterSecond(void) const;
+
+    /// Return span time as number of seconds.
+    ///
+    /// @return
+    ///   Return representative of time span as type double. 
+    ///   The fractional part represents nanoseconds part of time span.
+    ///   The double representation of the time span is aproximate.
+    double Get(void) const;
+
+    //
+    // Arithmetic
+    //
+
+    // Operator to add time span.
+    CTimeSpan& operator+= (const CTimeSpan& t);
+
+    // Operator to add time span.
+    CTimeSpan operator+ (const CTimeSpan& t);
+
+    /// Operator to subtract time span.
+    CTimeSpan& operator-= (const CTimeSpan& t);
+
+    /// Operator to subtract time span.
+    CTimeSpan operator- (const CTimeSpan& t);
+
+    /// Unary operator "-" (minus) to change time span sign.
+    const CTimeSpan operator- (void) const;
+
+    /// Invert time span. Changes time span sign.
+    void CTimeSpan::Invert(void);
+
+    //
+    // Comparison
+    //
+
+    /// Operator to test equality of time span.
+    bool operator== (const CTimeSpan& t) const;
+
+    /// Operator to test in-equality of time span.
+    bool operator!= (const CTimeSpan& t) const;
+
+    /// Operator to test if time span is greater.
+    bool operator>  (const CTimeSpan& t) const;
+
+    /// Operator to test if time is less.
+    bool operator<  (const CTimeSpan& t) const;
+
+    /// Operator to test if time span is greater or equal.
+    bool operator>= (const CTimeSpan& t) const;
+
+    /// Operator to test if time span is less or equal.
+    bool operator<= (const CTimeSpan& t) const;
+
+private:
+    /// Get hour.
+    /// Hours since midnight = -23..23
+    int x_Hour(void) const;
+
+    /// Get minute.
+    /// Minutes after the hour = -59..59
+    int x_Minute(void) const;
+
+    /// Get second.
+    /// Seconds after the minute = -59..59
+    int x_Second(void) const;
+
+    /// Get nanoseconds.
+    /// Nanoseconds after the second = -999999999..999999999
+    long x_NanoSecond(void) const;
+
+    /// Helper method to set time value from string "str" using format "fmt".
+    void x_Init(const string& str, const string& fmt);
+
+    /// Helper method to normalize stored time value.
+    void x_Normalize(void);
+
+    /// Helper method to check if time format "fmt" is valid.
+    static void x_VerifyFormat(const string& fmt);    
+
+private:
+    long  m_Sec;      ///< Seconds part of the time span
+    long  m_NanoSec;  ///< Nanoseconds after the second
 };
 
 
@@ -905,14 +1160,48 @@ public:
     /// Start the timer.
     void Start(void);
 
-    /// Return time elapsed time since last Start() or Restart() call.
+    /// Return time elapsed since last Start() or Restart() call (in seconds).
     /// Result is underfined if Start() or Restart() wasn't previously called.
     double Elapsed(void) const;
 
-    /// Return time elapsed time since last Start() or Restart() call.
+    /// Return time elapsed since last Start() or Restart() call (in seconds).
     /// Start new timer after that.
     /// Result is underfined if Start() or Restart() wasn't previously called.
     double Restart(void);
+
+    /// Set the current stopwatch time format.
+    /// 
+    /// The default format is: "S.n".
+    /// @sa
+    ///   CTimeSpan::GetFormat, GetFormat
+    static void SetFormat(const string& fmt);
+
+    /// Get the current stopwatch time format.
+    /// 
+    /// The default format is: "S.n".
+    /// @return
+    ///   A string of letters describing the time span format.
+    ///   The letters having the same means that for CTimeSpan.
+    /// @sa
+    ///   CTimeSpan::GetFormat, SetFormat
+    static string GetFormat(void);
+
+    /// Transform stopwatch time to string.
+    ///
+    /// According to used OS, the double representation can provide much
+    /// finer grained time control. The string representation is limited
+    /// by nanoseconds.
+    /// @param fmt
+    ///   If "fmt" is not defined, then GetFormat() will be used.
+    ///   Format specifier used to convert value returned by Elapsed()
+    ///   to string.
+    /// @sa
+    ///   CTimeSpan::AsString, GetFormat, SetFormat
+    string AsString(const string& fmt = kEmptyStr) const;
+
+    /// Return stopwatch time as string using the format returned
+    /// by GetFormat().
+    operator string(void) const;
 
 protected:
     /// Get current time mark.
@@ -923,8 +1212,8 @@ private:
 };
 
 
-
 /* @} */
+
 
 
 //=============================================================================
@@ -933,47 +1222,13 @@ private:
 //
 //=============================================================================
 
-// Add (subtract if negative) to the time (see CTime::AddXXX)
-NCBI_XNCBI_EXPORT
-extern CTime AddYear       (const CTime& t, int  years       = 1);
-NCBI_XNCBI_EXPORT
-extern CTime AddMonth      (const CTime& t, int  months      = 1);
-NCBI_XNCBI_EXPORT
-extern CTime AddDay        (const CTime& t, int  days        = 1);
-NCBI_XNCBI_EXPORT
-extern CTime AddHour       (const CTime& t, int  hours       = 1);
-NCBI_XNCBI_EXPORT
-extern CTime AddMinute     (const CTime& t, int  minutes     = 1);
-NCBI_XNCBI_EXPORT
-extern CTime AddSecond     (const CTime& t, int  seconds     = 1);
-NCBI_XNCBI_EXPORT
-extern CTime AddNanoSecond (const CTime& t, long nanoseconds = 1);
 
 // Add/subtract days (see CTime::operator +/-)
 NCBI_XNCBI_EXPORT
 extern CTime operator + (int days, const CTime& t);
 
 NCBI_XNCBI_EXPORT
-extern CTime operator + (const CTime& t, int days);
-
-NCBI_XNCBI_EXPORT
-extern CTime operator - (const CTime& t, int days);
-
-// Difference in days (see CTime::operator)
-NCBI_XNCBI_EXPORT
-extern int   operator - (const CTime& t1, const CTime& t2);
-
-// Get current time (in local or GMT format)
-NCBI_XNCBI_EXPORT
-extern CTime CurrentTime(
-    CTime::ETimeZone          tz  = CTime::eLocal, 
-    CTime::ETimeZonePrecision tzp = CTime::eTZPrecisionDefault
-    );
-
-// Truncate the time to days (see CTime::Truncate)
-NCBI_XNCBI_EXPORT 
-extern CTime Truncate(const CTime& t);
-
+extern int   operator- (const CTime& t1, const CTime& t2);
 
 
 //=============================================================================
@@ -982,8 +1237,103 @@ extern CTime Truncate(const CTime& t);
 //
 //=============================================================================
 
+// Add (subtract if negative) to the time (see CTime::AddXXX)
 
-// CTime
+inline
+CTime AddYear(const CTime& t, int  years = 1)
+{
+    CTime tmp(t);
+    return tmp.AddYear(years);
+}
+
+inline
+CTime AddMonth(const CTime& t, int  months = 1)
+{
+    CTime tmp(t);
+    return tmp.AddMonth(months);
+}
+
+inline
+CTime AddDay(const CTime& t, int  days = 1)
+{
+    CTime tmp(t);
+    return tmp.AddDay(days);
+}
+
+inline
+CTime AddHour(const CTime& t, int  hours = 1)
+{
+    CTime tmp(t);
+    return tmp.AddHour(hours);
+}
+
+inline
+CTime AddMinute(const CTime& t, int  minutes = 1)
+{
+    CTime tmp(t);
+    return tmp.AddMinute(minutes);
+}
+
+inline
+CTime AddSecond(const CTime& t, int  seconds = 1)
+{
+    CTime tmp(t);
+    return tmp.AddSecond(seconds);
+}
+
+inline
+CTime AddNanoSecond (const CTime& t, long nanoseconds = 1)
+{
+    CTime tmp(t);
+    return tmp.AddNanoSecond(nanoseconds);
+}
+
+// Add/subtract CTimeSpan (see CTime::operator +/-)
+inline
+CTime operator+ (const CTimeSpan& ts, const CTime& t)
+{
+    CTime tmp(t);
+    tmp.AddTimeSpan(ts);
+    return tmp;
+}
+
+// Get current time (in local or GMT format)
+inline
+CTime CurrentTime(
+    CTime::ETimeZone          tz  = CTime::eLocal, 
+    CTime::ETimeZonePrecision tzp = CTime::eTZPrecisionDefault
+    )
+{
+    return CTime(CTime::eCurrent,tz,tzp);
+}
+    
+// Truncate the time to days (see CTime::Truncate)
+inline
+CTime Truncate(const CTime& t)
+{
+    CTime tmp(t);
+    return tmp.Truncate();
+}
+
+/// Dumps the current stopwatch time to an output stream.
+/// The time will be printed out using format specified
+/// by CStopWatch::GetFormat().
+inline
+ostream& operator<< (ostream& os, const CStopWatch& sw)
+{
+    return os << sw.AsString();
+}
+
+
+//=============================================================================
+//
+//  Inline class methods
+//
+//=============================================================================
+
+//
+//  CTime
+//
 
 inline 
 int CTime::Year(void) const { return m_Year; }
@@ -1019,22 +1369,50 @@ inline
 CTime& CTime::SetCurrent(void) { return x_SetTime(); }
 
 inline 
-CTime& CTime::operator += (const int days) { return AddDay(days); }
+CTime& CTime::operator+= (int days) { return AddDay(days); }
 
 inline 
-CTime& CTime::operator -= (const int days) { return AddDay(-days); }
+CTime& CTime::operator-= (int days) { return AddDay(-days); }
 
 inline 
-CTime& CTime::operator ++ (void) { return AddDay( 1); }
+CTime& CTime::operator++ (void) { return AddDay( 1); }
 
 inline 
-CTime& CTime::operator -- (void) { return AddDay(-1); }
+CTime& CTime::operator-- (void) { return AddDay(-1); }
+
+inline
+CTime& CTime::operator+= (const CTimeSpan& ts) { return AddTimeSpan(ts); }
+
+inline
+CTime& CTime::operator-= (const CTimeSpan& ts) { return AddTimeSpan(-ts); }
+
+inline
+CTime CTime::operator+ (const CTimeSpan& ts)
+{
+    CTime tmp(*this);
+    tmp.AddTimeSpan(ts);
+    return tmp;
+}
+
+inline
+CTime CTime::operator- (const CTimeSpan& ts)
+{
+    CTime tmp(*this);
+    tmp.AddTimeSpan(-ts);
+    return tmp;
+}
+
+inline
+CTimeSpan CTime::operator- (const CTime& t)
+{
+    return DiffTimeSpan(t);
+}
 
 inline 
 CTime::operator string(void) const { return AsString(); }
 
 inline 
-CTime CTime::operator ++ (int)
+CTime CTime::operator++ (int)
 {
     CTime t = *this;
     AddDay(1);
@@ -1042,7 +1420,7 @@ CTime CTime::operator ++ (int)
 }
 
 inline 
-CTime CTime::operator -- (int)
+CTime CTime::operator-- (int)
 {
     CTime t = *this;
     AddDay(-1);
@@ -1050,14 +1428,30 @@ CTime CTime::operator -- (int)
 }
 
 inline 
-CTime& CTime::operator = (const string& str)
+CTime CTime::operator+ (int days)
+{
+    CTime t = *this;
+    t.AddDay(days);
+    return t;
+}
+
+inline 
+CTime CTime::operator- (int days)
+{
+    CTime t = *this;
+    t.AddDay(-days);
+    return t;
+}
+
+inline 
+CTime& CTime::operator= (const string& str)
 {
     x_Init(str, GetFormat());
     return *this;
 }
 
 inline 
-CTime& CTime::operator = (const CTime& t)
+CTime& CTime::operator= (const CTime& t)
 {
     if ( &t == this )
         return *this;
@@ -1077,19 +1471,19 @@ CTime& CTime::operator = (const CTime& t)
 }
 
 inline 
-bool CTime::operator != (const CTime& t) const
+bool CTime::operator!= (const CTime& t) const
 {
     return !(*this == t);
 }
 
 inline 
-bool CTime::operator >= (const CTime& t) const
+bool CTime::operator>= (const CTime& t) const
 {
     return !(*this < t);
 }
 
 inline
-bool CTime::operator <= (const CTime& t) const
+bool CTime::operator<= (const CTime& t) const
 {
     return !(*this > t);
 }
@@ -1212,7 +1606,206 @@ bool CTime::x_NeedAdjustTime(void) const
 }
 
 
-// CStopWatch
+//
+//  CTimeSpan
+//
+
+inline
+CTimeSpan::CTimeSpan(void) 
+{
+    Clear();
+    return;
+}
+
+inline
+CTimeSpan::CTimeSpan(long days, long hours, long minutes, long seconds,
+                     long nanoseconds)
+{
+    m_Sec = ((days*24 + hours)*60 + minutes)*60 + 
+            seconds + nanoseconds/kNanoSecondsPerSecond;
+    m_NanoSec = nanoseconds % kNanoSecondsPerSecond;
+    x_Normalize();
+}
+
+inline
+CTimeSpan::CTimeSpan(double seconds)
+{
+    m_Sec = long(seconds);
+    m_NanoSec = long((seconds - m_Sec) * kNanoSecondsPerSecond);
+    x_Normalize();
+    return;
+}
+
+inline
+CTimeSpan::CTimeSpan(const CTimeSpan& t)
+{
+    m_Sec = t.m_Sec;
+    m_NanoSec = t.m_NanoSec;
+}
+
+inline
+CTimeSpan& CTimeSpan::Clear(void) {
+    m_Sec = 0;
+    m_NanoSec = 0;
+    return *this;
+}
+
+inline
+ESign CTimeSpan::GetSign(void) const
+{
+    if ((m_Sec < 0) || (m_NanoSec < 0)) {
+        return eNegative;
+    }
+    if (!m_Sec  &&  !m_NanoSec) {
+        return eZero;
+    } 
+    return ePositive;
+}
+
+inline
+int CTimeSpan::x_Hour(void) const { return int((m_Sec / 3600L) % 24); }
+
+inline
+int CTimeSpan::x_Minute(void) const { return int((m_Sec / 60L) % 60); }
+
+inline
+int CTimeSpan::x_Second(void) const { return int(m_Sec % 60L); }
+
+inline
+long CTimeSpan::GetTotalDays(void) const { return m_Sec / 86400L; }
+
+inline
+long CTimeSpan::GetTotalHours(void) const { return m_Sec / 3600L; }
+
+inline
+long CTimeSpan::GetTotalMinutes(void) const { return m_Sec / 60L; }
+
+inline
+long CTimeSpan::GetTotalSeconds(void) const { return m_Sec; }
+
+inline
+long CTimeSpan::GetNanoSecondsAfterSecond(void) const { return m_NanoSec; }
+
+inline
+double CTimeSpan::Get(void) const
+{
+    double t = abs(m_Sec) + double(abs(m_NanoSec)) / kNanoSecondsPerSecond;
+    return (GetSign() == eNegative) ? -t : t;
+}
+
+inline
+CTimeSpan& CTimeSpan::operator= (const CTimeSpan& t)
+{
+    m_Sec = t.m_Sec;
+    m_NanoSec = t.m_NanoSec;
+    return *this;
+}
+
+inline 
+CTimeSpan& CTimeSpan::operator= (const string& str)
+{
+    x_Init(str, GetFormat());
+    return *this;
+}
+
+inline 
+CTimeSpan::operator string(void) const { return AsString(); }
+
+inline 
+CTimeSpan& CTimeSpan::operator+= (const CTimeSpan& t)
+{
+    m_Sec += t.m_Sec;
+    m_NanoSec += t.m_NanoSec;
+    x_Normalize();
+    return *this;
+}
+
+inline 
+CTimeSpan CTimeSpan::operator+ (const CTimeSpan& t)
+{
+    CTimeSpan tnew(0, 0, 0, m_Sec + t.m_Sec, m_NanoSec + t.m_NanoSec);
+    return tnew;
+}
+
+inline 
+CTimeSpan& CTimeSpan::operator-= (const CTimeSpan& t)
+{
+    m_Sec -= t.m_Sec;
+    m_NanoSec -= t.m_NanoSec;
+    x_Normalize();
+    return *this;
+}
+
+inline 
+CTimeSpan CTimeSpan::operator- (const CTimeSpan& t)
+{
+    CTimeSpan tnew(0, 0, 0, m_Sec - t.m_Sec, m_NanoSec - t.m_NanoSec);
+    return tnew;
+}
+
+inline 
+const CTimeSpan CTimeSpan::operator- (void) const
+{
+    CTimeSpan t;
+    t.m_Sec     = -m_Sec;
+    t.m_NanoSec = -m_NanoSec;
+    return t;
+}
+
+inline 
+void CTimeSpan::Invert(void)
+{
+    m_Sec     = -m_Sec;
+    m_NanoSec = -m_NanoSec;
+}
+
+inline
+bool CTimeSpan::operator== (const CTimeSpan& t) const
+{
+    return m_Sec == t.m_Sec  &&  m_NanoSec == t.m_NanoSec;
+}
+
+inline 
+bool CTimeSpan::operator!= (const CTimeSpan& t) const
+{
+    return !(*this == t);
+}
+
+inline
+bool CTimeSpan::operator> (const CTimeSpan& t) const
+{
+    if (m_Sec == t.m_Sec) {
+        return m_NanoSec > t.m_NanoSec;
+    }
+    return m_Sec > t.m_Sec;
+}
+
+
+inline
+bool CTimeSpan::operator< (const CTimeSpan& t) const
+{
+    if (m_Sec == t.m_Sec) {
+        return m_NanoSec < t.m_NanoSec;
+    }
+    return m_Sec < t.m_Sec;
+}
+
+inline 
+bool CTimeSpan::operator>= (const CTimeSpan& t) const
+{
+    return !(*this < t);
+}
+
+inline
+bool CTimeSpan::operator<= (const CTimeSpan& t) const
+{
+    return !(*this > t);
+}
+
+
+//
+//  CStopWatch
+//
 
 inline
 CStopWatch::CStopWatch(void)
@@ -1246,6 +1839,9 @@ double CStopWatch::Restart()
     return (m_Start = GetTimeMark()) - previous;
 }
 
+inline 
+CStopWatch::operator string(void) const { return AsString(); }
+
 
 END_NCBI_SCOPE
 
@@ -1253,6 +1849,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/09/07 16:31:22  ivanov
+ * Added CTimeSpan class and its support to CTime class (addition/subtraction)
+ * CTime:: added new format letter support 'd', day without leading zero.
+ * CStopWatch:: added operatir << to dumps the current stopwatch time to an
+ * output stream.
+ * Comments and other cosmetic changes.
+ *
  * Revision 1.35  2004/08/19 13:02:17  dicuccio
  * Dropped unnecessary export specifier on exceptions
  *
