@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.3 2000/08/24 14:47:53 sherry Exp $
+-- $Id: docsum.asn,v 1.4 2000/10/20 19:21:41 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.4  2000/10/20 19:21:41  sherry
+-- added ambiguousloc and lowmapquality to legal withdrawn reasons
+--
 -- Revision 1.3  2000/08/24 14:47:53  sherry
 -- added subsnp-class and mixed snp-class type
 --
@@ -149,7 +152,9 @@ NCBI-RefSNPdocsum ::= SEQUENCE {		-- defines the docsum structure that summarize
 		artifact     (2),		-- variation determined to be experimental artifact
 		gene-dup      (3),		-- variation artifact of duplicated gene region
 		duplicatesub  (4),		-- variation was duplicate submission
-		notspecified  (5) },		-- no reason specified for withdrawal	
+		notspecified  (5),		-- no reason specified for withdrawal	
+		ambiguousloc  (6),		-- variation has excessive number of potional locations in genome
+		lowmapquality (7)},		-- evidence for calling variation deemed insufficient
 		
 	link-data SET OF NCBI-RefSNPlink OPTIONAL, 	-- link data for external resources
 	validated BOOLEAN OPTIONAL,		-- at least one subsnp has been reported as validated		SNP.validated
