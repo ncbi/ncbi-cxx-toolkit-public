@@ -24,6 +24,8 @@
 			Building shared libraries (DLLs)</a>
 		   <li> <a href="#ref_NamingBuildTree">
 			Naming the <i>build tree</i></a>
+		   <li> <a href="#ref_AfterConf">
+			After-configure user callback script</a>
 		   <li> <a href="#ref_ToolsAndFlags">
 			Tools and Flags</a>
          <li> <a href="#ref_Localization">
@@ -370,6 +372,24 @@ There is also a special case with <i><b>--exec_prefix=</b>.</i>
 the sources are located. But be advised that this will disallow you
 to configure for other <i>build trees</i>.
 
+<p>
+<br>
+<a name="ref_AfterConf"></a>
+<h4>After-configure user callback script</h4>
+
+You can specify your own script to call from the <i>configure</i>
+script after the configuration is complete:
+<ul>
+  <li> <i><b>--with-extra-action=</b>"&lt;some_action&gt;"</i>
+</ul>
+where <i>&lt;some_action&gt;</i> can be some script with parameters.
+The trick here is that in the &lt;some_action&gt; string, all
+occurences of "<i>{}</i>" will be replaced by the build dir name.
+<br><i>Example:</i>
+<br>&nbsp;&nbsp;&nbsp;<i>configure <b>--with-extra-action=</b>"echo foobar {}"</i>
+<br>will execute (after the configuration is done):
+<br>&nbsp;&nbsp;&nbsp;<i>echo foobar /home/user/c++/GCC-Debug</i>.
+
 
 <p>
 <br>
@@ -549,9 +569,9 @@ to the "generic" ones
   </tr>
 
   <tr>
-	 <td><b>NCBI_SSSDB_PATH</b></td>
-	 <td><i>/net/neptune/pubmed1/sss/db</i></td>
-	 <td>Path to the NCBI SSS DB package</td>
+	 <td><b>NCBI_SSS_PATH</b></td>
+	 <td><i>/net/neptune/pubmed1/sss</i></td>
+	 <td>Path to the NCBI SSS package</td>
   </tr>
 
   <tr>
@@ -573,13 +593,11 @@ to use in the generated makefiles:
   <tr>
 	 <th>Name</th>
 	 <th>Value</th>
-	 <th>Fallback</th>
 	 <th>Used to...</th>
   </tr>
 
   <tr>
 	 <td><i><b>THREAD_LIBS</b></i></td>
-	 <td>$THREAD_LIBS</td>
 	 <td>$THREAD_LIBS</td>
 	 <td>link with system thread lib</td>
   </tr>
@@ -587,14 +605,12 @@ to use in the generated makefiles:
   <tr>
 	 <td><i><b>NETWORK_LIBS</b></i></td>
 	 <td>$NETWORK_LIBS</td>
-	 <td>$NETWORK_LIBS</td>
 	 <td>link with system network libs</td>
   </tr>
 
   <tr>
 	 <td><i><b>SYBASE_INCLUDE</b></i></td>
 	 <td><i><b>-I</b></i>$SYBASE_PATH<i>/include</i></td>
-	 <td>none</td>
 	 <td><i>#include</i> Sybase headers</td>
   </tr>
 
@@ -603,14 +619,12 @@ to use in the generated makefiles:
 	 <td><i><b>-L</b></i>$SYBASE_PATH<i>/lib <br>
        <b>-l</b>ct <b>-l</b>cs <b>-l</b>tcl <b>-l</b>comn <b>-l</b>intl
     </i></td>
-	 <td>none</td>
 	 <td>link with Sybase libs</td>
   </tr>
 
   <tr>
 	 <td><i><b>FASTCGI_INCLUDE</b></i></td>
 	 <td><i><b>-I</b></i>$FASTCGI_PATH<i>/include</i></td>
-	 <td>none</td>
 	 <td><i>#include</i> Fast-CGI headers</td>
   </tr>
 
@@ -619,14 +633,12 @@ to use in the generated makefiles:
 	 <td><i><b>-L</b></i>$FASTCGI_PATH<i>/lib <b>-l</b>fcgi</i>
         <br> or <br>
         <i><b>-L</b></i>$FASTCGI_PATH<i>/altlib <b>-l</b>fcgi</i> </td>
-	 <td>none</td>
 	 <td>link with Fast-CGI lib</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_C_INCLUDE</b></i></td>
 	 <td><i><b>-I</b></i>$NCBI_C_PATH<i>/include</i></td>
-	 <td>none</td>
 	 <td><i>#include</i> NCBI C toolkit headers</td>
   </tr>
 
@@ -635,37 +647,46 @@ to use in the generated makefiles:
 	 <td><i><b>-L</b></i>$NCBI_C_PATH<i>/lib</i>
         <br> or <br>
         <i><b>-L</b></i>$NCBI_C_PATH<i>/altlib</i></td>
-	 <td>none</td>
 	 <td>path to NCBI C toolkit libs</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_C_ncbi</b></i></td>
 	 <td><i><b>-l</b>ncbi</i></td>
-	 <td>none</td>
 	 <td>link with NCBI C CoreLib</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_SSSDB_INCLUDE</b></i></td>
-	 <td><i><b>-I</b></i>$NCBI_SSSDB_PATH</td>
-	 <td>none</td>
+	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/db</td>
 	 <td><i>#include</i> NCBI SSS DB headers</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_SSSDB_LIBS</b></i></td>
-	 <td><i><b>-L</b></i>$NCBI_SSSDB_PATH<i>/Release -<b>l</b>sssdb</i> <br>or<br>
-        <i><b>-L</b></i>$NCBI_SSSDB_PATH<i>/Debug -<b>l</b>sssdb</i>
+	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/db/Release -<b>l</b>sssdb</i> <br>or<br>
+        <i><b>-L</b></i>$NCBI_SSS_PATH<i>/db/Debug -<b>l</b>sssdb</i>
     </td>
-	 <td>none</td>
 	 <td>link with NCBI SSS DB libs</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_SSSUTILS_INCLUDE</b></i></td>
+	 <td><i><b>-I</b></i>$NCBI_SSS_PATH/utils</td>
+	 <td><i>#include</i> NCBI SSS UTILS headers</td>
+  </tr>
+
+  <tr>
+	 <td><i><b>NCBI_SSSUTILS_LIBS</b></i></td>
+	 <td><i><b>-L</b></i>$NCBI_SSS_PATH<i>/utils/Release -<b>l</b>sssutils</i> <br>or<br>
+        <i><b>-L</b></i>$NCBI_SSS_PATH<i>/utils/Debug -<b>l</b>sssutils</i>
+    </td>
+	 <td>link with NCBI SSS UTILS libs</td>
   </tr>
 
   <tr>
 	 <td><i><b>NCBI_PM_PATH</b></i></td>
 	 <td>$NCBI_PM_PATH</td>
-	 <td><i>No_NCBI_PubMed</i></td>
 	 <td>path to the PubMed package</td>
   </tr>
 </table>
@@ -685,6 +706,9 @@ flags:
   <li> <i><b>--without-fastcgi</b></i> (Fast-CGI)
   <li> <i><b>--without-ncbi-c</b></i> (NCBI C toolkit)
   <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB)
+  <li> <i><b>--without-sssutils</b></i> (NCBI SSS UTILS)
+  <li> <i><b>--without-sss</b></i>
+		  (both <i><b>--without-sssdb</b></i> and <i><b>--without-sssutils</b></i>)
   <li> <i><b>--without-pubmed</b></i> (NCBI PubMed)
 </ul>
 
