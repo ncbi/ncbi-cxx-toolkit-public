@@ -13,7 +13,6 @@
  *
  *  Although all reasonable efforts have been taken to ensure the accuracy
  *  and reliability of the software and data, the NLM and the U.S.
- *  Government do not and cannot warrant the performance or results that
  *  may be obtained by using this software or data. The NLM and the U.S.
  *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
@@ -783,7 +782,6 @@ static void s_TEST_MemoryFile(void)
         fs.write(buf, s_BufLen);
         assert(fs.good());
         fs.close();
-        CFile f(s_FileName);
         assert(f.GetLength() == s_BufLen);
 
         // Map some segments of the file
@@ -880,6 +878,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2004/12/22 12:27:35  ivanov
+ * Removed redundant variable declaration
+ *
  * Revision 1.42  2004/12/14 17:50:28  ivanov
  * CDir::Create(): return TRUE if creating directory already exists
  *
