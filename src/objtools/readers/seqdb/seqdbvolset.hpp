@@ -30,7 +30,7 @@
  *
  */
 
-/// @file seqdbimpl.hpp
+/// @file seqdbvolset.hpp
 /// Manages a set of database volumes.
 /// 
 /// Defines classes:
