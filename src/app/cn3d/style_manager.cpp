@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/04/12 01:54:43  thiessen
+* tweaks to style stuff
+*
 * Revision 1.64  2002/04/11 17:50:28  thiessen
 * fix domain coloring bug
 *
@@ -584,7 +587,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
             nucleotideBackbone.colorScheme = eDomain;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
             heterogens.colorScheme = solvents.colorScheme = eElement;
-            helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+            helixObjects.colorScheme = strandObjects.colorScheme = eDomain;
             break;
 
         case eMoleculeShortcut:
@@ -592,7 +595,7 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eMolecule;
             heterogens.colorScheme = solvents.colorScheme = eMolecule;
-            helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+            helixObjects.colorScheme = strandObjects.colorScheme = eMolecule;
             break;
 
         case eRainbowShortcut:
@@ -1755,13 +1758,13 @@ bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_an
 void StyleManager::SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme)
 {
     globalStyle.SetColorScheme(scheme);
-    structureSet->SetDataChanged(StructureSet::eStyleData);
+//    structureSet->SetDataChanged(StructureSet::eStyleData);
 }
 
 void StyleManager::SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style)
 {
     globalStyle.SetRenderingStyle(style);
-    structureSet->SetDataChanged(StructureSet::eStyleData);
+//    structureSet->SetDataChanged(StructureSet::eStyleData);
 }
 
 bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& styleASN)
@@ -1769,7 +1772,7 @@ bool StyleManager::SetGlobalStyle(const ncbi::objects::CCn3d_style_settings& sty
     bool okay = globalStyle.LoadSettingsFromASN(styleASN);
     if (okay) {
         CheckGlobalStyleSettings();
-        structureSet->SetDataChanged(StructureSet::eStyleData);
+//        structureSet->SetDataChanged(StructureSet::eStyleData);
         GlobalMessenger()->PostRedrawAllStructures();
         GlobalMessenger()->PostRedrawAllSequenceViewers();
     }
