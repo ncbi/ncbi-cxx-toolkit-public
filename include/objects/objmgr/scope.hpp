@@ -174,7 +174,8 @@ public:
     CSeq_id_Handle GetIdHandle(const CSeq_id& id) const;
 
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          CSeq_annot::C_Data::E_Choice sel);
+                          CSeq_annot::C_Data::E_Choice sel,
+                          const CSeq_entry* limit_entry = 0);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              CAnnotTypes_CI::TTSESet& tse_set);
     CTSE_Lock GetTSEInfo(const CSeq_entry* tse);
@@ -187,7 +188,7 @@ private:
     void x_AddToHistory(CTSE_Info& tse);
 
     // Find the best possible resolution for the Seq-id
-    CSeqMatch_Info x_BestResolve(const CSeq_id& id);
+    CSeqMatch_Info x_BestResolve(CSeq_id_Handle idh);
 
     // Get bioseq handles for sequences from the given TSE using the filter
     void x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
@@ -237,6 +238,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/03/18 14:46:36  grichenk
+* Set limit object type to "none" if the object is null.
+*
 * Revision 1.35  2003/03/12 20:09:30  grichenk
 * Redistributed members between CBioseq_Handle, CBioseq_Info and CTSE_Info
 *

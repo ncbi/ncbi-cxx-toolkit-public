@@ -91,15 +91,6 @@ public:
     // Get sequence map.
     virtual const CSeqMap& GetSeqMap(void) const;
 
-    // Get sequence map with resolved multi-level references.
-    // The resulting map should contain regions of literals, gaps
-    // and references to literals only (but not gaps or refs) of other
-    // sequences.
-    // WARNING: the returned object should be stored as a CRef<> or
-    // deleted manually. Do not assign the returned value to a simple
-    // reference.
-    //virtual const CSeqMap& CreateResolvedSeqMap(void) const;
-
     // CSeqVector constructor flags
     enum EVectorCoding {
         eCoding_NotSet, // Use original coding - DANGEROUS! - may change
@@ -117,8 +108,6 @@ public:
     CSeqVector GetSeqVector(ENa_strand strand = eNa_strand_plus) const;
     CSeqVector GetSeqVector(EVectorCoding coding, EVectorStrand strand) const;
     CSeqVector GetSeqVector(EVectorStrand strand) const;
-    // NOTE: the following function is deprecated, use enum arguments instead.
-    //CSeqVector GetSeqVector(bool use_iupac_coding, bool plus_strand) const;
 
     // Sequence filtering: get a seq-vector for a part of the sequence.
     // The part shown depends oon the mode selected. If the location
@@ -138,9 +127,6 @@ public:
                                ENa_strand strand = eNa_strand_plus) const;
 
 
-    //CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
-    //                                         ENa_strand strand) const;
-    //CConstRef<CSeqMap> GetSeqMapByStrand(ENa_strand strand) const;
     CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
                                            ESequenceViewMode mode) const;
 
@@ -153,16 +139,15 @@ public:
     void ReplaceAnnot(const CSeq_annot& old_annot, CSeq_annot& new_annot);
 
 private:
-    CBioseq_Handle(const CSeq_id_Handle& value);
+    CBioseq_Handle(const CSeq_id_Handle& value,
+                   CScope& scope,
+                   CBioseq_Info& bioseq);
 
     // Get the internal seq-id handle
     const CSeq_id_Handle&  GetKey(void) const;
 
     // Get data source
     CDataSource& x_GetDataSource(void) const;
-
-    // Set the handle seq-entry and datasource
-    void x_ResolveTo(CScope& scope, CBioseq_Info& bioseq);
 
     bool x_IsSynonym(const CSeq_id& id) const;
 
@@ -181,10 +166,12 @@ private:
 
 
 inline
-CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value)
+CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& value,
+                               CScope& scope,
+                               CBioseq_Info& bioseq)
     : m_Value(value),
-      m_Scope(0),
-      m_Bioseq_Info(0)
+      m_Scope(&scope),
+      m_Bioseq_Info(&bioseq)
 {
 }
 
@@ -276,6 +263,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/03/18 14:46:35  grichenk
+* Set limit object type to "none" if the object is null.
+*
 * Revision 1.32  2003/03/14 19:10:33  grichenk
 * + SAnnotSelector::EIdResolving; fixed operator=() for several classes
 *

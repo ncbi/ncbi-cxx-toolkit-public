@@ -188,19 +188,19 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector
         }
     SAnnotSelector& SetLimitTSE(const CSeq_entry* tse)
         {
-            m_LimitObjectType = eLimit_TSE;
+            m_LimitObjectType = tse ? eLimit_TSE : eLimit_None;
             m_LimitObject.Reset(tse);
             return *this;
         }
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* entry)
         {
-            m_LimitObjectType = eLimit_Entry;
+            m_LimitObjectType = entry ? eLimit_Entry : eLimit_None;
             m_LimitObject.Reset(entry);
             return *this;
         }
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* annot)
         {
-            m_LimitObjectType = eLimit_Annot;
+            m_LimitObjectType = annot ? eLimit_Annot : eLimit_None;
             m_LimitObject.Reset(annot);
             return *this;
         }
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/03/18 14:46:35  grichenk
+* Set limit object type to "none" if the object is null.
+*
 * Revision 1.6  2003/03/14 20:39:26  ucko
 * return *this from SetIdResolvingXxx().
 *
