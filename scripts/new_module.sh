@@ -43,12 +43,23 @@ getvar () {
 
 # detect command arguments
 case "$1" in
-    *.asn) module="`basename \"$1\" .asn`"; asn="$1";;
-    *.module) module="`basename \"$1\" .module`";;
-    '') echo "Usage: $0 [module]"; exit 1;;
-    *) module="$1";;
+    *.asn)
+        module="`basename \"$1\" .asn`"
+        asn="$1"
+        shift;;
+    *.module)
+        module="`basename \"$1\" .module`"
+        shift;;
+    '') if test -f *.module; then
+            module="`basename *.module .module`"
+        else
+            echo "Usage: $0 [module]"
+            exit 1
+        fi;;
+    *)
+        module="$1";
+        shift;;
 esac
-shift
 
 if test -f "$module.module"; then
     if test -z "$asn"; then
