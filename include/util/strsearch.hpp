@@ -40,46 +40,54 @@
 #include <corelib/ncbistd.hpp>
 #include <string>
 #include <vector>
-using namespace std;
+
 
 BEGIN_NCBI_SCOPE
 
- 
+
 //============================================================================//
-//                            BoyerMooreMatcher                               //
+//                            CBoyerMooreMatcher                               //
 //============================================================================//
 
 //
-// This implemetation uses the Boyer-Moore alg. in oreder to search a single
+// This implemetation uses the Boyer-Moore alg. in order to search a single
 // pattern over varying texts.
 
-class BoyerMooreMatcher 
+
+class CBoyerMooreMatcher 
 {
 public:
     // Initialize a matcher with the pattern to be matched.
-    // caseSensitive - should the search be case sensitive.
-    // wholeWord - a match is found ony if the pattern was found to 
-    //             be between whitespaces.
-    BoyerMooreMatcher(const string &pattern, 
-                      bool caseSensitive = false,
-                      bool wholeWord = false);
-
+    // case_sensitive - should the search be case sensitive (false by default).
+    // whole_word - a match is found ony if the pattern was found to 
+    //              be between whitespaces (false by default).
+    CBoyerMooreMatcher(const string& pattern,        
+        bool case_sensitive = false,   
+        bool whole_word = false);     
+    
+    
     // Search for the pattern over text starting at position pos.
     // Returns the position at which the pattern was found, -1 otherwise.
-    int search(const string &text, unsigned int pos = 0) const;
+    int Search(const string& text, unsigned int pos = 0) const;
     
 private:
-    static const int ALPHABET_SIZE;
-
-    bool IsWholeWord (const string &text, int pos) const;
-
-    string m_pattern;  
-    unsigned int m_patlen;
-    bool m_caseSensitive;
-    bool m_wholeWord;
-    vector<unsigned int> m_last_occurance;
-
-};  // class BoyerMooreMatcher 
+    // Constants
+    static const int sm_AlphabetSize;
+    
+    // Member Functions:
+    
+    // Check if the pattern at position pos in the text lies on a
+    // whole word boundry.
+    bool IsWholeWord(const string& text, int pos) const;
+    
+    // Member Variables
+    string                  m_Pattern;  
+    string::size_type       m_PatLen;
+    bool                    m_CaseSensitive;
+    bool                    m_WholeWord;
+    vector<size_t>          m_LastOccurance;
+    
+};  // class CBoyerMooreMatcher 
 
 
 //============================================================================//
@@ -92,177 +100,229 @@ template <typename MatchType>
 class CTextFsm
 {
 public:
-    typedef map<char, int> TransitionTbl;
-    static const int FAIL_STATE;
-
-    // Constructor:
-    CTextFsm(void);
-
-    // FSM Construction
-    void AddWord(const string &word);
-    void AddWord(const string &word, const MatchType &match);
-    void Prime(void);
-
-    int GetInitialState(void) const { return 0; }
-    int GetNextState(int state, char letter) const;
-
-    bool IsMatchFound(int state) const;
-    const vector<MatchType> &GetMatches(int state) const;
-
-    // Destructor
+    // Constants:     
+    static const int sm_FailState;
+    
+    // Constructors and Destructors:
+    CTextFsm(bool case_sensitive = false);
     ~CTextFsm(void);
     
+    // Add a word to the Fsm. Store a match for later retreival.
+    void AddWord(const string& word, const MatchType& match);
+    
+    // Prime the FSM.
+    // After finishing adding all the words to the FSM it needs to be 
+    // primed to enable usage.
+    void Prime(void);
+    
+    // Retreive the FSM's initial state.
+    int GetInitialState(void) const { return 0; }
+    
+    // Get the next state, based on the currect state and a transition
+    // character.
+    int GetNextState(int state, char letter) const;
+    
+    // Are there any matches stored in state?
+    bool IsMatchFound(int state) const;
+    
+    // Retrieve the stored matches in state.
+    const vector<MatchType>& GetMatches(int state) const;
+    
 private:
+    // Internal representation of states.
     class CState
     {
     public:
-        CState(void) : onfailure(0) {}
-
-        void AddTransition (char letter, int to) { transitions[letter] = to; }
-        int GetNextState (char letter) const {
-           	TransitionTbl::const_iterator it = transitions.find(letter);
-            return it != transitions.end() ?  it->second : FAIL_STATE;
-        }
-
+        // Ad-hoc definitions
+        typedef map<char, int> TMapCharInt;
         
-        bool IsMatchFound (void) const { return !matches.empty(); }
-        void AddMatch (const MatchType &match) { matches.push_back(match); }
-
-        vector<MatchType> &GetMatches(void) { return matches; }
-        const vector<MatchType> &GetMatches(void) const { return matches; }
-
-        const TransitionTbl &GetTransitions (void) const { return transitions; };
-
-        void SetOnFailure(int state) { onfailure = state; }
-        int GetOnFailure(void) const { return onfailure; }
-
+        // Constructors and Destructors
+        CState(void) : m_OnFailure(0) {}
         ~CState(void) {};
         
+        // Add a transition to the table.
+        void AddTransition(char letter, int to) { m_Transitions[letter] = to; }
+        
+        // Retreive the transition state, give the transition character.
+        int GetNextState(char letter) const {
+	    CState::TMapCharInt::const_iterator it = 
+	      m_Transitions.find(letter);
+	    return it != m_Transitions.end() ?  it->second : sm_FailState;
+        }
+        
+        
+        // Are there any matches stored in this state?
+        bool IsMatchFound(void) const { return !m_Matches.empty(); }
+        
+        // Retreive the stored matches
+        vector<MatchType>& GetMatches(void) { return m_Matches; }
+        const vector<MatchType>& GetMatches(void) const { return m_Matches; }
+        
+        // Store a match.
+        void AddMatch(const MatchType& match) { m_Matches.push_back(match); }
+        
+        const TMapCharInt& GetTransitions(void) const { return m_Transitions; };
+        
+        // Getter and Setter for failure transition.
+        void SetOnFailure(int state) { m_OnFailure = state; }
+        int GetOnFailure(void) const { return m_OnFailure; }
+        
     private:
-        TransitionTbl transitions;
-        vector<MatchType> matches;
-        int onfailure;
-    };  // class CState
-
-    int GetNextState(const CState &from, char letter) const;
+        
+        // Member Variables:
+        TMapCharInt         m_Transitions;   // Transition table
+        vector<MatchType>   m_Matches;       // Stored matches
+        int                 m_OnFailure;     // Transition state in failure.
+        
+    };  // end of class CState
+    
+    // Private Methods:
     CState *GetState(int state);
+    int GetNextState(const CState& from, char letter) const;
+    
+    // Compute the transition to be performed on failure.
     void ComputeFail(void);
-    void FindFail (int state, int new_state, char ch);
-    void QueueAdd(vector<int> &queue, int qbeg, int val);
-      
-    bool primed;
-    vector< CState > states;
-};  // class CTextFsm
+    void FindFail(int state, int new_state, char ch);
+    void QueueAdd(vector<int>& queue, int qbeg, int val);
+    
+    // Member Variables
+    bool                m_Primed;
+    vector< CState >    m_States;
+    bool                m_CaseSensitive;
+    
+};  // end of class CTextFsm
 
 
-typedef CTextFsm<string> CTextFsa;
+// Convenience class when the MatchType is of string type (most cases)
+class CTextFsa : public CTextFsm<string>
+{
+public:
+    CTextFsa(bool case_sensitive = false) :
+        CTextFsm<string>(case_sensitive) 
+    {}
+
+    void AddWord(const string& word) {
+        CTextFsm<string>::AddWord(word, word);
+    }
+};
+
+
+//============================================================================//
+//                   Finite State Automata Implementation                     //
+//============================================================================//
 
 
 // Public:
 // =======
 
 template <typename MatchType>
-const int CTextFsm<MatchType>::FAIL_STATE = -1;
+const int CTextFsm<MatchType>::sm_FailState = -1;
 
 
 template <typename MatchType>
-CTextFsm<MatchType>::CTextFsm(void) :
-	primed(false)
+CTextFsm<MatchType>::CTextFsm(bool case_sensitive) :
+m_Primed(false), m_CaseSensitive(case_sensitive)
 {
-	CState initial;
-	states.push_back(initial);
+    CState initial;
+    m_States.push_back(initial);
 }
 
 
 template <typename MatchType>	
-void CTextFsm<MatchType>::AddWord(const string &word, const MatchType &match) 
+void CTextFsm<MatchType>::AddWord(const string& word, const MatchType& match) 
 {
-	int state = 0,
-		next, i, word_len = word.length();
+    string temp = word;
+    if ( !m_CaseSensitive ) {
+        NStr::ToUpper(temp);
+    }
 
-	// try to overlay beginning of word onto existing table 
-	for ( i = 0; i < word_len; ++i ) {
-		next = states[state].GetNextState(word[i]);
-		if ( next == FAIL_STATE ) break;
-		state = next;
-	}
-
-	// now create new states for remaining characters in word 
-	for ( ;i < word_len; ++ i ) {
-		CState new_state;
-
-		states.push_back(new_state);
-		states[state].AddTransition(word.at(i), states.size() - 1);
-		state = states[state].GetNextState(word.at(i));
-	}
-
-	// add match information 
-	states[state].AddMatch(match);
-}
-
-
-template <typename MatchType>
-void CTextFsm<MatchType>::AddWord(const string &word) {
-    AddWord(word, word);
+    int next, i, 
+        state = 0,
+        word_len = temp.length();
+    
+    // try to overlay beginning of word onto existing table 
+    for ( i = 0;  i < word_len;  ++i ) {
+        next = m_States[state].GetNextState(word[i]);
+        if ( next == sm_FailState ) break;
+        state = next;
+    }
+    
+    // now create new states for remaining characters in word 
+    for ( ;  i < word_len;  ++ i ) {
+        CState new_state;
+        
+        m_States.push_back(new_state);
+        m_States[state].AddTransition(temp[i], m_States.size() - 1);
+        state = m_States[state].GetNextState(temp[i]);
+    }
+    
+    // add match information 
+    m_States[state].AddMatch(match);
 }
 
 
 template <typename MatchType>
 void CTextFsm<MatchType>::Prime(void)
 {
-	if ( primed ) return;
-
-	ComputeFail();
-
-	primed = true;
+    if ( m_Primed ) return;
+    
+    ComputeFail();
+    
+    m_Primed = true;
 }
 
 
 template <typename MatchType>
 typename CTextFsm<MatchType>::CState *CTextFsm<MatchType>::GetState(int state) 
 {
-    if ( (state < 0) || (state > states.size()) ) {
+    if ( (state < 0) || (state > m_States.size()) ) {
         return 0;
     }
-    return &states[state];
+    return &(m_States[state]);
 }
 
 
 template <typename MatchType>
-int CTextFsm<MatchType>::GetNextState(const CState &from, char letter) const {
-    return from.GetNextState(letter);
+int CTextFsm<MatchType>::GetNextState(const CState& from, char letter) const {
+    char ch = m_CaseSensitive ? letter : toupper(letter);
+    return from.GetNextState(ch);
 }
 
 
 template <typename MatchType>
 int CTextFsm<MatchType>::GetNextState(int state, char letter) const
 {
-    if ( state < 0 || state >= states.size() ) {
-        return FAIL_STATE;
+    if ( state < 0 || state >= m_States.size() ) {
+        return sm_FailState;
     }
-
-	int next = GetNextState(states[state], letter);
-    if ( next == FAIL_STATE ) {
-        next = GetInitialState();
+    
+    int next;
+    int initial = GetInitialState();
+    while ( (next = GetNextState(m_States[state], letter)) == sm_FailState ) {
+        if ( state == initial ) {
+            next = initial;
+            break;
+        }
+        state = m_States[state].GetOnFailure();
     }
-
+    
     return next;
 }
 
 
 template <typename MatchType>
-void CTextFsm<MatchType>::QueueAdd(vector<int> &queue, int qbeg, int val)
+void CTextFsm<MatchType>::QueueAdd(vector<int>& queue, int qbeg, int val)
 {
-  int  q;
-
-  q = queue [qbeg];
-  if (q == 0) {
-    queue [qbeg] = val;
-  } else {
-    for ( ; queue [q] != 0; q = queue [q]) continue;
-    queue [q] = val;
-  }
-  queue [val] = 0;
+    int  q;
+    
+    q = queue [qbeg];
+    if (q == 0) {
+        queue [qbeg] = val;
+    } else {
+        for ( ;  queue [q] != 0;  q = queue [q]) continue;
+        queue [q] = val;
+    }
+    queue [val] = 0;
 }
 
 
@@ -270,17 +330,19 @@ template <typename MatchType>
 void CTextFsm<MatchType>::ComputeFail(void) 
 {
     int	qbeg, r, s, state;
-    vector<int> queue(states.size());
+    vector<int> queue(m_States.size());
     
     qbeg = 0;
     queue [0] = 0;
     
     // queue up states reached directly from state 0 (depth 1) 
     
-    iterate ( TransitionTbl, it, states[GetInitialState()].GetTransitions() ) {
+    iterate ( CState::TMapCharInt,
+              it, 
+              m_States[GetInitialState()].GetTransitions() ) {
         s = it->second;
-        states[s].SetOnFailure(0);
-        QueueAdd (queue, qbeg, s);
+        m_States[s].SetOnFailure(0);
+        QueueAdd(queue, qbeg, s);
     }
     
     while (queue [qbeg] != 0) {
@@ -289,9 +351,9 @@ void CTextFsm<MatchType>::ComputeFail(void)
         
         // depth 1 states beget depth 2 states, etc. 
         
-        iterate ( TransitionTbl, it, states[r].GetTransitions() ) {
+        iterate ( CState::TMapCharInt, it, m_States[r].GetTransitions() ) {
             s = it->second;
-            QueueAdd (queue, qbeg, s);
+            QueueAdd(queue, qbeg, s);
             
             //   State   Substring   Transitions   Failure
             //     2       st          a ->   3       6
@@ -304,7 +366,7 @@ void CTextFsm<MatchType>::ComputeFail(void)
             //   Thus, check state 6 (t) for any transitions using 'a'.
             //   Since 6 (t) 'a' -> 7 (ta), therefore set fail [3] -> 7.
             
-            state = states[r].GetOnFailure();
+            state = m_States[r].GetOnFailure();
             FindFail(state, s, it->first);
         }
     }
@@ -312,41 +374,41 @@ void CTextFsm<MatchType>::ComputeFail(void)
 
 
 template <typename MatchType>
-void CTextFsm<MatchType>::FindFail (int state, int new_state, char ch)
+void CTextFsm<MatchType>::FindFail(int state, int new_state, char ch)
 {
     int        next;
-
+    
     // traverse existing failure path 
-
-    while ( (next = GetNextState(state, ch)) == FAIL_STATE) {
+    
+    while ( (next = GetNextState(state, ch)) == sm_FailState) {
         if ( state == 0 ) {
             next = 0; break;
         }
-        state = states[state].GetOnFailure();
+        state = m_States[state].GetOnFailure();
     }
-
+    
     // add new failure state 
-
-    states[new_state].SetOnFailure(next);
-
+    
+    m_States[new_state].SetOnFailure(next);
+    
     // add matches of substring at new state 
-
-    copy( states[next].GetMatches().begin(), 
-	   	states[next].GetMatches().end(),
-	    back_inserter(states[new_state].GetMatches()) );
+    
+    copy( m_States[next].GetMatches().begin(), 
+        m_States[next].GetMatches().end(),
+        back_inserter(m_States[new_state].GetMatches()) );
 }
 
 
 template <typename MatchType>
-const vector<MatchType> &CTextFsm<MatchType>::GetMatches(int state) const {
-    return states[state].GetMatches();
+const vector<MatchType>& CTextFsm<MatchType>::GetMatches(int state) const {
+    return m_States[state].GetMatches();
 }
 
 
 template <typename MatchType>
 bool CTextFsm<MatchType>::IsMatchFound(int state) const
 {
-    return states[state].IsMatchFound();
+    return m_States[state].IsMatchFound();
 }
 
 
@@ -362,6 +424,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/11/05 22:58:57  shomrat
+* Coding style changes; Case sensetivity option added to finite state automata; Bug fix in GetNextState
+*
 * Revision 1.2  2002/11/03 21:58:49  kans
 * BoyerMoore takes caseSensitive, wholeWord parameters (MS)
 *
