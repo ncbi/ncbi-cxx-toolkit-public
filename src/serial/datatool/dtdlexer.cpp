@@ -134,6 +134,7 @@ bool DTDLexer::ProcessComment(void)
         char c = Char();
         switch ( c ) {
         case '\r':
+            SkipChar();
             break;
         case '\n':
             SkipChar();
@@ -287,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2004/01/16 19:56:52  gouriano
+ * Minor correction when parsing end-of-line
+ *
  * Revision 1.5  2002/12/17 16:24:43  gouriano
  * replaced _ASSERTs by throwing an exception
  *
