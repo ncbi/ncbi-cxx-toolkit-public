@@ -112,10 +112,10 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
             uuu->can_connect = eCC_None;
             return 0/*failure*/;
         }
-    } else if (!uuu->adjust_net_info ||
-               !uuu->adjust_net_info(uuu->net_info,
-                                     uuu->adjust_data,
-                                     uuu->failure_count)) {
+    } else if (uuu->adjust_net_info &&
+               uuu->adjust_net_info(uuu->net_info,
+                                    uuu->adjust_data,
+                                    uuu->failure_count) == 0) {
         if (!drop_unread)
             CORE_LOG(eLOG_Error,"[HTTP]  Retry attempts exhausted, giving up");
         uuu->can_connect = eCC_None;
@@ -893,6 +893,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2003/01/31 21:18:49  lavr
+ * Fullfil max tries even in the absence of connection adjustment routine
+ *
  * Revision 6.42  2003/01/17 19:44:46  lavr
  * Reduce dependencies
  *
