@@ -55,6 +55,29 @@ static void s_DiagToStdlog_Cleanup(void* data)
     delete os_log;
 }
 
+static void s_SetFixedDiagPostLevel(const string& post_level)
+{
+    int sev = -1;
+    if (post_level >= "0"  && post_level <= "9") {
+        // Digital value
+        sev = atoi(post_level.c_str());
+    } else {
+        // String value
+        for (int s = eDiag_Info; s<= eDiag_Trace; s++) {
+            if (NStr::CompareNocase(post_level, CNcbiDiag::SeverityName((EDiagSev)s)) == 0) {
+                sev = s;
+                break;
+            }
+        }
+    }
+    // Unknown value
+    if (sev == -1) {
+        return;
+    }
+    SetDiagPostLevel((EDiagSev)sev);
+    DisableDiagPostLevelChange();
+}
+
 
 ///////////////////////////////////////////////////////
 // CNcbiApplication
@@ -259,6 +282,10 @@ int CNcbiApplication::AppMain
     if ( !m_Environ->Get(DIAG_TRACE).empty() ) {
         SetDiagTrace(eDT_Enable, eDT_Enable);
     }
+    string post_level = m_Environ->Get(DIAG_POST_LEVEL);
+    if ( !post_level.empty() ) {
+        s_SetFixedDiagPostLevel(post_level);
+    }
     if ( !m_Environ->Get(ABORT_ON_THROW).empty() ) {
         SetThrowTraceAbort(true);
     }
@@ -293,6 +320,10 @@ int CNcbiApplication::AppMain
     }
     if ( !m_Config->Get("DEBUG", ABORT_ON_THROW).empty() ) {
         SetThrowTraceAbort(true);
+    }
+    post_level = m_Config->Get("DEBUG", DIAG_POST_LEVEL);
+    if ( !post_level.empty() ) {
+        s_SetFixedDiagPostLevel(post_level);
     }
 
     // Call:  Init() + Run() + Exit()
@@ -558,6 +589,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2002/07/02 18:31:38  ivanov
+ * Added assignment the value of diagnostic post level from environment variable
+ * and config file if set. Disable to change it from application in this case.
+ *
  * Revision 1.38  2002/06/19 16:57:56  ivanov
  * Added new default command line parameters "-logfile <file>" and
  * "-conffile <file>" into CNcbiApplication::AppMain()
