@@ -34,7 +34,7 @@
 #include <util/sequtil/sequtil_manip.hpp>
 #include <algorithm>
 #include <stdexcept>
-#include <strings.h>
+#include <string.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.2  2003/11/06 22:33:38  johnson
+* typo: include 'string.h', not 'strings.h'
+*
 * Revision 1.1  2003/11/06 20:36:03  johnson
 * first revision
 *
