@@ -108,13 +108,13 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
             *redirect = 0;
         }
         if (!drop_unread && uuu->failure_count > 1) {
-            CORE_LOGF(eLOG_Error, ("[HTTP]  Too many failed attempts (%d), "
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Too many failed attempts (%d),"
                                    " giving up", uuu->failure_count));
         }
         uuu->can_connect = eCC_None;
         return 0/*failure*/;
     }
-    /* adjust info before another connection attempt */
+    /* adjust info before yet another connection attempt */
     if (*redirect) {
         int status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
         free(*redirect);
@@ -129,8 +129,8 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
                                     uuu->adjust_data,
                                     uuu->failure_count) == 0) {
         if (!drop_unread && uuu->failure_count > 1) {
-            CORE_LOGF(eLOG_Error, ("[HTTP]  Retry attempts (%d) exhausted, "
-                                   "giving up", uuu->failure_count));
+            CORE_LOGF(eLOG_Error, ("[HTTP]  Retry attempts (%d) exhausted,"
+                                   " giving up", uuu->failure_count));
         }
         uuu->can_connect = eCC_None;
         return 0/*failure*/;
@@ -962,6 +962,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2003/09/30 19:44:08  lavr
+ * Fix typos in error messages
+ *
  * Revision 6.55  2003/08/25 14:40:29  lavr
  * Employ new k..Timeout constants
  *
