@@ -152,10 +152,12 @@ class CFlatStringQVal : public IFlatQVal
 {
 public:
     CFlatStringQVal(const string& value, const string& suffix = "; ",
-        CFlatQual::EStyle style = CFlatQual::eQuoted)
-        : m_Value(value), m_Suffix(suffix), m_Style(style) { }
+        CFlatQual::EStyle style = CFlatQual::eQuoted);
+        
     void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
                 TFlags flags) const;
+
+    const string& GetValue(void) const { return m_Value; }
 
 private:
     string            m_Value;
@@ -293,12 +295,14 @@ private:
 class CFlatSeqIdQVal : public IFlatQVal
 {
 public:
-    CFlatSeqIdQVal(const CSeq_id& value) : m_Value(&value) { }
+    CFlatSeqIdQVal(const CSeq_id& value, bool add_gi_prefix = false) 
+        : m_Value(&value), m_GiPrefix(add_gi_prefix) { }
     void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
                 TFlags flags) const;
 
 private:
     CConstRef<CSeq_id> m_Value;
+    bool               m_GiPrefix;
 };
 
 
@@ -399,6 +403,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/08 20:59:02  shomrat
+* + GI prefix flag for Seq-id qualifiers
+*
 * Revision 1.3  2004/03/05 18:50:48  shomrat
 * Added new qualifier classes
 *
