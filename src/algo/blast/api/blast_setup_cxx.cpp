@@ -370,17 +370,17 @@ GetNumberOfFrames(EProgram p)
 
     switch (p) {
     case eBlastn:
-        retval = 2;
+        retval = NUM_STRANDS;
         break;
     case eBlastp:
     case eRPSBlast:
     case eTblastn: 
-    case eRPSTblastn: 
         retval = 1;
         break;
     case eBlastx:
     case eTblastx:
-        retval = 6;
+    case eRPSTblastn: 
+        retval = NUM_FRAMES;
         break;
     default:
         NCBI_THROW(CBlastException, eBadParameter, 
@@ -399,6 +399,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.75  2004/09/21 13:50:38  dondosha
+ * GetNumberOfFrames now returns 6 for RPS tblastn
+ *
  * Revision 1.74  2004/08/17 20:01:57  camacho
  * Handle misconfigured NCBI configuration file
  *
