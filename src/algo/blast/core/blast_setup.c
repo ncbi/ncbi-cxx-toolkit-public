@@ -469,10 +469,6 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
         sbp->kbp = sbp->kbp_std;
         Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                     query_info->last_context);
-    }
-
-    if (program_number == eBlastTypeBlastx ||
-        program_number == eBlastTypeTblastx) {
         /* Adjust the gapped Karlin parameters, if it is a gapped search */
         if (scoring_options->gapped_calculation) {
            sbp->kbp = sbp->kbp_gap_std;
@@ -525,11 +521,6 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
             return status;
         }
     }
-
-    /* If there was a lower case mask, its contents have now been moved to 
-     * filter_maskloc and are no longer needed in the query block.
-    */
-    query_blk->lcase_mask = NULL;
 
     if (program_number == eBlastTypeBlastx && scoring_options->is_ooframe) {
         BLAST_InitDNAPSequence(query_blk, query_info);
@@ -641,12 +632,6 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
              effective_search_space =
                 (query_length - length_adjustment) * 
                 (db_length - db_num_seqs*length_adjustment);
-
-             /* For translated RPS blast, the DB size is left unchanged
-                and the query size is divided by 3 (for conversion to 
-                a protein sequence) and multiplied by 6 (for 6 frames) */
-             if (program_number == eBlastTypeRpsTblastn)
-                effective_search_space *= (Int8)(NUM_FRAMES / CODON_LENGTH);
           }
        }
        query_info->eff_searchsp_array[index] = effective_search_space;
