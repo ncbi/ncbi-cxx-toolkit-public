@@ -66,6 +66,12 @@
 /* Define if you have the <iostream.h> header file.  */
 #undef HAVE_IOSTREAM_H
 
+/* Define if you have the <string> header file.  */
+#undef HAVE_STRING
+
+/* Define if you have the <strstrea.h> header file.  */
+#undef HAVE_STRSTREA_H
+
 /* Define if you have the <strstream> header file.  */
 #undef HAVE_STRSTREAM
 
