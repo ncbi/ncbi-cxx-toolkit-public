@@ -105,7 +105,7 @@ public:
     static double        StringToDouble (const string& str,
                                          ECheckEndPtr check = eCheck_Need);
     static Int8          StringToInt8   (const string& str);
-    static Uint8         StringToUInt8  (const string& str);
+    static Uint8         StringToUInt8  (const string& str, int base = 10);
     static const void*   StringToPtr    (const string& str);
 
     /// X-to-String conversion functions
@@ -730,6 +730,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2003/02/26 16:42:27  siyan
+ * Added base parameter to NStr::StringToUInt8 to support different radixes
+ * such as base 10 (default), 16, 8, 2.
+ *
  * Revision 1.37  2003/02/24 19:54:50  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
