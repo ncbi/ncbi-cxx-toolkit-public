@@ -339,7 +339,7 @@ EIO_Status CSocket::ReadLine(string& str)
         status = SOCK_ReadLine(m_Socket, buf, sizeof(buf), &size);
         if (!size)
             break;
-        str += string(buf, size);
+        str.append(buf, size);
     } while (status == eIO_Success  &&  size == sizeof(buf));
     return status;
 }
@@ -649,8 +649,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2004/11/09 21:26:38  lavr
+ * CSocket::ReadLine(): Use string::append() instead of operator+()
+ *
  * Revision 6.28  2004/11/09 21:13:28  lavr
- * +ReadLine
+ * +CSocket::ReadLine()
  *
  * Revision 6.27  2004/10/26 14:48:28  lavr
  * Implement UNIX socket extensions to the socket API
