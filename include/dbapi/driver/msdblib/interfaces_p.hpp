@@ -80,6 +80,8 @@
 #define DBDATETIME4_days(x) ((x)->numdays)
 #define DBDATETIME4_mins(x) ((x)->nummins)
 #define DBNUMERIC_val(x) ((x)->val)
+#define DBIORDESC(x) (-1)
+#define DBIOWDESC(x) (-1)
 
 #endif  /* DBAPI_DRIVER_DBLIB___INTERFACES_P__HPP */
 
