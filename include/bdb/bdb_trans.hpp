@@ -56,7 +56,15 @@ class   CBDB_RawFile;
 class NCBI_BDB_EXPORT CBDB_Transaction
 {
 public:
-    CBDB_Transaction(CBDB_Env& env);
+    /// Enum controls if transaction is synchronous or not.
+    /// see DB_TXN->commit for more details
+    enum ETransSync {
+        eTransSync,  ///< Syncronous transaction
+        eTransASync  ///< Non-durable asyncronous transaction
+    };
+
+
+    CBDB_Transaction(CBDB_Env& env, ETransSync tsync = eTransSync);
 
     /// Non-commited transaction is aborted upon the destruction
     ~CBDB_Transaction();
@@ -103,6 +111,7 @@ private:
     CBDB_Transaction& operator=(const CBDB_Transaction& trans);
 protected:
     CBDB_Env&               m_Env;        ///< Associated environment
+    ETransSync              m_TSync;      ///< Sync. flag
     DB_TXN*                 m_Txn;        ///< Transaction handle
     vector<CBDB_RawFile*>   m_TransFiles; ///< Files connected to transaction
     
@@ -117,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/03 13:32:38  kuznets
+ * + support of async. transactions
+ *
  * Revision 1.3  2004/06/21 18:41:04  kuznets
  * Change in comments
  *

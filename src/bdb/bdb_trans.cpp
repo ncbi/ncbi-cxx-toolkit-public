@@ -36,8 +36,9 @@
 
 BEGIN_NCBI_SCOPE
 
-CBDB_Transaction::CBDB_Transaction(CBDB_Env& env)
+CBDB_Transaction::CBDB_Transaction(CBDB_Env& env, ETransSync tsync)
  : m_Env(env),
+   m_TSync(tsync),
    m_Txn(0)
 {}
 
@@ -65,7 +66,9 @@ DB_TXN* CBDB_Transaction::GetTxn()
 void CBDB_Transaction::Commit()
 {
     if (m_Txn) {
-        int ret = m_Txn->commit(m_Txn, DB_TXN_SYNC);
+        u_int32_t flags = 
+            m_TSync == eTransSync ? DB_TXN_SYNC : DB_TXN_NOSYNC;
+        int ret = m_Txn->commit(m_Txn, flags);
         m_Txn = 0;
         BDB_CHECK(ret, "DB_TXN::commit");
     }
@@ -110,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/03 13:32:52  kuznets
+ * + support of async. transactions
+ *
  * Revision 1.3  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
