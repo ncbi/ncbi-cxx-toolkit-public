@@ -269,6 +269,8 @@ enum EErrType {
     eErr_SEQ_FEAT_LocusTagProblem,
     eErr_SEQ_FEAT_AltStartCodon,
     eErr_SEQ_FEAT_GenesInconsistent,
+    eErr_SEQ_FEAT_DuplicateTranslExcept,
+    eErr_SEQ_FEAT_TranslExceptAndRnaEditing,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -756,6 +758,7 @@ private:
     void ValidateCDSPartial(const CSeq_feat& feat);
     void ValidateCodeBreakNotOnCodon(const CSeq_feat& feat,const CSeq_loc& loc,
                                      const CCdregion& cdregion);
+    void x_ValidateCdregionCodebreak(const CCdregion& cds, const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSerialObject& obj);
 
@@ -932,6 +935,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2004/06/25 14:57:23  shomrat
+* +eErr_SEQ_FEAT_DuplicateTranslExcept,eErr_SEQ_FEAT_TranslExceptAndRnaEditing
+*
 * Revision 1.65  2004/06/17 17:03:29  shomrat
 * Added CollidingPublications check
 *
