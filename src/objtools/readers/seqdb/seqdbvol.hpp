@@ -123,6 +123,8 @@ public:
                          vector<Uint4>  & oids,
                          CSeqDBLockHold & locked) const;
     
+    Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+    
 private:
     CRef<CBlast_def_line_set>
     x_GetHdrText(Uint4 oid,
@@ -182,6 +184,8 @@ private:
     
     bool x_SeqIdIn(const list< CRef<CSeq_id> > & seqids,
                    CSeq_id                     & seqid) const;
+    
+    Uint8 x_GetSeqResidueOffset(Uint4 oid) const;
     
     CSeqDBAtlas      & m_Atlas;
     string             m_VolName;

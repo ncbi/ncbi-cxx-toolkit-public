@@ -222,6 +222,11 @@ void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
     m_Impl->SetMemoryBound(membound, slice_size);
 }
 
+Uint4 CSeqDB::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
+{
+    return m_Impl->GetOidAtOffset(first_seq, residue);
+}
+
 CSeqDBIter::CSeqDBIter(const CSeqDB * db, TOID oid)
     : m_DB    (db),
       m_OID   (oid),

@@ -152,6 +152,10 @@ public:
     /// Find OIDs matching the specified string.
     void AccessionToOids(const string & acc, vector<TOID> & oids) const;
     
+    /// Find the OID corresponding to the offset given in residues,
+    /// into the database as a whole.
+    Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+    
 private:
     string x_FixString(const string &) const;
     

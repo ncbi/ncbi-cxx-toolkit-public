@@ -520,5 +520,55 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
     }
 }
 
+Uint4 CSeqDBImpl::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
+{
+    if (first_seq >= m_NumSeqs) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "OID not in valid range.");
+    }
+    
+    if (residue >= m_TotalLength) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Residue offset not in valid range.");
+    }
+    
+    Uint4 vol_start(0);
+    
+    for(Uint4 vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        const CSeqDBVol * volp = m_VolSet.GetVol(vol_idx);
+        
+        Uint4 vol_cnt = volp->GetNumSeqs();
+        Uint8 vol_len = volp->GetTotalLength();
+        
+        // Both limits fit this volume, delegate to volume code.
+        
+        if ((first_seq < vol_cnt) && (residue < vol_len)) {
+            return vol_start + volp->GetOidAtOffset(first_seq, residue);
+        }
+        
+        // Adjust each limit.
+        
+        vol_start += vol_cnt;
+        
+        if (first_seq > vol_cnt) {
+            first_seq -= vol_cnt;
+        } else {
+            first_seq = 0;
+        }
+        
+        if (residue > vol_len) {
+            residue -= vol_len;
+        } else {
+            residue = 0;
+        }
+    }
+    
+    NCBI_THROW(CSeqDBException,
+               eArgErr,
+               "Could not find valid split point oid.");
+}
+
 END_NCBI_SCOPE
 

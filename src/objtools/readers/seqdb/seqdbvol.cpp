@@ -1442,5 +1442,90 @@ void CSeqDBVol::UnLease()
     }
 }
 
+Uint4 CSeqDBVol::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
+{
+    // This method compensates for representation in two ways.
+    //
+    // 1. For protein, we subtract the oid to compensate for
+    // inter-sequence nulls.
+    // 
+    // 2. For nucleotide, the input value is 0..(num residues).  We
+    // scale this value to the length of the byte data.
+    
+    Uint4 vol_cnt = GetNumSeqs();
+    Uint8 vol_len = GetTotalLength();
+    
+    if (first_seq >= vol_cnt) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "OID not in valid range.");
+    }
+    
+    if (residue >= vol_len) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Residue offset not in valid range.");
+    }
+    
+    if (kSeqTypeNucl == m_Idx.GetSeqType()) {
+        // Input range is from 0 .. total_length
+        // Require range from  0 .. byte_length
+        
+        Uint8 end_of_bytes = x_GetSeqResidueOffset(vol_cnt);
+        
+        double dresidue = (double(residue) * end_of_bytes) / vol_len;
+        
+        if (dresidue < 0) {
+            residue = 0;
+        } else { 
+            residue = Uint8(dresidue);
+            
+            if (residue > (end_of_bytes-1)) {
+                residue = end_of_bytes - 1;
+            }
+        }
+    }
+    
+    // First seq limit handled right here.
+    // oid_end refers to first disincluded oid.
+    
+    Uint4 oid_beg = first_seq;
+    Uint4 oid_end = vol_cnt-1;
+    
+    // Residue limit we need to search for.
+    
+    Uint4 oid_mid = (oid_beg + oid_end)/2;
+    
+    while(oid_beg < oid_end) {
+        Uint8 offset = x_GetSeqResidueOffset(oid_mid);
+        
+        if (kSeqTypeProt == m_Idx.GetSeqType()) {
+            offset -= oid_mid;
+        }
+        
+        if (offset >= residue) {
+            oid_end = oid_mid;
+        } else {
+            oid_beg = oid_mid + 1;
+        }
+        
+        oid_mid = (oid_beg + oid_end)/2;
+    }
+    
+    return oid_mid;
+}
+
+Uint8 CSeqDBVol::x_GetSeqResidueOffset(Uint4 oid) const
+{
+    TIndx start_offset = 0;
+    
+    if (! m_Idx.GetSeqStart(oid, start_offset)) {
+        NCBI_THROW(CSeqDBException, eFileErr,
+                   "Error: could not get sequence start/end.");
+    }
+    
+    return start_offset;
+}
+
 END_NCBI_SCOPE
 
