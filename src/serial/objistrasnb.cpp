@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/04/13 14:50:27  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.30  2000/03/29 15:55:28  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -160,6 +163,13 @@ using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 
 BEGIN_NCBI_SCOPE
 
+
+CObjectIStream* OpenObjectIStreamAsnBinary(CNcbiIstream& in, bool deleteIn)
+{
+    return new CObjectIStreamAsnBinary(in, deleteIn);
+}
+
+
 static inline
 TByte MakeTagByte(EClass c, bool constructed, ETag tag)
 {
@@ -206,8 +216,15 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in)
     m_CurrentTagLength = 0;
 }
 
-CObjectIStreamAsnBinary::~CObjectIStreamAsnBinary(void)
+CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
+                                                 bool deleteIn)
+    : m_Input(in, deleteIn)
 {
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLimit = INT_MAX;
+#endif
+    m_CurrentTagLength = 0;
 }
 
 string CObjectIStreamAsnBinary::GetPosition(void) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/04/13 14:50:17  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.28  2000/04/06 16:10:50  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -167,6 +170,7 @@ public:
     typedef unsigned char TByte;
 
     CObjectIStreamAsn(CNcbiIstream& in);
+    CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn);
 
     virtual string GetPosition(void) const;
 

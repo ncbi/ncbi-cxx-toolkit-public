@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/13 14:50:18  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.6  2000/04/06 16:10:52  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -98,6 +101,18 @@ struct StrCmp
 };
 
 #define NCBISER_ALLOW_CYCLES 1
+
+enum ESerialOpenFlags {
+    eSerial_AsnText      = 1,      // open ASN.1 text format
+    eSerial_AsnBinary    = 2,      // open ASN.1 binary format
+    eSerial_Xml          = 3,      // open XML format (not supported yet)
+    eSerial_FormatMask   = 15,
+    eSerial_StdWhenEmpty = 1 << 4, // use std stream when filename is empty
+    eSerial_StdWhenDash  = 1 << 5, // use std stream when filename is "-"
+    eSerial_StdWhenStd   = 1 << 6, // use std when filename is "stdin"/"stdout"
+    eSerial_StdWhenMask  = 15 << 4,
+    eSerial_StdWhenAny   = eSerial_StdWhenMask
+};
 
 #include <serial/serialdef.inl>
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/04/13 14:50:27  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.34  2000/04/06 16:11:00  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -182,8 +185,18 @@
 
 BEGIN_NCBI_SCOPE
 
+CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
+{
+    return new CObjectOStreamAsn(out, deleteOut);
+}
+
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out)
     : m_Output(out)
+{
+}
+
+CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut)
+    : m_Output(out, deleteOut)
 {
 }
 

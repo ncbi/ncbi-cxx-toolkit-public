@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/13 14:51:01  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.6  2000/04/12 15:38:05  vasilche
 * Added copyright header.
 * testmedline code moved out of ncbi namespace.
@@ -40,8 +43,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serial.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objostrasn.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 #define Ncbi_mime_asn11 0
 #define Medline1 1
@@ -73,34 +76,34 @@ int main(void)
 
     Struct1 object1;
     try {
-        CNcbiIfstream in(File1 ".ent");
-        CObjectIStreamAsn objIn(in);
-        objIn >> object1;
+        auto_ptr<CObjectIStream> in(CObjectIStream::Open(File1".ent",
+                                                         eSerial_AsnText));
+        *in >> object1;
     }
     catch (exception& exc) {
         ERR_POST("Exception: " << exc.what());
     }
     try {
-        CNcbiOfstream out(File1 ".out");
-        CObjectOStreamAsn objOut(out);
-        objOut << object1;
+        auto_ptr<CObjectOStream> out(CObjectOStream::Open(File1".out",
+                                                          eSerial_AsnText));
+        *out << object1;
     }
     catch (exception& exc) {
         ERR_POST("Exception: " << exc.what());
     }
     Struct2 object2;
     try {
-        CNcbiIfstream in(File2 ".ent");
-        CObjectIStreamAsn objIn(in);
-        objIn >> object2;
+        auto_ptr<CObjectIStream> in(CObjectIStream::Open(File2".ent",
+                                                         eSerial_AsnText));
+        *in >> object2;
     }
     catch (exception& exc) {
         ERR_POST("Exception: " << exc.what());
     }
     try {
-        CNcbiOfstream out(File2 ".out");
-        CObjectOStreamAsn objOut(out);
-        objOut << object2;
+        auto_ptr<CObjectOStream> out(CObjectOStream::Open(File2".out",
+                                                          eSerial_AsnText));
+        *out << object2;
     }
     catch (exception& exc) {
         ERR_POST("Exception: " << exc.what());

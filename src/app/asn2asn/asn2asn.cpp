@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/04/13 14:50:59  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.12  2000/04/07 19:27:34  vasilche
 * Generated objects now are placed in NCBI_NS_NCBI::objects namespace.
 *
@@ -75,10 +78,8 @@
 #include <corelib/ncbienv.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/objostrasnb.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 
 USING_NCBI_SCOPE;
@@ -179,9 +180,9 @@ int CAsn2Asn::Run(void)
     string inFile;
     bool skip = false; 
     bool inSeqEntry = false;
-    bool inBinary = false;
+    unsigned inFlags = eSerial_AsnText;
     string outFile;
-    bool outBinary = false;
+    unsigned outFlags = eSerial_AsnText;
     string logFile;
     int count = 1;
     CNcbiDiagStream logStream(&NcbiCerr);
@@ -202,13 +203,13 @@ int CAsn2Asn::Run(void)
                     inSeqEntry = true;
                     break;
                 case 'b':
-                    inBinary = true;
+                    inFlags = eSerial_AsnBinary;
                     break;
                 case 'o':
                     outFile = StringArgument(GetArguments(), ++i);
                     break;
                 case 's':
-                    outBinary = true;
+                    outFlags = eSerial_AsnBinary;
                     break;
                 case 'S':
                     skip = true;
@@ -245,82 +246,41 @@ int CAsn2Asn::Run(void)
         }
     }
 
+    inFlags |= eSerial_StdWhenAny;
+    outFlags |= eSerial_StdWhenAny;
+
     for ( int i = 0; i < count; ++i ) {
-        auto_ptr<CNcbiIstream> inFStream;
-        CNcbiIstream* inStream;
-        if ( inFile.empty() || inFile == "stdin" ) {
-            inStream = &NcbiCin;
-        }
-        else {
-            if ( inBinary )
-                inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str(),
-                                                             IOS_BASE::in | IOS_BASE::binary));
-            else
-                inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str()));
-            if ( !*inStream )
-                ERR_POST(Fatal << "Cannot open file: " << inFile);
-        }
-        auto_ptr<CObjectIStream> inObject;
-        if ( inBinary )
-            inObject.reset(new CObjectIStreamAsnBinary(*inStream));
-        else
-            inObject.reset(new CObjectIStreamAsn(*inStream));
-        
-        auto_ptr<CNcbiOstream> outFStream;
-        CNcbiOstream* outStream;
-        if ( outFile.empty() ) {
-            outStream = 0;
-        }
-        else if ( outFile == "stdout" || outFile == "-" ) {
-            outStream = &NcbiCout;
-        }
-        else {
-            if ( outBinary )
-                outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str(),
-                                                               IOS_BASE::out | IOS_BASE::binary));
-            else
-                outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str()));
-            if ( !*outStream )
-                ERR_POST(Fatal << "Cannot open file: " << outFile);
-        }
-        auto_ptr<CObjectOStream> outObject;
-        if ( outStream ) {
-            if ( outBinary )
-                outObject.reset(new CObjectOStreamAsnBinary(*outStream));
-            else
-                outObject.reset(new CObjectOStreamAsn(*outStream));
-        }
-        
+        auto_ptr<CObjectIStream> in(CObjectIStream::Open(inFile, inFlags));
+        auto_ptr<CObjectOStream> out(outFile.empty()? 0:
+                                     CObjectOStream::Open(outFile, outFlags));
+
         if ( inSeqEntry ) { /* read one Seq-entry */
             if ( skip ) {
-                inObject->Skip(CSeq_entry::GetTypeInfo());
+                in->Skip(CSeq_entry::GetTypeInfo());
             }
             else {
                 CSeq_entry entry;
-                *inObject >> entry;
+                *in >> entry;
                 SeqEntryProcess(entry);     /* do any processing */
-                if ( outObject.get() )
-                    *outObject << entry;
+                if ( out.get() )
+                    *out << entry;
             }
         }
         else {              /* read Seq-entry's from a Bioseq-set */
             if ( skip ) {
-                inObject->Skip(CBioseq_set::GetTypeInfo());
+                in->Skip(CBioseq_set::GetTypeInfo());
             }
             else {
                 CBioseq_set entries;
-                *inObject >> entries;
+                *in >> entries;
                 non_const_iterate ( CBioseq_set::TSeq_set, i,
                                     entries.SetSeq_set() ) {
                     SeqEntryProcess(**i);     /* do any processing */
                 }
-                if ( outObject.get() )
-                    *outObject << entries;
+                if ( out.get() )
+                    *out << entries;
             }
         }
-        
-        inObject.reset(0);
-        outObject.reset(0);
     }
 	return 0;
 }

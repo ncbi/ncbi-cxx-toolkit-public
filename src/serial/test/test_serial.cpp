@@ -1,10 +1,8 @@
 #include "testserial.hpp"
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasnb.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objostrasn.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <serial/iterator.hpp>
 #include "cppwebenv.hpp"
 
@@ -28,34 +26,24 @@ int CTestSerial::Run(void)
         WebEnv* env = 0;
         {
             {
-                CNcbiIfstream in("webenv.ent");
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found webenv.ent");
-                CObjectIStreamAsn(in).
-                    Read(&env, GetSequenceTypeRef(&env));
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.ent",
+                                                                 eSerial_AsnText));
+                in->Read(&env, GetSequenceTypeRef(&env));
             }
             {
-                CNcbiOfstream out("webenv.bino",
-                                  IOS_BASE::out | IOS_BASE::binary);
-                if ( !out )
-                    THROW1_TRACE(runtime_error, "Cannot create webenv.bino");
-                CObjectOStreamAsnBinary(out).
-                    Write(&env, GetSequenceTypeRef(&env));
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.bino",
+                                                                  eSerial_AsnBinary));
+                out->Write(&env, GetSequenceTypeRef(&env));
             }
             {
-                CNcbiIfstream in("webenv.bin",
-                                 IOS_BASE::in | IOS_BASE::binary);
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found webenv.bin");
-                CObjectIStreamAsnBinary(in).
-                    Read(&env, GetSequenceTypeRef(&env));
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("webenv.bin",
+                                                                 eSerial_AsnBinary));
+                in->Read(&env, GetSequenceTypeRef(&env));
             }
             {
-                CNcbiOfstream out("webenv.ento");
-                if ( !out )
-                    THROW1_TRACE(runtime_error, "Cannot create webenv.ento");
-                CObjectOStreamAsn(out).
-                    Write(&env, GetSequenceTypeRef(&env));
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("webenv.ento",
+                                                                  eSerial_AsnText));
+                out->Write(&env, GetSequenceTypeRef(&env));
             }
         }
 #endif
@@ -148,80 +136,65 @@ int CTestSerial::Run(void)
 
         {
             {
-                CNcbiOfstream out("test.asno");
-                if ( !out )
-                    THROW1_TRACE(runtime_error, "Cannot create test.asno");
-                CObjectOStreamAsn oout(out);
-                oout << write;
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.asno",
+                                                                  eSerial_AsnText));
+                *out << write;
             }
             CSerialObject read;
             {
-                CNcbiIfstream in("test.asn");
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found test.asn");
-                CObjectIStreamAsn iin(in);
-                iin >> read;
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
+                                                                 eSerial_AsnText));
+                *in >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
             {
-                CNcbiIfstream in("test.asn");
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found test.asn");
-                CObjectIStreamAsn(in).SkipValue();
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asn",
+                                                                 eSerial_AsnText));
+                in->SkipValue();
             }
         }
 
         {
             {
-                CNcbiOfstream out("test.asbo", IOS_BASE::binary);
-                if ( !out )
-                    THROW1_TRACE(runtime_error, "Cannot create test.asbo");
-                CObjectOStreamAsnBinary oout(out);
-                oout << write;
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.asbo",
+                                                                  eSerial_AsnBinary));
+                *out << write;
             }
             CSerialObject read;
             {
-                CNcbiIfstream in("test.asb", IOS_BASE::binary);
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found test.asb");
-                CObjectIStreamAsnBinary iin(in);
-                iin >> read;
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
+                                                                 eSerial_AsnBinary));
+                *in >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
             {
-                CNcbiIfstream in("test.asb", IOS_BASE::binary);
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found test.asb");
-                CObjectIStreamAsnBinary(in).SkipValue();
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.asb",
+                                                                 eSerial_AsnBinary));
+                in->SkipValue();
             }
         }
 
 /*
         {
             {
-                CNcbiOfstream out("test.bino", IOS_BASE::binary);
-                if ( !out )
-                    THROW1_TRACE(runtime_error, "Cannot create test.bino");
-                CObjectOStreamBinary oout(out);
-                oout << write;
+                auto_ptr<CObjectOStream> out(CObjectOStream::Open("test.bino",
+                                    eSerial_AsnBinary));
+                *out << write;
             }
             CSerialObject read;
             {
-                CNcbiIfstream in("test.bin", IOS_BASE::binary);
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found test.bin");
-                CObjectIStreamBinary iin(in);
-                iin >> read;
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.bin",
+                                    eSerial_AsnBinary));
+                *in >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
             {
-                CNcbiIfstream in("test.bin", IOS_BASE::binary);
-                if ( !in )
-                    THROW1_TRACE(runtime_error, "File not found test.bin");
-                CObjectIStreamBinary(in).SkipValue();
+                auto_ptr<CObjectIStream> in(CObjectIStream::Open("test.bin",
+                                    eSerial_AsnBinary));
+                in->SkipValue();
             }
         }
 */

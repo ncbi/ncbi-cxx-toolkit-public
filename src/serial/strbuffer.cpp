@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/13 14:50:28  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.9  2000/04/06 16:11:01  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -84,7 +87,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static const size_t KInitialBufferSize = 8192;
+static const size_t KInitialBufferSize = 4096;
 
 static inline
 size_t BiggerBufferSize(size_t size) THROWS_NONE
@@ -92,9 +95,9 @@ size_t BiggerBufferSize(size_t size) THROWS_NONE
     return size * 2;
 }
 
-CIStreamBuffer::CIStreamBuffer(CNcbiIstream& in)
+CIStreamBuffer::CIStreamBuffer(CNcbiIstream& in, bool deleteIn)
     THROWS((bad_alloc))
-    : m_Input(in), m_BufferOffset(0),
+    : m_Input(in), m_DeleteInput(deleteIn), m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
       m_Line(1)
@@ -104,6 +107,8 @@ CIStreamBuffer::CIStreamBuffer(CNcbiIstream& in)
 CIStreamBuffer::~CIStreamBuffer(void)
 {
     delete[] m_Buffer;
+    if ( m_DeleteInput )
+        delete &m_Input;
 }
 
 // this method is highly optimized
@@ -294,9 +299,9 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
     }
 }
 
-COStreamBuffer::COStreamBuffer(CNcbiOstream& out)
+COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
     THROWS((bad_alloc))
-    : m_Output(out), m_IndentLevel(0),
+    : m_Output(out), m_DeleteOutput(deleteOut), m_IndentLevel(0),
       m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
@@ -310,6 +315,8 @@ COStreamBuffer::~COStreamBuffer(void)
 {
     FlushBuffer();
     delete[] m_Buffer;
+    if ( m_DeleteOutput )
+        delete &m_Output;
 }
 
 void COStreamBuffer::FlushBuffer(void)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/13 14:50:22  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.3  2000/04/07 19:26:09  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -72,6 +75,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -113,18 +117,11 @@ private:
     bool m_Open;
 };
 
-enum EFileType {
-    eFileTypeNone,
-    eASNText,
-    eASNBinary,
-    eXMLText
-};
-
 struct FileInfo {
     FileInfo(void)
-        : type(eFileTypeNone)
+        : type(ESerialOpenFlags(0))
         { }
-    FileInfo(const string& n, EFileType t)
+    FileInfo(const string& n, ESerialOpenFlags t)
         : name(n), type(t)
         { }
 
@@ -133,7 +130,7 @@ struct FileInfo {
     operator const string&(void) const
         { return name; }
     string name;
-    EFileType type;
+    ESerialOpenFlags type;
 };
 
 class CDelayedOfstream : public CNcbiOstrstream

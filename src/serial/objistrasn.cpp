@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/04/13 14:50:27  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.40  2000/03/29 15:55:28  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -218,8 +221,18 @@
 BEGIN_NCBI_SCOPE
 
 
+CObjectIStream* OpenObjectIStreamAsn(CNcbiIstream& in, bool deleteIn)
+{
+    return new CObjectIStreamAsn(in, deleteIn);
+}
+
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
     : m_Input(in)
+{
+}
+
+CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn)
+    : m_Input(in, deleteIn)
 {
 }
 

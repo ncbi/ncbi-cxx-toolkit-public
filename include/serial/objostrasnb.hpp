@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/04/13 14:50:18  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.18  2000/04/06 16:10:51  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -106,6 +109,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objstrasnb.hpp>
+#include <serial/strbuffer.hpp>
 #include <stack>
 
 BEGIN_NCBI_SCOPE
@@ -119,6 +123,7 @@ public:
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
 
     CObjectOStreamAsnBinary(CNcbiOstream& out);
+    CObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut);
     virtual ~CObjectOStreamAsnBinary(void);
 
     virtual bool WriteEnum(const CEnumeratedTypeValues& values, long value);
@@ -173,7 +178,7 @@ protected:
                             size_t length);
 
 private:
-    CNcbiOstream& m_Output;
+    COStreamBuffer m_Output;
 
 #if CHECK_STREAM_INTEGRITY
     size_t m_CurrentPosition;

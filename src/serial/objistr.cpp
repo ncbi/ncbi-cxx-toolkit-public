@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/04/13 14:50:26  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.45  2000/04/06 16:10:59  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -214,6 +217,55 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+
+CObjectIStream* OpenObjectIStreamAsn(CNcbiIstream& in, bool deleteIn);
+CObjectIStream* OpenObjectIStreamAsnBinary(CNcbiIstream& in, bool deleteIn);
+
+CObjectIStream* CObjectIStream::Open(const string& fileName, unsigned flags)
+{
+    CNcbiIstream* inStream = 0;
+    bool deleteStream;
+    if ( (flags & eSerial_StdWhenEmpty) && fileName.empty() ||
+         (flags & eSerial_StdWhenDash) && fileName == "-" ||
+         (flags & eSerial_StdWhenStd) && fileName == "stdin" ) {
+        inStream = &NcbiCin;
+        deleteStream = false;
+    }
+    else {
+        switch ( flags & eSerial_FormatMask ) {
+        case eSerial_AsnText:
+            inStream = new CNcbiIfstream(fileName.c_str());
+            break;
+        case eSerial_AsnBinary:
+            inStream = new CNcbiIfstream(fileName.c_str(),
+                                         IOS_BASE::in | IOS_BASE::binary);
+            break;
+        default:
+            THROW1_TRACE(runtime_error,
+                         "CObjectIStream::Open: unsupported format");
+        }
+        if ( !*inStream ) {
+            delete inStream;
+            THROW1_TRACE(runtime_error, "file not found");
+        }
+        deleteStream = true;
+    }
+
+    return Open(*inStream, flags, deleteStream);
+}
+
+CObjectIStream* CObjectIStream::Open(CNcbiIstream& inStream, unsigned flags,
+                                     bool deleteStream)
+{
+    switch ( flags & eSerial_FormatMask ) {
+    case eSerial_AsnText:
+        return OpenObjectIStreamAsn(inStream, deleteStream);
+    case eSerial_AsnBinary:
+        return OpenObjectIStreamAsnBinary(inStream, deleteStream);
+    }
+    THROW1_TRACE(runtime_error,
+                 "CObjectIStream::Open: unsupported format");
+}
 
 CObjectIStream::CObjectIStream(void)
     : m_Fail(0), m_CurrentElement(0), m_TypeMapper(0)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/04/13 14:50:18  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.20  2000/04/06 16:10:51  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -124,6 +127,7 @@ public:
     typedef map<string, TIndex> TStrings;
 
     CObjectOStreamAsn(CNcbiOstream& out);
+    CObjectOStreamAsn(CNcbiOstream& out, bool deleteOut);
     virtual ~CObjectOStreamAsn(void);
 
     virtual void WriteTypeName(const string& name);

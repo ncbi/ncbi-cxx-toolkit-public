@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/04/13 14:50:28  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.31  2000/04/06 16:11:00  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -158,8 +161,24 @@ using namespace NCBI_NS_NCBI::CObjectStreamAsnBinaryDefs;
 
 BEGIN_NCBI_SCOPE
 
+CObjectOStream* OpenObjectOStreamAsnBinary(CNcbiOstream& out, bool deleteOut)
+{
+    return new CObjectOStreamAsnBinary(out, deleteOut);
+}
+
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
     : m_Output(out)
+{
+#if CHECK_STREAM_INTEGRITY
+    m_CurrentPosition = 0;
+    m_CurrentTagState = eTagStart;
+    m_CurrentTagLimit = INT_MAX;
+#endif
+}
+
+CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
+                                                 bool deleteOut)
+    : m_Output(out, deleteOut)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
@@ -277,7 +296,7 @@ void CObjectOStreamAsnBinary::WriteByte(TByte byte)
     }
     m_CurrentPosition++;
 #endif
-    m_Output.put(char(byte));
+    m_Output.PutChar(byte);
 }
 
 #if !CHECK_STREAM_INTEGRITY
@@ -296,10 +315,7 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     if ( (m_CurrentPosition += size) == m_CurrentTagLimit )
         EndTag();
 #endif
-    if ( !m_Output.write(bytes, size) ) {
-        ERR_POST("write error: " << size << '@' << NStr::PtrToString(bytes));
-        THROW1_TRACE(runtime_error, "write error");
-    }
+    m_Output.PutString(bytes, size);
 }
 
 template<typename T>
@@ -426,8 +442,6 @@ void CObjectOStreamAsnBinary::WriteEndOfContent(void)
 {
     WriteSysTag(eNone);
     WriteShortLength(0);
-    if ( !m_Output )
-        THROW1_TRACE(runtime_error, "write error");
 }
 
 void CObjectOStreamAsnBinary::WriteNull(void)
@@ -714,8 +728,7 @@ void CObjectOStreamAsnBinary::AsnWrite(AsnIo& , const char* data, size_t length)
         THROW1_TRACE(runtime_error, "tag DATA overflow");
     m_CurrentPosition += length;
 #endif
-    if ( !m_Output.write(data, length) )
-        THROW1_TRACE(runtime_error, "write error");
+    m_Output.PutString(data, length);
 }
 #endif
 

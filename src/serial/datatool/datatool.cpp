@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/04/13 14:50:36  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.29  2000/04/12 15:36:51  vasilche
 * Added -on <namespace> argument to datatool.
 * Removed unnecessary namespace specifications in generated files.
@@ -83,10 +86,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
-#include <serial/objistrasn.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/objostrasnb.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <memory>
 #include <serial/tool/fileutil.hpp>
 #include <serial/tool/parser.hpp>
@@ -100,7 +101,8 @@ BEGIN_NCBI_SCOPE
 
 typedef pair<AnyType, TTypeInfo> TObject;
 
-static void Help(void)
+static
+void Help(void)
 {
     NcbiCout <<
         "\n"
@@ -125,7 +127,8 @@ static void Help(void)
         NcbiFlush;
 }
 
-static void GenerateHelp(void)
+static
+void GenerateHelp(void)
 {
     NcbiCout <<
         "\n"
@@ -159,19 +162,19 @@ const char* StringArgument(const char* arg)
     return arg;
 }
 
-inline
+static inline
 const char* DirArgument(const char* arg)
 {
     return StringArgument(arg);
 }
 
-inline
+static inline
 const char* FileInArgument(const char* arg)
 {
     return StringArgument(arg);
 }
 
-inline
+static inline
 const char* FileOutArgument(const char* arg)
 {
     return StringArgument(arg);
@@ -185,14 +188,15 @@ static TObject LoadValue(CFileSet& types, const FileInfo& file,
                          const string& typeName);
 static void StoreValue(const TObject& object, const FileInfo& file);
 
-inline
-EFileType FileType(const char* arg, EFileType defType = eASNText)
+static inline
+ESerialOpenFlags FileType(const char* arg,
+                          ESerialOpenFlags defType = eSerial_AsnText)
 {
     switch ( arg[2] ) {
     case 0:
         return defType;
     case 'x':
-        return eXMLText;
+        return eSerial_Xml;
     default:
         ERR_POST(Fatal << "Invalid argument: " << arg);
         return defType;
@@ -201,16 +205,17 @@ EFileType FileType(const char* arg, EFileType defType = eASNText)
 
 static
 void GetFileIn(FileInfo& info, const char* typeArg, const char* name,
-               EFileType defType = eASNText)
+               ESerialOpenFlags defType = eSerial_AsnText)
 {
     info.type = FileType(typeArg, defType);
     info.name = FileInArgument(name);
 }
 
 static
-void GetFilesIn(list<FileInfo>& files, const char* typeArg, const char* namesIn)
+void GetFilesIn(list<FileInfo>& files, const char* typeArg,
+                const char* namesIn)
 {
-    EFileType type = FileType(typeArg);
+    ESerialOpenFlags type = FileType(typeArg);
     string names = StringArgument(namesIn);
     SIZE_TYPE pos = 0;
     SIZE_TYPE next = names.find(',');
@@ -224,7 +229,7 @@ void GetFilesIn(list<FileInfo>& files, const char* typeArg, const char* namesIn)
 
 static
 void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
-               EFileType defType = eASNText)
+               ESerialOpenFlags defType = eSerial_AsnText)
 {
     info.type = FileType(typeArg, defType);
     info.name = FileOutArgument(name);
@@ -278,10 +283,10 @@ int main(int argc, const char*argv[])
                 GetFileOut(dataOut, arg, argv[++i]);
                 break;
             case 'd':
-                GetFileIn(dataIn, arg, argv[++i], eASNBinary);
+                GetFileIn(dataIn, arg, argv[++i], eSerial_AsnBinary);
                 break;
             case 'e':
-                GetFileOut(dataOut, arg, argv[++i], eASNBinary);
+                GetFileOut(dataOut, arg, argv[++i], eSerial_AsnBinary);
                 break;
             case 't':
                 dataInTypeName = StringArgument(argv[++i]);
@@ -430,7 +435,7 @@ void LoadDefinitions(CFileSet& fileSet,
 {
     iterate ( list<FileInfo>, fi, names ) {
         const string& name = *fi;
-        if ( fi->type != eASNText ) {
+        if ( fi->type != eSerial_AsnText ) {
             ERR_POST("data definition format not supported: " << name);
             continue;
         }
@@ -451,7 +456,7 @@ void LoadDefinitions(CFileSet& fileSet,
 
 void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 {
-    if ( file.type != eASNText )
+    if ( file.type != eSerial_AsnText )
         ERR_POST(Fatal << "data definition format not supported");
     
     DestinationFile out(file);
@@ -461,21 +466,10 @@ void StoreDefinition(const CFileSet& fileSet, const FileInfo& file)
 TObject LoadValue(CFileSet& types, const FileInfo& file,
                   const string& defTypeName)
 {
-    SourceFile in(file, file.type == eASNBinary);
-
-    auto_ptr<CObjectIStream> objIn;
-    switch ( file.type ) {
-    case eASNText:
-        objIn.reset(new CObjectIStreamAsn(in));
-        break;
-    case eASNBinary:
-        objIn.reset(new CObjectIStreamAsnBinary(in));
-        break;
-    default:
-        ERR_POST(Fatal << "value format not supported");
-    }
-    //    objIn->SetTypeMapper(&types);
-    string typeName = objIn->ReadTypeName();
+    auto_ptr<CObjectIStream> in(CObjectIStream::Open(file.name,
+                                                     file.type | eSerial_StdWhenAny));
+    //    in->SetTypeMapper(&types);
+    string typeName = in->ReadTypeName();
     if ( typeName.empty() ) {
         if ( defTypeName.empty() )
             ERR_POST(Fatal << "ASN.1 value type must be specified (-t)");
@@ -484,26 +478,15 @@ TObject LoadValue(CFileSet& types, const FileInfo& file,
     TTypeInfo typeInfo =
         CTypeRef(new CAnyTypeSource(types.ResolveInAnyModule(typeName, true))).Get();
     AnyType value;
-    objIn->ReadExternalObject(&value, typeInfo);
+    in->ReadExternalObject(&value, typeInfo);
     return make_pair(value, typeInfo);
 }
 
 void StoreValue(const TObject& object, const FileInfo& file)
 {
-    DestinationFile out(file, file.type == eASNBinary);
-
-    auto_ptr<CObjectOStream> objOut;
-    switch ( file.type ) {
-    case eASNText:
-        objOut.reset(new CObjectOStreamAsn(out));
-        break;
-    case eASNBinary:
-        objOut.reset(new CObjectOStreamAsnBinary(out));
-        break;
-    default:
-        ERR_POST(Fatal << "value format not supported");
-    }
-    objOut->Write(&object.first, object.second);
+    auto_ptr<CObjectOStream> out(CObjectOStream::Open(file.name,
+                                                      file.type | eSerial_StdWhenAny));
+    out->Write(&object.first, object.second);
 }
 
 END_NCBI_SCOPE

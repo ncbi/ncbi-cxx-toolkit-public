@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/04/13 14:50:17  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.33  2000/04/06 16:10:51  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -174,6 +177,11 @@ public:
     typedef unsigned TIndex;
     typedef int TMemberIndex;
 
+    static CObjectOStream* Open(const string& fileName, unsigned flags);
+    static CObjectOStream* Open(CNcbiOstream& outStream, unsigned flags,
+                                bool deleteOutStream = false);
+
+    CObjectOStream(void);
     virtual ~CObjectOStream(void);
 
     // root writer

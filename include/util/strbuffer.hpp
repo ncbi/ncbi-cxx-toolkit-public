@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/04/13 14:50:18  vasilche
+* Added CObjectIStream::Open() and CObjectOStream::Open() for easier use.
+*
 * Revision 1.7  2000/04/10 21:01:40  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -78,7 +81,8 @@ BEGIN_NCBI_SCOPE
 class CIStreamBuffer
 {
 public:
-    CIStreamBuffer(CNcbiIstream& in) THROWS((bad_alloc));
+    CIStreamBuffer(CNcbiIstream& in, bool deleteIn = false)
+        THROWS((bad_alloc));
     ~CIStreamBuffer(void);
 
     char PeekChar(size_t offset = 0) THROWS((CSerialIOException, bad_alloc))
@@ -161,6 +165,9 @@ protected:
 
 private:
     CNcbiIstream& m_Input;    // source stream
+    bool m_DeleteInput;
+
+
     size_t m_BufferOffset;   // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
@@ -172,7 +179,8 @@ private:
 class COStreamBuffer
 {
 public:
-    COStreamBuffer(CNcbiOstream& out) THROWS((bad_alloc));
+    COStreamBuffer(CNcbiOstream& out, bool deleteOut = false)
+        THROWS((bad_alloc));
     ~COStreamBuffer(void) THROWS((CSerialIOException));
 
     size_t GetCurrentLineNumber(void) const THROWS_NONE
@@ -328,6 +336,8 @@ public:
 
 private:
     CNcbiOstream& m_Output;
+    bool m_DeleteOutput;
+
     size_t m_IndentLevel;
 
     char* m_Buffer;           // buffer pointer
