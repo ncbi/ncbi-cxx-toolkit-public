@@ -137,6 +137,8 @@ public:
         x_GatherInfo(ctx);
     }
 
+    string GetKey(void) const;
+
 private:
     void x_GatherInfo(CFFContext& ctx);
 
@@ -229,6 +231,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 22:48:18  shomrat
+* override GetKey
+*
 * Revision 1.3  2004/02/11 16:38:51  shomrat
 * added methods for gathering and formatting of source features
 *

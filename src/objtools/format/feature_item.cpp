@@ -42,6 +42,7 @@
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 
 #include <objmgr/scope.hpp>
@@ -314,6 +315,38 @@ static bool s_SkipFeature(const CSeq_feat& feat, CFFContext& ctx)
 }
 
 
+string CFeatureItem::GetKey(void) const
+{
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
+    if ( m_Feat->GetData().IsProt()  &&  m_IsProduct ) {
+        if ( subtype == CSeqFeatData::eSubtype_preprotein         ||
+             subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
+             subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
+             subtype == CSeqFeatData::eSubtype_transit_peptide_aa ) {
+            return "Precursor";
+        }
+    }
+    if ( !m_IsProduct  &&  
+         subtype == CSeqFeatData::eSubtype_preprotein  &&
+         GetContext().IsRefSeq() ) {
+        // !!! itemID = 0;  ???
+        return "misc_feature";
+    }
+
+    // deal with unmappable impfeats
+    if ( subtype == CSeqFeatData::eSubtype_imp  &&
+        m_Feat->GetData().IsImp() ) {
+        const CSeqFeatData::TImp& imp = m_Feat->GetData().GetImp();
+        if ( imp.CanGetKey() ) {
+            // !!! encode_prefix = TRUE; ???
+            return imp.GetKey();
+        }
+    }
+         
+    return CFeatureItemBase::GetKey();
+}
+
+
 void CFeatureItem::x_GatherInfo(CFFContext& ctx)
 {
     if ( s_SkipFeature(GetFeat(), ctx) ) {
@@ -345,8 +378,27 @@ void CFeatureItem::x_AddQuals(CFFContext& ctx) const
 {
     CScope&             scope = ctx.GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
+    const CSeq_loc&     loc   = GetLoc();
 
     // add various generic qualifiers...
+
+    if ( !ctx.HideUnclassPartial() ) {
+        bool add_partial = false;
+        /*
+        !!!
+        if ( m_Feat->CanGetPartial()  &&  m_Feat->GetPartial() ) {
+            ESeqlocPartial partial = SeqLocPartialCheck(loc, &scope);
+            if ( partial == eSeqlocPartial_Complete  &&) {
+                add_partial = true;
+            }
+        }
+        */
+        if ( add_partial ) {
+            x_AddQual(eFQ_partial, new CFlatBoolQVal(true));
+        }
+    }
+    
+
     if (m_Feat->IsSetComment()) {
         x_AddQual(eFQ_seqfeat_note, new CFlatStringQVal(m_Feat->GetComment()));
     }
@@ -498,8 +550,7 @@ void CFeatureItem::x_AddQuals(const CCdregion& cds) const
         if (id == 255) { // none found, so substitute default
             id = 1;
         }
-        if ( id != 1  ||
-             ctx.GetFormat() == CFlatFileGenerator::eFormat_GBSeq) {
+        if ( id != 1  || ctx.IsFormatGBSeq() ) {
             x_AddQual(eFQ_transl_table, new CFlatIntQVal(id));
         }
         
@@ -1199,6 +1250,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:50:35  shomrat
+* override GetKey
+*
 * Revision 1.4  2004/02/11 16:56:42  shomrat
 * changes in qualifiers gathering and formatting
 *
