@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/05/17 16:15:13  lavr
+ * NCBI_* (for ANSI ext) undone - now "ncbi_ansi_ext.h" does good prototyping
+ *
  * Revision 6.5  2000/05/17 14:22:32  lavr
  * Small cosmetic changes
  *
@@ -246,7 +249,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
         if (*str) {
             char *c;
 
-            if ((c = NCBI_strdup(str)) != 0) {
+            if ((c = strdup(str)) != 0) {
                 /* ... str = time, ... */
                 str = c;
                 while (*c && !isspace(*c))
@@ -286,7 +289,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                         size_t i;
                         
                         for (i = 0; i < N_FLAG_TAGS; i++) {
-                            if (NCBI_strcasecmp(s, k_FlagTag[i]) == 0)
+                            if (strcasecmp(s, k_FlagTag[i]) == 0)
                                 break;
                         }
                         if (i == N_FLAG_TAGS) {
@@ -350,7 +353,7 @@ static SSERV_Info* s_Ncbid_Read(const char** str)
     SSERV_Info    *info;
     char          *args, *c;
     
-    if (!(args = NCBI_strdup(*str)))
+    if (!(args = strdup(*str)))
         return 0;
     for (c = args; *c; c++)
         if (isspace(*c)) {
@@ -475,7 +478,7 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type, const char** str)
     SSERV_Info*    info;
     char           *path, *args, *c;
 
-    if (!(path = NCBI_strdup(*str)))
+    if (!(path = strdup(*str)))
         return 0;
     for (c = path; *c; c++)
         if (isspace(*c)) {
