@@ -601,8 +601,10 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
         }
     }
 
-    NCBI_THROW(CPluginManagerException, eResolveFailure, 
-               "Cannot resolve class factory");
+    string msg = "Cannot resolve class factory (unknown driver: ";
+    msg += driver;
+    msg += ").";
+    NCBI_THROW(CPluginManagerException, eResolveFailure, msg);
 }
 
 
@@ -836,6 +838,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/11/08 16:37:34  kuznets
+ * More informative error message
+ *
  * Revision 1.36  2004/09/23 16:20:24  kuznets
  * All ParamTree_ functions assembled in CConfig class
  *
