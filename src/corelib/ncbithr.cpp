@@ -415,6 +415,7 @@ CThread::~CThread(void)
     CFastMutexGuard state_guard(s_ThreadMutex);
     if ( m_IsRun && m_Handle != NULL ) {
         CloseHandle(m_Handle);
+        m_Handle = NULL;
     }
 #endif
 }
@@ -513,6 +514,7 @@ void CThread::Detach(void)
 #if defined(NCBI_WIN32_THREADS)
     xncbi_Validate(CloseHandle(m_Handle),
                    "CThread::Detach() -- error closing thread handle");
+    m_Handle = NULL;
 #elif defined(NCBI_POSIX_THREADS)
     xncbi_Validate(pthread_detach(m_Handle) == 0,
                    "CThread::Detach() -- error detaching thread");
@@ -552,6 +554,7 @@ void CThread::Join(void** exit_data)
                    "CThread::Join() -- thread is still running after join");
     xncbi_Validate(CloseHandle(m_Handle),
                    "CThread::Join() -- can not close thread handle");
+    m_Handle = NULL;
 #elif defined(NCBI_POSIX_THREADS)
     xncbi_Validate(pthread_join(m_Handle, 0) == 0,
                    "CThread::Join() -- can not join thread");
@@ -645,6 +648,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/04/08 18:41:08  shomrat
+ * Setting the handle to NULL after closing it
+ *
  * Revision 1.24  2003/03/10 18:57:08  kuznets
  * iterate->ITERATE
  *
