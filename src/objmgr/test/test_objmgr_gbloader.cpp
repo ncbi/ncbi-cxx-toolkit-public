@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/03/21 19:14:55  kimelman
+* GB related bugfixes
+*
 * Revision 1.2  2002/03/21 16:18:21  gouriano
 * *** empty log message ***
 *
@@ -48,6 +51,7 @@
 #include <objects/objmgr1/object_manager.hpp>
 #include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/gbloader.hpp>
+#include <objects/objmgr1/reader_id1.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
@@ -75,9 +79,9 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
         {
 //            CRef< CGBDataLoader> pLoader = new CGBDataLoader;
 //            pOm->RegisterDataLoader( *pLoader, CObjectManager::eDefault);
-            pOm->RegisterDataLoader( *(new CGBDataLoader()), CObjectManager::eDefault);
+            pOm->RegisterDataLoader( *(new CGBDataLoader("ID",new CId1Reader,2)), CObjectManager::eDefault);
             
-            int i = 16;
+            int i = 1;
             while(i<1800)
             {
                 CScope scope(*pOm);

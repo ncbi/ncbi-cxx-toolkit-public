@@ -116,8 +116,9 @@ public:
   virtual void       Restore(istream &is) { m_Flag.Restore(is); }
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl) = 0;
   virtual CBlob     *RetrieveBlob(istream &is) = 0;
-  virtual CSeqref*   Dup() = 0 ;
-  virtual void       print() const = 0;
+  virtual CSeqref*   Dup() const = 0;
+  virtual char*      print(char*,int)    const = 0;
+  virtual char*      printTSE(char*,int) const = 0;
 
   enum EMatchLevel {
     eContext,
@@ -155,6 +156,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2002/03/21 19:14:52  kimelman
+* GB related bugfixes
+*
 * Revision 1.3  2002/03/21 01:34:50  kimelman
 * gbloader related bugfixes
 *

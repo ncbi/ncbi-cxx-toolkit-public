@@ -103,8 +103,12 @@ CGBDataLoader::~CGBDataLoader(void)
   cout << "~CGBDataLoader" << endl;
   iterate(TSeqId2Seqrefs,sih_it,m_Bs2Sr)
     {
-      delete sih_it->second->m_Sr;
-      delete sih_it->second;
+      if(sih_it->second)
+        {
+          if(sih_it->second->m_Sr)
+            delete sih_it->second->m_Sr;
+          delete sih_it->second;
+        }
     }
   iterate(TSr2TSEinfo,tse_it,m_Sr2TseInfo)
     delete tse_it->second;
@@ -143,7 +147,6 @@ CGBDataLoader::GetRecords(const CHandleRangeMap& hrmap, const EChoice choice)
 bool
 CGBDataLoader::DropTSE(const CSeq_entry *sep)
 {
-  cout << "DropTse" <<endl;
   m_LookupMutex.Lock();
   TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(sep);
   if (it == m_Tse2TseInfo.end())
@@ -164,7 +167,8 @@ CGBDataLoader::DropTSE(const CSeq_entry *sep)
       TSeqId2Seqrefs::iterator bsit = m_Bs2Sr.find(*sih_it);
       if(bsit == m_Bs2Sr.end()) continue;
       // delete sih
-      delete bsit->second->m_Sr;
+      if(bsit->second->m_Sr)
+        delete bsit->second->m_Sr;
       bsit->second->m_Sr=0;
       m_Bs2Sr.erase(bsit);
     }
@@ -219,19 +223,22 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,const TTSESet& tse_s
   // try harder
   
   best=0;conflict=false;
-  iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
+  if (sr->m_Sr)
     {
-      TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
-      if (tsep == m_Sr2TseInfo.end()) continue;
-      iterate(TTSESet, sit, tse_set)
+      iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
         {
-          CTSE_Info *ti = *sit;
-          TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE);
-          if(it==m_Tse2TseInfo.end()) continue;
-          if(it->second==tsep->second)
+          TSr2TSEinfo::iterator tsep = m_Sr2TseInfo.find(CCmpTSE(*srp));
+          if (tsep == m_Sr2TseInfo.end()) continue;
+          iterate(TTSESet, sit, tse_set)
             {
-              if(!best)           best=ti;
-              else if(ti != best) conflict=true;
+              CTSE_Info *ti = *sit;
+              TTse2TSEinfo::iterator it = m_Tse2TseInfo.find(ti->m_TSE);
+              if(it==m_Tse2TseInfo.end()) continue;
+              if(it->second==tsep->second)
+                {
+                  if(!best)           best=ti;
+                  else if(ti != best) conflict=true;
+                }
             }
         }
     }
@@ -271,10 +278,11 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
 void
 CGBDataLoader::x_GC(void)
 {
+  // cout << "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC << endl;
   // dirty read - but that ok for garbage collector 
   if(m_TseCount<m_TseGC_Threshhold) return;
   if(!m_InvokeGC) return ;
-  cout << "X_GC " << m_TseCount << endl;
+  //cout << "X_GC " << m_TseCount << endl;
   GetDataSource()->x_CleanupUnusedEntries();
 
 #if 0
@@ -297,7 +305,7 @@ CGBDataLoader::x_GC(void)
     }
 #endif
   m_InvokeGC=false;
-  cout << "X_GC " << m_TseCount << endl;
+  //cout << "X_GC " << m_TseCount << endl;
 }
 
 
@@ -333,11 +341,16 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
   TInt         blob_mask = x_Request2BlobMask(choice);
   SSeqrefs*    sr=0;
   
-  cout << "x_GetRecords" <<endl;
+  //cout << "x_GetRecords" <<endl;
   m_LookupMutex.Lock();
   if(!x_ResolveHandle(sih,sr))
     return false;// mutex has already been unlocked
-  
+
+  if(!sr->m_Sr) // no data for given seqid
+    {
+      m_LookupMutex.Unlock();
+      return true ;
+    }
   //cout << "x_GetRecords-Seqref_iterate" <<endl;
   iterate (SSeqrefs::TSeqrefs, srp, *sr->m_Sr)
     {
@@ -458,7 +471,7 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   m_LookupMutex.Unlock();
   if(!local_lock) m_Pool.GetMutex(sr).Lock();
 
-  cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  //cout << "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
   
   bool calibrating = m_Timer.NeedCalibration();
   if(calibrating) m_Timer.Start();
@@ -473,16 +486,22 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
     }
   if(calibrating) m_Timer.Stop();
   sr->m_Timer.Reset(m_Timer);
-  cout << "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
   
   m_Pool.GetMutex(sr).Unlock();
   m_LookupMutex.Lock();
   m_SlowTraverseMode--;
   local_lock=m_SlowTraverseMode>0;
-  //iterate(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
-  //  {
-  //    (*srp)->print(); cout << endl;
-  //  }
+  
+  cout << "ResolveHandle(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) <<endl;
+  if(sr->m_Sr)
+    {
+      iterate(SSeqrefs::TSeqrefs, srp, *(sr->m_Sr))
+        {
+          char b[100];
+          cout << (*srp)->print(b,sizeof(b)) << endl;
+        }
+    }
+  
   if(osr)
     {
       bsit = m_Bs2Sr.find(h); // make sure we are not deleted in the unlocked time 
@@ -545,7 +564,9 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
     return false;
   m_InvokeGC=true;
   bool new_tse = false;
-  cout << "GetBlob(" ; srp->print(); cout << "," << tse_up << ") " << from << ":"<< to << ":=" << tse_up->m_mode << endl;
+  char s[100];
+  cout << "GetBlob(" << srp->printTSE(s,sizeof(s)) << "," << tse_up << ") " <<
+    from << ":"<< to << ":=" << tse_up->m_mode << endl;
   _VERIFY(tse_up->m_mode != CTSEUpload::eDone);
   if (tse_up->m_mode == CTSEUpload::eNone)
     {
@@ -558,7 +579,7 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
           //cout << "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")" << endl;
           if (blob->Class()==0)
             {
-              cout << "GetBlob(" << srp << ") " << "- whole blob uploaded" << endl;
+              cout << "GetBlob(" << s << ") " << "- whole blob uploaded" << endl;
               tse_up->m_mode = CTSEUpload::eDone;
               tse_up->m_tse    = blob->Seq_entry();
               new_tse=true;
@@ -566,7 +587,7 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
             }
           else
             {
-              cout << "GetBlob(" << srp << ") " << "- partial load" << endl;
+              cout << "GetBlob(" << s << ") " << "- partial load" << endl;
               _ASSERT(tse_up->m_mode != CTSEUpload::eDone);
               if(tse_up->m_mode != CTSEUpload::ePartial)
                 tse_up->m_mode = CTSEUpload::ePartial;
@@ -579,7 +600,7 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
         {
           tse_up->m_mode = CTSEUpload::eDone;
           // TODO log message
-          cout << "ERROR: can not retrive blob : " ; srp->print(); cout << endl;
+          cout << "ERROR: can not retrive blob : " << s << endl;
         }
       
       //cout << "GetData-after:: " << from << to <<  endl;
@@ -597,6 +618,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/21 19:14:53  kimelman
+* GB related bugfixes
+*
 * Revision 1.5  2002/03/21 01:34:53  kimelman
 * gbloader related bugfixes
 *

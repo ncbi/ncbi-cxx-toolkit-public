@@ -56,9 +56,10 @@ public:
   virtual void Restore(istream &is);
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl);
   virtual CBlob *RetrieveBlob(istream &is);
-  virtual CSeqref* Dup();
+  virtual CSeqref* Dup() const;
   virtual int Compare(const CSeqref &seqRef,EMatchLevel ml=eSeq) const ;
-  virtual void print() const ;
+  virtual char* print(char*,int)    const;
+  virtual char* printTSE(char*,int) const;
 
   CIntStreamable::TInt &Gi() { return m_Gi.Value(); };
   string &Sat() { return m_Sat.Value(); };
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2002/03/21 19:14:52  kimelman
+* GB related bugfixes
+*
 * Revision 1.3  2002/03/21 01:34:51  kimelman
 * gbloader related bugfixes
 *

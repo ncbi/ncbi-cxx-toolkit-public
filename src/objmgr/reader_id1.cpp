@@ -22,6 +22,7 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistre.hpp>
 #include <objects/objmgr1/reader_id1.hpp>
 
 #include <serial/objistrasnb.hpp>
@@ -113,7 +114,7 @@ void CId1Seqref::Restore(istream &is)
   is >> m_Gi >> m_Sat >> m_SatKey;
 }
 
-CSeqref* CId1Seqref::Dup()
+CSeqref* CId1Seqref::Dup() const
 {
   return new CId1Seqref(*this);
 }
@@ -205,9 +206,20 @@ void CId1Blob::Restore(istream &is)
   CBlob::Restore(is);
 }
 
-void CId1Seqref::print() const
+char* CId1Seqref::print(char *s,int size) const
 {
-  cout << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
+  CNcbiOstrstream ostr(s,size);
+  ostr << "SeqRef(" << Sat() << "," << SatKey () << "," << Gi() << ")" ;
+  s[ostr.pcount()]=0;
+  return s;
+}
+
+char* CId1Seqref::printTSE(char *s,int size) const
+{
+  CNcbiOstrstream ostr(s,size);
+  ostr << "TSE(" << Sat() << "," << SatKey () << ")" ;
+  s[ostr.pcount()]=0;
+  return s;
 }
 
 int CId1Seqref::Compare(const CSeqref &seqRef,EMatchLevel ml) const
@@ -237,6 +249,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2002/03/21 19:14:54  kimelman
+* GB related bugfixes
+*
 * Revision 1.4  2002/03/21 01:34:55  kimelman
 * gbloader related bugfixes
 *

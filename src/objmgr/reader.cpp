@@ -122,7 +122,7 @@ int CReader::ParalellLevel() const
 };
 
 CIntStreamable::TInt
-CReader::GetConst(string &const_name) const
+CReader::GetConst(string &) const
 {
   return 0;
 }
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2002/03/21 19:14:54  kimelman
+* GB related bugfixes
+*
 * Revision 1.2  2002/03/20 04:50:13  kimelman
 * GB loader added
 *

@@ -49,8 +49,9 @@ int main()
   CId1Reader reader;
 
   CSeq_id seqId;
-  seqId.SetEmbl().SetAccession("X66994");
-  seqId.SetEmbl().SetVersion(1);
+  //seqId.SetEmbl().SetAccession("X66994");
+  //seqId.SetEmbl().SetVersion(1);
+  seqId.SetGi(5);
 
   for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
   {
@@ -71,6 +72,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.3  2002/03/21 19:14:55  kimelman
+* GB related bugfixes
+*
 * Revision 1.2  2002/01/23 21:59:34  grichenk
 * Redesigned seq-id handles and mapper
 *
