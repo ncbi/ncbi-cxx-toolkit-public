@@ -3679,6 +3679,8 @@ case "$host_os:$compiler" in
       CFLAGS="-Wno-long-double -fno-common $CFLAGS"
       CXXFLAGS="-Wno-long-double -fno-common $CXXFLAGS"
    fi
+   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
+   LIBS="-Wl,-framework,ApplicationServices $LIBS"
    ;;
 esac
 
@@ -10295,8 +10297,7 @@ fi
 if test "$with_opengl" != "no"; then
    case "$OSTYPE" in
       darwin) # Use native interface
-         OPENGL_LIBS="-framework Carbon -framework ApplicationServices"
-         OPENGL_LIBS="$OPENGL_LIBS -framework AGL -framework OpenGL"
+         OPENGL_LIBS="-framework Carbon -framework AGL -framework OpenGL"
          ;;
       # cygwin) ... ;;
       *) # Default -- assume X-based

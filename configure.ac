@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.200 2003/06/19 17:49:06 ucko Exp $
+#  $Id: configure.ac,v 1.201 2003/06/27 17:25:45 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -711,6 +711,8 @@ case "$host_os:$compiler" in
       CFLAGS="-Wno-long-double -fno-common $CFLAGS"
       CXXFLAGS="-Wno-long-double -fno-common $CXXFLAGS"
    fi
+   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
+   LIBS="-Wl,-framework,ApplicationServices $LIBS"
    ;;
 esac
 
@@ -2380,8 +2382,7 @@ fi
 if test "$with_opengl" != "no"; then
    case "$OSTYPE" in
       darwin) # Use native interface
-         OPENGL_LIBS="-framework Carbon -framework ApplicationServices"
-         OPENGL_LIBS="$OPENGL_LIBS -framework AGL -framework OpenGL"
+         OPENGL_LIBS="-framework Carbon -framework AGL -framework OpenGL"
          ;;
       # cygwin) ... ;; 
       *) # Default -- assume X-based
