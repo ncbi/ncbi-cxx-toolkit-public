@@ -33,6 +33,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/09/10 17:15:51  grichenk
+* Added definition of CLK_TCK (absent on some systems).
+*
 * Revision 1.9  2001/07/24 13:19:14  ivanov
 * Remove semicolon after functions header (for NCBI_OS_WIN)
 *
@@ -121,6 +124,10 @@ static char*                 s_ReserveMemory     = 0;
 static TLimitsPrintHandler   s_PrintHandler      = 0;
 static TLimitsPrintParameter s_PrintHandlerParam = 0;
 
+
+#if !defined(CLK_TCK)  &&  defined(CLOCKS_PER_SEC)
+#  define CLK_TCK CLOCKS_PER_SEC
+#endif
 
 /* Routine to be called at the exit from application
  */
