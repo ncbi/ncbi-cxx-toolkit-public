@@ -45,6 +45,7 @@
 
 // Forward declaration of a unit test class
 class CBlastGapAlignTest;
+class CBlastDbTest;
 
 BEGIN_NCBI_SCOPE
 
@@ -1696,6 +1697,7 @@ private:
     friend class CDbBlast;
 
     friend class CBlastGapAlignTest;
+    friend class CBlastDbTest;
 
     // Pointers to local and remote objects
     
@@ -2399,6 +2401,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/02/10 19:46:19  dondosha
+* Added friend class CBlastDbTest
+*
 * Revision 1.45  2004/01/20 17:54:50  bealer
 * - Add SkipTraceback option.
 *
