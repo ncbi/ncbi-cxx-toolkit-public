@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/08/30 00:36:45  vakatov
+* + NStr::StringToNumeric()
+* Also, well-groomed the code and get rid of some compilation warnings.
+*
 * Revision 1.44  2001/05/30 15:56:25  vakatov
 * NStr::CompareNocase, NStr::CompareCase -- get rid of the possible
 * compilation warning (ICC compiler:  "return statement missing").
@@ -194,7 +198,7 @@
 BEGIN_NCBI_SCOPE
 
 
-const char* const kEmptyCStr = "";
+const char *const kEmptyCStr = "";
 
 
 const string* CNcbiEmptyString::m_Str = 0;
@@ -324,45 +328,40 @@ int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     return toupper(*s) - toupper(*p);
 }
 
+
 int NStr::CompareCase(const char* s1, const char* s2)
 {
-    for ( ;; ) {
-        // get next chars
-        char c1 = *s1, c2 = *s2;
+    int diff;
+    for ( ;; ++s1, ++s2) {
+        char c1 = *s1;
         // calculate difference
-        int diff = c1 - c2;
+        diff = c1 - *s2;
         // if end of string or different
-        if ( !c1 || diff )
-            return diff; // return difference
-        ++s1;  ++s2; // otherwise go to next chars
+        if (!c1  ||  diff)
+            break; // return difference
     }
-
-    // must never get to this point
-    _TROUBLE;
-    // fake "return" to avoid compiler warning
-    return 0;
+    return diff;
 }
+
 
 int NStr::CompareNocase(const char* s1, const char* s2)
 {
-    for ( ;; ) {
+    int diff;
+    for ( ;; ++s1, ++s2) {
         // get next chars
-        char c1 = *s1, c2 = *s2;
+        char c1 = *s1;
         // calculate difference
-        int diff = toupper(c1) - toupper(c2);
-        // if end of string or different
-        if ( !c1 || diff )
-            return diff; // return difference
-        ++s1;  ++s2; // otherwise go to next chars
+        diff = toupper(c1) - toupper(*s2);
+        // end of string or different
+        if (!c1  ||  diff)
+            break;
     }
-
-    // must never get to this point
-    _TROUBLE;
-    // fake "return" to avoid compiler warning
-    return 0;
+    return diff;
 }
 
-char* NStr::ToLower(char* str) {
+
+char* NStr::ToLower(char* str)
+{
     char* s;
     for (s = str;  *str;  str++) {
         *str = tolower(*str);
@@ -370,14 +369,17 @@ char* NStr::ToLower(char* str) {
     return s;
 }
 
-string& NStr::ToLower(string& str) {
-    for (string::iterator it = str.begin();  it != str.end();  ++it) {
+string& NStr::ToLower(string& str)
+{
+    non_const_iterate (string, it, str) {
         *it = tolower(*it);
     }
     return str;
 }
 
-char* NStr::ToUpper(char* str) {
+
+char* NStr::ToUpper(char* str)
+{
     char* s;
     for (s = str;  *str;  str++) {
         *str = toupper(*str);
@@ -385,18 +387,35 @@ char* NStr::ToUpper(char* str) {
     return s;
 }
 
-string& NStr::ToUpper(string& str) {
-    for (string::iterator it = str.begin();  it != str.end();  ++it) {
+string& NStr::ToUpper(string& str)
+{
+    non_const_iterate (string, it, str) {
         *it = toupper(*it);
     }
     return str;
 }
 
+
+int NStr::StringToNumeric(const string& str)
+{
+    if (str.empty()  ||  !isdigit(*str.begin())) {
+        return -1;
+    }
+    errno = 0;
+    char* endptr = 0;
+    unsigned long value = strtoul(str.c_str(), &endptr, 10);
+    if (errno  ||  !endptr  ||  value > (unsigned long) kMax_Int  ||
+        *endptr != '\0'  ||  endptr == str.c_str()) {
+        return -1;
+    }
+    return (int) value;
+}
+
+
 # define CHECK_ENDPTR() \
     if (*endptr != '\0') { \
         THROW1_TRACE(runtime_error, "no symbols should be after number"); \
     }
-
 
 
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
@@ -491,7 +510,7 @@ static const string s_kFalseString = "false";
 static const string s_kTString     = "t";
 static const string s_kFString     = "f";
 
-string NStr::BoolToString(bool value)
+const string& NStr::BoolToString(bool value)
 {
     return value ? s_kTrueString : s_kFalseString;
 }
@@ -517,7 +536,7 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
         while (beg < str.length()  &&  isspace(str[beg]))
             beg++;
         if (beg == str.length())
-            return NcbiEmptyString;
+            return kEmptyStr;
     }
     SIZE_TYPE end = str.length() - 1;
     if (where == eTrunc_End  ||  where == eTrunc_Both) {
@@ -581,7 +600,7 @@ list<string>& NStr::Split(const string& str, const string& delim,
 string NStr::PrintableString(const string& str)
 {
     string s;
-    for (string::const_iterator it = str.begin();  it != str.end();  ++it) {
+    iterate (string, it, str) {
         if (*it == '\0') {
             s += "\\0";
         } else if (*it == '\\') {
