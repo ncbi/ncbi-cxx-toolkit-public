@@ -49,19 +49,22 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER iter,
 char* SERV_LBSMD_GetConfig(void);
 
 
-int LBSM_HINFO_CpuCount(const void* load);
+typedef const void* LBSM_HINFO;
 
 
-int LBSM_HINFO_TaskCount(const void* load);
+int LBSM_HINFO_CpuCount(LBSM_HINFO hinfo);
 
 
-int/*bool*/ LBSM_HINFO_LoadAverage(const void* load, double lavg[2]);
+int LBSM_HINFO_TaskCount(LBSM_HINFO hinfo);
 
 
-int/*bool*/ LBSM_HINFO_Status(const void* load, double status[2]);
+int/*bool*/ LBSM_HINFO_LoadAverage(LBSM_HINFO hinfo, double lavg[2]);
 
 
-int/*bool*/ LBSM_HINFO_BLASTParams(const void* load, unsigned int blast[8]);
+int/*bool*/ LBSM_HINFO_Status(LBSM_HINFO hinfo, double status[2]);
+
+
+int/*bool*/ LBSM_HINFO_BLASTParams(LBSM_HINFO hinfo, unsigned int blast[8]);
 
 
 #ifdef __cplusplus
@@ -72,6 +75,9 @@ int/*bool*/ LBSM_HINFO_BLASTParams(const void* load, unsigned int blast[8]);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/10/28 21:55:38  lavr
+ * LBSM_HINFO introduced for readability to replace plain "const void*"
+ *
  * Revision 6.8  2002/10/28 20:12:57  lavr
  * Module renamed and host info API included
  *

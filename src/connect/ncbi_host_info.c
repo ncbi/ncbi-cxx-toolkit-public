@@ -43,29 +43,29 @@
 
 
 typedef struct SHostInfoTag {
-    const char*  env;
-    double       pad;           /* for proper alignment; also as a magic */
-    char         load[1];
+    const char* env;
+    double      pad;    /* for proper 'hinfo' alignment; also as a magic */
+    char        hinfo[1];
 } SHOST_Info;
 
 
-HOST_INFO HINFO_Create(const void* load, size_t size, const char* env)
+HOST_INFO HINFO_Create(const void* hinfo, size_t hinfo_size, const char* env)
 {
     SHOST_Info* host_info;
 
-    if (!load)
+    if (!hinfo)
         return 0;
     if (env && !*env)
         env = 0;
-    size += sizeof(*host_info);
-    if (!(host_info = (SHOST_Info*) malloc(size + (env ? strlen(env) : 0))))
+    hinfo_size += sizeof(*host_info);
+    if (!(host_info = (SHOST_Info*)malloc(hinfo_size + (env ? strlen(env):0))))
         return 0;
     if (env)
-        strcpy((char*) host_info + sizeof(*host_info) - 1 + size, env);
+        strcpy((char*) host_info + sizeof(*host_info) - 1 + hinfo_size, env);
     else
         host_info->env = 0;
     host_info->pad = M_PI;
-    memcpy(host_info->load, load, size);
+    memcpy(host_info->hinfo, hinfo, hinfo_size);
     return host_info;
 }
 
@@ -74,7 +74,7 @@ int HINFO_CpuCount(HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_CpuCount(host_info->load);
+    return LBSM_HINFO_CpuCount(host_info->hinfo);
 }
 
 
@@ -82,7 +82,7 @@ int HINFO_TaskCount(HOST_INFO host_info)
 {
     if (!host_info || host_info->pad != M_PI)
         return -1;
-    return LBSM_HINFO_TaskCount(host_info);
+    return LBSM_HINFO_TaskCount(host_info->hinfo);
 }
 
 
@@ -90,7 +90,7 @@ int/*bool*/ HINFO_LoadAverage(HOST_INFO host_info, double lavg[2])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_LoadAverage(host_info->load, lavg);
+    return LBSM_HINFO_LoadAverage(host_info->hinfo, lavg);
 }
 
 
@@ -98,7 +98,7 @@ int/*bool*/ HINFO_Status(HOST_INFO host_info, double status[2])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_Status(host_info->load, status);
+    return LBSM_HINFO_Status(host_info->hinfo, status);
 }
 
 
@@ -106,7 +106,7 @@ int/*bool*/ HINFO_BLASTParams(HOST_INFO host_info, unsigned int blast[8])
 {
     if (!host_info || host_info->pad != M_PI)
         return 0;
-    return LBSM_HINFO_BLASTParams(host_info->load, blast);
+    return LBSM_HINFO_BLASTParams(host_info->hinfo, blast);
 }
 
 
@@ -121,6 +121,9 @@ const char* HINFO_Environment(HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/10/28 21:55:38  lavr
+ * LBSM_HINFO introduced for readability to replace plain "const void*"
+ *
  * Revision 6.2  2002/10/28 20:49:04  lavr
  * Conditionally define M_PI if it is not already defined by <math.h>
  *
