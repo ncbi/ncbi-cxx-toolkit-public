@@ -340,17 +340,31 @@ static void TestCgi_Request_Full(CNcbiIstream*         istr,
 
 static void TestCgiMisc(void)
 {
-    const string str("_ _%_;_\n_:_\\_\"_");
-    string url = "qwerty";
-    url = URL_EncodeString(str);
-    NcbiCout << str << NcbiEndl << url << NcbiEndl;
-    assert( url.compare("_+_%25_%3B_%0A_%3A_%5C_%22_") == 0 );
+    const string str("_ _%_;_\n_:_'_*_\\_\"_");
+    {{
+        string url = "qwerty";
+        url = URL_EncodeString(str);
+        NcbiCout << str << NcbiEndl << url << NcbiEndl;
+        assert( url.compare("_+_%25_%3B_%0A_%3A_'_*_%5C_%22_") == 0 );
 
-    string str1 = URL_DecodeString(url);
-    assert( str1 == str );
+        string str1 = URL_DecodeString(url);
+        assert( str1 == str );
 
-    string url1 = URL_EncodeString(str1);
-    assert( url1 == url );
+        string url1 = URL_EncodeString(str1);
+        assert( url1 == url );
+    }}
+    {{
+        string url = "qwerty";
+        url = URL_EncodeString(str, eUrlEncode_ProcessMarkChars);
+        NcbiCout << str << NcbiEndl << url << NcbiEndl;
+        assert( url.compare("%5F+%5F%25%5F%3B%5F%0A%5F%3A%5F%27%5F%2A%5F%5C%5F%22%5F") == 0 );
+
+        string str1 = URL_DecodeString(url);
+        assert( str1 == str );
+
+        string url1 = URL_EncodeString(str1, eUrlEncode_ProcessMarkChars);
+        assert( url1 == url );
+    }}
 
     const string bad_url("%ax");
     try {
@@ -580,6 +594,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.16  2003/07/08 19:07:28  ivanov
+ * Added into TestCgi() test for URL_Encode() mark characters encoding
+ *
  * Revision 1.15  2002/12/30 21:13:29  vakatov
  * Cosmetics and compiler warning elimination
  *
