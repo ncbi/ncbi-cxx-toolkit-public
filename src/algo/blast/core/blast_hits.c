@@ -870,6 +870,7 @@ static void InsertBlastHSPListInHeap(BlastHitList* hit_list,
       }
       hit_list->worst_evalue = 
          hit_list->hsplist_array[0]->hsp_array[0]->evalue;
+      hit_list->low_score = hit_list->hsplist_array[0]->hsp_array[0]->score;
 }
 
 /** Insert a new HSP list into the hit list.
@@ -901,7 +902,11 @@ static Int2 BLAST_UpdateHitList(BlastHitList* hit_list,
       hit_list->hsplist_array[hit_list->hsplist_count++] = hsp_list;
       hit_list->worst_evalue = 
          MAX(hsp_list->hsp_array[0]->evalue, hit_list->worst_evalue);
-   } else if (hsp_list->hsp_array[0]->evalue >= hit_list->worst_evalue) {
+      hit_list->low_score = 
+         MIN(hsp_list->hsp_array[0]->score, hit_list->low_score);
+   } else if ((hsp_list->hsp_array[0]->evalue > hit_list->worst_evalue) ||
+              ((hsp_list->hsp_array[0]->evalue == hit_list->worst_evalue) &&
+               (hsp_list->hsp_array[0]->score <= hit_list->low_score))) {
       /* This hit list is less significant than any of those already saved;
          discard it */
       BlastHSPListFree(hsp_list);
