@@ -596,6 +596,12 @@ public:
     virtual ~I_DriverMgr(void);
 };
 
+#if defined(NCBI_OS_MSWIN)
+inline int close(int fd)
+{
+    return _close(fd);
+}
+#endif
 
 END_NCBI_SCOPE
 
@@ -606,6 +612,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/02/24 15:45:23  soussov
+ * adds close(int fd) to MSWIN
+ *
  * Revision 1.27  2005/02/23 21:36:38  soussov
  * Adds Abort() method to connection
  *
