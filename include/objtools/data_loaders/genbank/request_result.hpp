@@ -246,6 +246,7 @@ class NCBI_XREADER_EXPORT CLoadInfoLock : public CObject
 public:
     ~CLoadInfoLock(void);
 
+    void ReleaseLock(void);
     void SetLoaded(CObject* obj = 0);
 
 protected:

@@ -136,8 +136,14 @@ CLoadInfoLock::CLoadInfoLock(CReaderRequestResult& owner,
 
 CLoadInfoLock::~CLoadInfoLock(void)
 {
-    m_Guard.Release();
+    ReleaseLock();
     m_Owner.ReleaseLoadLock(m_Info);
+}
+
+
+void CLoadInfoLock::ReleaseLock(void)
+{
+    m_Guard.Release();
 }
 
 
@@ -148,7 +154,7 @@ void CLoadInfoLock::SetLoaded(CObject* obj)
         obj = new CObject;
     }
     m_Info->m_LoadLock.Reset(obj);
-    m_Guard.Release();
+    ReleaseLock();
 }
 
 
@@ -418,10 +424,12 @@ void CReaderRequestResult::SaveLocksTo(TTSE_LockSet& locks)
 
 void CReaderRequestResult::ReleaseLocks(void)
 {
+    NON_CONST_ITERATE( TLockMap, it, m_LockMap ) {
+        it->second->ReleaseLock();
+    }
     m_BlobLoadLocks.clear();
     m_LoadedSet.clear();
     m_TSE_LockSet.clear();
-    m_LockMap.clear();
 }
 
 
