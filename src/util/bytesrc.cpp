@@ -58,13 +58,13 @@ CByteSourceReader::~CByteSourceReader(void)
 
 
 CRef<CSubSourceCollector> 
-CByteSourceReader::SubSource(size_t /*prevent*/,CRef<CSubSourceCollector>& parent)
+CByteSourceReader::SubSource(size_t /*prevent*/,CRef<CSubSourceCollector> parent)
 {
     return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent));
 }
 
 
-CSubSourceCollector::CSubSourceCollector(CRef<CSubSourceCollector>& parent)
+CSubSourceCollector::CSubSourceCollector(CRef<CSubSourceCollector> parent)
  : m_ParentSubSource(parent)
 {
 }
@@ -210,7 +210,7 @@ bool CSubFileByteSourceReader::EndOfData(void) const
 
 CRef<CSubSourceCollector> 
 CFileByteSourceReader::SubSource(size_t prepend, 
-                                 CRef<CSubSourceCollector>& parent)
+                                 CRef<CSubSourceCollector> parent)
 {
     return CRef<CSubSourceCollector>(new CFileSourceCollector(m_FileSource,
                                     m_Stream->tellg() - TFileOff(prepend),
@@ -218,9 +218,9 @@ CFileByteSourceReader::SubSource(size_t prepend,
 }
 
 
-CFileSourceCollector::CFileSourceCollector(const CConstRef<CFileByteSource>& s,
+CFileSourceCollector::CFileSourceCollector(CConstRef<CFileByteSource> s,
                                            TFilePos start,
-                                           CRef<CSubSourceCollector>& parent)
+                                           CRef<CSubSourceCollector> parent)
     : CSubSourceCollector(parent),
       m_FileSource(s),
       m_Start(start),
@@ -246,7 +246,7 @@ CRef<CByteSource> CFileSourceCollector::GetSource(void)
 
 
 CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
-                           CRef<CMemoryChunk>& prevChunk)
+                           CRef<CMemoryChunk> prevChunk)
     : m_Data(new char[dataSize]),
       m_DataSize(dataSize)
 {
@@ -306,7 +306,7 @@ bool CMemoryByteSourceReader::EndOfData(void) const
     return !m_CurrentChunk;
 }
 
-CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector>& parent)
+CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector> parent)
 : CSubSourceCollector(parent)
 {
 }
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2003/09/25 13:59:40  ucko
+ * Pass C(Const)Ref by value, not reference!
+ *
  * Revision 1.20  2003/09/25 12:47:36  kuznets
  * Added subsource chaining
  *
