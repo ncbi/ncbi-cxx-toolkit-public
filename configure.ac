@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.132 2002/10/02 18:09:51 ucko Exp $
+#  $Id: configure.ac,v 1.133 2002/10/03 18:48:18 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1924,7 +1924,6 @@ if test "$with_fltk" != "no"; then
       [if test -x "$FLTK_BINPATH/fltk-config" ; then
           FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
           FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
-          FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
     
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
@@ -1952,8 +1951,8 @@ else
    if test -z "$FLTK_INCLUDE"; then
       FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
       FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
-      FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
    fi
+   FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
    FLTK_POST_LINK="$FLTK_BINPATH/fltk-config --post"
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
@@ -1976,21 +1975,10 @@ if test "$with_wxwin" != "no" ; then
    fi
    WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_ARCH_PATH/bin"}
    WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_ARCH_PATH/lib"}
-#    if test -n "$WXWIN_GTK"; then
-#    WXWIN_GTK=wx_gtk
-#    if test "$with_debug" != "no"; then
-#       if test -f "$WXWIN_LIBPATH/libwx_gtkd.a"
-#       -o -f "$WXWIN_LIBPATH/libwx_gtkd.so"; then
-#          WXWIN_GTK=wx_gtkd
-#       fi
-#    fi
-#    fi    
-
-#  WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
    WXWIN_INCLUDE=
    AC_CACHE_CHECK([for wxWindows in $WXWIN_ARCH_PATH], ncbi_cv_lib_wxwindows,
       [if test -x "$WXWIN_BINPATH/wx-config" ; then
-          WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+          WXWIN_INCLUDE="`$WXWIN_BINPATH/gtk-config --cflags` `$WXWIN_BINPATH/wx-config --cflags`"
           WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
     
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
@@ -2011,14 +1999,16 @@ if test "$with_wxwin" = "no" ; then
    WXWIN_LIBPATH="No_wxWindows"
    WXWIN_INCLUDE=
    WXWIN_LIBS=
+   WXWIN_GL_LIBS=
    WithoutPackages="$WithoutPackages wxWindows"
 else
    WithPackages="$WithPackages wxWindows"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
-      WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+      WXWIN_INCLUDE="`$WXWIN_BINPATH/gtk-config --cflags` `$WXWIN_BINPATH/wx-config --cflags`"
       WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
    fi
+   WXWIN_GL_LIBS=`$WXWIN_BINPATH/wx-config --gl-libs`
    AC_DEFINE(HAVE_WXWINDOWS, 1, [Define to 1 if wxWindows is available.])
 fi
 
@@ -2829,6 +2819,7 @@ AC_SUBST(FLTK_LIBS_GL)
 AC_SUBST(FLTK_POST_LINK)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
+AC_SUBST(WXWIN_GL_LIBS)
 AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)

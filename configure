@@ -305,7 +305,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS_INCLUDE FTDS_LIBS freetds X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial dbapi objects ctools gui app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_POST_LINK WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -9457,7 +9457,6 @@ else
   if test -x "$FLTK_BINPATH/fltk-config" ; then
           FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
           FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
-          FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
 
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
@@ -9515,8 +9514,8 @@ else
    if test -z "$FLTK_INCLUDE"; then
       FLTK_INCLUDE=`$FLTK_BINPATH/fltk-config --cxxflags --use-gl`
       FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
-      FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
    fi
+   FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
    FLTK_POST_LINK="$FLTK_BINPATH/fltk-config --post"
 
 cat >>confdefs.h <<\_ACEOF
@@ -9543,17 +9542,6 @@ if test "$with_wxwin" != "no" ; then
    fi
    WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_ARCH_PATH/bin"}
    WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_ARCH_PATH/lib"}
-#    if test -n "$WXWIN_GTK"; then
-#    WXWIN_GTK=wx_gtk
-#    if test "$with_debug" != "no"; then
-#       if test -f "$WXWIN_LIBPATH/libwx_gtkd.a"
-#       -o -f "$WXWIN_LIBPATH/libwx_gtkd.so"; then
-#          WXWIN_GTK=wx_gtkd
-#       fi
-#    fi
-#    fi
-
-#  WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
    WXWIN_INCLUDE=
    echo "$as_me:$LINENO: checking for wxWindows in $WXWIN_ARCH_PATH" >&5
 echo $ECHO_N "checking for wxWindows in $WXWIN_ARCH_PATH... $ECHO_C" >&6
@@ -9561,7 +9549,7 @@ if test "${ncbi_cv_lib_wxwindows+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test -x "$WXWIN_BINPATH/wx-config" ; then
-          WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+          WXWIN_INCLUDE="`$WXWIN_BINPATH/gtk-config --cflags` `$WXWIN_BINPATH/wx-config --cflags`"
           WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
 
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
@@ -9612,14 +9600,16 @@ if test "$with_wxwin" = "no" ; then
    WXWIN_LIBPATH="No_wxWindows"
    WXWIN_INCLUDE=
    WXWIN_LIBS=
+   WXWIN_GL_LIBS=
    WithoutPackages="$WithoutPackages wxWindows"
 else
    WithPackages="$WithPackages wxWindows"
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIN_INCLUDE"; then
-      WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+      WXWIN_INCLUDE="`$WXWIN_BINPATH/gtk-config --cflags` `$WXWIN_BINPATH/wx-config --cflags`"
       WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
    fi
+   WXWIN_GL_LIBS=`$WXWIN_BINPATH/wx-config --gl-libs`
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_WXWINDOWS 1
@@ -14170,6 +14160,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -14929,6 +14920,7 @@ s,@FLTK_LIBS_GL@,$FLTK_LIBS_GL,;t t
 s,@FLTK_POST_LINK@,$FLTK_POST_LINK,;t t
 s,@WXWIN_INCLUDE@,$WXWIN_INCLUDE,;t t
 s,@WXWIN_LIBS@,$WXWIN_LIBS,;t t
+s,@WXWIN_GL_LIBS@,$WXWIN_GL_LIBS,;t t
 s,@FASTCGI_INCLUDE@,$FASTCGI_INCLUDE,;t t
 s,@FASTCGI_LIBS@,$FASTCGI_LIBS,;t t
 s,@FASTCGI_OBJS@,$FASTCGI_OBJS,;t t

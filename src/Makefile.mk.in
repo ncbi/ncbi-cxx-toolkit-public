@@ -242,6 +242,7 @@ OPENGL_LIBS    = @OPENGL_LIBS@
 # wxWindows:  headers and libs
 WXWIN_INCLUDE = @WXWIN_INCLUDE@
 WXWIN_LIBS    = @WXWIN_LIBS@
+WXWIN_GL_LIBS = @WXWIN_GL_LIBS@
 
 # FLTK:  headers and libs (both with and without OpenGL support).
 FLTK_INCLUDE = @FLTK_INCLUDE@
