@@ -104,7 +104,7 @@ string CRefArgs::GetQueryString(const string& referrer) const
     }
 
     string args = host.substr(pos + 1, host.size());
-    host = host.substr(0, pos - 1);
+    host = host.substr(0, pos);
     // Find arguments if any
     pos = NStr::Find(args, "?");
     if (pos == NPOS) {
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2004/12/16 20:11:48  yasmax
+* Corrected length of host
+*
 * Revision 1.2  2004/12/09 16:35:45  grichenk
 * Added GetDefaultDefinitions. Doxygenized comments.
 *
