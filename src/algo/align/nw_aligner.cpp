@@ -500,6 +500,13 @@ void CNWAligner::GetTranscriptString(vector<char>* out) const
                 ++i2;
             }
             break;
+
+	    default: {
+	      NCBI_THROW( CAlgoAlignException,
+			  eInternal,
+			  "Unexpected transcript symbol");
+	    }
+	  
         }
 
         (*out)[i++] = c;
@@ -588,7 +595,7 @@ CNWAligner::TScore CNWAligner::GetScore() const
 
 bool CNWAligner::x_CheckMemoryLimit()
 {
-    size_t gdim = m_guides.size();
+    const size_t gdim = m_guides.size();
     if(gdim) {
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
 	const size_t elem_size = x_GetElemSize();
@@ -596,8 +603,8 @@ bool CNWAligner::x_CheckMemoryLimit()
             return false;
         }
         for(size_t i = 4; i < gdim; i += 4) {
-            size_t dim1 = m_guides[i] - m_guides[i-3] + 1;
-            size_t dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
+            dim1 = m_guides[i] - m_guides[i-3] + 1;
+            dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
             if(double(dim1)*dim2*elem_size >= kMax_UInt) {
                 return false;
             }
@@ -991,6 +998,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2003/10/31 19:40:13  kapustin
+ * Get rid of some WS and GCC complains
+ *
  * Revision 1.40  2003/10/27 20:47:35  kapustin
  * Minor code cleanup
  *

@@ -37,13 +37,13 @@
 
 BEGIN_NCBI_SCOPE
 
-unsigned char g_nwspl32_donor[splice_type_count_32][2] = {
+const unsigned char g_nwspl32_donor[splice_type_count_32][2] = {
     {'G','T'}, // donor type 1 in CDonorAcceptorMatrix coding
     {'G','C'}, // 2
     {'A','T'}  // 3
 };
 
-unsigned char g_nwspl32_acceptor[splice_type_count_32][2] = {
+const unsigned char g_nwspl32_acceptor[splice_type_count_32][2] = {
     {'A','G'}, // 1
     {'A','G'}, // 2
     {'A','C'}  // 3
@@ -227,14 +227,14 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
             
         // detect donor candidate
         if(N2 > 2) {
-            unsigned char c1 = seq2[1], c2 = seq2[2];
-            Uint1 dnr_type = 0xF0 & dnr_acc_matrix[(size_t(c1)<<8)|c2];
+            unsigned char d1 = seq2[1], d2 = seq2[2];
+            Uint1 dnr_type = 0xF0 & dnr_acc_matrix[(size_t(d1)<<8)|d2];
 
             for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
                 jAllDonors[st][jTail[st]] = j;
                 if(dnr_type & (0x10 << st)) {
                     vAllDonors[st][jTail[st]] = 
-                        ( c1 == g_nwspl32_donor[st][0] && c2 == g_nwspl32_donor[st][1] ) ?
+                        ( d1 == g_nwspl32_donor[st][0] && d2 == g_nwspl32_donor[st][1] ) ?
                         V: (V + m_Wd1);
                 }
                 else { // both chars distorted
@@ -267,7 +267,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
             }
             else {
                 rowF[j] = n0 + ws2;
-		del_start[j] = k-N2;
+                del_start[j] = k-N2;
             }
 
             // evaluate the score (V)
@@ -337,11 +337,11 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
 
             // detect donor candidates
             if(j < N2 - 2) {
-                unsigned char c1 = seq2[j+1], c2 = seq2[j+2];
-                Uint1 dnr_mask = 0xF0 & dnr_acc_matrix[(size_t(c1)<<8)|c2];
+                unsigned char d1 = seq2[j+1], d2 = seq2[j+2];
+                Uint1 dnr_mask = 0xF0 & dnr_acc_matrix[(size_t(d1)<<8)|d2];
                 for(Uint1 st = 0; st < splice_type_count_32; ++st ) {
                     if( dnr_mask & (0x10 << st) ) {
-                        if( c1 == g_nwspl32_donor[st][0] && c2 == g_nwspl32_donor[st][1] ) {
+                        if( d1 == g_nwspl32_donor[st][0] && d2 == g_nwspl32_donor[st][1] ) {
                             if(V > vBestDonor[st]) {
                                 jAllDonors[st][jTail[st]] = j;
                                 vAllDonors[st][jTail[st]] = V;
@@ -534,9 +534,9 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
         case eTS_Intron: {
 
             if(state1 != 2) {
-                for(unsigned char i = 0; i < splice_type_count_32; ++i) {
-                    if(*p2 == g_nwspl32_donor[i][0] && *(p2 + 1) == g_nwspl32_donor[i][1]) {
-                        score += m_Wi[i];
+                for(unsigned char k = 0; k < splice_type_count_32; ++k) {
+                    if(*p2 == g_nwspl32_donor[k][0] && *(p2 + 1) == g_nwspl32_donor[k][1]) {
+                        score += m_Wi[k];
                         break;
                     }
                 }
@@ -606,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/10/31 19:40:13  kapustin
+ * Get rid of some WS and GCC complains
+ *
  * Revision 1.8  2003/10/27 21:00:17  kapustin
  * Set intron penalty defaults differently for 16- and 32-bit versions according to the expected quality of sequences those variants are supposed to be used with.
  *
