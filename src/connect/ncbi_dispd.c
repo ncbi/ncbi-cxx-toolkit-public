@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/10/05 22:43:30  lavr
+ * Another dummy revision: still in development
+ *
  * Revision 6.3  2000/10/05 22:34:23  lavr
  * Temporary (dummy) revision for compilation to go
  *
@@ -46,6 +49,13 @@
 
 #include "ncbi_servicep_dispd.h"
 
+const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *net_info)
+{
+    return 0;
+}
+
+#if 0
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,13 +69,6 @@ extern "C" {
 } /* extern "C" */
 #endif
 
-
-const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *net_info)
-{
-    return 0;
-}
-
-#if 0
 struct SDISPD_DataTag {
     struct SConnNetInfo* net_info;
     struct SSERV_Info*   s_info;
@@ -73,6 +76,9 @@ struct SDISPD_DataTag {
     CONN                 conn;
 };
 
+
+const SSERV_VTable *SERV_DISPD_Open(SERV_ITER iter, SConnNetInfo *net_info)
+{
     CONNECTOR c;
     CONN conn;
 
