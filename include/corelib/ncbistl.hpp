@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/12/14 17:41:58  vakatov
+* [MSVC++] Added pragma to get rid of warning:
+*   "identifier was truncated to '255' characters in the browser information"
+*
 * Revision 1.24  2001/10/12 19:32:54  ucko
 * move BREAK to a central location; move CBioseq::GetTitle to object manager
 *
@@ -128,6 +132,8 @@
 #  pragma warning(disable: 4250)
 // 'this' : used in base member initializer list
 #  pragma warning(disable: 4355)
+// identifier was truncated to '255' characters in the browser information
+#  pragma warning(disable: 4786)
 #endif /* _MSC_VER >= 1200 */
 
 
