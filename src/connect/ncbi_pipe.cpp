@@ -37,6 +37,7 @@
 #elif defined NCBI_OS_UNIX
 #  include <unistd.h>
 #  include <errno.h>
+#  include <sys/time.h>
 #  include <sys/types.h>
 #  include <sys/wait.h>
 #  include <signal.h>
@@ -1397,6 +1398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/09/04 13:55:47  kans
+ * added include sys/time.h to fix Mac compiler error
+ *
  * Revision 1.27  2003/09/03 21:37:05  ivanov
  * Removed Linux ESPIPE workaround
  *
