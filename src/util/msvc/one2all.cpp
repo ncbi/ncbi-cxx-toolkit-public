@@ -527,7 +527,9 @@ void CMainApplication::ProcessFile(const string& file_name)
         LOG_POST(file_name << ":  " << cfgs);
 
         // Replace original project file (backup kept in .bak).
-        if (!CFile(file_name).Rename(file_name + ".bak") ||
+        string file_bakup =  file_name + ".bak";
+        CFile(file_bakup).Remove();
+        if (!CFile(file_name).Rename(file_bakup) ||
             !CFile(file_name_new).Rename(file_name) ) {
             throw "cannot rename file.";
         }
@@ -892,6 +894,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/06 17:08:32  ivanov
+ * Remove ".bak" file before renaming
+ *
  * Revision 1.1  2003/11/06 16:17:58  ivanov
  * Initial revision. Based on one2all.sh script.
  *
