@@ -286,7 +286,10 @@ get_seq(int gi)
 	CRef<CSeq_id> id(new CSeq_id);
 	id->SetGi(gi);
 
-	return const_cast<CBioseq*>(&scope.GetBioseqHandle(*id).GetBioseq());
+	const CBioseq* s =
+		const_cast<CBioseq*>(&scope.GetBioseqHandle(*id).GetBioseq());
+
+	return CRef<CBioseq>(s);
 }
 
 static CRef<CBlast4_request_body>
