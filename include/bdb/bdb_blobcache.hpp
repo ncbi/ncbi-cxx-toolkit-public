@@ -259,6 +259,8 @@ private:
 
     void x_Close();
 
+    void x_PidLock(ELockMode lm);
+
 private:
     CBDB_Cache(const CBDB_Cache&);
     CBDB_Cache& operator=(const CBDB_Cache);
@@ -413,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/08/24 14:06:53  kuznets
+ * +x_PidLock
+ *
  * Revision 1.29  2004/08/13 11:04:08  kuznets
  * +Verify()
  *
