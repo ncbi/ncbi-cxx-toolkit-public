@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
  * Revision 6.15  2002/02/05 16:05:26  lavr
  * List of included header files revised
  *
@@ -83,8 +86,8 @@
  */
 
 
-#include <corelib/ncbistd.hpp>
 #include "ncbi_conn_streambuf.hpp"
+#include <corelib/ncbistd.hpp>
 #include <memory>
 
 

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
  * Revision 6.20  2001/12/31 14:53:46  lavr
  * #include <connect/ncbi_ansi_ext.h> for Mac to be happy (noted by J.Kans)
  *
@@ -102,11 +105,11 @@
  * ==========================================================================
  */
 
+#include "ncbi_priv.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
-#include "ncbi_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>

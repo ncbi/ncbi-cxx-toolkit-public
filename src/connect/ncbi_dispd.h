@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/02/05 22:04:13  lavr
+ * Included header files rearranged
+ *
  * Revision 6.7  2001/04/24 21:32:06  lavr
  * SERV_DISPD_STALE_RATIO_OK and SERV_DISPD_LOCAL_SVC_BONUS moved to .c file
  *
@@ -60,8 +63,8 @@
  * ==========================================================================
  */
 
-#include <connect/ncbi_connutil.h>
 #include "ncbi_servicep.h"
+#include <connect/ncbi_connutil.h>
 
 #ifdef __cplusplus
 extern "C" {

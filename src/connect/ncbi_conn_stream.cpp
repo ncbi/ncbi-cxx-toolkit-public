@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
  * Revision 6.11  2002/02/05 16:05:26  lavr
  * List of included header files revised
  *
@@ -70,8 +73,8 @@
  */
 
 
-#include <connect/ncbi_conn_stream.hpp>
 #include "ncbi_conn_streambuf.hpp"
+#include <connect/ncbi_conn_stream.hpp>
 #include <memory>
 
 

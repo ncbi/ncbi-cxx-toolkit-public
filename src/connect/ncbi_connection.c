@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/02/05 22:04:12  lavr
+ * Included header files rearranged
+ *
  * Revision 6.19  2002/01/30 20:10:56  lavr
  * Remove *n_read = 0 assignment in s_CONN_Read; replace it with assert()
  *
@@ -109,10 +112,9 @@
  */
 
 #include "ncbi_priv.h"
+#include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connector.h>
-#include <connect/ncbi_buffer.h>
-
 #include <stdlib.h>
 #include <string.h>
 
