@@ -41,12 +41,8 @@
 
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/plugin_manager.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/grid_worker.hpp>
-#include <connect/services/netcache_client.hpp>
-#include <connect/services/netschedule_client.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -71,6 +67,13 @@ public:
                    INetScheduleClientFactory* client_factory = NULL);
     virtual ~CGridWorkerApp();
 
+    /// If you override this method, do call CGridWorkerApp::Init()
+    /// from inside your overriding method.    
+    virtual void Init(void);
+
+    /// Do not override this method yourself! It includes all the Worker Node
+    /// specific machinery. If you override it, do call CGridWorkerApp::Run()
+    /// from inside your overriding method.
     virtual int Run(void);
 
     void RequestShutdown();
@@ -90,9 +93,6 @@ private:
     auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
 
-    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
-    TPMNetSchedule            m_PM_NetSchedule;
-
     auto_ptr<CGridWorkerNode> m_WorkerNode;
     bool                      m_HandleSignals;
 
@@ -103,7 +103,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerAppException : public CException
 {
 public:
     enum EErrCode {
-        eJobFactoryIsNotSet
+        eJobFactoryIsNotSet,
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -118,6 +118,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CGridWorkerAppException, CException);
 };
 
+
 /* @} */
 
 
@@ -126,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/25 16:24:58  didenko
+ * Classes restructure
+ *
  * Revision 1.3  2005/03/23 21:26:04  didenko
  * Class Hierarchy restructure
  *

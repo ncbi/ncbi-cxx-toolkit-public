@@ -59,6 +59,32 @@ public:
     virtual void Reset() = 0;
 };
 
+
+/// NetSchedule Storage Factory interafce
+///
+/// @sa INetScheduleStorage
+///
+class INetScheduleStorageFactory
+{
+public:
+    /// Create a NetSchedule storage
+    ///
+    virtual INetScheduleStorage* CreateInstance(void) = 0;
+};
+
+class CNetScheduleClient;
+/// NetSchedule Client Factory interface
+///
+/// @sa CNetScheduleClient
+///
+class INetScheduleClientFactory
+{
+public:
+    /// Create a NetSchedule client
+    ///
+    virtual CNetScheduleClient* CreateInstance(void) = 0;
+};
+
 class NCBI_XCONNECT_EXPORT CNetScheduleStorageException : public CException
 {
 public:
@@ -106,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/25 16:24:58  didenko
+ * Classes restructure
+ *
  * Revision 1.3  2005/03/23 13:10:32  kuznets
  * documented and doxygenized
  *

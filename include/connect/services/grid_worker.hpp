@@ -230,29 +230,6 @@ public:
     virtual string GetJobVersion(void) const = 0;
 };
 
-/// NetSchedule Storage Factory interafce
-///
-/// @sa INetScheduleStorage
-///
-class INetScheduleStorageFactory
-{
-public:
-    /// Create a NetSchedule storage
-    ///
-    virtual INetScheduleStorage* CreateInstance(void) = 0;
-};
-
-/// NetSchedule Client Factory interface
-///
-/// @sa CNetScheduleClient
-///
-class INetScheduleClientFactory
-{
-public:
-    /// Create a NetSchedule client
-    ///
-    virtual CNetScheduleClient* CreateInstance(void) = 0;
-};
 
 /// Grid Worker Node
 /// 
@@ -364,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/25 16:24:58  didenko
+ * Classes restructure
+ *
  * Revision 1.5  2005/03/23 21:26:04  didenko
  * Class Hierarchy restructure
  *
