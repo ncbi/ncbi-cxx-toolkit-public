@@ -169,12 +169,22 @@ Uint4 CSeqDB::GetNumSeqs(void) const
     return m_Impl->GetNumSeqs();
 }
 
-Uint8  CSeqDB::GetTotalLength(void) const
+Uint4 CSeqDB::GetNumOIDs(void) const
+{
+    return m_Impl->GetNumOIDs();
+}
+
+Uint8 CSeqDB::GetTotalLength(void) const
 {
     return m_Impl->GetTotalLength();
 }
 
-Uint4  CSeqDB::GetMaxLength(void) const
+Uint8 CSeqDB::GetVolumeLength(void) const
+{
+    return m_Impl->GetVolumeLength();
+}
+
+Uint4 CSeqDB::GetMaxLength(void) const
 {
     return m_Impl->GetMaxLength();
 }
