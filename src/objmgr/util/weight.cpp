@@ -112,17 +112,17 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
     weights.clear();
 
     set<CConstRef<CSeq_loc> > locations;
-    CSeq_loc* whole = new CSeq_loc;
-    whole->SetWhole().Assign(*handle.GetSeqId());
-
     CConstRef<CSeq_loc> signal;
 
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
-    for (CFeat_CI feat(handle, 0, 0, CSeqFeatData::e_not_set,
-                       SAnnotSelector::eOverlap_Intervals,
-                       SAnnotSelector::eResolve_TSE);
-         feat;  ++feat) {
+    SAnnotSelector sel;
+    sel.SetOverlapIntervals().SetResolveTSE()
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa) // mature
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa) // signal
+        .IncludeFeatType(CSeqFeatData::e_Region)
+        .IncludeFeatType(CSeqFeatData::e_Site);
+    for (CFeat_CI feat(handle, 0, 0, sel); feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
         switch (data.Which()) {
@@ -130,6 +130,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
             switch (data.GetProt().GetProcessed()) {
             case CProt_ref::eProcessed_mature:         is_mature = true; break;
             case CProt_ref::eProcessed_signal_peptide: is_signal = true; break;
+            default: break;
             }
             break;
 
@@ -163,17 +164,21 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 
     if (locations.empty()) {
         CSeqVector v = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CRef<CSeq_loc> whole(new CSeq_loc);
         if ( signal.NotEmpty() ) {
             // Expects to see at beginning; is this assumption safe?
             CSeq_interval& interval = whole->SetInt();
             interval.SetFrom(signal->GetTotalRange().GetTo() + 1);
             interval.SetTo(v.size() - 1);
-            interval.SetId(*const_cast<CSeq_id*>(core->GetId().front().GetPointer()));                
+            interval.SetId(const_cast<CSeq_id&>(*handle.GetSeqId()));
         } else if (v[0] == 'M') { // Treat initial methionine as start codon
             CSeq_interval& interval = whole->SetInt();
             interval.SetFrom(1);
             interval.SetTo(v.size() - 1);
-            interval.SetId(*const_cast<CSeq_id*>(core->GetId().front().GetPointer()));
+            interval.SetId(const_cast<CSeq_id&>(*handle.GetSeqId()));
+        }
+        else {
+            whole->SetWhole(const_cast<CSeq_id&>(*handle.GetSeqId()));
         }
         locations.insert(CConstRef<CSeq_loc>(whole));
     }
@@ -194,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2004/06/15 14:03:43  vasilche
+* Optimized GetWeights() - iterate only required features.
+*
 * Revision 1.29  2004/05/25 15:38:23  ucko
 * Remove inappropriate THROWS declaration from GetProteinWeight.
 *
