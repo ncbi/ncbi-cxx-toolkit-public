@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/05/11 20:41:16  grichenk
+ * Added support for non-blocking stream reading
+ *
  * Revision 1.3  2001/05/11 14:06:45  grichenk
  * The first working revision
  *
@@ -182,10 +185,11 @@ int CId1FetchApp::Run(void)
     CID1server_back id1_response;
     {{
         // Read server response in ASN.1 binary format
-        CObjectIStreamAsnBinary id1_server_input(id1_server);
+        //### Use CObjectIStream::Open() since only this function
+        //### supports opening streams with non-blocking read.
+        CObjectIStream& id1_server_input = *CObjectIStream::Open
+            (eSerial_AsnBinary, id1_server, false, true);
         id1_server_input >> id1_response;
-        if ( !id1_server.good() )
-            cout << "Spoiled stream!" << endl;
     }}
 
     // Dump server response in the specified format

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2001/05/11 20:41:17  grichenk
+* Added support for non-blocking stream reading
+*
 * Revision 1.75  2001/01/22 23:11:22  vakatov
 * CObjectIStream::{Read,Skip}ClassSequential() -- use curr.member "pos"
 *
@@ -386,13 +389,14 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
 }
 
 CRef<CByteSource> CObjectIStream::GetSource(CNcbiIstream& inStream,
-                                            bool deleteInStream)
+                                            bool deleteInStream,
+                                            bool use_non_blocking_read)
 {
     if ( deleteInStream ) {
-        return new CFStreamByteSource(inStream);
+        return new CFStreamByteSource(inStream, use_non_blocking_read);
     }
     else {
-        return new CStreamByteSource(inStream);
+        return new CStreamByteSource(inStream, use_non_blocking_read);
     }
 }
 
@@ -422,9 +426,11 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
-                                     bool deleteInStream)
+                                     bool deleteInStream,
+                                     bool use_non_blocking_read)
 {
-    return Create(format, GetSource(inStream, deleteInStream));
+    return Create(format, GetSource(inStream, deleteInStream,
+        use_non_blocking_read));
 }
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/05/11 20:41:11  grichenk
+* Added support for non-blocking stream reading
+*
 * Revision 1.63  2001/01/05 20:10:35  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -328,7 +331,8 @@ public:
 
     static CObjectIStream* Open(ESerialDataFormat format,
                                 CNcbiIstream& inStream,
-                                bool deleteInStream = false);
+                                bool deleteInStream = false,
+                                bool use_non_blocking_read = false);
     static CObjectIStream* Open(ESerialDataFormat format,
                                 const string& fileName,
                                 unsigned openFlags = 0);
@@ -721,7 +725,8 @@ private:
                                        const string& fileName,
                                        unsigned openFlags = 0);
     static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
-                                       bool deleteInStream = false);
+                                       bool deleteInStream = false,
+                                       bool use_non_blocking_read = false);
 
     static CObjectIStream* CreateObjectIStreamAsn(void);
     static CObjectIStream* CreateObjectIStreamAsnBinary(void);

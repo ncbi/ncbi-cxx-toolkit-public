@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/05/11 20:41:14  grichenk
+* Added support for non-blocking stream reading
+*
 * Revision 1.6  2001/01/05 20:08:52  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -104,8 +107,8 @@ public:
 class CStreamByteSource : public CByteSource
 {
 public:
-    CStreamByteSource(CNcbiIstream& in)
-        : m_Stream(&in)
+    CStreamByteSource(CNcbiIstream& in, bool use_non_blocking_read = false)
+        : m_Stream(&in), m_Use_Non_Blocking_Read(use_non_blocking_read)
         {
         }
 
@@ -113,13 +116,16 @@ public:
 
 protected:
     CNcbiIstream* m_Stream;
+
+private:
+    bool m_Use_Non_Blocking_Read;
 };
 
 class CFStreamByteSource : public CStreamByteSource
 {
 public:
-    CFStreamByteSource(CNcbiIstream& in)
-        : CStreamByteSource(in)
+    CFStreamByteSource(CNcbiIstream& in, bool use_non_blocking_read = false)
+        : CStreamByteSource(in, use_non_blocking_read)
         {
         }
     CFStreamByteSource(const string& fileName, bool binary);
@@ -151,8 +157,10 @@ private:
 class CStreamByteSourceReader : public CByteSourceReader
 {
 public:
-    CStreamByteSourceReader(const CByteSource* source, CNcbiIstream* stream)
-        : m_Source(source), m_Stream(stream)
+    CStreamByteSourceReader(const CByteSource* source, CNcbiIstream* stream,
+        bool use_non_blocking_read = false)
+        : m_Source(source), m_Stream(stream),
+        m_Use_Non_Blocking_Read(use_non_blocking_read)
         {
         }
 
@@ -162,6 +170,9 @@ public:
 protected:
     CConstRef<CByteSource> m_Source;
     CNcbiIstream* m_Stream;
+
+private:
+    bool m_Use_Non_Blocking_Read;
 };
 
 class CFileByteSourceReader : public CStreamByteSourceReader
