@@ -41,6 +41,12 @@
 #include <corelib/ncbidiag.hpp>
 
 
+/** @addtogroup Debug
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -88,9 +94,16 @@ extern EValidateAction xncbi_GetValidateAction(void);
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.30  2003/03/31 14:29:23  siyan
+ * Added doxygen support
+ *
  * Revision 1.29  2002/09/24 20:59:47  vasilche
  * Added "extern" keyword.
  *
