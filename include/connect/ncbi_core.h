@@ -129,13 +129,14 @@ typedef enum {
 /* I/O status
  */
 typedef enum {
-    eIO_Success = 0,  /* everything is fine, no errors occurred         */
-    eIO_Timeout,      /* timeout expired before the data could be i/o'd */
-    eIO_Closed,       /* peer has closed the connection                 */
-    eIO_InvalidArg,   /* bad argument value(s)                          */
-    eIO_NotSupported, /* the requested operation is not supported       */
+    eIO_Success = 0,  /* everything is fine, no errors occurred              */
+    eIO_Timeout,      /* timeout expired before the data could be i/o'd      */
+    eIO_Closed,       /* peer has closed the connection                      */
+    eIO_Interrupt,    /* signal received while the operation was in progress */
+    eIO_InvalidArg,   /* bad argument value(s)                               */
+    eIO_NotSupported, /* the requested operation is not supported            */
 
-    eIO_Unknown       /* unknown (most probably -- fatal) error         */
+    eIO_Unknown       /* unknown (most probably -- fatal) error              */
 } EIO_Status;
 
 
@@ -464,6 +465,9 @@ extern void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.18  2002/08/13 19:26:39  lavr
+ * Add eIO_Interrupt to EIO_Status
+ *
  * Revision 6.17  2002/08/08 14:21:11  ucko
  * Fix C++-style comment; really move CVS log to end.
  *
