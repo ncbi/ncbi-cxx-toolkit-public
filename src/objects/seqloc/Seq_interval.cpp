@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/09/12 20:40:42  kans
+ * fixed extra IsSetFuzz_to test in IsPartialRight
+ *
  * Revision 6.4  2002/09/12 20:30:49  kans
  * added member functions IsPartialLeft and IsPartialRight
  *
@@ -129,11 +132,9 @@ bool CSeq_interval::IsPartialRight (void)
         }
     } else {
         if (IsSetFuzz_to ()) {
-            if (IsSetFuzz_to ()) {
-                const CInt_fuzz & ifp = GetFuzz_to ();
-                if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
-                    return true;
-                }
+            const CInt_fuzz & ifp = GetFuzz_to ();
+            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+                return true;
             }
         }
     }
