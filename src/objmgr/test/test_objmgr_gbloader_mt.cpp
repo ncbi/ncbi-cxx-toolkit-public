@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/06/06 20:42:17  kimelman
+* cosmetics
+*
 * Revision 1.15  2002/06/06 06:17:07  vakatov
 * Workaround a weird compiler bug (WorkShop 5.3 on INTEL in ReleaseMT mode)
 *
@@ -227,41 +230,40 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
 {
   int step= c_GI_count/thread_count;
   CObjectManager Om;
-  {
-    CScope         scope(Om);
-    typedef CTestThread* CTestThreadPtr;
-    CTestThreadPtr *thr = new CTestThreadPtr[thread_count];
+  CScope         scope(Om);
+  typedef CTestThread* CTestThreadPtr;
   
-    // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
-    // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-    if(((test_mode>>2)&1)==1)
-      {
-        Om.RegisterDataLoader(*new CGBDataLoader("ID", 0,1+2*thread_count),
-                              CObjectManager::eDefault);
-        scope.AddDefaults();
-      }
-    
-    for (unsigned i=0; i<thread_count; ++i)
-      {
-        thr[i] = new CTestThread(test_mode, Om, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
-        thr[i]->Run();
-      }
-    
-    for (unsigned i=0; i<thread_count; i++) {
-      LOG_POST("Thread " << i << " @join");
-      thr[i]->Join();
+  CTestThreadPtr  *thr = new CTestThreadPtr[thread_count];
+  
+  // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
+  // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
+  if(((test_mode>>2)&1)==1)
+    {
+      Om.RegisterDataLoader(*new CGBDataLoader("ID", 0,1+2*thread_count),
+                            CObjectManager::eDefault);
+      scope.AddDefaults();
     }
+    
+  for (unsigned i=0; i<thread_count; ++i)
+    {
+      thr[i] = new CTestThread(test_mode, Om, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
+      thr[i]->Run();
+    }
+    
+  for (unsigned i=0; i<thread_count; i++) {
+    LOG_POST("Thread " << i << " @join");
+    thr[i]->Join();
+  }
     
 #if 0 
-    // Destroy all threads : has already been destroyed by join
-    for (unsigned i=0; i<thread_count; i++) {
-      LOG_POST("Thread " << i << " @delete");
-      delete thr[i];
-    }
+  // Destroy all threads : has already been destroyed by join
+  for (unsigned i=0; i<thread_count; i++) {
+    LOG_POST("Thread " << i << " @delete");
+    delete thr[i];
+  }
 #endif
     
-    delete [] thr;
-  }
+  delete [] thr;
   return 0;
 }
 
