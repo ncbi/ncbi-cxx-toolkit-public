@@ -844,7 +844,7 @@ public:
     ///   The length of the file is returned here.
     /// @return
     ///   true if the file exists.
-    bool CSeqDBAtlas::GetFileSizeL(const string & fname,
+    bool GetFileSizeL(const string & fname,
                                    TIndx        & length);
     
     /// Gets a partial mapping of the file.
