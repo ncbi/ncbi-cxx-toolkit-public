@@ -201,9 +201,13 @@ char CObjectIStreamAsn::SkipWhiteSpace(void)
         }
     } catch (CEofException& e) {
         // There should be no eof here, report as an error
-        ThrowError(fEOF, e.what());
-        return '\0';
+        if (GetStackDepth() < 2) {
+            throw;
+        } else {
+            ThrowError(fEOF, e.what());
+        }
     }
+    return '\0';
 }
 
 void CObjectIStreamAsn::SkipComments(void)
@@ -1190,6 +1194,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2003/02/28 15:09:28  gouriano
+* pass CEofException if there is no object in the input stream
+*
 * Revision 1.79  2002/12/23 19:00:49  dicuccio
 * Tabs -> Spaces.  Lof to end.
 *
