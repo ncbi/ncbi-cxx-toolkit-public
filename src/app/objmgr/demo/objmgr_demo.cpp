@@ -113,6 +113,11 @@ void CDemoApp::Init(void)
                             &(*new CArgAllow_Strings,
                               "none", "tse", "all"));
 
+    arg_desc->AddDefaultKey("loader", "Loader",
+                            "Use specified loaders",
+                            CArgDescriptions::eString, "");
+
+
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("reverse", "reverse order of features");
@@ -613,6 +618,10 @@ int CDemoApp::Run(void)
         resolve = CFeat_CI::eResolve_None;
     if ( args["resolve"].AsString() == "tse" )
         resolve = CFeat_CI::eResolve_TSE;
+    if ( !args["loader"].AsString().empty() ) {
+        string env = "GENBANK_LOADER_METHOD="+args["loader"].AsString();
+        ::putenv(::strdup(env.c_str()));
+    }
 
     int repeat_count = args["count"].AsInteger();
     int pause = args["pause"].AsInteger();
@@ -885,6 +894,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/07/24 20:36:17  vasilche
+* Added arguemnt to choose ID1<->PUBSEQOS on Windows easier.
+*
 * Revision 1.31  2003/07/17 20:06:18  vasilche
 * Added OBJMGR_LIBS definition.
 *
