@@ -95,6 +95,7 @@ const char* const SSNP_Info::s_SNP_Type_Label[eSNP_Type_last] = {
 
 static const string kId_variation        ("variation");
 static const string kId_allele           ("allele");
+static const string kId_replace          ("replace");
 static const string kId_dbSnpSynonymyData("dbSnpSynonymyData");
 static const string kId_weight           ("weight");
 static const string kId_dbSNP            ("dbSNP");
@@ -103,6 +104,8 @@ static const string kId_dbSNP            ("dbSNP");
 SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                                               CSeq_annot_SNP_Info& annot_info)
 {
+    m_Flags = 0;
+
     const CSeq_loc& loc = feat.GetLocation();
     const CSeqFeatData& data = feat.GetData();
     if ( data.Which() != CSeqFeatData::e_Imp ||
@@ -116,12 +119,21 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     const CSeq_feat::TDbxref& dbxref = feat.GetDbxref();
 
     size_t alleles_count = 0;
+    bool qual_allele = false;
+    bool qual_replace = false;
     ITERATE ( CSeq_feat::TQual, it, qual ) {
         if ( alleles_count >= kMax_AllelesCount ) {
             return eSNP_Complex_AlleleCountTooLarge;
         }
         const CGb_qual& gb_qual = **it;
-        if ( gb_qual.GetQual() != kId_allele ) {
+        const string& qual_str = gb_qual.GetQual();
+        if ( qual_str == kId_allele ) {
+            qual_allele = true;
+        }
+        else if ( qual_str == kId_replace ) {
+            qual_replace = true;
+        }
+        else {
             return eSNP_Bad_WrongTextId;
         }
         TAlleleIndex allele_index =
@@ -131,6 +143,12 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             return eSNP_Complex_AlleleLengthBad;
         }
         m_AllelesIndices[alleles_count++] = allele_index;
+    }
+    if ( qual_replace && qual_allele ) {
+        return eSNP_Bad_WrongTextId;
+    }
+    if ( qual_replace ) {
+        m_Flags |= fQualReplace;
     }
 #ifdef EXACT_ALLELE_COUNT
     if ( alleles_count != kMax_AllelesCount ) {
@@ -251,10 +269,9 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
 
     switch ( strand ) {
     case eNa_strand_plus:
-        m_MinusStrand = false;
         break;
     case eNa_strand_minus:
-        m_MinusStrand = true;
+        m_Flags |= fMinusStrand;
         break;
     default:
         return eSNP_Complex_LocationStrandIsBad;
@@ -273,7 +290,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     if ( !id->IsGi() ) {
         return eSNP_Complex_LocationIsNotGi;
     }
-    if ( !annot_info.x_SetGi(id->GetGi()) ) {
+    if ( !annot_info.x_CheckGi(id->GetGi()) ) {
         return eSNP_Complex_LocationGiIsBad;
     }
 
@@ -329,6 +346,8 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
     { // allele
         CSeq_feat::TQual& qual = feat.SetQual();
         size_t i;
+        const string& qual_str =
+            m_Flags & fQualReplace? kId_replace: kId_allele;
         for ( i = 0; i < kMax_AllelesCount; ++i ) {
             TAlleleIndex allele_index = m_AllelesIndices[i];
             if ( allele_index == kNo_AlleleIndex ) {
@@ -340,8 +359,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
             }
             else {
                 qual.push_back(CRef<CGb_qual>(gb_qual = new CGb_qual));
-                CPackString::Assign(gb_qual->SetQual(),
-                                    kId_allele);
+                CPackString::Assign(gb_qual->SetQual(), qual_str);
             }
             CPackString::Assign(gb_qual->SetVal(),
                                 annot_info.x_GetAllele(allele_index));
@@ -526,6 +544,16 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
 }
 
 
+void CSeq_annot_SNP_Info::x_SetGi(int gi)
+{
+    _ASSERT(m_Gi == -1);
+    m_Gi = gi;
+    _ASSERT(!m_Seq_id);
+    m_Seq_id.Reset(new CSeq_id);
+    m_Seq_id->SetGi(gi);
+}
+
+
 void CSeq_annot_SNP_Info::Reset(void)
 {
     m_Gi = -1;
@@ -542,6 +570,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.10  2004/02/06 16:13:20  vasilche
+ * Added parsing "replace" as a synonym of "allele" in SNP qualifiers.
+ * More compact format of SNP table in cache. SNP table version increased.
+ * Fixed null pointer exception when SNP features are loaded from cache.
+ *
  * Revision 1.9  2004/01/28 20:54:36  vasilche
  * Fixed mapping of annotations.
  *

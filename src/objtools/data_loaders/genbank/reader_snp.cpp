@@ -118,6 +118,23 @@ void CSNP_Ftable_hook::ReadChoiceVariant(CObjectIStream& in,
 }
 
 
+static int s_GetEnvInt(const char* env, int def_val)
+{
+    const char* val = ::getenv(env);
+    if ( val ) {
+        try {
+            return NStr::StringToInt(val);
+        }
+        catch (...) {
+        }
+    }
+    return def_val;
+}
+
+
+static bool s_SNP_stat = s_GetEnvInt("GENBANK_SNP_TABLE_STAT", 0) > 0;
+
+
 CSNP_Seq_feat_hook::CSNP_Seq_feat_hook(CSeq_annot_SNP_Info& annot_snp_info,
                                        CSeq_annot::TData::TFtable& ftable)
     : m_Seq_annot_SNP_Info(annot_snp_info),
@@ -132,7 +149,7 @@ static size_t s_TotalCount[SSNP_Info::eSNP_Type_last] = { 0 };
 
 CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 {
-    if ( 0 ) {
+    if ( s_SNP_stat ) {
         size_t total =
             accumulate(m_Count, m_Count+SSNP_Info::eSNP_Type_last, 0);
         NcbiCout << "CSeq_annot_SNP_Info statistic:\n";
@@ -162,29 +179,6 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
                                               const CObjectInfo& /*ftable*/)
 {
-    /*
-    CObjectIStreamAsnBinary* bin = dynamic_cast<CObjectIStreamAsnBinary*>(&in);
-    if ( bin ) {
-        char buffer[100];
-        size_t count = 0;
-        try {
-            count = bin->PeekBytes(buffer, sizeof(buffer));
-        }
-        catch ( ... ) {
-            count = 0;
-        }
-        string s;
-        s.reserve(100);
-        for ( size_t i = 0; i < count; ++i ) {
-            char b = buffer[i];
-            s += "0123456789abcdef"[(b>>4)&15];
-            s += "0123456789abcdef"[(b)&15];
-            s += ' ';
-        }
-        s += '\n';
-        NcbiCout << s;
-    }
-    */
     if ( !m_Feat ) {
         m_Feat.Reset(new CSeq_feat);
     }
@@ -197,19 +191,67 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
         m_Seq_annot_SNP_Info.x_AddSNP(snp_info);
     }
     else {
+#ifdef _DEBUG
+        static int dump_feature = s_GetEnvInt("GENBANK_SNP_TABLE_DUMP", 0);
+        if ( dump_feature ) {
+            --dump_feature;
+            NcbiCerr <<
+                "CSNP_Seq_feat_hook::ReadContainerElement: complex SNP: " <<
+                SSNP_Info::s_SNP_Type_Label[snp_type] << ":\n" << 
+                MSerial_AsnText << *m_Feat;
+        }
+#endif
         m_Ftable.push_back(m_Feat);
         m_Feat.Reset();
     }
 }
 
 
+static void write_unsigned(CNcbiOstream& stream, unsigned n)
+{
+    stream.write(reinterpret_cast<const char*>(&n), sizeof(n));
+}
+
+
+static unsigned read_unsigned(CNcbiIstream& stream)
+{
+    unsigned n;
+    stream.read(reinterpret_cast<char*>(&n), sizeof(n));
+    return n;
+}
+
+
+static void write_size(CNcbiOstream& stream, unsigned size)
+{
+    // use ASN.1 binary like format
+    while ( size >= (1<<7) ) {
+        stream.put(char(size | (1<<7)));
+        size >>= 7;
+    }
+    stream.put(char(size));
+}
+
+
+static unsigned read_size(CNcbiIstream& stream)
+{
+    unsigned size = 0;
+    int shift = 0;
+    char c = 1<<7;
+    while ( c & (1<<7) ) {
+        c = stream.get();
+        size |= (c & ((1<<7)-1)) << shift;
+        shift += 7;
+    }
+    return size;
+}
+
+
 void CIndexedStrings::StoreTo(CNcbiOstream& stream) const
 {
-    unsigned size = m_Strings.size();
-    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    write_size(stream, m_Strings.size());
     ITERATE ( TStrings, it, m_Strings ) {
-        size = it->size();
-        stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        unsigned size = it->size();
+        write_size(stream, size);
         stream.write(it->data(), size);
     }
 }
@@ -220,16 +262,15 @@ void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
                                size_t max_length)
 {
     Clear();
-    unsigned size;
-    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
-    if ( !stream || (size > unsigned(max_index+1)) ) {
+    unsigned count = read_size(stream);
+    if ( !stream || (count > unsigned(max_index+1)) ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Bad format of SNP table");
     }
-    m_Strings.resize(size);
+    m_Strings.resize(count);
     AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
     NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
-        stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+        unsigned size = read_size(stream);
         if ( !stream || (size > max_length) ) {
             Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
@@ -269,24 +310,24 @@ void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
 }
 
 
-static const unsigned MAGIC = 0x12340001;
+static const unsigned MAGIC = 0x12340002;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CSeq_annot_SNP_Info& snp_info)
 {
     // header
-    stream.write(reinterpret_cast<const char*>(&MAGIC), sizeof(MAGIC));
-    stream.write(reinterpret_cast<const char*>(&snp_info.m_Gi), sizeof(int));
+    write_unsigned(stream, MAGIC);
+    write_unsigned(stream, snp_info.GetGi());
 
     // strings
     snp_info.m_Comments.StoreTo(stream);
     snp_info.m_Alleles.StoreTo(stream);
 
     // simple SNPs
-    unsigned size = snp_info.m_SNP_Set.size();
-    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    unsigned count = snp_info.m_SNP_Set.size();
+    write_size(stream, count);
     stream.write(reinterpret_cast<const char*>(&snp_info.m_SNP_Set[0]),
-                 size*sizeof(SSNP_Info));
+                 count*sizeof(SSNP_Info));
 
     // complex SNPs
     CObjectOStreamAsnBinary obj_stream(stream);
@@ -300,13 +341,12 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
     snp_info.Reset();
 
     // header
-    unsigned magic;
-    stream.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+    unsigned magic = read_unsigned(stream);
     if ( !stream || magic != MAGIC ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
-    stream.read(reinterpret_cast<char*>(&snp_info.m_Gi), sizeof(int));
+    snp_info.x_SetGi(read_unsigned(stream));
 
     // strings
     snp_info.m_Comments.LoadFrom(stream,
@@ -317,12 +357,11 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
                                 SSNP_Info::kMax_AlleleLength);
 
     // simple SNPs
-    unsigned size;
-    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+    unsigned count = read_size(stream);
     if ( stream ) {
-        snp_info.m_SNP_Set.resize(size);
+        snp_info.m_SNP_Set.resize(count);
         stream.read(reinterpret_cast<char*>(&snp_info.m_SNP_Set[0]),
-                    size*sizeof(SSNP_Info));
+                    count*sizeof(SSNP_Info));
     }
     size_t comments_size = snp_info.m_Comments.GetSize();
     size_t alleles_size = snp_info.m_Alleles.GetSize();
@@ -365,6 +404,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.10  2004/02/06 16:13:19  vasilche
+ * Added parsing "replace" as a synonym of "allele" in SNP qualifiers.
+ * More compact format of SNP table in cache. SNP table version increased.
+ * Fixed null pointer exception when SNP features are loaded from cache.
+ *
  * Revision 1.9  2004/01/13 16:55:55  vasilche
  * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
  * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

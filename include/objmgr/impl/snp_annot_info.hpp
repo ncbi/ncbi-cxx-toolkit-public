@@ -145,10 +145,15 @@ public:
     enum {
         kMax_Weight        = kMax_I1
     };
+    typedef Uint1 TFlags;
+    enum FFlags {
+        fMinusStrand = 1,
+        fQualReplace = 2
+    };
 
     TSeqPos         m_ToPosition;
     TSNPId          m_SNP_Id;
-    bool            m_MinusStrand;
+    TFlags          m_Flags;
     TPositionDelta  m_PositionDelta;
     TCommentIndex   m_CommentIndex;
     TWeight         m_Weight;
@@ -229,7 +234,8 @@ protected:
     SSNP_Info::TAlleleIndex x_GetAlleleIndex(const string& allele);
     const string& x_GetAllele(SSNP_Info::TAlleleIndex index) const;
 
-    bool x_SetGi(int gi);
+    bool x_CheckGi(int gi);
+    void x_SetGi(int gi);
     void x_AddSNP(const SSNP_Info& snp_info);
 
 private:
@@ -270,7 +276,7 @@ TSeqPos SSNP_Info::GetTo(void) const
 inline
 bool SSNP_Info::MinusStrand(void) const
 {
-    return m_MinusStrand;
+    return (m_Flags & fMinusStrand) != 0;
 }
 
 
@@ -353,15 +359,13 @@ const CSeq_id& CSeq_annot_SNP_Info::GetSeq_id(void) const
 
 
 inline
-bool CSeq_annot_SNP_Info::x_SetGi(int gi)
+bool CSeq_annot_SNP_Info::x_CheckGi(int gi)
 {
     if ( gi == m_Gi ) {
         return true;
     }
     if ( m_Gi < 0 ) {
-        m_Gi = gi;
-        m_Seq_id.Reset(new CSeq_id);
-        m_Seq_id->SetGi(gi);
+        x_SetGi(gi);
         return true;
     }
     return false;
@@ -422,6 +426,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/02/06 16:13:19  vasilche
+* Added parsing "replace" as a synonym of "allele" in SNP qualifiers.
+* More compact format of SNP table in cache. SNP table version increased.
+* Fixed null pointer exception when SNP features are loaded from cache.
+*
 * Revision 1.10  2004/01/28 20:54:35  vasilche
 * Fixed mapping of annotations.
 *
