@@ -5,5 +5,8 @@
 # Build library "XHTML"
 #################################
 
-LIBOBJ = node html htmlhelper page nodemap pager selection components querypages
+CPPFLAGS = ${ORIG_CPPFLAGS} -I$(NCBI)/ver0.0/ncbi/include
+
+LIBOBJ = node html htmlhelper page nodemap pager selection components querypages asnwrite
+
 LIB    = xhtml
