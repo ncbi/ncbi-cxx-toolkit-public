@@ -1436,9 +1436,9 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                                 int/*bool*/           writeable)
 {
     EIO_Status     status;
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX) || defined(NCBI_OS_MSWIN)
     SOCK_socklen_t x_len = (SOCK_socklen_t) sizeof(*x_errno);
-#endif /*NCBI_OS_UNIX*/
+#endif /*NCBI_OS_UNIX || NCBI_OS_MSWIN*/
     SSOCK_Poll     poll;
 
     *x_errno = 0;
@@ -3923,6 +3923,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.131  2003/10/02 16:04:42  lavr
+ * Fix conditional compilation of s_IsConnected() on MS-Windows
+ *
  * Revision 6.130  2003/10/02 14:51:22  lavr
  * Better processing of delayed connections
  *
