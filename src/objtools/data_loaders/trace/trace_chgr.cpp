@@ -40,6 +40,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -154,6 +155,12 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_Trace(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_Trace);
+}
+
+
 const string kDataLoader_Trace_DriverName("trace");
 
 class CTrace_DataLoaderCF : public CDataLoaderFactory
@@ -210,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/12/22 20:42:53  grichenk
+ * Added entry points registration funcitons
+ *
  * Revision 1.8  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

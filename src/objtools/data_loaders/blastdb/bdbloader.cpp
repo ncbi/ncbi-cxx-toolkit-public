@@ -43,6 +43,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 
 //=======================================================================
@@ -170,6 +171,12 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_BlastDb(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_BlastDb);
+}
+
+
 const string kDataLoader_BlastDb_DriverName("blastdb");
 
 class CBlastDb_DataLoaderCF : public CDataLoaderFactory
@@ -247,6 +254,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.20  2004/12/22 20:42:53  grichenk
+ * Added entry points registration funcitons
+ *
  * Revision 1.19  2004/11/29 20:57:09  grichenk
  * Added GetLoaderNameFromArgs with full set of arguments.
  * Fixed BlastDbDataLoader name.

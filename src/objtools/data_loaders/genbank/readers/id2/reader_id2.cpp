@@ -70,6 +70,7 @@
 #include <util/compress/stream.hpp>
 #include <util/stream_utils.hpp>
 #include <util/static_map.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <memory>
 #include <iomanip>
@@ -1287,6 +1288,12 @@ void CId2Reader::x_ReadSNPData(CTSE_Info& tse, const CID2_Reply_Data& data)
 
 
 END_SCOPE(objects)
+
+void GenBankReaders_Register_Id2(void)
+{
+    RegisterEntryPoint<objects::CReader>(NCBI_EntryPoint_Id2Reader);
+}
+
 
 const string kId2ReaderDriverName("id2");
 

@@ -47,6 +47,7 @@
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
@@ -384,6 +385,12 @@ CRef<CSeq_annot> CUsrFeatDataLoader::GetAnnot(const CSeq_id_Handle& idh)
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_UsrFeat(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_UsrFeat);
+}
+
+
 const string kDataLoader_UsrFeat_DriverName("usrfeat");
 
 class CUsrFeat_DataLoaderCF : public CDataLoaderFactory
@@ -470,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/12/22 20:42:53  grichenk
+ * Added entry points registration funcitons
+ *
  * Revision 1.10  2004/10/25 16:53:53  vasilche
  * User features are orphan, not external.
  *

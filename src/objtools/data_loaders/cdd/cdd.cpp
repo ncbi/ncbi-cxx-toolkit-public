@@ -41,6 +41,7 @@
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <objtools/data_loaders/cdd/cdd.hpp>
 
@@ -143,6 +144,12 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_CDD(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_Cdd);
+}
+
+
 const string kDataLoader_Cdd_DriverName("cdd");
 
 class CCdd_DataLoaderCF : public CDataLoaderFactory
@@ -197,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/12/22 20:42:53  grichenk
+ * Added entry points registration funcitons
+ *
  * Revision 1.9  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

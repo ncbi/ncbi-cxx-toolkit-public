@@ -45,6 +45,7 @@
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -336,6 +337,12 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_LDS(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_LDS);
+}
+
+
 const string kDataLoader_LDS_DriverName("lds");
 
 class CLDS_DataLoaderCF : public CDataLoaderFactory
@@ -417,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/12/22 20:42:53  grichenk
+ * Added entry points registration funcitons
+ *
  * Revision 1.21  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

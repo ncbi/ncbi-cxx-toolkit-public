@@ -47,6 +47,7 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -338,6 +339,12 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_Sage(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_Sage);
+}
+
+
 const string kDataLoader_Sage_DriverName("sage");
 
 class CSage_DataLoaderCF : public CDataLoaderFactory
@@ -406,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/12/22 20:42:53  grichenk
+ * Added entry points registration funcitons
+ *
  * Revision 1.12  2004/10/25 16:53:52  vasilche
  * Sage features are orphan, not external.
  *

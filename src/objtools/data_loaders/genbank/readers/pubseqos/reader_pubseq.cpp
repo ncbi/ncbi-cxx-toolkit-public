@@ -52,6 +52,7 @@
 #include <serial/iterator.hpp>
 
 #include <util/compress/reader_zlib.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <memory>
 
@@ -660,6 +661,11 @@ size_t CResultBtSrcRdr::Read(char* buffer, size_t bufferLength)
 
 
 END_SCOPE(objects)
+
+void GenBankReaders_Register_Pubseq(void)
+{
+    RegisterEntryPoint<objects::CReader>(NCBI_EntryPoint_ReaderPubseqos);
+}
 
 
 const string kPubseqReaderDriverName("pubseqos");
