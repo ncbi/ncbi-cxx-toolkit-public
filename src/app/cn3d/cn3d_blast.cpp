@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/20 02:51:46  thiessen
+* fix Prinf to self problems
+*
 * Revision 1.24  2002/10/25 19:00:02  thiessen
 * retrieve VAST alignment from vastalign.cgi on structure import
 *
@@ -492,17 +495,20 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                             status.Printf("E-value %g", (*sc)->GetValue().GetReal());
                             newAlignment->SetRowStatusLine(0, status.c_str());
                             newAlignment->SetRowStatusLine(1, status.c_str());
-                            scores.Printf("%s E-value: %g", scores.c_str(), (*sc)->GetValue().GetReal());
+                            wxString tmp = scores;
+                            scores.Printf("%s E-value: %g", tmp.c_str(), (*sc)->GetValue().GetReal());
                         }
 
                         // raw score
                         if ((*sc)->GetValue().IsInt() && (*sc)->GetId().GetStr() == "score") {
-                            scores.Printf("%s raw: %i", scores.c_str(), (*sc)->GetValue().GetInt());
+                            wxString tmp = scores;
+                            scores.Printf("%s raw: %i", tmp.c_str(), (*sc)->GetValue().GetInt());
                         }
 
                         // bit score
                         if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "bit_score") {
-                            scores.Printf("%s bit score: %g", scores.c_str(), (*sc)->GetValue().GetReal());
+                            wxString tmp = scores;
+                            scores.Printf("%s bit score: %g", tmp.c_str(), (*sc)->GetValue().GetReal());
                         }
                     }
                 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/12/20 02:51:46  thiessen
+* fix Prinf to self problems
+*
 * Revision 1.20  2002/12/09 16:25:04  thiessen
 * allow negative score threshholds
 *
@@ -274,13 +277,17 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(CSeq_align& sa,
         if ((*c)->IsSetId() && (*c)->GetId().IsStr()) {
 
             // raw score
-            if ((*c)->GetValue().IsInt() && (*c)->GetId().GetStr() == "score")
-                score.Printf("%s raw score: %i", score.c_str(), (*c)->GetValue().GetInt());
+            if ((*c)->GetValue().IsInt() && (*c)->GetId().GetStr() == "score") {
+                wxString tmp = score;
+                score.Printf("%s raw score: %i", tmp.c_str(), (*c)->GetValue().GetInt());
+            }
 
             // E-value
             if ((*c)->GetValue().IsReal() && (*c)->GetId().GetStr() == "e_value"
-                    && (*c)->GetValue().GetReal() > 0.0)
-                score.Printf("%s E-value: %g", score.c_str(), (*c)->GetValue().GetReal());
+                    && (*c)->GetValue().GetReal() > 0.0) {
+                wxString tmp = score;
+                score.Printf("%s E-value: %g", tmp.c_str(), (*c)->GetValue().GetReal());
+            }
         }
     }
     if (score.size() > 0) {
