@@ -48,3 +48,5 @@
 #define HAVE_STRSTREA_H  1
 #define HAVE_STRSTREAM   1
 #define HAVE_WINDOWS_H   1
+
+#define HAVE_OPENGL      1
