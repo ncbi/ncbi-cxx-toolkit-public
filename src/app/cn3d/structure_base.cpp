@@ -65,20 +65,13 @@ StructureBase::StructureBase(StructureBase *parent)
 // delete children upon destruction
 StructureBase::~StructureBase(void)
 {
-    _ChildList::iterator i, e=_children.end();
-    for (i=_children.begin(); i!=e; ++i)
-        delete *i;
-}
+    if (_parent) {
+        _parent->_RemoveChild(this);
+        _parent = NULL;
+    }
 
-// draws the object and all its children - halt upon false return from Draw or DrawAll
-bool StructureBase::DrawAll(const AtomSet *atomSet) const
-{
-    if (!parentSet->renderer) return false;
-    if (!Draw(atomSet)) return true;
-    _ChildList::const_iterator i, e=_children.end();
-    for (i=_children.begin(); i!=e; ++i)
-        if (!((*i)->DrawAll(atomSet))) return true;
-	return true;
+    while (_children.size() > 0)
+        delete _children.front();
 }
 
 void StructureBase::_AddChild(StructureBase *child)
@@ -98,12 +91,26 @@ void StructureBase::_RemoveChild(const StructureBase *child)
     WARNINGMSG("attempted to remove non-existent child");
 }
 
+// draws the object and all its children - halt upon false return from Draw or DrawAll
+bool StructureBase::DrawAll(const AtomSet *atomSet) const
+{
+    if (!parentSet->renderer) return false;
+    if (!Draw(atomSet)) return true;
+    _ChildList::const_iterator i, e=_children.end();
+    for (i=_children.begin(); i!=e; ++i)
+        if (!((*i)->DrawAll(atomSet))) return true;
+    return true;
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/09/27 23:34:20  thiessen
+* remove child from parent's list upon deletion
+*
 * Revision 1.14  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
