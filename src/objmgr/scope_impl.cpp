@@ -151,7 +151,7 @@ CSeq_entry_Handle CScope_Impl::AddTopLevelSeqEntry(CSeq_entry& top_entry,
     m_setDataSrc.Insert(*ds, (priority == kPriority_NotSet) ?
         ds->GetDefaultPriority() : priority);
     x_ClearCacheOnNewData();
-    return CSeq_entry_Handle(*m_HeapScope, *ds->GetTopEntry_Info());
+    return CSeq_entry_Handle(*m_HeapScope, *x_GetSeq_entry_Info(top_entry));
 }
 
 
@@ -422,12 +422,14 @@ void CScope_Impl::x_ClearCacheOnRemoveData(const CBioseq_set_Info& seqset)
 
 CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(const CSeq_entry& entry)
 {
+    TReadLockGuard guard(m_Scope_Conf_RWLock);
     return CSeq_entry_Handle(*m_HeapScope, *x_GetSeq_entry_Info(entry));
 }
 
 
 CSeq_annot_Handle CScope_Impl::GetSeq_annotHandle(const CSeq_annot& annot)
 {
+    TReadLockGuard guard(m_Scope_Conf_RWLock);
     return CSeq_annot_Handle(*m_HeapScope, *x_GetSeq_annot_Info(annot));
 }
 
@@ -455,8 +457,13 @@ CScope_Impl::x_GetTSE_Info(const CSeq_entry& tse)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CConstRef<CTSE_Info> info = it->GetDataSource().FindTSEInfo(tse);
-        if ( info )
+        if ( info ) {
+            {{
+                CFastMutexGuard guard(it->GetMutex());
+                it->AddTSE(*info);
+            }}
             return info;
+        }
     }
     NCBI_THROW(CObjMgrException, eFindFailed,
                "CScope_Impl::x_GetTSE_Info: entry is not attached");
@@ -470,6 +477,10 @@ CScope_Impl::x_GetSeq_entry_Info(const CSeq_entry& entry)
         CConstRef<CSeq_entry_Info> info =
             it->GetDataSource().FindSeq_entry_Info(entry);
         if ( info ) {
+            {{
+                CFastMutexGuard guard(it->GetMutex());
+                it->AddTSE(info->GetTSE_Info());
+            }}
             return info;
         }
     }
@@ -485,6 +496,10 @@ CScope_Impl::x_GetSeq_annot_Info(const CSeq_annot& annot)
         CConstRef<CSeq_annot_Info> info =
             it->GetDataSource().FindSeq_annot_Info(annot);
         if ( info ) {
+            {{
+                CFastMutexGuard guard(it->GetMutex());
+                it->AddTSE(info->GetTSE_Info());
+            }}
             return info;
         }
     }
@@ -500,6 +515,10 @@ CScope_Impl::x_GetBioseq_Info(const CBioseq& bioseq)
         CConstRef<CBioseq_Info> info =
             it->GetDataSource().FindBioseq_Info(bioseq);
         if ( info ) {
+            {{
+                CFastMutexGuard guard(it->GetMutex());
+                it->AddTSE(info->GetTSE_Info());
+            }}
             return info;
         }
     }
@@ -700,8 +719,24 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     }
     else {
         // new bioseq - try to find it in source TSE
+        {{
+            // first try main id
+            CSeqMatch_Info match(id, tse);
+            CConstRef<CBioseq_Info> bioseq = match.GetBioseq_Info();
+            if ( bioseq ) {
+                _ASSERT(m_HeapScope);
+                CBioseq_Handle bh =
+                    GetBioseqHandle(id, CScope::eGetBioseq_Loaded);
+                if ( bh && &bh.x_GetInfo().GetTSE_Info() == &tse ) {
+                    ret = bh;
+                    return ret;
+                }
+            }
+        }}
+        
         CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
         if ( mapper.HaveMatchingHandles(id) ) {
+            // than try matching handles
             TSeq_id_HandleSet hset;
             mapper.GetMatchingHandles(id, hset);
             ITERATE ( TSeq_id_HandleSet, hit, hset ) {
@@ -717,17 +752,6 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                         ret = bh;
                         break;
                     }
-                }
-            }
-        }
-        else {
-            CSeqMatch_Info match(id, tse);
-            CConstRef<CBioseq_Info> bioseq = match.GetBioseq_Info();
-            if ( bioseq ) {
-                CBioseq_Handle bh = GetBioseqHandle(id,
-                    CScope::eGetBioseq_Loaded);
-                if ( bh && &bh.x_GetInfo().GetTSE_Info() == &tse ) {
-                    ret = bh;
                 }
             }
         }
@@ -1349,6 +1373,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/04/14 19:12:12  vasilche
+* Added storing TSE in history when returning CSeq_entry or CSeq_annot handles.
+* Added test for main id before matching handles in GetBioseqHandleFromTSE().
+*
 * Revision 1.12  2004/04/13 15:59:35  grichenk
 * Added CScope::GetBioseqHandle() with id resolving flag.
 *
