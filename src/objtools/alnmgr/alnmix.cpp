@@ -95,10 +95,10 @@ bool CAlnMix::x_CompareAlnSegIndexes(const CAlnMixSegment* aln_seg1,
 void CAlnMix::x_Reset()
 {
     if (m_DS) {
-        m_DS->Reset();
+        m_DS.Reset();
     }
     if (m_Aln) {
-        m_Aln->Reset();
+        m_Aln.Reset();
     }
     m_Segments.clear();
     m_Rows.clear();
@@ -1276,6 +1276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/03/06 21:42:38  todorov
+* bug fix in x_Reset()
+*
 * Revision 1.34  2003/03/05 21:53:24  todorov
 * clean up miltiple mix case
 *
