@@ -32,6 +32,8 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
+#include <memory>
+
 USING_NCBI_SCOPE;
 
 int main(int argc, char **argv)
@@ -151,6 +153,9 @@ int main(int argc, char **argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/02/19 16:16:13  ucko
+ * +<memory> for auto_ptr<>
+ *
  * Revision 1.4  2002/08/29 15:41:44  butanaev
  * Command line interface improved.
  *
