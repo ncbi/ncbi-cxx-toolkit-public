@@ -105,39 +105,39 @@ private:
 
 struct SAnnotTypeSelector
 {
-    typedef CSeq_annot::C_Data::E_Choice TAnnotChoice;
-    typedef CSeqFeatData::E_Choice       TFeatChoice;
+    typedef CSeq_annot::C_Data::E_Choice TAnnotType;
+    typedef CSeqFeatData::E_Choice       TFeatType;
     typedef CSeqFeatData::ESubtype       TFeatSubtype;
 
-    SAnnotTypeSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set)
+    SAnnotTypeSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set)
         : m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatChoice(CSeqFeatData::e_not_set),
-          m_AnnotChoice(annot)
+          m_FeatType(CSeqFeatData::e_not_set),
+          m_AnnotType(annot)
     {
     }
 
-    SAnnotTypeSelector(TFeatChoice  feat)
+    SAnnotTypeSelector(TFeatType  feat)
         : m_FeatSubtype(CSeqFeatData::eSubtype_any),
-          m_FeatChoice(feat),
-          m_AnnotChoice(CSeq_annot::C_Data::e_Ftable)
+          m_FeatType(feat),
+          m_AnnotType(CSeq_annot::C_Data::e_Ftable)
     {
     }
 
     SAnnotTypeSelector(TFeatSubtype feat_subtype)
         : m_FeatSubtype(feat_subtype),
-          m_FeatChoice(CSeqFeatData::GetTypeFromSubtype(feat_subtype)),
-          m_AnnotChoice(CSeq_annot::C_Data::e_Ftable)
+          m_FeatType(CSeqFeatData::GetTypeFromSubtype(feat_subtype)),
+          m_AnnotType(CSeq_annot::C_Data::e_Ftable)
     {
     }
    
-    TAnnotChoice GetAnnotChoice(void) const
+    TAnnotType GetAnnotType(void) const
         {
-            return TAnnotChoice(m_AnnotChoice);
+            return TAnnotType(m_AnnotType);
         }
 
-    TFeatChoice GetFeatChoice(void) const
+    TFeatType GetFeatType(void) const
         {
-            return TFeatChoice(m_FeatChoice);
+            return TFeatType(m_FeatType);
         }
 
     TFeatSubtype GetFeatSubtype(void) const
@@ -147,42 +147,42 @@ struct SAnnotTypeSelector
 
     bool operator<(const SAnnotTypeSelector& s) const
         {
-            if ( m_AnnotChoice != s.m_AnnotChoice )
-                return m_AnnotChoice < s.m_AnnotChoice;
-            if ( m_FeatChoice != s.m_FeatChoice )
-                return m_FeatChoice < s.m_FeatChoice;
+            if ( m_AnnotType != s.m_AnnotType )
+                return m_AnnotType < s.m_AnnotType;
+            if ( m_FeatType != s.m_FeatType )
+                return m_FeatType < s.m_FeatType;
             return m_FeatSubtype < s.m_FeatSubtype;
         }
 
     bool operator==(const SAnnotTypeSelector& s) const
         {
-            return m_AnnotChoice == s.m_AnnotChoice &&
-                m_FeatChoice == s.m_FeatChoice &&
+            return m_AnnotType == s.m_AnnotType &&
+                m_FeatType == s.m_FeatType &&
                 m_FeatSubtype == s.m_FeatSubtype;
         }
 
     bool operator!=(const SAnnotTypeSelector& s) const
         {
-            return m_AnnotChoice != s.m_AnnotChoice ||
-                m_FeatChoice != s.m_FeatChoice ||
+            return m_AnnotType != s.m_AnnotType ||
+                m_FeatType != s.m_FeatType ||
                 m_FeatSubtype != s.m_FeatSubtype;
         }
 
-    void SetAnnotChoice(TAnnotChoice choice)
+    void SetAnnotType(TAnnotType type)
         {
-            m_AnnotChoice = choice;
+            m_AnnotType = type;
             // Reset feature type/subtype
-            if (m_AnnotChoice != CSeq_annot::C_Data::e_Ftable) {
-                m_FeatChoice = CSeqFeatData::e_not_set;
+            if (m_AnnotType != CSeq_annot::C_Data::e_Ftable) {
+                m_FeatType = CSeqFeatData::e_not_set;
                 m_FeatSubtype = CSeqFeatData::eSubtype_any;
             }
         }
 
-    void SetFeatChoice(TFeatChoice choice)
+    void SetFeatType(TFeatType type)
         {
-            m_FeatChoice = choice;
+            m_FeatType = type;
             // Adjust annot type and feature subtype
-            m_AnnotChoice = CSeq_annot::C_Data::e_Ftable;
+            m_AnnotType = CSeq_annot::C_Data::e_Ftable;
             m_FeatSubtype = CSeqFeatData::eSubtype_any;
         }
 
@@ -190,17 +190,17 @@ struct SAnnotTypeSelector
         {
             m_FeatSubtype = subtype;
             // Adjust annot type and feature type
-            m_AnnotChoice = CSeq_annot::C_Data::e_Ftable;
+            m_AnnotType = CSeq_annot::C_Data::e_Ftable;
             if (m_FeatSubtype != CSeqFeatData::eSubtype_any) {
-                m_FeatChoice =
+                m_FeatType =
                     CSeqFeatData::GetTypeFromSubtype(GetFeatSubtype());
             }
         }
 
 private:
     Uint2           m_FeatSubtype;  // Seq-feat subtype
-    Uint1           m_FeatChoice;   // Seq-feat type
-    Uint1           m_AnnotChoice;  // Annotation type
+    Uint1           m_FeatType;   // Seq-feat type
+    Uint1           m_AnnotType;  // Annotation type
 };
 
 // Structure to select type of Seq-annot
@@ -246,29 +246,42 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         eFailUnresolved    // Throw exception for unresolved ids
     };
 
-    SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
-                   TFeatChoice  feat  = CSeqFeatData::e_not_set);
-    SAnnotSelector(TFeatChoice  feat);
-    SAnnotSelector(TAnnotChoice annot, TFeatChoice  feat, bool feat_product);
-    SAnnotSelector(TFeatChoice  feat, bool feat_product);
+    SAnnotSelector(TAnnotType annot = CSeq_annot::C_Data::e_not_set,
+                   TFeatType  feat  = CSeqFeatData::e_not_set);
+    SAnnotSelector(TFeatType  feat);
+    SAnnotSelector(TAnnotType annot, TFeatType  feat, bool feat_product);
+    SAnnotSelector(TFeatType  feat, bool feat_product);
     
-    SAnnotSelector& SetAnnotChoice(TAnnotChoice choice)
+    SAnnotSelector& SetAnnotType(TAnnotType type)
         {
-            SAnnotTypeSelector::SetAnnotChoice(choice);
+            if (type != CSeq_annot::C_Data::e_Ftable) {
+                x_ClearAnnotTypesSet();
+            }
+            SAnnotTypeSelector::SetAnnotType(type);
             return *this;
         }
 
-    SAnnotSelector& SetFeatChoice(TFeatChoice choice)
+    SAnnotSelector& SetFeatType(TFeatType type)
         {
-            SAnnotTypeSelector::SetFeatChoice(choice);
+            x_ClearAnnotTypesSet();
+            SAnnotTypeSelector::SetFeatType(type);
             return *this;
         }
 
     SAnnotSelector& SetFeatSubtype(TFeatSubtype subtype)
         {
+            x_ClearAnnotTypesSet();
             SAnnotTypeSelector::SetFeatSubtype(subtype);
             return *this;
         }
+
+    SAnnotSelector& IncludeFeatType(TFeatType type);
+    SAnnotSelector& ExcludeFeatType(TFeatType type);
+    SAnnotSelector& IncludeFeatSubtype(TFeatSubtype subtype);
+    SAnnotSelector& ExcludeFeatSubtype(TFeatSubtype subtype);
+
+    bool IncludedFeatType(TFeatType type) const;
+    bool IncludedFeatSubtype(TFeatSubtype subtype) const;
 
     bool GetFeatProduct(void) const
         {
@@ -433,6 +446,10 @@ protected:
     static bool x_Has(const TAnnotsNames& names, const CAnnotName& name);
     static void x_Add(TAnnotsNames& names, const CAnnotName& name);
     static void x_Del(TAnnotsNames& names, const CAnnotName& name);
+    void x_InitializeAnnotTypesSet(void);
+    void x_ClearAnnotTypesSet(void);
+
+    typedef vector<bool> TAnnotTypesSet;
 
     bool                  m_FeatProduct;  // "true" for searching products
     int                   m_ResolveDepth;
@@ -451,7 +468,15 @@ protected:
     bool                  m_AdaptiveDepth;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
+    TAnnotTypesSet        m_AnnotTypesSet;
 };
+
+
+inline
+void SAnnotSelector::x_ClearAnnotTypesSet(void)
+{
+    m_AnnotTypesSet.clear();
+}
 
 
 END_SCOPE(objects)
@@ -460,6 +485,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/02/04 18:05:31  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.23  2004/01/23 16:14:45  grichenk
 * Implemented alignment mapping
 *

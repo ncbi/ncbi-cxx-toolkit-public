@@ -393,7 +393,7 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
             TFeatTypes feat_types;
             ITERATE ( SAllAnnots::TTypeSet, tit, type_set ) {
                 const SAnnotTypeSelector& t = *tit;
-                switch ( t.GetAnnotChoice() ) {
+                switch ( t.GetAnnotType() ) {
                 case CSeq_annot::C_Data::e_Align:
                     annot_info.SetAlign();
                     break;
@@ -401,7 +401,7 @@ void CBlobSplitterImpl::MakeID2Chunk(int id, const SChunkInfo& info)
                     annot_info.SetGraph();
                     break;
                 case CSeq_annot::C_Data::e_Ftable:
-                    feat_types[t.GetFeatChoice()].insert(t.GetFeatSubtype());
+                    feat_types[t.GetFeatType()].insert(t.GetFeatSubtype());
                     break;
                 }
             }
@@ -540,6 +540,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/02/04 18:05:40  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.8  2004/01/22 20:10:42  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

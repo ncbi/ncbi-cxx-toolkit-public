@@ -38,6 +38,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
@@ -719,7 +720,7 @@ void CAnnotTypes_CI::x_Sort(void)
     _ASSERT(m_DataCollector->m_AnnotMappingSet.empty());
     switch ( m_SortOrder ) {
     case eSortOrder_Normal:
-        if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
+        if ( GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
             sort(m_AnnotSet.begin(), m_AnnotSet.end(),
                  CAnnotObject_Ref_Less<CFeat_Less>());
         }
@@ -729,7 +730,7 @@ void CAnnotTypes_CI::x_Sort(void)
         }
         break;
     case eSortOrder_Reverse:
-        if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
+        if ( GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
             sort(m_AnnotSet.begin(), m_AnnotSet.end(),
                  CAnnotObject_Ref_Reverse_Less<CFeat_Less>());
         }
@@ -771,35 +772,27 @@ CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 inline
 bool CAnnotTypes_CI::x_MatchType(const CAnnotObject_Info& annot_info) const
 {
-    if ( GetAnnotChoice() != CSeq_annot::C_Data::e_not_set ) {
+    if ( GetAnnotType() != CSeq_annot::C_Data::e_not_set ) {
 #ifdef _DEBUG
-        if ( GetAnnotChoice() != annot_info.GetAnnotType() ) {
+        if ( GetAnnotType() != annot_info.GetAnnotType() ) {
             LOG_POST("invalid annot-choice: " <<
-                     annot_info.GetAnnotType() << " != " << GetAnnotChoice());
+                     annot_info.GetAnnotType() << " != " << GetAnnotType());
             return false;
         }
 #endif
-        if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
-            if ( GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
+        if ( GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
 #ifdef _DEBUG
-                if ( GetFeatSubtype() != annot_info.GetFeatSubtype() ) {
-                    LOG_POST("invalid feat-subtype: " <<
-                             annot_info.GetFeatSubtype() << " != " <<
-                             GetFeatSubtype());
-                    return false;
-                }
-#endif
+            if ( !IncludedFeatSubtype(annot_info.GetFeatSubtype()) ) {
+                LOG_POST("invalid feat-subtype: " <<
+                         annot_info.GetFeatSubtype());
+                return false;
             }
-            else if ( GetFeatChoice() != CSeqFeatData::e_not_set ) {
-#ifdef _DEBUG
-                if ( GetFeatChoice() != annot_info.GetFeatType() ) {
-                    LOG_POST("invalid feat-choice: " <<
-                             annot_info.GetFeatType() << " != " <<
-                             GetFeatChoice());
-                    return false;
-                }
-#endif
+            if ( !IncludedFeatType(annot_info.GetFeatType()) ) {
+                LOG_POST("invalid feat-choice: " <<
+                         annot_info.GetFeatType());
+                return false;
             }
+#endif
         }
     }
     return true;
@@ -809,19 +802,15 @@ bool CAnnotTypes_CI::x_MatchType(const CAnnotObject_Info& annot_info) const
 inline
 bool CAnnotTypes_CI::x_NeedSNPs(void) const
 {
-    if ( GetAnnotChoice() != CSeq_annot::C_Data::e_not_set ) {
-        if ( GetAnnotChoice() != CSeq_annot::C_Data::e_Ftable ) {
+    if ( GetAnnotType() != CSeq_annot::C_Data::e_not_set ) {
+        if ( GetAnnotType() != CSeq_annot::C_Data::e_Ftable ) {
             return false;
         }
-        if ( GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
-            if ( GetFeatSubtype() != CSeqFeatData::eSubtype_variation ) {
-                return false;
-            }
+        if ( !IncludedFeatSubtype(CSeqFeatData::eSubtype_variation) ) {
+            return false;
         }
-        else if ( GetFeatChoice() != CSeqFeatData::e_not_set ) {
-            if ( GetFeatChoice() != CSeqFeatData::e_Imp ) {
-                return false;
-            }
+        else if ( !IncludedFeatType(CSeqFeatData::e_Imp) ) {
+            return false;
         }
     }
     return true;
@@ -979,7 +968,7 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
                     for ( int i = count - 1; i >= 0; --i ) {
                         CSeqFeatData::ESubtype subtype =
                             s_DefaultAdaptiveTriggers[i];
-                        size_t index = CTSE_Info::x_GetSubtypeIndex(subtype);
+                        size_t index = CAnnotType_Index::GetSubtypeIndex(subtype);
                         if ( index ) {
                             indexes.resize(max(indexes.size(), index + 1));
                             indexes[index] = 1;
@@ -989,7 +978,7 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
                 else {
                     ITERATE ( TAdaptiveTriggers, it, m_AdaptiveTriggers ) {
                         pair<size_t, size_t> idxs =
-                            CTSE_Info::x_GetIndexRange(*it);
+                            CAnnotType_Index::GetIndexRange(*it);
                         indexes.resize(max(indexes.size(), idxs.second));
                         for ( size_t i = idxs.first; i < idxs.second; ++i ) {
                             indexes[i] = 1;
@@ -1079,16 +1068,81 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
                               const CHandleRange& hr,
                               CSeq_loc_Conversion* cvt)
 {
+    if (m_AnnotTypesSet.size() == 0) {
+        pair<size_t, size_t> range = CAnnotType_Index::GetIndexRange(*this, *objs);
+        if ( range.first < range.second ) {
+            x_SearchRange(tse, objs, guard, annot_name, id, hr, cvt,
+                range.first, range.second);
+        }
+
+    }
+    else {
+        pair<size_t, size_t> range(0, 0);
+        bool last_bit = false;
+        bool cur_bit;
+        for (size_t idx = 0; idx < objs->m_AnnotSet.size(); ++idx) {
+            cur_bit = m_AnnotTypesSet[idx];
+            if (!last_bit  &&  cur_bit) {
+                // open range
+                range.first = idx;
+            }
+            else if (last_bit  &&  !cur_bit) {
+                // close and search range
+                range.second = idx;
+                x_SearchRange(tse, objs, guard, annot_name, id, hr, cvt,
+                    range.first, range.second);
+            }
+            last_bit = cur_bit;
+        }
+    }
+
+    if ( x_NeedSNPs() ) {
+        CHandleRange::TRange range = hr.GetOverlappingRange();
+        ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
+            const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
+            CSeq_annot_SNP_Info::const_iterator snp_it =
+                snp_annot.FirstIn(range);
+            if ( snp_it != snp_annot.end() ) {
+                m_TSE_LockSet.insert(ConstRef(&tse));
+                TSeqPos index = snp_it - snp_annot.begin() - 1;
+                do {
+                    ++index;
+                    const SSNP_Info& snp = *snp_it;
+                    if ( snp.NoMore(range) ) {
+                        break;
+                    }
+                    if ( snp.NotThis(range) ) {
+                        continue;
+                    }
+
+                    CAnnotObject_Ref annot_ref(snp_annot, index);
+                    annot_ref.SetSNP_Point(snp, cvt);
+                    if ( x_AddObject(annot_ref, cvt) ) {
+                        return;
+                    }
+                } while ( ++snp_it != snp_annot.end() );
+            }
+        }
+    }
+}
+
+
+void CAnnotTypes_CI::x_SearchRange(const CTSE_Info& tse,
+                                   const SIdAnnotObjs* objs,
+                                   CReadLockGuard& guard,
+                                   const CAnnotName& annot_name,
+                                   const CSeq_id_Handle& id,
+                                   const CHandleRange& hr,
+                                   CSeq_loc_Conversion* cvt,
+                                   size_t from_idx, size_t to_idx)
+{
     _ASSERT(objs);
 
     CHandleRange::TRange range = hr.GetOverlappingRange();
 
-    pair<size_t, size_t> idxs = CTSE_Info::x_GetIndexRange(*this, *objs);
-    if ( idxs.first < idxs.second ) {
-        m_TSE_LockSet.insert(ConstRef(&tse));
-    }
+    m_TSE_LockSet.insert(ConstRef(&tse));
 
-    for ( size_t index = idxs.first; index < idxs.second; ++index ) {
+    for ( size_t index = from_idx; index < to_idx; ++index ) {
         size_t start_size = m_AnnotSet.size(); // for rollback
         
         const CTSE_Info::TRangeMap& rmap = objs->m_AnnotSet[index];
@@ -1157,34 +1211,6 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
             }
             if ( x_AddObject(annot_ref, cvt) ) {
                 return;
-            }
-        }
-    }
-
-    if ( x_NeedSNPs() ) {
-        ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
-            const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
-            CSeq_annot_SNP_Info::const_iterator snp_it =
-                snp_annot.FirstIn(range);
-            if ( snp_it != snp_annot.end() ) {
-                m_TSE_LockSet.insert(ConstRef(&tse));
-                TSeqPos index = snp_it - snp_annot.begin() - 1;
-                do {
-                    ++index;
-                    const SSNP_Info& snp = *snp_it;
-                    if ( snp.NoMore(range) ) {
-                        break;
-                    }
-                    if ( snp.NotThis(range) ) {
-                        continue;
-                    }
-
-                    CAnnotObject_Ref annot_ref(snp_annot, index);
-                    annot_ref.SetSNP_Point(snp, cvt);
-                    if ( x_AddObject(annot_ref, cvt) ) {
-                        return;
-                    }
-                } while ( ++snp_it != snp_annot.end() );
             }
         }
     }
@@ -1365,6 +1391,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2004/02/04 18:05:38  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.108  2004/01/30 15:25:45  grichenk
 * Fixed alignments mapping and sorting
 *

@@ -569,7 +569,7 @@ int CDemoApp::Run(void)
         {{
             SAnnotSelector sel = base_sel;
             if ( feat_type >= 0 ) {
-                sel.SetFeatChoice(SAnnotSelector::TFeatChoice(feat_type));
+                sel.SetFeatType(SAnnotSelector::TFeatType(feat_type));
             }
             if ( feat_subtype >= 0 ) {
                 sel.SetFeatSubtype(SAnnotSelector::TFeatSubtype(feat_subtype));
@@ -634,7 +634,7 @@ int CDemoApp::Run(void)
             // segmented (constructed), search for features on the referenced
             // sequences in the same top level seq-entry, ignore far pointers.
             SAnnotSelector sel = base_sel;
-            sel.SetFeatChoice(CSeqFeatData::e_Cdregion);
+            sel.SetFeatType(CSeqFeatData::e_Cdregion);
             for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
                 count++;
                 // Get seq vector filtered with the current feature location.
@@ -752,6 +752,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2004/02/04 18:05:34  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.56  2004/01/30 19:18:49  vasilche
 * Added -seq_map flag.
 *

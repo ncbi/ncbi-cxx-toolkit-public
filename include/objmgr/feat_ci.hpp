@@ -206,7 +206,7 @@ public:
     // disable references resolving.
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
-             TFeatChoice feat_choice,
+             TFeatType feat_type,
              EOverlapType overlap_type = eOverlap_Intervals,
              EResolveMethod resolve = eResolve_TSE,
              EFeat_Location loc_type = e_Location,
@@ -218,7 +218,7 @@ public:
     // (but no its sub-entries or parent entry).
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
-             TFeatChoice feat_choice,
+             TFeatType feat_type,
              EOverlapType overlap_type = eOverlap_Intervals,
              EResolveMethod resolve = eResolve_TSE,
              EFeat_Location loc_type = e_Location,
@@ -361,6 +361,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/02/04 18:05:32  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.36  2004/01/28 20:54:34  vasilche
 * Fixed mapping of annotations.
 *

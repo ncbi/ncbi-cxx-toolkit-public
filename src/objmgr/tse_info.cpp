@@ -32,6 +32,7 @@
 
 
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
@@ -77,7 +78,6 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
       m_Dead(dead),
       m_Blob_ID(blob_id)
 {
-    x_InitIndexTables();
     m_TSE_Info = this;
     entry.Parentize();
     x_SetSeq_entry(entry);
@@ -397,144 +397,6 @@ void CTSE_Info::LoadAllChunks(void)
 }
 
 
-// All ranges are in format [x, y)
-
-const size_t kAnnotTypeMax = CSeq_annot::C_Data::e_Graph;
-const size_t kFeatTypeMax = CSeqFeatData::e_Biosrc;
-const size_t kFeatSubtypeMax = CSeqFeatData::eSubtype_max;
-
-// Table: annot type -> index
-// (for Ftable it's just the first feature type index)
-vector<CTSE_Info::TIndexRange> s_AnnotTypeIndexRange;
-
-// Table: feat type -> index range, [)
-vector<CTSE_Info::TIndexRange> s_FeatTypeIndexRange;
-
-// Table feat subtype -> index
-vector<size_t> s_FeatSubtypeIndex;
-
-// Initialization flag
-bool s_TablesInitialized = false;
-
-
-void CTSE_Info::x_InitIndexTables(void)
-{
-    // Check flag, lock tables
-    if (!s_TablesInitialized) {
-        s_AnnotTypeIndexRange.resize(kAnnotTypeMax + 1);
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].first = 0;
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Align] = TIndexRange(0,1);
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Graph] = TIndexRange(1,2);
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first = 2;
-
-        vector< vector<size_t> > type_subtypes(kFeatTypeMax+1);
-        for ( size_t subtype = 0; subtype <= kFeatSubtypeMax; ++subtype ) {
-            size_t type = CSeqFeatData::
-                GetTypeFromSubtype(CSeqFeatData::ESubtype(subtype));
-            if ( type != CSeqFeatData::e_not_set ||
-                 subtype == CSeqFeatData::eSubtype_bad ) {
-                type_subtypes[type].push_back(subtype);
-            }
-        }
-
-        s_FeatTypeIndexRange.resize(kFeatTypeMax + 1);
-        s_FeatSubtypeIndex.resize(kFeatSubtypeMax + 1);
-
-        size_t cur_idx =
-            s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first;
-        for ( size_t type = 0; type <= kFeatTypeMax; ++type ) {
-            s_FeatTypeIndexRange[type].first = cur_idx;
-            if ( type != CSeqFeatData::e_not_set ) {
-                s_FeatTypeIndexRange[type].second =
-                    cur_idx + type_subtypes[type].size();
-            }
-            ITERATE ( vector<size_t>, it, type_subtypes[type] ) {
-                s_FeatSubtypeIndex[*it] = cur_idx++;
-            }
-        }
-
-        s_FeatTypeIndexRange[CSeqFeatData::e_not_set].second = cur_idx;
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].second = cur_idx;
-        s_AnnotTypeIndexRange[CSeq_annot::C_Data::e_not_set].second = cur_idx;
-        
-        s_TablesInitialized = true;
-    }
-}
-
-
-size_t CTSE_Info::x_GetSubtypeIndex(CSeqFeatData::ESubtype subtype)
-{
-    if ( size_t(subtype) < s_FeatSubtypeIndex.size() ) {
-        return s_FeatSubtypeIndex[subtype];
-    }
-    else {
-        return 0;
-    }
-}
-
-
-size_t CTSE_Info::x_GetTypeIndex(const CAnnotObject_Info& info)
-{
-    if ( info.GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
-        if ( size_t(info.GetFeatSubtype()) < s_FeatSubtypeIndex.size() ) {
-            size_t index = s_FeatSubtypeIndex[info.GetFeatSubtype()];
-            if ( index ) {
-                return index;
-            }
-        }
-    }
-    else if ( info.GetFeatType() != CSeqFeatData::e_not_set ) {
-        if ( size_t(info.GetFeatType()) < s_FeatTypeIndexRange.size() ) {
-            const TIndexRange& r = s_FeatTypeIndexRange[info.GetFeatType()];
-            if ( r.second == r.first + 1 ) {
-                return r.first;
-            }
-        }
-    }
-    else {
-        if ( size_t(info.GetAnnotType()) < s_AnnotTypeIndexRange.size() ) {
-            const TIndexRange& r = s_AnnotTypeIndexRange[info.GetAnnotType()];
-            if ( r.second == r.first + 1 ) {
-                return r.first;
-            }
-        }
-        
-    }
-    NCBI_THROW(CObjMgrException, eOtherError,
-               "CAnnotObject_Info is incompatible with CTSE_Info indexes");
-}
-
-inline
-size_t CTSE_Info::x_GetTypeIndex(const SAnnotObject_Key& key)
-{
-    return x_GetTypeIndex(*key.m_AnnotObject_Info);
-}
-
-
-CTSE_Info::TIndexRange
-CTSE_Info::x_GetIndexRange(const SAnnotTypeSelector& sel)
-{
-    TIndexRange r;
-    if ( sel.GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
-        if ( size_t(sel.GetFeatSubtype()) < s_FeatSubtypeIndex.size() ) {
-            r.first = s_FeatSubtypeIndex[sel.GetFeatSubtype()];
-            r.second = r.first? r.first + 1: 0;
-        }
-    }
-    else if ( sel.GetFeatChoice() != CSeqFeatData::e_not_set ) {
-        if ( size_t(sel.GetFeatChoice()) < s_FeatTypeIndexRange.size() ) {
-            r = s_FeatTypeIndexRange[sel.GetFeatChoice()];
-        }
-    }
-    else {
-        if ( size_t(sel.GetAnnotChoice()) < s_AnnotTypeIndexRange.size() ) {
-            r = s_AnnotTypeIndexRange[sel.GetAnnotChoice()];
-        }
-    }
-    return r;
-}
-
-
 CTSE_Info::TAnnotObjs& CTSE_Info::x_SetAnnotObjs(const CAnnotName& name)
 {
     TNamedAnnotObjs::iterator iter = m_NamedAnnotObjs.lower_bound(name);
@@ -660,7 +522,7 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& annotRef)
 {
-    size_t index = x_GetTypeIndex(key);
+    size_t index = CAnnotType_Index::GetTypeIndex(key);
     if ( index >= objs.m_AnnotSet.size() ) {
         objs.m_AnnotSet.resize(index+1);
     }
@@ -671,7 +533,7 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
 bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
                                    const SAnnotObject_Key& key)
 {
-    size_t index = x_GetTypeIndex(key);
+    size_t index = CAnnotType_Index::GetTypeIndex(key);
     _ASSERT(index < objs.m_AnnotSet.size());
     if ( x_UnmapAnnotObject(objs.m_AnnotSet[index], key) ) {
         while ( objs.m_AnnotSet.back().empty() ) {
@@ -867,6 +729,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/02/04 18:05:39  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.38  2004/02/03 19:02:19  vasilche
 * Fixed broken 'dirty annot index' state after RemoveEntry().
 *

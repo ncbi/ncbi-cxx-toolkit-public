@@ -114,7 +114,7 @@ inline
 CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set)
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_not_set)
                      .SetNoMapping(true)
                      .SetSortOrder(eSortOrder_None))
 {
@@ -127,7 +127,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_not_set)
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_not_set)
                      .SetNoMapping(true)
                      .SetSortOrder(eSortOrder_None))
 {
@@ -193,6 +193,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/02/04 18:05:31  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.24  2003/10/09 12:29:52  dicuccio
 * Added missing 'public' in inheritance
 *

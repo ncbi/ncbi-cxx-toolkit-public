@@ -278,6 +278,14 @@ private:
                   const CSeq_id_Handle& id,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
+    void x_SearchRange(const CTSE_Info& tse_info,
+                       const SIdAnnotObjs* objs,
+                       CReadLockGuard& guard,
+                       const CAnnotName& name,
+                       const CSeq_id_Handle& id,
+                       const CHandleRange& hr,
+                       CSeq_loc_Conversion* cvt,
+                       size_t from_idx, size_t to_idx);
     void x_SearchAll(void);
     void x_SearchAll(const CSeq_entry_Info& entry_info);
     void x_SearchAll(const CSeq_annot_Info& annot_info);
@@ -645,6 +653,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/02/04 18:05:32  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.61  2004/01/28 20:54:34  vasilche
 * Fixed mapping of annotations.
 *

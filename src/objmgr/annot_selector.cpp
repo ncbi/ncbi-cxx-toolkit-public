@@ -30,6 +30,8 @@
 */
 
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -44,8 +46,8 @@ BEGIN_SCOPE(objects)
 //  SAnnotSelector
 //
 
-SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
-                               TFeatChoice feat)
+SAnnotSelector::SAnnotSelector(TAnnotType annot,
+                               TFeatType feat)
     : SAnnotTypeSelector(annot),
       m_FeatProduct(false),
       m_ResolveDepth(kMax_Int),
@@ -61,11 +63,11 @@ SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
       m_AdaptiveDepth(false)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
-        SetFeatChoice(feat);
+        SetFeatType(feat);
     }
 }
 
-SAnnotSelector::SAnnotSelector(TFeatChoice feat)
+SAnnotSelector::SAnnotSelector(TFeatType feat)
     : SAnnotTypeSelector(feat),
       m_FeatProduct(false),
       m_ResolveDepth(kMax_Int),
@@ -83,8 +85,8 @@ SAnnotSelector::SAnnotSelector(TFeatChoice feat)
 }
 
 
-SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
-                               TFeatChoice feat,
+SAnnotSelector::SAnnotSelector(TAnnotType annot,
+                               TFeatType feat,
                                bool feat_product)
     : SAnnotTypeSelector(annot),
       m_FeatProduct(feat_product),
@@ -101,11 +103,11 @@ SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
       m_AdaptiveDepth(false)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
-        SetFeatChoice(feat);
+        SetFeatType(feat);
     }
 }
 
-SAnnotSelector::SAnnotSelector(TFeatChoice feat,
+SAnnotSelector::SAnnotSelector(TFeatType feat,
                                bool feat_product)
     : SAnnotTypeSelector(feat),
       m_FeatProduct(feat_product),
@@ -296,12 +298,117 @@ bool SAnnotSelector::ExcludedTSE(const CSeq_entry& tse) const
 }
 
 
+void SAnnotSelector::x_InitializeAnnotTypesSet(void)
+{
+    if (m_AnnotTypesSet.size() > 0) {
+        return;
+    }
+    m_AnnotTypesSet.resize(CAnnotType_Index::GetAnnotTypeRange(
+        CSeq_annot::C_Data::e_Ftable).second);
+    // Do not try to use flags from an uninitialized selector
+    if (GetAnnotType() != CSeq_annot::C_Data::e_not_set) {
+        // Copy current state to the set
+        CAnnotType_Index::TIndexRange range = 
+            CAnnotType_Index::GetIndexRange(*this);
+        for (int i = range.first; i < range.second; ++i) {
+            m_AnnotTypesSet[i] = true;
+        }
+    }
+    // Do not call this->SetAnnotType() -- it will reset the types set.
+    // Set type to Ftable -- only feature types/subtypes may be selected.
+    SAnnotTypeSelector::SetAnnotType(CSeq_annot::C_Data::e_Ftable);
+}
+
+
+SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
+        ||  m_AnnotTypesSet.size() > 0  ||  !IncludedFeatType(type)) {
+        x_InitializeAnnotTypesSet();
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetFeatTypeRange(type);
+        for (int i = range.first; i < range.second; ++i) {
+            m_AnnotTypesSet[i] = true;
+        }
+    }
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
+        ||  m_AnnotTypesSet.size() > 0  ||  IncludedFeatType(type)) {
+        x_InitializeAnnotTypesSet();
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetFeatTypeRange(type);
+        for (int i = range.first; i < range.second; ++i) {
+            m_AnnotTypesSet[i] = false;
+        }
+    }
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::IncludeFeatSubtype(TFeatSubtype subtype)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
+        ||  m_AnnotTypesSet.size() > 0  ||  !IncludedFeatSubtype(subtype)) {
+        x_InitializeAnnotTypesSet();
+        m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = true;
+    }
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
+        ||  m_AnnotTypesSet.size() > 0  ||  IncludedFeatSubtype(subtype)) {
+        x_InitializeAnnotTypesSet();
+        m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = false;
+    }
+    return *this;
+}
+
+
+bool SAnnotSelector::IncludedFeatType(TFeatType type) const
+{
+    if (m_AnnotTypesSet.size() > 0) {
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetFeatTypeRange(type);
+        for (int i = range.first; i < range.second; ++i) {
+            if (!m_AnnotTypesSet[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return (GetFeatType() == type || GetFeatType() == CSeqFeatData::e_not_set)
+        &&  GetFeatSubtype() == CSeqFeatData::eSubtype_any;
+}
+
+
+bool SAnnotSelector::IncludedFeatSubtype(TFeatSubtype subtype) const
+{
+    if (m_AnnotTypesSet.size() > 0) {
+        return m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)];
+    }
+    return GetFeatSubtype() == subtype
+        ||  GetFeatSubtype() == CSeqFeatData::eSubtype_any;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/02/04 18:05:38  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.4  2004/01/23 16:14:47  grichenk
 * Implemented alignment mapping
 *

@@ -97,7 +97,7 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -107,7 +107,7 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -124,7 +124,7 @@ inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -141,7 +141,7 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -177,6 +177,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/02/04 18:05:31  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.23  2004/01/29 15:44:45  vasilche
 * Fixed mapped align when it's not mapped.
 *

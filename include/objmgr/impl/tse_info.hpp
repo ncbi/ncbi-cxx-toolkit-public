@@ -155,8 +155,6 @@ public:
     void x_DSAttach(void);
     void x_DSDetach(void);
 
-    typedef pair<size_t, size_t> TIndexRange;
-
     CRef<CTSE_Chunk_Info> GetNotLoadedChunk(void);
     void LoadAllChunks(void);
 
@@ -170,6 +168,7 @@ private:
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
     friend class CTSE_Chunk_Info;
+    friend struct SAnnotSelector;
 
     CSeq_entry_Info& GetBioseq_set(int id);
     CBioseq_Info& GetBioseq(int gi);
@@ -178,15 +177,6 @@ private:
     void x_ResetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
     void x_SetBioseq_setId(int key, CSeq_entry_Info* info);
     void x_ResetBioseq_setId(int key, CSeq_entry_Info* info);
-
-    static void x_InitIndexTables(void);
-
-    static size_t x_GetSubtypeIndex(CSeqFeatData::ESubtype subtype);
-    static TIndexRange x_GetIndexRange(const SAnnotTypeSelector& sel);
-    static TIndexRange x_GetIndexRange(const SAnnotTypeSelector& sel,
-                                       const SIdAnnotObjs& objs);
-    static size_t x_GetTypeIndex(const CAnnotObject_Info& info);
-    static size_t x_GetTypeIndex(const SAnnotObject_Key& key);
 
     // index access methods
     TAnnotObjs& x_SetAnnotObjs(const CAnnotName& name);
@@ -366,23 +356,16 @@ const CConstRef<CObject>& CTSE_Info::GetBlobId(void) const
 }
 
 
-inline
-CTSE_Info::TIndexRange
-CTSE_Info::x_GetIndexRange(const SAnnotTypeSelector& sel,
-                           const SIdAnnotObjs& objs)
-{
-    TIndexRange r = x_GetIndexRange(sel);
-    r.second = min(r.second, objs.m_AnnotSet.size());
-    return r;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/02/04 18:05:33  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.44  2004/01/22 20:10:39  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

@@ -113,8 +113,8 @@ CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                                      const SAnnotTypeSelector& sel)
     : m_Object(0),
       m_FeatSubtype(sel.GetFeatSubtype()),
-      m_FeatType(sel.GetFeatChoice()),
-      m_AnnotType(sel.GetAnnotChoice())
+      m_FeatType(sel.GetFeatType()),
+      m_AnnotType(sel.GetAnnotType())
 {
     m_Chunk_Info = &chunk_info;
     _ASSERT(IsChunkStub());
@@ -424,6 +424,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/02/04 18:05:38  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.31  2004/01/23 16:14:47  grichenk
 * Implemented alignment mapping
 *

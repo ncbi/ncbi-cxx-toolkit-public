@@ -48,13 +48,13 @@ BEGIN_SCOPE(objects)
 
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
-                   TFeatChoice feat_choice,
+                   TFeatType feat_type,
                    EOverlapType overlap_type,
                    EResolveMethod resolve,
                    EFeat_Location loc_type,
                    const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_type)
                      .SetByProduct(loc_type == e_Product)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve)
@@ -66,13 +66,13 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
-                   TFeatChoice feat_choice,
+                   TFeatType feat_type,
                    EOverlapType overlap_type,
                    EResolveMethod resolve,
                    EFeat_Location loc_type,
                    const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_type)
                      .SetByProduct(loc_type == e_Product)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve)
@@ -104,7 +104,7 @@ CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -114,7 +114,7 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -131,7 +131,7 @@ CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot)
 CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -148,7 +148,7 @@ CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry)
 CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,
                    SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+                     sel.SetAnnotType(CSeq_annot::C_Data::e_Ftable))
 {
     Update();
 }
@@ -359,6 +359,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/02/04 18:05:39  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.24  2004/01/28 20:54:36  vasilche
 * Fixed mapping of annotations.
 *

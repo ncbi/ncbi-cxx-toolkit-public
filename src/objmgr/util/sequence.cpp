@@ -2161,7 +2161,7 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
     int diff = -1;
 
     CFeat_CI feat_it(scope, loc, SAnnotSelector()
-        .SetFeatChoice(feat_type)
+        .SetFeatType(feat_type)
         .SetFeatSubtype(feat_subtype)
         .SetOverlapType(annot_overlap_type)
         .SetResolveTSE());
@@ -3870,6 +3870,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.70  2004/02/04 18:05:41  grichenk
+* Added annotation filtering by set of types/subtypes.
+* Renamed *Choice to *Type in SAnnotSelector.
+*
 * Revision 1.69  2004/01/30 17:49:29  ucko
 * Add missing "typename"
 *
