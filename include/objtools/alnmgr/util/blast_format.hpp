@@ -88,7 +88,7 @@ typedef vector<TSeqLocInfo> TSeqLocInfoVector;
 
 /** Options for formatting BLAST results 
  */
-class NCBI_XBLAST_EXPORT CBlastFormatOptions : public CObject
+class NCBI_XALNUTIL_EXPORT CBlastFormatOptions : public CObject
 {
 public:
 
