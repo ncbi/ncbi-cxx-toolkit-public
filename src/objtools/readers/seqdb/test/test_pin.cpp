@@ -49,7 +49,10 @@
 #include <objects/seq/seq__.hpp>
 
 #include <assert.h>
+
+#if defined(NCBI_OS_UNIX)
 #include <readdb.h>
+#endif
 
 volatile int gnum = 0;
 
@@ -71,7 +74,7 @@ int test1(int argc, char ** argv)
     
     bool  use_mm        = true;
     bool  deletions     = true;
-    Int8  num_display   = -1;
+    Int4  num_display   = -1;
     Int4  num_itera     = 1;
     bool  look_seq      = false;
     bool  show_bioseq   = false;
@@ -205,8 +208,8 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-here]";
         
+#if defined(NCBI_OS_UNIX)
         if (s == "-bs9") {
-            
             // These require: -lncbitool -lz -lncbiobj -lncbi
             
             const char * dbname = "nt";
@@ -316,7 +319,8 @@ int test1(int argc, char ** argv)
             
             return 0;
         } else desc += " [-bs9]";
-
+#endif
+        
         if (s == "-dyn") {
             CSeqDB db("nr", 'p');
             
@@ -1143,7 +1147,7 @@ int test1(int argc, char ** argv)
         
         
         if (s == "-lib") {
-            CSeqDB phil(/*dbpath,*/ "nt nt month est", 'n');
+            CSeqDB phil("nt nt month est", 'n');
             phil.GetSeqLength(123);
             phil.GetSeqLengthApprox(123);
             phil.GetHdr(123);
@@ -1165,7 +1169,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-lib]";
         
         if (s == "-summary") {
-            CSeqDB phil(/*dbpath,*/ "month", 'n');
+            CSeqDB phil("month", 'n');
             cout << "dbpath: " << dbpath            << endl;
             cout << "title:  " << phil.GetTitle()   << endl;
             cout << "nseqs:  " << phil.GetNumSeqs() << endl;
@@ -1501,7 +1505,7 @@ int test1(int argc, char ** argv)
             cout << "total length: " << db.GetTotalLength() << endl;
             cout << "number seqs : " << db.GetNumSeqs() << endl;
             
-            unsigned nseq = db.GetNumSeqs();
+            Uint4 nseq = db.GetNumSeqs();
             
             const char * seqdata = 0;
             
@@ -1740,8 +1744,7 @@ int test1(int argc, char ** argv)
             if (show_progress)
                 cout << "at line " << __LINE__ << endl;
             
-			// Does nseqs really need to be an Int8?
-            Int8 nseqs  = (Int8) dbi.GetNumSeqs();
+            Uint4 nseqs = dbi.GetNumSeqs();
             Uint8 tleng = dbi.GetTotalLength();
             
             if ((num_display <= 0) || (num_display > nseqs)) {
