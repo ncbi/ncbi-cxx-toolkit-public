@@ -33,27 +33,16 @@
 
 BEGIN_NCBI_SCOPE
 
-CInvalidChoiceSelection::CInvalidChoiceSelection(const string& current,
-                                                 const string& mustBe) throw()
-    : runtime_error("Invalid choice selection: "+current+". "
-                    "Expected: "+mustBe)
+const char* CInvalidChoiceSelection::GetErrCodeString(void) const
 {
+    switch ( GetErrCode() ) {
+    case eFail:  return "eFail";
+    default:     return CException::GetErrCodeString();
+    }
 }
 
-CInvalidChoiceSelection::CInvalidChoiceSelection(size_t currentIndex,
-                                                 size_t mustBeIndex,
-                                                 const char* const names[],
-                                                 size_t namesCount) throw()
-    : runtime_error(string("Invalid choice selection: ")+
-                    GetName(currentIndex, names, namesCount)+". "
-                    "Expected: "+
-                    GetName(mustBeIndex, names, namesCount))
-{
-}
-
-const char* CInvalidChoiceSelection::GetName(size_t index,
-                                             const char* const names[],
-                                             size_t namesCount)
+const char* CInvalidChoiceSelection::GetName(
+    size_t index, const char* const names[], size_t namesCount)
 {
     if ( index > namesCount )
         return "?unknown?";
@@ -61,14 +50,75 @@ const char* CInvalidChoiceSelection::GetName(size_t index,
     
 }
 
+CInvalidChoiceSelection::CInvalidChoiceSelection(
+    const char* file,int line,
+    size_t currentIndex, size_t mustBeIndex,
+    const char* const names[], size_t namesCount) throw()
+        : CSerialException(file, line, 0,
+          (CSerialException::EErrCode) CException::eInvalid,"")
+{
+    x_Init(file,line,
+           string("Invalid choice selection: ")+
+           GetName(currentIndex, names, namesCount)+". "
+           "Expected: "+
+           GetName(mustBeIndex, names, namesCount),0);
+    x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
+}
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(
+    size_t currentIndex, size_t mustBeIndex,
+    const char* const names[], size_t namesCount) throw()
+        : CSerialException("unknown", 0, 0,
+          (CSerialException::EErrCode) CException::eInvalid,"")
+{
+    x_Init("unknown", 0,
+           string("Invalid choice selection: ")+
+           GetName(currentIndex, names, namesCount)+". "
+           "Expected: "+
+           GetName(mustBeIndex, names, namesCount),0);
+    x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
+}
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(
+    const CInvalidChoiceSelection& other) throw()
+    : CSerialException(other)
+{
+    x_Assign(other);
+}
+
 CInvalidChoiceSelection::~CInvalidChoiceSelection(void) throw()
 {
 }
+
+const char* CInvalidChoiceSelection::GetType(void) const
+{
+    return "CInvalidChoiceSelection";
+}
+
+CInvalidChoiceSelection::EErrCode CInvalidChoiceSelection::GetErrCode(void) const
+{
+    return typeid(*this) == typeid(CInvalidChoiceSelection) ?
+        (CInvalidChoiceSelection::EErrCode) x_GetErrCode() :
+        (CInvalidChoiceSelection::EErrCode) CException::eInvalid;
+}
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(void) throw()
+{
+}
+
+const CException* CInvalidChoiceSelection::x_Clone(void) const
+{
+    return new CInvalidChoiceSelection(*this);
+}
+
 
 END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/11 17:59:39  gouriano
+* reimplement CInvalidChoiceSelection exception
+*
 * Revision 1.9  2003/03/10 18:54:25  gouriano
 * use new structured exceptions (based on CException)
 *

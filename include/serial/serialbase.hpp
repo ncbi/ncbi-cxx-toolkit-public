@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <serial/exception.hpp>
 #include <typeinfo>
 
 BEGIN_NCBI_SCOPE
@@ -206,6 +207,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/03/11 18:00:08  gouriano
+* reimplement CInvalidChoiceSelection exception
+*
 * Revision 1.14  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -68,16 +68,33 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
 };
 
-class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public runtime_error
+class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public CSerialException
 {
 public:
-    CInvalidChoiceSelection(const string& current, const string& mustBe) throw();
-    CInvalidChoiceSelection(size_t currentIndex, size_t mustBeIndex,
-                            const char* const names[], size_t namesCount) throw();
-    ~CInvalidChoiceSelection(void) throw();
-
+    enum EErrCode {
+        eFail
+    };
+    virtual const char* GetErrCodeString(void) const;
     static const char* GetName(size_t index,
                                const char* const names[], size_t namesCount);
+
+    CInvalidChoiceSelection(const char* file,int line,
+        size_t currentIndex, size_t mustBeIndex,
+        const char* const names[], size_t namesCount) throw();
+// for backward compatibility
+    CInvalidChoiceSelection(
+        size_t currentIndex, size_t mustBeIndex,
+        const char* const names[], size_t namesCount) throw();
+
+    CInvalidChoiceSelection(const CInvalidChoiceSelection& other) throw();
+    virtual ~CInvalidChoiceSelection(void) throw();
+
+    virtual const char* GetType(void) const;
+    EErrCode GetErrCode(void) const;
+
+protected:
+    CInvalidChoiceSelection(void) throw();
+    virtual const CException* x_Clone(void) const;
 };
 
 END_NCBI_SCOPE
@@ -88,6 +105,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/11 18:00:08  gouriano
+* reimplement CInvalidChoiceSelection exception
+*
 * Revision 1.9  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

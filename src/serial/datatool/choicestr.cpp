@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2003/03/11 17:59:16  gouriano
+* reimplement CInvalidChoiceSelection exception
+*
 * Revision 1.40  2003/03/10 21:21:10  gouriano
 * use CSerialException in generated code
 *
@@ -750,7 +753,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "\n"
             "void "<<methodPrefix<<"ThrowInvalidSelection("STATE_ENUM" index) const\n"
             "{\n"
-            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
+            "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(__FILE__,__LINE__,m_choice, index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n";
     }
