@@ -175,12 +175,27 @@ string CObjectOStreamXml::GetDTDPublicId(void) const
     return m_PublicId;
 }
 
+inline
+void  CObjectOStreamXml::SetDefaultSchemaNamespace(const string& schema_ns)
+{
+    sm_DefaultSchemaNamespace = schema_ns;
+}
+
+inline
+string CObjectOStreamXml::GetDefaultSchemaNamespace(void)
+{
+    return sm_DefaultSchemaNamespace;
+}
+
 #endif /* def OBJOSTRXML__HPP  &&  ndef OBJOSTRXML__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/07/02 13:01:00  gouriano
+* added ability to read/write XML files with reference to schema
+*
 * Revision 1.9  2003/01/10 16:53:36  gouriano
 * fixed a bug with optional class members
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/07/02 13:01:29  gouriano
+* added ability to read/write XML files with reference to schema
+*
 * Revision 1.57  2003/06/30 15:39:48  gouriano
 * added encoding (utf-8 or iso-8859-1)
 *
@@ -272,6 +275,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
 
 
 string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
+string CObjectOStreamXml::sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut),
@@ -279,7 +283,8 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_UseDefaultDTDFilePrefix( true),
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
-      m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown )
+      m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown ),
+      m_UseSchemaRef( false )
 {
     m_Output.SetBackLimit(1);
 }
@@ -302,6 +307,17 @@ CObjectOStreamXml::EEncoding CObjectOStreamXml::GetEncoding(void) const
 {
     return m_Encoding;
 }
+
+void CObjectOStreamXml::SetReferenceSchema(bool use_schema)
+{
+    m_UseSchemaRef = use_schema;
+}
+
+bool CObjectOStreamXml::GetReferenceSchema(void) const
+{
+    return m_UseSchemaRef;
+}
+
 
 CObjectOStreamXml::ERealValueFormat
     CObjectOStreamXml::GetRealValueFormat(void) const
@@ -376,28 +392,45 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
     m_Output.PutString("\"?>");
     m_Output.PutEol();
 
-    m_Output.PutString("<!DOCTYPE ");
-    m_Output.PutString(type->GetName());
-    
-    if (m_UsePublicId) {
-        m_Output.PutString(" PUBLIC \"");
-        if (m_PublicId.empty()) {
-            m_Output.PutString("-//NCBI//");
-            m_Output.PutString(GetPublicModuleName(type));
-            m_Output.PutString("/EN");
-        } else {
-            m_Output.PutString(m_PublicId);
-        }
-        m_Output.PutString("\"");
-    } else {
-        m_Output.PutString(" SYSTEM");
-    }
-    m_Output.PutString(" \"");
-    m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
-    m_Output.PutString(".dtd\">");
-    m_Output.PutEol();
+    if (m_UseSchemaRef) {
+        m_Output.PutString("<");
+        m_Output.PutString(type->GetName());
+        m_Output.PutEol();
+        m_Output.PutString("xmlns=\"");
+        m_Output.PutString(GetDefaultSchemaNamespace() + "\"");
+        m_Output.PutEol();
+        m_Output.PutString("xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"");
+        m_Output.PutEol();
+        m_Output.PutString("xs:schemaLocation=\"");
+        m_Output.PutString(GetDefaultSchemaNamespace() + " ");
+        m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
+        m_Output.PutString(".xsd\">");
 
-    m_LastTagAction = eTagClose;
+        m_LastTagAction = eSchemaTag;
+    } else {
+        m_Output.PutString("<!DOCTYPE ");
+        m_Output.PutString(type->GetName());
+    
+        if (m_UsePublicId) {
+            m_Output.PutString(" PUBLIC \"");
+            if (m_PublicId.empty()) {
+                m_Output.PutString("-//NCBI//");
+                m_Output.PutString(GetPublicModuleName(type));
+                m_Output.PutString("/EN");
+            } else {
+                m_Output.PutString(m_PublicId);
+            }
+            m_Output.PutString("\"");
+        } else {
+            m_Output.PutString(" SYSTEM");
+        }
+        m_Output.PutString(" \"");
+        m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
+        m_Output.PutString(".dtd\">");
+        m_Output.PutEol();
+
+        m_LastTagAction = eTagClose;
+    }
 }
 
 void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
@@ -1007,7 +1040,13 @@ ETypeFamily CObjectOStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
     CheckStdXml(classInfo);
-    OpenTagIfNamed(classInfo);
+    if (m_LastTagAction == eSchemaTag) {
+        m_Output.IncIndentLevel();
+        m_LastTagAction = eTagClose;
+        m_EndTag = false;
+    } else {
+        OpenTagIfNamed(classInfo);
+    }
 }
 
 void CObjectOStreamXml::EndClass(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/07/02 13:01:29  gouriano
+* added ability to read/write XML files with reference to schema
+*
 * Revision 1.43  2003/06/30 15:39:48  gouriano
 * added encoding (utf-8 or iso-8859-1)
 *
@@ -592,9 +595,16 @@ string CObjectIStreamXml::ReadFileHeader(void)
                 }
             }
         default:
+            {
+                string typeName = ReadName(m_Input.PeekChar());
+                UndoClassMember();
+                return typeName;
+            }
+/*
             m_Input.UngetChar('<');
             Back_lt();
             ThrowError(fFormatError, "unknown DOCTYPE");
+*/
         }
     }
     return NcbiEmptyString;
@@ -1379,27 +1389,39 @@ TMemberIndex
 CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
 {
     CLightString tagName;
-    if (m_RejectedTag.empty()) {
-        if (m_Attlist && InsideTag()) {
-            if (HasAttlist()) {
-                tagName = ReadName(SkipWS());
+    bool more;
+    do {
+        more = false;
+        if (m_RejectedTag.empty()) {
+            if (m_Attlist && InsideTag()) {
+                if (HasAttlist()) {
+                    tagName = ReadName(SkipWS());
+                } else {
+                    return kInvalidMember;
+                }
             } else {
-                return kInvalidMember;
+                if ( NextTagIsClosing() )
+                    return kInvalidMember;
+                tagName = ReadName(BeginOpeningTag());
             }
         } else {
-            if ( NextTagIsClosing() )
-                return kInvalidMember;
-            tagName = ReadName(BeginOpeningTag());
+            tagName = RejectedName();
         }
-    } else {
-        tagName = RejectedName();
-    }
-    TMemberIndex ind = classType->GetMembers().Find(tagName);
-    if ( ind != kInvalidMember ) {
-        if (x_IsStdXml()) {
-            return ind;
+        TMemberIndex ind = classType->GetMembers().Find(tagName);
+        if ( ind != kInvalidMember ) {
+            if (x_IsStdXml()) {
+                return ind;
+            }
         }
-    }
+// if it is an attribute list, but the tag is unrecognized - just skip it
+        if (m_Attlist) {
+            string value;
+            ReadAttributeValue(value);
+            m_Input.SkipChar();
+            more = true;
+        }
+    } while (more);
+
     CLightString id = SkipStackTagName(tagName, 1, '_');
     TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember )
@@ -1422,14 +1444,27 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             }
         } else {
             if (!m_Attlist) {
-                if (pos == first &&
-                    classType->GetMemberInfo(first)->GetId().IsAttlist()) {
-                    m_Attlist = true;
-                    if (m_TagState == eTagOutside) {
-                        m_Input.UngetChar('>');
-                        m_TagState = eTagInsideOpening;
+                if (pos == first) {
+                    if (classType->GetMemberInfo(first)->GetId().IsAttlist()) {
+                        m_Attlist = true;
+                        if (m_TagState == eTagOutside) {
+                            m_Input.UngetChar('>');
+                            m_TagState = eTagInsideOpening;
+                        }
+                        return first;
                     }
-                    return first;
+// if class spec defines no attributes, but there are some - just skip them
+                    if (HasAttlist()) {
+                        for (;;) {
+                            char ch = SkipWS();
+                            if (ch == '>') {
+                                break;
+                            }
+                            tagName = ReadName(ch);
+                            string value;
+                            ReadAttributeValue(value);
+                        }
+                    }
                 }
             }
             if (m_Attlist && !SelfClosedTag()) {

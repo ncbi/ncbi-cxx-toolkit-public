@@ -62,7 +62,13 @@ public:
     void SetEncoding(EEncoding enc);
     EEncoding GetEncoding(void) const;
 
+    void SetReferenceSchema(bool use_schema = true);
+    bool GetReferenceSchema(void) const;
+
     virtual void WriteFileHeader(TTypeInfo type);
+
+    static void   SetDefaultSchemaNamespace(const string& schema_ns);
+    static string GetDefaultSchemaNamespace(void);
 
     // DTD file name and prefix. The final module name is built as
     // DTDFilePrefix + DTDFileName.
@@ -244,7 +250,8 @@ private:
         eTagOpen,
         eTagClose,
         eTagSelfClosed,
-        eAttlistTag
+        eAttlistTag,
+        eSchemaTag
     };
     ETagAction m_LastTagAction;
     bool m_EndTag;
@@ -261,6 +268,8 @@ private:
     bool m_EnforcedStdXml;
     ERealValueFormat m_RealFmt;
     EEncoding m_Encoding;
+    bool m_UseSchemaRef;
+    static string sm_DefaultSchemaNamespace;
 };
 
 
@@ -277,6 +286,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/07/02 13:01:00  gouriano
+* added ability to read/write XML files with reference to schema
+*
 * Revision 1.32  2003/06/30 15:40:18  gouriano
 * added encoding (utf-8 or iso-8859-1)
 *
