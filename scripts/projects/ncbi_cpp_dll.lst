@@ -15,6 +15,4 @@ objtools
 serial
 sqlite
 util
--app/cn3d
--algo/structure/struct_util/demo
 -misc/third_party_static
