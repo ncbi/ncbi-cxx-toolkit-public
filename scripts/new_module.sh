@@ -10,9 +10,17 @@ mp=
 while true; do
     d="`basename \"$p\"`"
     p="`dirname \"$p\"`"
-    if test -d "$p/src" && test -d "$p/include"  &&
-        test -f "$p/src/Makefile.module"; then
-        break
+    if test -d "$p/src" && test -d "$p/include"; then
+        makemodule="$p/src/Makefile.module"
+        if test -f "$makemodule"; then
+            break
+        fi
+        makemodule="$NCBI/c++/src/Makefile.module"
+        if test -f "$makemodule"; then
+            break
+        fi
+        echo "Makefile.module not found"
+        exit 1
     fi
     if test -z "$mp"; then
         mp="$d"
@@ -87,5 +95,5 @@ if test -z "$MAKE" ; then
 fi
 
 # run command
-echo $MAKE -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
-$MAKE -f "$p/src/Makefile.module" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
+echo $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
+$MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
