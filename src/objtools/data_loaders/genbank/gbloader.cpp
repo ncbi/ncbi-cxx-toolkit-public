@@ -61,7 +61,7 @@ BEGIN_SCOPE(objects)
 // 
 
 const char* GB_ENV_VAR = "GENBANK_LOADER_METHOD";
-const char* DEFAULT_DRIVERS_ORDER = "PUBSEQ:ID1";
+const char* DEFAULT_DRIVERS_ORDER = "PUBSEQOS:ID1";
 const string DRV_PUBSEQOS = "PUBSEQOS";
 const string DRV_ID1 = "ID1";
 
@@ -922,6 +922,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2003/06/10 19:01:07  vasilche
+* Fixed loader methods string.
+*
 * Revision 1.74  2003/06/10 15:25:33  vasilche
 * Changed wrong _ASSERT to _VERIFY
 *
