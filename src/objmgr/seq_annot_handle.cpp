@@ -29,6 +29,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/scope.hpp>
@@ -121,6 +122,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.8  2004/04/29 15:44:30  grichenk
 * Added GetTopLevelEntry()
 *

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_gbseq_formatter.hpp>
 #include <objtools/flat/flat_items.hpp>
 
@@ -319,6 +320,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2003/11/04 20:00:28  ucko
 * Edit " \b" sequences (used as hints for wrapping) out from qualifier values
 *

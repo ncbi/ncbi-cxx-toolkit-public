@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
@@ -609,6 +610,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/05/21 21:42:51  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.14  2004/03/09 21:19:53  ucko
 * Only warn about overwriting temporary files, since the previous run
 * may have crashed and left them behind.

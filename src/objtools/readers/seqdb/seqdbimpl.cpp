@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "seqdbimpl.hpp"
 #include <iostream>
 

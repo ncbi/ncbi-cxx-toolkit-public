@@ -26,6 +26,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_projects.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/proj_tree.hpp>
@@ -164,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/03/18 19:13:08  gorelenk
  * Changed imlementations of class CProjectsLstFileFilter constructor and
  * CProjectsLstFileFilter::CheckProject .

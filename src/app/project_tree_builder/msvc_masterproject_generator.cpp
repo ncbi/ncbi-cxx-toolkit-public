@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/msvc_masterproject_generator.hpp>
 
 
@@ -209,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.14  2004/02/20 22:53:25  gorelenk
  * Added analysis of ASN projects depends.
  *

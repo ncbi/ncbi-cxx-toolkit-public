@@ -31,6 +31,7 @@
 /// @file remote_blast.cpp
 /// Queueing and Polling code for Remote Blast API.
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <algo/blast/api/remote_blast.hpp>
 
@@ -796,6 +797,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/05/21 21:41:02  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/05/12 19:26:49  bealer
 * - Additional checking for PSSM queries.
 * - PSSM query now implies service="psi".

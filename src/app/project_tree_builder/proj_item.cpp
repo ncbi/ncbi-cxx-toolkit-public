@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
 
 
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.22  2004/03/02 16:32:06  gorelenk
  * Implementation of classes CProjectItemsTree CCyclicDepends
  * SProjectTreeFolder CProjectTreeFolders moved to proj_tree.cpp

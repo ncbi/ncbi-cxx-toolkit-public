@@ -32,6 +32,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -542,6 +543,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.22  2004/04/12 16:49:16  vasilche
 * Allow null scope in CSeqMap_CI and CSeqVector.
 *

@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 
 #include <objmgr/impl/seq_align_mapper.hpp>
@@ -832,6 +833,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.27  2004/05/10 18:26:37  grichenk
 * Fixed 'not used' warnings
 *

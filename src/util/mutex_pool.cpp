@@ -31,6 +31,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -108,6 +109,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2003/07/01 18:02:37  vasilche
 * Removed invalid assert.
 * Moved asserts from .hpp to .cpp file.

@@ -57,6 +57,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 USING_SCOPE(ncbi);
 static int nodecount = 0;
@@ -1250,8 +1251,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2004/02/11 17:40:54  jcherry
- * Initial version
+ * Revision 1.2  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
  *
  * ===========================================================================
  */

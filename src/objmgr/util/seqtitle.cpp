@@ -30,6 +30,7 @@
 *   CreateDefLine in the C toolkit.)
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/iterator.hpp>
 
 #include <objects/biblio/Id_pat.hpp>
@@ -924,6 +925,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.37  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.36  2004/05/10 21:25:17  ucko
 * x_TitleFromChromosome: handle organelles with multiple chromosomes,
 * such as Guillardia theta nucleomorph (per C toolkit)

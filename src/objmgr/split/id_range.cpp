@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/split/id_range.hpp>
 
 #include <objects/seqloc/seqloc__.hpp>
@@ -323,6 +324,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/01/07 17:36:27  vasilche
 * Moved id2_split headers to include/objmgr/split.
 * Fixed include path to genbank.

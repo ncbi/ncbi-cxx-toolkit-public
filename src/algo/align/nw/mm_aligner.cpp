@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "mm_aligner_threads.hpp"
 
 #include <corelib/ncbimtx.hpp>
@@ -948,6 +949,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/05/21 21:41:01  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.19  2004/05/18 21:43:40  kapustin
  * Code cleanup
  *

@@ -31,6 +31,7 @@
  */
 
 // Local
+#include <ncbi_pch.hpp>
 #include "queue_poll.hpp"
 
 // Corelib
@@ -576,6 +577,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/05/21 21:41:38  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/05/05 18:20:39  bealer
  * - Update for new ASN.1
  *

@@ -29,6 +29,7 @@
  *   Validates CSeq_entries and CSeq_submits
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
 #include <objmgr/object_manager.hpp>
@@ -1162,6 +1163,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.43  2004/03/25 18:31:41  shomrat
 * + SEQ_FEAT_GenesInconsistent
 *

@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_id_tree.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
@@ -1614,6 +1615,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/04/29 13:17:51  grichenk
 * Fixed reverse ID matching
 *

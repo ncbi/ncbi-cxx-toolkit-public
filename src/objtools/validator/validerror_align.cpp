@@ -30,6 +30,7 @@
  *   .......
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -1068,6 +1069,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2003/09/30 18:30:38  shomrat
 * changed unsigned to signed to eliminate infinite loop
 *

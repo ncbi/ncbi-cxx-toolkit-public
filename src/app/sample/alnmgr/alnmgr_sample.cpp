@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -200,6 +201,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/21 21:41:41  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/01/07 17:38:03  vasilche
 * Fixed include path to genbank loader.
 *

@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 
 #include <objmgr/scope.hpp>
@@ -399,6 +400,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.8  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *

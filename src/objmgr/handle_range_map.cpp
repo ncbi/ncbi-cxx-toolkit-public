@@ -31,6 +31,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/seq_id_mapper.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -254,6 +255,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.18  2003/07/17 20:07:56  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

@@ -30,6 +30,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -195,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.11  2004/04/22 16:00:08  shomrat
 * Changes in context
 *

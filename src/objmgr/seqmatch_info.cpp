@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seqmatch_info.hpp>
 
 #include <objmgr/impl/data_source.hpp>
@@ -80,6 +81,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.14  2004/03/16 15:47:28  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -29,6 +29,7 @@
 *   flat-file generator -- comment item implementation
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -849,6 +850,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/05/06 17:45:43  shomrat
 * + CLocalIdComment
 *

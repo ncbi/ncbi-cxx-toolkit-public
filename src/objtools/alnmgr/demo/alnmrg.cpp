@@ -30,6 +30,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -411,6 +412,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/05/21 21:42:51  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.19  2004/01/07 17:37:35  vasilche
 * Fixed include path to genbank loader.
 * Moved split_cache application.

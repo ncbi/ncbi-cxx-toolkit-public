@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <bdb/bdb_cursor.hpp>
@@ -264,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/21 21:42:54  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2004/03/09 17:16:59  kuznets
  * Merge object attributes with objects
  *

@@ -39,6 +39,7 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
+#include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objmgr/util/sequence.hpp>

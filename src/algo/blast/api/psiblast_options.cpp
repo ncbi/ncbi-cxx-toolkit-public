@@ -30,6 +30,7 @@
 /// @file psiblast_options.cpp
 /// Implements the CPSIBlastOptionsHandle class.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 #include "blast_setup.hpp"
 
@@ -69,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/05/17 19:33:23  bealer
  * - Update sources to new macro spelling.
  *

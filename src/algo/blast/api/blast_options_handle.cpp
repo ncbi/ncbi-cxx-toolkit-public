@@ -31,6 +31,7 @@
 /// Implementation for the CBlastOptionsHandle and the
 /// CBlastOptionsFactory classes.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
@@ -149,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/05/17 20:19:55  ucko
  * Trivial compilation fixes.
  *

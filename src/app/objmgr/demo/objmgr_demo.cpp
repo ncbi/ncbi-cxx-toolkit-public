@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -786,6 +787,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/05/21 21:41:40  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.67  2004/05/13 19:50:48  vasilche
 * Added options to skip and get mapped alignments.
 *

@@ -31,6 +31,7 @@
 *
 * ===========================================================================*/
 
+#include <ncbi_pch.hpp>
 #include <algo/sequence/cpg.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -215,6 +216,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.4  2004/05/21 21:41:04  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.3  2003/12/12 20:05:19  johnson
 * refactoring to accommodate MSVC 7
 *

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/alnmgr/alnmix.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -1957,6 +1958,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.93  2004/05/21 21:42:51  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.92  2004/04/13 18:02:10  todorov
 * Added some limit checks when inc/dec iterators
 *

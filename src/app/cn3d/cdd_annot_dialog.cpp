@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Align_annot.hpp>
@@ -1253,6 +1254,9 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/05/21 21:41:38  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.38  2004/04/02 22:45:03  thiessen
 * make stuff visible in global style on show evidence
 *

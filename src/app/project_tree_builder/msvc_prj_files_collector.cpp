@@ -27,6 +27,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_prj_files_collector.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
@@ -337,6 +338,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/05/19 14:25:53  gorelenk
  * Changed implementation of CMsvcPrjFilesCollector::CollectResources -
  * default resource will be added omly if there are no excplicit resource

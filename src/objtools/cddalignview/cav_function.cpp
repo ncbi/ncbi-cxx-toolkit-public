@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_limits.h>
@@ -394,6 +395,9 @@ int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/21 21:42:51  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.3  2004/03/15 18:51:27  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

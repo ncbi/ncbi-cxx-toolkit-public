@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "seqdbvol.hpp"
 
 BEGIN_NCBI_SCOPE

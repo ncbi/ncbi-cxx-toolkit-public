@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_gff_formatter.hpp>
 #include <objtools/flat/flat_head.hpp>
 #include <objtools/flat/flat_items.hpp>
@@ -395,6 +396,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2003/12/03 20:53:53  ucko
 * Also quote #s in values to avoid trouble with naive comment recognizers.
 *

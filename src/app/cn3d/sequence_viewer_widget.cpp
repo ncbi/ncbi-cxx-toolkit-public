@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include "sequence_viewer_widget.hpp"
@@ -1064,6 +1065,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/05/21 21:41:39  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.40  2004/03/15 18:32:03  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

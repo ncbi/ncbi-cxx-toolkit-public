@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "seq_loader.hpp"
 #include "splign_app_exception.hpp"
 
@@ -366,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.16  2004/05/10 21:50:03  kapustin
  * Fixed some MSVC6.0 incompatibility issues
  *

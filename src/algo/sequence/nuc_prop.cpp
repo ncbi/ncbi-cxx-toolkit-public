@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <algo/sequence/nuc_prop.hpp>
 
@@ -162,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2003/08/18 17:35:29  jcherry
  * Fixed CountNmers to alter result vectors size, not just its capacity.
  * Made Int2Nmer build its string from scratch, and do so properly.

@@ -31,6 +31,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <algo/sequence/coiled_coil.hpp>
@@ -300,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/09/09 18:30:55  ucko
  * Fixes for WorkShop, which (still) doesn't let templates access
  * anything file-static.

@@ -26,6 +26,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
 BEGIN_NCBI_SCOPE
 
@@ -43,6 +44,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/02/20 22:53:59  gorelenk
  * Added analysis of ASN projects depends.
  *

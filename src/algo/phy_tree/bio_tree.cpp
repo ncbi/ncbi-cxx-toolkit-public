@@ -32,6 +32,7 @@
 /// @file bio_tree.cpp
 /// Things for representing and manipulating bio trees
 
+#include <ncbi_pch.hpp>
 #include <algo/phy_tree/bio_tree.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -175,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/05/19 12:45:18  kuznets
  * + CBioTreeFeatureDictionary::Clear()
  *

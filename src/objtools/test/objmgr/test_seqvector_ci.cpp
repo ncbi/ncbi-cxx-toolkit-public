@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -494,6 +495,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2004/04/12 23:24:27  ucko
 * Avoid directly "dereferencing" a null scope, to fix the MIPSpro build.
 *

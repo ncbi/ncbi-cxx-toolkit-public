@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/impl/seq_id_tree.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.43  2004/02/19 17:25:35  vasilche
 * Use CRef<> to safely hold pointer to CSeq_id_Info.
 * CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.

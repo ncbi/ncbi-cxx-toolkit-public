@@ -31,6 +31,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <fstream>
@@ -268,6 +269,9 @@ void CMassArray::Init(const CMSRequest::TFixed &Mods,
 
 /*
   $Log$
+  Revision 1.6  2004/05/21 21:41:03  gorelenk
+  Added PCH ncbi_pch.hpp
+
   Revision 1.5  2004/03/30 19:36:59  lewisg
   multiple mod code
 

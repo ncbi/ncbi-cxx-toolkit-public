@@ -31,6 +31,7 @@
 /// @file blast_setup_cxx.cpp
 /// Auxiliary setup functions for Blast objects interface.
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/metareg.hpp>
@@ -929,6 +930,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2004/05/21 21:41:02  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.67  2004/04/19 19:52:02  papadopo
 * correct off-by-one error in sequence size computation
 *

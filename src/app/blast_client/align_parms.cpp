@@ -31,6 +31,7 @@
  */
 
 // Local
+#include <ncbi_pch.hpp>
 #include "align_parms.hpp"
 
 void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
@@ -60,6 +61,9 @@ void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/05/21 21:41:38  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/09/26 16:53:49  bealer
  * - Add blast_client project for netblast protocol, initial code commit.
  *

@@ -29,6 +29,7 @@
 *   Bio sequence data generator to test Object Manager
 */
 
+#include <ncbi_pch.hpp>
 #include "test_helper.hpp"
 #include <objects/seqloc/Seq_point.hpp>
 #include <serial/object.hpp>
@@ -1402,6 +1403,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.3  2004/02/09 19:18:56  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

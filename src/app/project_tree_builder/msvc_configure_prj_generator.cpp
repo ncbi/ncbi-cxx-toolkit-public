@@ -26,6 +26,7 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
@@ -206,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2004/04/13 17:07:16  gorelenk
  * Changed implementation of class CMsvcConfigureProjectGenerator constructor.
  *

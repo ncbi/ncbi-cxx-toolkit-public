@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <util/tables/raw_scoremat.h>
@@ -200,6 +201,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/05/21 21:41:04  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.10  2004/02/19 02:21:20  thiessen
 * fix struct_dp paths
 *

@@ -31,6 +31,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include "search_opts.hpp"
 
 USING_NCBI_SCOPE;
@@ -218,6 +219,9 @@ void COptionWalker::ReadOpt(const ncbi::CArgs & args,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:38  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/12/29 19:48:30  bealer
  * - Change code to accomodate first half of new ASN changes.
  *

@@ -34,6 +34,7 @@
 static char const rcsid[] = 
     "$Id$";
 
+#include <ncbi_pch.hpp>
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/readers/fasta.hpp>

@@ -29,6 +29,7 @@
 *   Sequence utilities requiring CScope
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/iterator.hpp>
 
 #include <objmgr/object_manager.hpp>
@@ -4109,6 +4110,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.80  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.79  2004/05/06 17:39:43  shomrat
 * Fixes to SeqLocMerge
 *

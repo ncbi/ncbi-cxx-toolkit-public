@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.121  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.120  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

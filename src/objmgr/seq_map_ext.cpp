@@ -32,6 +32,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_map_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -321,6 +322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.11  2004/02/19 17:19:35  vasilche
 * Removed 'unused argument' warning.
 *

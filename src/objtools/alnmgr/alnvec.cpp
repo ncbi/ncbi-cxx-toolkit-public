@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 
 // Objects includes
@@ -833,6 +834,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2004/05/21 21:42:51  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.58  2004/03/30 16:39:09  todorov
 * -redundant statement
 *

@@ -29,6 +29,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
@@ -590,6 +591,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.11  2004/03/17 16:04:26  vasilche
 * IRIX CC doesn't allow explicit call of implicit operator=()
 *

@@ -27,6 +27,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/seqref_pubseq.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
@@ -528,6 +529,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.52  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.51  2004/02/18 14:01:26  dicuccio
 * Added new satellites for TRACE_ASSM, TR_ASSM_CH.  Added support for overloading
 * the ID1 named service

@@ -29,6 +29,7 @@
  *   New IDFETCH network client (get Seq-Entry by GI)
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -231,6 +232,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2004/05/21 21:41:40  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.12  2004/02/20 20:04:08  vasilche
  * Added possibility to send any request to ID1.
  *

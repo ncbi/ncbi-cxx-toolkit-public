@@ -29,6 +29,7 @@
  *    Performance tests for various iterators
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -378,6 +379,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/12/16 17:51:16  kuznets
  * Code reorganization
  *

@@ -30,6 +30,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -109,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/11/28 13:41:09  dicuccio
  * Fixed to match new API in CDataLoader
  *

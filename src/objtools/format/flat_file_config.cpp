@@ -29,6 +29,7 @@
 *   Configuration class for flat-file generator
 *   
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objtools/format/flat_file_config.hpp>
@@ -130,6 +131,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.1  2004/04/22 16:03:23  shomrat
 * Initial Revision (from context)
 *

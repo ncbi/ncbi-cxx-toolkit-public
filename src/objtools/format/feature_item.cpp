@@ -32,6 +32,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/iterator.hpp>
 
@@ -3001,6 +3002,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.24  2004/05/19 14:47:19  shomrat
 * Check for illegal qualifiers in RELEASE mode
 *

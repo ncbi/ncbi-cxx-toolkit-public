@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -176,6 +177,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/04/05 15:56:15  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

@@ -29,6 +29,7 @@
 *   date item (for EMBL)
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/general/Date.hpp>
@@ -90,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.3  2004/04/22 15:52:22  shomrat
 * Changes in context
 *

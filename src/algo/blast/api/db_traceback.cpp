@@ -31,6 +31,7 @@
  *
  * ===========================================================================
  */
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/db_traceback.hpp>
 #include "blast_setup.hpp"
 #include <algo/blast/core/blast_traceback.h>
@@ -144,6 +145,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/05/14 17:16:32  dondosha
  * BlastReturnStat structure changed to BlastDiagnostics and refactored
  *

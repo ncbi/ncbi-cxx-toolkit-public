@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/resolver.hpp>
 #include <corelib/ncbistr.hpp>
 
@@ -186,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/02/17 16:18:33  gorelenk
  * Added digit as an allowed symbol for makefile defines.
  *

@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_datatool_generated_src.hpp>
 #include <app/project_tree_builder/file_contents.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
@@ -233,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2004/03/10 16:48:53  gorelenk
  * Implemented operators == and < of class CDataToolGeneratedSrc.
  *

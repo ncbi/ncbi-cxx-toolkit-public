@@ -30,6 +30,7 @@
  *   .......
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objmgr/object_manager.hpp>
@@ -2428,6 +2429,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.50  2004/05/10 13:56:47  shomrat
 * Use CSeq_feat_Handle instead of FeatAnnotMap
 *

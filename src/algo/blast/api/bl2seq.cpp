@@ -31,6 +31,7 @@
 /// @file bl2seq.cpp
 /// Implementation of CBl2Seq class.
 
+#include <ncbi_pch.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -319,6 +320,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.52  2004/05/14 17:16:12  dondosha
  * BlastReturnStat structure changed to BlastDiagnostics and refactored
  *

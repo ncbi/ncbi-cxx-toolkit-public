@@ -30,6 +30,7 @@
 *           
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objtools/format/text_ostream.hpp>

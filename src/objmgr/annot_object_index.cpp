@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 #include <objmgr/impl/annot_object.hpp>
 
@@ -101,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.2  2003/11/26 17:55:56  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

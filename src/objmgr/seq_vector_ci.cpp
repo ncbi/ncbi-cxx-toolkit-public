@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
 #include <objects/seq/NCBI8aa.hpp>
@@ -799,6 +800,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.33  2004/05/10 18:27:37  grichenk
 * Check cache in x_ResizeCache()
 *

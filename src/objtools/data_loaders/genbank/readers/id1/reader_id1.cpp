@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 
@@ -900,6 +901,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.81  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.80  2004/03/16 17:49:18  vasilche
  * Use enum constant for TRACE_CHGR entries
  *

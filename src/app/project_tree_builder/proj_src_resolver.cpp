@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_src_resolver.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 
@@ -161,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/02/12 23:15:30  gorelenk
  * Implemented utility projects creation and configure re-build of the app.
  *

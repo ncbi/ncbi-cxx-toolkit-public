@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/table/sqlite_table.hpp>
 #include <sqlite/sqlite.hpp>
 #include <corelib/ncbifile.hpp>
@@ -423,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:42:53  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/10/02 18:21:20  dicuccio
  * Added Unix projects.  Compilation fixes for gcc on Linux
  *

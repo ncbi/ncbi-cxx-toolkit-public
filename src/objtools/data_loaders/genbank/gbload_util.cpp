@@ -29,6 +29,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/gbload_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/impl/handle_range.hpp>
@@ -319,6 +320,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.24  2004/01/13 21:54:49  vasilche
 * Requrrected new version
 *

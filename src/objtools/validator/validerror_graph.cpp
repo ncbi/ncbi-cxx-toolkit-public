@@ -30,6 +30,7 @@
  *   .......
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -104,6 +105,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/04/23 16:27:21  shomrat
 * Stop using CBioseq_Handle deprecated interface
 *

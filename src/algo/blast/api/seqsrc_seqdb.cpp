@@ -30,6 +30,7 @@
 /// @file seqdb_src.cpp
 /// Implementation of the BlastSeqSrc interface for a C++ BLAST databases API
 
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/seqdb_src.hpp>
@@ -464,6 +465,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/05/19 15:26:47  dondosha
  * Removed unused variables
  *

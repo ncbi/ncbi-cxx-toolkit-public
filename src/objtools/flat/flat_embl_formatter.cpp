@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_embl_formatter.hpp>
 #include <objtools/flat/flat_items.hpp>
 
@@ -366,6 +367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.9  2003/10/11 19:29:02  ucko
 * Made the XX paragraph a normal member to avoid trouble when statically
 * linked into multiple plugins.  (The old code wasn't threadsafe anyway.)

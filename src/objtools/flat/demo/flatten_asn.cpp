@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #include <serial/objistr.hpp>
@@ -137,6 +138,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/01/07 17:37:38  vasilche
 * Fixed include path to genbank loader.
 * Moved split_cache application.

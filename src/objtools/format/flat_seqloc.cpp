@@ -33,6 +33,7 @@
 
 
 
+#include <ncbi_pch.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/seqloc__.hpp>
@@ -415,6 +416,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.9  2004/05/20 13:45:43  shomrat
 * fixed formatting of fuzz-range
 *

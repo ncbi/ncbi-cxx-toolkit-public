@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
 #include <app/project_tree_builder/proj_tree_builder.hpp>
@@ -804,6 +805,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.38  2004/05/19 14:23:40  gorelenk
  * Implemented CProjBulderApp::GetDllFilesDistr .
  *

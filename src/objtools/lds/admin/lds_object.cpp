@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -584,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.19  2004/03/11 18:45:04  kuznets
  * Get correct title for standalone Bioseqs using object manager
  *

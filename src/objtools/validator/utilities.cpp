@@ -29,6 +29,7 @@
  *      Implementation of utility classes and functions.
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 
@@ -1140,6 +1141,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.19  2004/04/23 16:24:53  shomrat
 * Stop using CBioseq_Handle deprecated interface
 *

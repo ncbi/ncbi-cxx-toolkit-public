@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/scope.hpp>
@@ -223,6 +224,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/04/26 14:13:46  grichenk
 * Added constructors from bioseq-set handle and bioseq handle.
 *

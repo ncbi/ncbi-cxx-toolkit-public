@@ -29,6 +29,7 @@
 *   Primary item for flat-file
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/general/Dbtag.hpp>
@@ -217,6 +218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2004/05/06 17:58:28  shomrat
 * Do not add spaces if plus strand
 *

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_formatter.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
@@ -300,6 +301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.8  2003/07/17 20:27:30  vasilche
 * Added check for IsSetStrand().
 *

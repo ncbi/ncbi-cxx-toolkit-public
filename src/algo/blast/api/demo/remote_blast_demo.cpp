@@ -30,6 +30,7 @@
 /// @file demo/remote_blast_demo.cpp
 /// Example program for remote_blast C++ interface
 
+#include <ncbi_pch.hpp>
 #include "queue_poll.hpp"
 #include "align_parms.hpp"
 #include "search_opts.hpp"
@@ -230,6 +231,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/04/20 15:42:23  bealer
  * - Change name of remote_blast.cpp to avoid doxygen and gdb issues.
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objtools/data_loaders/trace/trace_chgr.hpp>
 #include <objects/id1/id1_client.hpp>
@@ -108,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:42:53  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/03/25 14:20:25  dicuccio
  * Initial revision
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <algo/align/nw_formatter.hpp>
 #include <algo/align/nw_aligner.hpp>
 #include <algo/align/align_exception.hpp>
@@ -480,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/05/18 21:43:40  kapustin
  * Code cleanup
  *

@@ -31,6 +31,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/sequence/signal_seq.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -244,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/03/16 19:40:09  vasilche
  * Made static const arrays accessible from template on ForteCC
  *

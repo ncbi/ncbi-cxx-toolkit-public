@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/table/user_feature_dload.hpp>
 #include <sqlite/sqlite.hpp>
 
@@ -336,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:42:53  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/11/28 13:41:10  dicuccio
  * Fixed to match new API in CDataLoader
  *

@@ -29,6 +29,7 @@
 *   
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/util/obj_sniff.hpp>
 
 #include <serial/iterator.hpp>
@@ -273,6 +274,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.16  2004/02/04 13:53:03  kuznets
 * Performance optimizations in CObjectsSniffer::ProbeASN1_Text
 *

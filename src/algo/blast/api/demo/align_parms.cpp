@@ -32,6 +32,7 @@
  */
 
 // Local
+#include <ncbi_pch.hpp>
 #include "align_parms.hpp"
 
 void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
@@ -61,6 +62,9 @@ void CAlignParms::AdjustDisplay(CDisplaySeqalign & disp)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/05/19 14:52:02  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

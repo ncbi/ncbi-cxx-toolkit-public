@@ -29,6 +29,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/agp_read.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
@@ -206,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.5  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2004/02/19 22:57:52  ucko
  * Accommodate stricter implementations of CT_POS_TYPE.
  *

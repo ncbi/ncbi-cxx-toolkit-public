@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -263,6 +264,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.2  2004/03/16 15:47:29  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

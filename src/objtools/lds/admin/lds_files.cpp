@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
 
@@ -297,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/04/20 14:52:25  rsmith
  * Name fl -> aFile since fl is a macro (?!) on Macs.
  *

@@ -31,6 +31,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -330,6 +331,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.27  2004/05/17 18:12:29  bealer
  * - Add PSI-Blast support.
  *

@@ -32,6 +32,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/align/nw_spliced_aligner.hpp>
 #include <algo/align/align_exception.hpp>
 
@@ -252,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/05/17 14:50:56  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

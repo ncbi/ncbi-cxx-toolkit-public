@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 #include <objmgr/seq_id_mapper.hpp>
@@ -783,6 +784,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/05/13 19:10:57  grichenk
 * Preserve scores in mapped alignments
 *

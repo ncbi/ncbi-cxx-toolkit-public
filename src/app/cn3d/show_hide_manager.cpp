@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include "show_hide_manager.hpp"
 #include "structure_set.hpp"
 #include "molecule.hpp"
@@ -528,6 +529,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/05/21 21:41:40  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.22  2004/03/15 18:32:03  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/align_ci.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
@@ -141,6 +142,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.25  2004/05/04 18:08:48  grichenk
 * Added CSeq_feat_Handle, CSeq_align_Handle and CSeq_graph_Handle
 *

@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -1831,6 +1832,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.18  2004/05/10 20:22:24  grichenk
 * Fixed more warnings (removed inlines)
 *

@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #include <serial/iterator.hpp>
@@ -293,6 +294,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/21 21:41:40  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2004/05/03 18:01:34  ucko
 * Kill unwanted definition of ff as a macro, if present (as on Mac OS 10.3)
 *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/aln_reader.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <util/creaders/alnread.h>
@@ -370,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/03/23 19:35:21  jcherry
  * Set class to pop-set rather than nuc-prot
  *

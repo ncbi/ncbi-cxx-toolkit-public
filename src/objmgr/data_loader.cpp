@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/annot_selector.hpp>
@@ -123,6 +124,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.12  2003/10/07 13:43:23  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

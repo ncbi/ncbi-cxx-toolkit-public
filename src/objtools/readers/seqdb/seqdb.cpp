@@ -33,6 +33,7 @@
 /// methods on objects which represent the various database files,
 /// such as the index file, the header file, and the sequence file.
 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "seqdbimpl.hpp"
 

@@ -29,6 +29,7 @@
 *   flat-file generator -- version item implementation
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -117,6 +118,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/05/06 18:01:29  shomrat
 * Get accession from context
 *

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_items.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -347,6 +348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.8  2004/04/05 15:56:15  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

@@ -1,4 +1,5 @@
 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 
 #include <serial/serial.hpp>

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "gene_finder.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -1384,6 +1385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/11/06 15:02:21  ucko
  * Use iostream interface from ncbistre.hpp for GCC 2.95 compatibility.
  *

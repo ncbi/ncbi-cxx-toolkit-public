@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/split_parser.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
@@ -244,6 +245,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.6  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/03/16 15:47:29  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

@@ -30,6 +30,7 @@
  *   .......
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
@@ -3661,6 +3662,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.76  2004/05/10 13:57:19  shomrat
 * Use CSeq_feat_Handle instead of FeatAnnotMap
 *

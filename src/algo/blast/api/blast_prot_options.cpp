@@ -30,6 +30,7 @@
 /// @file blast_prot_options.cpp
 /// Implements the CBlastProteinOptionsHandle class.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
@@ -150,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.8  2004/05/17 15:32:39  madden
  * Int algorithm_type replaced with enum EBlastPrelimGapExt
  *

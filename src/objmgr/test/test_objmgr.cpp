@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -256,6 +257,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.40  2004/04/01 20:18:12  grichenk
 * Added initialization of m_MultiId member.
 *

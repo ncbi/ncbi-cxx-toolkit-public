@@ -29,6 +29,7 @@
 *   Contig item for flat-file
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seq/Delta_ext.hpp>
@@ -115,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2004/04/22 15:51:43  shomrat
 * Changes in context
 *

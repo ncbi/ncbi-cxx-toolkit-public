@@ -30,6 +30,7 @@
 /// @file rpstblastn_options.cpp
 /// Implements the CRPSTBlastnOptionsHandle class.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/rpstblastn_options.hpp>
 #include "blast_setup.hpp"
 
@@ -67,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * =======================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/04/23 13:51:07  papadopo
  * derived from BlastRPSOptionsHandle
  *

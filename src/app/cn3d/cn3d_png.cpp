@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
@@ -877,6 +878,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/05/21 21:41:39  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.20  2004/03/15 17:30:06  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -989,6 +990,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.19  2004/05/21 21:41:03  gorelenk
+Added PCH ncbi_pch.hpp
+
 Revision 1.18  2004/04/06 19:53:20  lewisg
 allow adjustment of precursor charges that allow multiply charged product ions
 

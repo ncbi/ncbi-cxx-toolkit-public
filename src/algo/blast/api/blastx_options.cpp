@@ -30,6 +30,7 @@
 /// @file blastx_options.cpp
 /// Implements the CBlastxOptionsHandle class.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/blastx_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 
@@ -91,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/03/19 15:13:34  camacho
  * Move to doxygen group AlgoBlast
  *

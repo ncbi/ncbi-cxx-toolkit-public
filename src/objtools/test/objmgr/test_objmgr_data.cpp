@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/21 21:42:55  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2004/04/19 14:53:31  grichenk
 * Added prefetching test (-prefetch argument)
 *
@@ -117,6 +120,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_util.h>

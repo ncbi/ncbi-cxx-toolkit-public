@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/05/21 21:41:38  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.45  2003/03/11 15:30:29  kuznets
 * iterate -> ITERATE
 *
@@ -176,6 +179,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbithr.hpp>

@@ -29,6 +29,7 @@
 *   User interface for generating flat file reports from ASN.1
 *   
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
@@ -255,6 +256,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.9  2004/05/19 14:47:56  shomrat
 * + Reset()
 *

@@ -29,6 +29,7 @@
  *                   
 */
 
+#include <ncbi_pch.hpp>
 #include <algo/align/mm_aligner.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
@@ -418,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.26  2004/04/30 13:01:33  kuznets
  * throw -> THROWS
  *

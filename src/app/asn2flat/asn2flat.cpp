@@ -30,6 +30,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #include <serial/objistr.hpp>
@@ -499,6 +500,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/21 21:41:38  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.8  2004/05/19 14:48:36  shomrat
 * Implemented batch processing
 *

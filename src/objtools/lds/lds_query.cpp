@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 
 #include <bdb/bdb_cursor.hpp>
@@ -401,6 +402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2004/03/11 18:43:41  kuznets
  * + FindSequences
  *

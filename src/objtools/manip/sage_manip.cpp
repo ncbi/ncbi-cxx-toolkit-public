@@ -30,6 +30,7 @@
  *                  a CUser_object
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/manip/sage_manip.hpp>
 #include <objects/general/User_field.hpp>
 
@@ -131,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2003/10/02 17:39:27  dicuccio
  * Initial revision
  *

@@ -31,6 +31,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <serial/enumvalues.hpp>
@@ -643,6 +644,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.14  2004/05/06 17:58:52  shomrat
 * CFlatQual -> CFormatQual
 *

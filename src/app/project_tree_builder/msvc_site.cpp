@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_site.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
@@ -301,6 +302,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.13  2004/05/17 14:41:10  gorelenk
  * Implemented CMsvcSite::GetAppDefaultResource .
  *

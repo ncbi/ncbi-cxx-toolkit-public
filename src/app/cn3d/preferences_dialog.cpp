@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
 
@@ -778,6 +779,9 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/05/21 21:41:39  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.19  2004/02/19 17:05:03  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

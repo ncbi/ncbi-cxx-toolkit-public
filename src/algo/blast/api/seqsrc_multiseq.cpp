@@ -31,6 +31,7 @@
 /// Implementation of the BlastSeqSrc interface for a vector of sequence 
 /// locations.
 
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/multiseq_src.hpp>
@@ -461,6 +462,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.15  2004/04/28 20:09:43  dondosha
  * Commented out unused argument name
  *

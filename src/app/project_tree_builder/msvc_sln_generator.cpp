@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_sln_generator.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
@@ -412,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.17  2004/05/10 19:51:16  gorelenk
  * Changed CMsvcSolutionGenerator::WriteProjectAndSection .
  *

@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 
 #include <app/project_tree_builder/msvc_project_context.hpp>
@@ -837,6 +838,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.28  2004/05/11 15:55:03  gorelenk
  * Changed CMsvcPrjProjectContext::IsConfigEnabled - added test REQUIRES.
  *

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/alnmgr/util/showalign.hpp>
 
 #include <corelib/ncbiexpt.hpp>
@@ -1993,6 +1994,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.36  2004/05/21 21:42:51  gorelenk
+*Added PCH ncbi_pch.hpp
+*
 *Revision 1.35  2004/04/26 16:50:48  ucko
 *Don't try to pass temporary (dummy) CSeq_id objects, even by const
 *reference, as CSeq_id has no public copy constructor.

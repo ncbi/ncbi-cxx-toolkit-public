@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "queue_poll.hpp"
 #include <connect/ncbi_core_cxx.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -192,6 +193,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:38  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2003/09/26 20:01:13  bealer
  * - Fix compile warning.
  *

@@ -31,6 +31,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <serial/iterator.hpp>
@@ -1229,6 +1230,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.17  2004/05/20 17:11:45  ucko
 * Reset strings with erase() rather than clear(), which isn't 100% portable.
 *

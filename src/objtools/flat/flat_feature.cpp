@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_quals.hpp>
 #include <objtools/flat/flat_gbseq_formatter.hpp>
 
@@ -759,6 +760,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.10  2003/10/17 20:58:41  ucko
 * Don't assume coding-region features have their "product" fields set.
 *

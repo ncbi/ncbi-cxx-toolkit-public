@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_graph_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
@@ -90,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:42:13  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/05/04 18:06:07  grichenk
  * Initial revision
  *

@@ -30,6 +30,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/gff_gather.hpp>
@@ -77,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/04/22 16:02:23  shomrat
 * Changes in context
 *

@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include "seqdboidlist.hpp"
 #include "seqdbfile.hpp"

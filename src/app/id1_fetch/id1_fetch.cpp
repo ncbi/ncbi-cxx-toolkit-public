@@ -29,6 +29,7 @@
  *   New IDFETCH network client (get data from "ID1")
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -748,6 +749,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2004/05/21 21:41:40  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.49  2004/04/26 20:46:11  ucko
 * Fix typo that accidentally introduced an implicit temporary CSeq_id.
 *

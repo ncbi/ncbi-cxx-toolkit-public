@@ -29,6 +29,7 @@
 *   Bio sequence data generator to test Object Manager
 */
 
+#include <ncbi_pch.hpp>
 #include "test_helper.hpp"
 #include <corelib/ncbithr.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -1410,6 +1411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.57  2004/04/01 20:18:12  grichenk
 * Added initialization of m_MultiId member.
 *

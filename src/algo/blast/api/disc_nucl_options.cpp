@@ -30,6 +30,7 @@
 /// @file disc_nucl_options.cpp
 /// Implements the CDiscNucleotideOptionsHandle class.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
@@ -106,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/05/17 15:32:39  madden
  * Int algorithm_type replaced with enum EBlastPrelimGapExt
  *

@@ -32,6 +32,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/handle_range.hpp>
 
 #include <algorithm>
@@ -213,6 +214,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.20  2004/02/19 17:17:23  vasilche
 * Removed unused include.
 *

@@ -35,6 +35,7 @@
 /// Implements the CBlastOptions class, which encapsulates options structures
 /// from algo/blast/core
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_options.hpp>
 #include "blast_setup.hpp"
 
@@ -592,6 +593,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2004/05/21 21:41:02  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.43  2004/05/17 18:12:29  bealer
 * - Add PSI-Blast support.
 *

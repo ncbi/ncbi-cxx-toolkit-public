@@ -30,6 +30,7 @@
 *           
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/general/Date.hpp>
@@ -586,6 +587,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/05/08 12:12:33  dicuccio
 * Altered handling of transcript_id - make transcript_id globally unique and
 * trackable across CDS features as well as mRNA features

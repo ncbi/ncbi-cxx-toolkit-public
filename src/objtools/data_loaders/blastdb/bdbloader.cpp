@@ -30,6 +30,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 
@@ -178,6 +179,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.4  2004/05/21 21:42:51  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/09/30 17:22:06  vasilche
  * Fixed for new CDataLoader interface.
  *

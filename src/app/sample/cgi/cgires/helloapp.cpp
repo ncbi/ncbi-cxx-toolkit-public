@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "helloapp.hpp"
 #include "hellores.hpp"
 #include "hellocmd.hpp"
@@ -98,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/05/04 14:44:21  kuznets
  * MOving from the root "hello" to the new location
  *

@@ -36,6 +36,7 @@
 #endif
 
 #if defined(__WXMSW__)
+#include <ncbi_pch.hpp>
 #include <windows.h>
 #include <shellapi.h>   // for ShellExecute, needed to launch browser
 
@@ -320,6 +321,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/21 21:41:39  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/02/19 17:04:52  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

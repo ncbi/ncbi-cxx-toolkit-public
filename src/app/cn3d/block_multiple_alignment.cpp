@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqalign/Dense_diag.hpp>
@@ -1815,6 +1816,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/05/21 21:41:38  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.55  2004/03/15 17:27:02  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -35,6 +35,7 @@
 #pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
 #endif
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/cdd/Cdd_descr.hpp>
@@ -547,6 +548,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/05/21 21:41:38  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/03/15 17:27:02  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
@@ -421,6 +422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/21 21:42:12  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/05/06 17:32:37  grichenk
  * Added CanGetXXXX() methods
  *

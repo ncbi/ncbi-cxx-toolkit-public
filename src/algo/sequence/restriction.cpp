@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <algorithm>
@@ -531,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.10  2003/08/28 15:49:43  jcherry
  * Fixed problem with x_FindRSite; pattern was being searched before
  * it was read.

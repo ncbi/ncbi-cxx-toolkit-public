@@ -1,3 +1,4 @@
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/msvc_prj_generator.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 #include <app/project_tree_builder/msvc_project_context.hpp>
@@ -611,6 +612,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.32  2004/05/10 19:55:08  gorelenk
  * Changed CMsvcProjectGenerator::Generate .
  *

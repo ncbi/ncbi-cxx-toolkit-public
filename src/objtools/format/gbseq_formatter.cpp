@@ -29,6 +29,7 @@
 * File Description:
 *   GBseq formatting        
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 
@@ -600,6 +601,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.3  2004/05/06 17:52:53  shomrat
 * CFlatQual -> CFormatQual
 *

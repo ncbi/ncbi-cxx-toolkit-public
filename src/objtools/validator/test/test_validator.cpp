@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -490,6 +491,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2004/05/21 21:42:56  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.26  2004/02/09 19:18:58  grichenk
  * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
  * and CSeqdesc_CI to avoid using data directly.

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/gff_reader.hpp>
 
 #include <corelib/ncbitime.hpp>
@@ -730,6 +731,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/21 21:42:55  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/05/08 12:13:24  dicuccio
 * Switched away from using CRangeCollection<> for locations, as this lead to
 * inadvertent merging of correctly overlapping exons

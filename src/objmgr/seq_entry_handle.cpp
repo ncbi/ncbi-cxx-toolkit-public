@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
@@ -477,6 +478,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.10  2004/05/11 19:26:19  grichenk
 * Implemented HasParentSeq_entry()
 *

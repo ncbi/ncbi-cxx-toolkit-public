@@ -28,6 +28,7 @@
 * File Description:
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 
@@ -486,6 +487,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.5  2004/04/22 15:55:04  shomrat
 * Changes in context
 *

@@ -31,6 +31,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/phy_tree/phy_tree_serial.hpp>
 
 
@@ -48,6 +49,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/02/10 15:15:59  jcherry
  * Initial version
  *

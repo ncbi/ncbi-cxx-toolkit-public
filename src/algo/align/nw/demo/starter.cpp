@@ -30,6 +30,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <algo/align/nw_aligner.hpp>
 #include "nwa.hpp"
 
@@ -44,6 +45,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/06/17 14:51:04  dicuccio
  * Fixed after algo/ rearragnement
  *

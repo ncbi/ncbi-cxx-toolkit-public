@@ -29,6 +29,7 @@
 *   Sequence utilities
 */
 
+#include <ncbi_pch.hpp>
 #include <serial/object.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -642,6 +643,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.12  2003/08/21 12:09:08  dicuccio
 * Added processing of CDS in case the CDS is just an open reading frame
 *

@@ -37,6 +37,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -318,6 +319,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.106  2004/04/13 15:59:35  grichenk
 * Added CScope::GetBioseqHandle() with id resolving flag.
 *

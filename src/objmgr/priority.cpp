@@ -31,6 +31,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/priority.hpp>
 #include <objmgr/impl/scope_info.hpp>
 
@@ -252,6 +253,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2003/09/30 20:40:32  vasilche
 * Fixed CScope::AddScope() -  create new CDataSource_ScopeInfo objects.
 *

@@ -29,6 +29,7 @@
 *
 * ===========================================================================*/
 
+#include <ncbi_pch.hpp>
 #include <algo/sequence/regexp_loc.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -83,6 +84,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.2  2004/05/21 21:41:04  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.1  2003/07/16 19:18:53  clausen
 * Initial version
 *

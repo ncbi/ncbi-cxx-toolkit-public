@@ -32,6 +32,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -266,6 +267,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.12  2004/05/21 21:41:03  gorelenk
+  Added PCH ncbi_pch.hpp
+
   Revision 1.11  2004/03/30 19:36:59  lewisg
   multiple mod code
 

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_formatter.hpp>
 
 #include <serial/iterator.hpp>
@@ -645,6 +646,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.10  2003/12/02 19:22:17  ucko
 * Properly detect unpublished references, and give them a pseudo-journal
 * of Unpublished.

@@ -29,6 +29,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -826,6 +827,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.63  2004/05/10 18:26:37  grichenk
 * Fixed 'not used' warnings
 *

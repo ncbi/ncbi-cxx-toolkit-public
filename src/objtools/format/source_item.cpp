@@ -29,6 +29,7 @@
 *   flat-file generator -- source item implementation
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqblock/GB_block.hpp>
@@ -297,6 +298,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/04/22 15:53:09  shomrat
 * Changes in context
 *

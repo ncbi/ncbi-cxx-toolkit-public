@@ -37,6 +37,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -1385,6 +1386,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.14  2004/04/16 13:31:47  grichenk
 * Added data pre-fetching functions.
 *

@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/split/blob_splitter_impl.hpp>
 
 #include <serial/objostr.hpp>
@@ -290,6 +291,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/03/24 18:29:19  vasilche
 * Fixed performance problem in verbose output.
 *

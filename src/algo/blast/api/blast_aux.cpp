@@ -31,6 +31,7 @@
 /// Implements C++ wrapper classes for structures in algo/blast/core as well as
 /// some auxiliary functions to convert CSeq_loc to/from BlastMask structures.
 
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -406,6 +407,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.39  2004/05/17 15:33:14  madden
  * Int algorithm_type replaced with enum EBlastPrelimGapExt
  *

@@ -30,6 +30,7 @@
 /// @file blast_rps_options.cpp
 /// Implements the CBlastRPSOptionsHandle class.
 
+#include <ncbi_pch.hpp>
 #include <algo/blast/api/blast_rps_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include "blast_setup.hpp"
@@ -142,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/05/17 15:32:39  madden
  * Int algorithm_type replaced with enum EBlastPrelimGapExt
  *

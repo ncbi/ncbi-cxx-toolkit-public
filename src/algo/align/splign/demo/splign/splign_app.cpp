@@ -29,6 +29,7 @@
  *                   
 */
 
+#include <ncbi_pch.hpp>
 #include "splign_app.hpp"
 #include "splign_app_exception.hpp"
 
@@ -593,6 +594,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.23  2004/05/18 21:43:40  kapustin
  * Code cleanup
  *

@@ -31,6 +31,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "mm_aligner_threads.hpp"
 
 
@@ -115,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/10/14 18:41:31  kapustin
  * Dismiss static keyword as a local-to-compilation-unit flag. Use longer name since unnamed namespace are not everywhere supported
  *

@@ -26,6 +26,7 @@
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
 
+#include <ncbi_pch.hpp>
 #include <stdio.h>
 
 
@@ -1653,8 +1654,8 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2004/02/12 02:30:35  ucko
- * More portability fixes for newick parser.
+ * Revision 1.4  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
  *
  * Revision 1.2  2004/02/11 22:18:16  ucko
  * erase() strings rather than clear()ing them for older compilers' sake.

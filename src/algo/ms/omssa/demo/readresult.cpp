@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -144,6 +145,9 @@ int CReadresult::Run()
 
 /*
 $Log$
+Revision 1.3  2004/05/21 21:41:03  gorelenk
+Added PCH ncbi_pch.hpp
+
 Revision 1.2  2003/10/29 22:22:50  lewisg
 added comments
 

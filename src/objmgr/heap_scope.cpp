@@ -37,6 +37,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/scope.hpp>
@@ -89,6 +90,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.2  2004/04/12 16:49:16  vasilche
 * Allow null scope in CSeqMap_CI and CSeqVector.
 *

@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
@@ -545,6 +546,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/05/21 21:42:55  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.11  2004/02/19 22:57:52  ucko
 * Accommodate stricter implementations of CT_POS_TYPE.
 *

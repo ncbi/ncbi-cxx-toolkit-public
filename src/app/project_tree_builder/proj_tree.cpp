@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_tree.hpp>
 #include <app/project_tree_builder/proj_tree_builder.hpp>
 #include <app/project_tree_builder/proj_utils.hpp>
@@ -480,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/05/10 19:50:05  gorelenk
  * Changed CProjectItemsTree::CreateFrom .
  *

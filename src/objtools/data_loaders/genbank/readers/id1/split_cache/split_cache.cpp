@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "split_cache.hpp"
 
 #include <corelib/ncbistd.hpp>
@@ -740,6 +741,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.18  2004/04/28 17:06:26  vasilche
 * Load split blobs from new ICache.
 *

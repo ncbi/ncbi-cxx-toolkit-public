@@ -35,6 +35,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/impl/scope_impl.hpp>
@@ -436,6 +437,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.32  2004/03/24 18:30:29  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.

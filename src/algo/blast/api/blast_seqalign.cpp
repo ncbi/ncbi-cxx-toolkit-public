@@ -32,6 +32,7 @@
 /// Utility function to convert internal BLAST result structures into
 /// CSeq_align_set objects.
 
+#include <ncbi_pch.hpp>
 #include "blast_seqalign.hpp"
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -1408,6 +1409,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2004/05/21 21:41:02  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.41  2004/05/19 15:26:04  dondosha
 * Edit script operations changed from macros to an enum
 *

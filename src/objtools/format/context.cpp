@@ -31,6 +31,7 @@
 *
 * ===========================================================================
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -505,6 +506,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/05/21 21:42:54  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.17  2004/05/08 12:11:39  dicuccio
 * Use CSeq_id::GetLabel() instead of GetSeqIdString()
 *

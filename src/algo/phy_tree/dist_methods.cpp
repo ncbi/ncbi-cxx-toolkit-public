@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
 
 #include <math.h>
@@ -355,6 +356,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/03/17 17:57:48  jcherry
  * Made fastme set the node ids of leaf nodes
  *

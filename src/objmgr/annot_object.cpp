@@ -29,6 +29,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
@@ -429,6 +430,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.37  2004/04/01 20:33:58  grichenk
 * One more m_MultiId initialization
 *

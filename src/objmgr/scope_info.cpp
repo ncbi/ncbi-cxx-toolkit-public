@@ -31,6 +31,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/scope_info.hpp>
 
 #include <objmgr/impl/bioseq_info.hpp>
@@ -188,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2003/11/17 16:03:13  grichenk
 * Throw exception in CBioseq_Handle if the parent scope has been reset
 *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/lds/admin/lds_admin.hpp>
 #include <objtools/lds/admin/lds_files.hpp>
 #include <objtools/lds/admin/lds_object.hpp>
@@ -137,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.9  2004/04/20 14:52:25  rsmith
  * Name fl -> aFile since fl is a macro (?!) on Macs.
  *

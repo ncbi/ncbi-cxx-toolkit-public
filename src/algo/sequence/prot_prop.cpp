@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/sequence/prot_prop.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -132,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2004/05/14 01:24:15  jcherry
  * Pass vector by reference
  *

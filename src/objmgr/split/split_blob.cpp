@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/split/split_blob.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
@@ -109,6 +110,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/21 21:42:14  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/01/22 20:10:42  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon.hpp>
 #include "gene_finder.hpp"
 
@@ -355,6 +356,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.3  2003/11/06 00:51:05  ucko
  * Adjust usage of min for platforms with 64-bit size_t.
  *

@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <algo/sequence/orf.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Na_strand.hpp>
@@ -265,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2003/10/15 20:25:05  dicuccio
  * Fixed access of seq-loc - don't assume interval...
  *

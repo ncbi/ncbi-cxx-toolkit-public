@@ -22,6 +22,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <iostream>
 #include <serial/serial.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -67,6 +68,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.4  2004/05/21 21:42:52  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.3  2003/12/30 22:14:45  vasilche
 * Updated genbank loader and readers plugins.
 *

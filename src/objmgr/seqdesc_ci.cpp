@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objmgr/impl/annot_object.hpp>
@@ -245,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.12  2004/04/28 14:14:39  grichenk
 * Added filtering by several seqdesc types.
 *

@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/seqref.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -83,6 +84,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.2  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.1  2004/01/13 16:55:55  vasilche
  * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
  * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

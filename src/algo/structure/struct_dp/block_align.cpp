@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbi_limits.h>
@@ -909,6 +910,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/05/21 21:41:04  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.19  2004/03/15 18:54:57  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algorithm>

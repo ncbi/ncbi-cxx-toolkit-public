@@ -34,6 +34,7 @@
 static char const rcsid[] = 
     "$Id$";
 
+#include <ncbi_pch.hpp>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -549,6 +550,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/05/19 14:52:02  camacho
  * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
  * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i

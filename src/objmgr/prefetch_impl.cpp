@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/prefetch_impl.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -255,6 +256,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/21 21:42:12  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.4  2004/05/07 13:47:35  grichenk
 * Removed single-id constructors.
 * Added non-locking prefetch mode.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/21 21:42:56  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.2  2004/02/17 21:13:20  vasilche
 * Added flags to skip some tests.
 *
@@ -105,6 +108,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/test_mt.hpp>
 

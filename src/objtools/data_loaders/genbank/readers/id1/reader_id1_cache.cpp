@@ -27,6 +27,7 @@
  *  File Description: Cached extension of data reader from ID1
  *
  */
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_cache.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/split_parser.hpp>
@@ -1396,6 +1397,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.25  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.24  2004/04/28 17:06:25  vasilche
  * Load split blobs from new ICache.
  *

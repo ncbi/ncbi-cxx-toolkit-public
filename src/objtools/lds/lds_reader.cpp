@@ -28,6 +28,7 @@
  * File Description:  LDS reader implementation.
  *
  */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <util/format_guess.hpp>
@@ -162,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/21 21:42:55  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2003/07/14 19:47:01  kuznets
  * + new annotation reader
  *

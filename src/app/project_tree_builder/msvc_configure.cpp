@@ -27,6 +27,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <app/project_tree_builder/msvc_configure.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
 
@@ -183,6 +184,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/21 21:41:41  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/05/07 15:22:17  gorelenk
  * Changed implementation of CMsvcConfigure::WriteNcbiconfMsvcSite .
  *

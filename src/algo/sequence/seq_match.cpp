@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <algo/sequence/seq_match.hpp>
 
@@ -131,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.4  2003/08/18 19:23:33  jcherry
  * Moved seq_match to algo/sequence
  *

@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
@@ -191,6 +192,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/21 21:42:13  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.8  2004/03/26 19:42:04  vasilche
 * Fixed premature deletion of SNP annot info object.
 * Removed obsolete references to chunk info.

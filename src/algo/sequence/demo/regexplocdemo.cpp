@@ -30,6 +30,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <algo/sequence/regexp_loc.hpp>
 
 #include <corelib/ncbiapp.hpp>
@@ -151,6 +152,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/21 21:41:04  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.2  2004/01/07 17:39:28  vasilche
  * Fixed include path to genbank loader.
  *

@@ -30,6 +30,7 @@
  */
 
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/lds/lds_util.hpp>
@@ -298,6 +299,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.14  2004/03/09 17:17:20  kuznets
  * Merge object attributes with objects
  *

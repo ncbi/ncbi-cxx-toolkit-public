@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <objtools/flat/flat_formatter.hpp>
 
 #include <corelib/ncbiutil.hpp>
@@ -124,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/21 21:42:53  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2003/11/11 01:31:31  ucko
 * Fix for MSVC now that CBioseq_Handle::GetSeqId returns a CConstRef.
 *

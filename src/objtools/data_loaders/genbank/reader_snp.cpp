@@ -28,6 +28,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 #include <objtools/data_loaders/genbank/reader.hpp>
@@ -404,6 +405,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.12  2004/05/21 21:42:52  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2004/03/16 16:04:20  vasilche
  * Removed conversion warning
  *

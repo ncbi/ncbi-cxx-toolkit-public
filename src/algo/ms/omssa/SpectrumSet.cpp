@@ -35,6 +35,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistre.hpp>
@@ -175,6 +176,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/05/21 21:41:03  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.6  2004/03/30 19:36:59  lewisg
  * multiple mod code
  *
