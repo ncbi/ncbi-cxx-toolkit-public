@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/01/25 23:33:04  vakatov
+ * s_LOCK_Handler() -- to match handler proto, return boolean value (not VOID!)
+ *
  * Revision 6.7  2002/01/15 21:28:49  lavr
  * +MT_LOCK_cxx2c()
  *
@@ -122,7 +125,7 @@ static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
 {
     try {
         EDiagSev level;
-        switch (call_data->level) {
+        switch ( call_data->level ) {
         case eLOG_Trace:
             level = eDiag_Trace;
             break;
@@ -144,13 +147,16 @@ static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
             level = eDiag_Fatal;
             break;
         }
+
         CNcbiDiag diag(level, eDPF_Default);
-        if (call_data->file)
+        if (call_data->file) {
             diag.SetFile(call_data->file);
-        if (call_data->line)
+        }
+        if (call_data->line) {
             diag.SetLine(call_data->line);
+        }
         diag << call_data->message;
-        if (call_data->raw_data && call_data->raw_size) {
+        if (call_data->raw_data  &&  call_data->raw_size) {
             diag <<
                 "\n#################### [BEGIN] Raw Data (" <<
                 call_data->raw_size <<
@@ -174,11 +180,11 @@ extern LOG LOG_cxx2c(void)
 }
 
 
-static void s_LOCK_Handler(void* user_data, EMT_Lock how)
+static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how)
 {
     try {
         CRWLock* lock = static_cast<CRWLock*> (user_data);
-        switch (how) {
+        switch ( how ) {
         case eMT_Lock:
             lock->WriteLock();
             break;
@@ -191,10 +197,12 @@ static void s_LOCK_Handler(void* user_data, EMT_Lock how)
         default:
             THROW1_TRACE(runtime_error,
                          "s_LOCK_Handler() used with op " + (unsigned int)how);
-            break;
         }
+        return 1/*true*/;
+
     }
     STD_CATCH_ALL("s_LOCK_Handler() failed");
+    return 0/*false*/;
 }
 
 
