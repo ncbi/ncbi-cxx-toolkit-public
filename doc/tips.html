@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Introduction to some of C++ and STL features and techniques</title>
+  </head>
+
+  <body>
+	 <h1>Introduction to some of C++ and STL features and techniques</h1>
+
+	 <br></br>
+	 <h2>C++ Implementation Guide</h2>
+
+	 <h3>Use of STL(Standard Template Library)</h3>
+	 <p>
+	 Use the <a href="#ref_STL">Standard Template Library(STL)</a>, which
+	 is part of ANSI/ISO C++.
+	 It'll  make programming easier, as well as make it easier for others to
+	 learn and maintain your code. </p>
+
+	 <h3>Use of C++ exceptions</h3>
+	 <p>
+	 Exceptions are useful.
+	 However, since exceptions unwind the stack, you must be careful to destroy
+	 all resources (such as memory on the heap and file handles) in every
+	 intermediate step in the stack unwinding.
+	 That means you must always catch exceptions, even those you don't handle,
+	 and delete everything you are using locally.
+	 In most cases it's very convenient and safe to use the
+	 <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-utilities.html#lib.auto.ptr">auto_ptr</a>
+	 template to ensure the freeing of temporary allocated dynamic
+	 memory for the case of exception. </p>
+
+	 <h3>Design</h3>
+	 <p>
+	 Use abstract base classes.
+	 This increases the reusability of code.
+	 Whether a base class should be abstract or not depends on the
+	 potential for reuse.</p>
+	 <p>
+	 Don't expose complex member variables, rather expose member functions that 
+	 manipulate the member variables.
+	 This increases reusability and flexibility. 
+	 For example, this frees you from having the string in-process -- it
+	 could be in another process or even on another machine. </p>
+	 <p>
+	 Don't use multiple inheritance (i.e. <i>class A: public B, public C {}</i>)
+	 unless creating interface instead of implementation.
+	 Otherwise, you'll run into all sorts of problems with conflicting members,
+	 especially if someone else owns a base class.
+	 The best time to use multiple inheritance is when a subclass multiply
+	 inherits from abstract base classes with only pure virtual functions. </p>
+	 <p>
+	 Some people prefer the
+	 <a href="http://www.pureatria.com/uml/umlwp.html">Unified Modelling Language</a>
+	 to describe the relationships between objects.</p>
+
+	 <br></br>
+
+	 <h2>C++ Tips and Tricks</h2>
+
+	 <p>
+	 Writing something like <i>map&lt;int, int, less&lt;int&gt;&gt;</i> will give you 
+	 weird errors; instead write <i>map&lt;int, int, less&lt;int&gt; &gt;</i>.
+	 This is because <i>&gt;&gt;</i> is reserved word. </p>
+	 <p>
+	 Do use pass-by-reference.
+	 It'll cut down on the number of pointer related errors. </p>
+	 <p>
+	 Use <i>const</i> (or <i>enum</i>) instead of <i>#define</i> when you can.
+	 This is much easier to debug. </p>
+
+	 <p>
+	 Header files should contain what they contain in C along with classes,
+	 const's, and in-line functions (in-line functions are functions defined
+	 within the braces of the class or declared <i>inline</i>.
+	 In-line functions must be in header files as compilers need to see
+	 the source in order to inline properly. </p>
+	 <p>
+	 See the
+	 <a href="http://www.cerfnet.com/~mpcline/C++-FAQs-Lite/">C++ FAQ</a> </p>
+
+	 <br></br>
+
+	 <a name="ref_STL">
+	 <h2> Standard template library (STL) </h2>
+
+	 <p>
+	 The STL is a library included in ANSI/ISO C++ for stream, string, and
+	 container(linked lists, etc.) manipulation. For SunPro 4.2 we've working
+	 on installing a version from the
+	 <a href="http://corp.metabyte.com/~fbp/stl/index.html">
+		STL adaptation effort</a>
+	 plus a string library from
+	 <a href="http://corp.metabyte.com/~fbp/stl/components.html">
+		Moderna Software</a>.
+	 This library doesn't include a stream library -- with SunPro we are limited
+	 to the older iostream library sun provides, which doesn't have classes 
+	 like sstream.
+	 <p>
+	 In the future, we expect to use the version of STL included in the next
+	 version of SunPro. Microsoft Visual C++ has had STL since version 5.0.
+	 We haven't detected any non-configuration incompatibilities yet. 
+	 <p>
+
+	 <h3>STL tips and tricks</h3>
+	 <p>
+	 end() does not return an iterator to the last element of a container,
+	 rather it returns a iterator just beyond the last element of the container.
+	 This is so you can do constructs like
+	 <i>for (iterator = container.begin();  iterator != container.end();  iterator++)</i>.
+	 If you want to access the end element, use <i>--container.end()</i>.
+	 <p>
+	 Iterator misuse causes the same problems as pointer misuse.
+	 There are
+	 <a href="http://corp.metabyte.com/~fbp/stl/effort.html#extensions">
+		versions of the STL</a>
+	 that flag incorrect use of iterators, including STL adaptation effort.
+	 <p>
+	 Iterators are guarantee to remain valid after insertion and deletion
+	 from list containers, but not vector containers.
+	 Check to see if the container you are using preserves iterators. 
+	 <p>
+	 If you create a container of pointers to objects, the objects are not
+	 destroyed when the container is destroyed, only the pointers are.
+	 Other that maintaining the objects yourself, there are several strategies
+	 detailed in the <a href="books.html">literature</a>.
+	 <p>
+	 If you pass a container to a function, don't add a local object to the
+	 container.
+	 The local variable will be destroyed when you leave the function.
+	 <p>
+	 When declaring a map, use the form
+	 <i>map&lt;string, string, less&lt;string&gt; &gt;</i>.
+	 The third argument isn't necessary on most compilers, but SunPro 4.2 is 
+	 a bit old and needs it because it doesn't do default values for templates.
+	 <p>
+	 SunPro 4.2 uses and older (and less functional) version of
+	 <i>&lt;iostream&gt;</i> called <i>&lt;iostream.h&gt;</i>
+	 <p>
+	 SunPro 4.2 doesn't understand <i>&quot;using namespace std;&quot;</i>, and it
+	 was decided to prohibite the explicit use <i>&quot;using namespace XXX;&quot;</i>
+	 in NCBI C++ code. Thus, if you need to use STL just use special
+	 preprocessor macro <i>"NCBI_USING_STL;"</i>(it is defined in
+	 <i>"&lt;ncbistd.hpp&gt;"</i>, see <a href="framewrk.cpp">example</a>).
+	 <p>
+	 The <i>basic_string</i> class has a few
+	 <a href="http://www.loria.fr/serveurs/CCH/documentation/docSGI/STL_doc/string_discussion.html">pitfalls</a>.
+
+
+	 <br></br>
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
+		  <td align=right>($Revision$)</td></tr>
+	 </table>
+  </body>
+</html>

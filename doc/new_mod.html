@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Starting new C++ module(source and headers)</title>
+  </head>
+
+  <body>
+	 <h1>Starting new C++ module(source and headers)</h1>
+
+
+	 Usually, each C++ module consists of 3 files:
+    <ul>
+      <li>
+		<a href="framewrk.hpp">Header file(*.hpp)</a> --
+		API for the external users.  Ideally, this file contains only
+		declarations of things(with good comments) that are to be used
+		by external users. No less, and no more.
+		<li>
+		<a href="framewrk.inl">Inline file(*.inl)</a> --
+		All inline function definitions go here, along with the declarations
+		of internally(or indirectly) used things that are of no interest
+		the external user but still must be included as a part of the
+		header file(see <a href="framewrk.hpp">example </a>).
+      <li>
+		<a href="framewrk.cpp">Source file(*.cpp)</a> --
+		Definitions of non-inline functions and internally used things that
+		should not be included to other modules.
+    </ul>
+
+    Each and every source file must include NCBI disclamer and (preferably)
+    CVS info. Then, the header file must be protected from double-include,
+	 and it must include <i>"*.inl"</i> file, if any.
+	 <p>
+	 The above examples contain a standard startup frameworks so
+	 that one could just cut&amp;paste one of them to start a new C++ file
+	 (just dont forget to replace the <i>"framewrk"</i> stubs by your new module
+	 name).
+	 
+	 <br></br>
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+		  <td align=right>($Revision$)</td></tr>
+	 </table>
+  </body>
+</html>

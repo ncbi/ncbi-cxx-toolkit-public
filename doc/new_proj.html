@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Starting new C++ project</title>
+  </head>
+
+  <body>
+	 <h1>Starting new C++ project</h1>
+
+	 <ul>
+		<li> <a href="#ref_Structure">CVS tree structure for new C++ projects</a>
+		<li> <a href="#ref_Create">Adding CVS directory for a new C++ project</a>
+		<li> <a href="#ref_CVS">Using CVS</a>
+	 </ul>
+
+	 <br></br>
+
+	 <a name="ref_Structure">
+	 <h2>Overview of the C++ CVS tree structure</h2>
+
+	 The standard CVS location for the newcoming NCBI C++/STL projects is
+	 <i><b>$CVSROOT/internal/cpp/</b></i>. It has the following structure:
+
+	 <p><i><b>doc/</b></i>
+	 <p>
+	 <i>"*.html"</i>, <i>"readme.*"</i>, <i>"*.txt"</i>, etc.<p>
+	 Here go the NCBI C++ style and naming conventions, as well as
+	 recommendations and directives of what features of C++ can be
+	 used(and how) -- for everybody writing on C++ in NCBI.
+	 Here may also be a list of referencies to the documentations
+	 in the <i>projects/*/doc/</i> dirs.
+  
+	 <p><i><b>projects/makefile.*</b></i>
+	 <p>
+	 Platform-specific makefiles that recursively build libs &amp; stuff
+	 in the <i>projects/*/</i> dirs using the project-related makefiles
+	 <i>"projects/*/makefile.*"</i>
+
+	 <p><i><b>projects/*/makefile.*</b></i>
+	 <p>
+	 Platform-specific makefiles to build this particular project.
+
+
+	 <p><i><b>projects/*/doc/</b></i>
+	 <p>
+	 Documentation for this particular project.
+
+	 <p><i><b>projects/*/include/</b></i>
+	 <p>
+	 Externally used include files(<i>"*.hpp"</i> and <i>"*.inl"</i>)
+	 that describe the API provided by the project(included with
+	 <i>#include &lt;*.*&gt;</i>).
+
+	 <p><i><b>projects/*/src/</b></i>
+	 Source files(<i>"*.cpp"</i>) that implement the API;
+	 and, probably, some internally used include files
+	 (<i>"*.hpp" </i> and <i>"*.inl"</i>, included with <i>#include "*.*"</i>)
+
+
+	 <br></br> <br></br>
+	 <a name="ref_Create">
+	 <h2>Adding CVS directory for a new C++ project</h2>
+
+	 <p>
+	 Create your new project directories in the NCBI CVS tree:
+
+	 <pre>
+cd $CVSROOT/internal/cpp/projects
+mkdir MyNewProject
+cd MyNewProject
+mkdir include
+mkdir src
+mkdir doc
+	 </pre>
+
+	 Now you can checkout the new directory to some local directory, e.g.:
+	 <pre>
+cd ~/
+cvs checkout -d MyNewProject internal/cpp/projects/MyNewProject
+cd MyNewProject
+	 </pre>
+
+	 and <a href="new_mod.html">add</a> and edit your C++ files in there.
+
+
+	 <br></br> <br></br>
+	 <a name="#ref_CVS">
+	 <h2>Using CVS</h2>
+
+	 For the detailed info on CVS see
+	 <a href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">
+		CVS online manual</a> or use commands <i>"man cvs"</i> or <i>"cvs -H"</i> on
+	 your workstation.
+
+	 <br></br>
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+		  <td align=right>($Revision$)</td></tr>
+	 </table>
+  </body>
+</html>

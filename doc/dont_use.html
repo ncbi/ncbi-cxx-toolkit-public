@@ -1,0 +1,46 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Prohibited C++ and STL features</title>
+  </head>
+
+  <body>
+	 <h1>Prohibited C++ and STL features</h1>
+
+
+	 <br></br>
+	 <h2>Prohibited STL features</h2>
+
+	 <p>
+	 Don't use hash or the rope classes from some versions of the STL.
+	 These are non-standard additions. If you have questions about what
+	 is/isn't in the library, consult the 
+	 <a href="http://www.cygnus.com/misc/wp/dec96pub/">draft standard</a>.</p>
+
+
+	 <br></br>
+	 <h2>Prohibited C++ features</h2>
+
+	 <p>
+	 Don't use operator overloading, unless you are writing a very basic class, 
+	 like string. It turns out that in large projects, people have different
+    ideas of what an overloaded operator means, leading to all sorts of bugs.
+	 For example, what exactly does <i>"string1 = string2;"</i> mean? </p>
+
+	 <p>
+	 Never use <i>"using namespace XXX;"</i>.
+	 Yet, the definition or namespace is allowed.
+    For more details, see in
+	 <a href="style.html#ref_Prefix">Name prefixing and/or the use of namespaces</a>.
+
+	 <br></br>
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address></td>
+		  <td align=right>($Revision$)</td></tr>
+		<tr>
+		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td></tr>
+	 </table>
+  </body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Naming conventions, Identation and Bracing</title>
+  </head>
+
+  <body>
+	 <h1>Naming conventions, Identation and Bracing</h1>
+
+	 <ul>
+		<li> <a href="#ref_Naming">Naming conventions</a>
+	 <ul>
+		<li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
+		<li> <a href="#ref_NamingTypes">Type Names</a>
+		<li> <a href="#ref_NamingConst">Constants</a>
+		<li> <a href="#ref_NamingVar">Class member variables</a>
+		<li> <a href="#ref_NamingFunc">Functions</a>
+	 </ul>
+	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
+	 <li> <a href="#ref_Indent">Code indentation and bracing</a> </ul>
+
+
+	 <br></br>
+
+	 <a name="ref_Naming">
+    <h2> Naming conventions </h2>
+
+    <table border=1 cellspacing=0>
+
+      <tr><th>Synopsis</th><th>Example</th></tr>
+
+		<a name="ref_NamingCPP">
+      <tr><th>Preprocessor Define/Macro</th></tr>
+      <tr><td><i>MACRO_NAME</i></td><td>#define MY_DEFINE 12345</td></tr>
+      <tr><td><i>macro_arg_name</i></td><td>#define MY_MACRO(x, y) ((x + 1) < (y))</td></tr>
+
+		<a name="ref_NamingTypes">
+      <tr><th>Type Names</th></tr>
+      <tr><td><i><b>C</b>ClassTypeName</i></td><td>class CMyClass { ..... };</td></tr>
+      <tr><td><i><b>S</b>StructTypeName</i></td><td>struct SMyStruct { ..... };</td></tr>
+      <tr><td><i><b>U</b>UnionTypeName</i></td><td>union UMyUnion { ..... };</td></tr>
+      <tr><td><i><b>E</b>EnumTypeName</i></td><td>enum EMyEnum { ..... };</td></tr>
+      <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)(void) { ..... };</td></tr>
+      <tr><td><i><b>T</b>AuxiliaryTypedef</i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
+      <tr><td><i><b>N</b>Namespace</i></td><td>namespace NMyNamespace { ..... }; </td></tr>
+
+		<a name="ref_NamingConst">
+      <tr><th>Constants</th></tr>
+      <tr><td><i><b>k</b>ConstantName</i></td><td>const Int2 kMyConst;</td></tr>
+      <tr><td><i><b>e</b>EnumConstantName</i></td>
+	<td>enum EMyEnum { <br>
+	     &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum1 = 11, <br>
+	      &nbsp;&nbsp;&nbsp;&nbsp; eMyEnum2 = 22, <br>
+		&nbsp;&nbsp;&nbsp;&nbsp; eMyEnum3 = 33 <br>
+		  };</td></tr>
+
+		<a name="ref_NamingVar">
+      <tr><th>Class member variables</th></tr>
+      <tr><td><i><b>m_</b>ClassMemberName</i></td><td>class X { Int1 m_MyClassData; }</td></tr>
+      <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>class X { static Int4 sm_MyClassStaticData; }</td></tr>
+
+		<a name="ref_NamingFunc">
+      <tr><th>Functions</th></tr>
+      <tr><td><i>(starts from capital)</i></td><td>Int2 MyFunc(void);</td></tr>
+
+	 </table>
+
+	 <br></br> <br></br>
+
+	 <a name="ref_Prefix">
+    <h2> Name prefixing and/or the use of namespaces</h2>
+
+	 In addition to the above naming conventions that highlights the
+	 nature and/or the scope of things, one should also consider the use
+	 of prefixes(or namespaces) in order to:
+	 <ul>
+		<li> avoid name conflicts
+		<li> indicate the package which the thing belongs to
+	 </ul>
+	 E.g. it will always be a good idea to name your new base
+	 class(for some package <i>"Foo"</i>) <i>"C<b>Foo</b>Object"</i> rather
+	 than just <i>"CObject"</i>. -- And the same is true for all other
+	 things from this package, so name the constants <i>"k<b>Foo</b>Someconst"</i>,
+	 types <i>"T<b>Foo</b>Sometype"</i>, etc.
+
+	 <p>
+	 It is decided that we do not use the full functionality of C++
+	 namespaces in NCBI, so the use of <i>"using namespace XXX;"</i>" is
+	 prohibited.
+	 <p>
+	 However, the namespace definitions are allowed in the form of
+    <i>"namespace NSomething { .....;  void SomeFunc(int); ... };"</i>(please notice the terminating
+	 <i>';'</i>);  and then one has to use an explicit prefix
+	 for all things belonging to this namespace, e.g. call
+    <i>"NSomething::SomeFunc(5)"</i>. This will work even for compilers
+    that do not support namespaces(there is a hinty redefinition
+    of <i>"namespace"</i> to <i>"struct"</i> in NCBI standard C++ headers,
+	 and that is why the terminating <i>';'</i> after namespace definition
+	 needed). Usually, this approach is good for global functions.
+	 As for classes, etc. it is better to use simple prefixes(as described
+	 above) rather than namespaces.
+
+
+	 <br></br> <br></br>
+
+	 <a name="ref_Indent">
+    <h2> Code indentation and bracing </h2>
+
+    4-spaces indentation only;  tabulation symbol should not be used
+	 for indentation.
+
+<p></p>
+	 In "if", "for", "while", "do", "switch", "case", etc. and
+    type definition statements:
+    <pre>
+if (...) {
+    .....;
+} else if (...) {
+    .....;
+} else {
+    .....;
+}
+
+if|for|do|while (...) {
+    .....;
+}
+
+switch (...) {
+    case ...: {
+        .....;
+        break;
+    }
+}
+
+class|struct|union <[C|S|U]TypeName> {
+    .....;
+};
+    </pre>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
+		  <td align=right>($Revision$)</td></tr>
+	 </table>
+  </body>
+</html>
