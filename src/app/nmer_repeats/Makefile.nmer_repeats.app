@@ -5,7 +5,6 @@
 
 APP = nmer_repeats
 SRC = nmer_repeats
-LIB = xalgoseq xregexp regexp seqset seq seqcode pub medline biblio \
-	general xser xobjread xutil xncbi sequtil
+LIB = xalgoseq xregexp regexp xobjread xobjutil $(OBJMGR_LIBS)
 
-
+REQUIRES = objects dbapi
