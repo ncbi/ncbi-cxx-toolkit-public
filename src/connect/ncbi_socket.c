@@ -31,186 +31,6 @@
  *     [MSWIN]   -DNCBI_OS_MSWIN    wsock32.lib
  *     [MacOS]   -DNCBI_OS_MAC      NCSASOCK -- BSD-style socket emulation lib
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.47  2002/05/13 19:49:22  ucko
- * Indent with spaces rather than tabs.
- *
- * Revision 6.46  2002/05/13 19:08:11  ucko
- * Use get{addr,name}info in favor of gethostby{name,addr}(_r) when available.
- *
- * Revision 6.45  2002/05/06 19:19:43  lavr
- * Remove unnecessary inits of fields returned from s_Select()
- *
- * Revision 6.44  2002/04/26 16:41:16  lavr
- * Redesign of waiting mechanism, and implementation of SOCK_Poll()
- *
- * Revision 6.43  2002/04/22 20:53:16  lavr
- * +SOCK_htons(); Set close timeout only when the socket was not yet shut down
- *
- * Revision 6.42  2002/04/17 20:05:05  lavr
- * Cosmetic changes
- *
- * Revision 6.41  2002/03/22 19:52:19  lavr
- * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.40  2002/02/11 20:36:44  lavr
- * Use "ncbi_config.h"
- *
- * Revision 6.39  2002/01/28 20:29:52  lavr
- * Distinguish between EOF and severe read error
- * Return eIO_Success if waiting for read in a stream with EOF already seen
- *
- * Revision 6.38  2001/12/03 21:35:32  vakatov
- * + SOCK_IsServerSide()
- * SOCK_Reconnect() - check against reconnect of server-side socket to its peer
- *
- * Revision 6.37  2001/11/07 19:00:11  vakatov
- * LSOCK_Accept() -- minor adjustments
- *
- * Revision 6.36  2001/08/31 16:00:58  vakatov
- * [MSWIN] "setsockopt()" -- Start using SO_REUSEADDR on MS-Win.
- * [MAC]   "setsockopt()" -- Do not use it on MAC whatsoever (as it is not
- *         implemented in the M.I.T. socket emulation lib).
- *
- * Revision 6.35  2001/08/29 17:32:56  juran
- * Define POSIX macros missing from Universal Interfaces 3.4
- * in terms of the 'proper' constants.
- * Complain about unsupported platforms at compile-time, not runtime.
- *
- * Revision 6.34  2001/07/11 16:16:39  vakatov
- * Fixed comments for HAVE_GETHOSTBYNAME_R, HAVE_GETHOSTBYADDR_R; other
- * minor (style and messages) fixes
- *
- * Revision 6.33  2001/07/11 00:54:35  vakatov
- * SOCK_gethostbyname() and SOCK_gethostbyaddr() -- now can work with
- * gethostbyname_r() with 6 args and gethostbyaddr_r() with 8 args
- * (in addition to those with 5 and 7 args, repectively).
- * [NCBI_OS_IRIX] s_Select() -- no final ASSERT() if built on IRIX.
- * SOCK_gethostbyaddr() -- added missing CORE_UNLOCK.
- *
- * Revision 6.32  2001/06/20 21:26:18  vakatov
- * As per A.Grichenko/A.Lavrentiev report:
- *   SOCK_Shutdown() -- typo fixed (use "how" rather than "x_how").
- *   SOCK_Shutdown(READ) -- do not call system shutdown if EOF was hit.
- *   Whenever shutdown on both READ and WRITE:  do the WRITE shutdown first.
- *
- * Revision 6.31  2001/06/04 21:03:08  vakatov
- * + HAVE_SOCKLEN_T
- *
- * Revision 6.30  2001/05/31 15:42:10  lavr
- * INADDR_* constants are all and always in host byte order -
- * this was mistakenly forgotten, and now fixed by use of htonl().
- *
- * Revision 6.29  2001/05/23 21:03:35  vakatov
- * s_SelectStallsafe() -- fix for the interpretation of "default" R-on-W mode
- * (by A.Lavrentiev)
- *
- * Revision 6.28  2001/05/21 15:10:32  ivanov
- * Added (with Denis Vakatov) automatic read on write data from the socket
- * (stall protection).
- * Added functions SOCK_SetReadOnWriteAPI(), SOCK_SetReadOnWrite()
- * and internal function s_SelectStallsafe().
- *
- * Revision 6.27  2001/04/25 19:16:01  juran
- * Set non-blocking mode on Mac OS. (from pjc)
- *
- * Revision 6.26  2001/04/24 21:03:42  vakatov
- * s_NCBI_Recv()   -- restore "r_status" to eIO_Success on success.
- * SOCK_Wait(READ) -- return eIO_Success if data pending in the buffer.
- * (w/A.Lavrentiev)
- *
- * Revision 6.25  2001/04/23 22:22:08  vakatov
- * SOCK_Read() -- special treatment for "buf" == NULL
- *
- * Revision 6.24  2001/04/04 14:58:59  vakatov
- * Cleaned up after R6.23 (and get rid of the C++ style comments)
- *
- * Revision 6.23  2001/04/03 20:30:15  juran
- * Changes to work with OT sockets.
- * Not all of pjc's changes are here -- I will test them shortly.
- *
- * Revision 6.22  2001/03/29 21:15:36  lavr
- * More accurate length calculation in 'SOCK_gethostbyaddr'
- *
- * Revision 6.21  2001/03/22 17:43:54  vakatov
- * Typo fixed in the SOCK_AllowSigPipeAPI() proto
- *
- * Revision 6.20  2001/03/22 17:40:36  vakatov
- * + SOCK_AllowSigPipeAPI()
- *
- * Revision 6.19  2001/03/06 23:54:20  lavr
- * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
- * Added:   SOCK_gethostbyaddr
- *
- * Revision 6.18  2001/03/02 20:10:29  lavr
- * Typos fixed
- *
- * Revision 6.17  2001/02/28 00:55:38  lavr
- * SOCK_gethostaddr: InitAPI added, SOCK_gethostname used instead of
- * gethostname
- *
- * Revision 6.16  2001/01/26 23:50:32  vakatov
- * s_NCBI_Recv() -- added check for ENOTCONN to catch EOF (mostly for Mac)
- *
- * Revision 6.15  2001/01/25 17:10:41  lavr
- * The following policy applied: on either read or write,
- * n_read and n_written returned to indicate actual number of passed
- * bytes, regardless of error status. eIO_Success means that the
- * operation went through smoothly, while any other status has to
- * be analyzed. Anyway, the number of passed bytes prior the error
- * occurred is returned in n_read and n_written respectively.
- *
- * Revision 6.14  2001/01/23 23:19:34  lavr
- * Typo fixed in comment
- *
- * Revision 6.13  2000/12/28 21:26:27  lavr
- * Cosmetic fix to get rid of "converting -1 to unsigned" warning
- *
- * Revision 6.12  2000/12/26 21:40:03  lavr
- * SOCK_Read modified to handle properly the case of 0 byte reading
- *
- * Revision 6.11  2000/12/05 23:27:09  lavr
- * Added SOCK_gethostaddr
- *
- * Revision 6.10  2000/12/04 17:34:19  beloslyu
- * the order of include files is important, especially on other Unixes!
- * Look the man on inet_ntoa
- *
- * Revision 6.9  2000/11/22 19:29:16  vakatov
- * SOCK_Create() -- pre-set the sock handle to SOCK_INVALID before connect
- *
- * Revision 6.8  2000/11/15 18:51:21  vakatov
- * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
- * Add more checking and diagnostics.
- * [NOTE: not tested on Mac]
- *
- * Revision 6.7  2000/06/23 19:34:44  vakatov
- * Added means to log binary data
- *
- * Revision 6.6  2000/05/30 23:31:44  vakatov
- * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
- * implementation to work properly with GCC on IRIX64 platforms
- *
- * Revision 6.5  2000/03/24 23:12:08  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.4  2000/02/23 22:34:35  vakatov
- * Can work both "standalone" and as a part of NCBI C++ or C toolkits
- *
- * Revision 6.3  1999/10/19 22:21:48  vakatov
- * Put the call to "gethostbyname()" into a CRITICAL_SECTION
- *
- * Revision 6.2  1999/10/19 16:16:01  vakatov
- * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
- * not #define'd
- *
- * Revision 6.1  1999/10/18 15:36:38  vakatov
- * Initial revision (derived from the former "ncbisock.[ch]")
- *
- * ===========================================================================
  */
 
 #include "ncbi_config.h"
@@ -391,40 +211,40 @@ extern int gethostname(char* machname, long buflen);
 /* Listening socket
  */
 typedef struct LSOCK_tag {
-    TSOCK_Handle    sock;       /* OS-specific socket handle                */
+    TSOCK_Handle    sock;       /* OS-specific socket handle                 */
 } LSOCK_struct;
 
 
 /* Socket
  */
 typedef struct SOCK_tag {
-    TSOCK_Handle    sock;       /* OS-specific socket handle                */
-    struct timeval* r_timeout;  /* zero (if infinite), or points to "r_tv"  */
-    struct timeval  r_tv;       /* finite read timeout value                */
-    STimeout        r_to;       /* finite read timeout value (aux., temp.)  */
-    struct timeval* w_timeout;  /* zero (if infinite), or points to "w_tv"  */
-    struct timeval  w_tv;       /* finite write timeout value               */
-    STimeout        w_to;       /* finite write timeout value (aux., temp.) */
-    struct timeval* c_timeout;  /* zero (if infinite), or points to "c_tv"  */
-    struct timeval  c_tv;       /* finite close timeout value               */
-    STimeout        c_to;       /* finite close timeout value (aux., temp.) */
-    unsigned int    host;       /* peer host (in the network byte order)    */
-    unsigned short  port;       /* peer port (in the network byte order)    */
-    ESwitch         r_on_w;     /* enable/disable automatic read-on-write   */
-    BUF             buf;        /* read buffer */
+    TSOCK_Handle    sock;       /* OS-specific socket handle                 */
+    struct timeval* r_timeout;  /* zero (if infinite), or points to "r_tv"   */
+    struct timeval  r_tv;       /* finite read timeout value                 */
+    STimeout        r_to;       /* finite read timeout value (aux., temp.)   */
+    struct timeval* w_timeout;  /* zero (if infinite), or points to "w_tv"   */
+    struct timeval  w_tv;       /* finite write timeout value                */
+    STimeout        w_to;       /* finite write timeout value (aux., temp.)  */
+    struct timeval* c_timeout;  /* zero (if infinite), or points to "c_tv"   */
+    struct timeval  c_tv;       /* finite close timeout value                */
+    STimeout        c_to;       /* finite close timeout value (aux., temp.)  */
+    unsigned int    host;       /* peer host (in the network byte order)     */
+    unsigned short  port;       /* peer port (in the network byte order)     */
+    ESwitch         r_on_w;     /* enable/disable automatic read-on-write    */
+    BUF             buf;        /* read buffer                               */
 
     /* current status and EOF indicator */
-    int/*bool*/  is_eof;    /* if EOF has been detected (on read) */
-    EIO_Status   r_status;  /* read  status:  eIO_Closed if was shutdown */
-    EIO_Status   w_status;  /* write status:  eIO_Closed if was shutdown */
+    int/*bool*/     is_eof;     /* if EOF has been detected (on read)        */
+    EIO_Status      r_status;   /* read  status:  eIO_Closed if was shutdown */
+    EIO_Status      w_status;   /* write status:  eIO_Closed if was shutdown */
 
     /* for the tracing/statistics */
-    ESwitch      log_data;
-    unsigned int id;        /* the internal ID (see also "s_ID_Counter") */
-    size_t       n_read;
-    size_t       n_written;
+    ESwitch         log_data;
+    unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
+    size_t          n_read;
+    size_t          n_written;
 
-    int/*bool*/  is_server_side; /* was created by LSOCK_Accept() */
+    int/*bool*/     is_server_side; /* was created by LSOCK_Accept()         */
 } SOCK_struct;
 
 
@@ -612,7 +432,7 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
 /* Select on the socket i/o (multiple sockets).
  * If eIO_Write event inquired on a socket, and socket is marked for
  * upread, then returned "revent" may include eIO_Read to indicate that
- * input is available on that socket.
+ * an input is available on that socket.
  * Return eIO_Success when at least one socket found ready
  * (including eIO_Read event on eIO_Write for upreadable sockets)
  * or failing ("revent" contains eIO_Close).
@@ -990,12 +810,22 @@ static EIO_Status s_Connect(SOCK            sock,
             struct timeval tv;
             SSOCK_Poll poll;
             SOCK_struct s;
+#ifdef NCBI_OS_SOLARIS
+            int s_err;
+            int s_len = (int) sizeof(s_err);
+#endif /*NCBI_OS_SOLARIS*/
             memset(&s, 0, sizeof(s)); /* make it temporary and fill partially*/
             s.sock     = x_sock;
             s.r_on_w   = eOff;        /* to prevent upread inquiry           */
             poll.sock  = &s;
             poll.event = eIO_Write;
             status = s_Select(1, &poll, s_to2tv(timeout, &tv));
+#ifdef NCBI_OS_SOLARIS
+            if (status == eIO_Success  &&
+                (getsockopt(x_sock, SOL_SOCKET, SO_ERROR, &s_err, &s_len) != 0
+                 ||  s_err != 0))
+                status = eIO_Unknown;
+#endif /*NCBI_OS_SOLARIS*/
             if (status != eIO_Success  ||  poll.revent != eIO_Write) {
                 if (poll.revent != eIO_Write)
                     status = eIO_Unknown;
@@ -1985,3 +1815,190 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
     return 0;
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.48  2002/06/10 19:52:45  lavr
+ * Additional failsafe check whether the socket actually connected (Solaris)
+ *
+ * Revision 6.47  2002/05/13 19:49:22  ucko
+ * Indent with spaces rather than tabs
+ *
+ * Revision 6.46  2002/05/13 19:08:11  ucko
+ * Use get{addr,name}info in favor of gethostby{name,addr}(_r) when available
+ *
+ * Revision 6.45  2002/05/06 19:19:43  lavr
+ * Remove unnecessary inits of fields returned from s_Select()
+ *
+ * Revision 6.44  2002/04/26 16:41:16  lavr
+ * Redesign of waiting mechanism, and implementation of SOCK_Poll()
+ *
+ * Revision 6.43  2002/04/22 20:53:16  lavr
+ * +SOCK_htons(); Set close timeout only when the socket was not yet shut down
+ *
+ * Revision 6.42  2002/04/17 20:05:05  lavr
+ * Cosmetic changes
+ *
+ * Revision 6.41  2002/03/22 19:52:19  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
+ * Revision 6.40  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
+ * Revision 6.39  2002/01/28 20:29:52  lavr
+ * Distinguish between EOF and severe read error
+ * Return eIO_Success if waiting for read in a stream with EOF already seen
+ *
+ * Revision 6.38  2001/12/03 21:35:32  vakatov
+ * + SOCK_IsServerSide()
+ * SOCK_Reconnect() - check against reconnect of server-side socket to its peer
+ *
+ * Revision 6.37  2001/11/07 19:00:11  vakatov
+ * LSOCK_Accept() -- minor adjustments
+ *
+ * Revision 6.36  2001/08/31 16:00:58  vakatov
+ * [MSWIN] "setsockopt()" -- Start using SO_REUSEADDR on MS-Win.
+ * [MAC]   "setsockopt()" -- Do not use it on MAC whatsoever (as it is not
+ *         implemented in the M.I.T. socket emulation lib).
+ *
+ * Revision 6.35  2001/08/29 17:32:56  juran
+ * Define POSIX macros missing from Universal Interfaces 3.4
+ * in terms of the 'proper' constants.
+ * Complain about unsupported platforms at compile-time, not runtime.
+ *
+ * Revision 6.34  2001/07/11 16:16:39  vakatov
+ * Fixed comments for HAVE_GETHOSTBYNAME_R, HAVE_GETHOSTBYADDR_R; other
+ * minor (style and messages) fixes
+ *
+ * Revision 6.33  2001/07/11 00:54:35  vakatov
+ * SOCK_gethostbyname() and SOCK_gethostbyaddr() -- now can work with
+ * gethostbyname_r() with 6 args and gethostbyaddr_r() with 8 args
+ * (in addition to those with 5 and 7 args, repectively).
+ * [NCBI_OS_IRIX] s_Select() -- no final ASSERT() if built on IRIX.
+ * SOCK_gethostbyaddr() -- added missing CORE_UNLOCK.
+ *
+ * Revision 6.32  2001/06/20 21:26:18  vakatov
+ * As per A.Grichenko/A.Lavrentiev report:
+ *   SOCK_Shutdown() -- typo fixed (use "how" rather than "x_how").
+ *   SOCK_Shutdown(READ) -- do not call system shutdown if EOF was hit.
+ *   Whenever shutdown on both READ and WRITE:  do the WRITE shutdown first.
+ *
+ * Revision 6.31  2001/06/04 21:03:08  vakatov
+ * + HAVE_SOCKLEN_T
+ *
+ * Revision 6.30  2001/05/31 15:42:10  lavr
+ * INADDR_* constants are all and always in host byte order -
+ * this was mistakenly forgotten, and now fixed by use of htonl().
+ *
+ * Revision 6.29  2001/05/23 21:03:35  vakatov
+ * s_SelectStallsafe() -- fix for the interpretation of "default" R-on-W mode
+ * (by A.Lavrentiev)
+ *
+ * Revision 6.28  2001/05/21 15:10:32  ivanov
+ * Added (with Denis Vakatov) automatic read on write data from the socket
+ * (stall protection).
+ * Added functions SOCK_SetReadOnWriteAPI(), SOCK_SetReadOnWrite()
+ * and internal function s_SelectStallsafe().
+ *
+ * Revision 6.27  2001/04/25 19:16:01  juran
+ * Set non-blocking mode on Mac OS. (from pjc)
+ *
+ * Revision 6.26  2001/04/24 21:03:42  vakatov
+ * s_NCBI_Recv()   -- restore "r_status" to eIO_Success on success.
+ * SOCK_Wait(READ) -- return eIO_Success if data pending in the buffer.
+ * (w/A.Lavrentiev)
+ *
+ * Revision 6.25  2001/04/23 22:22:08  vakatov
+ * SOCK_Read() -- special treatment for "buf" == NULL
+ *
+ * Revision 6.24  2001/04/04 14:58:59  vakatov
+ * Cleaned up after R6.23 (and get rid of the C++ style comments)
+ *
+ * Revision 6.23  2001/04/03 20:30:15  juran
+ * Changes to work with OT sockets.
+ * Not all of pjc's changes are here -- I will test them shortly.
+ *
+ * Revision 6.22  2001/03/29 21:15:36  lavr
+ * More accurate length calculation in 'SOCK_gethostbyaddr'
+ *
+ * Revision 6.21  2001/03/22 17:43:54  vakatov
+ * Typo fixed in the SOCK_AllowSigPipeAPI() proto
+ *
+ * Revision 6.20  2001/03/22 17:40:36  vakatov
+ * + SOCK_AllowSigPipeAPI()
+ *
+ * Revision 6.19  2001/03/06 23:54:20  lavr
+ * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
+ * Added:   SOCK_gethostbyaddr
+ *
+ * Revision 6.18  2001/03/02 20:10:29  lavr
+ * Typos fixed
+ *
+ * Revision 6.17  2001/02/28 00:55:38  lavr
+ * SOCK_gethostaddr: InitAPI added, SOCK_gethostname used instead of
+ * gethostname
+ *
+ * Revision 6.16  2001/01/26 23:50:32  vakatov
+ * s_NCBI_Recv() -- added check for ENOTCONN to catch EOF (mostly for Mac)
+ *
+ * Revision 6.15  2001/01/25 17:10:41  lavr
+ * The following policy applied: on either read or write,
+ * n_read and n_written returned to indicate actual number of passed
+ * bytes, regardless of error status. eIO_Success means that the
+ * operation went through smoothly, while any other status has to
+ * be analyzed. Anyway, the number of passed bytes prior the error
+ * occurred is returned in n_read and n_written respectively.
+ *
+ * Revision 6.14  2001/01/23 23:19:34  lavr
+ * Typo fixed in comment
+ *
+ * Revision 6.13  2000/12/28 21:26:27  lavr
+ * Cosmetic fix to get rid of "converting -1 to unsigned" warning
+ *
+ * Revision 6.12  2000/12/26 21:40:03  lavr
+ * SOCK_Read modified to handle properly the case of 0 byte reading
+ *
+ * Revision 6.11  2000/12/05 23:27:09  lavr
+ * Added SOCK_gethostaddr
+ *
+ * Revision 6.10  2000/12/04 17:34:19  beloslyu
+ * the order of include files is important, especially on other Unixes!
+ * Look the man on inet_ntoa
+ *
+ * Revision 6.9  2000/11/22 19:29:16  vakatov
+ * SOCK_Create() -- pre-set the sock handle to SOCK_INVALID before connect
+ *
+ * Revision 6.8  2000/11/15 18:51:21  vakatov
+ * Add SOCK_Shutdown() and SOCK_Status().  Remove SOCK_Eof().
+ * Add more checking and diagnostics.
+ * [NOTE: not tested on Mac]
+ *
+ * Revision 6.7  2000/06/23 19:34:44  vakatov
+ * Added means to log binary data
+ *
+ * Revision 6.6  2000/05/30 23:31:44  vakatov
+ * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
+ * implementation to work properly with GCC on IRIX64 platforms
+ *
+ * Revision 6.5  2000/03/24 23:12:08  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.4  2000/02/23 22:34:35  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
+ * Revision 6.3  1999/10/19 22:21:48  vakatov
+ * Put the call to "gethostbyname()" into a CRITICAL_SECTION
+ *
+ * Revision 6.2  1999/10/19 16:16:01  vakatov
+ * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
+ * not #define'd
+ *
+ * Revision 6.1  1999/10/18 15:36:38  vakatov
+ * Initial revision (derived from the former "ncbisock.[ch]")
+ *
+ * ===========================================================================
+ */
