@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/11/14 21:01:11  gouriano
+* modified AddMember to use CClassTypeInfoBase
+*
 * Revision 1.21  2002/11/05 17:45:10  grichenk
 * Reset object before reading
 *
@@ -165,19 +168,19 @@ void SetModuleName(CEnumeratedTypeValues* info, const char* moduleName)
 }
 
 // add member functions
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        const CTypeRef& r)
 {
     return info->AddMember(name, member, r);
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfo t)
 {
     return AddMember(info, name, member, CTypeRef(t));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter f)
 {
@@ -185,21 +188,21 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 }
 
 // two arguments:
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        const CTypeRef& r)
 {
     return AddMember(info, name, member, CTypeRef(f1, r));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfo t)
 {
     return AddMember(info, name, member, f1, CTypeRef(t));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f)
@@ -208,7 +211,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 }
 
 // three arguments:
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
@@ -216,7 +219,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 {
     return AddMember(info, name, member, f2, CTypeRef(f1, r));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
@@ -224,7 +227,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 {
     return AddMember(info, name, member, f2, f1, CTypeRef(t));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f2,
                        TTypeInfoGetter1 f1,
@@ -234,7 +237,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 }
 
 // four arguments:
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
@@ -243,7 +246,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 {
     return AddMember(info, name, member, f3, f2, CTypeRef(f1, r));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
@@ -252,7 +255,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 {
     return AddMember(info, name, member, f3, f2, f1, CTypeRef(t));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f3,
                        TTypeInfoGetter1 f2,
@@ -263,7 +266,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 }
 
 // five arguments:
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
                        TTypeInfoGetter1 f3,
@@ -273,7 +276,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 {
     return AddMember(info, name, member, f4, f3, f2, CTypeRef(f1, r));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
                        TTypeInfoGetter1 f3,
@@ -283,7 +286,7 @@ CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
 {
     return AddMember(info, name, member, f4, f3, f2, f1, CTypeRef(t));
 }
-CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        const void* member,
                        TTypeInfoGetter1 f4,
                        TTypeInfoGetter1 f3,
