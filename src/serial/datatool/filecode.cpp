@@ -45,6 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
+string CFileCode::m_PchHeader;
 
 CFileCode::CFileCode(const CCodeGenerator* codeGenerator,
                      const string& baseName)
@@ -537,7 +538,12 @@ void CFileCode::GenerateCPP(const string& path, string& fileName) const
 
     WriteCopyright(code, false) <<
         "\n"
-        "// standard includes\n"
+        "// standard includes\n";
+    if (!m_PchHeader.empty()) {
+        code <<
+            "#include <" << m_PchHeader << ">\n";
+    }
+    code <<
         "#include <serial/serialimpl.hpp>\n"
         "\n"
         "// generated includes\n"
@@ -799,7 +805,12 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
 {
     WriteUserCopyright(code, false) <<
         "\n"
-        "// standard includes\n"
+        "// standard includes\n";
+    if (!m_PchHeader.empty()) {
+        code <<
+            "#include <" << m_PchHeader << ">\n";
+    }
+    code <<
         "\n"
         "// generated includes\n"
         "#include " << Include(GetUserHPPName()) << "\n";
@@ -858,6 +869,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.44  2004/05/17 14:50:54  gouriano
+* Added possibility to include precompiled header
+*
 * Revision 1.43  2004/05/03 19:31:03  gouriano
 * Made generation of DOXYGEN-style comments optional
 *

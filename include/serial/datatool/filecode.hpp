@@ -118,6 +118,10 @@ public:
 
     void GetModuleNames( map<string,string>& names) const;
 
+    static void SetPchHeader(const string& name)
+        {
+            m_PchHeader = name;
+        }
 private:
     const CCodeGenerator* m_CodeGenerator;
     bool m_UseQuotedForm;
@@ -134,6 +138,7 @@ private:
     // classes code
     TAddedClasses m_AddedClasses;
     TClasses m_Classes;
+    static string m_PchHeader;
     
     CFileCode(const CFileCode&);
     CFileCode& operator=(const CFileCode&);
@@ -154,6 +159,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2004/05/17 14:51:23  gouriano
+* Added possibility to include precompiled header
+*
 * Revision 1.16  2004/04/29 20:09:44  gouriano
 * Generate DOXYGEN-style comments in C++ headers
 *

@@ -49,6 +49,7 @@
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/generate.hpp>
 #include <serial/datatool/datatool.hpp>
+#include <serial/datatool/filecode.hpp>
 #include <serial/objistrxml.hpp>
 #include <serial/objostrxml.hpp>
 
@@ -192,6 +193,9 @@ void CDataTool::Init(void)
                       CArgDescriptions::eString);
     d->AddFlag("lax_syntax",
                "allow non-standard ASN.1 syntax accepted by asntool");
+    d->AddOptionalKey("pch", "file",
+                      "name of the precompiled header to include in all *.cpp files",
+                      CArgDescriptions::eString);
 
     SetupArgDescriptions(d.release());
 }
@@ -479,6 +483,10 @@ bool CDataTool::GenerateCode(void)
         generator.SetFileNamePrefixSource(eFileName_FromModuleName);
     if ( args["orA"] )
         generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
+
+    // precompiled header
+    if ( const CArgValue& pch = args["pch"] )
+        CFileCode::SetPchHeader(pch.AsString());
     
     // generate code
     generator.GenerateCode();
@@ -558,6 +566,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2004/05/17 14:50:54  gouriano
+* Added possibility to include precompiled header
+*
 * Revision 1.70  2004/05/03 19:31:03  gouriano
 * Made generation of DOXYGEN-style comments optional
 *
