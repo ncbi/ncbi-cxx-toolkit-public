@@ -420,7 +420,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
         if (IsPositiveStrand(for_row)) {
             pos += delta;
         } else {
-            pos += x_GetLen(for_row, seg) - 1 - delta;
+            pos += x_GetLen(for_row, x_GetRawSegFromSeg(seg)) - 1 - delta;
         }
     } else if (dir != eNone) {
         // it is a gap, search in the neighbouring segments
@@ -906,6 +906,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/09/10 22:53:37  todorov
+* Use raw seg in GetSeqPosFromAlnPos
+*
 * Revision 1.37  2003/08/25 16:34:59  todorov
 * exposed GetWidth
 *
