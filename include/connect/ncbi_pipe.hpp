@@ -28,21 +28,13 @@
  *
  * Author:  Vladimir Ivanov
  *
- * File Description:  Portable class for work with process/file pipes
+ * File Description:  Portable class for work with process pipes
  *
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
 #include <stdio.h>
 #include <vector>
-
-#if defined(NCBI_OS_MSWIN)
-#  include <io.h>
-#elif defined(NCBI_OS_UNIX)
-#  include <unistd.h>
-#elif defined(NCBI_OS_MAC)
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -116,12 +108,12 @@ public:
     // if an error occurs or if the end of the pipe file stream is encountered 
     // before reaching count.
     size_t Read(void *buffer, const size_t count, 
-                const EChildIOHandle from_handle = eStdOut);
+                const EChildIOHandle from_handle = eStdOut) const;
 
     // Writes data to the pipe. 
     // Returns the number of bytes actually written, which may be less than 
     // count if an error occurs.
-    size_t Write(const void *buffer, const size_t count);
+    size_t Write(const void *buffer, const size_t count) const;
 
 private:
     // Initialization of the class members
@@ -138,12 +130,49 @@ private:
 };
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CPipeIOStream class
+//
+
+// This is a class, derived from "std::iostream", does both input and 
+// output, using the specified pipe. 
+
+
+// Forward declaration
+class CPipeStreambuf;
+
+// Default buffer size for pipe iostream
+const streamsize kPipeDefaultBufSize = 4096;
+
+
+class CPipeIOStream : public iostream
+{
+public:
+    // 'ctors
+    CPipeIOStream(const CPipe& pipe, 
+                  streamsize buf_size = kPipeDefaultBufSize);
+    virtual ~CPipeIOStream(void);
+
+    // Set handle of the child process for reading by default (eStdOut/eStdErr)
+    void SetReadHandle(const CPipe::EChildIOHandle handle) const;
+
+private:
+    // Stream buffer for pipe I/O 
+    CPipeStreambuf* m_StreamBuf;
+};
+ 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/06/11 19:25:06  ivanov
+ * Added class CPipeIOStream
+ *
  * Revision 1.2  2002/06/10 18:35:13  ivanov
  * Changed argument's type of a running child program from char*[]
  * to vector<string>
