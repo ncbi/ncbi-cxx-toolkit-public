@@ -128,17 +128,17 @@ void CSplignApp::Init()
 
 
 
-bool CSplignApp::x_GetNextQuery(ifstream* ifs, vector<CHit>* hits,
-				string* first_line)
+bool CSplignApp::x_GetNextPair(ifstream* ifs, vector<CHit>* hits)
 {
   hits->clear();
   if(!ifs || !*ifs) {
     return false;
   }
 
+  static string first_line;
   string query;
-  if(first_line->size()) {
-    CHit hit (first_line->c_str());
+  if(first_line.size()) {
+    CHit hit (first_line.c_str());
     query = hit.m_Query;
     hits->push_back(hit);
   }
@@ -157,7 +157,7 @@ bool CSplignApp::x_GetNextQuery(ifstream* ifs, vector<CHit>* hits,
       query = hit.m_Query;
     }
     if(hit.m_Query != query) {
-      *first_line = p;
+      first_line = p;
       break;
     }
     hits->push_back(hit);
@@ -251,8 +251,7 @@ int CSplignApp::Run()
 
   vector<CHit> hits;
   ifstream* ifs_hits = (ifstream*) (hit_stream.get());
-  string first_line;
-  while(x_GetNextQuery(ifs_hits, &hits, &first_line)) {
+  while(x_GetNextPair(ifs_hits, &hits)) {
 
     string query (hits[0].m_Query);
 
@@ -574,6 +573,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/12/15 20:16:58  kapustin
+ * GetNextQuery() ->GetNextPair()
+ *
  * Revision 1.12  2003/12/09 13:21:47  ucko
  * +<memory> for auto_ptr
  *

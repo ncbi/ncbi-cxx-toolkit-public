@@ -54,7 +54,7 @@ protected:
 
   string x_RunOnPair(vector<CHit>* hits);
   void   x_Filter(vector<CHit>* hits);
-  bool   x_GetNextQuery(ifstream* ifs, vector<CHit>* hits, string* first_line);
+  bool   x_GetNextPair(ifstream* ifs, vector<CHit>* hits);
   size_t x_TestPolyA(const vector<char>& mrna);
 
   // sequence loader
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/15 20:16:58  kapustin
+ * GetNextQuery() ->GetNextPair()
+ *
  * Revision 1.3  2003/11/20 14:38:10  kapustin
  * Add -nopolya flag to suppress Poly(A) detection.
  *
