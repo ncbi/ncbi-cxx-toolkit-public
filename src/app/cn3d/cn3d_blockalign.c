@@ -32,7 +32,7 @@ Contents: Code to test block-based alignments for proteins */
 /*
  * $Id$
  *
- * This file is slightly modified from Alejandro's blockalign.c as of 9/21/02
+ * This file is slightly modified from Alejandro's blockalign.c as of 10/1/02
  */
 
 #include <ncbi.h>
@@ -1505,7 +1505,8 @@ Int2  Main(void)
    outfp = NULL;
    blockalign_outputfile = myargs[4].strvalue;
    show_gi = (Boolean) myargs[11].intvalue;
-   believe_query = (Boolean) myargs[11].intvalue;
+   believe_query = (Boolean) myargs[12].intvalue;
+
    if (blockalign_outputfile != NULL)
      {
        if ((outfp = FileOpen(blockalign_outputfile, "w")) == NULL)
@@ -1525,6 +1526,19 @@ Int2  Main(void)
 	 }
      }
 
+   if (myargs[13].strvalue != NULL)
+     {
+       if (believe_query == FALSE)
+	 {
+	   ErrPostEx(SEV_FATAL, 0, 0, "-J option must be TRUE to use this option");
+	   return (1);
+	 }
+       if ((aip = AsnIoOpen (myargs[13].strvalue,"w")) == NULL)
+	 {
+	   ErrPostEx(SEV_FATAL, 0, 0, "blockalignd: Unable to open output file %s\n", myargs[ARG_SEQALIGN_FILE].strvalue);
+	   return 1;
+	 }
+     }
 
    sep = FastaToSeqEntryEx(infp, FALSE, NULL, FALSE);
    if (sep != NULL) {
