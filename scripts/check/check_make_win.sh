@@ -20,8 +20,7 @@
 #                       (default: will try determine path from current work
 #                       directory -- root of build tree ) 
 #    cfgs             - list of tests configurations 
-#                       (default: "Debug DebugMT DebugDll Release ReleaseMT 
-#                       ReleaseDLL")
+#                       (default: "Debug DebugMT Release ReleaseMT")
 #
 #    If any parameter is skipped that will be used default value for it.
 #
