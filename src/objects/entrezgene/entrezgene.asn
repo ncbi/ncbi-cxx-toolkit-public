@@ -1,4 +1,4 @@
---$Revision: 1.6 $ 
+--$Revision: 1.7 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -52,7 +52,10 @@ Entrezgene ::= SEQUENCE {
     locus SEQUENCE OF Gene-commentary OPTIONAL ,   -- where is the gene on a chromosome 
     refgene SEQUENCE OF Gene-commentary OPTIONAL , -- NG for this? 
     homology SEQUENCE OF Gene-commentary OPTIONAL , 
-    comments SEQUENCE OF Gene-commentary OPTIONAL } 
+    comments SEQUENCE OF Gene-commentary OPTIONAL ,
+    xtra-index-terms SEQUENCE OF VisibleString OPTIONAL , -- see note 2
+    xtra-properties SEQUENCE OF Xtra-Terms OPTIONAL ,
+    xtra-iq SEQUENCE OF Xtra-Terms OPTIONAL } 
  
 Gene-track ::= SEQUENCE { 
     geneid INTEGER ,     -- required unique document id 
@@ -120,6 +123,10 @@ Maps::= SEQUENCE {
                     cR (3) ,
                     min (4)}}}
                         
+Xtra-Terms ::= SEQUENCE {  -- see note 2
+    tag VisibleString ,
+    value VisibleString }
+
 END 
 
 --********************************************************************** 
@@ -129,6 +136,14 @@ END
 --  1)  Ignored unless status = secondary.  This is where gene_ids are
 --      placed toward which the interface will direct users.
 --
--- 
+--  2)  These 'xtra' objects are for submitting data for Entrez indexing
+--      that might not fit anywhere in the Entrezgene specification but
+--      are considered by the data source submittor to be important.
+--          xtra-index-terms is any string.
+--          xtra-properties are tag/value pairs of properties/feilds as
+--              defined in the Entrez database (i.e.: UNIGENE/Hs.74561)
+--          xtra-iq are tag/value pairs of Entrez database/UID as defined
+--              in the Entrezgene indexing code (i.e.: NUCLEOTIDE/20270626)
+--
 --********************************************************************** 
 
