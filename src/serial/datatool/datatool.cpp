@@ -120,6 +120,9 @@ void CDataTool::Init(void)
     d->AddOptionalKey("px", "valueFile",
                       "write value in XML format",
                       CArgDescriptions::eOutputFile);
+    d->AddOptionalKey("px_ns", "namespaceName",
+                      "when writing value in XML format, reference schema and use this namespace name",
+                      CArgDescriptions::eString);
     d->AddOptionalKey("e", "valueFile",
                       "write value in ASN.1 binary format",
                       CArgDescriptions::eOutputFile);
@@ -328,6 +331,8 @@ bool CDataTool::ProcessData(void)
     // determine output data file
     ESerialDataFormat outFormat;
     string outFileName;
+    bool use_nsName = false;
+    string nsName;
     
     if ( const CArgValue& p = args["p"] ) {
         outFormat = eSerial_AsnText;
@@ -336,6 +341,10 @@ bool CDataTool::ProcessData(void)
     else if ( const CArgValue& px = args["px"] ) {
         outFormat = eSerial_Xml;
         outFileName = px.AsString();
+        if ( const CArgValue& px_ns = args["px_ns"] ) {
+            use_nsName = true;
+            nsName = px_ns.AsString();
+        }
     }
     else if ( const CArgValue& e = args["e"] ) {
         outFormat = eSerial_AsnBinary;
@@ -360,6 +369,12 @@ bool CDataTool::ProcessData(void)
                 if (stdXmlOut) {
                     os->SetEnforcedStdXml(true);
                 }
+                if (use_nsName) {
+                    os->SetReferenceSchema(true);
+                    if (!nsName.empty()) {
+                        os->SetDefaultSchemaNamespace(nsName);
+                    }
+                }
                 // Set DTD file name (default prefix is added in any case)
                 if( const CArgValue& dn = args["dn"] ) {
                   os->SetDTDFileName(dn.AsString());
@@ -378,6 +393,12 @@ bool CDataTool::ProcessData(void)
                 CObjectOStreamXml *os = dynamic_cast<CObjectOStreamXml*>(out.get());
                 if (stdXmlOut) {
                     os->SetEnforcedStdXml(true);
+                }
+                if (use_nsName) {
+                    os->SetReferenceSchema(true);
+                    if (!nsName.empty()) {
+                        os->SetDefaultSchemaNamespace(nsName);
+                    }
                 }
                 // Set DTD file name (default prefix is added in any case)
                 if( const CArgValue& dn = args["dn"] ) {
@@ -567,6 +588,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2004/07/22 17:50:40  gouriano
+* Added possibility to specify namespace name in XML output
+*
 * Revision 1.72  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
