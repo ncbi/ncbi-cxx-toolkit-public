@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --*********************************************************************
 --
 -- 1990 - J.Ostell
@@ -92,7 +92,7 @@ BEGIN
 EXPORTS SP-block;
 
 IMPORTS Date, Dbtag FROM NCBI-General
-        Seq-id FROM NCBI-SeqLoc;
+        Seq-id FROM NCBI-Seqloc;
 
 SP-block ::= SEQUENCE {         -- SWISSPROT specific descriptions
     class ENUMERATED {
@@ -125,7 +125,7 @@ BEGIN
 
 EXPORTS PIR-block;
 
-IMPORTS Seq-id FROM NCBI-SeqLoc;
+IMPORTS Seq-id FROM NCBI-Seqloc;
 
 PIR-block ::= SEQUENCE {          -- PIR specific descriptions
     had-punct BOOLEAN OPTIONAL ,      -- had punctuation in sequence ?

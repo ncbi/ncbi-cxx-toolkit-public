@@ -1,4 +1,4 @@
---$Revision: 5.3 $
+--$Revision: 5.4 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -16,7 +16,7 @@
 --
 --**********************************************************************
 
-MMDB-features DEFINITIONS ::=
+MMDB-Features DEFINITIONS ::=
 
 BEGIN
 

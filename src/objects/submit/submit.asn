@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -20,7 +20,7 @@ EXPORTS Seq-submit;
 
 IMPORTS Cit-sub, Author FROM NCBI-Biblio
         Date, Object-id FROM NCBI-General
-        Seq-annot FROM NCBI-Seq
+        Seq-annot FROM NCBI-Sequence
         Seq-id FROM NCBI-Seqloc
         Seq-entry FROM NCBI-Seqset;
 

@@ -1,4 +1,4 @@
---$Revision: 5.0 $
+--$Revision: 5.1 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -506,7 +506,9 @@ BEGIN
 
 EXPORTS Txinit;
 
-IMPORTS Gene-ref, Prot-ref, Org-ref FROM NCBI-SeqFeat;
+IMPORTS Gene-ref FROM NCBI-Gene
+        Prot-ref FROM NCBI-Protein
+        Org-ref FROM NCBI-Organism;
 
 Txinit ::= SEQUENCE {
     name VisibleString ,    -- descriptive name of initiation site
