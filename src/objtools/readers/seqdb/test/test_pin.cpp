@@ -7,6 +7,7 @@
 #include <string>
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -68,6 +69,33 @@ int main(int argc, char ** argv)
         
         string s = args.front();
         args.pop_front();
+        
+        if (s == "-seqids") {
+            CSeqDB nr(dbpath, "nr", 'p', true);
+            
+            for(int i = 0; i<100; i++) {
+                list< CRef<CSeq_id> > seqids =
+                    nr.GetSeqIDs(i);
+                
+                cout << "-----seq " << i << "------------" << endl;
+                
+                for(list< CRef<CSeq_id> >::iterator j = seqids.begin();
+                    j != seqids.end();
+                    j++) {
+                    
+                    cout << "SEQID----*:" << endl;
+                    
+                    auto_ptr<CObjectOStream>
+                        outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+                    
+                    CRef<CSeq_id> ident = *j;
+                    
+                    *outpstr << *ident;
+                }
+            }
+            
+            return 0;
+        } else desc += " [-seqids]";
         
         if (s == "-memtest") {
             CSeqDB nt(dbpath, "nt", 'n', false);
