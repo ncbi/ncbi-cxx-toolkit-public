@@ -1,5 +1,11 @@
-#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
+#ifndef CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H
+#define CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H
+
+#ifdef CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
+#  error "Must not include MSVC site headers from different configurations!"
+#endif
 #define CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
+
 
 /* $Id$
 * ===========================================================================
@@ -34,4 +40,4 @@
 *
 */
 
-#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__H
+#endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H
