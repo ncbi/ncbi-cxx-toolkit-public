@@ -276,6 +276,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
       }
    }
    
+   if (scoring_options->is_ooframe) {
+      BLAST_InitDNAPSequence(query_blk, query_info);
+   }
+
    *lookup_segments = NULL;
    BLAST_ComplementMaskLocations(program_number, query_info, *filter_out, 
                                  lookup_segments);
