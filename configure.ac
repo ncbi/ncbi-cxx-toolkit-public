@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.120 2002/08/19 14:56:39 ucko Exp $
+#  $Id: configure.ac,v 1.121 2002/08/19 18:46:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1569,6 +1569,7 @@ AC_LANG_PUSH(C)
 NCBI_CHECK_LIBS(CRYPT, crypt crypt_i, setkey)
 AC_LANG_POP(C)
 NCBI_CHECK_LIBS(DL, dl, dlopen)
+NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
 
 
 ## SYBASE libraries
@@ -2753,6 +2754,7 @@ AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(CRYPT_LIBS)
 AC_SUBST(DL_LIBS)
+AC_SUBST(RT_LIBS)
 AC_SUBST(SYBASE_PATH)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)

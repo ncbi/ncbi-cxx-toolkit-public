@@ -79,6 +79,10 @@
    the standard libraries. */
 #undef HAVE_LIBRPCSVC
 
+/* Define to 1 if RT is available, either in its own library or as part of the
+   standard libraries. */
+#undef HAVE_LIBRT
+
 /* Define to 1 if the SP SGML library is available. */
 #undef HAVE_LIBSP
 
