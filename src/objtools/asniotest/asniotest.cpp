@@ -191,9 +191,24 @@ TEST_FUNC(BasicFileIO)
     CCdd cdd;
     if (!ReadASNFromFile("ADF.bin", &cdd, true, &err))
         ERR_RETURN("failed to load ADF.bin: " << err);
-    if (!WriteASNToFile("t2.txt", seqId, false, &err) ||
-        !WriteASNToFile("t2.bin", seqId, true, &err))
+    if (!WriteASNToFile("t2.txt", cdd, false, &err) ||
+        !WriteASNToFile("t2.bin", cdd, true, &err))
         ERR_RETURN("failed to write CCdd: " << err);
+
+    return OKAY;
+}
+
+TEST_FUNC(AssignAndOutput)
+{
+    CSeq_id s1;
+    if (!ReadASNFromFile("pdbSeqId.txt", &s1, false, &err))
+        ERR_RETURN("failed to load pdbSeqId.txt: " << err);
+
+    CSeq_id s2;
+    s2.Assign(s1);
+    if (!WriteASNToFile("t3.txt", s2, false, &err) ||
+        !WriteASNToFile("t3.bin", s2, true, &err))
+        ERR_RETURN("failed to write Assign()'ed Seq-id: " << err);
 
     return OKAY;
 }
@@ -210,6 +225,7 @@ int ASNIOTestApp::Run(void)
 
         // individual tests
         RUN_TEST(BasicFileIO);
+        RUN_TEST(AssignAndOutput);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -254,6 +270,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/21 15:26:12  thiessen
+* add Assign test
+*
 * Revision 1.1  2003/11/21 14:48:51  thiessen
 * initial checkin
 *
