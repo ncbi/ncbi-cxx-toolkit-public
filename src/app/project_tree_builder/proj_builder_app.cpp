@@ -176,14 +176,24 @@ int CProjBulderApp::Run(void)
                                        GetArgs()["solution"].AsString());
     configure_generator.SaveProject();
 
-
+    // INDEX dummy project
+    CVisualStudioProject index_xmlprj;
+    CreateUtilityProject(" INDEX, see here: ", 
+                         GetRegSettings().m_ConfigInfo, 
+                         &index_xmlprj);
+    string index_prj_path = 
+        CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
+    index_prj_path += MSVC_PROJECT_FILE_EXT;
+    SaveIfNewer(index_prj_path, index_xmlprj);
+    //
     // Solution
     CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         sln_gen.AddProject(p->second);
     }
-    sln_gen.AddMasterProject   (master_prj_gen.GetPath());
-    sln_gen.AddConfigureProject(configure_generator.GetPath());
+    sln_gen.AddUtilityProject(master_prj_gen.GetPath());
+    sln_gen.AddUtilityProject(configure_generator.GetPath());
+    sln_gen.AddUtilityProject(index_prj_path);
     sln_gen.SaveSolution(m_Solution);
 
     //
@@ -445,6 +455,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/02/12 23:15:29  gorelenk
+ * Implemented utility projects creation and configure re-build of the app.
+ *
  * Revision 1.17  2004/02/12 18:46:20  ivanov
  * Removed extra argument from AppMain() call to autoload .ini file
  *

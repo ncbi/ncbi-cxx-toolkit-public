@@ -346,11 +346,103 @@ bool SameRootDirs(const string& dir1, const string& dir2)
 }
 
 
+void CreateUtilityProject(const string&            name, 
+                          const list<SConfigInfo>& configs, 
+                          CVisualStudioProject*    project)
+{
+    
+    {{
+        //Attributes:
+        project->SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
+        project->SetAttlist().SetVersion      (MSVC_PROJECT_VERSION);
+        project->SetAttlist().SetName         (name);
+        project->SetAttlist().SetRootNamespace
+            (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
+        project->SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
+    }}
+    
+    {{
+        //Platforms
+         CRef<CPlatform> platform(new CPlatform(""));
+         platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
+         project->SetPlatforms().SetPlatform().push_back(platform);
+    }}
+
+    ITERATE(list<SConfigInfo>, p , configs) {
+        // Iterate all configurations
+        const string& config = (*p).m_Name;
+        
+        CRef<CConfiguration> conf(new CConfiguration());
+
+#define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
+
+        {{
+            //Configuration
+            SET_ATTRIBUTE(conf, Name,               ConfigName(config));
+
+            SET_ATTRIBUTE(conf, 
+                          OutputDirectory,
+                          "$(SolutionDir)$(ConfigurationName)");
+            
+            SET_ATTRIBUTE(conf, 
+                          IntermediateDirectory,  
+                          "$(ConfigurationName)");
+            
+            SET_ATTRIBUTE(conf, ConfigurationType,  "10");
+            
+            SET_ATTRIBUTE(conf, CharacterSet,       "2");
+            
+            SET_ATTRIBUTE(conf, ManagedExtensions,  "TRUE");
+        }}
+
+        {{
+            //VCCustomBuildTool
+            CRef<CTool> tool(new CTool(""));
+            SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
+            conf->SetTool().push_back(tool);
+        }}
+        {{
+            //VCMIDLTool
+            CRef<CTool> tool(new CTool(""));
+            SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
+            conf->SetTool().push_back(tool);
+        }}
+        {{
+            //VCPostBuildEventTool
+            CRef<CTool> tool(new CTool(""));
+            SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
+            conf->SetTool().push_back(tool);
+        }}
+        {{
+            //VCPreBuildEventTool
+            CRef<CTool> tool(new CTool(""));
+            SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
+            conf->SetTool().push_back(tool);
+        }}
+
+        project->SetConfigurations().SetConfiguration().push_back(conf);
+    }
+
+    {{
+        //References
+        project->SetReferences("");
+    }}
+
+ 
+    {{
+        //Globals
+        project->SetGlobals("");
+    }}
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/12 23:15:29  gorelenk
+ * Implemented utility projects creation and configure re-build of the app.
+ *
  * Revision 1.12  2004/02/12 16:27:57  gorelenk
  * Changed generation of command line for datatool.
  *

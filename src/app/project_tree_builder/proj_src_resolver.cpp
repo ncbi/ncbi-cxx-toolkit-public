@@ -113,8 +113,10 @@ void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
 
     ITERATE(list<string>, p, sources_names) {
         const string& src = *p;
+        bool found = false;
         if ( s_SourceFileExists(m_SourcesBaseDir, src) ) {
             sources_dst->push_back(src);
+            found = true;
         } else {
             ITERATE(list<string>, n, m_MakefileDirs) {
                 const string& dir = *n;
@@ -123,9 +125,13 @@ void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
                         CDirEntry::CreateRelativePath(m_SourcesBaseDir, dir);
                     path = CDirEntry::ConcatPath(path, src);
                     sources_dst->push_back(path);
+                    found = true;
+                    break;
                 }
             }
         }
+        if ( !found ) 
+            sources_dst->push_back(src);
     }
 }
 
@@ -155,6 +161,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/12 23:15:30  gorelenk
+ * Implemented utility projects creation and configure re-build of the app.
+ *
  * Revision 1.2  2004/02/10 18:05:48  gorelenk
  * Implemented recursive resolving for makefiles from different dirs.
  *

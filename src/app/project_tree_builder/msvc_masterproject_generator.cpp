@@ -50,7 +50,7 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
       const string&            project_dir)
     :m_Tree          (tree),
      m_Configs       (configs),
-	 m_Name          ("_HIERARCHICAL_VIEW_"), //_MasterProject
+	 m_Name          ("-HIERARCHICAL-VIEW-"), //_MasterProject
      m_ProjectDir    (project_dir),
      m_ProjectItemExt("._"),
      m_FilesSubdir   ("UtilityProjectsFiles")
@@ -72,94 +72,12 @@ void
 CMsvcMasterProjectGenerator::SaveProject()
 {
     CVisualStudioProject xmlprj;
-    
-    {{
-        //Attributes:
-        xmlprj.SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
-        xmlprj.SetAttlist().SetVersion      (MSVC_PROJECT_VERSION);
-        xmlprj.SetAttlist().SetName         (m_Name);
-        xmlprj.SetAttlist().SetRootNamespace
-            (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
-        xmlprj.SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
-    }}
-    
-    {{
-        //Platforms
-         CRef<CPlatform> platform(new CPlatform(""));
-         platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
-         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
-    }}
-
-    ITERATE(list<SConfigInfo>, p , m_Configs) {
-        // Iterate all configurations
-        const string& config = (*p).m_Name;
-        
-        CRef<CConfiguration> conf(new CConfiguration());
-
-#define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
-
-        {{
-            //Configuration
-            SET_ATTRIBUTE(conf, Name,               ConfigName(config));
-
-            SET_ATTRIBUTE(conf, 
-                          OutputDirectory,
-                          "$(SolutionDir)$(ConfigurationName)");
-            
-            SET_ATTRIBUTE(conf, 
-                          IntermediateDirectory,  
-                          "$(ConfigurationName)");
-            
-            SET_ATTRIBUTE(conf, ConfigurationType,  "10");
-            
-            SET_ATTRIBUTE(conf, CharacterSet,       "2");
-            
-            SET_ATTRIBUTE(conf, ManagedExtensions,  "TRUE");
-        }}
-
-        {{
-            //VCCustomBuildTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCMIDLTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPostBuildEventTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPreBuildEventTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-
-        xmlprj.SetConfigurations().SetConfiguration().push_back(conf);
-    }
-
-    {{
-        //References
-        xmlprj.SetReferences("");
-    }}
+    CreateUtilityProject(m_Name, m_Configs, &xmlprj);
 
     {{
         CProjectTreeFolders folders(m_Tree);
         ProcessTreeFolder(folders.m_RootParent, &xmlprj.SetFiles());
     }}
-
-    {{
-        //Globals
-        xmlprj.SetGlobals("");
-    }}
-
 
 
     SaveIfNewer(GetPath(), xmlprj);
@@ -168,7 +86,7 @@ CMsvcMasterProjectGenerator::SaveProject()
 
 string CMsvcMasterProjectGenerator::GetPath() const
 {
-    string project_path = CDirEntry::ConcatPath(m_ProjectDir, m_Name);
+    string project_path = CDirEntry::ConcatPath(m_ProjectDir, "_HIERARCHICAL_VIEW_");
     project_path += MSVC_PROJECT_FILE_EXT;
     return project_path;
 }
@@ -289,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/12 23:15:29  gorelenk
+ * Implemented utility projects creation and configure re-build of the app.
+ *
  * Revision 1.11  2004/02/12 17:45:12  gorelenk
  * Redesigned projects saving.
  *

@@ -59,34 +59,12 @@ CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 
 
 void 
-CMsvcSolutionGenerator::AddMasterProject(const string& full_path)
+CMsvcSolutionGenerator::AddUtilityProject(const string& full_path)
 {
-    m_MasterProject.first  = full_path;
-    m_MasterProject.second = GenerateSlnGUID();
+    m_UtilityProjects.push_back(TUtilityProject(full_path, 
+                                                GenerateSlnGUID()));
 }
 
-
-void 
-CMsvcSolutionGenerator::AddConfigureProject(const string& full_path)
-{
-    m_ConfigureProject.first  = full_path;
-    m_ConfigureProject.second = GenerateSlnGUID();
-}
-
-
-bool 
-CMsvcSolutionGenerator::IsSetMasterProject(void) const
-{
-    return !m_MasterProject.first.empty() && !m_MasterProject.second.empty();
-}
-
-
-bool 
-CMsvcSolutionGenerator::IsSetConfigureProject(void) const
-{
-    return !m_ConfigureProject.first.empty() && 
-           !m_ConfigureProject.second.empty();
-}
 
 void 
 CMsvcSolutionGenerator::SaveSolution(const string& file_path)
@@ -100,22 +78,26 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
-    //Start sln file
+    // Start sln file
     ofs << MSVC_SOLUTION_HEADER_LINE << endl;
 
+    // Utility projects
+    ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
+        const TUtilityProject& utl_prj = *p;
+        WriteUtilityProject(utl_prj, ofs);
+    }
+
+    // Projects from the projects tree
     ITERATE(TProjects, p, m_Projects) {
         
         WriteProjectAndSection(ofs, p->second);
     }
-    if ( IsSetMasterProject() )
-        WriteUtilityProject(m_MasterProject,    ofs);
-    if ( IsSetConfigureProject() )
-        WriteUtilityProject(m_ConfigureProject, ofs);
 
-    //Start "Global" section
+
+    // Start "Global" section
     ofs << "Global" << endl;
 	
-    //Write all configurations
+    // Write all configurations
     ofs << '\t' << "GlobalSection(SolutionConfiguration) = preSolution" << endl;
     ITERATE(list<SConfigInfo>, p, m_Configs) {
         const string& config = (*p).m_Name;
@@ -127,18 +109,21 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         << "GlobalSection(ProjectConfiguration) = postSolution" 
         << endl;
 
+    // Utility projects
+    ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
+        const TUtilityProject& utl_prj = *p;
+        WriteUtilityProjectConfiguration(utl_prj, ofs);
+    }
+
+    // Projects from tree
     ITERATE(TProjects, p, m_Projects) {
         
         WriteProjectConfigurations(ofs, p->second);
     }
-    if ( IsSetMasterProject() )
-        WriteUtilityProjectConfiguration(m_MasterProject,   ofs);
-    if ( IsSetConfigureProject() )
-        WriteUtilityProjectConfiguration(m_ConfigureProject,ofs);
 
     ofs << '\t' << "EndGlobalSection" << endl;
 
-    //meanless stuff
+    // meanless stuff
     ofs << '\t' 
         << "GlobalSection(ExtensibilityGlobals) = postSolution" << endl;
 	ofs << '\t' << "EndGlobalSection" << endl;
@@ -343,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/02/12 23:15:29  gorelenk
+ * Implemented utility projects creation and configure re-build of the app.
+ *
  * Revision 1.10  2004/02/12 17:45:12  gorelenk
  * Redesigned projects saving.
  *

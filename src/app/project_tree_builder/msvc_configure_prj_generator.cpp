@@ -41,7 +41,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                    const string&            tree_root,
                                    const string&            subtree_to_build,
                                    const string&            solution_to_build)
-:m_Name          ("_CONFIGURE_"),
+:m_Name          ("-CONFIGURE-"),
  m_OutputDir     (output_dir),
  m_Configs       (configs),
  m_ProjectDir    (project_dir),
@@ -53,6 +53,31 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
  m_FilesSubdir   ("UtilityProjectsFiles")
 {
     m_CustomBuildCommand = "@echo on\n";
+    m_CustomBuildCommand += 
+        "devenv /rebuild $(ConfigurationName) /project project_tree_builder ";
+
+    string project_tree_builder_sln_dir = 
+        GetApp().GetProjectTreeInfo().m_Compilers;
+    project_tree_builder_sln_dir = 
+        CDirEntry::ConcatPath(project_tree_builder_sln_dir,
+                              GetApp().GetRegSettings().m_CompilersSubdir);
+    project_tree_builder_sln_dir = 
+        CDirEntry::ConcatPath(project_tree_builder_sln_dir, "app");
+    project_tree_builder_sln_dir = 
+        CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                              "project_tree_builder");
+    project_tree_builder_sln_dir = 
+        CDirEntry::AddTrailingPathSeparator(project_tree_builder_sln_dir);
+    
+    string project_tree_builder_sln_path = 
+        CDirEntry::ConcatPath(project_tree_builder_sln_dir, 
+                              "project_tree_builder.sln");
+    project_tree_builder_sln_path = 
+        CDirEntry::CreateRelativePath(project_dir, 
+                                      project_tree_builder_sln_path);
+    
+    m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+
     m_CustomBuildCommand += "set _THE_PATH=" + m_OutputDir + "$(ConfigurationName)\n";
     m_CustomBuildCommand += "cd $(InputDir)\n";
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
@@ -79,83 +104,8 @@ CMsvcConfigureProjectGenerator::~CMsvcConfigureProjectGenerator(void)
 void CMsvcConfigureProjectGenerator::SaveProject()
 {
     CVisualStudioProject xmlprj;
-    
-    {{
-        //Attributes:
-        xmlprj.SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
-        xmlprj.SetAttlist().SetVersion      (MSVC_PROJECT_VERSION);
-        xmlprj.SetAttlist().SetName         (m_Name);
-        xmlprj.SetAttlist().SetRootNamespace
-            (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
-        xmlprj.SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
-    }}
-    
-    {{
-        //Platforms
-         CRef<CPlatform> platform(new CPlatform(""));
-         platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
-         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
-    }}
+    CreateUtilityProject(m_Name, m_Configs, &xmlprj);
 
-    ITERATE(list<SConfigInfo>, p , m_Configs) {
-        // Iterate all configurations
-        const string& config = (*p).m_Name;
-        
-        CRef<CConfiguration> conf(new CConfiguration());
-
-#define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
-
-        {{
-            //Configuration
-            SET_ATTRIBUTE(conf, Name,               ConfigName(config));
-
-            SET_ATTRIBUTE(conf, 
-                          OutputDirectory,
-                          "$(SolutionDir)$(ConfigurationName)");
-            
-            SET_ATTRIBUTE(conf, 
-                          IntermediateDirectory,  
-                          "$(ConfigurationName)");
-            
-            SET_ATTRIBUTE(conf, ConfigurationType,  "10");
-            
-            SET_ATTRIBUTE(conf, CharacterSet,       "2");
-            
-            SET_ATTRIBUTE(conf, ManagedExtensions,  "TRUE");
-        }}
-
-        {{
-            //VCCustomBuildTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCMIDLTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPostBuildEventTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPreBuildEventTool
-            CRef<CTool> tool(new CTool(""));
-            SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-
-        xmlprj.SetConfigurations().SetConfiguration().push_back(conf);
-    }
-
-    {{
-        //References
-        xmlprj.SetReferences("");
-    }}
 
     {{
         CRef<CFilter> filter(new CFilter());
@@ -184,10 +134,6 @@ void CMsvcConfigureProjectGenerator::SaveProject()
 
     }}
 
-    {{
-        //Globals
-        xmlprj.SetGlobals("");
-    }}
 
 
     SaveIfNewer(GetPath(), xmlprj);
@@ -196,7 +142,7 @@ void CMsvcConfigureProjectGenerator::SaveProject()
 
 string CMsvcConfigureProjectGenerator::GetPath() const
 {
-    string project_path = CDirEntry::ConcatPath(m_ProjectDir, m_Name);
+    string project_path = CDirEntry::ConcatPath(m_ProjectDir, "_CONFIGURE_");
     project_path += MSVC_PROJECT_FILE_EXT;
     return project_path;
 }
@@ -234,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/12 23:15:28  gorelenk
+ * Implemented utility projects creation and configure re-build of the app.
+ *
  * Revision 1.2  2004/02/12 17:43:46  gorelenk
  * Changed command line for project re-configure.
  *
