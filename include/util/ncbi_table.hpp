@@ -36,6 +36,12 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Template class to create a table with custom row-column access
+///
+/// Table provides two access modes one is using custom types 
+/// associated with rows and columns and another using rows and columns
+/// integer indexes.
+///
 template<class TValue, class TRow, class TColumn>
 class CNcbiTable
 {
@@ -48,46 +54,70 @@ public:
 
 public:
     CNcbiTable();
+    /// Construction.
+    /// Creates row x cols table without any row-column association
     CNcbiTable(unsigned int rows, unsigned int cols);
+
+    CNcbiTable(const CNcbiTable& table);
+    CNcbiTable& operator=(const CNcbiTable& table)
+    {
+        x_Free();
+        x_Copy();
+    }
+
     ~CNcbiTable();
 
+
+    /// Number of rows
     unsigned int Rows() const;
+    /// Number of column
     unsigned int Cols() const;
 
+    /// Add column to the table, column recieves name "col"
     void AddColumn(const TColumn& col);
+    /// Add row to the table, column recieves name "row"
     void AddRow(const TRow& row);
 
+    /// Set up row name
     void AssociateRow(const TRow& row, unsigned int row_idx);
+    /// Set up column name
     void AssociateColumn(const TColumn& col, unsigned int col_idx);
 
+    /// Change table size
     void Resize(unsigned int rows, 
                 unsigned int cols);
 
+    /// Change table size, new table elements initialized with value
     void Resize(unsigned int rows, 
                 unsigned int cols,
                 const TValue& v);
 
     /// Get table row
     const TRowType& GetRow(const TRow& row) const;
-    /// Get table row
+    /// Get table row by row index
     const TRowType& GetRowVector(unsigned int row_idx) const;
+    /// Get table row by row index
     TRowType& GetRowVector(unsigned int row_idx);
 
-
+    /// Get table element
     const TValueType& GetElement(const TRow& row, const TColumn& col) const;
+    /// Get table element
     TValueType& GetElement(const TRow& row, const TColumn& col);
 
-
+    /// Get table element
     const TValue& operator()(const TRow& row, const TColumn& col) const
     {
         return GetElement(row, col);
     }
+    /// Get table element
     TValue& operator()(const TRow& row, const TColumn& col)
     {
         return GetElement(row, col);
     }
 
+    /// Get column index
     unsigned int ColumnIdx(const TColumn& col) const;
+    /// Get row index
     unsigned int RowIdx(const TRow& row) const;
 
     /// Access table element by index
@@ -95,6 +125,10 @@ public:
 
     /// Access table element by index
     TValueType& GetCell(unsigned int row_idx, unsigned int col_idx);
+protected:
+
+    void x_Free();
+    void x_Copy(const CNcbiTable& table);
 
 protected:
     typedef vector<TRowType*>   TRowCollection;
@@ -135,13 +169,47 @@ CNcbiTable<TValue, TRow, TColumn>::CNcbiTable(unsigned int rows,
 }
 
 template<class TValue, class TRow, class TColumn>
+CNcbiTable<TValue, TRow, TColumn>::CNcbiTable(
+                 const CNcbiTable<TValue, TRow, TColumn>& table)
+{
+    x_Copy(table);
+}
+
+template<class TValue, class TRow, class TColumn>
+void CNcbiTable<TValue, TRow, TColumn>::x_Copy(const CNcbiTable& table)
+{
+    m_Rows = table.Rows();
+    m_Cols = table.Cols();
+
+    m_Table.resize(0);
+    m_Table.reserve(m_Rows);
+    for (unsigned int i = 0; i < m_Rows; ++i) {
+        const TRowType& src_row = table.GetRowVector(i);
+        TRowType* r = new TRowType(src_row);
+        m_Table.push_back(r);  
+    }
+
+    m_RowMap = table.m_RowMap;
+    m_ColumnMap = table.m_ColumnMap;
+}
+
+
+template<class TValue, class TRow, class TColumn>
 CNcbiTable<TValue, TRow, TColumn>::~CNcbiTable()
+{
+    x_Free();
+}
+
+template<class TValue, class TRow, class TColumn>
+void CNcbiTable<TValue, TRow, TColumn>::x_Free()
 {
     NON_CONST_ITERATE(typename TRowCollection, it, m_Table) {
         TRowType* r = *it;
         delete r;
     }
+    m_Table.resize(0);
 }
+
 
 template<class TValue, class TRow, class TColumn>
 unsigned int CNcbiTable<TValue, TRow, TColumn>::Rows() const
@@ -359,6 +427,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/09/02 13:33:42  kuznets
+ * Added comments, copy-ctor, assignment op
+ *
  * Revision 1.2  2004/09/01 13:04:03  kuznets
  * Use typename to make GCC happy
  *
