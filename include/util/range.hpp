@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/09/05 14:50:28  grichenk
+* Fixed comparison of "whole" ranges
+*
 * Revision 1.3  2001/01/05 20:08:53  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -156,14 +159,20 @@ public:
     // check if intersected when ranges may be empty
     bool IntersectingWithPossiblyEmpty(TThisType range) const
         {
-            if ( GetFrom() <= range.GetFrom() )
-                return GetTo() >= range.GetFrom() && !range.Empty();
-            else
-                return GetFrom() <= range.GetTo() && !Empty();
+            if ( Empty()  ||  range.Empty() )
+                return false;
+            return IntersectingWith(range);
         }
     // check if intersected when ranges are not empty
     bool IntersectingWith(TThisType range) const
         {
+            if ( IsWholeFrom() ) {
+                return IsWholeTo()  ||  range.IsWholeFrom()  ||
+                    range.GetFrom() <= GetTo();
+            }
+            if ( IsWholeTo() ) {
+                return range.IsWholeTo()  ||  range.GetTo() >= GetFrom();
+            }
             if ( GetFrom() <= range.GetFrom() )
                 return GetTo() >= range.GetFrom();
             else
