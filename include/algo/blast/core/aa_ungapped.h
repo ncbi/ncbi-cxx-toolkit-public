@@ -170,7 +170,6 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 /** Perform a one-hit extension. Beginning at the specified hit,
  * extend to the left, then extend to the right. 
  *
- * @param diag diagonal table [in/out]
  * @param matrix the substitution matrix [in]
  * @param subject subject sequence [in]
  * @param query query sequence [in]

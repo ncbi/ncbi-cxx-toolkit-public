@@ -77,7 +77,6 @@ SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc,
 /** Go through all mask locations in one sequence, 
  * combine any that overlap. Deallocate the memory for the locations that 
  * were on the list, produce a new (merged) list of locations. 
- * @param program_number Type of BLAST program [in]
  * @param mask_loc The list of masks to be merged [in] 
  * @param mask_loc_out The new (merged) list of masks. [out]
 */

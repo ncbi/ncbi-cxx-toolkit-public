@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.12  2003/06/06 17:51:28  dondosha
+* Comments fixes for doxygen
+*
 * Revision 1.11  2003/06/05 18:33:39  dondosha
 * Compiler warnings fixes
 *
@@ -228,18 +231,16 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
 
 /** "Main" setup routine for BLAST. Calculates all information for BLAST search
  * that is dependent on the ASN.1 structures.
- * @param query_slp Linked list of all query SeqLocs. [in]
- * @param program blastn, blastp, blastx, etc. [in]
+ * @param program_number Type of BLAST program (0=blastn, ...). [in]
  * @param qsup_options options for query setup. [in]
  * @param scoring_options options for scoring. [in]
  * @param lookup_options options for lookup table. [in]
  * @param hit_options options for saving hits. [in]
- * @param frame frame info. (blastx/tblastx) [in]
- * @param query_blk_ptr BLAST_SequenceBlkPtr for the query. [out]
+ * @param query_blk BLAST_SequenceBlkPtr for the query. [in]
+ * @param query_info The query information block [in]
  * @param lookup_segments Start/stop locations for non-masked query 
  *                        segments [out]
- * @param query_info The query information block [out]
- * @param filter_slp_out filtering seqloc. [out]
+ * @param filter_slp_out Filtering/masking locations. [out]
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
@@ -249,8 +250,8 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
         const LookupTableOptionsPtr lookup_options,	
         const BlastHitSavingOptionsPtr hit_options,
         BLAST_SequenceBlkPtr query_blk,
-        BlastSeqLocPtr *lookup_segments,
-        BlastQueryInfoPtr query_info, BlastMaskPtr *filter_slp_out,
+        BlastQueryInfoPtr query_info, BlastSeqLocPtr *lookup_segments,
+        BlastMaskPtr *filter_slp_out,
         BLAST_ScoreBlkPtr *sbpp, Blast_MessagePtr *blast_message);
 
 /** Given a list of query SeqLoc's, create the sequence block and the query
