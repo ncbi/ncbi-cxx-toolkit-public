@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.97 2002/06/21 14:09:36 ucko Exp $
+#  $Id: configure.ac,v 1.98 2002/06/21 17:12:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -215,6 +215,7 @@ for x_arg in "$@" ; do
       | --cache-file=* | --build=* | --host=* \
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
+      | --with-ftds=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -2171,10 +2172,10 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
 
-# The IPC stuff doesn't build on Cygwin.
-if test "x$host_os" = "xcygwin32"; then
-    with_local_lbsm="no"
-fi
+# The IPC stuff doesn't build on Cygwin or Darwin.
+case "$host_os" in
+  cygwin32 | darwin ) with_local_lbsm="no" ;;
+esac
 
 for fff in $local_lbsm ; do
    if test ! -f ${srcdir}/src/connect/${fff}.c ; then

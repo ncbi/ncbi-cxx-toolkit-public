@@ -1634,6 +1634,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | --cache-file=* | --build=* | --host=* \
       | [A-Z]*=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
+      | --with-ftds=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -10053,10 +10054,10 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
 
-# The IPC stuff doesn't build on Cygwin.
-if test "x$host_os" = "xcygwin32"; then
-    with_local_lbsm="no"
-fi
+# The IPC stuff doesn't build on Cygwin or Darwin.
+case "$host_os" in
+  cygwin32 | darwin ) with_local_lbsm="no" ;;
+esac
 
 for fff in $local_lbsm ; do
    if test ! -f ${srcdir}/src/connect/${fff}.c ; then
