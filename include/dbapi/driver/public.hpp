@@ -4,30 +4,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Vladimir Soussov
- *   
+ *
  * File Description:  Data Server public interfaces
  *
  */
@@ -68,7 +68,7 @@ public:
                                     unsigned int  batch_size = 1);
     // "Send-data" command
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
-                                         size_t          data_size, 
+                                         size_t          data_size,
                                          bool            log_it = true);
 
     // Shortcut to send text and image to the server without using the
@@ -107,7 +107,7 @@ public:
     // Destructor
     virtual ~CDB_Connection();
 
-private:
+protected: // was 'private:'
     I_Connection* m_Connect;
 
     // The constructor should be called by "I_DriverContext" only!
@@ -115,7 +115,7 @@ private:
     CDB_Connection(I_Connection* c);
 
     // Prohibit default- and copy- constructors, and assignment
-    CDB_Connection();
+    CDB_Connection() {m_Connect=NULL;}
     CDB_Connection& operator= (const CDB_Connection&);
     CDB_Connection(const CDB_Connection&);
 };
@@ -161,7 +161,7 @@ public:
     // Return number of successfully read bytes.
     // Set "*is_null" to TRUE if the item is <NULL>.
     // Throw an exception on any error.
-    virtual size_t ReadItem(void* buffer, size_t buffer_size, 
+    virtual size_t ReadItem(void* buffer, size_t buffer_size,
                             bool* is_null = 0);
 
     // Get a descriptor for text/image column (for SendData).
@@ -176,7 +176,7 @@ public:
     // Destructor
     virtual ~CDB_Result();
 
-private:
+protected: // was 'private:'
     I_Result* m_Res;
 
     // The constructor should be called by "I_***Cmd" only!
@@ -186,7 +186,7 @@ private:
     // Prohibit default- and copy- constructors, and assignment
     CDB_Result& operator= (const CDB_Result&);
     CDB_Result(const CDB_Result&);
-    CDB_Result();
+    CDB_Result() {m_Res=NULL;}
 };
 
 
@@ -226,7 +226,7 @@ public:
     // Destructor
     virtual ~CDB_LangCmd();
 
-private:
+protected: // was 'private:'
     I_LangCmd* m_Cmd;
 
     // The constructor should be called by "I_Connection" only!
@@ -236,7 +236,7 @@ private:
     // Prohibit default- and copy- constructors, and assignment
     CDB_LangCmd& operator= (const CDB_LangCmd&);
     CDB_LangCmd(const CDB_LangCmd&);
-    CDB_LangCmd();
+    CDB_LangCmd() {m_Cmd = NULL; }
 };
 
 
@@ -282,8 +282,8 @@ public:
 
     // Destructor
     virtual ~CDB_RPCCmd();
-    
-private:
+
+protected: // was 'private:'
     I_RPCCmd* m_Cmd;
 
     // The constructor should be called by "I_Connection" only!
@@ -293,7 +293,7 @@ private:
     // Prohibit default- and copy- constructors, and assignment
     CDB_RPCCmd& operator= (const CDB_RPCCmd&);
     CDB_RPCCmd(const CDB_RPCCmd&);
-    CDB_RPCCmd();
+    CDB_RPCCmd() { m_Cmd = NULL; }
 };
 
 
@@ -311,7 +311,7 @@ public:
     // into the table
     virtual bool CompleteBatch();
 
-    // Cancel the BCP command 
+    // Cancel the BCP command
     virtual bool Cancel();
 
     // Complete the BCP and store all rows transferred in last batch into
@@ -413,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/02/13 22:11:16  sapojnik
+ * several methods changed from private to protected to allow derived classes (needed for rdblib)
+ *
  * Revision 1.3  2001/11/06 17:58:03  lavr
  * Formatted uniformly as the rest of the library
  *
