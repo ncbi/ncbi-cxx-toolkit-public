@@ -84,21 +84,21 @@ public:
     typedef EType           TType;
     typedef ERefTrackStatus TRefTrackStatus;
 
+    // constructors
     CCommentItem(CBioseqContext& ctx);
     CCommentItem(const string& comment, CBioseqContext& ctx,
         const CSerialObject* obj = 0);
     CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx);
-    //CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx);
+    CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx);
 
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
-    bool IsFirst(void) const { return m_First; }
-    const string& GetComment(void) const { return m_Comment; }
+    bool IsFirst(void) const;
+    const string& GetComment(void) const;
 
     void AddPeriod(void);
 
-    static const string kNsAreGaps;
-
+    static const string& GetNsAreGapsStr(void);
     static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
     static string GetStringForRefTrack(const CUser_object& uo);
@@ -131,6 +131,7 @@ private:
     bool    m_First;
 };
 
+
 // --- CGenomeAnnotComment
 
 class CGenomeAnnotComment : public CCommentItem
@@ -144,6 +145,7 @@ private:
     // data
     string m_GenomeBuildNumber;
 };
+
 
 // --- CHistComment
 
@@ -165,6 +167,7 @@ private:
     CConstRef<CSeq_hist>    m_Hist;
 };
 
+
 // --- CGsdbComment
 
 class CGsdbComment : public CCommentItem
@@ -178,6 +181,7 @@ private:
     // data
     CConstRef<CDbtag> m_Dbtag;
 };
+
 
 // --- CLocalIdComment
 
@@ -198,11 +202,16 @@ private:
 //  inline methods
 
 inline
-void CCommentItem::AddPeriod(void)
+bool CCommentItem::IsFirst(void) const
 {
-    if ( !NStr::EndsWith(m_Comment, ".") ) {
-        m_Comment += ".";
-    }
+    return m_First;
+}
+
+
+inline
+const string& CCommentItem::GetComment(void) const
+{
+    return m_Comment;
 }
 
 
@@ -214,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/08/19 16:19:16  shomrat
+* Added constructor from CSeq_feat
+*
 * Revision 1.6  2004/05/06 17:40:31  shomrat
 * + CLocalIdComment class
 *
