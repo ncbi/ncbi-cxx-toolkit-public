@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = xobjread
+SRC = fasta readfeat
