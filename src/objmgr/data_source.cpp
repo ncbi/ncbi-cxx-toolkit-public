@@ -766,7 +766,7 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
 
 void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                                       set<TTSE_Lock>& tse_set,
-                                      CScope& scope)
+                                      CScope::TRequestHistory& history)
 {
     TTSELockSet tmp_tse_set;
     TTSELockSet non_history;
@@ -790,8 +790,8 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
             CRef<CTSE_Info> unique_from_history;
             CRef<CTSE_Info> unique_live;
             ITERATE (TTSELockSet, with_seq, selected_with_seq) {
-                if ( scope.m_History.find(*with_seq) !=
-                     scope.m_History.end() ) {
+                if ( history.find(*with_seq) !=
+                     history.end() ) {
                     if ( unique_from_history ) {
                         THROW1_TRACE(runtime_error,
                                      "CDataSource::GetTSESetWithAnnots() -- "
@@ -828,8 +828,8 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
             }
             ITERATE(TTSELockSet, tse, selected_with_ref) {
                 bool in_history =
-                    scope.m_History.find(*tse) !=
-                    scope.m_History.end();
+                    history.find(*tse) !=
+                    history.end();
                 if ( !(*tse)->m_Dead  || in_history ) {
                     // Select only TSEs present in the history and live TSEs
                     // Different sets for in-history and non-history TSEs for
@@ -852,7 +852,7 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
         bool conflict = false;
         // Check each seq-id from the current TSE
         ITERATE (CTSE_Info::TBioseqMap, seq_it, (*tse_it)->m_BioseqMap) {
-            ITERATE (CScope::TRequestHistory, hist_it, scope.m_History) {
+            ITERATE (CScope::TRequestHistory, hist_it, history) {
                 conflict =
                     (*hist_it)->m_BioseqMap.find(seq_it->first) !=
                     (*hist_it)->m_BioseqMap.end();
@@ -1297,10 +1297,9 @@ bool CDataSource::IsSynonym(const CSeq_id_Handle& h1,
 }
 
 
-bool CDataSource::GetTSEHandles(CScope& scope,
-                                const CSeq_entry& entry,
-                                set<CBioseq_Handle>& handles,
-                                CSeq_inst::EMol filter)
+TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
+                                     set<CBioseq_Info*>& bioseqs,
+                                     CSeq_inst::EMol filter)
 {
     // Find TSE_Info
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
@@ -1308,10 +1307,10 @@ bool CDataSource::GetTSEHandles(CScope& scope,
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end()  ||
         found->second->m_TSE.GetPointer() != &entry)
-        return false; // entry not found or not a TSE
+        return TTSE_Lock(0); // entry not found or not a TSE
 
-    // One lock for the whole bioseq iterator
-    scope.x_AddToHistory(*found->second);
+    // Lock TSE to prevent destruction
+    TTSE_Lock tse_lock(found->second);
 
     // Get all bioseq handles from the TSE
     // Store seq-entries in the map to prevent duplicates
@@ -1326,15 +1325,9 @@ bool CDataSource::GetTSEHandles(CScope& scope,
             if (bit->second->m_Entry->GetSeq().GetInst().GetMol() != filter)
                 continue;
         }
-        bioseq_map[const_cast<CSeq_entry*>(bit->second->m_Entry.GetPointer())]
-            = bit->second;
+        bioseqs.insert(bit->second);
     }
-    // Convert each map entry into bioseq handle
-    NON_CONST_ITERATE (TEntryToInfo, eit, bioseq_map) {
-        CBioseq_Handle h(*eit->second->m_Synonyms.begin(), scope, *eit->second);
-        handles.insert(h);
-    }
-    return true;
+    return tse_lock;
 }
 
 
@@ -1412,6 +1405,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2003/04/14 21:32:18  grichenk
+* Avoid passing CScope as an argument to CDataSource methods
+*
 * Revision 1.96  2003/03/24 21:26:45  grichenk
 * Added support for CTSE_CI
 *

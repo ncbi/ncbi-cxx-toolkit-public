@@ -339,7 +339,7 @@ const CScope::TTSE_Set& CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     TTSE_Set& tse_set = m_AnnotCache[idh];
     //CMutexGuard guard(m_Scope_Mtx);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
-        it->GetTSESetWithAnnots(idh, tse_set, *this);
+        it->GetTSESetWithAnnots(idh, tse_set, m_History);
     }
     //### Filter the set depending on the requests history?
     NON_CONST_ITERATE (TTSE_Set, tse_it, tse_set) {
@@ -444,9 +444,19 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
                                         set<CBioseq_Handle>& handles,
                                         CSeq_inst::EMol filter)
 {
+    TTSE_Lock tse_lock(0);
+    set<CBioseq_Info*> info_set;
     for (CPriority_I it(m_setDataSrc); it; ++it) {
-        if (it->GetTSEHandles(*this, tse, handles, filter))
+        tse_lock = it->GetTSEHandles(tse, info_set, filter);
+        if (tse_lock) {
+            x_AddToHistory(*tse_lock);
+            // Convert each bioseq info into bioseq handle
+            NON_CONST_ITERATE (set<CBioseq_Info*>, iit, info_set) {
+                CBioseq_Handle h(*(*iit)->m_Synonyms.begin(), *this, **iit);
+                handles.insert(h);
+            }
             break;
+        }
     }
 }
 
@@ -544,6 +554,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/04/14 21:32:18  grichenk
+* Avoid passing CScope as an argument to CDataSource methods
+*
 * Revision 1.58  2003/04/09 16:04:32  grichenk
 * SDataSourceRec replaced with CPriorityNode
 * Added CScope::AddScope(scope, priority) to allow scope nesting

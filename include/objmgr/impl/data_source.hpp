@@ -156,16 +156,15 @@ public:
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                              set<TTSE_Lock>& tse_set,
-                             CScope& scope);
+                             CScope::TRequestHistory& history);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
-    // Return false if the entry was not found or is not a TSE. "filter" may
-    // be used to select a particular sequence type.
+    // Return empty tse lock if the entry was not found or is not a TSE.
+    // "filter" may be used to select a particular sequence type.
     // Used to initialize bioseq iterators.
-    bool GetTSEHandles(CScope& scope,
-                       const CSeq_entry& entry,
-                       set<CBioseq_Handle>& handles,
-                       CSeq_inst::EMol filter);
+    TTSE_Lock GetTSEHandles(const CSeq_entry& entry,
+                            set<CBioseq_Info*>& bioseqs,
+                            CSeq_inst::EMol filter);
 
     CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
 
@@ -314,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/04/14 21:32:16  grichenk
+* Avoid passing CScope as an argument to CDataSource methods
+*
 * Revision 1.48  2003/03/24 21:26:43  grichenk
 * Added support for CTSE_CI
 *
