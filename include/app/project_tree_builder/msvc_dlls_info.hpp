@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 class CMsvcDllsInfo
 {
 public:
-    CMsvcDllsInfo(const CNcbiRegistry& registry);
+    CMsvcDllsInfo(const string& file_path);
     ~CMsvcDllsInfo(void);
     
     void GetDllsList      (list<string>*      dlls_ids) const;
@@ -64,7 +64,7 @@ public:
     string GetDllHost (const string& lib_id) const; 
 
 private:
-    const CNcbiRegistry& m_Registry;
+    CNcbiRegistry m_Registry;
 
     //no value-type semantics
     CMsvcDllsInfo(void);
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/07 13:45:39  gorelenk
+ * Class CMsvcDllsInfo separated from application config.
+ *
  * Revision 1.5  2004/03/15 21:22:44  gorelenk
  * Added declaration of function CollectDllsDepends.
  *

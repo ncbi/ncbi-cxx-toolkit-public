@@ -45,9 +45,13 @@
 BEGIN_NCBI_SCOPE
 
 
-CMsvcDllsInfo::CMsvcDllsInfo(const CNcbiRegistry& registry)
-    :m_Registry(registry)
+CMsvcDllsInfo::CMsvcDllsInfo(const string& file_path)
 {
+    CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if (ifs) {
+        //read registry
+        m_Registry.Read(ifs);
+    }
 }
 
 
@@ -59,14 +63,6 @@ CMsvcDllsInfo::~CMsvcDllsInfo(void)
 void CMsvcDllsInfo::GetDllsList(list<string>* dlls_ids) const
 {
     ncbi::GetDllsList(m_Registry, dlls_ids);
-#if 0
-    dlls_ids->clear();
-
-    string dlls_ids_str = 
-        m_Registry.GetString("DllBuild", "DLLs", "");
-    
-    NStr::Split(dlls_ids_str, LIST_SEPARATOR, *dlls_ids);
-#endif
 }
 
 
@@ -78,7 +74,7 @@ void CMsvcDllsInfo::GetBuildConfigs(list<SConfigInfo>* config) const
         m_Registry.GetString("DllBuild", "Configurations", "");
     list<string> config_names;
     NStr::Split(configs_str, LIST_SEPARATOR, config_names);
-    LoadConfigInfoByNames(m_Registry, config_names, config);
+    LoadConfigInfoByNames(GetApp().GetConfig(), config_names, config);
 }
 
 
@@ -109,10 +105,6 @@ void CMsvcDllsInfo::GetDllInfo(const string& dll_id, SDllInfo* dll_info) const
     dll_info->Clear();
 
     GetHostedLibs(m_Registry, dll_id, &(dll_info->m_Hosting) );
-#if 0
-    string hosting_str = m_Registry.GetString(dll_id, "Hosting", "");
-    NStr::Split(hosting_str, LIST_SEPARATOR, dll_info->m_Hosting);
-#endif
 
     string depends_str = m_Registry.GetString(dll_id, "Dependencies", "");
     NStr::Split(depends_str, LIST_SEPARATOR, dll_info->m_Depends);
@@ -464,7 +456,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             CProjectItemsTree::TProjects::const_iterator k = 
              GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
                                                               lib_id));
-            if (k == tree_src.m_Projects.end()) {
+            if (k == GetApp().GetWholeTree().m_Projects.end()) {
                 LOG_POST(Error << "No project " +
                                    lib_id + " hosted in dll : " + dll_id);
                 continue;
@@ -545,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/06/07 13:46:21  gorelenk
+ * Class CMsvcDllsInfo separated from application config.
+ *
  * Revision 1.18  2004/06/04 14:48:53  gorelenk
  * Changed dll_main location.
  *
