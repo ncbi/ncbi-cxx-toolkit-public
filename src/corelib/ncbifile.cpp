@@ -597,7 +597,7 @@ string CDirEntry::ConcatPath(const string& first, const string& second)
     string path = AddTrailingPathSeparator(NStr::TruncateSpaces(first));
     // Remove leading separator in "second" part
     string part = NStr::TruncateSpaces(second);
-    if ( part.length() > 0  &&  part[0] == DIR_SEPARATOR ) {
+    if ( !path.empty()  &&  part.length() > 0  &&  part[0] == DIR_SEPARATOR ) {
         part.erase(0,1);
     }
     // Add second part
@@ -2285,6 +2285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2004/08/10 16:57:31  grichenk
+ * Fixed leading / in ConcatPath()
+ *
  * Revision 1.82  2004/08/03 12:04:31  ivanov
  * + CMemoryFile_Base   - base class for all memory mapping classes.
  * + CMemoryFileSegment - auxiliary class for mapping a memory file region.
