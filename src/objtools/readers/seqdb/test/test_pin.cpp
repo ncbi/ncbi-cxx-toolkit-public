@@ -582,6 +582,160 @@ int test1(int argc, char ** argv)
         } else desc += " [-dyn]";
         
 #if defined(NCBI_OS_UNIX)
+        if ((s == "-gi2oid") ||
+            (s == "-gi2oidX") ||
+            (s == "-gi2oidS") ||
+            (s == "-gi2oidR")) {
+            
+            bool randomize = true;
+            
+            bool using_readdb     (s == "-gi2oidR");
+            bool seperate_caching (s == "-gi2oidS");
+            bool build_gilist     (s == "-gi2oidX");
+            
+            cout << "using_readdb:     " << (using_readdb     ? "T" : "F") << endl;
+            cout << "seperate_caching: " << (seperate_caching ? "T" : "F") << endl;
+            
+            vector<Uint4> gis;
+            vector<Uint4> oids;
+            
+            CStopWatch sw(true);
+            
+            CSeqDB db("nr", 'p');
+            
+            ReadDBFILEPtr rdfp =
+                readdb_new_ex2((char*) "nr",
+                               1, // prot
+                               READDB_NEW_DO_TAXDB,
+                               NULL,
+                               NULL);
+            
+            Uint4 nseq = db.GetNumSeqs();
+            
+            double spt1(0.0);
+            double spt1a(0.0);
+            double spt2(0.0);
+            
+            if (build_gilist) {
+                Uint4 jump = 10;
+
+                cout << "Setting up (j" << jump << ")..." << endl;
+                
+                Uint4 i = 0;
+                
+                for(i = 0; i<nseq; i+= jump) {
+                    oids.push_back(i);
+                    gis.push_back(0);
+                }
+                
+                cout << "Initial translation (w/ SeqDB)..." << endl;
+                
+                spt1 = sw.Elapsed();
+                
+                {
+                    // Use a seperate object to avoid "internal" caching
+                    // interference.
+                    
+                    CSeqDB db1("nr", 'p');
+                    
+                    CSeqDB & dbx(seperate_caching ? db1 : db);
+                    
+                    for(i = 0; i<oids.size(); i++) {
+                        dbx.OidToGi(oids[i], gis[i]);
+                    }
+                }
+                
+                spt1a = sw.Elapsed();
+                
+                if (randomize) {
+                    cout << "Randomizing " << oids.size() << " entries ..." << endl;
+                
+                    Uint4 i = 0;
+                
+                    CRandom prng;
+                
+                    for(i = 0; i<oids.size(); i+= jump) {
+                        Uint4 j = prng.GetRand(0, oids.size()-1);
+                    
+                        Uint4 oid_tmp = oids[i];
+                        oids[i] = oids[j];
+                        oids[j] = oid_tmp;
+                    
+                        Uint4 gi_tmp = gis[i];
+                        gis[i] = gis[j];
+                        gis[j] = gi_tmp;
+                    }
+                }
+                
+                ofstream gilist("gilist.txt");
+                
+                for(Uint4 i = 0; i<oids.size(); i++) {
+                    gilist << gis[i] << "\n";
+                }
+            } else {
+                cout << "Reading from file..." << endl;
+                
+                spt1 = sw.Elapsed();
+                
+                ifstream gilist("gilist.txt");
+                
+                while(gilist) {
+                    Uint4 gi(0);
+                    
+                    gilist >> gi;
+                    gis.push_back(gi);
+                }
+                
+                spt1a = sw.Elapsed();
+                
+                ITERATE(vector<Uint4>, iter, gis) {
+                    Uint4 oid(0);
+                    db.GiToOid(*iter, oid);
+                    
+                    oids.push_back(oid);
+                }
+            }
+            
+            spt2 = sw.Elapsed();
+            
+            cout << "trans oid2gi: " << (spt1a - spt1) << ", randomize " << (spt2 - spt1a) << endl;
+            
+            cout << "Phase 2..." << endl;
+            
+            for(Uint4 iter = 0; iter<4; iter++) {
+                double spt3 = sw.Elapsed();
+                
+                if (using_readdb) {
+                    for(Uint4 i = 0; i<oids.size(); i++) {
+                        Uint4 oid(Uint4(-1));
+                        oid = readdb_gi2seq(rdfp, gis[i], 0);
+                        
+                        if (oid != oids[i]) {
+                            cout << "Error, gi " << gis[i]
+                                 << " should be oid " << oids[i]
+                                 << " but was " << oid << endl;
+                        }
+                    }
+                } else {
+                    for(Uint4 i = 0; i<oids.size(); i++) {
+                        Uint4 oid(Uint4(-1));
+                        db.GiToOid(gis[i], oid);
+                        
+                        if (oid != oids[i]) {
+                            cout << "Error, gi " << gis[i]
+                                 << " should be oid " << oids[i]
+                                 << " but was " << oid << endl;
+                        }
+                    }
+                }
+                double spt4 = sw.Elapsed();
+                cout << "verif gi2oid [" << iter << "]: " << (spt4 - spt3) << endl;
+            }
+            
+            return 0;
+        } else desc += " [-gi2oid | -gi2oidR]";
+        
+        
         if (s == "-xlate3") {
             string dbname("nr");
             //string dbname("prot_dbs");
