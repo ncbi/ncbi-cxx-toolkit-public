@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/08 22:14:40  grichenk
+* Fixed CAliasTypeInfo::IsType()
+*
 * Revision 1.3  2003/11/24 14:10:03  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *
@@ -75,7 +78,6 @@ public:
     TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
     bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-    bool IsType(TTypeInfo type) const;
 
     void SetDataOffset(TPointerOffsetType offset);
     TObjectPtr GetDataPtr(TObjectPtr objectPtr) const;

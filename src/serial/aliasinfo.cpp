@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/08 22:14:41  grichenk
+* Fixed CAliasTypeInfo::IsType()
+*
 * Revision 1.4  2003/11/24 14:10:05  grichenk
 * Changed base class for CAliasTypeInfo to CPointerTypeInfo
 *
@@ -158,12 +161,6 @@ TTypeInfo CAliasTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const
 bool CAliasTypeInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 {
     return GetPointedType()->IsParentClassOf(classInfo);
-}
-
-
-bool CAliasTypeInfo::IsType(TTypeInfo type) const
-{
-    return GetPointedType()->IsType(type);
 }
 
 
