@@ -158,6 +158,26 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    return 0;
 }
 
+double PHIScoreToEvalue(Int4 score, BlastScoreBlk* sbp)
+{
+   double paramC = sbp->kbp[0]->paramC;
+   double Lambda = sbp->kbp[0]->Lambda;
+   Int4 pattern_space = sbp->effective_search_sp;
+   
+   return pattern_space*paramC*(1+Lambda*score)*exp(-Lambda*score);
+}
+
+void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
+{
+   Int4 index;
+   BlastHSP* hsp;
+
+   for (index = 0; index < hsp_list->hspcnt; ++index) {
+      hsp = hsp_list->hsp_array[index];
+      hsp->evalue = PHIScoreToEvalue(hsp->score, sbp);
+   }
+}
+
 Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list, 
         BlastHitSavingOptions* hit_options)
 {
