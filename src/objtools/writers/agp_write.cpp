@@ -40,7 +40,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqblock/GB_block.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
+//#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/seq_map_ci.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/08 16:53:31  yazhuk
+ * commented #include <objtools/data_loaders/genbank/gbloader.hpp>
+ *
  * Revision 1.3  2004/07/07 21:45:07  jcherry
  * Removed form of AgpWrite that creates its own object manager
  *
