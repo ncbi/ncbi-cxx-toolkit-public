@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/05/20 16:49:13  pubmed
+* Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
+*
 * Revision 1.8  1999/01/04 20:06:11  vasilche
 * Redesigned CHTML_table.
 * Added selection support to HTML forms (via hidden values).
@@ -75,6 +78,9 @@ class CNCBINode
 public:    
     typedef list<CNCBINode*> TChildList;
     typedef map<string, string> TAttributes;
+    
+    enum EMode { eHTML = 0, ePlainText  = 1 };
+    typedef int TMode; // combination of EMode
 
     // 'structors
     CNCBINode(void);
@@ -99,10 +105,10 @@ public:
     // finds iterator pointing to child
     TChildList::iterator FindChild(CNCBINode* child);
 
-    virtual CNcbiOstream& Print(CNcbiOstream& out);
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out);
-    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out);
+    virtual CNcbiOstream& Print(CNcbiOstream& out,TMode mode = eHTML);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode = eHTML);
 
     // this method will be called when printing and "this" node doesn't
     // contain any children

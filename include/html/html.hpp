@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  1999/05/20 16:49:11  pubmed
+* Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
+*
 * Revision 1.34  1999/05/10 17:01:11  vasilche
 * Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().
 *
@@ -209,7 +212,7 @@ public:
     const string& GetText(void) const;
     void SetText(const string& text);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode = eHTML);
 
 protected:
     string m_Text;  // the text
@@ -228,7 +231,7 @@ public:
     
     const string& GetText(void) const;
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream& out, TMode mode = eHTML);
     virtual void CreateSubNodes();
 
 protected:
@@ -248,7 +251,8 @@ public:
     CHTMLOpenElement(const string& name, CNCBINode* node);
     CHTMLOpenElement(const string& name, const string& text);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &);   // prints tag itself
+    // prints tag itself
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);   
 
 protected:
     // cloning
@@ -265,7 +269,8 @@ public:
     CHTMLElement(const string& name, CNCBINode* node);
     CHTMLElement(const string& name, const string& text);
 
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream &);   // prints tag close
+    // prints tag close    
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode = eHTML);   
 
 protected:
     // cloning
@@ -281,8 +286,8 @@ public:
     CHTMLComment(CNCBINode* node);
     CHTMLComment(const string& text);
 
-    virtual CNcbiOstream& PrintBegin(CNcbiOstream &);
-    virtual CNcbiOstream& PrintEnd(CNcbiOstream &);
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode = eHTML);
 
 protected:
     // cloning
@@ -423,12 +428,7 @@ class CHTMLOpenElementTmpl : public CHTMLOpenElement
 public:
     static const string& s_GetTagName(void)
         { return *TagName; }
-
-    /*
-    CHTMLOpenElementTmpl(void);
-    CHTMLOpenElementTmpl(CNCBINode* node);
-    CHTMLOpenElementTmpl(const string& text);
-    */
+ 
     CHTMLOpenElementTmpl(void)
         : CParent(s_GetTagName()) {}
     CHTMLOpenElementTmpl(CNCBINode* node)
@@ -649,7 +649,7 @@ public:
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
 
-    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
+    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode = eHTML);
 
 protected:
     TIndex m_CurrentRow, m_CurrentCol;
@@ -852,6 +852,8 @@ public:
     CHTML_br(void);
     // create <number> of <br> tags
     CHTML_br(int number);
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);
 };
 
 
@@ -942,6 +944,8 @@ public:
 
     CHTML_hr* SetNoShade(void);
     CHTML_hr* SetNoShade(bool noShade);
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode = eHTML);
 };
 
 #include <html/html.inl>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/05/20 16:49:12  pubmed
+* Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
+*
 * Revision 1.4  1999/03/15 19:57:55  vasilche
 * CIDs now use set instead of map.
 *
@@ -129,6 +132,19 @@ public:
                             const TIDList& ids,
                             const string& hiddenPrefix,
                             const string& checkboxPrefix);
+
+    // platform-dependent newline symbol
+    // default value is "\n" as in UNIX
+    // application program is to set it as correct
+    static void SetNL( const string& nl )
+        { sm_newline = nl; }
+    
+    static const string& GetNL(void)
+        { return sm_newline; }
+
+protected:
+
+    static string sm_newline;
 
 };
 
