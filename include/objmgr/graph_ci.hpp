@@ -34,10 +34,151 @@
 */
 
 #include <objects/objmgr/annot_types_ci.hpp>
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+class CMappedGraph
+{
+public:
+    CMappedGraph(void)
+        : m_Graph(0),
+          m_MappedGraph(0),
+          m_Partial(false),
+          m_MappedLoc(0)
+        { return; }
+    CMappedGraph(const CMappedGraph& graph)
+        : m_Graph(graph.m_Graph),
+          m_MappedGraph(graph.m_MappedGraph),
+          m_Partial(graph.m_Partial),
+          m_MappedLoc(graph.m_MappedLoc)
+        { return; }
+    CMappedGraph& operator= (const CMappedGraph& graph)
+        {
+            if (this != &graph) {
+                m_Graph = graph.m_Graph;
+                m_MappedGraph = graph.m_MappedGraph;
+                m_Partial = graph.m_Partial;
+                m_MappedLoc = graph.m_MappedLoc;
+            }
+            return *this;
+        }
+
+    // Original graph with unmapped location/product
+    const CSeq_graph& GetOriginalGraph(void) const
+        {
+            return *m_Graph;
+        }
+    // Graph mapped to the master sequence.
+    // WARNING! The function is rather slow and should be used with care.
+    const CSeq_graph& GetMappedGraph(void) const
+        {
+            if ( !m_MappedGraph ) {
+                if ( m_MappedLoc ) {
+                    CSeq_graph* tmp = new CSeq_graph;
+                    m_MappedGraph = tmp;
+                    tmp->Assign(*m_Graph);
+                    tmp->SetLoc().Assign(*m_MappedLoc);
+                }
+                else {
+                    m_MappedGraph = m_Graph;
+                }
+            }
+            return *m_MappedGraph;
+        }
+
+    bool IsSetTitle(void) const
+        {
+            return m_Graph->IsSetTitle();
+        }
+    const string& GetTitle(void) const
+        {
+            return m_Graph->GetTitle();
+        }
+
+    bool IsSetComment(void) const
+        {
+            return m_Graph->IsSetComment();
+        }
+    const string& GetComment(void) const
+        {
+            return m_Graph->GetComment();
+        }
+
+    const CSeq_loc& GetLoc(void) const
+        {
+            return m_MappedLoc ? *m_MappedLoc : m_Graph->GetLoc();
+        }
+
+    bool IsSetTitle_x(void) const
+        {
+            return m_Graph->IsSetTitle_x();
+        }
+    const string& GetTitle_x(void) const
+        {
+            return m_Graph->GetTitle_x();
+        }
+
+    bool IsSetTitle_y(void) const
+        {
+            return m_Graph->IsSetTitle_y();
+        }
+    const string& GetTitle_y(void) const
+        {
+            return m_Graph->GetTitle_y();
+        }
+
+    bool IsSetComp(void) const
+        {
+            return m_Graph->IsSetComp();
+        }
+    const TSeqPos& GetComp(void) const
+        {
+            return m_Graph->GetComp();
+        }
+
+    bool IsSetA(void) const
+        {
+            return m_Graph->IsSetA();
+        }
+    const double& GetA(void) const
+        {
+            return m_Graph->GetA();
+        }
+
+    bool IsSetB(void) const
+        {
+            return m_Graph->IsSetB();
+        }
+    const double& GetB(void) const
+        {
+            return m_Graph->GetB();
+        }
+
+    const TSeqPos& GetNumval(void) const
+        {
+            return m_Graph->GetNumval();
+        }
+
+    const CSeq_graph::C_Graph& GetGraph(void) const
+        {
+            return m_Graph->GetGraph();
+        }
+
+private:
+    friend class CGraph_CI;
+    CMappedGraph& Set(const CAnnotObject& annot);
+
+    CConstRef<CSeq_graph>         m_Graph;
+    mutable CConstRef<CSeq_graph> m_MappedGraph;
+    bool                          m_Partial;
+    CConstRef<CSeq_loc>           m_MappedLoc;
+};
+
 
 class NCBI_XOBJMGR_EXPORT CGraph_CI : public CAnnotTypes_CI
 {
@@ -107,6 +248,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/02/10 15:51:26  grichenk
+* + CMappedGraph
+*
 * Revision 1.15  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *

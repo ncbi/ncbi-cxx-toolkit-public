@@ -37,6 +37,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+CMappedGraph& CMappedGraph::Set(const CAnnotObject& annot)
+{
+    _ASSERT(annot.IsGraph());
+    m_Graph = &annot.GetGraph();
+    m_MappedGraph.Reset();
+    m_Partial = annot.IsPartial();
+    if ( annot.IsMappedLoc() )
+        m_MappedLoc = &annot.GetMappedLoc();
+    else
+        m_MappedLoc.Reset();
+    return *this;
+}
+
+
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
                      CAnnot_CI::EOverlapType overlap_type,
@@ -88,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/10 15:51:27  grichenk
+* + CMappedGraph
+*
 * Revision 1.12  2002/12/24 15:42:45  grichenk
 * CBioseqHandle argument to annotation iterators made const
 *
