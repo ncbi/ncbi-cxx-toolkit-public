@@ -1,0 +1,8 @@
+# $Id$
+
+# Meta-makefile
+
+APP_PROJ = test_algo_tree
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
