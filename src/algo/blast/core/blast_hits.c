@@ -52,13 +52,14 @@ extern Int4 LIBCALL
 HspArrayPurge PROTO((BlastHSPPtr PNTR hsp_array, Int4 hspcnt, 
                      Boolean clear_num));
 
-void BLAST_AdjustQueryOffsets(Uint1 program_number, 
-        BlastHSPListPtr hsp_list, BlastQueryInfoPtr query_info)
+void 
+BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list, 
+   BlastQueryInfoPtr query_info, Boolean is_ooframe)
 {
    BlastHSPPtr hsp;
    Int4 context;
    Int4 index;
-   Int4 offset_shift, extra_length;
+   Int4 offset_shift, extra_length = 0;
 
    if (!hsp_list)
       return;
@@ -69,8 +70,16 @@ void BLAST_AdjustQueryOffsets(Uint1 program_number,
          BinarySearchInt4(hsp->query.gapped_start, 
             query_info->context_offsets, 
             (Int4) (query_info->last_context+1));   
-      hsp->query.frame = BLAST_ContextToFrame(program_number, context);
-      offset_shift = query_info->context_offsets[context];
+      if (is_ooframe) {
+         offset_shift = query_info->context_offsets[context-context%3];
+         /* Query offset is in mixed-frame coordinates */
+         hsp->query.frame = hsp->query.offset % 3 + 1;
+         if ((context % 6) >= 3)
+            hsp->query.frame = -hsp->query.frame;
+      } else {
+         hsp->query.frame = BLAST_ContextToFrame(program_number, context);
+         offset_shift = query_info->context_offsets[context];
+      }
       hsp->query.offset -= offset_shift;
       hsp->query.gapped_start -= offset_shift;
       
@@ -81,8 +90,10 @@ void BLAST_AdjustQueryOffsets(Uint1 program_number,
       }
 
       /* Check if this HSP is crossing the boundary on the right */
-      extra_length = 
-         hsp->query.end - query_info->context_offsets[context+1] + 1;
+      if (!is_ooframe) {
+         extra_length = 
+            hsp->query.end - query_info->context_offsets[context+1] + 1;
+      }
       hsp->query.end -= offset_shift;
 
       if (extra_length > 0) {
