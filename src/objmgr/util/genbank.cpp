@@ -35,6 +35,7 @@
 #include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 
+#include <numeric>
 #include <algorithm>
 
 #include <serial/enumvalues.hpp>
@@ -199,6 +200,14 @@ static void s_AddProteinQualifiers(CFeature &feature, const CProt_ref& prot);
 static TGBSQuals s_SourceQualifiers(const COrg_ref& org);
 static TGBSQuals s_SourceQualifiers(const CBioSource& source);
 
+const unsigned int CGenbankWriter::sm_KeywordWidth = 12;
+const unsigned int CGenbankWriter::sm_LineWidth = 80;
+const unsigned int CGenbankWriter::sm_DataWidth
+= CGenbankWriter::sm_LineWidth - CGenbankWriter::sm_KeywordWidth;
+const unsigned int CGenbankWriter::sm_FeatureNameIndent = 5;
+const unsigned int CGenbankWriter::sm_FeatureNameWidth = 16;
+
+
 static string s_Pad(const string& s, SIZE_TYPE width)
 {
     if (s.size() >= width) {
@@ -208,14 +217,31 @@ static string s_Pad(const string& s, SIZE_TYPE width)
     }
 }
 
+/*
+struct s_Pad
+{
+    s_Pad(const char* s, size_t len)
+        : m_String(s), m_Length(strlen(s)), m_Required(len)
+        {
+        }
+    s_Pad(const string& s, size_t len)
+        : m_String(s.data()), m_Length(s.size()), m_Required(len)
+        {
+        }
+    const char* m_String;
+    size_t m_Length;
+    size_t m_Required;
+};
 
-const unsigned int CGenbankWriter::sm_KeywordWidth = 12;
-const unsigned int CGenbankWriter::sm_LineWidth = 80;
-const unsigned int CGenbankWriter::sm_DataWidth
-= CGenbankWriter::sm_LineWidth - CGenbankWriter::sm_KeywordWidth;
-const unsigned int CGenbankWriter::sm_FeatureNameIndent = 5;
-const unsigned int CGenbankWriter::sm_FeatureNameWidth = 16;
-
+inline
+ostream& operator<<(ostream& out, const s_Pad& s)
+{
+    out.write(s.m_String, s.m_Length);
+    if ( s.m_Length < s.m_Required )
+        out << setw(s.m_Required-s.m_Length) << "";
+    return out;
+}
+*/
 
 bool CGenbankWriter::Write(const CSeq_entry& entry) const
 {
@@ -2306,37 +2332,60 @@ bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
     CSeqVector vec = handle.GetSeqVector();
     vec.SetIupacCoding();
     if (m_Format == eFormat_Genbank) {
-        TSeqPos a = 0, c = 0, g = 0, t = 0, other = 0;
-        for (TSeqPos pos = 0;  pos < vec.size();  ++pos) {
-            switch (vec[pos]) {
-            case 'A': ++a;     break;
-            case 'C': ++c;     break;
-            case 'G': ++g;     break;
-            case 'T': ++t;     break;
-            default:  ++other; break;
-            }
+        const size_t COUNTS_SIZE = kMax_UChar+1;
+        TSeqPos counts[COUNTS_SIZE];
+        fill(counts, counts+COUNTS_SIZE, 0);
+        for (TSeqPos pos = 0, size = vec.size();  pos < size;  ++pos) {
+            ++counts[(unsigned char)vec[pos]];
         }
-        m_Stream << s_Pad("BASE COUNT", sm_KeywordWidth) << ' '
-                 << setw(6) << a << " a " << setw(6) << c << " c "
-                 << setw(6) << g << " g " << setw(6) << t << " t";
+        TSeqPos other = accumulate(counts, counts+COUNTS_SIZE, 0);
+        m_Stream << s_Pad("BASE COUNT", sm_KeywordWidth);
+        for ( const char* b = "ACGT"; *b; ++b ) {
+            TSeqPos count = counts[*b];
+            m_Stream << ' ' << setw(6) << count << ' ' << char(tolower(*b));
+            other -= count;
+        }
         if (other) {
             m_Stream << ' ' << setw(6) << other << " other";
             if (other > 1) {
                 m_Stream << 's';
             }
         }
-        m_Stream << NcbiEndl;
+        m_Stream << '\n';
     }
-    m_Stream << s_Pad("ORIGIN", sm_KeywordWidth);
-    for (TSeqPos n = 0;  n < vec.size();  ++n) {
-        if (n % 60 == 0) {
-            m_Stream << NcbiEndl << setw(9) << n + 1 << ' ';
-        } else if (n % 10 == 0) {
-            m_Stream << ' ';
+    m_Stream << s_Pad("ORIGIN", sm_KeywordWidth) << '\n';
+
+    const size_t BLOCK_SIZE = 10;
+    const size_t BLOCK_COUNT = 6;
+    char buffer[BLOCK_COUNT*(BLOCK_SIZE+1)+32];
+    size_t block_size = 0;
+    size_t block_count = 0;
+    size_t buffer_size = 0;
+    buffer[buffer_size++] = ' ';
+    size_t line_pos = 1;
+
+    for (TSeqPos n = 0, size = vec.size();  n < size;  ++n) {
+        buffer[buffer_size++] = tolower(vec[n]);
+        if ( ++block_size == BLOCK_SIZE ) {
+            block_size = 0;
+            if ( ++block_count == BLOCK_COUNT ) {
+                buffer[buffer_size++] = '\n';
+                buffer[buffer_size] = 0;
+                m_Stream << setw(9) << line_pos << buffer;
+                buffer_size = 0;
+                block_count = 0;
+                buffer_size = 0;
+                line_pos = n+2;
+            }
+            buffer[buffer_size++] = ' ';
         }
-        m_Stream << static_cast<char>(tolower(vec[n]));
     }
-    m_Stream << NcbiEndl;
+    if ( block_count+block_size != 0 ) {
+        buffer[buffer_size++] = '\n';
+        buffer[buffer_size] = 0;
+        m_Stream << setw(9) << line_pos << buffer;
+    }
+    m_Stream.flush();
     return true;
 }
 
@@ -2351,7 +2400,7 @@ void CGenbankWriter::Wrap(const string& keyword, const string& contents,
     }
 
     m_Stream << s_Pad(keyword, indent);
-    const string newline = s_Pad("\n", indent + 1);
+    const string newline = '\n'+string(indent, ' ');
 
     SIZE_TYPE pos = 0, tilde_pos;
     while ((tilde_pos = contents.find('~', pos)) != NPOS
@@ -2775,6 +2824,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.28  2002/12/30 19:38:35  vasilche
+* Optimized CGenbankWriter::WriteSequence.
+* Implemented GetBestOverlappingFeat() with CSeqFeatData::ESubtype selector.
+*
 * Revision 1.27  2002/12/30 18:02:53  dicuccio
 * Minor compiler warning tweaks: added virtual dtor to CGBQual; fixed a couple of warning concerning uninitialized variables in CGenBankWriter
 *

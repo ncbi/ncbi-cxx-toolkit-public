@@ -238,10 +238,17 @@ enum EOverlapType {
 
 // Check if the two locations have ovarlap of a given type
 NCBI_XOBJUTIL_EXPORT
-int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type);
+
+int TestForOverlap(const CSeq_loc& loc1,
+                   const CSeq_loc& loc2,
+                   EOverlapType type);
 
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
+                                            EOverlapType overlap_type,
+                                            CScope& scope);
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
+                                            CSeqFeatData::ESubtype feat_type,
                                             EOverlapType overlap_type,
                                             CScope& scope);
 
@@ -482,6 +489,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2002/12/30 19:38:34  vasilche
+* Optimized CGenbankWriter::WriteSequence.
+* Implemented GetBestOverlappingFeat() with CSeqFeatData::ESubtype selector.
+*
 * Revision 1.20  2002/12/27 13:09:59  dicuccio
 * Added missing #include for SeqFeatData.hpp
 *

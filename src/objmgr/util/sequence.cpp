@@ -1608,7 +1608,9 @@ TSeqPos LocationOffset(const CSeq_loc& outer, const CSeq_loc& inner,
 }
 
 
-int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type)
+int TestForOverlap(const CSeq_loc& loc1,
+                   const CSeq_loc& loc2,
+                   EOverlapType type)
 {
     CRange<TSeqPos> rg1 = loc1.GetTotalRange();
     CRange<TSeqPos> rg2 = loc2.GetTotalRange();
@@ -1709,14 +1711,60 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
         annot_overlap_type = CAnnot_CI::eOverlap_Intervals;
         break;
     }
+
+    CConstRef<CSeq_feat> feat_ref;
+    int diff = -1;
+
     CFeat_CI feat_it(scope, loc, feat_type,
         annot_overlap_type,
         CFeat_CI::eResolve_TSE, // ???
         CFeat_CI::e_Location);
-    CConstRef<CSeq_feat> feat_ref(0);
-    int diff = -1;
     for ( ; feat_it; ++feat_it) {
-        int cur_diff = TestForOverlap(loc, feat_it->GetLocation(), overlap_type);
+        int cur_diff =
+            TestForOverlap(loc, feat_it->GetLocation(), overlap_type);
+        if (cur_diff < 0)
+            continue;
+        if ( cur_diff < diff  ||  diff < 0 ) {
+            diff = cur_diff;
+            feat_ref = &(*feat_it);
+        }
+    }
+    return feat_ref;
+}
+
+
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
+                                            CSeqFeatData::ESubtype feat_type,
+                                            EOverlapType overlap_type,
+                                            CScope& scope)
+{
+    CAnnot_CI::EOverlapType annot_overlap_type;
+    switch (overlap_type) {
+    case eOverlap_Simple:
+    case eOverlap_Contained:
+        // Require total range overlap
+        annot_overlap_type = CAnnot_CI::eOverlap_TotalRange;
+        break;
+    case eOverlap_Subset:
+    case eOverlap_CheckIntervals:
+    case eOverlap_Interval:
+    default:
+        // Require intervals overlap
+        annot_overlap_type = CAnnot_CI::eOverlap_Intervals;
+        break;
+    }
+
+    CConstRef<CSeq_feat> feat_ref;
+    int diff = -1;
+
+    for ( CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
+                           annot_overlap_type,
+                           CFeat_CI::eResolve_TSE, // ???
+                           CFeat_CI::e_Location); feat_it; ++feat_it ) {
+        if ( feat_it->GetData().GetSubtype() != feat_type )
+            continue;
+        int cur_diff =
+            TestForOverlap(loc, feat_it->GetLocation(), overlap_type);
         if (cur_diff < 0)
             continue;
         if ( cur_diff < diff  ||  diff < 0 ) {
@@ -2763,6 +2811,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.29  2002/12/30 19:38:35  vasilche
+* Optimized CGenbankWriter::WriteSequence.
+* Implemented GetBestOverlappingFeat() with CSeqFeatData::ESubtype selector.
+*
 * Revision 1.28  2002/12/26 21:45:29  grichenk
 * + GetBestOverlappingFeat()
 *
