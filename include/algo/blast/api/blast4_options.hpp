@@ -140,7 +140,7 @@ public:
     {
         CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
         subject_p->SetDatabase(x);
-        m_Qsr->SetSubject(*subject_p);
+        m_QSR->SetSubject(*subject_p);
     }
     
     /******************* Entrez Query *******************/
@@ -152,7 +152,7 @@ public:
     /******************* Queries *******************/
     void SetQueries(CRef<objects::CBioseq_set> bioseqs)
     {
-        m_Qsr->SetQueries(*bioseqs);
+        m_QSR->SetQueries(*bioseqs);
     }
     
     /******************* Queries *******************/
@@ -219,7 +219,8 @@ public:
     }
     
 private:
-    CRef<objects::CBlast4_queue_search_request> m_Qsr;
+    CRef<blast::CBlastOptionsHandle>            m_CBOH;
+    CRef<objects::CBlast4_queue_search_request> m_QSR;
     CRef<objects::CBlast4_reply>                m_Reply;
     
     string m_Err;
@@ -232,6 +233,7 @@ private:
     // Initialize request (called by constructors)
     void x_Init(CBlastOptionsHandle * algo_opts, const char * program, const char * service);
     void x_Init(const string & RID);
+    void x_SetAlgoOpts(void);
     
     // Parameter setting
     void x_SetOneParam(const char * name, const int * x); // not currently used
@@ -263,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/09 22:36:06  bealer
+ * - Delay examination of CBlastOptionsHandle object until Submit() action.
+ *
  * Revision 1.6  2004/02/06 00:15:39  bealer
  * - Add RID capability.
  *

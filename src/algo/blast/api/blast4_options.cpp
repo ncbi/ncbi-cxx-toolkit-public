@@ -43,6 +43,7 @@
 #include <objects/blast/Blas_get_searc_resul_reque.hpp>
 #include <objects/blast/Blast4_error_code.hpp>
 
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
@@ -341,13 +342,15 @@ int CBlast4Options::x_GetState(void)
 
 void CBlast4Options::x_SubmitSearch(void)
 {
-    if (m_Qsr.Empty()) {
+    if (m_QSR.Empty()) {
         m_Err = "No request exists and no RID was specified.";
         return;
     }
     
+    x_SetAlgoOpts();
+    
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
-    body->SetQueue_search(*m_Qsr);
+    body->SetQueue_search(*m_QSR);
     
     CRef<CBlast4_reply> reply;
     
@@ -500,27 +503,32 @@ void CBlast4Options::x_Init(CBlastOptionsHandle * opts_handle,
                             const char          * program,
                             const char          * service)
 {
+    m_CBOH.Reset( opts_handle );
     m_ErrIgn    = 5;
     m_Pending   = false;
     m_Verbose   = false;
     
-    m_Qsr.Reset(new objects::CBlast4_queue_search_request);
-    m_Qsr->SetProgram(program);
-    m_Qsr->SetService(service);
+    m_QSR.Reset(new objects::CBlast4_queue_search_request);
+    m_QSR->SetProgram(program);
+    m_QSR->SetService(service);
     
-    CBlast4_parameters * algo_opts =
-        opts_handle->SetOptions().GetBlast4AlgoOpts();
-    
-    if (algo_opts) {
-        m_Qsr->SetAlgorithm_options().Set() = *algo_opts;
-    } else {
+    if (! (opts_handle && opts_handle->SetOptions().GetBlast4AlgoOpts())) {
         // This happens if you do not specify eRemote for the
         // CBlastOptions subclass constructor.
+        
         string errmsg("CBlast4Options: No remote API options.");
         
         ERR_POST(errmsg);
         throw runtime_error(errmsg);
     }
+}
+
+void CBlast4Options::x_SetAlgoOpts(void)
+{
+    CBlast4_parameters * algo_opts =
+        m_CBOH->SetOptions().GetBlast4AlgoOpts();
+    
+    m_QSR->SetAlgorithm_options().Set() = *algo_opts;
 }
 
 void CBlast4Options::x_Init(const string & RID)
@@ -541,7 +549,7 @@ void CBlast4Options::x_SetOneParam(const char * name, const int * x)
     p->SetName(name);
     p->SetValue(*v);
         
-    m_Qsr->SetProgram_options().Set().push_back(p);
+    m_QSR->SetProgram_options().Set().push_back(p);
 }
 
 void CBlast4Options::x_SetOneParam(const char * name, const list<int> * x)
@@ -553,7 +561,7 @@ void CBlast4Options::x_SetOneParam(const char * name, const list<int> * x)
     p->SetName(name);
     p->SetValue(*v);
         
-    m_Qsr->SetProgram_options().Set().push_back(p);
+    m_QSR->SetProgram_options().Set().push_back(p);
 }
 
 void CBlast4Options::x_SetOneParam(const char * name, const char ** x)
@@ -565,7 +573,7 @@ void CBlast4Options::x_SetOneParam(const char * name, const char ** x)
     p->SetName(name);
     p->SetValue(*v);
         
-    m_Qsr->SetProgram_options().Set().push_back(p);
+    m_QSR->SetProgram_options().Set().push_back(p);
 }
 
 void CBlast4Options::x_SetOneParam(const char * name, objects::CScore_matrix_parameters * matrix)
@@ -577,7 +585,7 @@ void CBlast4Options::x_SetOneParam(const char * name, objects::CScore_matrix_par
     p->SetName(name);
     p->SetValue(*v);
         
-    m_Qsr->SetProgram_options().Set().push_back(p);
+    m_QSR->SetProgram_options().Set().push_back(p);
 }
 
 END_SCOPE(blast)
@@ -587,6 +595,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/09 22:35:37  bealer
+* - Delay examination of CBlastOptionsHandle object until Submit() action.
+*
 * Revision 1.5  2004/02/06 00:16:39  bealer
 * - Add RID capability.
 * - Detect lack of eRemote flag.
