@@ -47,7 +47,11 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Std_seg.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
+#include <objmgr/gbloader.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -77,6 +81,8 @@ class CAlnMgrTestApp : public CNcbiApplication
     void             View2(int screen_width);
 private:
     CRef<CAlnVec> m_AV;
+    CRef<CScope>  m_Scope;
+    CRef<CObjectManager> m_ObjMgr;
 };
 
 void CAlnMgrTestApp::Init(void)
@@ -115,6 +121,10 @@ void CAlnMgrTestApp::Init(void)
          "View2: Prints in popset viewer style.",
          CArgDescriptions::eBoolean, "f");
 
+    arg_desc->AddDefaultKey
+        ("cf", "GetChunkFlags",
+         "Flags for GetChunks (CAlnMap::TGetChunkFlags)",
+         CArgDescriptions::eInteger, "0");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -140,10 +150,39 @@ void CAlnMgrTestApp::LoadDenseg(void)
     auto_ptr<CObjectIStream> in
         (CObjectIStream::Open(eSerial_AsnText, is));
     
+    //create scope
+    {{
+        m_ObjMgr = new CObjectManager;
+        
+        m_ObjMgr->RegisterDataLoader
+            (*new CGBDataLoader("ID", NULL, 2),
+             CObjectManager::eDefault);
+
+        m_Scope = new CScope(*m_ObjMgr);
+        m_Scope->AddDefaults();
+    }}
+
     if (asn_type == "Dense-seg") {
         CRef<CDense_seg> ds(new CDense_seg);
         *in >> *ds;
         m_AV = new CAlnVec(*ds);
+    } else if (asn_type == "Seq-submit") {
+        CRef<CSeq_submit> ss(new CSeq_submit);
+        *in >> *ss;
+        CTypesIterator i;
+        CType<CDense_seg>::AddTo(i);
+        CType<CSeq_entry>::AddTo(i);
+        int tse_cnt = 0;
+        for (i = Begin(*ss); i; ++i) {
+            if (CType<CDense_seg>::Match(i)) {
+                m_AV = new CAlnVec(*(CType<CDense_seg>::Get(i)), *m_Scope);
+            } else if (CType<CSeq_entry>::Match(i)) {
+                if ( !(tse_cnt++) ) {
+                    m_Scope->AddTopLevelSeqEntry
+                        (*(CType<CSeq_entry>::Get(i)));
+                }
+            }
+        }
     } else {
         cerr << "Cannot read: " << asn_type;
         return;
@@ -208,6 +247,8 @@ int CAlnMgrTestApp::Run(void)
 
     LoadDenseg();
 
+    cout << "-----";
+
     if (args["a"]) {
         m_AV->SetAnchor(args["a"].AsInteger());
     }
@@ -221,15 +262,32 @@ int CAlnMgrTestApp::Run(void)
         View2(40);
     }
 
+    return 0;
+
     string buff;
 
+    //////////////////////
+    // print segments
     //////////////////////
     for (row=0; row<m_AV->GetNumRows(); row++) {
         cout << "Row: " << row << endl;
         for (int seg=0; seg<m_AV->GetNumSegs(); seg++) {
             
+            // aln coords
+            cout << m_AV->GetAlnStart(seg) << "-"
+                 << m_AV->GetAlnStop(seg) << " ";
+
+
+            // type
             CAlnMap::TSegTypeFlags type = m_AV->GetSegType(row, seg);
-            if (type & CAlnMap::fSeq) cout << "(Seq)";
+            if (type & CAlnMap::fSeq) {
+                // seq coords
+                cout << m_AV->GetStart(row, seg) << "-" 
+                     << m_AV->GetStop(row, seg) << " (Seq)";
+            } else {
+                cout << "(Gap)";
+            }
+
             if (type & CAlnMap::fNotAlignedToSeqOnAnchor) cout << "(NotAlignedToSeqOnAnchor)";
             if (CAlnMap::IsTypeInsert(type)) cout << "(Insert)";
             if (type & CAlnMap::fUnalignedOnRight) cout << "(UnalignedOnRight)";
@@ -238,61 +296,36 @@ int CAlnMgrTestApp::Run(void)
             if (type & CAlnMap::fNoSeqOnLeft) cout << "(NoSeqOnLeft)";
             if (type & CAlnMap::fEndOnRight) cout << "(EndOnRight)";
             if (type & CAlnMap::fEndOnLeft) cout << "(EndOnLeft)";
+
             cout << NcbiEndl;
         }
     }
     cout << "---------" << endl;
     /////////////////////
 
-    {{
-        cout << "*******************************" << endl;
-        CAlnMap::TSignedRange range(0, m_AV->GetAlnStop());
-
-        for (row=0; row<m_AV->GetNumRows(); row++) {
-            cout << "Row: " << row << endl;
-            CRef<CAlnMap::CAlnChunkVec> chunk_vec = m_AV->GetAlnChunks(row, range, CAlnMap::fInsertsOnly /*| CAlnMap::fIgnoreGaps*/);
-            
-            for (int i=0; i<chunk_vec->size(); i++) {
-                CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
-                if (!chunk->IsGap()) {
-                    cout << chunk->GetRange().GetFrom() << "-"
-                         << chunk->GetRange().GetTo();
-                } else {
-                    cout << "gap";
-                }
-                
-                if (chunk->GetType() & CAlnMap::fSeq) cout << "(Seq)";
-                if (chunk->GetType() & CAlnMap::fNotAlignedToSeqOnAnchor) cout << "(NotAlignedToSeqOnAnchor)";
-                if (CAlnMap::IsTypeInsert(chunk->GetType())) cout << "(Insert)";
-                if (chunk->GetType() & CAlnMap::fUnalignedOnRight) cout << "(UnalignedOnRight)";
-                if (chunk->GetType() & CAlnMap::fUnalignedOnLeft) cout << "(UnalignedOnLeft)";
-                if (chunk->GetType() & CAlnMap::fNoSeqOnRight) cout << "(NoSeqOnRight)";
-                if (chunk->GetType() & CAlnMap::fNoSeqOnLeft) cout << "(NoSeqOnLeft)";
-                if (chunk->GetType() & CAlnMap::fEndOnRight) cout << "(EndOnRight)";
-                if (chunk->GetType() & CAlnMap::fEndOnLeft) cout << "(EndOnLeft)";
-                cout << chunk->GetAlnRange().GetFrom();
-                cout << "-";
-                cout << chunk->GetAlnRange().GetTo();
-                cout << NcbiEndl;
-            }
-        }
-        cout << "************************************" << endl;
-    }}
     /////////////////////
-
-    CAlnMap::TSignedRange range(0, m_AV->GetAlnStop());
+    // print chunks
+    /////////////////////
+    CAlnMap::TSignedRange range(-1, m_AV->GetAlnStop()+1);
 
     for (row=0; row<m_AV->GetNumRows(); row++) {
         cout << "Row: " << row << endl;
-        CRef<CAlnMap::CAlnChunkVec> chunk_vec = m_AV->GetAlnChunks(row, range, 0/*CAlnMap::fIgnoreGaps*/);
+        //CAlnMap::TSignedRange range(m_AV->GetSeqStart(row) -1,
+        //m_AV->GetSeqStop(row) + 1);
+        CRef<CAlnMap::CAlnChunkVec> chunk_vec = m_AV->GetAlnChunks(row, range, args["cf"].AsInteger());
     
         for (int i=0; i<chunk_vec->size(); i++) {
             CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
+
+            cout << "[row" << row << "|" << i << "]";
+            cout << chunk->GetAlnRange().GetFrom() << "-"
+                 << chunk->GetAlnRange().GetTo() << " ";
+
             if (!chunk->IsGap()) {
                 cout << chunk->GetRange().GetFrom() << "-"
                     << chunk->GetRange().GetTo();
             } else {
-                cout << "gap";
+                cout << "(Gap)";
             }
 
             if (chunk->GetType() & CAlnMap::fSeq) cout << "(Seq)";
@@ -304,9 +337,6 @@ int CAlnMgrTestApp::Run(void)
             if (chunk->GetType() & CAlnMap::fNoSeqOnLeft) cout << "(NoSeqOnLeft)";
             if (chunk->GetType() & CAlnMap::fEndOnRight) cout << "(EndOnRight)";
             if (chunk->GetType() & CAlnMap::fEndOnLeft) cout << "(EndOnLeft)";
-            cout << chunk->GetAlnRange().GetFrom();
-            cout << "-";
-            cout << chunk->GetAlnRange().GetTo();
             cout << NcbiEndl;
         }
     }
@@ -369,6 +399,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/06/04 18:20:40  todorov
+* read seq-submit
+*
 * Revision 1.2  2003/06/02 16:06:41  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
