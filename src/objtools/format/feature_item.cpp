@@ -1997,7 +1997,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_phenotype, CSeqFeatData::eQual_phenotype),
     TQualPair(eFQ_product, CSeqFeatData::eQual_product),
     TQualPair(eFQ_product_quals, CSeqFeatData::eQual_product),
-    TQualPair(eFQ_prot_activity, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_prot_activity, CSeqFeatData::eQual_function),
     TQualPair(eFQ_prot_comment, CSeqFeatData::eQual_note),
     TQualPair(eFQ_prot_EC_number, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_prot_note, CSeqFeatData::eQual_note),
@@ -2254,18 +2254,15 @@ void CFeatureItem::x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ct
         return;
     }
     const CSeqFeatData::TRna& rna = feat.GetData().GetRna();
-    if ( rna.CanGetExt() ) {
+    if (rna.CanGetExt()) {
         const CRNA_ref::TExt& ext = rna.GetExt();
-        switch ( ext.Which() ) {
-        case CRNA_ref::TExt::e_Name:
-            if ( !ext.GetName().empty() ) {
+        if (ext.IsName()) {
+            if (!ext.GetName().empty()) {
                 x_AddFTableQual("product", ext.GetName());
             }
-            break;
-        case CRNA_ref::TExt::e_TRNA:
+        } else if (ext.IsTRNA()) {
             feature::GetLabel(feat, &label, feature::eContent, &ctx.GetScope());
             x_AddFTableQual("product", label);
-            break;
         }
     }
 
@@ -2998,6 +2995,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2004/08/09 19:19:19  shomrat
+* Fixed prot_activity qualifier
+*
 * Revision 1.26  2004/05/26 14:57:54  shomrat
 * removed non-preferred variants ribosome slippage, trans splicing, alternate processing, and non-consensus splice site
 *
