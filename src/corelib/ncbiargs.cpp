@@ -34,6 +34,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.27  2000/12/12 14:20:36  vasilche
+ * Added operator bool to CArgValue.
+ * Various NStr::Compare() methods made faster.
+ * Added class Upcase for printing strings to ostream with automatic conversion.
+ *
  * Revision 1.26  2000/11/29 00:18:13  vakatov
  * s_ProcessArgument() -- avoid nested quotes in the exception message
  *
@@ -178,6 +183,10 @@ CArgValue::~CArgValue(void)
     return;
 }
 
+bool CArgValue::HasValue(void) const
+{
+    return !IsDefaultValue(); //true;
+}
 
 long CArgValue::AsInteger(void) const
 {
@@ -215,6 +224,29 @@ void CArgValue::CloseFile(void) const
 }
 
 
+
+
+///////////////////////////////////////////////////////
+//  CArg_None::
+
+class CArg_None : public CArgValue
+{
+public:
+    CArg_None(void);
+
+    bool HasValue(void) const;
+};
+
+inline
+CArg_None::CArg_None(void)
+    : CArgValue(kEmptyStr, true)
+{
+}
+
+bool CArg_None::HasValue(void) const
+{
+    return false;
+}
 
 
 ///////////////////////////////////////////////////////
@@ -985,7 +1017,7 @@ bool CArgs::Exist(const string& name) const
 
 bool CArgs::IsProvided(const string& name) const
 {
-  return Exist(name)  &&  !(*this)[name].m_IsDefaultValue;
+  return Exist(name)  &&  !(*this)[name].IsDefaultValue();
 }
 
 
@@ -1037,7 +1069,7 @@ string& CArgs::Print(string& str) const
 
         // Indicate whether the argument value was provided
         // in the command-line or was obtained from the arg.description
-        if ( (*this)[arg_name].m_IsDefaultValue ) {
+        if ( (*this)[arg_name].IsDefaultValue() ) {
             str += "[default]  ";
         } else {
             str += "[cmdline]  ";

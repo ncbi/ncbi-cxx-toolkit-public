@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/12/12 14:20:36  vasilche
+* Added operator bool to CArgValue.
+* Various NStr::Compare() methods made faster.
+* Added class Upcase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.6  1999/12/28 18:55:43  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -58,11 +63,11 @@
 */
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <ctype.h>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
-
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
@@ -107,6 +112,14 @@ CNcbiOstrstreamToString::operator string(void) const
     const char* str = m_Out.str();
     m_Out.freeze(false);
     return string(str, length);
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s)
+{
+    iterate ( string, c, s.m_String ) {
+        out.put(char(toupper(*c)));
+    }
+    return out;
 }
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2000/12/12 14:20:36  vasilche
+* Added operator bool to CArgValue.
+* Various NStr::Compare() methods made faster.
+* Added class Upcase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.36  2000/12/11 20:42:50  vakatov
 * + NStr::PrintableString()
 *
@@ -174,22 +179,34 @@ const string& CNcbiEmptyString::FirstGet(void) {
 }
 
 
-struct s_PCharDiff_Case {
-    int operator()(const char& c1, const char& c2) {
-        return (int) c1 - c2;
+int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const char* pattern)
+{
+    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
+        return *pattern ? -1 : 0;
     }
-};
-
-struct s_PCharDiff_Nocase {
-    int operator()(const char& c1, const char& c2) {
-        return toupper(c1) - toupper(c2);
+    if ( !*pattern ) {
+        return 1;
     }
-};
+    
+    if (n == NPOS  ||  n > str.length() - pos) {
+        n = str.length() - pos;
+    }
+    
+    const char* s = str.data() + pos;
+    while (n  &&  *pattern  &&  *s == *pattern) {
+        s++;  pattern++;  n--;
+    }
 
+    if (n == 0) {
+        return *pattern ? -1 : 0; 
+    }
+    
+    return *s - *pattern;
+}
 
-template <class TCharDiff>
-int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-              const char* pattern, TCharDiff char_diff)
+int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                        const char* pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return *pattern ? -1 : 0;
@@ -203,7 +220,7 @@ int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&  char_diff(*s, *pattern) == 0) {
+    while (n  &&  *pattern  &&  toupper(*s) == toupper(*pattern)) {
         s++;  pattern++;  n--;
     }
 
@@ -211,13 +228,12 @@ int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return *pattern ? -1 : 0; 
     }
     
-    return char_diff(*s, *pattern);
+    return toupper(*s) - toupper(*pattern);
 }
 
 
-template <class PCharDiff>
-int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-              const string& pattern, PCharDiff char_diff)
+int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const string& pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
@@ -236,7 +252,7 @@ int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     const char* s = str.data() + pos;
     const char* p = pattern.data();
-    while (n_cmp  &&  char_diff(*s, *p) == 0) {
+    while (n_cmp  &&  *s == *p) {
         s++;  p++;  n_cmp--;
     }
 
@@ -246,46 +262,57 @@ int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         return n > pattern.length() ? 1 : -1;
     }
     
-    return char_diff(*s, *p);
+    return *s - *p;
 }
 
-int NStr::Compare(const char* s1, const char* s2,
-                  ECase use_case /* = eCase */)
+int NStr::CompareNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                        const string& pattern)
 {
-    if (use_case == eCase) {
-        while (*s1  &&  *s1 == *s2) {
-            s1++;  s2++;
-        }
-        return (int) *s1 - *s2;
-    } else {
-        while (*s1  &&  toupper(*s1) == toupper(*s2)) {
-            s1++;  s2++;
-        }
-        return toupper(*s1) - toupper(*s2);
+    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
+        return pattern.empty() ? 0 : -1;
     }
+    if ( pattern.empty() ) {
+        return 1;
+    }
+
+    if (n == NPOS  ||  n > str.length() - pos) {
+        n = str.length() - pos;
+    }
+
+    SIZE_TYPE n_cmp = n;
+    if (n_cmp > pattern.length()) {
+        n_cmp = pattern.length();
+    }
+    const char* s = str.data() + pos;
+    const char* p = pattern.data();
+    while (n_cmp  &&  toupper(*s) == toupper(*p)) {
+        s++;  p++;  n_cmp--;
+    }
+
+    if (n_cmp == 0) {
+        if (n == pattern.length())
+            return 0;
+        return n > pattern.length() ? 1 : -1;
+    }
+    
+    return toupper(*s) - toupper(*p);
 }
 
-int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const char* pattern, ECase use_case /* = eCase */)
+int NStr::CompareCase(const char* s1, const char* s2)
 {
-    if (use_case == eCase) {
-        return s_Compare(str, pos, n, pattern, s_PCharDiff_Case());
-    } else {
-        return s_Compare(str, pos, n, pattern, s_PCharDiff_Nocase());
+    while (*s1  &&  *s1 == *s2) {
+        s1++;  s2++;
     }
+    return *s1 - *s2;
 }
 
-int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const string& pattern, ECase use_case /* = eCase */)
+int NStr::CompareNocase(const char* s1, const char* s2)
 {
-    if (use_case == eCase) {
-        return s_Compare(str, pos, n, pattern, s_PCharDiff_Case());
-    } else {
-        return s_Compare(str, pos, n, pattern, s_PCharDiff_Nocase());
+    while (*s1  &&  toupper(*s1) == toupper(*s2)) {
+        s1++;  s2++;
     }
+    return toupper(*s1) - toupper(*s2);
 }
-
-
 
 char* NStr::ToLower(char* str) {
     char* s;
@@ -483,7 +510,6 @@ string NStr::Replace(const string& src,
     return Replace(src, search, replace, dst, start_pos, max_replace);
 }
 
-
 string NStr::PrintableString(const string& str)
 {
     string s;
@@ -510,24 +536,6 @@ string NStr::PrintableString(const string& str)
         }
     }
     return s;
-}
-
-
-
-// predicates
-
-// case-INsensitive string comparison
-// operator() meaning is the same as operator<
-bool PNocase::operator() (const string& x, const string& y) const
-{
-    return NStr::Compare(x, y, NStr::eNocase) < 0;
-}
-
-// case-sensitive string comparison
-// operator() meaning is the same as operator<
-bool PCase::operator() (const string& x, const string& y) const
-{
-    return NStr::Compare(x, y, NStr::eCase) < 0;
 }
 
 #if !defined(HAVE_STRDUP)
