@@ -287,7 +287,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
-        eOverlap_Contained,
+        eOverlap_Contains,
         *m_Scope);
     if ( overlap ) {
         if ( overlap->GetPseudo()  ||
@@ -563,34 +563,36 @@ void CValidError_feat::ValidateCdregion (
     }
     
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation ());
-    CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
-    if ( diter ) {
-        const CBioSource& src = diter->GetSource();
-        
-        int biopgencode = src.GetGenCode();
-        
-        if (cdregion.IsSetCode ()) {
-            int cdsgencode = cdregion.GetCode().GetId();
+    if ( bsh ) {
+        CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
+        if ( diter ) {
+            const CBioSource& src = diter->GetSource();
             
-            if ( biopgencode != cdsgencode ) {
-                int genome = 0;
+            int biopgencode = src.GetGenCode();
+            
+            if (cdregion.IsSetCode ()) {
+                int cdsgencode = cdregion.GetCode().GetId();
                 
-                if ( src.IsSetGenome() ) {
-                    genome = src.GetGenome();
-                }
-
-                if ( IsPlastid(genome) ) {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
-                        "Genetic code conflict between CDS (code " +
-                        NStr::IntToString (cdsgencode) +
-                        ") and BioSource.genome biological context (" +
-                        s_PlastidTxt [genome] + ") (uses code 11)", feat);
-                } else {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
-                        "Genetic code conflict between CDS (code " +
-                        NStr::IntToString (cdsgencode) +
-                        ") and BioSource (code " +
-                        NStr::IntToString (biopgencode) + ")", feat);
+                if ( biopgencode != cdsgencode ) {
+                    int genome = 0;
+                    
+                    if ( src.IsSetGenome() ) {
+                        genome = src.GetGenome();
+                    }
+                    
+                    if ( IsPlastid(genome) ) {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                            "Genetic code conflict between CDS (code " +
+                            NStr::IntToString (cdsgencode) +
+                            ") and BioSource.genome biological context (" +
+                            s_PlastidTxt [genome] + ") (uses code 11)", feat);
+                    } else {
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                            "Genetic code conflict between CDS (code " +
+                            NStr::IntToString (cdsgencode) +
+                            ") and BioSource (code " +
+                            NStr::IntToString (biopgencode) + ")", feat);
+                    }
                 }
             }
         }
@@ -657,6 +659,9 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         
         if ( last_id == 0 || !last_id->Match(seq_id) ) {
             bsh = m_Scope->GetBioseqHandle(seq_id);
+            if ( !bsh ) {
+                break;
+            }
             seq_len = bsh.GetSeqVector().size();
             last_id = &seq_id;
         }
@@ -699,7 +704,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
                 if ( (res1 != 'G')  || (res2 != 'T' ) ) {
                     string msg;
                     if ( (res1 == 'G')  && (res2 != 'C' ) ) { // GC minor splice site
-                        sev = eDiag_Warning;
+                        sev = eDiag_Info;
                         msg = "Rare splice donor consensus (GC) found instead of "
                               "(GT) after exon ending at position " +
                               NStr::IntToString(donor + 1) + " of " + label;
@@ -861,16 +866,21 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     // Make sure AA coding is ncbieaa.
     if ( trna.GetAa().Which() != CTrna_ext::C_Aa::e_Ncbieaa ) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_TrnaCodonWrong,
-            "tRNA AA coding is not match ncbieaa", feat);
+            "tRNA AA coding does not match ncbieaa", feat);
         return;
     }
     
     // Retrive the Genetic code id for the tRna
     int gcode = 0;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    for ( CSeqdesc_CI diter (bsh, CSeqdesc::e_Source); diter; ++diter) {
-        gcode = diter->GetSource().GetGenCode();
-        break; // need only the closest biosoure.
+    if ( !bsh ) {
+        gcode = 1;
+    } else {
+        // need only the closest biosoure.
+        CSeqdesc_CI diter(bsh, CSeqdesc::e_Source);
+        if ( diter ) {
+            gcode = diter->GetSource().GetGenCode();
+        }
     }
     
     const string& ncbieaa = CGen_code_table::GetNcbieaa(gcode);
@@ -1145,7 +1155,7 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
     CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
         loc,
         CSeqFeatData::e_Cdregion,
-        eOverlap_Contained,
+        eOverlap_Contains,
         *m_Scope);
     if ( !cds ) {
         return;
@@ -1331,7 +1341,6 @@ void CValidError_feat::ValidateCommonCDSProduct
     }
 
     CBioseq_Handle prod = m_Scope->GetBioseqHandle(feat.GetProduct());
-    CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( !prod ) {
         const CSeq_id* sid = 0;
         try {
@@ -1345,24 +1354,26 @@ void CValidError_feat::ValidateCommonCDSProduct
             }
         }
         // or just a bioseq
-        if ( nuc.GetTopLevelSeqEntry().IsSeq() ) {
+        if ( m_Imp.GetTSE().IsSeq() ) {
             return;
         }
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCDSproducts,
             "Unable to find product Bioseq from CDS feature", feat);
         return;
     }
-    const CSeq_entry* prod_nps = 
-        m_Imp.GetAncestor(prod.GetBioseq(), CBioseq_set::eClass_nuc_prot);
-    const CSeq_entry* nuc_nps = 
-        m_Imp.GetAncestor(nuc.GetBioseq(), CBioseq_set::eClass_nuc_prot);
+    CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if ( nuc ) {
+        const CSeq_entry* prod_nps = 
+            m_Imp.GetAncestor(prod.GetBioseq(), CBioseq_set::eClass_nuc_prot);
+        const CSeq_entry* nuc_nps = 
+            m_Imp.GetAncestor(nuc.GetBioseq(), CBioseq_set::eClass_nuc_prot);
 
-    if ( (prod_nps != nuc_nps)  &&  (!m_Imp.IsNT())  &&  (!m_Imp.IsGPS()) ) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
-            "Protein product not packaged in nuc-prot set with nucleotide", 
-            feat);
+        if ( (prod_nps != nuc_nps)  &&  (!m_Imp.IsNT())  &&  (!m_Imp.IsGPS()) ) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+                "Protein product not packaged in nuc-prot set with nucleotide", 
+                feat);
+        }
     }
-
     const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(prod.GetBioseq());
     if ( !sfp ) {
         return;
@@ -1462,19 +1473,24 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
     // !!! can't look for contating feature using GetBestOverlap.
     // This implementation should be changed once the above is supported
 
-    // look for intersecting genes
+    // look for overlapping genes
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
+        feat.GetLocation(),
+        CSeqFeatData::e_Gene,
+        eOverlap_Contains,
+        *m_Scope);
+    if ( gene ) {
+        return;
+    }
+
+
+    // look for intersecting genes
+    gene = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
         eOverlap_Simple,
         *m_Scope);
-    if ( gene == 0 ) {
-        return;
-    }
-
-    // Make sure the gene overlap and not just intersect
-    int i = TestForOverlap(gene->GetLocation(), feat.GetLocation(), eOverlap_Contained);
-    if ( i >= 0 ) {
+    if ( !gene ) {
         return;
     }
 
@@ -1753,7 +1769,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         return;
     }
 
-    CSeqVector prot_vec = prot_handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    CSeqVector prot_vec = prot_handle.GetSeqVector();
+    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
     size_t prot_len = prot_vec.size(); 
     size_t len = transl_prot.length();
 
@@ -1925,7 +1942,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
-        eOverlap_Contained,
+        eOverlap_Contains,
         *m_Scope);
     if ( !overlap ) {
         return;
@@ -2139,6 +2156,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/02/14 21:54:21  shomrat
+* Change use of GetBestOverlappingFeat due to addition of contains option
+*
 * Revision 1.16  2003/02/12 18:05:52  shomrat
 * SerialNumberInComment was moved to validerror_imp; and a few bug fixes
 *
