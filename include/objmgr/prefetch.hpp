@@ -64,7 +64,7 @@ public:
     typedef CPrefetchToken_Impl::TIds TIds;
 
     enum ENon_locking_prefetch {
-        eNon_locking_prefetch,
+        eNon_locking_prefetch
     };
 
     CPrefetchToken(void);
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/02/22 17:51:58  grichenk
+* Fixed enum warning
+*
 * Revision 1.9  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
