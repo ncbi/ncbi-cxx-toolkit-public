@@ -57,9 +57,74 @@ MakeDirs()
 }
 
 
+CommonRoot()
+{
+    dir=`echo $1 | sed -e 's|/\$||'`
+    list1=`echo "$dir" | tr '/' ' '`
+    root=''
+    for i in $list1 ; do
+        newroot=$root/$i
+        tail=`echo $2 | sed -e "s|^$newroot||"`
+        if [ ! $2 = ${newroot}$tail ]; then
+            break;
+        fi
+        root=$newroot
+    done
+    if [ ! -z "$root" ]; then
+        echo $root
+    fi
+}
+
+RelativePath()
+{
+    path1="$1"
+    path2="$2"
+    if [ "$path1" = "$path2" ]; then
+        echo .
+        return
+    fi
+    diff=""
+
+    croot=`CommonRoot $1 $2`
+    if [ -z "$croot" ]; then
+        return
+    fi
+    tail=`echo $path2 | sed -e "s|^$croot||"`
+    for i in `echo "$tail" | tr '/' ' '` ; do
+        back_path="${back_path}"../
+    done
+    back_path=`echo $back_path | sed -e 's|/\$||'`
+    tail=`echo $path1 | sed -e "s|^$croot||"`
+    diff=${back_path}${tail}
+    echo $diff
+}
+
+RelativeCP()
+{
+    if [ "$copy_all" = "yes" ]; then
+        COMMON_ExecRB $BINCOPY $1 $2
+    else
+        # trying to find the relative path
+        path1=`dirname $1`
+        path2=$2
+        pdiff=`RelativePath $path1 $path2`
+
+        if [ "$pdiff" = "" ]; then
+            COMMON_ExecRB $BINCOPY $1 $2
+        else
+            path2=$2
+            file2=`basename $1`
+            old_path=`pwd`
+            cd $path2
+            COMMON_ExecRB $BINCOPY $pdiff/$file2 $file2
+            cd $old_path
+        fi
+    fi
+}
+
 DoCopy()
 {
-    COMMON_ExecRB $BINCOPY $1 $2
+    RelativeCP $1 $2
 
     case `uname` in
         Darwin*)
@@ -74,11 +139,11 @@ CopyFiles()
 {
     for x in $BINS; do
         echo copying: $x
-        src_file=$src_dir/bin/$x 
+        src_file=$src_dir/bin/$x
         if [ -f $src_file ]; then
             mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-            COMMON_ExecRB $BINCOPY $src_file $target_dir/bin/
+            RelativeCP $src_file $target_dir/bin/
         else
             echo "++++++++ RP proc: $x_common_rb"
             $x_common_rb
@@ -88,10 +153,10 @@ CopyFiles()
 
     for x in $LIBS; do
         echo copying: lib_$x.so
-        src_file=$src_dir/lib/lib$x.so 
+        src_file=$src_dir/lib/lib$x.so
         if [ -f $src_file ]; then
             rm -f $target_dir/lib/lib$x.so
-            DoCopy $src_file $target_dir/lib/ 
+            DoCopy $src_file $target_dir/lib/
         else
             $x_common_rb
             COMMON_Error "File not found: $src_file"
@@ -122,7 +187,7 @@ CopyFiles()
 
 if [ $# -eq 0 ]; then
     Usage "Wrong number of arguments"
-fi 
+fi
 
 copy_all="no"
 if [ $1 = "--copy" ]; then
@@ -136,6 +201,8 @@ else
     target_dir=$2
 fi
 
+src_dir=`echo $src_dir | sed -e 's|/\$||'`
+target_dir=`echo $target_dir | sed -e 's|/\$||'`
 
 if [ -z "$src_dir" ]; then
     Usage "Source directory not provided"
@@ -148,8 +215,8 @@ fi
 if [ ! -d $src_dir ]; then
     COMMON_Error "Source directory not found: $src_dir"
 else
-    echo Source: $src_dir    
-    echo Target: $target_dir    
+    echo Source: $src_dir
+    echo Target: $target_dir
 fi
 
 if [ ! -d $src_dir/bin ]; then
@@ -159,7 +226,6 @@ fi
 if [ ! -d $src_dir/lib ]; then
     COMMON_Error "lib directory not found: $src_dir/lib"
 fi
-
 
 
 source_dir=`FindDirPath $src_dir /src/gui/gbench`
