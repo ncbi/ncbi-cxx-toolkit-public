@@ -34,6 +34,8 @@
 #include <dbapi/driver/gateway/interfaces.hpp>
 // #include <dbapi/driver/util/numeric_convert.hpp>
 
+#include "../../rdblib/common/cdb_object_send_read.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -246,149 +248,6 @@ CDB_Result* CGW_BaseCmd::Result()
   }
 }
 
-CDB_Object* read_CDB_Object(CDB_Object* obj)
-{
-  //// EDB_Type, construction, IsNULL
-  IGate* pGate = conn->getProtocol();
-  int type;
-  int size=-1;
-  if (pGate->get_input_arg("type", &type) != IGate::eGood) {
-    comprot_errmsg();
-    return 0;
-  }
-  if (pGate->get_input_arg("size", &size) != IGate::eGood) {
-    //comprot_errmsg();
-    //return 0;
-  }
-
-  if( obj==NULL ) {
-    obj = CDB_Object::Create((EDB_Type)type,size);
-    if (obj==NULL ) {
-      string msg = "Invalid CDB_Object type: ";
-      msg+= NStr::IntToString(type);
-      msg+= "\n";
-      conn->setErrMsg( msg.c_str() );
-      return 0;
-    }
-  }
-  else if( type!=obj->GetType() ) {
-    // We can check for exact match without worrying about compatible types
-    // (e.g. Int and SmallInt) because the server side provides any valid
-    // conversions to the type the user wants.
-    string msg = "Returned and requested CDB_Object types do not match: ";
-    msg+= NStr::IntToString( type );
-    msg+= " != ";
-    msg+= NStr::IntToString( obj->GetType() );
-    msg+= "\n";
-    conn->setErrMsg( msg.c_str() );
-    return 0;
-  }
-
-  int isNull=0;
-  if( pGate->get_input_arg("null", &isNull) != IGate::eGood ) {
-    // comprot_errmsg();
-    // return 0;
-  }
-  else if(isNull) {
-    obj->AssignNULL();
-    return obj;
-  }
-
-  //// Recieve the type-specific value of CDB_Object
-  switch( (EDB_Type)type ) {
-    case eDB_Int:
-    {
-      int val;
-      if (pGate->get_input_arg("value", &val) != IGate::eGood) {
-        comprot_errmsg();
-        return 0;
-      }
-      *((CDB_Int*)obj) = val;
-      break;
-    }
-
-    case eDB_SmallInt:
-    {
-      int val;
-      if (pGate->get_input_arg("value", &val) != IGate::eGood) {
-        comprot_errmsg();
-        return 0;
-      }
-      *((CDB_SmallInt*)obj) = val;
-      break;
-    }
-
-    case eDB_TinyInt:
-    {
-      int val;
-      if (pGate->get_input_arg("value", &val) != IGate::eGood) {
-        comprot_errmsg();
-        return 0;
-      }
-      *((CDB_TinyInt*)obj) = val;
-      break;
-    }
-
-    // case eDB_BigInt:
-
-    case eDB_VarChar:
-    {
-      const char* str;
-      int len;
-      if( pGate->get_input_arg("value", &str, (unsigned*)&len) != IGate::eGood ) {
-        comprot_errmsg();
-        return 0;
-      }
-      ((CDB_VarChar*)obj)->SetValue(str,len);
-      break;
-    }
-    case eDB_Char:
-    {
-      const char* str;
-      int len;
-      if (pGate->get_input_arg("value", &str, (unsigned*)&len) != IGate::eGood) {
-        comprot_errmsg();
-        return 0;
-      }
-      ((CDB_Char*)obj)->SetValue(str,len);
-      break;
-    }
-
-    /*
-    case eDB_VarBinary    :
-    case eDB_Binary       :
-    case eDB_Float        :
-    case eDB_Double       :
-    */
-    case eDB_DateTime:
-    {
-      int val, sec;
-      if (pGate->get_input_arg("value", &val) != IGate::eGood) {
-        comprot_errmsg();
-        return 0;
-      }
-      if (pGate->get_input_arg("secs", &sec) != IGate::eGood) {
-        comprot_errmsg();
-        return 0;
-      }
-
-      // cerr << "Days=" << val << " 300Secs=" << sec << "\n";
-
-      ((CDB_DateTime*)obj)->Assign(val,sec);
-      break;
-    }
-    /*
-    case eDB_SmallDateTime:
-    case eDB_Text         :
-    case eDB_Image        :
-    case eDB_Bit          :
-    case eDB_Numeric      :
-    */
-
-  }
-  return obj;
-
-}
 
 /* A more complex function than the rest:
  * needs to handle all possible EDB_Type-s and memory allocation.
@@ -423,7 +282,7 @@ CDB_Object* CGW_Result::GetItem(CDB_Object* item_buf)
   }
   pGate->send_data();
 
-  return read_CDB_Object(item_buf);
+  return read_CDB_Object(pGate,item_buf);
 }
 
 // A client callback invoked by comprot server from GWLib:Result:ReadItem
@@ -520,31 +379,6 @@ size_t CGW_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
     return 0;
   }
   return callback_args.bytesReceived;
-  /*
-  int i=-1;
-  if(is_null) {
-    if( pGate->get_input_arg("is_null", &i) != IGate::eGood) {
-      comprot_errmsg();
-      return 0;
-    }
-    *is_null = i;
-  }
-  cerr << "  is_null==" << i << "\n";
-
-  int size=0;
-  if( pGate->get_input_arg("size", &size) != IGate::eGood ) {
-    comprot_errmsg();
-    return 0;
-  }
-  cerr << "  size=" << size << "\n";
-
-  if( pGate->get_input_arg("value", (char*)buffer, buffer_size ) != IGate::eGood ) {
-    comprot_errmsg();
-    return 0;
-  }
-  cerr << "  value==" << buffer << "\n";
-  return size;
-  */
 }
 
 CGWContext::CGWContext(CSSSConnection& sssConnection)
@@ -554,7 +388,8 @@ CGWContext::CGWContext(CSSSConnection& sssConnection)
   CProcBinCli* pBin = conn->getProcBin();
   pBin->regProc( new C_RDBLib_Result_ReadItem() );
 
-  DBINT version = DBVERSION_UNKNOWN;
+  //DBINT version = DBVERSION_UNKNOWN; <-- 'version' is a rudiment from dblib
+  int version = 0;
   remoteObj = comprot_int1( "GWLib:Context:new", 0, (int*)&version );
 }
 
@@ -565,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/03/26 17:58:06  sapojnik
+ * Functions for sending/receiving CDB_Object-s moved to new gateway_common.lib
+ *
  * Revision 1.4  2002/03/19 21:45:10  sapojnik
  * some small bugs fixed after testing - the ones related to Connection:SendDataCmd,DropCmd; BaseCmd:Send
  *
