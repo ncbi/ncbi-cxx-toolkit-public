@@ -681,12 +681,10 @@ int CBlastApplication::Run(void)
                   args["lcase"].AsBoolean());
 
     if (args["dbrange"]) {
-        char* delimiters = " ,:;";
+        const char* delimiters = " ,:;";
         char* range_str = strdup(args["dbrange"].AsString().c_str());
-        char* ptr = NULL;
-        first_oid =
-            atoi(strtok_r(range_str, delimiters, &ptr));
-        last_oid = atoi(ptr);
+        first_oid = atoi(strtok(range_str, delimiters));
+        last_oid = atoi(strtok(NULL, delimiters));
         sfree(range_str);
     }
 
