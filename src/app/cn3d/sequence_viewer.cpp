@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2002/12/09 16:25:04  thiessen
+* allow negative score threshholds
+*
 * Revision 1.58  2002/12/06 17:07:15  thiessen
 * remove seqrow export format; add choice of repeat handling for FASTA export; export rows in display order
 *
@@ -484,14 +487,15 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                     uids[row] = sequence->identifier->pdbID;
                     if (sequence->identifier->pdbChain != ' ')
                         uids[row] += (char) sequence->identifier->pdbChain;
+                    uids[row] += "%5BACCN%5D";
                 }
             } else if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
                 CNcbiOstrstream uidoss;
-                uidoss << sequence->identifier->gi << '\0';
+                uidoss << sequence->identifier->gi << "%5BUID%5D" << '\0';
                 uids[row] = uidoss.str();
                 delete uidoss.str();
             } else if (sequence->identifier->accession.size() > 0) {
-                uids[row] = sequence->identifier->accession;
+                uids[row] = sequence->identifier->accession + "%5BACCN%5D";
             }
         }
     }
@@ -584,8 +588,9 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
             // title
             if (doHTML && uids[row].size() > 0) {
-                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?uid="
-                    << uids[row] << "&form=6&db=p&Dopt=g\" onMouseOut=\"window.status=''\"\n"
+                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
+                    << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
+                    << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
                     << ((sequence->description.size() > 0) ? sequence->description : titles[row])
                     << "';return true\">"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/12/09 16:25:04  thiessen
+* allow negative score threshholds
+*
 * Revision 1.19  2002/11/06 00:18:10  thiessen
 * fixes for new CRef/const rules in objects
 *
@@ -604,7 +607,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxStaticText *item4 = new wxStaticText( panel, ID_TEXT, "Single block score threshold:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     iSingle = new IntegerSpinCtrl(panel,
-        0, 100, 1, init.singleBlockThreshold,
+        -100, 100, 1, init.singleBlockThreshold,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(iSingle->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -613,7 +616,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxStaticText *item7 = new wxStaticText( panel, ID_TEXT, "Multiple block score threshold:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item7, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     iMultiple = new IntegerSpinCtrl(panel,
-        0, 100, 1, init.multipleBlockThreshold,
+        -100, 100, 1, init.multipleBlockThreshold,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(iMultiple->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);

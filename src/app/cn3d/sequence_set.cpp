@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2002/12/09 16:25:04  thiessen
+* allow negative score threshholds
+*
 * Revision 1.53  2002/11/22 19:54:29  thiessen
 * fixes for wxMac/OSX
 *
@@ -629,20 +632,20 @@ void LaunchWebPage(const char *url)
 
 void Sequence::LaunchWebBrowserWithInfo(void) const
 {
-    char dbChar = isProtein ? 'P' : 'N';
+    std::string db = isProtein ? "Protein" : "Nucleotide";
     CNcbiOstrstream oss;
-    oss << "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?form=6&Dopt=g&db="
-        << dbChar << "&uid=";
+    oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=GenPept"
+        << "&db=" << db << "&term=";
     if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();
         if (identifier->pdbChain != ' ')
             oss << (char) identifier->pdbChain;
-        oss << "%5B" << dbChar << "ACC%5D";
+        oss << "%5BACCN%5D";
     } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        oss << identifier->gi;
+        oss << identifier->gi << "%5BUID%5D";
     } else if (identifier->accession.size() > 0) {
         if (identifier->accession == "query" || identifier->accession == "consensus") return;
-        oss << identifier->accession.c_str();
+        oss << identifier->accession.c_str() << "%5BACCN%5D";
     }
     oss << '\0';
     LaunchWebPage(oss.str());
