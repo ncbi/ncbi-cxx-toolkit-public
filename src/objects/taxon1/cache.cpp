@@ -96,29 +96,38 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
                     list< CRef<CTaxon1_name> >& lLin = resp.SetTaxalineage();
                     CTaxon1Node* pParent = 0;
                     pNode   = 0;
-                    list< CRef< CTaxon1_name > >::reverse_iterator i;
-                    // Fill in storage
-                    for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
-                        if( !m_ppEntries[ (*i)->GetTaxid() ] ) {
-                            // Create node
-                            break;
-                        } else {
-                            pParent = m_ppEntries[ (*i)->GetTaxid() ];
-                        }
-                    }
-                    // Create tree iterator
-                    CTreeIterator* pIt = ( m_tPartTree.GetIterator() );
-                    if( !pParent ) {
-                        pParent = static_cast<CTaxon1Node*>(pIt->GetNode());
-                    }
-                    pIt->GoNode( pParent );
-                    for( ; i != lLin.rend(); ++i ) {
-                        pNode = new CTaxon1Node(*i);
-                        m_ppEntries[ pNode->GetTaxId() ] = pNode;
-                        pIt->AddChild( pNode );
-                        pIt->GoNode( pNode );
-                    }
-                    _ASSERT( pNode );
+		    // Check if this is a secondary node
+		    if( lLin.front()->GetTaxid() != tax_id ) {
+			// Secondary node, try to get primary from index
+			pNode = m_ppEntries[ lLin.front()->GetTaxid() ];
+		    }
+		    if( !pNode ) {
+			list< CRef< CTaxon1_name > >::reverse_iterator i;
+			// Fill in storage
+			for( i = lLin.rbegin(); i != lLin.rend(); ++i ) {
+			    if( !m_ppEntries[ (*i)->GetTaxid() ] ) {
+				// Create node
+				break;
+			    } else {
+				pParent = m_ppEntries[ (*i)->GetTaxid() ];
+			    }
+			}
+			// Create tree iterator
+			CTreeIterator* pIt = ( m_tPartTree.GetIterator() );
+			if( !pParent ) {
+			    pParent = static_cast<CTaxon1Node*>(pIt->GetNode());
+			}
+			pIt->GoNode( pParent );
+			for( ; i != lLin.rend(); ++i ) {
+			    pNode = new CTaxon1Node(*i);
+			    m_ppEntries[ pNode->GetTaxId() ] = pNode;
+			    pIt->AddChild( pNode );
+			    pIt->GoNode( pNode );
+			}
+		    } else { // Store secondary in index
+			m_ppEntries[ tax_id ] = pNode;
+		    }
+		    _ASSERT( pNode );
                     *ppData = pNode;
                     return true;
                 } else { // Internal: wrong respond type
@@ -921,6 +930,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.11  2003/01/21 19:36:22  domrach
+ * Secondary tax id support added. New copy constructor for partial tree support added.
+ *
  * Revision 6.10  2002/11/08 14:39:52  domrach
  * Member function GetSuperkingdom() added
  *

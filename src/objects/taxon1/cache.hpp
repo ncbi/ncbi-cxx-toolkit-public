@@ -188,6 +188,9 @@ class CTaxon1Node : public CTreeContNodeBase
 public:
     CTaxon1Node( const CRef< CTaxon1_name >& ref )
         : m_ref( ref ), m_cacheEntry( NULL ), m_bTerm( false ) {}
+    explicit CTaxon1Node( const CTaxon1Node& node )
+        : CTreeContNodeBase(), m_ref( node.m_ref ),
+	  m_cacheEntry( NULL ), m_bTerm( false ) {}
 
     int                GetTaxId() const { return m_ref->GetTaxid(); }
     const string&      GetName() const { return m_ref->GetOname(); }
@@ -205,7 +208,7 @@ public:
     bool               IsTerminal() const { return m_bTerm; }
     void               SetTerminal() { m_bTerm = true; }
 
-    CTaxon1Node*               GetParent()
+    CTaxon1Node*       GetParent()
     { return static_cast<CTaxon1Node*>(Parent()); }
 private:
     friend class COrgRefCache;
@@ -223,6 +226,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.7  2003/01/21 19:36:23  domrach
+ * Secondary tax id support added. New copy constructor for partial tree support added.
+ *
  * Revision 6.6  2003/01/10 19:58:46  domrach
  * Function GetPopsetJoin() added to CTaxon1 class
  *
