@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.115 2002/08/07 17:18:20 ucko Exp $
+#  $Id: configure.ac,v 1.116 2002/08/08 20:27:13 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2513,7 +2513,11 @@ if test "$with_internal" = "yes" ; then
      sep=", "
    fi
    if test -n "$reason"; then
-      AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
+      if test -z "$with_projects"  -o  "$with_projects" = "no"; then
+         AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
+      else
+         AC_MSG_WARN(["--with-internal:  Cannot build all INTERNAL projects: missing $reason"])
+      fi
    fi
 else
    WithoutProjects="$WithoutProjects internal"

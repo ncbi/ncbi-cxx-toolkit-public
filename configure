@@ -10478,9 +10478,14 @@ if test "$with_internal" = "yes" ; then
      sep=", "
    fi
    if test -n "$reason"; then
-      { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects: missing $reason\"" >&5
+      if test -z "$with_projects"  -o  "$with_projects" = "no"; then
+         { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects: missing $reason\"" >&5
 echo "$as_me: error: \"--with-internal:  Cannot build INTERNAL projects: missing $reason\"" >&2;}
    { (exit 1); exit 1; }; }
+      else
+         { echo "$as_me:$LINENO: WARNING: \"--with-internal:  Cannot build all INTERNAL projects: missing $reason\"" >&5
+echo "$as_me: WARNING: \"--with-internal:  Cannot build all INTERNAL projects: missing $reason\"" >&2;}
+      fi
    fi
 else
    WithoutProjects="$WithoutProjects internal"
