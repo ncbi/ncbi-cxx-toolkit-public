@@ -1024,6 +1024,14 @@ CSeqMatch_Info CDataSource::HistoryResolve(CSeq_id_Handle idh,
                     continue;
                 }
 
+                if ( new_match.GetTSE_Info().IsDead() !=
+                     match.GetTSE_Info().IsDead() ) {
+                    if ( !new_match.GetTSE_Info().IsDead() ) {
+                        // old one is dead
+                        match = new_match;
+                    }
+                    continue;
+                }
                 CNcbiOstrstream s;
                 s << "CDataSource("<<GetName()<<"): "
                     "multiple history matches: Seq-id="<<idh.AsString()<<
