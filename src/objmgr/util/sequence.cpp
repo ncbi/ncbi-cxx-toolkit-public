@@ -230,8 +230,26 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
 {
     switch (loc.Which()) {
     case CSeq_loc::e_Bond:
-        return loc.GetBond().GetA().IsSetStrand() ?
-            loc.GetBond().GetA().GetStrand() : eNa_strand_unknown;
+        {
+            const CSeq_bond& bond = loc.GetBond();
+            ENa_strand a_strand = bond.GetA().IsSetStrand() ?
+                bond.GetA().GetStrand() : eNa_strand_unknown;
+            ENa_strand b_strand = eNa_strand_unknown;
+            if ( bond.IsSetB() ) {
+                b_strand = bond.GetB().IsSetStrand() ?
+                    bond.GetB().GetStrand() : eNa_strand_unknown;
+            }
+
+            if ( a_strand == eNa_strand_unknown  &&
+                 b_strand != eNa_strand_unknown ) {
+                a_strand = b_strand;
+            } else if ( a_strand != eNa_strand_unknown  &&
+                        b_strand == eNa_strand_unknown ) {
+                b_strand = a_strand;
+            }
+
+            return (a_strand != b_strand) ? eNa_strand_other : a_strand;
+        }
     case CSeq_loc::e_Whole:
         return eNa_strand_both;
     case CSeq_loc::e_Int:
@@ -266,6 +284,27 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
         }
         return strand;
     }
+    case CSeq_loc::e_Mix:
+    {
+        ENa_strand strand = eNa_strand_unknown;
+        bool strand_set = false;
+        ITERATE(CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
+            ENa_strand istrand = GetStrand(**it);
+            if (strand == eNa_strand_unknown  &&  istrand == eNa_strand_plus) {
+                strand = eNa_strand_plus;
+                strand_set = true;
+            } else if (strand == eNa_strand_plus  &&
+                istrand == eNa_strand_unknown) {
+                istrand = eNa_strand_plus;
+                strand_set = true;
+            } else if (!strand_set) {
+                strand = istrand;
+                strand_set = true;
+            } else if (istrand != strand) {
+                return eNa_strand_other;
+            }
+        }
+    }
     default:
         return eNa_strand_unknown;
     }
@@ -275,14 +314,13 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
 ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
 {
     if (!IsOneBioseq(loc, scope)) {
-        return eNa_strand_unknown;
+        return eNa_strand_unknown;  // multiple bioseqs
     }
 
     ENa_strand strand = eNa_strand_unknown, cstrand;
     bool strand_set = false;
     for (CSeq_loc_CI i(loc); i; ++i) {
         switch (i.GetSeq_loc().Which()) {
-        case CSeq_loc::e_Mix:
         case CSeq_loc::e_Equiv:
             break;
         default:
@@ -2292,6 +2330,250 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 }
 
 
+typedef CSeq_loc::TRange    TRange;
+typedef vector<TRange>      TRangeVec;
+
+
+CSeq_loc* SeqLocMerge
+(const CBioseq_Handle& target,
+ const CSeq_loc& loc1,
+ const CSeq_loc& loc2,
+ TSeqLocFlags flags)
+{
+    _ASSERT(target);
+
+    vector< CConstRef<CSeq_loc> > locs;
+    locs.push_back(CConstRef<CSeq_loc>(&loc1));
+    locs.push_back(CConstRef<CSeq_loc>(&loc2));
+    return SeqLocMerge(target, locs, flags);
+}
+
+
+static void s_CollectRanges(const CSeq_loc& loc, TRangeVec& ranges)
+{
+    // skipping empty / nulls
+    for ( CSeq_loc_CI li(loc); li; ++li ) {
+        ranges.push_back(li.GetRange());
+    }
+}
+
+
+static void s_MergeRanges(TRangeVec& ranges, TSeqLocFlags flags)
+{
+    bool merge = (flags & fMergeIntervals) != 0;
+    bool fuse  = (flags & fFuseAbutting) != 0;
+
+    if ( !merge  &&  !fuse ) {
+        return;
+    }
+
+    TRangeVec::iterator next = ranges.begin();
+    TRangeVec::iterator curr = next++;
+    bool advance = true;
+    while ( next != ranges.end() ) {
+        advance = true;
+        if ( (merge  &&  curr->GetTo() >= next->GetFrom())  ||
+             (fuse   &&  curr->GetTo() + 1 == next->GetFrom()) ) {
+            *curr += *next;
+            next = ranges.erase(next);
+            advance = false;
+        }
+        if ( advance ) {
+            curr = next++;
+        }
+    }
+}
+
+
+static CSeq_loc* s_CreateSeqLoc
+(CSeq_id& id,
+ const TRangeVec& ranges,
+ ENa_strand strand,
+ bool rearranged,
+ bool add_null)
+{
+    static const  CSeq_loc null_loc(CSeq_loc::e_Null);
+
+    bool has_pnt = false;
+    bool has_int = false;
+
+    if ( ranges.size() < 2 ) {
+        add_null = false;
+    }
+
+    if ( !add_null ) {
+        ITERATE(TRangeVec, it, ranges) {
+            if ( it->GetLength() == 1 ) {
+                has_pnt = true;
+            } else {
+                has_int = true;
+            }
+        }
+    }
+    
+    CSeq_loc::E_Choice loc_type = CSeq_loc::e_not_set;
+    if ( add_null ) {
+        loc_type = CSeq_loc::e_Mix;
+    } else if ( has_pnt  &&  has_int ) {  // points and intervals  => mix location
+        loc_type = CSeq_loc::e_Mix;
+    } else if ( has_pnt ) {  // only points
+        loc_type = ranges.size() == 1 ? CSeq_loc::e_Pnt : CSeq_loc::e_Packed_pnt;
+    } else if ( has_int ) {  // only intervals
+        loc_type = ranges.size() == 1 ? CSeq_loc::e_Int : CSeq_loc::e_Packed_int;
+    } else {
+        loc_type = CSeq_loc::e_Null;
+    }
+
+    CRef<CSeq_loc> result;
+    switch ( loc_type ) {
+    case CSeq_loc::e_Pnt:
+        {
+            result.Reset(new CSeq_loc(id, ranges.front().GetFrom(), strand));
+            break;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            CPacked_seqpnt::TPoints points(ranges.size());;
+            ITERATE(TRangeVec, it, ranges) {
+                points.push_back(it->GetFrom());
+            }
+            result.Reset(new CSeq_loc(id, points, strand));
+            
+            break;
+        }
+    case CSeq_loc::e_Int:
+        {
+            const TRange& r = ranges.front();
+            result.Reset(new CSeq_loc(id, r.GetFrom(), r.GetTo(), strand));
+            break;
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            result.Reset(new CSeq_loc(id, ranges, strand));
+            if ( rearranged ) {
+                // the first 2 intervals span the origin
+                CPacked_seqint::Tdata ivals = result->SetPacked_int().Set();
+                CPacked_seqint::Tdata::iterator it = ivals.begin();
+                if ( strand == eNa_strand_minus ) {
+                    (*it)->SetFuzz_from().SetLim(CInt_fuzz::eLim_circle);
+                    ++it;
+                    (*it)->SetFuzz_to().SetLim(CInt_fuzz::eLim_circle);
+                } else {
+                    (*it)->SetFuzz_to().SetLim(CInt_fuzz::eLim_circle);
+                    ++it;
+                    (*it)->SetFuzz_from().SetLim(CInt_fuzz::eLim_circle);
+                }
+            }
+            break;
+        }
+    case CSeq_loc::e_Mix:
+        {
+            result.Reset(new CSeq_loc);
+            CSeq_loc_mix& mix = result->SetMix();
+            TRangeVec::const_iterator last = ranges.end(); --last;
+            ITERATE(TRangeVec, it, ranges) {
+                if ( it->GetLength() == 1 ) {
+                    mix.AddSeqLoc(*new CSeq_loc(id, it->GetFrom(), strand));
+                } else {
+                    mix.AddSeqLoc(*new CSeq_loc(id, it->GetFrom(), it->GetTo(), strand));
+                }
+                if ( add_null  &&  it != last ) {
+                    mix.AddSeqLoc(null_loc);
+                }
+            }
+            break;
+        }
+    case CSeq_loc::e_Null:
+        {
+            result.Reset(new CSeq_loc);
+            result->SetNull();
+            break;
+        }
+    default:
+        {
+            result.Reset();
+        }
+    };
+
+    return result.Release();
+}
+
+
+static void s_RearrangeRanges(TRangeVec& ranges)
+{
+    deque<TRange> temp(ranges.size());
+    copy(ranges.begin(), ranges.end(), temp.begin());
+    ranges.clear();
+    temp.push_front(temp.back());  
+    temp.pop_back();
+    copy(temp.begin(), temp.end(), back_inserter(ranges));
+}
+
+
+CSeq_loc* SeqLocMerge
+(const CBioseq_Handle& target,
+ vector< CConstRef<CSeq_loc> >& locs,
+ TSeqLocFlags flags)
+{
+    _ASSERT(target);
+
+    TRangeVec ranges;
+
+    CRef<CSeq_id> id(new CSeq_id);
+    id->Assign(*FindBestChoice(target.GetBioseqCore()->GetId(), CSeq_id::BestRank));
+
+
+    CSeq_inst::TTopology topology = target.GetBioseqCore()->GetInst().CanGetTopology() ?
+        target.GetBioseqCore()->GetInst().GetTopology() : CSeq_inst::eTopology_not_set;
+    bool circular = (topology == CSeq_inst::eTopology_circular);
+    if ( circular ) {  // circular topology overrides fSingleInterval flag
+        flags &= ~fSingleInterval;
+    }
+    TSeqPos seq_len = target.GetBioseqLength();
+
+    // create a single Seq-loc holding all the locations
+    CSeq_loc temp;
+    ITERATE( vector< CConstRef<CSeq_loc> >, it, locs ) {
+        temp.Add(**it);
+    }
+    // map the location to the target bioseq
+    CRef<CSeq_loc> mapped_loc(target.MapLocation(temp));
+    _ASSERT(IsOneBioseq(*mapped_loc));  // doesn't have multiple bioseqs
+
+    ENa_strand strand = GetStrand(*mapped_loc);
+    bool rearranged = false;
+
+    if ( (flags & fSingleInterval) != 0 ) {
+            ranges.push_back(mapped_loc->GetTotalRange());
+    } else {
+        if ( strand == eNa_strand_other ) {  // multiple strands in location
+            return mapped_loc.Release();
+        }
+    
+        s_CollectRanges(*mapped_loc, ranges);
+        sort(ranges.begin(), ranges.end());  // on the plus strand
+        s_MergeRanges(ranges, flags);
+        if ( strand == eNa_strand_minus ) {
+            reverse(ranges.begin(), ranges.end());
+        }
+        // if circular bioseq and ranges span the origin, rearrange
+        if ( circular ) {
+            if ( ((strand == eNa_strand_minus)             &&
+                  (ranges.front().GetTo() == seq_len - 1)  &&
+                  (ranges.back().GetFrom() == 0))           ||
+                 ((strand != eNa_strand_minus)             &&
+                  (ranges.front().GetFrom() == 0)          &&
+                  (ranges.back().GetTo() == seq_len - 1)) ) {
+                rearranged = true;
+                s_RearrangeRanges(ranges);
+            }
+        }
+    }   
+
+    return s_CreateSeqLoc(*id, ranges, strand, rearranged, (flags & fAddNulls) != 0);
+}
+
+
 // Get the encoding CDS feature of a given protein sequence.
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope)
 {
@@ -3407,6 +3689,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.67  2004/01/28 17:19:04  shomrat
+* Implemented SeqLocMerge
+*
 * Revision 1.66  2003/12/16 19:37:43  shomrat
 * Retrieve encoding feature and bioseq of a protein
 *
