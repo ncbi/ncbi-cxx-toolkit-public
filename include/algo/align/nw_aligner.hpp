@@ -104,7 +104,13 @@ public:
     virtual TScore Run();
 
     // Create human-readable representation of the alignment
-    string Format(size_t line_width = 50) const;
+    enum EFormat {
+        eFormatType1,
+        eFormatType2,
+        eFormatAsn,
+        eFormatFastA
+    };
+    string Format(size_t line_width, EFormat type, int param = 0) const;
 
     // Retrieve transcript string
     string GetTranscript() const;
@@ -167,6 +173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/24 16:48:36  kapustin
+ * Support more output formats - type 2 and gapped FastA
+ *
  * Revision 1.4  2003/01/21 12:36:56  kapustin
  * Specify negative infinity value
  *

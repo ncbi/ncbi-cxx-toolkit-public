@@ -279,38 +279,92 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace)
 
 // creates formatted output of alignment;
 // requires prior call to Run
-string CNWAligner::Format(size_t line_width) const
+string CNWAligner::Format(size_t line_width, EFormat type, int param) const
 {
-    vector<char> v1, v2;
-
-    size_t aln_size = x_ApplyTranscript(&v1, &v2);
-    unsigned i1 = 0, i2 = 0;
     ostrstream ss;
-    for (size_t i = 0;  i < aln_size; ) {
-        ss << i << '\t' << i1 << ':' << i2 << endl;
-        int i0 = i;
-        for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width;
-             ++i, ++jPos) {
-            char c = v1[i0 + jPos];
-            ss << c;
-            if(c != '-'  &&  c != '+')
-                i1++;
-        }
-        ss << endl;
+    vector<char> v1, v2;
+    size_t aln_size = x_ApplyTranscript(&v1, &v2);
 
-        string marker_line(line_width, ' ');
-        i = i0;
-        for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width;
-             ++i, ++jPos) {
-            char c1 = v1[i0 + jPos];
-            char c  = v2[i0 + jPos];
-            ss << c;
-            if(c != '-' && c != '+')
-                i2++;
-            if(c != c1  &&  c != '-'  &&  c1 != '-'  &&  c1 != '+')
-                marker_line[jPos] = '^';
+    switch (type) {
+
+    case eFormatType1: {
+        unsigned i1 = 0, i2 = 0;
+        for (size_t i = 0;  i < aln_size; ) {
+            ss << i << '\t' << i1 << ':' << i2 << endl;
+            int i0 = i;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width;
+                 ++i, ++jPos) {
+                char c = v1[i0 + jPos];
+                ss << c;
+                if(c != '-'  &&  c != '+')
+                    i1++;
+            }
+            ss << endl;
+            
+            string marker_line(line_width, ' ');
+            i = i0;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width;
+                 ++i, ++jPos) {
+                char c1 = v1[i0 + jPos];
+                char c  = v2[i0 + jPos];
+                ss << c;
+                if(c != '-' && c != '+')
+                    i2++;
+                if(c != c1  &&  c != '-'  &&  c1 != '-'  &&  c1 != '+')
+                    marker_line[jPos] = '^';
+            }
+            ss << endl << marker_line << endl;
         }
-        ss << endl << marker_line << endl;
+    }
+    break;
+
+    case eFormatType2: {
+        unsigned i1 = 0, i2 = 0;
+        for (size_t i = 0;  i < aln_size; ) {
+            ss << i << '\t' << i1 << ':' << i2 << endl;
+            int i0 = i;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width;
+                 ++i, ++jPos) {
+                char c = v1[i0 + jPos];
+                ss << c;
+                if(c != '-'  &&  c != '+')
+                    i1++;
+            }
+            ss << endl;
+            
+            string line2 (line_width, ' ');
+            string line3 (line_width, ' ');
+            i = i0;
+            for (size_t jPos = 0;  i < aln_size  &&  jPos < line_width;
+                 ++i, ++jPos) {
+                char c1 = v1[i0 + jPos];
+                char c2  = v2[i0 + jPos];
+                if(c2 != '-' && c2 != '+')
+                    i2++;
+                if(c2 == c1)
+                    line2[jPos] = '|';
+                line3[jPos] = c2;
+            }
+            ss << line2 << endl << line3 << endl << endl;
+        }
+    }
+    break;
+
+    case eFormatAsn: {
+    }
+    break;
+
+    case eFormatFastA: {
+        const vector<char>* pv = param == 1? &v1: &v2;
+        for(size_t i = 0; i < aln_size; ++i) {
+            for(size_t j = 0; j < line_width && i < aln_size; ++j, ++i) {
+                ss << (*pv)[i];
+            }
+            ss << endl;
+        }
+    }
+    break;
+
     }
 
     return CNcbiOstrstreamToString(ss);
@@ -479,8 +533,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/01/24 16:48:50  kapustin
+ * Support more output formats - type 2 and gapped FastA
+ *
  * Revision 1.7  2003/01/21 16:34:21  kapustin
- * mm
+ * Get rid of reverse() and reverse_copy() not supported by MSVC and/or ICC
  *
  * Revision 1.6  2003/01/21 12:41:37  kapustin
  * Use class neg infinity constant to specify least possible score
