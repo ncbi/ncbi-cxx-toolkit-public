@@ -822,7 +822,6 @@ CTL_RowResult::~CTL_RowResult()
 {
     if ( m_ColFmt ) {
         delete[] m_ColFmt;
-	m_ColFmt= 0;
     }
 
     if ( m_EOR ) {
@@ -875,16 +874,12 @@ EDB_ResType CTL_CursorResult::ResultType() const
 
 CTL_CursorResult::~CTL_CursorResult()
 {
-    if ( m_ColFmt) {
-        delete[] m_ColFmt;
-	m_ColFmt= 0;
-    }
-
-    if ( m_EOR ) {
+    if ( !m_EOR ) {
         CS_INT res_type;
         while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
             continue;
         }
+	m_EOR= true;
     }
 }
 
@@ -908,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/10/01 19:27:40  soussov
+ * Fixed typo in ~CTL_CursorResult
+ *
  * Revision 1.5  2001/10/01 19:13:56  soussov
  * Eliminates double deletes in results destructor
  *
