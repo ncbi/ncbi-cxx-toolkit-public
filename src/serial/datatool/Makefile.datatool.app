@@ -11,7 +11,8 @@ SRC = datatool \
 	type namespace statictype enumtype reftype unitype blocktype choicetype \
 	typestr ptrstr stdstr classstr enumstr stlstr choicestr choiceptrstr \
 	value mcontainer module moduleset generate filecode code \
-	fileutil alexer aparser parser lexer exceptions comments srcutil
+	fileutil alexer aparser parser lexer exceptions comments srcutil \
+	dtdlexer dtdparser
 LIB = xser xutil xncbi
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
