@@ -3,52 +3,57 @@
 <!--#include virtual="./ssi/header.shtml" -->
 
 <h1>NCBI C++ Toolkit developers and major contributors</h1>
-(<i>draft</i>)
+(<i><b>NOTE:</b> this page is always a <b>draft</b> and virtually <b>never</b> up-to-date</i>.)
 <br><br>
 
 <table BORDER WIDTH="100%" NOSAVE>
 <tr NOSAVE>
-<td NOSAVE><b><i>full-time developers</i></b></td>
-
-<td>&nbsp;</td>
+<th NOSAVE colspan=2 align=center>Full-time developers</th>
 </tr>
 
 <tr>
-<td>Denis Vakatov</td>
+<td>Denis Vakatov
+<br>(since Oct 1998)
+</td>
 
-<td>Fathered the Toolkit. Supervise all works on the portable (core, non-internal)
+<td>Fathered the Toolkit.
+<br>Coordinate all works on the portable (core, non-internal)
 projects of the Toolkit, actively participate in the design (and sometimes
 implementation details) of all core APIs.
-<br>CONFIGURE -- UNIX configuration tool (using <i>autoconf</i>).
-<br>CORELIB -- orig.author and active supporter/developer
-<br>CGI -- orig.author of "CGI Request" and "CGI Application"; maintain
-all of it now
+<br>CONFIGURE -- orig.author and eventual supporter.
+<br>CORELIB -- orig.author of many modules and active supporter/developer.
+<br>CGI -- orig.author of "CGI Request" and "CGI Application".
+<br>DBAPI -- a massive code and API revision on incorporating DBAPI into
+the Toolkit (with the orig.author, V.Soussov);  participate in the core
+(exception, diagnostic, driver manager) code support and development.
 <br>CONNECT -- orig.author of the core, abstract connection(CONN) and portable
 socket(SOCK) APIs, and FW-daemon.
+<br>GUI -- helped setup the project structure, namespace and common definitions.
 <br>DOC -- "Reference Manual", "FAQ", mailing lists; snapshots, announcements.</td>
 </tr>
 
 <tr>
 <td>Eugene Vasilchenko
-<br>(Nov 1999 - Feb 2001)</td>
+<br>(Nov 1999 - Feb 2001)
+<br>(Aug 2002 - current)</td>
 
-<td>CORELIB -- "CObject, CRef&lt;&gt;"
-<br>CGI -- "CGI Response", "Fast-CGI module"
+<td>CORELIB -- "CObject, CRef&lt;&gt;", multi-threading
+<br>CGI -- orig.author of "CGI Response", "Fast-CGI module"
 <br>HTML -- orig.author
 <br>SERIAL -- orig.author
-<br>DATATOOL -- orig.author</td>
+<br>DATATOOL -- orig.author
+<br>OBJMGR -- taking over the client-side "loader" code; revising some "user" APIs
+</td>
 </tr>
 
 <tr>
 <td>Anton Lavrentiev
 <br>(since Mar 2000)</td>
 
-<td>CONNECT -- author of "NCBI Services": network client API, load balancer,
-<br>service mapper, dispatcher and launcher; daemons' installation, configuration
-and monitoring.
-<br>CTOOLS -- connectivity with the NCBI C Toolkit.
-<br>MSVC++ project mutli-configuration. Internal wxWindows installations
-on MS-Win and Solaris.
+<td>CONNECT -- <i>[principal developer]</i> author of "NCBI Services": network client API, load balancer,
+<br>service mapper, dispatcher and launcher; daemons' installation, configuration and monitoring.
+<br>CTOOLS -- <i>[principal developer]</i> connectivity with the NCBI C Toolkit.
+<br>MSVC++ project mutli-configuration <i>[principal developer]</i>. Help with the internal wxWindows installations on MS-Win and Solaris.
 <br>DOC -- documentation on all of the above
 <br>Tune-up of online docs and source browsers.</td>
 </tr>
@@ -60,7 +65,8 @@ on MS-Win and Solaris.
 <td>CORELIB -- orig.author of the thread library
 <br>SERIAL -- support and further development
 <br>DATATOOL -- support and further development
-<br>OBJMGR (in progress) -- client-side API and implementation
+<br>OBJMGR -- <i>[principal developer]</i>
+client-side API and implementation
 <br>Incorporation of MT-safety and "safe-static" features to all of the above
 </td>
 </tr>
@@ -69,10 +75,16 @@ on MS-Win and Solaris.
 <td>Aaron Ucko
 <br>(since Aug 2001)</td>
 
-<td>ID1_FETCH -- developed from a test/demo application to a real client.
-<br>CONFIGURE -- multiple extentions to the configurator
+<td>ID1_FETCH -- <i>[principal developer]</i>
+developed from a test/demo application to a real client.
+<br>CONFIGURE -- <i>[principal developer]</i>; active support and development of the UNIX building framework
 <br>CORELIB -- generalized error handlers, implemented E-mail and CGI/HTML ones
-<br>PubMed (internal) -- developing C++ bio-sequence indexer
+<br>UTIL,CONNECT -- blocking-queue; multi-threaded network server API
+<br>OBJECTS -- adding new functionality, QA'ing other people's additions
+<br>ALNMGR  -- participated in the design
+<br>PubMed (internal) -- <i>[principal developer]</i>
+developing C++ bio-sequence indexer framework
+<br>Toolkit builds on UNIXes (internal) -- support of the building and installation framework
 </td>
 </tr>
 
@@ -80,7 +92,10 @@ on MS-Win and Solaris.
 <td>Andrei Gourianov
 <br>(since Nov 2001)</td>
 
-<td>OBJMGR (in progress) -- client-side API, implementation, and docs.
+<td>
+CORELIB -- major revamp of the exception API -- structure, standartize.
+<br>OBJMGR -- client-side API, implementation, and docs.
+<br>DATATOOL -- adding DTD/XML support for the code generator
 </td>
 </tr>
 
@@ -90,7 +105,9 @@ on MS-Win and Solaris.
 
 <td>HTML -- further support and development
 <br>CORELIB, UTIL -- porting of some very platform-dependent extensions
-<br>Tune-up of online docs and source browsers.</td>
+<br>Tune-up of online docs and source browsers.
+<br>Internal wxWindows installations on MS-Win and Solaris.
+</td>
 </td>
 </tr>
 
@@ -101,9 +118,16 @@ on MS-Win and Solaris.
 <td>DOC -- "Programming Manual"</td>
 </tr>
 
+<tr>
+<td>Chris Lanczycki
+<br>(summer 2002 only)</td>
+
+<td>DOC -- major reorganization of the docs structure and appearance</td>
+</tr>
+
 
 <tr>
-<td><b><i>major contributors</i></b></td>
+<th NOSAVE colspan=2 align=center>Major contributors</th>
 
 <td>&nbsp;</td>
 </tr>
@@ -119,16 +143,15 @@ client-side loader (both generic and its implementation for ID)
 <tr>
 <td>Anton Butanaev</td>
 
-<td>OBJMGR (in progress) -- implementation of ID1 loader
-<br>DBAPI (future) -- author of the "high-level, user-friendly" layer of
-DB API (to be based on Michael Kholodov's and Vladimir Soussov's DB APIs)</td>
+<td>OBJMGR -- helped to implement ID1 loader
+<br>DBAPI (in progress) -- driver for MySQL</td>
 </tr>
 
 <tr>
 <td>Michael Kholodov</td>
 
-<td>DBAPI (in progress) -- author of the "middle-level" database API based
-on Vladimir Soussov's portable DB driver API.
+<td>DBAPI -- author of the "user-level" database API based
+on Vladimir Soussov's portable "driver-level" API.
 <br>SERIAL, DATATOOL -- provided eventual support of (in the beginning of
 2001)</td>
 </tr>
@@ -136,28 +159,60 @@ on Vladimir Soussov's portable DB driver API.
 <tr>
 <td>Vladimir Soussov</td>
 
-<td>DBAPI -- author of the portable DB driver API and its
-implemementations for CTLIB, DBLIB and FreeTDS</td>
+<td>DBAPI -- <i>[principal developer]</i>
+author of the portable DB driver API and its
+implemementations for CTLIB(Sybase for UNIX and MS-Win),
+DBLIB (Sybase and Microsoft), FreeTDS and ODBC</td>
 </tr>
 
 <tr>
 <td>Victor Sapojnikov</td>
 
-<td>DBAPI (in progress) -- implementation of the MS-SQL driver on MS Windows,
-and the multiplatform "network bridge" driver</td>
+<td>DBAPI -- participated in the implementation of the Microsoft DBLIB
+driver on MS Windows;
+<br>(in progress)  multiplatform "network bridge" driver</td>
 </tr>
 
 <tr>
-<td>Joshua Juran
-<br>Jonathan Kans</td>
+<td>
+Jonathan Kans
+</td>
 
-<td>Porting to MAC.</td>
+<td>OBJECTS -- helped port seq. validator (from C Toolkit).
+<br>Provide MAC platform support.</td>
+</tr>
+
+<tr>
+<td>Vladimir Lebedev
+</td>
+
+<td>GUI_SEQ -- the first FLTK/OpenGL based GUI widgets for bio-seq
+visualization
+<br>Provide MAC platform support.
+</td>
+</tr>
+
+<tr>
+<td>Kamen Todorov
+</td>
+
+<td>ALNMGR -- library to deal with bio-sequence alignments</td>
+</tr>
+
+<tr>
+<td>Mike DiCuccio
+</td>
+
+<td>GBENCH -- (in progress) extendable C++ FLTK/OpenGL based
+GUI tool for the retrieval, visualization, analysis, editing, and
+submitting of biological sequences</td>
 </tr>
 
 <tr>
 <td>Cliff Clausen</td>
 
-<td>OBJECTS -- ported some of bio-sequence related code from C Toolkit</td>
+<td>OBJECTS -- ported various bio-sequence related code and utilities (from
+C Toolkit)</td>
 </tr>
 
 <tr>
