@@ -77,12 +77,16 @@ public:
     };
 
     typedef vector<SObjectDescription>  TTopLevelMapVector;
+    typedef vector<CObjectTypeInfo>     TCandidates;
 
 public:
     CObjectsSniffer() {}
 
     // Add new possible type to the recognition list.
     void AddCandidate(CObjectTypeInfo ti) { m_Candidates.push_back(ti); }
+
+    // Return reference on the internal vector of object candidates.
+    const TCandidates& GetCandidates() const { return m_Candidates; }
 
     // The main worker function. Tryes to identify if the input stream contains
     // any candidate objects. Function reads the stream up until it ends of
@@ -103,12 +107,12 @@ public:
     // before deserialization. This function can be overloaded in child
     // classes to implement some custom actions. This function is called before
     // deserialization.
-    virtual void ObjectFoundPre(const CObjectInfo& object, 
-                                size_t stream_offset);
+    virtual void OnObjectFoundPre(const CObjectInfo& object, 
+                                  size_t stream_offset);
     
     // Event handling virtual function, called when candidate is found
     // and deserialized.
-    virtual void ObjectFoundPost(const CObjectInfo& object);
+    virtual void OnObjectFoundPost(const CObjectInfo& object);
 
 protected:
     void ProbeASN1_Text(CObjectIStream& input);
@@ -116,8 +120,6 @@ protected:
 
 
 private:
-    typedef vector<CObjectTypeInfo> TCandidates;
-
     TCandidates         m_Candidates;  // Possible candidates for type probing
     TTopLevelMapVector  m_TopLevelMap; // Vector of level object descriptions
     size_t              m_StreamOffset;// Stream offset of the
@@ -132,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/22 16:46:46  kuznets
+ * ObjectFound methods renamed OnObjectFound, added GetCandidates() method
+ *
  * Revision 1.3  2003/05/21 14:27:49  kuznets
  * Added methods ObjectFoundPre, ObjectFoundPost
  *
