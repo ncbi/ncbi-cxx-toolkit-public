@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/10/15 13:40:33  gouriano
+* added "skiptag" flag
+*
 * Revision 1.8  2002/09/26 18:12:27  gouriano
 * added HasMemberId method
 *
@@ -76,6 +79,7 @@ void CObjectStackFrame::Reset(void)
     m_FrameType = eFrameOther;
     m_TypeInfo = 0;
     m_MemberId = 0;
+    m_SkipTag = false;
 }
 
 inline
@@ -117,6 +121,19 @@ void CObjectStackFrame::SetMemberId(const CMemberId& memberid)
             m_FrameType == eFrameChoiceVariant);
     m_MemberId = &memberid;
 }
+
+inline
+void CObjectStackFrame::SetSkipTag(void)
+{
+    m_SkipTag = true;
+}
+
+inline
+bool CObjectStackFrame::GetSkipTag(void)
+{
+    return m_SkipTag;
+}
+
 
 inline
 size_t CObjectStack::GetStackDepth(void) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/10/15 13:40:33  gouriano
+* added "skiptag" flag
+*
 * Revision 1.9  2002/09/26 18:12:27  gouriano
 * added HasMemberId method
 *
@@ -115,12 +118,16 @@ public:
     const CMemberId& GetMemberId(void) const;
     void SetMemberId(const CMemberId& memberid);
 
+    void SetSkipTag(void);
+    bool GetSkipTag(void);
+
 private:
     friend class CObjectStack;
 
     EFrameType m_FrameType;
     TTypeInfo m_TypeInfo;
     const CMemberId* m_MemberId;
+    bool m_SkipTag;
 };
 
 class CObjectStack
