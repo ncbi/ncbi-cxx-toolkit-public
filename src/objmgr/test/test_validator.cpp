@@ -90,9 +90,9 @@ void CTest_validatorApplication::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
-                    ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
-                     CArgDescriptions::eString, "current.asn");
-
+                     ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
+                      CArgDescriptions::eString, "current.prt");
+                     
     arg_desc->AddDefaultKey(
             "o", "UseID", "If true, registers ID loader",
             CArgDescriptions::eBoolean, "false");
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2002/10/08 13:40:38  clausen
+ * Changed current.asn to current.prt
+ *
  * Revision 1.1  2002/10/03 18:34:13  clausen
  * Initial version
  *
