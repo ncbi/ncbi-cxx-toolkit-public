@@ -800,14 +800,14 @@ extern SOCK URL_Connect
     /* connect to HTTPD */
     if ((st= SOCK_CreateEx(host, port, c_timeout, &sock, log)) != eIO_Success){
         CORE_LOGF(eLOG_Error,
-                  ("[URL_Connect]  Socket connect to %s:%hu failed: %s", host,
-                   port, st==eIO_Unknown? strerror(errno) : IO_StatusStr(st)));
+                  ("[URL_Connect]  Socket connect to %s:%hu failed: %s",
+                   host, port, IO_StatusStr(st)));
         return 0/*error*/;
     }
 
     /* setup i/o timeout for the connection */
     if (SOCK_SetTimeout(sock, eIO_ReadWrite, rw_timeout) != eIO_Success) {
-        CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot setup connection timeout");
+        CORE_LOG(eLOG_Error, "[URL_Connect]  Cannot set connection timeout");
         SOCK_Close(sock);
         return 0;
     }
@@ -1458,6 +1458,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2002/12/10 17:34:15  lavr
+ * Remove errno decoding on failed connect in URL_Connect()
+ *
  * Revision 6.46  2002/12/05 21:43:31  lavr
  * Fix in assignment and compare in URL_Connect()
  *
