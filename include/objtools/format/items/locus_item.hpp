@@ -99,6 +99,59 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// inline methods
+
+inline
+const string& CLocusItem::GetName(void) const
+{
+    return m_Name;
+}
+
+
+inline
+size_t CLocusItem::GetLength(void) const
+{
+    return m_Length;
+}
+
+
+inline
+CLocusItem::TStrand CLocusItem::GetStrand(void) const
+{
+    return m_Strand;
+}
+
+
+inline
+CLocusItem::TBiomol CLocusItem::GetBiomol(void) const
+{
+    return m_Biomol;
+}
+
+
+inline
+CLocusItem::TTopology CLocusItem::GetTopology (void) const
+{
+    return m_Topology;
+}
+
+
+inline
+const string& CLocusItem::GetDivision(void) const
+{
+    return m_Division;
+}
+
+
+inline
+const string& CLocusItem::GetDate(void) const
+{
+    return m_Date;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -107,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/19 16:17:17  shomrat
+* Added inline methods
+*
 * Revision 1.2  2004/04/22 15:37:32  shomrat
 * Changes in context
 *
