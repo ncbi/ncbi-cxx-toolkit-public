@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/05/11 14:06:45  grichenk
+ * The first working revision
+ *
  * Revision 1.2  2001/04/13 14:09:34  grichenk
  * Next debug version, still not working
  *
@@ -155,12 +158,15 @@ int CId1FetchApp::Run(void)
     id1_request.SetGetseqidsfromgi() = gi;
 
     // Open connection to ID1 server
-    STimeout tmout;  tmout.sec = 999999;  tmout.usec = 0;  
+    STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
     CConn_ServiceStream     id1_server("ID1", fSERV_Any, 0, &tmout);
-    CObjectOStreamAsnBinary id1_server_output(id1_server);
+    {{
+        CObjectOStreamAsnBinary id1_server_output(id1_server);
 
-    // Send request to the server
-    id1_server_output << id1_request;
+        // Send request to the server
+        id1_server_output << id1_request;
+        id1_server_output.Flush();
+    }}
 
     // Get response (Seq-Entry) from the server, dump it to the
     // output data file in the requested format
@@ -173,17 +179,16 @@ int CId1FetchApp::Run(void)
         return 0;  // Done
     }
 
-    // Read server response in ASN.1 binary format
-    CObjectIStreamAsnBinary id1_server_input(id1_server);
-
     CID1server_back id1_response;
-    id1_server_input >> id1_response;
+    {{
+        // Read server response in ASN.1 binary format
+        CObjectIStreamAsnBinary id1_server_input(id1_server);
+        id1_server_input >> id1_response;
+        if ( !id1_server.good() )
+            cout << "Spoiled stream!" << endl;
+    }}
 
-    //// CSeq_entry& seq_entry = id1_response.GetGotseqentry();
-    list< CRef< CSeq_id > >& seq_entry = id1_response.GetIds();
-
-
-    //// Dump server response in the specified format
+    // Dump server response in the specified format
     ESerialDataFormat format;
     if        (fmt == "asn") {
         format = eSerial_AsnText;
@@ -193,15 +198,15 @@ int CId1FetchApp::Run(void)
         format = eSerial_Xml;
     }
 
-    auto_ptr<CObjectOStream> id1_client_output
-        (CObjectOStream::Open(format, datafile));
-    
-    //// *id1_client_output << seq_entry;
-    *id1_client_output << **seq_entry.begin();
+    {{
+        auto_ptr<CObjectOStream> id1_client_output
+            (CObjectOStream::Open(format, datafile));
 
-    if (fmt == "asn"  ||  fmt == "xml") {
-        datafile << NcbiEndl;
-    }
+        *id1_client_output << id1_response;
+        if (fmt == "asn"  ||  fmt == "xml") {
+            datafile << NcbiEndl;
+        }
+    }}
 
     return 0;  // Done
 }
