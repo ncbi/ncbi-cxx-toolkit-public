@@ -328,6 +328,7 @@ CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
+                annotRef.m_StrandIndex = hr.GetStrandsFlag();
                 if ( hr.HasGaps() ) {
                     annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     annotRef.m_HandleRange->GetData() = hr;
@@ -529,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/08/20 15:08:27  grichenk
+ * Fixed strands indexing
+ *
  * Revision 1.22  2004/08/17 15:56:08  vasilche
  * Added mapping and unmapping CSeq_annot -> CSeq_annot_Info in x_SetObject().
  *
