@@ -671,17 +671,14 @@ CBDB_File::GetFieldIdx(const string& name) const
     if (m_KeyBuf.get()) {
         fidx = m_KeyBuf->GetFieldIndex(name);
         if (fidx >= 0) {    //  field name found
-            ++fidx;
-            return -fidx;
+            return BDB_GetUFieldIdx(fidx, true /*key*/);
         }
     }
 
     if (m_DataBuf.get()) {
         fidx = m_DataBuf->GetFieldIndex(name);
         if (fidx >= 0) {    //  field name found
-            if (fidx >= 0) {    //  field name found
-                return ++fidx;
-            }
+            return BDB_GetUFieldIdx(fidx, false /*non-key*/);
         }
     }
     return 0;
@@ -851,6 +848,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/03/08 13:32:43  kuznets
+ * Code clean-up
+ *
  * Revision 1.33  2004/02/13 15:01:02  kuznets
  * + methods working with TUnifiedFieldIndex
  *
