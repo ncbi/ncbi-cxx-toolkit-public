@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/11/19 18:07:38  juran
+ * Change Contents() to GetEntries().
+ * Implement MatchesMask().
+ *
  * Revision 1.4  2001/11/15 16:30:46  ivanov
  * Moved from util to corelib
  *
@@ -52,9 +56,8 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
-
 #include <vector>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -78,15 +81,15 @@ BEGIN_NCBI_SCOPE
 class CDirEntry
 {
 public:
-	CDirEntry();
+    CDirEntry();
 #ifdef NCBI_OS_MAC
     CDirEntry(const FSSpec& fss);
 #endif
     CDirEntry(const string& path);
     void Reset(const string& path);
     virtual ~CDirEntry(void);
-    
-	bool operator==(const CDirEntry& other) const;
+
+	bool operator== (const CDirEntry& other) const;
 #ifdef NCBI_OS_MAC
 	const FSSpec& FSS() const;
 #endif
@@ -107,6 +110,9 @@ public:
     static string MakePath(const string& dir  = kEmptyStr,
                            const string& base = kEmptyStr,
                            const string& ext  = kEmptyStr);
+
+    // Match "name" against the filename "mask"
+    static bool MatchesMask(const char *name, const char *mask);
 
     // Check existence of entry "path"
     virtual bool Exists(void) const;
@@ -190,7 +196,7 @@ public:
     // Set mode for this one object only.
     // By default ("fDefault), mode will be set to the current global mode
     // (specified by SetDefaultModeGlobal()).
-    virtual void SetDefaultMode(EType entry_type, 
+    virtual void SetDefaultMode(EType entry_type,
                                 TMode user_mode,  // e.g. fDefault
                                 TMode group_mode = fDefault,
                                 TMode other_mode = fDefault);
@@ -306,8 +312,11 @@ public:
 
     // Check if directory "dirname" exists
     virtual bool Exists(void) const;
-    
-    vector<CDirEntry> Contents() const;
+
+    // Return an array containing all directory entries.
+    // Use file name mask "mask" (if passed non-empty).
+    typedef vector< AutoPtr<CDirEntry> > TEntries;
+    TEntries GetEntries(const string& mask = kEmptyStr) const;
 
     // Create the directory using "dirname" passed in the constructor.
     bool Create(void) const;
@@ -320,18 +329,18 @@ public:
         eRecursive      // Remove all files and subdirectories
     };
 
-    // Delete exist directory
+    // Delete existing directory.
     // NOTE: This functions can delete non-empty directories (unlike
     //       CDirEntry::Remove()).
     bool Remove(EDirRemoveMode mode) const;
 };
 
 
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Inline
 //
-
 
 
 // CDirEntry
@@ -392,6 +401,12 @@ inline
 bool CDirEntry::IsDir(void) const
 {
     return GetType() == eDir;
+}
+
+inline
+bool CDirEntry::Exists(void) const
+{
+    return GetType() != eUnknown;
 }
 
 
