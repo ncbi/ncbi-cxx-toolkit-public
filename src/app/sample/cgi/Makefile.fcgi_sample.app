@@ -4,7 +4,7 @@
 #################################
 
 APP = fcgi_sample.fcgi
-SRC = fcgi_sample
+SRC = cgi_sample
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
