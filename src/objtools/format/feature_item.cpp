@@ -3178,6 +3178,14 @@ static ESourceQualifier s_SubSourceToSlot(const CSubSource& ss)
         DO_SS(transgenic);
         DO_SS(environmental_sample);
         DO_SS(isolation_source);
+        DO_SS(lat_lon);
+        DO_SS(collection_date);
+        DO_SS(collected_by);
+        DO_SS(identified_by);
+        DO_SS(fwd_primer_seq);
+        DO_SS(rev_primer_seq);
+        DO_SS(fwd_primer_name);
+        DO_SS(rev_primer_name);
 #undef DO_SS
     case CSubSource::eSubtype_other:  return eSQ_subsource_note;
     default:                          return eSQ_none;
@@ -3334,6 +3342,15 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
     DO_QUAL(anamorph);
     DO_QUAL(teleomorph);
     DO_QUAL(breed);
+
+    DO_QUAL(lat_lon);
+    DO_QUAL(collection_date);
+    DO_QUAL(collected_by);
+    DO_QUAL(identified_by);
+    DO_QUAL(fwd_primer_seq);
+    DO_QUAL(rev_primer_seq);
+    DO_QUAL(fwd_primer_name);
+    DO_QUAL(rev_primer_name);
     
     DO_QUAL(genotype);
     x_FormatQual(eSQ_plastid_name, "plastid", qvec);
@@ -3393,6 +3410,15 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
         DO_NOTE(teleomorph);
         DO_NOTE(breed);
         
+        DO_NOTE(lat_lon);
+        DO_NOTE(collection_date);
+        DO_NOTE(collected_by);
+        DO_NOTE(identified_by);
+        DO_NOTE(fwd_primer_seq);
+        DO_NOTE(rev_primer_seq);
+        DO_NOTE(fwd_primer_name);
+        DO_NOTE(rev_primer_name);
+
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
         
@@ -3514,6 +3540,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2005/02/09 14:57:06  shomrat
+* Added subsource qualifiers for Barcode of Life project
+*
 * Revision 1.42  2005/01/31 16:32:31  shomrat
 * Added /compare qualifier
 *

@@ -152,6 +152,8 @@ enum ESourceQualifier {
     eSQ_citation,
     eSQ_clone,
     eSQ_clone_lib,
+    eSQ_collected_by,
+    eSQ_collection_date,
     eSQ_common,
     eSQ_common_name,
     eSQ_country,
@@ -168,6 +170,8 @@ enum ESourceQualifier {
     eSQ_forma,
     eSQ_forma_specialis,
     eSQ_frequency,
+    eSQ_fwd_primer_name,
+    eSQ_fwd_primer_seq,
     eSQ_gb_acronym,
     eSQ_gb_anamorph,
     eSQ_gb_synonym,
@@ -175,11 +179,13 @@ enum ESourceQualifier {
     eSQ_germline,
     eSQ_group,
     eSQ_haplotype,
+    eSQ_identified_by,
     eSQ_insertion_seq_name,
     eSQ_isolate,
     eSQ_isolation_source,
     eSQ_lab_host,
     eSQ_label,
+    eSQ_lat_lon,
     eSQ_macronuclear,
     eSQ_map,
     eSQ_mol_type,
@@ -193,6 +199,8 @@ enum ESourceQualifier {
     eSQ_plastid_name,
     eSQ_pop_variant,
     eSQ_rearranged,
+    eSQ_rev_primer_name,
+    eSQ_rev_primer_seq,
     eSQ_segment,
     eSQ_seqfeat_note,
     eSQ_sequenced_mol,
@@ -232,6 +240,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/02/09 14:53:02  shomrat
+* Added subsource qualifiers for Barcode of Life project
+*
 * Revision 1.5  2004/11/24 16:45:15  shomrat
 * + estimated_length qualifier
 *
