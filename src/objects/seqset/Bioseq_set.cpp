@@ -186,7 +186,7 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
         CNcbiOstrstream os;
         if (best->GetFirstId()) {
             os << best->GetFirstId()->DumpAsFasta();
-            *label += os.str();
+            *label += CNcbiOstrstreamToString(os);
         }
     }
 }
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/12/30 13:21:24  clausen
+ * Replaced os.str() with CNcbiOstrstreamToString(os)
+ *
  * Revision 1.7  2002/10/07 17:10:54  ucko
  * Include Seq-annot.hpp to make KCC happy.
  *
