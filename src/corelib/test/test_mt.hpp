@@ -31,16 +31,6 @@
  * File Description:
  *   Wrapper for testing modules in MT environment
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.2  2001/05/17 15:05:08  lavr
- * Typos corrected
- *
- * Revision 6.1  2001/04/06 15:53:08  grichenk
- * Initial revision
- *
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbistd.hpp>
@@ -48,7 +38,9 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <assert.h>
+
+#include "../ncbidbg_p.hpp"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -63,7 +55,7 @@ void s_Verify(bool expr)
     }
 }
 #else
-#define s_Verify( expr ) assert( expr )
+#define s_Verify( expr ) CORE_ASSERT( expr )
 #endif
 
 
@@ -116,5 +108,20 @@ private:
 
 
 END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 6.3  2002/04/10 18:38:51  ivanov
+ * Moved CVS log to end of file. Changed assert() to CORE_ASSERT()
+ *
+ * Revision 6.2  2001/05/17 15:05:08  lavr
+ * Typos corrected
+ *
+ * Revision 6.1  2001/04/06 15:53:08  grichenk
+ * Initial revision
+ *
+ * ===========================================================================
+ */
 
 #endif  /* TEST_MT__HPP */
