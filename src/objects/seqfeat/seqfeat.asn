@@ -1,4 +1,4 @@
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -473,7 +473,7 @@ SubSource ::= SEQUENCE {
         transposon-name (20) ,
         insertion-seq-name (21) ,
         plastid-name (22) ,
-	county (23) ,
+	country (23) ,
 	segment (24) ,
 	endogenous-virus-name (25) ,
         other (255) } ,
