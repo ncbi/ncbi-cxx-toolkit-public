@@ -1,5 +1,5 @@
-#ifndef MSVC_PRJ_DEFINES_HEADER
-#define MSVC_PRJ_DEFINES_HEADER
+#ifndef PROJECT_TREE_BUILDER__MSVC_PRJ_DEFINES__HPP
+#define PROJECT_TREE_BUILDER__MSVC_PRJ_DEFINES__HPP
 
 /* $Id$
  * ===========================================================================
@@ -59,6 +59,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.5  2004/02/13 20:42:14  gorelenk
  * Minor cosmetic changes.
  *
@@ -75,4 +78,4 @@
  * ===========================================================================
  */
 
-#endif // MSVC_PRJ_DEFINES_HEADER
+#endif //PROJECT_TREE_BUILDER__MSVC_PRJ_DEFINES__HPP

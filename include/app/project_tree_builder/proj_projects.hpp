@@ -1,5 +1,5 @@
-#ifndef PROJ_PROJECTS_HEADER
-#define PROJ_PROJECTS_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_PROJECTS__HPP
+#define PROJECT_TREE_BUILDER__PROJ_PROJECTS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.5  2004/03/18 19:11:12  gorelenk
  * Added m_LstFileContentsExclude member to class CProjectsLstFileFilter.
  *
@@ -157,4 +160,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif //PROJ_PROJECTS_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_PROJECTS__HPP

@@ -1,5 +1,5 @@
-#ifndef PROJ_DATATOOL_GENERATED_SRC_HEADER
-#define PROJ_DATATOOL_GENERATED_SRC_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_DATATOOL_GENERATED_SRC__HPP
+#define PROJECT_TREE_BUILDER__PROJ_DATATOOL_GENERATED_SRC__HPP
 
 /* $Id$
  * ===========================================================================
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.3  2004/03/10 16:48:14  gorelenk
  * Added declarations of operators == and < to class CDataToolGeneratedSrc.
  *
@@ -87,4 +90,5 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // PROJ_DATATOOL_GENERATED_SRC_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_DATATOOL_GENERATED_SRC__HPP
+

@@ -1,5 +1,5 @@
-#ifndef MSVC_MASTERPROJECT_GENERATOR_HEADER
-#define MSVC_MASTERPROJECT_GENERATOR_HEADER
+#ifndef PROJECT_TREE_BULDER__MSVC_MASTERPROJECT_GENERATOR_HPP
+#define PROJECT_TREE_BULDER__MSVC_MASTERPROJECT_GENERATOR_HPP
 
 /* $Id$
  * ===========================================================================
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.10  2004/03/02 16:34:12  gorelenk
  * Added include to proj_tree.hpp.
  *
@@ -136,4 +139,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  // MSVC_MASTERPROJECT_GENERATOR_HEADER
+#endif  //PROJECT_TREE_BULDER__MSVC_MASTERPROJECT_GENERATOR_HPP

@@ -1,5 +1,5 @@
-#ifndef MSVC_PRJ_GENERATOR_HEADER
-#define MSVC_PRJ_GENERATOR_HEADER
+#ifndef PROJECT_TREE_BUILDER__MSVC_PRJ_GENERATOR__HPP
+#define PROJECT_TREE_BUILDER__MSVC_PRJ_GENERATOR__HPP
 
 /* $Id$
  * ===========================================================================
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.10  2004/05/10 19:49:07  gorelenk
  * Changed Generate in CMsvcProjectGenerator .
  *
@@ -95,4 +98,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // MSVC_PRJ_GENERATOR_HEADER
+#endif //PROJECT_TREE_BUILDER__MSVC_PRJ_GENERATOR__HPP

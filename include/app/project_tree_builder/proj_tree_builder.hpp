@@ -1,5 +1,5 @@
-#ifndef PROJ_TREE_BUILDER_HEADER
-#define PROJ_TREE_BUILDER_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_TREE_BUILDER__HPP
+#define PROJECT_TREE_BUILDER__PROJ_TREE_BUILDER__HPP
 
 /* $Id$
  * ===========================================================================
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.5  2004/05/10 19:48:21  gorelenk
  * + SMsvcProjectT .
  *
@@ -339,4 +342,5 @@ END_NCBI_SCOPE
   * ===========================================================================
  */
 
-#endif // PROJ_TREE_BUILDER_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_TREE_BUILDER__HPP
+

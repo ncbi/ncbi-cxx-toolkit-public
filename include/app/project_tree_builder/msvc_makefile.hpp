@@ -1,5 +1,5 @@
-#ifndef MSVC_MAKEFILE_HEADER
-#define MSVC_MAKEFILE_HEADER
+#ifndef PROJECT_TREE_BULDER__MSVC_MAKEFILE__HPP
+#define PROJECT_TREE_BULDER__MSVC_MAKEFILE__HPP
 /* $Id$
  * ===========================================================================
  *
@@ -238,6 +238,8 @@ public:
                                  const CMsvcProjectMakefile* project_makefile,
                                  const string&               rules_basedir,
                                  const list<string>          requires_list);
+
+    virtual ~CMsvcCombinedProjectMakefile(void);
     
     // IMsvcMetaMakefile
     virtual string GetCompilerOpt (const string&       opt, 
@@ -332,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.9  2004/06/07 13:49:35  gorelenk
  * Introduced interfaces for meta-makefile and project-makefile.
  * Declared classes CMsvcProjectRuleMakefile and CMsvcCombinedProjectMakefile
@@ -371,4 +376,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // MSVC_MAKEFILE_HEADER
+#endif //PROJECT_TREE_BULDER__MSVC_MAKEFILE__HPP

@@ -1,5 +1,5 @@
-#ifndef MSVC_DLLS_INDO_HEADER
-#define MSVC_DLLS_INDO_HEADER
+#ifndef PROJECT_TREE_BULDER__MSVC_DLLS_INDO__HPP
+#define PROJECT_TREE_BULDER__MSVC_DLLS_INDO__HPP
 
 /* $Id$
  * ===========================================================================
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.6  2004/06/07 13:45:39  gorelenk
  * Class CMsvcDllsInfo separated from application config.
  *
@@ -118,4 +121,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif //MSVC_DLLS_INDO_HEADER
+#endif //PROJECT_TREE_BULDER__MSVC_DLLS_INDO__HPP

@@ -1,5 +1,5 @@
-#ifndef PROJ_ITEM_HEADER
-#define PROJ_ITEM_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_ITEM__HPP
+#define PROJECT_TREE_BUILDER__PROJ_ITEM__HPP
 
 /* $Id$
  * ===========================================================================
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.17  2004/05/10 19:46:22  gorelenk
  * + eMsvc in CProjKey.
  *
@@ -214,4 +217,5 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // PROJ_ITEM_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_ITEM__HPP
+

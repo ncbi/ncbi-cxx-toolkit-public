@@ -1,5 +1,5 @@
-#ifndef PROJ_BUILDER_APP_HEADER
-#define PROJ_BUILDER_APP_HEADER
+#ifndef PROJECT_TREE_BULDER__PROJ_BUILDER_APP__HPP
+#define PROJECT_TREE_BULDER__PROJ_BUILDER_APP__HPP
 
 /* $Id$
  * ===========================================================================
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.15  2004/05/19 14:23:07  gorelenk
  * Added definition of GetDllFilesDistr to class CProjBulderApp.
  *
@@ -230,4 +233,6 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif
+#endif //PROJECT_TREE_BULDER__PROJ_BUILDER_APP__HPP
+
+

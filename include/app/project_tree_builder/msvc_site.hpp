@@ -1,5 +1,5 @@
-#ifndef MSVC_SITE_HEADER
-#define MSVC_SITE_HEADER
+#ifndef PROJECT_TREE_BUILDER_MSVC_SITE__HPP
+#define PROJECT_TREE_BUILDER_MSVC_SITE__HPP
 /* $Id$
  * ===========================================================================
  *
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.15  2004/06/01 16:02:40  gorelenk
  * + GetLibChoiceForLib to class CMsvcSite,
  * + default constructor for struct SLibChoice.
@@ -224,4 +227,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // MSVC_SITE_HEADER
+#endif //PROJECT_TREE_BUILDER_MSVC_SITE__HPP

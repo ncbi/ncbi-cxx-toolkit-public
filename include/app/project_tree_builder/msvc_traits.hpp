@@ -1,5 +1,5 @@
-#ifndef MSVC_TRAITS_HEADER
-#define MSVC_TRAITS_HEADER
+#ifndef PROJECT_TREE_BUILDER__MSVC_TRAITS__HPP
+#define PROJECT_TREE_BUILDER__MSVC_TRAITS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.4  2004/01/26 19:25:42  gorelenk
  * += MSVC meta makefile support
  * += MSVC project makefile support
@@ -368,4 +371,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // MSVC_TRAITS_HEADER
+#endif //PROJECT_TREE_BUILDER__MSVC_TRAITS__HPP

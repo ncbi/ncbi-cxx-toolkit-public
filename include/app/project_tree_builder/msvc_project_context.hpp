@@ -1,5 +1,5 @@
-#ifndef PROJECT_CONTEXT_HEADER
-#define PROJECT_CONTEXT_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJECT_CONTEXT__HPP
+#define PROJECT_TREE_BUILDER__PROJECT_CONTEXT__HPP
 
 /* $Id$
  * ===========================================================================
@@ -512,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.16  2004/06/07 13:53:07  gorelenk
  * Changed signature of member-function GetMsvcProjectMakefile
  * of class CMsvcPrjProjectContext.
@@ -567,4 +570,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // PROJECT_CONTEXT_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJECT_CONTEXT__HPP

@@ -1,5 +1,5 @@
-#ifndef FILE_CONTENTS_HEADER
-#define FILE_CONTENTS_HEADER
+#ifndef PROJECT_TREE_BUILDER__FILE_CONTENTS__HPP
+#define PROJECT_TREE_BUILDER__FILE_CONTENTS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/06/10 15:12:54  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.5  2004/02/17 23:21:56  gorelenk
  * Cosmetic changes.
  *
@@ -120,4 +123,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif //FILE_CONTENTS_HEADER
+#endif //PROJECT_TREE_BUILDER__FILE_CONTENTS__HPP

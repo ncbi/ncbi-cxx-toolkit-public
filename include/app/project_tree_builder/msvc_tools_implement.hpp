@@ -1,5 +1,5 @@
-#ifndef TOOLS_IMPLEMENT_HEADER
-#define TOOLS_IMPLEMENT_HEADER
+#ifndef PROJECT_TREE_BUILDER__TOOLS_IMPLEMENT__HPP
+#define PROJECT_TREE_BUILDER__TOOLS_IMPLEMENT__HPP
 
 /* $Id$
  * ===========================================================================
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.13  2004/06/07 13:54:52  gorelenk
  * Classes *ToolImpl, switched to using interface IMsvcMetaMakefile.
  *
@@ -739,4 +742,5 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // TOOLS_IMPLEMENT_HEADER
+#endif //PROJECT_TREE_BUILDER__TOOLS_IMPLEMENT__HPP
+

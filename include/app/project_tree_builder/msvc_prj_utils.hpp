@@ -1,5 +1,5 @@
-#ifndef MSVC_PRJ_UTILS_HEADER
-#define MSVC_PRJ_UTILS_HEADER
+#ifndef PROJECT_TREE_BUILDER__MSVC_PRJ_UTILS__HPP
+#define PROJECT_TREE_BUILDER__MSVC_PRJ_UTILS__HPP
 
 /* $Id$
  * ===========================================================================
@@ -185,10 +185,14 @@ bool IsSubdir(const string& abs_parent_dir, const string& abs_dir);
 template <class C, class P> 
 void EraseIf(C& cont, const P& pred)
 {
-    for (C::iterator p = cont.begin(); p != cont.end(); )
+    for (typename C::iterator p = cont.begin(); p != cont.end(); )
     {
-        if ( pred(*p) )
-            p = cont.erase(p);
+        if ( pred(*p) ) {
+            typename C::iterator p_next = p;
+	    ++p_next;
+            cont.erase(p);
+	    p = p_next;
+        }
         else
             ++p;
     }
@@ -456,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.22  2004/06/08 16:28:27  gorelenk
  * Added members m_HeaderFilesPrivate and m_HeaderFilesImpl
  * to struct SFiltersItem.
@@ -532,4 +539,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // MSVC_PRJ_UTILS_HEADER
+#endif //PROJECT_TREE_BUILDER__MSVC_PRJ_UTILS__HPP

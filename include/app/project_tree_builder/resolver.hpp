@@ -1,5 +1,5 @@
-#ifndef RESOLVER_01072004_HEADER
-#define RESOLVER_01072004_HEADER
+#ifndef PROJECT_TREE_BUILDER__RESOLVER__HPP
+#define PROJECT_TREE_BUILDER__RESOLVER__HPP
 
 /* $Id$
  * ===========================================================================
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.4  2004/02/04 23:11:43  gorelenk
  * StripDefine helper promoted to class CSymResolver member. FilterDefine was
  * moved here from proj_src_resolver.cpp module.
@@ -92,4 +95,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif //RESOLVER_01072004_HEADER
+#endif //PROJECT_TREE_BUILDER__RESOLVER__HPP

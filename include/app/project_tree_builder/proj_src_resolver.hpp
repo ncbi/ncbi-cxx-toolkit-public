@@ -1,5 +1,5 @@
-#ifndef PROJ_SRC_RESOLVER_HEADER
-#define PROJ_SRC_RESOLVER_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_SRC_RESOLVER__HPP
+#define PROJECT_TREE_BUILDER__PROJ_SRC_RESOLVER__HPP
 
 /* $Id$
  * ===========================================================================
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.2  2004/02/10 18:04:42  gorelenk
  * Added list of Makefiles (m_MakefileDirs) for class CProjSRCResolver.
  *
@@ -82,4 +85,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif //PROJ_SRC_RESOLVER_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_SRC_RESOLVER__HPP

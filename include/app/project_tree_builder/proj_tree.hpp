@@ -1,5 +1,5 @@
-#ifndef PROJ_TREE_HEADER
-#define PROJ_TREE_HEADER
+#ifndef PROJECT_TREE_BUILDER__PROJ_TREE__HPP
+#define PROJECT_TREE_BUILDER__PROJ_TREE__HPP
 
 /* $Id$
  * ===========================================================================
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.3  2004/05/10 19:47:39  gorelenk
  * Changed CreateFrom in CProjectItemsTree.
  *
@@ -225,4 +228,5 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // PROJ_TREE_HEADER
+#endif //PROJECT_TREE_BUILDER__PROJ_TREE__HPP
+

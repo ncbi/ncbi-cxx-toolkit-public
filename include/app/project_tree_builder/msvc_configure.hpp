@@ -1,5 +1,5 @@
-#ifndef MSVC_CONFIGURE_HEADER
-#define MSVC_CONFIGURE_HEADER
+#ifndef PROJECT_TREE_BULDER__MSVC_CONFIGURE__HPP
+#define PROJECT_TREE_BULDER__MSVC_CONFIGURE__HPP
 
 /* $Id$
  * ===========================================================================
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.3  2004/03/18 17:41:03  gorelenk
  * Aligned classes member-functions parameters inside declarations.
  *
@@ -86,4 +89,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif //MSVC_CONFIGURE_HEADER
+#endif //PROJECT_TREE_BULDER__MSVC_CONFIGURE__HPP

@@ -1,5 +1,5 @@
-#ifndef MSVC_SLN_GENERATOR_HEADER
-#define MSVC_SLN_GENERATOR_HEADER
+#ifndef PROJECT_TREE_BUILDER__MSVC_SLN_GENERATOR__HPP
+#define PROJECT_TREE_BUILDER__MSVC_SLN_GENERATOR__HPP
 
 /* $Id$
  * ===========================================================================
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/10 15:12:55  gorelenk
+ * Added newline at the file end to avoid GCC warning.
+ *
  * Revision 1.11  2004/03/18 17:41:03  gorelenk
  * Aligned classes member-functions parameters inside declarations.
  *
@@ -155,4 +158,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif // MSVC_SLN_GENERATOR_HEADER
+#endif //PROJECT_TREE_BUILDER__MSVC_SLN_GENERATOR__HPP
