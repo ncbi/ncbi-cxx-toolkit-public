@@ -248,11 +248,13 @@ inline void CHTMLPage::SetTemplateFile(const string& template_file)
     m_TemplateBuffer = 0;
     {{
         Int8 size = CFile(template_file).GetLength();
-        if (size >= numeric_limits<size_t>::max()) {
+        if (size <= 0) {
+            m_TemplateSize = 0;
+        } else if (size >= numeric_limits<size_t>::max()) {
             NCBI_THROW(CException, eUnknown,
                        "CHTMLPage: input template " + template_file
                        + " too big to handle");
-        } else if (size >= 0) {
+        } else {
             m_TemplateSize = size;
         }
     }}
@@ -263,6 +265,7 @@ inline void CHTMLPage::SetTemplateStream(const istream& template_stream)
     m_TemplateFile   = kEmptyStr;
     m_TemplateStream = const_cast<istream*>(&template_stream);
     m_TemplateBuffer = 0;
+    m_TemplateSize   = 0;
 }
 
 inline void CHTMLPage::SetTemplateString(const char* template_string)
@@ -289,6 +292,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/05/23 17:34:10  ucko
+* CHTMLPage::SetTemplateFile: fix logic for setting m_TemplateSize.
+*
 * Revision 1.28  2003/05/14 21:53:02  ucko
 * Adjust interface to allow automatic streaming of large templates when
 * not using JavaScript menus.
