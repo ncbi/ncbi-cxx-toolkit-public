@@ -56,7 +56,7 @@ SIdAnnotObjs::~SIdAnnotObjs(void)
 }
 
 
-SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& objs)
+SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& _DEBUG_ARG(objs))
 {
     _ASSERT(objs.m_AnnotSet.empty());
     _ASSERT(objs.m_SNPSet.empty());
@@ -651,7 +651,7 @@ CBioseq_Info& CTSE_Info::GetBioseq(int gi)
 }
 
 
-void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+void CTSE_Info::DebugDump(CDebugDumpContext /*ddc*/, unsigned int /*depth*/) const
 {
 #if 0
     ddc.SetFrame("CTSE_Info");
@@ -729,6 +729,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/02/19 17:13:42  vasilche
+* Removed 'unused argument' warnings.
+*
 * Revision 1.39  2004/02/04 18:05:39  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.
