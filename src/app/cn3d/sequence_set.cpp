@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/01/09 21:45:00  thiessen
+* always use pdbID as title if known
+*
 * Revision 1.15  2001/01/04 18:20:52  thiessen
 * deal with accession seq-id
 *
@@ -318,19 +321,17 @@ CSeq_id * Sequence::CreateSeqId(void) const
 std::string Sequence::GetTitle(void) const
 {
     CNcbiOstrstream oss;
-    if (molecule) {
+    if (pdbID.size() > 0) {
         oss << pdbID;
-        if (molecule->pdbChain != ' ') {
-            oss <<  '_' << (char) molecule->pdbChain;
+        if (pdbChain != ' ') {
+            oss <<  '_' << (char) pdbChain;
         }
-    } else {
-        if (gi != NOT_SET)
-            oss << "gi " << gi;
-        else if (accession.size() > 0)
-            oss << "acc " << accession;
-        else
-            oss << '?';
-    }
+    } else if (gi != NOT_SET)
+        oss << "gi " << gi;
+    else if (accession.size() > 0)
+        oss << "acc " << accession;
+    else
+        oss << '?';
     oss << '\0';
     return std::string(oss.str());
 }
