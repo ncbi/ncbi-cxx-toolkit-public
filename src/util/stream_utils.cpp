@@ -416,8 +416,8 @@ static inline streamsize s_Readsome(CNcbiIstream& is,
      * NOTE that showmanyc() does not guarantee the number of bytes that can
      * be read, but returns a best guess estimate [C++ Standard, footnote 275].
      */
-    is.readsome(buf, buf_size);
-    return is.gcount();
+    streamsize n = is.readsome(buf, buf_size);
+    return n ? is.gcount() : 0;
 #  else
     return is.readsome(buf, buf_size);
 #  endif /*NCBI_COMPILER_WORKSHOP*/
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.38  2003/12/31 16:24:54  lavr
+ * Fix istream::readsome() return counter use for Rogue Wave implementations
+ *
  * Revision 1.37  2003/12/31 15:31:20  lavr
  * Fix wrong use of istream::readsome() on platforms that lack it
  *
