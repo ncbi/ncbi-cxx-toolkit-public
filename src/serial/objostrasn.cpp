@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/03/26 16:14:23  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.76  2003/02/04 17:06:26  gouriano
 * added check for NaN in WriteDouble
 *
@@ -407,7 +410,7 @@ void CObjectOStreamAsn::WriteEnum(TEnumValueType value,
                                   const string& valueName)
 {
     if ( !valueName.empty() )
-		m_Output.PutString(valueName);
+        m_Output.PutString(valueName);
     else
         m_Output.PutInt4(value);
 }
@@ -468,7 +471,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     if ( data == 0.0 ) {
         m_Output.PutString("{ 0, 10, 0 }");
         return;
-	}
+    }
 
     char buffer[128];
     // ensure buffer is large enough to fit result
@@ -502,7 +505,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     // now we have:
     // mantissa with dot without trailing zeroes - buffer:ePos
 
-	m_Output.PutString("{ ");
+    m_Output.PutString("{ ");
     m_Output.PutString(buffer, dotPos - buffer);
     m_Output.PutString(dotPos + 1, fractDigits);
     m_Output.PutString(", 10, ");
@@ -577,15 +580,15 @@ void CObjectOStreamAsn::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamAsn::WriteId(const string& str)
 {
-	if ( str.find(' ') != NPOS || str.find('<') != NPOS ||
+    if ( str.find(' ') != NPOS || str.find('<') != NPOS ||
          str.find(':') != NPOS ) {
-		m_Output.PutChar('[');
+        m_Output.PutChar('[');
         m_Output.PutString(str);
         m_Output.PutChar(']');
-	}
-	else {
-		m_Output.PutString(str);
-	}
+    }
+    else {
+        m_Output.PutString(str);
+    }
 }
 
 void CObjectOStreamAsn::WriteNullPointer(void)
@@ -944,7 +947,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
 
 void CObjectOStreamAsn::BeginBytes(const ByteBlock& )
 {
-	m_Output.PutChar('\'');
+    m_Output.PutChar('\'');
 }
 
 static const char HEX[] = "0123456789ABCDEF";
@@ -952,18 +955,18 @@ static const char HEX[] = "0123456789ABCDEF";
 void CObjectOStreamAsn::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
-	while ( length-- > 0 ) {
-		char c = *bytes++;
+    while ( length-- > 0 ) {
+        char c = *bytes++;
         m_Output.WrapAt(78, false);
-		m_Output.PutChar(HEX[(c >> 4) & 0xf]);
+        m_Output.PutChar(HEX[(c >> 4) & 0xf]);
         m_Output.PutChar(HEX[c & 0xf]);
-	}
+    }
 }
 
 void CObjectOStreamAsn::EndBytes(const ByteBlock& )
 {
     m_Output.WrapAt(78, false);
-	m_Output.PutString("\'H");
+    m_Output.PutString("\'H");
 }
 
 void CObjectOStreamAsn::BeginChars(const CharBlock& )

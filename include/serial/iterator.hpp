@@ -268,7 +268,7 @@ protected:
                     return false;
                 }
             }
-	        return true;
+            return true;
         }
 
     virtual bool CanEnter(const CConstObjectInfo& object)
@@ -805,6 +805,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/26 16:13:32  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.25  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *

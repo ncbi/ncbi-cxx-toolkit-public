@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/03/26 16:14:23  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.51  2003/02/07 16:09:22  gouriano
 * correction of GetContainerElementTypeFamily for the case of copying objects
 *
@@ -543,9 +546,9 @@ void CObjectOStreamXml::WriteCString(const char* str)
         SelfCloseTagEnd();
     }
     else {
-		while ( *str ) {
-			WriteEscapedChar(*str++);
-		}
+        while ( *str ) {
+            WriteEscapedChar(*str++);
+        }
     }
 }
 
@@ -1140,20 +1143,20 @@ static const char* const HEX = "0123456789ABCDEF";
 void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
-	while ( length-- > 0 ) {
-		char c = *bytes++;
-		m_Output.PutChar(HEX[(c >> 4) & 0xf]);
+    while ( length-- > 0 ) {
+        char c = *bytes++;
+        m_Output.PutChar(HEX[(c >> 4) & 0xf]);
         m_Output.PutChar(HEX[c & 0xf]);
-	}
+    }
 }
 
 void CObjectOStreamXml::WriteChars(const CharBlock& ,
                                    const char* chars, size_t length)
 {
-	while ( length-- > 0 ) {
-		char c = *chars++;
+    while ( length-- > 0 ) {
+        char c = *chars++;
         WriteEscapedChar(c);
-	}
+    }
 }
 
 

@@ -40,11 +40,13 @@ BEGIN_NCBI_SCOPE
 class NCBI_XSERIAL_EXPORT CSerializable
 {
 protected:
-    enum EOutputType { eAsFasta, 
-		       eAsAsnText, 
-		       eAsAsnBinary, 
-		       eAsXML, 
-		       eAsString };
+    enum EOutputType {
+        eAsFasta, 
+        eAsAsnText, 
+        eAsAsnBinary, 
+        eAsXML, 
+        eAsString
+    };
 
     virtual void WriteAsFasta     (CNcbiOstream& out) const;
     virtual void WriteAsAsnText   (CNcbiOstream& out) const;
@@ -84,6 +86,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/26 16:13:33  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.4  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

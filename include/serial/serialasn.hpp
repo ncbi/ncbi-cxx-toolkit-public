@@ -128,7 +128,7 @@ GetOldAsnTypeRef(const string& name,
 // adding old ASN members
 #define ADD_NAMED_ASN_MEMBER(MemberAlias, MemberName, AsnTypeKind) \
     NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName),\
-	NCBI_NAME3(Get,AsnTypeKind,TypeRef)(MEMBER_PTR(MemberName)))
+        NCBI_NAME3(Get,AsnTypeKind,TypeRef)(MEMBER_PTR(MemberName)))
 #define ADD_ASN_MEMBER(MemberName, AsnTypeKind) \
     ADD_NAMED_ASN_MEMBER(#MemberName, MemberName, AsnTypeKind)
 

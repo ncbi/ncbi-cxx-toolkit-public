@@ -52,7 +52,7 @@ struct CLessTypeInfo
         }
 
     bool operator()(const type_info* i1, const type_info* i2) const
-		{
+        {
             return ToBool(i1->before(*i2));
         }
 };
@@ -67,6 +67,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/26 16:13:33  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.2  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

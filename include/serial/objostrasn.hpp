@@ -58,11 +58,11 @@ public:
                           CObjectIStream& in);
     void WriteEnum(TEnumValueType value, const string& valueName);
     EFixNonPrint FixNonPrint(EFixNonPrint how)
-    {
-        EFixNonPrint tmp = m_FixMethod;
-        m_FixMethod = how;
-        return tmp;
-    }
+        {
+            EFixNonPrint tmp = m_FixMethod;
+            m_FixMethod = how;
+            return tmp;
+        }
 
 protected:
     virtual void WriteBool(bool data);
@@ -125,15 +125,15 @@ protected:
     virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                     const CMemberId& id);
 
-	virtual void BeginBytes(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block,
+    virtual void BeginBytes(const ByteBlock& block);
+    virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
-	virtual void EndBytes(const ByteBlock& block);
+    virtual void EndBytes(const ByteBlock& block);
 
-	virtual void BeginChars(const CharBlock& block);
-	virtual void WriteChars(const CharBlock& block,
+    virtual void BeginChars(const CharBlock& block);
+    virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length);
-	virtual void EndChars(const CharBlock& block);
+    virtual void EndChars(const CharBlock& block);
 
     // Write current separator to the stream
     virtual void WriteSeparator(void);
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/03/26 16:13:33  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.42  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

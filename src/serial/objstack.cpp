@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/03/26 16:14:23  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.10  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -148,16 +151,16 @@ CObjectStack::TFrame& CObjectStack::PushFrameLong(void)
     size_t newSize = oldSize * 2;
     TFrame* newStack = new TFrame[newSize];
 
-	{
-		// copy old stack
-		for ( size_t i = 0; i < oldSize; ++i )
-			newStack[i] = m_Stack[i];
-	}
-	{
-		// clear new area of new stack
-		for ( size_t i = oldSize; i < newSize; ++i )
-			newStack[i].Reset();
-	}
+    {
+        // copy old stack
+        for ( size_t i = 0; i < oldSize; ++i )
+            newStack[i] = m_Stack[i];
+    }
+    {
+        // clear new area of new stack
+        for ( size_t i = oldSize; i < newSize; ++i )
+            newStack[i].Reset();
+    }
 
     delete[] m_Stack;
 

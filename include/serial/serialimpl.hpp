@@ -243,7 +243,7 @@ NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
 const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 { \
     typedef ClassName CClass; \
-	typedef BaseClassName CClass_Base; \
+    typedef BaseClassName CClass_Base; \
     static InfoType* volatile s_info = 0; \
     InfoType* info = s_info; \
     if ( !info ) { \
@@ -254,7 +254,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
             info = Code; \
             NCBI_NS_NCBI::RegisterTypeInfoObject(info);
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
-	BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
+    BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
 #define END_TYPE_INFO \
             s_info = info; \
@@ -356,19 +356,19 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // type info definition macros
 #define BEGIN_NAMED_CLASS_INFO(ClassAlias,ClassName) \
-	BEGIN_TYPE_INFO(ClassName, \
+    BEGIN_TYPE_INFO(ClassName, \
         ClassName::GetTypeInfo, \
-		NCBI_NS_NCBI::CClassTypeInfo, \
+        NCBI_NS_NCBI::CClassTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(ClassAlias))
 #define BEGIN_CLASS_INFO(ClassName) \
-	BEGIN_NAMED_CLASS_INFO(#ClassName, ClassName)
+    BEGIN_NAMED_CLASS_INFO(#ClassName, ClassName)
 #define BEGIN_NAMED_BASE_CLASS_INFO(ClassAlias,ClassName) \
-	BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
-		NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
+    BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
+        NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
         NCBI_NS_NCBI::CClassTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateClassInfo(ClassAlias))
 #define BEGIN_BASE_CLASS_INFO(ClassName) \
-	BEGIN_NAMED_BASE_CLASS_INFO(#ClassName, ClassName)
+    BEGIN_NAMED_BASE_CLASS_INFO(#ClassName, ClassName)
 
 #define SET_CLASS_IMPLICIT() info->SetImplicit()
 #define BEGIN_NAMED_IMPLICIT_CLASS_INFO(ClassAlias,ClassName) \
@@ -386,39 +386,39 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,ClassName) \
-	BEGIN_TYPE_INFO(ClassName, \
+    BEGIN_TYPE_INFO(ClassName, \
         ClassName::GetTypeInfo, \
-		NCBI_NS_NCBI::CClassTypeInfo, \
+        NCBI_NS_NCBI::CClassTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
 #define BEGIN_ABSTRACT_CLASS_INFO(ClassName) \
-	BEGIN_NAMED_ABSTRACT_CLASS_INFO(#ClassName, ClassName)
+    BEGIN_NAMED_ABSTRACT_CLASS_INFO(#ClassName, ClassName)
 #define BEGIN_NAMED_ABSTRACT_BASE_CLASS_INFO(ClassAlias,ClassName) \
-	BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
-		NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
-		NCBI_NS_NCBI::CClassTypeInfo, \
+    BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
+        NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
+        NCBI_NS_NCBI::CClassTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
 
 #define END_ABSTRACT_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_NAMED_DERIVED_CLASS_INFO(ClassAlias,ClassName,ParentClassName) \
-	BEGIN_NAMED_CLASS_INFO(ClassAlias,ClassName) \
+    BEGIN_NAMED_CLASS_INFO(ClassAlias,ClassName) \
     SET_PARENT_CLASS(ParentClassName);
 #define BEGIN_DERIVED_CLASS_INFO(ClassName,ParentClassName) \
-	BEGIN_NAMED_DERIVED_CLASS_INFO(#ClassName, ClassName, ParentClassName)
+    BEGIN_NAMED_DERIVED_CLASS_INFO(#ClassName, ClassName, ParentClassName)
 
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_NAMED_CHOICE_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
-		ClassName::GetTypeInfo, \
-		NCBI_NS_NCBI::CChoiceTypeInfo, \
+        ClassName::GetTypeInfo, \
+        NCBI_NS_NCBI::CChoiceTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
 #define BEGIN_CHOICE_INFO(ClassName) \
     BEGIN_NAMED_CHOICE_INFO(#ClassName, ClassName)
 #define BEGIN_NAMED_BASE_CHOICE_INFO(ClassAlias,ClassName) \
     BEGIN_BASE_TYPE_INFO(ClassName, NCBI_NAME2(ClassName,_Base), \
-		NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
-		NCBI_NS_NCBI::CChoiceTypeInfo, \
+        NCBI_NAME2(ClassName,_Base)::GetTypeInfo, \
+        NCBI_NS_NCBI::CChoiceTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(ClassAlias))
 #define BEGIN_BASE_CHOICE_INFO(ClassName) \
     BEGIN_NAMED_BASE_CHOICE_INFO(#ClassName, ClassName)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2003/03/26 16:14:22  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.102  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -841,7 +844,7 @@ void CObjectIStream::ReadClassMember(const CObjectInfo::CMemberIterator& member)
     const CMemberInfo* memberInfo = member.GetMemberInfo();
     TObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
     ReadObject(memberInfo->GetMemberPtr(classPtr),
-		       memberInfo->GetTypeInfo());
+               memberInfo->GetTypeInfo());
 }
 
 void CObjectIStream::ReadChoiceVariant(const CObjectInfoCV& object)
@@ -1418,7 +1421,7 @@ char* CObjectIStream::ReadCString(void)
 {
     string s;
     ReadString(s);
-	return strdup(s.c_str());
+    return strdup(s.c_str());
 }
 
 void CObjectIStream::ReadStringStore(string& s)

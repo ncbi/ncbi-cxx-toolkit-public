@@ -111,7 +111,7 @@ protected:
 private:
     const TItemsByName& GetItemsByName(void) const;
     const TItemsByOffset& GetItemsByOffset(void) const;
-	pair<TMemberIndex, const TItemsByTag*> GetItemsByTagInfo(void) const;
+    pair<TMemberIndex, const TItemsByTag*> GetItemsByTagInfo(void) const;
 
     // items
     TItems m_Items;
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/03/26 16:13:32  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.22  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -177,8 +177,8 @@ protected:
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
     virtual void BeginClassMember(const CMemberId& id);
-            void BeginClassMember(TTypeInfo memberType,
-                                  const CMemberId& id);
+    void BeginClassMember(TTypeInfo memberType,
+                          const CMemberId& id);
     virtual void EndClassMember(void);
 
     virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
@@ -187,9 +187,9 @@ protected:
                                     const CMemberId& id);
     virtual void EndChoiceVariant(void);
 
-	virtual void WriteBytes(const ByteBlock& block,
+    virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
-	virtual void WriteChars(const CharBlock& block,
+    virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length);
 
     // Write current separator to the stream
@@ -255,6 +255,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/03/26 16:13:33  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.28  2003/02/05 17:08:51  gouriano
 * added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
 *

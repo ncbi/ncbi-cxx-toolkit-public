@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/03/26 16:14:22  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.59  2003/03/10 18:54:24  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -288,14 +291,14 @@ BEGIN_NCBI_SCOPE
 static inline
 void* Alloc(size_t size)
 {
-	return NotNull(calloc(size, 1));
+    return NotNull(calloc(size, 1));
 }
 
 template<class T>
 static inline
 T* Alloc(T*& ptr)
 {
-	return ptr = static_cast<T*>(Alloc(sizeof(T)));
+    return ptr = static_cast<T*>(Alloc(sizeof(T)));
 }
 
 static CTypeInfoMap s_SequenceOfTypeInfo_map;
@@ -313,21 +316,21 @@ CTypeInfo* CSequenceOfTypeInfo::CreateTypeInfo(TTypeInfo base)
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder)
     : CParent(sizeof(TObjectType), type, randomOrder)
 {
-	InitSequenceOfTypeInfo();
+    InitSequenceOfTypeInfo();
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name,
                                          TTypeInfo type, bool randomOrder)
     : CParent(sizeof(TObjectType), name, type, randomOrder)
 {
-	InitSequenceOfTypeInfo();
+    InitSequenceOfTypeInfo();
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name,
                                          TTypeInfo type, bool randomOrder)
     : CParent(sizeof(TObjectType), name, type, randomOrder)
 {
-	InitSequenceOfTypeInfo();
+    InitSequenceOfTypeInfo();
 }
 
 static
@@ -496,7 +499,7 @@ public:
 
 void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
 {
-	TTypeInfo type = GetElementType();
+    TTypeInfo type = GetElementType();
     const CAutoPointerTypeInfo* ptrInfo =
         dynamic_cast<const CAutoPointerTypeInfo*>(type);
     if ( ptrInfo != 0 ) {
@@ -525,11 +528,11 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
         else if ( asnType->GetSize() <= sizeof(dataval) ) {
             // standard types and SET/SEQUENCE OF
             SetValNodeNext();
-			m_ElementType = asnType;
+            m_ElementType = asnType;
         }
-		else {
+        else {
 /*
-			_ASSERT(type->GetSize() <= sizeof(dataval));
+            _ASSERT(type->GetSize() <= sizeof(dataval));
             SetValNodeNext();
 */
             CNcbiOstrstream msg;
@@ -537,19 +540,19 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
                 type->GetName() << ": " << typeid(*type).name() <<
                 " size: " << type->GetSize();
             NCBI_THROW(CSerialException,eInvalidData, CNcbiOstrstreamToString(msg));
-		}
+        }
     }
     else if ( type->GetSize() <= sizeof(dataval) ) {
         // SEQUENCE OF, SET OF or primitive types
         SetValNodeNext();
     }
-	else {
+    else {
         CNcbiOstrstream msg;
         msg << "CSequenceOfTypeInfo: incompatible type: " <<
             type->GetName() << ": " << typeid(*type).name() <<
             " size: " << type->GetSize();
-		NCBI_THROW(CSerialException,eInvalidData, CNcbiOstrstreamToString(msg));
-	}
+        NCBI_THROW(CSerialException,eInvalidData, CNcbiOstrstreamToString(msg));
+    }
 
     {
         typedef CSequenceOfTypeInfoFunctions TFunc;
@@ -586,12 +589,12 @@ TObjectPtr CSequenceOfTypeInfo::CreateNode(void) const
     if ( m_DataOffset == 0 ) {
         _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
         return GetElementType()->Create();
-	}
+    }
     else {
         _ASSERT(m_NextOffset == offsetof(valnode, next));
-		_ASSERT(m_DataOffset == offsetof(valnode, data));
+        _ASSERT(m_DataOffset == offsetof(valnode, data));
         return Alloc(sizeof(valnode));
-	}
+    }
 }
 
 void CSequenceOfTypeInfo::DeleteNode(TObjectPtr node) const
@@ -599,12 +602,12 @@ void CSequenceOfTypeInfo::DeleteNode(TObjectPtr node) const
     if ( m_DataOffset == 0 ) {
         _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
         GetElementType()->Delete(node);
-	}
+    }
     else {
         _ASSERT(m_NextOffset == offsetof(valnode, next));
-		_ASSERT(m_DataOffset == offsetof(valnode, data));
+        _ASSERT(m_DataOffset == offsetof(valnode, data));
         Free(node);
-	}
+    }
 }
 
 bool CSequenceOfTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -681,26 +684,26 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
     bytestore* bs1 = Get(obj1);
     bytestore* bs2 = Get(obj2);
     if ( bs1 == 0 || bs2 == 0 )
-		return bs1 == bs2;
+        return bs1 == bs2;
 
-	Int4 len = BSLen(bs1);
+    Int4 len = BSLen(bs1);
     if ( len != BSLen(bs2) )
         return false;
     
-	BSSeek(bs1, 0, SEEK_SET);
-	BSSeek(bs2, 0, SEEK_SET);
-	char buff1[1024], buff2[1024];
-	while ( len > 0 ) {
-		Int4 chunk = Int4(sizeof(buff1));
-		if ( chunk > len )
-			chunk = len;
-		BSRead(bs1, buff1, chunk);
-		BSRead(bs2, buff2, chunk);
-		if ( memcmp(buff1, buff2, chunk) != 0 )
-			return false;
-		len -= chunk;
-	}
-	return true;
+    BSSeek(bs1, 0, SEEK_SET);
+    BSSeek(bs2, 0, SEEK_SET);
+    char buff1[1024], buff2[1024];
+    while ( len > 0 ) {
+        Int4 chunk = Int4(sizeof(buff1));
+        if ( chunk > len )
+            chunk = len;
+        BSRead(bs1, buff1, chunk);
+        BSRead(bs2, buff2, chunk);
+        if ( memcmp(buff1, buff2, chunk) != 0 )
+            return false;
+        len -= chunk;
+    }
+    return true;
 }
 
 void COctetStringTypeInfo::SetDefault(TObjectPtr dst) const
@@ -711,19 +714,19 @@ void COctetStringTypeInfo::SetDefault(TObjectPtr dst) const
 
 void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-	if ( Get(src) == 0 ) {
-		NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
+    if ( Get(src) == 0 ) {
+        NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
     }
-	BSFree(Get(dst));
-	Get(dst) = BSDup(Get(src));
+    BSFree(Get(dst));
+    Get(dst) = BSDup(Get(src));
 }
 
 void COctetStringTypeInfo::ReadOctetString(CObjectIStream& in,
                                            TTypeInfo /*objectType*/,
                                            TObjectPtr objectPtr)
 {
-	CObjectIStream::ByteBlock block(in);
-	BSFree(Get(objectPtr));
+    CObjectIStream::ByteBlock block(in);
+    BSFree(Get(objectPtr));
     char buffer[1024];
     Int4 count = Int4(block.Read(buffer, sizeof(buffer)));
     bytestore* bs = Get(objectPtr) = BSNew(count);
@@ -738,21 +741,21 @@ void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
                                             TTypeInfo /*objectType*/,
                                             TConstObjectPtr objectPtr)
 {
-	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
-	if ( bs == 0 )
-		out.ThrowError(out.fIllegalCall, "null bytestore pointer");
-	Int4 len = BSLen(bs);
-	CObjectOStream::ByteBlock block(out, len);
-	BSSeek(bs, 0, SEEK_SET);
-	char buff[1024];
-	while ( len > 0 ) {
-		Int4 chunk = Int4(sizeof(buff));
-		if ( chunk > len )
-			chunk = len;
-		BSRead(bs, buff, chunk);
-		block.Write(buff, chunk);
-		len -= chunk;
-	}
+    bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
+    if ( bs == 0 )
+        out.ThrowError(out.fIllegalCall, "null bytestore pointer");
+    Int4 len = BSLen(bs);
+    CObjectOStream::ByteBlock block(out, len);
+    BSSeek(bs, 0, SEEK_SET);
+    char buff[1024];
+    while ( len > 0 ) {
+        Int4 chunk = Int4(sizeof(buff));
+        if ( chunk > len )
+            chunk = len;
+        BSRead(bs, buff, chunk);
+        block.Write(buff, chunk);
+        len -= chunk;
+    }
     block.End();
 }
 
@@ -771,13 +774,13 @@ void COctetStringTypeInfo::SkipOctetString(CObjectIStream& in,
 void COctetStringTypeInfo::GetValueOctetString(TConstObjectPtr objectPtr,
                                                vector<char>& value) const
 {
-	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
-	if ( bs == 0 ) {
-		NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
+    bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
+    if ( bs == 0 ) {
+        NCBI_THROW(CSerialException,eInvalidData, "null bytestore pointer");
     }
-	Int4 len = BSLen(bs);
+    Int4 len = BSLen(bs);
     value.resize(len);
-	BSSeek(bs, 0, SEEK_SET);
+    BSSeek(bs, 0, SEEK_SET);
     BSRead(bs, &value.front(), len);
 }
 

@@ -56,9 +56,9 @@ public:
     typedef TObjectPtr TObjectType;
 
     CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder = false);
-	CSequenceOfTypeInfo(const char* name,
+    CSequenceOfTypeInfo(const char* name,
                         TTypeInfo type, bool randomOrder = false);
-	CSequenceOfTypeInfo(const string& name,
+    CSequenceOfTypeInfo(const string& name,
                         TTypeInfo type, bool randomOrder = false);
 
     size_t GetNextOffset(void) const
@@ -107,7 +107,7 @@ public:
     void DeleteNode(TObjectPtr node) const;
 
 private:
-	void InitSequenceOfTypeInfo(void);
+    void InitSequenceOfTypeInfo(void);
 
     // set this sequence to have ValNode as data holder
     // (used for SET OF (INTEGER, STRING, SET OF etc.)
@@ -226,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.38  2003/03/26 16:13:32  vasilche
+ * Removed TAB symbols. Some formatting.
+ *
  * Revision 1.37  2002/12/23 18:38:50  dicuccio
  * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
  * Moved all CVS logs to the end.

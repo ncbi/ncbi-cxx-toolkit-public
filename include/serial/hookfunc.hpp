@@ -70,8 +70,8 @@ struct SMemberReadFunctions
 {
     SMemberReadFunctions(TMemberReadFunction main, TMemberReadFunction missing)
         : m_Main(main), m_Missing(missing)
-		{
-		}
+        {
+        }
     TMemberReadFunction m_Main, m_Missing;
 };
 
@@ -79,8 +79,8 @@ struct SMemberCopyFunctions
 {
     SMemberCopyFunctions(TMemberCopyFunction main, TMemberCopyFunction missing)
         : m_Main(main), m_Missing(missing)
-		{
-		}
+        {
+        }
     TMemberCopyFunction m_Main, m_Missing;
 };
 
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/26 16:13:32  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.2  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

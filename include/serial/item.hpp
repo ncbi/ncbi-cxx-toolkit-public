@@ -46,8 +46,8 @@ class NCBI_XSERIAL_EXPORT CItemInfo
 {
 public:
     enum {
-		eNoOffset = -1
-	};
+        eNoOffset = -1
+    };
 
     CItemInfo(const CMemberId& id, TPointerOffsetType offset,
               TTypeInfo type);
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/26 16:13:32  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.4  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -58,7 +58,7 @@ namespace CObjectStreamBinaryDefs
         eOtherClass,
         eElement,
         eEndOfElements,
-		eBytes,
+        eBytes,
         eMember
     };
 }
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/03/26 16:13:33  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.9  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

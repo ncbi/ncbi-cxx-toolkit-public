@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/03/26 16:14:23  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.72  2003/02/04 17:06:26  gouriano
 * added check for NaN in WriteDouble
 *
@@ -462,11 +465,11 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
             ThrowError(fFormatError, "first byte of length is zero");
         if ( --m_CurrentTagLengthSize == 0 ) {
             SetTagLength(byte);
-		}
-		else {
-	        m_CurrentTagLength = byte;
-			m_CurrentTagState = eLengthValue;
-		}
+        }
+        else {
+            m_CurrentTagLength = byte;
+            m_CurrentTagState = eLengthValue;
+        }
         break;
         // fall down to next case (no break needed)
     case eLengthValue:
@@ -1338,14 +1341,14 @@ void CObjectOStreamAsnBinary::CopyChoice(const CChoiceTypeInfo* choiceType,
 
 void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)
 {
-	WriteSysTag(eOctetString);
-	WriteLength(block.GetLength());
+    WriteSysTag(eOctetString);
+    WriteLength(block.GetLength());
 }
 
 void CObjectOStreamAsnBinary::WriteBytes(const ByteBlock& ,
                                          const char* bytes, size_t length)
 {
-	WriteBytes(bytes, length);
+    WriteBytes(bytes, length);
 }
 
 void CObjectOStreamAsnBinary::BeginChars(const CharBlock& block)
@@ -1355,8 +1358,8 @@ void CObjectOStreamAsnBinary::BeginChars(const CharBlock& block)
         WriteShortLength(0);
         return;
     }
-	WriteSysTag(eVisibleString);
-	WriteLength(block.GetLength());
+    WriteSysTag(eVisibleString);
+    WriteLength(block.GetLength());
 }
 
 

@@ -60,11 +60,11 @@ public:
     Uint1 ReadByte(void);
     void ReadBytes(Uint1* bytes, unsigned size);
     EFixNonPrint FixNonPrint(EFixNonPrint how)
-    {
-        EFixNonPrint tmp = m_FixMethod;
-        m_FixMethod = how;
-        return tmp;
-    }
+        {
+            EFixNonPrint tmp = m_FixMethod;
+            m_FixMethod = how;
+            return tmp;
+        }
 
 protected:
     TObjectIndex ReadIndex(void);
@@ -128,13 +128,13 @@ protected:
 
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
 
-	virtual void BeginBytes(ByteBlock& block);
+    virtual void BeginBytes(ByteBlock& block);
     int GetHexChar(void);
-	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
-	virtual void EndBytes(const ByteBlock& block);
+    virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
+    virtual void EndBytes(const ByteBlock& block);
 
-	virtual void BeginChars(CharBlock& block);
-	virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
+    virtual void BeginChars(CharBlock& block);
+    virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
 
 private:
     virtual EPointerType ReadPointerType(void);
@@ -150,7 +150,7 @@ public:
     char GetChar(void);
     char PeekChar(void);
 
-	// parse methods
+    // parse methods
     char GetChar(bool skipWhiteSpace);
     char PeekChar(bool skipWhiteSpace);
 private:
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/03/26 16:13:33  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.53  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/03/26 16:14:23  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.58  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -797,7 +800,7 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     ExpectSysTag(eVisibleString);
     size_t length = ReadLength();
     char* s = static_cast<char*>(malloc(length + 1));
-	 ReadBytes(s, length);
+    ReadBytes(s, length);
     s[length] = 0;
     // Check the string for non-printable characters
     for (char* c = s; *c; c++) {
@@ -1075,15 +1078,15 @@ void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
 
 void CObjectIStreamAsnBinary::BeginBytes(ByteBlock& block)
 {
-	ExpectSysTag(eOctetString);
-	block.SetLength(ReadLength());
+    ExpectSysTag(eOctetString);
+    block.SetLength(ReadLength());
 }
 
 size_t CObjectIStreamAsnBinary::ReadBytes(ByteBlock& ,
                                           char* dst, size_t length)
 {
-	ReadBytes(dst, length);
-	return length;
+    ReadBytes(dst, length);
+    return length;
 }
 
 void CObjectIStreamAsnBinary::EndBytes(const ByteBlock& )
@@ -1094,14 +1097,14 @@ void CObjectIStreamAsnBinary::EndBytes(const ByteBlock& )
 void CObjectIStreamAsnBinary::BeginChars(CharBlock& block)
 {
     ExpectSysTag(eVisibleString);
-	block.SetLength(ReadLength());
+    block.SetLength(ReadLength());
 }
 
 size_t CObjectIStreamAsnBinary::ReadChars(CharBlock& ,
                                           char* dst, size_t length)
 {
-	ReadBytes(dst, length);
-	return length;
+    ReadBytes(dst, length);
+    return length;
 }
 
 void CObjectIStreamAsnBinary::EndChars(const CharBlock& )
@@ -1259,7 +1262,7 @@ void CObjectIStreamAsnBinary::SkipNull(void)
 
 void CObjectIStreamAsnBinary::SkipByteBlock(void)
 {
-	ExpectSysTag(eOctetString);
+    ExpectSysTag(eOctetString);
     SkipTagData();
 }
 

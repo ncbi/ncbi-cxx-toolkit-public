@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/03/26 16:14:22  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.33  2003/03/10 18:54:25  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -386,7 +389,7 @@ TMemberIndex CItemsInfo::Find(const CLightString& name, TMemberIndex pos) const
 
 TMemberIndex CItemsInfo::Find(TTag tag) const
 {
-	pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
+    pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
     if ( info.first != kInvalidMember ) {
         TMemberIndex index = tag + m_ZeroTagIndex;
         if ( index < FirstIndex() || index > LastIndex() )
@@ -403,7 +406,7 @@ TMemberIndex CItemsInfo::Find(TTag tag) const
 
 TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
 {
-	pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
+    pair<TMemberIndex, const TItemsByTag*> info = GetItemsByTagInfo();
     if ( info.first != kInvalidMember ) {
         TMemberIndex index = tag + m_ZeroTagIndex;
         if ( index < pos || index > LastIndex() )

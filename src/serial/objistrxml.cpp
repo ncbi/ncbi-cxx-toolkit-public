@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/03/26 16:14:23  vasilche
+* Removed TAB symbols. Some formatting.
+*
 * Revision 1.37  2003/02/07 16:09:22  gouriano
 * correction of GetContainerElementTypeFamily for the case of copying objects
 *
@@ -288,7 +291,7 @@ char CObjectIStreamXml::SkipWS(void)
 {
     _ASSERT(InsideTag());
     for ( ;; ) {
-		char c = m_Input.SkipSpaces();
+        char c = m_Input.SkipSpaces();
         switch ( c ) {
         case '\t':
             m_Input.SkipChar();
@@ -308,7 +311,7 @@ char CObjectIStreamXml::SkipWSAndComments(void)
 {
     _ASSERT(OutsideTag());
     for ( ;; ) {
-		char c = m_Input.SkipSpaces();
+        char c = m_Input.SkipSpaces();
         switch ( c ) {
         case '\t':
             m_Input.SkipChar();
@@ -337,7 +340,7 @@ char CObjectIStreamXml::SkipWSAndComments(void)
                         else {
                             // --[^>]
                             ThrowError(fFormatError,
-                                "double dash '--' is not allowed in XML comments");
+                                       "double dash '--' is not allowed in XML comments");
                         }
                     }
                     else {
@@ -736,7 +739,7 @@ char* CObjectIStreamXml::ReadCString(void)
     }
     string str;
     ReadTagData(str);
-	return strdup(str.c_str());
+    return strdup(str.c_str());
 }
 
 void CObjectIStreamXml::ReadTagData(string& str)
@@ -1596,8 +1599,8 @@ int CObjectIStreamXml::GetHexChar(void)
 size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
                                     char* dst, size_t length)
 {
-	size_t count = 0;
-	while ( length-- > 0 ) {
+    size_t count = 0;
+    while ( length-- > 0 ) {
         int c1 = GetHexChar();
         if ( c1 < 0 ) {
             block.EndOfBlock();
@@ -1614,8 +1617,8 @@ size_t CObjectIStreamXml::ReadBytes(ByteBlock& block,
             *dst++ = (c1 << 4) | c2;
             count++;
         }
-	}
-	return count;
+    }
+    return count;
 }
 
 void CObjectIStreamXml::BeginChars(CharBlock& )
@@ -1626,8 +1629,8 @@ void CObjectIStreamXml::BeginChars(CharBlock& )
 size_t CObjectIStreamXml::ReadChars(CharBlock& block,
                                     char* dst, size_t length)
 {
-	size_t count = 0;
-	while ( length-- > 0 ) {
+    size_t count = 0;
+    while ( length-- > 0 ) {
         char c = m_Input.GetChar();
         if (c == '<') {
             block.EndOfBlock();
@@ -1635,8 +1638,8 @@ size_t CObjectIStreamXml::ReadChars(CharBlock& block,
         }
         *dst++ = c;
         count++;
-	}
-	return count;
+    }
+    return count;
 }
 
 void CObjectIStreamXml::SkipBool(void)
@@ -1743,7 +1746,7 @@ void CObjectIStreamXml::SkipByteBlock(void)
             ThrowError(fFormatError, "bad char in octet string");
         }
     }
-	if ( m_Input.PeekChar() != 'H' )
+    if ( m_Input.PeekChar() != 'H' )
         ThrowError(fFormatError, "'H' expected");
     m_Input.SkipChar();
 }
