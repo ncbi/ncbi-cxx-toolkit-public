@@ -78,8 +78,8 @@ CLDS_Management::OpenCreateDB(const string& dir_name,
         CLDS_Management admin(*db);
         admin.Create();
         admin.SyncWithDir(dir_name);
+        *is_created = true;
     }
-    *is_created = true;
     return db;
 }
 
@@ -89,6 +89,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/06 20:13:05  kuznets
+ * Fixed LDS database creation bug CLDS_Management::OpenCreateDB always reported TRUE
+ * in is_created parameter
+ *
  * Revision 1.3  2003/06/25 18:28:40  kuznets
  * + CLDS_Management::OpenCreateDB(...)
  *
