@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/16 23:19:10  thiessen
+* redo of drawing system
+*
 * Revision 1.5  2000/07/12 23:27:48  thiessen
 * now draws basic CPK model
 *
@@ -62,11 +65,6 @@
 
 #include "cn3d/atom_set.hpp"
 #include "cn3d/vector_math.hpp"
-#include "cn3d/structure_set.hpp"
-#include "cn3d/chemical_graph.hpp"
-#include "cn3d/residue.hpp"
-#include "cn3d/periodic_table.hpp"
-#include "cn3d/opengl_renderer.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -74,7 +72,7 @@ using namespace objects;
 BEGIN_SCOPE(Cn3D)
 
 AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
-    StructureBase(parent)
+    StructureBase(parent), activeEnsemble(NULL)
 {
     int nAtoms = coords.GetNumber_of_points();
     TESTMSG("model has " << nAtoms << " atomic coords");
@@ -216,7 +214,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
                 e_altIDs = ensemble.GetAlt_conf_ids().end();
             for (i_altIDs=ensemble.GetAlt_conf_ids().begin();
                  i_altIDs!=e_altIDs; i_altIDs++) {
-                (*ensembleStr) += ((*i_altIDs).GetObject().Get())[0];
+                (*ensembleStr) += (i_altIDs->GetObject().Get())[0];
             }
             ensembles.push_back(ensembleStr);
             TESTMSG("alt conf ensemble '" << (*ensembleStr) << "'");
@@ -231,55 +229,46 @@ AtomSet::~AtomSet(void)
         delete const_cast<std::string *>(*i);
 }
 
-bool AtomSet::Draw(void) const
-{
-    TESTMSG("drawing AtomSet");
-
-    const StructureObject *object;
-    if (!GetParentOfType(&object))
-        ERR_POST(Error << "can't get StructureObject parent from Atom");
-
-    AtomMap::const_iterator a, ae=atomMap.end();
-    for (a=atomMap.begin(); a!=ae; a++) {
-        // get element info for this atom
-        const Residue::AtomInfo *info = object->graph->GetAtomInfo(
-            (*a).first.first, (*a).first.second.first, (*a).first.second.second);
-        const Element *element = PeriodicTable.GetElement(info->atomicNumber);
-        // just draw the first altConf for now
-        DrawSphere((*a).second.front()->site, element->vdWRadius, element->color);
-    }
-
-    return false; // don't draw Atom children
-}
-
 const double Atom::NO_TEMPERATURE = -1.0;
 const double Atom::NO_OCCUPANCY = -1.0;
 const double Atom::NO_ALTCONFID = '-';
 
+bool AtomSet::SetActiveEnsemble(const std::string *ensemble)
+{
+    // if not NULL, make sure it's one of this AtomSet's ensembles
+    if (ensemble) {
+        EnsembleList::const_iterator e, ee=ensembles.end();
+        for (e=ensembles.begin(); e!=ee; e++) {
+            if (*e == ensemble) break;
+        }
+        if (e == ee) return false;
+    }
+    activeEnsemble = ensemble;
+    return true;
+}
+
 const Atom* AtomSet::GetAtom(int mID, int rID, int aID, 
-                             const std::string *ensemble, bool suppressWarning) const
+    bool getAny, bool suppressWarning) const
 {
     AtomMap::const_iterator atomConfs = atomMap.find(MakeKey(mID, rID, aID));
     if (atomConfs == atomMap.end()) {
-        ERR_POST(Warning << "can't find atom(s) from pointer (" << mID << ',' 
-                        << rID << ',' << aID << ')');
+        if (!suppressWarning)
+            ERR_POST(Warning << "can't find atom(s) from pointer (" << mID << ',' 
+                             << rID << ',' << aID << ')');
         return NULL;
     }
     AtomAltList::const_iterator atom = (*atomConfs).second.begin();
 
-    // if no ensemble specified, just return first one
-    if (!ensemble) return *atom;
+    // if no activeEnsemble specified, just return first altConf
+    if (!activeEnsemble || getAny) return *atom;
 
-    // otherwise, return first atom whose altConfID is in the ensemble
+    // otherwise, return first atom whose altConfID is in the activeEnsemble
     AtomAltList::const_iterator e = (*atomConfs).second.end();
     for (; atom!=e; atom++) {
-        if (ensemble->find((*atom)->altConfID) != ensemble->npos)
+        if (activeEnsemble->find((*atom)->altConfID) != activeEnsemble->npos)
             return *atom;
     }
-    if (!suppressWarning)
-        ERR_POST(Warning << "atom (" << mID << ',' 
-                         << rID << ',' << aID << ") is not in ensemble '"
-                         << *ensemble << '\'');
+
     return NULL;
 }
 
@@ -290,13 +279,6 @@ Atom::Atom(StructureBase *parent) :
     altConfID(NO_ALTCONFID)
 {
 }
-
-//bool Atom::Draw(void) const
-//{
-//    TESTMSG("drawing Atom");
-//    return true;
-//}
-
 
 END_SCOPE(Cn3D)
 

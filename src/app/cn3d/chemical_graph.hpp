@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/16 23:18:33  thiessen
+* redo of drawing system
+*
 * Revision 1.3  2000/07/12 23:28:27  thiessen
 * now draws basic CPK model
 *
@@ -85,7 +88,7 @@ public:
         ERR_POST(Warning << "Graph: can't find molecule #" << mID);
         return NULL;
     }
-    bool Draw(void) const;
+    //bool Draw(const StructureBase *data) const;
 
 private:
 };

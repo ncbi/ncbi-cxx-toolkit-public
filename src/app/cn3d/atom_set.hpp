@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/16 23:18:33  thiessen
+* redo of drawing system
+*
 * Revision 1.6  2000/07/12 23:28:27  thiessen
 * now draws basic CPK model
 *
@@ -90,7 +93,6 @@ public:
     static const double NO_ALTCONFID;
 
     // public methods
-    //bool Draw(void) const;
     bool HasTemp(void) const { return (averageTemperature!=NO_TEMPERATURE); }
     bool HasOccup(void) const { return (occupancy!=NO_OCCUPANCY); }
     bool HasAlt(void) const { return (altConfID!=NO_ALTCONFID); }
@@ -109,10 +111,13 @@ public:
     EnsembleList ensembles;
 
     // public methods
-    bool Draw(void) const;
+
+    // which ensemble to use?
+    bool SetActiveEnsemble(const std::string *ensemble);
+    // get Atom based on Atom-pntr. If 'getAny' is true, then will return arbitrary
+    // altConf; if false, will only return one from active ensemble
     const Atom* GetAtom(int moleculeID, int residueID, int atomID, 
-                        const std::string *ensemble = NULL,
-                        bool suppressWarning = false) const;
+        bool getAny = false, bool suppressWarning = false) const;
 
 private:
     // this provides a convenient way to look up atoms from Atom-pntr info
@@ -124,8 +129,10 @@ private:
     typedef LIST_TYPE < const Atom * > AtomAltList;
     typedef std::map < AtomPntrKey, AtomAltList > AtomMap;
     AtomMap atomMap;
+    const std::string *activeEnsemble;
 
 public:
+    const std::string* GetActiveEnsemble(void) const { return activeEnsemble; }
     bool HasTemp(void) const { return (atomMap.size()>0 && (*((*(atomMap.begin())).second.begin()))->HasTemp()); }
     bool HasOccup(void) const { return (atomMap.size()>0 && (*((*(atomMap.begin())).second.begin()))->HasOccup()); }
     bool HasAlt(void) const { return (atomMap.size()>0 && (*((*(atomMap.begin())).second.begin()))->HasAlt()); }

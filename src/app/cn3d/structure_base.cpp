@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
 * Revision 1.2  2000/07/11 13:45:31  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -60,28 +63,24 @@ StructureBase::StructureBase(StructureBase *parent, bool warnOnNULL)
 // delete children upon destruction
 StructureBase::~StructureBase(void)
 {
-    //TESTMSG("in StructureBase::~StructureBase(), _children.size()=" << _children.size());
     _ChildList::iterator i, e=_children.end();
     for (i=_children.begin(); i!=e; i++) 
-        delete (*i).first;
+        delete i->first;
 }
 
 // draws the object and all its children - halt upon false return from Draw or DrawAll
-bool StructureBase::DrawAll(void) const
+bool StructureBase::DrawAll(const StructureBase *data) const
 {
-    //if (IsVisible()) {
-        if (!Draw()) return true;
-        _ChildList::const_iterator i, e=_children.end();
-        for (i=_children.begin(); i!=e; i++) 
-            if (!(((*i).first)->DrawAll())) return true;
-        //PostDraw();
-    //}
+    if (!Draw(data)) return true;
+    _ChildList::const_iterator i, e=_children.end();
+    for (i=_children.begin(); i!=e; i++) 
+        if (!((i->first)->DrawAll(data))) return true;
 	return true;
 }
 
 // every StructureBase object stored will get a unique ID (although it's
 // not really useful or accessible at the moment... just need something to map to)
-static int id = 1;
+static unsigned int id = 1;
 
 void StructureBase::_AddChild(StructureBase *child)
 {

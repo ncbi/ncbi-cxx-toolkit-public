@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/16 23:18:34  thiessen
+* redo of drawing system
+*
 * Revision 1.6  2000/07/12 23:28:28  thiessen
 * now draws basic CPK model
 *
@@ -82,15 +85,13 @@ public:
     // delete any StructureBase-derived objects.
     virtual ~StructureBase(void);
 
-    // Draws the object (if visible) and all its children - do not override!
-    bool DrawAll(void) const;
+    // overridable default Draws the object and all its children; 'data' will
+    // be passed along to self and children's Draw methods
+    virtual bool DrawAll(const StructureBase *data = NULL) const;
 
     // function to draw this object, called before children are Drawn. Return
     // false to halt recursive drawing process
-    virtual bool Draw(void) const { ERR_POST(Fatal << "in StructureBase::Draw()"); return false; }
-
-    // called after this object and its children have been Drawn
-    //virtual bool PostDraw(void) const { TESTMSG("in PostDraw()"); return true; }
+    virtual bool Draw(const StructureBase *data = NULL) const { return true; }
 
 private:
     // no default construction
@@ -104,33 +105,13 @@ private:
     void _RemoveChild(StructureBase *child);
     StructureBase* _parent;
 
-#if 0  // don't know if we'll actually need/want these
-    // misc flags
-    enum _eFlags {
-        _eVisible = 1
-    };
-    typedef unsigned char FlagType;
-    FlagType _flags;
-
-    // to set/query all flags
-    bool GetFlag(FlagType flag) const { return ((_flags & flag) > 0); }
-    void SetFlag(FlagType flag, bool on)
-    {
-        if (on) _flags |= flag; else _flags &= ~flag;
-    }
-
-    // to set/query specific flags
-    bool IsVisible(void) const { return GetFlag(_eVisible); }
-    void SetVisible(bool on) { SetFlag(_eVisible, on); }
-#endif
-
 public:
     // go up the hierarchy to find a parent of the desired type
     template < class T >
     bool GetParentOfType(T* *ptr) const
     {
         *ptr = NULL;
-        for (const StructureBase *parent=this; parent; parent=parent->_parent) {
+        for (const StructureBase *parent=this->_parent; parent; parent=parent->_parent) {
             if ((*ptr = dynamic_cast<T*>(parent)) != NULL) {
                 return true;
             }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
 * Revision 1.1  2000/07/11 13:45:31  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -45,6 +48,12 @@
 
 #include "cn3d/residue.hpp"
 #include "cn3d/bond.hpp"
+#include "cn3d/structure_set.hpp"
+#include "cn3d/coord_set.hpp"
+#include "cn3d/atom_set.hpp"
+#include "cn3d/molecule.hpp"
+#include "cn3d/periodic_table.hpp"
+#include "cn3d/opengl_renderer.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -82,8 +91,8 @@ Residue::Residue(StructureBase *parent,
     CResidue_graph *residueGraph = NULL;
     ResidueGraphList::const_iterator i, ie=dictionary->end();
     for (i=dictionary->begin(); i!=ie; i++) {
-        if ((*i).GetObject().GetId().Get() == graphID) {
-            residueGraph = (*i).GetPointer();
+        if (i->GetObject().GetId().Get() == graphID) {
+            residueGraph = i->GetPointer();
             break;
         }
     }
@@ -99,29 +108,35 @@ Residue::Residue(StructureBase *parent,
     if (residueGraph->IsSetDescr()) {
         CResidue_graph::TDescr::const_iterator j, je = residueGraph->GetDescr().end();
         for (j=residueGraph->GetDescr().begin(); j!=je; j++) {
-            if ((*j).GetObject().IsName()) {
-                name = (*j).GetObject().GetName();
+            if (j->GetObject().IsName()) {
+                name = j->GetObject().GetName();
                 break;
             }
         }
     }
 
-    // get bonds
-    CResidue_graph::TBonds::const_iterator b, be = residueGraph->GetBonds().end();
-    for (b=residueGraph->GetBonds().begin(); b!=be; b++) {
-        int order = (*b).GetObject().IsSetBond_order() ? 
-                (*b).GetObject().GetBond_order() : Bond::eUnknown;
-        Bond *bond = new Bond(this,
-            moleculeID, id, (*b).GetObject().GetAtom_id_1().Get(),
-            moleculeID, id, (*b).GetObject().GetAtom_id_2().Get(),
-            order);
-        bonds.push_back(bond);
+    // get StructureObject* parent
+    const StructureObject *object;
+    if (!GetParentOfType(&object) || object->coordSets.size() == 0) {
+        ERR_POST("Residue() : parent doesn't have any CoordSets");
+        return;
     }
 
     // get atom info
     CResidue_graph::TAtoms::const_iterator a, ae = residueGraph->GetAtoms().end();
     for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
-        const CAtom& atom = (*a).GetObject();
+        const CAtom& atom = a->GetObject();
+
+        // first see if this atom is present each CoordSet; if not, don't
+        // bother storing info. This forces an intersection on CoordSets - e.g.,
+        // from a multi-model NMR structure, only those atoms present in *all*
+        // models will be displayed.
+        StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
+        for (c=object->coordSets.begin(); c!=ce; c++) {
+            if (!((*c)->atomSet->GetAtom(moleculeID, id, atom.GetId().Get(), true, true))) break;
+        }
+        if (c != ce) continue;
+
         AtomInfo *info = new AtomInfo;
         // get name if present
         if (atom.IsSetName()) info->name = atom.GetName();
@@ -142,19 +157,64 @@ Residue::Residue(StructureBase *parent,
             ERR_POST(Fatal << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
         atomInfos[atom.GetId().Get()] = info;
     }
+
+    // get bonds
+    CResidue_graph::TBonds::const_iterator b, be = residueGraph->GetBonds().end();
+    for (b=residueGraph->GetBonds().begin(); b!=be; b++) {
+        int order = b->GetObject().IsSetBond_order() ? 
+                b->GetObject().GetBond_order() : Bond::eUnknown;
+        const Bond *bond = MakeBond(this,
+            moleculeID, id, b->GetObject().GetAtom_id_1().Get(),
+            moleculeID, id, b->GetObject().GetAtom_id_2().Get(),
+            order);
+        if (bond) bonds.push_back(bond);
+    }
 }
 
 Residue::~Residue(void)
 {
     AtomInfoMap::iterator a, ae = atomInfos.end();
-    for (a=atomInfos.begin(); a!=ae; a++) delete (*a).second;
+    for (a=atomInfos.begin(); a!=ae; a++) delete a->second;
 }
 
-bool Residue::Draw(void) const
+// draw atom spheres here
+bool Residue::Draw(const StructureBase *data) const
 {
-    // prune draw tree here
-    TESTMSG("not drawing Residue #" << id << " yet");
-    return false;
+    // at this point 'data' should be an AtomSet*
+    const AtomSet *atomSet;
+    if ((atomSet = dynamic_cast<const AtomSet *>(data)) == NULL) {
+        ERR_POST(Error << "Residue::Draw(data) - data not AtomSet*");
+        return false;
+    }
+
+    // get Molecule parent
+    const Molecule *molecule;
+    if (!GetParentOfType(&molecule)) {
+        ERR_POST(Error << "Residue::Draw(data) - can't get parent Molecule");
+        return false;
+    }
+
+    // get OpenGLRenderer
+    const StructureSet *set;
+    if (!GetParentOfType(&set) || !set->renderer) {
+        ERR_POST(Warning << "Residue::Draw() - no renderer");
+        return false;
+    }
+
+    AtomInfoMap::const_iterator a, ae = atomInfos.end();
+    for (a=atomInfos.begin(); a!=ae; a++) {
+
+        // get Atom* for appropriate altConf
+        static bool overlayEnsembles = true;
+        const Atom *atom = atomSet->GetAtom(molecule->id, id, a->first, overlayEnsembles);
+        if (!atom) continue; // skip atom if no altConf
+
+        // draw sphere
+        const Element *element = PeriodicTable.GetElement(a->second->atomicNumber);
+        set->renderer->DrawSphere(atom->site, 0.4 /*element->vdWRadius*/, element->color);
+    }
+
+    return true;
 }
 
 END_SCOPE(Cn3D)

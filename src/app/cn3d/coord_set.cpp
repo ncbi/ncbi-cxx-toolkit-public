@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/16 23:19:10  thiessen
+* redo of drawing system
+*
 * Revision 1.2  2000/07/12 23:27:49  thiessen
 * now draws basic CPK model
 *
@@ -58,7 +61,7 @@ CoordSet::CoordSet(StructureBase *parent,
     CBiostruc_model::TModel_coordinates::const_iterator j, je=modelCoords.end();
     for (j=modelCoords.begin(); j!=je; j++) {
         const CModel_coordinate_set::C_Coordinates& 
-            coordSet = (*j).GetObject().GetCoordinates();
+            coordSet = j->GetObject().GetCoordinates();
         if (coordSet.IsLiteral()) {
             const CCoordinates& coords = coordSet.GetLiteral();
             if (coords.IsAtomic()) {
@@ -72,10 +75,10 @@ CoordSet::CoordSet(StructureBase *parent,
     }
 }
 
-bool CoordSet::Draw(void) const
+bool CoordSet::Draw(const StructureBase *data) const
 {
-    TESTMSG("drawing CoordSet");
-    return true;
+    TESTMSG("not drawing CoordSet");
+    return false;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
 * Revision 1.2  2000/07/12 23:27:49  thiessen
 * now draws basic CPK model
 *
@@ -62,15 +65,13 @@ using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-// local functions
-static void ConstructLogo(void);
-static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha = 1.0);
-
 static const double PI = acos(-1);
 static inline double DegreesToRad(double deg) { return deg*PI/180.0; }
 static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 
 static const GLuint FIRST_LIST = 1;
+
+// it's easier to keep one global qobj for now
 static GLUquadricObj *qobj = NULL;
 
 /* these are used for both matrial colors and light colors */
@@ -84,14 +85,18 @@ static const GLfloat Color_On[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 OpenGLRenderer::OpenGLRenderer(void)
 {
-    // initialize global qobj
-    if (!qobj) {
+    if (!qobj) { // initialize global qobj
         qobj = gluNewQuadric();
         if (!qobj) ERR_POST(Fatal << "unable to allocate GLUQuadricObj");
         gluQuadricDrawStyle(qobj, GLU_FILL);
         gluQuadricNormals(qobj, GLU_SMOOTH);
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
+
+    // set default rendering options
+    sphereSides = 8;
+    sphereStacks = 4;
+   
     AttachStructureSet(NULL);
 }
 
@@ -231,6 +236,7 @@ void OpenGLRenderer::Display(void) const
 void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
 {
     structureSet = targetStructureSet;
+    if (structureSet) structureSet->renderer = this;
 
     // make sure general GL stuff is set up
     background[0] = background[1] = background[2] = 0.0;
@@ -245,6 +251,7 @@ void OpenGLRenderer::Construct(void)
     glLoadIdentity();
 
     if (structureSet) {
+        SetColor(GL_AMBIENT, 2, 2, 2); // reset color caches in SetColor
         glNewList(FIRST_LIST, GL_COMPILE);
         structureSet->DrawAll();
         glEndList();
@@ -253,11 +260,10 @@ void OpenGLRenderer::Construct(void)
     }
 }
 
-
-// non-object (static) functions
+// drawing methods
 
 // set current GL color; don't change color if it's same as what's current
-static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+void OpenGLRenderer::SetColor(int type, float red, float green, float blue, float alpha)
 {
     static GLfloat pr, pg, pb, pa;
     static GLenum pt = GL_NONE;
@@ -269,7 +275,7 @@ static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfl
         ERR_POST(Warning << "SetColor request alpha 0.0");
 //#endif
 
-    if (red != pr || green != pg || blue != pb || alpha != pa || type != pt) {
+    if (red != pr || green != pg || blue != pb || type != pt || alpha != pa) {
         if (type != pt) {
             if (type == GL_DIFFUSE) {
                 glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
@@ -280,12 +286,12 @@ static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfl
             }
             pt = type;
         }
-        GLfloat rgb[4] = { red, green, blue, alpha };
-        glMaterialfv(GL_FRONT_AND_BACK, type, rgb);
+        GLfloat rgba[4] = { red, green, blue, alpha };
+        glMaterialfv(GL_FRONT_AND_BACK, type, rgba);
         if (type == GL_AMBIENT) {
             /* this is necessary so that fonts are rendered in correct
                 color in SGI's OpenGL implementation, and maybe others */
-            glColor4f(red, green, blue, alpha);
+            glColor4fv(rgba);
         }
         pr = red;
         pg = green;
@@ -295,7 +301,7 @@ static void SetColor(GLenum type, GLfloat red, GLfloat green, GLfloat blue, GLfl
 }
 
 /* create display list with logo */
-static void ConstructLogo(void)
+void OpenGLRenderer::ConstructLogo(void)
 {
     static const GLfloat logoColor[3] = { 100.0f/255, 240.0f/255, 150.0f/255 };
     static const int LOGO_SIDES = 36, segments = 180;
@@ -395,16 +401,31 @@ static void ConstructLogo(void)
     glEndList();
 }
 
-
-// exported function for drawing primitives
-
-void DrawSphere(const Vector& site, double radius, const Vector& color)
+void OpenGLRenderer::DrawSphere(const Vector& site, double radius, const Vector& color)
 {
     SetColor(GL_DIFFUSE, color[0], color[1], color[2]);
     glPushMatrix();
     glTranslated(site.x, site.y, site.z);
-    gluSphere(qobj, radius, 12, 8);
+    gluSphere(qobj, radius, sphereSides, sphereStacks);
     glPopMatrix();
+}
+
+void OpenGLRenderer::DrawLine(const Vector& site1, const Vector& site2, 
+    const Vector& color1, const Vector& color2)
+{
+    Vector midpoint = (site1 + site2) / 2;
+
+    SetColor(GL_AMBIENT, color1[0], color1[1], color1[2]);
+    glBegin(GL_LINES);
+    glVertex3d(site1.x, site1.y, site1.z);
+    glVertex3d(midpoint.x, midpoint.y, midpoint.z);
+    glEnd();
+
+    SetColor(GL_AMBIENT, color2[0], color2[1], color2[2]);
+    glBegin(GL_LINES);
+    glVertex3d(midpoint.x, midpoint.y, midpoint.z);
+    glVertex3d(site2.x, site2.y, site2.z);
+    glEnd();
 }
 
 END_SCOPE(Cn3D)

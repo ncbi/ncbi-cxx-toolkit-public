@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/16 23:18:34  thiessen
+* redo of drawing system
+*
 * Revision 1.2  2000/07/12 23:28:27  thiessen
 * now draws basic CPK model
 *
@@ -47,10 +50,8 @@
 
 #include "cn3d/vector_math.hpp"
 
-BEGIN_SCOPE(Cn3D)
 
-// non-object functions to draw primitives in OpenGL
-void DrawSphere(const Vector& site, double radius, const Vector& color);
+BEGIN_SCOPE(Cn3D)
 
 // the OpenGLRenderer class
 
@@ -99,8 +100,15 @@ public:
     // constructs the structure display lists (but doesn't draw them)
     void Construct(void);
 
+    // drawing methods
+    void DrawSphere(const Vector& site, double radius, const Vector& color);
+    void DrawLine(const Vector& site1, const Vector& site2, const Vector& color1, const Vector& color2);
+
+
 private:
     StructureSet *structureSet;
+    void SetColor(int type, float red, float green, float blue, float alpha = 1.0);
+    void ConstructLogo(void);
 
     // camera data
     double cameraDistance, cameraAngleRad, 
@@ -113,6 +121,9 @@ private:
 
     // background color
     float background[3];
+
+    // misc rendering stuff
+    int sphereSides, sphereStacks;
 };
 
 END_SCOPE(Cn3D)

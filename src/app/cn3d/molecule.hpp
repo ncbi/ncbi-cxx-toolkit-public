@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/16 23:18:34  thiessen
+* redo of drawing system
+*
 * Revision 1.1  2000/07/11 13:49:29  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -100,7 +103,7 @@ public:
         ERR_POST(Warning << "Molecule #" << id << ": can't find residue #" << rID);
         return NULL;
     }
-    bool Draw(void) const;
+    //bool Draw(const StructureBase *data) const;
 
 private:
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
 * Revision 1.1  2000/07/11 13:45:30  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -58,8 +61,8 @@ Molecule::Molecule(StructureBase *parent,
     id = graph.GetId().Get();
     CMolecule_graph::TDescr::const_iterator k, ke=graph.GetDescr().end();
     for (k=graph.GetDescr().begin(); k!=ke; k++) {
-        if ((*k).GetObject().IsMolecule_type()) {
-            type = static_cast<eType>((*k).GetObject().GetMolecule_type());
+        if (k->GetObject().IsMolecule_type()) {
+            type = static_cast<eType>(k->GetObject().GetMolecule_type());
             break;
         }
     }
@@ -78,22 +81,22 @@ Molecule::Molecule(StructureBase *parent,
     if (graph.IsSetInter_residue_bonds()) {
         CMolecule_graph::TInter_residue_bonds::const_iterator j, je=graph.GetInter_residue_bonds().end();
         for (j=graph.GetInter_residue_bonds().begin(); j!=je; j++) {
-            int order = (*j).GetObject().IsSetBond_order() ? 
-                (*j).GetObject().GetBond_order() : Bond::eUnknown;
-            Bond *bond = new Bond(this, 
-                (*j).GetObject().GetAtom_id_1(), 
-                (*j).GetObject().GetAtom_id_2(),
+            int order = j->GetObject().IsSetBond_order() ? 
+                j->GetObject().GetBond_order() : Bond::eUnknown;
+            const Bond *bond = MakeBond(this, 
+                j->GetObject().GetAtom_id_1(), 
+                j->GetObject().GetAtom_id_2(),
                 order);
-            interResidueBonds.push_back(bond);
+            if (bond) interResidueBonds.push_back(bond);
         }
     }
 }
 
-bool Molecule::Draw(void) const
-{
-    TESTMSG("drawing Molecule #" << id);
-    return true;
-}
+//bool Molecule::Draw(const StructureBase *data) const
+//{
+//    TESTMSG("drawing Molecule #" << id);
+//    return true;
+//}
 
 END_SCOPE(Cn3D)
 

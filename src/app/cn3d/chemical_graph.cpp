@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/16 23:19:10  thiessen
+* redo of drawing system
+*
 * Revision 1.2  2000/07/12 23:27:49  thiessen
 * now draws basic CPK model
 *
@@ -87,7 +90,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     CBiostruc_graph::TMolecule_graphs::const_iterator i, ie=graph.GetMolecule_graphs().end();
     for (i=graph.GetMolecule_graphs().begin(); i!=ie; i++) {
         Molecule *molecule = new Molecule(this,
-            (*i).GetObject(),
+            i->GetObject(),
             standardDictionary->GetResidue_graphs(),
             graph.GetResidue_graphs());
         if (molecules.find(molecule->id) != molecules.end())
@@ -99,22 +102,22 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     if (graph.IsSetInter_molecule_bonds()) {
         CBiostruc_graph::TInter_molecule_bonds::const_iterator j, je=graph.GetInter_molecule_bonds().end();
         for (j=graph.GetInter_molecule_bonds().begin(); j!=je; j++) {
-            int order = (*j).GetObject().IsSetBond_order() ? 
-                (*j).GetObject().GetBond_order() : Bond::eUnknown;
-            Bond *bond = new Bond(this, 
-                (*j).GetObject().GetAtom_id_1(), 
-                (*j).GetObject().GetAtom_id_2(),
+            int order = j->GetObject().IsSetBond_order() ? 
+                j->GetObject().GetBond_order() : Bond::eUnknown;
+            const Bond *bond = MakeBond(this,
+                j->GetObject().GetAtom_id_1(), 
+                j->GetObject().GetAtom_id_2(),
                 order);
-            interMoleculeBonds.push_back(bond);
+            if (bond) interMoleculeBonds.push_back(bond);
         }
     }
 }
 
-bool ChemicalGraph::Draw(void) const
-{
-    TESTMSG("not drawing ChemicalGraph yet");
-    return false;
-}
+//bool ChemicalGraph::Draw(const StructureBase *data) const
+//{
+//    TESTMSG("drawing ChemicalGraph");
+//    return false;
+//}
 
 END_SCOPE(Cn3D)
 

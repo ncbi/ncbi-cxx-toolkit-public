@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/16 23:18:33  thiessen
+* redo of drawing system
+*
 * Revision 1.1  2000/07/11 13:49:26  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -49,6 +52,8 @@ using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
+class AtomSet;
+
 // A Bond is a link between two atoms, referenced by Atom-pntr (molecule,
 // residue, and atom IDs).
 
@@ -65,10 +70,7 @@ public:
         eUnknown = CInter_residue_bond::eBond_order_unknown 
     };
 
-    Bond(StructureBase *parent, const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2, 
-        int bondOrder = eUnknown);
-    Bond(StructureBase *parent, int mID1, int rID1, int aID1, int mID2, int rID2, int aID2, 
-        int bondOrder = eUnknown);
+    Bond(StructureBase *parent) : StructureBase(parent) { }
     //~Bond(void);
 
     // public data
@@ -79,10 +81,17 @@ public:
     eBondOrder order;
 
     // public methods
-    bool Draw(void) const;
+    bool Draw(const StructureBase *data) const;
 
 private:
 };
+
+const Bond* MakeBond(StructureBase *parent, 
+    const CAtom_pntr& atomPtr1, const CAtom_pntr& atomPtr2, 
+    int bondOrder = Bond::eUnknown);
+const Bond* MakeBond(StructureBase *parent,
+    int mID1, int rID1, int aID1, int mID2, int rID2, int aID2, 
+    int bondOrder = Bond::eUnknown);
 
 END_SCOPE(Cn3D)
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/16 23:18:34  thiessen
+* redo of drawing system
+*
 * Revision 1.1  2000/07/11 13:49:29  thiessen
 * add modules to parse chemical graph; many improvements
 *
@@ -87,9 +90,10 @@ public:
     // public methods
     bool HasCode(void) const { return (code != NO_CODE); }
     bool HasName(void) const { return (!name.empty()); }
-    bool Draw(void) const;
+    bool Draw(const StructureBase *data) const;
 
 private:
+    // mapped by Atom-id
     typedef std::map < int , const AtomInfo * > AtomInfoMap;
     AtomInfoMap atomInfos;
 

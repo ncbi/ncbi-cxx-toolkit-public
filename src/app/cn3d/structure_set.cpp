@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/16 23:19:11  thiessen
+* redo of drawing system
+*
 * Revision 1.7  2000/07/12 02:00:15  thiessen
 * add basic wxWindows GUI
 *
@@ -66,6 +69,7 @@
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
 #include "cn3d/chemical_graph.hpp"
+#include "cn3d/atom_set.hpp"
 
 USING_NCBI_SCOPE;
 using namespace objects;
@@ -73,7 +77,7 @@ using namespace objects;
 BEGIN_SCOPE(Cn3D)
 
 StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
-    StructureBase(NULL, false)
+    StructureBase(NULL, false), renderer(NULL)
 {
     StructureObject *object;
     
@@ -92,7 +96,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         const CBiostruc_align::TSlaves& slaves = mime.GetAlignstruc().GetSlaves();
 		CBiostruc_align::TSlaves::const_iterator i, e=slaves.end();
         for (i=slaves.begin(); i!=e; i++) {
-            object = new StructureObject(this, (*i).GetObject(), false);
+            object = new StructureObject(this, i->GetObject(), false);
             objects.push_back(object);
         }
 
@@ -105,7 +109,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     }
 }
 
-bool StructureSet::Draw(void) const
+bool StructureSet::Draw(const StructureBase *data) const
 {
     TESTMSG("drawing StructureSet");
     return true;
@@ -119,8 +123,8 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     // get MMDB id
     CBiostruc::TId::const_iterator j, je=biostruc.GetId().end();
     for (j=biostruc.GetId().begin(); j!=je; j++) {
-        if ((*j).GetObject().IsMmdb_id()) {
-            mmdbID = (*j).GetObject().GetMmdb_id().Get();
+        if (j->GetObject().IsMmdb_id()) {
+            mmdbID = j->GetObject().GetMmdb_id().Get();
             break;
         }
     }
@@ -130,8 +134,8 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     if (biostruc.IsSetDescr()) {
         CBiostruc::TDescr::const_iterator k, ke=biostruc.GetDescr().end();
         for (k=biostruc.GetDescr().begin(); k!=ke; k++) {
-            if ((*k).GetObject().IsName()) {
-                pdbID = (*k).GetObject().GetName();
+            if (k->GetObject().IsName()) {
+                pdbID = k->GetObject().GetName();
                 break;
             }
         }
@@ -143,23 +147,48 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
         // iterate SEQUENCE OF Biostruc-model
         CBiostruc::TModel::const_iterator i, ie=biostruc.GetModel().end();
         for (i=biostruc.GetModel().begin(); i!=ie; i++) {
-            if ((*i).GetObject().IsSetModel_coordinates()) {
+            if (i->GetObject().IsSetModel_coordinates()) {
                 CoordSet *coordSet =
-                    new CoordSet(this, (*i).GetObject().GetModel_coordinates());
+                    new CoordSet(this, i->GetObject().GetModel_coordinates());
                 coordSets.push_back(coordSet);
             }
         }
     }
 
-    // get bonds
+    // get graph - must be done after atom coordinates are loaded, so we can
+    // avoid storing graph nodes for atoms not present in the model
     graph = new ChemicalGraph(this, biostruc.GetChemical_graph());
 }
 
-bool StructureObject::Draw(void) const
+// override DrawAll so that the graph will be applied to each CoordSet
+bool StructureObject::DrawAll(const StructureBase *data) const
 {
     TESTMSG("drawing StructureObject " << pdbID);
-    return true;
+    
+    // if this is the only StructureObject in this StructureSet, and if this
+    // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
+    // has multiple ensembles, then draw multiple altConf ensembles
+    const StructureSet *parentSet;
+    if (coordSets.size() == 1 && coordSets.front()->atomSet->ensembles.size() > 1 &&
+        GetParentOfType(&parentSet) && parentSet->objects.size() == 1) {
+        AtomSet *atomSet = coordSets.front()->atomSet;
+        AtomSet::EnsembleList::iterator e, ee=atomSet->ensembles.end();
+        for (e=atomSet->ensembles.begin(); e!=ee; e++) {
+            TESTMSG("drawing multiple altConf ensemble '" << **e << '\'');
+            atomSet->SetActiveEnsemble(*e);
+            if (!graph->DrawAll(coordSets.front()->atomSet)) return true;
+        }
+
+    // otherwise, loop through all CoordSets using default altConf ensemble
+    } else {
+        TESTMSG("drawing default altConf ensemble");
+        CoordSetList::const_iterator c, ce=coordSets.end();
+        for (c=coordSets.begin(); c!=ce; c++) {
+            (*c)->atomSet->SetActiveEnsemble(NULL);
+            if (!(graph->DrawAll((*c)->atomSet))) return true;
+        }
+    }
+	return true;
 }
 
 END_SCOPE(Cn3D)
-

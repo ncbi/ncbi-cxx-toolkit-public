@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/16 23:18:35  thiessen
+* redo of drawing system
+*
 * Revision 1.7  2000/07/12 02:00:39  thiessen
 * add basic wxWindows GUI
 *
@@ -73,6 +76,7 @@ BEGIN_SCOPE(Cn3D)
 // A SturctureObject is basically the contents of one PDB entry.
 
 class StructureObject;
+class OpenGLRenderer;
 
 class StructureSet : public StructureBase
 {
@@ -84,8 +88,10 @@ public:
     typedef LIST_TYPE < const StructureObject * > ObjectList;
     ObjectList objects;
 
+    OpenGLRenderer *renderer;
+
     // public methods
-    bool Draw(void) const;
+    bool Draw(const StructureBase *data) const;
 
 private:
 };
@@ -112,7 +118,7 @@ public:
     CoordSetList coordSets;
 
     // public methods
-    bool Draw(void) const;
+    bool DrawAll(const StructureBase *data) const;
 
 private:
 };
