@@ -52,6 +52,7 @@ extern "C" {
 #define CAV_FASTA           0x0100  /* FASTA text output */
 #define CAV_FASTA_LOWERCASE 0x0200  /* make unaligned residues lower case in FASTA output */
 #define CAV_ANNOT_BOTTOM    0x0400  /* put annotations on bottom; default is on top */
+#define CAV_NO_PARAG_COLOR  0x0800  /* don't use colored background for alignment paragraphs (HTML only) */
 
 
 /* data structure for holding alignment feature/annotation info */
@@ -127,6 +128,9 @@ extern int CAV_DisplayMultiple(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/07/26 19:15:21  thiessen
+* add option to not color HTML paragraphs
+*
 * Revision 1.1  2003/03/19 19:05:31  thiessen
 * move again
 *

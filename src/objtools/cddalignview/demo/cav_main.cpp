@@ -72,6 +72,9 @@ void CAVApp::Init(void)
     // whether to do condensed display
     argDescr->AddFlag("condensed", "condensed incompletely aligned columns (text/HTML only)");
 
+    // don't use colored backgrounds
+    argDescr->AddFlag("no_color_bg", "don't use colored backgrounds for alignment paragraphs (HTML only)");
+
     // input file name (required)
     argDescr->AddPositional("in", "name of input file", argDescr->eString);
 
@@ -121,6 +124,7 @@ int CAVApp::Run(void)
     if (args["condensed"].HasValue()) options |= CAV_CONDENSED;
     if (args["identity"].HasValue()) options |= CAV_SHOW_IDENTITY;
     if (args["fasta_lc"].HasValue()) options |= CAV_FASTA_LOWERCASE;
+    if (args["no_color_bg"].HasValue()) options |= CAV_NO_PARAG_COLOR;
 
     // for testing alignment features
 #if 0
@@ -178,6 +182,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/07/26 19:15:33  thiessen
+* add option to not color HTML paragraphs
+*
 * Revision 1.3  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *

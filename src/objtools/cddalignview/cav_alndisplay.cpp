@@ -609,9 +609,12 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
         }
 
         // start table row
-        if (doHTML)
-            os << "<tr><td bgcolor=" << blockBGColors[nParags % nBlockColors] << "><pre>\n\n";
-        else
+        if (doHTML) {
+            os << "<tr><td";
+            if (!(options & CAV_NO_PARAG_COLOR))
+                os << " bgcolor=" << blockBGColors[nParags % nBlockColors];
+            os << "><pre>\n\n";
+        } else
             if (paragraphStart > 0) os << '\n';
 
         // output each alignment row
@@ -829,9 +832,12 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
     for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, ++nParags) {
 
         // start table row
-        if (doHTML)
-            os << "<tr><td bgcolor=" << blockBGColors[nParags % nBlockColors] << "><pre>\n";
-        else
+        if (doHTML) {
+            os << "<tr><td";
+            if (!(options & CAV_NO_PARAG_COLOR))
+                os << " bgcolor=" << blockBGColors[nParags % nBlockColors];
+            os << "><pre>\n";
+        } else
             if (paragraphStart > 0) os << '\n';
 
         // do ruler
@@ -1224,6 +1230,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/26 19:15:33  thiessen
+* add option to not color HTML paragraphs
+*
 * Revision 1.5  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *
