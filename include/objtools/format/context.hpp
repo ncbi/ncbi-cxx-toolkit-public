@@ -393,26 +393,32 @@ public:
     bool HideEmptySource   (void) const { return x_Flags().HideEmptySource();    }
     bool GoQualsToNote     (void) const { return x_Flags().GoQualsToNote();      }
     bool GeneSynsToNote    (void) const { return x_Flags().GeneSynsToNote();     }
+    bool SelenocysteineToNote(void) const { return x_Flags().SelenocysteineToNote(); }
     bool ForGBRelease      (void) const { return x_Flags().ForGBRelease();       }
     bool HideUnclassPartial(void) const { return x_Flags().HideUnclassPartial(); }
 
-    bool HideImpFeats      (void) const { return x_Flags().HideImpFeats();       }
-    bool HideSnpFeats      (void) const { return x_Flags().HideSnpFeats();       }
-    bool HideExonFeats     (void) const { return x_Flags().HideExonFeats();      }
-    bool HideIntronFeats   (void) const { return x_Flags().HideIntronFeats();    }
-    bool HideRemImpFeats   (void) const { return x_Flags().HideRemImpFeats();    }
-    bool HideGeneRIFs      (void) const { return x_Flags().HideGeneRIFs();       }
-    bool OnlyGeneRIFs      (void) const { return x_Flags().OnlyGeneRIFs();       }
-    bool HideCDSProdFeats  (void) const { return x_Flags().HideCDSProdFeats();   }
-    bool HideCDDFeats      (void) const { return x_Flags().HideCDDFeats();       }
-    bool LatestGeneRIFs    (void) const { return x_Flags().LatestGeneRIFs();     }
-    bool ShowContigFeatures(void) const { return x_Flags().ShowContigFeatures(); }
-    bool ShowContigSources (void) const { return x_Flags().ShowContigSources();  }
-    bool ShowContigAndSeq  (void) const { return x_Flags().ShowContigAndSeq();   }
-    bool CopyGeneToCDNA    (void) const { return x_Flags().CopyGeneToCDNA();     }
-    bool CopyCDSFromCDNA   (void) const { return x_Flags().CopyCDSFromCDNA();    }
-    bool HideSourceFeats   (void) const { return x_Flags().HideSourceFeats();    }
-    bool DoHtml            (void) const { return x_Flags().DoHtml();             }
+    bool HideImpFeats       (void) const { return x_Flags().HideImpFeats();        }
+    bool HideSnpFeats       (void) const { return x_Flags().HideSnpFeats();        }
+    bool HideExonFeats      (void) const { return x_Flags().HideExonFeats();       }
+    bool HideIntronFeats    (void) const { return x_Flags().HideIntronFeats();     }
+    bool HideRemImpFeats    (void) const { return x_Flags().HideRemImpFeats();     }
+    bool HideGeneRIFs       (void) const { return x_Flags().HideGeneRIFs();        }
+    bool OnlyGeneRIFs       (void) const { return x_Flags().OnlyGeneRIFs();        }
+    bool HideCDSProdFeats   (void) const { return x_Flags().HideCDSProdFeats();    }
+    bool HideCDDFeats       (void) const { return x_Flags().HideCDDFeats();        }
+    bool LatestGeneRIFs     (void) const { return x_Flags().LatestGeneRIFs();      }
+    bool ShowContigFeatures (void) const { return x_Flags().ShowContigFeatures();  }
+    bool ShowContigSources  (void) const { return x_Flags().ShowContigSources();   }
+    bool ShowContigAndSeq   (void) const { return x_Flags().ShowContigAndSeq();    }
+    bool CopyGeneToCDNA     (void) const { return x_Flags().CopyGeneToCDNA();      }
+    bool CopyCDSFromCDNA    (void) const { return x_Flags().CopyCDSFromCDNA();     }
+    bool HideSourceFeats    (void) const { return x_Flags().HideSourceFeats();     }
+    bool AlwaysTranslateCDS (void) const { return x_Flags().AlwaysTranslateCDS();  }
+    bool ShowFarTranslations(void) const { return x_Flags().ShowFarTranslations(); }
+    bool TranslateIfNoProd  (void) const { return x_Flags().TranslateIfNoProd();   }
+    bool ShowTranscript     (void) const { return x_Flags().ShowTranscript();      }
+    bool ShowPeptides       (void) const { return x_Flags().ShowPeptides();        }
+    bool DoHtml             (void) const { return x_Flags().DoHtml();              }
 
     bool ShowGBBSource(void) const;
     bool IsGPS(void) const;
@@ -425,50 +431,56 @@ private:
         CFlags(TMode mode, TFlags flags);
         
         // mode dependant flags
-        bool SupressLocalId    (void) const { return m_SupressLocalId;     }
-        bool ValidateFeats     (void) const { return m_ValidateFeats;      }
-        bool IgnorePatPubs     (void) const { return m_IgnorePatPubs;      }
-        bool DropShortAA       (void) const { return m_DropShortAA;        }
-        bool AvoidLocusColl    (void) const { return m_AvoidLocusColl;     }
-        bool IupacaaOnly       (void) const { return m_IupacaaOnly;        }
-        bool DropBadCitGens    (void) const { return m_DropBadCitGens;     }
-        bool NoAffilOnUnpub    (void) const { return m_NoAffilOnUnpub;     }
-        bool DropIllegalQuals  (void) const { return m_DropIllegalQuals;   }
-        bool CheckQualSyntax   (void) const { return m_CheckQualSyntax;    }
-        bool NeedRequiredQuals (void) const { return m_NeedRequiredQuals;  }
-        bool NeedOrganismQual  (void) const { return m_NeedOrganismQual;   }
-        bool NeedAtLeastOneRef (void) const { return m_NeedAtLeastOneRef;  }
-        bool CitArtIsoJta      (void) const { return m_CitArtIsoJta;       }
-        bool DropBadDbxref     (void) const { return m_DropBadDbxref;      }
-        bool UseEmblMolType    (void) const { return m_UseEmblMolType;     }
-        bool HideBankItComment (void) const { return m_HideBankItComment;  }
-        bool CheckCDSProductId (void) const { return m_CheckCDSProductId;  }
-        bool SupressSegLoc     (void) const { return m_SupressSegLoc;      }
-        bool SrcQualsToNote    (void) const { return m_SrcQualsToNote;     }
-        bool HideEmptySource   (void) const { return m_HideEmptySource;    }
-        bool GoQualsToNote     (void) const { return m_GoQualsToNote;      }
-        bool GeneSynsToNote    (void) const { return m_GeneSynsToNote;     }
-        bool ForGBRelease      (void) const { return m_ForGBRelease;       }
-        bool HideUnclassPartial(void) const { return m_HideUnclassPartial; }
+        bool SupressLocalId      (void) const { return m_SupressLocalId;       }
+        bool ValidateFeats       (void) const { return m_ValidateFeats;        }
+        bool IgnorePatPubs       (void) const { return m_IgnorePatPubs;        }
+        bool DropShortAA         (void) const { return m_DropShortAA;          }
+        bool AvoidLocusColl      (void) const { return m_AvoidLocusColl;       }
+        bool IupacaaOnly         (void) const { return m_IupacaaOnly;          }
+        bool DropBadCitGens      (void) const { return m_DropBadCitGens;       }
+        bool NoAffilOnUnpub      (void) const { return m_NoAffilOnUnpub;       }
+        bool DropIllegalQuals    (void) const { return m_DropIllegalQuals;     }
+        bool CheckQualSyntax     (void) const { return m_CheckQualSyntax;      }
+        bool NeedRequiredQuals   (void) const { return m_NeedRequiredQuals;    }
+        bool NeedOrganismQual    (void) const { return m_NeedOrganismQual;     }
+        bool NeedAtLeastOneRef   (void) const { return m_NeedAtLeastOneRef;    }
+        bool CitArtIsoJta        (void) const { return m_CitArtIsoJta;         }
+        bool DropBadDbxref       (void) const { return m_DropBadDbxref;        }
+        bool UseEmblMolType      (void) const { return m_UseEmblMolType;       }
+        bool HideBankItComment   (void) const { return m_HideBankItComment;    }
+        bool CheckCDSProductId   (void) const { return m_CheckCDSProductId;    }
+        bool SupressSegLoc       (void) const { return m_SupressSegLoc;        }
+        bool SrcQualsToNote      (void) const { return m_SrcQualsToNote;       }
+        bool HideEmptySource     (void) const { return m_HideEmptySource;      }
+        bool GoQualsToNote       (void) const { return m_GoQualsToNote;        }
+        bool GeneSynsToNote      (void) const { return m_GeneSynsToNote;       }
+        bool SelenocysteineToNote(void) const { return m_SelenocysteineToNote; }
+        bool ForGBRelease        (void) const { return m_ForGBRelease;         }
+        bool HideUnclassPartial  (void) const { return m_HideUnclassPartial;   }
 
         // custumizable flags
-        bool HideImpFeats      (void) const  { return m_HideImpFeats;        }
-        bool HideSnpFeats      (void) const  { return m_HideSnpFeats;        }
-        bool HideExonFeats     (void) const  { return m_HideExonFeats;       }
-        bool HideIntronFeats   (void) const  { return m_HideIntronFeats;     }
-        bool HideRemImpFeats   (void) const  { return m_HideRemImpFeats;     }
-        bool HideGeneRIFs      (void) const  { return m_HideGeneRIFs;       }
-        bool OnlyGeneRIFs      (void) const  { return m_OnlyGeneRIFs;       }
-        bool HideCDSProdFeats  (void) const  { return m_HideCDSProdFeats;   }
-        bool HideCDDFeats      (void) const  { return m_HideCDDFeats;       }
-        bool LatestGeneRIFs    (void) const  { return m_LatestGeneRIFs;     }
-        bool ShowContigFeatures(void) const  { return m_ShowContigFeatures; }
-        bool ShowContigSources (void) const  { return m_ShowContigSources;  }
-        bool ShowContigAndSeq  (void) const  { return m_ShowContigAndSeq;   }
-        bool CopyGeneToCDNA    (void) const  { return m_CopyGeneToCDNA;     }
-        bool CopyCDSFromCDNA   (void) const  { return m_CopyCDSFromCDNA;    }
-        bool HideSourceFeats   (void) const  { return m_HideSourceFeats;    }
-        bool DoHtml            (void) const  { return m_DoHtml;             }
+        bool HideImpFeats       (void) const { return m_HideImpFeats;        }
+        bool HideSnpFeats       (void) const { return m_HideSnpFeats;        }
+        bool HideExonFeats      (void) const { return m_HideExonFeats;       }
+        bool HideIntronFeats    (void) const { return m_HideIntronFeats;     }
+        bool HideRemImpFeats    (void) const { return m_HideRemImpFeats;     }
+        bool HideGeneRIFs       (void) const { return m_HideGeneRIFs;        }
+        bool OnlyGeneRIFs       (void) const { return m_OnlyGeneRIFs;        }
+        bool HideCDSProdFeats   (void) const { return m_HideCDSProdFeats;    }
+        bool HideCDDFeats       (void) const { return m_HideCDDFeats;        }
+        bool LatestGeneRIFs     (void) const { return m_LatestGeneRIFs;      }
+        bool ShowContigFeatures (void) const { return m_ShowContigFeatures;  }
+        bool ShowContigSources  (void) const { return m_ShowContigSources;   }
+        bool ShowContigAndSeq   (void) const { return m_ShowContigAndSeq;    }
+        bool CopyGeneToCDNA     (void) const { return m_CopyGeneToCDNA;      }
+        bool CopyCDSFromCDNA    (void) const { return m_CopyCDSFromCDNA;     }
+        bool HideSourceFeats    (void) const { return m_HideSourceFeats;     }
+        bool AlwaysTranslateCDS (void) const { return m_AlwaysTranslateCDS;  }
+        bool ShowFarTranslations(void) const { return m_ShowFarTranslations; }
+        bool TranslateIfNoProd  (void) const { return m_TranslateIfNoProd;   }
+        bool ShowTranscript     (void) const { return m_ShowTranscript;      }
+        bool ShowPeptides       (void) const { return m_ShowPeptides;        }
+        bool DoHtml             (void) const { return m_DoHtml;              }
         
     private:
         // setup
@@ -501,6 +513,7 @@ private:
         bool m_HideEmptySource;
         bool m_GoQualsToNote;
         bool m_GeneSynsToNote;
+        bool m_SelenocysteineToNote;
         bool m_ForGBRelease;
         bool m_HideUnclassPartial;   // hide unclassified partial
 
@@ -521,6 +534,11 @@ private:
         bool m_CopyGeneToCDNA;
         bool m_CopyCDSFromCDNA;
         bool m_HideSourceFeats;
+        bool m_AlwaysTranslateCDS;
+        bool m_ShowFarTranslations;
+        bool m_TranslateIfNoProd;
+        bool m_ShowTranscript;
+        bool m_ShowPeptides;
         bool m_DoHtml;
     };
 
@@ -1414,6 +1432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/05 18:53:34  shomrat
+* added customization flags
+*
 * Revision 1.5  2004/02/19 17:56:21  shomrat
 * add flag for skipping gathering of source features
 *
