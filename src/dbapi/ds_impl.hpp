@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2003/02/10 17:20:15  kholodov
+* Modified: made desctructor non-public
+*
 * Revision 1.6  2002/11/27 17:14:51  kholodov
 * Modified: CToMulitExHandler definition moved to err_handler.hpp.
 *
@@ -74,10 +77,10 @@ public:
 
     CDataSource(I_DriverContext *ctx);
 
-public:
+protected:
     virtual ~CDataSource();
 
-
+public:
     virtual void SetLoginTimeout(unsigned int i);
     virtual void SetLogStream(CNcbiOstream* out);
 
