@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/03/16 02:20:40  vakatov
+* [MSWIN]  Avoid the "Beep()" clash between MS-Win and C Toolkit headers
+*
 * Revision 1.49  2001/02/22 00:09:28  vakatov
 * non_const_iterate() -- added parenthesis around the "Cont" arg
 *
@@ -418,6 +421,14 @@ extern char* strdup(const char* str);
 
 #define non_const_iterate(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
+
+
+// Avoid a silly name clash between MS-Win and C Toolkit headers
+//
+
+#if defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
+#  define Beep Beep
+#endif
 
 
 END_NCBI_SCOPE
