@@ -48,10 +48,11 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     m_ProjectName  = CreateProjectName(CProjKey(project.m_ProjType, 
                                                 project.m_ID));
     m_ProjectId    = project.m_ID;
+    m_ProjType     = project.m_ProjType;
 
     m_SourcesBaseDir = project.m_SourcesBaseDir;
     m_Requires       = project.m_Requires;
-
+    
     // Get msvc project makefile
     m_MsvcProjectMakefile = 
         auto_ptr<CMsvcProjectMakefile>
@@ -59,6 +60,10 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                     (CDirEntry::ConcatPath
                             (m_SourcesBaseDir, 
                              CreateMsvcProjectMakefileName(project))));
+
+    // Done if this is ready MSVC project
+    if ( project.m_ProjType == CProjKey::eMsvc)
+        return;
 
     // Collect all dirs of source files into m_SourcesDirsAbs:
     set<string> sources_dirs;
@@ -102,7 +107,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         m_ProjectDir = CDirEntry::AddTrailingPathSeparator(m_ProjectDir);
     }
 
-    m_ProjType = project.m_ProjType;
+    
 
     // Generate include dirs:
     // Include dirs for appropriate src dirs
@@ -825,6 +830,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/05/10 19:52:04  gorelenk
+ * Changed CMsvcPrjProjectContext class constructor .
+ *
  * Revision 1.26  2004/04/19 15:44:50  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext constructor:
  * added lib choice test while creating list of dependencies (m_ProjectLibs).
