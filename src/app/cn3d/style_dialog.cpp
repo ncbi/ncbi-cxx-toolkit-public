@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/11/15 18:12:46  thiessen
+* add text+forefround color to user color buttons
+*
 * Revision 1.12  2001/09/24 14:37:52  thiessen
 * more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
 *
@@ -410,6 +413,10 @@ static bool SetButtonColor(wxButton *button, const Vector& color)
         static_cast<unsigned char>((color[1] + 0.000001) * 255),
         static_cast<unsigned char>((color[2] + 0.000001) * 255)
     );
+    // set both foreground and background colors, so that if e.g. on wxGTK themes are
+    // used (and thus backgrounds are not user-selectable), at least the text (foreground)
+    // color will indicate the user's color choice
+    button->SetForegroundColour(wxcol);
     button->SetBackgroundColour(wxcol);
     return true;
 }
@@ -788,7 +795,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 16, strs12, 0 );
     item3->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item13 = new wxButton( parent, ID_PBB_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item13 = new wxButton( parent, ID_PBB_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item13, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item14 = new wxStaticText( parent, ID_TEXT, "Protein sidechains:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -828,7 +835,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 15, strs17, 0 );
     item3->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item18 = new wxButton( parent, ID_PSIDE_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item18 = new wxButton( parent, ID_PSIDE_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item18, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item19 = new wxStaticText( parent, ID_TEXT, "Nucleotide backbone:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -869,7 +876,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item22 = new wxChoice( parent, ID_NUC_COLOR, wxDefaultPosition, wxDefaultSize, 7, strs22, 0 );
     item3->Add( item22, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item23 = new wxButton( parent, ID_NUC_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item23 = new wxButton( parent, ID_NUC_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item23, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item24 = new wxStaticText( parent, ID_TEXT, "Nucleotide sidechains:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -901,7 +908,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item27 = new wxChoice( parent, ID_NSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 7, strs27, 0 );
     item3->Add( item27, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item28 = new wxButton( parent, ID_NSIDE_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item28 = new wxButton( parent, ID_NSIDE_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item28, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item29 = new wxStaticText( parent, ID_TEXT, "Heterogens:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -931,7 +938,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item32 = new wxChoice( parent, ID_HET_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs32, 0 );
     item3->Add( item32, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item33 = new wxButton( parent, ID_HET_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item33 = new wxButton( parent, ID_HET_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item33, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item34 = new wxStaticText( parent, ID_TEXT, "Solvents:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -961,7 +968,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item37 = new wxChoice( parent, ID_SOLV_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs37, 0 );
     item3->Add( item37, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item38 = new wxButton( parent, ID_SOLV_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item38 = new wxButton( parent, ID_SOLV_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item38, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item39 = new wxStaticText( parent, ID_TEXT, "Connections:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -985,7 +992,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item42 = new wxChoice( parent, ID_CONN_COLOR, wxDefaultPosition, wxDefaultSize, 1, strs42, 0 );
     item3->Add( item42, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item43 = new wxButton( parent, ID_CONN_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item43 = new wxButton( parent, ID_CONN_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item43, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item44 = new wxStaticText( parent, ID_TEXT, "Helix objects:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1013,7 +1020,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item47 = new wxChoice( parent, ID_HELX_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs47, 0 );
     item3->Add( item47, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item48 = new wxButton( parent, ID_HELX_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item48 = new wxButton( parent, ID_HELX_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item48, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item49 = new wxStaticText( parent, ID_TEXT, "Strand objects:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1041,7 +1048,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxChoice *item52 = new wxChoice( parent, ID_STRN_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs52, 0 );
     item3->Add( item52, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item53 = new wxButton( parent, ID_STRN_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item53 = new wxButton( parent, ID_STRN_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item53, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item54 = new wxStaticText( parent, ID_TEXT, "Virtual disulfides:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1054,7 +1061,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
 
     item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item56 = new wxButton( parent, ID_VSS_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item56 = new wxButton( parent, ID_VSS_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item56, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item57 = new wxStaticText( parent, ID_TEXT, "Hydrogens:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1068,7 +1075,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
     wxStaticText *item59 = new wxStaticText( parent, ID_TEXT, "Background:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item59, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-    wxButton *item60 = new wxButton( parent, ID_BG_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item60 = new wxButton( parent, ID_BG_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item60, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     item1->Add( item3, 0, wxALIGN_CENTRE|wxALL, 5 );
