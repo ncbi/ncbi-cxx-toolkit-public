@@ -105,6 +105,7 @@
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
+#  define NCBI_XOBJWRITE_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
 #  define NCBI_XOBJMANIP_EXPORTS
 #  define NCBI_FORMAT_EXPORTS
@@ -584,6 +585,15 @@
 #  define NCBI_XOBJREAD_EXPORT      __declspec(dllexport)
 #else
 #  define NCBI_XOBJREAD_EXPORT      __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objtools_xobjwrite
+ */
+#ifdef NCBI_XOBJWRITE_EXPORTS
+#  define NCBI_XOBJWRITE_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_XOBJWRITE_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -1517,6 +1527,7 @@
 #  define NCBI_XOBJMGR_EXPORT
 #  define NCBI_XOBJREAD_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
+#  define NCBI_XOBJWRITE_EXPORT
 #  define NCBI_XOMSSA_EXPORT
 #  define NCBI_XREADER_EXPORT
 #  define NCBI_XREADER_ID1_EXPORT
@@ -1544,6 +1555,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.76  2004/07/06 13:19:56  jcherry
+ * Added NCBI_XOBJWRITE_EXPORT specifier (in NCBI_SEQEXT_EXPORTS)
+ *
  * Revision 1.75  2004/06/16 15:20:00  shomrat
  * Added export for xobjedit library
  *
