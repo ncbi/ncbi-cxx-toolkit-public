@@ -41,6 +41,8 @@
 BEGIN_NCBI_SCOPE
 
 
+template <typename T> class CSafeStaticPtr;
+
 class NCBI_XNCBI_EXPORT CMetaRegistry
 {
 public:
@@ -137,12 +139,9 @@ private:
 
     const TSearchPath& x_GetSearchPath(void) const { return m_SearchPath; }
     TSearchPath&       x_SetSearchPath(void)
-        { CMutexGuard GUARD(sm_Mutex); m_Index.clear(); return m_SearchPath; }
+        { CMutexGuard GUARD(m_Mutex); m_Index.clear(); return m_SearchPath; }
 
     /// Members
-    static auto_ptr<CMetaRegistry> sm_Instance;
-    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
-
     struct SKey {
         string     requested_name;
         ENameStyle style;
@@ -159,7 +158,9 @@ private:
     TSearchPath    m_SearchPath;
     TIndex         m_Index;
 
-    friend class auto_ptr<CMetaRegistry>;
+    CMutex         m_Mutex;
+
+    friend class CSafeStaticPtr<CMetaRegistry>;
 };
 
 
@@ -201,19 +202,6 @@ CMetaRegistry::CMetaRegistry()
 }
 
 
-inline
-CMetaRegistry& CMetaRegistry::Instance(void)
-{
-    if ( !sm_Instance.get() ) {
-        CMutexGuard GUARD(sm_Mutex);
-        if ( !sm_Instance.get() ) { // check again with the lock to avoid races
-            sm_Instance.reset(new CMetaRegistry);
-        }
-    }
-    return *sm_Instance;
-}
-
-
 END_NCBI_SCOPE
 
 
@@ -222,6 +210,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/01/25 19:56:34  ucko
+* Hold the single instance with a CSafeStaticPtr rather than a static auto_ptr.
+*
 * Revision 1.10  2005/01/10 16:56:45  ucko
 * Support working with arbitrary IRWRegistry objects, and take
 * advantage of the fact that they're CObjects these days.

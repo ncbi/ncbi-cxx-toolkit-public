@@ -35,12 +35,18 @@
 #include <corelib/metareg.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-auto_ptr<CMetaRegistry> CMetaRegistry::sm_Instance;
-DEFINE_CLASS_STATIC_MUTEX(CMetaRegistry::sm_Mutex);
+CSafeStaticPtr<CMetaRegistry> s_Instance;
+
+
+CMetaRegistry& CMetaRegistry::Instance(void)
+{
+    return *s_Instance;
+}
 
 
 CMetaRegistry::~CMetaRegistry()
@@ -57,7 +63,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
 {
     _TRACE("CMetaRegistry::Load: looking for " << name);
 
-    CMutexGuard GUARD(sm_Mutex);
+    CMutexGuard GUARD(m_Mutex);
 
     if (flags & fPrivate) {
         GUARD.Release();
@@ -251,6 +257,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/01/25 19:56:41  ucko
+ * Hold the single instance with a CSafeStaticPtr rather than a static auto_ptr.
+ *
  * Revision 1.14  2005/01/10 16:56:49  ucko
  * Support working with arbitrary IRWRegistry objects, and take
  * advantage of the fact that they're CObjects these days.
