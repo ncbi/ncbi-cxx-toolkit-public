@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/01/11 15:13:36  vasilche
+* Fixed CHTML_font size.
+* CHTMLHelper extracted to separate file.
+*
 * Revision 1.1  1999/01/07 16:41:57  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -90,49 +94,6 @@ string CHTMLHelper::HTMLEncode(const string& input)
     return output;
 }
 
-/*
-NcbiOstream& CHTMLHelper::PrintEncoded(NcbiOstream& out, const string& input)
-{
-    SIZE_TYPE last = 0;
-
-    // find first symbol to encode
-    SIZE_TYPE ptr = input.find_first_of("\"&<>", last);
-    while ( ptr != NPOS ) {
-        // copy plain part of input
-        if ( ptr != last )
-            out << input.substr(last, ptr - last);
-
-        // append encoded symbol
-        switch ( input[ptr] ) {
-        case '"':
-            out << "&quot;";
-            break;
-        case '&':
-            out << "&amp;";
-            break;
-        case '<':
-            out << "&lt;";
-            break;
-        case '>':
-            out << "&gt;";
-            break;
-        }
-
-        // skip it
-        last = ptr + 1;
-
-        // find next symbol to encode
-        ptr = input.find_first_of("\"&<>", last);
-    }
-
-    // append last part of input
-    if ( last != input.size() )
-        out << input.substr(last);
-
-    return out;
-}
-*/
-
 void CHTMLHelper::LoadIDList(TIDList& ids,
                 const TCgiEntries& values,
                 const string& hiddenPrefix,
@@ -148,12 +109,11 @@ void CHTMLHelper::LoadIDList(TIDList& ids,
 }
 
 void CHTMLHelper::StoreIDList(CHTML_form* form,
-                const TIDList& in_ids,
+                const TIDList& ids,
                 const string& hiddenPrefix,
                 const string& checkboxName)
 {
-    TIDList ids = in_ids;
-    sx_SetCheckboxes(form, ids, checkboxName);
+    //    sx_SetCheckboxes(form, ids, checkboxName);
     string value = sx_EncodeIDList(ids);
     if ( !value.empty() )
         sx_InsertHidden(form, value, hiddenPrefix);

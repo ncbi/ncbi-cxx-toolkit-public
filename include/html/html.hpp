@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/01/11 15:13:32  vasilche
+* Fixed CHTML_font size.
+* CHTMLHelper extracted to separate file.
+*
 * Revision 1.17  1999/01/07 16:41:53  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -726,10 +730,16 @@ public:
     CHTML_font(void);
     CHTML_font(int size, CNCBINode* node = 0);
     CHTML_font(int size, const string& text);
+    CHTML_font(int size, bool absolute, CNCBINode* node = 0);
+    CHTML_font(int size, bool absolute, const string& text);
     CHTML_font(const string& typeface, CNCBINode* node = 0);
     CHTML_font(const string& typeface, const string& text);
     CHTML_font(const string& typeface, int size, CNCBINode* node = 0);
     CHTML_font(const string& typeface, int size, const string& text);
+    CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node = 0);
+    CHTML_font(const string& typeface, int size, bool absolute, const string& text);
+
+    void SetRelativeSize(int size);
 };
 
 class CHTML_basefont : public CHTML_basefont_Base

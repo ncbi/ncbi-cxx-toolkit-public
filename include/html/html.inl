@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/01/11 15:13:33  vasilche
+* Fixed CHTML_font size.
+* CHTMLHelper extracted to separate file.
+*
 * Revision 1.6  1999/01/07 16:41:53  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -343,7 +347,31 @@ inline CHTML_font::CHTML_font(void)
 inline CHTML_font::CHTML_font(int size, CNCBINode* node)
     : CParent(node)
 {
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetRelativeSize(size);
+}
+
+inline CHTML_font::CHTML_font(int size, const string& text)
+    : CParent(text)
+{
+    SetRelativeSize(size);
+}
+
+inline CHTML_font::CHTML_font(int size, bool absolute, CNCBINode* node)
+    : CParent(node)
+{
+    if ( absolute )
+        SetAttribute(KHTMLAttributeName_size, size);
+    else
+        SetRelativeSize(size);
+}
+
+inline CHTML_font::CHTML_font(int size, bool absolute, const string& text)
+    : CParent(text)
+{
+    if ( absolute )
+        SetAttribute(KHTMLAttributeName_size, size);
+    else
+        SetRelativeSize(size);
 }
 
 inline CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
@@ -352,30 +380,44 @@ inline CHTML_font::CHTML_font(const string& typeface, CNCBINode* node)
     SetAttribute(KHTMLAttributeName_face, typeface);
 }
 
-inline CHTML_font::CHTML_font(const string& typeface, int size, CNCBINode* node)
-    : CParent(node)
-{
-    SetAttribute(KHTMLAttributeName_face, typeface);
-    SetAttribute(KHTMLAttributeName_size, size);
-}
-
-inline CHTML_font::CHTML_font(int size, const string& text)
-    : CParent(text)
-{
-    SetAttribute(KHTMLAttributeName_size, size);
-}
-
 inline CHTML_font::CHTML_font(const string& typeface, const string& text)
     : CParent(text)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
 }
 
+inline CHTML_font::CHTML_font(const string& typeface, int size, CNCBINode* node)
+    : CParent(node)
+{
+    SetAttribute(KHTMLAttributeName_face, typeface);
+    SetRelativeSize(size);
+}
+
 inline CHTML_font::CHTML_font(const string& typeface, int size, const string& text)
     : CParent(text)
 {
     SetAttribute(KHTMLAttributeName_face, typeface);
-    SetAttribute(KHTMLAttributeName_size, size);
+    SetRelativeSize(size);
+}
+
+inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, CNCBINode* node)
+    : CParent(node)
+{
+    SetAttribute(KHTMLAttributeName_face, typeface);
+    if ( absolute )
+        SetAttribute(KHTMLAttributeName_size, size);
+    else
+        SetRelativeSize(size);
+}
+
+inline CHTML_font::CHTML_font(const string& typeface, int size, bool absolute, const string& text)
+    : CParent(text)
+{
+    SetAttribute(KHTMLAttributeName_face, typeface);
+    if ( absolute )
+        SetAttribute(KHTMLAttributeName_size, size);
+    else
+        SetRelativeSize(size);
 }
 
 inline CHTML_color::CHTML_color(const string& color, const string& text)

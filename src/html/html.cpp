@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/01/11 15:13:35  vasilche
+* Fixed CHTML_font size.
+* CHTMLHelper extracted to separate file.
+*
 * Revision 1.20  1999/01/07 16:41:56  vasilche
 * CHTMLHelper moved to separate file.
 * TagNames of CHTML classes ara available via s_GetTagName() static
@@ -958,6 +962,18 @@ CHTML_dl* CHTML_dl::AppendTerm(CNCBINode* term, CNCBINode* definition)
     if ( definition )
         AppendChild(new CHTML_dd(definition));
     return this;
+}
+
+void CHTML_font::SetRelativeSize(int size)
+{
+    if ( size == 0 )
+        return;
+
+    string value = IntToString(size);
+    if ( size > 0 )
+        value.insert(0, '+');
+
+    SetAttribute(KHTMLAttributeName_size, value);
 }
 
 END_NCBI_SCOPE
