@@ -66,7 +66,7 @@ ASNP_BRA = \
 +if test ! -z "$(ASN_PROJ)" ; then \
    x_project="$(ASN_PROJ)" ; \
    for i in $$x_project ; do \
-      (cd $(srcdir)  &&  MAKE="$(MAKE) $(MFLAGS)" $(RWL) $(MAKE_ASN)
+      (cd $(srcdir)  &&  MAKE="$(MAKE) $(MFLAGS)" $(RWL) -base make_asn $(MAKE_ASN)
 ASNP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
 fi
@@ -162,7 +162,7 @@ SUB_BRA = \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
           cd $$i  &&  if $(MAKE) $(MFLAGS) -q requirements ; then \
-            $(MAKE) $(MFLAGS)
+            $(RWL) $(MAKE) $(MFLAGS)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
           else \
@@ -220,7 +220,8 @@ if test -n "$(SUB_PROJ)"             -o  -n "$(POTENTIAL_SUB_PROJ)"  -o \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
+          cd $$i  &&  if $(MAKE) $(MFLAGS) -q requirements ; then \
+            $(RWL) $(MAKE) $(MFLAGS)
 
 SUB_KET_P = $(SUB_KET)
 
