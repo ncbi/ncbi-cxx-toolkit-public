@@ -64,7 +64,7 @@ class CPub_equiv;
 class CPub_set;
 class CTitle;
 class CAffil;
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -80,31 +80,24 @@ public:
     typedef ECategory                       TCategory;
     typedef vector<CRef<CReferenceItem> >   TReferences;
 
-    CReferenceItem(const CPubdesc& pub, CFFContext& ctx,
+    CReferenceItem(const CPubdesc& pub, CBioseqContext& ctx,
         const CSeq_loc* loc = 0);
-    CReferenceItem(const CSeqdesc&  desc, CFFContext& ctx);
-    CReferenceItem(const CSeq_feat& feat, CFFContext& ctx);
+    CReferenceItem(const CSeqdesc&  desc, CBioseqContext& ctx);
+    CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx);
         
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     // sort, drops duplicates and cleans up remaining items
-    static void Rearrange(TReferences& refs, CFFContext& ctx);
+    static void Rearrange(TReferences& refs, CBioseqContext& ctx);
 
     bool Matches(const CPub_set& ps) const;
-    //bool HasMUID(int id) const { return m_MUIDs.find(id) != m_MUIDs.end(); }
-    //bool HasPMID(int id) const { return m_PMIDs.find(id) != m_PMIDs.end(); }
-
-    // same form(!)
-    //string GetMedlineURL(int muid) const { return x_GetURL(muid); }
-    //string GetPubMedURL (int pmid) const { return x_GetURL(pmid); }
-
-    //string GetRange(CFFContext& ctx) const;
-    TSeqPos GetFrom(void) const;
-    TSeqPos GetTo(void) const;
+       
+    //TSeqPos GetFrom(void) const { return m_From; }
+    //TSeqPos GetTo  (void) const { return m_To;   }
 
     // typically has to go through m_Pub(desc), since we don't want to store
     // format-dependent strings
-    //void GetTitles(string& title, string& journal, const CFFContext& ctx)
+    //void GetTitles(string& title, string& journal, const CBioseqContext& ctx)
     //    const;
         
     const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;   }
@@ -133,26 +126,26 @@ public:
 
 private:
     
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
-    void x_Init(const CPub&           pub,  CFFContext& ctx);
-    void x_Init(const CCit_gen&       gen,  CFFContext& ctx);
-    void x_Init(const CCit_sub&       sub,  CFFContext& ctx);
-    void x_Init(const CMedline_entry& mle,  CFFContext& ctx);
-    void x_Init(const CCit_art&       art,  CFFContext& ctx);
-    void x_Init(const CCit_jour&      jour, CFFContext& ctx);
-    void x_Init(const CCit_book&      book, CFFContext& ctx, 
+    void x_Init(const CPub&           pub,  CBioseqContext& ctx);
+    void x_Init(const CCit_gen&       gen,  CBioseqContext& ctx);
+    void x_Init(const CCit_sub&       sub,  CBioseqContext& ctx);
+    void x_Init(const CMedline_entry& mle,  CBioseqContext& ctx);
+    void x_Init(const CCit_art&       art,  CBioseqContext& ctx);
+    void x_Init(const CCit_jour&      jour, CBioseqContext& ctx);
+    void x_Init(const CCit_book&      book, CBioseqContext& ctx, 
         bool for_art = false);
-    void x_Init(const CCit_pat&       pat,  CFFContext& ctx);
-    void x_Init(const CCit_let&       man,  CFFContext& ctx);
+    void x_Init(const CCit_pat&       pat,  CBioseqContext& ctx);
+    void x_Init(const CCit_let&       man,  CBioseqContext& ctx);
 
     void x_AddAuthors(const CAuth_list& auth);
-    void x_SetJournal(const CTitle& title, CFFContext& ctx);
-    void x_SetJournal(const CCit_gen& gen, CFFContext& ctx);
-    void x_AddImprint(const CImprint& imp, CFFContext& ctx);
+    void x_SetJournal(const CTitle& title, CBioseqContext& ctx);
+    void x_SetJournal(const CCit_gen& gen, CBioseqContext& ctx);
+    void x_AddImprint(const CImprint& imp, CBioseqContext& ctx);
     
     // Genbank format specific
-    void x_GatherRemark(CFFContext& ctx);
+    void x_GatherRemark(CBioseqContext& ctx);
 
     void x_CleanData(void);
 
@@ -176,7 +169,8 @@ private:
     bool                  m_JustUids;
     CConstRef<CCit_book>  m_Book;
 
-    //static string x_GetURL(int id);
+    //TSeqPos m_From;
+    //TSeqPos m_To;
 };
 
 
@@ -210,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/22 15:39:18  shomrat
+* Changes in context
+*
 * Revision 1.5  2004/04/13 16:42:53  shomrat
 * + GetAuthNames()
 *

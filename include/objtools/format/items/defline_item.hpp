@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -53,13 +53,13 @@ class IFormatter;
 class CDeflineItem : public CFlatItem
 {
 public:
-    CDeflineItem(CFFContext& ctx);
+    CDeflineItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string& GetDefline(void) const;
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     string      m_Defline;
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:35:44  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:46:20  shomrat
 * Initial revision (adapted from flat lib)
 *

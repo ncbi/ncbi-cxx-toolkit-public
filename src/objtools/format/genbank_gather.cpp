@@ -70,13 +70,13 @@ CGenbankGatherer::CGenbankGatherer(void)
 }
 
 
-bool s_ShowBaseCount(CFFContext& ctx)
+bool s_ShowBaseCount(const CFlatFileConfig& cfg)
 { 
-    return (ctx.IsModeDump()  ||  ctx.IsModeGBench());
+    return (cfg.IsModeDump()  ||  cfg.IsModeGBench());
 }
 
 
-bool s_ShowContig(CFFContext& ctx)
+bool s_ShowContig(CBioseqContext& ctx)
 {
     if ( (ctx.IsSegmented()  &&  ctx.HasParts())  ||
          (ctx.IsDelta()  &&  !ctx.IsDeltaLitOnly()) ) {
@@ -86,9 +86,9 @@ bool s_ShowContig(CFFContext& ctx)
 }
 
 
-void CGenbankGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
+void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
-    CFFContext& ctx = Context();
+    const CFlatFileConfig& cfg = ctx.Config();
 
     ItemOS() << new CStartSectionItem(ctx);
 
@@ -108,18 +108,18 @@ void CGenbankGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
     x_GatherComments();
     ItemOS() << new CPrimaryItem(ctx);
     ItemOS() << new CFeatHeaderItem(ctx);
-    if ( !ctx.HideSourceFeats() ) {
+    if ( !cfg.HideSourceFeats() ) {
         x_GatherSourceFeatures();
     }
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
         x_GatherWGS(ctx);
     } else if ( ctx.DoContigStyle() ) {
-        if ( ctx.ShowContigFeatures() ) {
+        if ( cfg.ShowContigFeatures() ) {
             x_GatherFeatures();
         }
         ItemOS() << new CContigItem(ctx);
-        if ( ctx.ShowContigAndSeq() ) {
-            if ( ctx.IsNa()  &&  s_ShowBaseCount(ctx) ) {
+        if ( cfg.ShowContigAndSeq() ) {
+            if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
                 ItemOS() << new CBaseCountItem(ctx);
             }
             ItemOS() << new COriginItem(ctx);
@@ -127,10 +127,10 @@ void CGenbankGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
         }
     } else {
         x_GatherFeatures();
-        if ( ctx.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
+        if ( cfg.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
             ItemOS() << new CContigItem(ctx);
         }
-        if ( ctx.IsNa()  &&  s_ShowBaseCount(ctx) ) {
+        if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
             ItemOS() << new CBaseCountItem(ctx);
         }
         ItemOS() << new COriginItem(ctx);
@@ -141,7 +141,7 @@ void CGenbankGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 }
 
 
-void CGenbankGatherer::x_GatherWGS(CFFContext& ctx) const
+void CGenbankGatherer::x_GatherWGS(CBioseqContext& ctx) const
 {
     const string* first = 0;
     const string* last  = 0;
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/22 16:00:08  shomrat
+* Changes in context
+*
 * Revision 1.10  2004/03/31 17:17:25  shomrat
 * Active bioseq set outside method
 *

@@ -51,15 +51,13 @@ CGFFGatherer::CGFFGatherer(void)
 }
 
 
-void CGFFGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
+void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
-    CFFContext& ctx = Context();
-
     ItemOS() << new CStartSectionItem(ctx);
 
     ItemOS() << new CDateItem(ctx);  // for UpdateDate
     ItemOS() << new CLocusItem(ctx); // for strand
-    if ( !ctx.HideSourceFeats() ) {
+    if ( !ctx.Config().HideSourceFeats() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
@@ -79,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/22 16:02:23  shomrat
+* Changes in context
+*
 * Revision 1.6  2004/03/31 17:17:47  shomrat
 * Active bioseq set outside method
 *

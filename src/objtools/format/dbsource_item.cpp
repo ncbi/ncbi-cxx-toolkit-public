@@ -42,6 +42,7 @@
 #include <objects/seqblock/SP_block.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -58,8 +59,8 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
 
-CDBSourceItem::CDBSourceItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+CDBSourceItem::CDBSourceItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
     x_GatherInfo(ctx);
 }
@@ -90,15 +91,9 @@ static int s_ScoreForDBSource(const CRef<CSeq_id>& x) {
 }
 
 
-void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
+void CDBSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    const CBioseq_Handle& bsh = ctx.GetHandle();
-    CBioseq_Handle::TBioseqCore seq(bsh.GetBioseqCore());
-    if ( !seq ) {
-        return;
-    }
-
-    const CBioseq::TId& ids = seq->GetId();
+    const CBioseq::TId& ids = ctx.GetBioseqIds();
     CConstRef<CSeq_id> id = FindBestChoice(ids, s_ScoreForDBSource);
 
     if ( !id ) {
@@ -138,11 +133,11 @@ void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
     case CSeq_id::e_Tpg: case CSeq_id::e_Tpe: case CSeq_id::e_Tpd:
     {
         set<CBioseq_Handle> sources;
-        CScope& scope = ctx.GetHandle().GetScope();
-        const CSeq_feat* feat = GetCDSForProduct(bsh);
+        CScope& scope = ctx.GetScope();
+        const CSeq_feat* feat = GetCDSForProduct(ctx.GetHandle());
         if ( feat == 0 ) {
             // may also be protein product of mature peptide feature
-            feat = GetPROTForProduct(bsh);
+            feat = GetPROTForProduct(ctx.GetHandle());
         }
         if ( feat != 0 ) {
             const CSeq_loc& loc = feat->GetLocation();
@@ -177,7 +172,7 @@ void CDBSourceItem::x_GatherInfo(CFFContext& ctx)
     }
 }
 
-void CDBSourceItem::x_AddPIRBlock(CFFContext& ctx)
+void CDBSourceItem::x_AddPIRBlock(CBioseqContext& ctx)
 {
     CSeqdesc_CI dsc(ctx.GetHandle(), CSeqdesc::e_Pir);
     if ( !dsc ) {
@@ -246,7 +241,7 @@ void CDBSourceItem::x_AddPIRBlock(CFFContext& ctx)
 }
 
 
-void CDBSourceItem::x_AddSPBlock(CFFContext& ctx)
+void CDBSourceItem::x_AddSPBlock(CBioseqContext& ctx)
 {
     CSeqdesc_CI dsc(ctx.GetHandle(), CSeqdesc::e_Sp);
     if ( !dsc ) {
@@ -340,7 +335,7 @@ void CDBSourceItem::x_AddSPBlock(CFFContext& ctx)
 }
 
 
-void CDBSourceItem::x_AddPRFBlock(CFFContext& ctx)
+void CDBSourceItem::x_AddPRFBlock(CBioseqContext& ctx)
 {
     CSeqdesc_CI dsc(ctx.GetHandle(), CSeqdesc::e_Prf);
     if ( !dsc ) {
@@ -374,7 +369,7 @@ void CDBSourceItem::x_AddPRFBlock(CFFContext& ctx)
 }
 
 
-void CDBSourceItem::x_AddPDBBlock(CFFContext& ctx)
+void CDBSourceItem::x_AddPDBBlock(CBioseqContext& ctx)
 {
     CSeqdesc_CI dsc(ctx.GetHandle(), CSeqdesc::e_Pdb);
     if ( !dsc ) {
@@ -491,6 +486,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/22 15:55:04  shomrat
+* Changes in context
+*
 * Revision 1.4  2004/03/25 20:36:31  shomrat
 * Use handles
 *

@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -55,14 +55,14 @@ class IFormatter;
 class CVersionItem : public CFlatItem
 {
 public:
-    CVersionItem(CFFContext& ctx);
+    CVersionItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     int GetGi(void) const;
     const string& GetAccession(void) const;
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     int     m_Gi;
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:40:17  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:50:19  shomrat
 * Initial revision (adapted from flat lib)
 *

@@ -34,6 +34,8 @@
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seg_ext.hpp>
 
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
@@ -46,8 +48,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CContigItem::CContigItem(CFFContext& ctx) :
-    CFlatItem(ctx), m_Loc(new CSeq_loc)
+CContigItem::CContigItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx), m_Loc(new CSeq_loc)
 {
     x_GatherInfo(ctx);
 }
@@ -61,16 +63,19 @@ void CContigItem::Format
 }
 
 
-void CContigItem::x_GatherInfo(CFFContext& ctx)
+void CContigItem::x_GatherInfo(CBioseqContext& ctx)
 {
     typedef CRef<CSeq_loc>  TLoc;
-
-    CSeq_loc_mix::Tdata& data = m_Loc->SetMix().Set();
-    const CSeq_inst& inst = ctx.GetActiveBioseq().GetInst();
-    if ( !inst.CanGetExt() ) {
+    if ( !ctx.GetHandle().IsSetInst_Ext() ) {
         return;
     }
-    const CSeq_ext& ext = inst.GetExt();
+
+    CSeq_loc_mix::Tdata& data = m_Loc->SetMix().Set();
+    //const CSeq_inst& inst = ctx.GetHandle().GetSeq_inst();
+    //if ( !inst.CanGetExt() ) {
+    //    return;
+    //}
+    const CSeq_ext& ext = ctx.GetHandle().GetInst_Ext();
 
     if ( ctx.IsSegmented()  &&  ctx.HasParts() ) {
         ITERATE (CSeg_ext::Tdata, it, ext.GetSeg().Get()) {
@@ -110,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:51:43  shomrat
+* Changes in context
+*
 * Revision 1.3  2004/02/19 18:04:01  shomrat
 * Implemented Contig item
 *

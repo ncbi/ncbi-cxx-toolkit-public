@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 
 class CBioseq_Handle;
 class CDate;
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -61,7 +61,7 @@ public:
     typedef CSeq_inst::TStrand      TStrand;
     typedef CSeq_inst::TTopology    TTopology;
 
-    CLocusItem(CFFContext& ctx);
+    CLocusItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string& GetName     (void) const;
@@ -74,14 +74,14 @@ public:
 
 private:
 
-    void x_GatherInfo(CFFContext& ctx);
-    void x_SetName(CFFContext& ctx);
-    void x_SetLength(CFFContext& ctx);
-    void x_SetStrand(CFFContext& ctx);
-    void x_SetBiomol(CFFContext& ctx);
-    void x_SetTopology(CFFContext& ctx);
-    void x_SetDivision(CFFContext& ctx);
-    void x_SetDate(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
+    void x_SetName(CBioseqContext& ctx);
+    void x_SetLength(CBioseqContext& ctx);
+    void x_SetStrand(CBioseqContext& ctx);
+    void x_SetBiomol(CBioseqContext& ctx);
+    void x_SetTopology(CBioseqContext& ctx);
+    void x_SetDivision(CBioseqContext& ctx);
+    void x_SetDate(CBioseqContext& ctx);
 
     const CDate* x_GetDateForBioseq(const CBioseq_Handle& bsh) const;
     const CDate* x_GetLaterDate(const CDate* d1, const CDate* d2) const;
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:37:32  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:48:58  shomrat
 * Initial revision (adapted from flat lib)
 *

@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -52,13 +52,13 @@ class IFormatter;
 class COriginItem : public CFlatItem
 {
 public:
-    COriginItem(CFFContext& ctx);
+    COriginItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     const string& GetOrigin(void) const { return m_Origin; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     string  m_Origin;
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:37:43  shomrat
+* Changes in context
+*
 * Revision 1.1  2004/02/19 17:48:41  shomrat
 * Initial Revision
 *

@@ -77,7 +77,9 @@ CGenbankFormatter::CGenbankFormatter(void)
 //
 // END SECTION
 
-void CGenbankFormatter::EndSection(IFlatTextOStream& text_os)
+void CGenbankFormatter::EndSection
+(const CEndSectionItem&,
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     l.push_back("//");
@@ -122,7 +124,7 @@ void CGenbankFormatter::FormatLocus
 {
     static const string strands[]  = { "   ", "ss-", "ds-", "ms-" };
 
-    const CFFContext& ctx = locus.GetContext();
+    const CBioseqContext& ctx = *locus.GetContext();
 
     list<string> l;
     CNcbiOstrstream locus_line;
@@ -185,7 +187,12 @@ void CGenbankFormatter::FormatAccession
  IFlatTextOStream& text_os)
 {
     string acc_line = x_FormatAccession(acc, ' ');
-    
+    if ( acc.IsSetRegion() ) {
+        acc_line += " REGION: ";
+        acc_line += NStr::Int8ToString(acc.GetRegion().GetFrom());
+        acc_line += "..";
+        acc_line += NStr::Int8ToString(acc.GetRegion().GetTo());
+    }
     if ( !acc_line.empty() ) {
         list<string> l;
         Wrap(l, "ACCESSION", acc_line);
@@ -306,7 +313,7 @@ void CGenbankFormatter::FormatReference
 (const CReferenceItem& ref,
  IFlatTextOStream& text_os)
 {
-    CFFContext& ctx = const_cast<CFFContext&>(ref.GetContext()); // !!!
+    CBioseqContext& ctx = *ref.GetContext();
 
     list<string> l;
 
@@ -329,7 +336,7 @@ void CGenbankFormatter::FormatReference
 void CGenbankFormatter::x_Reference
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     CNcbiOstrstream ref_line;
 
@@ -344,9 +351,8 @@ void CGenbankFormatter::x_Reference
         ref_line << "(sites)";
     } else if ( reftype == CPubdesc::eReftype_no_target ) {
     } else {
-        const CSeq_loc* loc = ref.GetLoc() != 0 ? ref.GetLoc() : ctx.GetLocation();
-        x_FormatRefLocation(ref_line, *loc, " to ", "; ",
-            ctx.IsProt(), ctx.GetScope());
+        const CSeq_loc* loc = ref.GetLoc() != 0 ? ref.GetLoc() : &ctx.GetLocation();
+        x_FormatRefLocation(ref_line, *loc, " to ", "; ", ctx);
     }
     Wrap(l, GetWidth(), "REFERENCE", CNcbiOstrstreamToString(ref_line));
 }
@@ -355,7 +361,7 @@ void CGenbankFormatter::x_Reference
 void CGenbankFormatter::x_Authors
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     string auth = CReferenceItem::GetAuthString(ref.GetAuthors());
     if ( !NStr::EndsWith(auth, ".") ) {
@@ -368,7 +374,7 @@ void CGenbankFormatter::x_Authors
 void CGenbankFormatter::x_Consortium
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     Wrap(l, "CONSRTM", ref.GetConsortium(), eSubp);
 }
@@ -377,7 +383,7 @@ void CGenbankFormatter::x_Consortium
 void CGenbankFormatter::x_Title
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     string title = ref.GetTitle();
 
@@ -392,7 +398,7 @@ void CGenbankFormatter::x_Title
 void CGenbankFormatter::x_Journal
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     string journal;
     x_FormatRefJournal(journal, ref);
@@ -403,7 +409,7 @@ void CGenbankFormatter::x_Journal
 void CGenbankFormatter::x_Medline
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     if ( ref.GetMUID() != 0 ) {
         Wrap(l, GetWidth(), "MEDLINE", NStr::IntToString(ref.GetMUID()), eSubp);
@@ -414,7 +420,7 @@ void CGenbankFormatter::x_Medline
 void CGenbankFormatter::x_Pubmed
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     if ( ref.GetPMID() != 0 ) {
         Wrap(l, " PUBMED", NStr::IntToString(ref.GetPMID()), eSubp);
@@ -425,7 +431,7 @@ void CGenbankFormatter::x_Pubmed
 void CGenbankFormatter::x_Remark
 (list<string>& l,
  const CReferenceItem& ref,
- CFFContext& ctx) const
+ CBioseqContext& ctx) const
 {
     Wrap(l, "REMARK", ref.GetRemark(), eSubp);
 }
@@ -624,10 +630,14 @@ void CGenbankFormatter::FormatWGS
 // PRIMARY
 
 void CGenbankFormatter::FormatPrimary
-(const CPrimaryItem& prim,
+(const CPrimaryItem& primary,
  IFlatTextOStream& text_os)
 {
-    // !!!
+    list<string> l;
+
+    Wrap(l, "PRIMARY", primary.GetString());
+
+    text_os.AddParagraph(l);
 }
 
 
@@ -652,7 +662,7 @@ void CGenbankFormatter::FormatContig
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    string assembly = CFlatSeqLoc(contig.GetLoc(), contig.GetContext(), 
+    string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
         CFlatSeqLoc::eType_assembly).GetString();
     Wrap(l, "CONTIG", assembly);
     text_os.AddParagraph(l);
@@ -685,6 +695,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/22 15:59:59  shomrat
+* Changes in context
+*
 * Revision 1.11  2004/04/13 16:47:53  shomrat
 * Journal formatting moved to base class
 *

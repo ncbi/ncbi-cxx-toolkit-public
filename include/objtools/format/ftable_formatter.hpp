@@ -56,8 +56,8 @@ public:
 
 private:
     void x_FormatLocation(const CSeq_loc& loc, const string& key,
-        CFFContext& ctx, list<string>& l);
-    void x_FormatQuals(const CFlatFeature::TQuals& quals, CFFContext& ctx,
+        CBioseqContext& ctx, list<string>& l);
+    void x_FormatQuals(const CFlatFeature::TQuals& quals, CBioseqContext& ctx,
         list<string>& l);
 };
 
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:43:56  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/04/07 14:51:46  shomrat
 * Fixed typo
 *

@@ -51,7 +51,7 @@ BEGIN_SCOPE(objects)
 class CFeatHeaderItem : public CFlatItem
 {
 public:
-    CFeatHeaderItem(CFFContext& ctx);
+    CFeatHeaderItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter,
         IFlatTextOStream& text_os) const {
         formatter.FormatFeatHeader(*this, text_os);
@@ -60,7 +60,7 @@ public:
     const CSeq_id& GetId(void) const { return *m_Id; }  // for FTable format
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     CConstRef<CSeq_id>  m_Id;  // for FTable format
@@ -111,10 +111,10 @@ public:
 protected:
 
     // constructor
-    CFeatureItemBase(const CSeq_feat& feat, CFFContext& ctx,
+    CFeatureItemBase(const CSeq_feat& feat, CBioseqContext& ctx,
                      const CSeq_loc* loc = 0);
 
-    virtual void x_AddQuals   (CFFContext& ctx) const = 0;
+    virtual void x_AddQuals(CBioseqContext& ctx) = 0;
     virtual void x_FormatQuals(void) const = 0;
 
     CConstRef<CSeq_feat>    m_Feat;
@@ -136,13 +136,13 @@ public:
     };
 
     // constructors
-    CFeatureItem(const CSeq_feat& feat, CFFContext& ctx,
+    CFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
                  const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped)
         : CFeatureItemBase(feat, ctx, loc), m_Mapped(mapped)
     {
         x_GatherInfo(ctx);
     }
-    CFeatureItem(const CMappedFeat& feat, CFFContext& ctx,
+    CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
                  const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped)
         : CFeatureItemBase(feat.GetOriginalFeature(), ctx,
                            loc ? loc : &feat.GetLocation()),
@@ -158,34 +158,34 @@ public:
     bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // qualifier collection
-    void x_AddQuals(CFFContext& ctx)       const;
+    void x_AddQuals(CBioseqContext& ctx);
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
     void x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const;
-    void x_AddCdregionQuals(const CSeq_feat& cds, CFFContext& ctx,
+    void x_AddCdregionQuals(const CSeq_feat& cds, CBioseqContext& ctx,
         bool& pseudo, bool& had_prot_desc) const;
     const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
     void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
-    void x_AddRnaQuals(const CSeq_feat& feat, CFFContext& ctx,
+    void x_AddRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx,
         bool& pseudo) const;
-    void x_AddProtQuals(const CSeq_feat& feat, CFFContext& ctx,
+    void x_AddProtQuals(const CSeq_feat& feat, CBioseqContext& ctx,
         bool& pseudo, bool& had_prot_desc, string& precursor_comment) const;
-    void x_AddRegionQuals(const CSeq_feat& feat, CFFContext& ctx) const;
+    void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddQuals(const CGene_ref& gene) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
-    void x_AddExceptionQuals(CFFContext& ctx) const;
+    void x_AddExceptionQuals(CBioseqContext& ctx) const;
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
     void x_CleanQuals(void) const;
     // feature table quals
     typedef vector< CRef<CFlatQual> > TQualVec;
-    void x_AddFTableQuals(CFFContext& ctx) const;
+    void x_AddFTableQuals(CBioseqContext& ctx) const;
     bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene) const;
-    void x_AddFTableRnaQuals(const CSeq_feat& feat, CFFContext& ctx) const;
-    void x_AddFTableCdregionQuals(const CSeq_feat& feat, CFFContext& ctx) const;
+    void x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
+    void x_AddFTableCdregionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
     void x_AddFTableProtQuals(const CSeq_feat& prot) const;
     void x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region) const;
     void x_AddFTableBondQuals(const CSeqFeatData::TBond& bond) const;
@@ -243,14 +243,14 @@ class CSourceFeatureItem : public CFeatureItemBase
 public:
     typedef CRange<TSeqPos> TRange;
 
-    CSourceFeatureItem(const CBioSource& src, TRange range, CFFContext& ctx);
-    CSourceFeatureItem(const CSeq_feat& feat, CFFContext& ctx,
+    CSourceFeatureItem(const CBioSource& src, TRange range, CBioseqContext& ctx);
+    CSourceFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
                            const CSeq_loc* loc = 0)
         : CFeatureItemBase(feat, ctx, loc), m_WasDesc(false)
     {
         x_GatherInfo(ctx);
     }
-    CSourceFeatureItem(const CMappedFeat& feat, CFFContext& ctx,
+    CSourceFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
                            const CSeq_loc* loc = 0)
         : CFeatureItemBase(feat.GetOriginalFeature(), ctx,
                            loc ? loc : &feat.GetLocation()),
@@ -266,13 +266,13 @@ public:
     string GetKey(void) const { return "source"; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx) {
+    void x_GatherInfo(CBioseqContext& ctx) {
         x_AddQuals(ctx);
     }
 
-    void x_AddQuals(CFFContext& ctx)       const;
-    void x_AddQuals(const CBioSource& src, CFFContext& ctx) const;
-    void x_AddQuals(const COrg_ref& org, CFFContext& ctx) const;
+    void x_AddQuals(CBioseqContext& ctx);
+    void x_AddQuals(const CBioSource& src, CBioseqContext& ctx) const;
+    void x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) const;
 
     // XXX - massage slot as necessary and perhaps sanity-check value's type
     void x_AddQual (ESourceQualifier slot, const IFlatQVal* value) const {
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/04/22 15:36:00  shomrat
+* Changes in context
+*
 * Revision 1.12  2004/04/13 16:42:24  shomrat
 * Additions due to GBSeq format
 *

@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 
 
 class CUser_object;
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -62,7 +62,7 @@ public:
     typedef EWGSType    TWGSType;
 
     CWGSItem(TWGSType type, const string& first, const string& last,
-        const CUser_object& uo, CFFContext& ctx);
+        const CUser_object& uo, CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     TWGSType      GetType   (void) const { return m_Type;  }
@@ -72,7 +72,7 @@ public:
 private:
     
     
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     TWGSType    m_Type;
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:40:29  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:50:30  shomrat
 * Initial revision (adapted from flat lib)
 *

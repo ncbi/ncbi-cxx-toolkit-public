@@ -63,8 +63,8 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
 
-CLocusItem::CLocusItem(CFFContext& ctx) :
-    CFlatItem(ctx),
+CLocusItem::CLocusItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_Length(0), m_Biomol(CMolInfo::eBiomol_unknown), m_Date("01-JAN-1900")
 {
    x_GatherInfo(ctx);
@@ -126,7 +126,7 @@ const string& CLocusItem::GetDate(void) const
 /***************************************************************************/
 
 
-void CLocusItem::x_GatherInfo(CFFContext& ctx)
+void CLocusItem::x_GatherInfo(CBioseqContext& ctx)
 {
     CSeqdesc_CI mi_desc(ctx.GetHandle(), CSeqdesc::e_Molinfo);
     if ( mi_desc ) {
@@ -146,7 +146,7 @@ void CLocusItem::x_GatherInfo(CFFContext& ctx)
 
 // Name
 
-void CLocusItem::x_SetName(CFFContext& ctx)
+void CLocusItem::x_SetName(CBioseqContext& ctx)
 {
     CBioseq_Handle::TBioseqCore seq  = ctx.GetHandle().GetBioseqCore();
 
@@ -174,19 +174,15 @@ bool CLocusItem::x_NameHasBadChars(const string& name) const
 
 // Length
 
-void CLocusItem::x_SetLength(CFFContext& ctx)
+void CLocusItem::x_SetLength(CBioseqContext& ctx)
 {
-    if ( ctx.GetLocation() != 0 ) {
-        m_Length = sequence::GetLength(*ctx.GetLocation(), &ctx.GetScope());
-    } else {
-        m_Length = ctx.GetHandle().GetBioseqLength();
-    }
+    m_Length = sequence::GetLength(ctx.GetLocation(), &ctx.GetScope());
 }
 
 
 // Strand
 
-void CLocusItem::x_SetStrand(CFFContext& ctx)
+void CLocusItem::x_SetStrand(CBioseqContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
     
@@ -200,7 +196,7 @@ void CLocusItem::x_SetStrand(CFFContext& ctx)
     }
 
     // cleanup for formats other than GBSeq
-    if ( !ctx.IsFormatGBSeq() ) {
+    if ( !ctx.Config().IsFormatGBSeq() ) {
         // if ds-DNA don't show ds
         if ( bmol == CSeq_inst::eMol_dna  &&  m_Strand == CSeq_inst::eStrand_ds ) {
             m_Strand = CSeq_inst::eStrand_not_set;
@@ -219,7 +215,7 @@ void CLocusItem::x_SetStrand(CFFContext& ctx)
 
 // Biomol
 
-void CLocusItem::x_SetBiomol(CFFContext& ctx)
+void CLocusItem::x_SetBiomol(CBioseqContext& ctx)
 {
     if ( ctx.IsProt() ) {
         return;
@@ -256,16 +252,13 @@ void CLocusItem::x_SetBiomol(CFFContext& ctx)
 
 // Topology
 
-void CLocusItem::x_SetTopology(CFFContext& ctx)
+void CLocusItem::x_SetTopology(CBioseqContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
     
-    const CSeq_inst* inst = bsh.GetBioseqCore()->CanGetInst() ? 
-        &(bsh.GetBioseqCore()->GetInst()) : 0;
-
-    m_Topology = (inst  &&  inst->CanGetTopology()) ?
-        inst->GetTopology() : CSeq_inst::eTopology_not_set;
-    if ( ctx.GetLocation() != 0   &&  !ctx.GetLocation()->IsWhole() ) {
+    m_Topology = bsh.GetInst_Topology();
+    // an interval is always linear
+    if ( !ctx.GetLocation().IsWhole() ) {
         m_Topology = CSeq_inst::eTopology_linear;
     }
 }
@@ -273,7 +266,7 @@ void CLocusItem::x_SetTopology(CFFContext& ctx)
 
 // Division
 
-void CLocusItem::x_SetDivision(CFFContext& ctx)
+void CLocusItem::x_SetDivision(CBioseqContext& ctx)
 {
     // contig style (old genome_view flag) forces CON division
     if ( ctx.DoContigStyle() ) {
@@ -298,7 +291,7 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
         CFeat_CI feat(bsh, 0, 0, CSeqFeatData::e_Biosrc);
         if ( feat ) {
             bsrc = &(feat->GetData().GetBiosrc());
-        } else if ( CSeq_inst::IsAa(bsh.GetBioseqMolType()) ) {
+        } else if ( ctx.IsProt() ) {
             // if protein with no sources, get sources applicable to 
             // DNA location of CDS
             const CSeq_feat* cds = GetCDSForProduct(bsh);
@@ -307,12 +300,12 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
                     cds->GetLocation(),
                     CSeqFeatData::e_Biosrc,
                     eOverlap_Contains,
-                    ctx.GetScope());
+                    bsh.GetScope());
                 if ( nuc_fsrc ) {
                     bsrc = &(nuc_fsrc->GetData().GetBiosrc());
                 } else {
                     CBioseq_Handle nuc = 
-                        ctx.GetScope().GetBioseqHandle(cds->GetLocation());
+                        bsh.GetScope().GetBioseqHandle(cds->GetLocation());
                     CSeqdesc_CI nuc_dsrc(nuc, CSeqdesc::e_Source);
                     if ( nuc_dsrc ) {
                         bsrc = &(nuc_dsrc->GetSource());
@@ -387,7 +380,7 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
         }
 
         const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
-        if ( ctx.IsFormatEMBL() ) {
+        if ( ctx.Config().IsFormatEMBL() ) {
             for ( CSeqdesc_CI embl_desc(bsh, CSeqdesc::e_Embl); 
                   embl_desc; 
                   ++embl_desc ) {
@@ -413,7 +406,7 @@ void CLocusItem::x_SetDivision(CFFContext& ctx)
 
 // Date
 
-void CLocusItem::x_SetDate(CFFContext& ctx)
+void CLocusItem::x_SetDate(CBioseqContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
 
@@ -534,6 +527,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/22 15:58:51  shomrat
+* Changes in context
+*
 * Revision 1.7  2004/04/13 16:49:01  shomrat
 * GBSeq format changes
 *

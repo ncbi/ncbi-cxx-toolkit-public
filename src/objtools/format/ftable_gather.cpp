@@ -51,17 +51,15 @@ CFtableGatherer::CFtableGatherer(void)
 }
 
 
-void CFtableGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
+void CFtableGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
-    CFFContext& ctx = Context();
-
     ItemOS() << new CStartSectionItem(ctx);
 
     ItemOS() << new CFeatHeaderItem(ctx);
-    if ( ctx.ShowFtableRefs() ) {
+    if ( ctx.Config().ShowFtableRefs() ) {
         x_GatherReferences();
     }
-    if ( !ctx.HideSourceFeats() ) {
+    if ( !ctx.Config().HideSourceFeats() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
@@ -78,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:58:27  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/04/07 14:51:24  shomrat
 * Fixed typo
 *

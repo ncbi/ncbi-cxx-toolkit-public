@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -52,11 +52,11 @@ class IFormatter;
 class CGenomeItem : public CFlatItem
 {
 public:
-    CGenomeItem(CFFContext& ctx);
+    CGenomeItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 };
 
 
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:36:37  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:47:51  shomrat
 * Initial revision (adapted from flat lib)
 *

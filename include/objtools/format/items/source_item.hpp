@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 class CGB_block;
 class CSeqdesc;
 class CBioSource;
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -58,7 +58,7 @@ class IFormatter;
 class CSourceItem : public CFlatItem
 {
 public:
-    CSourceItem(CFFContext& ctx);
+    CSourceItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const string&       GetTaxname      (void) const;
@@ -71,7 +71,7 @@ public:
     // TaxId ???
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // Populate the object based on the source of the data
     void x_SetSource(const CGB_block&  gb, const CSeqdesc& desc);
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:40:05  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:50:09  shomrat
 * Initial revision (adapted from flat lib)
 *

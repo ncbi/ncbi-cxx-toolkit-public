@@ -62,7 +62,7 @@ class CGenomeItem;
 class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
-class CFFContext;
+class CBioseqContext;
 class COriginItem;
 
 
@@ -73,7 +73,7 @@ public:
 
     virtual SIZE_TYPE GetWidth(void) const { return 79; }
 
-    virtual void EndSection(IFlatTextOStream& text_os);
+    virtual void EndSection(const CEndSectionItem&, IFlatTextOStream& text_os);
 
     virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
     virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
@@ -101,14 +101,14 @@ private:
     void x_FormatOrganismLine(list<string>& l, const CSourceItem& source) const;
 
     // reference
-    void x_Reference(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Authors(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Consortium(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Title(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Journal(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Medline(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Pubmed(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
-    void x_Remark(list<string>& l, const CReferenceItem& ref, CFFContext& ctx) const;
+    void x_Reference(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Authors(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Consortium(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Title(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Journal(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Medline(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Pubmed(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+    void x_Remark(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
 };
 
 
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:45:27  shomrat
+* Changes in context
+*
 * Revision 1.3  2004/02/19 17:58:41  shomrat
 * Added method to format Origin item
 *

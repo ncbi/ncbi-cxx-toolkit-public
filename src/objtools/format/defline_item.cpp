@@ -43,8 +43,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CDeflineItem::CDeflineItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+CDeflineItem::CDeflineItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
     x_GatherInfo(ctx);
 }
@@ -70,7 +70,7 @@ const string& CDeflineItem::GetDefline(void) const
 /***************************************************************************/
 
 
-void CDeflineItem::x_GatherInfo(CFFContext& ctx)
+void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
 {
     m_Defline = sequence::GetTitle(ctx.GetHandle());
     if ( !NStr::EndsWith(m_Defline, ".") ) {
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:55:41  shomrat
+* Changes in context
+*
 * Revision 1.2  2003/12/18 17:43:32  shomrat
 * context.hpp moved
 *

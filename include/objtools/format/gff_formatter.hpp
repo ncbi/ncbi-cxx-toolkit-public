@@ -72,8 +72,8 @@ public:
     CGFFFormatter(void);
 
     virtual void Start       (IFlatTextOStream& text_os);
-    virtual void StartSection(IFlatTextOStream& text_os);
-    virtual void EndSection  (IFlatTextOStream& text_os);
+    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream& text_os);
+    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream& text_os);
 
     virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
     virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os);
@@ -82,12 +82,13 @@ public:
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
 
 private:
-    string x_GetGeneID(const CFlatFeature& feat, const string& gene_name, CFFContext& ctx) const;
-    string x_GetSourceName(CFFContext& ctx) const;
+    string x_GetGeneID(const CFlatFeature& feat, const string& gene_name, CBioseqContext& ctx) const;
+    string x_GetSourceName(CBioseqContext& ctx) const;
     void   x_AddFeature(list<string>& l, const CSeq_loc& loc,
                         const string& source, const string& key,
                         const string& score, int frame, const string& attrs,
-                        bool gtf, CFFContext& ctx) const;
+                        bool gtf, CBioseqContext& ctx,
+                        bool tentative_stop = false) const;
 
     mutable TGFFFlags           m_GFFFlags;
     //CRef<IFlatTextOStream> m_Stream;
@@ -113,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:45:57  shomrat
+* Changes in context
+*
 * Revision 1.1  2004/01/14 15:59:50  shomrat
 * Initial Revision
 *

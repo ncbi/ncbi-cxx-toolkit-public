@@ -41,8 +41,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CGenomeItem::CGenomeItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+CGenomeItem::CGenomeItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
 }
 
@@ -56,7 +56,7 @@ void CGenomeItem::Format
 }
 
 
-void CGenomeItem::x_GatherInfo(CFFContext& ctx)
+void CGenomeItem::x_GatherInfo(CBioseqContext& ctx)
 {
     // !!!
 }
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 16:00:44  shomrat
+* Changes in context
+*
 * Revision 1.2  2003/12/18 17:43:34  shomrat
 * context.hpp moved
 *

@@ -168,13 +168,8 @@ CFlatStringQVal::CFlatStringQVal
 
 
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
-                           CFFContext& ctx, IFlatQVal::TFlags flags) const
+                           CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
-    const string* sfx = m_Suffix;
-    //if ( sfx->empty()  &&  s_IsNote(ctx, flags) ) {
-    //    sfx = "\n";
-    //}
-
     x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
 }
 
@@ -186,7 +181,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
 // CFlatStringListQVal {
 
 void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
-                           CFFContext& ctx, IFlatQVal::TFlags flags) const
+                           CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     if ( s_IsNote(flags) ) {
         m_Suffix = &kSemicolon;
@@ -202,7 +197,7 @@ void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
-                              CFFContext& ctx, IFlatQVal::TFlags) const
+                              CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     ITERATE (CCdregion::TCode_break, it, m_Value) {
         string pos = CFlatSeqLoc((*it)->GetLoc(), ctx).GetString();
@@ -233,7 +228,7 @@ CFlatCodonQVal::CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_asc
 }
 
 
-void CFlatCodonQVal::Format(TFlatQuals& q, const string& name, CFFContext& ctx,
+void CFlatCodonQVal::Format(TFlatQuals& q, const string& name, CBioseqContext& ctx,
                           IFlatQVal::TFlags) const
 {
     if ( !m_Checked ) {
@@ -244,7 +239,7 @@ void CFlatCodonQVal::Format(TFlatQuals& q, const string& name, CFFContext& ctx,
 
 
 void CFlatExpEvQVal::Format(TFlatQuals& q, const string& name,
-                          CFFContext&, IFlatQVal::TFlags) const
+                          CBioseqContext&, IFlatQVal::TFlags) const
 {
     const char* s = 0;
     switch (m_Value) {
@@ -258,7 +253,7 @@ void CFlatExpEvQVal::Format(TFlatQuals& q, const string& name,
 }
 
 
-void CFlatIllegalQVal::Format(TFlatQuals& q, const string&, CFFContext &ctx,
+void CFlatIllegalQVal::Format(TFlatQuals& q, const string&, CBioseqContext &ctx,
                             IFlatQVal::TFlags) const
 {
     // XXX - return if too strict
@@ -267,7 +262,7 @@ void CFlatIllegalQVal::Format(TFlatQuals& q, const string&, CFFContext &ctx,
 
 
 void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
-                            CFFContext& ctx, IFlatQVal::TFlags flags) const
+                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     const char* s = 0;
     switch ( m_Biomol ) {
@@ -326,7 +321,7 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
-                           CFFContext& ctx, IFlatQVal::TFlags flags) const
+                           CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     string subname = m_Value->GetSubname();
     if ( s_StringIsJustQuotes(subname) ) {
@@ -346,7 +341,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
-                              CFFContext&, IFlatQVal::TFlags) const
+                              CBioseqContext&, IFlatQVal::TFlags) const
 {
     const string& organelle
         = CBioSource::GetTypeInfo_enum_EGenome()->FindName(m_Value, true);
@@ -388,7 +383,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
-                           CFFContext& ctx, IFlatQVal::TFlags) const
+                           CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     ITERATE (vector< CRef<CReferenceItem> >, it, ctx.GetReferences()) {
         if ((*it)->Matches(*m_Value)) {
@@ -400,7 +395,7 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
-                          CFFContext& ctx, IFlatQVal::TFlags) const
+                          CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     // XXX - add link in HTML mode
     string id_str;
@@ -417,7 +412,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
-                              CFFContext& ctx, IFlatQVal::TFlags flags) const
+                              CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     if ( !m_Value->CanGetName()  ||  m_Value->GetName().empty() ) {
         return;
@@ -453,7 +448,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
 
 
 void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
-                         CFFContext& ctx, IFlatQVal::TFlags flags) const
+                         CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     // XXX - add link in HTML mode?
     ITERATE (TXref, it, m_Value) {
@@ -503,7 +498,7 @@ bool CFlatXrefQVal::x_XrefInGeneXref(const CDbtag& dbtag) const
 void CFlatModelEvQVal::Format
 (TFlatQuals& q,
  const string& name,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
     const string* method = 0;
@@ -518,16 +513,16 @@ void CFlatModelEvQVal::Format
     if ( m_Value->HasField("mRNA") ) {
         const CUser_field& field = m_Value->GetField("mRNA");
         if ( field.GetData().IsFields() ) {
-            ITERATE (CUser_field::C_Data::TFields, it, field.GetData().GetFields()) {
-                const CUser_field& uf = **it;
+            ITERATE (CUser_field::C_Data::TFields, it1, field.GetData().GetFields()) {
+                const CUser_field& uf = **it1;
                 if ( !uf.CanGetData()  ||  !uf.GetData().IsFields() ) {
                     continue;
                 }
-                ITERATE (CUser_field::C_Data::TFields, it, uf.GetData().GetFields()) {
-                    if ( !(*it)->CanGetLabel() ) {
+                ITERATE (CUser_field::C_Data::TFields, it2, uf.GetData().GetFields()) {
+                    if ( !(*it2)->CanGetLabel() ) {
                         continue;
                     }
-                    const CObject_id& oid = (*it)->GetLabel();
+                    const CObject_id& oid = (*it2)->GetLabel();
                     if ( oid.IsStr() ) {
                         if ( oid.GetStr() == "accession" ) {
                             ++nm;
@@ -559,17 +554,19 @@ void CFlatModelEvQVal::Format
 void CFlatGoQVal::Format
 (TFlatQuals& q,
  const string& name,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
     _ASSERT(m_Value->GetData().IsFields());
+    bool is_ftable = ctx.Config().IsFormatFTable();
+
     if ( s_IsNote(flags) ) {
         static const string sfx = ";";
         m_Prefix = &kEOL;
         m_Suffix = &sfx;
-        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value, ctx.IsFormatFTable()));
+        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value, is_ftable));
     } else {
-        x_AddFQ(q, name, s_GetGOText(*m_Value, ctx.IsFormatFTable()));
+        x_AddFQ(q, name, s_GetGOText(*m_Value, is_ftable));
     }
 }
 
@@ -577,7 +574,7 @@ void CFlatGoQVal::Format
 void CFlatAnticodonQVal::Format
 (TFlatQuals& q,
  const string& name,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
     if ( !m_Anticodon->IsInt()  ||  !m_Aa.empty() ) {
@@ -596,7 +593,7 @@ void CFlatAnticodonQVal::Format
 void CFlatTrnaCodonsQVal::Format
 (TFlatQuals& q,
  const string& name,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
     // !!!
@@ -606,7 +603,7 @@ void CFlatTrnaCodonsQVal::Format
 void CFlatProductQVal::Format
 (TFlatQuals& q,
  const string& n,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  TFlags) const
 {
     // !!!
@@ -624,6 +621,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/04/22 15:57:06  shomrat
+* Changes in context
+*
 * Revision 1.11  2004/04/07 14:28:44  shomrat
 * Fixed GO quals formatting for FTable format
 *

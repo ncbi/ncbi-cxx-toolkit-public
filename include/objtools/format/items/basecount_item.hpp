@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -56,7 +56,7 @@ class IFormatter;
 class CBaseCountItem : public CFlatItem
 {
 public:
-    CBaseCountItem(CFFContext& ctx);
+    CBaseCountItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     void GetCounts(SIZE_TYPE& a, SIZE_TYPE& c, SIZE_TYPE& g, SIZE_TYPE& t,
@@ -68,7 +68,7 @@ public:
     SIZE_TYPE GetOther(void) const  { return m_Other; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     mutable TSeqPos     m_A, m_C, m_G, m_T, m_Other;
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:34:12  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:44:53  shomrat
 * Initial revision (adapted from flat lib)
 *

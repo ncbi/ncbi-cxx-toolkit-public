@@ -74,15 +74,15 @@ class CFlatItemFormatter : public IFormatter
 public:
     
     // virtual constructor
-    static CFlatItemFormatter* New(TFormat format);
+    static CFlatItemFormatter* New(CFlatFileConfig::TFormat format);
     
     virtual ~CFlatItemFormatter(void);
 
 
     // control methods
     virtual void Start       (IFlatTextOStream&) {}
-    virtual void StartSection(IFlatTextOStream&) {}
-    virtual void EndSection  (IFlatTextOStream&) {}
+    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream& text_os) {}
+    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream& text_os)   {}
     virtual void End         (IFlatTextOStream&) {}
 
     // Format methods
@@ -109,11 +109,11 @@ public:
     virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
 
     // Context
-    void SetContext(CFFContext& ctx) { m_Ctx.Reset(&ctx); }
-    CFFContext& GetContext(void) { return *m_Ctx; }
+    void SetContext(CFlatFileContext& ctx) { m_Ctx.Reset(&ctx); }
+    CFlatFileContext& GetContext(void) { return *m_Ctx; }
 
 protected:
-    CFlatItemFormatter(void) {} // !!!
+    CFlatItemFormatter(void) {}
     CFlatItemFormatter(const CFlatItemFormatter&);
     CFlatItemFormatter& operator=(const CFlatItemFormatter&);
 
@@ -138,7 +138,7 @@ protected:
 
     void x_FormatRefLocation(CNcbiOstrstream& os, const CSeq_loc& loc,
         const string& to, const string& delim,
-        bool is_prot, CScope& scope) const;
+        CBioseqContext& ctx) const;
     void x_FormatRefJournal(string& journal, const CReferenceItem& ref) const;
     string x_FormatAccession(const CAccessionItem& acc, char separator) const;
 
@@ -153,9 +153,9 @@ protected:
 
 private:
     // data
-    string           m_Indent;
-    string           m_FeatIndent;
-    CRef<CFFContext> m_Ctx;
+    string                 m_Indent;
+    string                 m_FeatIndent;
+    CRef<CFlatFileContext> m_Ctx;
 };
 
 
@@ -167,6 +167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/22 15:46:39  shomrat
+* Changes in context
+*
 * Revision 1.6  2004/04/13 16:43:41  shomrat
 * + x_FormatRefJournal()
 *

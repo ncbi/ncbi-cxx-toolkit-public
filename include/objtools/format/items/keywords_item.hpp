@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -59,13 +59,13 @@ public:
     // types
     typedef list<string> TKeywords;
 
-    CKeywordsItem(CFFContext& ctx);
+    CKeywordsItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const TKeywords& GetKeywords(void) const;
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     void x_AddKeyword(const string& keyword, Uint4 flags = 0);
     bool x_CheckSpecialKeyword(const string& keyword, Uint4 flags = 0) const;
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:37:17  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:48:45  shomrat
 * Initial revision (adapted from flat lib)
 *

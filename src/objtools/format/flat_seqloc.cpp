@@ -89,7 +89,7 @@ static bool s_IsVirtualLocation(const CSeq_loc& loc, CScope* scope)
 
 CFlatSeqLoc::CFlatSeqLoc
 (const CSeq_loc& loc,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  TType type)
 {
     CNcbiOstrstream oss;
@@ -101,7 +101,7 @@ CFlatSeqLoc::CFlatSeqLoc
 void CFlatSeqLoc::x_Add
 (const CSeq_loc& loc,
  CNcbiOstrstream& oss,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  TType type,
  bool show_comp)
 {
@@ -193,7 +193,7 @@ void CFlatSeqLoc::x_Add
         string delim;
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
-            x_Add(*it, ppnt.IsSetFuzz() ? &ppnt.GetFuzz() : 0, oss, ctx.DoHtml());
+            x_Add(*it, ppnt.IsSetFuzz() ? &ppnt.GetFuzz() : 0, oss, ctx.Config().DoHTML());
             delim = ", \b";
         }
         if ( ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())  &&  show_comp ) {
@@ -253,10 +253,12 @@ void CFlatSeqLoc::x_Add
 void CFlatSeqLoc::x_Add
 (const CSeq_interval& si,
  CNcbiOstrstream& oss,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  TType type,
  bool show_comp)
 {
+    bool do_html = ctx.Config().DoHTML();
+
     TSeqPos from = si.GetFrom(), to = si.GetTo();
     ENa_strand strand = si.CanGetStrand() ? si.GetStrand() : eNa_strand_unknown;
     bool comp = show_comp  &&  IsReverse(strand);
@@ -271,9 +273,9 @@ void CFlatSeqLoc::x_Add
         oss << (comp ? "complement(" : kEmptyStr);
         x_AddID(si.GetId(), oss, ctx, type);
     }
-    x_Add(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0, oss, ctx.DoHtml());
+    x_Add(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0, oss, do_html);
     oss << "..";
-    x_Add(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, ctx.DoHtml());
+    x_Add(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, do_html);
     oss << (comp ? ")" : kEmptyStr);
 }
 
@@ -281,7 +283,7 @@ void CFlatSeqLoc::x_Add
 void CFlatSeqLoc::x_Add
 (const CSeq_point& pnt,
  CNcbiOstrstream& oss,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  TType type,
  bool show_comp)
 {
@@ -289,14 +291,16 @@ void CFlatSeqLoc::x_Add
         return;
     }
 
+    bool do_html = ctx.Config().DoHTML();
+
     TSeqPos pos = pnt.GetPoint();
     x_AddID(pnt.GetId(), oss, ctx, type);
     if ( pnt.IsSetStrand()  &&  IsReverse(pnt.GetStrand())  &&  show_comp ) {
         oss << "complement(";
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ctx.DoHtml());
+        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html);
         oss << ')';
     } else {
-        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, ctx.DoHtml());
+        x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html);
     }
 }
 
@@ -368,7 +372,7 @@ void CFlatSeqLoc::x_Add
 void CFlatSeqLoc::x_AddID
 (const CSeq_id& id,
  CNcbiOstrstream& oss,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  TType type)
 {
     CBioseq_Handle bh = 
@@ -411,6 +415,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/22 15:58:01  shomrat
+* Changes in context
+*
 * Revision 1.7  2004/03/26 17:24:14  shomrat
 * Skip gaps when formatting a location
 *

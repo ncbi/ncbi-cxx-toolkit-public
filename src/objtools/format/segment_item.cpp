@@ -41,8 +41,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSegmentItem::CSegmentItem(CFFContext& ctx) :
-    CFlatItem(ctx),
+CSegmentItem::CSegmentItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_Num(0), m_Count(0)
 {
     x_GatherInfo(ctx);
@@ -63,10 +63,10 @@ void CSegmentItem::Format
 /***************************************************************************/
 
 
-void CSegmentItem::x_GatherInfo(CFFContext& ctx)
+void CSegmentItem::x_GatherInfo(CBioseqContext& ctx)
 {
     m_Num = ctx.GetPartNumber();
-    m_Count = ctx.GetNumParts();
+    m_Count = ctx.GetMaster().GetNumParts();
 }
 
 
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:52:57  shomrat
+* Changes in context
+*
 * Revision 1.2  2003/12/18 17:43:36  shomrat
 * context.hpp moved
 *

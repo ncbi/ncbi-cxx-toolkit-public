@@ -48,8 +48,8 @@ CWGSItem::CWGSItem
  const string& first,
  const string& last,
  const CUser_object& uo,
- CFFContext& ctx) :
-    CFlatItem(ctx),
+ CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_Type(type), m_First(first), m_Last(last)
 {
     x_SetObject(uo);
@@ -65,7 +65,7 @@ void CWGSItem::Format
 }
 
 
-void CWGSItem::x_GatherInfo(CFFContext& ctx)
+void CWGSItem::x_GatherInfo(CBioseqContext& ctx)
 {
 }
 
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:52:44  shomrat
+* Changes in context
+*
 * Revision 1.2  2003/12/18 17:43:37  shomrat
 * context.hpp moved
 *

@@ -43,6 +43,7 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub_set.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
@@ -58,6 +59,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+USING_SCOPE(sequence);
 
 
 void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
@@ -139,24 +141,22 @@ static void s_FixPages(string& pages)
 }
 
 
-CReferenceItem::CReferenceItem(const CSeqdesc& desc, CFFContext& ctx) :
-    CFlatItem(ctx), m_Category(eUnknown), m_Serial(0)
+CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
+    CFlatItem(&ctx), m_Category(eUnknown), m_Serial(0)
 {
     _ASSERT(desc.IsPub());
     
     x_SetObject(desc.GetPub());
     m_Pubdesc.Reset(&(desc.GetPub()));
 
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    loc->SetWhole(*ctx.GetPrimaryId());
-    m_Loc = loc;
+    m_Loc.Reset(&ctx.GetLocation());
 
     x_GatherInfo(ctx);
 }
 
 
-CReferenceItem::CReferenceItem(const CSeq_feat& feat, CFFContext& ctx) :
-    CFlatItem(ctx)
+CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
     _ASSERT(feat.GetData().IsPub());
 
@@ -169,23 +169,33 @@ CReferenceItem::CReferenceItem(const CSeq_feat& feat, CFFContext& ctx) :
 
 CReferenceItem::CReferenceItem
 (const CPubdesc& pub,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  const CSeq_loc* loc)
-    : CFlatItem(ctx), m_Pubdesc(&pub), m_Loc(loc), m_Category(eUnknown), m_Serial(0)
+    : CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_Category(eUnknown), m_Serial(0)
 {
     x_SetObject(pub);
+
+    if ( !m_Loc ) {
+        m_Loc.Reset(&ctx.GetLocation());
+    }
 
     x_GatherInfo(ctx);
 }
 
 
-void CReferenceItem::x_GatherInfo(CFFContext& ctx)
+void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
 {
     if ( !m_Pubdesc->CanGetPub() ) {
-        Skip();
+        x_SetSkip();
     }
 
-    if ( ctx.GetSeqSubmit() != 0 ) {
+    /*
+    CScope* scope = &ctx.GetScope();
+    TSeqPos len = GetLength(ctx.GetLocation(), scope);
+    m_From = LocationOffset(ctx.GetLocation(), *m_Loc, eOffset_FromLeft, scope) + 1;
+    m_To   = len + LocationOffset(ctx.GetLocation(), *m_Loc, eOffset_FromRight, scope);
+    */
+    if ( ctx.GetSubmitBlock() != 0 ) {
         m_Title = "Direct Submission";
         m_Category = eSubmission;
     }
@@ -195,13 +205,14 @@ void CReferenceItem::x_GatherInfo(CFFContext& ctx)
     x_CleanData();
 
     // gather Genbank specific fields (formats: Genbank, GBSeq)
-    if ( ctx.IsFormatGenBank()  ||  ctx.IsFormatGBSeq() ) {
+    const CFlatFileConfig& cfg = ctx.Config();
+    if ( cfg.IsFormatGenbank()  ||  cfg.IsFormatGBSeq() ) {
         x_GatherRemark(ctx);
     }
 }
 
 
-void CReferenceItem::Rearrange(TReferences& refs, CFFContext& ctx)
+void CReferenceItem::Rearrange(TReferences& refs, CBioseqContext& ctx)
 {
     {{
         sort(refs.begin(), refs.end(), LessEqual(false, ctx.IsRefSeq()));
@@ -227,106 +238,6 @@ void CReferenceItem::Rearrange(TReferences& refs, CFFContext& ctx)
     }
 }
 
-/*
-string CReferenceItem::GetRange(CFFContext& ctx) const
-{
-    bool is_embl = ctx.GetFormat() == CFlatFileGenerator::eFormat_EMBL;
-    if (is_embl  &&  m_Loc.Empty()) {
-        return kEmptyStr;
-    }
-    CNcbiOstrstream oss;
-    if ( !is_embl ) {
-// !!!        oss << "  (" << ctx.GetUnits(false) << ' ';
-    }
-    string delim;
-    const char* to = is_embl ? "-" : " to ";
-    for (CSeq_loc_CI it(m_Loc ? *m_Loc : *ctx.GetLocation());  it;  ++it) {
-        CSeq_loc_CI::TRange range = it.GetRange();
-        if (it.IsWhole()) {
-            range.SetTo(sequence::GetLength(it.GetSeq_id(),
-                                            &ctx.GetScope())
-                        - 1);
-        }
-        if (it.IsPoint()) {
-            oss << range.GetFrom() + 1;
-        } else {
-            oss << delim << range.GetFrom() + 1 << to << range.GetTo() + 1;
-        }
-        delim = ", ";
-    }
-    if ( !is_embl ) {
-        oss << ')';
-    }
-    return CNcbiOstrstreamToString(oss);
-}
-*/
-
-/*
-void CReferenceItem::GetTitles(string& title, string& journal,
-                               const CFFContext& ctx) const
-{
-    // XXX - kludged for now (should move more logic from x_Init to here)
-    title = m_Title;
-    if ( NStr::EndsWith(title, ".") ) {
-        title.erase(title.length() - 1);
-    }
-    if (m_Journal.empty()) {
-        // complain?
-        return;
-    }
-
-    if (ctx.GetFormat() == CFlatFileGenerator::eFormat_EMBL) {
-        if (m_Category == CReferenceItem::eSubmission) {
-            journal = "Submitted ";
-            if (m_Date) {
-                journal += '(';
-                // !!!ctx.GetFormatter().FormatDate(*m_Date, journal);
-                journal += ") ";
-            }
-            journal += "to the EMBL/GenBank/DDBJ databases.\n" + m_Journal;
-        } else {
-            journal = m_Journal;
-            if ( !m_Volume.empty() ) {
-                journal += " " + m_Volume;
-            }
-            if ( !m_Pages.empty()) {
-                journal += ":" + m_Pages;
-            }
-            if (m_Date) {
-                journal += '(';
-                m_Date->GetDate(&journal, "%Y");
-                journal += ").";
-            }
-        }
-    } else { // NCBI or DDBJ
-        if (m_Category == CReferenceItem::eSubmission) {
-            journal = "Submitted ";
-            if (m_Date) {
-                journal += '(';
-                // !!!ctx.GetFormatter().FormatDate(*m_Date, journal);
-                journal += ") ";
-            }
-            journal += m_Journal;
-        } else {
-            journal = m_Journal;
-            if ( !m_Volume.empty() ) {
-                journal += " " + m_Volume;
-            }
-            if ( !m_Issue.empty() ) {
-                journal += " (" + m_Issue + ')';
-            }
-            if ( !m_Pages.empty()) {
-                journal += ", " + m_Pages;
-            }
-            if (m_Date) {
-                journal += " (";
-                m_Date->GetDate(&journal, "%Y");
-                journal += ')';
-            }
-        }
-    }
-}
-*/
 
 void CReferenceItem::Format
 (IFormatter& formatter,
@@ -377,7 +288,7 @@ bool CReferenceItem::Matches(const CPub_set& ps) const
 
  
 
-void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
+void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
 {
     switch (pub.Which()) {
     case CPub::e_Gen:
@@ -442,7 +353,7 @@ void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
+void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
 {
     // serial
     if ( gen.CanGetSerial_number()  &&  m_Serial == 0 ) {
@@ -507,7 +418,7 @@ void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CCit_sub& sub, CFFContext& ctx)
+void CReferenceItem::x_Init(const CCit_sub& sub, CBioseqContext& ctx)
 {
     // Title
     m_Title = "Direct Submission";
@@ -532,7 +443,7 @@ void CReferenceItem::x_Init(const CCit_sub& sub, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CMedline_entry& mle, CFFContext& ctx)
+void CReferenceItem::x_Init(const CMedline_entry& mle, CBioseqContext& ctx)
 {
     m_Category = ePublished;
 
@@ -554,7 +465,7 @@ void CReferenceItem::x_Init(const CMedline_entry& mle, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CCit_art& art, CFFContext& ctx)
+void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
 {
     // Title
     if ( art.CanGetTitle()  &&  !art.GetTitle().Get().empty() ) {
@@ -602,7 +513,7 @@ void CReferenceItem::x_Init(const CCit_art& art, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CCit_jour& jour, CFFContext& ctx)
+void CReferenceItem::x_Init(const CCit_jour& jour, CBioseqContext& ctx)
 {
     x_SetJournal(jour.GetTitle(), ctx);
     x_AddImprint(jour.GetImp(), ctx);
@@ -614,7 +525,7 @@ void CReferenceItem::x_Init(const CCit_jour& jour, CFFContext& ctx)
 
 void CReferenceItem::x_Init
 (const CCit_book& book,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  bool for_art)
 {
     if ( !for_art ) {
@@ -634,12 +545,12 @@ void CReferenceItem::x_Init
 }
 
 
-void CReferenceItem::x_Init(const CCit_pat& pat, CFFContext& ctx)
+void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
 {
     m_Title = pat.GetTitle();
     x_AddAuthors(pat.GetAuthors());
     int seqid = 0;
-    ITERATE (CBioseq::TId, it, ctx.GetActiveBioseq().GetId()) {
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
         if ((*it)->IsPatent()) {
             seqid = (*it)->GetPatent().GetSeqid();
         }
@@ -659,7 +570,7 @@ void CReferenceItem::x_Init(const CCit_pat& pat, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CCit_let& man, CFFContext& ctx)
+void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
 {
     x_Init(man.GetCit(), ctx);
     if (man.CanGetType()  &&  man.GetType() == CCit_let::eType_thesis) {
@@ -721,73 +632,13 @@ void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
             }
         }
     }
-
-    /*
-    typedef CAuth_list::C_Names TNames;
-    const TNames& names = auth.GetNames();
-    switch (names.Which()) {
-    case TNames::e_Std:
-        ITERATE (TNames::TStd, it, names.GetStd()) {
-            const CPerson_id& name = (*it)->GetName();
-            switch (name.Which()) {
-            case CPerson_id::e_Name:
-            {
-                const CName_std& ns = name.GetName();
-                string           s  = ns.GetLast();
-                if (ns.IsSetInitials()) {
-                    s += ',' + ns.GetInitials();
-                } else if (ns.IsSetFirst()) {
-                    s += ',' + ns.GetFirst()[0] + '.';
-                    if (ns.IsSetMiddle()) {
-                        s += ns.GetMiddle()[0] + '.';
-                    }
-                }
-                // suffix?
-                m_Authors.push_back(s);
-                break;
-            }
-            case CPerson_id::e_Ml:
-            {
-                string s = name.GetMl();
-                m_Authors.push_back(s_FixMedlineName(s));
-                break;
-            }
-            case CPerson_id::e_Str:
-                m_Authors.push_back(name.GetStr());
-                break;
-            case CPerson_id::e_Consortium:
-                m_Consortium = name.GetConsortium();
-                break;
-            default:
-                // complain?
-                break;
-            }
-        }
-        break;
-
-    case TNames::e_Ml:
-        ITERATE (TNames::TMl, it, names.GetMl()) {
-            string s = *it;
-            m_Authors.push_back(s_FixMedlineName(s));
-        }
-        break;
-
-    case TNames::e_Str:
-        m_Authors.insert(m_Authors.end(),
-                         names.GetStr().begin(), names.GetStr().end());
-        break;
-
-    default:
-        break;
-    }
-    */
 }
 
 
-void CReferenceItem::x_SetJournal(const CTitle& title, CFFContext& ctx)
+void CReferenceItem::x_SetJournal(const CTitle& title, CBioseqContext& ctx)
 {
     // Only GenBank/EMBL/DDBJ require ISO JTA in ENTREZ/RELEASE modes.
-    bool require_iso_jta = ctx.CitArtIsoJta();
+    bool require_iso_jta = ctx.Config().CitArtIsoJta();
     if ( !ctx.IsGED()  &&  !ctx.IsTPA() ) {
         require_iso_jta = false;
     }
@@ -819,7 +670,7 @@ void CReferenceItem::x_SetJournal(const CTitle& title, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
+void CReferenceItem::x_SetJournal(const CCit_gen& gen, CBioseqContext& ctx)
 {
     if ( !gen.CanGetCit()  &&  !gen.CanGetJournal()  &&  !gen.CanGetDate()  &&
          gen.CanGetSerial_number()  &&  gen.GetSerial_number() != 0 ) {
@@ -831,7 +682,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
           NStr::StartsWith(gen.GetCit(), "unpublished", NStr::eNocase) ) {
         const string& cit = gen.GetCit();
 
-        if ( ctx.NoAffilOnUnpub() ) {
+        if ( ctx.Config().NoAffilOnUnpub() ) {
             m_Category = eUnpublished;
             m_Journal = "Unpublished";
             return;
@@ -865,7 +716,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
             result = cit.substr(pos + 9);
         } else if ( NStr::StartsWith(cit, "submitted", NStr::eNocase)  ||
                     NStr::StartsWith(cit, "unpublished", NStr::eNocase) ) {
-            if ( !ctx.DropBadCitGens()  ||  !result.empty() ) {
+            if ( !ctx.Config().DropBadCitGens()  ||  !result.empty() ) {
                 in_press = cit;
             } else {
                 in_press = "Unpublished";
@@ -873,7 +724,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
         } else if ( NStr::StartsWith(cit, "Online Publication", NStr::eNocase)  ||
                     NStr::StartsWith(cit, "Published Only in DataBase", NStr::eNocase) ) {
             in_press = cit;
-        } else if ( !ctx.DropBadCitGens()  &&  result.empty() ) {
+        } else if ( !ctx.Config().DropBadCitGens()  &&  result.empty() ) {
             result = cit;
         }
     }
@@ -893,7 +744,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_AddImprint(const CImprint& imp, CFFContext& ctx)
+void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
 {
     if ( !m_Date ) {
         m_Date.Reset(&imp.GetDate());
@@ -1015,7 +866,7 @@ static const string s_RemarksText[] = {
 };
 
 
-void CReferenceItem::x_GatherRemark(CFFContext& ctx)
+void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
 {
     list<string> l;
 
@@ -1031,7 +882,7 @@ void CReferenceItem::x_GatherRemark(CFFContext& ctx)
     }
 
     // for GBSeq format collect remarks only from comments.
-    if ( ctx.IsFormatGBSeq() ) {
+    if ( ctx.Config().IsFormatGBSeq() ) {
         if ( !l.empty() ) {
             m_Remark = l.front();
         }
@@ -1040,7 +891,7 @@ void CReferenceItem::x_GatherRemark(CFFContext& ctx)
 
     // GIBBSQ
     CSeq_id::TGibbsq gibbsq = 0;
-    ITERATE (CBioseq::TId, it, ctx.GetActiveBioseq().GetId()) {
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
         if ( (*it)->IsGibbsq() ) {
             gibbsq = (*it)->GetGibbsq();
         }
@@ -1232,6 +1083,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/22 15:56:30  shomrat
+* Changes in context
+*
 * Revision 1.10  2004/04/13 16:49:36  shomrat
 * GBSeq format changes
 *

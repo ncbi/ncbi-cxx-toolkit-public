@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_id;
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -53,17 +53,17 @@ class CDBSourceItem : public CFlatItem
 public:
     typedef list<string> TDBSource;
 
-    CDBSourceItem(CFFContext& ctx);
+    CDBSourceItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     const TDBSource& GetDBSource(void) const { return m_DBSource; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
-    void x_AddPIRBlock(CFFContext& ctx);
-    void x_AddSPBlock(CFFContext& ctx);
-    void x_AddPRFBlock(CFFContext& ctx);
-    void x_AddPDBBlock(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
+    void x_AddPIRBlock(CBioseqContext& ctx);
+    void x_AddSPBlock(CBioseqContext& ctx);
+    void x_AddPRFBlock(CBioseqContext& ctx);
+    void x_AddPDBBlock(CBioseqContext& ctx);
     string x_FormatDBSourceID(const CSeq_id& id);
 
     // data
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:35:34  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/03/18 15:26:38  shomrat
 * Added missing forward decleration
 *

@@ -48,9 +48,10 @@ class CDbtag;
 class CBioseq;
 class CSeqdesc;
 class CSeq_feat;
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 class CMolInfo;
+class CBioseq_Handle;
 struct SModelEvidance;
 
 
@@ -82,11 +83,11 @@ public:
     typedef EType           TType;
     typedef ERefTrackStatus TRefTrackStatus;
 
-    CCommentItem(CFFContext& ctx);
-    CCommentItem(const string& comment, CFFContext& ctx,
+    CCommentItem(CBioseqContext& ctx);
+    CCommentItem(const string& comment, CBioseqContext& ctx,
         const CSerialObject* obj = 0);
-    CCommentItem(const CSeqdesc&  desc, CFFContext& ctx);
-    //CCommentItem(const CSeq_feat& feat, CFFContext& ctx);
+    CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx);
+    //CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx);
 
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
@@ -97,13 +98,13 @@ public:
 
     static const string kNsAreGaps;
 
-    static string GetStringForTPA(const CUser_object& uo, CFFContext& ctx);
+    static string GetStringForTPA(const CUser_object& uo, CBioseqContext& ctx);
     static string GetStringForBankIt(const CUser_object& uo);
     static string GetStringForRefTrack(const CUser_object& uo);
-    static bool NsAreGaps(const CBioseq& seq, CFFContext& ctx);
-    static string GetStringForWGS(CFFContext& ctx);
-    static string GetStringForMolinfo(const CMolInfo& mi, CFFContext& ctx);
-    static string GetStringForHTGS(const CMolInfo& mi, CFFContext& ctx);
+    static bool NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx);
+    static string GetStringForWGS(CBioseqContext& ctx);
+    static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
+    static string GetStringForHTGS(CBioseqContext& ctx);
     static string GetStringForModelEvidance(const SModelEvidance& me);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
@@ -112,9 +113,9 @@ public:
 
 protected:
 
-    void x_GatherInfo(CFFContext& ctx);
-    void x_GatherDescInfo(const CSeqdesc& desc, CFFContext& ctx);
-    void x_GatherFeatInfo(const CSeq_feat& feat, CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
+    void x_GatherDescInfo(const CSeqdesc& desc);
+    void x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx);
 
     void x_SetComment(const string& comment) { m_Comment = comment; }
     void x_SetCommentWithURLlinks(const string& prefix, const string& str,
@@ -133,10 +134,10 @@ private:
 class CGenomeAnnotComment : public CCommentItem
 {
 public:
-    CGenomeAnnotComment(CFFContext& ctx, const string& build_num = kEmptyStr);
+    CGenomeAnnotComment(CBioseqContext& ctx, const string& build_num = kEmptyStr);
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     string m_GenomeBuildNumber;
@@ -151,10 +152,10 @@ public:
         eReplaced_by
     };
 
-    CHistComment(EType type, const CSeq_hist& hist, CFFContext& ctx);
+    CHistComment(EType type, const CSeq_hist& hist, CBioseqContext& ctx);
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     EType                   m_Type;
@@ -165,10 +166,10 @@ private:
 class CGsdbComment : public CCommentItem
 {
 public:
-    CGsdbComment(const CDbtag& dbtag, CFFContext& ctx);
+    CGsdbComment(const CDbtag& dbtag, CBioseqContext& ctx);
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     CConstRef<CDbtag> m_Dbtag;
@@ -195,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/22 15:34:25  shomrat
+* Changes in context
+*
 * Revision 1.4  2004/03/26 17:21:06  shomrat
 * + AddPeriod()
 *

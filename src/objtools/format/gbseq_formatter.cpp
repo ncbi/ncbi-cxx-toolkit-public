@@ -117,14 +117,14 @@ void CGBSeqFormatter::Start(IFlatTextOStream& text_os)
 }
 
 
-void CGBSeqFormatter::StartSection(IFlatTextOStream&)
+void CGBSeqFormatter::StartSection(const CStartSectionItem&, IFlatTextOStream&)
 {
     m_GBSeq.Reset(new CGBSeq);
     _ASSERT(m_GBSeq);
 }
 
 
-void CGBSeqFormatter::EndSection(IFlatTextOStream& text_os)
+void CGBSeqFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_os)
 {
     x_WriteGBSeq(text_os);
 
@@ -228,10 +228,10 @@ string s_GetDate(const CBioseq_Handle& bsh, CSeqdesc::E_Choice choice)
 
 void CGBSeqFormatter::FormatLocus
 (const CLocusItem& locus, 
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     _ASSERT(m_GBSeq);
-    CFFContext& ctx = locus.GetContext();
+    CBioseqContext& ctx = *locus.GetContext();
 
     m_GBSeq->SetLocus(locus.GetName());
     m_GBSeq->SetLength(locus.GetLength());
@@ -241,7 +241,7 @@ void CGBSeqFormatter::FormatLocus
     m_GBSeq->SetDivision(locus.GetDivision());
     m_GBSeq->SetUpdate_date(s_GetDate(ctx.GetHandle(), CSeqdesc::e_Update_date));
     m_GBSeq->SetCreate_date(s_GetDate(ctx.GetHandle(), CSeqdesc::e_Create_date));
-    ITERATE (CBioseq::TId, it, ctx.GetActiveBioseq().GetId()) {
+    ITERATE (CBioseq::TId, it, ctx.GetBioseqIds()) {
         m_GBSeq->SetOther_seqids().push_back(CGBSeqid((*it)->AsFastaString()));
     }
 }
@@ -253,7 +253,7 @@ void CGBSeqFormatter::FormatLocus
 
 void CGBSeqFormatter::FormatDefline
 (const CDeflineItem& defline,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     _ASSERT(m_GBSeq);
     m_GBSeq->SetDefinition(defline.GetDefline());
@@ -269,7 +269,7 @@ void CGBSeqFormatter::FormatDefline
 
 void CGBSeqFormatter::FormatAccession
 (const CAccessionItem& acc, 
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     m_GBSeq->SetPrimary_accession(acc.GetAccession());
     ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
@@ -284,7 +284,7 @@ void CGBSeqFormatter::FormatAccession
 
 void CGBSeqFormatter::FormatVersion
 (const CVersionItem& version,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     m_GBSeq->SetAccession_version(version.GetAccession());
 }
@@ -296,7 +296,7 @@ void CGBSeqFormatter::FormatVersion
 
 void CGBSeqFormatter::FormatSegment
 (const CSegmentItem& seg,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     CNcbiOstrstream segment_line;
 
@@ -312,7 +312,7 @@ void CGBSeqFormatter::FormatSegment
 
 void CGBSeqFormatter::FormatSource
 (const CSourceItem& source,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     _ASSERT(m_GBSeq);
     CNcbiOstrstream source_line;
@@ -334,7 +334,7 @@ void CGBSeqFormatter::FormatSource
 
 void CGBSeqFormatter::FormatKeywords
 (const CKeywordsItem& keys,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     ITERATE (CKeywordsItem::TKeywords, it, keys.GetKeywords()) {
         m_GBSeq->SetKeywords().push_back(CGBKeyword(*it));
@@ -348,18 +348,17 @@ void CGBSeqFormatter::FormatKeywords
 
 void CGBSeqFormatter::FormatReference
 (const CReferenceItem& ref,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     _ASSERT(m_GBSeq);
-    CFFContext& ctx = ref.GetContext();
+    CBioseqContext& ctx = *ref.GetContext();
 
     CRef<CGBReference> gbref(new CGBReference);
     const CSeq_loc* loc = (ref.GetLoc() != 0) ?
-        ref.GetLoc() : ctx.GetLocation();
+        ref.GetLoc() : &ctx.GetLocation();
     CNcbiOstrstream refstr;
     refstr << ref.GetSerial() << ' ';
-    x_FormatRefLocation(refstr, *loc, " to ", "; ",
-        ctx.IsProt(), ctx.GetScope());
+    x_FormatRefLocation(refstr, *loc, " to ", "; ", ctx);
     gbref->SetReference(CNcbiOstrstreamToString(refstr));
     list<string> authors;
     CReferenceItem::GetAuthNames(authors, ref.GetAuthors());
@@ -408,7 +407,7 @@ void CGBSeqFormatter::FormatReference
 
 void CGBSeqFormatter::FormatComment
 (const CCommentItem& comment,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     string str = comment.GetComment();
     s_GBSeqStringCleanup(str);
@@ -442,7 +441,7 @@ static void s_SetIntervals(CGBFeature::TIntervals& intervals,
                 CRef<CSeq_id> sip(const_cast<CSeq_id*>(id.GetPointerOrNull()));
                 ids.push_back(sip);
             }
-            best.Reset(&*FindBestChoice(ids, CSeq_id::Score));
+            best.Reset(FindBestChoice(ids, CSeq_id::Score));
         }
         ival->SetAccession(best->GetSeqIdString(true));  
         if ( range.GetLength() == 1 ) {  // point
@@ -485,22 +484,22 @@ static void s_SetQuals(CGBFeature::TQuals& gbquals,
 
 void CGBSeqFormatter::FormatFeature
 (const CFeatureItemBase& f,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
-    const CFlatFeature& feat = *f.Format();
+    CRef<CFlatFeature> feat = f.Format();
 
     CRef<CGBFeature>    gbfeat(new CGBFeature);
-    gbfeat->SetKey(feat.GetKey());
+    gbfeat->SetKey(feat->GetKey());
     
-    string location = feat.GetLoc().GetString();
+    string location = feat->GetLoc().GetString();
     s_GBSeqStringCleanup(location, true);
     gbfeat->SetLocation(location);
-    if ( feat.GetKey() != "source" ) {
+    if ( feat->GetKey() != "source" ) {
         s_SetIntervals(gbfeat->SetIntervals(), f.GetLoc(), 
-            f.GetContext().GetScope());
+            f.GetContext()->GetScope());
     }
-    if ( !feat.GetQuals().empty() ) {
-        s_SetQuals(gbfeat->SetQuals(), feat.GetQuals());
+    if ( !feat->GetQuals().empty() ) {
+        s_SetQuals(gbfeat->SetQuals(), feat->GetQuals());
     }
     
     m_GBSeq->SetFeature_table().push_back(gbfeat);
@@ -513,7 +512,7 @@ void CGBSeqFormatter::FormatFeature
 
 void CGBSeqFormatter::FormatSequence
 (const CSequenceItem& seq,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
     string data;
 
@@ -533,9 +532,9 @@ void CGBSeqFormatter::FormatSequence
 
 void CGBSeqFormatter::FormatContig
 (const CContigItem& contig,
- IFlatTextOStream& text_os)
+ IFlatTextOStream&)
 {
-    string assembly = CFlatSeqLoc(contig.GetLoc(), contig.GetContext(), 
+    string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
         CFlatSeqLoc::eType_assembly).GetString();
     s_GBSeqStringCleanup(assembly, true);
     m_GBSeq->SetContig(assembly);
@@ -601,6 +600,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:53:26  shomrat
+* Changes in context
+*
 * Revision 1.1  2004/04/13 16:49:54  shomrat
 * Initial revision
 *

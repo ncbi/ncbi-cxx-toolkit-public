@@ -45,7 +45,7 @@ class CInt_fuzz;
 class CSeq_id;
 class CSeq_interval;
 class CSeq_loc;
-class CFFContext;
+class CBioseqContext;
 
 
 class CFlatGapLoc : public CSeq_loc
@@ -73,22 +73,22 @@ public:
     };
     typedef EType     TType;
     
-    CFlatSeqLoc(const CSeq_loc& loc, CFFContext& ctx, 
+    CFlatSeqLoc(const CSeq_loc& loc, CBioseqContext& ctx, 
         TType type = eType_location);
 
     const string&     GetString(void)    const { return m_String;    }
     
 private:
     void x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
-        CFFContext& ctx, TType type, bool show_comp);
+        CBioseqContext& ctx, TType type, bool show_comp);
     void x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
-        CFFContext& ctx, TType type, bool show_comp);
+        CBioseqContext& ctx, TType type, bool show_comp);
     void x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
-        CFFContext& ctx, TType type, bool show_comp);
+        CBioseqContext& ctx, TType type, bool show_comp);
     void x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
         bool html = false);
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
-        CFFContext& ctx, TType type);
+        CBioseqContext& ctx, TType type);
 
     // data
     string     m_String;    // whole location, as a GB-style string
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:36:25  shomrat
+* Changes in context
+*
 * Revision 1.3  2004/03/05 18:50:25  shomrat
 * clean code
 *

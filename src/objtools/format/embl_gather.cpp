@@ -62,9 +62,9 @@ CEmblGatherer::CEmblGatherer(void)
 }
 
 
-void CEmblGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
+void CEmblGatherer::x_DoSingleSection(CBioseqContext& ctx) const
 {
-    CFFContext& ctx = Context();
+    const CFlatFileConfig& cfg = ctx.Config();
 
     ItemOS() << new CStartSectionItem(ctx);
 
@@ -73,7 +73,7 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
     // The AC Line
     ItemOS() << new CAccessionItem(ctx);
     // The SV Line
-    if ( ctx.IsNa() ) {
+    if ( ctx.IsNuc() ) {
         ItemOS() << new CVersionItem(ctx);
     }
     // The DT Line
@@ -90,12 +90,12 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 
     // Features
     ItemOS() << new CFeatHeaderItem(ctx);
-    if ( !ctx.HideSourceFeats() ) {
+    if ( !cfg.HideSourceFeats() ) {
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
     // Base count
-    if ( ctx.IsNa()  &&  (ctx.IsModeGBench()  ||  ctx.IsModeDump()) ) {
+    if ( ctx.IsNuc()  &&  (cfg.IsModeGBench()  ||  cfg.IsModeDump()) ) {
         ItemOS() << new CBaseCountItem(ctx);
     }
     // Sequenece
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/04/22 15:55:26  shomrat
+* Changes in context
+*
 * Revision 1.8  2004/03/31 17:17:04  shomrat
 * Active bioseq set outside method
 *

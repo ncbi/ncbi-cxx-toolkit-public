@@ -44,8 +44,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CBaseCountItem::CBaseCountItem(CFFContext& ctx) :
-    CFlatItem(ctx),
+CBaseCountItem::CBaseCountItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_A(0), m_C(0), m_G(0), m_T(0), m_Other(0)
 {
     x_GatherInfo(ctx);
@@ -66,7 +66,7 @@ void CBaseCountItem::Format
 /***************************************************************************/
 
 
-void CBaseCountItem::x_GatherInfo(CFFContext& ctx)
+void CBaseCountItem::x_GatherInfo(CBioseqContext& ctx)
 {
     if ( ctx.IsProt() ) {
         x_SetSkip();
@@ -74,7 +74,7 @@ void CBaseCountItem::x_GatherInfo(CFFContext& ctx)
     }
     
     CSeqVector v = ctx.GetHandle().GetSequenceView(
-            *ctx.GetLocation(),
+            ctx.GetLocation(),
             CBioseq_Handle::eViewConstructed,
             CBioseq_Handle::eCoding_Iupac);
 
@@ -109,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:50:56  shomrat
+* Changes in context
+*
 * Revision 1.3  2004/03/05 18:43:30  shomrat
 * Use ITERATE instead of for
 *

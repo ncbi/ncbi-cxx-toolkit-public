@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -56,7 +56,7 @@ class CSequenceItem : public CFlatItem
 {
 public:
     CSequenceItem(TSeqPos from, TSeqPos to, bool first, 
-                CFFContext& ctx);
+                CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     const CSeqVector& GetSequence(void) const;
@@ -65,7 +65,7 @@ public:
     bool IsFirst(void) const;
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     TSeqPos     m_From, m_To;
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:39:54  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/02/19 17:50:06  shomrat
 * correct typo
 *

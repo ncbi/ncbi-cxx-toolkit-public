@@ -63,25 +63,25 @@ const string CFlatItemFormatter::s_GenbankMol[] = {
 };
 
 
-CFlatItemFormatter* CFlatItemFormatter::New(TFormat format)
+CFlatItemFormatter* CFlatItemFormatter::New(CFlatFileConfig::TFormat format)
 {
     switch ( format ) {
-    case eFormat_GenBank:
+    case CFlatFileConfig::eFormat_GenBank:
         return new CGenbankFormatter;
         
-    case eFormat_EMBL:
+    case CFlatFileConfig::eFormat_EMBL:
         return new CEmblFormatter;
 
-    case eFormat_GFF:
+    case CFlatFileConfig::eFormat_GFF:
         return new CGFFFormatter;
 
-    case eFormat_FTable:
+    case CFlatFileConfig::eFormat_FTable:
         return new CFtableFormatter;
 
-    case eFormat_GBSeq:
+    case CFlatFileConfig::eFormat_GBSeq:
         return new CGBSeqFormatter;
 
-    case eFormat_DDBJ:
+    case CFlatFileConfig::eFormat_DDBJ:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
@@ -108,7 +108,7 @@ string  CFlatItemFormatter::x_FormatAccession
 {
     CNcbiOstrstream acc_line;
 
-    const CFFContext& ctx = acc.GetContext();
+    CBioseqContext& ctx = *acc.GetContext();
 
     const string& primary = ctx.IsHup() ? ";" : 
         ctx.GetPrimaryId()->GetSeqIdString(false);
@@ -187,22 +187,27 @@ void CFlatItemFormatter::x_FormatRefLocation
  const CSeq_loc& loc,
  const string& to,
  const string& delim,
- bool is_prot,
- CScope& scope) const
+ CBioseqContext& ctx) const
 {
     const string* delim_p = &kEmptyStr;
+    CScope& scope = ctx.GetScope();
 
-    os << (is_prot ? "(residues " : "(bases ");
-    for ( CSeq_loc_CI it(loc);  it;  ++it ) {
+    CConstRef<CSeq_loc> mapped_loc(&loc);
+    if ( ctx.GetMapper() != 0 ) {
+        mapped_loc.Reset(ctx.GetMapper()->Map(loc));
+    }
+    if ( !mapped_loc  || mapped_loc->IsNull() ) {
+        return;
+    }
+
+    os << (ctx.IsProt() ? "(residues " : "(bases ");
+    for ( CSeq_loc_CI it(*mapped_loc);  it;  ++it ) {
         CSeq_loc_CI::TRange range = it.GetRange();
-        if ( it.IsWhole() ) {
+        if ( range.IsWhole() ) {
             range.SetTo(sequence::GetLength(it.GetSeq_id(), &scope) - 1);
         }
-        if ( it.IsPoint() ) {
-            os << range.GetFrom() + 1;
-        } else {
-            os << *delim_p << range.GetFrom() + 1 << to << range.GetTo() + 1;
-        }
+        
+        os << *delim_p << range.GetFrom() + 1 << to << range.GetTo() + 1;
         delim_p = &delim;
     }
     os << ')';
@@ -364,6 +369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/22 16:00:58  shomrat
+* Changes in context
+*
 * Revision 1.7  2004/04/13 16:48:39  shomrat
 * Added Journal formatting (from fenbank_formatter)
 *

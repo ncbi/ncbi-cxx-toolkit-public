@@ -73,8 +73,8 @@ const string CCommentItem::kNsAreGaps = "The strings of n's in this record " \
 //
 //  CCommentItem
 
-CCommentItem::CCommentItem(CFFContext& ctx) :
-    CFlatItem(ctx), m_First(false)
+CCommentItem::CCommentItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx), m_First(false)
 {
     swap(m_First, sm_FirstComment);
 }
@@ -82,9 +82,9 @@ CCommentItem::CCommentItem(CFFContext& ctx) :
 
 CCommentItem::CCommentItem
 (const string& comment,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  const CSerialObject* obj) :
-    CFlatItem(ctx), m_Comment(comment)
+    CFlatItem(&ctx), m_Comment(comment)
 {
     swap(m_First, sm_FirstComment);
     if ( obj != 0 ) {
@@ -93,8 +93,8 @@ CCommentItem::CCommentItem
 }
 
     
-CCommentItem::CCommentItem(const CSeqdesc&  desc, CFFContext& ctx) :
-    CFlatItem(ctx)
+CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
     swap(m_First, sm_FirstComment);
     x_SetObject(desc);
@@ -115,7 +115,7 @@ void CCommentItem::Format
 
 string CCommentItem::GetStringForTPA
 (const CUser_object& uo,
- CFFContext& ctx)
+ CBioseqContext& ctx)
 {
     static const string tpa_string = 
         "THIRD PARTY ANNOTATION DATABASE: This TPA record uses data from DDBJ/EMBL/GenBank ";
@@ -127,7 +127,7 @@ string CCommentItem::GetStringForTPA
          uo.GetType().GetStr() != "TpaAssembly" ) {
         return kEmptyStr;
     }
-    const CSeq_inst& inst = ctx.GetActiveBioseq().GetInst();
+    const CSeq_inst& inst = ctx.GetHandle().GetInst();
     if ( inst.CanGetHist()  &&  inst.GetHist().CanGetAssembly() ) {
         return kEmptyStr;
     }
@@ -363,16 +363,15 @@ string CCommentItem::GetStringForRefTrack(const CUser_object& uo)
 
 
 
-bool CCommentItem::NsAreGaps(const CBioseq& seq, CFFContext& ctx)
+bool CCommentItem::NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx)
 {
-    const CSeq_inst& inst = seq.GetInst();
-    if ( !inst.CanGetExt() ) {
+    if ( !seq.IsSetInst()  ||  !seq.IsSetInst_Ext() ) {
         return false;
     }
 
     if ( ctx.GetRepr() == CSeq_inst::eRepr_delta  &&  ctx.IsWGS()  &&
-         inst.GetExt().IsDelta() ) {
-        ITERATE (CDelta_ext::Tdata, iter, inst.GetExt().GetDelta().Get()) {
+         seq.GetInst_Ext().IsDelta() ) {
+        ITERATE (CDelta_ext::Tdata, iter, seq.GetInst_Ext().GetDelta().Get()) {
             const CDelta_seq& dseg = **iter;
             if ( dseg.IsLiteral() ) {
                 const CSeq_literal& lit = dseg.GetLiteral();
@@ -388,7 +387,7 @@ bool CCommentItem::NsAreGaps(const CBioseq& seq, CFFContext& ctx)
 }
 
 
-string CCommentItem::GetStringForWGS(CFFContext& ctx)
+string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
 {
     static const string default_str = "?";
 
@@ -453,7 +452,7 @@ string CCommentItem::GetStringForWGS(CFFContext& ctx)
 }
 
 
-string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CFFContext& ctx)
+string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx)
 {
     _ASSERT(mi.CanGetCompleteness());
 
@@ -493,11 +492,11 @@ string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CFFContext& ctx)
 }
 
 
-string CCommentItem::GetStringForHTGS(const CMolInfo& mi, CFFContext& ctx)
+string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
 {
     SDeltaSeqSummary summary;
     if ( ctx.GetRepr() == CSeq_inst::eRepr_delta ) {
-        GetDeltaSeqSummary(ctx.GetActiveBioseq(), ctx.GetScope(), summary);
+        GetDeltaSeqSummary(ctx.GetHandle(), summary);
     }
 
     CMolInfo::TTech tech = ctx.GetTech();
@@ -594,11 +593,11 @@ string CCommentItem::GetStringForModelEvidance(const SModelEvidance& me)
 /***************************************************************************/
 
 
-void CCommentItem::x_GatherInfo(CFFContext& ctx)
+void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 {
     const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(GetObject());
     if ( desc != 0 ) {
-        x_GatherDescInfo(*desc, ctx);
+        x_GatherDescInfo(*desc);
         return;
     }
 
@@ -609,7 +608,7 @@ void CCommentItem::x_GatherInfo(CFFContext& ctx)
 }
 
 
-void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CFFContext& ctx)
+void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
 {
     string prefix, str, suffix;
     switch ( desc.Which() ) {
@@ -654,8 +653,9 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc, CFFContext& ctx)
 }
 
 
-void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CFFContext& ctx)
+void CCommentItem::x_GatherFeatInfo(const CSeq_feat&, CBioseqContext&)
 {
+    // !!!
 }
 
 
@@ -695,7 +695,7 @@ void CCommentItem::x_SetCommentWithURLlinks
 // --- CGenomeAnnotComment
 
 CGenomeAnnotComment::CGenomeAnnotComment
-(CFFContext& ctx,
+(CBioseqContext& ctx,
  const string& build_num) :
     CCommentItem(ctx), m_GenomeBuildNumber(build_num)
 {
@@ -703,7 +703,7 @@ CGenomeAnnotComment::CGenomeAnnotComment
 }
 
 
-void CGenomeAnnotComment::x_GatherInfo(CFFContext& ctx)
+void CGenomeAnnotComment::x_GatherInfo(CBioseqContext&)
 {
     CNcbiOstrstream text;
 
@@ -727,7 +727,7 @@ void CGenomeAnnotComment::x_GatherInfo(CFFContext& ctx)
 CHistComment::CHistComment
 (EType type,
  const CSeq_hist& hist,
- CFFContext& ctx) : 
+ CBioseqContext& ctx) : 
     CCommentItem(ctx), m_Type(type), m_Hist(&hist)
 {
     x_GatherInfo(ctx);
@@ -738,7 +738,6 @@ CHistComment::CHistComment
 string s_CreateHistCommentString
 (const string& prefix,
  const string& suffix,
- int gi,
  const CSeq_hist_rec& hist)
 {
     _ASSERT(hist.CanGetDate());
@@ -775,7 +774,7 @@ string s_CreateHistCommentString
     return CNcbiOstrstreamToString(text);
 }
 
-void CHistComment::x_GatherInfo(CFFContext& ctx)
+void CHistComment::x_GatherInfo(CBioseqContext&)
 {
     _ASSERT(m_Hist);
 
@@ -784,14 +783,12 @@ void CHistComment::x_GatherInfo(CFFContext& ctx)
         x_SetComment(s_CreateHistCommentString(
             "[WARNING] On",
             "this sequence was replaced by a newer version",
-            ctx.GetGI(),
             m_Hist->GetReplaced_by()));
         break;
     case eReplaces:
         x_SetComment(s_CreateHistCommentString(
             "On",
             "this sequence version replaced",
-            ctx.GetGI(),
             m_Hist->GetReplaces()));
         break;
     }
@@ -800,14 +797,14 @@ void CHistComment::x_GatherInfo(CFFContext& ctx)
 
 // --- CGsdbComment
 
-CGsdbComment::CGsdbComment(const CDbtag& dbtag, CFFContext& ctx) :
+CGsdbComment::CGsdbComment(const CDbtag& dbtag, CBioseqContext& ctx) :
     CCommentItem(ctx), m_Dbtag(&dbtag)
 {
     x_GatherInfo(ctx);
 }
 
 
-void CGsdbComment::x_GatherInfo(CFFContext& ctx)
+void CGsdbComment::x_GatherInfo(CBioseqContext&)
 {
     x_SetComment("GSDB:S:" + m_Dbtag->GetTag().GetId());
 }
@@ -821,6 +818,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/22 15:51:13  shomrat
+* Changes in context
+*
 * Revision 1.5  2004/04/13 16:45:22  shomrat
 * Fixed comment cleanup
 *

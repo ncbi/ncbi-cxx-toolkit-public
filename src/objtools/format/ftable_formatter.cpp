@@ -89,8 +89,10 @@ void CFtableFormatter::FormatFeature
 {
     list<string> l;
     const CFlatFeature& feat = *f.Format();
-    x_FormatLocation(f.GetLoc(), feat.GetKey(), GetContext(), l);
-    x_FormatQuals(feat.GetQuals(), GetContext(), l);
+    CBioseqContext& bctx = *f.GetContext();
+
+    x_FormatLocation(f.GetLoc(), feat.GetKey(), bctx, l);
+    x_FormatQuals(feat.GetQuals(), bctx, l);
     text_os.AddParagraph(l);
 }
 
@@ -107,7 +109,7 @@ bool s_IsBetween(const CSeq_loc& loc)
 void CFtableFormatter::x_FormatLocation
 (const CSeq_loc& loc,
  const string& key,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  list<string>& l)
 {
     bool need_key = true;
@@ -158,7 +160,7 @@ void CFtableFormatter::x_FormatLocation
 
 void CFtableFormatter::x_FormatQuals
 (const CFlatFeature::TQuals& quals,
- CFFContext& ctx,
+ CBioseqContext& ctx,
  list<string>& l)
 {
     string line;

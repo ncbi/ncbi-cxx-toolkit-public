@@ -66,7 +66,7 @@ CEmblFormatter::CEmblFormatter(void)
 //
 // END SECTION
 
-void CEmblFormatter::EndSection(IFlatTextOStream& text_os)
+void CEmblFormatter::EndSection(const CEndSectionItem&, IFlatTextOStream& text_os)
 {
     list<string> l;
     l.push_back("//");
@@ -97,7 +97,7 @@ void CEmblFormatter::FormatLocus
         "RNA", "AA ", "DNA", "DNA", "RNA", "RNA", "RNA"
     };
 
-    const CFFContext& ctx = locus.GetContext();
+    const CBioseqContext& ctx = *locus.GetContext();
 
     list<string> l;
     CNcbiOstrstream id_line;
@@ -106,7 +106,7 @@ void CEmblFormatter::FormatLocus
 
     string topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?
                 "circular" : kEmptyStr;
-    const string& mol = ctx.UseEmblMolType() ? 
+    const string& mol = ctx.Config().UseEmblMolType() ? 
         embl_mol[locus.GetBiomol()] : s_GenbankMol[locus.GetBiomol()];
             
     id_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);

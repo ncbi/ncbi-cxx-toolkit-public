@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -55,13 +55,13 @@ class IFormatter;
 class CContigItem : public CFlatItem
 {
 public:
-    CContigItem(CFFContext& ctx);
+    CContigItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     const CSeq_loc& GetLoc(void) const { return *m_Loc; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
     // data
     CRef<CSeq_loc>     m_Loc;
 };
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:34:41  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/02/19 17:49:35  shomrat
 * use non-const reference
 *

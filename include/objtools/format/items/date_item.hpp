@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 class CDate;
 class CBioseq_Handle;
@@ -55,14 +55,14 @@ class CBioseq_Handle;
 class CDateItem : public CFlatItem
 {
 public:
-    CDateItem(CFFContext& ctx);
+    CDateItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     const CDate* GetCreateDate(void) const { return m_CreateDate; }
     const CDate* GetUpdateDate(void) const { return m_UpdateDate; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     CConstRef<CDate> m_CreateDate;
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:35:16  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:45:43  shomrat
 * Initial revision (adapted from flat lib)
 *

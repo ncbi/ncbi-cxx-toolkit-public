@@ -35,7 +35,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objtools/format/context.hpp>
-#include <objtools/format/flat_file_flags.hpp>
+#include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
 
@@ -55,34 +55,35 @@ class CFlatGatherer : public CObject
 public:
     
     // virtual constructor
-    static CFlatGatherer* New(TFormat format);
+    static CFlatGatherer* New(CFlatFileConfig::TFormat format);
 
-    virtual void Gather(CFFContext& ctx, CFlatItemOStream& os) const;
+    virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const;
 
     virtual ~CFlatGatherer(void);
 
 protected:
     CFlatGatherer(void) {}
 
-    CFlatItemOStream& ItemOS(void) const  { return *m_ItemOS;  }
-    CFFContext&     Context(void) const { return *m_Context; }
+    CFlatItemOStream& ItemOS     (void) const { return *m_ItemOS;  }
+    CBioseqContext& Context      (void) const { return *m_Current; }
+    const CFlatFileConfig& Config(void) const { return m_Context->GetConfig(); }
 
     virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry) const;
     virtual void x_GatherBioseq(const CBioseq_Handle& seq) const;
     virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
     virtual bool x_DisplayBioseq(const CSeq_entry_Handle& entry,
         const CBioseq_Handle& seq) const;
-    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const = 0;
+    virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 
     // references
     void x_GatherReferences(void) const;
 
     // features
     void x_GatherFeatures  (void) const;
-    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CFFContext& ctx) const;
-    bool x_SkipFeature(const CSeq_feat& feat, const CFFContext& ctx) const;
+    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CBioseqContext& ctx) const;
+    bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
     void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
-        CFFContext& ctx) const;
+        CBioseqContext& ctx) const;
 
     // source features
     typedef CRef<CSourceFeatureItem>    TSFItem;
@@ -90,29 +91,29 @@ protected:
     void x_GatherSourceFeatures(void) const;
     void x_CollectBioSources(TSourceFeatSet& srcs) const;
     void x_CollectBioSourcesOnBioseq(CBioseq_Handle bh, CRange<TSeqPos> range,
-        CFFContext& ctx, TSourceFeatSet& srcs) const;
+        CBioseqContext& ctx, TSourceFeatSet& srcs) const;
     void x_CollectSourceDescriptors(CBioseq_Handle& bh, const CRange<TSeqPos>& range,
-        CFFContext& ctx, TSourceFeatSet& srcs) const;
+        CBioseqContext& ctx, TSourceFeatSet& srcs) const;
     void x_CollectSourceFeatures(CBioseq_Handle& bh, const CRange<TSeqPos>& range,
-        CFFContext& ctx, TSourceFeatSet& srcs) const;
+        CBioseqContext& ctx, TSourceFeatSet& srcs) const;
     void x_MergeEqualBioSources(TSourceFeatSet& srcs) const;
     void x_SubtractFromFocus(TSourceFeatSet& srcs) const;
 
     // comments
     void x_GatherComments  (void) const;
     void x_AddComment(CCommentItem* comment) const;
-    void x_AddGSDBComment(const CDbtag& dbtag, CFFContext& ctx) const;
+    void x_AddGSDBComment(const CDbtag& dbtag, CBioseqContext& ctx) const;
     void x_FlushComments(void) const;
-    void x_IdComments(CFFContext& ctx) const;
-    void x_RefSeqComments(CFFContext& ctx) const;
-    void x_HistoryComments(CFFContext& ctx) const;
-    void x_WGSComment(CFFContext& ctx) const;
-    void x_GBBSourceComment(CFFContext& ctx) const;
-    void x_DescComments(CFFContext& ctx) const;
-    void x_MaplocComments(CFFContext& ctx) const;
-    void x_RegionComments(CFFContext& ctx) const;
-    void x_HTGSComments(CFFContext& ctx) const;
-    void x_FeatComments(CFFContext& ctx) const;
+    void x_IdComments(CBioseqContext& ctx) const;
+    void x_RefSeqComments(CBioseqContext& ctx) const;
+    void x_HistoryComments(CBioseqContext& ctx) const;
+    void x_WGSComment(CBioseqContext& ctx) const;
+    void x_GBBSourceComment(CBioseqContext& ctx) const;
+    void x_DescComments(CBioseqContext& ctx) const;
+    void x_MaplocComments(CBioseqContext& ctx) const;
+    void x_RegionComments(CBioseqContext& ctx) const;
+    void x_HTGSComments(CBioseqContext& ctx) const;
+    void x_FeatComments(CBioseqContext& ctx) const;
 
     // sequence 
     void x_GatherSequence  (void) const;
@@ -122,11 +123,14 @@ private:
     CFlatGatherer(const CFlatGatherer&);
     CFlatGatherer& operator=(const CFlatGatherer&);
 
-    // data
-    mutable CRef<CFlatItemOStream>  m_ItemOS;
-    mutable CRef<CFFContext>      m_Context;
+    // types
     typedef vector< CRef<CCommentItem> > TCommentVec;
-    mutable TCommentVec m_Comments;
+
+    // data
+    mutable CRef<CFlatItemOStream>   m_ItemOS;
+    mutable CRef<CFlatFileContext>   m_Context;
+    mutable CRef<CBioseqContext>     m_Current;
+    mutable TCommentVec              m_Comments;
 };
 
 
@@ -138,8 +142,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/04/22 15:44:29  shomrat
+* Changes in context
+*
 * Revision 1.9  2004/03/26 21:58:06  ucko
-* +<context.hpp> due to use of CRef<CFFContext>, which requires a full
+* +<context.hpp> due to use of CRef<CBioseqContext>, which requires a full
 * declaration with some compilers.
 *
 * Revision 1.8  2004/03/26 17:21:57  shomrat

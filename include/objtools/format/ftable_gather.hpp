@@ -44,7 +44,7 @@ class CFtableGatherer : public CFlatGatherer
 public:
     CFtableGatherer(void);
 
-    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const;
+    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
 };
 
 
@@ -56,6 +56,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:44:07  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/04/07 14:51:46  shomrat
 * Fixed typo
 *

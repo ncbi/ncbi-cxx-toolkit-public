@@ -55,8 +55,8 @@ BEGIN_SCOPE(objects)
 // SOURCE
 //   ORGANISM
 
-CSourceItem::CSourceItem(CFFContext& ctx) :
-    CFlatItem(ctx),
+CSourceItem::CSourceItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_Taxname(&scm_Unknown), m_Common(&kEmptyStr),
     m_Organelle(&kEmptyStr), m_Lineage(&scm_Unclassified),
     m_SourceLine(&kEmptyStr), m_Mod(&scm_EmptyList),
@@ -86,10 +86,10 @@ const string       CSourceItem::scm_Unclassified   = "Unclassified.";
 const list<string> CSourceItem::scm_EmptyList;
 
 
-void CSourceItem::x_GatherInfo(CFFContext& ctx)
+void CSourceItem::x_GatherInfo(CBioseqContext& ctx)
 {
     // For DDBJ format first try a GB-Block descriptor (old style)
-    if ( ctx.IsFormatDDBJ() ) {
+    if ( ctx.Config().IsFormatDDBJ() ) {
         CSeqdesc_CI gb_it(ctx.GetHandle(), CSeqdesc::e_Genbank);
         if ( gb_it ) {
             const CGB_block& gb = gb_it->GetGenbank();
@@ -297,6 +297,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/22 15:53:09  shomrat
+* Changes in context
+*
 * Revision 1.5  2004/03/25 20:46:49  shomrat
 * remove redundant include directive
 *

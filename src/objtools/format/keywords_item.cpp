@@ -51,8 +51,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CKeywordsItem::CKeywordsItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+CKeywordsItem::CKeywordsItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
     x_GatherInfo(ctx);
 }
@@ -84,7 +84,7 @@ enum ETechFlags {
 };
 
 
-void CKeywordsItem::x_GatherInfo(CFFContext& ctx)
+void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 {
     // add TPA keywords
     if ( ctx.IsTPA() ) {
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/22 15:58:42  shomrat
+* Changes in context
+*
 * Revision 1.4  2004/03/31 17:14:42  shomrat
 * EFlags -> ETechFlags
 *

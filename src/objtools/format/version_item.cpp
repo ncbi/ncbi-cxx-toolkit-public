@@ -43,8 +43,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CVersionItem::CVersionItem(CFFContext& ctx) :
-    CFlatItem(ctx),
+CVersionItem::CVersionItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx),
     m_Gi(0)
 {
     x_GatherInfo(ctx);
@@ -77,7 +77,7 @@ const string& CVersionItem::GetAccession(void) const
 /***************************************************************************/
 
 
-void CVersionItem::x_GatherInfo(CFFContext& ctx)
+void CVersionItem::x_GatherInfo(CBioseqContext& ctx)
 {
     if ( ctx.GetPrimaryId() != 0 ) {
         const CSeq_id& id = *ctx.GetPrimaryId();
@@ -100,7 +100,7 @@ void CVersionItem::x_GatherInfo(CFFContext& ctx)
         }        
     }
 
-    ITERATE( CBioseq::TId, id, ctx.GetActiveBioseq().GetId() ) {
+    ITERATE (CBioseq::TId, id, ctx.GetBioseqIds()) {
         if ( (*id)->IsGi() ) { 
             m_Gi = (*id)->GetGi();
             break;
@@ -117,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/22 15:52:35  shomrat
+* Changes in context
+*
 * Revision 1.4  2004/03/25 20:48:19  shomrat
 * remove redundant include directive
 *

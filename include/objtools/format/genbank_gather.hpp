@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 class CBioseq;
 
 
@@ -50,10 +50,10 @@ class CGenbankGatherer : public CFlatGatherer
 public:
     CGenbankGatherer(void);
 
-    virtual void x_DoSingleSection(const CBioseq_Handle& seq) const;
+    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
 
 private:
-    void x_GatherWGS(CFFContext& ctx) const;
+    void x_GatherWGS(CBioseqContext& ctx) const;
 };
 
 
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/04/22 15:45:40  shomrat
+* Changes in context
+*
 * Revision 1.3  2004/03/25 20:31:51  shomrat
 * Use handles
 *

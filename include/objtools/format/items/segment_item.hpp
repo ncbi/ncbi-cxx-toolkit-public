@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CFFContext;
+class CBioseqContext;
 class IFormatter;
 
 
@@ -52,14 +52,14 @@ class IFormatter;
 class CSegmentItem : public CFlatItem
 {
 public:
-    CSegmentItem(CFFContext& ctx);
+    CSegmentItem(CBioseqContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
 
     size_t GetNum  (void) const { return m_Num;   }
     size_t GetCount(void) const { return m_Count; }
 
 private:
-    void x_GatherInfo(CFFContext& ctx);
+    void x_GatherInfo(CBioseqContext& ctx);
 
     // data
     size_t   m_Num;     // # of this segment
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:39:33  shomrat
+* Changes in context
+*
 * Revision 1.1  2003/12/17 19:49:49  shomrat
 * Initial revision (adapted from flat lib)
 *

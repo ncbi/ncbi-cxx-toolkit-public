@@ -43,16 +43,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFFContext;
+class CBioseqContext;
 
 
 class CCtrlItem : public CFlatItem
 {
 public:
-    CCtrlItem(CFFContext& ctx) : CFlatItem(ctx) {}
-    
-protected:
-    void x_GatherInfo(CFFContext& ctx) {}
+    CCtrlItem(CBioseqContext* bctx = 0) : CFlatItem(bctx) {}
 };
 
 
@@ -65,13 +62,10 @@ protected:
 class CStartItem : public CCtrlItem
 {
 public:
-    CStartItem(CFFContext& ctx) : CCtrlItem(ctx) {}
+    CStartItem(void) {}
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.Start(text_os);
     }
-    
-private:
-    void x_GatherInfo(CFFContext& ctx) {}
 };
 
 
@@ -84,11 +78,11 @@ private:
 class CStartSectionItem : public CCtrlItem
 {
 public:
-    CStartSectionItem(CFFContext& ctx) : CCtrlItem(ctx) {
+    CStartSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {
         CCommentItem::ResetFirst();
     }
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
-        f.StartSection(text_os);
+        f.StartSection(*this, text_os);
     }
 };
 
@@ -102,9 +96,9 @@ public:
 class CEndSectionItem : public CCtrlItem
 {
 public:
-    CEndSectionItem(CFFContext& ctx) : CCtrlItem(ctx) {}
+    CEndSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {}
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
-        f.EndSection(text_os);
+        f.EndSection(*this, text_os);
     }
 };
 
@@ -118,7 +112,7 @@ public:
 class CEndItem : public CCtrlItem
 {
 public:
-    CEndItem(CFFContext& ctx) : CCtrlItem(ctx) {}
+    CEndItem(void) {}
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.End(text_os);
     }
@@ -133,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:35:01  shomrat
+* Changes in context
+*
 * Revision 1.2  2004/03/05 18:48:59  shomrat
 * reset comment count at start of a new section
 *

@@ -46,8 +46,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CDateItem::CDateItem(CFFContext& ctx) :
-    CFlatItem(ctx)
+CDateItem::CDateItem(CBioseqContext& ctx) :
+    CFlatItem(&ctx)
 {
     x_GatherInfo(ctx);
 }
@@ -62,7 +62,7 @@ void CDateItem::Format
 }
 
 
-void CDateItem::x_GatherInfo(CFFContext& ctx)
+void CDateItem::x_GatherInfo(CBioseqContext& ctx)
 {
     // create date
     {{
@@ -90,6 +90,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/04/22 15:52:22  shomrat
+* Changes in context
+*
 * Revision 1.2  2003/12/18 17:43:32  shomrat
 * context.hpp moved
 *
