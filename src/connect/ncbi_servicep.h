@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/10/20 17:22:55  lavr
+ * VTable changed to have 'Update' method
+ * 'SERV_Update' added to private interface
+ *
  * Revision 6.3  2000/10/05 21:37:51  lavr
  * Mapper-specific private data field added
  *
@@ -57,6 +61,7 @@ extern "C" {
  */
 typedef struct {
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter);
+    int/*bool*/ (*Update)(SERV_ITER iter, const char *text);
     void        (*Close)(SERV_ITER iter);
 } SSERV_VTable;
 
@@ -64,7 +69,7 @@ typedef struct {
 /* Iterator structure
  */
 struct SSERV_IterTag {
-    char*        service;        /* requested service name */
+    const char*  service;        /* requested service name */
     TSERV_Type   type;           /* requested server type(s) */
     unsigned int preferred_host; /* preferred host to select */
     SSERV_Info** skip;           /* servers to skip */
@@ -75,6 +80,13 @@ struct SSERV_IterTag {
 
     void*        data;           /* private data field */
 };
+
+
+/* Private interface: update mapper information from
+ * the given text (<CR><LF> separated lines, usually kept from HTTP header).
+ */
+int/*bool*/ SERV_Update(SERV_ITER iter,
+                        const char *text);
 
 
 #ifdef __cplusplus
