@@ -2837,7 +2837,6 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
 
 
 // Bother trying to merge?
-// XXX - deal with fuzz
 CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
                                 SRelLoc::TFlags /* flags */)
     const
@@ -2944,9 +2943,9 @@ CRef<CSeq_loc> SRelLoc::Resolve(const CSeq_loc& new_parent, CScope* scope,
                                                 (*it)->GetFrom());
                         }
                         if (f->IsP_m()  &&  !f->GetP_m() ) {
-                            fuzz_to.Reset(); // cancelled
+                            fuzz_from.Reset(); // cancelled
                         } else {
-                            fuzz_to = f;
+                            fuzz_from = f;
                         }
                     }
                     if (to == prange.GetTo()) {
@@ -3311,6 +3310,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.64  2003/10/17 20:55:27  ucko
+* SRelLoc::Resolve: fix a fuzz-handling paste-o.
+*
 * Revision 1.63  2003/10/16 11:55:19  dicuccio
 * Fix for brain-dead MSVC and ambiguous operator&&
 *
