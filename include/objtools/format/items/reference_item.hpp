@@ -78,11 +78,12 @@ public:
         eUnpublished, // unpublished paper
         eSubmission   // direct submission
     };
+
     typedef ECategory                       TCategory;
     typedef vector<CRef<CReferenceItem> >   TReferences;
+    typedef CImprint::TPrepub               TPrepub;
+    typedef CImprint::TPubstatus            TPubstatus;
 
-    CReferenceItem(const CPubdesc& pub, CBioseqContext& ctx,
-        const CSeq_loc* loc = 0);
     CReferenceItem(const CSeqdesc&  desc, CBioseqContext& ctx);
     CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx);
         
@@ -92,17 +93,13 @@ public:
     static void Rearrange(TReferences& refs, CBioseqContext& ctx);
 
     bool Matches(const CPub_set& ps) const;
-       
-    // typically has to go through m_Pub(desc), since we don't want to store
-    // format-dependent strings
-    //void GetTitles(string& title, string& journal, const CBioseqContext& ctx)
-    //    const;
-        
+               
     const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;        }
     CPubdesc::TReftype  GetReftype   (void) const { return GetPubdesc().GetReftype(); }
     TCategory           GetCategory  (void) const { return m_Category;        }
     const CDate*        GetDate      (void) const { return m_Date;            }
-    CImprint::TPrepub   GetPrepub    (void) const { return m_Prepub;          }
+    TPrepub             GetPrepub    (void) const { return m_Prepub;          }
+    TPubstatus          GetPubstatus (void) const { return m_Pubstatus;       }
     int                 GetSerial    (void) const { return m_Serial;          }
     const CSeq_loc*     GetLoc       (void) const { return m_Loc;             }
     const CAuth_list*   GetAuthors   (void) const { return m_Authors;         }
@@ -170,7 +167,8 @@ private:
     string                m_Remark;      // genbank specific
     bool                  m_JustUids;
     CConstRef<CCit_book>  m_Book;
-    CImprint::TPrepub     m_Prepub;
+    TPrepub               m_Prepub;
+    TPubstatus            m_Pubstatus;
     string                m_UniqueStr;
     bool                  m_UseDate;
     bool                  m_IsElectronicPub;
@@ -196,6 +194,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/11/15 20:04:10  shomrat
+* Added Pubstatus
+*
 * Revision 1.12  2004/10/18 18:45:25  shomrat
 * Indicate if electronic publication
 *
