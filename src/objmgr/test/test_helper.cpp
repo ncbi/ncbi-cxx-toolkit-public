@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/12/19 20:18:57  grichenk
+* Fixed test case for minus strand location
+*
 * Revision 1.18  2002/11/08 19:43:37  grichenk
 * CConstRef<> constructor made explicit
 *
@@ -711,11 +714,15 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
 
     CRef<CSeq_interval> int_ref(new CSeq_interval);
     int_ref->SetId().SetGi(11+idx*1000);
-    int_ref->SetFrom(5);
-    int_ref->SetTo(10);
     if (index == 2)
     {
+        int_ref->SetFrom(10);
+        int_ref->SetTo(5);
         int_ref->SetStrand(eNa_strand_minus);
+    }
+    else {
+        int_ref->SetFrom(5);
+        int_ref->SetTo(10);
     }
     int_list.push_back(int_ref);
 

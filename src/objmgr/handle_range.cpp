@@ -80,20 +80,22 @@ void CHandleRange::x_CombineRanges(TRange& dest, const TRange& src)
     if ( src.Empty() ) {
         return;
     }
+    TSeqPos from = dest.GetFrom(), to = dest.GetTo();
     if ( !dest.IsWholeFrom() ) {
         if (dest.GetFrom() > src.GetFrom()  ||
             src.IsWholeFrom()  ||
             dest.IsEmptyFrom()) {
-            dest.SetFrom(src.GetFrom());
+            from = src.GetFrom();
         }
     }
     if ( !dest.IsWholeTo() ) {
         if (dest.GetTo() < src.GetTo()  ||
             src.IsWholeTo()  ||
             dest.IsEmptyTo()) {
-            dest.SetTo(src.GetTo());
+            to = src.GetTo();
         }
     }
+    dest.Set(from, to);
 }
 
 
@@ -103,6 +105,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/19 20:18:01  grichenk
+* Fixed test case for minus strand location
+*
 * Revision 1.9  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
