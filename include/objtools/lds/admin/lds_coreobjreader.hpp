@@ -62,6 +62,9 @@ public:
     // Overload from CObjectsSniffer
     virtual void OnObjectFoundPost(const CObjectInfo& object);
 
+    // Overload from CObjectsSniffer
+    virtual void Reset();
+
 public:
 
     struct SObjectDetails
@@ -138,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/07 20:44:44  kuznets
+ * + Reset() method
+ *
  * Revision 1.5  2003/06/03 14:07:46  kuznets
  * Include paths changed to reflect the new directory structure
  *
