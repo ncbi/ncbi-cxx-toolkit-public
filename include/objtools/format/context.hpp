@@ -42,6 +42,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
@@ -65,6 +66,7 @@ public:
 
     const CBioseq& GetBioseq(void) const { return *m_Seq; }
     CBioseq_Handle& GetHandle(void) { return m_Handle; }
+    const CBioseq_Handle& GetHandle(void) const { return m_Handle; }
     SIZE_TYPE GetNumSegments(void) const;
     const string& GetBaseName(void) const { return m_BaseName; }
 
@@ -87,6 +89,7 @@ class CBioseqContext : public CObject
 public:
     CBioseqContext(const CBioseq& seq, CFFContext& ctx);
     CBioseq_Handle& GetHandle(void);
+    const CBioseq_Handle& GetHandle(void) const;
 
     SIZE_TYPE GetNumSegments(void) const;
 
@@ -94,8 +97,10 @@ public:
     SIZE_TYPE GetPartNumber(void) const;
     
     bool IsProt(void) const;
-    CSeq_inst::TRepr GetRepr(void) const;
-    CMolInfo::TTech  GetTech(void) const;
+    CSeq_inst::TRepr  GetRepr  (void) const;
+    CMolInfo::TTech   GetTech  (void) const;
+    CMolInfo::TBiomol GetBiomol(void) const;
+    CSeq_inst::TMol   GetMol   (void) const;
 
     bool IsSegmented(void) const;
     bool HasParts(void) const;
@@ -111,36 +116,41 @@ public:
     const string& GetWGSMasterAccn(void) const;
     const string& GetWGSMasterName(void) const;
 
+    const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
+
     const CSeq_loc* GetLocation(void) const;
     void SetLocation(const CSeq_loc* loc);
 
-    bool IsGED(void) const;
+    bool ShowGBBSource(void) const;
+
+    // ID queries
+    bool IsGED(void) const;  // Genbank, EMBL or DDBJ
     bool IsPDB(void) const;
-    bool IsTPA(void) const;
-    bool IsNC(void)  const;
-    bool IsNG(void)  const;
-    bool IsNM(void)  const;
-    bool IsNR(void)  const;
-    bool IsNP(void)  const;
-    bool IsNT(void)  const;
-    bool IsNW(void)  const;
-    bool IsXM(void)  const;
-    bool IsXR(void)  const;
-    bool IsXP(void)  const;
-    bool IsNZ(void)  const;
-    bool IsZP(void)  const;
-    bool IsNS(void)  const;
-    bool IsAE(void)  const;
-    bool IsCH(void)  const;
+    bool IsSP (void) const;  // SwissProt
+    bool IsTPA(void) const;  // Third-Party Annotation
     bool IsPatent(void) const;
-    bool IsRefSeq(void) const;
+    bool IsGbGenomeProject(void) const; // AE
+    bool IsNcbiCONDiv(void) const;      // CH
     bool IsGI(void) const;
     bool IsWGS(void) const;
     bool IsWGSMaster(void) const;
     bool IsHup(void) const;  // ??? should move to global
-
-    bool ShowGBBSource(void) const;
-
+    // RefSeq ID queries
+    bool IsRefSeq(void) const;
+    bool IsRSCompleteGenomic  (void) const;  // NC_
+    bool IsRSIncompleteGenomic(void) const;  // NG_
+    bool IsRSMRna             (void) const;  // NM_
+    bool IsRSNonCodingRna     (void) const;  // NR_
+    bool IsRSProtein          (void) const;  // NP_
+    bool IsRSContig           (void) const;  // NT_
+    bool IsRSIntermedWGS      (void) const;  // NW_
+    bool IsRSPredictedMRna    (void) const;  // XM_
+    bool IsRSPredictedNCRna   (void) const;  // XR_
+    bool IsRSPredictedProtein (void) const;  // XP_
+    bool IsRSWGSNuc           (void) const;  // NZ_
+    bool IsRSWGSProt          (void) const;  // ZP_
+    bool IsRSGenome           (void) const;  // NS_ (?)
+    
 private:
     SIZE_TYPE  x_CountSegs(const CBioseq& seq) const;
     bool x_HasParts(const CBioseq& seq) const;
@@ -154,12 +164,13 @@ private:
     void x_SetAccession(const CBioseq& seq);
 
     CSeq_inst::TRepr x_GetRepr(const CBioseq& seq) const;
-    CMolInfo::TTech  x_GetTech(void);
+    const CMolInfo*  x_GetMolinfo(void);
 
     // data
     CBioseq_Handle        m_Handle;
     CSeq_inst::TRepr      m_Repr;
-    CMolInfo::TTech       m_Tech;
+    CConstRef<CMolInfo>   m_Molinfo;
+    CSeq_inst::TMol       m_Mol;
     string                m_Accession;  // !!! should be string& ?
     CRef<CSeq_id>         m_PrimaryId;
     string                m_WGSMasterAccn;
@@ -171,37 +182,26 @@ private:
     bool        m_HasParts;
     bool        m_IsDeltaLitOnly;
 
-    bool m_IsProt;
-    bool m_IsGPS;
-    bool m_IsGED;
+    bool m_IsProt;  // Protein
+    bool m_IsGPS;   // Gene-Prod Set
+    bool m_IsGED;   // Genbank, Embl or Ddbj
     bool m_IsPDB;
-    bool m_IsTPA;
-    bool m_IsNC;
-    bool m_IsNG;
-    bool m_IsNM;
-    bool m_IsNR;
-    bool m_IsNP;
-    bool m_IsNT;
-    bool m_IsNW;
-    bool m_IsXM;
-    bool m_IsXR;
-    bool m_IsXP;
-    bool m_IsNZ;
-    bool m_IsZP;
-    bool m_IsNS;
-    bool m_IsAE;
-    bool m_IsCH;
-    bool m_IsPatent;
+    bool m_IsSP;    // SwissProt
+    bool m_IsTPA;   // Third Party Annotation
     bool m_IsRefSeq;
+    unsigned int m_RefseqInfo;
+    bool m_IsGbGenomeProject;       // GenBank Genome project data
+    bool m_IsNcbiCONDiv;            // NCBI CON division
+    bool m_IsPatent;
     bool m_IsGI;
     bool m_IsWGS;
     bool m_IsWGSMaster;
     bool m_IsHup;
     int  m_GI;
     bool m_ShowGBBSource;
-
+    
     CConstRef<CSeq_loc>     m_Location;
-    mutable CFFContext*   m_Ctx;
+    mutable CFFContext*     m_Ctx;
     const CMasterContext*   m_Master;
 };
 
@@ -228,9 +228,36 @@ public:
 
     TFormat GetFormat(void) const;
     void SetFormat(TFormat format);
+    bool IsFormatGenBank(void) const {
+        return GetFormat() == CFlatFileGenerator::eFormat_GenBank;
+    }
+    bool IsFormatEMBL   (void) const {
+        return GetFormat() == CFlatFileGenerator::eFormat_EMBL;
+    }
+    bool IsFormatDDBJ   (void) const {
+        return GetFormat() == CFlatFileGenerator::eFormat_DDBJ;
+    }
+    bool IsFormatGBSeq  (void) const {
+        return GetFormat() == CFlatFileGenerator::eFormat_GBSeq;
+    }
+    bool IsFormatFTable (void) const {
+        return GetFormat() == CFlatFileGenerator::eFormat_FTable;
+    }
 
     TMode GetMode(void) const;
     void SetMode(TMode mode);
+    bool IsModeRelease(void) const {
+        return GetMode()  == CFlatFileGenerator::eMode_Release;
+    }
+    bool IsModeEntrez (void) const {
+        return GetMode()  == CFlatFileGenerator::eMode_Entrez;
+    }
+    bool IsModeGBench (void) const {
+        return GetMode()  == CFlatFileGenerator::eMode_GBench;
+    }
+    bool IsModeDump   (void) const {
+        return GetMode()  == CFlatFileGenerator::eMode_Dump;
+    }
 
     TStyle GetStyle(void) const;
     void SetStyle(TStyle style);
@@ -241,7 +268,7 @@ public:
     const CSeq_entry& GetTSE(void) const;
     void SetTSE(const CSeq_entry& tse);
 
-    const CBioseq& GetActiveBioseq(void);
+    const CBioseq& GetActiveBioseq(void) const;
     void SetActiveBioseq(const CBioseq& seq);
 
     const CBioseq* GetMasterBioseq(void) const;
@@ -257,6 +284,7 @@ public:
     void SetSubmit(const CSubmit_block& sub);
 
     CBioseq_Handle& GetHandle(void);
+    const CBioseq_Handle& GetHandle(void) const;
     void SetHandle(CBioseq_Handle& handle);
 
     const string& GetAccession(void) const;
@@ -265,8 +293,11 @@ public:
     CSeq_id* GetPrimaryId(void);
     const CSeq_id* GetPrimaryId(void) const;
     int  GetGI(void) const;
-    CSeq_inst::TRepr GetRepr(void) const;
-    CMolInfo::TTech  GetTech(void) const;
+    const CSeq_id& GetPreferredSynonym(const CSeq_id& id) const;
+    CSeq_inst::TRepr  GetRepr  (void) const;
+    CMolInfo::TTech   GetTech  (void) const;
+    CMolInfo::TBiomol GetBiomol(void) const;
+    CSeq_inst::TMol   GetMol   (void) const;
 
     bool IsSegmented(void) const;
     bool HasParts(void) const;
@@ -279,34 +310,35 @@ public:
     SIZE_TYPE GetPartNumber(void) const;
 
     // flags calculated by examining data in record
-    bool IsGPS(void) const;
-    bool IsGED(void) const;
+    bool IsProt(void) const;
+    bool IsNa(void) const { return !IsProt(); }
+    bool IsGED(void) const;  // Genbank, EMBL or DDBJ
     bool IsPDB(void) const;
-    bool IsTPA(void) const;
-    bool IsNC(void)  const;
-    bool IsNG(void)  const;
-    bool IsNM(void)  const;
-    bool IsNR(void)  const;
-    bool IsNP(void)  const;
-    bool IsNT(void)  const;
-    bool IsNW(void)  const;
-    bool IsXM(void)  const;
-    bool IsXR(void)  const;
-    bool IsXP(void)  const;
-    bool IsNZ(void)  const;
-    bool IsZP(void)  const;
-    bool IsNS(void)  const;
-    bool IsAE(void)  const;
-    bool IsCH(void)  const;
+    bool IsSP (void) const;  // SwissProt
+    bool IsTPA(void) const;  // Third-Party Annotation
     bool IsPatent(void) const;
-    bool IsRefSeq(void) const;
+    bool IsGbGenomeProject(void) const; // AE
+    bool IsNcbiCONDiv(void) const;      // CH
     bool IsGI(void) const;
     bool IsWGS(void) const;
     bool IsWGSMaster(void) const;
-    bool IsProt(void) const;
-    bool IsNa(void) const { return !IsProt(); }
-    bool IsHup(void) const;
-
+    bool IsHup(void) const;  // ??? should move to global
+    // RefSeq ID queries
+    bool IsRefSeq(void) const;
+    bool IsRSCompleteGenomic  (void) const;  // NC_
+    bool IsRSIncompleteGenomic(void) const;  // NG_
+    bool IsRSMRna             (void) const;  // NM_
+    bool IsRSNonCodingRna     (void) const;  // NR_
+    bool IsRSProtein          (void) const;  // NP_
+    bool IsRSContig           (void) const;  // NT_
+    bool IsRSIntermedWGS      (void) const;  // NW_
+    bool IsRSPredictedMRna    (void) const;  // XM_
+    bool IsRSPredictedNCRna   (void) const;  // XR_
+    bool IsRSPredictedProtein (void) const;  // XP_
+    bool IsRSWGSNuc           (void) const;  // NZ_
+    bool IsRSWGSProt          (void) const;  // ZP_
+    bool IsRSGenome           (void) const;  // NS_ (?)
+    
     const CMasterContext* Master(void) const { return m_Master; }
     const CBioseqContext* Bioseq(void) const { return m_Bioseq; }
 
@@ -608,6 +640,20 @@ CMolInfo::TTech CFFContext::GetTech(void) const
 
 
 inline
+CMolInfo::TBiomol CFFContext::GetBiomol(void) const
+{
+    return m_Bioseq->GetBiomol();
+}
+
+
+inline
+CSeq_inst::TMol CFFContext::GetMol(void) const
+{
+    return m_Bioseq->GetMol();
+}
+
+
+inline
 bool CFFContext::IsSegmented(void) const
 {
     return m_Bioseq->IsSegmented();
@@ -677,6 +723,13 @@ int CFFContext::GetGI(void) const
 }
 
 
+inline
+const CSeq_id& CFFContext::GetPreferredSynonym(const CSeq_id& id) const
+{
+    return m_Bioseq->GetPreferredSynonym(id);
+}
+
+
 inline 
 bool CFFContext::IsHup(void) const
 {
@@ -685,7 +738,7 @@ bool CFFContext::IsHup(void) const
 
 
 inline
-const CBioseq& CFFContext::GetActiveBioseq(void)
+const CBioseq& CFFContext::GetActiveBioseq(void) const
 {
     return m_Bioseq->GetHandle().GetBioseq();
 }
@@ -699,7 +752,21 @@ const CSeq_loc* CFFContext::GetLocation(void) const
 
 
 inline
+void CFFContext::SetLocation(const CSeq_loc* loc)
+{
+    m_Bioseq->SetLocation(loc);
+}
+
+
+inline
 CBioseq_Handle& CFFContext::GetHandle(void)
+{
+    return m_Bioseq->GetHandle();
+}
+
+
+inline
+const CBioseq_Handle& CFFContext::GetHandle(void) const
 {
     return m_Bioseq->GetHandle();
 }
@@ -720,6 +787,13 @@ bool CFFContext::IsPDB(void) const
 
 
 inline
+bool CFFContext::IsSP(void) const
+{
+    return m_Bioseq->IsSP();
+}
+
+
+inline
 bool CFFContext::IsTPA(void) const
 {
     return m_Bioseq->IsTPA();
@@ -727,106 +801,106 @@ bool CFFContext::IsTPA(void) const
 
 
 inline
-bool CFFContext::IsNC(void) const
+bool CFFContext::IsRSCompleteGenomic(void) const
 {
-    return m_Bioseq->IsNC();
+    return m_Bioseq->IsRSCompleteGenomic();
 }
 
 
 inline
-bool CFFContext::IsNG(void) const
+bool CFFContext::IsRSIncompleteGenomic(void) const
 {
-    return m_Bioseq->IsNG();
+    return m_Bioseq->IsRSIncompleteGenomic();
 }
 
 
 inline
-bool CFFContext::IsNM(void) const
+bool CFFContext::IsRSMRna(void) const
 {
-    return m_Bioseq->IsNM();
+    return m_Bioseq->IsRSMRna();
 }
 
 
 inline
-bool CFFContext::IsNR(void) const
+bool CFFContext::IsRSNonCodingRna(void) const
 {
-    return m_Bioseq->IsNR();
+    return m_Bioseq->IsRSNonCodingRna();
 }
 
 inline
-bool CFFContext::IsNP(void) const
+bool CFFContext::IsRSProtein(void) const
 {
-    return m_Bioseq->IsNP();
-}
-
-
-inline
-bool CFFContext::IsNT(void) const
-{
-    return m_Bioseq->IsNT();
+    return m_Bioseq->IsRSProtein();
 }
 
 
 inline
-bool CFFContext::IsNW(void) const
+bool CFFContext::IsRSContig(void) const
 {
-    return m_Bioseq->IsNW();
+    return m_Bioseq->IsRSContig();
 }
 
 
 inline
-bool CFFContext::IsXM(void) const
+bool CFFContext::IsRSIntermedWGS(void) const
 {
-    return m_Bioseq->IsXM();
+    return m_Bioseq->IsRSIntermedWGS();
 }
 
 
 inline
-bool CFFContext::IsXR(void) const
+bool CFFContext::IsRSPredictedMRna(void) const
 {
-    return m_Bioseq->IsXR();
+    return m_Bioseq->IsRSPredictedMRna();
 }
 
 
 inline
-bool CFFContext::IsXP(void) const
+bool CFFContext::IsRSPredictedNCRna(void) const
 {
-    return m_Bioseq->IsXP();
+    return m_Bioseq->IsRSPredictedNCRna();
 }
 
 
 inline
-bool CFFContext::IsNZ(void) const
+bool CFFContext::IsRSPredictedProtein(void) const
 {
-    return m_Bioseq->IsNZ();
+    return m_Bioseq->IsRSPredictedProtein();
 }
 
 
 inline
-bool CFFContext::IsZP(void) const
+bool CFFContext::IsRSWGSNuc(void) const
 {
-    return m_Bioseq->IsZP();
+    return m_Bioseq->IsRSWGSNuc();
 }
 
 
 inline
-bool CFFContext::IsNS(void) const
+bool CFFContext::IsRSWGSProt(void) const
 {
-    return m_Bioseq->IsNS();
+    return m_Bioseq->IsRSWGSProt();
 }
 
 
 inline
-bool CFFContext::IsAE(void) const
+bool CFFContext::IsRSGenome(void) const
 {
-    return m_Bioseq->IsAE();
+    return m_Bioseq->IsRSGenome();
 }
 
 
 inline
-bool CFFContext::IsCH(void) const
+bool CFFContext::IsGbGenomeProject(void) const
 {
-    return m_Bioseq->IsCH();
+    return m_Bioseq->IsGbGenomeProject();
+}
+
+
+inline
+bool CFFContext::IsNcbiCONDiv(void) const
+{
+    return m_Bioseq->IsNcbiCONDiv();
 }
 
 
@@ -917,6 +991,13 @@ CBioseq_Handle& CBioseqContext::GetHandle(void)
 
 
 inline
+const CBioseq_Handle& CBioseqContext::GetHandle(void) const
+{
+    return m_Handle;
+}
+
+
+inline
 bool CBioseqContext::IsProt(void) const
 {
     return m_IsProt;
@@ -954,7 +1035,23 @@ CSeq_inst::TRepr CBioseqContext::GetRepr(void) const
 inline
 CMolInfo::TTech CBioseqContext::GetTech(void) const
 {
-    return m_Tech;
+    return (!m_Molinfo.IsNull()  &&  m_Molinfo->CanGetTech()) ? 
+        m_Molinfo->GetTech() : CMolInfo::eTech_unknown;
+}
+
+
+inline
+CMolInfo::TBiomol CBioseqContext::GetBiomol(void) const
+{
+    return (!m_Molinfo.IsNull()  &&  m_Molinfo->CanGetBiomol()) ? 
+        m_Molinfo->GetBiomol() : CMolInfo::eBiomol_unknown;
+}
+
+
+inline
+CSeq_inst::TMol CBioseqContext::GetMol(void) const
+{
+    return m_Mol;
 }
 
 
@@ -1015,6 +1112,13 @@ bool CBioseqContext::IsPDB(void) const
 
 
 inline
+bool CBioseqContext::IsSP(void) const
+{
+    return m_IsSP;
+}
+
+
+inline
 bool CBioseqContext::IsTPA(void) const
 {
     return m_IsTPA;
@@ -1022,107 +1126,107 @@ bool CBioseqContext::IsTPA(void) const
 
 
 inline
-bool CBioseqContext::IsNC(void)  const
+bool CBioseqContext::IsRSCompleteGenomic(void)  const
 {
-    return m_IsNC;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_chromosome) != 0;  // NC_
 }
 
 
 inline
-bool CBioseqContext::IsNG(void)  const
+bool CBioseqContext::IsRSIncompleteGenomic(void)  const
 {
-    return m_IsNG;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_genomic) != 0;  // NG_
 }
 
 
 inline
-bool CBioseqContext::IsNM(void)  const
+bool CBioseqContext::IsRSMRna(void)  const
 {
-    return m_IsNM;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_mrna) != 0;  // NM_
 }
 
 
 inline
-bool CBioseqContext::IsNR(void)  const
+bool CBioseqContext::IsRSNonCodingRna(void)  const
 {
-    return m_IsNR;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_ncrna) != 0;  // NR_
 }
 
 
 inline
-bool CBioseqContext::IsNP(void)  const
+bool CBioseqContext::IsRSProtein(void)  const
 {
-    return m_IsNP;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_prot) != 0;  // NP_
 }
 
 
 inline
-bool CBioseqContext::IsNT(void)  const
+bool CBioseqContext::IsRSContig(void)  const
 {
-    return m_IsNT;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_contig) != 0;  // NT_
 }
 
 
 inline
-bool CBioseqContext::IsNW(void)  const
+bool CBioseqContext::IsRSIntermedWGS(void)  const
 {
-    return m_IsNW;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_wgs_intermed) != 0;  // NW_
 }
 
 
 inline
-bool CBioseqContext::IsXM(void)  const
+bool CBioseqContext::IsRSPredictedMRna(void)  const
 {
-    return m_IsXM;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_mrna_predicted) != 0;  // XM_
 }
 
 
 inline
-bool CBioseqContext::IsXR(void)  const
+bool CBioseqContext::IsRSPredictedNCRna(void)  const
 {
-    return m_IsXR;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_ncrna_predicted) != 0;  // XR_
 }
 
 
 inline
-bool CBioseqContext::IsXP(void)  const
+bool CBioseqContext::IsRSPredictedProtein(void)  const
 {
-    return m_IsXP;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_prot_predicted) != 0;  // XP_
 }
 
 
 inline
-bool CBioseqContext::IsNZ(void)  const
+bool CBioseqContext::IsRSWGSNuc(void)  const
 {
-    return m_IsNZ;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_wgs_nuc) != 0;  // NZ_
 }
 
 
 inline
-bool CBioseqContext::IsZP(void)  const
+bool CBioseqContext::IsRSWGSProt(void)  const
 {
-    return m_IsZP;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_wgs_prot) != 0;  // ZP_
 }
 
 
 inline
-bool CBioseqContext::IsNS(void)  const
+bool CBioseqContext::IsRSGenome(void)  const
 {
-    return m_IsNS;
+    return (m_RefseqInfo & CSeq_id::eAcc_refseq_genome) != 0;  // NS_ (?)
 }
 
 
 inline
-bool CBioseqContext::IsAE(void)  const
+bool CBioseqContext::IsGbGenomeProject(void)  const
 {
-    return m_IsAE;
+    return m_IsGbGenomeProject;
 }
 
 
 inline
-bool CBioseqContext::IsCH(void)  const
+bool CBioseqContext::IsNcbiCONDiv(void)  const
 {
-    return m_IsCH;
+    return m_IsNcbiCONDiv;
 }
 
 
@@ -1204,6 +1308,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:50:17  shomrat
+* multiple changes (work in progress)
+*
 * Revision 1.1  2003/12/18 17:41:20  shomrat
 * file was moved from src directory
 *
