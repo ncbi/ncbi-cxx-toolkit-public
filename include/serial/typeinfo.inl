@@ -118,12 +118,21 @@ bool CTypeInfo::IsCObject(void) const
     return m_IsCObject;
 }
 
+inline
+bool CTypeInfo::IsAlias(void) const
+{
+    return m_IsAlias;
+}
+
 #endif /* def TYPEINFO__HPP  &&  ndef TYPEINFO__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/11/18 18:11:48  grichenk
+* Resolve aliased type info before using it in CObjectTypeInfo
+*
 * Revision 1.8  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

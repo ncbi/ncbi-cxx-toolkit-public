@@ -45,7 +45,8 @@ CObjectTypeInfo::CObjectTypeInfo(TTypeInfo typeinfo)
 inline
 TTypeInfo CObjectTypeInfo::GetTypeInfo(void) const
 {
-    return m_TypeInfo;
+    return m_TypeInfo->IsAlias() ? m_TypeInfo->GetReferencedType()
+        : m_TypeInfo;
 }
 
 inline
@@ -281,6 +282,9 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/11/18 18:11:47  grichenk
+* Resolve aliased type info before using it in CObjectTypeInfo
+*
 * Revision 1.3  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

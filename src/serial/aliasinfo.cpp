@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/18 18:11:48  grichenk
+* Resolve aliased type info before using it in CObjectTypeInfo
+*
 * Revision 1.2  2003/10/21 21:08:46  grichenk
 * Fixed aliases-related bug in XML stream
 *
@@ -71,6 +74,7 @@ CAliasTypeInfo::CAliasTypeInfo(const string& name, TTypeInfo type)
     : CParent(type->GetTypeFamily(), type->GetSize(), name),
       m_DataTypeRef(type), m_DataOffset(0)
 {
+    m_IsAlias = true;
     InitAliasTypeInfoFunctions();
 }
 
