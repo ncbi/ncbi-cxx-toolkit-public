@@ -84,15 +84,17 @@ int CDbBlastTraceback::SetupSearch()
         
         /* Pass NULL lookup segments and output filtering locations pointers
            in the next call, to indicate that we don't need them here. */
-        BLAST_MainSetUp(x_eProgram, GetQueryOpts(), GetScoringOpts(),
-            GetHitSaveOpts(), m_iclsQueries, m_iclsQueryInfo, scale_factor,
-            NULL, NULL, &m_ipScoreBlock, &blast_message);
+        BLAST_MainSetUp(x_eProgram, GetOptions().GetQueryOpts(), 
+            GetOptions().GetScoringOpts(), GetOptions().GetHitSaveOpts(), 
+            m_iclsQueries, m_iclsQueryInfo, scale_factor, NULL, NULL, 
+            &m_ipScoreBlock, &blast_message);
 
         if (blast_message)
             GetErrorMessage().push_back(blast_message);
 
         BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
-            GetScoringOpts(), GetEffLenOpts(), GetExtnOpts(), GetHitSaveOpts(),
+            GetOptions().GetScoringOpts(), GetOptions().GetEffLenOpts(), 
+            GetOptions().GetExtnOpts(), GetOptions().GetHitSaveOpts(),
             m_iclsQueryInfo, m_ipScoreBlock, &m_ipScoringParams,
             &m_ipExtParams, &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
 
@@ -109,7 +111,8 @@ CDbBlastTraceback::RunSearchEngine()
         BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
             m_ipHspStream, m_iclsQueries, m_iclsQueryInfo,
             GetSeqSrc(), m_ipGapAlign, m_ipScoringParams, m_ipExtParams, 
-            m_ipHitParams, m_ipEffLenParams, GetDbOpts(), NULL, &m_ipResults);
+            m_ipHitParams, m_ipEffLenParams, GetOptions().GetDbOpts(), NULL, 
+            &m_ipResults);
 }
 
 /// Resets query data structures; does only part of the work in the base 
@@ -144,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/06/15 18:46:38  dondosha
+ * Access individual options structures through CBlastOptions class methods
+ *
  * Revision 1.11  2004/06/08 15:20:44  dondosha
  * Use BlastHSPStream interface
  *
