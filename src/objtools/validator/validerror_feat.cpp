@@ -507,8 +507,15 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
         else if ( partial_prod == eSeqlocPartial_Complete  &&
                   feat.CanGetProduct() ) {
             // if not local bioseq product, lower severity
-            EDiagSev sev = m_Scope->GetBioseqHandle(feat.GetProduct()) ?
-                eDiag_Warning : eDiag_Info;
+            EDiagSev sev = eDiag_Warning;
+            if ( IsOneBioseq(feat.GetProduct(), m_Scope) ) {
+                const CSeq_id& prod_id = GetId(feat.GetProduct());
+                CBioseq_Handle prod =
+                    m_Scope->GetBioseqHandleFromTSE(prod_id, m_Imp.GetTSE());
+                if ( !prod ) {
+                    eDiag_Info;
+                }
+            }
                         
             string str("Inconsistent: Product= complete, Location= ");
             if ( partial_loc != eSeqlocPartial_Complete ) {
@@ -522,7 +529,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             } else {
                 str += "FALSE";
             }
-            PostErr(sev, eErr_SEQ_FEAT_PartialProblem, str, feat);
+            PostErr(sev, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
         }
         // inconsistent combination of partial/complete product,location,partial flag - part 2
         else if ( partial_loc == eSeqlocPartial_Complete  ||
@@ -548,7 +555,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
                     str += "FALSE";
                 }
             }
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, str, feat);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent, str, feat);
         }
         // 5' or 3' partial location giving unclassified partial product
         else if ( (partial_loc & eSeqlocPartial_Start  ||
@@ -2664,6 +2671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2004/03/19 14:48:53  shomrat
+* use ERR_SEQ_FEAT_PartialsInconsistent in two places
+*
 * Revision 1.49  2004/03/10 21:24:44  shomrat
 * suppress eErr_SEQ_FEAT_AltStartCodon for GenBank/EMBL/DDBJ and Local
 *
