@@ -383,7 +383,7 @@ void CTextFsm<MatchType>::Prime(void)
 template <typename MatchType>
 typename CTextFsm<MatchType>::CState *CTextFsm<MatchType>::GetState(int state) 
 {
-    if ( (state < 0) || (state > m_States.size()) ) {
+    if ( size_t(state) >= m_States.size() ) {
         return 0;
     }
     return &(m_States[state]);
@@ -400,7 +400,7 @@ int CTextFsm<MatchType>::GetNextState(const CState& from, char letter) const {
 template <typename MatchType>
 int CTextFsm<MatchType>::GetNextState(int state, char letter) const
 {
-    if ( state < 0 || size_t(state) >= m_States.size() ) {
+    if ( size_t(state) >= m_States.size() ) {
         return eFailState;
     }
     
@@ -536,6 +536,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/06/30 21:57:11  vasilche
+* Fixed warnings and wrong bound check.
+*
 * Revision 1.19  2004/05/27 13:41:16  kuznets
 * Fixed warnings (GCC 3.4)
 *
