@@ -410,7 +410,9 @@ void CGenbankFormatter::x_Journal
 
     if ((ref.GetPrepub() == CImprint::ePrepub_in_press)  ||
         (ref.GetPubstatus() == 10  &&  NStr::IsBlank(ref.GetPages()))) {
-        journal += " In press";
+        if (!NStr::EndsWith(journal , "in press", NStr::eNocase)) {
+            journal += " In press";
+        }
     }
 
     Wrap(l, "JOURNAL", journal, eSubp);
@@ -736,6 +738,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/12/13 14:44:27  shomrat
+* Add In Press only if missing
+*
 * Revision 1.22  2004/11/24 16:51:11  shomrat
 * Format gaps
 *
