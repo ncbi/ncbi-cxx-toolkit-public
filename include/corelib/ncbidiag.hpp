@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/03/10 14:17:40  vasilche
+* Added missing namespace specifier to macro.
+*
 * Revision 1.18  2000/02/18 16:54:02  vakatov
 * + eDiag_Critical
 *
@@ -121,7 +124,7 @@ typedef enum {
 
 // Auxiliary macros for a "standard" error posting
 #define ERR_POST(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << Endm )
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
 
 
 // Which parts of the diagnostic context should be posted, and which are not...

@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/03/10 14:17:40  vasilche
+* Added missing namespace specifier to macro.
+*
 * Revision 1.18  1999/12/27 19:39:12  vakatov
 * [_DEBUG]  Forcibly flush ("<< Endm") the diag. stream
 *
@@ -100,18 +103,18 @@ BEGIN_NCBI_SCOPE
 #  define _TRACE(message) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
       NCBI_NS_NCBI::eDiag_Trace, NCBI_NS_NCBI::eDPF_Trace) \
-      << message << Endm )
+      << message << NCBI_NS_NCBI::Endm )
 
 #  define _TROUBLE \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
       NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
-      << "Trouble!" << Endm )
+      << "Trouble!" << NCBI_NS_NCBI::Endm )
 
 #  define _ASSERT(expr) \
     if ( expr ) ; else \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
       NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
-      << "Assertion failed: (" #expr ")" << Endm )
+      << "Assertion failed: (" #expr ")" << NCBI_NS_NCBI::Endm )
 
 #  define _VERIFY(expr) _ASSERT(expr)
 
