@@ -100,8 +100,13 @@
 #  include <signal.h>
 
 #elif defined(NCBI_OS_MSWIN)
-#  include <winsock2.h>
-
+#  ifndef COMP_METRO
+#    include <winsock2.h>
+#  else
+#    define SD_RECEIVE      0x00
+#    define SD_SEND         0x01
+#    define SD_BOTH         0x02
+#  endif
 #elif defined(NCBI_OS_MAC)
 #  include <unistd.h>
 #  include <sock_ext.h>
@@ -3036,6 +3041,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.97  2003/05/05 11:41:09  rsmith
+ * added defines and declarations to allow cross compilation Mac->Win32 using Metrowerks Codewarrior.
+ *
  * Revision 6.96  2003/04/30 17:00:18  lavr
  * Added on-stack buffers for small datagrams; few name collisions resolved
  *

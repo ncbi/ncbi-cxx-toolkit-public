@@ -44,6 +44,9 @@
 #  include <time.h>
 #endif
 
+#if defined(OS_MSWIN)  &&  defined(COMP_METRO)
+char *_strtime( char *timestr );
+#endif
 
 /* Static function pre-declarations to avoid C++ compiler warnings
  */
@@ -168,7 +171,8 @@ extern char* LOG_ComposeMessage
 
     /* Pre-calculate total message length */
     if ((format_flags & fLOG_DateTime) != 0) {
-#ifdef NCBI_OS_MSWIN/*Should be compiler-dependent, but C-Toolkit lacks it*/
+#if  defined(NCBI_OS_MSWIN)  &&  !defined(COMP_METRO) 
+/*Should be compiler-dependent, but C-Toolkit lacks it*/
         _strdate(&datetime[datetime_len]);
         datetime_len += strlen(&datetime[datetime_len]);
         datetime[datetime_len++] = ' ';
@@ -499,6 +503,9 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/05/05 11:41:09  rsmith
+ * added defines and declarations to allow cross compilation Mac->Win32 using Metrowerks Codewarrior.
+ *
  * Revision 6.26  2003/01/17 15:55:13  lavr
  * Fix errno reporting (comma was missing if errno == 0)
  *
