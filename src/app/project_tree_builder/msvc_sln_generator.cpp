@@ -255,19 +255,22 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         }
 
         TProjects::const_iterator n = m_Projects.find(id);
-        if (n != m_Projects.end()) {
-
-            const CPrjContext& prj_i = n->second;
-
-            ofs << '\t' << '\t' 
-                << prj_i.m_GUID 
-                << " = " 
-                << prj_i.m_GUID << endl;
-        } else {
-
-            LOG_POST(Warning << "Project " + 
-                      project.m_ProjectName + " depends on missing project " + id.Id());
+        if (n == m_Projects.end()) {
+// also check user projects
+            CProjKey id_alt(CProjKey::eMsvc,id.Id());
+            n = m_Projects.find(id_alt);
+            if (n == m_Projects.end()) {
+                LOG_POST(Warning << "Project " + 
+                        project.m_ProjectName + " depends on missing project " + id.Id());
+                continue;
+            }
         }
+        const CPrjContext& prj_i = n->second;
+
+        ofs << '\t' << '\t' 
+            << prj_i.m_GUID 
+            << " = " 
+            << prj_i.m_GUID << endl;
     }
     ofs << '\t' << "EndProjectSection" << endl;
     ofs << "EndProject" << endl;
@@ -403,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/01/19 15:16:29  gouriano
+ * Check user projects when generating dependencies
+ *
  * Revision 1.23  2004/12/20 21:07:33  gouriano
  * Eliminate compiler warnings
  *
