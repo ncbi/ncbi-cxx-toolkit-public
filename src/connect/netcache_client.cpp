@@ -59,12 +59,13 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
         key->prefix += *ch;
     }
     if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
     ++ch;
 
     if (key->prefix != kNetCache_KeyPrefix) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, "Invalid prefix");
+        NCBI_THROW(CNetCacheException, eKeyFormatError, 
+                                       "Key syntax error. Invalid prefix.");
     }
 
     // version
@@ -73,7 +74,7 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
         ++ch;
     }
     if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
     ++ch;
 
@@ -83,7 +84,7 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
         ++ch;
     }
     if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
     ++ch;
 
@@ -93,7 +94,7 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
         key->hostname += *ch;
     }
     if (*ch == 0) {
-        NCBI_THROW(CNetCacheException, eKeyFormatError, kEmptyStr);
+        NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
     ++ch;
 
@@ -232,12 +233,15 @@ string  CNetCacheClient::PutData(const string& key,
     ReadStr(*m_Sock, &blob_id);
     if (NStr::FindCase(blob_id, "ID:") != 0) {
         // Answer is not in "ID:....." format
-        NCBI_THROW(CNetCacheException, eCommunicationError, blob_id);
+        string msg = "Unexpected server response:";
+        msg += blob_id;
+        NCBI_THROW(CNetCacheException, eCommunicationError, msg);
     }
     blob_id.erase(0, 3);
     
     if (blob_id.empty())
-        NCBI_THROW(CNetCacheException, eCommunicationError, blob_id);
+        NCBI_THROW(CNetCacheException, eCommunicationError, 
+                   "Invalid server response. Empty key.");
 
     // Write the actual BLOB
     WriteStr((const char*) buf, size);
@@ -271,7 +275,12 @@ string CNetCacheClient::ServerVersion()
     // Read BLOB_ID answer from the server
     ReadStr(*m_Sock, &version);
     if (NStr::FindCase(version, "OK:") != 0) {
-        NCBI_THROW(CNetCacheException, eCommunicationError, version);
+        // error message in version string
+        string msg = version;
+        if (msg.empty()) {
+            msg = "Empty version string.";
+        }
+        NCBI_THROW(CNetCacheException, eCommunicationError, msg);
     }
 
     version.erase(0, 3);
@@ -339,7 +348,9 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
         if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
-            NCBI_THROW(CNetCacheException, eCommunicationError, answer);
+            string msg = "Server error:";
+            msg += answer;
+            NCBI_THROW(CNetCacheException, eCommunicationError, msg);
         }
         if (blob_size) {
             string::size_type pos = answer.find("SIZE=");
@@ -432,7 +443,11 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
-            NCBI_THROW(CNetCacheException, eTimeout, kEmptyStr);
+            {
+            string msg = "Communication timeout reading from server.";
+            NCBI_THROW(CNetCacheException, eTimeout, msg);
+            }
+            break;
         default: // invalid socket or request, bailing out
             return false;
         };
@@ -467,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/11/02 13:51:42  kuznets
+ * Improved diagnostics
+ *
  * Revision 1.15  2004/11/01 16:02:26  kuznets
  * GetData now returns BLOB size
  *
