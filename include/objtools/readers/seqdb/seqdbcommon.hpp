@@ -63,7 +63,10 @@ public:
         eArgErr,
         
         /// Files were missing or contents were incorrect.
-        eFileErr
+        eFileErr,
+        
+        /// Memory allocation failed.
+        eMemErr
     };
     
     /// Get a message describing the situation leading to the throw.
