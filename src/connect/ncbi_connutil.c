@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2002/02/08 22:22:17  lavr
+ * BUGFIX: sizeof(info) -> sizeof(*info) in ConnNetInfo_Create()
+ *
  * Revision 6.27  2002/01/30 20:14:48  lavr
  * URL_Connect(): Print error code in some failure messages
  *
@@ -319,7 +322,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->http_proxy_adjusted = 0/*false*/;
     /* remember the service name for which this structure has been created */
     if (service  &&  *service) {
-        s = (char*) info + sizeof(info);
+        s = (char*) info + sizeof(*info);
         strcpy(s, service);
     } else
         s = 0;
