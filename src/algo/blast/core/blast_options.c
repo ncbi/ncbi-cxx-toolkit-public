@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.26  2003/06/11 16:14:53  dondosha
+ * Added initialization of PSI-BLAST and database options
+ *
  * Revision 1.25  2003/06/09 20:13:17  dondosha
  * Minor type casting compiler warnings fixes
  *
@@ -239,6 +242,8 @@ BlastQuerySetUpOptionsNew(QuerySetUpOptionsPtr *options)
    if (*options == NULL)
       return 1;
    
+   (*options)->genetic_code = BLAST_GENETIC_CODE;
+
    return 0;
 }
 
@@ -261,6 +266,7 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
    } else {
       options->filter_string = StringSave(filter_string); 
    }
+
    return 0;
 }
 
@@ -1160,6 +1166,43 @@ BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options)
    return MemFree(format_options);
 }
 
+Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options)
+{
+   PSIBlastOptionsPtr options = 
+      (PSIBlastOptionsPtr) MemNew(sizeof(PSIBlastOptions));
+   *psi_options = options;
+   options->ethresh = PSI_ETHRESH;
+   options->maxNumPasses = PSI_MAX_NUM_PASSES;
+   options->pseudoCountConst = PSI_PSEUDO_COUNT_CONST;
+   options->scalingFactor = PSI_SCALING_FACTOR;
+   
+}
+
+PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options)
+{
+   if (psi_options->isPatternSearch)
+      MemFree(psi_options->phi_pattern);
+   
+   return (PSIBlastOptionsPtr) MemFree(psi_options);
+}
+
+Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options)
+{
+   BlastDatabaseOptionsPtr options = (BlastDatabaseOptionsPtr)
+      MemNew(sizeof(BlastDatabaseOptions));
+
+   options->genetic_code = BLAST_GENETIC_CODE;
+   *db_options = options;
+}
+
+BlastDatabaseOptionsPtr 
+BlastDatabaseOptionsFree(BlastDatabaseOptionsPtr db_options)
+{
+   MemFree(db_options->database);
+   MemFree(db_options->entrez_query);
+   
+   return (BlastDatabaseOptionsPtr) MemFree(db_options);
+}
 
 Int2 BLAST_InitDefaultOptions(const Uint1 program_number,
    LookupTableOptionsPtr PNTR lookup_options,
@@ -1169,8 +1212,8 @@ Int2 BLAST_InitDefaultOptions(const Uint1 program_number,
    BlastHitSavingOptionsPtr PNTR hit_options,
    BlastScoringOptionsPtr PNTR score_options,
    BlastEffectiveLengthsOptionsPtr PNTR eff_len_options,
-   ProteinBlastOptionsPtr PNTR protein_options,
-   BlastDatabaseSetUpOptionsPtr PNTR db_options)
+   PSIBlastOptionsPtr PNTR psi_options,
+   BlastDatabaseOptionsPtr PNTR db_options)
 {
    Int2 status;
 
@@ -1195,6 +1238,12 @@ Int2 BLAST_InitDefaultOptions(const Uint1 program_number,
    if ((status=BlastEffectiveLengthsOptionsNew(eff_len_options)))
       return status;
    
+   if ((status=PSIBlastOptionsNew(psi_options)))
+      return status;
+
+   if ((status=BlastDatabaseOptionsNew(db_options)))
+      return status;
+
    return 0;
 
 }
