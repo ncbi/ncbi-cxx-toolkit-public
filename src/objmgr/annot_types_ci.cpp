@@ -56,6 +56,7 @@
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <algorithm>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -920,8 +921,9 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
     case eLimit_Entry:
     {
         // Limit update to one seq-entry
-        const CSeq_entry& entry = 
-            dynamic_cast<const CSeq_entry&>(*m_LimitObject);
+        // Eugene: I had to split expression to avoid segfault on ICC-Linux
+        const CObject* obj = &*m_LimitObject;
+        const CSeq_entry& entry = dynamic_cast<const CSeq_entry&>(*obj);
         m_Scope->UpdateAnnotIndex(loc, *this, entry);
         break;
     }
@@ -930,8 +932,9 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
         // it's already loaded and indexed (?)
     {
         // Limit update to one seq-entry
-        const CSeq_annot& annot = 
-            dynamic_cast<const CSeq_annot&>(*m_LimitObject);
+        // Eugene: I had to split expression to avoid segfault on ICC-Linux
+        const CObject* obj = &*m_LimitObject;
+        const CSeq_annot& annot = dynamic_cast<const CSeq_annot&>(*obj);
         m_Scope->UpdateAnnotIndex(loc, *this, annot);
         break;
     }
@@ -1018,6 +1021,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/04/28 15:00:46  vasilche
+* Workaround for ICC bug with dynamic_cast<>.
+*
 * Revision 1.64  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
