@@ -126,7 +126,7 @@ protected:
 
     static const string s_GenbankMol[];
 
-    virtual SIZE_TYPE GetWidth(void) const { return 0; }
+    virtual SIZE_TYPE GetWidth(void) const { return 78; }
 
     static  string& x_Pad(const string& s, string& out, SIZE_TYPE width,
                         const string& indent = kEmptyStr);
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/18 15:31:19  shomrat
+* Changed default width value
+*
 * Revision 1.4  2004/02/19 17:58:53  shomrat
 * Added method to format Origin item
 *
