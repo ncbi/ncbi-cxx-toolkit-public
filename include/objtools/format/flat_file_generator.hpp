@@ -149,6 +149,10 @@ private:
     //TStyle          m_Style;
     //TFilter         m_Filter;
     //TFlags          m_Flags;
+
+    // forbidden
+    CFlatFileGenerator(const CFlatFileGenerator&);
+    CFlatFileGenerator& operator=(const CFlatFileGenerator&);
 };
 
 
@@ -160,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/15 16:57:08  dicuccio
+* Added private unimplemented copy ctor to satisfy MSVC
+*
 * Revision 1.2  2004/01/14 15:52:40  shomrat
 * Added GFF format
 *
