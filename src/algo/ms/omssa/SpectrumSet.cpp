@@ -81,12 +81,21 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                 getline(DTA, Line);
             } while (NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
             if (!DTA || DTA.eof()) {
-                if (GotOne) return 0;
-                else return 1;
+                if (GotOne) {
+                    ERR_POST(Info << "LoadMultDTA: end of xml");
+                    return 0;
+                }
+                else {
+                    ERR_POST(Info << "LoadMultDTA: bad end of xml");
+                    return 1;
+                }
             }
 //            GotOne = true;
             Count++;
-            if (Max > 0 && Count > Max) return -1;  // too many
+            if (Max > 0 && Count > Max) {
+                ERR_POST(Info << "LoadMultDTA: too many spectra in xml");
+                return -1;  // too many
+            }
 
             MySpectrum = new CMSSpectrum;
             CRegexp RxpGetNum("\\sid\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
@@ -105,7 +114,10 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
                 MySpectrum->SetIds().push_back(Match);
             }
 
-            if(!GetDTAHeader(DTA, MySpectrum)) return 1;
+            if(!GetDTAHeader(DTA, MySpectrum)) {
+                ERR_POST(Info << "LoadMultDTA: not able to get header");
+                return 1;
+            }
             getline(DTA, Line);
             getline(DTA, Line);
 
@@ -119,7 +131,10 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
             Set().push_back(MySpectrum);
         } while (DTA && !DTA.eof());
 
-    if (!GotOne) return 1;
+    if (!GotOne) {
+        ERR_POST(Info << "LoadMultDTA: didn't get one");
+        return 1;
+    }
         
     } catch (NCBI_NS_STD::exception& e) {
         ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
@@ -193,11 +208,16 @@ bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectru
     double dummy(0.0L);
 
     DTA >> dummy;
-    if (dummy <= 0) return false;
+    if (dummy <= 0) {
+        return false;
+    }
     MySpectrum->SetPrecursormz(static_cast <int> ((dummy-1.00794)*MSSCALE));
     DTA >> dummy;
-    if (dummy <= 0) return false;
+    if (dummy <= 0) {
+        return false;
+    }
     MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
+    return true;
 }
 
 
@@ -264,6 +284,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/11/09 17:57:05  lewisg
+ * dta parsing fix
+ *
  * Revision 1.11  2004/11/01 22:04:01  lewisg
  * c-term mods
  *
