@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/02/24 19:02:01  vasilche
+* Reverted testing shortcut.
+*
 * Revision 1.13  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.
@@ -242,8 +245,6 @@ int CDemoApp::Run(void)
             CConstRef<CSeq_annot> annot(&feat_it.GetSeq_annot());
         }
         NcbiCout << "Feat count (whole, any):       " << count << NcbiEndl;
-
-        continue;
 
         count = 0;
         // The same region (whole sequence), but restricted feature type:
