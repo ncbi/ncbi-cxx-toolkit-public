@@ -179,10 +179,7 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list,
    return 0;
 }
 
-/** Cleans out the NULLed out HSP's from the HSP array,
- *	moving the BLAST_HSPPtr's up to fill in the gaps.
- *	returns the number of valid HSP's.
-*/
+/* See description in blast_hits.h */
 
 Int4
 BlastHSPArrayPurge (BlastHSP** hsp_array, Int4 hspcnt)
@@ -650,7 +647,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
  * @param query_info Auxiliary query information [in]
  * @param sbp The statistical information [in]
  * @param score_options The scoring options [in]
- * @param rdfp The BLAST database structure (for retrieving uncompressed
+ * @param bssp The BLAST database structure (for retrieving uncompressed
  *             sequence) [in]
  */
 static Int2 
@@ -772,6 +769,7 @@ heapify (char* base0, char* base, char* lim, char* last, size_t width, int (*com
  * @param b An array [in] [out]
  * @param nel Number of elements in b [in]
  * @param width The size of each element [in]
+ * @param compar Callback to compare two heap elements [in]
  */
 static void CreateHeap (void* b, size_t nel, size_t width, 
    int (*compar )(const void*, const void* ))   

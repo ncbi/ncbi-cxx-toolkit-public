@@ -235,7 +235,7 @@ Int2 BLAST_ScoreBlkFill (BlastScoreBlk* sbp, char* string, Int4 length, Int4 con
  *	-read in the matrix
  *	-set maxscore
  * @param sbp Scoring block [in] [out]
- * @param matrix_path Full path to the matrix in the directory structure [in]
+ * @param matrix Full path to the matrix in the directory structure [in]
 */
 Int2 BLAST_ScoreBlkMatFill (BlastScoreBlk* sbp, char* matrix);
  

@@ -233,6 +233,7 @@ Int4 BlastAaExtendOneHit(Int4 ** matrix,
  * @param hsp_len the length of the HSP [out]
  * @param use_pssm TRUE if the scoring matrix is position-specific [in]
  * @param word_size number of letters in one word [in]
+ * @param right_extend set to TRUE if an extension to the right happened [out]
  * @param s_last_off the rightmost subject offset examined [out]
  * @return the score of the hsp.
  */

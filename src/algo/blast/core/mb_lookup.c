@@ -106,7 +106,7 @@ static DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
 #define SMALL_QUERY_CUTOFF 15000
 #define LARGE_QUERY_CUTOFF 800000
 
-/** Documentation in mb_lookup.h */
+/* Documentation in mb_lookup.h */
 Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
         MBLookupTable** mb_lt_ptr,
         const LookupTableOptions* lookup_options)

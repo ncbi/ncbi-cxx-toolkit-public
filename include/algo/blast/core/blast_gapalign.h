@@ -183,6 +183,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
  * @param score_options Scoring parameters [in]
  * @param q_start Offset in query where to start alignment [in]
  * @param s_start Offset in subject where to start alignment [in]
+ * @param query_length Maximal allowed extension in query [in]
  * @param subject_length Maximal allowed extension in subject [in]
  */
 Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, 
@@ -198,7 +199,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param query_length The query sequence length [in]
- * @param subject The subject sequence length [in]
+ * @param subject_length The subject sequence length [in]
  * @param gap_align The structure holding various information and memory 
  *        needed for gapped alignment [in] [out]
  * @param score_options Options related to scoring alignments [in]
@@ -221,6 +222,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
  * @param score_options Scoring parameters [in]
  * @param q_start Offset in query where to start alignment [in]
  * @param s_start Offset in subject where to start alignment [in]
+ * @param query_length Maximal allowed extension in query [in]
  * @param subject_length Maximal allowed extension in subject [in]
  */
 Int2 PHIGappedAlignmentWithTraceback(Uint1 program, 

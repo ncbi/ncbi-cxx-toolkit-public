@@ -336,7 +336,7 @@ FillReturnXDropoffsInfo(BlastReturnStat* return_stats,
 /** Setup of the auxiliary BLAST structures; 
  * also calculates internally used parameters from options. 
  * @param program_number blastn, blastp, blastx, etc. [in]
- * @param bssp Sequence source information, with callbacks to get 
+ * @param seq_src Sequence source information, with callbacks to get 
  *             sequences, their lengths, etc. [in]
  * @param scoring_options options for scoring. [in]
  * @param eff_len_options  used to calculate effective lengths. [in]

@@ -155,10 +155,10 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap, /* in: the LUT */
  * "offset". 
  *
  * @param lookup_wrap the lookup table [in]
- * @param subject the subject sequence [in]
+ * @param sequence the subject sequence [in]
  * @param offset the offset in the subject at which to begin scanning [in/out]
- * @param query_offsets array to which hits will be copied [out]
- * @param subject_offsets array to which hits will be copied [out]
+ * @param table_offsets array to which hits will be copied [out]
+ * @param sequence_offsets array to which hits will be copied [out]
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */

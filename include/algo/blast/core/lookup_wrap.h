@@ -59,6 +59,7 @@ typedef struct LookupTableWrap {
  *                        construction [in]
  * @param sbp Scoring block containing matrix [in]
  * @param lookup_wrap_ptr The initialized lookup table [out]
+ * @param rps_info Structure containing RPS blast setup information [in]
  */
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	

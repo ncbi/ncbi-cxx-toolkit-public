@@ -514,7 +514,7 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringOptions* score_options,
    return gamp;
 }
 
-/** Deallocate the BlastGapAlignStruct structure */
+/* Documented in blast_gapalign.h */
 BlastGapAlignStruct* 
 BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
 {
@@ -527,7 +527,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
    return NULL;
 }
 
-/** Documented in blast_gapalign.h */
+/* Documented in blast_gapalign.h */
 Int2
 BLAST_GapAlignStructNew(const BlastScoringOptions* score_options, 
    const BlastExtensionParameters* ext_params, 
@@ -2814,8 +2814,9 @@ static void SavePatternLengthInBlastHSP(BlastInitHSP* init_hsp,
  * @param hsp_list Structure holding all HSPs with full gapped alignment 
  *        information [in] [out]
  * @param hit_options Options related to saving hits [in]
- * @param frame Subject frame: -3..3 for translated sequence, 1 for blastn, 
- *              0 for blastp [in]
+ * @param query_context The index of the query containing this HSP
+ * @param subject_frame Subject frame: -3..3 for translated sequence, 
+ *        1 for blastn, 0 for blastp [in]
  */
 static Int2 BLAST_SaveHsp(BlastGapAlignStruct* gap_align, 
    BlastInitHSP* init_hsp, BlastHSPList* hsp_list, 

@@ -599,7 +599,7 @@ BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
 } /* BlastTranslateUnambiguousSequence */
 
 
-/** Reverse a nucleotide sequence in the ncbi4na encoding */
+/* Reverse a nucleotide sequence in the ncbi4na encoding */
 Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length, 
                             Uint1** rev_sequence_ptr)
 {

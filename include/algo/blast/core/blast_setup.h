@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.33  2004/03/11 18:31:06  papadopo
+* fix doxygen warnings
+*
 * Revision 1.32  2004/03/10 18:00:20  camacho
 * Remove outdated references to blastkar
 *
@@ -242,7 +245,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
  *      Should be moved to blast_stat.c in the future.
  * @param sbp Contains fields to be set, should not be NULL. [out]
  * @param scoring_options Scoring_options [in]
- * @param program_number Used to set fields on sbp [in]
+ * @param program Used to set fields on sbp [in]
  * @param query_info Query information containing context information [in]
  *
 */

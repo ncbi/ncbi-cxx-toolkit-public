@@ -44,7 +44,7 @@ Detailed Contents:
 
 static char const rcsid[] = "$Id$";
 
-/** Comparison function for sorting HSPs by score. 
+/* Comparison function for sorting HSPs by score. 
  * Ties are broken based on subject sequence offsets.
  */
 static int
@@ -611,7 +611,7 @@ HSPContainedInHSPCheck(BlastHSP** hsp_array, BlastHSP* hsp, Int4 max_index, Bool
  * @param subject database sequence as a raw string [in]
  * @param program_number which program [in]
  * @param sbp the scoring information [in]
- * @param scalingFactor normally 1 or 0 (both mean no rescaling) , but may be larger for rescaled searches. [in]
+ * @param psi_options parameters for PSI blast [in]
  * @param scoring_options instructions on how to score matches. [in]
  * @param hit_options determines which scores to save. [in]
  */

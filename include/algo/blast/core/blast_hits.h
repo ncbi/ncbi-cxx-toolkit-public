@@ -152,7 +152,7 @@ typedef struct BlastHSPResults {
  *                    information of nucleotide queries [in]
  * @param sbp The Karlin-Altschul statistical information block [in]
  * @param score_options Options related to scoring [in]
- * @param rdfp Needed to extract the whole subject sequence with
+ * @param bssp Needed to extract the whole subject sequence with
  *             ambiguities [in]
  * @param thr_info Information shared between multiple search threads [in]
  */

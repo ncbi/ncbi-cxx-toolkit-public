@@ -51,7 +51,7 @@ extern "C" {
  * @param results Results of this BLAST search [in] [out]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]
- * @param rdfp BLAST database structure [in]
+ * @param bssp BLAST database structure [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options The scoring related options [in]
  * @param ext_params Gapped extension parameters [in]
@@ -85,7 +85,6 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
  * @param db_options Options containing database genetic code string [in]
- * @param psi_options Options specific to PSI BLAST [in]
  */
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
         BlastHSPResults* results, BLAST_SequenceBlk* query, 

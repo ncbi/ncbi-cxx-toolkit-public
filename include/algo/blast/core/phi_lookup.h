@@ -97,6 +97,7 @@ Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
  *
  * @param lookup_wrap contains the pseudo lookup table with offsets of pattern
  *                    occurrencies in query [in]
+ * @param query_blk the query sequence [in]
  * @param subject the subject sequence [in]
  * @param offset the offset in the subject at which to begin scanning [in/out]
  * @param query_offsets array to which hits will be copied [out]

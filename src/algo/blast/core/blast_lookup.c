@@ -855,12 +855,8 @@ static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, Int4 offset)
  *
  ******************************************************/
 
-/** Given a starting position of a word in a compressed nucleotide sequence, 
- *  compute this word's lookup table index
- * @param length The length of the word [in]
- * @param word Pointer to the start of the word [in]
- * @param index Lookup table index [out]
- * @return Pointer to the next byte after the end of the word
+/* Given a starting position of a word in a compressed nucleotide sequence, 
+ * compute this word's lookup table index
  */
 static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
 		          const Uint1* word, Int4* index)
@@ -873,13 +869,8 @@ static NCBI_INLINE Uint1* BlastNaLookupInitIndex(Int4 length,
    return (Uint1 *) (word + length);
 }
 
-/** Recompute the word index given its previous value and the new location 
+/* Recompute the word index given its previous value and the new location 
  *  of the last byte of the word
- * @param scan_shift The number of bits to shift the previous word [in]
- * @param mask The mask to cut off the higher bits of the previous word [in]
- * @param word Pointer to the beginning of the previous word [in]
- * @param index The lookup index value for the previous word [in]
- * @return The value of the lookup index for the next word 
  */
 static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
 		      const Uint1* word, Int4 index)
@@ -888,14 +879,8 @@ static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask,
    
 }
 
-/** Given a word computed from full bytes of a compressed sequence, 
+/* Given a word computed from full bytes of a compressed sequence, 
  *  shift it by 0-3 bases 
- * @param s Pointer to the start of a word in the compressed sequence [in]
- * @param index The unadjusted lookup index [in] 
- * @param mask The mask to cut off the unneeded bits from the shifted word [in]
- * @param bit By how many bits the word should be shifted for adjusted index
- *        recomputation
- * @return The adjusted value of the lookup index
  */
 static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index, 
                       Int4 mask, Uint1 bit)
@@ -1182,11 +1167,7 @@ static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
   return 0;
 }
 
-/** Fill the BLASTn lookup table.
- * @param lookup The lookup table structure [in] [out]
- * @param query The query sequence [in]
- * @param location What part of the query should be indexed? [in]
- */
+/* See description in blast_lookup.h */
 Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
 			ListNode* location)
 {
