@@ -174,7 +174,8 @@ class CNcbiRegistry;
 /// @return 
 ///     Reconstructed tree (caller is responsible for deletion)
 ///
-TPluginManagerParamTree* NCBI_XNCBI_EXPORT
+NCBI_XNCBI_EXPORT
+TPluginManagerParamTree*
 PluginManager_ConvertRegToTree(const CNcbiRegistry&  reg);
 
 
@@ -837,6 +838,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/07/29 15:37:59  dicuccio
+ * Rearranged export specifier - comes before return value
+ *
  * Revision 1.25  2004/07/29 13:14:49  kuznets
  * + PluginManager_ConvertRegToTree
  *
