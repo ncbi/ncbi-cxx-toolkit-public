@@ -22,13 +22,19 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 4.0  1995/07/26 13:56:09  ostell
-* force revision to 4.0
+* Revision 4.1  1997/01/28 22:35:23  kans
+* new symbol collisions in CodeWarrior fixed
 *
+ * Revision 4.0  1995/07/26  13:56:09  ostell
+ * force revision to 4.0
+ *
  * Revision 1.3  1995/05/17  17:56:54  epstein
  * add RCS log revision history
  *
  */
+
+#ifndef _NETERRNO_
+#define _NETERRNO_
 
 #ifndef KERNEL
 extern int errno;			/* global error number */
@@ -39,7 +45,7 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 
 #ifdef __MWERKS__
 #define	EPERM		1		/* Operation not permitted */
-#define	ENOENT		2		/* No such file or directory */
+/*#define	ENOENT		2*/		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
 #define	EINTR		4		/* Interrupted system call */
 #define	EIO		5		/* Input/output error */
@@ -63,7 +69,7 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #endif /* ENOMEM */
 
 #ifdef __MWERKS__
-#define	EACCES		13		/* Permission denied */
+/*#define	EACCES		13*/		/* Permission denied */
 #endif /* __MWERKS__ */
 
 #ifndef EFAULT
@@ -165,6 +171,9 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #endif /* _POSIX_SOURCE */
 
 #define	ENOLCK		77		/* No locks available */
+#ifdef ENOSYS
+#undef ENOSYS
+#endif
 #define	ENOSYS		78		/* Function not implemented */
 
 #ifdef KERNEL
@@ -172,3 +181,6 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #define	ERESTART	-1		/* restart syscall */
 #define	EJUSTRETURN	-2		/* don't modify regs, just return */
 #endif
+
+#endif /* defined _NETERRNO_ */
+
