@@ -989,10 +989,21 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
                 ITERATE(CBioseq_Info::TSynonyms, it,
                         info->GetBioseq_Info().m_Synonyms) {
                     // Check current ID for conflicts, add to the set.
-                    TSeq_idMapValue& seq_id_info = x_GetSeq_id_Info(*it);
-                    if ( x_InitBioseq_Info(seq_id_info) == info ) {
-                        // the same bioseq - add synonym
-                        syn_set->AddSynonym(&seq_id_info);
+                    try {
+                        TSeq_idMapValue& seq_id_info = x_GetSeq_id_Info(*it);
+                        if ( x_InitBioseq_Info(seq_id_info) == info ) {
+                            // the same bioseq - add synonym
+                            syn_set->AddSynonym(&seq_id_info);
+                        }
+                        else {
+                            LOG_POST(Warning << "CScope::GetSynonyms: "
+                                     "one of Bioseq's ids is resolved to another sequence");
+                        }
+                    }
+                    catch ( CException& exc ) {
+                        LOG_POST(Warning << "CScope::GetSynonyms: "
+                                 "one of Bioseq's ids cannot be resolved: " <<
+                                 exc.what());
                     }
                 }
             }
@@ -1022,6 +1033,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/10/20 18:23:54  vasilche
+* Make CScope::GetSynonyms() to skip conflicting ids.
+*
 * Revision 1.84  2003/10/09 13:58:21  vasilche
 * Fixed conflict when the same datasource appears twice with equal priorities.
 *
