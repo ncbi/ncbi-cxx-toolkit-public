@@ -35,6 +35,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -122,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/16 15:37:43  vasilche
+ * Added required include
+ *
  * Revision 1.1  2003/10/24 15:06:30  dicuccio
  * Initial revision
  *

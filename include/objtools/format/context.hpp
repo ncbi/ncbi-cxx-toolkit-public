@@ -45,6 +45,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objmgr/scope.hpp>
 
 #include <objtools/format/flat_file_flags.hpp>
@@ -1434,6 +1435,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/16 15:40:21  vasilche
+* Added required include
+*
 * Revision 1.8  2004/03/12 16:55:10  shomrat
 * + ViewNuc(), ViewProt()
 *

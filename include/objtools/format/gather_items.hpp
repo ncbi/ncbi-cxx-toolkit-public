@@ -38,7 +38,7 @@
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
 
-
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/16 15:40:21  vasilche
+* Added required include
+*
 * Revision 1.5  2004/03/12 16:54:32  shomrat
 * + x_DisplayBioseq
 *
