@@ -57,6 +57,17 @@ typedef struct {
 
 /* Callback to expand the heap (a la 'realloc').
  * NOTE: the returned address must be aligned on a 'double' boundary!
+ *
+ *   old_base  |  new_size  |  Expected result
+ * ------------+------------+--------------------------------------------------
+ *   non-NULL  |     0      | Deallocate old_base and return 0
+ *   non-NULL  |  non-zero  | Reallocate to the requested size, return new base
+ *      0      |  non-zero  | Allocate (newly) and return base
+ *      0      |     0      | Do nothing, return 0
+ * ------------+------------+--------------------------------------------------
+ * Note that reallocation can request either to expand or to shrink the
+ * heap extent. When (re-)allocation fails, the callback should return 0.
+ * When expected to return 0, this callback has to always do so.
  */
 typedef char* (*FHEAP_Expand)
 (char*      old_base,  /* current base of the heap to be expanded           */
@@ -153,6 +164,9 @@ int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/09/25 20:08:43  lavr
+ * Added table to explain expand callback inputs and outputs
+ *
  * Revision 6.11  2002/09/19 18:00:58  lavr
  * Header file guard macro changed; log moved to the end
  *
