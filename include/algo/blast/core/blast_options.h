@@ -438,13 +438,22 @@ typedef struct BlastEffectiveLengthsParameters {
  *  Some of these possibly should be transfered elsewhere  
  */
 typedef struct PSIBlastOptions {
+    /** Pseudocount constant. Needed for the computing the PSSM residue 
+     * frequencies */
+    Int4 pseudo_count;
+
+    /*** The following options are used at the API layer to specify how the
+     * multiple sequence alignment is built from pairwise alignments. These
+     * could go in their own structure in the future. */
+
     /** Minimum evalue for inclusion in PSSM calculation. Needed for the first
      * stage of the PSSM calculation algorithm */
     double inclusion_ethresh;
 
-    /** Pseudocount constant. Needed for the computing the PSSM residue 
-     * frequencies */
-    Int4 pseudo_count;
+    /** If set to TRUE, use the best alignment when multiple HSPs are found 
+     * in a query-subject alignment (i.e.: HSP with the lowest e-value), else
+     * use all HSPs in a query-subject alignment. */
+    Boolean use_best_alignment;
 } PSIBlastOptions;
 
 /** Options used to create the ReadDBFILE structure 
