@@ -85,6 +85,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2002/04/26 16:40:43  lavr
+ * New method: SOCK_Poll()
+ *
  * Revision 6.16  2002/04/22 20:52:34  lavr
  * +SOCK_htons(), macros SOCK_ntohl() and SOCK_ntohs()
  *
@@ -354,6 +357,29 @@ extern EIO_Status SOCK_Wait
 (SOCK            sock,
  EIO_Event       event,  /* [in] one of:  eIO_Read, eIO_Write, eIO_ReadWrite */
  const STimeout* timeout
+ );
+
+
+/* Block until at least one of the sockets enlisted in "socks" array
+ * (of size "n") becomes available for requested operation (event),
+ * or until timeout expires (wait indefinitely if timeout is passed NULL).
+ * Return eIO_Success if at least one socket was found ready; eIO_Timeout
+ * if timeout expired; eIO_Unknown if underlying system call(s) failed.
+ * NOTE: for a socket found not ready for an operation, eIO_Open is returned
+ *       in its "revent"; for a failing socket, eIO_Close is returned.
+ */
+
+typedef struct {
+    SOCK      sock;   /* [in]           SOCK to poll (NULL if not to poll)   */
+    EIO_Event event;  /* [in]  one of:  eIO_Read, eIO_Write, eIO_ReadWrite   */
+    EIO_Event revent; /* [out] one of:  eIO_Open/Read/Write/ReadWrite/Close  */
+} SSOCK_Poll;
+
+extern EIO_Status SOCK_Poll
+(size_t          n,         /* [in]      # of SSOCK_Poll elems in "socks"    */
+ SSOCK_Poll      socks[],   /* [in|out]  array of query/result structures    */
+ const STimeout* timeout,   /* [in]      max time to wait    (can be NULL)   */
+ size_t*         n_out      /* [out]     # of ready sockets  (can be NULL)   */
  );
 
 
