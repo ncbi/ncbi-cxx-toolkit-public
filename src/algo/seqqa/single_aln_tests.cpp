@@ -90,6 +90,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         = scope.GetBioseqHandle(disc.front()->GetSeq_id(0));
     SAnnotSelector sel;
     sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    sel.SetAdaptiveDepth();
     CFeat_CI it(xcript_hand, 0, xcript_hand.GetBioseqLength() - 1, sel);
 
     const CSeq_feat& mf = it->GetMappedFeature();
@@ -450,6 +451,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/06 21:49:05  jcherry
+ * Use "adaptive depth" (apparently will be necessary for use
+ * of "fake" transcripts representing genomic annotation)
+ *
  * Revision 1.1  2004/10/06 19:57:15  jcherry
  * Initial version
  *

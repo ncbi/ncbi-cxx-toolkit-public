@@ -78,6 +78,7 @@ CSeqTest::x_TestAllCdregions(const CSerialObject& obj,
 
     SAnnotSelector sel;
     sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+    sel.SetAdaptiveDepth();
     CSeq_loc loc;
     loc.SetWhole().Assign(*id);
     CFeat_CI feat_iter(ctx->GetScope(), loc, sel);
@@ -205,6 +206,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/06 21:49:05  jcherry
+ * Use "adaptive depth" (apparently will be necessary for use
+ * of "fake" transcripts representing genomic annotation)
+ *
  * Revision 1.2  2004/10/06 21:09:50  jcherry
  * Fixed msvc compile errors
  *
