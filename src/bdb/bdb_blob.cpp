@@ -68,18 +68,11 @@ EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf,
     }
 
     EBDB_ErrCode ret;
-    try {
 
-        ret = CBDB_File::Fetch();
+    ret = CBDB_File::Fetch();
 
-        if ( buf )
-            *buf = m_DBT_Data.data;
-
-    } catch(...) {
-        ::memset(&m_DBT_Data, 0, sizeof(m_DBT_Data));
-        throw;
-    }
-
+    if ( buf )
+        *buf = m_DBT_Data.data;
 
     if (ret == eBDB_NotFound)
         return eBDB_NotFound;
@@ -259,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/09 13:44:57  kuznets
+ * Fixed a bug in cursors based on BLOB storage
+ *
  * Revision 1.5  2003/05/08 13:43:40  kuznets
  * Bug fix.
  *

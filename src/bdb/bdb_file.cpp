@@ -451,6 +451,12 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
 {
     x_StartRead();
 
+    if (m_DataBufDisabled) {
+        m_DBT_Data.size  = 0;
+        m_DBT_Data.flags = 0;
+        m_DBT_Data.data  = 0;        
+    }
+
     int ret = dbc->c_get(dbc,
                          &m_DBT_Key,
                          &m_DBT_Data,
@@ -526,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/05/09 13:44:57  kuznets
+ * Fixed a bug in cursors based on BLOB storage
+ *
  * Revision 1.6  2003/05/05 20:15:32  kuznets
  * Added CBDB_BLobFile
  *
