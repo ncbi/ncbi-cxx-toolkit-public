@@ -859,7 +859,6 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
    BlastHitList* hit_list;
    BlastHSPList* hsp_list;
    BlastScoreBlk* sbp;
-   Uint1 encoding=ERROR_ENCODING;
    Boolean db_is_na;
    
    if (!results || !query_info || !subject) {
@@ -877,8 +876,6 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
    sfree(gap_align->dyn_prog);
 
    sbp = gap_align->sbp;
-
-   encoding = GetTracebackEncoding(program_number);
 
    if (db_is_na) {
       /* Two sequences case: free the compressed sequence */
