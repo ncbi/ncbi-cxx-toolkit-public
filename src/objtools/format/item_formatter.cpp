@@ -153,24 +153,6 @@ string& CFlatItemFormatter::Pad(const string& s, string& out,
 }
 
 
-void s_TrimSpaces(string& str, int indent)
-{
-    if (str.empty()) {
-        return;
-    }
-
-    int end = str.length() - 1;
-    while (end >= indent  &&  isspace(str[end])) {
-        end--;
-    }
-    if (end < indent) {
-        str.erase(indent);
-    } else {
-        str.erase(end + 1);
-    }
-}
-
-
 list<string>& CFlatItemFormatter::Wrap
 (list<string>& l,
  SIZE_TYPE width,
@@ -184,7 +166,7 @@ list<string>& CFlatItemFormatter::Wrap
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
     NStr::Wrap(body, width, l, flags, indent, tag2);
     NON_CONST_ITERATE (list<string>, it, l) {
-        s_TrimSpaces(*it, indent.length());
+        TrimSpaces(*it, indent.length());
     }
     return l;
 }
@@ -202,7 +184,7 @@ list<string>& CFlatItemFormatter::Wrap
     const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
     NStr::Wrap(body, GetWidth(), l, flags, indent, tag2);
     NON_CONST_ITERATE (list<string>, it, l) {
-        s_TrimSpaces(*it, indent.length());
+        TrimSpaces(*it, indent.length());
     }
     return l;
 }
@@ -281,27 +263,31 @@ void CFlatItemFormatter::x_FormatRefJournal
                     ref.GetDate()->GetDate(&year, " (%Y)");
                 }
             }
-            journal = ref.GetJournal() + year;
+            journal = 
+                (ref.GetJournal().empty() ? "Unpublished" : ref.GetJournal());
+            journal += year;
             break;
         }}
         case CReferenceItem::ePublished:
         {{
             journal = ref.GetJournal();
-            if (!ref.GetVolume().empty()) {
-                journal += ' ';
-                journal += ref.GetVolume();
-            }
-            if (!ref.GetIssue().empty()) {
-                journal += " (";
-                journal += ref.GetIssue();
-                journal += ')';
-            }
-            if (!ref.GetPages().empty()) {
-                journal += ", ";
-                journal += ref.GetPages();
-            }
-            if (ref.GetDate() != NULL) {
-                ref.GetDate()->GetDate(&journal, " (%Y)");
+            if (!journal.empty()) {
+                if (!ref.GetVolume().empty()) {
+                    journal += ' ';
+                    journal += ref.GetVolume();
+                }
+                if (!ref.GetIssue().empty()) {
+                    journal += " (";
+                    journal += ref.GetIssue();
+                    journal += ')';
+                }
+                if (!ref.GetPages().empty()) {
+                    journal += ", ";
+                    journal += ref.GetPages();
+                }
+                if (ref.UseDate()  &&  ref.GetDate() != NULL) {
+                    ref.GetDate()->GetDate(&journal, " (%Y)");
+                }
             }
             break;
         }}
@@ -392,17 +378,10 @@ void CFlatItemFormatter::x_GetKeywords
  const string& prefix,
  list<string>& l) const
 {
-    list<string> kw;
-    CKeywordsItem::TKeywords::const_iterator last = --(kws.GetKeywords().end());
-    ITERATE (CKeywordsItem::TKeywords, it, kws.GetKeywords()) {
-        kw.push_back(*it + (it == last ? '.' : ';'));
-    }
-    if ( kw.empty() ) {
-        kw.push_back(".");
-    }
-    string  str;
-    Pad(prefix, str, ePara);
-    NStr::WrapList(kw, GetWidth(), " ", l, 0, GetIndent(), &str);
+    string keywords = NStr::Join(kws.GetKeywords(), "; ");
+    keywords += '.';
+
+    Wrap(l, prefix, keywords);
 }
 
 
@@ -414,6 +393,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/10/05 15:45:03  shomrat
+* Fixed journal formatting
+*
 * Revision 1.14  2004/08/30 13:39:52  shomrat
 * fixed reference formatting
 *
