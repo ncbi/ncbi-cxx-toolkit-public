@@ -3064,7 +3064,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    Int2 frame = 0; /* CHANGE!!!!!!!!!!!!!!!!! */
    BlastInitHSP** init_hsp_array = NULL;
    BlastHSPList* hsp_list = NULL;
-   double gap_trigger;
+   Int4 gap_trigger;
    double cutoff_score;
    Boolean further_process = FALSE;
    const BlastHitSavingOptions* hit_options = hit_params->options;

@@ -162,7 +162,7 @@ typedef struct BlastReturnStat {
                        extensions */
    Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
                              extensions with traceback */
-   double gap_trigger; /**< Minimal raw score for starting gapped extension */
+   Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastReturnStat;
 
 #ifdef __cplusplus

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.93  2004/03/26 20:46:00  dondosha
+ * Made gap_trigger parameter an integer, as in the old code
+ *
  * Revision 1.92  2004/03/22 20:11:37  dondosha
  * Do not allow small gaps cutoff to be less than gap trigger
  *
@@ -619,7 +622,7 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
       gap trigger. */
    if (gapped_calculation && program_number != blast_type_blastn) {
       parameters->cutoff_score = 
-         MIN((Int4)ext_params->gap_trigger, hit_params->cutoff_score);
+         MIN(ext_params->gap_trigger, hit_params->cutoff_score);
    } else {
       Int4 s2 = 0;
       double e2;
@@ -762,8 +765,8 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
    params->gap_x_dropoff_final = (Int4) 
       (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp_gap->Lambda);
 
-   params->gap_trigger = 
-      (options->gap_trigger*NCBIMATH_LN2 + kbp->logK) / kbp->Lambda;
+   params->gap_trigger = (Int4)
+      ((options->gap_trigger*NCBIMATH_LN2 + kbp->logK) / kbp->Lambda);
 
    return 0;
 }
@@ -1405,14 +1408,14 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
          However this does not apply to the ungapped search! */
       if (params->do_sum_stats) {
          params->cutoff_score = 
-            MIN(params->cutoff_score, (Int4) ext_params->gap_trigger);
+            MIN(params->cutoff_score, ext_params->gap_trigger);
       }
    } else {
       params->cutoff_score = 0;
    }
    
    params->cutoff_small_gap = 
-      MIN(params->cutoff_score, (Int4) ext_params->gap_trigger);
+      MIN(params->cutoff_score, ext_params->gap_trigger);
       
    return 0;
 }

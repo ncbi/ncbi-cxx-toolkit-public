@@ -237,7 +237,7 @@ typedef struct BlastExtensionParameters {
    Int4 gap_x_dropoff; /**< X-dropoff value for gapped extension (raw) */
    Int4 gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                extension (raw) */
-   double gap_trigger; /**< Minimal raw score for starting gapped extension */
+   Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastExtensionParameters;
 
 /** Options used when evaluating and saving hits
