@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.3  2000/03/21 00:19:20  kans
+* need OpenResolver and CloseResolver even for PPC
+*
 * Revision 6.2  2000/03/20 21:49:05  kans
 * initial work on OpenTransport (Churchill)
 *
@@ -75,6 +78,8 @@ int sock_init()
 {
 #if TARGET_CPU_68K == 1
 	OSErr io;
+#else
+	OSErr io;
 #endif
 	int i;
 	
@@ -123,6 +128,9 @@ int sock_init()
 
 #if TARGET_CPU_68K == 1
 	// We only need to do this for 68K targets...
+	io = OpenResolver(NULL);
+#else
+	// Actually it fails if not done for PPC targets
 	io = OpenResolver(NULL);
 #endif
 	
@@ -179,6 +187,8 @@ void sock_close_all()
 	
 #if TARGET_CPU_68K == 1
 	/* release name server resources */
+	(void) CloseResolver();
+#else
 	(void) CloseResolver();
 #endif
 
