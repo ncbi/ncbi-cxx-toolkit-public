@@ -225,7 +225,7 @@ void CMemberInfo::UpdateSetFlag(TObjectPtr object, ESetFlag value) const
                 CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
             TMemberIndex pos = (GetIndex()-1) << 1;
             size_t index =  pos >> 5;
-            size_t offset = pos % 31;
+            size_t offset = pos & 31;
             Uint4 mask = 0x03 << offset;
             *(bits+index) = (*(bits+index) & ~mask) | (value << offset);
         } else {
@@ -244,7 +244,7 @@ void CMemberInfo::UpdateSetFlagYes(TObjectPtr object) const
                 CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
             TMemberIndex pos = (GetIndex()-1) << 1;
             size_t index =  pos >> 5;
-            size_t offset = pos % 31;
+            size_t offset = pos & 31;
             Uint4 mask = 0x03 << offset;
             *(bits+index) |= mask;
         } else {
@@ -263,7 +263,7 @@ bool CMemberInfo::UpdateSetFlagNo(TObjectPtr object) const
                 CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
             TMemberIndex pos = (GetIndex()-1) << 1;
             size_t index =  pos >> 5;
-            size_t offset = pos % 31;
+            size_t offset = pos & 31;
             Uint4 mask = 0x03 << offset;
             if ( *(bits+index) & mask ) {
                 *(bits+index) &= ~mask;
@@ -286,6 +286,9 @@ bool CMemberInfo::UpdateSetFlagNo(TObjectPtr object) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/09/11 20:47:26  vasilche
+* Fixed type %31 -> &31.
+*
 * Revision 1.20  2003/08/14 20:03:57  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
