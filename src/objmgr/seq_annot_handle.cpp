@@ -238,26 +238,15 @@ void CSeq_annot_EditHandle::Remove(void) const
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CSeq_annot_Handle::GetSeq_annot() is deprecated, "
-                  "use GetCompleteSeq_annot().");
-    return *GetCompleteSeq_annot();
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.14  2005/01/03 21:51:58  grichenk
 * Added proxy methods for CSeq_annot getters.
 *

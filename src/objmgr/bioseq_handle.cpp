@@ -726,132 +726,6 @@ CRef<CSeq_loc> CBioseq_Handle::GetRangeSeq_loc(TSeqPos start,
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-const CBioseq& CBioseq_Handle::GetBioseq(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CBioseq_Handle::GetBioseq() is deprecated, "
-                  "use GetCompleteBioseq() or GetBioseqCore().");
-    return *GetCompleteBioseq();
-}
-
-
-const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CBioseq_Handle::GetTopLevelSeqEntry() is deprecated, "
-                  "use GetTopLevelEntry().");
-    return *GetTopLevelEntry().GetCompleteSeq_entry();
-}
-
-
-CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
-                                           ESequenceViewMode mode,
-                                           EVectorCoding coding,
-                                           ENa_strand strand) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CBioseq_Handle::GetSequenceView() is deprecated, "
-                  "use CSeqVector(CSeq_loc&).");
-    if ( mode != eViewConstructed )
-        strand = eNa_strand_unknown;
-    return CSeqVector(*GetSeqMapByLocation(location, mode), GetTSE_Handle(),
-                      coding, strand);
-}
-
-
-CConstRef<CSeqMap>
-CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
-                                    ESequenceViewMode mode) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CBioseq_Handle::GetSeqMapByLocation() is deprecated, "
-                  "use CSeqMap::CreateSeqMapForSeq_loc().");
-    CConstRef<CSeqMap> ret;
-    if ( mode == eViewConstructed ) {
-        ret = CSeqMap::CreateSeqMapForSeq_loc(loc, &GetScope());
-    }
-    else {
-        // Parse the location
-        CHandleRange rlist;      // all intervals pointing to the sequence
-        CSeq_loc_CI loc_it(loc);
-        for ( ; loc_it; ++loc_it) {
-            if ( !IsSynonym(loc_it.GetSeq_id()) )
-                continue;
-            rlist.AddRange(loc_it.GetRange(), loc_it.GetStrand());
-        }
-
-        // Make mode-dependent parsing of the range list
-        CHandleRange mode_rlist; // processed intervals (merged, excluded)
-        switch (mode) {
-        case eViewMerged:
-        {
-            // Merge intervals from "rlist"
-            ITERATE (CHandleRange, rit, rlist) {
-                mode_rlist.MergeRange(rit->first, rit->second);
-            }
-            break;
-        }
-        case eViewExcluded:
-        {
-            // Exclude intervals from "rlist"
-            TSeqPos last_from = 0;
-
-            // Ranges need to be sorted first
-            typedef vector<CHandleRange::TRange> TSortedRanges;
-            TSortedRanges sorted_rg;
-            ITERATE (CHandleRange, rit, rlist) {
-                sorted_rg.push_back(rit->first);
-            }
-            sort(sorted_rg.begin(), sorted_rg.end());
-
-            ITERATE(TSortedRanges, rit, sorted_rg) {
-                if (last_from < rit->GetFrom()) {
-                    mode_rlist.MergeRange(
-                        CHandleRange::TRange(last_from, rit->GetFrom()-1),
-                        eNa_strand_unknown);
-                }
-                if ( !rit->IsWholeTo() ) {
-                    last_from = rit->GetTo()+1;
-                }
-                else {
-                    last_from = CHandleRange::TRange::GetWholeTo();
-                    break;
-                }
-            }
-            TSeqPos total_length = GetSeqMap().GetLength(&GetScope());
-            if (last_from < total_length) {
-                mode_rlist.MergeRange(
-                    CHandleRange::TRange(last_from, total_length-1),
-                    eNa_strand_unknown);
-            }
-            break;
-        }
-        default:
-            break;
-        }
-
-        // Convert ranges to seq-loc
-        CRef<CSeq_loc> view_loc(new CSeq_loc);
-        ITERATE (CHandleRange, rit, mode_rlist) {
-            CRef<CSeq_loc> seg_loc(new CSeq_loc);
-            CRef<CSeq_id> id(new CSeq_id);
-            id->Assign(*GetSeqId());
-            seg_loc->SetInt().SetId(*id);
-            seg_loc->SetInt().SetFrom(rit->first.GetFrom());
-            seg_loc->SetInt().SetTo(rit->first.GetTo());
-            view_loc->SetMix().Set().push_back(seg_loc);
-        }
-        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, &GetScope());
-    }
-    return ret;
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 bool CBioseq_Handle::AddUsedBioseq(const CBioseq_Handle& bh) const
 {
     return GetTSE_Handle().AddUsedTSE(bh.GetTSE_Handle());
@@ -868,6 +742,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.78  2005/01/04 16:31:07  grichenk
 * Added IsNa(), IsAa()
 *

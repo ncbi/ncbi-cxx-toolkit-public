@@ -564,65 +564,15 @@ bool SAnnotSelector::MatchType(const CAnnotObject_Info& annot_info) const
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-SAnnotSelector&
-SAnnotSelector::SetLimitTSE(const CSeq_entry* limit)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "SAnnotSelector::SetLimitTSE(const CSeq_entry* limit).");
-    if ( !limit )
-        return SetLimitNone();
-    
-    m_LimitObjectType = eLimit_TSE;
-    m_LimitObject.Reset(limit);
-    m_LimitTSE.Reset();
-    return *this;
-}
-
-
-SAnnotSelector&
-SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* limit)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* limit).");
-    if ( !limit )
-        return SetLimitNone();
-    
-    m_LimitObjectType = eLimit_Seq_entry;
-    m_LimitObject.Reset(limit);
-    m_LimitTSE.Reset();
-    return *this;
-}
-
-
-SAnnotSelector&
-SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* limit)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* limit).");
-    if ( !limit )
-        return SetLimitNone();
-    
-    m_LimitObjectType = eLimit_Seq_annot;
-    m_LimitObject.Reset(limit);
-    m_LimitTSE.Reset();
-    return *this;
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.20  2005/01/04 16:50:34  vasilche
 * Added SAnnotSelector::SetExcludeExternal().
 *

@@ -173,12 +173,6 @@ protected:
 public: // non-public section
     const CSeq_annot_Info& x_GetInfo(void) const;
     const CSeq_annot& x_GetSeq_annotCore(void) const;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-    /// Get const reference to the current seq-annot
-    const CSeq_annot& GetSeq_annot(void) const;
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -321,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.14  2005/01/03 21:51:58  grichenk
 * Added proxy methods for CSeq_annot getters.
 *

@@ -251,32 +251,6 @@ private:
     CGraph_CI operator-- (int);
 
     CMappedGraph m_Graph; // current graph object returned by operator->()
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    /// @deprecated
-    /// Iterate all graphs related to the bioseq
-    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              const SAnnotSelector& sel);
-
-    /// @deprecated
-    /// Iterate all graphs related to the location
-    CGraph_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-
-    /// @deprecated
-    /// Iterate all graphs related to the bioseq
-    CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -417,6 +391,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.40  2004/12/22 15:56:07  vasilche
 * Added method CSeq_annot_Handle GetAnnot().
 *

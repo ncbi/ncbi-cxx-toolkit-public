@@ -184,12 +184,6 @@ private:
     mutable CConstRef<CSeq_feat> m_OriginalSeq_feat;
     mutable CConstRef<CSeq_feat> m_MappedSeq_feat;
     mutable CConstRef<CSeq_loc>  m_MappedSeq_loc;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    const CSeq_annot& GetSeq_annot(void) const;
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -275,88 +269,6 @@ private:
     CFeat_CI& operator-- (int);
 
     CMappedFeat m_MappedFeat;// current feature object returned by operator->()
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    enum EFeat_Location {
-        e_Location,
-        e_Product
-    };
-
-    /// @deprecated
-    /// Search features on the bioseq
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop);
-
-    /// @deprecated
-    /// Search features on the bioseq
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             const SAnnotSelector& sel);
-
-    /// @deprecated
-    /// Iterate all features from the seq-annot regardless of their location
-    CFeat_CI(CScope& scope, const CSeq_annot& annot);
-
-    /// @deprecated
-    /// Iterate all features from the seq-annot regardless of their location
-    CFeat_CI(CScope& scope, const CSeq_annot& annot,
-             const SAnnotSelector& sel);
-
-    /// @deprecated
-    /// Iterate all features from the seq-entry regardless of their location
-    CFeat_CI(CScope& scope, const CSeq_entry& entry);
-
-    /// @deprecated
-    /// Iterate all features from the seq-entry regardless of their location
-    CFeat_CI(CScope& scope, const CSeq_entry& entry,
-             const SAnnotSelector& sel);
-
-    typedef SAnnotSelector::TFeatType TFeatType;
-
-    /// @deprecated
-    /// Search features related to the location
-    CFeat_CI(CScope& scope,
-             const CSeq_loc& loc,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type
-             = SAnnotSelector::eOverlap_Intervals,
-             SAnnotSelector::EResolveMethod resolve
-             = SAnnotSelector::eResolve_TSE,
-             EFeat_Location loc_type = e_Location);
-
-    /// @deprecated
-    /// Search features on the bioseq
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type
-             = SAnnotSelector::eOverlap_Intervals,
-             SAnnotSelector::EResolveMethod resolve
-             = SAnnotSelector::eResolve_TSE,
-             EFeat_Location loc_type = e_Location);
-
-    /// @deprecated
-    /// Search features on the bioseq
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type,
-             SAnnotSelector::EResolveMethod resolve,
-             EFeat_Location loc_type,
-             const CSeq_entry_Handle& limitEntry);
-
-    /// @deprecated
-    /// Search features on the bioseq
-    CFeat_CI(const CBioseq_Handle& bioseq,
-             TSeqPos start, TSeqPos stop,
-             TFeatType feat_type,
-             SAnnotSelector::EOverlapType overlap_type,
-             SAnnotSelector::EResolveMethod resolve,
-             EFeat_Location loc_type,
-             const CSeq_entry* limitEntry);
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -457,6 +369,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.47  2004/10/29 17:47:12  grichenk
 * Marked CMappedFeat::GetSeq_annot as deprecated
 *

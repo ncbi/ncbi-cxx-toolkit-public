@@ -295,13 +295,6 @@ private:
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
     friend class CMappedGraph;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-private:
-    void x_Initialize(const CBioseq_Handle& bioseq,
-                      TSeqPos start, TSeqPos stop);
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -662,6 +655,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.21  2004/12/22 15:56:19  vasilche
 * Added CTSE_Handle.
 * Renamed x_Search() methods to avoid name clash.

@@ -72,42 +72,15 @@ SSeqMapSelector::SSeqMapSelector(CSeqMap::EFlags flags, size_t resolve_count)
 }
 
 
-SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry* tse)
-{
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-    m_LimitTSEObject.Reset(tse);
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-    m_LimitTSE.Reset();
-    return *this;
-}
-
-
 SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry_Handle& tse)
 {
     m_LimitTSE = tse.GetTSE_Handle();
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-    m_LimitTSEObject.Reset();
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     return *this;
 }
 
 
 const CTSE_Handle& SSeqMapSelector::x_GetLimitTSE(CScope* scope) const
 {
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-    if ( !m_LimitTSE ) {
-        _ASSERT(m_LimitTSEObject);
-        if ( !scope ) {
-            NCBI_THROW(CSeqMapException, eNullPointer,
-                       "Cannot find limit TSE: null scope pointer");
-        }
-        const_cast<SSeqMapSelector*>(this)->m_LimitTSE =
-            scope->GetTSE_Handle(*m_LimitTSEObject);
-    }
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     _ASSERT(m_LimitTSE);
     return m_LimitTSE;
 }
@@ -586,70 +559,6 @@ void CSeqMap_CI::SetFlags(TFlags flags)
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       TSeqPos pos,
-                       size_t maxResolveCount,
-                       TFlags flags)
-    : m_Scope(scope)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,\n"
-        "                    CScope* scope,\n"
-        "                    TSeqPos pos,\n"
-        "                    size_t maxResolveCount,\n"
-        "                    TFlags flags)\n");
-    SSeqMapSelector sel;
-    sel.SetResolveCount(maxResolveCount).SetFlags(flags);
-    x_Select(seqMap, sel, pos);
-}
-
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       TSeqPos pos,
-                       ENa_strand strand,
-                       size_t maxResolveCount,
-                       TFlags flags)
-    : m_Scope(scope)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,\n"
-        "                    CScope* scope,\n"
-        "                    TSeqPos pos,\n"
-        "                    ENa_strand strand,\n"
-        "                    size_t maxResolveCount,\n"
-        "                    TFlags flags)\n");
-    SSeqMapSelector sel;
-    sel.SetStrand(strand).SetResolveCount(maxResolveCount).SetFlags(flags);
-    x_Select(seqMap, sel, pos);
-}
-
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       TSeqPos pos,
-                       const SSeqMapSelector& sel)
-    : m_Scope(scope)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,\n"
-        "                       CScope* scope,\n"
-        "                       TSeqPos pos,\n"
-        "                       const SSeqMapSelector& sel)\n");
-    x_Select(seqMap, sel, pos);
-}
-
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -657,6 +566,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.33  2004/12/22 15:56:16  vasilche
 * Added CTSE_Handle.
 * Allow used TSE linking.

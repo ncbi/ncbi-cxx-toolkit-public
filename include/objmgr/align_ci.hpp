@@ -147,34 +147,6 @@ private:
     CAlign_CI operator-- (int);
 
     mutable CConstRef<CSeq_align> m_MappedAlign;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    /// @deprecated
-    /// Create an iterator that enumerates CSeq_align objects 
-    /// related to the given bioseq
-    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              const SAnnotSelector& sel);
-
-    /// @deprecated
-    /// Create an iterator that enumerates CSeq_align objects
-    /// from all TSEs in all datasources
-    CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector::EOverlapType overlap_type,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-
-    /// @deprecated
-    /// Create an iterator that enumerates CSeq_align objects
-    /// from the only TSE that contains the bioseq
-    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector::EOverlapType overlap_type
-              = SAnnotSelector::eOverlap_Intervals,
-              SAnnotSelector::EResolveMethod resolve
-              = SAnnotSelector::eResolve_TSE);
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -271,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.32  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *

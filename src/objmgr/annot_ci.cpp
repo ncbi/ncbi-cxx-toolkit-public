@@ -139,77 +139,15 @@ void CAnnot_CI::x_Collect(void)
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     bioseq, start, stop,
-                     SAnnotSelector(sel)
-                     .SetNoMapping(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None))
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,\n"
-        "                     TSeqPos start, TSeqPos stop,\n"
-        "                     const SAnnotSelector& sel).");
-    x_Collect();
-}
-
-
-CAnnot_CI::CAnnot_CI(CScope& scope,
-                     const CSeq_loc& loc,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     SAnnotSelector::EResolveMethod resolve)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     scope, loc,
-                     &SAnnotSelector()
-                     .SetNoMapping(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None)
-                     .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve))
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAnnot_CI::CAnnot_CI(CScope& scope,\n"
-        "                     const CSeq_loc& loc,\n"
-        "                     SAnnotSelector::EOverlapType overlap_type,\n"
-        "                     SAnnotSelector::EResolveMethod resolve).");
-    x_Collect();
-}
-
-
-CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     SAnnotSelector::EResolveMethod resolve)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
-                     bioseq, start, stop,
-                     SAnnotSelector()
-                     .SetNoMapping(true)
-                     .SetSortOrder(SAnnotSelector::eSortOrder_None)
-                     .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve))
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,\n"
-        "                     SAnnotSelector::EOverlapType overlap_type,\n"
-        "                     SAnnotSelector::EResolveMethod resolve).");
-    x_Collect();
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.36  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

@@ -891,59 +891,6 @@ void CAnnot_Collector::x_GetTSE_Info(void)
     _ASSERT(m_Selector.m_LimitObject);
     
     switch ( m_Selector.m_LimitObjectType ) {
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-    case SAnnotSelector::eLimit_TSE:
-    {
-        const CSeq_entry* object = CTypeConverter<CSeq_entry>::
-            SafeCast(m_Selector.m_LimitObject.GetPointer());
-        _ASSERT(object);
-        CSeq_entry_Handle handle = m_Scope->GetSeq_entryHandle(*object);
-        if ( !handle ) {
-            NCBI_THROW(CAnnotException, eLimitError,
-                       "CAnnot_Collector::x_GetTSE_Info: "
-                       "unknown top level Seq-entry");
-        }
-        m_Selector.SetLimitTSE(handle);
-        _ASSERT(m_Selector.m_LimitTSE);
-        _ASSERT(m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_TSE_Info);
-        _ASSERT(m_Selector.m_LimitObject);
-        break;
-    }
-    case SAnnotSelector::eLimit_Seq_entry:
-    {
-        const CSeq_entry* object = CTypeConverter<CSeq_entry>::
-            SafeCast(m_Selector.m_LimitObject.GetPointer());
-        _ASSERT(object);
-        CSeq_entry_Handle handle = m_Scope->GetSeq_entryHandle(*object);
-        if ( !handle ) {
-            NCBI_THROW(CAnnotException, eLimitError,
-                       "CAnnot_Collector::x_GetTSE_Info: "
-                       "unknown Seq-entry");
-        }
-        m_Selector.SetLimitSeqEntry(handle);
-        _ASSERT(m_Selector.m_LimitTSE);
-        _ASSERT(m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_Seq_entry_Info);
-        _ASSERT(m_Selector.m_LimitObject);
-        break;
-    }
-    case SAnnotSelector::eLimit_Seq_annot:
-    {
-        const CSeq_annot* object = CTypeConverter<CSeq_annot>::
-            SafeCast(m_Selector.m_LimitObject.GetPointer());
-        _ASSERT(object);
-        CSeq_annot_Handle handle = m_Scope->GetSeq_annotHandle(*object);
-        if ( !handle ) {
-            NCBI_THROW(CAnnotException, eLimitError,
-                       "CAnnot_Collector::x_GetTSE_Info: "
-                       "unknown Seq-annot");
-        }
-        m_Selector.SetLimitSeqAnnot(handle);
-        _ASSERT(m_Selector.m_LimitTSE);
-        _ASSERT(m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_Seq_annot_Info);
-        _ASSERT(m_Selector.m_LimitObject);
-        break;
-    }
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     case SAnnotSelector::eLimit_TSE_Info:
     {
         _ASSERT(m_Selector.m_LimitTSE);
@@ -1844,42 +1791,15 @@ CAnnot_Collector::MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,
-                                    TSeqPos               start,
-                                    TSeqPos               stop)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,\n"
-        "                                    TSeqPos               start,\n"
-        "                                    TSeqPos               stop).");
-    try {
-        if ( start == 0 && stop == 0 ) {
-            stop = bioseq.GetBioseqLength()-1;
-        }
-        CHandleRangeMap master_loc;
-        master_loc.AddRange(bioseq.GetSeq_id_Handle(),
-                            CHandleRange::TRange(start, stop),
-                            eNa_strand_unknown);
-        x_Initialize(master_loc);
-    } catch (...) {
-        // clear all members - GCC 3.0.4 does not do it
-        x_Clear();
-        throw;
-    }
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.42  2005/01/04 16:50:34  vasilche
 * Added SAnnotSelector::SetExcludeExternal().
 *

@@ -381,13 +381,6 @@ protected:
         eLimit_TSE_Info,        // CTSE_Info + m_LimitTSE
         eLimit_Seq_entry_Info,  // CSeq_entry_Info + m_LimitTSE
         eLimit_Seq_annot_Info   // CSeq_annot_Info + m_LimitTSE
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-        ,
-        eLimit_TSE,             // CSeq_entry
-        eLimit_Seq_entry,       // CSeq_entry
-        eLimit_Seq_annot        // CSeq_annot
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
     };
     ELimitObject          m_LimitObjectType;
     EUnresolvedFlag       m_UnresolvedFlag;
@@ -402,15 +395,6 @@ protected:
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesSet        m_AnnotTypesSet;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    SAnnotSelector& SetLimitTSE(const CSeq_entry* limit);
-    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* limit);
-    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* limit);
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -423,6 +407,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.41  2005/01/04 16:50:34  vasilche
 * Added SAnnotSelector::SetExcludeExternal().
 *

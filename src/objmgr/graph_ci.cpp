@@ -99,65 +99,6 @@ CGraph_CI::~CGraph_CI(void)
 {
 }
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, start, stop, sel)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,\n"
-        "                     TSeqPos start, TSeqPos stop,\n"
-        "                     const SAnnotSelector& sel).");
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-CGraph_CI::CGraph_CI(CScope& scope,
-                     const CSeq_loc& loc,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     SAnnotSelector::EResolveMethod resolve)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
-                     scope, loc,
-                     overlap_type, resolve)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CGraph_CI::CGraph_CI(CScope& scope,\n"
-        "                     const CSeq_loc& loc,\n"
-        "                     SAnnotSelector::EOverlapType overlap_type,\n"
-        "                     SAnnotSelector::EResolveMethod resolve).");
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     SAnnotSelector::EResolveMethod resolve)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
-                     bioseq, start, stop,
-                     overlap_type, resolve)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,\n"
-        "                     TSeqPos start, TSeqPos stop,\n"
-        "                     SAnnotSelector::EOverlapType overlap_type,\n"
-        "                     SAnnotSelector::EResolveMethod resolve).");
-    if ( IsValid() ) {
-        m_Graph.Set(GetCollector(), GetIterator());
-    }
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -165,6 +106,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.30  2004/12/22 15:56:07  vasilche
 * Added method CSeq_annot_Handle GetAnnot().
 *

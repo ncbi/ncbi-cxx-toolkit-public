@@ -112,64 +112,15 @@ CSeq_align_Handle CAlign_CI::GetSeq_align_Handle(void) const
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
-                     const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq, start, stop, sel)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,\n"
-        "                     TSeqPos start, TSeqPos stop,\n"
-        "                     const SAnnotSelector& sel).");
-}
-
-
-CAlign_CI::CAlign_CI(CScope& scope,
-                     const CSeq_loc& loc,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     SAnnotSelector::EResolveMethod resolve)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
-                     scope, loc,
-                     overlap_type,
-                     resolve)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAlign_CI::CAlign_CI(CScope& scope,\n"
-        "                     const CSeq_loc& loc,\n"
-        "                     SAnnotSelector::EOverlapType overlap_type,\n"
-        "                     SAnnotSelector::EResolveMethod resolve).");
-}
-
-
-CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     SAnnotSelector::EResolveMethod resolve)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
-                     bioseq, start, stop,
-                     overlap_type,
-                     resolve)
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,\n"
-        "                     SAnnotSelector::EOverlapType overlap_type,\n"
-        "                     SAnnotSelector::EResolveMethod resolve).");
-}
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.29  2004/12/22 15:56:08  vasilche
 * Used CSeq_annot_Handle GetAnnot() to get annotation handle.
 *

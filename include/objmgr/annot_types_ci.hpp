@@ -102,38 +102,6 @@ private:
     CRef<CAnnot_Collector> m_DataCollector;
     // Current annotation
     TIterator              m_CurrAnnot;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    // Search on the bioseq
-    CAnnotTypes_CI(TAnnotType type,
-                   const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   const SAnnotSelector& params);
-
-    // Search all TSEs in all datasources, by default get annotations defined
-    // on segments in the same TSE (eResolve_TSE method).
-    CAnnotTypes_CI(TAnnotType type,
-                   CScope& scope,
-                   const CSeq_loc& loc,
-                   SAnnotSelector::EOverlapType overlap_type,
-                   SAnnotSelector::EResolveMethod resolve);
-
-    // Search only in TSE, containing the bioseq, by default get annotations
-    // defined on segments in the same TSE (eResolve_TSE method).
-    // If "entry" is set, search only annotations from the seq-entry specified
-    // (but no its sub-entries or parent entry).
-    CAnnotTypes_CI(TAnnotType type,
-                   const CBioseq_Handle& bioseq,
-                   TSeqPos start, TSeqPos stop,
-                   SAnnotSelector::EOverlapType overlap_type,
-                   SAnnotSelector::EResolveMethod resolve);
-
-    // Get parent seq-annot
-    const CSeq_annot& GetSeq_annot(void) const;
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -223,6 +191,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.71  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

@@ -125,94 +125,15 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 }
 
 
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               const CBioseq_Handle& bioseq,
-                               TSeqPos start, TSeqPos stop,
-                               const SAnnotSelector& params)
-    : m_DataCollector(new CAnnot_Collector(params, bioseq.GetScope()))
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,\n"
-        "                               const CBioseq_Handle& bioseq,\n"
-        "                               TSeqPos start, TSeqPos stop,\n"
-        "                               const SAnnotSelector& params).");
-    m_DataCollector->GetSelector().CheckAnnotType(type);
-    m_DataCollector->x_Initialize(bioseq, start, stop);
-    Rewind();
-}
-
-
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               CScope& scope,
-                               const CSeq_loc& loc,
-                               SAnnotSelector::EOverlapType overlap_type,
-                               SAnnotSelector::EResolveMethod resolve_method)
-    : m_DataCollector(new CAnnot_Collector(SAnnotSelector(), scope))
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,\n"
-        "                               CScope& scope,\n"
-        "                               const CSeq_loc& loc,\n"
-        "                               SAnnotSelector::EOverlapType overlap_type,\n"
-        "                               SAnnotSelector::EResolveMethod resolve_method).");
-    m_DataCollector->GetSelector()
-        .CheckAnnotType(type)
-        .SetOverlapType(overlap_type)
-        .SetResolveMethod(resolve_method);
-    CHandleRangeMap master_loc;
-    master_loc.AddLocation(loc);
-    m_DataCollector->x_Initialize(master_loc);
-    Rewind();
-}
-
-
-CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
-                               const CBioseq_Handle& bioseq,
-                               TSeqPos start, TSeqPos stop,
-                               //const SAnnotSelector& selector,
-                               SAnnotSelector::EOverlapType overlap_type,
-                               SAnnotSelector::EResolveMethod resolve_method)
-    : m_DataCollector(new CAnnot_Collector(SAnnotSelector(),
-                                              bioseq.GetScope()))
-{
-    ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,\n"
-        "                               const CBioseq_Handle& bioseq,\n"
-        "                               TSeqPos start, TSeqPos stop,\n"
-        "                               SAnnotSelector::EOverlapType overlap_type,\n"
-        "                               SAnnotSelector::EResolveMethod resolve_method).");
-    m_DataCollector->GetSelector()
-        .CheckAnnotType(type)
-        .SetOverlapType(overlap_type)
-        .SetResolveMethod(resolve_method);
-    m_DataCollector->x_Initialize(bioseq, start, stop);
-    Rewind();
-}
-
-const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
-{
-    ERR_POST_ONCE(Warning<<
-                  "CAnnotTypes_CI::GetSeq_annot() is deprecated, "
-                  "use GetAnnot()");
-    return *GetAnnot().GetCompleteSeq_annot();
-}
-
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.124  2005/01/06 16:41:31  grichenk
+* Removed deprecated methods
+*
 * Revision 1.123  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

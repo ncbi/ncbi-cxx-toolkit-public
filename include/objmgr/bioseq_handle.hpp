@@ -375,50 +375,6 @@ protected:
 
 public: // non-public section
     const CBioseq_Info& x_GetInfo(void) const;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-    /// @deprecated
-    /// Get complete bioseq
-    const CBioseq& GetBioseq(void) const;
-
-    /// @deprecated
-    /// Get top level seq-entry
-    const CSeq_entry& GetTopLevelSeqEntry(void) const;
-
-    /// @deprecated
-    /// Sequence filtering: get a seq-vector for a part of the sequence.
-    /// The part shown depends on the mode selected. If the location
-    /// contains references to other sequences they are ignored (unlike
-    /// CBioseq constructor, which constructs a bioseq using all references
-    /// from a location). Strand information from "location" is ingored
-    /// when creating merged or excluded views. If "minus_strand" is true,
-    /// the result is reverse-complement.
-    enum ESequenceViewMode {
-        eViewConstructed,    ///< Do not merge or reorder intervals
-        eViewMerged,         ///< Merge overlapping intervals, sort by location
-        eViewExcluded        ///< Show intervals not included in the seq-loc
-    };
-
-    /// @deprecated
-    /// Create a seq-vector for a part of the bioseq
-    ///
-    /// @sa
-    ///     GetSeqMapByLocation()
-    CSeqVector GetSequenceView(const CSeq_loc& location,
-                               ESequenceViewMode mode,
-                               EVectorCoding coding = eCoding_Ncbi,
-                               ENa_strand strand = eNa_strand_plus) const;
-
-    /// @deprecated
-    /// Return seq-map constructed from a seq-loc
-    ///
-    /// @sa
-    ///     GetSequenceView()
-    CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
-                                           ESequenceViewMode mode) const;
-
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -641,6 +597,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2005/01/06 16:41:30  grichenk
+* Removed deprecated methods
+*
 * Revision 1.68  2005/01/04 16:31:07  grichenk
 * Added IsNa(), IsAa()
 *

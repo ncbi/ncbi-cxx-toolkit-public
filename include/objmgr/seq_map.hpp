@@ -308,36 +308,6 @@ protected:
     
     friend class CSeqMap_CI;
     friend class CSeqMap_CI_SegmentInfo;
-
-#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
-// !!!!! Deprecated methods !!!!!
-public:
-    /// @deprecated
-    /// Get iterator for resolved SeqMap
-    CSeqMap_CI BeginResolved(CScope* scope,
-                             size_t maxResolveCount,
-                             TFlags flags = fDefaultFlags) const;
-    /// @deprecated
-    /// Get iterator for resolved SeqMap starting from segment containing pos.
-    CSeqMap_CI FindResolved(CScope* scope,
-                            const SSeqMapSelector& selector) const;
-    /// @deprecated
-    /// Get iterator for resolved SeqMap starting from segment containing pos.
-    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
-                            size_t maxResolveCount = size_t(-1),
-                            TFlags flags = fDefaultFlags) const;
-    /// @deprecated
-    /// Get iterator for resolved SeqMap starting from segment containing pos.
-    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
-                            ENa_strand strand,
-                            size_t maxResolveCount = size_t(-1),
-                            TFlags flags = fDefaultFlags) const;
-    /// @deprecated
-    /// Get end iterator for resolved SeqMap
-    CSeqMap_CI EndResolved(CScope* scope,
-                           size_t maxResolveCount,
-                           TFlags flags = fDefaultFlags) const;
-#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
