@@ -46,11 +46,25 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
+extern "C" {
+
+/* Function prototypes */
+static Int4 SeqDbGetMaxLength(void* seqdb_handle, void* ignoreme);
+static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void* ignoreme);
+static Int8 SeqDbGetTotLen(void* seqdb_handle, void* ignoreme);
+static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme);
+static char* SeqDbGetName(void* seqdb_handle, void* ignoreme);
+static char* SeqDbGetDefinition(void* seqdb_handle, void* ignoreme);
+static char* SeqDbGetDate(void* seqdb_handle, void* ignoreme);
+static Boolean SeqDbGetIsProt(void* seqdb_handle, void* ignoreme);
+static ListNode* SeqDbGetSeqLoc(void* seqdb_handle, void* args);
+static ListNode* SeqDbGetError(void* seqdb_handle, void* args);
+
 /** Retrieves the length of the longest sequence in the BlastSeqSrc.
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int4 SeqDbGetMaxLength(void* seqdb_handle, void* ignoreme)
+static Int4 SeqDbGetMaxLength(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return seqdb->GetMaxLength();
@@ -60,7 +74,7 @@ static Int4 SeqDbGetMaxLength(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void* ignoreme)
+static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return seqdb->GetNumSeqs();
@@ -70,7 +84,7 @@ static Int4 SeqDbGetNumSeqs(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Int8 SeqDbGetTotLen(void* seqdb_handle, void* ignoreme)
+static Int8 SeqDbGetTotLen(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return seqdb->GetTotalLength();
@@ -93,7 +107,7 @@ static Int4 SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* SeqDbGetName(void* seqdb_handle, void* ignoreme)
+static char* SeqDbGetName(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return strdup(seqdb->GetTitle().c_str());
@@ -103,7 +117,7 @@ static char* SeqDbGetName(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* SeqDbGetDefinition(void* seqdb_handle, void* ignoreme)
+static char* SeqDbGetDefinition(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return strdup(seqdb->GetTitle().c_str());
@@ -113,7 +127,7 @@ static char* SeqDbGetDefinition(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static char* SeqDbGetDate(void* seqdb_handle, void* ignoreme)
+static char* SeqDbGetDate(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
     return strdup(seqdb->GetDate().c_str());
@@ -123,7 +137,7 @@ static char* SeqDbGetDate(void* seqdb_handle, void* ignoreme)
  * @param seqdb_handle Pointer to initialized CSeqDB object [in]
  * @param ignoreme Unused by this implementation [in]
  */
-static Boolean SeqDbGetIsProt(void* seqdb_handle, void* ignoreme)
+static Boolean SeqDbGetIsProt(void* seqdb_handle, void*)
 {
     CSeqDB* seqdb = (CSeqDB*) seqdb_handle;
 
@@ -241,7 +255,7 @@ static char* SeqDbGetSeqIdStr(void* seqdb_handle, void* args)
 
 /* There is no need to return locations from seqdb, since we always search
    whole sequences in the database */
-static ListNode* SeqDbGetSeqLoc(void* seqdb_handle, void* args)
+static ListNode* SeqDbGetSeqLoc(void*, void*)
 {
    return NULL;
 }
@@ -265,8 +279,9 @@ static Int4 SeqDbGetSeqLen(void* seqdb_handle, void* args)
 /* There are no error messages saved in the SeqdbFILE structure, so the 
  * following getter function is implemented as always returning NULL.
  */
-static ListNode* SeqDbGetError(void* seqdb_handle, void* args)
+static ListNode* SeqDbGetError(void*, void*)
 {
+    /* FIXME: error handling should not be provided by the seqsrc interface */
    return NULL;
 }
 
@@ -342,7 +357,11 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     if (!retval)
         return NULL;
 
-    CSeqDB* seqdb(new CSeqDB(rargs->dbname, (rargs->is_protein ? 'p' : 'n')));
+    ASSERT(rargs);
+
+    string db_name(rargs->dbname);
+    char db_type = static_cast<char>((rargs->is_protein ? 'p' : 'n'));
+    CSeqDB* seqdb(new CSeqDB(db_name, db_type));
 
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
@@ -365,9 +384,7 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
     SetGetNextChunk(retval, &SeqDbGetNextChunk);
     SetIterNext(retval, &SeqDbIteratorNext);
     SetGetError(retval, &SeqDbGetError);
-#if 0
-    seqdb->SetRange(rargs->first_db_seq, rargs->final_db_seq);
-#endif
+
     return retval;
 }
 
@@ -381,9 +398,11 @@ BlastSeqSrc* SeqDbSrcFree(BlastSeqSrc* seq_src)
     return NULL;
 }
 
+}
+
 BlastSeqSrc* 
 SeqDbSrcInit(const char* dbname, Boolean is_prot, int first_seq, 
-                      int last_seq, void* extra_arg)
+                      int last_seq, void*)
 {
     BlastSeqSrcNewInfo bssn_info;
     BlastSeqSrc* seq_src = NULL;
@@ -391,8 +410,8 @@ SeqDbSrcInit(const char* dbname, Boolean is_prot, int first_seq,
         (SSeqDbSrcNewArgs*) calloc(1, sizeof(SSeqDbSrcNewArgs));;
     seqdb_args->dbname = strdup(dbname);
     seqdb_args->is_protein = is_prot;
-    seqdb_args->first_db_seq = first_seq;
-    seqdb_args->final_db_seq = last_seq;
+    seqdb_args->first_db_seq = first_seq;   /* FIXME: why do we need these? */
+    seqdb_args->final_db_seq = last_seq;    /* FIXME: why do we need these? */
     bssn_info.constructor = &SeqDbSrcNew;
     bssn_info.ctor_argument = (void*) seqdb_args;
 
@@ -413,6 +432,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/04/08 14:45:48  camacho
+ * 1. Added missing extern "C" declarations
+ * 2. Removed compiler warnings about unused parameters.
+ * 3. Removed dead code.
+ * 4. Added FIXMEs.
+ *
  * Revision 1.2  2004/04/07 18:45:13  bealer
  * - Update constructor for CSeqDB to omit obsolete first argument.
  *
