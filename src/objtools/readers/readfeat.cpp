@@ -1422,6 +1422,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             CImp_feat_Base& imp = sfdata.SetImp ();
                             imp.SetKey (feat);
                             ftable.push_back (sfp);
+                            CRef<CSeq_loc> location (new CSeq_loc);
+                            mix = &(location->SetMix ());
+                            sfp->SetLocation (*location);
+                            x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3);
                         }
                     }
 
