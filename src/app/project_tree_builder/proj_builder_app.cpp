@@ -200,6 +200,8 @@ int CProjBulderApp::Run(void)
     string output_dir = GetProjectTreeInfo().m_Compilers;
     output_dir = CDirEntry::ConcatPath(output_dir, 
                                        GetRegSettings().m_CompilersSubdir);
+    output_dir = CDirEntry::ConcatPath(output_dir, 
+                                       GetBuildType().GetTypeStr());
     output_dir = CDirEntry::ConcatPath(output_dir, "bin");
     output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
     CMsvcConfigureProjectGenerator configure_generator
@@ -542,6 +544,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/03/03 00:06:25  gorelenk
+ * Changed implementation of CProjBulderApp::Run.
+ *
  * Revision 1.27  2004/03/02 23:35:41  gorelenk
  * Changed implementation of CProjBulderApp::Init (added flag "dll").
  * Added implementation of CProjBulderApp::GetBuildType.
