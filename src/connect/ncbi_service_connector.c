@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/05/08 20:27:05  lavr
+ * Patches in re-try code
+ *
  * Revision 6.17  2001/05/03 16:37:09  lavr
  * Flow control fixed in s_Open for firewall connection
  *
@@ -95,6 +98,7 @@
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -185,23 +189,29 @@ extern "C" {
 static int/*bool*/ s_ParseHeader(const char* header, void* data,
                                  int/*bool*/ server_error)
 {
+    static const char kStateless[] = "TRY_STATELESS";
     SServiceConnector* uuu = (SServiceConnector*) data;
-    const char* line;
 
     if (server_error)
         return 1/*parsed okay*/;
     SERV_Update(uuu->iter, header);
-
-    line = header;
-    while (line && *line) {
-        if (strncasecmp(line, HTTP_CONNECTION_INFO,
+    
+    while (header && *header) {
+        if (strncasecmp(header, HTTP_CONNECTION_INFO,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
             unsigned int i1, i2, i3, i4, temp;
             unsigned char o1, o2, o3, o4;
             char host[64];
-
-            if (sscanf(line + sizeof(HTTP_CONNECTION_INFO) - 1,
-                       "%d.%d.%d.%d %hu %x",
+            
+            header += sizeof(HTTP_CONNECTION_INFO) - 1;
+            while (*header && isspace((unsigned char)(*header)))
+                header++;
+            if (strncasecmp(header, kStateless, sizeof(kStateless) - 1) == 0) {
+                /* Special keyword for switching into stateless mode */
+                uuu->host = (unsigned int)(-1);
+                break;
+            }
+            if (sscanf(header, "%d.%d.%d.%d %hu %x",
                        &i1, &i2, &i3, &i4, &uuu->port, &temp) < 6)
                 return 0/*failed*/;
             o1 = i1; o2 = i2; o3 = i3; o4 = i4;
@@ -211,8 +221,8 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
             SOCK_ntoa(uuu->host, host, sizeof(host));
             break;
         }
-        if ((line = strchr(line, '\n')) != 0)
-            line++;
+        if ((header = strchr(header, '\n')) != 0)
+            header++;
     }
 
     return 1/*success*/;
@@ -282,6 +292,9 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
     /* This callback is only for services called via direct HTTP */
     assert(n != 0);
 
+    if (net_info->firewall)
+        return 0/*nothing to adjust*/;
+    
     while (1) {
         if (!(info = SERV_GetNextInfo(uuu->iter)))
             return 0/*false - not adjusted*/;
@@ -291,7 +304,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
         if (!info->sful)
             break;
     }
-
+    
     SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
     net_info->port = info->port;
     
@@ -340,7 +353,8 @@ static CONNECTOR s_Open
 (SServiceConnector* uuu,
  const STimeout*    timeout,
  const SSERV_Info*  info,
- SConnNetInfo*      net_info)
+ SConnNetInfo*      net_info,
+ int/*bool*/        second_call)
 {
     const char* header = 0;
 
@@ -348,6 +362,7 @@ static CONNECTOR s_Open
         /* Not a firewall/relay connection here */
         EReqMethod req_method;
         /* We know the connection point, let's try to use it! */
+        assert(!net_info->firewall && !second_call);
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
         switch (info->type) {
@@ -397,9 +412,10 @@ static CONNECTOR s_Open
         }
     } else {
         /* Firewall, connection to dispatcher, special tags */
+        assert(net_info->firewall);
         s_AdjustNetInfo(net_info,
                         net_info->stateless ? eReqMethod_Post : eReqMethod_Get,
-                        0, 0, "service", uuu->serv);
+                        0, 0, second_call ? 0 : "service", uuu->serv);
         header = net_info->stateless
             ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
               "Relay-Mode: FIREWALL\r\n"
@@ -425,13 +441,12 @@ static CONNECTOR s_Open
         assert(!header || strcmp(net_info->http_user_header, header) == 0);
         if (user_header)
             free(user_header);
-
-        if (!net_info->stateless &&
-            (net_info->firewall || info->type == fSERV_Ncbid)) {
+        
+        if (!net_info->stateless && (!info || info->type == fSERV_Ncbid)) {
             /* HTTP connector is auxiliary only */
             CONNECTOR conn;
             CONN c;
-
+            
             /* Clear connection info */
             uuu->host = 0;
             uuu->port = 0;
@@ -450,7 +465,13 @@ static CONNECTOR s_Open
                 CONN_Close(c);            
             }
             if (!uuu->host)
-                return 0;
+                return 0/*No connection info returned*/;
+            if (uuu->host == (unsigned int)(-1)) {
+                assert(!info && !second_call); /*firewall mode only*/
+                /* Try to use stateless mode instead */
+                net_info->stateless = 1;
+                return s_Open(uuu, timeout, 0, net_info, 1/*second call*/);
+            }
             SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
             net_info->port = uuu->port;
             /* Build and return target SOCKET connector */
@@ -531,7 +552,7 @@ static EIO_Status s_VT_Open
         if (!(net_info = ConnNetInfo_Clone(uuu->info)))
             break;
         
-        conn = s_Open(uuu, timeout, info, net_info);
+        conn = s_Open(uuu, timeout, info, net_info, 0/*second_call*/);
         
         ConnNetInfo_Destroy(net_info);
         

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/05/08 20:26:27  lavr
+ * Patches in re-try code
+ *
  * Revision 6.12  2001/04/26 20:21:34  lavr
  * Reorganized and and made slightly more effective
  *
@@ -256,7 +259,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
 
 /* Connect to the server specified by "uuu->info", then compose and form
  * relevant HTTP header, and flush the accumulated output data("uuu->obuf")
- * after the HTTP header. On error, all accumulated output data will be lost,
+ * after the HTTP header. On error (and after all possible re-tries to
+ * connect/send data), all accumulated output data will be lost,
  * and the connector socket will be NULL.
  */
 static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
@@ -266,11 +270,8 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
     for (;;) {
         size_t size;
 
-        if ((status = s_Connect(uuu)) != eIO_Success) {
-            /* error: discard all pending output data */
-            BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
+        if ((status = s_Connect(uuu)) != eIO_Success)
             break;
-        }
         assert(uuu->sock);
         uuu->first_read = 1/*true*/;
 
@@ -307,7 +308,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
 #endif
         if (status == eIO_Success)
             break;
-        
+
         /* write failed, close socket and try to use another server */
         SOCK_Close(uuu->sock);
         uuu->sock = 0;
@@ -315,6 +316,10 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
             break;
     }
 
+    if (status != eIO_Success) {
+        /* Error: discard all pending output data */
+        BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
+    }
     return status;
 }
 
@@ -428,8 +433,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu)
         if (uuu->can_connect != eCC_None) {
             for (;;) {
                 if (s_ConnectAndSend(uuu) != eIO_Success) {
-                    if (!s_Adjust(uuu))
-                        break;    
+                    break;    
                 } else if (s_ReadHeader(uuu) == eIO_Success) {
                     s_Disconnect(uuu, 1/*drop_unread*/);
                     break;
@@ -646,7 +650,8 @@ static EIO_Status s_VT_Read
             if ((status = s_ConnectAndSend(uuu)) != eIO_Success)
                 return status;
             assert(uuu->sock);
-        }
+        } else
+            status = eIO_Success;
 
         /* set timeout */
         SOCK_SetTimeout(uuu->sock, eIO_Read,
@@ -657,17 +662,19 @@ static EIO_Status s_VT_Read
             break;
         /* first read:  parse and skip HTTP header */
         uuu->first_read = 0;
-        if ((status = s_ReadHeader(uuu)) == eIO_Success) {
-            /* reply was okay - discard output data */
-            BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
+        if ((status = s_ReadHeader(uuu)) == eIO_Success)
             break;
-        }
 
         SOCK_Close(uuu->sock);
         uuu->sock = 0;
         if (!s_Adjust(uuu))
-            return status;
+            break;
     }
+
+    /* Success or re-tries exceeded: discard all pending output data */
+    BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
+    if (status != eIO_Success)
+        return status;
 
     x_read = BUF_Read(uuu->ibuf, buf, size);
     if (x_read < size) {
