@@ -42,6 +42,10 @@
 #  error "ncbi_os_mac.hpp must be used on MAC platforms only"
 #endif
 
+#include <cassert>
+#include <cstring>
+
+#include <Files.h>
 #include <MacTypes.h>
 
 // If this variable gets set to true, then we should throw rather than exit() or abort().
@@ -68,12 +72,72 @@ public:
     const OSErr& GetOSErr(void) const THROWS_NONE { return m_OSErr; }
 };
 
+
+/* Copy a C string (up to a limit) onto a Pascal string. */
+inline
+unsigned char*
+Pstrncpy(unsigned char *dest, const char *src, size_t len)
+{
+	assert(len <= 255);
+	if (len > 255) {
+		len = 255;
+	}
+	dest[0] = static_cast<unsigned char>(len);
+	memcpy(dest + 1, src, len);
+	
+	return dest;
+}
+
+/* Copy a C string to a Pascal string. */
+inline
+unsigned char*
+Pstrcpy(unsigned char *dest, const char *src)
+{
+	return Pstrncpy(dest, src, std::strlen(src));
+}
+
+/* Copy a Pascal string to a Pascal string. */
+inline
+unsigned char*
+PstrPcpy(unsigned char *dest, const unsigned char *src)
+{
+	return static_cast<unsigned char *>(
+		std::memcpy(dest, src, static_cast<size_t>(src[0]+1) )
+	);
+}
+
+class PString {
+public:
+    PString(const unsigned char* str) { PstrPcpy(m_Str, str); }
+    friend bool operator==(const PString& one, const PString& other) {
+        return std::memcmp(one.m_Str, other.m_Str, one.m_Str[0]) == 0;
+    }
+private:
+    Str255 m_Str;
+};
+
+
+extern OSErr FSpGetDirectoryID(const FSSpec *spec, long *theDirID, Boolean *isDirectory);
+extern OSErr FSpCheckObjectLock(const FSSpec *spec);
+extern OSErr FSpGetFileSize(const FSSpec *spec, long *dataSize, long *rsrcSize);
+extern OSErr GetDirItems(short vRefNum, long dirID, ConstStr255Param name,
+    Boolean getFiles, Boolean getDirectories, FSSpecPtr items,
+    short reqItemCount, short *actItemCount, short *itemIndex);
+extern OSErr MacPathname2FSSpec(const char *inPathname, FSSpec *outFSS);
+extern OSErr MacFSSpec2FullPathname(const FSSpec *inFSS, char **outPathname);
+
+
 END_NCBI_SCOPE
 
 
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2001/12/18 21:40:01  juran
+ * Copy Pascal-string-related functions from Josh's pstring.c.  (Public domain)
+ * Move PStr from ncbifile.cpp, rename to PString.
+ * Add extern prototypes for MoreFiles functions copied to our .cpp.
+ *
  * Revision 1.3  2001/12/03 22:59:04  juran
  * Don't forget MacTypes.h.
  *
