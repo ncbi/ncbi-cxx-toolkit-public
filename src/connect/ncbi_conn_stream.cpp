@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/12/10 19:41:18  vakatov
+ * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
+ *
  * Revision 6.7  2001/12/07 22:58:01  lavr
  * GetCONN(): throw exception if the underlying streambuf is not CONN-based
  *
@@ -96,6 +99,17 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
                                        const STimeout* timeout,
                                        streamsize      buf_size)
     : CConn_IOStream(SOCK_CreateConnector(host.c_str(), port, max_try),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
+CConn_SocketStream::CConn_SocketStream(SOCK            sock,
+                                       unsigned int    max_try,
+                                       const STimeout* timeout,
+                                       streamsize      buf_size)
+    : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, max_try),
                      timeout, buf_size)
 {
     return;

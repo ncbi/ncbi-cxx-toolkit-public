@@ -50,6 +50,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/12/10 19:41:16  vakatov
+ * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
+ *
  * Revision 6.9  2001/12/07 22:55:41  lavr
  * More comments added
  *
@@ -132,6 +135,16 @@ public:
     CConn_SocketStream
     (const string&   host,         /* host to connect to  */
      unsigned short  port,         /* ... and port number */
+     unsigned int    max_try  = 3, /* number of attempts  */
+     const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
+     streamsize      buf_size = kConn_DefBufSize);
+
+    // This variant uses existing socket "sock" to build the stream upon it.
+    // NOTE:  it revokes all ownership of the socket, and further assumes the
+    // socket being in exclusive use of this stream's underlying CONN.
+    // More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
+    CConn_SocketStream
+    (SOCK            sock,         /* socket              */
      unsigned int    max_try  = 3, /* number of attempts  */
      const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
      streamsize      buf_size = kConn_DefBufSize);
