@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.5 2004/08/13 12:28:22 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.6 2004/08/27 18:00:24 thiessen Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -153,7 +153,9 @@ PC-Count ::= SEQUENCE {
     bond-chiral-def          INTEGER,  -- Total count of (SP2) Defined Chiral Bonds
     bond-chiral-undef        INTEGER,  -- Total count of (SP2) Undefined Chiral Bonds
 
-    isotope-atom             INTEGER   -- Total count of Atoms with Isotopic Information
+    isotope-atom             INTEGER,  -- Total count of Atoms with Isotopic Information
+
+    tautomers                INTEGER OPTIONAL -- Total number of possible tautomers (including the one drawn)
 }
 
 
@@ -664,6 +666,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.6  2004/08/27 18:00:24  thiessen
+-- add tautomer count to PC-Count (optional so as to not invalidate old data
+--
 -- Revision 1.5  2004/08/13 12:28:22  bolton
 -- Added count of the number of atoms with isotopic information.
 --
