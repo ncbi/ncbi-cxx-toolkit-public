@@ -49,6 +49,13 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 inline
+bool IsForward(ENa_strand s)
+{
+    return (s == eNa_strand_plus  ||  s == eNa_strand_both);
+}
+
+
+inline
 bool IsReverse(ENa_strand s)
 {
     // treat unknown as forward
@@ -91,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/08/16 17:59:26  grichenk
+* Added IsForward()
+*
 * Revision 1.4  2004/02/19 18:00:50  shomrat
 * changed logic to match C toolkit
 *
