@@ -1,31 +1,24 @@
 #!/bin/sh
+EXEC_PATH='@executable_path'
 
-#
-# Make a Mac OS X disk image with Genome Workbench in it.
-#
-
-cd @out_path@
-if test -e gbench.dmg
+if test -e gbench.dmg; then
   echo Genome Workbench image already exists
   exit 0
 fi
 
-mkdir @out_path@/tmp
-cp -r @out_path@/bin/Genome\ Workbench.app  @out_path@/tmp
-cd @out_path@/tmp/Genome\ Workbench.app/Contents/MacOS
+pwd
+mkdir tmp
+cp -r bin/Genome\ Workbench.app  tmp
+cd tmp/Genome\ Workbench.app/Contents/MacOS
 
-EXEC_PATH='@executable_path'
 
-# 1) Copy dylibs here
 echo Copy 3-rd party dylibs
 cp `otool -L Genome\ Workbench | awk '/(netopt)|(sw)/ {print $1}' ` .
 echo Copy NCBI dylibs
-cp @out_path@/lib/* .
+cp ../../../../lib/* .
 
-# 2) Change permissions
 chmod +w *
 
-# 3) Patch all dylib paths to point to @executable_path
 echo Patch dylibs
 for i in `find . -name \*.dylib`; do
         for j in `otool -L $i | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
@@ -34,16 +27,15 @@ for i in `find . -name \*.dylib`; do
         done
 done
 
-# 4) Patch Genome Workbench executable paths to point to @executable_path
 echo Patch Genome Workbench
 for j in `otool -L 'Genome Workbench' | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
         install_name_tool -change $j $EXEC_PATH/`basename $j` 'Genome Workbench'
 done
 
 
-cd @out_path@
+cd ../../../../
 echo Creating disk image
-hdiutil create -srcfolder @out_path@/tmp  -volname GBENCH @out_path@/gbench.dmg
+hdiutil create -srcfolder tmp  -volname GBENCH gbench.dmg
 
-rm -r @out_path@/tmp
+rm -r tmp
 exit 0

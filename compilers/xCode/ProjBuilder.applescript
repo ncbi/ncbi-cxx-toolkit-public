@@ -395,8 +395,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		(* Genome Workbench Disk Image *)
 		(* Add a shell script only target to create a standalone disk image for distribution *)
-		set out_dir to x_Replace(TheOUTPath, "/", "\\/")
-		set shellScript to do shell script "sed 's/@out_path@/" & out_dir & "/' <" & TheNCBIPath & "/compilers/xCode/diskimage.tmpl"
+		set shellScript to do shell script "cat " & TheNCBIPath & "/compilers/xCode/diskimage.tmpl"
 		
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set scriptPhaseName to "SCRIPTPHASE__GBENCH"
@@ -608,6 +607,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/03/22 16:41:53  lebedev
+ * Better disk image script
+ *
  * Revision 1.23  2005/03/21 19:22:51  lebedev
  * Build phase for generating release GBench disk images added
  *
