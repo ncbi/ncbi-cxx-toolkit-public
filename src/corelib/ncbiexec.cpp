@@ -158,8 +158,6 @@ int CExec::System(const char *cmdline)
     status = system(cmdline); 
 #elif defined(NCBI_OS_UNIX)
     status = system(cmdline);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSystem,
@@ -181,8 +179,6 @@ int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
 #elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eV, mode, cmdname, args);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnL");
@@ -200,8 +196,6 @@ int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...
     status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLE");
@@ -219,8 +213,6 @@ int CExec::SpawnLP(const EMode mode, const char *cmdname,
 #elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     status = s_SpawnUnix(eVP, mode, cmdname, args);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLP");
@@ -239,8 +231,6 @@ int CExec::SpawnLPE(const EMode mode, const char *cmdname,
     status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLPE");
@@ -259,8 +249,6 @@ int CExec::SpawnV(const EMode mode, const char *cmdname,
     status = spawnv(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, argv);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnV");
@@ -279,8 +267,6 @@ int CExec::SpawnVE(const EMode mode, const char *cmdname,
     status = spawnve(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, argv, envp);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVE");
@@ -299,8 +285,6 @@ int CExec::SpawnVP(const EMode mode, const char *cmdname,
     status = spawnvp(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, argv);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVP");
@@ -319,8 +303,6 @@ int CExec::SpawnVPE(const EMode mode, const char *cmdname,
     status = spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, argv, envp);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     if (status == -1 ) {
         NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVPE");
@@ -339,8 +321,6 @@ int CExec::Wait(const int pid)
     if ( waitpid(pid, &status, 0) == -1 ) 
         return -1;
     status = WEXITSTATUS(status);
-#elif defined(NCBI_OS_MAC)
-    ?
 #endif
     return status;
 }
@@ -352,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/04/23 21:02:48  ivanov
+ * Removed redundant NCBI_OS_MAC preprocessor directives
+ *
  * Revision 1.11  2003/02/24 19:56:05  gouriano
  * use template-based exceptions instead of errno and parse exceptions
  *
