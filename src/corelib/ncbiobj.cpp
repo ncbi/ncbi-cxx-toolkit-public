@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/08/20 18:35:10  ucko
+* Clarified InitCounter's treatment of statically allocated objects.
+*
 * Revision 1.17  2001/08/20 15:59:43  ucko
 * Test more accurately whether CObjects were created on the stack.
 *
@@ -178,6 +181,7 @@ void CObject::operator delete[](void* ptr)
 void CObject::InitCounter(void)
 {
     if ( m_Counter != eCounterNew ) {
+        // takes care of statically allocated case
         m_Counter = TCounter(eCounterNotInHeap);
     }
     else {
@@ -200,7 +204,7 @@ void CObject::InitCounter(void)
         // surely not in heap
         if ( inStack )
             m_Counter = TCounter(eCounterNotInHeap);
-        else // what about static allocation?
+        else
             m_Counter = eCounterInHeap;
     }
 }
