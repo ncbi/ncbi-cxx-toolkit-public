@@ -757,7 +757,7 @@ extern void SOCK_AllowSigPipeAPI(void)
 #if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
 
 #  if !defined(__GNUC__) && !defined(offsetof)
-#    define offsetof(T, F) ((unsigned int)((char*) &(((T*) 0)->F) - (char*) 0))
+#    define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
 #  endif
 
 static void s_ShowDataLayout(void)
@@ -789,28 +789,28 @@ static void s_ShowDataLayout(void)
                           "\n\tfile:      %u"
 #  endif /*NCBI_OS_UNIX*/
                           , (unsigned int) sizeof(SOCK_struct),
-                          offsetof(SOCK_struct, sock),
-                          offsetof(SOCK_struct, id),
-                          offsetof(SOCK_struct, host),
-                          offsetof(SOCK_struct, port),
-                          offsetof(SOCK_struct, r_timeout),
-                          offsetof(SOCK_struct, r_tv),
-                          offsetof(SOCK_struct, r_to),
-                          offsetof(SOCK_struct, w_timeout),
-                          offsetof(SOCK_struct, w_tv),
-                          offsetof(SOCK_struct, w_to),
-                          offsetof(SOCK_struct, c_timeout),
-                          offsetof(SOCK_struct, c_tv),
-                          offsetof(SOCK_struct, c_to),
-                          offsetof(SOCK_struct, r_buf),
-                          offsetof(SOCK_struct, w_buf),
-                          offsetof(SOCK_struct, w_len),
-                          offsetof(SOCK_struct, n_read),
-                          offsetof(SOCK_struct, n_written),
-                          offsetof(SOCK_struct, n_in),
-                          offsetof(SOCK_struct, n_out)
+                          (unsigned int) offsetof(SOCK_struct, sock),
+                          (unsigned int) offsetof(SOCK_struct, id),
+                          (unsigned int) offsetof(SOCK_struct, host),
+                          (unsigned int) offsetof(SOCK_struct, port),
+                          (unsigned int) offsetof(SOCK_struct, r_timeout),
+                          (unsigned int) offsetof(SOCK_struct, r_tv),
+                          (unsigned int) offsetof(SOCK_struct, r_to),
+                          (unsigned int) offsetof(SOCK_struct, w_timeout),
+                          (unsigned int) offsetof(SOCK_struct, w_tv),
+                          (unsigned int) offsetof(SOCK_struct, w_to),
+                          (unsigned int) offsetof(SOCK_struct, c_timeout),
+                          (unsigned int) offsetof(SOCK_struct, c_tv),
+                          (unsigned int) offsetof(SOCK_struct, c_to),
+                          (unsigned int) offsetof(SOCK_struct, r_buf),
+                          (unsigned int) offsetof(SOCK_struct, w_buf),
+                          (unsigned int) offsetof(SOCK_struct, w_len),
+                          (unsigned int) offsetof(SOCK_struct, n_read),
+                          (unsigned int) offsetof(SOCK_struct, n_written),
+                          (unsigned int) offsetof(SOCK_struct, n_in),
+                          (unsigned int) offsetof(SOCK_struct, n_out)
 #  ifdef NCBI_OS_UNIX
-                          , offsetoff(SOCK_struct, file)
+                          , (unsigned int) offsetoff(SOCK_struct, file)
 #  endif /*NCBI_OS_UNIX*/
                           ));
 }
@@ -839,7 +839,7 @@ extern EIO_Status SOCK_InitializeAPI(void)
         if (x_errno != 0) {
             CORE_UNLOCK;
             CORE_LOG_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                              "[SOCK_InitializeAPI]  Failed WSAStartup()");
+                              "[SOCK::InitializeAPI]  Failed WSAStartup()");
             return eIO_Unknown;
         }
     }}
@@ -879,7 +879,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
         CORE_UNLOCK;
         if ( x_errno ) {
             CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                              "[SOCK_ShutdownAPI]  Failed WSACleanup()");
+                              "[SOCK::ShutdownAPI]  Failed WSACleanup()");
             return eIO_Unknown;
         }
     }}
@@ -1167,9 +1167,9 @@ static EIO_Status s_Select(size_t                n,
             TSOCK_Handle fd = polls[i].sock->sock;
             assert(polls[i].revent == eIO_Open);
             if (fd != SOCK_INVALID) {
-                if ( FD_ISSET(fd, &r_fds) )
+                if (!write_only  &&  FD_ISSET(fd, &r_fds))
                     polls[i].revent = eIO_Read;
-                if ( FD_ISSET(fd, &w_fds) )
+                if (!read_only   &&   FD_ISSET(fd, &w_fds))
                     polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
                 if (!polls[i].revent  &&  FD_ISSET(fd, &e_fds))
                     polls[i].revent = eIO_Close;
@@ -1264,8 +1264,8 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
     if (bind(x_lsock, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("LSOCK#%u[%u]: [LSOCK::Create]  Failed bind()",
-                            x_id, (unsigned int) x_lsock));
+                           ("LSOCK#%u[%u]: [LSOCK::Create]  Failed bind(:%hu)",
+                            x_id, (unsigned int) x_lsock, port));
         SOCK_CLOSE(x_lsock);
         return x_errno == SOCK_EADDRINUSE ? eIO_Closed : eIO_Unknown;
     }
@@ -1274,8 +1274,8 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
     if (listen(x_lsock, backlog) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("LSOCK#%u[%u]: [LSOCK::Create]  Failed listen()",
-                            x_id, (unsigned int) x_lsock));
+                           ("LSOCK#%u[%u]: [LSOCK::Create]  Failed listen(%hu)"
+                            , x_id, (unsigned int) x_lsock, backlog));
         SOCK_CLOSE(x_lsock);
         return eIO_Unknown;
     }
@@ -1300,7 +1300,7 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
 
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
-        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Listening on port :%hu",
+        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Listening at port :%hu",
                                x_id, (unsigned int) x_lsock, port));
     }
 
@@ -1350,8 +1350,8 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
             int x_errno = SOCK_ERRNO;
             CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                                ("LSOCK#%u[%u]: [LSOCK::Accept] "
-                                " Failed accept()",
-                                lsock->id, (unsigned int) lsock->sock));
+                                " Failed accept()", lsock->id,
+                                (unsigned int) lsock->sock));
             return eIO_Unknown;
         }
         lsock->n_accept++;
@@ -1425,7 +1425,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
-        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Closing on port :%hu "
+        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Closing at port :%hu "
                                "(%u accept%s total)", lsock->id,
                                (unsigned int) lsock->sock, lsock->port,
                                lsock->n_accept, lsock->n_accept == 1? "":"s"));
@@ -1562,7 +1562,7 @@ static EIO_Status s_Connect(SOCK            sock,
     x_host = host  &&  *host ? SOCK_gethostbyname(host) : sock->host;
     if ( !x_host ) {
         CORE_LOGF(eLOG_Error, ("%s[SOCK::s_Connect]  Failed "
-                               "SOCK_gethostbyname(%.64s)",
+                               "SOCK_gethostbyname(\"%.64s\")",
                                s_ID(sock, _id), host));
         return eIO_Unknown;
     }
@@ -1582,9 +1582,8 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* set the socket I/O to non-blocking mode */
     if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::s_Connect] "
-                               " Cannot set socket to non-blocking mode",
-                               s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::s_Connect]  Cannot set socket to "
+                               "non-blocking mode", s_ID(sock, _id)));
         sock->sock = SOCK_INVALID;
         SOCK_CLOSE(x_sock);
         return eIO_Unknown;
@@ -1627,8 +1626,8 @@ static EIO_Status s_Connect(SOCK            sock,
                 char addr[80];
                 HostPortToString(x_host, ntohs(x_port), addr, sizeof(addr));
                 CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                                   ("%s[SOCK::s_Connect]  Failed connect()"
-                                    " to %s", s_ID(sock, _id), addr));
+                                   ("%s[SOCK::s_Connect]  Failed connect() "
+                                    "to %s", s_ID(sock, _id), addr));
             }
             sock->sock = SOCK_INVALID;
             SOCK_CLOSE(x_sock);
@@ -1748,8 +1747,8 @@ static int s_Recv(SOCK        sock,
                 /* catch unknown ERROR */
                 sock->r_status = eIO_Unknown;
                 CORE_LOGF_ERRNO_EX(eLOG_Trace, x_errno, SOCK_STRERROR(x_errno),
-                                   ("%s[SOCK::s_Recv]  Failed recv()",
-                                   s_ID(sock, xx_buffer)));
+                                   ("%s[SOCK::s_Recv] "
+                                    " Failed recv()", s_ID(sock, xx_buffer)));
             }
             return n_read ? (int) n_read : -1;
         }
@@ -1758,7 +1757,7 @@ static int s_Recv(SOCK        sock,
         /* if "peek" -- store the new read data in the internal input buffer */
         if (peek  &&  !BUF_Write(&sock->r_buf, x_buffer, (size_t) x_read)) {
             CORE_LOGF_ERRNO(eLOG_Error, errno,
-                            ("%s[SOCK::s_Recv]  Failed to store data in "
+                            ("%s[SOCK::s_Recv]  Cannot store data in "
                              "peek buffer", s_ID(sock, xx_buffer)));
             sock->eof      = 1/*failure*/;
             sock->r_status = eIO_Closed;
@@ -2048,7 +2047,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
                     size_t      len = strlen(sock->file);
                     int/*bool*/ trunc = len > sizeof(addr) - 3 ? 1 : 0;
                     sprintf(addr, "\"%s%.*s\"", trunc ? "..." : "", 
-                            trunc ? sizeof(addr) - 6 : len,
+                            (int)(trunc ? sizeof(addr) - 6 : len),
                             &sock->file[trunc ? len - sizeof(addr) + 6 : 0]);
                 } else
 #endif /*NCBI_OS_UNIX*/
@@ -2129,8 +2128,8 @@ static EIO_Status s_Read(SOCK        sock,
         if (sock->r_status == eIO_Closed  ||  sock->eof) {
             if ( !sock->eof ) {
                 char _id[32];
-                CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Read]  Socket has been "
-                                       "shut down for reading",
+                CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Read]  Socket has already "
+                                       "been shut down for reading",
                                        s_ID(sock, _id)));
             }
             return eIO_Closed;
@@ -2196,8 +2195,9 @@ static EIO_Status s_Write(SOCK        sock,
     if (sock->w_status == eIO_Closed) {
         if (size != 0) {
             char _id[32];
-            CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Write]  Socket has been shut "
-                                   "down for writing", s_ID(sock, _id)));
+            CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Write]  Socket has already "
+                                   "been shut down for writing",
+                                   s_ID(sock, _id)));
         }
         return eIO_Closed;
     }
@@ -2352,8 +2352,8 @@ static EIO_Status s_Close(SOCK sock)
 
         /* set the socket back to blocking mode */
         if ( !s_SetNonblock(sock->sock, 0/*false*/) ) {
-            CORE_LOGF(eLOG_Error, ("%s[SOCK::s_Close]  Failed to set socket "
-                                   "back to blocking mode", s_ID(sock, _id)));
+            CORE_LOGF(eLOG_Warning,("%s[SOCK::s_Close]  Cannot set socket "
+                                    "back to blocking mode", s_ID(sock, _id)));
         }
     } else {
         status = s_WritePending(sock, sock->c_timeout, 0);
@@ -2383,8 +2383,8 @@ static EIO_Status s_Close(SOCK sock)
             if (SOCK_ERRNO != SOCK_EINTR) {
                 int x_errno = SOCK_ERRNO;
                 CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
-                                   ("%s[SOCK::s_Close]  Failed close()",
-                                    s_ID(sock, _id)));
+                                   ("%s[SOCK::s_Close] "
+                                    " Failed close()", s_ID(sock, _id)));
                 status = eIO_Unknown;
                 break;
             }
@@ -2434,8 +2434,8 @@ extern EIO_Status SOCK_CreateEx(const char*     host,
             !BUF_Write(&x_sock->w_buf, data, datalen)) {
             char _id[32];
             CORE_LOGF_ERRNO(eLOG_Error, errno,
-                            ("%s[SOCK::CreateEx]  Cannot store initial data",
-                             s_ID(x_sock, _id)));
+                            ("%s[SOCK::CreateEx] "
+                             " Cannot store initial data", s_ID(x_sock, _id)));
             SOCK_Close(x_sock);
             return eIO_Unknown;
         }
@@ -2495,7 +2495,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     if (!handle  ||  handle_size != sizeof(xx_sock)) {
         CORE_LOGF(eLOG_Error, ("SOCK#%u[?]: [SOCK::CreateOnTopEx] "
                                " Invalid handle %s%lu", x_id,
-                               handle ? "size "                     : "",
+                               handle ? "size " : "",
                                handle ? (unsigned long) handle_size : 0));
         assert(0);
         return eIO_InvalidArg;
@@ -2525,7 +2525,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     if (peer.sa.sa_family != AF_INET)
         return eIO_InvalidArg;
 #endif /*NCBI_OS_UNIX*/
-    
+
 #ifdef NCBI_OS_UNIX
     if (
 #  if defined(NCBI_OS_BSD)     ||  \
@@ -2544,8 +2544,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
                 return eIO_Closed;
             assert(peer.sa.sa_family == AF_UNIX);
             if (!peer.un.sun_path[0]) {
-                CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [SOCK::CreateOnTopEx]  "
-                                       "Cannot deal with unbound UNIX sockets",
+                CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [SOCK::CreateOnTopEx] "
+                                       " Unbound UNIX socket",
                                        x_id, (unsigned int) xx_sock));
                 assert(0);
                 return eIO_InvalidArg;
@@ -2560,9 +2560,8 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
                       !BUF_Write(&w_buf, data, datalen))) {
         CORE_LOGF_ERRNO(eLOG_Error, errno,
-                        ("SOCK#%u[%u]: [SOCK::CreateOnTopEx] "
-                         " Cannot store initial data", x_id,
-                         (unsigned int) xx_sock));
+                        ("SOCK#%u[%u]: [SOCK::CreateOnTopEx]  Cannot store "
+                         "initial data", x_id, (unsigned int) xx_sock));
         BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
@@ -2598,13 +2597,12 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf    = w_buf;
     x_sock->w_len    = datalen;
-    
+
     /* set to non-blocking mode */
     if ( !s_SetNonblock(xx_sock, 1/*true*/) ) {
         char _id[32];
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::CreateOnTopEx] "
-                               " Failed to set socket to non-blocking mode",
-                               s_ID(x_sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::CreateOnTopEx]  Cannot set socket "
+                               "to non-blocking mode", s_ID(x_sock, _id)));
         x_sock->sock = SOCK_INVALID;
         SOCK_Close(x_sock);
         return eIO_Unknown;
@@ -2613,7 +2611,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn))
         s_DoLog(x_sock, eIO_Open, &peer, 0, &peer.sa);
-    
+
     /* success */
     *sock = x_sock;
     return eIO_Success;
@@ -2628,16 +2626,16 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
     char _id[32];
 
     if (sock->sock == eSOCK_Datagram) {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect]  Called for "
-                               "datagram socket", s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect] "
+                               " Datagram socket", s_ID(sock, _id)));
         assert(0);
         return eIO_InvalidArg;
     }
 
 #ifdef NCBI_OS_UNIX
     if (sock->file[0]) {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect]  Called for UNIX socket "
-                               "\"%s\"", s_ID(sock, _id), sock->file));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect]  UNIX socket \"%s\"",
+                               s_ID(sock, _id), sock->file));
         assert(0);
         return eIO_InvalidArg;
     }
@@ -2727,8 +2725,8 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         if (sock->type == eSOCK_Datagram)
             return eIO_Closed;
         if (sock->r_status == eIO_Closed) {
-            CORE_LOGF(eLOG_Warning, ("%s[SOCK::Wait(R)]  Socket %s",
-                                     s_ID(sock, _id),
+            CORE_LOGF(eLOG_Warning, ("%s[SOCK::Wait(R)]  Socket has already "
+                                     "been %s", s_ID(sock, _id),
                                      sock->eof ? "closed" : "shut down"));
             return eIO_Closed;
         }
@@ -2739,8 +2737,8 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         if (sock->type == eSOCK_Datagram)
             return eIO_Success;
         if (sock->w_status == eIO_Closed) {
-            CORE_LOGF(eLOG_Warning, ("%s[SOCK::Wait(W)]  Socket shut down",
-                                     s_ID(sock, _id)));
+            CORE_LOGF(eLOG_Warning, ("%s[SOCK::Wait(W)]  Socket has already "
+                                     "been shut down", s_ID(sock, _id)));
             return eIO_Closed;
         }
         break;
@@ -2750,23 +2748,24 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         if ((sock->r_status == eIO_Closed  ||  sock->eof)  &&
             (sock->w_status == eIO_Closed)) {
             if (sock->r_status == eIO_Closed) {
-                CORE_LOGF(eLOG_Warning, ("%s[SOCK::Wait(RW)]  "
-                                         "Socket shut down", s_ID(sock, _id)));
+                CORE_LOGF(eLOG_Warning, ("%s[SOCK::Wait(RW)]  Socket has "
+                                         "already been shut down",
+                                         s_ID(sock, _id)));
             }
             return eIO_Closed;
         }
         if (sock->r_status == eIO_Closed  ||  sock->eof) {
             if (sock->r_status == eIO_Closed) {
-                CORE_LOGF(eLOG_Note, ("%s[SOCK::Wait(RW)]  Socket %s",
-                                      s_ID(sock, _id), sock->eof
+                CORE_LOGF(eLOG_Note, ("%s[SOCK::Wait(RW)]  Socket has already "
+                                      "been %s", s_ID(sock, _id), sock->eof
                                       ? "closed" : "shut down for reading"));
             }
             event = eIO_Write;
             break;
         }
         if (sock->w_status == eIO_Closed) {
-            CORE_LOGF(eLOG_Note, ("%s[SOCK::Wait(RW)]  Socket shut down for "
-                                  "writing", s_ID(sock, _id)));
+            CORE_LOGF(eLOG_Note,("%s[SOCK::Wait(RW)]  Socket has already been "
+                                 "shut down for writing", s_ID(sock, _id)));
             event = eIO_Read;
             break;
         }
@@ -2827,10 +2826,6 @@ extern EIO_Status SOCK_Poll(size_t          n,
              polls[x_n].event == eIO_ReadWrite)    &&
             BUF_Size(polls[x_n].sock->r_buf) != 0) {
             polls[x_n].revent = eIO_Read;
-            if (polls[x_n].event == eIO_ReadWrite  &&
-                polls[x_n].sock->type == eSOCK_Datagram) {
-                polls[x_n].revent = eIO_ReadWrite;
-            }
         } else
             polls[x_n].revent = eIO_Open;
     }
@@ -2999,8 +2994,8 @@ extern EIO_Status SOCK_Read(SOCK           sock,
             break;
         }
     } else {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Read]  Invalid socket",
-                               s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Read] "
+                               " Invalid socket", s_ID(sock, _id)));
         x_read = 0;
         status = eIO_Closed;
     }
@@ -3017,8 +3012,8 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
 {
     if (sock->sock == SOCK_INVALID) {
         char _id[32];
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::PushBack]  Invalid socket",
-                               s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::PushBack] "
+                               " Invalid socket", s_ID(sock, _id)));
         return eIO_Closed;
     }
 
@@ -3064,8 +3059,8 @@ extern EIO_Status SOCK_Write(SOCK            sock,
             break;
         }
     } else {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Write]  Invalid socket",
-                               s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Write] "
+                               " Invalid socket", s_ID(sock, _id)));
         x_written = 0;
         status = eIO_Closed;
     }
@@ -3082,13 +3077,13 @@ extern EIO_Status SOCK_Abort(SOCK sock)
     EIO_Status status;
 
     if (sock->sock == SOCK_INVALID) {
-        CORE_LOGF(eLOG_Warning, ("%s[SOCK::Abort]  Invalid socket",
-                                 s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Warning, ("%s[SOCK::Abort] "
+                                 " Invalid socket", s_ID(sock, _id)));
         return eIO_Closed;
     }
     if (sock->type == eSOCK_Datagram) {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Abort]  Called for datagram socket",
-                               s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Abort] "
+                               " Datagram socket", s_ID(sock, _id)));
         assert(0);
         return eIO_InvalidArg;
     }
@@ -3100,8 +3095,8 @@ extern EIO_Status SOCK_Abort(SOCK sock)
     if (SOCK_CLOSE(sock->sock) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("%s[SOCK::Abort]  Failed close()",
-                            s_ID(sock, _id)));
+                           ("%s[SOCK::Abort] "
+                            " Failed close()", s_ID(sock, _id)));
         status = eIO_Unknown;
     } else
         status = eIO_Success;
@@ -3229,7 +3224,7 @@ extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
         CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
                            ("%s[SOCK::SetReuseAddress] "
                             " Failed setsockopt(%sREUSEADDR)",
-                            s_ID(sock, _id), on_off ? "" : "!"));
+                            s_ID(sock, _id), on_off ? "" : "NO"));
     }
 }
 
@@ -3254,15 +3249,14 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, ESwitch log)
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                            ("SOCK#%u[?]: [DSOCK::Create] "
-                            " Cannot create datagram socket", x_id));
+                            " Cannot create socket", x_id));
         return eIO_Unknown;
     }
 
     /* set to non-blocking mode */
     if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
-        CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [DSOCK::Create] "
-                               " Cannot set socket to non-blocking mode",
-                               x_id, x_sock));
+        CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [DSOCK::Create]  Cannot set "
+                               "socket to non-blocking mode", x_id, x_sock));
         SOCK_CLOSE(x_sock);
         return eIO_Unknown;
     }
@@ -3363,14 +3357,14 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     if (host  &&  *host) {
         if ((sock->host = SOCK_gethostbyname(host)) == 0) {
             CORE_LOGF(eLOG_Error, ("%s[DSOCK::Connect]  Failed "
-                                   "SOCK_gethostbyname(%.64s)",
+                                   "SOCK_gethostbyname(\"%.64s\")",
                                    s_ID(sock, _id), host));
             return eIO_Unknown;
         }
     }
     if (!sock->host || !sock->port) {
-        CORE_LOGF(eLOG_Error, ("%s[DSOCK::Connect]  Cannot connect "
-                               "to incomplete address", s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[DSOCK::Connect] "
+                               " Address incomplete", s_ID(sock, _id)));
         return eIO_InvalidArg;
     }
 
@@ -3383,14 +3377,12 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     peer.sin_len         = sizeof(peer);
 #endif /*HAVE_SIN_LEN*/
     if (connect(sock->sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
-        char addr[64];
+        char addr[80];
         int x_errno = SOCK_ERRNO;
-        if (SOCK_ntoa(sock->host, addr, sizeof(addr)) != 0)
-            strcpy(addr, "???");
+        HostPortToString(sock->host, sock->port, addr, sizeof(addr));
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                           ("%s[DSOCK::Connect]  Cannot connect "
-                            "datagram socket to %s:%hu", s_ID(sock, _id),
-                            addr, ntohs(sock->port)));
+                           ("%s[DSOCK::Connect]  Failed connect() to %s",
+                            s_ID(sock, _id), addr));
         return eIO_Unknown;
     }
 
@@ -3437,7 +3429,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
     if (host  &&  *host) {
         if ( !(x_host = SOCK_gethostbyname(host)) ) {
             CORE_LOGF(eLOG_Error, ("%s[DSOCK::SendMsg]  Failed "
-                                   "SOCK_gethostbyname(%.64s)",
+                                   "SOCK_gethostbyname(\"%.64s\")",
                                    s_ID(sock, w), host));
             return eIO_Unknown;
         }
@@ -3445,8 +3437,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
         x_host = sock->host;
 
     if (!x_host  ||  !x_port) {
-        CORE_LOGF(eLOG_Error, ("%s[DSOCK::SendMsg]  Cannot do default send "
-                               "on unconnected socket", s_ID(sock, w)));
+        CORE_LOGF(eLOG_Error, ("%s[DSOCK::SendMsg] "
+                               " Address incomplete", s_ID(sock, w)));
         return eIO_Unknown;
     }
 
@@ -3707,7 +3699,7 @@ extern EIO_Status DSOCK_WipeMsg(SOCK sock, EIO_Event direction)
         return eIO_InvalidArg;
     }
     if (sock->sock == SOCK_INVALID) {
-        CORE_LOGF(eLOG_Error, ("%s[DSOCK::Wipe] "
+        CORE_LOGF(eLOG_Error, ("%s[DSOCK::WipeMsg] "
                                " Invalid socket", s_ID(sock, _id)));
         return eIO_Closed;
     }
@@ -3759,8 +3751,8 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
                        (const char*) &bcast, sizeof(bcast)) != 0) {
             int x_errno = SOCK_ERRNO;
             CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                               ("%s[DSOCK::SetBroadcast]  Failed "
-                                "setsockopt(%sBROADCAST)",
+                               ("%s[DSOCK::SetBroadcast] "
+                                " Failed setsockopt(%sBROADCAST)",
                                 s_ID(sock, _id), bcast ? "" : "NO"));
             return eIO_Unknown;
         }
@@ -3803,7 +3795,7 @@ extern int SOCK_gethostname(char*  name,
     if (gethostname(name, (int) namelen) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOG_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                          "[SOCK_gethostname]  Cannot get local hostname");
+                          "[SOCK_gethostname]  Failed gethostname()");
         error = 1;
     } else if ( name[namelen - 1] ) {
         CORE_LOG(eLOG_Error, "[SOCK_gethostname]  Buffer too small");
@@ -3826,9 +3818,7 @@ extern int SOCK_ntoa(unsigned int host,
     char str[16];
 
     assert(buf && buflen > 0);
-    verify(sprintf(str, "%u.%u.%u.%u",
-                   (unsigned) b[0], (unsigned) b[1],
-                   (unsigned) b[2], (unsigned) b[3]) > 0);
+    verify(sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]) > 0);
     assert(strlen(str) < sizeof(str));
 
     if (strlen(str) >= buflen) {
@@ -3884,9 +3874,9 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
                     x_errno = SOCK_ERRNO;
                 else
                     x_errno += EAI_BASE;
-                CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno,SOCK_STRERROR(x_errno),
-                                  "[SOCK_gethostbyname]  Failed "
-                                  "getaddrinfo()");
+                CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
+                                   ("[SOCK_gethostbyname]  Failed "
+                                    "getaddrinfo(\"%.64s\")", hostname));
             }
             host = 0;
         }
@@ -3896,6 +3886,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 #else /* use some variant of gethostbyname */
         struct hostent* he;
 #  if defined(HAVE_GETHOSTBYNAME_R)
+        static const char suffix[] = "_r";
         struct hostent  x_he;
         char            x_buf[1024];
 
@@ -3912,6 +3903,8 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 #      error "Unknown HAVE_GETHOSTBYNAME_R value"
 #    endif /*HAVE_GETHOSTNBYNAME_R == N*/
 #  else
+        static const char suffix[] = "";
+
         CORE_LOCK_WRITE;
         he = gethostbyname(hostname);
 #    ifdef NCBI_OS_MAC
@@ -3938,9 +3931,9 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
             if (x_errno == NETDB_INTERNAL + DNS_BASE)
                 x_errno = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
-            CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+            CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
                               "[SOCK_gethostbyname]  Failed "
-                              "gethostbyname[_r]()");
+                              "gethostbyname%s(\"%.64s\")", suffix, hostname);
         }
 
 #endif /*HAVE_GETADDR_INFO*/
@@ -3978,13 +3971,16 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
             return name;
         } else {
             if (s_Log == eOn) {
+                char addr[16];
                 if (x_errno == EAI_SYSTEM)
                     x_errno = SOCK_ERRNO;
                 else
                     x_errno += EAI_BASE;
-                CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno,SOCK_STRERROR(x_errno),
-                                  "[SOCK_gethostbyaddr]  Failed "
-                                  "getnameinfo()");
+                if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+                    strcpy(addr, "<unknown>");
+                CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
+                                  ("[SOCK_gethostbyaddr]  Failed "
+                                   "getnameinfo(%s)", addr));
             }
             name[0] = '\0';
             return 0;
@@ -3992,6 +3988,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #else /* use some variant of gethostbyaddr */
         struct hostent* he;
 #  if defined(HAVE_GETHOSTBYADDR_R)
+        static const char suffix[] = "_r";
         struct hostent  x_he;
         char            x_buf[1024];
 
@@ -4009,6 +4006,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #      error "Unknown HAVE_GETHOSTBYADDR_R value"
 #    endif /*HAVE_GETHOSTBYADDR_R == N*/
 #  else /*HAVE_GETHOSTBYADDR_R*/
+        static const char suffix[] = "";
+
         CORE_LOCK_WRITE;
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
 #    ifdef NCBI_OS_MAC
@@ -4033,13 +4032,16 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!name  &&  s_Log == eOn) {
+            char addr[16];
 #  ifdef NETDB_INTERNAL
             if (x_errno == NETDB_INTERNAL + DNS_BASE)
                 x_errno = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
+            if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+                strcpy(addr, "<unknown>");
             CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
                               "[SOCK_gethostbyaddr]  Failed "
-                              "gethostbyaddr[_r]()");
+                              "gethostbyaddr%s(%s)", suffix, addr);
         }
 
         return name;
@@ -4055,6 +4057,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.144  2004/05/04 19:51:27  lavr
+ * More elaborate diagnostics and better event dispatching
+ *
  * Revision 6.143  2003/11/25 15:08:40  lavr
  * DSOCK_Connect(): fix diag messages
  *
