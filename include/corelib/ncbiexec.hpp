@@ -36,6 +36,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 
 /** @addtogroup Exec
@@ -436,7 +437,7 @@ public:
     /// @return
     ///   - Exit code of child process, if no errors.
     ///   - (-1), if error has occured.
-    static int Wait(int pid);
+    static int Wait(int pid, unsigned long timeout = kMax_ULong);
 };
 
 
@@ -449,6 +450,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/25 17:19:05  ucko
+ * CExec::Wait: add an optional timeout argument per the new (forwarding)
+ * implementation.
+ *
  * Revision 1.10  2003/09/16 17:48:03  ucko
  * Remove redundant "const"s from arguments passed by value.
  *
