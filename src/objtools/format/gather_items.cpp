@@ -53,6 +53,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -239,10 +240,15 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
     while ( it ) {
         CSeq_id_Handle id = it.GetRefSeqid();
         CBioseq_Handle part = scope->GetBioseqHandleFromTSE(id, seq);
-        if ( part ) {
-            m_Current.Reset(new CBioseqContext(part, *m_Context, mctx));
-            m_Context->AddSection(m_Current);
-            x_DoSingleSection(*m_Current);
+        if (part) {
+            // do only non-virtual parts
+            CSeq_inst::TRepr repr = part.IsSetInst_Repr() ?
+                part.GetInst_Repr() : CSeq_inst::eRepr_not_set;
+            if (repr != CSeq_inst::eRepr_virtual) {
+                m_Current.Reset(new CBioseqContext(part, *m_Context, mctx));
+                m_Context->AddSection(m_Current);
+                x_DoSingleSection(*m_Current);
+            }
         }
         ++it;
     }
@@ -313,7 +319,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_RefSeqComments(ctx);
 
     if ( CCommentItem::NsAreGaps(ctx.GetHandle(), ctx) ) {
-        x_AddComment(new CCommentItem(CCommentItem::kNsAreGaps, ctx));
+        x_AddComment(new CCommentItem(CCommentItem::GetNsAreGapsStr(), ctx));
     }
 
     x_HistoryComments(ctx);
@@ -578,7 +584,9 @@ void CFlatGatherer::x_WGSComment(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_GBBSourceComment(CBioseqContext& ctx) const
 {
-    _ASSERT(ctx.ShowGBBSource());
+    if (!ctx.ShowGBBSource()) {
+        return;
+    }
 
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Genbank); it; ++it) {
         const CGB_block& gbb = it->GetGenbank();
@@ -648,9 +656,19 @@ void CFlatGatherer::x_HTGSComments(CBioseqContext& ctx) const
 }
 
 
+// add comment features that are full length on appropriate segment
 void CFlatGatherer::x_FeatComments(CBioseqContext& ctx) const
 {
-    // !!!
+    CScope *scope = &ctx.GetScope();
+    const CSeq_loc& loc = ctx.GetLocation();
+
+    for (CFeat_CI it(ctx.GetScope(), loc, CSeqFeatData::e_Comment); it; ++it) {
+        ECompare comp = Compare(it->GetLocation(), loc, scope);
+
+        if ((comp == eSame)  ||  (comp == eContains)) {
+            x_AddComment(new CCommentItem(it->GetOriginalFeature(), ctx));
+        }
+    }
 }
 
 
@@ -1021,7 +1039,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
         case CSeqFeatData::eSubtype_cdregion:
             {{  
                 if ( !ctx.Config().IsFormatFTable() ) {
-                    x_GetFeatsOnCdsProduct(it->GetOriginalFeature(), ctx, mapper);
+                    x_GetFeatsOnCdsProduct(feat, ctx, mapper);
                 }
                 break;
             }}
@@ -1269,6 +1287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/08/19 16:31:29  shomrat
+* Do only non-virtual parts; gather feature comments
+*
 * Revision 1.22  2004/06/21 18:52:56  ucko
 * +x_GatherAlignments
 *
