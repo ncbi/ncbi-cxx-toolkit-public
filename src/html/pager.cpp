@@ -397,10 +397,9 @@ void CPagerViewButtons::CreateSubNodes()
     butt->SetClass("dblinks");
     butt->SetAttribute("value", "Page");
     butt->SetEventHandler(eHTML_EH_Click,
-                          "form.cmd.value='';form." +
-						  CPager::KParam_InputPage +
+                          "form.cmd.value='';form." + CPager::KParam_InputPage +
                           ".value=form.textpage" + m_jssuffix +
-                          ".value; frm.CMD.value='Pager'; form.submit();");
+                          ".value;form.CMD.value='Pager';form.submit();");
     InsertAt(0, column, butt);
     InsertAt(0, column, new CHTML_nbsp);
 
@@ -414,12 +413,13 @@ void CPagerViewButtons::CreateSubNodes()
     }
                                
     textpage->SetEventHandler(eHTML_EH_Change,
-                              "if(form.textpage" + suffix + "){form.textpage"
+                              "form.CMD.value='Pager';"
+							  "if(form.textpage" + suffix + "){form.textpage"
                               + suffix +".value=" + "this.value}");
     
     textpage->SetEventHandler(eHTML_EH_KeyPress,
                               "form." + CPager::KParam_InputPage +".value=" 
-							  "this.value; frm.CMD.value='Pager'; KeyPress('',event);");
+							  "this.value;form.CMD.value='Pager';KeyPress('',event);");
                                          
     InsertAt(0, column++, textpage);
 
