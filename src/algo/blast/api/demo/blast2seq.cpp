@@ -294,20 +294,25 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        opt.SetVariableWordSize(args["varword"].AsBoolean());
-        switch(args["scantype"].AsInteger()) {
-        case 1:
-            opt.SetSeedExtensionMethod(eRightAndLeft);
-            opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
-                                                opt.GetVariableWordSize(), 
-                                                opt.GetLookupTableType()));
-            break;
-        default:
-            opt.SetSeedExtensionMethod(eRight);
-            break;
-        }
-        if (args["stride"].AsInteger()) {
-            opt.SetScanStep(args["stride"].AsInteger());
+        if (!args["templen"].AsInteger()) {
+            opt.SetVariableWordSize(args["varword"].AsBoolean());
+            switch(args["scantype"].AsInteger()) {
+            case 1:
+                opt.SetSeedExtensionMethod(eRightAndLeft);
+                opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
+                                    opt.GetVariableWordSize(), 
+                                    opt.GetLookupTableType()));
+                break;
+            default:
+                opt.SetSeedExtensionMethod(eRight);
+                break;
+            }
+            if (args["stride"].AsInteger()) {
+                opt.SetScanStep(args["stride"].AsInteger());
+            }
+        } else {
+            // Discontiguous Mega BLAST: only one extension method
+            opt.SetSeedExtensionMethod(eRight); 
         }
     }
 
@@ -525,6 +530,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/12/31 20:05:58  dondosha
+ * For discontiguous megablast, set extension method and scanning stride correctly
+ *
  * Revision 1.33  2003/12/09 15:13:58  camacho
  * Use difference scopes for queries and subjects
  *
