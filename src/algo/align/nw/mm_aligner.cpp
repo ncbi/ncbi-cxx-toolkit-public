@@ -261,7 +261,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     SCoordRect rlt;
     if(!bNoLT) {
         // left top
-        int left_bnd = submatr.j1 + trans_pos - steps_left - 1;
+        size_t left_bnd = submatr.j1 + trans_pos - steps_left - 1;
         if(left_bnd >= submatr.j1) {
             rlt.i1 = submatr.i1;
             rlt.j1 = submatr.j1;
@@ -279,7 +279,7 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     SCoordRect rrb;
     if(!bNoRB) {
         // right bottom
-        int right_bnd = submatr.j1 + trans_pos + steps_right;
+        size_t right_bnd = submatr.j1 + trans_pos + steps_right;
         if(right_bnd <= submatr.j2) {
             rrb.i1 = I + 2;
             rrb.j1 = right_bnd;
@@ -798,8 +798,8 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
         return 0;
     }
 
-    const int N1 = rect.i2 - rect.i1 + 2;
-    const int N2 = rect.j2 - rect.j1 + 2;
+    const size_t N1 = rect.i2 - rect.i1 + 2;
+    const size_t N2 = rect.j2 - rect.j1 + 2;
 
     TScore* rowV    = new TScore [N2];
     TScore* rowF    = new TScore [N2];
@@ -955,6 +955,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/06/17 14:51:04  dicuccio
+ * Fixed after algo/ rearragnement
+ *
  * Revision 1.11  2003/06/03 18:19:06  rsmith
  * Move static mutex initialization to file from function scope, because of MW compiler choking (wrongly) over complex initialization.
  *

@@ -32,7 +32,7 @@
 */
 
 
-#include <algo/nw_aligner_mrna2dna.hpp>
+#include <algo/align/nw_aligner_mrna2dna.hpp>
 #include <corelib/ncbi_limits.h>
 
 BEGIN_NCBI_SCOPE
@@ -810,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/06/17 14:51:04  dicuccio
+ * Fixed after algo/ rearragnement
+ *
  * Revision 1.18  2003/06/02 14:04:49  kapustin
  * Progress indication-related updates
  *

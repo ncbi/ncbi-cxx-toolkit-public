@@ -29,8 +29,8 @@
  *                   
 */
 
-#include <algo/mm_aligner.hpp>
-#include <algo/nw_aligner_mrna2dna.hpp>
+#include <algo/align/mm_aligner.hpp>
+#include <algo/align/nw_aligner_mrna2dna.hpp>
 #include "nwa.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -406,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/06/17 14:51:04  dicuccio
+ * Fixed after algo/ rearragnement
+ *
  * Revision 1.19  2003/05/23 18:28:27  kapustin
  * Introduce new (generic) splice type
  *

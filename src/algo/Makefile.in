@@ -3,8 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-LIB_PROJ = xalgoalign
-SUB_PROJ = demo
+SUB_PROJ = align
 
 REQUIRES = objects
 

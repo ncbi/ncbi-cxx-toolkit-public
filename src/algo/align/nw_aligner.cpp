@@ -32,7 +32,7 @@
  */
 
 
-#include <algo/nw_aligner.hpp>
+#include <algo/align/nw_aligner.hpp>
 #include <corelib/ncbi_limits.h>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
@@ -457,6 +457,7 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
     seqalign->Reset();
     if(m_Transcript.size() == 0) return;
 
+
     // the alignment is pairwise
     seqalign->SetDim(2);
 
@@ -495,7 +496,7 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
     vector< TSignedSeqPos > &starts  = ds.SetStarts();
     vector< TSeqPos >       &lens    = ds.SetLens();
     vector< ENa_strand >    &strands = ds.SetStrands();
-
+    
     // iterate through transcript
     size_t seg_count = 0;
     {{ 
@@ -508,17 +509,13 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
             ii;
         
         ETranscriptSymbol ts = *ib;
-        bool intron = (ts & eIntron_GT_AG) || (ts & eIntron_GC_AG) ||
-                      (ts & eIntron_AT_AC) || (ts & eIntron_Generic);
-        char seg_type0 = ((ts == eInsert || intron )? 1:
+        char seg_type0 = ((ts == eInsert || (ts & eIntron_GT_AG))? 1:
                           (ts == eDelete)? 2: 0);
         size_t seg_len = 0;
 
         for (ii = ib;  ii != ie; ++ii) {
             ts = *ii;
-            intron = (ts & eIntron_GT_AG) || (ts & eIntron_GC_AG) ||
-                (ts & eIntron_AT_AC) || (ts & eIntron_Generic);
-            char seg_type = ((ts == eInsert || intron )? 1:
+            char seg_type = ((ts == eInsert || (ts & eIntron_GT_AG))? 1:
                              (ts == eDelete)? 2: 0);
 
             if(seg_type0 != seg_type) {
@@ -998,8 +995,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.27  2003/06/16 19:54:35  kapustin
- * Check for all four types of introns in SeqAlign formatter
+ * Revision 1.28  2003/06/17 14:51:04  dicuccio
+ * Fixed after algo/ rearragnement
  *
  * Revision 1.26  2003/06/02 14:04:49  kapustin
  * Progress indication-related updates

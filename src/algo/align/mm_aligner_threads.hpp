@@ -32,7 +32,7 @@
 *
 */
 
-#include <algo/mm_aligner.hpp>
+#include <algo/align/mm_aligner.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/17 14:51:04  dicuccio
+ * Fixed after algo/ rearragnement
+ *
  * Revision 1.1  2003/01/22 13:31:33  kapustin
  * Initial revision
  *
