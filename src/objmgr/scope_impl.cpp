@@ -1303,12 +1303,13 @@ CScope_Impl::x_GetSynonyms(CBioseq_ScopeInfo& info)
 
 void CScope_Impl::GetAllTSEs(TTSE_Handles& tses, int kind)
 {
-    // CScope::ETSEKind(kind)
+    TReadLockGuard rguard(m_Scope_Conf_RWLock);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if (it->GetDataLoader() &&  kind == CScope::eManualTSEs) {
             // Skip data sources with loaders
             continue;
         }
+        CFastMutexGuard guard(it->GetMutex());
         const TTSE_LockSet& tse_cache = it->GetTSESet();
         ITERATE(TTSE_LockSet, tse_it, tse_cache) {
             tses.push_back(CSeq_entry_Handle(*m_HeapScope, **tse_it));
@@ -1336,6 +1337,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/04/12 19:35:59  grichenk
+* Added locks in GetAllTSEs()
+*
 * Revision 1.10  2004/04/12 18:40:24  grichenk
 * Added GetAllTSEs()
 *
