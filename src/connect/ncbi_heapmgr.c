@@ -177,7 +177,7 @@ HEAP HEAP_Create(void* base,       TNCBI_Size   size,
 }
 
 
-HEAP HEAP_AttachEx(const void* base, size_t size)
+HEAP HEAP_AttachEx(const void* base, TNCBI_Size size)
 {
     HEAP heap;
 
@@ -573,6 +573,9 @@ int HEAP_Serial(const HEAP heap)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/09/24 02:56:55  ucko
+ * HEAP_AttachEx: size_t -> TNCBI_Size per prototype (needed on 64-bit platforms)
+ *
  * Revision 6.24  2003/09/23 21:06:30  lavr
  * +HEAP_AttachEx()
  *
