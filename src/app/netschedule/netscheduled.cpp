@@ -66,7 +66,7 @@
 USING_NCBI_SCOPE;
 
 
-#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.6"
+#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.7"
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -656,7 +656,7 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
 #define NS_SKIPSPACE(x)  \
     while (*x && (*x == ' ' || *x == '\t')) { ++x; }
 #define NS_CHECKEND(x, msg) \
-    if (!*s) { req->req_type = eError; req->err_msg = msg; }
+    if (!*s) { req->req_type = eError; req->err_msg = msg; return; }
 #define NS_GETSTRING(x, str) \
     for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
 
@@ -1272,6 +1272,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/03/17 14:07:19  kuznets
+ * Fixed bug in request parsing
+ *
  * Revision 1.13  2005/03/15 20:14:30  kuznets
  * Implemented notification to client waiting for job
  *
