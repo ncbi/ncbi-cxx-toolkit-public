@@ -249,7 +249,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
+CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
+                                 EDestinationLocs dst_locs)
     : m_Scope(&target_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -282,12 +283,16 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
         m_DstRanges[0][target_seq.GetSeq_id_Handle()]
             .push_back(TRange::GetWhole());
     }
+    if (dst_locs == eDestinationPreserve) {
+        PreserveDestinationLocs();
+    }
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
-                                 const CSeq_id* dst_id,
-                                 CScope*        scope)
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
+                                 const CSeq_id*   dst_id,
+                                 CScope*          scope,
+                                 EDestinationLocs dst_locs)
     : m_Scope(scope),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -296,6 +301,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
       m_Dst_width(0)
 {
     x_Initialize(seq_map, dst_id);
+    if (dst_locs == eDestinationPreserve) {
+        PreserveDestinationLocs();
+    }
 }
 
 
@@ -1846,6 +1854,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/09/27 14:36:52  grichenk
+* Set eDestinationPreserve in some constructors by default
+*
 * Revision 1.24  2004/09/03 16:57:13  dicuccio
 * Fixed type: 'fuzz.second' should be 'res.second' (prevent dereference of a null
 * pointer)

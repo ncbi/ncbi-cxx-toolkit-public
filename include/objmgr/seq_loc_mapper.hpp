@@ -107,6 +107,11 @@ public:
         eLocationToProduct,
         eProductToLocation
     };
+    // Method of treating locations already on the destination
+    enum EDestinationLocs {
+        eDestinationPreserve,  // preserve locations on the destination
+        eDestinationRemove     // remove any location not on the source
+    };
 
     // Mapping through a feature, both location and product must be set.
     // If scope is set, synonyms are resolved for each source ID.
@@ -137,10 +142,12 @@ public:
     // mapped to the id. Otherwise mapping is done to the top
     // level references in the map (e.g. if the map is created from
     // a seq-loc).
-    CSeq_loc_Mapper(CBioseq_Handle target_seq);
-    CSeq_loc_Mapper(const CSeqMap& seq_map,
-                    const CSeq_id* dst_id = 0,
-                    CScope*        scope = 0);
+    CSeq_loc_Mapper(CBioseq_Handle   target_seq,
+                    EDestinationLocs dst_locs = eDestinationPreserve);
+    CSeq_loc_Mapper(const CSeqMap&   seq_map,
+                    const CSeq_id*   dst_id = 0,
+                    CScope*          scope = 0,
+                    EDestinationLocs dst_locs = eDestinationPreserve);
 
     // Mapping from master sequence to its segments, restricted
     // by depth. Depth = 0 is for synonyms conversion.
@@ -438,6 +445,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/09/27 14:36:52  grichenk
+* Set eDestinationPreserve in some constructors by default
+*
 * Revision 1.16  2004/08/11 17:23:09  grichenk
 * Added eMergeContained flag. Fixed convertion of whole to seq-interval.
 *
