@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.mac,v 1.3 2000/03/30 17:28:42 kans Exp $
+/* $Id: ncbiconf.mac,v 1.4 2001/01/03 23:07:27 vakatov Exp $
  * By Jonathan Kans, NCBI (kans@ncbi.nlm.nih.gov)
  *
  * NOTE:  Unlike its UNIX and NT counterparts, this configuration header
@@ -64,7 +64,7 @@
 /* #undef _SVID_SOURCE */
 
 /* The number of bytes in a __int64.  */
-#define SIZEOF___INT64 8
+/* #undef SIZEOF___INT64 */
 
 /* The number of bytes in a char.  */
 #define SIZEOF_CHAR 1

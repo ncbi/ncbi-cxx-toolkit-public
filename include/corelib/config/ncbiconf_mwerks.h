@@ -64,7 +64,7 @@
 /* #undef _SVID_SOURCE */
 
 /* The number of bytes in a __int64.  */
-#define SIZEOF___INT64 8
+/* #undef SIZEOF___INT64 */
 
 /* The number of bytes in a char.  */
 #define SIZEOF_CHAR 1
