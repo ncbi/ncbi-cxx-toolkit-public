@@ -245,6 +245,7 @@ enum EErrType {
     eErr_SEQ_FEAT_RnaProductMismatch,
     eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
     eErr_SEQ_FEAT_MissingCDSproduct,
+    eErr_SEQ_FEAT_MissingLocation,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -874,6 +875,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/07/21 21:18:19  shomrat
+* Added eErr_SEQ_FEAT_MissingLocation
+*
 * Revision 1.34  2003/07/15 18:26:43  shomrat
 * Added x_IsActiveFin
 *
