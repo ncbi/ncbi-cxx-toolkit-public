@@ -16,8 +16,8 @@
 
 echo "[`date`]"
 
-cvs_location=`echo '$Source$' | sed "s%\$[S]ource: *\([^$][^$]*\)\$.*%\1%"`
-cvs_revision=`echo '$Revision$' | sed "s%\$[R]evision: *\([^$][^$]*\)\$.*%\1%"`
+cvs_location=`echo '$Source$' | sed "s%\\$[S]ource: *\\([^$][^$]*\\) \\$.*%\\1%"`
+cvs_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
 
 script_name=`basename $0`
 script_dir=`dirname $0`
