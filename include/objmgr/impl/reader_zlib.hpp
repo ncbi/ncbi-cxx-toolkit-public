@@ -49,6 +49,9 @@ public:
     virtual CRef<CByteSourceReader> Open(void);
 
 private:
+    CResultZBtSrc(const CResultZBtSrc&);
+    const CResultZBtSrc& operator=(const CResultZBtSrc&);
+
     CRef<CByteSourceReader> m_Src;
 };
 
@@ -72,6 +75,9 @@ public:
     virtual size_t Read(char* buffer, size_t bufferLength);
 
 private:
+    CResultZBtSrcRdr(const CResultZBtSrcRdr&);
+    const CResultZBtSrcRdr& operator=(const CResultZBtSrcRdr&);
+
     CRef<CByteSourceReader> m_Src;
     EType       m_Type;
     auto_ptr<CResultZBtSrcX> m_Decompressor;
@@ -84,6 +90,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2003/07/24 20:41:43  vasilche
+* Added private constructor to make MSVC-DLL happy.
+*
 * Revision 1.1  2003/07/24 19:28:08  vasilche
 * Implemented SNP split for ID1 loader.
 *
