@@ -94,9 +94,12 @@ s_BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
  *                       tblastn only [in]
  * @param offset Shift in the subject sequence protein coordinates [in]
  */
-static void s_TranslateHSPsToDNAPCoord(EBlastProgramType program, 
-        BlastInitHitList* init_hitlist, BlastQueryInfo* query_info,
-        Int2 subject_frame, Int4 subject_length, Int4 offset)
+static void 
+s_TranslateHSPsToDNAPCoord(EBlastProgramType program, 
+                           BlastInitHitList* init_hitlist, 
+                           BlastQueryInfo* query_info,
+                           Int2 subject_frame, Int4 subject_length, 
+                           Int4 offset)
 {
     BlastInitHSP * init_hsp = 0;
     Int4 index = 0;
@@ -145,6 +148,7 @@ static void s_TranslateHSPsToDNAPCoord(EBlastProgramType program,
             }
         }
     }
+    Blast_InitHitListSortByScore(init_hitlist);
 }
 
 /** The core of the BLAST search: comparison between the (concatenated)
