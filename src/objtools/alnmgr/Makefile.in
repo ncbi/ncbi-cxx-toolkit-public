@@ -1,7 +1,7 @@
 # $Id$
 
 LIB_PROJ = alnmgr
-SUB_PROJ = demo util
+SUB_PROJ = demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
