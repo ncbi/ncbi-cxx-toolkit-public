@@ -35,6 +35,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/05/16 22:04:36  kholodov
+* Added: CDbapiClosedEvent()
+*
 * Revision 1.2  2002/02/05 17:16:23  kholodov
 * Put into right scope, invalidobjex retired
 *
@@ -56,26 +59,35 @@ class CDbapiEvent
 {
 public:
 
-  CDbapiEvent(CActiveObject* src)
-    : m_source(src) {}
+    CDbapiEvent(CActiveObject* src)
+        : m_source(src) {}
   
-  virtual ~CDbapiEvent() {}
+    virtual ~CDbapiEvent() {}
 
-  CActiveObject* GetSource() const { return m_source; }
+    CActiveObject* GetSource() const { return m_source; }
 
 
 private:
-  CActiveObject* m_source;
+    CActiveObject* m_source;
 };
 
 
 class CDbapiDeletedEvent : public CDbapiEvent
 {
 public:
-  CDbapiDeletedEvent(CActiveObject* src)
-    : CDbapiEvent(src) {}
+    CDbapiDeletedEvent(CActiveObject* src)
+        : CDbapiEvent(src) {}
 
-  virtual ~CDbapiDeletedEvent() {}
+    virtual ~CDbapiDeletedEvent() {}
+};
+
+class CDbapiClosedEvent : public CDbapiEvent
+{
+public:
+    CDbapiClosedEvent(CActiveObject* src)
+        : CDbapiEvent(src) {}
+
+    virtual ~CDbapiClosedEvent() {}
 };
 
 //===============================================================
@@ -83,32 +95,32 @@ public:
 class IEventListener
 {
 public:
-  virtual void Action(const CDbapiEvent& ev) = 0;
+    virtual void Action(const CDbapiEvent& ev) = 0;
 
 protected:
-  IEventListener() {}
+    IEventListener() {}
 };
 
 //=================================================================
 class CActiveObject : public CObject 
 {
 public:
-  CActiveObject();
-  virtual ~CActiveObject();
+    CActiveObject();
+    virtual ~CActiveObject();
 
-  void AddListener(IEventListener* obj);
-  void RemoveListener(IEventListener* obj);
-  void Notify(const CDbapiEvent& e);
+    void AddListener(IEventListener* obj);
+    void RemoveListener(IEventListener* obj);
+    void Notify(const CDbapiEvent& e);
 
-  void CheckValid() const; // Disabled, not used anymore
-  void SetValid(bool v);
+    void CheckValid() const; // Disabled, not used anymore
+    void SetValid(bool v);
 
 
 private:
-  typedef set<IEventListener*> TLList;
+    typedef set<IEventListener*> TLList;
 
-  TLList m_listenerList;
-  bool m_valid;
+    TLList m_listenerList;
+    bool m_valid;
 
 };
 
