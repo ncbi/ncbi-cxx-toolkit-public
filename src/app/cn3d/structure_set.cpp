@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.122  2002/11/21 15:26:33  thiessen
+* fix style dictionary loading bug
+*
 * Revision 1.121  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -871,6 +874,7 @@ void StructureSet::Load(int structureLimit)
     showHideManager = new ShowHideManager();
     styleManager = new StyleManager(this);
     havePrevPickedAtomCoord = false;
+    hasUserStyle = false;
 
     // if this is a single structure, then there should be one sequence per biopolymer
     if (dataManager->IsSingleStructure()) {
@@ -894,6 +898,9 @@ void StructureSet::Load(int structureLimit)
         LoadAlignmentsAndStructures(structureLimit);
     }
 
+    // find center of coordinates
+    SetCenter();
+
     // create alignment manager
     if (sequenceSet) {
         if (dataManager->GetUpdates())
@@ -910,7 +917,16 @@ void StructureSet::Load(int structureLimit)
     // setup show/hide items
     showHideManager->ConstructShowHideArray(this);
 
-    // load user annotations (styles are loaded later using LoadStyleDictionary())
+    // load style dictionary and user annotations
+    const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();
+    if (styles) {
+        if (!styleManager->LoadFromASNStyleDictionary(*styles) ||
+            !styleManager->CheckGlobalStyleSettings())
+            ERR_POST(Error << "Error loading style dictionary");
+        dataManager->RemoveStyleDictionary();   // remove now; recreated with current settings upon save
+        hasUserStyle = true;
+    }
+
     const CCn3d_user_annotations *annots = dataManager->GetUserAnnotations();
     if (annots) {
         if (!styleManager->LoadFromASNUserAnnotations(*annots) ||
@@ -934,18 +950,6 @@ StructureSet::~StructureSet(void)
 
     BioseqMap::iterator i, ie = bioseqs.end();
     for (i=bioseqs.begin(); i!=ie; i++) BioseqFree(i->second);
-}
-
-bool StructureSet::LoadStyleDictionary(void)
-{
-    const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();
-    if (styles) {
-        if (!styleManager->LoadFromASNStyleDictionary(*styles) ||
-            !styleManager->CheckGlobalStyleSettings())
-            ERR_POST(Error << "Error loading style dictionary");
-        dataManager->RemoveStyleDictionary();   // remove now; recreated with current settings upon save
-    }
-    return (styles != NULL);
 }
 
 BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)

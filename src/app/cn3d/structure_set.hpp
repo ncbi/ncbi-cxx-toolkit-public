@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2002/11/21 15:26:33  thiessen
+* fix style dictionary loading bug
+*
 * Revision 1.71  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -306,6 +309,7 @@ public:
 
     bool isAlphaOnly;   // assume if one Object is alpha-only, then they all are
     int nDomains;       // total number of domains over all objects
+    bool hasUserStyle;  // whether there's a global style in the original data
 
     typedef std::list < const StructureObject * > ObjectList;
     ObjectList objects;
@@ -343,9 +347,6 @@ public:
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
-
-    // load style dictionary; returns true if there was one in the asn data
-    bool LoadStyleDictionary(void);
 
     // center rotation and view on aligned residues only
     void CenterViewOnAlignedResidues(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.168  2002/11/21 15:26:33  thiessen
+* fix style dictionary loading bug
+*
 * Revision 1.167  2002/11/20 14:15:40  thiessen
 * fix for building with wx2.3.3
 *
@@ -2188,13 +2191,12 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     SetWorkingTitle(glCanvas->structureSet);
     GlobalMessenger()->SetAllWindowTitles();
 
-   // set style as stored in asn data if present, otherwise use a default style
-    if (glCanvas->structureSet->LoadStyleDictionary()) {
+    // use a default style if no global style stored in asn data
+    if (glCanvas->structureSet->hasUserStyle) {
         SetRenderingMenuFlag(0);
         SetColoringMenuFlag(0);
     } else {
-        // set default rendering style and view
-        glCanvas->structureSet->SetCenter();
+        // set default rendering style and view, and turn on corresponding style menu flags
         if (glCanvas->structureSet->alignmentSet) {
             glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
             SetRenderingMenuFlag(MID_TUBE);
