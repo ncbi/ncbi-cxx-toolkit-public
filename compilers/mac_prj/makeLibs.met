@@ -1,7 +1,4 @@
 
-
-
-
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -396,9 +393,9 @@ on SetProjectData()
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
+		-- AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
 		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
-			{GuiFileDataExcept("widgets:aln_multiple", {"alnmultib.cpp"})} Â
-				))
+			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp", "alnmulti_widget_old.cpp"})}))
 		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
 		
 		
@@ -451,7 +448,7 @@ on SetProjectData()
 		
 		-- PLUGINS --
 		
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xblast"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "w_fltable", "w_table"})
 		AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"})
@@ -460,6 +457,11 @@ on SetProjectData()
 			{"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
+		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
+			{"plugin", "fltk", "libdl"}, Â
+			{mkFileData(gSourceDir & "gui:plugins:algo:external"), Â
+				mkFileDataListFiles(gSourceDir & "gui:plugins:algo:basic", {"output_dlg.cpp"})}), Â
+			{"xalgoseq", "xcgi"}, {"gui_core"}))
 		
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"w_fltable", "w_table", "xflat", "ncbi_xloader_lds", "gbseq"})
@@ -1031,6 +1033,7 @@ on UpdateTarget(proj, targetIndex)
 		
 		tell application "CodeWarrior IDE"
 			if ((count of filesToAdd) is not 0) then
+				--display dialog filesToAdd
 				Add Files filesToAdd
 				set targetFileList to my GetTargetFiles(targetIndex)
 			end if
