@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.1 2001/09/14 18:29:11 ucko Exp $
+#  $Id: configure.ac,v 1.2 2001/09/17 15:59:10 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -192,7 +192,7 @@ for x_arg in "$@" ; do
       ;;
 
       --with-extra-action=* | --exec-prefix=* | --with-projects=* \
-      | --cache-file=* | --build=* | --host=* \
+      | --cache-file=* | --build=* | --host=* | [A-Z]*=* \
       | --with-sybase-local=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
