@@ -185,9 +185,11 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
 
                 if (pool_name.compare(t_con->PoolName()) == 0) {
                     m_NotInUse.Remove(i);
-                    m_InUse.Add((TPotItem) t_con);
-                    t_con->Refresh();
-                    return Create_Connection(*t_con);
+                    if(t_con->Refresh()) {
+                        m_InUse.Add((TPotItem) t_con);
+                        return Create_Connection(*t_con);
+                    }
+                    delete t_con;
                 }
             }
         }
@@ -203,9 +205,11 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
                 
                 if (srv_name.compare(t_con->ServerName()) == 0) {
                     m_NotInUse.Remove(i);
-                    m_InUse.Add((TPotItem) t_con);
-                    t_con->Refresh();
-                    return Create_Connection(*t_con);
+                    if(t_con->Refresh()) {
+                        m_InUse.Add((TPotItem) t_con);
+                        return Create_Connection(*t_con);
+                    }
+                    delete t_con;
                 }
             }
         }
@@ -403,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/27 17:00:53  soussov
+ * adds code to prevent the return of broken connection from the pool
+ *
  * Revision 1.9  2003/07/21 21:58:08  soussov
  * fixes bug whith pool name mismatch in Connect()
  *
