@@ -42,6 +42,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <set>
+#include <map>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -123,6 +124,9 @@ public:
 
     void SetPartial(bool value);
     void SetMappedIndex(int index);
+
+    void ResetLocation(void);
+    bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
 
 private:
     friend class CSeq_loc_Conversion;
@@ -210,6 +214,8 @@ protected:
 
 private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
+    typedef vector< CRef<CSeq_loc_Conversion> > TMappingSet;
+    typedef map<CAnnotObject_Ref, TMappingSet> TAnnotMappingSet;
 
     void x_Clear(void);
     void x_Initialize(const CBioseq_Handle& bioseq,
@@ -243,6 +249,11 @@ private:
     void x_SearchAll(const CSeq_annot_Info& annot_info);
     void x_Sort(void);
     
+    bool x_AddObjectMapping(CAnnotObject_Ref& object_ref,
+                            CSeq_loc_Conversion* cvt);
+    bool x_AddObject(CAnnotObject_Ref& object_ref);
+    bool x_AddObject(CAnnotObject_Ref& object_ref, CSeq_loc_Conversion* cvt);
+
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
 
@@ -253,8 +264,12 @@ private:
                       const CRange<TSeqPos>& range,
                       const SAnnotObject_Index& index) const;
 
+    // Count of all found annot objects
+    size_t                       m_AnnotCount;
     // Set of all the annotations found
     TAnnotSet                    m_AnnotSet;
+    // Set of annotations for complex remapping
+    TAnnotMappingSet             m_AnnotMappingSet;
     // Current annotation
     TAnnotSet::const_iterator    m_CurAnnot;
     // info of limit object
@@ -275,7 +290,8 @@ CAnnotObject_Ref::CAnnotObject_Ref(void)
       m_MappedIndex(0),
       m_ObjectType(eType_null),
       m_Partial(false),
-      m_MappedType(CSeq_loc::e_not_set)
+      m_MappedType(CSeq_loc::e_not_set),
+      m_MappedStrand(eNa_strand_unknown)
 {
 }
 
@@ -424,6 +440,15 @@ void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range, int index)
 }
 
 
+inline
+void CAnnotObject_Ref::ResetLocation(void)
+{
+    m_TotalRange = TRange::GetEmpty();
+    m_MappedType = CSeq_loc::e_not_set;
+    m_MappedStrand = eNa_strand_unknown;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CAnnotTypes_CI
 /////////////////////////////////////////////////////////////////////////////
@@ -491,6 +516,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/10/27 20:07:10  vasilche
+* Started implementation of full annotations' mapping.
+*
 * Revision 1.55  2003/10/09 20:20:59  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.

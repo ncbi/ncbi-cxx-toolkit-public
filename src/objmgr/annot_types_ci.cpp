@@ -79,7 +79,8 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
       m_MappedIndex(0),
       m_ObjectType(eType_Seq_annot_Info),
       m_Partial(false),
-      m_MappedType(CSeq_loc::e_not_set)
+      m_MappedType(CSeq_loc::e_not_set),
+      m_MappedStrand(eNa_strand_unknown)
 {
     if ( object.IsFeat() ) {
         const CSeq_feat& feat = *object.GetFeatFast();
@@ -98,7 +99,8 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
       m_MappedIndex(0),
       m_ObjectType(eType_Seq_annot_SNP_Info),
       m_Partial(false),
-      m_MappedType(CSeq_loc::e_not_set)
+      m_MappedType(CSeq_loc::e_not_set),
+      m_MappedStrand(eNa_strand_unknown)
 {
 }
 
@@ -249,6 +251,18 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc,
         else
             interval.ResetStrand();
     }
+}
+
+
+bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
+{
+    if ( m_ObjectType != ref.m_ObjectType ) {
+        return m_ObjectType < ref.m_ObjectType;
+    }
+    if ( m_Object != ref.m_Object ) {
+        return m_Object < ref.m_Object;
+    }
+    return m_AnnotObject_Index < ref.m_AnnotObject_Index;
 }
 
 
@@ -424,6 +438,7 @@ bool CAnnotObject_Less::x_less(const CAnnotObject_Ref& x,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(void)
+    : m_AnnotCount(0)
 {
 }
 
@@ -432,6 +447,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
+      m_AnnotCount(0),
       m_Scope(scope)
 {
     CHandleRangeMap master_loc;
@@ -444,6 +460,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
+      m_AnnotCount(0),
       m_Scope(bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
@@ -453,6 +470,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
 CAnnotTypes_CI::CAnnotTypes_CI(const CSeq_annot_Handle& annot,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
+      m_AnnotCount(0),
       m_Scope(annot.GetScope())
 {
     SetResolveNone(); // nothing to resolve
@@ -465,6 +483,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_entry& entry,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
+      m_AnnotCount(0),
       m_Scope(scope)
 {
     SetResolveNone(); // nothing to resolve
@@ -484,6 +503,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
+      m_AnnotCount(0),
       m_Scope(scope)
 {
     CHandleRangeMap master_loc;
@@ -502,6 +522,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
+      m_AnnotCount(0),
       m_Scope(bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
@@ -523,6 +544,7 @@ void CAnnotTypes_CI::x_Initialize(const CBioseq_Handle& bioseq,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
+    : m_AnnotCount(0)
 {
     *this = it;
 }
@@ -537,18 +559,26 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 void CAnnotTypes_CI::x_Clear(void)
 {
     m_AnnotSet.clear();
+    m_AnnotMappingSet.clear();
+    m_AnnotCount = 0;
+    m_CurAnnot = m_AnnotSet.begin();
 }
 
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
+    _ASSERT(it.m_AnnotMappingSet.empty());
+    _ASSERT(it.m_AnnotCount == m_AnnotSet.size());
     if ( this != &it ) {
         x_Clear();
         // Copy TSE list, set TSE locks
         m_TSE_LockSet = it.m_TSE_LockSet;
         static_cast<SAnnotSelector&>(*this) = it;
+        m_AnnotCount = it.m_AnnotCount;
         m_AnnotSet = it.m_AnnotSet;
+        m_AnnotMappingSet.clear();
         size_t index = it.m_CurAnnot - it.m_AnnotSet.begin();
+        _ASSERT(index < m_AnnotCount);
         m_CurAnnot = m_AnnotSet.begin()+index;
     }
     return *this;
@@ -639,6 +669,8 @@ void CAnnotTypes_CI::x_Initialize(void)
 
 void CAnnotTypes_CI::x_Sort(void)
 {
+    _ASSERT(m_AnnotMappingSet.empty());
+    _ASSERT(m_AnnotCount == m_AnnotSet.size());
     switch ( m_SortOrder ) {
     case eSortOrder_Normal:
         if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
@@ -949,6 +981,40 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
 }
 
 
+bool CAnnotTypes_CI::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
+                                        CSeq_loc_Conversion* cvt)
+{
+    m_AnnotSet.push_back(object_ref);
+    return ++m_AnnotCount >= m_MaxSize;
+    /*
+    object_ref.ResetLocation();
+    TMappingSet& mapping_set = m_AnnotMappingSet[object_ref];
+    if ( mapping_set.empty() ) {
+        ++m_AnnotCount;
+    }
+    mapping_set.push_back(Ref(cvt));
+    return m_AnnotCount >= m_MaxSize;
+    */
+}
+
+
+inline
+bool CAnnotTypes_CI::x_AddObject(CAnnotObject_Ref& object_ref)
+{
+    m_AnnotSet.push_back(object_ref);
+    return ++m_AnnotCount >= m_MaxSize;
+}
+
+
+inline
+bool CAnnotTypes_CI::x_AddObject(CAnnotObject_Ref& object_ref,
+                                 CSeq_loc_Conversion* cvt)
+{
+    return ( cvt && cvt->IsPartial() )?
+        x_AddObjectMapping(object_ref, cvt): x_AddObject(object_ref);
+}
+
+
 void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
                               const SIdAnnotObjs* objs,
                               CReadLockGuard& guard,
@@ -1031,11 +1097,9 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
             else {
                 annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct);
             }
-            m_AnnotSet.push_back(annot_ref);
-
-            // Limit number of annotations to m_MaxSize
-            if ( m_AnnotSet.size() >= m_MaxSize )
+            if ( x_AddObject(annot_ref, cvt) ) {
                 return;
+            }
         }
     }
 
@@ -1059,9 +1123,9 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
 
                     CAnnotObject_Ref annot_ref(snp_annot, index);
                     annot_ref.SetSNP_Point(snp, cvt);
-                    m_AnnotSet.push_back(annot_ref);
-                    if ( m_AnnotSet.size() >= m_MaxSize )
+                    if ( x_AddObject(annot_ref, cvt) ) {
                         return;
+                    }
                 } while ( ++snp_it != snp_annot.end() );
             }
         }
@@ -1133,13 +1197,13 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_entry_Info& entry_info)
     // Collect all annotations from the entry
     ITERATE( CSeq_entry_Info::TAnnots, ait, entry_info.m_Annots ) {
         x_SearchAll(**ait);
-        if ( m_AnnotSet.size() >= m_MaxSize )
+        if ( m_AnnotCount >= m_MaxSize )
             return;
     }
     // Collect annotations from all children
     ITERATE( CSeq_entry_Info::TEntries, cit, entry_info.m_Entries ) {
         x_SearchAll(**cit);
-        if ( m_AnnotSet.size() >= m_MaxSize )
+        if ( m_AnnotCount >= m_MaxSize )
             return;
     }
 }
@@ -1154,11 +1218,9 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
             continue;
         }
         CAnnotObject_Ref annot_ref(*aoit);
-        // annot_ref.m_TotalRange;
-        m_AnnotSet.push_back(annot_ref);
-        // Limit number of annotations to m_MaxSize
-        if ( m_AnnotSet.size() >= m_MaxSize )
+        if ( x_AddObject(annot_ref) ) {
             return;
+        }
     }
 
     if ( x_NeedSNPs() && annot_info.x_HaveSNP_annot_Info() ) {
@@ -1169,9 +1231,9 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
             const SSNP_Info& snp = *snp_it;
             CAnnotObject_Ref annot_ref(snp_annot, index);
             annot_ref.SetSNP_Point(snp, 0);
-            m_AnnotSet.push_back(annot_ref);
-            if ( m_AnnotSet.size() >= m_MaxSize )
+            if ( x_AddObject(annot_ref) ) {
                 return;
+            }
             ++index;
         }
     }
@@ -1223,9 +1285,12 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
         return x_Search(ref_loc, 0);
     }
     else {
-        CSeq_loc_Conversion cvt(master_id, master_loc_empty,
-                                seg, ref_id, m_Scope);
-        return x_Search(ref_loc, &cvt);
+        CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_id,
+                                                              master_loc_empty,
+                                                              seg,
+                                                              ref_id,
+                                                              m_Scope));
+        return x_Search(ref_loc, &*cvt);
     }
 }
 
@@ -1236,6 +1301,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2003/10/27 20:07:10  vasilche
+* Started implementation of full annotations' mapping.
+*
 * Revision 1.95  2003/10/10 12:47:24  dicuccio
 * Fixed off-by-one error in x_Search() - allocate correct size for array
 *

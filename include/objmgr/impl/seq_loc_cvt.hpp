@@ -61,7 +61,7 @@ class CSeq_point;
 // CSeq_loc_Conversion
 /////////////////////////////////////////////////////////////////////////////
 
-class CSeq_loc_Conversion
+class CSeq_loc_Conversion : public CObject
 {
 public:
     typedef CRange<TSeqPos> TRange;
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/10/27 20:07:10  vasilche
+* Started implementation of full annotations' mapping.
+*
 * Revision 1.4  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
