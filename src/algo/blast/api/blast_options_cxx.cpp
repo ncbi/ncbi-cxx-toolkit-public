@@ -66,20 +66,14 @@ CBlastOptions::~CBlastOptions()
 void 
 CBlastOptions::SetDbGeneticCode(int gc)
 {
-    const unsigned char* gc_str = FindGeneticCode(gc).get();
-
-    if (!gc_str)
-        return;
 
     m_DbOpts->genetic_code = gc;
 
     if (m_DbOpts->gen_code_string) 
         sfree(m_DbOpts->gen_code_string);
 
-    m_DbOpts->gen_code_string =
-        (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
-
-    memcpy(m_DbOpts->gen_code_string, gc_str, GENCODE_STRLEN);
+    m_DbOpts->gen_code_string = (Uint1*)
+        BlastMemDup(FindGeneticCode(gc).get(), GENCODE_STRLEN);
 }
 
 bool
@@ -275,6 +269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/12/04 18:35:33  dondosha
+* Correction in assigning the genetic code string option
+*
 * Revision 1.31  2003/12/03 16:41:16  dondosha
 * Added SetDbGeneticCode implementation, to set both integer and string
 *
