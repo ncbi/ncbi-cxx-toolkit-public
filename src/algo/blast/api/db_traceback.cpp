@@ -123,8 +123,13 @@ CDbBlastTraceback::x_ResetQueryDs()
     m_iclsQueries.Reset(NULL);
     m_iclsQueryInfo.Reset(NULL);
     m_ipScoreBlock = BlastScoreBlkFree(m_ipScoreBlock);
-    
-    sfree(m_ipReturnStats);
+    m_ipScoringParams = BlastScoringParametersFree(m_ipScoringParams);
+    m_ipExtParams = BlastExtensionParametersFree(m_ipExtParams);
+    m_ipHitParams = BlastHitSavingParametersFree(m_ipHitParams);
+    m_ipEffLenParams = BlastEffectiveLengthsParametersFree(m_ipEffLenParams);
+    m_ipGapAlign = BLAST_GapAlignStructFree(m_ipGapAlign);
+
+    sfree(m_ipDiagnostics);
     NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
         *itr = Blast_MessageFree(*itr);
     }
@@ -139,6 +144,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/05/14 17:16:32  dondosha
+ * BlastReturnStat structure changed to BlastDiagnostics and refactored
+ *
  * Revision 1.8  2004/05/12 12:19:33  madden
  * Add (NULL) psi_options to call to BLAST_ComputeTraceback
  *

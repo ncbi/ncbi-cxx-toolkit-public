@@ -131,7 +131,7 @@ void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries,
     mi_pLookupTable = NULL;
     mi_pLookupSegments = NULL;
     mi_pResults = NULL;
-    mi_pReturnStats = NULL;
+    mi_pDiagnostics = NULL;
     mi_pSeqSrc = NULL;
 }
 
@@ -162,7 +162,7 @@ CBl2Seq::x_ResetSubjectDs()
     // Clean up structures and results from any previous search
     mi_pSeqSrc = BlastSeqSrcFree(mi_pSeqSrc);
     mi_pResults = Blast_HSPResultsFree(mi_pResults);
-    sfree(mi_pReturnStats);
+    mi_pDiagnostics = Blast_DiagnosticsFree(mi_pDiagnostics);
     // TODO: Should clear class wrappers for internal parameters structures?
     //      -> destructors will be called for them
     //m_OptsHandle->SetDbSeqNum(0);  // FIXME: Really needed?
@@ -241,7 +241,7 @@ void
 CBl2Seq::ScanDB()
 {
     mi_pResults = NULL;
-    mi_pReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
+    mi_pDiagnostics = Blast_DiagnosticsInit();
 
     Blast_HSPResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
 
@@ -255,7 +255,7 @@ CBl2Seq::ScanDB()
                        m_OptsHandle->GetOptions().GetHitSaveOpts(),
                        m_OptsHandle->GetOptions().GetEffLenOpts(),
                        NULL, m_OptsHandle->GetOptions().GetDbOpts(),
-                       mi_pResults, mi_pReturnStats);
+                       mi_pResults, mi_pDiagnostics);
 }
 
 /** Unlike the database search, we want to make sure that a seqalign list is   
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2004/05/14 17:16:12  dondosha
+ * BlastReturnStat structure changed to BlastDiagnostics and refactored
+ *
  * Revision 1.51  2004/05/07 15:28:05  papadopo
  * add scale factor of 1.0 to BlastMainSetup
  *

@@ -581,7 +581,7 @@ void CBlastApplication::FormatResults(CDbBlast& blaster,
 #ifdef C_FORMATTING
         PrintOutputFooter(program, format_options, score_options, 
             m_sbp, lookup_options, word_options, ext_options, hit_options, 
-            blaster.GetQueryInfo(), dbname, blaster.GetReturnStats());
+            blaster.GetQueryInfo(), dbname, blaster.GetDiagnostics());
 #endif
         
     }

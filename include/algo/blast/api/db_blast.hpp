@@ -88,7 +88,7 @@ public:
     void SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src=false);
     BlastSeqSrc* GetSeqSrc() const;
     BlastHSPResults* GetResults() const;
-    BlastReturnStat* GetReturnStats() const;
+    BlastDiagnostics* GetDiagnostics() const;
     BlastScoreBlk* GetScoreBlk() const;
     const CBlastQueryInfo& GetQueryInfo() const;
     TBlastError& GetErrorMessage();
@@ -116,7 +116,7 @@ protected:
     CBlastQueryInfo     m_iclsQueryInfo; // one for all queries
     BlastScoreBlk*      m_ipScoreBlock; // Karlin-Altschul parameters
     /// Statistical return structures
-    BlastReturnStat*    m_ipReturnStats;
+    BlastDiagnostics*    m_ipDiagnostics;
     /// Error (info, warning) messages
     TBlastError         m_ivErrors;
    
@@ -208,9 +208,9 @@ inline BlastHSPResults* CDbBlast::GetResults() const
     return m_ipResults;
 }
 
-inline BlastReturnStat* CDbBlast::GetReturnStats() const
+inline BlastDiagnostics* CDbBlast::GetDiagnostics() const
 {
-    return m_ipReturnStats;
+    return m_ipDiagnostics;
 }
 
 inline BlastScoreBlk* CDbBlast::GetScoreBlk() const
@@ -270,6 +270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/05/14 17:15:59  dondosha
+* BlastReturnStat structure changed to BlastDiagnostics and refactored
+*
 * Revision 1.16  2004/05/07 15:39:23  papadopo
 * add getter for the RPSInfo private member, since the scale factor is now explicitly needed in the implementation of this class
 *

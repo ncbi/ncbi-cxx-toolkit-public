@@ -116,6 +116,8 @@ public:
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
     const vector< CConstRef<objects::CSeq_loc> >& GetFilteredQueryRegions() const;
+    /// Retrieves the diagnostics information returned from the engine
+    BlastDiagnostics* GetDiagnostics() const;
 
 protected:
     virtual void SetupSearch();
@@ -156,7 +158,7 @@ private:
     /// Results for all queries and subjects together
     BlastHSPResults*                    mi_pResults;
     /// Return search statistics data
-    BlastReturnStat*                    mi_pReturnStats;
+    BlastDiagnostics*                   mi_pDiagnostics;
 
     /// Regions filtered out from the query sequence, one per query
     vector< CConstRef<objects::CSeq_loc> >       mi_vFilteredRegions;
@@ -253,6 +255,11 @@ CBl2Seq::GetFilteredQueryRegions() const
     return mi_vFilteredRegions;
 }
 
+inline BlastDiagnostics* CBl2Seq::GetDiagnostics() const
+{
+    return mi_pDiagnostics;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -262,6 +269,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/05/14 17:15:59  dondosha
+* BlastReturnStat structure changed to BlastDiagnostics and refactored
+*
 * Revision 1.32  2004/05/14 16:02:56  madden
 * Rename BLAST_ExtendWord to Blast_ExtendWord in order to fix conflicts with C toolkit
 *

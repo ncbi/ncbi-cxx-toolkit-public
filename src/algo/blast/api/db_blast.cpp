@@ -61,7 +61,7 @@ void CDbBlast::x_InitFields()
     m_ipLookupSegments = NULL;
     m_ipFilteredRegions = NULL;
     m_ipResults = NULL;
-    m_ipReturnStats = NULL;
+    m_ipDiagnostics = NULL;
     m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(m_pSeqSrc));
     m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(m_pSeqSrc));
 }
@@ -93,7 +93,7 @@ CDbBlast::x_ResetResultDs()
 {
     m_ipResults = Blast_HSPResultsFree(m_ipResults);
     
-    sfree(m_ipReturnStats);
+    m_ipDiagnostics = Blast_DiagnosticsFree(m_ipDiagnostics);
     NON_CONST_ITERATE(TBlastError, itr, m_ivErrors) {
         *itr = Blast_MessageFree(*itr);
     }
@@ -172,7 +172,7 @@ int CDbBlast::SetupSearch()
             m_ipLookupSegments, m_ipScoreBlock, &m_ipLookupTable, m_pRpsInfo);
         
         m_ibQuerySetUpDone = true;
-        m_ipReturnStats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
+        m_ipDiagnostics = Blast_DiagnosticsInit();
     }
     return status;
 }
@@ -285,7 +285,7 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetEffLenOpts(),
             m_OptsHandle->GetOptions().GetProtOpts(), 
             m_OptsHandle->GetOptions().GetDbOpts(),
-            m_ipResults, m_ipReturnStats);
+            m_ipResults, m_ipDiagnostics);
     } else {
         BLAST_SearchEngine(m_OptsHandle->GetOptions().GetProgram(),
             m_iclsQueries, m_iclsQueryInfo, m_pSeqSrc, m_ipScoreBlock, 
@@ -295,7 +295,7 @@ CDbBlast::RunSearchEngine()
             m_OptsHandle->GetOptions().GetHitSaveOpts(), 
             m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
             m_OptsHandle->GetOptions().GetDbOpts(),
-            m_ipResults, m_ipReturnStats);
+            m_ipResults, m_ipDiagnostics);
     }
     m_ipLookupTable = LookupTableWrapFree(m_ipLookupTable);
     m_iclsQueries = BlastSequenceBlkFree(m_iclsQueries);
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2004/05/14 17:16:12  dondosha
+ * BlastReturnStat structure changed to BlastDiagnostics and refactored
+ *
  * Revision 1.25  2004/05/07 15:28:41  papadopo
  * add scale factor to BlastMainSetup
  *
