@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2002/12/13 21:50:42  gouriano
+* corrected reading of choices
+*
 * Revision 1.97  2002/11/26 22:12:02  gouriano
 * corrected ReadClassSequential
 *
@@ -1163,11 +1166,12 @@ void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
     BeginChoice(choiceType);
+    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
     TMemberIndex index = BeginChoiceVariant(choiceType);
     _ASSERT(index != kInvalidMember);
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    TopFrame().SetMemberId(variantInfo->GetId());
 
     variantInfo->ReadVariant(*this, choicePtr);
 
@@ -1181,12 +1185,13 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
     BeginChoice(choiceType);
+    BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
     TMemberIndex index = BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
         ThrowError(fFormatError, "choice variant id expected");
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    TopFrame().SetMemberId(variantInfo->GetId());
 
     variantInfo->SkipVariant(*this);
 

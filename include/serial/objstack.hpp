@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/12/13 21:51:05  gouriano
+* corrected reading of choices
+*
 * Revision 1.14  2002/12/12 21:11:15  gouriano
 * added some debug tracing
 *
@@ -177,7 +180,7 @@ public:
     void TracePushFrame(bool push) const;
 #endif
 
-protected:
+
     bool StackIsEmpty(void) const;
 
     void ClearStack(void);

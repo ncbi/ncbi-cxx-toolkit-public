@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2002/12/13 21:50:42  gouriano
+* corrected reading of choices
+*
 * Revision 1.73  2002/11/14 20:59:48  gouriano
 * added BeginChoice/EndChoice methods
 *
@@ -909,6 +912,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
 {
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
     copier.In().BeginChoice(choiceType);
+    BEGIN_OBJECT_2FRAMES_OF(copier, eFrameChoiceVariant);
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
         copier.ThrowError(CObjectIStream::fFormatError,
@@ -916,8 +920,8 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
     }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameChoiceVariant,
-                             variantInfo->GetId());
+    copier.In().TopFrame().SetMemberId(variantInfo->GetId());
+    copier.Out().TopFrame().SetMemberId(variantInfo->GetId());
     WriteMemberId(variantInfo->GetId());
 
     variantInfo->CopyVariant(copier);

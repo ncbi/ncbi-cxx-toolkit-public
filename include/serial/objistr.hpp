@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2002/12/13 21:51:05  gouriano
+* corrected reading of choices
+*
 * Revision 1.76  2002/12/12 21:10:26  gouriano
 * implemented handling of complex XML containers
 *
@@ -350,7 +353,6 @@ class CObjectInfoMI;
 
 class CClassTypeInfo;
 class CChoiceTypeInfo;
-class CChoiceTypeInfoFunctions;
 class CContainerTypeInfo;
 class CObjectStreamCopier;
 
@@ -825,7 +827,6 @@ public:
     CHookDataKey<CReadObjectHook> m_ObjectHookKey;
     CHookDataKey<CReadClassMemberHook> m_ClassMemberHookKey;
     CHookDataKey<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
-    friend class CChoiceTypeInfoFunctions;
 };
 
 inline

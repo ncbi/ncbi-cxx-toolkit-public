@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/12/13 21:50:42  gouriano
+* corrected reading of choices
+*
 * Revision 1.31  2002/12/12 21:08:07  gouriano
 * implemented handling of complex XML containers
 *
@@ -1388,7 +1391,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
         UndoClassMember();
         return kInvalidMember;
     }
-    CLightString id = SkipStackTagName(tagName, 0, '_');
+    CLightString id = SkipStackTagName(tagName, 1, '_');
     return choiceType->GetVariants().Find(id);
 }
 
