@@ -41,8 +41,11 @@
 #ifdef NCBI_OS_MSWIN
 
 #include <windows.h>
-#define DBNTWIN32 /* must be defined before sqlfront.h */
-#include <sqlfront.h> /* must be after windows.h */
+#define DBNTWIN32                   /* must be defined before sqlfront.h */
+#include <sqlfront.h>               /* must be after windows.h */
+# if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
+typedef const LPBYTE	LPCBYTE;    /* MSVC7 headers lucks typedef for LPCBYTE */
+# endif
 #include <sqldb.h>
 
 #define DBVERSION_UNKNOWN DBUNKNOWN
@@ -660,6 +663,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/18 19:22:08  gorelenk
+ * Conditionaly added typedef for LPCBYTE missed in MSVC7 headers .
+ *
  * Revision 1.5  2003/07/17 20:42:47  soussov
  * connections pool improvements
  *
