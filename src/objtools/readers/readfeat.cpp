@@ -217,8 +217,8 @@ private:
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
 
     bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
-                                  bool* partial5P, bool* partial3P, string& featP,
-                                  string& qualP, string& valP, Int4 offset);
+                                  bool* partial5P, bool* partial3P, bool* ispointP,
+                                  string& featP, string& qualP, string& valP, Int4 offset);
 
     bool x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSeq_loc_mix *mix,
                                  const string& seqid, Int4 start,
@@ -575,12 +575,14 @@ CFeature_table_reader_imp::~CFeature_table_reader_imp(void)
 
 
 bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
-                                                         bool* partial5P, bool* partial3P, string& featP,
-                                                         string& qualP, string& valP, Int4 offset)
+                                                         bool* partial5P, bool* partial3P, bool* ispointP,
+                                                         string& featP, string& qualP, string& valP, Int4 offset)
 
 {
     SIZE_TYPE      numtkns;
     bool           badNumber = false;
+    bool           ispoint = false;
+    size_t         len;
     bool           partial5 = false;
     bool           partial3 = false;
     Int4           startv = -1;
@@ -618,6 +620,11 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int
         if (start [0] == '<') {
             partial5 = true;
             start.erase (0, 1);
+        }
+        len = start.length ();
+        if (len > 1 && start [len - 1] == '^') {
+          ispoint = true;
+          start [len - 1] = '\0';
         }
         try {
             startv = NStr::StringToLong (start);
@@ -659,6 +666,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (const string& line, Int
     *stopP = stopv + offset;
     *partial5P = partial5;
     *partial3P = partial3;
+    *ispointP = ispoint;
     featP = feat;
     qualP = qual;
     valP = val;
@@ -745,7 +753,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
                 fun.push_back (val);
                 return true;
             }
-            return true;
         case eQual_product:
             {
                 CProt_ref& prp = sfp->SetProtXref ();
@@ -753,7 +760,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, C
                 prod.push_back (val);
                 return true;
             }
-            return true;
         case eQual_prot_desc:
             {
                 CProt_ref& prp = sfp->SetProtXref ();
@@ -969,12 +975,45 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         qlist.push_back (gbq);
                         return true;
                     }
+                case eQual_gene:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        if (val == "-") {
+                            grp.SetLocus ("");
+                        } else {
+                            grp.SetLocus (val);
+                        }
+                        return true;
+                    }
+                case eQual_gene_desc:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        grp.SetDesc (val);
+                        return true;
+                    }
+                case eQual_gene_syn:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        CGene_ref::TSyn& syn = grp.SetSyn ();
+                        syn.push_back (val);
+                        return true;
+                    }
+                case eQual_locus_tag:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        grp.SetLocus_tag (val);
+                        return true;
+                    }
+                case eQual_db_xref:
+                    {
+                        return true;
+                    }
                 default:
                     break;
             }
         }
     }
-    return true;
+    return false;
 }
 
 
@@ -1025,7 +1064,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
     string str;
     string feat, qual, val;
     Int4 start, stop;
-    bool partial5, partial3;
+    bool partial5, partial3, ispoint;
     Int4 offset = 0;
     CSeqFeatData::ESubtype sbtyp = CSeqFeatData::eSubtype_bad;
     CSeqFeatData::E_Choice typ = CSeqFeatData::e_not_set;
@@ -1046,7 +1085,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
 
                 // set offset
 
-            } else if (x_ParseFeatureTableLine (str, &start, &stop, &partial5, &partial3, feat, qual, val, offset)) {
+            } else if (x_ParseFeatureTableLine (str, &start, &stop, &partial5, &partial3, &ispoint, feat, qual, val, offset)) {
 
                 // process line in feature table
 
