@@ -435,6 +435,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_UnnecessaryGeneXref",
     "SEQ_FEAT_TranslExceptPhase",
     "SEQ_FEAT_TrnaCodonWrong",
+    "SEQ_FEAT_BadTrnaAA",
     "SEQ_FEAT_BothStrands",
     "SEQ_FEAT_CDSgeneRange",
     "SEQ_FEAT_CDSmRNArange",
@@ -893,6 +894,8 @@ This is redundant, and probably should be removed.",
 //  SEQ_FEAT_TrnaCodonWrong
 "The tRNA codon recognized does not code for the indicated amino acid \
 using the specified genetic code.",
+//  SEQ_FEAT_BadTrnaAA
+"The tRNA encoded amino acid is an illegal value.",
 //  SEQ_FEAT_BothStrands
 "Feature location indicates that it is on both strands. This is not \
 biologically possible for this kind of feature. Please indicate the \
@@ -1121,6 +1124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/10/13 18:45:23  shomrat
+* Added SEQ_FEAT_BadTrnaAA
+*
 * Revision 1.28  2003/09/03 18:24:46  shomrat
 * added SEQ_DESCR_RefGeneTrackingWithoutStatus
 *
