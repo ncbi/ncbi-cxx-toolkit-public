@@ -256,6 +256,7 @@ public:
     /// Use specified menu configuration (for eKurdinConf only).
     /// NOTE: All attributes stated by SetAttribute() will be ignored.
     void UseConfig(const string& name);
+    void DisableLocalConfig(bool disable = true);
 
     /// Get HTML code for inserting into the end of the HEAD and BODY blocks.
     /// If "menu_lib_url" is not defined, then use default URL.
@@ -299,6 +300,8 @@ private:
 
     // Name of local configuration for eKurdinConf menu type.
     string       m_ConfigName; 
+    // Enable/disable local configuration for current menu.
+    bool         m_DisableLocalConfig; 
 };
 
 
@@ -337,6 +340,13 @@ string CHTMLPopupMenu::GetAttributeName(EHTML_PM_Attribute attribute) const
 }
 
 
+inline 
+void CHTMLPopupMenu::DisableLocalConfig(bool disable)
+{
+    m_DisableLocalConfig = disable;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -346,6 +356,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/05/05 13:55:40  ivanov
+ * + DisableLocalConfig()
+ *
  * Revision 1.18  2004/04/05 16:19:46  ivanov
  * Added support for Sergey Kurdin's popup menu with configurations
  *
