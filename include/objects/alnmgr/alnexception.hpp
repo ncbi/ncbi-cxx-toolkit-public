@@ -43,6 +43,7 @@ class NCBI_XALNMGR_EXPORT CAlnException : EXCEPTION_VIRTUAL_BASE public CExcepti
 {
 public:
     enum EErrCode {
+        eInvalidRequest,
         eConsensusNotPresent,
         eInvalidRow,
         eInvalidSegment,
@@ -56,6 +57,7 @@ public:
     virtual const char *GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
+        case eInvalidRequest:       return "eInvalidRequest";
         case eConsensusNotPresent:  return "eConsensusNotPresent";
         case eInvalidRow:           return "eInvalidRow";
         case eInvalidSegment:       return "eInvalidSegment";
@@ -76,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/03/05 16:20:13  todorov
+ * +eInvalidRequest
+ *
  * Revision 1.5  2002/12/26 12:38:07  dicuccio
  * Added Win32 export specifiers
  *
