@@ -32,8 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
-#include "algo/winmask/seq_masker_ostat_factory.hpp"
-#include "algo/winmask/seq_masker_ostat_ascii.hpp"
+#include <algo/winmask/seq_masker_ostat_factory.hpp>
+#include <algo/winmask/seq_masker_ostat_ascii.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/29 13:33:25  dicuccio
+ * Use <> for includes
+ *
  * Revision 1.1  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *

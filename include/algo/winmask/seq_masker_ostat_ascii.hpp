@@ -37,7 +37,7 @@
 
 #include <corelib/ncbistre.hpp>
 
-#include "algo/winmask/seq_masker_ostat.hpp"
+#include <algo/winmask/seq_masker_ostat.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -74,11 +74,12 @@ class CSeqMaskerOstatAscii : public CSeqMaskerOstat
 
 END_NCBI_SCOPE
 
-#endif
-
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/29 13:29:37  dicuccio
+ * Use <> for includes
+ *
  * Revision 1.1  2005/03/28 22:41:06  morgulis
  * Moved win_mask_ustat* files to library and renamed them.
  *
@@ -90,3 +91,5 @@ END_NCBI_SCOPE
  *
  * ========================================================================
  */
+
+#endif
