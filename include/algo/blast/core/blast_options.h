@@ -325,8 +325,13 @@ typedef struct PSIBlastOptions {
  *  to a subset.
  */
 typedef struct BlastDatabaseOptions {
-   CharPtr database; /**< Name of the database */
    Int4 genetic_code;  /**< Genetic code to use for translation, 
+                             tblast[nx] only */
+   Uint1Ptr gen_code_string;  /**< Genetic code string in ncbistdaa encoding,
+                                 tblast[nx] only */
+#if 0
+   /* CC: Not needed, was copied from OldBlast */
+   CharPtr database; /**< Name of the database */
                              tblast[nx] only */
    CharPtr gifile;   /**< File to get a gi list from: REMOVE? */
    ValNodePtr gilist; /**< A list of gis this database should be restricted to:
@@ -334,17 +339,8 @@ typedef struct BlastDatabaseOptions {
    CharPtr entrez_query;/**< An Entrez query to get a OID list from: REMOVE? */
    Int4 first_db_seq; /**< The first ordinal id number (OID) to search */
    Int4 final_db_seq; /**< The last OID to search */
+#endif
 } BlastDatabaseOptions, *BlastDatabaseOptionsPtr;
-
-/** Options used to create the ReadDBFILE structure 
- *  Include database name and various information for restricting the database
- *  to a subset.
- */
-typedef struct BlastDatabaseParameters {
-   BlastDatabaseOptionsPtr options; /**< Options related to BLAST database */
-   Uint1Ptr gen_code_string;  /**< Genetic code string in ncbistdaa encoding,
-                                 tblast[nx] only */
-} BlastDatabaseParameters, *BlastDatabaseParametersPtr;
 
 /********************************************************************************
 
@@ -658,7 +654,9 @@ Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options);
 /** Deallocate PSI BLAST options */
 PSIBlastOptionsPtr PSIBlastOptionsFree(PSIBlastOptionsPtr psi_options);
 
-/** Initialize default database options */
+/** Allocates the BlastDatabase options structure and sets the default
+ * database genetic code value (BLAST_GENETIC_CODE). Genetic code string in
+ * ncbistdaa must be populated by client code */
 Int2 BlastDatabaseOptionsNew(BlastDatabaseOptionsPtr PNTR db_options);
 
 /** Deallocate database options */
