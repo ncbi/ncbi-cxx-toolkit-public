@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.37  2003/07/23 16:42:01  dondosha
+ * Formatting options moved from blast_options.c to blast_format.c
+ *
  * Revision 1.36  2003/07/22 20:26:16  dondosha
  * Initialize BlastDatabaseParameters structure outside engine
  *
@@ -1018,45 +1021,6 @@ BlastHitSavingParametersNew(Uint1 program_number,
    params->gap_size = BLAST_GAP_SIZE;
       
    return 0;
-}
-
-Int2 BlastFormattingOptionsNew(Uint1 program_number, CharPtr file_out, 
-        Int4 num_descriptions, Int4 num_alignments, Int4 align_view, 
-        BlastFormattingOptionsPtr PNTR format_options_ptr)
-{
-   BlastFormattingOptionsPtr format_options; 
-   if ((format_options = (BlastFormattingOptionsPtr)
-        MemNew(sizeof(BlastFormattingOptions))) == NULL)
-      return -1;
-   format_options->believe_query = FALSE;
-   if ((format_options->outfp = FileOpen(file_out, "w")) == NULL)
-      return -1;
-   format_options->number_of_descriptions = num_descriptions;
-   format_options->number_of_alignments = num_alignments;
-   
-   format_options->print_options = 0;
-   format_options->align_options = 0;
-   format_options->align_options += TXALIGN_COMPRESS;
-   format_options->align_options += TXALIGN_END_NUM;
-   format_options->align_options += TXALIGN_SHOW_GI;
-   format_options->print_options += TXALIGN_SHOW_GI;
-   
-   format_options->align_options += TXALIGN_MATRIX_VAL;
-   format_options->align_options += TXALIGN_SHOW_QS;
-   if (program_number == blast_type_blastx)
-      format_options->align_options += TXALIGN_BLASTX_SPECIAL;
-   
-   format_options->align_view = align_view;
-
-   *format_options_ptr = format_options;
-   return 0;
-}
-
-BlastFormattingOptionsPtr 
-BlastFormattingOptionsFree(BlastFormattingOptionsPtr format_options)
-{
-   FileClose(format_options->outfp);
-   return MemFree(format_options);
 }
 
 Int2 PSIBlastOptionsNew(PSIBlastOptionsPtr PNTR psi_options)
