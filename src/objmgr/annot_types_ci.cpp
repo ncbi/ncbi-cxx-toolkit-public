@@ -172,15 +172,7 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
 
 CSeq_annot_Handle CAnnotTypes_CI::GetAnnot(void) const
 {
-    const CAnnotObject_Ref& ref = Get();
-    const CSeq_annot_Info* info;
-    if ( ref.GetObjectType() == ref.eType_Seq_annot_SNP_Info ) {
-        info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
-    }
-    else {
-        info = &ref.GetSeq_annot_Info();
-    }
-    return CSeq_annot_Handle(GetScope(), *info);
+    return m_DataCollector->GetAnnot(Get());
 }
 
 
@@ -205,6 +197,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.122  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.121  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

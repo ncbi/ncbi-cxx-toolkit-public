@@ -58,6 +58,7 @@ class CSeqMatch_Info;
 class CSynonymsSet;
 class CBioseq_ScopeInfo;
 class CSeq_id_ScopeInfo;
+class CTSE_Lock;
 
 class CBioseq_Handle;
 class CSeq_annot_Handle;
@@ -273,6 +274,7 @@ protected:
 
     CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
     const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
+    const CTSE_Lock& GetTSE_Lock(void) const;
 
     CHeapScope          m_Scope;
     CSeq_id_Handle      m_Seq_id;
@@ -416,6 +418,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2004/08/04 14:53:25  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.57  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

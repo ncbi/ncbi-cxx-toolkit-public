@@ -53,8 +53,7 @@ BEGIN_SCOPE(objects)
 CTSE_Chunk_Info::CTSE_Chunk_Info(TChunkId id)
     : m_TSE_Info(0),
       m_ChunkId(id),
-      m_DirtyAnnotIndex(true),
-      m_NotLoaded(true)
+      m_DirtyAnnotIndex(true)
 {
 }
 
@@ -83,19 +82,23 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
 }
 
 
-void CTSE_Chunk_Info::Load(void)
+void CTSE_Chunk_Info::Load(void) const
 {
-    CFastMutexGuard guard(m_LoadLock);
-    if ( m_NotLoaded ) {
-        x_Load();
-        m_NotLoaded = false;
+    if ( NotLoaded() ) {
+        CTSE_Chunk_Info* chunk = const_cast<CTSE_Chunk_Info*>(this);
+        chunk->GetTSE_Info().GetDataSource().GetDataLoader()->
+            GetChunk(Ref(chunk));
+        _ASSERT(!NotLoaded());
     }
 }
 
 
-void CTSE_Chunk_Info::x_Load(void)
+void CTSE_Chunk_Info::SetLoaded(CObject* obj)
 {
-    GetTSE_Info().GetDataSource().GetDataLoader()->GetChunk(*this);
+    if ( !obj ) {
+        obj = new CObject;
+    }
+    m_LoadLock.Reset(obj);
 }
 
 
@@ -223,7 +226,13 @@ void CTSE_Chunk_Info::x_LoadDescr(const TPlace& place,
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
                                   CRef<CSeq_annot_Info> annot)
 {
-    x_GetBase(place).AddAnnot(annot);
+    {{
+        CTSE_Info& tse = GetTSE_Info();
+        _ASSERT(tse.HasDataSource());
+        CDataSource::TMainLock::TWriteLockGuard guard
+            (tse.GetDataSource().m_DSMainLock);
+        x_GetBase(place).AddAnnot(annot);
+    }}
     GetTSE_Info().UpdateAnnotIndex(*annot);
 }
 
@@ -269,6 +278,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.11  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.

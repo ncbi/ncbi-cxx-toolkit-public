@@ -109,7 +109,7 @@ CSeqMap::CSeqMap(const CSeq_loc& ref)
     x_AddEnd();
 }
 
-
+/*
 CSeqMap::CSeqMap(const CSeq_data& data, TSeqPos length)
     : m_Resolved(0),
       m_Mol(CSeq_inst::eMol_not_set),
@@ -119,7 +119,7 @@ CSeqMap::CSeqMap(const CSeq_data& data, TSeqPos length)
     x_Add(data, length);
     x_AddEnd();
 }
-
+*/
 
 CSeqMap::CSeqMap(TSeqPos length)
     : m_Resolved(0),
@@ -250,9 +250,10 @@ void CSeqMap::x_LoadObject(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
     if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
-        CObject* obj = const_cast<CObject*>(seg.m_RefObject.GetPointer());
+        const CObject* obj = seg.m_RefObject.GetPointer();
         if ( obj && seg.m_ObjType == eSeqChunk ) {
-            CTSE_Chunk_Info* chunk = dynamic_cast<CTSE_Chunk_Info*>(obj);
+            const CTSE_Chunk_Info* chunk =
+                dynamic_cast<const CTSE_Chunk_Info*>(obj);
             if ( chunk ) {
                 chunk->Load();
             }
@@ -866,8 +867,15 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
         }
         const CSegment& seg = x_GetSegment(index);
 
+        // update segment position if not set yet
+        if ( index > m_Resolved ) {
+            _ASSERT(index == m_Resolved + 1);
+            _ASSERT(seg.m_Position == kInvalidSeqPos || seg.m_Position == pos);
+            seg.m_Position = pos;
+            m_Resolved = index;
+        }
         // check segment
-        if ( seg.m_Position != pos || seg.m_Length < length ) {
+        if ( seg.m_Position != pos || seg.m_Length > length ) {
             NCBI_THROW(CSeqMapException, eDataError,
                        "SeqMap segment crosses split chunk boundary");
         }
@@ -895,6 +903,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.57  2004/07/12 16:53:28  vasilche
 * Fixed loading of split Seq-data when sequence is not delta.
 *

@@ -37,6 +37,7 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -49,18 +50,18 @@ BEGIN_SCOPE(objects)
 SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry* tse)
 {
     m_TSE.Reset(tse);
-    m_TSE_Info.Reset();
+    m_TSE_Lock.Reset();
     return *this;
 }
 
 SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry_Handle& tse)
 {
     if ( tse ) {
-        m_TSE_Info = tse.GetTSE_Info();
+        m_TSE_Lock = tse.GetTSE_Lock();
         m_TSE = tse.GetSeq_entryCore();
     }
     else {
-        m_TSE_Info.Reset();
+        m_TSE_Lock.Reset();
         m_TSE.Reset();
     }
     return *this;
@@ -311,16 +312,16 @@ bool CSeqMap_CI::x_RefTSEMatch(const CSeqMap::CSegment& seg) const
         GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
     CSeq_entry_Handle tse_info;
     CScope& scope = *m_Scope;
-    if ( m_Selector.m_TSE_Info ) {
+    if ( m_Selector.m_TSE_Lock ) {
         tse_info =
             CSeq_entry_Handle(scope,
-                              static_cast<const CTSE_Info&>
-                              (*m_Selector.m_TSE_Info));
+                              *m_Selector.m_TSE_Lock,
+                              m_Selector.m_TSE_Lock);
     }
     else {
         tse_info = scope.GetSeq_entryHandle(*m_Selector.m_TSE);
-        const_cast<SSeqMapSelector&>(m_Selector).m_TSE_Info =
-            tse_info.GetTSE_Info();
+        const_cast<SSeqMapSelector&>(m_Selector).m_TSE_Lock =
+            tse_info.GetTSE_Lock();
     }
     return scope.GetBioseqHandleFromTSE(id, tse_info);
 }
@@ -543,6 +544,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.26  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

@@ -155,7 +155,7 @@ private:
     size_t              m_MaxResolveCount;
     // limit search to single TSE
     CConstRef<CSeq_entry> m_TSE;
-    CConstRef<CObject>  m_TSE_Info;
+    TTSE_Lock           m_TSE_Lock;
     // return all intermediate resolved sequences
     TFlags              m_Flags;
 };
@@ -291,6 +291,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.14  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

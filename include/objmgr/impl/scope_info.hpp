@@ -40,7 +40,7 @@
 #include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/objmgr_exception.hpp>
-#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 #include <set>
 #include <utility>
@@ -63,7 +63,6 @@ struct NCBI_XOBJMGR_EXPORT CDataSource_ScopeInfo : public CObject
     CDataSource_ScopeInfo(CDataSource& ds);
     ~CDataSource_ScopeInfo(void);
 
-    typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
 
     const TTSE_LockSet& GetTSESet(void) const;
@@ -77,7 +76,7 @@ protected:
 
     CFastMutex& GetMutex(void);
 
-    void AddTSE(const CTSE_Info& tse);
+    void AddTSE(const TTSE_Lock& tse);
     void Reset(void);
 
 private:
@@ -97,7 +96,8 @@ public:
 
     CBioseq_ScopeInfo(TScopeInfo* scope_info); // no sequence
     CBioseq_ScopeInfo(TScopeInfo* scope_info,
-                      const CConstRef<CBioseq_Info>& bioseq);
+                      const CConstRef<CBioseq_Info>& bioseq,
+                      const TTSE_Lock& tse_lock);
 
     ~CBioseq_ScopeInfo(void);
 
@@ -107,6 +107,7 @@ public:
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
     const CBioseq_Info& GetBioseq_Info(void) const;
 
+    const TTSE_Lock& GetTSE_Lock(void) const;
     const CTSE_Info& GetTSE_Info(void) const;
     CDataSource& GetDataSource(void) const;
 
@@ -124,7 +125,7 @@ private:
     // if none -> no bioseq for this Seq_id, but there might be annotations
     // if buiseq exists, m_TSE_Lock holds lock for TSE containing bioseq
     CConstRef<CBioseq_Info>  m_Bioseq_Info;
-    CConstRef<CTSE_Info>     m_TSE_Lock;
+    TTSE_Lock                m_TSE_Lock;
 
     // caches synonyms of bioseq if any
     // all synonyms share the same CBioseq_ScopeInfo object
@@ -141,7 +142,6 @@ struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
     SSeq_id_ScopeInfo(CScope* scope);
     ~SSeq_id_ScopeInfo(void);
 
-    typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
     typedef map<TTSE_Lock, TSeq_id_HandleSet>        TTSE_LockMap;
     typedef CObjectFor<TTSE_LockMap>                 TAnnotRefMap;
@@ -158,40 +158,6 @@ struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
 };
 
 
-typedef CRef<CObject> TBlob_ID;
-
-class NCBI_XOBJMGR_EXPORT CBlob_Info
-{
-public:
-    CBlob_Info(void)
-        : m_Blob_ID(0), m_Source(0) {}
-
-    CBlob_Info(TBlob_ID bid, CDataSource& src)
-        : m_Blob_ID(bid), m_Source(&src) {}
-
-    ~CBlob_Info(void) {}
-
-    CBlob_Info(const CBlob_Info& info)
-        : m_Blob_ID(info.m_Blob_ID), m_Source(info.m_Source) {}
-
-    CBlob_Info& operator =(const CBlob_Info& info)
-        {
-            if (&info != this) {
-                m_Blob_ID = info.m_Blob_ID;
-                m_Source = info.m_Source;
-            }
-            return *this;
-        }
-
-    operator bool(void)
-        { return bool(m_Blob_ID)  &&  m_Source; }
-
-    bool operator !(void)
-        { return !m_Blob_ID  ||  !m_Source; }
-
-    TBlob_ID     m_Blob_ID;
-    CDataSource* m_Source;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // Inline methods
@@ -249,6 +215,13 @@ const CSeq_id_Handle& CBioseq_ScopeInfo::GetSeq_id_Handle(void) const
 
 
 inline
+const TTSE_Lock& CBioseq_ScopeInfo::GetTSE_Lock(void) const
+{
+    return m_TSE_Lock;
+}
+
+
+inline
 void CBioseq_ScopeInfo::CheckScope(void) const
 {
     if ( !m_ScopeInfo ) {
@@ -264,6 +237,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.10  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

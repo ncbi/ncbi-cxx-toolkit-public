@@ -43,14 +43,13 @@ BEGIN_SCOPE(objects)
 
 
 CSeqMatch_Info::CSeqMatch_Info(void)
-    : m_TSE(0)
 {
 }
 
 
 CSeqMatch_Info::CSeqMatch_Info(const CSeq_id_Handle& h,
-                               const CTSE_Info& tse)
-    : m_Handle(h), m_TSE(&tse)
+                               const TTSE_Lock& tse)
+    : m_Handle(h), m_TSE(tse)
 {
 }
 
@@ -62,16 +61,23 @@ bool CSeqMatch_Info::operator< (const CSeqMatch_Info& info) const
     return true;
 }
 
-
+/*
 CDataSource& CSeqMatch_Info::GetDataSource(void) const
 {
     return GetTSE_Info().GetDataSource();
 }
-
+*/
 
 CConstRef<CBioseq_Info> CSeqMatch_Info::GetBioseq_Info(void) const
 {
-    return GetDataSource().GetBioseq_Info(*this);
+    CRef<CBioseq_Info> ret;
+    // The TSE is locked by the scope, so, it can not be deleted.
+    CTSE_Info::TBioseqs::const_iterator it =
+        GetTSE_Info().m_Bioseqs.find(GetIdHandle());
+    if ( it != GetTSE_Info().m_Bioseqs.end() ) {
+        ret = it->second;
+    }
+    return ret;
 }
 
 
@@ -81,6 +87,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.15  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

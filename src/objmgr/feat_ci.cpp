@@ -308,8 +308,11 @@ CSeq_feat_Handle CMappedFeat::GetSeq_feat_Handle(void) const
 
 CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 {
+    return m_Collector->GetAnnot(*m_FeatRef);
+    /*
     return CSeq_annot_Handle(m_Collector->GetScope(),
         m_FeatRef->GetSeq_annot_Info());
+    */
 }
 
 
@@ -530,6 +533,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.32  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

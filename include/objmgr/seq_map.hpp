@@ -235,7 +235,6 @@ protected:
     // 'ctors
     CSeqMap(CSeqMap* parent, size_t index);
     CSeqMap(void);
-    CSeqMap(const CSeq_data& data, TSeqPos len);
     CSeqMap(const CSeq_loc& ref);
     CSeqMap(TSeqPos len); // gap
 
@@ -330,6 +329,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.46  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

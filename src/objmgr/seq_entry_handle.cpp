@@ -40,6 +40,7 @@
 
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 
@@ -51,8 +52,9 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_entry_Handle::CSeq_entry_Handle(CScope& scope,
-                                     const CSeq_entry_Info& info)
-    : m_Scope(&scope), m_Info(&info)
+                                     const CSeq_entry_Info& info,
+                                     const TTSE_Lock& tse_lock)
+    : m_Scope(&scope), m_Info(&info), m_TSE_Lock(tse_lock)
 {
 }
 
@@ -93,7 +95,9 @@ CSeq_entry_Handle CSeq_entry_Handle::GetParentEntry(void) const
     CSeq_entry_Handle ret;
     const CSeq_entry_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(), info.GetParentSeq_entry_Info());
+        ret = CSeq_entry_Handle(GetScope(),
+                                info.GetParentSeq_entry_Info(),
+                                GetTSE_Lock());
     }
     return ret;
 }
@@ -104,7 +108,9 @@ CSeq_entry_Handle CSeq_entry_Handle::GetTopLevelEntry(void) const
     CSeq_entry_Handle ret;
     const CSeq_entry_Info& info = x_GetInfo();
     if ( info.HasTSE_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(), info.GetTSE_Info());
+        ret = CSeq_entry_Handle(GetScope(),
+                                info.GetTSE_Info(),
+                                GetTSE_Lock());
     }
     return ret;
 }
@@ -144,7 +150,9 @@ CBioseq_set_Handle CSeq_entry_Handle::GetParentBioseq_set(void) const
     CBioseq_set_Handle ret;
     const CSeq_entry_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
-        ret = CBioseq_set_Handle(GetScope(), info.GetParentBioseq_set_Info());
+        ret = CBioseq_set_Handle(GetScope(),
+                                 info.GetParentBioseq_set_Info(),
+                                 GetTSE_Lock());
     }
     return ret;
 }
@@ -152,7 +160,7 @@ CBioseq_set_Handle CSeq_entry_Handle::GetParentBioseq_set(void) const
 
 CBioseq_Handle CSeq_entry_Handle::GetSeq(void) const
 {
-    return m_Scope->GetBioseqHandle(x_GetInfo().GetSeq());
+    return m_Scope->GetBioseqHandle(x_GetInfo().GetSeq(), GetTSE_Lock());
 }
 
 
@@ -168,7 +176,9 @@ CConstRef<CTSE_Info> CSeq_entry_Handle::GetTSE_Info(void) const
 
 CBioseq_set_Handle CSeq_entry_Handle::GetSet(void) const
 {
-    return CBioseq_set_Handle(GetScope(), x_GetInfo().GetSet());
+    return CBioseq_set_Handle(GetScope(),
+                              x_GetInfo().GetSet(),
+                              GetTSE_Lock());
 }
 
 
@@ -184,9 +194,15 @@ const CSeq_descr& CSeq_entry_Handle::GetDescr(void) const
 }
 
 
-CConstRef<CObject> CSeq_entry_Handle::GetBlobId(void) const
+CSeq_entry_Handle::TBlobId CSeq_entry_Handle::GetBlobId(void) const
 {
     return x_GetInfo().GetTSE_Info().GetBlobId();
+}
+
+
+CSeq_entry_Handle::TBlobVersion CSeq_entry_Handle::GetBlobVersion(void) const
+{
+    return x_GetInfo().GetTSE_Info().GetBlobVersion();
 }
 
 
@@ -200,7 +216,8 @@ CSeq_entry_EditHandle CSeq_entry_EditHandle::GetParentEntry(void) const
     CSeq_entry_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
         ret = CSeq_entry_EditHandle(GetScope(),
-                                    info.GetParentSeq_entry_Info());
+                                    info.GetParentSeq_entry_Info(),
+                                    GetTSE_Lock());
     }
     return ret;
 }
@@ -218,7 +235,8 @@ CBioseq_set_EditHandle CSeq_entry_EditHandle::GetParentBioseq_set(void) const
     CSeq_entry_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
         ret = CBioseq_set_EditHandle(GetScope(),
-                                     info.GetParentBioseq_set_Info());
+                                     info.GetParentBioseq_set_Info(),
+                                     GetTSE_Lock());
     }
     return ret;
 }
@@ -232,13 +250,16 @@ CSeq_entry_Info& CSeq_entry_EditHandle::x_GetInfo(void) const
 
 CBioseq_set_EditHandle CSeq_entry_EditHandle::SetSet(void) const
 {
-    return CBioseq_set_EditHandle(GetScope(), x_GetInfo().SetSet());
+    return CBioseq_set_EditHandle(GetScope(),
+                                  x_GetInfo().SetSet(),
+                                  GetTSE_Lock());
 }
 
 
 CBioseq_EditHandle CSeq_entry_EditHandle::SetSeq(void) const
 {
-    return m_Scope->GetBioseqHandle(x_GetInfo().SetSeq()).GetEditHandle();
+    return m_Scope->GetBioseqHandle(x_GetInfo().SetSeq(),
+                                    GetTSE_Lock()).GetEditHandle();
 }
 
 
@@ -478,6 +499,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.11  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

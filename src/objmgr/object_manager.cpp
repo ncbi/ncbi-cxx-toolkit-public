@@ -49,30 +49,45 @@ BEGIN_SCOPE(objects)
 
 const string kObjectManagerPtrName = "ObjectManagerPtr";
 
-static CRef<CObjectManager> s_ObjectManager;
-DEFINE_STATIC_FAST_MUTEX(s_ObjectManagerInstanceMutex);
+static CObjectManager* s_ObjectManager = 0;
+DEFINE_STATIC_MUTEX(s_ObjectManagerInstanceMutex);
 
 CRef<CObjectManager> CObjectManager::GetInstance(void)
 {
-    if (!s_ObjectManager) {
-        CFastMutexGuard guard(s_ObjectManagerInstanceMutex);
-        if (!s_ObjectManager) {
-            s_ObjectManager.Reset(new CObjectManager);
-        }
-    }
-    return s_ObjectManager;
+	CRef<CObjectManager> ret;
+	{{
+		CMutexGuard guard(s_ObjectManagerInstanceMutex);
+		ret.Reset(s_ObjectManager);
+		if ( !ret || ret->ReferencedOnlyOnce() ) {
+			if ( ret ) {
+				ret.Release();
+			}
+			ret.Reset(new CObjectManager);
+		}
+	}}
+	return ret;
 }
 
 
 CObjectManager::CObjectManager(void)
     : m_Seq_id_Mapper(CSeq_id_Mapper::GetInstance())
 {
+	{{
+		CMutexGuard guard(s_ObjectManagerInstanceMutex);
+		s_ObjectManager = this;
+	}}
 }
 
 
 CObjectManager::~CObjectManager(void)
 {
-    // delete scopes
+	{{
+		CMutexGuard guard(s_ObjectManagerInstanceMutex);
+		if ( s_ObjectManager == this ) {
+			s_ObjectManager = 0;
+		}
+	}}
+	// delete scopes
     TWriteLockGuard guard(m_OM_Lock);
 
     if(!m_setScope.empty()) {
@@ -488,6 +503,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.40  2004/07/30 14:23:55  ucko
 * Make kObjectManagerPtrName extern (defined in object_manager.cpp) to
 * ensure that it's always properly available on WorkShop.

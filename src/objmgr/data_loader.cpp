@@ -33,9 +33,11 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/data_loader.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
@@ -101,7 +103,7 @@ string CDataLoader::GetName(void) const
 }
 
 
-void CDataLoader::DropTSE(const CTSE_Info& /*tse_info*/)
+void CDataLoader::DropTSE(CRef<CTSE_Info> /*tse_info*/)
 {
 }
 
@@ -111,15 +113,175 @@ void CDataLoader::GC(void)
 }
 
 
-void CDataLoader::GetChunk(CTSE_Chunk_Info& /*chunk_info*/)
+CDataLoader::TTSE_LockSet
+CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
+                        EChoice /*choice*/)
 {
+    NCBI_THROW(CObjMgrException, eNotImplemented,
+               "CDataLoader::GetRecords()");
 }
 
 
-CConstRef<CTSE_Info> CDataLoader::ResolveConflict(const CSeq_id_Handle&,
-                                                  const TTSE_LockSet&)
+CDataLoader::TTSE_LockSet
+CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
+                        const SRequestDetails& /*details*/)
 {
-    return CConstRef<CTSE_Info>();
+    NCBI_THROW(CObjMgrException, eNotImplemented,
+               "CDataLoader::GetRecords()");
+}
+
+
+CDataLoader::EChoice
+CDataLoader::DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const
+{
+    EChoice ret = eCore;
+    ITERATE ( SRequestDetails::TAnnotSet, i, annots ) {
+        ITERATE ( SRequestDetails::TAnnotTypesSet, j, i->second ) {
+            EChoice cur = eCore;
+            switch ( j->GetAnnotType() ) {
+            case CSeq_annot::C_Data::e_Ftable:
+                cur = eFeatures;
+                break;
+            case CSeq_annot::C_Data::e_Graph:
+                cur = eGraph;
+                break;
+            case CSeq_annot::C_Data::e_Align:
+                cur = eAlign;
+                break;
+            case CSeq_annot::C_Data::e_not_set:
+                return eAnnot;
+            default:
+                break;
+            }
+            if ( cur != eCore && cur != ret ) {
+                if ( ret != eCore ) return eAnnot;
+                ret = cur;
+            }
+        }
+    }
+    return ret;
+}
+
+
+CDataLoader::EChoice
+CDataLoader::DetailsToChoice(const SRequestDetails& details) const
+{
+    EChoice ret = DetailsToChoice(details.m_NeedInternalAnnots);
+    if ( !details.m_NeedSeqMap.Empty() || !details.m_NeedSeqData.Empty() ) {
+        // include sequence
+        if ( ret == eCore ) {
+            ret = eSequence;
+        }
+        else {
+            ret = eBlob;
+        }
+    }
+
+    EChoice external = DetailsToChoice(details.m_NeedExternalAnnots);
+    if ( external != eCore ) {
+        // shift from internal to external annotations
+        _ASSERT(external >= eFeatures && external <= eAnnot);
+        external = EChoice(external + eExtFeatures - eFeatures);
+        _ASSERT(external >= eExtFeatures && external <= eExtAnnot);
+        if ( ret == eCore ) {
+            ret = external;
+        }
+        else {
+            ret = eAll;
+        }
+    }
+    return ret;
+}
+
+
+SRequestDetails CDataLoader::ChoiceToDetails(EChoice choice) const
+{
+    SRequestDetails details;
+    // internal annotations
+    bool internal = false;
+    bool external = false;
+    bool sequence = false;
+    CSeq_annot::C_Data::E_Choice type = CSeq_annot::C_Data::e_not_set;
+    switch ( choice ) {
+    case eAll:
+        sequence = external = internal = true; // from all blobs
+        break;
+    case eBlob:
+    case eBioseq:
+        sequence = internal = true; // internal only
+        break;
+    case eSequence:
+        sequence = true;
+        break;
+    case eAnnot:
+        internal = true; // internal only
+        break;
+    case eGraph:
+        type = CSeq_annot::C_Data::e_Graph;
+        internal = true;
+        break;
+    case eFeatures:
+        type = CSeq_annot::C_Data::e_Ftable;
+        internal = true;
+        break;
+    case eAlign:
+        type = CSeq_annot::C_Data::e_Align;
+        internal = true;
+        break;
+    case eExtAnnot:
+        type = CSeq_annot::C_Data::e_not_set; // all annotations
+        external = true; // external only
+        break;
+    case eExtGraph:
+        type = CSeq_annot::C_Data::e_Graph;
+        external = true;
+        break;
+    case eExtFeatures:
+        type = CSeq_annot::C_Data::e_Ftable;
+        external = true;
+        break;
+    case eExtAlign:
+        type = CSeq_annot::C_Data::e_Align;
+        external = true;
+        break;
+    default:
+        break;
+    }
+    if ( sequence ) {
+        details.m_NeedSeqMap = SRequestDetails::TRange::GetWhole();
+        details.m_NeedSeqData = SRequestDetails::TRange::GetWhole();
+    }
+    if ( internal ) {
+        details.m_NeedInternalAnnots[CAnnotName()]
+            .insert(SAnnotTypeSelector(type));
+    }
+    if ( external ) {
+        details.m_NeedExternalAnnots[CAnnotName()]
+            .insert(SAnnotTypeSelector(type));
+    }
+    return details;
+}
+
+
+void CDataLoader::GetChunk(TChunk /*chunk_info*/)
+{
+    NCBI_THROW(CObjMgrException, eNotImplemented,
+               "CDataLoader::GetChunk()");
+}
+
+
+void CDataLoader::GetChunks(const TChunkSet& chunks)
+{
+    ITERATE ( TChunkSet, it, chunks ) {
+        GetChunk(*it);
+    }
+}
+
+
+TTSE_Lock CDataLoader::ResolveConflict(const CSeq_id_Handle& /*id*/,
+                                       const TTSE_LockSet& /*tse_set*/)
+{
+    return TTSE_Lock();
 }
 
 
@@ -129,12 +291,43 @@ void CDataLoader::DebugDump(CDebugDumpContext, unsigned int) const
 }
 
 
+CDataLoader::TBlobId CDataLoader::GetBlobId(const CSeq_id& id)
+{
+    return GetBlobId(CSeq_id_Handle::GetHandle(id));
+}
+
+
+CDataLoader::TBlobId CDataLoader::GetBlobId(const CSeq_id_Handle& /*sih*/)
+{
+    return TBlobId();
+}
+
+
+CDataLoader::TBlobVersion CDataLoader::GetBlobVersion(const TBlobId& /*id*/)
+{
+    return 0;
+}
+
+
+bool CDataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
+{
+    return id1 < id2;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.17  2004/07/28 14:02:57  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *

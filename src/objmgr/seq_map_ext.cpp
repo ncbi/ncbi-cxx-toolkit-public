@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 ////////////////////////////////////////////////////////////////////
-//  CSeqMap
+//  CSeqMap_Delta_seqs
 
 CSeqMap_Delta_seqs::CSeqMap_Delta_seqs(const TObject& obj)
     : CSeqMap(),
@@ -128,7 +128,8 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
     segment.m_ObjType = eSeqData;
     segment.m_RefObject.Reset(&data);
     // update sequence
-    const_cast<CDelta_seq&>(**x_GetSegmentList_I(index)).SetLiteral().SetSeq_data(data);
+    const_cast<CDelta_seq&>(**x_GetSegmentList_I(index))
+        .SetLiteral().SetSeq_data(data);
 }
 
 
@@ -260,6 +261,10 @@ void CSeqMap_Seq_locs::x_IndexAll(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CSeqMap_Seq_intervals
+
+
 CSeqMap_Seq_intervals::CSeqMap_Seq_intervals(const TObject& obj)
     : CSeqMap(),
       m_Object(&obj),
@@ -301,6 +306,10 @@ void CSeqMap_Seq_intervals::x_IndexAll(void)
     }
     x_AddEnd();
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeqMap_SeqPoss
 
 
 CSeqMap_SeqPoss::CSeqMap_SeqPoss(const TObject& obj)
@@ -361,6 +370,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.13  2004/07/12 16:53:28  vasilche
 * Fixed loading of split Seq-data when sequence is not delta.
 *

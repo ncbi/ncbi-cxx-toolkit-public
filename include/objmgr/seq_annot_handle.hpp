@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objmgr/impl/heap_scope.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -62,7 +63,6 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Handle
 {
 public:
     CSeq_annot_Handle(void);
-    CSeq_annot_Handle(CScope& scope, const CSeq_annot_Info& annot);
 
     //
     operator bool(void) const;
@@ -90,13 +90,23 @@ public:
     bool IsNamed(void) const;
     const string& GetName(void) const;
 
-    const CSeq_annot_Info& x_GetInfo(void) const;
-
 protected:
+    friend class CScope_Impl;
+    friend class CSeq_annot_CI;
+
+    CSeq_annot_Handle(CScope& scope,
+                      const CSeq_annot_Info& annot,
+                      const TTSE_Lock& tse_lock);
+
     void x_Set(CScope& scope, const CSeq_annot_Info& annot);
 
     CHeapScope          m_Scope;
     CConstRef<CObject>  m_Info;
+    TTSE_Lock           m_TSE_Lock;
+
+public: // non-public section
+    const TTSE_Lock& GetTSE_Lock(void) const;
+    const CSeq_annot_Info& x_GetInfo(void) const;
 };
 
 
@@ -117,7 +127,9 @@ protected:
     friend class CSeq_entry_EditHandle;
 
     CSeq_annot_EditHandle(const CSeq_annot_Handle& h);
-    CSeq_annot_EditHandle(CScope& scope, CSeq_annot_Info& info);
+    CSeq_annot_EditHandle(CScope& scope,
+                          CSeq_annot_Info& info,
+                          const TTSE_Lock& tse_lock);
 
 public: // non-public section
     CSeq_annot_Info& x_GetInfo(void) const;
@@ -161,6 +173,13 @@ void CSeq_annot_Handle::Reset(void)
 {
     m_Scope.Reset();
     m_Info.Reset();
+}
+
+
+inline
+const TTSE_Lock& CSeq_annot_Handle::GetTSE_Lock(void) const
+{
+    return m_TSE_Lock;
 }
 
 
@@ -210,8 +229,9 @@ CSeq_annot_EditHandle::CSeq_annot_EditHandle(const CSeq_annot_Handle& h)
 
 inline
 CSeq_annot_EditHandle::CSeq_annot_EditHandle(CScope& scope,
-                                             CSeq_annot_Info& info)
-    : CSeq_annot_Handle(scope, info)
+                                             CSeq_annot_Info& info,
+                                             const TTSE_Lock& tse_lock)
+    : CSeq_annot_Handle(scope, info, tse_lock)
 {
 }
 
@@ -222,6 +242,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.8  2004/04/29 15:44:30  grichenk
 * Added GetTopLevelEntry()
 *

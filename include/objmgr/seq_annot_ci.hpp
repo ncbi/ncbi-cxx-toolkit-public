@@ -37,6 +37,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 
 #include <vector>
 #include <stack>
@@ -82,6 +84,7 @@ public:
     const CSeq_annot_Handle& operator*(void) const;
     const CSeq_annot_Handle* operator->(void) const;
 
+    /*
     struct SEntryLevel_CI
     {
         typedef vector< CRef<CSeq_entry_Info> > TEntries;
@@ -95,21 +98,21 @@ public:
         CConstRef<CBioseq_set_Info> m_Set;
         TEntry_CI                   m_Iter;
     };
-
+    */
 private:
     void x_Initialize(const CSeq_entry_Handle& entry_handle, EFlags flags);
 
-    void x_SetEntry(const CSeq_entry_Info& entry);
+    void x_SetEntry(const CSeq_entry_Handle& entry);
     void x_Push(void);
     void x_Settle(void);
 
     typedef vector< CRef<CSeq_annot_Info> > TAnnots;
-
     typedef TAnnots::const_iterator TAnnot_CI;
-    typedef stack<SEntryLevel_CI>   TEntryStack;
+    typedef stack<CSeq_entry_CI> TEntryStack;
 
-    CHeapScope                  m_Scope;
-    CConstRef<CSeq_entry_Info>  m_CurrentEntry;
+    const TAnnots& x_GetAnnots(void) const;
+
+    CSeq_entry_Handle           m_CurrentEntry;
     TAnnot_CI                   m_AnnotIter;
     CSeq_annot_Handle           m_CurrentAnnot;
     TEntryStack                 m_EntryStack;
@@ -128,7 +131,7 @@ private:
 inline
 CScope& CSeq_annot_CI::GetScope(void) const
 {
-    return m_Scope;
+    return m_CurrentEntry.GetScope();
 }
 
 
@@ -161,6 +164,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/04 14:53:25  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.9  2004/04/26 14:13:45  grichenk
 * Added constructors from bioseq-set handle and bioseq handle.
 *

@@ -38,6 +38,8 @@
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/data_source.hpp>
 
+#include <objmgr/bioseq_handle.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -93,6 +95,10 @@ void CSynonymsSet::AddSynonym(const value_type& syn)
 CDataSource_ScopeInfo::CDataSource_ScopeInfo(CDataSource& ds)
     : m_DataSource(&ds)
 {
+    TTSE_Lock manual_tse = ds.GetTopEntry_Info();
+    if ( manual_tse ) {
+        m_TSE_LockSet.insert(manual_tse);
+    }
 }
 
 
@@ -114,9 +120,9 @@ CDataLoader* CDataSource_ScopeInfo::GetDataLoader(void)
 }
 
 
-void CDataSource_ScopeInfo::AddTSE(const CTSE_Info& tse)
+void CDataSource_ScopeInfo::AddTSE(const TTSE_Lock& tse)
 {
-    m_TSE_LockSet.insert(TTSE_Lock(&tse));
+    m_TSE_LockSet.insert(tse);
 }
 
 
@@ -143,10 +149,11 @@ CBioseq_ScopeInfo::CBioseq_ScopeInfo(TScopeInfo* scope_info)
 
 
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(TScopeInfo* scope_info,
-                                     const CConstRef<CBioseq_Info>& bioseq)
+                                     const CConstRef<CBioseq_Info>& bioseq,
+                                     const TTSE_Lock& tse_lock)
     : m_ScopeInfo(scope_info),
       m_Bioseq_Info(bioseq),
-      m_TSE_Lock(&bioseq->GetTSE_Info())
+      m_TSE_Lock(tse_lock)
 {
 }
 
@@ -189,6 +196,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.7  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

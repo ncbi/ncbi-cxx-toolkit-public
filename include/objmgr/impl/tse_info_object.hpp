@@ -99,21 +99,28 @@ public:
     virtual void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
     enum {
-        kNeedUpdate_bits        = 8,
-        fNeedUpdate_this        = (1<<kNeedUpdate_bits)-1,
-        fNeedUpdate_children    = fNeedUpdate_this<<kNeedUpdate_bits
+        /// number of bits for fields
+        kNeedUpdate_bits              = 8
     };
     enum ENeedUpdate {
-        fNeedUpdate_descr             = 1<<0, // descr of this object
-        fNeedUpdate_annot             = 1<<1, // annot of this object
-        fNeedUpdate_seq_data          = 1<<2, // seq-data of this object
-        fNeedUpdate_core              = 1<<3, // core
+        /// all fields of this object
+        fNeedUpdate_this              = (1<<kNeedUpdate_bits)-1,
+        /// all fields of children objects
+        fNeedUpdate_children          = fNeedUpdate_this<<kNeedUpdate_bits,
+
+        /// specific fields of this object
+        fNeedUpdate_descr             = 1<<0, //< descr of this object
+        fNeedUpdate_annot             = 1<<1, //< annot of this object
+        fNeedUpdate_seq_data          = 1<<2, //< seq-data of this object
+        fNeedUpdate_core              = 1<<3, //< core
+
+        /// specific fields of children
         fNeedUpdate_children_descr    = fNeedUpdate_descr   <<kNeedUpdate_bits,
         fNeedUpdate_children_annot    = fNeedUpdate_annot   <<kNeedUpdate_bits,
         fNeedUpdate_children_seq_data = fNeedUpdate_seq_data<<kNeedUpdate_bits,
         fNeedUpdate_children_core     = fNeedUpdate_core    <<kNeedUpdate_bits
     };
-    typedef unsigned TNeedUpdateFlags;
+    typedef int TNeedUpdateFlags;
     bool x_NeedUpdate(ENeedUpdate flag) const;
     void x_SetNeedUpdate(TNeedUpdateFlags flags);
     virtual void x_SetNeedUpdateParent(TNeedUpdateFlags flags);
@@ -188,6 +195,13 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/08/04 14:53:26  vasilche
+ * Revamped object manager:
+ * 1. Changed TSE locking scheme
+ * 2. TSE cache is maintained by CDataSource.
+ * 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+ * 4. Fixed processing of split data.
+ *
  * Revision 1.3  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.

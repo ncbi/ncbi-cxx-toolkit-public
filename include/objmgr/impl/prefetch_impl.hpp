@@ -55,7 +55,6 @@ class NCBI_XOBJMGR_EXPORT CPrefetchToken_Impl : public CObject
 {
 public:
     typedef vector<CSeq_id_Handle> TIds;
-    typedef CDataLoader::TTSE_Lock TTSE_Lock;
 
     ~CPrefetchToken_Impl(void);
 
@@ -133,6 +132,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.4  2004/05/07 13:47:34  grichenk
 * Removed single-id constructors.
 * Added non-locking prefetch mode.

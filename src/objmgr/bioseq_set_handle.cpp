@@ -37,6 +37,7 @@
 
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -46,8 +47,9 @@ BEGIN_SCOPE(objects)
 
 
 CBioseq_set_Handle::CBioseq_set_Handle(CScope& scope,
-                                       const CBioseq_set_Info& info)
-    : m_Scope(&scope), m_Info(&info)
+                                       const CBioseq_set_Info& info,
+                                       const TTSE_Lock& tse_lock)
+    : m_Scope(&scope), m_Info(&info), m_TSE_Lock(tse_lock)
 {
 }
 
@@ -69,7 +71,9 @@ CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
     CSeq_entry_Handle ret;
     const CBioseq_set_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(), info.GetParentSeq_entry_Info());
+        ret = CSeq_entry_Handle(GetScope(),
+                                info.GetParentSeq_entry_Info(),
+                                GetTSE_Lock());
     }
     return ret;
 }
@@ -80,7 +84,9 @@ CSeq_entry_Handle CBioseq_set_Handle::GetTopLevelEntry(void) const
     CSeq_entry_Handle ret;
     const CBioseq_set_Info& info = x_GetInfo();
     if ( info.HasTSE_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(), info.GetTSE_Info());
+        ret = CSeq_entry_Handle(GetScope(),
+                                info.GetTSE_Info(),
+                                GetTSE_Lock());
     }
     return ret;
 }
@@ -301,7 +307,8 @@ CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
     CBioseq_set_Info& info = x_GetInfo();
     if ( info.HasParent_Info() ) {
         ret = CSeq_entry_EditHandle(GetScope(),
-                                    info.GetParentSeq_entry_Info());
+                                    info.GetParentSeq_entry_Info(),
+                                    GetTSE_Lock());
     }
     return ret;
 }
@@ -474,6 +481,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.10  2004/06/09 16:42:26  grichenk
 * Added GetComplexityLevel() and GetExactComplexityLevel() to CBioseq_set_Handle
 *

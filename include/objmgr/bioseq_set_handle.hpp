@@ -38,6 +38,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objmgr/impl/heap_scope.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -147,7 +148,9 @@ protected:
     friend class CSeq_annot_CI;
     friend class CAnnotTypes_CI;
 
-    CBioseq_set_Handle(CScope& scope, const CBioseq_set_Info& info);
+    CBioseq_set_Handle(CScope& scope,
+                       const CBioseq_set_Info& info,
+                       const TTSE_Lock& tse_lock);
 
     typedef int TComplexityTable[20];
     static const TComplexityTable& sx_GetComplexityTable(void);
@@ -156,8 +159,10 @@ protected:
 
     CHeapScope          m_Scope;
     CConstRef<CObject>  m_Info;
+    TTSE_Lock           m_TSE_Lock;
 
 public: // non-public section
+    const TTSE_Lock& GetTSE_Lock(void) const;
     const CBioseq_set_Info& x_GetInfo(void) const;
 };
 
@@ -225,7 +230,9 @@ protected:
     friend class CSeq_entry_EditHandle;
 
     CBioseq_set_EditHandle(const CBioseq_set_Handle& h);
-    CBioseq_set_EditHandle(CScope& scope, CBioseq_set_Info& info);
+    CBioseq_set_EditHandle(CScope& scope,
+                           CBioseq_set_Info& info,
+                           const TTSE_Lock& tse_lock);
 
 public: // non-public section
     CBioseq_set_Info& x_GetInfo(void) const;
@@ -255,6 +262,13 @@ void CBioseq_set_Handle::Reset(void)
 {
     m_Scope.Reset();
     m_Info.Reset();
+}
+
+
+inline
+const TTSE_Lock& CBioseq_set_Handle::GetTSE_Lock(void) const
+{
+    return m_TSE_Lock;
 }
 
 
@@ -323,8 +337,9 @@ CBioseq_set_EditHandle::CBioseq_set_EditHandle(const CBioseq_set_Handle& h)
 
 inline
 CBioseq_set_EditHandle::CBioseq_set_EditHandle(CScope& scope,
-                                               CBioseq_set_Info& info)
-    : CBioseq_set_Handle(scope, info)
+                                               CBioseq_set_Info& info,
+                                               const TTSE_Lock& tse_lock)
+    : CBioseq_set_Handle(scope, info, tse_lock)
 {
 }
 
@@ -342,6 +357,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/04 14:53:25  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.8  2004/06/09 16:42:25  grichenk
 * Added GetComplexityLevel() and GetExactComplexityLevel() to CBioseq_set_Handle
 *

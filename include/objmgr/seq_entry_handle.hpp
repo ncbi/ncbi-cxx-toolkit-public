@@ -39,6 +39,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objmgr/impl/heap_scope.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -108,7 +109,10 @@ public:
 
     typedef CBioseq_set::TClass TClass;
 
-    CConstRef<CObject> GetBlobId(void) const;
+    typedef CConstRef<CObject> TBlobId;
+    typedef int TBlobVersion;
+    TBlobId GetBlobId(void) const;
+    TBlobVersion GetBlobVersion(void) const;
 
     // Utility methods/operators
     operator bool(void) const;
@@ -127,11 +131,15 @@ protected:
     friend class CSeqMap_CI;
     friend class CSeq_entry_CI;
 
-    CSeq_entry_Handle(CScope& scope, const CSeq_entry_Info& info);
+    CSeq_entry_Handle(CScope& scope,
+                      const CSeq_entry_Info& info,
+                      const TTSE_Lock& tse_lock);
     CHeapScope          m_Scope;
     CConstRef<CObject>  m_Info;
+    TTSE_Lock           m_TSE_Lock;
 
 public: // non-public section
+    const TTSE_Lock& GetTSE_Lock(void) const;
     CConstRef<CTSE_Info> GetTSE_Info(void) const;
 
     const CSeq_entry_Info& x_GetInfo(void) const;
@@ -253,7 +261,9 @@ protected:
     friend class CSeq_entry_I;
 
     CSeq_entry_EditHandle(const CSeq_entry_Handle& h);
-    CSeq_entry_EditHandle(CScope& scope, CSeq_entry_Info& info);
+    CSeq_entry_EditHandle(CScope& scope,
+                          CSeq_entry_Info& info,
+                          const TTSE_Lock& tse_lock);
 
 public: // non-public section
     CSeq_entry_Info& x_GetInfo(void) const;
@@ -289,6 +299,13 @@ inline
 bool CSeq_entry_Handle::operator!(void) const
 {
     return !m_Info;
+}
+
+
+inline
+const TTSE_Lock& CSeq_entry_Handle::GetTSE_Lock(void) const
+{
+    return m_TSE_Lock;
 }
 
 
@@ -357,8 +374,9 @@ CSeq_entry_EditHandle::CSeq_entry_EditHandle(const CSeq_entry_Handle& h)
 
 inline
 CSeq_entry_EditHandle::CSeq_entry_EditHandle(CScope& scope,
-                                             CSeq_entry_Info& info)
-    : CSeq_entry_Handle(scope, info)
+                                             CSeq_entry_Info& info,
+                                             const TTSE_Lock& tse_lock)
+    : CSeq_entry_Handle(scope, info, tse_lock)
 {
 }
 
@@ -369,6 +387,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.11  2004/04/29 15:44:30  grichenk
 * Added GetTopLevelEntry()
 *

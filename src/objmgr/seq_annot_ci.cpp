@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
+/*
 CSeq_annot_CI::SEntryLevel_CI::SEntryLevel_CI(const CBioseq_set_Info& seqset,
                                               const TEntry_CI& iter)
     : m_Set(&seqset), m_Iter(iter)
@@ -67,7 +67,7 @@ CSeq_annot_CI::SEntryLevel_CI::operator=(const SEntryLevel_CI& l)
 CSeq_annot_CI::SEntryLevel_CI::~SEntryLevel_CI(void)
 {
 }
-
+*/
 
 CSeq_annot_CI::CSeq_annot_CI(void)
     : m_UpTree(false)
@@ -102,24 +102,21 @@ CSeq_annot_CI& CSeq_annot_CI::operator=(const CSeq_annot_CI& iter)
 
 CSeq_annot_CI::CSeq_annot_CI(CScope& scope, const CSeq_entry& entry,
                              EFlags flags)
-    : m_Scope(scope),
-      m_UpTree(false)
+    : m_UpTree(false)
 {
     x_Initialize(scope.GetSeq_entryHandle(entry), flags);
 }
 
 
 CSeq_annot_CI::CSeq_annot_CI(const CSeq_entry_Handle& entry, EFlags flags)
-    : m_Scope(entry.GetScope()),
-      m_UpTree(false)
+    : m_UpTree(false)
 {
     x_Initialize(entry, flags);
 }
 
 
 CSeq_annot_CI::CSeq_annot_CI(const CBioseq_Handle& bioseq)
-    : m_Scope(bioseq.GetScope()),
-      m_UpTree(true)
+    : m_UpTree(true)
 {
     x_Initialize(bioseq.GetParentEntry(), eSearch_entry);
 }
@@ -127,8 +124,7 @@ CSeq_annot_CI::CSeq_annot_CI(const CBioseq_Handle& bioseq)
 
 CSeq_annot_CI::CSeq_annot_CI(const CBioseq_set_Handle& bioseq_set,
                              EFlags flags)
-    : m_Scope(bioseq_set.GetScope()),
-      m_UpTree(false)
+    : m_UpTree(false)
 {
     x_Initialize(bioseq_set.GetParentEntry(), flags);
 }
@@ -137,18 +133,24 @@ CSeq_annot_CI::CSeq_annot_CI(const CBioseq_set_Handle& bioseq_set,
 inline
 void CSeq_annot_CI::x_Push(void)
 {
-    if ( m_CurrentEntry->IsSet() ) {
-        const CBioseq_set_Info& set = m_CurrentEntry->GetSet();
-        m_EntryStack.push(SEntryLevel_CI(set, set.GetSeq_set().begin()));
+    if ( m_CurrentEntry.IsSet() ) {
+        m_EntryStack.push(CSeq_entry_CI(m_CurrentEntry));
     }
 }
 
 
 inline
-void CSeq_annot_CI::x_SetEntry(const CSeq_entry_Info& entry)
+const CSeq_annot_CI::TAnnots& CSeq_annot_CI::x_GetAnnots(void) const
 {
-    m_CurrentEntry.Reset(&entry);
-    m_AnnotIter = entry.m_Contents->GetAnnot().begin();
+    return m_CurrentEntry.x_GetInfo().m_Contents->GetAnnot();
+}
+
+
+inline
+void CSeq_annot_CI::x_SetEntry(const CSeq_entry_Handle& entry)
+{
+    m_CurrentEntry = entry;
+    m_AnnotIter = x_GetAnnots().begin();
     if ( !m_EntryStack.empty() ) {
         x_Push();
     }
@@ -161,12 +163,8 @@ void CSeq_annot_CI::x_Initialize(const CSeq_entry_Handle& entry, EFlags flags)
         NCBI_THROW(CAnnotException, eFindFailed,
                    "Can not find seq-entry in the scope");
     }
-    if ( entry.Which() == CSeq_entry::e_not_set ) {
-        NCBI_THROW(CAnnotException, eFindFailed,
-                   "seq-entry is empty");
-    }
 
-    x_SetEntry(entry.x_GetInfo());
+    x_SetEntry(entry);
     if ( flags == eSearch_recursive ) {
         x_Push();
     }
@@ -187,19 +185,21 @@ CSeq_annot_CI& CSeq_annot_CI::operator++(void)
 void CSeq_annot_CI::x_Settle(void)
 {
     for ( ;; ) {
-        if ( m_AnnotIter != m_CurrentEntry->m_Contents->GetAnnot().end() ) {
-            m_CurrentAnnot = CSeq_annot_Handle(GetScope(), **m_AnnotIter);
+        if ( m_AnnotIter != x_GetAnnots().end() ) {
+            m_CurrentAnnot = CSeq_annot_Handle(m_CurrentEntry.GetScope(),
+                                               **m_AnnotIter,
+                                               m_CurrentEntry.GetTSE_Lock());
             return;
         }
 
         if ( m_UpTree ) {
             // Iterating from a bioseq up to its TSE
-            if ( m_CurrentEntry->HasParent_Info() ) {
-                x_SetEntry(m_CurrentEntry->GetParentSeq_entry_Info());
-                continue;
+            x_SetEntry(m_CurrentEntry.GetParentEntry());
+            if ( !m_CurrentEntry ) {
+                m_CurrentAnnot = CSeq_annot_Handle();
+                return;
             }
-            m_CurrentAnnot = CSeq_annot_Handle();
-            return;
+            continue;
         }
 
         if ( m_EntryStack.empty() ) {
@@ -207,9 +207,11 @@ void CSeq_annot_CI::x_Settle(void)
             return;
         }
         
-        if ( m_EntryStack.top().m_Iter !=
-             m_EntryStack.top().m_Set->GetSeq_set().end() ) {
-            x_SetEntry(**m_EntryStack.top().m_Iter++);
+        if ( m_EntryStack.top() ) {
+            CSeq_entry_CI& entry_iter = m_EntryStack.top();
+            CSeq_entry_Handle sub_entry = *entry_iter;
+            ++entry_iter;
+            x_SetEntry(sub_entry);
         }
         else {
             m_EntryStack.pop();
@@ -224,6 +226,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.8  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

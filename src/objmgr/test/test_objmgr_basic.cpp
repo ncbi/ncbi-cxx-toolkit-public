@@ -31,6 +31,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.24  2004/07/28 14:02:57  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *
@@ -162,9 +169,10 @@ public:
         const string& loader_name,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    virtual void GetRecords(const CSeq_id_Handle& /*id*/,
-                            EChoice /*choice*/)
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& /*id*/,
+                                    EChoice /*choice*/)
         {
+            return TTSE_LockSet();
         }
 
 private:
@@ -294,7 +302,6 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
     {
         CRef< CObjectManager> pOm = CObjectManager::GetInstance();
         {
-            pOm->RevokeDataLoader(name1);
             CScope* pScope1 = new CScope(*pOm);
             pScope1->AddDefaults(); // nothing added
             // must throw an exception: dataloader1 not found

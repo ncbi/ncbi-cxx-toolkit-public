@@ -35,10 +35,10 @@
 
 
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbimtx.hpp>
 
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
+#include <objmgr/impl/mutex_pool.hpp>
 
 #include <vector>
 #include <list>
@@ -92,7 +92,8 @@ public:
     TChunkId GetChunkId(void) const;
 
     bool NotLoaded(void) const;
-    void Load(void);
+    bool IsLoaded(void) const;
+    void Load(void) const;
 
     void x_TSEAttach(CTSE_Info& tse_info);
 
@@ -117,9 +118,13 @@ public:
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& seq);
 
-protected:
-    virtual void x_Load(void);
+    operator CInitMutex_Base&(void)
+        {
+            return m_LoadLock;
+        }
+    void SetLoaded(CObject* obj = 0);
 
+protected:
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     void x_UnmapAnnotObjects(CTSE_Info& tse);
@@ -137,16 +142,15 @@ private:
     TChunkId        m_ChunkId;
 
     bool            m_DirtyAnnotIndex;
-    bool            m_NotLoaded;
 
     TPlaces         m_DescrPlaces;
     TPlaces         m_AnnotPlaces;
     TAnnotContents  m_AnnotContents;
     TLocationSet    m_Seq_data;
 
-    CFastMutex      m_LoadLock;
+    CInitMutex<CObject> m_LoadLock;
 
-    TObjectInfosList  m_ObjectInfosList;
+    TObjectInfosList    m_ObjectInfosList;
 };
 
 
@@ -167,7 +171,14 @@ CTSE_Chunk_Info::TChunkId CTSE_Chunk_Info::GetChunkId(void) const
 inline
 bool CTSE_Chunk_Info::NotLoaded(void) const
 {
-    return m_NotLoaded;
+    return !m_LoadLock;
+}
+
+
+inline
+bool CTSE_Chunk_Info::IsLoaded(void) const
+{
+    return m_LoadLock;
 }
 
 
@@ -178,6 +189,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.7  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.

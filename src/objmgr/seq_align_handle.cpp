@@ -79,7 +79,7 @@ CConstRef<CSeq_align> CSeq_align_Handle::GetSeq_align(void) const
 CSeq_annot_Handle CSeq_align_Handle::GetAnnot(void) const
 {
     if ( m_Annot ) {
-        return CSeq_annot_Handle(m_Scope.GetScope(), *m_Annot);
+        return m_Scope.GetScope().GetSeq_annotHandle(*m_Annot->GetSeq_annotCore());
     }
     return CSeq_annot_Handle();
 }
@@ -91,6 +91,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/04 14:53:26  vasilche
+ * Revamped object manager:
+ * 1. Changed TSE locking scheme
+ * 2. TSE cache is maintained by CDataSource.
+ * 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+ * 4. Fixed processing of split data.
+ *
  * Revision 1.2  2004/05/21 21:42:12  gorelenk
  * Added PCH ncbi_pch.hpp
  *

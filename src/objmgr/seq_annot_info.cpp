@@ -217,6 +217,7 @@ void CSeq_annot_Info::x_SetObject(const TObject& obj)
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object.Reset(&obj);
     x_UpdateName();
+    x_SetDirtyAnnotIndex();
 }
 
 
@@ -230,6 +231,7 @@ void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info)
         m_SNP_Info->x_ParentAttach(*this);
         x_AttachObject(*m_SNP_Info);
     }
+    x_SetDirtyAnnotIndex();
 }
 
 
@@ -473,6 +475,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/08/04 14:53:26  vasilche
+ * Revamped object manager:
+ * 1. Changed TSE locking scheme
+ * 2. TSE cache is maintained by CDataSource.
+ * 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+ * 4. Fixed processing of split data.
+ *
  * Revision 1.18  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.

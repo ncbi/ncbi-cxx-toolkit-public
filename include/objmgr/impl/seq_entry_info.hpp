@@ -87,6 +87,7 @@ public:
 
     typedef CSeq_entry TObject;
 
+    bool HasSeq_entry(void) const;
     CConstRef<TObject> GetCompleteSeq_entry(void) const;
     CConstRef<TObject> GetSeq_entryCore(void) const;
 
@@ -212,6 +213,13 @@ protected:
 
 
 inline
+bool CSeq_entry_Info::HasSeq_entry(void) const
+{
+    return m_Object;
+}
+
+
+inline
 CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
 {
     return m_Which;
@@ -252,6 +260,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.14  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.

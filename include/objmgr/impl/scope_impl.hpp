@@ -82,6 +82,7 @@ class CDataSource;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CBioseq_Info;
+class CBioseq_set_Info;
 class CSeq_id_Handle;
 class CSeqMap;
 class CSeqMatch_Info;
@@ -107,7 +108,6 @@ class CPriorityNode;
 class NCBI_XOBJMGR_EXPORT CScope_Impl : public CObject
 {
 public:
-    typedef CConstRef<CTSE_Info>                     TTSE_Lock;
     typedef set<TTSE_Lock>                           TTSE_LockSet;
 
     // History of requests
@@ -217,6 +217,7 @@ public:
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
+    CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Lock& tse_lock);
 
     void ResetHistory(void);
 
@@ -292,16 +293,22 @@ private:
                                             int get_flag);
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                            const CTSE_Info& tse);
+                                            const TTSE_Lock& tse);
 
-    CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq);
-    CBioseq_Handle x_GetBioseqHandle(const CBioseq_Info& seq);
+    CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq,
+                                   const TTSE_Lock& tse_lock);
+    CBioseq_Handle x_GetBioseqHandle(const CBioseq_Info& seq,
+                                     const TTSE_Lock& tse_lock);
 
 public:
-    CConstRef<CTSE_Info> x_GetTSE_Info(const CSeq_entry& tse);
-    CConstRef<CSeq_entry_Info> x_GetSeq_entry_Info(const CSeq_entry& entry);
-    CConstRef<CSeq_annot_Info> x_GetSeq_annot_Info(const CSeq_annot& annot);
-    CConstRef<CBioseq_Info> x_GetBioseq_Info(const CBioseq& bioseq);
+    typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
+    typedef pair<CConstRef<CSeq_annot_Info>, TTSE_Lock> TSeq_annot_Lock;
+    typedef pair<CConstRef<CBioseq_Info>, TTSE_Lock> TBioseq_Lock;
+
+    TTSE_Lock x_GetTSE_Lock(const CSeq_entry& tse);
+    TSeq_entry_Lock x_GetSeq_entry_Lock(const CSeq_entry& entry);
+    TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot);
+    TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq);
 
 private:
     // Get bioseq handles for sequences from the given TSE using the filter
@@ -385,6 +392,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.10  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

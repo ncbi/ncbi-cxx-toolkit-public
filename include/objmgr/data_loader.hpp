@@ -34,9 +34,13 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <util/range.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <set>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -51,7 +55,30 @@ class CTSE_Info;
 class CTSE_Chunk_Info;
 struct SAnnotTypeSelector;
 
+/////////////////////////////////////////////////////////////////////////////
+// structure to describe required data set
+//
 
+struct SRequestDetails
+{
+    typedef CRange<TSeqPos> TRange;
+    typedef set<SAnnotTypeSelector> TAnnotTypesSet;
+    typedef map<CAnnotName, TAnnotTypesSet> TAnnotSet;
+    
+    SRequestDetails(void)
+        : m_NeedSeqMap(TRange::GetEmpty()),
+          m_NeedSeqData(TRange::GetEmpty())
+        {
+        }
+
+    TRange      m_NeedSeqMap;
+    TRange      m_NeedSeqData;
+    TAnnotSet   m_NeedExternalAnnots;
+    TAnnotSet   m_NeedInternalAnnots;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
 // Template for data loader construction
 class CLoaderMaker_Base
 {
@@ -141,17 +168,23 @@ public:
     virtual ~CDataLoader(void);
 
 public:
+    // main blob is blob with sequence
+    // all other blobs are external and contain external annotations
     enum EChoice {
-        eBlob,        // whole seqentry
-        eBioseq,      // whole bioseq
-        eCore,        // everything except bioseqs & annotations
-        eBioseqCore,  // bioseq without seqdata and annotations
+        eBlob,        // whole main
+        eBioseq,      // main blob with complete bioseq
+        eCore,        // ?only seq-entry core?
+        eBioseqCore,  // main blob with bioseq core (no seqdata and annots)
         eSequence,    // seq data 
-        eFeatures,    // SeqFeatures
-        eGraph,       // SeqGraph 
-        eAlign,       // SeqAlign 
-        eAnnot,       // all annotations
-        eAll          // whatever fits location
+        eFeatures,    // features from main blob
+        eGraph,       // graph annotations from main blob
+        eAlign,       // aligns from main blob
+        eAnnot,       // all annotations from main blob
+        eExtFeatures, // external features
+        eExtGraph,    // external graph annotations
+        eExtAlign,    // external aligns
+        eExtAnnot,    // all external annotations
+        eAll          // all blobs (main and external)
     };
     
     // Request from a datasource for data specified in "choice".
@@ -159,17 +192,35 @@ public:
     // CDataSource::AppendXXX() methods.
     //### virtual bool GetRecords(const CSeq_loc& loc, EChoice choice) = 0;
     
-    typedef CConstRef<CTSE_Info> TTSE_Lock;
-    typedef set<TTSE_Lock>       TTSE_LockSet;
+    typedef set<TTSE_Lock>          TTSE_LockSet;
+    typedef CRef<CTSE_Chunk_Info>   TChunk;
+    typedef vector<TChunk>          TChunkSet;
 
     // Request from a datasource using handles and ranges instead of seq-loc
     // The TSEs loaded in this call will be added to the tse_set.
-    virtual void GetRecords(const CSeq_id_Handle& idh, EChoice choice) = 0;
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
+                                    EChoice choice);
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
+                                    const SRequestDetails& details);
 
-    virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
+    // blob operations
+    typedef CConstRef<CObject> TBlobId;
+    typedef int TBlobVersion;
+    virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
+    TBlobId GetBlobId(const CSeq_id& id);
+    virtual TBlobVersion GetBlobVersion(const TBlobId& id);
+
+    virtual bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
+
+    virtual SRequestDetails ChoiceToDetails(EChoice choice) const;
+    virtual EChoice DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const;
+    virtual EChoice DetailsToChoice(const SRequestDetails& details) const;
+
+    virtual void GetChunk(TChunk chunk_info);
+    virtual void GetChunks(const TChunkSet& chunks);
     
     // 
-    virtual void DropTSE(const CTSE_Info& tse_info);
+    virtual void DropTSE(CRef<CTSE_Info> tse_info);
     
     // Specify datasource to send loaded data to.
     void SetTargetDataSource(CDataSource& data_source);
@@ -180,8 +231,8 @@ public:
     // *select the best TSE from the set of dead TSEs.
     // *select the live TSE from the list of live TSEs
     //  and mark the others one as dead.
-    virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle&,
-                                                 const TTSE_LockSet&);
+    virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& id,
+                                      const TTSE_LockSet& tse_set);
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
@@ -196,6 +247,8 @@ protected:
 
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
+
+    friend class CGBReaderRequestResult;
     
 private:
     CDataLoader(const CDataLoader&);
@@ -219,6 +272,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/08/04 14:53:25  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.30  2004/08/02 17:34:43  grichenk
 * Added data_loader_factory.cpp.
 * Renamed xloader_cdd to ncbi_xloader_cdd.

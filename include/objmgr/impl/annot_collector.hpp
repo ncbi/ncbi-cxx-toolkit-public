@@ -37,6 +37,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -180,12 +181,12 @@ private:
     CAnnot_Collector(const CAnnot_Collector&);
     CAnnot_Collector& operator= (const CAnnot_Collector&);
 
-    typedef CConstRef<CTSE_Info> TTSE_Lock;
     typedef set<TTSE_Lock>       TTSE_LockSet;
     typedef vector<CAnnotObject_Ref> TAnnotSet;
 
     const TAnnotSet& GetAnnotSet(void) const;
     CScope& GetScope(void) const;
+    CSeq_annot_Handle GetAnnot(const CAnnotObject_Ref& ref) const;
 
     SAnnotSelector& GetSelector(void);
 
@@ -205,14 +206,14 @@ private:
                   const CSeq_id_Handle& id,
                   const CHandleRange&   hr,
                   CSeq_loc_Conversion*  cvt);
-    void x_Search(const CTSE_Info&      tse_info,
+    void x_Search(const TTSE_Lock&      tse,
                   const SIdAnnotObjs*   objs,
                   CReadLockGuard&       guard,
                   const CAnnotName&     name,
                   const CSeq_id_Handle& id,
                   const CHandleRange&   hr,
                   CSeq_loc_Conversion*  cvt);
-    void x_SearchRange(const CTSE_Info&      tse_info,
+    void x_SearchRange(const TTSE_Lock&      tse,
                        const SIdAnnotObjs*   objs,
                        CReadLockGuard&       guard,
                        const CAnnotName&     name,
@@ -253,6 +254,7 @@ private:
     CHeapScope                       m_Scope;
     // TSE set to keep all the TSEs locked
     TTSE_LockSet                     m_TSE_LockSet;
+    TTSE_Lock                        m_LimitTSE_Lock;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
     // Set of all the annotations found
     TAnnotSet                        m_AnnotSet;
@@ -575,6 +577,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.10  2004/07/19 14:24:00  grichenk
 * Simplified and fixed mapping through annot.locs
 *

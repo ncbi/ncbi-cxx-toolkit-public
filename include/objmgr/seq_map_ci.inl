@@ -148,15 +148,6 @@ CSeqMap::ESegmentType CSeqMap_CI_SegmentInfo::GetType(void) const
 }
 
 
-/*
-inline
-CSeqMap_CI_SegmentInfo::CSeqMap_CI_SegmentInfo(CConstRef<CSeqMap> seqMap, size_t index)
-    : m_SeqMap(seqMap), m_Index(index),
-      m_LevelRangePos(0), m_LevelRangeEnd(seqMap->x_GetSegmentLength(index))
-{
-}
-*/
-
 /////////////////////////////////////////////////////////////////////
 //  CSeqMap_CI
 
@@ -266,13 +257,6 @@ TSeqPos CSeqMap_CI::GetRefEndPosition(void) const
     return GetRefPosition() + GetLength();
 }
 
-/*
-inline
-TSeqPos CSeqMap_CI::x_GetPositionInSeqMap(void) const
-{
-    return x_GetSeqMap()->x_GetSegmentPosition(x_GetIndex(), GetScope());
-}
-*/
 
 inline
 bool CSeqMap_CI::operator==(const CSeqMap_CI& seg) const
@@ -353,6 +337,13 @@ CSeqMap_CI::TFlags CSeqMap_CI::GetFlags(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/04 14:53:26  vasilche
+ * Revamped object manager:
+ * 1. Changed TSE locking scheme
+ * 2. TSE cache is maintained by CDataSource.
+ * 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+ * 4. Fixed processing of split data.
+ *
  * Revision 1.7  2004/04/12 16:49:16  vasilche
  * Allow null scope in CSeqMap_CI and CSeqVector.
  *

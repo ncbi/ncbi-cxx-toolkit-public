@@ -74,7 +74,9 @@ void CSeq_entry_CI::x_Initialize(const CBioseq_set_Handle& seqset)
 void CSeq_entry_CI::x_SetCurrentEntry(void)
 {
     if ( m_Parent && m_Iterator != m_Parent.x_GetInfo().GetSeq_set().end() ) {
-        m_Current = CSeq_entry_Handle(m_Parent.GetScope(), **m_Iterator);
+        m_Current = CSeq_entry_Handle(m_Parent.GetScope(),
+                                      **m_Iterator,
+                                      m_Parent.GetTSE_Lock());
     }
     else {
         m_Current.Reset();
@@ -122,7 +124,9 @@ void CSeq_entry_I::x_Initialize(const CBioseq_set_EditHandle& seqset)
 void CSeq_entry_I::x_SetCurrentEntry(void)
 {
     if ( m_Parent && m_Iterator != m_Parent.x_GetInfo().SetSeq_set().end() ) {
-        m_Current = CSeq_entry_EditHandle(m_Parent.GetScope(), **m_Iterator);
+        m_Current = CSeq_entry_EditHandle(m_Parent.GetScope(),
+                                          **m_Iterator,
+                                          m_Parent.GetTSE_Lock());
     }
     else {
         m_Current.Reset();
@@ -146,6 +150,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.4  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

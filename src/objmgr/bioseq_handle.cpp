@@ -98,6 +98,12 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 }
 
 
+const TTSE_Lock& CBioseq_Handle::GetTSE_Lock(void) const
+{
+    return x_GetScopeInfo().GetTSE_Lock();
+}
+
+
 const CBioseq_Info& CBioseq_Handle::x_GetInfo(void) const
 {
     return x_GetScopeInfo().GetBioseq_Info();
@@ -530,14 +536,16 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 CSeq_entry_Handle CBioseq_Handle::GetTopLevelEntry(void) const
 {
     return CSeq_entry_Handle(GetScope(),
-                             x_GetInfo().GetTSE_Info());
+                             x_GetInfo().GetTSE_Info(),
+                             GetTSE_Lock());
 }
 
 
 CSeq_entry_Handle CBioseq_Handle::GetParentEntry(void) const
 {
-    return CSeq_entry_Handle(m_Scope,
-                             x_GetInfo().GetParentSeq_entry_Info());
+    return CSeq_entry_Handle(GetScope(),
+                             x_GetInfo().GetParentSeq_entry_Info(),
+                             GetTSE_Lock());
 }
 
 
@@ -637,8 +645,9 @@ CBioseq_EditHandle::CBioseq_EditHandle(const CBioseq_Handle& h)
 
 CSeq_entry_EditHandle CBioseq_EditHandle::GetParentEntry(void) const
 {
-    return CSeq_entry_EditHandle(m_Scope,
-                                 x_GetInfo().GetParentSeq_entry_Info());
+    return CSeq_entry_EditHandle(GetScope(),
+                                 x_GetInfo().GetParentSeq_entry_Info(),
+                                 GetTSE_Lock());
 }
 
 
@@ -772,6 +781,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.67  2004/06/09 16:42:26  grichenk
 * Added GetComplexityLevel() and GetExactComplexityLevel() to CBioseq_set_Handle
 *

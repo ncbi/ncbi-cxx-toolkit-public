@@ -36,13 +36,14 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_lock.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
 class CDataSource;
+class CBioseq_Info;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -57,15 +58,16 @@ class NCBI_XOBJMGR_EXPORT CSeqMatch_Info
 {
 public:
     CSeqMatch_Info(void);
-    CSeqMatch_Info(const CSeq_id_Handle& h, const CTSE_Info& tse);
+    CSeqMatch_Info(const CSeq_id_Handle& h, const TTSE_Lock& tse);
     
     // Return true if "info" is better than "this"
     bool operator< (const CSeqMatch_Info& info) const;
     operator bool (void);
     bool operator! (void);
 
-    CDataSource& GetDataSource(void) const;
+    //CDataSource& GetDataSource(void) const;
 
+    const TTSE_Lock& GetTSE_Lock(void) const;
     const CTSE_Info& GetTSE_Info(void) const;
 
     const CSeq_id_Handle& GetIdHandle(void) const;
@@ -74,8 +76,15 @@ public:
 
 private:
     CSeq_id_Handle    m_Handle;     // best id handle, matching the request
-    CConstRef<CTSE_Info>   m_TSE;   // TSE, containing the best match
+    TTSE_Lock         m_TSE;   // TSE, containing the best match
 };
+
+
+inline
+const TTSE_Lock& CSeqMatch_Info::GetTSE_Lock(void) const
+{
+    return m_TSE;
+}
 
 
 inline
@@ -112,6 +121,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.15  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

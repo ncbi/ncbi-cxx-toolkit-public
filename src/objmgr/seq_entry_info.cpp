@@ -103,9 +103,14 @@ CSeq_entry_Info& CSeq_entry_Info::GetParentSeq_entry_Info(void)
 void CSeq_entry_Info::x_CheckWhich(E_Choice which) const
 {
     if ( Which() != which ) {
-        NCBI_THROW(CUnassignedMember,eGet,
-                   which == CSeq_entry::e_Set?
-                   "Seq_entry.set": "Seq_entry.seq");
+        switch ( which ) {
+        case CSeq_entry::e_Seq:
+            NCBI_THROW(CUnassignedMember,eGet,"Seq_entry.seq");
+        case CSeq_entry::e_Set:
+            NCBI_THROW(CUnassignedMember,eGet,"Seq_entry.set");
+        default:
+            NCBI_THROW(CUnassignedMember,eGet,"Seq_entry.not_set");
+        }
     }
 }
 
@@ -447,7 +452,9 @@ void CSeq_entry_Info::UpdateAnnotIndex(void) const
 
 void CSeq_entry_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
-    m_Contents->x_UpdateAnnotIndex(tse);
+    if ( m_Contents ) {
+        m_Contents->x_UpdateAnnotIndex(tse);
+    }
     TParent::x_UpdateAnnotIndexContents(tse);
 }
 
@@ -549,6 +556,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/08/04 14:53:26  vasilche
+ * Revamped object manager:
+ * 1. Changed TSE locking scheme
+ * 2. TSE cache is maintained by CDataSource.
+ * 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+ * 4. Fixed processing of split data.
+ *
  * Revision 1.16  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.

@@ -34,6 +34,7 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -41,8 +42,9 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_annot_Handle::CSeq_annot_Handle(CScope& scope,
-                                     const CSeq_annot_Info& info)
-    : m_Scope(&scope), m_Info(&info)
+                                     const CSeq_annot_Info& info,
+                                     const TTSE_Lock& tse_lock)
+    : m_Scope(&scope), m_Info(&info), m_TSE_Lock(tse_lock)
 {
 }
 
@@ -64,7 +66,9 @@ const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
 
 CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
 {
-    return CSeq_entry_Handle(m_Scope, x_GetInfo().GetParentSeq_entry_Info());
+    return CSeq_entry_Handle(GetScope(),
+                             x_GetInfo().GetParentSeq_entry_Info(),
+                             GetTSE_Lock());
 }
 
 
@@ -73,7 +77,9 @@ CSeq_entry_Handle CSeq_annot_Handle::GetTopLevelEntry(void) const
     CSeq_entry_Handle ret;
     const CSeq_annot_Info& info = x_GetInfo();
     if ( info.HasTSE_Info() ) {
-        ret = CSeq_entry_Handle(GetScope(), info.GetTSE_Info());
+        ret = CSeq_entry_Handle(GetScope(),
+                                info.GetTSE_Info(),
+                                GetTSE_Lock());
     }
     return ret;
 }
@@ -106,7 +112,8 @@ CSeq_annot_Info& CSeq_annot_EditHandle::x_GetInfo(void) const
 CSeq_entry_EditHandle CSeq_annot_EditHandle::GetParentEntry(void) const
 {
     return CSeq_entry_EditHandle(GetScope(),
-                                 x_GetInfo().GetParentSeq_entry_Info());
+                                 x_GetInfo().GetParentSeq_entry_Info(),
+                                 GetTSE_Lock());
 }
 
 
@@ -122,6 +129,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.9  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

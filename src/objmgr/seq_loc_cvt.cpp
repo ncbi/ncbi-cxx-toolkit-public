@@ -37,6 +37,7 @@
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/impl/annot_object.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -1020,6 +1021,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.32  2004/07/19 17:41:34  grichenk
 * Simplified switches in Convert() methods.
 *

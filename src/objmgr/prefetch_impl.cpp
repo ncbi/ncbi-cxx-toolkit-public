@@ -233,7 +233,7 @@ void* CPrefetchThread::Main(void)
             try {
                 CSeqMatch_Info info = m_DataSource.BestResolve(id);
                 if ( info ) {
-                    TTSE_Lock tse(&info.GetTSE_Info());
+                    TTSE_Lock tse(info.GetTSE_Lock());
                     if (tse) {
                         token->AddResolvedId(i, tse);
                     }
@@ -256,6 +256,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.5  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -140,13 +140,18 @@ CAnnot_CI::~CAnnot_CI(void)
 void CAnnot_CI::x_Collect(void)
 {
     while ( IsValid() ) {
+        CSeq_annot_Handle h = GetAnnot();
+        if ( h ) {
+            m_SeqAnnotSet.insert(h);
+        }
+        /*
         if (Get().GetObjectType() != CAnnotObject_Ref::eType_Seq_annot_Info) {
             Next();
             continue;
         }
         CSeq_annot_Handle h(GetScope(),
                             Get().GetAnnotObject_Info().GetSeq_annot_Info());
-        m_SeqAnnotSet.insert(h);
+        */
         Next();
     }
     m_Iterator = m_SeqAnnotSet.begin();
@@ -159,6 +164,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/08/04 14:53:26  vasilche
+* Revamped object manager:
+* 1. Changed TSE locking scheme
+* 2. TSE cache is maintained by CDataSource.
+* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
+* 4. Fixed processing of split data.
+*
 * Revision 1.33  2004/06/09 20:15:07  grichenk
 * Fixed type argument in CAnnot_CI constructor
 *
