@@ -386,7 +386,7 @@ s_FillContigMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    const Int4 kWordLength = COMPRESSION_RATIO*width;   
    /* The user probably specified a much larger word size (like 28) and this is what full_word_size is. */
    Int4 full_word_size;
-   const Int4 kMask = (1 << (8*width - 2)) - 1;;
+   const Int4 kMask = (1 << (8*width - 2)) - 1;
    const Int4 kCompressionFactor=2048; /* compress helper_array by factor of 2048. */
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_array_bts;
