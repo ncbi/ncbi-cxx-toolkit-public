@@ -452,7 +452,7 @@ void CRemoteBlast::x_CheckResults(void)
 
 void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
 {
-    if (m_Verbose)
+    if (eDebug == m_Verbose)
         cout << "polling " << 0 << endl;
     
     // Configuration - internal for now
@@ -462,7 +462,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
     double max_sleep = 300.0;
     double max_time  = timeout;
     
-    if (m_Verbose)
+    if (eDebug == m_Verbose)
         cout << "polling " << start_sec << "/" << increment << "/" << max_sleep << "/" << max_time << "/" << endl;
     
     // End config
@@ -470,7 +470,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
     double sleep_next = start_sec;
     double sleep_totl = 0.0;
     
-    if (m_Verbose)
+    if (eDebug == m_Verbose)
         cout << "line " << __LINE__ << " sleep next " << sleep_next << " sleep totl " << sleep_totl << endl;
     
     if (ePollAsync == immed) {
@@ -478,7 +478,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
     }
     
     while (m_Pending && (sleep_totl < max_time)) {
-        if (m_Verbose)
+        if (eDebug == m_Verbose)
             cout << " about to sleep " << sleep_next << endl;
         
         double max_left = max_time - sleep_totl;
@@ -495,7 +495,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
         SleepSec(int(sleep_next));
         sleep_totl += sleep_next;
         
-        if (m_Verbose)
+        if (eDebug == m_Verbose)
             cout << " done, total = " << sleep_totl << endl;
         
         if (sleep_next < max_sleep) {
@@ -505,7 +505,7 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
             }
         }
         
-        if (m_Verbose)
+        if (eDebug == m_Verbose)
             cout << " next sleep time = " << sleep_next << endl;
         
         x_CheckResults();
@@ -608,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/18 18:28:51  bealer
+* - Fix verbosity tests.
+*
 * Revision 1.1  2004/02/18 17:30:57  bealer
 * - Change blast4_options.* to remote_blast.*, plus changes.
 *
