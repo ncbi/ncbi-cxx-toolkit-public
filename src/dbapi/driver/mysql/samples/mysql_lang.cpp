@@ -39,7 +39,7 @@ int main()
   try
   {
     CMySQLContext my_context;
-    auto_ptr<CDB_Connection> con(my_context.Connect("chopin", "butanaev", "jbin71o", 0));
+    auto_ptr<CDB_Connection> con(my_context.Connect("chopin", "test_user", "test", 0));
 
     {
       auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from trace.Trace limit 3"));
@@ -80,6 +80,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/08/13 20:30:24  butanaev
+ * Username/password changed.
+ *
  * Revision 1.1  2002/08/13 20:23:14  butanaev
  * The beginning.
  *
