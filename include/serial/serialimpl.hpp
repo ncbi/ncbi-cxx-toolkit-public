@@ -404,7 +404,7 @@ CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define SET_PARENT_CLASS(BaseClass) \
-    NCBI_NS_NCBI::AddMember(info,"",CLASS_PTR(BaseClass), \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),"",CLASS_PTR(BaseClass), \
                             &BaseClass::GetTypeInfo)
 
 #define BEGIN_STRUCT_INFO2(Name, Class) \
@@ -435,31 +435,31 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
 #define STD_MEMBER(Member) \
     NCBI_NS_NCBI::StdMemberInfo(MEMBER_PTR(Member))
 #define ADD_STD_MEMBER2(Name, Member) \
-    info->AddMember(Name, STD_MEMBER(Member))
+    info->GetMembers().AddMember(Name, STD_MEMBER(Member))
 #define ADD_STD_MEMBER(Member) ADD_STD_MEMBER2(#Member, Member)
 
 #define CLASS_MEMBER(Member) \
 	NCBI_NS_NCBI::ClassMemberInfo(MEMBER_PTR(Member))
 #define ADD_CLASS_MEMBER2(Name, Member) \
-	info->AddMember(Name, CLASS_MEMBER(Member))
+	info->GetMembers().AddMember(Name, CLASS_MEMBER(Member))
 #define ADD_CLASS_MEMBER(Member) ADD_CLASS_MEMBER2(#Member, Member)
 
 #define PTR_CLASS_MEMBER(Member) \
 	NCBI_NS_NCBI::PtrMemberInfo(MEMBER_PTR(Member))
 #define ADD_PTR_CLASS_MEMBER2(Name, Member) \
-	info->AddMember(Name, PTR_CLASS_MEMBER(Member))
+	info->GetMembers().AddMember(Name, PTR_CLASS_MEMBER(Member))
 #define ADD_PTR_CLASS_MEMBER(Member) ADD_PTR_CLASS_MEMBER2(#Member, Member)
 
 #define STL_CLASS_MEMBER(Member) \
 	NCBI_NS_NCBI::StlMemberInfo(MEMBER_PTR(Member))
 #define ADD_STL_CLASS_MEMBER2(Name, Member) \
-	info->AddMember(Name, STL_CLASS_MEMBER(Member))
+	info->GetMembers().AddMember(Name, STL_CLASS_MEMBER(Member))
 #define ADD_STL_CLASS_MEMBER(Member) ADD_STL_CLASS_MEMBER2(#Member, Member)
 
 #define ASN_MEMBER(Member, Type) \
 	NCBI_NAME2(Type, MemberInfo)(MEMBER_PTR(Member))
 #define ADD_ASN_MEMBER2(Name, Member, Type) \
-	info->AddMember(Name, ASN_MEMBER(Member, Type))
+	info->GetMembers().AddMember(Name, ASN_MEMBER(Member, Type))
 #define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
 
 #define OLD_ASN_MEMBER(Member, Name, Type) \
@@ -467,7 +467,7 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
                      &NCBI_NAME2(Type, New), &NCBI_NAME2(Type, Free), \
                      &NCBI_NAME2(Type, AsnRead), &NCBI_NAME2(Type, AsnWrite))
 #define ADD_OLD_ASN_MEMBER2(Name, Member, TypeName, Type) \
-	info->AddMember(Name, OLD_ASN_MEMBER(Member, TypeName, Type))
+	info->GetMembers().AddMember(Name, OLD_ASN_MEMBER(Member, TypeName, Type))
 #define ADD_OLD_ASN_MEMBER(Member, Type) \
     ADD_OLD_ASN_MEMBER2(#Member, Member, #Type, Type)
 
@@ -475,7 +475,7 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
     NCBI_NS_NCBI::ChoiceMemberInfo(MEMBER_PTR(Member), \
                      NCBI_NAME2(GetTypeInfo_struct_, Choices))
 #define ADD_CHOICE_MEMBER2(Name, Member, Choices) \
-    info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
+    info->GetMembers().AddMember(Name, CHOICE_MEMBER(Member, Choices))
 #define ADD_CHOICE_MEMBER(Member, Choices) \
     ADD_CHOICE_MEMBER2(#Member, Member, Choices)
 
