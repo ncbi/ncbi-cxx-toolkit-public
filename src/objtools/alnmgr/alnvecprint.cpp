@@ -46,9 +46,49 @@ CAlnVecPrinter::CAlnVecPrinter(const CAlnVec& aln_vec,
 }
 
 
+void
+CAlnVecPrinter::x_SetChars()
+{
+    CAlnVec& aln_vec = const_cast<CAlnVec&>(m_AlnVec);
+
+    m_OrigSetGapChar = aln_vec.IsSetGapChar();
+    if (m_OrigSetGapChar) {
+        m_OrigGapChar = aln_vec.GetGapChar(0);
+    }
+    aln_vec.SetGapChar('-');
+
+    m_OrigSetEndChar = aln_vec.IsSetEndChar();
+    if (m_OrigSetEndChar) {
+        m_OrigEndChar = aln_vec.GetEndChar();
+    }
+    aln_vec.SetEndChar('-');
+}
+
+
+void
+CAlnVecPrinter::x_UnsetChars()
+{
+    CAlnVec& aln_vec = const_cast<CAlnVec&>(m_AlnVec);
+
+    if (m_OrigSetGapChar) {
+        aln_vec.SetGapChar(m_OrigGapChar);
+    } else {
+        aln_vec.UnsetGapChar();
+    }
+
+    if (m_OrigSetEndChar) {
+        aln_vec.SetEndChar(m_OrigEndChar);
+    } else {
+        aln_vec.UnsetEndChar();
+    }
+}
+
+
 void CAlnVecPrinter::PopsetStyle(int scrn_width,
                                  EAlgorithm algorithm)
 {
+    x_SetChars();
+
     switch(algorithm) {
     case eUseSeqString:
         {
@@ -79,7 +119,7 @@ void CAlnVecPrinter::PopsetStyle(int scrn_width,
                 }
             
                 for (seg = 0, pos = row;  seg < nsegs; ++seg, pos += nrows) {
-                    len = lens[row];
+                    len = lens[seg];
                     if ((start = starts[pos]) >= 0) {
                     
                         left_seg = seg; // ending left seg is at most here
@@ -109,17 +149,14 @@ void CAlnVecPrinter::PopsetStyle(int scrn_width,
             TSeqPos pos = 0;
             do {
                 for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
-                    *m_Out << row 
-                           << "\t"
-                        << m_AlnVec.GetSeqId(row).AsFastaString()
-                        << "\t"
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
-                        << "\t"
-                        << buffer[row].substr(pos, scrn_width)
-                        << "\t"
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, pos + scrn_width - 1,
-                                                      CAlnMap::eLeft)
-                        << endl;
+                    PrintNumRow(row);
+                    PrintId(row);
+                    PrintSeqPos(m_AlnVec.GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft));
+                    *m_Out << buffer[row].substr(pos, scrn_width)
+                           << "  "
+                           << m_AlnVec.GetSeqPosFromAlnPos(row, pos + scrn_width - 1,
+                                                           CAlnMap::eLeft)
+                           << endl;
                 }
                 *m_Out << endl;
                 pos += scrn_width;
@@ -142,18 +179,15 @@ void CAlnVecPrinter::PopsetStyle(int scrn_width,
                 aln_seq_str.reserve(scrn_width + 1);
                 // for each sequence
                 for (CAlnMap::TNumrow row = 0; row < m_NumRows; row++) {
-                    *m_Out << row 
-                        << "\t"
-                        << m_AlnVec.GetSeqId(row).AsFastaString()
-                        << "\t" 
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, rng.GetFrom(),
-                                                      CAlnMap::eLeft)
-                        << "\t"
-                        << m_AlnVec.GetAlnSeqString(aln_seq_str, row, rng)
-                        << "\t"
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, rng.GetTo(),
-                                                      CAlnMap::eLeft)
-                        << endl;
+                    PrintNumRow(row);
+                    PrintId(row);
+                    PrintSeqPos(m_AlnVec.GetSeqPosFromAlnPos(row, rng.GetFrom(),
+                                                             CAlnMap::eLeft));
+                    *m_Out << m_AlnVec.GetAlnSeqString(aln_seq_str, row, rng)
+                           << " "
+                           << m_AlnVec.GetSeqPosFromAlnPos(row, rng.GetTo(),
+                                                           CAlnMap::eLeft)
+                           << endl;
                 }
                 *m_Out << endl;
                 aln_pos += scrn_width;
@@ -191,8 +225,6 @@ void CAlnVecPrinter::PopsetStyle(int scrn_width,
                     PrintNumRow(row);
                     PrintId(row);
                     PrintSeqPos(scrn_lefts[row].front());
-                    *m_Out << scrn_lefts[row].front();
-
                     *m_Out << buffer[row].substr(pos, scrn_width)
                            << " "
                            << scrn_rights[row].front()
@@ -210,25 +242,28 @@ void CAlnVecPrinter::PopsetStyle(int scrn_width,
             break;
         }
     }
+    x_UnsetChars();
 }
 
 
 void CAlnVecPrinter::ClustalStyle(int scrn_width,
                                   EAlgorithm algorithm)
 {
+    x_SetChars();
+
     *m_Out << "CLUSTAL W (1.83) multiple sequence alignment" << endl << endl;
 
     switch(algorithm) {
     case eUseSeqString:
         {
             TSeqPos aln_len = m_AlnVec.GetAlnStop() + 1;
-            const CAlnMap::TNumrow nrows = m_NumRows;
             const CAlnMap::TNumseg nsegs = m_AlnVec.GetNumSegs();
             const CDense_seg::TStarts& starts = m_AlnVec.GetDenseg().GetStarts();
             const CDense_seg::TLens& lens = m_AlnVec.GetDenseg().GetLens();
+            CAlnMap::TNumrow row;
             
-            vector<string> buffer(nrows);
-            for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
+            vector<string> buffer(m_NumRows+1);
+            for (row = 0; row < m_NumRows; row++) {
             
                 // allocate space for the row
                 buffer[row].reserve(aln_len + 1);
@@ -239,16 +274,16 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
                 TSeqPos len;
             
                 // determine the ending right seg
-                for (seg = nsegs - 1, pos = seg * nrows + row;
-                     seg >= 0; --seg, pos -= nrows) {
+                for (seg = nsegs - 1, pos = seg * m_NumRows + row;
+                     seg >= 0; --seg, pos -= m_NumRows) {
                     if (starts[pos] >= 0) {
                         right_seg = seg;
                         break;
                     }
                 }
             
-                for (seg = 0, pos = row;  seg < nsegs; ++seg, pos += nrows) {
-                    len = lens[row];
+                for (seg = 0, pos = row;  seg < nsegs; ++seg, pos += m_NumRows) {
+                    len = lens[seg];
                     if ((start = starts[pos]) >= 0) {
                     
                         left_seg = seg; // ending left seg is at most here
@@ -274,23 +309,33 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
                     }
                 }
             }
+            // Find identities
+            buffer[m_NumRows].resize(aln_len);
+            for (TSeqPos pos = 0; pos < aln_len; pos++) {
+                bool identity = true;
+                char residue = buffer[0][pos];
+                for (row = 1; row < m_NumRows; row++) {
+                    if (buffer[row][pos] != residue) {
+                        identity = false;
+                        break;
+                    }
+                }
+                buffer[m_NumRows][pos] = (identity ? '*' : ' ');
+            }
+
         
             TSeqPos pos = 0;
             do {
-                for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
-                    *m_Out << row 
-                        << "\t"
-                        << m_AlnVec.GetSeqId(row).AsFastaString()
-                        << "\t"
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
-                        << "\t"
-                        << buffer[row].substr(pos, scrn_width)
-                        << "\t"
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, pos + scrn_width - 1,
-                                                        CAlnMap::eLeft)
-                        << endl;
+                for (CAlnMap::TNumrow row = 0; row < m_NumRows; row++) {
+                    PrintId(row);
+                    *m_Out << buffer[row].substr(pos, scrn_width)
+                           << endl;
                 }
-                *m_Out << endl;
+                m_Out->width(m_IdFieldLen);
+                *m_Out << "";
+                *m_Out << buffer[m_NumRows].substr(pos, scrn_width)
+                       << endl << endl;
+
                 pos += scrn_width;
                 if (pos + scrn_width > aln_len) {
                     scrn_width = aln_len - pos;
@@ -303,75 +348,86 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
             TSeqPos aln_pos = 0;
             CAlnMap::TSignedRange rng;
             
+            string identities_str;
+            identities_str.reserve(scrn_width + 1);
+
             do {
                 // create range
                 rng.Set(aln_pos, aln_pos + scrn_width - 1);
                 
                 string aln_seq_str;
                 aln_seq_str.reserve(scrn_width + 1);
+
                 // for each sequence
                 for (CAlnMap::TNumrow row = 0; row < m_NumRows; row++) {
-                    *m_Out << row 
-                        << "\t"
-                        << m_AlnVec.GetSeqId(row).AsFastaString()
-                        << "\t" 
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, rng.GetFrom(),
-                                                        CAlnMap::eLeft)
-                        << "\t"
-                        << m_AlnVec.GetAlnSeqString(aln_seq_str, row, rng)
-                        << "\t"
-                        << m_AlnVec.GetSeqPosFromAlnPos(row, rng.GetTo(),
-                                                        CAlnMap::eLeft)
-                        << endl;
+                    PrintId(row);
+                    *m_Out << m_AlnVec.GetAlnSeqString(aln_seq_str, row, rng)
+                           << endl;
+
+                    if (row == 0) {
+                        identities_str = aln_seq_str;
+                    } else {
+                        for (size_t i = 0; i < aln_seq_str.length(); i++) {
+                            if (aln_seq_str[i] != identities_str[i]) {
+                                identities_str[i] = ' ';
+                            }
+                        }
+                    }
                 }
-                *m_Out << endl;
+                for (size_t i = 0; i < identities_str.length(); i++) {
+                    if (identities_str[i] != ' ') {
+                        identities_str[i] = '*';
+                    }
+                }
+                m_Out->width(m_IdFieldLen);
+                *m_Out << "";
+                *m_Out << identities_str
+                       << endl << endl;
                 aln_pos += scrn_width;
             } while (aln_pos < m_AlnVec.GetAlnStop());
             break;
         }
     case eUseWholeAlnSeqString:
         {
-            CAlnMap::TNumrow row, nrows = m_NumRows;
+            CAlnMap::TNumrow row;
 
-            vector<string> buffer(nrows+1);
+            vector<string> buffer(m_NumRows+1);
         
             // Fill in the vectors for each row
-            for (row = 0; row < nrows; row++) {
+            for (row = 0; row < m_NumRows; row++) {
                 m_AlnVec.GetWholeAlnSeqString(row, buffer[row]);
             }
         
             TSeqPos pos = 0;
             const TSeqPos aln_len = m_AlnVec.GetAlnStop() + 1;
             
-            // Finde identities
-            buffer[nrows].resize(aln_len);
+            // Find identities
+            buffer[m_NumRows].resize(aln_len);
             for (pos = 0; pos < aln_len; pos++) {
                 bool identity = true;
                 char residue = buffer[0][pos];
-                for (row = 1; row < nrows; row++) {
+                for (row = 1; row < m_NumRows; row++) {
                     if (buffer[row][pos] != residue) {
                         identity = false;
                         break;
                     }
                 }
-                buffer[nrows][pos] = (identity ? '*' : ' ');
+                buffer[m_NumRows][pos] = (identity ? '*' : ' ');
             }
 
 
             // Visualization
             pos = 0;
             do {
-                for (row = 0; row < nrows; row++) {
+                for (row = 0; row < m_NumRows; row++) {
                     PrintId(row);
                     *m_Out << buffer[row].substr(pos, scrn_width)
                         << endl;
                 }
                 m_Out->width(m_IdFieldLen);
                 *m_Out << "";
-                *m_Out << buffer[nrows].substr(pos, scrn_width)
-                    << endl;
-
-                *m_Out << endl;
+                *m_Out << buffer[m_NumRows].substr(pos, scrn_width)
+                       << endl << endl;
                 
                 pos += scrn_width;
                 if (pos + scrn_width > aln_len) {
@@ -382,6 +438,7 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
             break;
         }
     }
+    x_UnsetChars();
 }
 
 
@@ -389,6 +446,10 @@ void CAlnVecPrinter::ClustalStyle(int scrn_width,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/03/16 19:32:29  todorov
+ * Added independent (from CAlnVec) default end & gap characters for the
+ * printers.
+ *
  * Revision 1.2  2005/03/15 22:17:32  todorov
  * + PrintSeqPos
  *
