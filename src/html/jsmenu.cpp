@@ -43,7 +43,7 @@ const string kJSMenuDefaultURL_Smith
 
 // Sergey Kurdin's menu
 const string kJSMenuDefaultURL_Kurdin  // URL base
-    = "http://www.ncbi.nlm.nih.gov/projects/webdev/javascript/popupmenu2";
+    = "http://www.ncbi.nlm.nih.gov/corehtml/jscript/popupmenu2";
 const string kJSMenuDefaultURL_Kurdin_files[3] = {
     "popupmenu2_styles.css",    // styles
     "popupmenu2.js",            // main menu script
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2003/04/01 16:35:29  ivanov
+ * Changed path for the Kurdin's popup menu
+ *
  * Revision 1.10  2003/03/11 15:28:57  kuznets
  * iterate -> ITERATE
  *
