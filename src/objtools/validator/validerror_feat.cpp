@@ -2753,7 +2753,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                             "Redundant allele qualifier (" + allele + 
                             ") on gene and feature", feat);
-                    } else {
+                    } else if (feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
                         PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                             "Mismatched allele qualifier on gene (" + allele + 
                             ") and feature (" + qual.GetVal() +")", feat);
@@ -3041,6 +3041,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2004/09/22 13:54:36  shomrat
+* do not report InvalidQualifierValue when allele on variation does not match allele on gene
+*
 * Revision 1.68  2004/09/21 19:10:30  shomrat
 * Addede eErr_SEQ_FEAT_MrnaTransFail, support mismatches in transcription exception
 *
