@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, bool is_text, bool logit, 
-						          SQLPOINTER id, CODBC_Reporter& rep);
+						          SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph);
 static bool ODBC_xSendDataGetId(SQLHSTMT cmd, SQLPOINTER* id, 
                                 CODBC_Reporter& rep);
 
@@ -180,8 +180,9 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
     CODBC_Reporter lrep(&m_MsgHandlers, SQL_HANDLE_STMT, cmd);
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= img.Size();
+	SQLINTEGER ph;
 
-    if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, false, log_it, p, lrep)) ||
+    if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, false, log_it, p, lrep, &ph)) ||
        (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
         throw CDB_ClientEx(eDB_Error, 410035, "CODBC_Connection::SendData",
                            "can not prepare a command");
@@ -205,8 +206,9 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
     CODBC_Reporter lrep(&m_MsgHandlers, SQL_HANDLE_STMT, cmd);
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= txt.Size();
+	SQLINTEGER ph;
 
-    if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, true, log_it, p, lrep)) ||
+    if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, true, log_it, p, lrep, &ph)) ||
        (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
         throw CDB_ClientEx(eDB_Error, 410035, "CODBC_Connection::SendData",
                            "can not prepare a command");
@@ -338,7 +340,7 @@ void CODBC_Connection::DropCmd(CDB_BaseEnt& cmd)
 
 static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, bool is_text, bool logit, 
-						          SQLPOINTER id, CODBC_Reporter& rep)
+						          SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph)
 {
     string q= "update ";
     q+= descr_in.TableName();
@@ -391,12 +393,12 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
 	default: return false;
 	}
 
-    SQLINTEGER p= SQL_LEN_DATA_AT_EXEC(size);
+    *ph= SQL_LEN_DATA_AT_EXEC(size);
 
     switch(SQLBindParameter(cmd, 1, SQL_PARAM_INPUT, 
                      is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
                      // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
-                     size, 0, id, 0, &p)) {
+                     size, 0, id, 0, ph)) {
 	case SQL_SUCCESS_WITH_INFO:
 		rep.ReportErrors();
 	case SQL_SUCCESS: break;
@@ -502,7 +504,7 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
 {
     SQLPOINTER p= (SQLPOINTER)1;
     if((!ODBC_xSendDataPrepare(cmd, descr, (SQLINTEGER)nof_bytes,
-                              false, logit, p, m_Reporter)) ||
+                              false, logit, p, m_Reporter, &m_ParamPH)) ||
        (!ODBC_xSendDataGetId(cmd, &p, m_Reporter))) {
         throw CDB_ClientEx(eDB_Error, 410035, "CODBC_SendDataCmd::CODBC_SendDataCm",
                            "can not prepare a command");
@@ -513,7 +515,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
 {
     if(nof_bytes > m_Bytes2go) nof_bytes= m_Bytes2go;
     if(nof_bytes < 1) return 0;
-
+	
     switch(SQLPutData(m_Cmd, (SQLPOINTER)chunk_ptr, (SQLINTEGER)nof_bytes)) {
     case SQL_SUCCESS_WITH_INFO:
         m_Reporter.ReportErrors();
@@ -529,7 +531,7 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         return 0;
     }
 
-    size_t s;
+    SQLPOINTER s= (SQLPOINTER)1;
     switch(SQLParamData(m_Cmd, (SQLPOINTER*)&s)) {
 	case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
     case SQL_SUCCESS:           break;
@@ -600,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/21 22:17:16  soussov
+ * fixes bug in SendDataCmd
+ *
  * Revision 1.5  2004/05/17 21:16:05  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

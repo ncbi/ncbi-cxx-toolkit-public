@@ -433,6 +433,7 @@ private:
     SQLHSTMT          m_Cmd;
     CODBC_Reporter    m_Reporter;
     size_t            m_Bytes2go;
+	SQLINTEGER        m_ParamPH;
 };
 
 
@@ -559,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/12/21 22:16:04  soussov
+ * fixes bug in SendDataCmd
+ *
  * Revision 1.7  2003/07/17 20:43:17  soussov
  * connections pool improvements
  *
