@@ -757,6 +757,8 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to)
 {
    BlastSeqLoc* head_loc = NULL, *last_loc = NULL, *next_loc, *seqloc;
    
+   to = MAX(to, 0);
+
    /* If there is no mask, or if both coordinates passed are 0, which indicates
       the full sequence, just return - there is nothing to be done. */
    if (mask == NULL || *mask == NULL || (from == 0 && to == 0))
