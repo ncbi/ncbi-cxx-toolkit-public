@@ -83,9 +83,10 @@ public:
                                     const string&   passwd,
                                     TConnectionMode mode,
                                     bool            reusable  = false,
-                                    const string&   pool_name = 0);
+                                    const string&   pool_name = kEmptyStr);
 
-    virtual unsigned int NofConnections(const string& srv_name = 0) const;
+    virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
+        const;
 
     virtual void PushCntxMsgHandler    (CDBUserHandler* h);
     virtual void PopCntxMsgHandler     (CDBUserHandler* h);
@@ -560,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/24 20:52:19  vakatov
+ * Fixed args like "string& s = 0" to "string& s = kEmptyStr"
+ *
  * Revision 1.1  2001/09/21 23:39:53  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

@@ -35,6 +35,7 @@
 
 #include <stdexcept>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbistr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -190,7 +191,8 @@ public:
 class CDB_MultiEx : public CDB_Exception
 {
 public:
-    CDB_MultiEx(const string& originated_from = 0, unsigned int capacity = 64);
+    CDB_MultiEx(const string& originated_from = kEmptyStr,
+                unsigned int  capacity = 64);
     CDB_MultiEx(const CDB_MultiEx& mex);
 
     bool           Push(const CDB_Exception& e)  { return m_Bag->Push(&e); }
@@ -256,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/24 20:52:18  vakatov
+ * Fixed args like "string& s = 0" to "string& s = kEmptyStr"
+ *
  * Revision 1.1  2001/09/21 23:39:52  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
