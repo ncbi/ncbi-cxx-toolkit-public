@@ -3273,9 +3273,8 @@ AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr,
       *subject_offset_ptr = max_extension_left;
    }
 
-   if (subject_length - s_offset > max_extension_right) {
-      *subject_length_ptr = s_offset + max_extension_right - *start_shift;
-   }
+   *subject_length_ptr = 
+      MIN(subject_length, s_offset + max_extension_right) - *start_shift;
 }
 
 /** Performs gapped extension for protein sequences, given two
