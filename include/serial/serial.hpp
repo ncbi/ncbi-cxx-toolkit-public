@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  1999/11/16 15:40:14  vasilche
+* Added plain pointer choice.
+*
 * Revision 1.37  1999/10/25 19:07:13  vasilche
 * Fixed coredump on non initialized choices.
 * Fixed compilation warning.
@@ -237,6 +240,10 @@ class CMemberInfo;
 #define SERIAL_TYPE_STL_CHOICE_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_CHOICE_auto_ptr(Type,Args) \
     &NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+
+#define SERIAL_TYPE_CHOICE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
+#define SERIAL_REF_CHOICE_POINTER(Type,Args) \
+    NCBI_NS_NCBI::CTypeRef(&NCBI_NS_NCBI::CChoicePointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
 
 template<typename T>
 struct Check

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/11/16 15:40:19  vasilche
+* Added plain pointer choice.
+*
 * Revision 1.5  1999/10/28 15:37:40  vasilche
 * Fixed null choice pointers handling.
 * Cleaned enumertion interface.
@@ -58,6 +61,8 @@
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo::sm_Map;
 
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo typeInfo)
     : CPointerTypeInfo(typeInfo)

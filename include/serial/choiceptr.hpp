@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/11/16 15:40:13  vasilche
+* Added plain pointer choice.
+*
 * Revision 1.5  1999/10/28 15:37:37  vasilche
 * Fixed null choice pointers handling.
 * Cleaned enumertion interface.
@@ -74,6 +77,11 @@ public:
     CChoicePointerTypeInfo(TTypeInfo typeInfo);
     CChoicePointerTypeInfo(const string& name, TTypeInfo typeInfo);
 
+    static TTypeInfo GetTypeInfo(TTypeInfo base)
+        {
+            return sm_Map.GetTypeInfo(base);
+        }
+
     void AddVariant(const CMemberId& id, const CTypeRef& type);
 
 protected:
@@ -91,6 +99,8 @@ private:
     CMembers m_Variants;
     TVariantTypes m_VariantTypes;
     mutable auto_ptr<TVariantsByType> m_VariantsByType;
+
+    static CTypeInfoMap<CChoicePointerTypeInfo> sm_Map;
 };
 
 //#include <serial/choiceptr.inl>
