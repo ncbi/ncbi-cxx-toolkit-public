@@ -48,7 +48,7 @@ class CLDS_Database;
 // CDataLoader implementation for LDS.
 //
 
-class CLDS_DataLoader : public CDataLoader
+class NCBI_XOBJMGR_DL_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
     CLDS_DataLoader(CLDS_Database& lds_db);
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/18 15:04:05  kuznets
+ * Added dll export/import specs.
+ *
  * Revision 1.1  2003/06/16 15:47:53  kuznets
  * Initial revision
  *
