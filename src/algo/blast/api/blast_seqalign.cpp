@@ -590,6 +590,8 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
 {
     CRef<CSeq_align_set> retval(new CSeq_align_set()); 
     retval.Reset(NULL);
+    NCBI_THROW(CBlastException, eInternal, 
+               "Ungapped alignment construction is unimplemented");
     return retval;
 }
 
@@ -672,8 +674,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
             subject_id.Reset(new CSeq_id(seqid));
             sfree(id);
             if (!is_gapped)
-                length = 
-                    BLASTSeqSrcGetSeqLen(bssp, (void*) &hsp_list->oid); 
+                length = BLASTSeqSrcGetSeqLen(bssp, (void*) &hsp_list->oid);
         }
         
         // Create a CSeq_align_set for each matching sequence
@@ -735,6 +736,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/10/28 20:53:59  camacho
+* Temporarily use exception for unimplemented function
+*
 * Revision 1.18  2003/10/15 16:59:42  coulouri
 * type correctness fixes
 *
