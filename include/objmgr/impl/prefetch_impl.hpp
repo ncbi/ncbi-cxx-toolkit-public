@@ -50,6 +50,7 @@ class CSeq_id_Handle;
 class CBioseq_Handle;
 class CPrefetchThread;
 class CDataSource;
+class CTSE_Lock;
 
 class NCBI_XOBJMGR_EXPORT CPrefetchToken_Impl : public CObject
 {
@@ -61,6 +62,10 @@ public:
 private:
     friend class CPrefetchToken;
     friend class CPrefetchThread;
+
+    typedef CTSE_Lock TTSE_Lock;
+    typedef vector<TTSE_Lock>   TFetchedTSEs;
+    typedef map<TTSE_Lock, int> TTSE_Map;
 
     CPrefetchToken_Impl(const TIds& ids, unsigned int depth);
 
@@ -82,9 +87,6 @@ private:
 
     // Checked by CPrefetchThread before processing next id
     bool IsEmpty(void) const;
-
-    typedef vector<TTSE_Lock>   TFetchedTSEs;
-    typedef map<TTSE_Lock, int> TTSE_Map;
 
     int            m_TokenCount;    // Number of tokens referencing this impl
     TIds           m_Ids;           // requested ids in the original order
@@ -132,6 +134,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/12/22 15:56:24  vasilche
+* Use typedefs for internal containers.
+* Use SSeqMatch_DS instead of CSeqMatch_Info.
+*
 * Revision 1.5  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

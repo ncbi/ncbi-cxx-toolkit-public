@@ -36,9 +36,9 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/data_source.hpp>
-#include <objmgr/seqmatch_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -231,12 +231,9 @@ void* CPrefetchThread::Main(void)
                 id = token->m_Ids[i];
             }}
             try {
-                CSeqMatch_Info info = m_DataSource.BestResolve(id);
-                if ( info ) {
-                    TTSE_Lock tse(info.GetTSE_Lock());
-                    if (tse) {
-                        token->AddResolvedId(i, tse);
-                    }
+                SSeqMatch_DS match = m_DataSource.BestResolve(id);
+                if ( match ) {
+                    token->AddResolvedId(i, match.m_TSE_Lock);
                 }
             } catch (...) {
                 // BestResolve() failed, go to the next id.
@@ -256,6 +253,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/12/22 15:56:24  vasilche
+* Use typedefs for internal containers.
+* Use SSeqMatch_DS instead of CSeqMatch_Info.
+*
 * Revision 1.6  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
