@@ -338,6 +338,7 @@ public:
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
     size_t GetStreamOffset(void) const;
+    void   SetStreamOffset(size_t pos);
 
     void ThrowError1(const char* file, int line,
                      TFailFlags fail, const char* message);
@@ -644,6 +645,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2003/12/31 21:02:20  gouriano
+* added possibility to seek (when possible) in CObjectIStream
+*
 * Revision 1.96  2003/11/26 19:59:37  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid

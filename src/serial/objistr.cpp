@@ -360,6 +360,11 @@ size_t CObjectIStream::GetStreamOffset(void) const
     return m_Input.GetStreamOffset();
 }
 
+void CObjectIStream::SetStreamOffset(size_t pos)
+{
+    m_Input.SetStreamOffset(pos);
+}
+
 string CObjectIStream::GetPosition(void) const
 {
     return "byte "+NStr::UIntToString(GetStreamOffset());
@@ -975,7 +980,7 @@ void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
     _ASSERT(index != kInvalidMember);
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    TopFrame().SetMemberId(variantInfo->GetId());
+    SetTopMemberId(variantInfo->GetId());
 
     variantInfo->ReadVariant(*this, choicePtr);
 
@@ -995,7 +1000,7 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
         ThrowError(fFormatError,"choice variant id expected");
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
-    TopFrame().SetMemberId(variantInfo->GetId());
+    SetTopMemberId(variantInfo->GetId());
 
     variantInfo->SkipVariant(*this);
 
@@ -1340,6 +1345,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.122  2003/12/31 21:02:58  gouriano
+* added possibility to seek (when possible) in CObjectIStream
+*
 * Revision 1.121  2003/11/26 20:04:46  vasilche
 * Method put in wrong file.
 *
