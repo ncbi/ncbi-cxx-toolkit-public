@@ -33,6 +33,7 @@
 
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_expt.hpp>
+#include <objtools/lds/lds_query.hpp>
 
 #include <map>
 
@@ -88,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/06/23 18:41:19  kuznets
+ * Added #include <lds_query.hpp>
+ *
  * Revision 1.10  2003/06/18 18:46:46  kuznets
  * Minor fix.
  *
