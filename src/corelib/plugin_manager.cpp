@@ -310,10 +310,12 @@ static const string kNodeName   = ".NodeName";
 
 
 /// @internal
+static
 void PluginManager_ConvertSubNodes(const CNcbiRegistry&     reg,
                                    const list<string>&      sub_nodes,
                                    TPluginManagerParamTree* node);
 /// @internal
+static
 void PluginManager_SplitConvertSubNodes(const CNcbiRegistry&     reg,
                                         const string&            sub_nodes,
                                         TPluginManagerParamTree* node);
@@ -333,7 +335,7 @@ bool s_IsSubNode(const string& str)
 {
     const string* aliases[] = { &kSubNode, &kSubSection };
 
-    for (int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
+    for (unsigned i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
         const string& element_name = *aliases[i];
         if (NStr::CompareNocase(element_name, str) == 0) {
             return true;
@@ -349,7 +351,7 @@ void s_GetSubNodes(const CNcbiRegistry&   reg,
 {
     const string* aliases[] = { &kSubNode, &kSubSection };
 
-    for (int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
+    for (unsigned i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
         const string& element_name = *aliases[i];
         const string& element = reg.Get(section, element_name);
         if (!element.empty()) {
@@ -505,8 +507,6 @@ PluginManager_ConvertRegToTree(const CNcbiRegistry& reg)
             }
 
             if (s_IsSubNode(element_name)) {
-                const string& value = reg.Get(section_name, element_name);
-
                 PluginManager_SplitConvertSubNodes(reg,
                                                    element_value,
                                                    node_ptr);
@@ -530,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/07/29 13:23:27  kuznets
+ * GCC fixes. Code cleanup.
+ *
  * Revision 1.8  2004/07/29 13:14:57  kuznets
  * + PluginManager_ConvertRegToTree
  *
