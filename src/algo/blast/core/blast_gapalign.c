@@ -67,20 +67,22 @@ typedef struct GapData {
   Int4  last;
 } GapData;
 
-/** Append "Delete k" op */
+/** Append "Delete k" traceback operation */
 #define DEL_(k) \
 data.last = (data.last < 0) ? (data.sapp[-1] -= (k)) : (*data.sapp++ = -(k));
 
-/** Append "Insert k" op */
+/** Append "Insert k" traceback operation */
 #define INS_(k) \
 data.last = (data.last > 0) ? (data.sapp[-1] += (k)) : (*data.sapp++ = (k));
 
-/** Append "Replace" op */
+/** Append "Replace" traceback operation */
 #define REP_ \
 {data.last = *data.sapp++ = 0;}
 
-/* Divide by two to prevent underflows. */
+/** Lower bound for scores. Divide by two to prevent underflows. */
 #define MININT INT4_MIN/2
+
+/** Apend "Decline" traceback operation */
 #define REPP_ \
 {*data.sapp++ = MININT; data.last = 0;}
 
@@ -409,10 +411,6 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
 		       const BlastExtensionParameters* ext_params,
 		       Int4 max_dbseq_length)
 {
-#define ERROR_FRACTION 2    /* N.B.: This value should match the value of
-                               ERROR_FRACTION in the anonymous enum in
-                               greedy_align.c */
-#define ICEIL(x,y) ((((x)-1)/(y))+1)    /* FIXME: duplicated from greedy_align.c */
    SGreedyAlignMem* gamp;
    Int4 max_d, max_d_1, Xdrop, d_diff, max_cost, gd, i;
    Int4 reward, penalty, gap_open, gap_extend;
@@ -442,7 +440,7 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    if (gap_open == 0 && gap_extend == 0)
       gap_extend = reward / 2 + penalty;
 
-   max_d = (Int4) (max_dbseq_length / ERROR_FRACTION + 1);
+   max_d = (Int4) (max_dbseq_length / GREEDY_MAX_COST_FRACTION + 1);
 
    gamp = (SGreedyAlignMem*) calloc(1, sizeof(SGreedyAlignMem));
 
@@ -562,6 +560,20 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    return status;
 }
 
+/** Values for the editing script operations in traceback */
+enum {
+    SCRIPT_SUB      = 0x00, /**< Substitution */
+    SCRIPT_INS      = 0x01, /**< Insertion */
+    SCRIPT_DEL      = 0x02, /**< Deletion */
+    SCRIPT_DECLINE  = 0x03, /**< Decline to align */
+    SCRIPT_OP_MASK  = 0x03, /**< Mask for standard edit script operations */
+    SCRIPT_OPEN_GAP = 0x04, /**< Open a gap when declining to align */
+    SCRIPT_INS_ROW  = 0x10, /**< Insert row */
+    SCRIPT_DEL_ROW  = 0x20, /**< Delete row */
+    SCRIPT_INS_COL  = 0x40, /**< Insert column */
+    SCRIPT_DEL_COL  = 0x80 /**< Delete column */
+};
+
 /** Low level function to perform dynamic programming gapped extension 
  * with traceback.
  * @param A The query sequence [in]
@@ -580,20 +592,6 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
  * @param reverse_sequence Do reverse the sequence [in]
  * @return The best alignment score found.
 */
-
-#define SCRIPT_SUB      0x00
-#define SCRIPT_INS      0x01
-#define SCRIPT_DEL      0x02
-#define SCRIPT_DECLINE  0x03
-
-#define SCRIPT_OP_MASK  0x03
-
-#define SCRIPT_OPEN_GAP 0x04
-#define SCRIPT_INS_ROW  0x10
-#define SCRIPT_DEL_ROW  0x20
-#define SCRIPT_INS_COL  0x40
-#define SCRIPT_DEL_COL  0x80
-
 Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset, 
 	Int4* b_offset, Int4** sapp, BlastGapAlignStruct* gap_align, 
@@ -1208,6 +1206,26 @@ static Int4 SEMI_G_ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N,
     return best_score;
 }
 
+/** Editing script operations for out-of-frame traceback */
+enum {
+    SCRIPT_GAP_IN_A              = 0, /**< Gap in sequence A */
+    SCRIPT_AHEAD_ONE_FRAME       = 1, /**< Shift 1 frame in sequence A
+                                         (gap 2 nucleotides) */ 
+    SCRIPT_AHEAD_TWO_FRAMES      = 2, /**< Shift 2 frames in sequence A
+                                         (gap 1 nucleotide) */
+    SCRIPT_NEXT_IN_FRAME         = 3, /**< Shift to next base (substitution) */
+    SCRIPT_NEXT_PLUS_ONE_FRAME   = 4, /**< Shift to next base plus 1 frame
+                                         (gap 1 nucleotide in sequence B) */
+    SCRIPT_NEXT_PLUS_TWO_FRAMES  = 5, /**< Shift to next base plus 2 frames
+                                         (gap 2 nucleotides in sequence B) */
+    SCRIPT_GAP_IN_B              = 6, /**< Full gap in sequence B */
+    SCRIPT_OOF_OP_MASK           = 0x07, /**< Mask for out-of-frame editing 
+                                            operations */
+    SCRIPT_OOF_OPEN_GAP          = 0x10, /**< Opening a gap */
+    SCRIPT_EXTEND_GAP_IN_A       = 0x20, /**< Extending a gap in sequence A */
+    SCRIPT_EXTEND_GAP_IN_B       = 0x40  /**< Extending a gap in sequence B */
+};
+
 /** Low level function to perform gapped extension with out-of-frame
  * gapping with traceback 
  * @param A The query sequence [in]
@@ -1225,20 +1243,6 @@ static Int4 SEMI_G_ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N,
  * @param reversed Has the sequence been reversed? Used for psi-blast [in]
  * @return The best alignment score found.
  */
-
-#define SCRIPT_GAP_IN_A                 0
-#define SCRIPT_AHEAD_ONE_FRAME          1
-#define SCRIPT_AHEAD_TWO_FRAMES         2
-#define SCRIPT_NEXT_IN_FRAME            3
-#define SCRIPT_NEXT_PLUS_ONE_FRAME      4
-#define SCRIPT_NEXT_PLUS_TWO_FRAMES     5
-#define SCRIPT_GAP_IN_B                 6
-#define SCRIPT_OOF_OP_MASK              0x07
-
-#define SCRIPT_OOF_OPEN_GAP             0x10
-#define SCRIPT_EXTEND_GAP_IN_A          0x20
-#define SCRIPT_EXTEND_GAP_IN_B          0x40
-
 static Int4 OOF_ALIGN(Uint1* A, Uint1* B, Int4 M, Int4 N,
    Int4* S, Int4* a_offset, Int4* b_offset, Int4** sapp, 
    BlastGapAlignStruct* gap_align, const BlastScoringParameters* score_params,
@@ -2400,8 +2404,9 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
 static GapEditScript*
 MBToGapEditScript (MBGapEditScript* ed_script)
 {
-    /* Moved from greedy_align.h because it's only needed in this function */
+/** Get extent of the editing operation from the greedy alignment edit script. */
 #define EDIT_VAL(op) (op >> 2)
+/** Get type of editing operation from the greedy alignment edit script */
 #define EDIT_OPC(op) (op & 0x3) /* EDIT_OP_MASK == 0x3 */
 
    GapEditScript* esp_start = NULL,* esp,* esp_prev = NULL;
@@ -2634,7 +2639,7 @@ static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    return 0;
 }
 
-/* Aligns two nucleotide sequences, one (A) should be packed in the
+/** Aligns two nucleotide sequences, one (A) should be packed in the
  * same way as the BLAST databases, the other (B) should contain one
  * basepair/byte. Traceback is not done in this function.
  * @param B The query sequence [in]
@@ -2902,6 +2907,9 @@ score_compare_match(const void* v1, const void* v2)
 	return 0;
 }
 
+/** Size of a window in which to look for best starting points for 
+ * gapped alignment.
+ */
 #define HSP_MAX_WINDOW 11
 
 Int4 
@@ -2954,6 +2962,25 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
     return max_offset;
 }
 
+/** Test for an array of ungapped HSPs to decide whether gapped alignment 
+ * should be performed on all of them. If the best HSP already has score above
+ * the cutoff for gapped alignments, then just return. Otherwise attempt 
+ * gapped alignment for all HSPs with scores above gap trigger, and see any of
+ * them receives score above the cutoff.
+ * @param program_number Type of BLAST program [in]
+ * @param query Query sequence [in]
+ * @param query_info Additional query information [in]
+ * @param subject Subject sequence [in]
+ * @param gap_align Gapped alignment structure [in]
+ * @param score_params Scoring parameters [in]
+ * @param ext_params Gapped extension parameters [in]
+ * @param hit_params Hit saving parameters [in]
+ * @param init_hsp_array Array of HSPs obtained by ungapped alignment [in]
+ * @param init_hsp_count Size of the array of initial HSPs [in]
+ * @param gapped_stats Gapped extension stats [in]
+ * @return TRUE if the set of initial HSPs has passed the test, so gapped 
+ *         alignment needs to be performed.
+ */
 static Boolean 
 Blast_GappedScorePrelimTest(EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -3306,7 +3333,14 @@ OOF_SEMI_G_ALIGN_EX(Uint1* query, Uint1* subject, Int4 q_off,
    }
 }
 
+/** Maximal subject length after which the offsets are adjusted to a 
+ * subsequence.
+ */
 #define MAX_SUBJECT_OFFSET 90000
+/** Approximate upper bound on a number of gaps in an HSP, needed to determine
+ * the length of the subject subsequence to be retrieved for alignment with
+ * traceback. 
+ */
 #define MAX_TOTAL_GAPS 3000
 
 void 
@@ -3753,6 +3787,11 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
     return status;
 }
 
+/** Returns length of a pattern in a PHI BLAST search, saved in the gapped
+ * alignment structure.
+ * @param The gapped alignment structure [in]
+ * @return Pattern length
+ */
 static Int4 
 GetPatternLengthFromGapAlignStruct(BlastGapAlignStruct* gap_align)
 {
