@@ -85,18 +85,18 @@ switches with the given directory list. Directories, already specified in projec
 The main purpose of the script is to eliminate "global" configuration through "Tool/Options",
 which is otherwise required to specify include file directories. Generated paths to include files are
 always relative to the project file. The script is to be used from the <tt><font color="#3333FF">msvc_prj</font></tt>
-directory each time, when the project file subtree
-is a kind rearranged and must be updated in the CVS. Therefore, the project files are always produced in UNIX
-text file format.</li>
+directory each time, when the project file subtree is a kind rearranged and must be updated in the CVS.
+Therefore, the project files are always produced in UNIX text file format.</li>
 
 <li>
 <a name="commit_sh"><i><font color="#3333FF">commit.sh</font></i></a> -
 control script for use from inside the CVS upon each commit to ensure
 that the project being checked in contains one fixed configuration only (namely, DebugMT).
-This script as well checks that the file being committed is in UNIX text file format, and
-rejects if not. The extensions (and only in directories specified in <tt><font color="#3333FF">DIRLIST</font></tt>
+This script as well checks that the file being committed is in UNIX text file format, and rejects if not.
+The extensions (and only in directories specified in <tt><font color="#3333FF">DIRLIST</font></tt>
 parameter, as described below) checked are: <tt><font color="#3333FF">.dsw</font></tt>,
 <tt><font color="#3333FF">.dsp</font></tt>, <tt><font color="#3333FF">.bat</font></tt>.</li>
+No explicit call to this script is ever necessary: it is entirely internal to CVS and transparent for the user.
 
 <br>
 <a name="notes"><br><b><u>Please note</u></b></a> that the above tools are <b><i>not</i></b> project file <i>generation</i>
