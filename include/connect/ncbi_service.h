@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/06/11 22:14:44  lavr
+ * Include files adjusted
+ *
  * Revision 6.16  2001/06/04 17:00:10  lavr
  * Include files adjusted
  *
@@ -85,7 +88,6 @@
  */
 
 #include <connect/ncbi_server_info.h>
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,8 +123,9 @@ SERV_ITER SERV_OpenSimple
  );
 
 
-/* Special value for preferred_host parameter */
-#define SERV_LOCALHOST  ((unsigned int)(~0L))
+/* Special values for preferred_host parameter */
+#define SERV_LOCALHOST  ((unsigned int)(~0UL))
+#define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
 
 
 SERV_ITER SERV_Open
