@@ -4939,12 +4939,44 @@ _ACEOF
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
    WithFeatures="$WithFeatures unix"
 
-   if test "$OSTYPE" = "irix" ; then
-
+   # Extra defines for variants we care about
+   case "$OSTYPE" in
+     aix)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_AIX 1
+_ACEOF
+          ;;
+     *bsd)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_BSD 1
+_ACEOF
+         ;;
+     cygwin)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_CYGWIN 1
+_ACEOF
+       ;;
+     irix)
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_OS_IRIX 1
 _ACEOF
-
+         ;;
+     linux)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_LINUX 1
+_ACEOF
+        ;;
+     osf)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_OSF1 1
+_ACEOF
+ ;;
+     solaris)
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_OS_SOLARIS 1
+_ACEOF
+      ;;
+   esac
    fi
 else
 

@@ -204,14 +204,32 @@
 /* Operating system name */
 #undef NCBI_OS
 
+/* Define to 1 on AIX. */
+#undef NCBI_OS_AIX
+
+/* Define to 1 on *BSD. */
+#undef NCBI_OS_BSD
+
+/* Define to 1 on Cygwin. */
+#undef NCBI_OS_CYGWIN
+
 /* Define to 1 on IRIX. */
 #undef NCBI_OS_IRIX
+
+/* Define to 1 on Linux. */
+#undef NCBI_OS_LINUX
 
 /* Define to 1 on MacOS. */
 #undef NCBI_OS_MAC
 
 /* Define to 1 on Windows. */
 #undef NCBI_OS_MSWIN
+
+/* Define to 1 on Digital Unix. */
+#undef NCBI_OS_OSF1
+
+/* Define to 1 on Solaris. */
+#undef NCBI_OS_SOLARIS
 
 /* Define to 1 on Unix. */
 #undef NCBI_OS_UNIX

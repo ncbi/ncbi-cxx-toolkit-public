@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.52 2002/03/28 07:00:05 vakatov Exp $
+#  $Id: configure.ac,v 1.53 2002/04/05 21:20:09 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1091,8 +1091,16 @@ elif test "$x_have_unistd" = "yes" ; then
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
    WithFeatures="$WithFeatures unix"
 
-   if test "$OSTYPE" = "irix" ; then
-      AC_DEFINE(NCBI_OS_IRIX, 1, [Define to 1 on IRIX.])
+   # Extra defines for variants we care about
+   case "$OSTYPE" in
+     aix)     AC_DEFINE(NCBI_OS_AIX,     1, [Define to 1 on AIX.])          ;;
+     *bsd)    AC_DEFINE(NCBI_OS_BSD,     1, [Define to 1 on *BSD.])         ;;
+     cygwin)  AC_DEFINE(NCBI_OS_CYGWIN,  1, [Define to 1 on Cygwin.])       ;;
+     irix)    AC_DEFINE(NCBI_OS_IRIX,    1, [Define to 1 on IRIX.])         ;;
+     linux)   AC_DEFINE(NCBI_OS_LINUX,   1, [Define to 1 on Linux.])        ;;
+     osf)     AC_DEFINE(NCBI_OS_OSF1,    1, [Define to 1 on Digital Unix.]) ;;
+     solaris) AC_DEFINE(NCBI_OS_SOLARIS, 1, [Define to 1 on Solaris.])      ;;
+   esac
    fi
 else
    AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
