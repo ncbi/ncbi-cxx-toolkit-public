@@ -45,7 +45,7 @@ typedef struct BlastSeqSrc BlastSeqSrc;
  * First argument is a pointer to the structure to be populated (allocated for
  * client implementations), second argument should be typecast'd to the 
  * correct type by user-defined constructor function */
-typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (const BlastSeqSrc*, const void*);
+typedef BlastSeqSrc* (*BlastSeqSrcConstructor) (BlastSeqSrc*, void*);
 
 /** Function pointer typedef to deallocate a BlastSeqSrc structure.
  * Argument is the BlastSeqSrc structure to free, always returns NULL. */
