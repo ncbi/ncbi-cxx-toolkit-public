@@ -307,7 +307,9 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
         if (seq_entry) {
             CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
-            CRef<CTSE_Info> tse_info(new CTSE_Info(*seq_entry, blob_id));
+            CRef<CTSE_Info> tse_info(new CTSE_Info(*seq_entry,
+                                                   CTSE_Info::fState_none,
+                                                   blob_id));
             locks.insert(data_source->AddTSE(tse_info));
             m_LoadedObjects.insert(object_id);
         }
@@ -423,6 +425,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/01/12 15:55:38  vasilche
+ * Use correct constructor of CTSE_Info (detected by new bool operator).
+ *
  * Revision 1.23  2005/01/11 19:30:29  kuznets
  * Fixed problem with loaded flag
  *
