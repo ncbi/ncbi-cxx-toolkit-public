@@ -213,20 +213,67 @@ CAlnMap::TNumseg CAlnMap::GetSeg(TSeqPos aln_pos) const
 
 
 CAlnMap::TNumseg
-CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
+CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
+                   ESearchDirection dir, bool try_reverse_dir) const
 {
     TSignedSeqPos start = -1, sseq_pos = seq_pos;
-    TNumseg       btm, top, mid, cur, last;
+    TNumseg       btm, top, mid, cur, last, cur_top, cur_btm;
     TNumrow       dim;
-    btm = 0; cur = top = last = m_DS->GetNumseg() - 1;
+    btm = cur_btm = 0; cur = top = last = cur_top = m_DS->GetNumseg() - 1;
     dim = m_DS->GetDim();
-
-    if (sseq_pos < GetSeqStart(row)  ||  sseq_pos > GetSeqStop(row)) {
-        return -1; // out of range
-    }
 
     bool plus = IsPositiveStrand(row);
 
+    // if out-of-range, return either -1 or the closest seg in dir direction
+    if (sseq_pos < GetSeqStart(row)) {
+        if (dir == eNone) {
+            return -1;
+        } else if (dir == eForward  || 
+                   dir == (plus ? eRight : eLeft)  ||
+                   try_reverse_dir) {
+            TNumseg seg;
+            if (plus) {
+                seg = -1;
+                while (++seg < m_DS->GetNumseg()) {
+                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                        return seg;
+                    }
+                }
+            } else {
+                seg = m_DS->GetNumseg();
+                while (seg--) {
+                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                        return seg;
+                    }
+                }
+            }
+        }
+    } else if (sseq_pos > GetSeqStop(row)) {
+        if (dir == eNone) {
+            return -1;
+        } else if (dir == eBackwards  ||
+                   dir == (plus ? eLeft : eRight)  ||
+                   try_reverse_dir) {
+            TNumseg seg;
+            if (plus) {
+                seg = m_DS->GetNumseg();
+                while (seg--) {
+                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                        return seg;
+                    }
+                }
+            } else {
+                seg = -1;
+                while (++seg < m_DS->GetNumseg()) {
+                    if (m_DS->GetStarts()[seg * dim + row] >= 0) {
+                        return seg;
+                    }
+                }
+            }
+        }
+    }
+
+    // main loop
     while (btm <= top) {
         cur = mid = (top + btm) / 2;
 
@@ -241,9 +288,10 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
                 return (plus ? cur : last - cur); // found
             }
             if (sseq_pos > start) {
-                btm = cur + 1; 
+                btm = cur + 1;
             } else {
                 top = mid - 1;
+                cur_top = cur;
             }
             continue;
         }
@@ -261,10 +309,21 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos) const
             }
             if (sseq_pos > start) {
                 btm = mid + 1;
+                cur_btm = cur;
             } else {
                 top = cur - 1;
             }
             continue;
+        }
+
+        // if we get here, seq_pos falls into an unaligned region
+        // return either -1 or the closest segment in dir direction
+        if (dir == eNone) {
+            return -1;
+        } else if (dir == eBackwards  ||  dir == (plus ? eLeft : eRight)) {
+            return cur_btm;
+        } else if (dir == eForward  ||  dir == (plus ? eRight : eLeft)) {
+            return cur_top;
         }
     }        
     return -1; /* No match found */
@@ -742,6 +801,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/03/04 16:19:05  todorov
+* Added advance search options for GetRawSeg
+*
 * Revision 1.24  2003/01/31 17:22:14  todorov
 * Fixed a typo
 *

@@ -155,18 +155,22 @@ public:
 
     //Position mapping funcitons
     TNumseg       GetSeg                 (TSeqPos aln_pos)              const;
-    TNumseg       GetRawSeg              (TNumrow row, TSeqPos seq_pos) const;
+    // if seq_pos falls outside the seq range or into an unaligned region
+    // and dir is provided, will return the first seg in according to dir;
+    // if still nothing is found will reverse dir if try_reverse_dir is set
+    TNumseg       GetRawSeg              (TNumrow row, TSeqPos seq_pos,
+                                          ESearchDirection dir = eNone,
+                                          bool try_reverse_dir = true) const;
     TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos) const;
     TSignedSeqPos GetSeqPosFromSeqPos    (TNumrow for_row,
                                           TNumrow row, TSeqPos seq_pos) const;
-
     // if seq pos is a gap, will search (if direction specified) 
     // in the neighbouring segments; if still none found will reverse direction
     // if try_reverse_dir is set
-    TSignedSeqPos GetSeqPosFromAlnPos(TNumrow for_row,
-                                      TSeqPos aln_pos,
-                                      ESearchDirection dir = eNone,
-                                      bool try_reverse_dir = true) const;
+    TSignedSeqPos GetSeqPosFromAlnPos    (TNumrow for_row,
+                                          TSeqPos aln_pos,
+                                          ESearchDirection dir = eNone,
+                                          bool try_reverse_dir = true) const;
     
  
 
@@ -564,6 +568,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/03/04 16:18:58  todorov
+* Added advance search options for GetRawSeg
+*
 * Revision 1.16  2003/01/15 18:48:36  todorov
 * Added GetSeqChunks to be used with native seq range
 *
