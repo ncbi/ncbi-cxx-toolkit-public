@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/01/07 21:15:19  vakatov
+* Changed prototypes for URL_DecodeString() and URL_EncodeString()
+*
 * Revision 1.30  1999/01/07 20:06:03  vakatov
 * + URL_DecodeString()
 * + URL_EncodeString()
@@ -364,12 +367,12 @@ private:
 };  // CCgiRequest
 
 
-// Decode URL-encoded string "url_str" into a regular string "str"
-// Return 0 on success;  return 1-based failed position in "url_str" on error
-extern SIZE_TYPE URL_DecodeString(const string& url_str, string& str);
+// Decode the URL-encoded string "str";  return the result of decoding
+// If "str" format is invalid then throw CParseException
+extern string URL_DecodeString(const string& str);
 
-// URL-encode regular string "str" to "url_str"
-extern void URL_EncodeString(const string& str, string& url_str);
+// URL-encode regular string "str";  return the result of encoding
+extern string URL_EncodeString(const string& str);
 
 
 ///////////////////////////////////////////////////////

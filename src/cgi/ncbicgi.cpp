@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/01/07 21:15:22  vakatov
+* Changed prototypes for URL_DecodeString() and URL_EncodeString()
+*
 * Revision 1.18  1999/01/07 20:06:04  vakatov
 * + URL_DecodeString()
 * + URL_EncodeString()
@@ -662,14 +665,18 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 }
 
 
-extern SIZE_TYPE URL_DecodeString(const string& url_str, string& str)
+extern string URL_DecodeString(const string& str)
 {
-    str = url_str;
-    return s_URL_Decode(str);
+    string    x_str = str;
+    SIZE_TYPE err_pos = s_URL_Decode(x_str);
+    if (err_pos != 0)
+        throw CParseException("URL_DecodeString(<badly_formatted_str>)",
+                              err_pos);
+    return x_str;
 }
 
 
-extern void URL_EncodeString(const string& str, string& url_str)
+extern string URL_EncodeString(const string& str)
 {
     static const char s_Encode[256][4] = {
         "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
@@ -721,14 +728,11 @@ extern void URL_EncodeString(const string& str, string& url_str)
         "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
     };
 
-    if (&str == &url_str)
-        throw logic_error("Identical source and dest. in URL_EncodeString()");
+    string url_str;
 
     SIZE_TYPE len = str.length();
-    if ( !len ) {
-        url_str.erase();
-        return;
-    }
+    if ( !len )
+        return url_str;
 
     SIZE_TYPE pos;
     SIZE_TYPE url_len = len;
@@ -738,6 +742,7 @@ extern void URL_EncodeString(const string& str, string& url_str)
             url_len += 2;
     }
     url_str.reserve(url_len + 1);
+    url_str.resize(url_len);
 
     SIZE_TYPE p = 0;
     for (pos = 0;  pos < len;  pos++, p++) {
@@ -752,8 +757,8 @@ extern void URL_EncodeString(const string& str, string& url_str)
     }
 
     _ASSERT( p == url_len );
-    url_str[p] = '\0';
-    url_str.resize(p);
+    url_str[url_len] = '\0';
+    return url_str;
 }
 
 

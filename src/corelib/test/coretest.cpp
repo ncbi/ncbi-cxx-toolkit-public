@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/01/07 21:15:24  vakatov
+* Changed prototypes for URL_DecodeString() and URL_EncodeString()
+*
 * Revision 1.31  1999/01/07 20:06:06  vakatov
 * + URL_DecodeString()
 * + URL_EncodeString()
@@ -626,16 +629,20 @@ static void TestCgiMisc(void)
 {
     const string str("_ _%_;_\n_:_\\_\"_");
     string url = "qwerty";
-    URL_EncodeString(str, url);
+    url = URL_EncodeString(str);
+    NcbiCout << str << NcbiEndl << url << NcbiEndl;
     _ASSERT( url.compare("_+_%25_%3B_%0A_%3A_%5C_%22_") == 0 );
 
-    string str1;
-    _ASSERT( URL_DecodeString(url, str1) == 0 );
+    string str1 = URL_DecodeString(url);
     _ASSERT( str1 == str );
 
-    string url1;
-    URL_EncodeString(str1, url1);
+    string url1 = URL_EncodeString(str1);
     _ASSERT( url1 == url );
+
+    const string bad_url("%ax");
+    try {
+        URL_DecodeString(bad_url);
+    } STD_CATCH("%ax");
 }
 
 
