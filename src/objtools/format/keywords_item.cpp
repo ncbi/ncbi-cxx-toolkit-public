@@ -142,6 +142,10 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword("WGS");
         break;
         
+    case CMolInfo::eTech_barcode:
+        x_AddKeyword("BARCODE");
+        break;
+
     default:
         break;
     }
@@ -199,9 +203,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 // Add a keyword to the list 
 void CKeywordsItem::x_AddKeyword(const string& keyword, Uint4 flags)
 {
-    list<string>::const_iterator begin = m_Keywords.begin();
-    list<string>::const_iterator end = m_Keywords.end();
-    if ( find(begin, end, keyword) == end ) {
+    if (find(m_Keywords.begin(), m_Keywords.end(), keyword) == m_Keywords.end()) {
         m_Keywords.push_back(keyword);
     }
 }
@@ -273,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/09/01 19:58:02  shomrat
+* Add BARCODE
+*
 * Revision 1.6  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
