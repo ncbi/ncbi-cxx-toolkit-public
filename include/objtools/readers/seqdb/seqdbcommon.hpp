@@ -96,10 +96,10 @@ const char kSeqTypeUnkn = '-';
 
 
 /// Used to request ambiguities in Ncbi/NA8 format.
-const Uint4 kSeqDBNuclNcbiNA8  = 0;
+const int kSeqDBNuclNcbiNA8  = 0;
 
 /// Used to request ambiguities in BLAST/NA8 format.
-const Uint4 kSeqDBNuclBlastNA8 = 1;
+const int kSeqDBNuclBlastNA8 = 1;
 
 
 /// Used to request that memory mapping be used.
