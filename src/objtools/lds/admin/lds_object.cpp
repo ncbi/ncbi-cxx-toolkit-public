@@ -199,12 +199,16 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         CLDS_CoreObjectsReader::TObjectVector& obj_vector 
                                                 = sniffer.GetObjectsVector();
 
-        for (unsigned int i = 0; i < obj_vector.size(); ++i) {
-            CLDS_CoreObjectsReader::SObjectDetails* obj_info = &obj_vector[i];
-            // If object is not in the database yet.
-            if (obj_info->ext_id == 0) {
-                SaveObject(file_id, &sniffer, obj_info);
+        if (obj_vector.size()) {
+            for (unsigned int i = 0; i < obj_vector.size(); ++i) {
+                CLDS_CoreObjectsReader::SObjectDetails* obj_info = &obj_vector[i];
+                // If object is not in the database yet.
+                if (obj_info->ext_id == 0) {
+                    SaveObject(file_id, &sniffer, obj_info);
+                }
             }
+        } else {
+            LOG_POST(Info << "No objects found in:" << file_name);
         }
 
     } else if ( format == CFormatGuess::eFasta ){
@@ -557,6 +561,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/10/07 20:46:57  kuznets
+ * Added diagnostics when some file has been recognized as a file without
+ * objects.
+ *
  * Revision 1.15  2003/08/21 12:10:04  dicuccio
  * Minor code reformatting
  *
