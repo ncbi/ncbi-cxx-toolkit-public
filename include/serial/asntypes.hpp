@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/09/24 18:55:53  vasilche
+* ASN.1 types will not be compiled is we don't have NCBI toolkit.
+*
 * Revision 1.15  1999/09/24 18:19:12  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -84,6 +87,7 @@
 * ===========================================================================
 */
 
+#if HAVE_NCBI_C
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
 #include <serial/typemap.hpp>
@@ -287,5 +291,7 @@ private:
 //#include <serial/asntypes.inl>
 
 END_NCBI_SCOPE
+
+#endif  /* HAVE_NCBI_C */
 
 #endif  /* ASNTYPES__HPP */

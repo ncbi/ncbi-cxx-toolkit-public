@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/24 18:55:58  vasilche
+* ASN.1 types will not be compiled is we don't have NCBI toolkit.
+*
 * Revision 1.25  1999/09/24 18:19:17  vasilche
 * Removed dependency on NCBI toolkit.
 *
@@ -115,40 +118,13 @@
 * ===========================================================================
 */
 
+#if HAVE_NCBI_C
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#if HAVE_NCBI_C
-# include <asn.h>
-#else
-union dataval {
-	void* ptrvalue;
-	int intvalue;
-	double realvalue;
-	bool boolvalue;
-};
-
-struct valnode {
-	int choice;          /* to pick a choice */
-	dataval data;              /* attached data */
-	valnode* next;  /* next in linked list */
-};
-struct bsunit {             /* for building multiline strings */
-	void* str;            /* the string piece */
-	int len_avail,
-        len;
-	bsunit* next;
-};
-struct bytestore {
-	int seekptr,       /* current position */
-		totlen,             /* total stored data length in bytes */
-		chain_offset;       /* offset in ByteStore of first byte in curchain */
-	bsunit* chain;       /* chain of elements */
-	bsunit*	curchain;           /* the BSUnit containing seekptr */
-};
-#endif
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -204,110 +180,6 @@ private:
     bsunit* unit;
     size_t pos;
 };
-
-#if !HAVE_NCBI_C
-END_NCBI_SCOPE
-
-extern "C" {
-static inline
-bsunit* BSUnitNew(Int4 size)
-{
-	bsunit* unit;
-	NCBI_NS_NCBI::Alloc(unit);
-	if ( size ) {
-		unit->len_avail = size;
-		unit->str = static_cast<char*>(NCBI_NS_NCBI::Alloc(size));
-	}
-	return unit;
-}
-
-static
-bytestore* BSNew(Int4 size)
-{
-	bytestore* bs;
-	NCBI_NS_NCBI::Alloc(bs)->chain = BSUnitNew(size);
-	return bs;
-}
-
-static
-bytestore* BSFree(bytestore* bs)
-{
-	if ( bs ) {
-		bsunit* unit = bs->chain;
-		while ( unit ) {
-			free(unit->str);
-			bsunit* next = unit->next;
-			free(unit);
-			unit = next;
-		}
-		free(bs);
-	}
-    return 0;
-}
-
-static
-bytestore* BSDup(bytestore* bs)
-{
-	bytestore* copy = BSNew(0);
-	size_t totlen = copy->totlen = bs->totlen;
-	bsunit** unitPtr = &copy->chain;
-	for ( const bsunit* unit = bs->chain; unit;
-          unit = unit->next, unitPtr = &(*unitPtr)->next ) {
-		size_t len = unit->len;
-		*unitPtr = BSUnitNew(len);
-		(*unitPtr)->len = len;
-		memcpy((*unitPtr)->str, unit->str, len);
-		totlen -= len;
-	}
-	if ( totlen != 0 )
-		THROW1_TRACE(std::runtime_error, "bad totlen in bytestore");
-	return copy;
-}
-
-static
-Int4 BSWrite(bytestore* bs, void* vdata, Int4 vlength)
-{
-    char* data = static_cast<char*>(vdata);
-    Int4 length = vlength;
-	bsunit* unit = bs->curchain;
-	if ( !unit ) {
-		_ASSERT(bs->chain_offset == 0);
-		_ASSERT(bs->totlen == 0);
-		if ( length == 0 )
-			return 0;
-		unit = bs->chain;
-		if ( !unit )
-			unit = bs->chain = BSUnitNew(length);
-		bs->curchain = unit;
-	}
-	while ( length > 0 ) {
-		Int4 currLen = unit->len;
-		Int4 count = unit->len_avail - currLen;
-        if ( length < count )
-            count = length;
-		if ( !count ) {
-			_ASSERT(unit->next == 0);
-			bs->curchain = unit = unit->next = BSUnitNew(length);
-			bs->chain_offset += currLen;
-			unit->len = length;
-			memcpy(unit->str, data, length);
-			bs->totlen += length;
-			bs->seekptr += length;
-			return vlength;
-		}
-		unit->len = currLen + count;
-		memcpy(static_cast<char*>(unit->str) + currLen, data, count);
-		bs->totlen += count;
-		bs->seekptr += count;
-		data += count;
-		length -= count;
-	}
-    return vlength;
-}
-}
-
-BEGIN_NCBI_SCOPE
-#endif
 
 CTypeInfoMap<CSequenceOfTypeInfo> CSequenceOfTypeInfo::sm_Map;
 
@@ -636,7 +508,6 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
 }
 
-#if HAVE_NCBI_C
 map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
 COldAsnTypeInfo::COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
@@ -695,6 +566,7 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
 }
-#endif
 
 END_NCBI_SCOPE
+
+#endif
