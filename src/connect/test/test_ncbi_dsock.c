@@ -50,6 +50,9 @@
 #elif defined(NCBI_OS_IRIX)
    /* This has been found experimentally on IRIX64 6.5 04101931 IP25 */
 #  define MAX_DGRAM_SIZE (60*1024)
+#elif defined(NCBI_OS_LINUX)
+/* Larger sizes do not seem to work everywhere */
+#  define MAX_DGRAM_SIZE 65000
 #else
    /* This is the maximal datagram size defined by the UDP standard */
 #  define MAX_DGRAM_SIZE 65535
@@ -371,6 +374,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/12/11 15:34:29  lavr
+ * Lower maximal datagram size for Linux - 65535 didn't seem to work everywhere
+ *
  * Revision 6.13  2003/12/10 17:24:16  lavr
  * Reattempt to send/receive a datagram on I/O errors in client
  *
