@@ -48,7 +48,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CBDB_BLOB_Cache;
+class ICache;
 
 BEGIN_SCOPE(objects)
 
@@ -130,9 +130,14 @@ public:
         return *m_Reader;
     }
 
-    CBDB_BLOB_Cache& GetCache(void)
+    ICache& GetCache(void)
     {
         return *m_Cache;
+    }
+
+    ICache& GetIdCache(void)
+    {
+        return *m_IdCache;
     }
 
 protected:
@@ -150,7 +155,8 @@ private:
     SSplitterParams m_SplitterParams;
     
     // splitter loaders/managers
-    auto_ptr<CBDB_BLOB_Cache>   m_Cache;
+    auto_ptr<ICache>            m_Cache;
+    auto_ptr<ICache>            m_IdCache;
     CCachedId1Reader*           m_Reader;
     CRef<CGBDataLoader>         m_Loader;
     CRef<CObjectManager>        m_ObjMgr;
@@ -169,6 +175,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/04/28 16:29:15  vasilche
+* Store split results into new ICache.
+*
 * Revision 1.9  2004/03/16 15:47:29  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

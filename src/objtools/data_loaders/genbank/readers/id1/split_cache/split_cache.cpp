@@ -257,8 +257,8 @@ void CSplitCacheApp::SetupCache(void)
     const CArgs& args = GetArgs();
     const CNcbiRegistry& reg = GetConfig();
     
+    string cache_dir;
     {{ // set cache directory
-        string cache_dir;
         if ( args["cache_dir"] ) {
             cache_dir = args["cache_dir"].AsString();
         }
@@ -269,6 +269,9 @@ void CSplitCacheApp::SetupCache(void)
         if ( cache_dir.empty() ) {
             ERR_POST(Fatal << "empty cache directory name");
         }
+    }}
+
+    {{ // create cache directory
         LINE("cache directory is \"" << cache_dir << "\"");
         {{
             // make sure our cache directory exists first
@@ -277,12 +280,12 @@ void CSplitCacheApp::SetupCache(void)
                 dir.Create();
             }
         }}
-
-        m_Cache.reset(new CBDB_BLOB_Cache());
-        m_Cache->Open(cache_dir.c_str());
     }}
 
-    {{ // set cache blob age
+    {{ // blob cache
+        CBDB_Cache* cache;
+        m_Cache.reset(cache = new CBDB_Cache());
+        
         int blob_age = reg.GetInt("LOCAL_CACHE", "Age", kDefaultCacheBlobAge,
                                   CNcbiRegistry::eErrPost);
 
@@ -294,14 +297,25 @@ void CSplitCacheApp::SetupCache(void)
             blob_age = kDefaultCacheBlobAge;
         }
         
+        ICache::TTimeStampFlags flags =
+            ICache::fTimeStampOnRead |
+            ICache::fExpireLeastFrequentlyUsed |
+            ICache::fPurgeOnStartup;
+        cache->SetTimeStampPolicy(flags, blob_age*24*60*60);
+        
+        cache->Open(cache_dir.c_str(), "blobs");
+
         // purge old blobs
         CTime time_stamp(CTime::eCurrent);
         time_t age = time_stamp.GetTimeT();
         age -= 60 * 60 * 24 * blob_age;
-        m_Cache->Purge(age);
+        cache->Purge(age);
     }}
 
     {{ // set cache id age
+        CBDB_Cache* cache;
+        m_IdCache.reset(cache = new CBDB_Cache());
+        
         int id_age = reg.GetInt("LOCAL_CACHE", "IdAge", kDefaultCacheIdAge,
                                 CNcbiRegistry::eErrPost);
         
@@ -309,11 +323,16 @@ void CSplitCacheApp::SetupCache(void)
             id_age = kDefaultCacheIdAge;
         }
 
-        m_Cache->GetIntCache()->SetExpirationTime(id_age * 24 * 60 * 60);
+        ICache::TTimeStampFlags flags =
+            ICache::fTimeStampOnCreate|
+            ICache::fCheckExpirationAlways;
+        cache->SetTimeStampPolicy(flags, id_age*24*60*60);
+        
+        cache->Open(cache_dir.c_str(), "ids");
     }}
 
     {{ // create loader
-        m_Reader = new CCachedId1Reader(1, &*m_Cache, m_Cache->GetIntCache());
+        m_Reader = new CCachedId1Reader(1, &*m_Cache, &*m_IdCache);
         m_Loader.Reset(new CGBDataLoader("GenBank", m_Reader));
     }}
 
@@ -468,13 +487,13 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
     {{
         CLevelGuard level(m_RecursionLevel);
         
-        CReader::TSeqrefs srs;
+        CId1Reader::TSeqrefs srs;
         m_Reader->ResolveSeq_id(srs, id, 0);
         if ( srs.empty() ) {
             LINE("Skipping: no blobs");
             return;
         }
-        ITERATE ( CReader::TSeqrefs, it, srs ) {
+        ITERATE ( CId1Reader::TSeqrefs, it, srs ) {
             ProcessBlob(**it);
         }
 
@@ -504,6 +523,7 @@ void Dump(CSplitCacheApp* app, const C& obj, ESerialDataFormat format,
     case eSerial_AsnText:   ext = "asn"; break;
     case eSerial_AsnBinary: ext = "asb"; break;
     case eSerial_Xml:       ext = "xml"; break;
+    default:                ext = "asn"; break;
     }
     string file_name = app->GetFileName(key, suffix, ext);
     WAIT_LINE4(app) << "Dumping to " << file_name << " ...";
@@ -539,7 +559,7 @@ template<class C>
 void StoreToCache(CSplitCacheApp* app, const C& obj, EDataType data_type,
                   const CSeqref& seqref, const string& suffix = kEmptyStr)
 {
-    string key = app->GetReader().GetBlobKey(seqref) + suffix;
+    string key = app->GetReader().GetBlobKey(seqref);
     WAIT_LINE4(app) << "Storing to cache " << key << " ...";
     CNcbiOstrstream stream;
     {{
@@ -554,7 +574,7 @@ void StoreToCache(CSplitCacheApp* app, const C& obj, EDataType data_type,
         " " << setw(7) << (size/1024.0) << " KB";
     const char* data = stream.str();
     stream.freeze(false);
-    app->GetCache().Store(key, seqref.GetVersion(), data, size);
+    app->GetCache().Store(key, seqref.GetVersion(), suffix, data, size);
 }
 
 
@@ -582,22 +602,10 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     }
 
     string blob_key = m_Reader->GetBlobKey(seqref);
-    if ( m_Cache->GetSize(blob_key+"-main", version) ) {
+    if ( m_Cache->GetSize(blob_key, version, "Skeleton") ) {
         if ( m_Resplit ) {
             WAIT_LINE << "Removing old split data...";
-            m_Cache->Remove(blob_key+"-main");
-            m_Cache->Remove(blob_key+"-split");
-            size_t missed_count = 0;
-            for ( int chunk = 1; missed_count < 3; ++chunk ) {
-                string key = blob_key + "-chunk-" + NStr::IntToString(chunk);
-                if ( m_Cache->GetSize(key, version) ) {
-                    missed_count = 0;
-                }
-                else {
-                    ++missed_count;
-                }
-                m_Cache->Remove(key);
-            }
+            m_Cache->Remove(blob_key);
         }
         else {
             LINE("Already splitted: skipping");
@@ -624,7 +632,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     CConstRef<CSeq_entry> seq_entry;
     if ( !m_Reader->IsSNPSeqref(seqref) ) {
         // get non-SNP blob
-        seq_entry.Reset(&bh.GetTopLevelSeqEntry());
+        seq_entry = bh.GetTopLevelEntry().GetCompleteSeq_entry();
     }
     else {
         LINE("Skipping SNP blob: not implemented");
@@ -652,7 +660,9 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         Dump(this, *seq_entry, eSerial_AsnBinary, blob_key);
     }
 
-    size_t blob_size = m_Cache->GetSize(m_Reader->GetBlobKey(seqref), version);
+    size_t blob_size =
+        m_Cache->GetSize(m_Reader->GetBlobKey(seqref), version,
+                         m_Reader->GetSeqEntrySubkey());
     if ( blob_size == 0 ) {
         LINE("Skipping: blob is not in cache");
         return;
@@ -695,11 +705,12 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         }
     }}
     {{ // storing split data into cache
-        StoreToCache(this, blob.GetMainBlob(), eDataType_MainBlob, seqref, "-main");
+        StoreToCache(this, blob.GetMainBlob(), eDataType_MainBlob, seqref,
+                     "Skeleton");
         StoreToCache(this, blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
-                     "-split");
+                     "Split");
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
-            string suffix = "-chunk-" + NStr::IntToString(it->first);
+            string suffix = "Chunk" + NStr::IntToString(it->first);
             StoreToCache(this, *it->second, eDataType_Chunk, seqref, suffix);
         }
     }}
@@ -729,6 +740,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/04/28 16:29:15  vasilche
+* Store split results into new ICache.
+*
 * Revision 1.16  2004/03/16 16:03:11  vasilche
 * Removed Windows EOL.
 *
