@@ -1772,29 +1772,58 @@ void x_PushRange(CSeq_loc& dst,
                  TRange rg,
                  ENa_strand strand)
 {
+    if (dst.Which() != CSeq_loc::e_not_set) {
+        if ( !dst.IsMix() ) {
+            dst.ChangeToMix();
+        }
+    }
     if ( !idh ) {
         // NULL
-        CRef<CSeq_loc> null_loc(new CSeq_loc);
-        null_loc->SetNull();
-        dst.SetMix().Set().push_back(null_loc);
+        if (dst.IsMix()) {
+            CRef<CSeq_loc> null_loc(new CSeq_loc);
+            null_loc->SetNull();
+            dst.SetMix().Set().push_back(null_loc);
+        }
+        else {
+            dst.SetNull();
+        }
     }
     else if ( rg.IsWhole() ) {
-        CRef<CSeq_loc> whole(new CSeq_loc);
-        whole->SetWhole().Assign(*idh.GetSeqId());
-        dst.SetMix().Set().push_back(whole);
+        if (dst.IsMix()) {
+            CRef<CSeq_loc> whole(new CSeq_loc);
+            whole->SetWhole().Assign(*idh.GetSeqId());
+            dst.SetMix().Set().push_back(whole);
+        }
+        else {
+            dst.SetWhole().Assign(*idh.GetSeqId());
+        }
     }
     else if ( rg.Empty() ) {
-        CRef<CSeq_loc> empty(new CSeq_loc);
-        empty->SetEmpty().Assign(*idh.GetSeqId());
-        dst.SetMix().Set().push_back(empty);
+        if (dst.IsMix()) {
+            CRef<CSeq_loc> empty(new CSeq_loc);
+            empty->SetEmpty().Assign(*idh.GetSeqId());
+            dst.SetMix().Set().push_back(empty);
+        }
+        else {
+            dst.SetEmpty().Assign(*idh.GetSeqId());
+        }
     }
     else {
         CRef<CSeq_id> id(new CSeq_id);
         id->Assign(*idh.GetSeqId());
-        dst.SetMix().AddInterval(*id,
-                                rg.GetFrom(),
-                                rg.GetTo(),
-                                strand);
+        if (dst.IsMix()) {
+            dst.SetMix().AddInterval(*id,
+                                    rg.GetFrom(),
+                                    rg.GetTo(),
+                                    strand);
+        }
+        else {
+            CRef<CSeq_interval> interval(new CSeq_interval(*id,
+                                                           rg.GetFrom(),
+                                                           rg.GetTo(),
+                                                           strand));
+            dst.SetInt(*interval);
+        }
     }
 }
 
@@ -1898,7 +1927,6 @@ void x_MergeNoSort(CSeq_loc& dst,
                    ISynonymMapper& syn_mapper)
 {
     _ASSERT((flags & CSeq_loc::fSort) == 0);
-    dst.ChangeToMix();
     CSeq_id_Handle last_id;
     TRange last_rg = TRange::GetEmpty();
     ENa_strand last_strand = eNa_strand_unknown;
@@ -2040,7 +2068,6 @@ void x_SubNoSort(CSeq_loc& dst,
                  CSeq_loc::TOpFlags flags)
 {
     _ASSERT((flags & CSeq_loc::fSort) == 0);
-    dst.ChangeToMix();
     CSeq_id_Handle last_id;
     TRange last_rg = TRange::GetEmpty();
     ENa_strand last_strand = eNa_strand_unknown;
@@ -2108,7 +2135,6 @@ void x_SubAndSort(CSeq_loc& dst,
     ENa_strand default_minus = use_strand ?
         eNa_strand_minus : eNa_strand_unknown;
 
-    dst.ChangeToMix();
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
         TRange it_range = it.GetRange();
@@ -2270,6 +2296,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.50  2004/11/16 18:31:22  grichenk
+ * Simplified resulting seq-loc in Add/Merge/Subtract
+ *
  * Revision 6.49  2004/11/15 15:07:57  grichenk
  * Moved seq-loc operations to CSeq_loc, modified flags.
  *
