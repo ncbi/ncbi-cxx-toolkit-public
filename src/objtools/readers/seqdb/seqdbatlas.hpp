@@ -29,15 +29,20 @@
  * Author:  Kevin Bealer
  *
  */
-/// @file seqdbatlas.hpp
-/// Implementation for the CBlastOptionsHandle and the
-/// CBlastOptionsFactory classes.
 
-/// CSeqDBAtlas class
+/// @file seqdbatlas.hpp
+/// The SeqDB memory management layer.
 /// 
-/// This object manages a set of memory areas, called "maps".  In most
-/// cases these will be memory maps.  In other cases, they may be
-/// sections of memory containing data read from files.
+/// Defines classes:
+///     CSeqDBFlushCB
+///     CSeqDBSpinLock
+///     CSeqDBLockHold
+///     CRegionMap
+///     CSeqDBMemLease
+///     CSeqDBAtlas
+/// 
+/// Implemented for: UNIX, MS-Windows
+
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiatomic.hpp>
@@ -51,10 +56,30 @@ BEGIN_NCBI_SCOPE
 
 class CSeqDBAtlas;
 
+
+/// CSeqDBFlushCB
+/// 
+/// This abstract class defines an interface which can be called to
+/// free unused regions of Atlas managed memory.  If a class derived
+/// from this interface is provide to the atlas constructor, it will
+/// be called at the beginning of garbage collection.  It is expected
+/// to release reference counts on any sections of memory that should
+/// be considered for garbage collection.
+
 class CSeqDBFlushCB {
 public:
     virtual void operator()(void) = 0;
 };
+
+
+/// CSeqDBSpinLock
+/// 
+/// This locking class is similar to a mutex, but uses a faster and
+/// simpler "spin lock" mechanism instead of the normal mutex
+/// algorithms.  The downside of this technique is that code which is
+/// waiting for a lock will not give up the processor to tasks which
+/// are doing work.  Because of this, it should only be used for locks
+/// which are acquired many times and held for a short duration.
 
 class CSeqDBSpinLock {
 public:
@@ -94,6 +119,17 @@ private:
     void * volatile m_L;
 };
 
+
+/// CSeqDBLockHold
+/// 
+/// This class is used to keep track of whether this thread holds the
+/// lock in the atlas object.  The atlas code will skip subsequent
+/// Lock() operations during the same transaction if the lock is
+/// already held.  This allows code that needs locking to get the lock
+/// without worrying about whether the calling function has already
+/// done so.  The destructor of this object will call Unlock() on the
+/// atlas if this thread has it locked.
+
 class CSeqDBLockHold {
 public:
     CSeqDBLockHold(class CSeqDBAtlas & atlas)
@@ -112,6 +148,16 @@ private:
     class CSeqDBAtlas & m_Atlas;
     bool                m_Locked;
 };
+
+
+/// CRegionMap
+/// 
+/// This object stores data relevant to a mapped portion of a file.
+/// The mapped area may be a memory map or an allocated buffer filled
+/// with data read from a file.  It also remembers some garbage
+/// collection statistics, used to determine if and when to reclaim
+/// this region.  The atlas code manages a collection of these
+/// objects.
 
 class CRegionMap {
 public:
@@ -238,6 +284,19 @@ private:
     Int4 m_Penalty;
 };
 
+
+/// CSeqDBMemLease
+/// 
+/// This object holds a reference on a region of memory managed by the
+/// atlas code, and prevent the region from being unmapped.  This
+/// allows for rapid access to that memory for the duration of the
+/// transaction, and for subsequent transactions, without needing to
+/// call GetRegion() until memory outside the region is needed.
+/// Since these objects can prevent large slices of memory from being
+/// unmapped, the SeqDB code uses a callback functor (CSeqDBFlushCB)
+/// to allow the garbage collection code to break these holds, and
+/// return the associated regions, if the memory bound is exceeded.
+
 class CSeqDBMemLease {
 public:
     typedef CRegionMap::TIndx TIndx;
@@ -299,6 +358,18 @@ private:
     TIndx              m_End;
     class CRegionMap * m_RMap;
 };
+
+
+/// CSeqDBAtlas class
+/// 
+/// This object manages a set of memory areas, usually memory mapped
+/// files.  It maps and unmaps code as needed to allow a set of files,
+/// the total size of which may exceed the address space, to be
+/// accessed efficiently by SeqDB.  SeqDB also registers certain other
+/// dynamic allocations (i.e. new[]) with this object, in an effort to
+/// limit the total memory usage.  This class also contains the
+/// primary mutex used to sequentialize access to the various SeqDB
+/// critical regions, some of which are outside of this class.
 
 class CSeqDBAtlas {
     enum {
