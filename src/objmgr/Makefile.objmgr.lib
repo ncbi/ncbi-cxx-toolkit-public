@@ -1,6 +1,6 @@
 # $Id$
 
-# Build library "xobjmgr1"
+# Build library "xobjmgr"
 #################################
 
 REQUIRES = dbapi
