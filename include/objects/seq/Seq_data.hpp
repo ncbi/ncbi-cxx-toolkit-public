@@ -48,7 +48,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSeq_data : public CSeq_data_Base
+
+class NCBI_SEQ_EXPORT CSeq_data : public CSeq_data_Base
 {
     typedef CSeq_data_Base Tparent;
 public:
@@ -92,6 +93,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/14 19:11:25  ivanov
+* Added export specifier for class CSeq_data
+*
 * Revision 1.2  2003/01/03 01:24:39  ucko
 * Fixed spelling of DoConstruct.
 *
