@@ -97,6 +97,7 @@
 #  define NCBI_SEQRES_EXPORTS
 #  define NCBI_SEQSET_EXPORTS
 #  define NCBI_SUBMIT_EXPORTS
+#  define NCBI_TAXON1_EXPORTS
 #endif
 
 
@@ -1246,6 +1247,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.54  2003/12/22 19:09:13  dicuccio
+ * Added taxonomy to ncbi_seq
+ *
  * Revision 1.53  2003/12/17 21:02:57  shomrat
  * added export specifier for xformat library
  *
