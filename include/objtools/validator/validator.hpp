@@ -1,7 +1,7 @@
 #ifndef VALIDATOR___VALIDATOR__HPP
 #define VALIDATOR___VALIDATOR__HPP
 
-/*  $Id:
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -33,9 +33,7 @@
  *   .......
  *
  */
-
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiobj.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/serialbase.hpp>
 
@@ -45,10 +43,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-// Forward declarations
 class CSeq_entry;
 class CSeq_submit;
+class CSeq_annot;
 class CObjectManager;
+class CScope;
 
 BEGIN_SCOPE(validator)
 
@@ -82,40 +81,14 @@ private:
     // internal string arrays
     static const string sm_Terse [];
     static const string sm_Verbose [];
-
-    friend class CValidError_CI;
 };
-
-
-typedef vector < CConstRef < CValidErrItem > > TErrs;
 
 
 class NCBI_VALIDATOR_EXPORT CValidError : public CObject
 {
 public:
-
-    enum EValidOptions {
-        eVal_non_ascii   = 1,
-        eVal_no_context  = 2,
-        eVal_val_align   = 4,
-        eVal_val_exons   = 8,
-        eVal_splice_err  = 16,
-        eVal_ovl_pep_err = 32,
-        eVal_need_taxid  = 64,
-        eVal_need_isojta = 128, 
-
-        // !!! For test purposes only {
-        eVal_perf_bottlenecks  = 256
-        // }
-    };
-
     // constructors
-    CValidError(CObjectManager& objmgr, const CSeq_entry& se,
-        Uint4 options = 0);
-
-    CValidError(CObjectManager& objmgr, const CSeq_submit& ss,
-        Uint4 options = 0);
-
+    CValidError(void);
     
     void AddValidErrItem(const CValidErrItem* item);
 
@@ -132,6 +105,7 @@ public:
     ~CValidError(void);
 
 private:
+    typedef vector < CConstRef < CValidErrItem > > TErrs;
 
     // Prohibit copy constructor & assignment operator
     CValidError(const CValidError&);
@@ -171,13 +145,70 @@ private:
     bool AtEnd(void) const;
     void Next(void);
 
-    CConstRef<CValidError>  m_Validator;
-    TErrs::const_iterator   m_ErrIter;
-    string                  m_ErrCodeFilter;
-    EDiagSev                m_MinSeverity;
-    EDiagSev                m_MaxSeverity;
+    CConstRef<CValidError>               m_Validator;
+    CValidError::TErrs::const_iterator   m_Current;
+
+    // filters:
+    string                               m_ErrCodeFilter;
+    EDiagSev                             m_MinSeverity;
+    EDiagSev                             m_MaxSeverity;
 };
 
+
+class NCBI_VALIDATOR_EXPORT CValidator : public CObject 
+{
+public:
+
+    enum EValidOptions {
+        eVal_non_ascii   = 1,
+        eVal_no_context  = 2,
+        eVal_val_align   = 4,
+        eVal_val_exons   = 8,
+        eVal_splice_err  = 16,
+        eVal_ovl_pep_err = 32,
+        eVal_need_taxid  = 64,
+        eVal_need_isojta = 128, 
+
+        // !!! For test purposes only {
+        eVal_perf_bottlenecks  = 256
+        // }
+    };
+
+    // Construtor / Destructor
+    CValidator(CObjectManager& objmgr);
+    ~CValidator(void);
+
+    // Validation methods:
+    // It is possible to validate objects of types CSeq_entry, CSeq_submit 
+    // or CSeq_annot. In addition to the object to validate the user must 
+    // provide the scope which contain that object, and validation options
+    // that are created by OR'ing EValidOptions (as specified above)
+
+    // Validate Seq-entry. 
+    // If provding a scope the Seq-entry must be a 
+    // top-level Seq-entry in that scope.
+    auto_ptr<CValidError> Validate(const CSeq_entry& se, CScope* scope = 0,
+        Uint4 options = 0);
+    // Validate Seq-submit.
+    // Validates each of the Seq-entry contained in the submission.
+    auto_ptr<CValidError> Validate(const CSeq_submit& ss, CScope* scope = 0,
+        Uint4 options = 0);
+    // Validate Seq-annot
+    // Validates stand alone Seq-annot objects. This will supress any
+    // check on the context of the annotaions.
+    auto_ptr<CValidError> Validate(const CSeq_annot& sa, CScope* scope = 0,
+        Uint4 options = 0);
+
+private:
+    // Prohibit copy constructor & assignment operator
+    CValidator(const CValidator&);
+    CValidator& operator= (const CValidator&);
+
+    CRef<CObjectManager>    m_ObjMgr;
+};
+
+
+// Inline Functions:
 
 inline
 SIZE_TYPE CValidError::TotalSize(void) const 
@@ -237,6 +268,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/03/20 18:52:11  shomrat
+* Addes support for standalone Seq-annot validation. Decoupling the validation class (CValidator) from the error repository (CValidError)
+*
 * Revision 1.7  2003/03/10 18:11:53  shomrat
 * Added statistics information
 *
