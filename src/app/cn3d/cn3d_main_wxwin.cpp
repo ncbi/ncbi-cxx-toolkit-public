@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.160  2002/09/18 13:19:32  thiessen
+* use wxTE_RICH style for big textctrls
+*
 * Revision 1.159  2002/09/14 19:18:32  thiessen
 * fix center-on-aligned bug when no structured master
 *
@@ -719,7 +722,7 @@ public:
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
             wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__)
-                | wxTE_RICH | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
+                | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
 #endif
             )
     {
@@ -791,7 +794,7 @@ void RaiseLogWindow(void)
 #endif
         logFrame->SetSizeHints(150, 100);
         logFrame->logText = new wxTextCtrl(logFrame, -1, "",
-            wxPoint(0,0), logFrame->GetClientSize(), wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
+            wxPoint(0,0), logFrame->GetClientSize(), wxTE_RICH | wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
         // display any messages received before window created
         while (backLog.size() > 0) {
             *(logFrame->logText) << backLog.front().c_str();

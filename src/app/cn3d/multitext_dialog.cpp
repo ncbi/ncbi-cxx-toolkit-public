@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/09/18 13:19:32  thiessen
+* use wxTE_RICH style for big textctrls
+*
 * Revision 1.6  2002/08/15 22:13:14  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -74,7 +77,8 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),
     myOwner(owner)
 {
-    textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
+    textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize,
+        wxTE_MULTILINE | wxHSCROLL | wxTE_RICH);
     bDone = new wxButton(this, -1, "Done");
 
     wxLayoutConstraints *c = new wxLayoutConstraints;
