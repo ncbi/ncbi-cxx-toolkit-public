@@ -372,7 +372,7 @@ bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
     }
 
     TWriteLockGuard guard(m_OM_Lock);
-    TMapToSource::iterator iter = m_mapToSource.find(key);
+    TMapToSource::iterator iter = m_mapToSource.find(key.GetPointer());
     if ( iter == m_mapToSource.end() ) {
         guard.Release();
         ERR_POST("CObjectManager::ReleaseDataSource: "
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/03/17 16:05:21  vasilche
+* IRIX CC won't implicitly convert CRef<CSeq_entry> to CObject*
+*
 * Revision 1.30  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
