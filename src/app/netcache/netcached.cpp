@@ -146,8 +146,6 @@ private:
     unsigned        m_MaxId;
     bm::bvector<>   m_UsedIds;   ///< Set of ids in use
     ICache*         m_Cache;
-//    char*           m_Buf;       ///< Temp buffer
-//    size_t          m_BufLength; ///< Actual buffer length (in bytes)
     bool            m_Shutdown;  ///< Shutdown request
 };
 
@@ -717,9 +715,14 @@ int CNetCacheDApp::Run(void)
         int port = 
             reg.GetInt("server", "port", 9000, CNcbiRegistry::eReturn);
 
-        m_PurgeThread.Reset(new CCacheCleanerThread(cache.get(), 30, 5));
-        LOG_POST(Info << "Running server on port " << port);
-        m_PurgeThread->Run();
+        bool purge_thread = 
+            reg.GetBool("server", "run_purge_thread", true, CNcbiRegistry::eReturn);
+
+        if (purge_thread) {
+            LOG_POST(Info << "Starting cache cleaning thread.");
+            m_PurgeThread.Reset(new CCacheCleanerThread(cache.get(), 30, 5));
+            m_PurgeThread->Run();
+        }
 
         unsigned max_threads =
             reg.GetInt("server", "max_threads", 25, CNcbiRegistry::eReturn);
@@ -728,16 +731,21 @@ int CNetCacheDApp::Run(void)
 
         auto_ptr<CNetCacheServer> thr_srv(
             new CNetCacheServer(port, cache.get(), max_threads, init_threads));
+
+        LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
 
-        LOG_POST(Info << "Stopping cache maintanace thread...");
-        if (bdb_cache) {
-            bdb_cache->SetBatchSleep(0);
-            bdb_cache->StopPurge();
+        if (!m_PurgeThread.Empty()) {
+            LOG_POST(Info << "Stopping cache cleaning thread...");
+            if (bdb_cache) {
+                bdb_cache->SetBatchSleep(0);
+                bdb_cache->StopPurge();
+            }
+
+            m_PurgeThread->RequestStop();
+            m_PurgeThread->Join();
+            LOG_POST(Info << "Stopped.");
         }
-        m_PurgeThread->RequestStop();
-        m_PurgeThread->Join();
-        LOG_POST(Info << "Stopped.");
         
     }
     catch (CBDB_ErrnoException& ex)
@@ -763,6 +771,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/10/21 15:06:10  kuznets
+ * New parameter run_purge_thread
+ *
  * Revision 1.12  2004/10/21 13:39:27  kuznets
  * New parameters max_threads, init_threads
  *
