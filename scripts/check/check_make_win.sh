@@ -29,8 +29,6 @@
 #    - If first two parameters are skipped that this script consider what 
 #      files <in_test_list> and <out_check_script> must be standing in the 
 #      root of the MSVC build tree.
-#    - Use ${BUILDTREE} env.variable to determine bin and lib directories.
-#      Accepted values: "", "static/", "dll/".
 #
 ###########################################################################
 
@@ -47,6 +45,8 @@ x_out=$2
 x_build_dir=$3
 x_confs="${4:-Debug DebugDLL Release ReleaseDLL}"
 
+x_build_trees="." 
+test ".$COMPILER" = ".msvc7"  &&  x_build_trees="static dll" 
 
 if test ! -z "$x_build_dir"; then
    if test ! -d "$x_build_dir"; then
@@ -109,6 +109,7 @@ cat > $x_out <<EOF
 root_dir="$x_root_dir"
 build_dir="$x_build_dir"
 src_dir="\$root_dir/src"
+build_trees="$x_build_trees" 
 
 res_script="$x_out"
 res_journal="\$res_script.journal"
@@ -117,7 +118,6 @@ res_list="\$res_script.list"
 res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
-BUILDTREE=\`echo \${BUILDTREE} | sed 's/\"//g'\`
 
 ##  Printout USAGE info and exit
 
@@ -159,10 +159,9 @@ case "\$method" in
       ;;
 #----------------------------------------------------------
    clean )
-      x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
-      for x_file in \$x_files; do
-         x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
-         rm -f \$x_file > /dev/null 2>&1
+      # For all build trees
+      for build_tree in \$build_trees; do
+          rm -rf \$build_dir/\$build_tree/check > /dev/null 2>&1
       done
       rm -f \$res_journal \$res_log \$res_list \$res_concat \$res_concat_err > /dev/null 2>&1
       rm -f \$res_script > /dev/null 2>&1
@@ -246,12 +245,16 @@ RunTest() {
    x_requires="\$7"
    x_conf="\$8"
 
-   x_work_dir="\$build_dir/\${BUILDTREE}\$x_wdir"
+   x_work_dir="\$build_dir/\${build_tree}check/\$x_conf/\$x_wdir"
+   mkdir -p \$x_work_dir
 
    # Features detection
    features="ODBC OpenGL serial objects dbapi app ctools gui algo"
+   if test \`echo \$x_conf | grep MT\`; then
+      features="MT \$features"
+   fi
    if test \`echo \$x_conf | grep DLL\`; then
-      features=\`echo "MT \$features"\`
+      features="MT \$features"
    fi
    export features
 
@@ -260,52 +263,39 @@ RunTest() {
       (echo " \$features " | grep " \$x_req " > /dev/null)  ||  return 0
    done
 
-   # Determine test directory
-   result=1
-   x_path_test="\$x_work_dir/\$x_test/\$x_conf"
-
-   if test ! -d "\$x_path_test"; then
-      x_path_test="\$x_work_dir/\$x_app/\$x_conf"
-      if test ! -d "\$x_path_test"; then
-         x_path_test="\$x_work_dir/\$x_conf"
-         if test ! -d "\$x_path_test"; then
-            result=0
-         fi
-      fi
-   fi
    # Determine test application name
-   x_path_run="\$build_dir/\${BUILDTREE}bin/\$x_conf"
-   if test \$result -eq 1; then
-      x_path_app="\$x_path_run/\$x_app"
+   x_path_run="\$build_dir/\${build_tree}bin/\$x_conf"
+   result=1
+   x_path_app="\$x_path_run/\$x_app"
+   if test ! -f "\$x_path_app"; then
+      x_path_app="\$x_path_run/\$x_test"
       if test ! -f "\$x_path_app"; then
-         x_path_app="\$x_path_run/\$x_test"
-         if test ! -f "\$x_path_app"; then
-            result=0
-         fi
+         result=0
       fi
    fi
 
+   x_cmd="[\${build_tree}\$x_conf/\$x_wdir]"
    if test \$result -eq 0; then
-      echo "ABS --  \$x_wdir, \$x_conf - \$x_app"
-      echo "ABS --  \$x_wdir, \$x_conf - \$x_app" >> \$res_log
+      echo "ABS --  \$x_cmd - \$x_app"
+      echo "ABS --  \$x_cmd - \$x_app" >> \$res_log
       count_absent=\`expr \$count_absent + 1\`
       return 0
    fi
 
    # Generate name of the output file
-   x_test_out="\$x_path_run/check/\$x_app.\$x_ext"
+   x_test_out="\$x_work_dir/\$x_app.\$x_ext"
 
    # Write header to output file 
    echo "\$x_test_out" >> \$res_journal
    (
       echo "======================================================================"
-      echo "\$x_conf - \$x_run"
+      echo "\${build_tree}\$x_conf - \$x_run"
       echo "======================================================================"
       echo 
    ) > \$x_test_out 2>&1
 
-   # Goto the test's directory 
-   cd "\$x_path_test"
+   # Goto the work directory 
+   cd "\$x_work_dir"
 
    # Fix empty parameters (replace "" to \"\", '' to \'\')
    x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
@@ -316,20 +306,20 @@ RunTest() {
    CHECK_TIMEOUT="\$x_timeout"
    export CHECK_TIMEOUT
    check_exec="\$root_dir/scripts/check/check_exec.sh"
-   \$check_exec \`eval echo \$x_run_fix\` >$x_tmp/\$\$.\$x_app.\$x_ext 2>&1
+   \$check_exec \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
    result=\$?
    sed -e '/ ["][$][@]["].*\$/ {
       s/^.*: //
       s/ ["][$][@]["].*$//
-      }' $x_tmp/\$\$.\$x_app.\$x_ext >> \$x_test_out
-   rm -f $x_tmp/\$\$.\$x_app.\$x_ext
+      }' \$x_test_out.\$\$ >> \$x_test_out
+   rm -f \$x_test_out.\$\$
 
    # Write result of the test into the his output file
    echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
    # And write result also on the screen and into the log
-   x_cmd="[\$x_wdir] \$x_run"
+   x_cmd="\$x_cmd \$x_run"
    if test \$result -eq 0; then
       echo "OK  --  \$x_cmd"
       echo "OK  --  \$x_cmd" >> \$res_log
@@ -341,19 +331,27 @@ RunTest() {
    fi
 }
 
+# For all build trees
+for build_tree in \$build_trees; do
 
-# Save value of PATH environment variable
-saved_path="\$PATH"
+   if test \$build_tree = "."; then
+      build_tree=""
+   else
+      build_tree="\$build_tree/"
+   fi
 
-# For each configuration
-for x_conf in \$configurations; do
+   # Save value of PATH environment variable
+   saved_path="\$PATH"
 
-# Add current configuration's build and dll build directories to PATH
-PATH=".:\${build_dir}/\${BUILDTREE}bin/\${x_conf}:\${build_dir}/\${BUILDTREE}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
-export PATH
+   # For each configuration
+   for x_conf in \$configurations; do
 
-# Create directory for tests output
-mkdir -p "\$build_dir/\${BUILDTREE}bin/\$x_conf/check" > /dev/null 2>&1
+   # Add current configuration's build and dll build directories to PATH
+   PATH=".:\${build_dir}/\${build_tree}bin/\${x_conf}:\${build_dir}/\${build_tree}lib/\${x_conf}:\${build_dir}/dll/bin/\${x_conf}:\${saved_path}"
+   export PATH
+
+   # Create directory for tests output
+   mkdir -p "\$build_dir/\${build_tree}bin/\$x_conf/check" > /dev/null 2>&1
 
 EOF
 
@@ -370,6 +368,7 @@ x_test_prev=""
 
 # For all tests
 for x_row in $x_tests; do
+#echo $x_row
    # Get one row from list
    x_row=`echo "$x_row" | sed -e 's/%gj_s4%/ /g' -e 's/^ *//' -e 's/ ____ /~/g'`
 
@@ -383,27 +382,15 @@ for x_row in $x_tests; do
    x_timeout=`echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'`
    x_requires=`echo "$x_row" | sed -e 's/.*~//'`
 
-   # Application base build directory
-   x_work_dir="$x_build_dir/$x_rel_dir"
+   for build_tree in $x_build_trees; do
 
-   # Copy specified files to the each build directory
+      build_tree="$build_tree/"
 
-   if test ! -z "$x_files" ; then
-      for x_conf in $x_confs; do
-         # Determine test directory
-         result=1
-         x_path="$x_work_dir/$x_test/$x_conf"
-         if test ! -d "$x_path"; then
-            x_path="$x_work_dir/$x_app/$x_conf"
-            if test ! -d "$x_path"; then
-               x_path="$x_work_dir/$x_conf"
-               if test ! -d "$x_path"; then
-                  result=0
-               fi
-            fi
-         fi
-         # Copy files if destination directory exist
-         if test $result -ne 0; then
+      # Copy specified files to the check tree
+      if test ! -z "$x_files" ; then
+         for x_conf in $x_confs; do
+            x_path="$x_build_dir/$build_tree/check/$x_conf/$x_rel_dir"
+            mkdir -p $x_path
             for i in $x_files ; do
                x_copy="$x_src_dir/$i"
                if test -f "$x_copy"  -o  -d "$x_copy" ; then
@@ -412,48 +399,50 @@ for x_row in $x_tests; do
                   echo "Warning:  \"$x_copy\" must be file or directory!"
                fi
             done
-         fi
-      done
-   fi
+         done
+      fi
 
-   # Generate extension for tests output file
-   if test "$x_test" != "$x_test_prev" ; then 
-      x_cnt=1
-      x_test_out="out"
-   else
-      x_cnt=`expr $x_cnt + 1`
-      x_test_out="out$x_cnt"
-   fi
-   x_test_prev="$x_test"
+      # Generate extension for tests output file
+      if test "$x_test" != "$x_test_prev" ; then 
+         x_cnt=1
+         x_test_out="out"
+      else
+         x_cnt=`expr $x_cnt + 1`
+         x_test_out="out$x_cnt"
+      fi
+      x_test_prev="$x_test"
 
 #//////////////////////////////////////////////////////////////////////////
 
    # Write test commands for current test into a shell script file
    cat >> $x_out <<EOF
-######################################################################
-RunTest "$x_rel_dir" \\
-        "$x_test" \\
-        "$x_app" \\
-        "$x_cmd" \\
-        "$x_test_out" \\
-        "$x_timeout" \\
-        "$x_requires" \\
-        "\$x_conf"
+   ######################################################################
+   RunTest "$x_rel_dir" \\
+           "$x_test" \\
+           "$x_app" \\
+           "$x_cmd" \\
+           "$x_test_out" \\
+           "$x_timeout" \\
+           "$x_requires" \\
+           "\$x_conf"
 EOF
 
 #//////////////////////////////////////////////////////////////////////////
 
+   done # for build_tree in x_build_trees
 done # for x_row in x_tests
 
 
 # Write ending code into the script 
 cat >> $x_out <<EOF
-######################################################################
+   ######################################################################
 
-# Restore saved PATH environment variable
-PATH="\$saved_path"
+   # Restore saved PATH environment variable
+   PATH="\$saved_path"
 
-done  # x_conf in configurations
+   done  # x_conf in configurations
+done  # build_tree in \$build_trees
+
 
 # Write result of the tests execution
 echo
