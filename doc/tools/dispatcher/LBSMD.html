@@ -92,7 +92,7 @@ A comment is introduced by a hash symbol (#).
 <font color="#009900">name=value</font>
 </pre>
 places itself in the <i>host environment</i>. The host environment can be accessed by
-clients while they make the service name resolution. Often, the host environment
+clients while they make the service name resolution. Often the host environment
 tells the client about limitations/options, which the host has, and based on this
 additional information the client can make a decision whether the server
 (despite that it is implementing the service) is suitable for carrying out client's request.
@@ -101,7 +101,7 @@ available on the host. The host environment is not interpreted or used in any wa
 by the load-balancing algorithm, except for that <tt>name</tt> must be a valid identifier.
 The <tt>value</tt> may be practically anything, even empty.
 It is left solely to the client to parse the environment and to look for the information in interest.
-The host environment can obtained from the service iterator via call to
+The host environment can be obtained from the service iterator via call to
 <a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
 which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>.<br>
 <u>Note</u>: White characters surrounding <tt>name</tt> are not preserved, but they are
@@ -148,7 +148,7 @@ where:
   <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> for servers, which are the CGI programs accepting only <i>GET</i> request method;
   <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting only <i>POST</i> request method;
   <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are the CGI programs accepting both of either <i>GET</i> or <i>POST</i> request methods.<br>
-  <u>Note</u>: Despite valid <tt>FIREWALL</tt> server specification may not be used in configuration file.
+  <u>Note</u>: <tt>FIREWALL</tt> server specification may not be used in configuration file.
   </ul>
 <li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host and
 port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
@@ -293,7 +293,7 @@ TestService STANDALONE :9999 S=yes R=2000
 
 # NCBID server (Note empty quotes to prevent treating of Regular as
 # an argument. Also note bar (|) followed by path and parameters of the executable.)
-TestService NCBID      '' Regular | /home/webuser/TestService/a.out "parameter 1"
+TestService NCBID '' Regular | /home/webuser/TestService/a.out "parameter 1"
 
 # Local HTTP service w/o checks (note [0])
 LocalService [0] HTTP /LocalService.cgi?param=somevalue L=yes
