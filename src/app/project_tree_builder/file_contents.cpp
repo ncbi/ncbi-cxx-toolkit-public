@@ -95,7 +95,7 @@ void CSimpleMakeFileContents::LoadFrom(const string&            file_path,
     parser.StartParse();
 
     string strline;
-    while ( getline(ifs, strline) )
+    while ( NcbiGetlineEOL(ifs, strline) )
 	    parser.AcceptLine(strline);
 
     parser.EndParse();
@@ -229,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/17 23:25:08  gorelenk
+ * Using NcbiGetlineEOL instead of getline.
+ *
  * Revision 1.8  2004/02/06 23:14:58  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
