@@ -86,7 +86,7 @@ public:
     virtual int  Run (void);
 
     void ReadClassMember(CObjectIStream& in,
-            const CObjectInfo::CMemberIterator& member);
+        const CObjectInfo::CMemberIterator& member);
 
 private:
 
@@ -107,7 +107,6 @@ private:
 
     void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os);
     void PrintBatchItem(const CValidErrItem& item, CNcbiOstream& os);
-   
 
     CRef<CObjectManager> m_ObjMgr;
     auto_ptr<CObjectIStream> m_In;
@@ -132,11 +131,10 @@ void CTest_validatorApplication::Init(void)
 
     // Create
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-    
+
     arg_desc->AddDefaultKey
         ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
         CArgDescriptions::eInputFile, "current.prt");
-    
 
     arg_desc->AddFlag("s", "Input is Seq-submit");
     arg_desc->AddFlag("t", "Input is Seq-set (NCBI Release file)");
@@ -144,11 +142,11 @@ void CTest_validatorApplication::Init(void)
     arg_desc->AddFlag("c", "Continue on ASN.1 error");
 
     arg_desc->AddFlag("g", "Registers ID loader");
-    
+
     arg_desc->AddFlag("nonascii", "Report Non Ascii Error");
     arg_desc->AddFlag("context", "Suppress context in error msgs");
     arg_desc->AddFlag("align", "Validate Alignments");
-    arg_desc->AddFlag("exon", "Validate exons", false);
+    arg_desc->AddFlag("exon", "Validate exons");
     arg_desc->AddFlag("splice", "Report splice error as error");
     arg_desc->AddFlag("ovlpep", "Report overlapping peptide as error");
     arg_desc->AddFlag("taxid", "Requires taxid");
@@ -178,7 +176,7 @@ void CTest_validatorApplication::Init(void)
     // Program description
     string prog_description = "Test driver for Validate()\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, false);
+        prog_description, false);
 
     // Pass argument descriptions to the application
     SetupArgDescriptions(arg_desc.release());
@@ -189,7 +187,7 @@ int CTest_validatorApplication::Run(void)
 {
     const CArgs& args = GetArgs();
     Setup(args);
-    
+
     // Open File 
     m_In.reset(OpenFile(args));
 
@@ -220,12 +218,11 @@ int CTest_validatorApplication::Run(void)
         }
     }
 
-    
     unsigned int result = 0;
     if ( eval ) {
         result = PrintValidError(eval, args);
     }
-    
+
     return result;
 }
 
@@ -240,25 +237,24 @@ void CTest_validatorApplication::ReadClassMember
         // Read each element separately to a local TSeqEntry,
         // process it somehow, and... not store it in the container.
         for ( CIStreamContainerIterator i(in, member); i; ++i ) {
-	    try {
+            try {
                 // Get seq-entry to validate
-	        CRef<CSeq_entry> se(new CSeq_entry);
-		i >> *se;
-            
-		// Validate Seq-entry
-		CValidator validator(*m_ObjMgr);
-		CConstRef<CValidError> eval = validator.Validate(*se, 0, m_Options);
-		if ( eval ) {
-		    m_Reported += PrintBatchErrors(eval, GetArgs());
-		}
-		
-	    } catch (exception e) {
-	        if ( !m_Continue ) {
-		  throw;
-		}
-		// should we issue some sort of warning?
-	    }
-	}
+                CRef<CSeq_entry> se(new CSeq_entry);
+                i >> *se;
+
+                // Validate Seq-entry
+                CValidator validator(*m_ObjMgr);
+                CConstRef<CValidError> eval = validator.Validate(*se, 0, m_Options);
+                if ( eval ) {
+                    m_Reported += PrintBatchErrors(eval, GetArgs());
+                }
+            } catch (exception e) {
+                if ( !m_Continue ) {
+                    throw;
+                }
+                // should we issue some sort of warning?
+            }
+        }
     } else {
         in.ReadClassMember(member);
     }
@@ -291,16 +287,16 @@ SIZE_TYPE CTest_validatorApplication::PrintBatchErrors
     if ( !errors  ||  errors->TotalSize() == 0 ) {
         return 0;
     }
-    
+
     EDiagSev show  = static_cast<EDiagSev>(args["q"].AsInteger());
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
     SIZE_TYPE reported = 0;
-    
+
     for ( CValidError_CI vit(*errors); vit; ++vit ) {
         if ( vit->GetSeverity() < show ) {
             continue;
         }
-	PrintBatchItem(*vit, *os);
+        PrintBatchItem(*vit, *os);
         ++reported;
     }
 
@@ -331,7 +327,7 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
 CConstRef<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
-    
+
     // Get seq-submit to validate
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
 
@@ -344,7 +340,7 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
 CConstRef<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
 {
     CRef<CSeq_annot> sa(new CSeq_annot);
-    
+
     // Get seq-annot to validate
     m_In->Read(ObjectInfo(*sa), CObjectIStream::eNoFileHeader);
 
@@ -355,7 +351,7 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
 
 
 void CTest_validatorApplication::Setup(const CArgs& args)
-{    
+{
     // Setup application registry and logs for CONNECT library
     CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(&GetConfig(), false));
@@ -390,7 +386,7 @@ void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
     m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid   : 0;
     m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta  : 0;
     m_Options |= args["g"]        ? CValidator::eVal_remote_fetch : 0;
-    
+
     // !!!  DEBUG {
     // For testing only. Should be removed in the future
     m_Options |= args["debug"].HasValue() ? CValidator::eVal_perf_bottlenecks : 0;
@@ -409,7 +405,7 @@ CObjectIStream* CTest_validatorApplication::OpenFile
     if ( args["b"] ) {
         format = eSerial_AsnBinary;
     }
-    
+
     return CObjectIStream::Open(fname, format);
 }
 
@@ -420,13 +416,13 @@ SIZE_TYPE CTest_validatorApplication::PrintValidError
 {
     EDiagSev show = static_cast<EDiagSev>(args["q"].AsInteger());
     EDiagSev count = static_cast<EDiagSev>(args["r"].AsInteger());
-    
+
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
 
     if ( errors->TotalSize() == 0 ) {
         *os << "All entries are OK!" << endl;
-	os->flush();
-	return 0;
+        os->flush();
+        return 0;
     }
 
     SIZE_TYPE result = 0;
@@ -444,14 +440,14 @@ SIZE_TYPE CTest_validatorApplication::PrintValidError
     }
     *os << reported << " messages reported" << endl;
     os->flush();
-        
+
     *os << "Total number of errors: " << errors->TotalSize() << endl
-	<< "Info: "     << errors->InfoSize()     << endl
-	<< "Warning: "  << errors->WarningSize()  << endl
-	<< "Error: "    << errors->ErrorSize()    << endl
-	<< "Critical: " << errors->CriticalSize() << endl
-	<< "Fatal: "    << errors->FatalSize()    << endl;
-    
+        << "Info: "     << errors->InfoSize()     << endl
+        << "Warning: "  << errors->WarningSize()  << endl
+        << "Error: "    << errors->ErrorSize()    << endl
+        << "Critical: " << errors->CriticalSize() << endl
+        << "Fatal: "    << errors->FatalSize()    << endl;
+
     return result;
 }
 
@@ -462,7 +458,7 @@ void CTest_validatorApplication::PrintValidErrItem
 {
     os << item.GetSevAsStr() << ":       " << item.GetErrCode() << endl << endl
        << "Message: " << item.GetMsg() << endl << endl;
-       //<< "Verbose: " << item.GetVerbose() << endl << endl;
+     //<< "Verbose: " << item.GetVerbose() << endl << endl;
 }
 
 
@@ -492,6 +488,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2003/05/28 16:39:19  shomrat
+ * Indentation corrections
+ *
  * Revision 1.21  2003/05/15 02:10:05  ucko
  * Be consistent about SIZE_TYPE vs. unsigned int in PrintValidError.
  *
