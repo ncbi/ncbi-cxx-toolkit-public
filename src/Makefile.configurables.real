@@ -34,7 +34,7 @@ $(SUB_MF_IN):
 	echo $@
 	-cd $(srcdir)  &&  cvs upd -ld `basename \`dirname $@\``
 	mkdir -p `dirname $@`
-	touch $@
+	test -f $@  ||  cp -p $(top_srcdir)/src/Makefile.in.skel $@
 
 $(builddir)/%: $(top_srcdir)/src/%.in $(config_status)
 	$(UPDATE_CONFIGURABLE) $@
