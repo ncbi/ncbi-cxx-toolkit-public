@@ -30,11 +30,40 @@
 #include <string.h>
 
 #ifndef HAVE_ATOLL
+#ifdef NCBI_FTDS
+#ifndef WIN32
 static long int
 atoll(const char *nptr)
 {
 	return atol(nptr);
 }
+#endif
+#endif
+#endif
+
+#ifdef NCBI_FTDS
+#ifdef WIN32
+char *
+strtok_r(char *str, const char *sep, char **lasts)
+{
+	char *p;
+
+	if (str == NULL) {
+		str = *lasts;
+	}
+	if (str == NULL) {
+		return NULL;
+	}
+	str += strspn(str, sep);
+	if ((p = strpbrk(str, sep)) != NULL) {
+		*lasts = p + 1;
+		*p = '\0';
+	} else {
+		*lasts = NULL;
+	}
+	return str;
+} 
+#endif
 #endif
 
 #ifdef NCBI_FTDS

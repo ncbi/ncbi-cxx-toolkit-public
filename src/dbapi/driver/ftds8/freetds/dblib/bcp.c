@@ -23,7 +23,11 @@
 #include "sybfront.h"
 #include "sybdb.h"
 #include "dblib.h"
+#ifdef NCBI_FTDS
+#ifndef WIN32
 #include <unistd.h>
+#endif
+#endif
 
 #ifdef TARGET_API_MAC_OS8
 #include <stdlib.h>

@@ -114,7 +114,9 @@ typedef int	(*INTFUNCPTR)();
 #undef STATUS
 #endif
 typedef int STATUS;
-typedef unsigned char BOOL ;
+#ifndef NCBI_FTDS
+typedef unsigned char BOOL;
+#endif
 #endif
 
 typedef unsigned char DBBOOL ;

@@ -315,6 +315,15 @@
 #endif
 
 /*
+ * Export specifier for library dbapi_driver_ftds
+ */
+#ifdef NCBI_DBAPIDRIVER_FTDS_EXPORTS
+#  define NCBI_DBAPIDRIVER_FTDS_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_DBAPIDRIVER_FTDS_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library dbapi
  */
 #ifdef NCBI_DBAPI_EXPORTS
@@ -1021,6 +1030,7 @@
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
+#  define NCBI_DBAPIDRIVER_FTDS_EXPORT
 #  define NCBI_DBAPI_EXPORT
 #  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
 #  define NCBI_DOCSUM_EXPORT
@@ -1123,6 +1133,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.87  2004/12/10 15:26:41  ssikorsk
+ * FreeTDS is ported on windows
+ *
  * Revision 1.86  2004/10/20 16:53:20  ivanov
  * Renamed NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT->NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
  *

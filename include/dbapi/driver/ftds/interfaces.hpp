@@ -32,6 +32,8 @@
  *
  */
 
+#include <corelib/ncbistl.hpp>
+
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
@@ -142,7 +144,7 @@ const unsigned int kTDSMaxNameLen = 128 + 4;
 
 I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0);
 
-class CTDSContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDSContext : public I_DriverContext
 {
     friend class CDB_Connection;
     friend I_DriverContext* FTDS_CreateContext(map<string,string>* attr);
@@ -219,7 +221,7 @@ private:
 //  CTL_Connection::
 //
 
-class CTDS_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_Connection : public I_Connection
 {
     friend class CTDSContext;
     friend class CDB_Connection;
@@ -302,7 +304,7 @@ private:
 //  CTDS_LangCmd::
 //
 
-class CTDS_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_LangCmd : public I_LangCmd
 {
     friend class CTDS_Connection;
 protected:
@@ -346,7 +348,7 @@ private:
 //  CTL_RPCCmd::
 //
 
-class CTDS_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_RPCCmd : public I_RPCCmd
 {
     friend class CTDS_Connection;
 protected:
@@ -395,7 +397,7 @@ private:
 //  CTDS_CursorCmd::
 //
 
-class CTDS_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_CursorCmd : public I_CursorCmd
 {
     friend class CTDS_Connection;
 protected:
@@ -441,7 +443,7 @@ private:
 //  CTDS_BCPInCmd::
 //
 
-class CTDS_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_BCPInCmd : public I_BCPInCmd
 {
     friend class CTDS_Connection;
 protected:
@@ -476,7 +478,7 @@ private:
 //  CTDS_SendDataCmd::
 //
 
-class CTDS_SendDataCmd : public I_SendDataCmd
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_SendDataCmd : public I_SendDataCmd
 {
     friend class CTDS_Connection;
 protected:
@@ -514,7 +516,7 @@ struct STDS_ColDescr
 //  CTDS_RowResult::
 //
 
-class CTDS_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_RowResult : public I_Result
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
@@ -556,7 +558,7 @@ protected:
 //  CTDS_BlobResult::
 //
 
-class CTDS_BlobResult : public I_Result
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_BlobResult : public I_Result
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
@@ -600,7 +602,7 @@ protected:
 //  CTDS_CursorResult::
 //
 
-class CTDS_ParamResult : public CTDS_RowResult
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_ParamResult : public CTDS_RowResult
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
@@ -621,7 +623,7 @@ protected:
 };
 
 
-class CTDS_ComputeResult : public CTDS_RowResult
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_ComputeResult : public CTDS_RowResult
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
@@ -644,7 +646,7 @@ protected:
 };
 
 
-class CTDS_StatusResult : public I_Result
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_StatusResult : public I_Result
 {
     friend class CTDS_LangCmd;
     friend class CTDS_RPCCmd;
@@ -673,7 +675,7 @@ protected:
 };
 
 
-class CTDS_CursorResult : public I_Result
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_CursorResult : public I_Result
 {
     friend class CTDS_CursorCmd;
 protected:
@@ -706,7 +708,7 @@ protected:
 //
 #define CTDS_ITDESCRIPTOR_TYPE_MAGNUM 0xf00
 
-class CTDS_ITDescriptor : public I_ITDescriptor
+class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDS_ITDescriptor : public I_ITDescriptor
 {
     friend class CTDS_RowResult;
     friend class CTDS_BlobResult;
@@ -740,6 +742,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/10 15:26:41  ssikorsk
+ * FreeTDS is ported on windows
+ *
  * Revision 1.16  2004/10/16 20:48:42  vakatov
  * +  #include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
  * to allow the renaming (and the use of the renamed) DBLIB symbols in

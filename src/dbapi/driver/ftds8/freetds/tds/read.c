@@ -99,7 +99,7 @@ struct timeval selecttimeout;
 			select (tds->s + 1, &fds, NULL, NULL, NULL);
 			len = READ(tds->s, buf + got, buflen - got);
 			if (len <= 0) {
-				if (len < 0 && (errno == EINTR || errno == EINPROGRESS)) len = 0;
+				if (len < 0 && (errno == EINTR || errno == TDSSOCK_EINPROGRESS)) len = 0;
 				else return (-1); /* SOCKET_ERROR); */
 			}  
 			got += len;

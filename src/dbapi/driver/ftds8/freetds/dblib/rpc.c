@@ -23,7 +23,11 @@
 #include "sybfront.h"
 #include "sybdb.h"
 #include "dblib.h"
+#ifdef NCBI_FTDS
+#ifndef WIN32
 #include <unistd.h>
+#endif
+#endif
 
 
 static char  software_version[]   = "$Id$";

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 
@@ -90,6 +91,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/10 15:26:12  ssikorsk
+ * FreeTDS is ported on windows
+ *
  * Revision 1.3  2003/10/10 14:03:59  ucko
  * Switch MSSQL server to ms_dev2, since dev1 seems to be down.
  *

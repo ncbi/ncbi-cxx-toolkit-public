@@ -41,6 +41,68 @@ static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 #include <stdio.h>
 #endif
 
+#ifdef NCBI_FTDS
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+#include <windows.h>
+#define READSOCKET(a,b,c)	recv((a), (b), (c), 0L)
+#define WRITESOCKET(a,b,c)	send((a), (b), (c), 0L)
+#define CLOSESOCKET(a)		closesocket((a))
+#define IOCTLSOCKET(a,b,c)	ioctlsocket((a), (b), (c))
+#define NETDB_REENTRANT 1	/* BSD-style netdb interface is reentrant */
+
+#define TDSSOCK_EINTR WSAEINTR
+#define TDSSOCK_EINPROGRESS WSAEINPROGRESS
+#define TDSSOCK_EWOULDBLOCK WSAEWOULDBLOCK
+
+#define getpid() GetCurrentThreadId()
+#define sock_errno WSAGetLastError()
+#ifndef __MINGW32__
+typedef DWORD pid_t;
+#endif
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
+#define atoll _atoi64
+#define vsnprintf _vsnprintf
+
+#ifndef WIN32
+#define WIN32 1
+#endif
+
+#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) */ 
+#endif /* NCBI_FTDS */
+
+#ifndef sock_errno
+#define sock_errno errno
+#endif
+ 
+#ifndef TDSSOCK_EINTR
+#define TDSSOCK_EINTR EINTR
+#endif
+
+#ifndef TDSSOCK_EINPROGRESS 
+#define TDSSOCK_EINPROGRESS EINPROGRESS
+#endif 
+
+#ifndef TDSSOCK_EWOULDBLOCK 
+#define TDSSOCK_EWOULDBLOCK EWOULDBLOCK
+#endif 
+
+#ifndef READSOCKET
+#define READSOCKET(a,b,c)	read((a), (b), (c))
+#endif /* !READSOCKET */
+
+#ifndef WRITESOCKET
+#define WRITESOCKET(a,b,c)	write((a), (b), (c))
+#endif /* !WRITESOCKET */
+
+#ifndef CLOSESOCKET
+#define CLOSESOCKET(a)		close((a))
+#endif /* !CLOSESOCKET */
+
+#ifndef IOCTLSOCKET
+#define IOCTLSOCKET(a,b,c)	ioctl((a), (b), (c))
+#endif /* !IOCTLSOCKET */ 
+
 #ifdef __INCvxWorksh
 #include <signal.h>
 #include <ioLib.h> /* for FIONBIO */
@@ -54,7 +116,9 @@ static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
+#ifndef NCBI_FTDS
 #include <sys/time.h>
+#endif
 #endif
 
 #ifndef WIN32

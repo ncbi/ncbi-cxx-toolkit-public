@@ -24,6 +24,12 @@
 #include <dmalloc.h>
 #endif
 
+#ifdef NCBI_FTDS
+#ifdef WIN32
+#include <windows.h>
+#endif
+#endif
+
 #ifdef WIN32                                           
 #define IOCTL(a,b,c) ioctlsocket(a, b, c)
 #else
@@ -35,7 +41,6 @@
 #else
 #define DOMAIN 0
 #endif
-
 
 static char  software_version[]   = "$Id$";
 static void *no_unused_var_warn[] = {software_version,
@@ -231,6 +236,22 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 
 		tdsdump_log(TDS_DBG_INFO1, "%L Connecting addr %s port %d\n", 
 					inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+
+#ifdef NCBI_FTDS
+#ifdef WIN32
+        {
+            WSADATA wsaData; 
+            if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
+            {
+		        perror ("socket");
+			    tds_free_config(config);
+			    tds_free_socket(tds);
+			    return NULL;
+            }
+        }
+#endif
+#endif
+
 		if ((tds->s = socket (AF_INET, SOCK_STREAM, 0)) < 0) {
 		    perror ("socket");
 			tds_free_config(config);
@@ -247,7 +268,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
         }
 #endif
         retval = connect(tds->s, (struct sockaddr *) &sin, sizeof(sin));
-        if (retval < 0 && errno == EINPROGRESS) retval = 0;
+        if (retval < 0 && (sock_errno == TDSSOCK_EINPROGRESS || sock_errno == TDSSOCK_EWOULDBLOCK)) retval = 0;
         if (retval < 0) {
 		    close(tds->s);
 		    continue;

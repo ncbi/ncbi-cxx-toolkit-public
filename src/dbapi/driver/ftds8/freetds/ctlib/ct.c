@@ -19,7 +19,11 @@
 
 #include <tds_config.h>
 #include <stdlib.h>
+#ifdef NCBI_FTDS
+#ifndef WIN32
 #include <unistd.h>
+#endif
+#endif
 #include <ctpublic.h>
 #include <ctlib.h>
 #include "tdsutil.h"

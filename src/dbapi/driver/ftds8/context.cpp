@@ -33,7 +33,11 @@
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
-
+#ifdef NCBI_FTDS
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -456,6 +460,7 @@ extern "C" {
         return (void*) DBAPI_RegisterDriver_FTDS;
     }
 
+    NCBI_DBAPIDRIVER_FTDS_EXPORT
     void* DBAPI_E_ftds()
     {
         return NCBI_FTDS_ENTRY_POINT();
@@ -470,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/12/10 15:26:11  ssikorsk
+ * FreeTDS is ported on windows
+ *
  * Revision 1.26  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

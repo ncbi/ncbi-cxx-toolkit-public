@@ -22,10 +22,15 @@
 
 #include "tds.h"
 
+#ifndef WIN32
 #include <sys/ioctl.h>
+#endif
+
 #include <time.h>                  /* Jeff's hack */
 #ifndef __INCvxWorksh             /* vxWorks doesn't have a sys/time.h */
+#ifndef WIN32
 #include <sys/time.h>
+#endif
 #endif
 
 #ifdef __cplusplus

@@ -24,7 +24,11 @@
 #include "sybdb.h"
 #include "dblib.h"
 #include "tdsconvert.h"
+#ifdef NCBI_FTDS
+#ifndef WIN32
 #include <unistd.h>
+#endif
+#endif
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>

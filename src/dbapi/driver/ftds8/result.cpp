@@ -1267,7 +1267,7 @@ CTDS_CursorResult::CTDS_CursorResult(CDB_LangCmd* cmd)
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception&) {
         throw CDB_ClientEx(eDB_Error, 222010,
                            "CTDS_CursorResult::CTDS_CursorResult",
                            "failed to get the results");
@@ -1351,7 +1351,7 @@ bool CTDS_CursorResult::Fetch()
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception&) {
         throw CDB_ClientEx(eDB_Error, 222011, "CTDS_CursorResult::Fetch",
                            "Failed to fetch the results");
     }
@@ -1470,6 +1470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/10 15:26:11  ssikorsk
+ * FreeTDS is ported on windows
+ *
  * Revision 1.14  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

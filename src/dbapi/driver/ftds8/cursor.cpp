@@ -113,7 +113,7 @@ CDB_Result* CTDS_CursorCmd::Open()
         }
 #endif
         delete m_LCmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception&) {
         if (m_LCmd) {
             delete m_LCmd;
             m_LCmd = 0;
@@ -142,7 +142,7 @@ CDB_Result* CTDS_CursorCmd::Open()
         }
 #endif
         delete m_LCmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception&) {
         if (m_LCmd) {
             delete m_LCmd;
             m_LCmd = 0;
@@ -189,7 +189,7 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
         }
 #endif
         delete cmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception&) {
         if (cmd)
             delete cmd;
         throw CDB_ClientEx(eDB_Error, 222004, "CTDS_CursorCmd::Update",
@@ -277,7 +277,7 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
         }
 #endif
         delete cmd;
-    } catch (CDB_Exception& e) {
+    } catch (CDB_Exception&) {
         if (cmd)
             delete cmd;
         throw CDB_ClientEx(eDB_Error, 222004, "CTDS_CursorCmd::Update",
@@ -325,7 +325,7 @@ bool CTDS_CursorCmd::Close()
             }
 #endif
             delete m_LCmd;
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception&) {
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
@@ -355,7 +355,7 @@ bool CTDS_CursorCmd::Close()
             }
 #endif
             delete m_LCmd;
-        } catch (CDB_Exception& e) {
+        } catch (CDB_Exception&) {
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
@@ -555,6 +555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/10 15:26:11  ssikorsk
+ * FreeTDS is ported on windows
+ *
  * Revision 1.11  2004/05/17 21:13:37  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
