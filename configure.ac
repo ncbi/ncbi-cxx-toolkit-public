@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.341 2005/01/27 17:45:52 ucko Exp $
+#  $Id: configure.ac,v 1.342 2005/01/27 19:44:50 ssikorsk Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2890,7 +2890,7 @@ if test "$with_python" != "no" ; then
       yes | "" ) : ${PYTHON_PATH:="/usr/local/python-2.4"} ;;
       */*      ) PYTHON_PATH=$with_python                  ;;
    esac
-   PYTHON_INCLUDE="-I$PYTHON_PATH/include/python2.4 -I$srcdir/src/dbapi/lang_bind/python"
+   PYTHON_INCLUDE="-I$PYTHON_PATH/include/python2.4"
    PYTHON_LIBPATH="$PYTHON_PATH/lib/python2.4/config"
    PYTHON_LIBS="-L$PYTHON_LIBPATH ${CONF_f_runpath}${PYTHON_LIBPATH} -lpython2.4 -lutil -lpthread -lm -ldl"
    CPPFLAGS="$PYTHON_INCLUDE $orig_CPPFLAGS"
