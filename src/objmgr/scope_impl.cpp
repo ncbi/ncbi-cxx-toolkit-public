@@ -760,11 +760,11 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
             }
         }}
         
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
-        if ( mapper.HaveMatchingHandles(id) ) {
+        CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
+        if ( mapper->HaveMatchingHandles(id) ) {
             // than try matching handles
             TSeq_id_HandleSet hset;
-            mapper.GetMatchingHandles(id, hset);
+            mapper->GetMatchingHandles(id, hset);
             ITERATE ( TSeq_id_HandleSet, hit, hset ) {
                 if ( *hit == id ) // already checked
                     continue;
@@ -795,7 +795,8 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
     if ( id )  {
         {{
             TReadLockGuard rguard(m_Scope_Conf_RWLock);
-            ret.m_Bioseq_Info = x_GetBioseq_Info(id, get_flag).GetPointer();
+            CRef<CBioseq_ScopeInfo> info = x_GetBioseq_Info(id, get_flag);
+            ret.m_Bioseq_Info = info;
         }}
         if ( bool(ret.m_Bioseq_Info) && !ret.x_GetScopeInfo().HasBioseq() ) {
             ret.m_Bioseq_Info.Reset();
@@ -1103,10 +1104,10 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info, int get_flag)
     // Protected by m_Scope_Conf_RWLock in upper-level functions
     CSeqMatch_Info match_info;
     auto_ptr<TSeq_id_HandleSet> hset;
-    CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
-    if ( mapper.HaveMatchingHandles(id_info.first) ) {
+    CRef<CSeq_id_Mapper> mapper = CSeq_id_Mapper::GetInstance();
+    if ( mapper->HaveMatchingHandles(id_info.first) ) {
         hset.reset(new TSeq_id_HandleSet);
-        mapper.GetMatchingHandles(id_info.first, *hset);
+        mapper->GetMatchingHandles(id_info.first, *hset);
         hset->erase(id_info.first);
         if ( hset->empty() )
             hset.reset();
@@ -1203,16 +1204,18 @@ CScope_Impl::GetTSESetWithAnnotsRef(const CBioseq_ScopeInfo& binfo,
                                     TAnnotRefMap& tse_map)
 {
     TSeq_id_HandleSet idh_set;
-    CSeq_id_Mapper& id_mapper = *CSeq_id_Mapper::GetInstance();
-    if (id_mapper.HaveReverseMatch(idh)) {
-        id_mapper.GetReverseMatchingHandles(idh, idh_set);
+    CRef<CSeq_id_Mapper> id_mapper = CSeq_id_Mapper::GetInstance();
+    if (id_mapper->HaveReverseMatch(idh)) {
+        id_mapper->GetReverseMatchingHandles(idh, idh_set);
     }
     else {
         idh_set.insert(idh);
     }
     ITERATE(TSeq_id_HandleSet, match_it, idh_set) {
         if ( binfo.HasBioseq() ) {
-            tse_map.GetData()[binfo.GetTSE_Lock()].insert(*match_it);
+            TTSE_Lock seq_tse = binfo.GetTSE_Lock();
+            const_cast<CTSE_Info&>(*seq_tse).x_GetRecords(*match_it, false);
+            tse_map.GetData()[seq_tse].insert(*match_it);
         }
         // Search in all data sources
         for (CPriority_I it(m_setDataSrc); it; ++it) {
@@ -1335,7 +1338,9 @@ CConstRef<CSynonymsSet> CScope_Impl::GetSynonyms(const CSeq_id_Handle& id)
 {
     _ASSERT(id);
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    return x_GetSynonyms(*x_GetBioseq_Info(id, CScope::eGetBioseq_All));
+    CRef<CBioseq_ScopeInfo> info =
+        x_GetBioseq_Info(id, CScope::eGetBioseq_All);
+    return x_GetSynonyms(*info);
 }
 
 
@@ -1384,11 +1389,10 @@ CScope_Impl::x_GetSynonyms(CBioseq_ScopeInfo& info)
             //syn_set->AddSynonym(id);
             if ( info.HasBioseq() ) {
                 ITERATE(CBioseq_Info::TId, it, info.GetBioseq_Info().GetId()) {
-                    CSeq_id_Mapper& mapper =
-                        *CSeq_id_Mapper::GetInstance();
-                    if ( mapper.HaveReverseMatch(*it) ) {
+                    CRef<CSeq_id_Mapper> mapper =CSeq_id_Mapper::GetInstance();
+                    if ( mapper->HaveReverseMatch(*it) ) {
                         TSeq_id_HandleSet hset;
-                        mapper.GetReverseMatchingHandles(*it, hset);
+                        mapper->GetReverseMatchingHandles(*it, hset);
                         ITERATE(TSeq_id_HandleSet, mit, hset) {
                             x_AddSynonym(*mit, *syn_set, info);
                         }
@@ -1453,6 +1457,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/09/01 17:54:52  vasilche
+* Fixed couple of warnings from Sun C++.
+* Fixed loading of annotations from split chunks.
+*
 * Revision 1.24  2004/08/31 21:03:49  grichenk
 * Added GetIds()
 *
