@@ -8,6 +8,8 @@ ulimit -n 1024 > /dev/null 2>&1
 # PYTHONPATH="$CFG_LIB:$CFG_BIN"
 if test -f $CFG_LIB/libpython_ncbi_dbapi.so ; then
     PYTHONPATH="$CFG_LIB"
+    LD_LIBRARY_PATH="$CFG_LIB:$LD_LIBRARY_PATH"
+    export LD_LIBRARY_PATH
 else
     PYTHONPATH="$CFG_BIN"
 fi
