@@ -60,6 +60,22 @@ test2 iterator_minus_minus "" "iterator minus minus"
 
 test2 seg_overlap "" "overlapping segments"
 
+test2 trunc1 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 1"
+
+test2 trunc2 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 2"
+
+test2 trunc3 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 3"
+
+test2 trunc4 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 4"
+
+test2 trunc5 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 5"
+
+test2 trunc6 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 6"
+
+test2 trunc7 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 7"
+
+test2 trunc8 "-truncateoverlaps t -noobjmgr t" "truncation of overlaps 8"
+
 rm $tmp_out
 
 echo "Done!"
