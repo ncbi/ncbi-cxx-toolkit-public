@@ -46,12 +46,14 @@
 
 /* Standard logging message
  */
-#define CONN_LOG(level, descr)                             \
+#define CONN_LOG_EX(level, descr, status)                  \
   CORE_LOGF(level,                                         \
             ("%s (connector \"%s\", error \"%s\")", descr, \
              conn->meta.get_type                           \
              ? conn->meta.get_type(conn->meta.c_get_type)  \
              : "Unknown", IO_StatusStr(status)))
+
+#define CONN_LOG(level, descr)  CONN_LOG_EX(level, descr, status)
 
 
 /* Standard macros to verify that the passed connection handle is not NULL
@@ -158,14 +160,13 @@ extern EIO_Status CONN_ReInit
         /* cancel async. i/o event handler */
         CONN_WaitAsync(conn, eIO_ReadWrite, 0, 0, 0);
 #endif
-        /* flush unwritten data */
-        CONN_Flush(conn);
         {{ /* erase unread data */
             size_t buf_size = BUF_Size(conn->buf);
             verify(BUF_Read(conn->buf, 0, buf_size) == buf_size);
         }}
-        /* call current connector's "CLOSE" method */
+        /* call current connector's "FLUSH" and "CLOSE" methods */
         if (conn->state == eCONN_Open) {
+            CONN_Flush(conn);
             if ( conn->meta.close ) {
                 status = conn->meta.close(conn->meta.c_close,
                                           conn->l_timeout ==
@@ -284,10 +285,10 @@ extern EIO_Status CONN_SetTimeout
             conn->w_timeout  = new_timeout;
         }
     } else {
-        status = eIO_InvalidArg;
-        CONN_LOG(eLOG_Warning,
+        CONN_LOG(eLOG_Error,
                  "[CONN_SetTimeout]  Unknown event to set timeout for");
-        
+        status = eIO_InvalidArg;
+        assert(0);
     }
 
     return status;
@@ -304,6 +305,10 @@ extern const STimeout* CONN_GetTimeout
     case eIO_Open:
         return conn->c_timeout;
     case eIO_ReadWrite:
+        CONN_LOG_EX(eLOG_Warning,
+                    "[CONN_GetTimeout]  ReadWrite timeout requested",
+                    eIO_InvalidArg);
+        /*FALLTHRU*/
     case eIO_Read:
         return conn->r_timeout;
     case eIO_Write:
@@ -312,6 +317,9 @@ extern const STimeout* CONN_GetTimeout
         return conn->l_timeout;
     }
 
+    CONN_LOG_EX(eLOG_Error,
+                "[CONN_GetTimeout]  Unknown event to get timeout for",
+                eIO_InvalidArg);
     assert(0);
     return 0;
 }
@@ -363,12 +371,11 @@ extern EIO_Status CONN_Write
 {
     EIO_Status status;
 
+    *n_written = 0;
     CONN_NOT_NULL("Write");
 
     if (conn->state == eCONN_Unusable  ||  !n_written)
         return eIO_InvalidArg;
-
-    *n_written = 0;
 
     /* open connection, if not yet opened */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
@@ -398,9 +405,9 @@ extern EIO_Status CONN_Flush
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
 
-    /* do nothing, if not opened yet */
-    if (conn->state != eCONN_Open)
-        return eIO_Success;
+    /* perform open, if not opened yet */
+    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
+        return status;
 
     /* call current connector's "FLUSH" method */
     status = conn->meta.flush
@@ -416,8 +423,7 @@ extern EIO_Status CONN_Flush
 }
 
 
-/* Read or peek data from the input queue
- * See CONN_Read()
+/* Read or peek data from the input queue, see CONN_Read()
  */
 static EIO_Status s_CONN_Read
 (CONN        conn,
@@ -438,14 +444,12 @@ static EIO_Status s_CONN_Read
     }
 
     /* read data from the internal "peek-buffer", if any */
-    if ( size ) {
-        *n_read = peek
-            ? BUF_Peek(conn->buf, buf, size) : BUF_Read(conn->buf, buf, size);
-        if (*n_read == size)
-            return eIO_Success;
-        buf = (char*) buf + *n_read;
-        size -= *n_read;
-    }
+    *n_read = peek
+        ? BUF_Peek(conn->buf, buf, size) : BUF_Read(conn->buf, buf, size);
+    if (*n_read == size)
+        return eIO_Success;
+    buf = (char*) buf + *n_read;
+    size -= *n_read;
 
     /* read data from the connection */
     {{
@@ -473,8 +477,7 @@ static EIO_Status s_CONN_Read
 }
 
 
-/* Persistently read data from the input queue
- * See CONN_Read()
+/* Persistently read data from the input queue, see CONN_Read()
  */
 static EIO_Status s_CONN_ReadPersist
 (CONN    conn,
@@ -508,21 +511,15 @@ extern EIO_Status CONN_Read
  size_t*        n_read,
  EIO_ReadMethod how)
 {
-    EIO_Status status;
-
+    *n_read = 0;
     CONN_NOT_NULL("Read");
 
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
 
-    /* perform open, if not yet */
-    if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
-        return status;
-
-    /* flush the unwritten output data, if any */
+    /* flush the unwritten output data, if any (NB: also opens connection) */
     CONN_Flush(conn);
 
-    *n_read = 0;
     switch (how) {
     case eIO_ReadPlain:
         return s_CONN_Read(conn, buf, size, n_read, 0/*no peek*/);
@@ -559,7 +556,7 @@ extern EIO_Status CONN_Close(CONN conn)
 {
     CONN_NOT_NULL("Close");
 
-    /* callback established? call it first, if yes! */
+    /* callback established? call it first, if so */
     if (conn->callback[eCONN_OnClose].func)
         conn->callback[eCONN_OnClose].func(conn, eCONN_OnClose,
                                            conn->callback[eCONN_OnClose].data);
@@ -670,6 +667,10 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2002/09/06 15:43:20  lavr
+ * Bug fixes of late assignments in Read and Write; Flush changed to open
+ * connection if not yet open; more error logging
+ *
  * Revision 6.25  2002/08/07 16:32:32  lavr
  * Changed EIO_ReadMethod enums accordingly; log moved to end
  *
