@@ -31,7 +31,7 @@
 */
 
 #include "dbapi_testspeed.hpp"
-//#include <map>
+#include <corelib/ncbitime.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -68,6 +68,9 @@ int main (int argc, char* argv[])
   I_DriverContext* my_context;
   CDB_Connection* con;
   CDB_BCPInCmd* bcp=NULL;
+  CStopWatch timer;
+
+
 
   // Command line args
   string server_name, driver_name;
@@ -89,7 +92,7 @@ int main (int argc, char* argv[])
   if(p){
     row_count = atoi(p);
     if(row_count<1 || row_count>0x100000) {
-      cout << "Error -- invalid row count; valid values are 1 .. 1 Meg.\n";
+      cerr << "Error -- invalid row count; valid values are 1 .. 1 Meg.\n";
       return Usage();
     }
   }
@@ -100,7 +103,7 @@ int main (int argc, char* argv[])
   if(p){
     col_count = atoi(p);
     if(col_count<1 || col_count>5) {
-      cout << "Error -- invalid column count = " << col_count << "; valid values are: 1..5\n";
+      cerr << "Error -- invalid column count = " << col_count << "; valid values are: 1..5\n";
       return Usage();
     }
   }
@@ -109,11 +112,11 @@ int main (int argc, char* argv[])
   if(p){
     blob_size = atoi(p);
     if(blob_size<1 || blob_size>1024000 ) {
-      cout << "Error -- invalid blob size; valid values are 1 (kb) to 1000 (kb)\n";
+      cerr << "Error -- invalid blob size; valid values are 1 (kb) to 1000 (kb)\n";
       return Usage();
     }
     if(col_count<5) {
-      cout << "Error -- blob size makes sense for '-c 5' only.\n";
+      cerr << "Error -- blob size makes sense for '-c 5' only.\n";
       return 1;
     }
   }
@@ -131,11 +134,14 @@ int main (int argc, char* argv[])
     mapDrvAttrib.insert(
       map<string,string>::value_type( string("version"), string("100") )
     );
+    my_context = drv_mgr.GetDriverContext(driver_name, &err_msg, &mapDrvAttrib);
   }
-  my_context = drv_mgr.GetDriverContext (driver_name, &err_msg, &mapDrvAttrib);
+  else{
+    my_context = drv_mgr.GetDriverContext( driver_name, &err_msg );
+  }
 
   if(!my_context) {
-    cout << "Can not load a driver " << driver_name
+    cerr << "Can not load a driver " << driver_name
          << " [" << err_msg << "]\n";
     return 1;
   }
@@ -169,7 +175,7 @@ int main (int argc, char* argv[])
       bcp = con->BCPIn(table_name, col_count);
     }
     else {
-      cout << "-c option not supported yet\n";
+      cerr << "-c option not supported yet\n";
       return 1;
     }
 
@@ -188,6 +194,13 @@ int main (int argc, char* argv[])
       }
     }
 
+    cout<< "driver " << driver_name
+        << ", rows " << row_count
+        << ", cols " << col_count
+        << ", blob size " << blob_size << "\n";
+
+    timer.Start();
+
     // Bind data from a program variables
     bcp->Bind(0, &int_val);
     if(col_count>1) bcp->Bind(1, &fl_val  );
@@ -199,8 +212,7 @@ int main (int argc, char* argv[])
       int_val  = i;
       fl_val   = i + 0.999;
       date_val = date_val.Value();
-      str_val  = "Franz Joseph Haydn symphony # ";
-      str_val+= NStr::IntToString(i);
+      str_val  = string("Franz Joseph Haydn symphony # ")+NStr::IntToString(i);
       pTxt.MoveTo(0);
 
       if( bcp ) {
@@ -220,8 +232,14 @@ int main (int argc, char* argv[])
     if( bcp ) {
       bcp->CompleteBCP();
     }
+    double timeElapsed = timer.Elapsed();
+    cout << "inserting timeElapsed=" << timeElapsed << "\n";
 
-    FetchResults(con);
+    timer.Start();
+    FetchResults(con, table_name);
+    timeElapsed = timer.Elapsed();
+    cout << "fetching timeElapsed=" << timeElapsed << "\n";
+    cout << "\n";
 
     DeleteTable(con, table_name);
     delete bcp;
@@ -229,7 +247,7 @@ int main (int argc, char* argv[])
   }
   catch (CDB_Exception& e) {
     HandleIt(&e);
-    DeleteTable(con);
+    DeleteTable(con, table_name);
     return 1;
   }
 
