@@ -68,19 +68,21 @@ either a list of
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CNodeRef">
 <i>CNodeRef</i></a> 
 objects, or as a list of <i>auto_ptr</i>'s to <i>CNodeRef</i>'s, where 
-<i>CNodeRef</i> is a type definition for a <i>CRef</i> to a <i>CNCBINode</i>. 
+<i>CNodeRef</i> is a type definition for a <a href="cref.html#cref"> <i>CRef</i></a> to a <i>CNCBINode</i>. 
 This distinction is transparent to the user, and the important point is that 
 the de-allocation of all dynamically embedded child nodes is handled 
 automatically by the containing class. 
 
 <p>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Print"> 
-<i>CNCBIN0de::Print()</i></a> 
+<i>CNCBINode::Print()</i></a> 
 recursively generates the HTML text for the node and all of its children, and outputs the
 result to a specified output stream. 
 
 The <i>Print()</i> function takes two arguments: (1) an output stream, and (2) a
-<i>CNCBINode::TMode</i> object, where <i>TMode</i> is an internal class defined inside the
+<i>CNCBINode::TMode</i> object, where 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/TMode.html">
+<i>TMode</i></a> is an internal class defined inside the
 <i>CNCBINode</i> class.  The <i>TMode</i> object is used by the print function to
 determine what type of encoding takes place on the output. 
 The <i>TMode</i> class has three data members defined:
@@ -91,16 +93,20 @@ The <i>TMode</i> class has three data members defined:
 </ol>
 <i>Print()</i> is implemented
 as a recursive function that allows the child node to dynamically "inherit" its mode of output from the parent node
-which contains it. <i>TMode</i> objects are created dynamically as needed, inside the <i>Print()</i> function.
+which contains it. <i>Print()</i> outputs the current node using <i>PrintBegin()</i>, recursively prints the
+child nodes using <i>PrintChildren()</i>, and concludes with a call to <i>PrintEnd()</i>.
+<i>TMode</i> objects are created dynamically as needed, inside the <i>Print()</i> function.
 The first call to <i>Print()</i> from say, a root <i>Page</i> node, generally specifies the output stream
 only, and uses a default <i>eHTML</i> enumeration value to initialize a <i>TMode</i> object.
 The <i>TMode</i> constructor in this case is:
 
-<center><pre> TMode(EMode M = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre></center><br>
+<center><pre> TMode(EMode m = eHTML): m_Mode(m), m_Node(0), m_Previous(0) {}</pre></center><br>
 
 The call to <i>Print()</i> with no <i>TMode</i> argument automatically calls this default
 constructor to create a <i>TMode</i> object which will then be substituted for the formal
-parameter <i>prev</i> in tbe <i>Print()</i> method:
+parameter <i>prev</i> inside tbe <i>Print()</i> method. One way to think of this is that the
+initial print call - which will ultimately be propagated to all of the child nodes - is
+initiated with a "null parent" <i>TMode</i> object that only specifies the mode of output.
 
 <font color = "#000080"> <pre>
 CNcbiOstream& CNCBINode::Print(CNcbiOstream& os, TMode prev)
@@ -127,6 +133,8 @@ body of the <i>Print()</i> method however, a new <i>TMode</i> is created for sub
 recursion, with the following constructor used to create the new <i>TMode</i> at that level:
 
 <center><pre> TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode), m_Node(N), m_Previous(M) {}</pre></center><br>
+
+where <i>M</i> is the <i>TMode</i> input parameter, and <i>N</i> is the <i>current</i> node.<p>
 Thus, the output encoding specified at the top level is propagated to the <i>PrintXxx()</i> methods
 of all the child nodes embedded in the parent. The <i>CNCBINode::PrintXxx()</i> methods essentially do nothing;
 <i>PrintBegin()</i> and <i>PrintEnd()</i> simply return 0, and <i>PrintChildren()</i> just
@@ -134,7 +142,7 @@ calls <i>Print()</i> on each child. Thus, the actual printing is implemented by 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=PrintBegin"> 
 <i>PrintBegin()</i></a>  and
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=PrintEnd"> 
-<i>PrintEnd()</i></a> methods specialized for the child objects. 
+<i>PrintEnd()</i></a> methods that are specialized by the child objects. 
 <p>
 
 As the foregoing discussion implies, a generic <i>CNCBINode</i> which has no children explicitly installed
@@ -169,46 +177,56 @@ Many of these subclasses make little sense out of context, as they are designed 
 subcomponents of, for example, a <i>CHTMLPage</i>. Exceptions to this are the text nodes,
 which are described next.
 <p>
+
+
 <a name="text"> <h3>HTML Text nodes:
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLText.html"><i>CHTMLText</i> </a> and
-<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPlainText.html"><i>CHTMLPlainText</i> </a></h3>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPlainText.html">
+<i>CHTMLPlainText</i> </a></h3>
 
 The <i>CHTMLText</i> class uses the <i>m_Name</i> data member inherited from <i>CNCBINode</i>
-to store a text string of arbitrary length.  No new data members are introduced, but 
-two new member functions are defined. <i>SetText(string& s)</i> resets <i>m_Name</i> to the
-string <i>s</i>, and <i>GetText()</i> returns the value currently stored in <i>m_Name</i>. 
-The <i>PrintBegin()</i> method is also specialized to handle occurrences of <i>tagged</i> sections
-in the text, which are delimited by "&lt;@" and "@>". Further discussion of this feature is deferred
-until the section on the <a href="#page"> NCBI page classes </a>, which contain a <i>TTagMap</i>. <p>
+to store a text string of arbitrary length.  No new data members are introduced, but two new
+member functions are defined. <i>SetText()</i> resets <i>m_Name</i> to a new string, and
+<i>GetText()</i> returns the value currently stored in <i>m_Name</i>.  With the exception of
+specially <i>tagged</i> sections (described below), all text occurring in a <i>CHTMLText</i>
+node is sent directly to the output without further encoding. <p>
 
-With the exception of the special tag symbols described above, all text occurring in a
-<i>CHTMLText</i> node is sent directly to the output without further encoding. The
-<i>CHTMLPlainText</i> class is provided for text that may not have been encoded. The <i>SetText()</i> and
-<i>GetText()</i> member functions are as described for the <i>CHTMLText</i> class, and one
+The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CHTMLPlainText.html">
+<i>CHTMLPlainText</i></a> class is provided for text that may require further encoding. In addition to
+the <i>SetText()</i> and
+<i>GetText()</i> member functions described for the <i>CHTMLText</i> class, one
 new data member is introduced. <i>m_NoEncode</i> is a Boolean variable that designates whether or
-not the text requires encoding. <i>NoEncode()</i> and <i>SetNoEncode()</i> allow for access and
+not the text should be further encoded. <i>NoEncode()</i> and <i>SetNoEncode()</i> allow for access and
 modification of this private data member.
+For example:
 
-For example, the following code excerpt:
 <pre>
-      CHTMLText *Text = new CHTMLText("An unencoded CHTMLText node: &lt;br> testing BR &lt;br>");
-      Text->Print(cout);
+     (new CHTMLText("&lt;br> testing BR &lt;br>"))->Print(cout);
 </pre>
 will generate the output:
 <pre>
-An unencoded CHTMLText node: <br> testing BR <br>
-</pre>
+<br> testing BR <br> </pre>
 
 while:
 <pre>
-      CHTMLPlainText *Text = new CHTMLText("An encoded CHTMLText node: &lt;br> testing BR &lt;br>");
-      Text->Print(cout);
-</pre>
-will generate the output:
+    (new CHTMLPlainText("&lt;br> testing BR &lt;br>"))->Print(cout);</pre>
+will generate:
 <pre>
-An encoded CHTMLText node: &lt;br> testing BR &lt;br>
+&lt;br> testing BR &lt;br>
 </pre>
-<p>
+
+The text in the <i>CHTMLText</i> node is output verbatim, and the web browser interprets
+the <i>&lt;br></i> tags as line breaks. In contrast, the <i>CHTMLPlainText</i> node 
+effectively "insulates" its content from the browser's interpretation by 
+encoding the <i>&lt;br></i> tags as "&amp;lt;br&amp;gt;".<p>
+
+<i>Tag</i> names in the text are delimited by "&lt;@" and "@>", as in &lt;@tagname@>".
+This device is used for example, in the <a href="#templates"> template files</a> to insert 
+additional nodes in a pre-formatted default web page.
+The <i>PrintBegin()</i> method for the text node classes are specialized to skip over the
+tag names and their delimiters, ouputting only the text generated by the nodes inserted
+in that tagged section. Further discussion of this feature is deferred
+until the section on the <a href="#page"> NCBI page classes </a>, which contain a <i>TTagMap</i>. <p>
 
 <a name="page"> <h3> The NCBI Page classes </h3>
 
