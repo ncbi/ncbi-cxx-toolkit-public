@@ -188,7 +188,7 @@ CDbBlast::Run()
 
 /* Comparison function for sorting HSP lists in increasing order of the 
    number of HSPs in a hit. Needed for TrimBlastHSPResults below. */
-static int
+extern "C" int
 compare_hsplist_hspcnt(const void* v1, const void* v2)
 {
    BlastHSPList* r1 = *((BlastHSPList**) v1);
@@ -317,6 +317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/02/23 15:45:09  camacho
+ * Eliminate compiler warning about qsort
+ *
  * Revision 1.12  2004/02/19 21:12:02  dondosha
  * Added handling of error messages; fill info message in TrimBlastHSPResults
  *
