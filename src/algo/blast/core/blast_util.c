@@ -935,7 +935,7 @@ int GetPartialTranslation(const Uint1* nucl_seq,
       if (protein_length)
          *protein_length = length;
    } else {
-      Int4 index;
+      Int2 index;
       Int2 frame_sign = ((frame < 0) ? -1 : 1);
       Int4 offset = 0;
       Int4 frame_offsets[3];
