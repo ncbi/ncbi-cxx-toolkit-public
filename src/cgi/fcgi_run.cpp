@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2001/07/03 18:17:32  ivanov
+ * + #include <unistd.h> (need for getpid())
+ *
  * Revision 1.7  2001/07/02 13:05:22  golikov
  * +debug
  *
@@ -73,6 +76,7 @@ bool CCgiApplication::RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
 # include <fcgiapp.h>
 # include <sys/stat.h>
 # include <errno.h>
+# include <unistd.h>
 
 BEGIN_NCBI_SCOPE
 
