@@ -141,6 +141,9 @@ public:
     // Return TRUE if the file is open
     bool IsOpen() const;
 
+    // Return TRUE if the file is attached to some other BDB file
+    bool IsAttached() const;
+
     // Return TRUE if file can contain duplicate keys
     bool DuplicatesAllowed() const { return m_DuplicateKeys == eDuplicatesEnable; }
 
@@ -357,6 +360,10 @@ inline bool CBDB_RawFile::IsOpen() const
     return !m_FileName.empty();
 }
 
+inline bool CBDB_RawFile::IsAttached() const
+{
+    return m_DB_Attached;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -387,6 +394,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/07/23 18:07:56  kuznets
+ * Implemented couple new functions to work with attached files
+ *
  * Revision 1.13  2003/07/22 19:21:04  kuznets
  * Implemented support of attachable berkeley db files
  *
