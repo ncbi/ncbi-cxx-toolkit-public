@@ -1298,7 +1298,7 @@ fi
 #### Detect KCC compiler
 if test "$GCC" != "yes" ; then
    touch kcc_test.c
-   kcc_ver="`$CXX -V -c kcc_test.c 2>&1`"
+   kcc_ver="`$CXX -V -c kcc_test.c 2>&1 | tail -1`"
    rm -f kcc_test.c kcc_test.o
    case "$kcc_ver" in 
       KAI* )  KCC="yes" ;;
