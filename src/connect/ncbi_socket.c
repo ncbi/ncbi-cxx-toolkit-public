@@ -86,7 +86,7 @@
 #if defined(NCBI_OS_UNIX)
 #  include <sys/time.h>
 #  include <unistd.h>
-#  if  defined (NCBI_OS_DARWIN) && defined (__MWERKS__) &&  _MSL_USING_MW_C_HEADERS
+#  if  defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS) &&  _MSL_USING_MW_C_HEADERS
 #    include <ncbi_mslextras.h>
 #  else
 #    include <netdb.h>
@@ -2979,6 +2979,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.89  2003/04/02 16:21:34  rsmith
+ * replace _MWERKS_ with NCBI_COMPILER_METROWERKS
+ *
  * Revision 6.88  2003/04/02 13:26:07  rsmith
  * include ncbi_mslextras.h when compiling with MSL libs in Codewarrior.
  *
