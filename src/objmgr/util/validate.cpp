@@ -4664,6 +4664,8 @@ void CValidError_impl::ValidateSourceQualTags(
 {
     if ( str.empty() ) return;
 
+    int str_len = str.length();
+
     int state = sourceQualTags.GetInitialState();
     for ( int i = 0; i < str.length(); ++i ) {
         state = sourceQualTags.GetNextState(state, str[i]);
@@ -4672,8 +4674,18 @@ void CValidError_impl::ValidateSourceQualTags(
             if ( match.empty() ) {
                 match = "?";
             }
-            ValidErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredSourceNote, 
-                "Source note has structured tag " + match, obj);
+
+            bool okay = true;
+            if ( i - str_len >= 0 ) {
+                char ch = str[i - str_len];
+                if ( !isspace(ch) || ch != ';' ) {
+                    okay = false;
+                }
+            }
+            if ( okay ) {
+                ValidErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredSourceNote,
+                    "Source note has structured tag " + match, obj);
+            }
         }
     }
 }
@@ -5838,6 +5850,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2002/11/18 15:39:50  shomrat
+* ValidateSourceQualTags checks pattern on a left word boundry
+*
 * Revision 1.24  2002/11/18 15:29:05  kans
 * Implemented ValidateSeqSet (LF)
 *
