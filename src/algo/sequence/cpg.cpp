@@ -204,13 +204,22 @@ bool CCpGIslands::x_ExtendHit(SCpGIsland &isle)
 void CCpGIslands::MergeIslesWithin(TSeqPos range)
 {
     TIsles::iterator prev = m_Isles.end();
+    
 
     NON_CONST_ITERATE(TIsles, i, m_Isles) {
         if (prev != m_Isles.end()  &&
             i->m_Start - prev->m_Stop <= range) {
-            i->m_Start = prev->m_Start;
-            x_CalcWindowStats(*i);
-            m_Isles.erase(prev);
+            // changed so that it will only merge
+            // if the merged island still passes muster
+            SCpGIsland merge_isle;
+            merge_isle.m_Start = prev->m_Start;
+            merge_isle.m_Stop = i->m_Stop;
+            x_CalcWindowStats(merge_isle);
+            if (x_IsIsland(merge_isle)){
+                i->m_Start = prev->m_Start;
+                x_CalcWindowStats(*i);
+                m_Isles.erase(prev);
+            }
         }
         prev = i;
     }
@@ -220,6 +229,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.6  2004/11/03 17:33:51  kskatz
+* Added a check to MergeIslesWithin() that will only do the merge if after merging the resulting composite would still pass the required thresholds of m_GC and m_CpG
+*
 * Revision 1.5  2004/11/01 16:19:50  kskatz
 * Changed CpGIslands constructor arguments "GC" and "CpG" from double to unsigned int
 *
