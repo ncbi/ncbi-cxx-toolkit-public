@@ -50,10 +50,7 @@ s/std::\([a-z_]*\)<\([^,<>]*<[^<>]*>\), std::allocator<\2>>/std::\1<\2>/g
 s/std::\([a-z_]*\)<\([^,<>]*\), \([^,<>]*<[^<>]*>\), std::less<\2>, std::allocator<std::pair<const \2, \3>>>/std::\1<\2, \3>/g
 ' | tee $tempfile
 
-egrep -e '
-^[0-9][0-9]* Error\(s\) .*detected\.
-^Compilation aborted, too many Error messages\.
-' $tempfile > /dev/null
+grep '^".*", line [0-9][0-9]*: Error: ' $tempfile > /dev/null
 
 if test $? -eq 0 ;  then
   rm $tempfile
