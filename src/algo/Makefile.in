@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-SUB_PROJ = align
+SUB_PROJ = align sequence
 
 REQUIRES = objects
 
