@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/09/21 22:39:07  ucko
+* Fix MSVC build.
+*
 * Revision 1.2  2001/09/05 14:44:59  ucko
 * Use NStr::IntToString instead of Stringify.
 *
@@ -1090,7 +1093,7 @@ bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
                         medline = gen.GetMuid();
                     }
                     if (gen.IsSetPmid()  &&  !pubmed) {
-                        pubmed = gen.GetPmid();
+                        pubmed = gen.GetPmid().Get();
                     }
                     if (seen_main) {
                         break;
@@ -1147,7 +1150,7 @@ bool CGenbankWriter::WriteReference(const CBioseq& seq, const CDescList& descs)
                         medline = entry.GetUid();
                     }
                     if (entry.IsSetPmid()  &&  !pubmed) {
-                        pubmed = entry.GetPmid();
+                        pubmed = entry.GetPmid().Get();
                     }
                     if (seen_main) {
                         break;

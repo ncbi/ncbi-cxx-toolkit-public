@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/09/21 22:39:18  ucko
+* Fix MSVC build.
+*
 * Revision 1.1  2001/09/04 14:06:31  ucko
 * Add resizing iterators for sequences whose representation uses an
 * unnatural unit size -- for instance, ASN.1 octet strings corresponding
@@ -53,12 +56,10 @@
 static const unsigned int kBitsPerByte = 8;
 
 
-#ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC
 template <class T>
-size_t BitsPerElement(T*) {
+size_t x_BitsPerElement(T*) {
     return kBitsPerByte * sizeof(T);
 }
-#endif
 
 
 template <class TIterator, class TOut>
@@ -66,7 +67,11 @@ TOut ExtractBits(TIterator& start, size_t& bit_offset, size_t bit_count)
 {
 #ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC // Why does Workshop set this?
     static const size_t kBitsPerElement
-        = BitsPerElement(__value_type(TIterator()));
+        = x_BitsPerElement(__value_type(TIterator()));
+#elif defined(NCBI_OS_MSWIN) && !defined(__GNUC__)
+    // iterator_traits seems to be broken under MSVC. :-/
+    static const size_t kBitsPerElement
+        = x_BitsPerElement(_Val_type(TIterator()));    
 #else
     static const size_t kBitsPerElement
         = kBitsPerByte * sizeof(iterator_traits<TIterator>::value_type);
