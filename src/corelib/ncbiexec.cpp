@@ -116,6 +116,8 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
     return pid;
 }
 
+#endif
+
 
 // Get exec arguments
 #define GET_EXEC_ARGS \
@@ -137,9 +139,6 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
         args[xi] = va_arg(vargs, const char*); \
     } \
     args[xi] = 0
-
-#endif
-
 
 
 int CExec::System(const char *cmdline)
@@ -185,14 +184,11 @@ int CExec::SpawnL(const EMode mode, const char *cmdname, const char *argv, ...)
 int CExec::SpawnLE(const EMode mode, const char *cmdname,  const char *argv, ...)
 {
     int status;
-#if defined(NCBI_OS_MSWIN)
-    const char **envp;
-    envp = &cmdname;
-    while (*envp++);
-    status = spawnve(s_GetRealMode(mode), cmdname, &cmdname, (char**)*envp);
-#elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
+#if defined(NCBI_OS_MSWIN)
+    status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
+#elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
 #elif defined(NCBI_OS_MAC)
     ?
@@ -227,14 +223,11 @@ int CExec::SpawnLPE(const EMode mode, const char *cmdname,
                     const char *argv, ...)
 {
     int status;
-#if defined(NCBI_OS_MSWIN)
-    const char **envp;
-    envp = &cmdname;
-    while (*envp++);
-    status = spawnvpe(s_GetRealMode(mode), cmdname, &cmdname, (char**)*envp);
-#elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
+#if defined(NCBI_OS_MSWIN)
+    status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
+#elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
 #elif defined(NCBI_OS_MAC)
     ?
@@ -349,6 +342,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/17 15:12:34  ivanov
+ * Changed method of obtaining parameters in the SpawnLE/LPE functions
+ * under MS Windows
+ *
  * Revision 1.8  2002/07/16 15:04:22  ivanov
  * Fixed warning about uninitialized variable in s_SpawnUnix()
  *
