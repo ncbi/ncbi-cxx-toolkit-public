@@ -50,7 +50,7 @@ END_SCOPE(objects)
 
 
 template<class TId>
-class CAlignShadow: public CObject
+class NCBI_XALGOALIGN_EXPORT CAlignShadow: public CObject
 {
 public:
 
@@ -149,7 +149,8 @@ CNcbiOstream& operator << (CNcbiOstream& os,
 }
 
 
-template<> 
+template<>
+NCBI_XALGOALIGN_EXPORT
 CNcbiOstream& operator << (
     CNcbiOstream& os,
     const CAlignShadow<CConstRef<objects::CSeq_id> >& align_shadow);
@@ -162,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/04 17:17:43  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.4  2005/03/03 19:33:19  ucko
  * Drop empty "inline" promises from member declarations.
  *
