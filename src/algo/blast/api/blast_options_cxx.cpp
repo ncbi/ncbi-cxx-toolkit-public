@@ -44,384 +44,21 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBlastOptions::CBlastOptions(EProgram prog_name) THROWS((CBlastException))
-    : m_Program(prog_name)
+CBlastOptions::CBlastOptions()
 {
-    int st;
-
-    if ( (st = BlastQuerySetUpOptionsNew(&m_QueryOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, "Query setup options error");
-
-    // Word settings 
-    if ( (st = BlastInitialWordOptionsNew(m_Program, &m_InitWordOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, "Initial word options error");
-    if ( (st = LookupTableOptionsNew(m_Program, &m_LutOpts)) != 0)
-        NCBI_THROW(CBlastException, eBadParameter, "Lookup options error");
-
-    // Hit extension settings
-    if ( (st = BlastExtensionOptionsNew(m_Program, &m_ExtnOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, "Lookup options error");
-
-    // Hit saving settings
-    if ( (st = BlastHitSavingOptionsNew(m_Program, &m_HitSaveOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, "Lookup options error");
-
-    // Protein blast settings: initialize for psi/rps-blast
-    //m_prot_opts;
-
-    if ( (st = BlastScoringOptionsNew(m_Program, &m_ScoringOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, "Scoring options error");
-
-    if ( (st = BlastEffectiveLengthsOptionsNew(&m_EffLenOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, 
-                "Effective length options error");
-
-    if ( (st = BlastDatabaseOptionsNew(&m_DbOpts)))
-        NCBI_THROW(CBlastException, eBadParameter, "Db options error");
-
-    if ( (st = PSIBlastOptionsNew(&m_ProtOpts)))
-       NCBI_THROW(CBlastException, eBadParameter, "PSI options error");
-
-    switch(prog_name) {
-    case eBlastn:       SetBlastn();        break;
-    case eBlastp:       SetBlastp();        break;
-    case eBlastx:       SetBlastx();        break;
-    case eTblastn:      SetTblastn();       break;
-    case eTblastx:      SetTblastx();       break;
-    //case eMegablast:    SetMegablast();     break;
-    default:
-        NCBI_THROW(CBlastException, eBadParameter, "Invalid program");
-    }
+    m_QueryOpts.Reset((QuerySetUpOptions*)calloc(1, sizeof(QuerySetUpOptions)));
+    m_InitWordOpts.Reset((BlastInitialWordOptions*)calloc(1, sizeof(BlastInitialWordOptions)));
+    m_LutOpts.Reset((LookupTableOptions*)calloc(1, sizeof(LookupTableOptions)));
+    m_ExtnOpts.Reset((BlastExtensionOptions*)calloc(1, sizeof(BlastExtensionOptions)));
+    m_HitSaveOpts.Reset((BlastHitSavingOptions*)calloc(1, sizeof(BlastHitSavingOptions)));
+    m_ScoringOpts.Reset((BlastScoringOptions*)calloc(1, sizeof(BlastScoringOptions)));
+    m_EffLenOpts.reset((BlastEffectiveLengthsOptions*)calloc(1, sizeof(BlastEffectiveLengthsOptions)));
+    m_DbOpts.Reset((BlastDatabaseOptions*)calloc(1, sizeof(BlastDatabaseOptions)));
+    m_ProtOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
 }
 
 CBlastOptions::~CBlastOptions()
 {
-}
-
-void
-CBlastOptions::SetDbGeneticCodeAndStr(int gc)
-{
-    SetDbGeneticCode(gc);
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc_str =
-        FindGeneticCode(gc);
-    SetDbGeneticCodeStr(gc_str.get());
-}
-
-void
-CBlastOptions::SetBlastp()
-{
-    // Lookup table options
-    m_LutOpts->lut_type = AA_LOOKUP_TABLE;
-    m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
-    m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTP;
-    m_LutOpts->alphabet_size = BLASTAA_SIZE;
-
-    // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_unknown;
-    SetFilterString("S");
-
-    // Initial word options
-    m_InitWordOpts->ungapped_extension = TRUE;
-    m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
-    m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
-
-    // Extension options
-    m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
-    m_ExtnOpts->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_PROT;
-    m_ExtnOpts->gap_trigger = BLAST_GAP_TRIGGER_PROT;
-    m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
-
-    // Scoring options
-    SetMatrixName("BLOSUM62");
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
-    m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
-    m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
-    m_ScoringOpts->shift_pen = INT2_MAX;
-    m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
-    m_ScoringOpts->decline_align = INT2_MAX;
-    m_ScoringOpts->gapped_calculation = TRUE;
-
-    // Hit saving options
-    m_HitSaveOpts->hitlist_size = 500;
-    m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
-    m_HitSaveOpts->percent_identity = 0;
-
-    // Effective length options
-    m_EffLenOpts->searchsp_eff = 0;
-    m_EffLenOpts->dbseq_num = 1;   // assume bl2seq by default
-    m_EffLenOpts->db_length = 0;   // will populate later
-    m_EffLenOpts->use_real_db_size = TRUE;
-
-    // Blast database options
-    m_DbOpts->genetic_code = BLAST_GENETIC_CODE; // not really needed
-}
-
-
-void
-CBlastOptions::SetBlastn()
-{
-    // Lookup table options
-    m_LutOpts->lut_type = NA_LOOKUP_TABLE;
-    m_LutOpts->word_size = BLAST_WORDSIZE_NUCL;
-    m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTN;
-    m_LutOpts->alphabet_size = BLASTNA_SIZE;
-    // ag_blast is the default; variable word sizes can only be used for word
-    // sizes divisible by COMPRESSION_RATIO (4)
-    if (m_LutOpts->word_size % COMPRESSION_RATIO == 0)
-        m_LutOpts->scan_step = m_LutOpts->word_size - 8 + COMPRESSION_RATIO;
-    else
-        m_LutOpts->scan_step = m_LutOpts->word_size - 8 + 1;
-
-    // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_both;
-    SetFilterString("D");
-
-    // Initial word options
-    m_InitWordOpts->ungapped_extension = TRUE;
-    m_InitWordOpts->extension_method = eRightAndLeft;
-    m_InitWordOpts->variable_wordsize = FALSE;
-    m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
-    m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_NUCL;
-
-    // Extension options
-    m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
-    m_ExtnOpts->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
-    m_ExtnOpts->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
-    m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
-
-    // Scoring options
-    SetMatrixName(NULL);
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), false).c_str());
-    m_ScoringOpts->penalty = BLAST_PENALTY;
-    m_ScoringOpts->reward = BLAST_REWARD;
-    m_ScoringOpts->gap_open = BLAST_GAP_OPEN_NUCL;
-    m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_NUCL;
-    m_ScoringOpts->decline_align = INT2_MAX;
-    m_ScoringOpts->gapped_calculation = TRUE;
-    m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
-
-    // Hit saving options
-    m_HitSaveOpts->hitlist_size = 500;
-    m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
-    m_HitSaveOpts->percent_identity = 0;
-
-    // Effective length options
-    m_EffLenOpts->searchsp_eff = 0;
-    m_EffLenOpts->dbseq_num = 1;   // assume bl2seq by default
-    m_EffLenOpts->db_length = 0;   // will populate later
-    m_EffLenOpts->use_real_db_size = TRUE;
-
-    // Blast database options
-    m_DbOpts->genetic_code = BLAST_GENETIC_CODE; // not really needed
-}
-
-void CBlastOptions::SetMegablast()
-{
-    // Lookup table optionas
-    m_LutOpts->lut_type = MB_LOOKUP_TABLE;
-    m_LutOpts->word_size = BLAST_WORDSIZE_MEGABLAST;
-    m_LutOpts->threshold = BLAST_WORD_THRESHOLD_MEGABLAST;
-    m_LutOpts->max_positions = INT4_MAX;
-    m_LutOpts->alphabet_size = BLASTNA_SIZE;
-    // ag_blast is the default; variable word sizes can only be used for word
-    // sizes divisible by COMPRESSION_RATIO (4)
-    if (m_LutOpts->word_size % COMPRESSION_RATIO == 0)
-        m_LutOpts->scan_step = m_LutOpts->word_size - 12 + COMPRESSION_RATIO;
-    else
-        m_LutOpts->scan_step = m_LutOpts->word_size - 12 + 1;
-
-    m_LutOpts->mb_template_length = 0;
-    m_LutOpts->mb_template_type = 0; // allowed types 0, 1, 2
-
-    // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_both;
-    SetFilterString("D");
-
-    // Initial word options
-    // variable word size is not supported if discontiguous MB
-    m_InitWordOpts->ungapped_extension = TRUE;
-    m_InitWordOpts->container_type = eMbStacks;
-    m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_NUCL;
-    m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_NUCL;
-
-    // Extension options
-    m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
-    m_ExtnOpts->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_NUCL;
-    m_ExtnOpts->gap_trigger = BLAST_GAP_TRIGGER_NUCL;
-    m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
-
-    // Scoring options
-    SetMatrixName(NULL);
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), false).c_str());
-    m_ScoringOpts->penalty = BLAST_PENALTY;
-    m_ScoringOpts->reward = BLAST_REWARD;
-    m_ScoringOpts->gap_open = BLAST_GAP_OPEN_MEGABLAST;
-    m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_MEGABLAST;
-    m_ScoringOpts->decline_align = INT2_MAX;
-    m_ScoringOpts->gapped_calculation = TRUE;
-    m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
-
-    // Hit saving options
-    m_HitSaveOpts->hitlist_size = 500;
-    m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
-    m_HitSaveOpts->percent_identity = 0;
-
-    // Effective length options
-    m_EffLenOpts->searchsp_eff = 0;
-    m_EffLenOpts->dbseq_num = 1;   // assume bl2seq by default
-    m_EffLenOpts->db_length = 0;   // will populate later
-    m_EffLenOpts->use_real_db_size = TRUE;
-
-    // Blast database options
-    m_DbOpts->genetic_code = BLAST_GENETIC_CODE; // not really needed
-}
-
-void
-CBlastOptions::SetBlastx() 
-{ 
-    // Lookup table options
-    m_LutOpts->lut_type = AA_LOOKUP_TABLE;
-    m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
-    m_LutOpts->threshold = BLAST_WORD_THRESHOLD_BLASTX;
-    m_LutOpts->alphabet_size = BLASTAA_SIZE;
-
-    // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_both;
-    SetFilterString("S");
-
-    // Initial word options
-    m_InitWordOpts->ungapped_extension = TRUE;
-    m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
-    m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
-
-    // Extension options
-    m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
-    m_ExtnOpts->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_PROT;
-    m_ExtnOpts->gap_trigger = BLAST_GAP_TRIGGER_PROT;
-    m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
-
-    // Scoring options
-    SetMatrixName("BLOSUM62");
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
-    m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
-    m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
-    m_ScoringOpts->shift_pen = INT2_MAX;
-    m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
-    m_ScoringOpts->decline_align = INT2_MAX;
-    m_ScoringOpts->gapped_calculation = TRUE;
-
-    // Hit saving options
-    m_HitSaveOpts->hitlist_size = 500;
-    m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
-    m_HitSaveOpts->percent_identity = 0;
-
-    // Effective length options
-    m_EffLenOpts->searchsp_eff = 0;
-    m_EffLenOpts->dbseq_num = 1;   // assume bl2seq by default
-    m_EffLenOpts->db_length = 0;   // will populate later
-    m_EffLenOpts->use_real_db_size = TRUE;
-
-    // Blast database options
-    SetDbGeneticCodeAndStr(BLAST_GENETIC_CODE);
-}
-
-void 
-CBlastOptions::SetTblastn()
-{
-    // Lookup table options
-    m_LutOpts->lut_type = AA_LOOKUP_TABLE;
-    m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
-    m_LutOpts->threshold = BLAST_WORD_THRESHOLD_TBLASTN;
-    m_LutOpts->alphabet_size = BLASTAA_SIZE;
-
-    // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_unknown;
-    SetFilterString("S");
-
-    // Initial word options
-    m_InitWordOpts->ungapped_extension = TRUE;
-    m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
-    m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
-
-    // Extension options
-    m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_PROT;
-    m_ExtnOpts->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_PROT;
-    m_ExtnOpts->gap_trigger = BLAST_GAP_TRIGGER_PROT;
-    m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
-
-    // Scoring options
-    SetMatrixName("BLOSUM62");
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
-    m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
-    m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
-    m_ScoringOpts->shift_pen = INT2_MAX;
-    m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
-    m_ScoringOpts->decline_align = INT2_MAX;
-    m_ScoringOpts->gapped_calculation = TRUE;
-
-    // Hit saving options
-    m_HitSaveOpts->hitlist_size = 500;
-    m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
-    m_HitSaveOpts->percent_identity = 0;
-    m_HitSaveOpts->do_sum_stats = TRUE;
-
-    // Effective length options
-    m_EffLenOpts->searchsp_eff = 0;
-    m_EffLenOpts->dbseq_num = 1;   // assume bl2seq by default
-    m_EffLenOpts->db_length = 0;   // will populate later
-    m_EffLenOpts->use_real_db_size = TRUE;
-
-    // Blast database options
-    SetDbGeneticCodeAndStr(BLAST_GENETIC_CODE);
-}
-
-void 
-CBlastOptions::SetTblastx()
-{
-    // Lookup table options
-    m_LutOpts->lut_type = AA_LOOKUP_TABLE;
-    m_LutOpts->word_size = BLAST_WORDSIZE_PROT;
-    m_LutOpts->threshold = BLAST_WORD_THRESHOLD_TBLASTX;
-    m_LutOpts->alphabet_size = BLASTAA_SIZE;
-
-    // Query setup options
-    m_QueryOpts->strand_option = eNa_strand_both;
-    SetFilterString("S");
-
-    // Initial word options
-    m_InitWordOpts->ungapped_extension = TRUE;
-    m_InitWordOpts->x_dropoff = BLAST_UNGAPPED_X_DROPOFF_PROT;
-    m_InitWordOpts->window_size = BLAST_WINDOW_SIZE_PROT;
-
-    // Extension options
-    m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_TBLASTX;
-    m_ExtnOpts->gap_x_dropoff_final = BLAST_GAP_X_DROPOFF_FINAL_TBLASTX;
-    m_ExtnOpts->gap_trigger = BLAST_GAP_TRIGGER_PROT;
-    m_ExtnOpts->algorithm_type = EXTEND_DYN_PROG;
-
-    // Scoring options
-    SetMatrixName("BLOSUM62");
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
-    m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
-    m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
-    m_ScoringOpts->shift_pen = INT2_MAX;
-    m_ScoringOpts->is_ooframe = FALSE;  // allowed for blastx only
-    m_ScoringOpts->decline_align = INT2_MAX;
-    m_ScoringOpts->gapped_calculation = FALSE;
-
-    // Hit saving options
-    m_HitSaveOpts->hitlist_size = 500;
-    m_HitSaveOpts->expect_value = BLAST_EXPECT_VALUE;
-    m_HitSaveOpts->percent_identity = 0;
-
-    // Effective length options
-    m_EffLenOpts->searchsp_eff = 0;
-    m_EffLenOpts->dbseq_num = 1;   // assume bl2seq by default
-    m_EffLenOpts->db_length = 0;   // will populate later
-    m_EffLenOpts->use_real_db_size = TRUE;
-
-    // Blast database options
-    SetDbGeneticCodeAndStr(BLAST_GENETIC_CODE);
 }
 
 bool
@@ -466,7 +103,148 @@ CBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     m_ProtOpts.DebugDump(ddc, depth);
     m_DbOpts.DebugDump(ddc, depth);
     m_ScoringOpts.DebugDump(ddc, depth);
-    m_EffLenOpts.DebugDump(ddc, depth);
+    //m_EffLenOpts.DebugDump(ddc, depth);
+}
+
+inline int
+x_safe_strcmp(const char* a, const char* b)
+{
+    if (a != b) {
+        if (a != NULL && b != NULL) {
+            return strcmp(a,b);
+        } else {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+inline int
+x_safe_memcmp(const void* a, const void* b, size_t size)
+{
+    if (a != b) {
+        if (a != NULL && b != NULL) {
+            return std::memcmp(a, b, size);
+        } else {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+bool
+x_QuerySetupOptions_cmp(const QuerySetUpOptions* a, const QuerySetUpOptions* b)
+{
+    if (x_safe_strcmp(a->filter_string, b->filter_string) != 0) {
+        return false;
+    }
+    if (a->strand_option != b->strand_option) return false;
+    if (a->genetic_code != b->genetic_code) return false;
+    return true;
+}
+
+bool
+x_LookupTableOptions_cmp(const LookupTableOptions* a, 
+                         const LookupTableOptions* b)
+{
+    if (a->threshold != b->threshold) return false;
+    if (a->lut_type != b->lut_type) return false;
+    if (a->word_size != b->word_size) return false;
+    if (a->alphabet_size != b->alphabet_size) return false;
+    if (a->mb_template_length != b->mb_template_length) return false;
+    if (a->mb_template_type != b->mb_template_type) return false;
+    if (a->scan_step != b->scan_step) return false;
+    if (a->max_num_patterns != b->max_num_patterns) return false;
+    if (a->use_pssm != b->use_pssm) return false;
+    if (x_safe_strcmp(a->phi_pattern, b->phi_pattern) != 0) return false;
+    return true;
+}
+
+bool
+x_BlastDatabaseOptions_cmp(const BlastDatabaseOptions* a,
+                           const BlastDatabaseOptions* b)
+{
+    if (a->genetic_code != b->genetic_code) return false;
+    if (x_safe_memcmp((void*)a->gen_code_string, 
+                      (void*)b->gen_code_string, GENCODE_STRLEN) != 0)
+        return false;
+    return true;
+}
+
+bool
+x_BlastScoringOptions_cmp(const BlastScoringOptions* a,
+                          const BlastScoringOptions* b)
+{
+    if (x_safe_strcmp(a->matrix, b->matrix) != 0) return false;
+    if (x_safe_strcmp(a->matrix_path, b->matrix_path) != 0) return false;
+    if (a->reward != b->reward) return false;
+    if (a->penalty != b->penalty) return false;
+    if (a->gapped_calculation != b->gapped_calculation) return false;
+    if (a->gap_open != b->gap_open) return false;
+    if (a->gap_extend != b->gap_extend) return false;
+    if (a->decline_align != b->decline_align) return false;
+    if (a->is_ooframe != b->is_ooframe) return false;
+    if (a->shift_pen != b->shift_pen) return false;
+    return true;
+}
+
+bool
+operator==(const CBlastOptions& lhs, const CBlastOptions& rhs)
+{
+    if (&lhs == &rhs)
+        return true;
+
+    if (lhs.m_Program != rhs.m_Program)
+        return false;
+
+    if ( !x_QuerySetupOptions_cmp(lhs.m_QueryOpts, rhs.m_QueryOpts) )
+        return false;
+
+    if ( !x_LookupTableOptions_cmp(lhs.m_LutOpts, rhs.m_LutOpts) )
+        return false;
+
+    void *a, *b;
+
+    a = static_cast<void*>( (BlastInitialWordOptions*) lhs.m_InitWordOpts);
+    b = static_cast<void*>( (BlastInitialWordOptions*) rhs.m_InitWordOpts);
+    if ( x_safe_memcmp(a, b, sizeof(BlastInitialWordOptions)) != 0 )
+         return false;
+
+    a = static_cast<void*>( (BlastExtensionOptions*) lhs.m_ExtnOpts);
+    b = static_cast<void*>( (BlastExtensionOptions*) rhs.m_ExtnOpts);
+    if ( x_safe_memcmp(a, b, sizeof(BlastExtensionOptions)) != 0 )
+         return false;
+
+    a = static_cast<void*>( (BlastHitSavingOptions*) lhs.m_HitSaveOpts);
+    b = static_cast<void*>( (BlastHitSavingOptions*) rhs.m_HitSaveOpts);
+    if ( x_safe_memcmp(a, b, sizeof(BlastHitSavingOptions)) != 0 )
+         return false;
+
+    a = static_cast<void*>( (PSIBlastOptions*) lhs.m_ProtOpts);
+    b = static_cast<void*>( (PSIBlastOptions*) rhs.m_ProtOpts);
+    if ( x_safe_memcmp(a, b, sizeof(PSIBlastOptions)) != 0 )
+         return false;
+
+    if ( !x_BlastDatabaseOptions_cmp(lhs.m_DbOpts, rhs.m_DbOpts) )
+        return false;
+
+    if ( !x_BlastScoringOptions_cmp(lhs.m_ScoringOpts, rhs.m_ScoringOpts) )
+        return false;
+    
+    a = static_cast<void*>( (BlastEffectiveLengthsOptions*)
+                            lhs.m_EffLenOpts.get());
+    b = static_cast<void*>( (BlastEffectiveLengthsOptions*)
+                            rhs.m_EffLenOpts.get());
+    if ( x_safe_memcmp(a, b, sizeof(BlastEffectiveLengthsOptions)) != 0 )
+         return false;
+    
+    return true;
+}
+
+bool
+operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs)
+{
+    return !(lhs == rhs);
 }
 
 END_SCOPE(blast)
@@ -476,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/11/26 18:23:59  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.27  2003/10/30 19:37:36  dondosha
 * Removed extra stuff accidentally committed
 *

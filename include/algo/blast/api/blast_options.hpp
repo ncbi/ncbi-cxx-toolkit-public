@@ -47,24 +47,15 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 
-/// @todo Constants used to initialize default values (word size, evalue
-/// threshold, ...) should be defined in this module when the C NewBlast is
-/// deprecated
-#define GENCODE_STRLEN 64
-
 /// Encapsulates all blast input parameters
 class NCBI_XBLAST_EXPORT CBlastOptions : public CObject
 {
 public:
-
-    /// Constructor
-    CBlastOptions(EProgram prog_name = eBlastp) THROWS((CBlastException));
-    /// Destructor
-    virtual ~CBlastOptions();
+    CBlastOptions();
+    ~CBlastOptions();
 
     /// Validate the options
     bool Validate() const;
-
 
     /// Accessors/Mutators for individual options
 
@@ -120,11 +111,11 @@ public:
     SeedExtensionMethod GetSeedExtensionMethod() const;
     void SetSeedExtensionMethod(SeedExtensionMethod method);
 
-    bool GetVariableWordsize() const;
-    void SetVariableWordsize(bool val);
+    bool GetVariableWordSize() const;
+    void SetVariableWordSize(bool val = true);
 
     bool GetUngappedExtension() const;
-    void SetUngappedExtension(bool val);
+    void SetUngappedExtension(bool val = true);
 
     double GetXDropoff() const;
     void SetXDropoff(double x);
@@ -258,23 +249,7 @@ public:
     /// Allows to dump a snapshot of the object
     void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    QuerySetUpOptions* GetQueryOpts() const { return m_QueryOpts; }
-    LookupTableOptions* GetLookupTableOpts() const { return m_LutOpts; }
-    BlastInitialWordOptions* GetInitWordOpts() const { return m_InitWordOpts;}
-    BlastExtensionOptions* GetExtensionOpts() const { return m_ExtnOpts; }
-    BlastHitSavingOptions* GetHitSavingOpts() const { return m_HitSaveOpts; }
-    BlastScoringOptions* GetScoringOpts() const { return m_ScoringOpts; }
-    BlastEffectiveLengthsOptions* GetEffLenOpts() const { return m_EffLenOpts;}
-    BlastDatabaseOptions* GetDbOpts() const { return m_DbOpts; }
-
 protected:
-
-    void SetBlastp();
-    void SetBlastn();
-    void SetBlastx();
-    void SetTblastn();
-    void SetTblastx();
-    void SetMegablast();
 
     /// Query sequence settings
     CQuerySetUpOptions            m_QueryOpts;
@@ -301,7 +276,9 @@ protected:
     CBlastScoringOptions          m_ScoringOpts;
 
     /// Effective lengths options
-    CBlastEffectiveLengthsOptions m_EffLenOpts;
+    //CBlastEffectiveLengthsOptions m_EffLenOpts;
+    AutoPtr<BlastEffectiveLengthsOptions,
+    CDeleter<BlastEffectiveLengthsOptions> > m_EffLenOpts;
 
     /// Blast program
     EProgram                             m_Program;
@@ -311,7 +288,14 @@ private:
     CBlastOptions(const CBlastOptions& bo);
     /// Prohibit assignment operator
     CBlastOptions& operator=(const CBlastOptions& bo);
+
+    friend class CBl2Seq;
+    friend bool operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
+    friend bool operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs);
 };
+
+bool 
+operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
 
 inline EProgram
 CBlastOptions::GetProgram() const
@@ -322,19 +306,8 @@ CBlastOptions::GetProgram() const
 inline void
 CBlastOptions::SetProgram(EProgram p)
 {
-    _ASSERT(p >= eBlastn && p < eBlastUndef);
+    _ASSERT(p >= eBlastn && p < eBlastProgramMax);
     m_Program = p;
-
-    switch (p) {
-    case eBlastn:       SetBlastn();        break;
-    case eBlastp:       SetBlastp();        break;
-    case eBlastx:       SetBlastx();        break;
-    case eTblastn:      SetTblastn();       break;
-    case eTblastx:      SetTblastx();       break;
-    //case eMegablast:    SetMegablast();     break;
-    default:
-        NCBI_THROW(CBlastException, eBadParameter, "Invalid program");
-    }
 }
 
 inline const char*
@@ -560,40 +533,27 @@ CBlastOptions::SetSeedExtensionMethod(SeedExtensionMethod method)
 }
 
 inline bool
-CBlastOptions::GetVariableWordsize() const
+CBlastOptions::GetVariableWordSize() const
 {
-    if (m_InitWordOpts->variable_wordsize)
-        return true;
-    else 
-        return false;
+    return m_InitWordOpts->variable_wordsize ? true: false;
 }
 
 inline void 
-CBlastOptions::SetVariableWordsize(bool val)
+CBlastOptions::SetVariableWordSize(bool val)
 {
-    if (val)
-        m_InitWordOpts->variable_wordsize = TRUE;
-    else
-        m_InitWordOpts->variable_wordsize = FALSE;
+    m_InitWordOpts->variable_wordsize = val;
 }
 
 inline bool
 CBlastOptions::GetUngappedExtension() const
 {
-    if (m_InitWordOpts->ungapped_extension)
-        return true;
-    else 
-        return false;
+    return m_InitWordOpts->ungapped_extension ? true : false;
 }
 
 inline void 
 CBlastOptions::SetUngappedExtension(bool val)
 {
-    if (val)
-        m_InitWordOpts->ungapped_extension = TRUE;
-    else
-        m_InitWordOpts->ungapped_extension = FALSE;
-    
+    m_InitWordOpts->ungapped_extension = val;
 }
 
 inline double
@@ -1004,6 +964,8 @@ CBlastOptions::GetDbGeneticCodeStr() const
     return m_DbOpts->gen_code_string;
 }
 
+#define GENCODE_STRLEN 64
+
 inline void 
 CBlastOptions::SetDbGeneticCodeStr(const unsigned char* gc_str)
 {
@@ -1048,6 +1010,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/11/26 18:22:14  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.33  2003/11/12 18:41:02  camacho
 * Remove side effects from mutators
 *

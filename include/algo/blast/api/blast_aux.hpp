@@ -53,6 +53,139 @@ BEGIN_SCOPE(objects)
     class CSeq_loc;
 END_SCOPE(objects)
 
+template<>
+struct CDeleter<BLAST_SequenceBlk>
+{
+    static void Delete(BLAST_SequenceBlk* p)
+    { BlastSequenceBlkFree(p); }
+};
+
+template<>
+struct CDeleter<BlastQueryInfo>
+{
+    static void Delete(BlastQueryInfo* p)
+    { BlastQueryInfoFree(p); }
+};
+
+template<>
+struct CDeleter<QuerySetUpOptions>
+{
+    static void Delete(QuerySetUpOptions* p)
+    { BlastQuerySetUpOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<LookupTableOptions>
+{
+    static void Delete(LookupTableOptions* p)
+    { LookupTableOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<LookupTableWrap>
+{
+    static void Delete(LookupTableWrap* p)
+    { LookupTableWrapFree(p); }
+};
+
+template<>
+struct CDeleter<BlastInitialWordOptions>
+{
+    static void Delete(BlastInitialWordOptions* p)
+    { BlastInitialWordOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<BlastInitialWordParameters>
+{
+    static void Delete(BlastInitialWordParameters* p)
+    { BlastInitialWordParametersFree(p); }
+};
+
+template<>
+struct CDeleter<BLAST_ExtendWord>
+{
+    static void Delete(BLAST_ExtendWord* p)
+    { BlastExtendWordFree(p); }
+};
+
+template<>
+struct CDeleter<BlastExtensionOptions>
+{
+    static void Delete(BlastExtensionOptions* p)
+    { BlastExtensionOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<BlastExtensionParameters>
+{
+    static void Delete(BlastExtensionParameters* p)
+    { BlastExtensionParametersFree(p); }
+};
+
+template<>
+struct CDeleter<BlastHitSavingOptions>
+{
+    static void Delete(BlastHitSavingOptions* p)
+    { BlastHitSavingOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<BlastHitSavingParameters>
+{
+    static void Delete(BlastHitSavingParameters* p)
+    { BlastHitSavingParametersFree(p); }
+};
+
+template<>
+struct CDeleter<PSIBlastOptions>
+{
+    static void Delete(PSIBlastOptions* p)
+    { sfree(p); }
+};
+
+template<>
+struct CDeleter<BlastDatabaseOptions>
+{
+    static void Delete(BlastDatabaseOptions* p)
+    { BlastDatabaseOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<BlastScoreBlk>
+{
+    static void Delete(BlastScoreBlk* p)
+    { BlastScoreBlkFree(p); }
+};
+
+template<>
+struct CDeleter<BlastScoringOptions>
+{
+    static void Delete(BlastScoringOptions* p)
+    { BlastScoringOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<BlastEffectiveLengthsOptions>
+{
+    static void Delete(BlastEffectiveLengthsOptions* p)
+    { BlastEffectiveLengthsOptionsFree(p); }
+};
+
+template<>
+struct CDeleter<BlastGapAlignStruct>
+{
+    static void Delete(BlastGapAlignStruct* p)
+    { BLAST_GapAlignStructFree(p); }
+};
+
+template<>
+struct CDeleter<BlastResults>
+{
+    static void Delete(BlastResults* p)
+    { BLAST_ResultsFree(p); }
+};
+
 BEGIN_SCOPE(blast)
 
 /** Converts a CSeq_loc into a BlastMask structure used in NewBlast
@@ -145,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/11/26 18:22:13  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.25  2003/10/07 17:27:37  dondosha
 * Lower case mask removed from options, added to the SSeqLoc structure
 *

@@ -47,6 +47,7 @@ public:
         eBadParameter,
         eOutOfMemory,
         eMemoryLimit,
+        eNotSupported,
         eInvalidCharacter
     };
     virtual const char* GetErrCodeString(void) const {
@@ -61,6 +62,8 @@ public:
             return "Memory limit exceeded";
         case eInvalidCharacter:
             return "Sequence contains one or more invalid characters";
+        case eNotSupported:
+            return "This operation is not supported";
         default:
             return CException::GetErrCodeString();
         }
@@ -76,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/11/26 18:22:14  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.3  2003/08/19 13:45:21  dicuccio
 * Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
 * compliant.  Added 'objects::' where necessary.

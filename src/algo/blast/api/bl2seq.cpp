@@ -37,7 +37,7 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 #include "blast_seqalign.hpp"
 #include "blast_setup.hpp"
 
@@ -58,38 +58,73 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
-    : m_pOptions(new CBlastOptions(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
+    : mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
     TSeqLocVector subjects;
     queries.push_back(query);
     subjects.push_back(subject);
 
-    x_Init(queries, subjects);
+    x_InitSeqs(queries, subjects);
+    m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
+}
+
+CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject,
+                 CBlastOptionsHandle& opts)
+    : mi_bQuerySetUpDone(false)
+{
+    TSeqLocVector queries;
+    TSeqLocVector subjects;
+    queries.push_back(query);
+    subjects.push_back(subject);
+
+    x_InitSeqs(queries, subjects);
+    m_OptsHandle.Reset(&opts);
 }
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
                  EProgram p)
-    : m_pOptions(new CBlastOptions(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
+    : mi_bQuerySetUpDone(false)
 {
     TSeqLocVector queries;
     queries.push_back(query);
 
-    x_Init(queries, subjects);
+    x_InitSeqs(queries, subjects);
+    m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
+}
+
+CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
+                 CBlastOptionsHandle& opts)
+    : mi_bQuerySetUpDone(false)
+{
+    TSeqLocVector queries;
+    queries.push_back(query);
+
+    x_InitSeqs(queries, subjects);
+    m_OptsHandle.Reset(&opts);
 }
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
                  EProgram p)
-    : m_pOptions(new CBlastOptions(p)), m_eProgram(p), mi_bQuerySetUpDone(false)
+    : mi_bQuerySetUpDone(false)
 {
-    x_Init(queries, subjects);
+    x_InitSeqs(queries, subjects);
+    m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
-void CBl2Seq::x_Init(const TSeqLocVector& queries, 
-                     const TSeqLocVector& subjects)
+CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
+                 CBlastOptionsHandle& opts)
+    : mi_bQuerySetUpDone(false)
+{
+    x_InitSeqs(queries, subjects);
+    m_OptsHandle.Reset(&opts);
+}
+
+void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries, 
+                         const TSeqLocVector& subjs)
 {
     m_tQueries = queries;
-    m_tSubjects = subjects;
+    m_tSubjects = subjs;
     mi_iMaxSubjLength = 0;
     mi_pScoreBlock = NULL;
     mi_pLookupTable = NULL;
@@ -100,7 +135,6 @@ CBl2Seq::~CBl2Seq()
 { 
     x_ResetQueryDs();
     x_ResetSubjectDs();
-    delete m_pOptions;
 }
 
 /// Resets query data structures
@@ -134,18 +168,17 @@ CBl2Seq::x_ResetSubjectDs()
     // TODO: Should clear class wrappers for internal parameters structures?
     //      -> destructors will be called for them
     mi_iMaxSubjLength = 0;
-    //m_pOptions->SetDbSeqNum(0);  // FIXME: Really needed?
-    //m_pOptions->SetDbLength(0);  // FIXME: Really needed?
+    //m_OptsHandle->SetDbSeqNum(0);  // FIXME: Really needed?
+    //m_OptsHandle->SetDbLength(0);  // FIXME: Really needed?
 }
 
 TSeqAlignVector
 CBl2Seq::Run()
 {
+    //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
     SetupSearch();
-    //m_pOptions->DebugDumpText(cerr, "m_pOptions", 1);
-    m_pOptions->Validate();  // throws an exception on failure
+    m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
     ScanDB();
-    Traceback();
     return x_Results2SeqAlign();
 }
 
@@ -155,19 +188,21 @@ CBl2Seq::SetupSearch()
 {
     if ( !mi_bQuerySetUpDone ) {
         x_ResetQueryDs();
-        m_eProgram = m_pOptions->GetProgram();  // options might have changed
-        SetupQueryInfo(m_tQueries, *m_pOptions, &mi_clsQueryInfo);
-        SetupQueries(m_tQueries, *m_pOptions, mi_clsQueryInfo, &mi_clsQueries);
+        SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), &mi_clsQueryInfo);
+        SetupQueries(m_tQueries, m_OptsHandle->GetOptions(), mi_clsQueryInfo, 
+                     &mi_clsQueries);
 
         // FIXME
         BlastMask* filter_mask = NULL;
         Blast_Message* blmsg = NULL;
         short st;
 
-        st = BLAST_MainSetUp(m_eProgram, m_pOptions->GetQueryOpts(),
-                             m_pOptions->GetScoringOpts(),
-                             m_pOptions->GetLookupTableOpts(),
-                             m_pOptions->GetHitSavingOpts(), mi_clsQueries, 
+        st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgram(), 
+                             m_OptsHandle->GetOptions().m_QueryOpts,
+                             m_OptsHandle->GetOptions().m_ScoringOpts,
+                             m_OptsHandle->GetOptions().m_LutOpts,
+                             m_OptsHandle->GetOptions().m_HitSaveOpts,
+                             mi_clsQueries, 
                              mi_clsQueryInfo, &mi_pLookupSegments, 
                              &filter_mask, &mi_pScoreBlock, &blmsg);
 
@@ -183,14 +218,16 @@ CBl2Seq::SetupSearch()
         //mi_vFilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
         BlastMaskFree(filter_mask); // FIXME, return seqlocs for formatter
 
-        LookupTableWrapInit(mi_clsQueries, m_pOptions->GetLookupTableOpts(),
+        LookupTableWrapInit(mi_clsQueries, 
+                            m_OptsHandle->GetOptions().m_LutOpts,
                             mi_pLookupSegments, mi_pScoreBlock, 
                             &mi_pLookupTable);
         mi_bQuerySetUpDone = true;
     }
 
     x_ResetSubjectDs();
-    SetupSubjects(m_tSubjects, m_pOptions, &mi_vSubjects, &mi_iMaxSubjLength);
+    SetupSubjects(m_tSubjects, &m_OptsHandle->SetOptions(), &mi_vSubjects, 
+                  &mi_iMaxSubjLength);
 }
 
 void 
@@ -206,37 +243,26 @@ CBl2Seq::ScanDB()
 
         /*int total_hits = BLAST_SearchEngineCore(mi_Query, mi_pLookupTable, 
           mi_QueryInfo, NULL, *itr,
-          mi_clsExtnWord, mi_clsGapAlign, m_pOptions->GetScoringOpts(), 
+          mi_clsExtnWord, mi_clsGapAlign, m_OptsHandle->GetScoringOpts(), 
           mi_clsInitWordParams, mi_clsExtnParams, mi_clsHitSavingParams, NULL,
-          m_pOptions->GetDbOpts(), &result, &return_stats);
+          m_OptsHandle->GetDbOpts(), &result, &return_stats);
           _TRACE("*** BLAST_SearchEngineCore hits " << total_hits << " ***");*/
 
-        BLAST_TwoSequencesEngine(m_eProgram, mi_clsQueries, mi_clsQueryInfo, 
+        BLAST_TwoSequencesEngine(m_OptsHandle->GetOptions().GetProgram(),
+                                 mi_clsQueries, mi_clsQueryInfo, 
                                  *itr, mi_pScoreBlock, 
-                                 m_pOptions->GetScoringOpts(),
+                                 m_OptsHandle->GetOptions().m_ScoringOpts,
                                  mi_pLookupTable,
-                                 m_pOptions->GetInitWordOpts(),
-                                 m_pOptions->GetExtensionOpts(),
-                                 m_pOptions->GetHitSavingOpts(),
-                                 m_pOptions->GetEffLenOpts(),
-                                 NULL, m_pOptions->GetDbOpts(),
+                                 m_OptsHandle->GetOptions().m_InitWordOpts,
+                                 m_OptsHandle->GetOptions().m_ExtnOpts,
+                                 m_OptsHandle->GetOptions().m_HitSaveOpts,
+                                 m_OptsHandle->GetOptions().m_EffLenOpts.get(),
+                                 NULL, m_OptsHandle->GetOptions().m_DbOpts,
                                  result, &return_stats);
 
         mi_vResults.push_back(result);
         mi_vReturnStats.push_back(return_stats);
     }
-}
-
-void
-CBl2Seq::Traceback()
-{
-#if 0
-    for (unsigned int i = 0; i < mi_vResults.size(); i++) {
-        BLAST_TwoSequencesTraceback(m_eProgram, mi_vResults[i], mi_Query,
-                                    mi_QueryInfo, mi_vSubjects[i], mi_clsGapAlign, 
-                                    m_pOptions->GetScoringOpts(), mi_clsExtnParams, mi_clsHitSavingParams);
-    }
-#endif
 }
 
 TSeqAlignVector
@@ -251,10 +277,11 @@ CBl2Seq::x_Results2SeqAlign()
         ASSERT(mi_vResults[index]->num_queries == (int)m_tQueries.size());
 
         TSeqAlignVector seqalign =
-            BLAST_Results2CSeqAlign(mi_vResults[index], m_eProgram,
+            BLAST_Results2CSeqAlign(mi_vResults[index],
+                m_OptsHandle->GetOptions().GetProgram(),
                 m_tQueries, NULL, 
                 &m_tSubjects[index],
-                m_pOptions->GetScoringOpts(), mi_pScoreBlock);
+                m_OptsHandle->GetOptions().m_ScoringOpts, mi_pScoreBlock);
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
@@ -292,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2003/11/26 18:23:58  camacho
+ * +Blast Option Handle classes
+ *
  * Revision 1.36  2003/11/03 15:20:39  camacho
  * Make multiple query processing the default for Run().
  *

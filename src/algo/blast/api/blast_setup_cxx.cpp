@@ -460,7 +460,7 @@ SetupSubjects(const TSeqLocVector& subjects,
                 BlastSeqBlkSetCompressedSequence(subj, 
                                                  comp_seqbuf.first.release());
             } catch (const CSeqVectorException&) {
-                NCBI_THROW(CBlastException, eBadParameter, 
+                NCBI_THROW(CBlastException, eInvalidCharacter, 
                            "Gaps found in subject sequence");
             }
         } else {
@@ -842,6 +842,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2003/11/26 18:24:00  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.49  2003/11/24 17:12:44  dondosha
 * Query info structure does not have a total_length member any more; use last context offset
 *

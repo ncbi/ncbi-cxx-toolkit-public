@@ -250,7 +250,7 @@ CBlast2seqApplication::GetBlastProgramNum(const string& prog)
         return eTblastn;
     if (prog == "tblastx")
         return eTblastx;
-    return eBlastUndef;
+    return eBlastProgramMax;
 }
 
 void
@@ -301,12 +301,12 @@ CBlast2seqApplication::ProcessCommandLineArgs(CBlastOptions& opt)
     // The next 3 apply to nucleotide searches only
     string program = args["program"].AsString();
     if (program == "blastn") {
-        opt.SetVariableWordsize(args["varword"].AsBoolean());
+        opt.SetVariableWordSize(args["varword"].AsBoolean());
         switch(args["scantype"].AsInteger()) {
         case 1:
             opt.SetSeedExtensionMethod(eRightAndLeft);
             opt.SetScanStep(CalculateBestStride(opt.GetWordSize(),
-                                                opt.GetVariableWordsize(), 
+                                                opt.GetVariableWordSize(), 
                                                 opt.GetLookupTableType()));
             break;
         default:
@@ -534,6 +534,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/11/26 18:24:32  camacho
+ * +Blast Option Handle classes
+ *
  * Revision 1.29  2003/11/03 15:20:39  camacho
  * Make multiple query processing the default for Run().
  *

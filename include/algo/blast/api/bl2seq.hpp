@@ -34,6 +34,7 @@
 #define ALGO_BLAST_API___BL2SEQ__HPP
 
 #include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -59,6 +60,17 @@ public:
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
             EProgram p);
 
+    CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, 
+            CBlastOptionsHandle& opts);
+
+    /// Constructor to compare query against all subject sequences
+    CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
+            CBlastOptionsHandle& opts);
+
+    /// Contructor to allow query concatenation
+    CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
+            CBlastOptionsHandle& opts);
+
     virtual ~CBl2Seq();
 
     void SetQuery(const SSeqLoc& query);
@@ -73,12 +85,13 @@ public:
     void SetSubjects(const TSeqLocVector& subjects);
     const TSeqLocVector& GetSubjects() const;
 
-    void SetProgram(EProgram p);
-    EProgram GetProgram() const;
-
+    void SetOptions(CBlastOptions& opts);
     CBlastOptions& SetOptions();
-    void SetOptions(const CBlastOptions& opts);
     const CBlastOptions& GetOptions() const;
+
+    void SetOptionsHandle(CBlastOptionsHandle& opts);
+    CBlastOptionsHandle& SetOptionsHandle();
+    const CBlastOptionsHandle& GetOptionsHandle() const;
 
     // Perform BLAST search with multiple query sequences
     virtual TSeqAlignVector Run();
@@ -90,18 +103,16 @@ public:
 protected:
     virtual void SetupSearch();
     virtual void ScanDB();
-    virtual void Traceback();
     virtual TSeqAlignVector x_Results2SeqAlign();
 
 private:
     // Data members received from client code
     TSeqLocVector        m_tQueries;         //< query sequence(s)
     TSeqLocVector        m_tSubjects;        //< sequence(s) to BLAST against
-    CBlastOptions*        m_pOptions;         //< Blast options
-    EProgram             m_eProgram;         //< Blast program FIXME ?needed?
+    CRef<CBlastOptionsHandle>  m_OptsHandle;         //< Blast options
 
     ///< Common initialization code for all c-tors
-    void x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjects);
+    void x_InitSeqs(const TSeqLocVector& queries, const TSeqLocVector& subjs);
 
     /// Prohibit copy constructor
     CBl2Seq(const CBl2Seq& rhs);
@@ -137,20 +148,6 @@ private:
     void x_ResetQueryDs();
     void x_ResetSubjectDs();
 };
-
-inline void
-CBl2Seq::SetProgram(EProgram p)
-{
-    m_eProgram = p;  // FIXME: we could just store the program in options obj
-    m_pOptions->SetProgram(p);
-    mi_bQuerySetUpDone = false;
-}
-
-inline EProgram
-CBl2Seq::GetProgram() const
-{
-    return m_eProgram;   // FIXME: return m_pOptions->GetProgram();
-}
 
 inline void
 CBl2Seq::SetQuery(const SSeqLoc& query)
@@ -212,23 +209,40 @@ inline CBlastOptions&
 CBl2Seq::SetOptions()
 {
     mi_bQuerySetUpDone = false;
-    return *m_pOptions;
+    return m_OptsHandle->SetOptions();
 }
 
 inline void
-CBl2Seq::SetOptions(const CBlastOptions& opts)
+CBl2Seq::SetOptions(CBlastOptions& opts)
 {
-    // FIXME: don't own the options
-    delete m_pOptions;
-    m_pOptions = const_cast<CBlastOptions*>(&opts);
-    m_eProgram = m_pOptions->GetProgram();
+    m_OptsHandle->SetOptions() = opts;
     mi_bQuerySetUpDone = false;
 }
 
 inline const CBlastOptions&
 CBl2Seq::GetOptions() const
 {
-    return *m_pOptions;
+    return m_OptsHandle->GetOptions();
+}
+
+inline CBlastOptionsHandle&
+CBl2Seq::SetOptionsHandle()
+{
+    mi_bQuerySetUpDone = false;
+    return *m_OptsHandle;
+}
+
+inline void
+CBl2Seq::SetOptionsHandle(CBlastOptionsHandle& opts)
+{
+    m_OptsHandle.Reset(&opts);
+    mi_bQuerySetUpDone = false;
+}
+
+inline const CBlastOptionsHandle&
+CBl2Seq::GetOptionsHandle() const
+{
+    return *m_OptsHandle;
 }
 
 inline const vector< CConstRef<objects::CSeq_loc> >&
@@ -244,6 +258,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/11/26 18:22:13  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.22  2003/11/03 15:20:20  camacho
 * Make multiple query processing the default for Run().
 *

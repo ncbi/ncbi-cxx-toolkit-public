@@ -44,12 +44,14 @@ BEGIN_SCOPE(blast)
 
 /// Enumeration analogous to blast_type_* defines from blast_def.h
 enum EProgram {
-    eBlastn = 0,        //< Nucl-Nucl (also includes megablast)
+    eBlastn = 0,        //< Nucl-Nucl (traditional blastn)
     eBlastp,            //< Protein-Protein
     eBlastx,            //< Translated nucl-Protein
     eTblastn,           //< Protein-Translated nucl
     eTblastx,           //< Translated nucl-Translated nucl
-    eBlastUndef = 255   //< Undefined program
+	eMegablast,			//< Nucl-Nucl (traditional megablast)
+	eDiscMegablast,		//< Nucl-Nucl using discontiguous megablast
+    eBlastProgramMax    //< Undefined program
 };
 
 struct SSeqLoc {
@@ -80,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/11/26 18:22:16  camacho
+* +Blast Option Handle classes
+*
 * Revision 1.6  2003/10/07 17:27:38  dondosha
 * Lower case mask removed from options, added to the SSeqLoc structure
 *
