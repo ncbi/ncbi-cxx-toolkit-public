@@ -215,7 +215,7 @@ void CDll::x_ThrowException(const string& what)
         errmsg = "unknown reason";
     }
 #  else
-    const char* errmsg = "No DLL support on this platform."
+    const char* errmsg = "No DLL support on this platform.";
 #  endif
 #endif
 
@@ -230,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/05/28 20:01:20  vakatov
+ * Typo fixed
+ *
  * Revision 1.5  2002/05/23 22:24:07  ucko
  * Handle the absence of <dlfcn.h> better.
  *
