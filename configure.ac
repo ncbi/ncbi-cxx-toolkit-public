@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.345 2005/01/31 16:32:40 ucko Exp $
+#  $Id: configure.ac,v 1.346 2005/02/03 16:02:58 ssikorsk Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -226,6 +226,10 @@ AC_ARG_WITH(python,
    [ --with-python=DIR       use Python installation in DIR])
 AC_ARG_WITH(python2,
    [ --without-python        do not use Python])
+AC_ARG_WITH(cppunit,
+   [ --with-cppunit=DIR      use CPPUNIT installation in DIR])
+AC_ARG_WITH(cppunit2,
+   [ --without-cppunit       do not use CPPUNIT])
 AC_ARG_WITH(sqlite,
    [ --with-sqlite=DIR       use SQLite installation in DIR])
 AC_ARG_WITH(sqlite2,
@@ -300,7 +304,7 @@ check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
-fltk opengl mesa glut bdb odbc python sqlite \
+fltk opengl mesa glut bdb odbc python sqlite cppunit \
 expat sablot libxml oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -342,7 +346,7 @@ for x_arg in "$@" ; do
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
       | --with-bdb=* | --with-odbc=* | --with-python=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
-      | --with-mesa=* | --with-glut=* | --with-oechem=* \
+      | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -2915,6 +2919,69 @@ else
    AC_DEFINE(HAVE_PYTHON, 1, [Define to 1 if Python libraries are available.])
 fi
 
+## CPPUNIT
+if test "$with_cppunit" != "no" ; then
+   if test -z "$CPPUNIT_PATH"; then
+      if test -d "$with_cppunit"; then
+         CPPUNIT_PATH=$with_cppunit
+      else
+         CPPUNIT_PATH="$NCBI/cppunit"
+      fi
+   fi
+   if test -d "$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}/lib" \
+        -a -z "$CPPUNIT_ARCH_PATH"; then
+      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}"
+   elif test -d "$CPPUNIT_PATH/${compiler_pfx}Debug${bit64_sfx}/lib" \
+        -a -z "$CPPUNIT_ARCH_PATH"; then
+      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_pfx}Debug${bit64_sfx}"
+   else
+      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH"
+   fi
+   CPPUNIT_BINPATH=${CPPUNIT_BINPATH:="$CPPUNIT_ARCH_PATH/bin"}
+   CPPUNIT_LIBPATH=${CPPUNIT_LIBPATH:="$CPPUNIT_ARCH_PATH/lib"}
+   CPPUNIT_INCLUDE=
+   AC_CACHE_CHECK([for CPPUNIT in $CPPUNIT_ARCH_PATH], ncbi_cv_lib_cppunit,
+      [if test -x "$CPPUNIT_BINPATH/cppunit-config" ; then
+          CPPUNIT_INCLUDE=`$CPPUNIT_BINPATH/cppunit-config --cflags`
+          CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs`
+
+          CPPFLAGS="$CPPUNIT_INCLUDE $orig_CPPFLAGS"
+          LIBS="$CPPUNIT_LIBS $orig_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+            [[
+               #include <cppunit/TestResult.h>
+               #include <cppunit/TestResultCollector.h>
+            ]],
+            [[
+               CPPUNIT_NS::TestResult controller;
+               CPPUNIT_NS::TestResultCollector result;
+               controller.addListener( &result );        
+            ]])],
+            [ncbi_cv_lib_cppunit=yes], [ncbi_cv_lib_cppunit=no])
+       else
+          ncbi_cv_lib_cppunit=no
+       fi])
+   if test "$ncbi_cv_lib_cppunit" = "no"; then
+      with_cppunit="no"
+   fi
+fi
+
+if test "$with_cppunit" = "no" ; then
+   CPPUNIT_PATH="No_CPPUNIT"
+   CPPUNIT_INCLUDE=
+   CPPUNIT_LIBS=
+   WithoutPackages="$WithoutPackages CPPUNIT"
+else
+   WithPackages="$WithPackages CPPUNIT"
+   CPPUNIT_CONFIG="$CPPUNIT_BINPATH/cppunit-config"
+   # The "yes" may have been cached; get the actual settings again if needed
+   if test -z "$CPPUNIT_INCLUDE"; then
+      CPPUNIT_INCLUDE=`$CPPUNIT_CONFIG --cflags`
+      CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs`
+   fi
+   AC_DEFINE(HAVE_CPPUNIT, 1, [Define to 1 if CPPUNIT libraries are available.])
+fi
+
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
@@ -4222,6 +4289,8 @@ AC_SUBST(ODBC_INCLUDE)
 AC_SUBST(ODBC_LIBS)
 AC_SUBST(PYTHON_INCLUDE)
 AC_SUBST(PYTHON_LIBS)
+AC_SUBST(CPPUNIT_INCLUDE)
+AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIBPATH)
 AC_SUBST(OPENGL_INCLUDE)

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL CXXCPP EGREP AMQ Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL CXXCPP EGREP AMQ Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -934,6 +934,8 @@ Optional Packages:
  --without-odbc          do not use ODBC
  --with-python=DIR       use Python installation in DIR
  --without-python        do not use Python
+ --with-cppunit=DIR      use CPPUNIT installation in DIR
+ --without-cppunit       do not use CPPUNIT
  --with-sqlite=DIR       use SQLite installation in DIR
  --without-sqlite,       do not use SQLite
  --with-expat=DIR        use Expat installation in DIR
@@ -1922,6 +1924,18 @@ if test "${with_python2+set}" = set; then
 
 fi;
 
+# Check whether --with-cppunit or --without-cppunit was given.
+if test "${with_cppunit+set}" = set; then
+  withval="$with_cppunit"
+
+fi;
+
+# Check whether --with-cppunit2 or --without-cppunit2 was given.
+if test "${with_cppunit2+set}" = set; then
+  withval="$with_cppunit2"
+
+fi;
+
 # Check whether --with-sqlite or --without-sqlite was given.
 if test "${with_sqlite+set}" = set; then
   withval="$with_sqlite"
@@ -2115,7 +2129,7 @@ check static-exe strip version lfs pch \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
-fltk opengl mesa glut bdb odbc python sqlite \
+fltk opengl mesa glut bdb odbc python sqlite cppunit \
 expat sablot libxml oechem gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -2157,7 +2171,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
       | --with-bdb=* | --with-odbc=* | --with-python=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
-      | --with-mesa=* | --with-glut=* | --with-oechem=* \
+      | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -17526,6 +17540,122 @@ _ACEOF
 
 fi
 
+## CPPUNIT
+if test "$with_cppunit" != "no" ; then
+   if test -z "$CPPUNIT_PATH"; then
+      if test -d "$with_cppunit"; then
+         CPPUNIT_PATH=$with_cppunit
+      else
+         CPPUNIT_PATH="$NCBI/cppunit"
+      fi
+   fi
+   if test -d "$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}/lib" \
+        -a -z "$CPPUNIT_ARCH_PATH"; then
+      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_vpfx}Debug${bit64_sfx}"
+   elif test -d "$CPPUNIT_PATH/${compiler_pfx}Debug${bit64_sfx}/lib" \
+        -a -z "$CPPUNIT_ARCH_PATH"; then
+      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH/${compiler_pfx}Debug${bit64_sfx}"
+   else
+      CPPUNIT_ARCH_PATH="$CPPUNIT_PATH"
+   fi
+   CPPUNIT_BINPATH=${CPPUNIT_BINPATH:="$CPPUNIT_ARCH_PATH/bin"}
+   CPPUNIT_LIBPATH=${CPPUNIT_LIBPATH:="$CPPUNIT_ARCH_PATH/lib"}
+   CPPUNIT_INCLUDE=
+   echo "$as_me:$LINENO: checking for CPPUNIT in $CPPUNIT_ARCH_PATH" >&5
+echo $ECHO_N "checking for CPPUNIT in $CPPUNIT_ARCH_PATH... $ECHO_C" >&6
+if test "${ncbi_cv_lib_cppunit+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -x "$CPPUNIT_BINPATH/cppunit-config" ; then
+          CPPUNIT_INCLUDE=`$CPPUNIT_BINPATH/cppunit-config --cflags`
+          CPPUNIT_LIBS=`$CPPUNIT_BINPATH/cppunit-config --libs`
+
+          CPPFLAGS="$CPPUNIT_INCLUDE $orig_CPPFLAGS"
+          LIBS="$CPPUNIT_LIBS $orig_LIBS"
+          cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+               #include <cppunit/TestResult.h>
+               #include <cppunit/TestResultCollector.h>
+
+int
+main ()
+{
+
+               CPPUNIT_NS::TestResult controller;
+               CPPUNIT_NS::TestResultCollector result;
+               controller.addListener( &result );
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_cppunit=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_cppunit=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+       else
+          ncbi_cv_lib_cppunit=no
+       fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_cppunit" >&5
+echo "${ECHO_T}$ncbi_cv_lib_cppunit" >&6
+   if test "$ncbi_cv_lib_cppunit" = "no"; then
+      with_cppunit="no"
+   fi
+fi
+
+if test "$with_cppunit" = "no" ; then
+   CPPUNIT_PATH="No_CPPUNIT"
+   CPPUNIT_INCLUDE=
+   CPPUNIT_LIBS=
+   WithoutPackages="$WithoutPackages CPPUNIT"
+else
+   WithPackages="$WithPackages CPPUNIT"
+   CPPUNIT_CONFIG="$CPPUNIT_BINPATH/cppunit-config"
+   # The "yes" may have been cached; get the actual settings again if needed
+   if test -z "$CPPUNIT_INCLUDE"; then
+      CPPUNIT_INCLUDE=`$CPPUNIT_CONFIG --cflags`
+      CPPUNIT_LIBS=`$CPPUNIT_CONFIG --libs`
+   fi
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CPPUNIT 1
+_ACEOF
+
+fi
+
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
@@ -22376,6 +22506,8 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -23213,6 +23345,8 @@ s,@ODBC_INCLUDE@,$ODBC_INCLUDE,;t t
 s,@ODBC_LIBS@,$ODBC_LIBS,;t t
 s,@PYTHON_INCLUDE@,$PYTHON_INCLUDE,;t t
 s,@PYTHON_LIBS@,$PYTHON_LIBS,;t t
+s,@CPPUNIT_INCLUDE@,$CPPUNIT_INCLUDE,;t t
+s,@CPPUNIT_LIBS@,$CPPUNIT_LIBS,;t t
 s,@NCBI_C_INCLUDE@,$NCBI_C_INCLUDE,;t t
 s,@NCBI_C_LIBPATH@,$NCBI_C_LIBPATH,;t t
 s,@OPENGL_INCLUDE@,$OPENGL_INCLUDE,;t t

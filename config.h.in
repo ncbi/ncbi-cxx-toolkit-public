@@ -22,6 +22,9 @@
 /* Define to 1 if Berkeley DB libraries are available. */
 #undef HAVE_BERKELEY_DB
 
+/* Define to 1 if CPPUNIT libraries are available. */
+#undef HAVE_CPPUNIT
+
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #undef HAVE_CPP_GNU_VARARGS
 
