@@ -53,13 +53,6 @@ BEGIN_SCOPE(objects)
 //
 
 
-CMutexPool_Base<CScope> CScope::sm_Scope_MP;
-#ifdef NCBI_COMPILER_MIPSPRO
-#pragma instantiate CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize]
-#else
-CMutex CMutexPool_Base<CScope>::sm_Pool[kMutexPoolSize];
-#endif
-
 CScope::CScope(CObjectManager& objmgr)
     : m_pObjMgr(&objmgr), m_FindMode(eFirst)
 {
@@ -92,7 +85,7 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
 
 bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachAnnot(entry, annot) ) {
             return true;
@@ -104,7 +97,7 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 
 bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachEntry(parent, entry) ) {
             return true;
@@ -116,7 +109,7 @@ bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 
 bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachMap(bioseq, seqmap) ) {
             return true;
@@ -129,7 +122,7 @@ bool CScope::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
                              TSeqPosition start, TSeqLength length)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     CRef<CDelta_seq> dseq = new CDelta_seq;
     dseq->SetLiteral().SetSeq_data(seq);
     dseq->SetLiteral().SetLength(length);
@@ -144,28 +137,27 @@ bool CScope::AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
 
 CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     CSeqMatch_Info match = x_BestResolve(id);
     if (!match)
         return CBioseq_Handle();
     x_AddToHistory(*match.m_TSE);
-    match.m_TSE->UnlockCounter(); // Locked by x_BestResolve()
-    return match.m_DataSource->GetBioseqHandle(*this, id);
+    return match.m_DataSource->GetBioseqHandle(*this, match);
 }
 
 
 void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
                        const string& searchBy) const
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     setId.clear();
 
     TSeq_id_HandleSet setSource, setResult;
     // find all
-    m_pObjMgr->m_IdMapper->GetMatchingHandlesStr( searchBy, setSource);
+    m_pObjMgr->m_IdMapper->GetMatchingHandlesStr(searchBy, setSource);
     // filter those which "belong" to my data sources
     iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
-        (*itSrc)->FilterSeqid( setResult, setSource);
+        (*itSrc)->FilterSeqid(setResult, setSource);
     }
     // create result
     iterate(TSeq_id_HandleSet, itSet, setResult) {
@@ -176,6 +168,7 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 
 CSeqMatch_Info CScope::x_BestResolve(const CSeq_id& id)
 {
+    // Protected by m_Scope_Mtx in upper-level functions
     set<CSeqMatch_Info> bm_set;
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         CSeqMatch_Info info = (*it)->BestResolve(id, *this);
@@ -243,7 +236,7 @@ void CScope::x_PopulateTSESet(CHandleRangeMap& loc,
                               CSeq_annot::C_Data::E_Choice sel,
                               CAnnotTypes_CI::TTSESet& tse_set)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
         (*it)->PopulateTSESet(loc, tse_set, sel, *this);
     }
@@ -259,7 +252,7 @@ bool CScope::x_GetSequence(const CBioseq_Handle& handle,
                            TSeqPosition point,
                            SSeqData* seq_piece)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     CSeqMatch_Info match = x_BestResolve(*handle.GetSeqId());
     if (!match)
         return false;
@@ -323,7 +316,7 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
 
 void CScope::ResetHistory(void)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     iterate(TRequestHistory, it, m_History) {
         (*it)->UnlockCounter();
     }
@@ -345,7 +338,7 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
 void
 CScope::x_DetachFromOM(void)
 {
-    CMutexGuard guard(sm_Scope_MP.GetMutex(this));
+    CMutexGuard guard(m_Scope_Mtx);
     // Drop and release all TSEs
     if(!m_History.empty())
       {
@@ -391,6 +384,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/10/18 19:12:40  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.30  2002/10/16 20:44:29  ucko
 * *** empty log message ***
 *

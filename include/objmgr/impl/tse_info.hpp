@@ -95,14 +95,9 @@ private:
     CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
 
-    // Methods and members for distributing mutex pool between TSEs
-    CMutex& GetMutex(void) const;
-    void x_AssignMutex(void) const;
-    
     bool m_Indexed;
 
-    mutable CMutex* m_TSE_Mutex;
-    static CFastMutex sm_TSEPool_Mutex;
+    mutable CMutex m_TSE_Mutex;
     friend class CTSE_Guard;
 };
 
@@ -117,7 +112,7 @@ private:
     CTSE_Guard(const CTSE_Guard&);
     CTSE_Guard& operator= (const CTSE_Guard&);
 
-    const CTSE_Info& m_TSE;
+    CMutexGuard m_Guard;
 };
 
 
@@ -166,25 +161,16 @@ bool CTSE_Info::operator== (const CTSE_Info& info) const
 }
 
 inline
-CMutex& CTSE_Info::GetMutex(void) const
-{
-    if ( !m_TSE_Mutex )
-        x_AssignMutex();
-    _ASSERT(m_TSE_Mutex);
-    return *m_TSE_Mutex;
-}
-
-inline
 CTSE_Guard::CTSE_Guard(const CTSE_Info& tse)
-    : m_TSE(tse)
+    : m_Guard(tse.m_TSE_Mutex)
 {
-    m_TSE.GetMutex().Lock();
+    return;
 }
 
 inline
 CTSE_Guard::~CTSE_Guard(void)
 {
-    m_TSE.GetMutex().Unlock();
+    return;
 }
 
 
@@ -194,6 +180,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/10/18 19:12:41  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.9  2002/07/10 16:50:33  grichenk
 * Fixed bug with duplicate and uninitialized atomic counters
 *

@@ -42,7 +42,6 @@
 #include <objects/objmgr/annot_types_ci.hpp>
 #include <objects/objmgr/seq_map.hpp>
 #include <objects/objmgr/seqmatch_info.hpp>
-#include <objects/objmgr/mutex_pool.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -155,7 +154,7 @@ private:
 
     TRequestHistory m_History;
 
-    static CMutexPool_Base<CScope> sm_Scope_MP;
+    mutable CMutex m_Scope_Mtx;
 
     friend class CObjectManager;
     friend class CSeqVector;
@@ -171,6 +170,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/10/18 19:12:39  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.21  2002/10/02 17:58:21  grichenk
 * Added sequence type filter to CBioseq_CI
 *

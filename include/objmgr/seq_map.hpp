@@ -39,6 +39,7 @@
 
 #include <objects/objmgr/seq_id_handle.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <vector>
 
@@ -164,6 +165,8 @@ private:
     vector< CRef<CSegmentInfo> > m_Data;
     // Segment lengths are resolved up to this index
     size_t m_FirstUnresolvedPos;
+    // MT-protection
+    static CMutex sm_SeqMap_Mtx;
 
     friend class CDataSource;
     friend class CAnnotTypes_CI;
@@ -356,6 +359,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/10/18 19:12:39  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.20  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

@@ -47,6 +47,8 @@ BEGIN_SCOPE(objects)
 ////////////////////////////////////////////////////////////////////
 //  CSeqMap
 
+CMutex CSeqMap::sm_SeqMap_Mtx;
+
 
 void CSeqMap::Add(CSegmentInfo& interval)
 {
@@ -84,6 +86,10 @@ void CSeqMap::Add(CSegmentInfo& interval)
 
 size_t CSeqMap::x_FindSegment(TSeqPos pos)
 {
+    CMutexGuard guard(sm_SeqMap_Mtx);
+    if (pos == kInvalidSeqPos) {
+        return m_Data.size() - 1;
+    }
     size_t seg_idx = 0;
     // Ignore eSeqEnd
     for ( ; seg_idx+1 < m_Data.size(); seg_idx++) {
@@ -101,19 +107,48 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos)
 CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
 {
     CBioseq_Handle::TBioseqCore seq;
-    size_t seg_idx = x_FindSegment(pos);
+    auto_ptr<CMutexGuard> guard(new CMutexGuard(sm_SeqMap_Mtx));
+    size_t seg_idx = (pos == kInvalidSeqPos) ?
+        m_Data.size() - 1 : x_FindSegment(pos);
     CSegmentInfo seg = *(m_Data[seg_idx]);
     if ( seg_idx >=  m_FirstUnresolvedPos) {
+        // First, get bioseq handles for all unresolved references.
+        // Note that some other thread may be doing the same right now.
+        // The mutex should be unlocked when calling GetBioseqHandle()
+        // to prevent dead-locks.
+        map<size_t, TSeqPos> lenmap;
+        for (size_t i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
+            if (m_Data[i]->m_Position > pos  ||
+                m_Data[i]->m_SegType == eSeqEnd)
+                break;
+            if (m_Data[i]->m_SegType != eSeqRef  ||
+                m_Data[i]->m_Resolved)
+                continue;
+            CConstRef<CSeq_id> id(
+                &CSeq_id_Mapper::GetSeq_id(m_Data[i]->m_RefSeq));
+            guard.reset();
+            CBioseq_Handle bh = scope.GetBioseqHandle(*id);
+            if (bh) {
+                seq = bh.GetBioseqCore();
+                if ( seq->GetInst().IsSetLength() ) {
+                    lenmap[i] = seq->GetInst().GetLength();
+                }
+                else {
+                    lenmap[i] = kInvalidSeqPos;
+                }
+            }
+            guard.reset(new CMutexGuard(sm_SeqMap_Mtx));
+        }
         // Resolve map segments
         long iStillUnresolved = -1;
         TSeqPos shift = 0;
         for (size_t i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
             if (m_Data[i]->m_Position+shift > pos  ||
-                m_Data[i]->m_SegType == CSeqMap::eSeqEnd)
+                m_Data[i]->m_SegType == eSeqEnd)
                 break;
             seg_idx = i;
             m_Data[i]->m_Position += shift;
-            if (m_Data[i]->m_SegType != CSeqMap::eSeqRef) {
+            if (m_Data[i]->m_SegType != eSeqRef) {
                 m_Data[i]->m_Resolved = true;
                 continue; // not a reference - nothing to resolve
             }
@@ -121,15 +156,12 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
                 m_Data[i]->m_Resolved = true;
                 continue; // resolved reference, known length
             }
-            CConstRef<CSeq_id> id(
-                &CSeq_id_Mapper::GetSeq_id(m_Data[i]->m_RefSeq));
-            CBioseq_Handle bh = scope.GetBioseqHandle(*id);
-            if (bh) {
-                seq = bh.GetBioseqCore();
-                if ( seq->GetInst().IsSetLength() ) {
+            if (lenmap.find(i) != lenmap.end()) {
+                TSeqPos len = lenmap[i];
+                if (len != kInvalidSeqPos) {
                     m_Data[i]->m_Resolved = true;
-                    m_Data[i]->m_Length = seq->GetInst().GetLength();
-                    shift += m_Data[i]->m_Length;
+                    m_Data[i]->m_Length = len;
+                        shift += len;
                 }
             }
             if ((iStillUnresolved < 0) && !(m_Data[i]->m_Resolved)) {
@@ -145,8 +177,10 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
             }
         }
         // now find again
-        seg_idx = x_FindSegment(pos);
+        seg_idx = (pos == kInvalidSeqPos) ?
+            0 : x_FindSegment(pos);
     }
+    guard.reset();
     // this could happen in case of unresolvable references
     if (m_Data[seg_idx]->m_SegType == CSeqMap::eSeqEnd) {
         seg_idx = 0;
@@ -164,25 +198,6 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(TSeqPos pos, CScope& scope)
     return seg;
 }
 
-/* Obsolete function - the positions are calculated from the lengths,
-not the lengths from the positions.
-void CSeqMap::x_CalculateSegmentLengths(void)
-{
-    for (size_t i = 0; i < m_Data.size()-1; i++) {
-        switch (m_Data[i]->GetType()) {
-        case CSeqMap::eSeqData:
-        case CSeqMap::eSeqRef:
-        case CSeqMap::eSeqGap:
-            m_Data[i]->m_length =
-                m_Data[i+1]->GetPosition() - m_Data[i]->GetPosition();
-            break;
-        case CSeqMap::eSeqEnd:
-        default:
-            break;
-        }
-    }
-}
-*/
 
 const CSeq_id& CSeqMap::CSegmentInfo::GetRefSeqid(void) const
 {
@@ -190,6 +205,7 @@ const CSeq_id& CSeqMap::CSegmentInfo::GetRefSeqid(void) const
     _ASSERT((bool)m_RefSeq);
     return CSeq_id_Mapper::GetSeq_id(m_RefSeq);
 }
+
 
 void CSeqMap::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
@@ -206,6 +222,7 @@ void CSeqMap::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             m_Data.begin(), m_Data.end(), depth);
     }
 }
+
 
 void CSeqMap::CSegmentInfo::DebugDump(CDebugDumpContext ddc,
     unsigned int depth) const
@@ -238,6 +255,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/10/18 19:12:40  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.22  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

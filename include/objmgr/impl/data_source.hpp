@@ -41,7 +41,6 @@
 #include <objects/objmgr/data_loader.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_annot.hpp>
-#include <objects/objmgr/mutex_pool.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -93,7 +92,7 @@ public:
 
     /// Get Bioseq handle by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
-    CBioseq_Handle GetBioseqHandle(CScope& scope, const CSeq_id& id);
+    CBioseq_Handle GetBioseqHandle(CScope& scope, CSeqMatch_Info& info);
 
     // Filter set of CSeq_id (setSource)
     // Select from the setSource ones which are "owned" by this DataSource
@@ -240,11 +239,8 @@ private:
                              CSeqMap& dmap, TSeqPos& dpos, TSeqPos dstop,
                              CScope& scope);
 
-    // Used to lock a separate TSE set (an element of m_TSE_xxx)
-    static CMutexPool_Base<TTSESet> sm_TSESet_MP;
-
     // Used to lock: m_Entries, m_TSE_seq, m_TSE_ref, m_SeqMaps
-    static CMutexPool_Base<CDataSource> sm_DataSource_MP;
+    mutable CMutex m_DataSource_Mtx;
 
     CDataLoader          *m_Loader;
     CRef<CSeq_entry>      m_pTopEntry;
@@ -268,7 +264,6 @@ inline
 CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
     : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
 {
-    //LOG_POST("CDataSource(" << loader.GetName() << ") " << this);
     m_Loader->SetTargetDataSource(*this);
 }
 
@@ -277,14 +272,12 @@ CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr),
       m_IndexedAnnot(false)
 {
-    //LOG_POST("CDataSource(seq_entry)");
     x_AddToBioseqMap(entry, false, 0);
 }
 
 inline
 CDataSource::~CDataSource(void)
 {
-    //LOG_POST("~CDataSource " << this );
     // Find and drop each TSE
     while (m_Entries.size() > 0) {
         _ASSERT( !m_Entries.begin()->second->CounterLocked() );
@@ -324,6 +317,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/10/18 19:12:40  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.28  2002/10/02 17:58:23  grichenk
 * Added sequence type filter to CBioseq_CI
 *

@@ -60,38 +60,23 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CMutexPool_Base<CDataSource::TTSESet> CDataSource::sm_TSESet_MP;
-CMutexPool_Base<CDataSource> CDataSource::sm_DataSource_MP;
-#ifdef NCBI_COMPILER_MIPSPRO
-#pragma instantiate CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize]
-#pragma instantiate CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize]
-#else
-CMutex CMutexPool_Base<CDataSource::TTSESet>::sm_Pool[kMutexPoolSize];
-CMutex CMutexPool_Base<CDataSource>::sm_Pool[kMutexPoolSize];
-#endif
-
 CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
                                       const CScope::TRequestHistory& history) const
 {
+//### Don't forget to unlock TSE in the calling function!
     const TTSESet* p_tse_set = 0;
-    {{
-        //### Locking the tse set will make this lock obsolete
-        //### CMutexGuard guard(sm_DataSource_Mutex);
-        TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
-        if ( tse_set == m_TSE_seq.end() ) {
-            return 0;
-        }
-        //### Lock the tse set to prevent its deletion
-        p_tse_set = &tse_set->second;
-    }}
-    CMutexGuard guard(sm_TSESet_MP.GetMutex(p_tse_set));
-    //### If the tse set is unlocked, its size may change between the two
-    //### actions: == and return
+    CMutexGuard ds_guard(m_DataSource_Mtx);
+    TTSEMap::const_iterator tse_set = m_TSE_seq.find(handle);
+    if ( tse_set == m_TSE_seq.end() ) {
+        return 0;
+    }
+    p_tse_set = &tse_set->second;
     if ( p_tse_set->size() == 1) {
         // There is only one TSE, no matter live or dead
-        return *p_tse_set->begin();
+        CTSE_Info* info = *p_tse_set->begin();
+        info->LockCounter();
+        return info;
     }
-    //### The following code is not safe unless the tse set is not locked
     // The map should not contain empty entries
     _ASSERT(p_tse_set->size() > 0);
     TTSESet live;
@@ -113,19 +98,25 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
         }
     }
     // History is always the best choice
-    if (from_history)
+    if (from_history) {
+        from_history->LockCounter();
         return from_history;
+    }
 
     // Check live
     if (live.size() == 1) {
         // There is only one live TSE -- ok to use it
-        return *live.begin();
+        CTSE_Info* info = *live.begin();
+        info->LockCounter();
+        return info;
     }
     else if ((live.size() == 0)  &&  m_Loader) {
         // No live TSEs -- try to select the best dead TSE
         CTSE_Info* best = m_Loader->ResolveConflict(handle, *p_tse_set);
         if ( best ) {
-            return *p_tse_set->find(best);
+            CTSE_Info* info = *p_tse_set->find(best);
+            info->LockCounter();
+            return info;
         }
         THROW1_TRACE(runtime_error,
             "CDataSource::x_FindBestTSE() -- Multiple seq-id matches found");
@@ -134,20 +125,19 @@ CTSE_Info* CDataSource::x_FindBestTSE(CSeq_id_Handle handle,
     // TSEs may change)
     CTSE_Info* best = m_Loader->ResolveConflict(handle, live);
     if ( best ) {
-        return *p_tse_set->find(best);
+        CTSE_Info* info = *p_tse_set->find(best);
+        info->LockCounter();
+        return info;
     }
     THROW1_TRACE(runtime_error,
         "CDataSource::x_FindBestTSE() -- Multiple live entries found");
 }
 
 
-CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
+CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope,
+                                            CSeqMatch_Info& info)
 {
-    CSeqMatch_Info info = BestResolve(id, scope);
-    // The TSE is locked by the BestResolve, so, it can not be deleted.
-
-    if ( !info )
-        return CBioseq_Handle();
+    // The TSE is locked by the scope, so, it can not be deleted.
     CSeq_entry* se = 0;
     {{
         //### CMutexGuard guard(sm_DataSource_Mutex);
@@ -158,8 +148,8 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope, const CSeq_id& id)
     }}
     CBioseq_Handle h(info.m_Handle);
     h.x_ResolveTo(scope, *this, *se, *info.m_TSE);
-    scope.x_AddToHistory(*info.m_TSE);
-    info.m_TSE->UnlockCounter(); // Locked by BestResolve()
+    // Locked by BestResolve() in CScope::x_BestResolve()
+    info.m_TSE->UnlockCounter();
     return h;
 }
 
@@ -170,7 +160,7 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
     _ASSERT(&setResult != &setSource);
     // for each handle
     TSeq_id_HandleSet::iterator itHandle;
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));
+    // CMutexGuard guard(m_DataSource_Mtx);
     for( itHandle = setSource.begin(); itHandle != setSource.end(); ) {
         // if it is in my map
         if (m_TSE_seq.find(*itHandle) != m_TSE_seq.end()) {
@@ -311,7 +301,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
     // No need to lock anything since the TSE should be locked by the handle
     const CBioseq& seq = GetBioseq(handle);
     //### Lock seq-maps to prevent duplicate seq-map creation
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
     TSeqMaps::iterator found = m_SeqMaps.find(&seq);
     if (found == m_SeqMaps.end()) {
         // Create sequence map
@@ -351,11 +341,12 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
     CSeq_entry* entry = handle.m_Entry;
     CBioseq_Handle rhandle = handle; // resolved handle for local use
     if ( !entry ) {
-        //### Lock the TSE until the rhandle is resolved to prevent its deletion
+        //### The TSE returns locked - unlock it
         CTSE_Info* info = x_FindBestTSE(rhandle.GetKey(), scope.m_History);
         CTSE_Guard guard(*info);
         if ( !info )
             return false;
+        info->UnlockCounter();
         entry = info->m_BioseqMap[rhandle.GetKey()]->m_Entry;
         rhandle.x_ResolveTo(scope, *this, *entry, *info);
     }
@@ -468,7 +459,7 @@ CSeq_entry* CDataSource::x_FindEntry(const CSeq_entry& entry)
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
     //### CMutexGuard guard(sm_DataSource_Mutex);
     //### Lock the entries list to prevent "found" destruction
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));
+    CMutexGuard guard(m_DataSource_Mtx);
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
         return 0;
@@ -739,7 +730,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
 {
     CTSE_Info* tse_info = 0;
     // Lock indexes to prevent duplicate indexing
-    CMutexGuard entries_guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard entries_guard(m_DataSource_Mtx);    
 
     TEntries::iterator found_tse = m_Entries.find(&tse);
     if (found_tse == m_Entries.end()) {
@@ -831,7 +822,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry)
 {
     // The entry must be already in the m_Entries map
     // Lock indexes
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
 
     CTSE_Info* tse = m_Entries[&entry];
     CTSE_Guard tse_guard(*tse);
@@ -1104,7 +1095,7 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
                                CTSE_Info& tse)
 {
     // Lock indexes
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
 
     // Create annotation object. It will split feature location
     // to a handle-ranges map.
@@ -1124,7 +1115,7 @@ void CDataSource::x_MapAlign(const CSeq_align& align,
                              CTSE_Info& tse)
 {
     // Lock indexes
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
 
     // Create annotation object. It will process the align locations
     CAnnotObject* aobj = new CAnnotObject(*this, align, annot);
@@ -1143,7 +1134,7 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
                              CTSE_Info& tse)
 {
     // Lock indexes
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
 
     // Create annotation object. It will split graph location
     // to a handle-ranges map.
@@ -1207,6 +1198,7 @@ without the sequence but with references to the id and all dead TSEs
     }
     x_ResolveLocationHandles(loc, scope.m_History);
     TTSESet non_history;
+    CMutexGuard guard(m_DataSource_Mtx);    
     iterate(CHandleRangeMap::TLocMap, hit, loc.GetMap()) {
         // Search for each seq-id handle from loc in the indexes
         TTSEMap::const_iterator tse_it = m_TSE_ref.find(hit->first);
@@ -1319,6 +1311,7 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
     CHandleRangeMap tmp(GetIdMapper());
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
         CSeq_id_Handle idh = it->first;
+        //### The TSE returns locked, unlock it
         CTSE_Info* tse_info = x_FindBestTSE(it->first, history);
         if ( !tse_info ) {
             // Try to find the best matching id (not exactly equal)
@@ -1330,11 +1323,14 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
                     continue;
                 CTSE_Info* tmp_tse = x_FindBestTSE(*hit, history);
                 if ( tmp_tse ) {
+                    if (tse_info != 0)
+                        tse_info->UnlockCounter();
                     tse_info = tmp_tse;
                     idh = *hit;
                 }
             }
         }
+        // At this point the tse_info (if not null) should be locked
         if (tse_info != 0) {
             TBioseqMap::const_iterator info =
                 tse_info->m_BioseqMap.find(idh);
@@ -1353,6 +1349,7 @@ void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
                     tmp.AddRanges(*syn_it, rg);
                 }
             }
+            tse_info->UnlockCounter();
         }
         else {
             // Just copy the existing range map
@@ -1371,7 +1368,7 @@ bool CDataSource::DropTSE(const CSeq_entry& tse)
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&tse));
 
     // Lock indexes
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
 
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end())
@@ -1399,7 +1396,8 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
             key = GetIdMapper().GetHandle(**id);
             TTSEMap::iterator tse_set = m_TSE_seq.find(key);
             _ASSERT(tse_set != m_TSE_seq.end());
-            CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));
+            //### No need to lock the TSE since the whole DS is locked by DropTSE()
+            //### CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));
             TTSESet::iterator tse_it = tse_set->second.begin();
             for ( ; tse_it != tse_set->second.end(); ++tse_it) {
                 if ((*tse_it)->m_TSE == tse)
@@ -1418,15 +1416,6 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
         }
         TSeqMaps::iterator map_it = m_SeqMaps.find(&seq);
         if (map_it != m_SeqMaps.end()) {
-/*
-            for (size_t i = 0; i < map_it->second->size(); i++) {
-                // Un-lock seq-id handles
-                const CSeqMap::CSegmentInfo& info = (*(map_it->second))[i];
-                if (info.m_SegType == CSeqMap::eSeqRef) {
-                    //### ??????
-                }
-            }
-*/
             m_SeqMaps.erase(map_it);
         }
         x_DropAnnotMap(entry);
@@ -1499,7 +1488,7 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
-        //### Lock the map and the set
+        // The whole DS should be locked by DropTSE()
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         if (tse_set == m_TSE_ref.end())
             continue; // The referenced ID is not currently loaded
@@ -1520,7 +1509,6 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
             if (rg == annot_it->second.end())
                 continue;
             // Delete the feature from all indexes
-            //### Lock all containers before erasing items
             annot_it->second.erase(rg);
             if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
@@ -1543,7 +1531,7 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
-        //### Lock the map and the set
+        // The whole DS should be locked by DropTSE()
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         if (tse_set == m_TSE_ref.end())
             continue; // The referenced ID is not currently loaded
@@ -1564,7 +1552,6 @@ void CDataSource::x_DropAlign(const CSeq_align& align,
             if (rg == annot_it->second.end())
                 continue;
             // Delete the align from all indexes
-            //### Lock all containers before erasing items
             annot_it->second.erase(rg);
             if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
@@ -1587,7 +1574,7 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
     iterate ( CHandleRangeMap::TLocMap,
         mapit, aobj->GetRangeMap().GetMap() ) {
         // Find TSEs containing references to the id
-        //### Lock the map and the set
+        // The whole DS should be locked by DropTSE()
         TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
         if (tse_set == m_TSE_ref.end())
             continue; // The referenced ID is not currently loaded
@@ -1608,7 +1595,6 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
             if (rg == annot_it->second.end())
                 continue;
             // Delete the graph from all indexes
-            //### Lock all containers before erasing items
             annot_it->second.erase(rg);
             if (annot_it->second.size() == 0) {
                 tse_set->second.erase(tse_info);
@@ -1625,7 +1611,7 @@ void CDataSource::x_DropGraph(const CSeq_graph& graph,
 void CDataSource::x_CleanupUnusedEntries(void)
 {
     // Lock indexes
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
+    CMutexGuard guard(m_DataSource_Mtx);    
 
     bool broken = true;
     while ( broken ) {
@@ -1657,6 +1643,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     TTSESet loaded_tse_set;
     if ( m_Loader ) {
         // Send request to the loader
+        //### Need a better interface to request just a set of IDs
         CSeq_id_Handle idh = GetIdMapper().GetHandle(id);
         CHandleRangeMap hrm(GetIdMapper());
         CHandleRange rg(idh);
@@ -1681,13 +1668,16 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
                 continue;
             CTSE_Info* tmp_tse = x_FindBestTSE(*hit, scope.m_History);
             if ( tmp_tse ) {
+                if (tse != 0)
+                    tse->UnlockCounter();
                 tse = tmp_tse;
                 idh = *hit;
             }
         }
     }
-    if ( tse ) {
+    if (tse != 0) {
         match = CSeqMatch_Info(idh, *tse, *this);
+        tse->UnlockCounter();
     }
     bool just_loaded = false;
     iterate (TTSESet, lit, loaded_tse_set) {
@@ -1718,7 +1708,7 @@ const CSeqMap& CDataSource::GetResolvedSeqMap(CBioseq_Handle handle)
 {
     // Get the source map
     CSeqMap& smap = x_GetSeqMap(handle);
-    smap.x_Resolve(handle.GetSeqVector().size()-1, *handle.m_Scope);
+    smap.x_Resolve(kInvalidSeqPos, *handle.m_Scope);
     // Create destination map (not stored in the indexes,
     // must be deleted by user or user's CRef).
     CRef<CSeqMap> dmap(new CSeqMap());
@@ -1768,13 +1758,13 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
     }
     // This tricky way of getting the seq-map is used to obtain
     // the non-const reference.
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
 
     CSeqMap& rmap = rbsh.x_GetDataSource().x_GetSeqMap(rbsh);
     // Resolve the reference map up to the end of the referenced region
     rmap.x_Resolve(start + len, scope);
     size_t rseg = rmap.x_FindSegment(start);
 
+    auto_ptr<CMutexGuard> guard(new CMutexGuard(m_DataSource_Mtx));    
     // Get enough segments to cover the "start+length" range on the
     // destination sequence
     while (dpos < dstop  &&  len > 0) {
@@ -1813,9 +1803,12 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
                 // Resolve multi-level references
                 TSignedSeqPos rshift
                     = rmap[rseg].m_RefPos - rmap[rseg].m_Position;
+                // Unlock mutex to prevent dead-locks
+                guard.reset();
                 x_ResolveMapSegment(rmap[rseg].m_RefSeq,
                     rstart + rshift, rlength,
                     dmap, dpos, dstop, scope);
+                guard.reset(new CMutexGuard(m_DataSource_Mtx));    
                 break;
             }
         }
@@ -1832,10 +1825,10 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
     CSeq_id_Handle h1 = GetIdMapper().GetHandle(id1);
     CSeq_id_Handle h2 = GetIdMapper().GetHandle(id2);
 
+    CMutexGuard guard(m_DataSource_Mtx);    
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
     if (tse_set == m_TSE_seq.end())
         return false; // Could not find id1 in the datasource
-    CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));    
     iterate ( TTSESet, tse_it, tse_set->second ) {
         const CBioseq_Info& bioseq = *(*tse_it)->m_BioseqMap[h1];
         if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
@@ -1852,7 +1845,7 @@ bool CDataSource::GetTSEHandles(CScope& scope,
 {
     // Find TSE_Info
     CRef<CSeq_entry> ref(const_cast<CSeq_entry*>(&entry));
-    CMutexGuard guard(sm_DataSource_MP.GetMutex(this));
+    CMutexGuard guard(m_DataSource_Mtx);
     TEntries::iterator found = m_Entries.find(ref);
     if (found == m_Entries.end()  ||
         found->second->m_TSE.GetPointer() != &entry)
@@ -1957,6 +1950,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2002/10/18 19:12:40  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.66  2002/10/16 20:44:16  ucko
 * MIPSpro: use #pragma instantiate rather than template<>, as the latter
 * ended up giving rld errors for CMutexPool_Base<*>::sm_Pool.  (Sigh.)

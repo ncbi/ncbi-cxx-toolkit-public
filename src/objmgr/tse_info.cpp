@@ -47,10 +47,6 @@ BEGIN_SCOPE(objects)
 //
 
 
-const size_t kTSEMutexPoolSize = 16;
-static CMutex s_TSEMutexPool[kTSEMutexPoolSize];
-
-
 CTSE_Info::CTSE_Info(void)
     : m_Dead(false)
 {
@@ -60,18 +56,6 @@ CTSE_Info::CTSE_Info(void)
 
 CTSE_Info::~CTSE_Info(void)
 {
-}
-
-
-CFastMutex CTSE_Info::sm_TSEPool_Mutex;
-
-
-void CTSE_Info::x_AssignMutex(void) const
-{
-    CFastMutexGuard guard(sm_TSEPool_Mutex);
-    if ( m_TSE_Mutex )
-        return;
-    m_TSE_Mutex = &s_TSEMutexPool[((size_t)const_cast<CTSE_Info*>(this) >> 4) % kTSEMutexPoolSize];
 }
 
 
@@ -149,6 +133,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/10/18 19:12:40  grichenk
+* Removed mutex pools, converted most static mutexes to non-static.
+* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
+* dead-locks.
+*
 * Revision 1.8  2002/07/10 16:50:33  grichenk
 * Fixed bug with duplicate and uninitialized atomic counters
 *
