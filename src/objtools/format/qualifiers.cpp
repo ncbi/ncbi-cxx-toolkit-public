@@ -59,6 +59,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
 const string IFlatQVal::kSpace     = " ";
 const string IFlatQVal::kSemicolon = ";";
 const string IFlatQVal::kComma     = ",";
@@ -319,7 +320,6 @@ void CFlatBondQVal::Format
 
 // === CFlatGeneQVal ========================================================
 
-
 void CFlatGeneQVal::Format
 (TFlatQuals& quals,
  const string& name,
@@ -328,6 +328,21 @@ void CFlatGeneQVal::Format
 {
     if (ctx.IsJournalScan()) {
         Sgml2Ascii(m_Value);
+    }
+    CFlatStringQVal::Format(quals, name, ctx, flags);
+}
+
+
+// === CFlatSiteQVal ========================================================
+
+void CFlatSiteQVal::Format
+(TFlatQuals& quals,
+ const string& name,
+ CBioseqContext& ctx,
+ TFlags flags) const
+{
+    if (s_IsNote(flags)) {
+        m_Value += " site";
     }
     CFlatStringQVal::Format(quals, name, ctx, flags);
 }
@@ -868,6 +883,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/12/09 14:47:17  shomrat
+* Added CFlatSiteQVal
+*
 * Revision 1.22  2004/11/15 20:10:49  shomrat
 * Fixed formatting of string, OrgMod and SubSource quals
 *

@@ -284,6 +284,17 @@ public:
 };
 
 
+class CFlatSiteQVal : public CFlatStringQVal
+{
+public:
+    CFlatSiteQVal(const string& value) : CFlatStringQVal(value)
+    {}
+        
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
+};
+
+
 class CFlatStringListQVal : public IFlatQVal
 {
 public:
@@ -566,6 +577,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/12/09 14:46:51  shomrat
+* Added CFlatSiteQVal
+*
 * Revision 1.17  2004/11/15 20:03:49  shomrat
 * Better control of period in qualifiers
 *
