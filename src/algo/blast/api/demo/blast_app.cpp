@@ -51,6 +51,7 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/hspstream_queue.hpp>
 #include "blast_input.hpp"
 #include <algo/blast/api/seqdb_src.hpp>
 #include <objtools/alnmgr/util/blast_format.hpp>
@@ -68,6 +69,12 @@ Contents: C++ driver for running BLAST
 // For writing out seqalign only
 #include <ctools/asn_converter.hpp>
 #include <objalign.h>
+
+// For on-the-fly tabular output
+#include "blast_tabular.hpp"
+
+// For repeats filtering
+#include <algo/blast/api/repeats_filter.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -233,6 +240,10 @@ void CBlastApplication::Init(void)
                              "Format: \"oid1 oid2\"",
                              CArgDescriptions::eString);
 
+    arg_desc->AddDefaultKey("tabular", "tabular", 
+                             "On the fly tabular output", 
+                             CArgDescriptions::eBoolean, "F");
+
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -277,7 +288,6 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
     }
 
     opt.SetFilterString(args["filter"].AsString().c_str());
-    // FIXME: Handle lcase masking
 
     // If lookup table type argument value is 0, the type will be set correctly
     // automatically. Value 1 corresponds to megablast lookup table;
@@ -525,6 +535,9 @@ slp[index].seqloc, slp[index].scope))));
 void CBlastApplication::FormatResults(CDbBlast& blaster, 
                                       TSeqAlignVector& seqalignv)
 {
+    if (seqalignv.size() == 0)
+        return;
+    
     CArgs args = GetArgs();
 
     if (args["asnout"]) {
@@ -748,9 +761,42 @@ int CBlastApplication::Run(void)
     
     ProcessCommandLineArgs(opts, seq_src, rps_info);
 
-    CDbBlast blaster(query_loc, seq_src, *opts, rps_info);
+    // Perform repeats filtering if required
+   char* repeat_filter_string = 
+       GetRepeatsFilterOption(opts->GetOptions().GetFilterString());
+   if (repeat_filter_string) {
+       FindRepeatFilterLoc(query_loc, repeat_filter_string);
+       sfree(repeat_filter_string);
+   }
 
-    TSeqAlignVector seqalignv = blaster.Run();
+
+    BlastHSPStream* hsp_stream = NULL;
+    bool tabular_output = args["tabular"].AsBoolean();
+
+    if (tabular_output) {
+        hsp_stream = Blast_HSPListCQueueInit();
+    }
+
+    CDbBlast blaster(query_loc, seq_src, *opts, rps_info, hsp_stream);
+    TSeqAlignVector seqalignv;
+
+    if (tabular_output) {
+        blaster.SetupSearch();
+        // Start the on-the-fly formatting thread
+        CBlastTabularFormatThread* tab_thread = 
+            new CBlastTabularFormatThread(blaster, query_loc, 
+                                          args["out"].AsOutputFile());
+        tab_thread->Run();
+        blaster.RunSearchEngine();
+        // Join the on-the-fly formatting thead
+        void *exit_data;
+        tab_thread->Join(&exit_data);
+
+        hsp_stream = BlastHSPStreamFree(hsp_stream);
+    } else {
+        // Run the BLAST engine
+        seqalignv = blaster.Run();
+    }
 
     BlastSeqSrcFree(seq_src);
     if (rps_info) {
