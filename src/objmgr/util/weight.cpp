@@ -31,10 +31,11 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <objmgr/object_manager.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/seq_vector.hpp>
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seq_vector_ci.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -46,7 +47,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objmgr/util/weight.hpp>
+#include <objects/util/weight.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -82,8 +83,8 @@ double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
     // Start with water (H2O)
     TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
-    for (TSeqPos i = 0;  i < size;  i++) {
-        CSeqVector::TResidue res = v[i];
+    for (CSeqVector_CI vit(v);  vit.GetPos() < size;  ++vit) {
+        CSeqVector::TResidue res = *vit;
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
             THROW1_TRACE(CBadResidueException,
                          "GetProteinWeight: bad residue");
@@ -190,18 +191,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
-* Revision 1.23  2003/06/02 16:06:39  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
+* Revision 1.24  2003/06/02 18:53:32  dicuccio
+* Fixed bungled commit
+*
+* Revision 1.22  2003/05/27 19:44:10  grichenk
+* Added CSeqVector_CI class
 *
 * Revision 1.21  2003/03/18 21:48:35  grichenk
 * Removed obsolete class CAnnot_CI

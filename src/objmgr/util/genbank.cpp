@@ -29,11 +29,12 @@
 *   Code to write Genbank/Genpept flat-file records.
 */
 
-#include <objmgr/util/genbank.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/seq_vector.hpp>
+#include <objects/util/genbank.hpp>
+#include <objects/util/sequence.hpp>
+#include <objects/objmgr/seqdesc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/seq_vector_ci.hpp>
 
 #include <numeric>
 #include <algorithm>
@@ -1964,10 +1965,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
                     CSeqVector vec = prot_handle.GetSeqVector();
                     vec.SetIupacCoding();
                     string data;
-                    data.resize(vec.size());
-                    for (TSeqPos n = 0;  n < vec.size();  n++) {
-                        data[n] = vec[n];
-                    }
+                    vec.GetSeqData(0, vec.size() - 1, data);
                     gbfeat.AddQual(CGBQual::eType_translation, data);
                 }}
             }
@@ -2322,8 +2320,9 @@ bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
         }
         //fill(counts, counts+COUNTS_SIZE, 0);
         TSeqPos size = vec.size();
-        for (TSeqPos pos = 0;  pos < size;  ++pos) {
-            ++counts[(unsigned char)vec[pos]];
+        ;
+        for (CSeqVector_CI vit(vec); vit.GetPos() < size; ++vit) {
+            ++counts[(unsigned char)(*vit)];
         }
 
         m_Stream << s_Pad("BASE COUNT", sm_KeywordWidth);
@@ -2348,13 +2347,15 @@ bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
 
     char line[BLOCK_COUNT*(BLOCK_SIZE+1)+2];
 
-    for ( TSeqPos n = 0, seq_end = vec.size(); n < seq_end; ) {
+    TSeqPos seq_end = vec.size();
+    for (CSeqVector_CI vit(vec); vit.GetPos() < seq_end; ) {
+        TSeqPos n = vit.GetPos();
         m_Stream << setw(9) << (n+1);
         size_t line_size = 0;
         for ( TSeqPos line_end = min(n + LINE_SIZE, seq_end); n < line_end; ) {
             line[line_size++] = ' ';
-            for ( TSeqPos block_end = min(n + BLOCK_SIZE, line_end); n < block_end; ++n )
-                line[line_size++] = tolower(vec[n]);
+            for ( TSeqPos block_end = min(n + BLOCK_SIZE, line_end); n < block_end; ++vit)
+                line[line_size++] = tolower(*vit);
         }
         line[line_size++] = '\n';
         m_Stream.write(line, line_size);
@@ -2850,18 +2851,14 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
-* Revision 1.39  2003/06/02 16:06:39  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
+* Revision 1.40  2003/06/02 18:48:45  dicuccio
+* Fixed bungled commit
+*
+* Revision 1.38  2003/05/27 23:12:35  ucko
+* WriteSequence: change seq_end's type back to TSeqPos to fix 64-bit compilation.
+*
+* Revision 1.37  2003/05/27 19:44:09  grichenk
+* Added CSeqVector_CI class
 *
 * Revision 1.36  2003/03/18 21:48:35  grichenk
 * Removed obsolete class CAnnot_CI
