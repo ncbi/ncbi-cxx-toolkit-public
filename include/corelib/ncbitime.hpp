@@ -37,6 +37,10 @@
  *	NOTE:   Do not use Local time with time span and dates < "1/1/1900"
  *           (use GMT time only!!!)	
  *
+ *  NCBI_MAC_OS Note: 
+ *			Mac OS 9 does not correctly support daylight savings flag. 
+ *			CTime implementation does not support Daylight on this platform.
+ *
  */
 
 #include <corelib/ncbistd.hpp>
@@ -610,6 +614,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/07/23 19:53:34  lebedev
+ * NCBI_OS_MAC: Note about Daylight flag handling added
+ *
  * Revision 1.14  2002/07/15 18:17:52  gouriano
  * renamed CNcbiException and its descendents
  *
