@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/11/14 21:03:39  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.24  2002/10/15 13:58:04  gouriano
 * use "noprefix" flag
 *
@@ -281,7 +284,8 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
             bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
             code->AddVariant((*i)->GetName(), varType, delayed,
-                             (*i)->GetType()->GetTag(), (*i)->NoPrefix());
+                             (*i)->GetType()->GetTag(),
+                             (*i)->NoPrefix(), (*i)->Attlist());
         }
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/11/14 20:53:42  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.11  2002/10/25 14:49:29  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -113,7 +116,8 @@ public:
         eFrameClass,
         eFrameClassMember,
         eFrameChoice,
-        eFrameChoiceVariant
+        eFrameChoiceVariant,
+        eFrameAttlist
     };
 
     void Reset(void);
@@ -126,6 +130,8 @@ public:
 
     void SetSkipTag(void);
     bool GetSkipTag(void);
+    void SetNotag(bool set=true);
+    bool GetNotag(void);
 
 private:
     friend class CObjectStack;
@@ -134,6 +140,7 @@ private:
     TTypeInfo m_TypeInfo;
     const CMemberId* m_MemberId;
     bool m_SkipTag;
+    bool m_Notag;
 };
 
 class CObjectStack
@@ -200,6 +207,7 @@ private:
 
 #define BEGIN_OBJECT_FRAME(Type) BEGIN_OBJECT_FRAME_OF(*this, Type)
 #define BEGIN_OBJECT_FRAME2(Type, Arg) BEGIN_OBJECT_FRAME_OF2(*this, Type, Arg)
+#define BEGIN_OBJECT_FRAME3(Type, Arg) BEGIN_OBJECT_FRAME_OFx(*this, (Type, Arg))
 #define END_OBJECT_FRAME() END_OBJECT_FRAME_OF(*this)
 
 #define BEGIN_OBJECT_2FRAMES_OFx(Stream, Args) \

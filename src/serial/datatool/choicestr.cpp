@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/11/14 21:03:40  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.34  2002/10/15 13:58:04  gouriano
 * use "noprefix" flag
 *
@@ -223,16 +226,20 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 
 void CChoiceTypeStrings::AddVariant(const string& name,
                                     const AutoPtr<CTypeStrings>& type,
-                                    bool delayed, int tag, bool noPrefix)
+                                    bool delayed, int tag,
+                                    bool noPrefix, bool attlist)
 {
-    m_Variants.push_back(SVariantInfo(name, type, delayed, tag, noPrefix));
+    m_Variants.push_back(SVariantInfo(name, type, delayed, tag,
+                                      noPrefix, attlist));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
                                                const AutoPtr<CTypeStrings>& t,
-                                               bool del, int tag, bool noPrefx)
+                                               bool del, int tag,
+                                               bool noPrefx, bool attlst)
     : externalName(name), cName(Identifier(name)),
-      type(t), delayed(del), memberTag(tag), noPrefix(noPrefx)
+      type(t), delayed(del), memberTag(tag),
+      noPrefix(noPrefx), attlist(attlst)
 {
     switch ( type->GetKind() ) {
     case eKindString:
@@ -267,6 +274,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     bool haveSimple = false;
     bool haveString = false;
     bool delayed = false;
+    bool haveAttlist = false;
     string codeClassName = GetClassNameDT();
     if ( haveUserClass )
         codeClassName += "_Base";
@@ -279,7 +287,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 i->type->GeneratePointerTypeCode(code);
                 break;
             case eObjectPointerMember:
-                haveObjectPointer = true;
+                if (i->attlist) {
+                    haveAttlist = true;
+                } else {
+                    haveObjectPointer = true;
+                }
                 i->type->GeneratePointerTypeCode(code);
                 break;
             case eSimpleMember:
@@ -328,9 +340,20 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    // choice state enum\n"
             "    enum "STATE_ENUM" {\n"
             "        "STATE_NOT_SET" = "<<kEmptyChoice;
+        TMemberIndex currIndex = kEmptyChoice;
+        bool needIni = false;
         iterate ( TVariants, i, m_Variants ) {
-            code.ClassPublic() << ",\n"
-                "        "STATE_PREFIX<<i->cName;
+            ++currIndex;
+            if (!i->attlist) {
+                code.ClassPublic() << ",\n"
+                    "        "STATE_PREFIX<<i->cName;
+                if (needIni) {
+                    code.ClassPublic() << " = "<<currIndex;
+                    needIni = false;
+                }
+            } else {
+                needIni = true;
+            }
         }
         code.ClassPublic() << "\n"
             "    };\n"
@@ -443,6 +466,18 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
     // generate initialization code
     code.AddInitializer(STATE_MEMBER, STATE_NOT_SET);
+    if (haveAttlist) {
+        iterate ( TVariants, i, m_Variants ) {
+            if (i->attlist) {
+                string member("m_");
+                member += i->cName;
+                string init("new C_");
+                init += i->cName;
+                init += "()";
+                code.AddInitializer(member, init);
+            }
+        }
+    }
 
     // generate destruction code
     code.AddDestructionCode("if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
@@ -453,6 +488,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
+        if (haveAttlist) {
+            iterate ( TVariants, i, m_Variants ) {
+                if (i->attlist) {
+                    methods <<
+                        "    Reset" << i->cName << "();\n";
+                }
+            }
+        }
         if ( haveObjectPointer || havePointers || haveString ) {
             if ( delayed ) {
                 methods <<
@@ -659,6 +702,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         iterate ( TVariants, i, m_Variants ) {
             methods << ",\n"
                 "    \""<<i->externalName<<"\"";
+            if (i->attlist) {
+                methods << " /* place holder */";
+            }
         }
         methods << "\n"
             "};\n"
@@ -678,7 +724,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variant types
     {
         code.ClassPublic() <<
-            "    // variants' types\n";
+            "    // types\n";
         iterate ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
@@ -691,22 +737,33 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variant getters & setters
     {
         code.ClassPublic() <<
-            "    // variants' getters\n";
+            "    // getters\n";
         setters <<
-            "    // variants' setters\n";
+            "    // setters\n";
         iterate ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
+            if (i->attlist) {
+                code.ClassPublic() <<
+                    "    void Reset"<<i->cName<<"(void);\n";
+            } else {
+                code.ClassPublic() <<
+                    "    bool Is"<<i->cName<<"(void) const;\n";
+            }
             code.ClassPublic() <<
-                "    bool Is"<<i->cName<<"(void) const;\n"
-                "    const "<<cType<<"& Get"<<i->cName<<"(void) const;\n"
+                "    const "<<cType<<"& Get"<<i->cName<<"(void) const;"
                 "\n";
             setters <<
                 "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eSimpleMember ||
                  i->memberType == eStringMember ||
                  i->memberType == eObjectPointerMember ) {
-                setters <<
-                    "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
+                if (i->attlist) {
+                    setters <<
+                        "    void Set"<<i->cName<<"("<<cType<<"& value);\n";
+                } else {
+                    setters <<
+                        "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
+                }
             }
             string memberRef;
             string constMemberRef;
@@ -734,73 +791,103 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->delayed )
                 inl = false;
-            inlineMethods <<
-                "inline\n"
-                "bool "<<methodPrefix<<"Is"<<i->cName<<"(void) const\n"
-                "{\n"
-                "    return "STATE_MEMBER" == "STATE_PREFIX<<i->cName<<";\n"
-                "}\n"
-                "\n";
-            code.MethodStart(inl) <<
-                "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                "{\n"
-                "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
-            if ( i->delayed ) {
+            if (i->attlist) {
+                code.MethodStart(inl) <<
+                    "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
+                    "{\n"
+                    "    (*m_" <<i->cName<< ").Reset();\n"
+                    "}\n"
+                    "\n";
+                code.MethodStart(inl) <<
+                    "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                    "{\n";
                 code.Methods(inl) <<
-                    "    "DELAY_MEMBER".Update();\n";
-            }
-            code.Methods(inl) <<
-                "    return "<<constMemberRef<<";\n"
-                "}\n"
-                "\n";
-            code.MethodStart(inl) <<
-                methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
-                "{\n"
-                "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
-            if ( i->delayed ) {
+                    "    return (*m_"<<i->cName<<");\n"
+                    "}\n"
+                    "\n";
+                code.MethodStart(inl) <<
+                    methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                    "{\n";
                 code.Methods(inl) <<
-                    "    "DELAY_MEMBER".Update();\n";
-            }
-            code.Methods(inl) <<
-                "    return "<<memberRef<<";\n"
-                "}\n"
-                "\n";
-            if ( i->memberType == eSimpleMember ||
-                 i->memberType == eStringMember ) {
+                    "    return (*m_"<<i->cName<<");\n"
+                    "}\n"
+                    "\n";
+                code.MethodStart(inl) <<
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(T"<<i->cName<<"& value)\n"
+                    "{\n";
+                code.Methods(inl) <<
+                    "    m_"<<i->cName<<".Reset(&value);\n"
+                    "}\n"
+                    "\n";
+            } else {
                 inlineMethods <<
                     "inline\n"
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
+                    "bool "<<methodPrefix<<"Is"<<i->cName<<"(void) const\n"
+                    "{\n"
+                    "    return "STATE_MEMBER" == "STATE_PREFIX<<i->cName<<";\n"
+                    "}\n"
+                    "\n";
+                code.MethodStart(inl) <<
+                    "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                    "{\n"
+                    "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
+                if ( i->delayed ) {
+                    code.Methods(inl) <<
+                        "    "DELAY_MEMBER".Update();\n";
+                }
+                code.Methods(inl) <<
+                    "    return "<<constMemberRef<<";\n"
+                    "}\n"
+                    "\n";
+                code.MethodStart(inl) <<
+                    methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                     "{\n"
                     "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                 if ( i->delayed ) {
+                    code.Methods(inl) <<
+                        "    "DELAY_MEMBER".Update();\n";
+                }
+                code.Methods(inl) <<
+                    "    return "<<memberRef<<";\n"
+                    "}\n"
+                    "\n";
+                if ( i->memberType == eSimpleMember ||
+                     i->memberType == eStringMember ) {
                     inlineMethods <<
-                        "    "DELAY_MEMBER".Forget();\n";
+                        "inline\n"
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
+                        "{\n"
+                        "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                    if ( i->delayed ) {
+                        inlineMethods <<
+                            "    "DELAY_MEMBER".Forget();\n";
+                    }
+                    inlineMethods <<
+                        "    "<<memberRef<<" = value;\n"
+                        "}\n"
+                        "\n";
                 }
-                inlineMethods <<
-                    "    "<<memberRef<<" = value;\n"
-                    "}\n"
-                    "\n";
-            }
-            if ( i->memberType == eObjectPointerMember ) {
-                methods <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
-                    "{\n"
-                    "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&value);\n";
-                if ( i->delayed ) {
+                if ( i->memberType == eObjectPointerMember ) {
                     methods <<
-                        "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "DELAY_MEMBER" || "OBJECT_MEMBER" != ptr ) {\n";
-                }
-                else {
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
+                        "{\n"
+                        "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&value);\n";
+                    if ( i->delayed ) {
+                        methods <<
+                            "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "DELAY_MEMBER" || "OBJECT_MEMBER" != ptr ) {\n";
+                    }
+                    else {
+                        methods <<
+                            "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "OBJECT_MEMBER" != ptr ) {\n";
+                    }
                     methods <<
-                        "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "OBJECT_MEMBER" != ptr ) {\n";
+                        "        Reset();\n"
+                        "        ("OBJECT_MEMBER" = ptr)->AddReference();\n"
+                        "        "STATE_MEMBER" = "STATE_PREFIX<<i->cName<<";\n"
+                        "    }\n"
+                        "}\n"
+                        "\n";
                 }
-                methods <<
-                    "        Reset();\n"
-                    "        ("OBJECT_MEMBER" = ptr)->AddReference();\n"
-                    "        "STATE_MEMBER" = "STATE_PREFIX<<i->cName<<";\n"
-                    "    }\n"
-                    "}\n"
-                    "\n";
             }
             setters <<
                 "\n";
@@ -810,7 +897,15 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate variants data
     {
         code.ClassPrivate() <<
-            "    // variants' data\n";
+            "    // data\n";
+        if (haveAttlist) {
+            iterate ( TVariants, i, m_Variants ) {
+                if (i->attlist) {
+                    code.ClassPrivate() <<
+                        "    "<<ncbiNamespace<<"CRef< T"<<i->cName<<" > m_"<<i->cName<<";\n";
+                }
+            }
+        }
         if ( haveUnion ) {
             code.ClassPrivate() << "    union {\n";
             iterate ( TVariants, i, m_Variants ) {
@@ -949,10 +1044,19 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 break;
             }
 
-            methods << "CHOICE_VARIANT(\""<<i->externalName<<"\", ";
+            if (i->attlist) {
+                methods << "MEMBER(\"";
+            } else {
+                methods << "CHOICE_VARIANT(\"";
+            }
+            methods <<i->externalName<<"\", ";
             switch ( i->memberType ) {
             case eObjectPointerMember:
-                methods << OBJECT_MEMBER;
+                if (i->attlist) {
+                    methods << "m_" << i->cName;
+                } else {
+                    methods << OBJECT_MEMBER;
+                }
                 break;
             case eStringMember:
                 methods << STRING_MEMBER;
@@ -976,6 +1080,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
+            }
+            if (i->attlist) {
+                methods << "->SetAttlist()";
             }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";

@@ -27,7 +27,7 @@
 * Author: Andrei Gourianov
 *
 * File Description:
-*   DTD lexer
+*   DTD parser
 *
 * ===========================================================================
 */
@@ -49,191 +49,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/////////////////////////////////////////////////////////////////////////////
-// DTDElement
-
-DTDElement::DTDElement(void)
-{
-    m_Type = eUnknown;
-    m_Occ  = eOne;
-    m_Refd = false;
-    m_Embd = false;
-}
-
-DTDElement::DTDElement(const DTDElement& other)
-{
-    m_Name = other.m_Name;
-    m_Type = other.eUnknown;
-    m_Occ  = other.m_Occ;
-    m_Refd = other.m_Refd;
-    m_Embd = other.m_Embd;
-    for (list<string>::const_iterator i = other.m_Refs.begin();
-        i != other.m_Refs.end(); ++i) {
-        m_Refs.push_back( *i);
-    }
-    for (map<string,EOccurrence>::const_iterator i = other.m_RefOcc.begin();
-        i != other.m_RefOcc.end(); ++i) {
-        m_RefOcc[i->first] = i->second;
-    }
-}
-
-DTDElement::~DTDElement(void)
-{
-}
-
-
-void DTDElement::SetName(const string& name)
-{
-    m_Name = name;
-}
-const string& DTDElement::GetName(void) const
-{
-    return m_Name;
-}
-
-
-void DTDElement::SetType( EType type)
-{
-    _ASSERT(m_Type == eUnknown || m_Type == type);
-    m_Type = type;
-}
-
-void DTDElement::SetTypeIfUnknown( EType type)
-{
-    if (m_Type == eUnknown) {
-        m_Type = type;
-    }
-}
-
-DTDElement::EType DTDElement::GetType(void) const
-{
-    return (EType)m_Type;
-}
-
-
-void DTDElement::SetOccurrence( const string& ref_name, EOccurrence occ)
-{
-    m_RefOcc[ref_name] = occ;
-}
-DTDElement::EOccurrence DTDElement::GetOccurrence(
-    const string& ref_name) const
-{
-    map<string,EOccurrence>::const_iterator i = m_RefOcc.find(ref_name);
-    return (i != m_RefOcc.end()) ? i->second : eOne;
-}
-
-
-void DTDElement::SetOccurrence( EOccurrence occ)
-{
-    m_Occ = occ;
-}
-DTDElement::EOccurrence DTDElement::GetOccurrence(void) const
-{
-    return m_Occ;
-}
-
-
-void DTDElement::AddContent( const string& ref_name)
-{
-    m_Refs.push_back( ref_name);
-}
-
-const list<string>& DTDElement::GetContent(void) const
-{
-    return m_Refs;
-}
-
-
-void DTDElement::SetReferenced(void)
-{
-    m_Refd = true;
-}
-bool DTDElement::IsReferenced(void) const
-{
-    return m_Refd;
-}
-
-
-void DTDElement::SetEmbedded(void)
-{
-    m_Embd = true;
-}
-bool DTDElement::IsEmbedded(void) const
-{
-    return m_Embd;
-}
-string DTDElement::CreateEmbeddedName(int depth) const
-{
-    string name, tmp;
-    list<string>::const_iterator i;
-    for ( i = m_Refs.begin(); i != m_Refs.end(); ++i) {
-        tmp = i->substr(0,depth);
-        tmp[0] = toupper(tmp[0]);
-        name += tmp;
-    }
-    return name;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// DTDEntity
-
-DTDEntity::DTDEntity(void)
-{
-    m_External = false;
-}
-DTDEntity::DTDEntity(const DTDEntity& other)
-{
-    m_Name = other.m_Name;
-    m_Data = other.m_Data;
-    m_External = other.m_External;
-}
-DTDEntity::~DTDEntity(void)
-{
-}
-
-void DTDEntity::SetName(const string& name)
-{
-    m_Name = name;
-}
-const string& DTDEntity::GetName(void) const
-{
-    return m_Name;
-}
-
-void DTDEntity::SetData(const string& data)
-{
-    m_Data = data;
-}
-const string& DTDEntity::GetData(void) const
-{
-    return m_Data;
-}
-
-void DTDEntity::SetExternal(void)
-{
-    m_External = true;
-}
-bool DTDEntity::IsExternal(void) const
-{
-    return m_External;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// DTDEntityLexer
-
-DTDEntityLexer::DTDEntityLexer(CNcbiIstream& in, bool autoDelete)
-    : DTDLexer(in)
-{
-    m_Str = &in;
-    m_AutoDelete = autoDelete;
-}
-DTDEntityLexer::~DTDEntityLexer(void)
-{
-    if (m_AutoDelete) {
-        delete m_Str;
-    }
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDParser
@@ -259,12 +74,7 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
         modules->AddModule(Module(entry.GetBase()));
         m_StackPath.pop();
     }
-/*
-    while ( Next() != T_EOF ) {
-        modules->AddModule(Module());
-    }
-    CopyComments(modules->LastComments());
-*/
+//    CopyComments(modules->LastComments());
     return modules;
 }
 
@@ -314,6 +124,7 @@ void DTDParser::BuildDocumentTree(void)
                 break;
             case K_ATTLIST:
                 Consume();
+                BeginAttributesContent();
                 break;
             case K_ENTITY:
                 Consume();
@@ -389,7 +200,7 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
 
 void DTDParser::ConsumeElementContent(DTDElement& node)
 {
-// definition of element content:
+// Element content:
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-element-content
 
     string id_name;
@@ -528,6 +339,9 @@ void DTDParser::FixEmbeddedNames(DTDElement& node)
 
 void DTDParser::BeginEntityContent(void)
 {
+// Entity:
+// http://www.w3.org/TR/2000/REC-xml-20001006#sec-entity-decl
+
     TToken tok = Next();
     _ASSERT(tok == T_SYMBOL);
     _ASSERT(NextToken().GetSymbol() == '%');
@@ -535,13 +349,18 @@ void DTDParser::BeginEntityContent(void)
     Consume();
     tok = Next();
     _ASSERT(tok == T_IDENTIFIER);
+    // entity name
     string name = NextToken().GetText();
     Consume();
+    ParseEntityContent(name);
+}
 
+void DTDParser::ParseEntityContent(const string& name)
+{
     DTDEntity& node = m_MapEntity[name];
     node.SetName(name);
 
-    tok = Next();
+    TToken tok = Next();
     if ((tok==K_SYSTEM) || (tok==K_PUBLIC)) {
         node.SetExternal();
         Consume();
@@ -566,8 +385,8 @@ void DTDParser::PushEntityLexer(const string& name)
     _ASSERT (i != m_MapEntity.end());
     CNcbiIstream* in;
     if (m_MapEntity[name].IsExternal()) {
-        string name(m_MapEntity[name].GetData());
-        string fullname = CDirEntry::MakePath(m_StackPath.top(), name);
+        string filename(m_MapEntity[name].GetData());
+        string fullname = CDirEntry::MakePath(m_StackPath.top(), filename);
         CFile  file(fullname);
         _ASSERT(file.Exists());
         in = new CNcbiIfstream(fullname.c_str());
@@ -594,6 +413,130 @@ bool DTDParser::PopEntityLexer(void)
     return false;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// DTDParser - attributes
+
+void DTDParser::BeginAttributesContent(void)
+{
+// Attributes
+// http://www.w3.org/TR/2000/REC-xml-20001006#attdecls
+    // element name
+    string name = NextToken().GetText();
+    Consume();
+    ParseAttributesContent(name);
+
+}
+
+void DTDParser::ParseAttributesContent(const string& name)
+{
+    string id_name;
+    DTDElement& node = m_MapElement[ name];
+    while (Next()==T_IDENTIFIER) {
+        // attribute name
+        id_name = NextToken().GetText();
+        Consume();
+        ConsumeAttributeContent(node, id_name);
+    }
+    // attlist description is ended
+    ConsumeSymbol('>');
+}
+
+void DTDParser::ConsumeAttributeContent(DTDElement& node,
+                                        const string& id_name)
+{
+    DTDAttribute attrib;
+    attrib.SetName(id_name);
+    for (bool done=false; !done;) {
+        switch(Next()) {
+        default:
+            _ASSERT(0);
+            break;
+        case T_IDENTIFIER:
+            done = true;
+            break;
+        case T_SYMBOL:
+            switch (NextToken().GetSymbol()) {
+            default:
+                done = true;
+                break;
+            case '(':
+                // parse enumerated list
+                attrib.SetType(DTDAttribute::eEnum);
+                Consume();
+                ParseEnumeratedList(attrib);
+                break;
+            }
+            break;
+        case T_STRING:
+            attrib.SetValue(NextToken().GetText());
+            break;
+        case K_CDATA:
+            attrib.SetType(DTDAttribute::eString);
+            break;
+        case K_ID:
+            attrib.SetType(DTDAttribute::eId);
+            break;
+        case K_IDREF:
+            attrib.SetType(DTDAttribute::eIdRef);
+            break;
+        case K_IDREFS:
+            attrib.SetType(DTDAttribute::eIdRefs);
+            break;
+        case K_NMTOKEN:
+            attrib.SetType(DTDAttribute::eNmtoken);
+            break;
+        case K_NMTOKENS:
+            attrib.SetType(DTDAttribute::eNmtokens);
+            break;
+        case K_ENTITY:
+            attrib.SetType(DTDAttribute::eEntity);
+            break;
+        case K_ENTITIES:
+            attrib.SetType(DTDAttribute::eEntities);
+            break;
+        case K_NOTATION:
+            attrib.SetType(DTDAttribute::eNotation);
+            break;
+        case K_DEFAULT:
+            attrib.SetValueType(DTDAttribute::eDefault);
+            break;
+        case K_REQUIRED:
+            attrib.SetValueType(DTDAttribute::eRequired);
+            break;
+        case K_IMPLIED:
+            attrib.SetValueType(DTDAttribute::eImplied);
+            break;
+        case K_FIXED:
+            attrib.SetValueType(DTDAttribute::eFixed);
+            break;
+        }
+        if (!done) {
+            Consume();
+        }
+    }
+    node.AddAttribute(attrib);
+}
+
+void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
+{
+    for (;;) {
+        switch(Next()) {
+        default:
+            _ASSERT(0);
+            break;
+        case T_IDENTIFIER:
+            attrib.AddEnumValue(NextToken().GetText());
+            Consume();
+            break;
+        case T_SYMBOL:
+            // may be either '|' or ')'
+            if (NextToken().GetSymbol() == ')') {
+                return;
+            }
+            Consume();
+        }
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // model generation
@@ -602,10 +545,13 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
 {
     map<string,DTDElement>::iterator i;
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
-//        if (!i->second.IsReferenced()) {
         DTDElement::EType type = i->second.GetType();
+
         if (((type == DTDElement::eSequence) ||
-            (type == DTDElement::eChoice)) && !i->second.IsEmbedded()) {
+            (type == DTDElement::eChoice) ||
+            i->second.HasAttributes()) &&
+            !i->second.IsEmbedded())
+        {
             ModuleType(module, i->second);
         }
     }
@@ -619,20 +565,22 @@ void DTDParser::ModuleType(CDataTypeModule& module, const DTDElement& node)
 
 
 AutoPtr<CDataType> DTDParser::Type(
-    const DTDElement& node, DTDElement::EOccurrence occ, bool in_elem)
+    const DTDElement& node, DTDElement::EOccurrence occ,
+    bool in_elem, bool ignoreAttrib)
 {
-    AutoPtr<CDataType> type(x_Type(node, occ, in_elem));
+    AutoPtr<CDataType> type(x_Type(node, occ, in_elem, ignoreAttrib));
     return type;
 }
 
 
 CDataType* DTDParser::x_Type(
-    const DTDElement& node, DTDElement::EOccurrence occ, bool in_elem)
+    const DTDElement& node, DTDElement::EOccurrence occ,
+    bool in_elem, bool ignoreAttrib)
 {
     CDataType* type;
 
 // if the node contains single embedded element - prune it
-    if (!in_elem) {
+    if (!in_elem && !node.HasAttributes()) {
         const list<string>& refs = node.GetContent();
         if (refs.size() == 1) {
             string refName = refs.front();
@@ -642,33 +590,45 @@ CDataType* DTDParser::x_Type(
             }
         }
     }
-    switch (node.GetType()) {
-    case DTDElement::eSequence:
-        if (in_elem && !node.IsEmbedded()) {
+    if ((node.GetType() != DTDElement::eSequence) &&
+        (node.GetType() != DTDElement::eChoice) &&
+        node.HasAttributes() &&
+        !ignoreAttrib)
+    {
+        if (in_elem) {
             type = new CReferenceDataType(node.GetName());
         } else {
-            type = TypesBlock(new CDataSequenceType(), node);
+            type = AttribNode(node);
         }
-        break;
-    case DTDElement::eChoice:
-        if (in_elem && !node.IsEmbedded()) {
-            type = new CReferenceDataType(node.GetName());
-        } else {
-            type = TypesBlock(new CChoiceDataType(), node);
+    } else {
+        switch (node.GetType()) {
+        case DTDElement::eSequence:
+            if (in_elem && !node.IsEmbedded()) {
+                type = new CReferenceDataType(node.GetName());
+            } else {
+                type = TypesBlock(new CDataSequenceType(), node);
+            }
+            break;
+        case DTDElement::eChoice:
+            if (in_elem && !node.IsEmbedded()) {
+                type = new CReferenceDataType(node.GetName());
+            } else {
+                type = TypesBlock(new CChoiceDataType(), node);
+            }
+            break;
+        case DTDElement::eString:
+            type = new CStringDataType();
+            break;
+        case DTDElement::eAny:
+            type = new CStringStoreDataType();  // ????
+            break;
+        case DTDElement::eEmpty:
+            type = new CNullDataType();  // ????
+            break;
+        default:
+            _ASSERT(0);
+            break;
         }
-        break;
-    case DTDElement::eString:
-        type = new CStringDataType();
-        break;
-    case DTDElement::eAny:
-        type = new CStringStoreDataType();  // ????
-        break;
-    case DTDElement::eEmpty:
-        type = new CNullDataType();  // ????
-        break;
-    default:
-        _ASSERT(0);
-        break;
     }
     if ((occ == DTDElement::eOneOrMore) ||
         (occ == DTDElement::eZeroOrMore)) {
@@ -681,6 +641,14 @@ CDataType* DTDParser::TypesBlock(
     CDataMemberContainerType* containerType,const DTDElement& node)
 {
     AutoPtr<CDataMemberContainerType> container(containerType);
+
+    if (node.HasAttributes()) {
+        AutoPtr<CDataMember> member(new CDataMember("Attlist", AttribBlock(node)));
+        member->SetNoPrefix();
+        member->SetAttlist();
+        container->AddMember(member);
+    }
+
     const list<string>& refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
@@ -691,12 +659,97 @@ CDataType* DTDParser::TypesBlock(
             (occ == DTDElement::eZeroOrMore)) {
             member->SetOptional();
         }
+        if (refNode.IsEmbedded()) {
+            member->SetNotag();
+        }
         member->SetNoPrefix();
         container->AddMember(member);
     }
     return container.release();
 }
 
+CDataType* DTDParser::AttribNode(const DTDElement& node)
+{
+// node with attributes becomes a sequence
+    AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+
+// attribute block
+    AutoPtr<CDataMember> attMember(new CDataMember("Attlist", AttribBlock(node)));
+    attMember->SetNoPrefix();
+    attMember->SetAttlist();
+    container->AddMember(attMember);
+
+// the rest of the node
+    AutoPtr<CDataType> type(Type(node, DTDElement::eOne, false, true));
+    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
+    member->SetNoPrefix();
+    member->SetNotag();
+    container->AddMember(member);
+
+    return container.release();
+}
+
+CDataType* DTDParser::AttribBlock(const DTDElement& node)
+{
+// attribute storage is sequence
+    AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+    const list<DTDAttribute>& att = node.GetAttributes();
+    for (list<DTDAttribute>::const_iterator i= att.begin();
+        i != att.end(); ++i) {
+        AutoPtr<CDataType> type(x_AttribType(*i));
+        AutoPtr<CDataMember> member(new CDataMember(i->GetName(), type));
+        string defValue( i->GetValue());
+        if (!defValue.empty()) {
+            member->SetDefault(new CIdDataValue(defValue));
+        }
+        if (i->GetValueType() == DTDAttribute::eImplied) {
+            member->SetOptional();
+        }
+        member->SetNoPrefix();
+        container->AddMember(member);
+    }
+    return container.release();
+}
+
+
+
+CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
+{
+    CDataType* type=0;
+    switch (att.GetType()) {
+    case DTDAttribute::eUnknown:
+        _ASSERT(0);
+        break;
+    case DTDAttribute::eId:
+    case DTDAttribute::eIdRef:
+    case DTDAttribute::eIdRefs:
+    case DTDAttribute::eNmtoken:
+    case DTDAttribute::eNmtokens:
+    case DTDAttribute::eEntity:
+    case DTDAttribute::eEntities:
+    case DTDAttribute::eNotation:
+    case DTDAttribute::eString:
+        type = new CStringDataType();
+        break;
+    case DTDAttribute::eEnum:
+        type = EnumeratedBlock(att, new CEnumDataType());
+        break;
+    }
+    return type;
+}
+
+CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
+    CEnumDataType* enumType)
+{
+    int v=1;
+    const list<string>& attEnums = att.GetEnumValues();
+    for (list<string>::const_iterator i = attEnums.begin();
+        i != attEnums.end(); ++i, ++v)
+    {
+        enumType->AddValue( *i, v);
+    }
+    return enumType;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // debug printing
@@ -712,7 +765,8 @@ void DTDParser::PrintDocumentTree(void)
         DTDElement& node = i->second;
         DTDElement::EType type = node.GetType();
         if (((type == DTDElement::eSequence) ||
-            (type == DTDElement::eChoice)) && !node.IsEmbedded()) {
+            (type == DTDElement::eChoice) ||
+            node.HasAttributes()) && !node.IsEmbedded()) {
             PrintDocumentNode(i->first,i->second);
         }
     }
@@ -755,7 +809,7 @@ void DTDParser::PrintEntities(void)
     }
 }
 
-void DTDParser::PrintDocumentNode(const string& name, DTDElement& node)
+void DTDParser::PrintDocumentNode(const string& name, const DTDElement& node)
 {
     cout << name << ": ";
     switch (node.GetType()) {
@@ -774,9 +828,13 @@ void DTDParser::PrintDocumentNode(const string& name, DTDElement& node)
     case DTDElement::eZeroOrMore:  cout << "(0..*)"; break;
     case DTDElement::eZeroOrOne:   cout << "(0..1)"; break;
     }
+    cout << endl;
+    if (node.HasAttributes()) {
+        PrintNodeAttributes(node);
+    }
     const list<string>& refs = node.GetContent();
     if (!refs.empty()) {
-        cout << ": " << endl;
+        cout << "        === Contents ===" << endl;
         for (list<string>::const_iterator ir= refs.begin();
             ir != refs.end(); ++ir) {
             cout << "        " << *ir;
@@ -792,6 +850,56 @@ void DTDParser::PrintDocumentNode(const string& name, DTDElement& node)
     }
     cout << endl;
 }
+
+void DTDParser::PrintNodeAttributes(const DTDElement& node)
+{
+    const list<DTDAttribute>& att = node.GetAttributes();
+    cout << "        === Attributes ===" << endl;
+    for (list<DTDAttribute>::const_iterator i= att.begin();
+        i != att.end(); ++i) {
+        cout << "        ";
+        cout << i->GetName();
+        cout << ": ";
+        switch (i->GetType()) {
+        case DTDAttribute::eUnknown:  cout << "eUnknown"; break;
+        case DTDAttribute::eString:   cout << "eString"; break;
+        case DTDAttribute::eEnum:     cout << "eEnum"; break;
+        case DTDAttribute::eId:       cout << "eId"; break;
+        case DTDAttribute::eIdRef:    cout << "eIdRef"; break;
+        case DTDAttribute::eIdRefs:   cout << "eIdRefs"; break;
+        case DTDAttribute::eNmtoken:  cout << "eNmtoken"; break;
+        case DTDAttribute::eNmtokens: cout << "eNmtokens"; break;
+        case DTDAttribute::eEntity:   cout << "eEntity"; break;
+        case DTDAttribute::eEntities: cout << "eEntities"; break;
+        case DTDAttribute::eNotation: cout << "eNotation"; break;
+        }
+        {
+            const list<string>& enumV = i->GetEnumValues();
+            if (!enumV.empty()) {
+                cout << " (";
+                for (list<string>::const_iterator ie= enumV.begin();
+                    ie != enumV.end(); ++ie) {
+                    if (ie != enumV.begin()) {
+                        cout << ",";
+                    }
+                    cout << *ie;
+                }
+                cout << ")";
+            }
+        }
+        cout << ", ";
+        switch (i->GetValueType()) {
+        case DTDAttribute::eDefault:  cout << "eDefault"; break;
+        case DTDAttribute::eRequired: cout << "eRequired"; break;
+        case DTDAttribute::eImplied:  cout << "eImplied"; break;
+        case DTDAttribute::eFixed:    cout << "eFixed"; break;
+        }
+        cout << ", ";
+        cout << "\"" << i->GetValue() << "\"";
+        cout << endl;
+    }
+}
+
 #endif
 
 END_NCBI_SCOPE
@@ -800,6 +908,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2002/11/14 21:05:27  gouriano
+ * added support of XML attribute lists
+ *
  * Revision 1.3  2002/10/21 16:11:13  gouriano
  * added parsing of external entities
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/11/14 21:02:54  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.37  2002/10/15 13:58:04  gouriano
 * use "noprefix" flag
 *
@@ -376,8 +379,12 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("_pointer"),
                         optional, defaultCode, delayed,
-                        (*i)->GetType()->GetTag(), (*i)->NoPrefix());
+                        (*i)->GetType()->GetTag(),
+                        (*i)->NoPrefix(), (*i)->Attlist(), (*i)->Notag(),
+                        (*i)->GetType());
+        (*i)->GetType()->SetTypeStr(&(*code));
     }
+    SetTypeStr(&(*code));
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());
 }
@@ -497,7 +504,9 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
 
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
-    : m_Name(name), m_Type(type), m_Optional(false), m_NoPrefix(false)
+    : m_Name(name), m_Type(type), m_Optional(false),
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
+
 {
     if ( m_Name.empty() ) {
         THROW1_TRACE(runtime_error,
@@ -559,6 +568,15 @@ void CDataMember::SetOptional(void)
 void CDataMember::SetNoPrefix(void)
 {
     m_NoPrefix = true;
+}
+
+void CDataMember::SetAttlist(void)
+{
+    m_Attlist = true;
+}
+void CDataMember::SetNotag(void)
+{
+    m_Notag = true;
 }
 
 

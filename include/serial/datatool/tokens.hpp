@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/11/14 21:07:10  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.7  2002/10/21 16:10:12  gouriano
 * added more DTD tokens
 *
@@ -107,16 +110,31 @@ static const TToken K_DEFAULT = 124;
 static const TToken K_BIGINT = 125;
 
 
-static const TToken T_ENTITY  =  11;
+static const TToken T_ENTITY   =  11;
 
-static const TToken K_ELEMENT = 201;
-static const TToken K_ATTLIST = 202;
-static const TToken K_ENTITY  = 203;
-static const TToken K_PCDATA  = 204;
-static const TToken K_ANY     = 205;
-static const TToken K_EMPTY   = 206;
-static const TToken K_SYSTEM  = 207;
-static const TToken K_PUBLIC  = 208;
+static const TToken K_ELEMENT  = 201;
+static const TToken K_ATTLIST  = 202;
+static const TToken K_ENTITY   = 203;
+static const TToken K_PCDATA   = 204;
+static const TToken K_ANY      = 205;
+static const TToken K_EMPTY    = 206;
+static const TToken K_SYSTEM   = 207;
+static const TToken K_PUBLIC   = 208;
+
+static const TToken K_CDATA    = 209;
+static const TToken K_ID       = 210;
+static const TToken K_IDREF    = 211;
+static const TToken K_IDREFS   = 212;
+static const TToken K_NMTOKEN  = 213;
+static const TToken K_NMTOKENS = 214;
+static const TToken K_ENTITIES = 215;
+static const TToken K_NOTATION = 216;
+
+static const TToken K_REQUIRED = 217;
+static const TToken K_IMPLIED  = 218;
+static const TToken K_FIXED    = 219;
+
+
 
 END_NCBI_SCOPE
 

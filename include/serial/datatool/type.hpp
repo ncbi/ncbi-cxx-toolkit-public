@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/11/14 21:07:10  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.14  2001/06/11 14:34:58  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -301,6 +304,13 @@ public:
         return m_Tag != eNoExplicitTag;
     }
 
+    void SetTypeStr(CClassTypeStrings* TypeStr) const {
+        m_TypeStr = TypeStr;
+    }
+    CClassTypeStrings* GetTypeStr(void) const {
+        return m_TypeStr;
+    }
+
 private:
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
@@ -308,6 +318,7 @@ private:
     int m_SourceLine;
     CComments m_Comments;
     CDataMember* m_DataMember;
+    mutable CClassTypeStrings* m_TypeStr;
 
     // tree info
     const CUniSequenceDataType* m_Set;

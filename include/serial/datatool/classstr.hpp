@@ -40,6 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 class CClassCode;
+class CDataType;
 
 class CClassTypeStrings : public CTypeStrings
 {
@@ -61,10 +62,15 @@ public:
         int memberTag;
         string defaultValue; // DEFAULT value code
         bool noPrefix;
+        bool attlist;
+        bool noTag;
+        const CDataType* dataType;
         SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
                     bool optional, const string& defaultValue,
-                    bool delayed, int tag, bool noPrefx);
+                    bool delayed, int tag,
+                    bool noPrefx, bool attlst, bool noTg,
+                    const CDataType* dataTp);
     };
     typedef list<SMemberInfo> TMembers;
 
@@ -89,11 +95,13 @@ public:
     void AddMember(const string& name, const AutoPtr<CTypeStrings>& type,
                    const string& pointerType,
                    bool optional, const string& defaultValue,
-                   bool delayed, int tag, bool noPrefix);
+                   bool delayed, int tag,
+                   bool noPrefix, bool attlist, bool noTag,
+                   const CDataType* dataType);
     void AddMember(const AutoPtr<CTypeStrings>& type, int tag)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
-                      false, NcbiEmptyString, false, tag, false);
+                      false, NcbiEmptyString, false, tag, false,false,false,0);
         }
 
     string GetCType(const CNamespace& ns) const;
@@ -182,6 +190,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2002/11/14 21:07:11  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.16  2002/11/13 00:44:00  ucko
 * Made type info declaration optional (but on by default); CVS logs to end
 *

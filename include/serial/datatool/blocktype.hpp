@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/11/14 21:07:11  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.10  2002/10/15 13:53:08  gouriano
 * use "noprefix" flag
 *
@@ -116,13 +119,21 @@ public:
         {
             return m_Type.get();
         }
-    bool Optional() const
+    bool Optional(void) const
         {
             return m_Optional || m_Default;
         }
-    bool NoPrefix() const
+    bool NoPrefix(void) const
         {
             return m_NoPrefix;
+        }
+    bool Attlist(void) const
+        {
+            return m_Attlist;
+        }
+    bool Notag(void) const
+        {
+            return m_Notag;
         }
     const CDataValue* GetDefault(void) const
         {
@@ -131,6 +142,8 @@ public:
 
     void SetOptional(void);
     void SetNoPrefix(void);
+    void SetAttlist(void);
+    void SetNotag(void);
     void SetDefault(const AutoPtr<CDataValue>& value);
 
     CComments& Comments(void)
@@ -143,6 +156,8 @@ private:
     AutoPtr<CDataType> m_Type;
     bool m_Optional;
     bool m_NoPrefix;
+    bool m_Attlist;
+    bool m_Notag;
     AutoPtr<CDataValue> m_Default;
     CComments m_Comments;
 };

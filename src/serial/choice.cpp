@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/11/14 20:55:47  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.30  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -369,17 +372,30 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
 
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
+    in.BeginChoice(choiceType);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
         in.ThrowError(in.fFormatError,
                       "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* memberInfo =
+            static_cast<const CMemberInfo*>(
+                choiceType->GetVariants().GetItemInfo(index));
+        memberInfo->ReadMember(in,objectPtr);
+        index = in.BeginChoiceVariant(choiceType);
+        if ( index == kInvalidMember )
+            in.ThrowError(in.fFormatError,
+                          "choice variant id expected");
+        variantInfo = choiceType->GetVariantInfo(index);
+    }
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
 
     variantInfo->ReadVariant(in, objectPtr);
 
     in.EndChoiceVariant();
     END_OBJECT_FRAME_OF(in);
+    in.EndChoice();
     END_OBJECT_FRAME_OF(in);
 }
 
@@ -391,11 +407,21 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
 
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoice, choiceType);
-    TMemberIndex index = choiceType->GetIndex(objectPtr);
+    out.BeginChoice(choiceType);
+    TMemberIndex index = choiceType->GetVariants().FirstIndex();
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* memberInfo =
+            static_cast<const CMemberInfo*>(
+                choiceType->GetVariants().GetItemInfo(index));
+        memberInfo->WriteMember(out,objectPtr);
+    }
+
+    index = choiceType->GetIndex(objectPtr);
     if ( index == kInvalidMember )
         out.ThrowError(out.fIllegalCall, "cannot write empty choice");
 
-    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());
     out.BeginChoiceVariant(choiceType, variantInfo->GetId());
 
@@ -403,6 +429,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
 
     out.EndChoiceVariant();
     END_OBJECT_FRAME_OF(out);
+    out.EndChoice();
     END_OBJECT_FRAME_OF(out);
 }
 
@@ -419,17 +446,30 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
         CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
 
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
+    in.BeginChoice(choiceType);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
         in.ThrowError(in.fFormatError,
                       "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* memberInfo =
+            static_cast<const CMemberInfo*>(
+                choiceType->GetVariants().GetItemInfo(index));
+        memberInfo->SkipMember(in);
+        index = in.BeginChoiceVariant(choiceType);
+        if ( index == kInvalidMember )
+            in.ThrowError(in.fFormatError,
+                          "choice variant id expected");
+        variantInfo = choiceType->GetVariantInfo(index);
+    }
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
 
     variantInfo->SkipVariant(in);
 
     in.EndChoiceVariant();
     END_OBJECT_FRAME_OF(in);
+    in.EndChoice();
     END_OBJECT_FRAME_OF(in);
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/11/14 21:04:02  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.64  2002/01/24 23:30:16  vakatov
 * Note for ourselves that the bug workaround "BW_010" is not needed
 * anymore, and we should get rid of it in about half a year
@@ -210,7 +213,7 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
       m_DataMember(0),  m_Set(0), m_Choice(0), m_Checked(false),
-      m_Tag(eNoExplicitTag)
+      m_Tag(eNoExplicitTag), m_TypeStr(0)
 {
 }
 

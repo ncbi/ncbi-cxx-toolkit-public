@@ -29,7 +29,7 @@
 * Author: Andrei Gourianov
 *
 * File Description:
-*   DTD lexer
+*   DTD parser
 *
 * ===========================================================================
 */
@@ -37,8 +37,8 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/datatool/aparser.hpp>
 #include <serial/datatool/dtdlexer.hpp>
+#include <serial/datatool/dtdaux.hpp>
 #include <serial/datatool/moduleset.hpp>
-#include <list>
 #include <map>
 #include <stack>
 
@@ -54,105 +54,6 @@ class CEnumDataType;
 class CEnumDataTypeValue;
 
 
-/////////////////////////////////////////////////////////////////////////////
-// DTDElement
-
-class DTDElement
-{
-public:
-    DTDElement(void);
-    DTDElement(const DTDElement& other);
-    virtual ~DTDElement(void);
-
-    enum EType {
-        eUnknown,
-        eString,   // #PCDATA
-        eAny,      // ANY
-        eEmpty,    // EMPTY
-        eSequence, // (a,b,c)
-        eChoice    // (a|b|c)
-                   // mixed content is not implemented
-    };
-    enum EOccurrence {
-        eOne,
-        eOneOrMore,
-        eZeroOrMore,
-        eZeroOrOne
-    };
-
-    void SetName(const string& name);
-    const string& GetName(void) const;
-
-    void SetType( EType type);
-    void SetTypeIfUnknown( EType type);
-    EType GetType(void) const;
-
-    void SetOccurrence( const string& ref_name, EOccurrence occ);
-    EOccurrence GetOccurrence(const string& ref_name) const;
-
-    void SetOccurrence( EOccurrence occ);
-    EOccurrence GetOccurrence(void) const;
-
-    // i.e. element contains other elements
-    void AddContent( const string& ref_name);
-    const list<string>& GetContent(void) const;
-
-    // element is contained somewhere
-    void SetReferenced(void);
-    bool IsReferenced(void) const;
-
-    // element does not have any specific name
-    void SetEmbedded(void);
-    bool IsEmbedded(void) const;
-    string CreateEmbeddedName(int depth) const;
-
-private:
-    string m_Name;
-    EType m_Type;
-    EOccurrence m_Occ;
-    list<string> m_Refs;
-    map<string,EOccurrence> m_RefOcc;
-    bool m_Refd;
-    bool m_Embd;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// DTDEntity
-
-class DTDEntity
-{
-public:
-    DTDEntity(void);
-    DTDEntity(const DTDEntity& other);
-    virtual ~DTDEntity(void);
-
-    void SetName(const string& name);
-    const string& GetName(void) const;
-
-    void SetData(const string& data);
-    const string& GetData(void) const;
-
-    void SetExternal(void);
-    bool IsExternal(void) const;
-
-private:
-    string m_Name;
-    string m_Data;
-    bool   m_External;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// DTDEntityLexer
-
-class DTDEntityLexer : public DTDLexer
-{
-public:
-    DTDEntityLexer(CNcbiIstream& in, bool autoDelete=true);
-    virtual ~DTDEntityLexer(void);
-protected:
-    bool m_AutoDelete;
-    CNcbiIstream* m_Str;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 // DTDParser
@@ -179,22 +80,36 @@ protected:
     void FixEmbeddedNames(DTDElement& node);
 
     void BeginEntityContent(void);
+    void ParseEntityContent(const string& name);
     void PushEntityLexer(const string& name);
     bool PopEntityLexer(void);
+
+    void BeginAttributesContent(void);
+    void ParseAttributesContent(const string& name);
+    void ConsumeAttributeContent(DTDElement& node, const string& id_name);
+    void ParseEnumeratedList(DTDAttribute& attrib);
 
     void GenerateDataTree(CDataTypeModule& module);
     void ModuleType(CDataTypeModule& module, const DTDElement& node);
     AutoPtr<CDataType> Type(const DTDElement& node,
-                            DTDElement::EOccurrence occ, bool in_elem);
+                            DTDElement::EOccurrence occ,
+                            bool in_elem, bool ignoreAttrib=false);
     CDataType* x_Type(const DTDElement& node,
-                      DTDElement::EOccurrence occ, bool in_elem);
+                      DTDElement::EOccurrence occ,
+                      bool in_elem, bool ignoreAttrib=false);
     CDataType* TypesBlock(CDataMemberContainerType* containerType,
                           const DTDElement& node);
+    CDataType* AttribNode(const DTDElement& node);
+    CDataType* AttribBlock(const DTDElement& node);
+    CDataType* x_AttribType(const DTDAttribute& att);
+    CDataType* EnumeratedBlock(const DTDAttribute& att,
+                               CEnumDataType* enumType);
 
 #ifdef _DEBUG
     void PrintDocumentTree(void);
     void PrintEntities(void);
-    void PrintDocumentNode(const string& name, DTDElement& node);
+    void PrintDocumentNode(const string& name, const DTDElement& node);
+    void PrintNodeAttributes(const DTDElement& node);
 #endif
     map<string,DTDElement> m_MapElement;
     map<string,DTDEntity>  m_MapEntity;
@@ -210,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2002/11/14 21:07:10  gouriano
+ * added support of XML attribute lists
+ *
  * Revision 1.3  2002/10/21 16:10:55  gouriano
  * added parsing of external entities
  *

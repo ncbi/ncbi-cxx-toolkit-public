@@ -29,6 +29,7 @@
 *   Type info for class generation: includes, used classes, C code etc.
 */
 
+#include <serial/datatool/type.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
@@ -62,26 +63,29 @@ void CClassTypeStrings::AddMember(const string& name,
                                   const string& defaultValue,
                                   bool delayed,
                                   int tag,
-                                  bool noPrefix)
+                                  bool noPrefix, bool attlist, bool noTag,
+                                  const CDataType* dataType)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
                                     optional, defaultValue,
-                                    delayed, tag, noPrefix));
+                                    delayed, tag, noPrefix,attlist,noTag,
+                                    dataType));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
                                             const AutoPtr<CTypeStrings>& t,
                                             const string& pType,
-                                            bool opt,
-                                            const string& defValue,
-                                            bool del,
-                                            int tag, bool noPrefx)
+                                            bool opt, const string& defValue,
+                                            bool del, int tag, bool noPrefx,
+                                            bool attlst, bool noTg,
+                                            const CDataType* dataTp)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
       optional(opt), delayed(del), memberTag(tag),
-      defaultValue(defValue), noPrefix(noPrefx)
+      defaultValue(defValue), noPrefix(noPrefx), attlist(attlst), noTag(noTg),
+      dataType(dataTp)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -265,7 +269,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member types
     {
         code.ClassPublic() <<
-            "    // members' types\n";
+            "    // types\n";
         iterate ( TMembers, i, m_Members ) {
             string cType = i->type->GetCType(code.GetNamespace());
             code.ClassPublic() <<
@@ -311,9 +315,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     // generate member getters & setters
     {
         code.ClassPublic() <<
-            "    // members' getters\n";
+            "    // getters\n";
         setters <<
-            "    // members' setters\n";
+            "    // setters\n";
         iterate ( TMembers, i, m_Members ) {
             // generate IsSet... method
             if ( i->optional ) {
@@ -491,6 +495,34 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "}\n"
                         "\n";
                 }
+                if (i->dataType) {
+                    const CDataType* resolved = i->dataType->Resolve();
+                    if (resolved && resolved != i->dataType) {
+                        CClassTypeStrings* typeStr = resolved->GetTypeStr();
+                        if (typeStr) {
+                            iterate ( TMembers, ir, typeStr->m_Members ) {
+                                if (ir->noTag) {
+                                    string ircType(ir->type->GetCType(
+                                        code.GetNamespace()));
+                                    setters <<
+                                        "    void Set"<<i->cName<<"(const "<<
+                                        ircType<<"& value);\n";
+                                    inlineMethods <<
+                                        "inline\n"<<
+                                        "void "<<methodPrefix<<"Set"<<
+                                        i->cName<<"(const "<<ircType<<
+                                        "& value)\n"
+                                        "{\n";
+                                    inlineMethods <<
+                                        "    Set" << i->cName <<
+                                        "() = value;\n"
+                                        "}\n"
+                                        "\n";
+                                }
+                            }
+                        }
+                    }
+                }
             }
             else {
                 if ( i->type->CanBeCopied() ) {
@@ -589,7 +621,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             code.GetClassNameDT() << "&);\n" <<
             "\n";
         code.ClassPrivate() <<
-            "    // members' data\n";
+            "    // data\n";
 		{
 	        iterate ( TMembers, i, m_Members ) {
 		        if ( i->haveFlag ) {
@@ -827,6 +859,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";
             }
+            if (i->attlist) {
+                methods << "->SetAttlist()";
+            }
+            if (i->noTag) {
+                methods << "->SetNotag()";
+            }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";
             }
@@ -859,6 +897,15 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "    typedef "<<GetClassNameDT()<<"_Base Tparent;\n"
         "public:\n";
     DeclareConstructor(out, GetClassNameDT());
+    iterate ( TMembers, i, m_Members ) {
+        if (i->noTag) {
+            out <<
+                "    " << GetClassNameDT() << "(const " <<
+                i->type->GetCType(GetNamespace()) << "& value);" <<
+                "\n";
+            break;
+        }
+    }
     DeclareDestructor(out, GetClassNameDT(), false);
 
     if ( generateCopy ) {
@@ -871,6 +918,18 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "    // data assignment operator\n"
             "    "<<GetClassNameDT()<<"& operator=(const "<<cType<<"& value);\n"
             "\n";
+    }
+    iterate ( TMembers, i, m_Members ) {
+        if (i->noTag) {
+            out <<
+            "    operator const " << i->type->GetCType(GetNamespace()) <<
+            "&(void) const;\n";
+            out <<
+            "    " << GetClassNameDT() << "& operator=(const " <<
+            i->type->GetCType(GetNamespace()) << "& value);\n" <<
+            "\n";
+            break;
+        }
     }
     out << "private:\n" <<
         "    // Prohibit copy constructor and assignment operator\n"
@@ -892,6 +951,18 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         "{\n"
         "}\n"
         "\n";
+    iterate ( TMembers, i, m_Members ) {
+        if (i->noTag) {
+            out <<
+            "inline\n" <<
+            GetClassNameDT()<<"::"<<GetClassNameDT()<<"(const "<<
+            i->type->GetCType(GetNamespace()) << "& value)\n"<<
+            "{\n"
+            "    Set" << i->cName << "(value);\n" <<
+            "}\n"
+            "\n";
+        }
+    }
     if ( generateCopy ) {
         const SMemberInfo& info = m_Members.front();
         out <<
@@ -910,6 +981,30 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
             "    return *this;\n"
             "}\n"
             "\n";
+    }
+    iterate ( TMembers, i, m_Members ) {
+        if (i->noTag) {
+            out <<
+            "inline\n"<<
+            GetClassNameDT() << "::"
+            "operator const " << i->type->GetCType(GetNamespace()) <<
+            "&(void) const\n" <<
+            "{\n" <<
+            "    return Get" << i->cName << "();\n" <<
+            "}\n" <<
+            "\n";
+            out <<
+            "inline\n"<<
+            GetClassNameDT() << "& " << GetClassNameDT() << "::"
+            "operator=(const " <<
+            i->type->GetCType(GetNamespace()) << "& value)\n" <<
+            "{\n" <<
+            "    Set" << i->cName << "(value);\n" <<
+            "    return *this;\n" <<
+            "}\n"
+            "\n";
+            break;
+        }
     }
     out <<
         "\n"
@@ -984,6 +1079,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2002/11/14 21:03:39  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.40  2002/11/13 00:44:00  ucko
 * Made type info declaration optional (but on by default); CVS logs to end
 *

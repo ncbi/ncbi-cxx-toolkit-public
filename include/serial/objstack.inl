@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/11/14 20:53:41  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.9  2002/10/15 13:40:33  gouriano
 * added "skiptag" flag
 *
@@ -80,6 +83,7 @@ void CObjectStackFrame::Reset(void)
     m_TypeInfo = 0;
     m_MemberId = 0;
     m_SkipTag = false;
+    m_Notag = false;
 }
 
 inline
@@ -109,7 +113,8 @@ inline
 const CMemberId& CObjectStackFrame::GetMemberId(void) const
 {
     _ASSERT(m_FrameType == eFrameClassMember ||
-            m_FrameType == eFrameChoiceVariant);
+            m_FrameType == eFrameChoiceVariant ||
+            m_FrameType == eFrameArray);
     _ASSERT(m_MemberId != 0);
     return *m_MemberId;
 }
@@ -132,6 +137,17 @@ inline
 bool CObjectStackFrame::GetSkipTag(void)
 {
     return m_SkipTag;
+}
+
+inline
+void CObjectStackFrame::SetNotag(bool set)
+{
+    m_Notag = set;
+}
+inline
+bool CObjectStackFrame::GetNotag(void)
+{
+    return m_Notag;
 }
 
 
@@ -183,7 +199,8 @@ CObjectStack::TFrame& CObjectStack::PushFrame(EFrameType type,
                                               const CMemberId& memberId)
 {
     _ASSERT(type == TFrame::eFrameClassMember ||
-            type == TFrame::eFrameChoiceVariant);
+            type == TFrame::eFrameChoiceVariant ||
+            type == TFrame::eFrameAttlist);
     TFrame& frame = PushFrame(type);
     frame.m_MemberId = &memberId;
     return frame;

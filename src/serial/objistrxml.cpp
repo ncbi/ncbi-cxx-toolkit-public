@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/11/14 20:58:54  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.25  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -159,7 +162,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 }
 
 CObjectIStreamXml::CObjectIStreamXml(void)
-    : m_TagState(eTagOutside)
+    : m_TagState(eTagOutside), m_Attlist(false)
 {
 }
 
@@ -311,6 +314,21 @@ char CObjectIStreamXml::SkipWSAndComments(void)
 void CObjectIStreamXml::EndTag(void)
 {
     char c = SkipWS();
+    if (m_Attlist) {
+        if (c == '=') {
+            m_Input.SkipChar();
+            c = SkipWS();
+            if (c == '\"') {
+                m_Input.SkipChar();
+                return;
+            }
+        }
+        if (c == '\"') {
+            m_Input.SkipChar();
+            m_TagState = eTagInsideOpening;
+            return;
+        }
+    }
     if ( c != '>' ) {
         ThrowError(fFormatError, "'>' expected");
     }
@@ -320,8 +338,14 @@ void CObjectIStreamXml::EndTag(void)
 
 bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 {
+    if (TopFrame().GetNotag()) {
+        return false;
+    }
     _ASSERT(InsideOpeningTag());
     char c = SkipWS();
+    if (m_Attlist) {
+        return false;
+    }
     if ( c == '/' && m_Input.PeekChar(1) == '>' ) {
         // end of self closed tag
         m_Input.SkipChars(2);
@@ -554,7 +578,9 @@ void CObjectIStreamXml::ReadAttributeValue(string& value)
             break;
         value += char(c);
     }
-    m_Input.SkipChar();
+    if (!m_Attlist) {
+        m_Input.SkipChar();
+    }
 }
 
 bool CObjectIStreamXml::ReadBool(void)
@@ -651,7 +677,7 @@ void CObjectIStreamXml::ReadTagData(string& str)
 {
     BeginData();
     for ( ;; ) {
-        int c = ReadEscapedChar('<');
+        int c = ReadEscapedChar(m_Attlist ? '\"' : '<');
         if ( c < 0 )
             break;
         str += char(c);
@@ -684,18 +710,24 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
             value = m_Input.GetInt4();
         }
         else {
-            CLightString attr = ReadAttributeName();
-            if ( attr != "value" )
-                ThrowError(fFormatError, "attribute 'value' expected");
-            string valueName;
-            ReadAttributeValue(valueName);
-            value = values.FindValue(valueName);
-            if ( !EndOpeningTagSelfClosed() && values.IsInteger() ) {
-                // read integer value
-                SkipWSAndComments();
-                if ( value != m_Input.GetInt4() )
-                    ThrowError(fFormatError,
-                               "incompatible name and value of enum");
+            if (m_Attlist) {
+                string valueName;
+                ReadAttributeValue(valueName);
+                value = values.FindValue(valueName);
+            } else {
+                CLightString attr = ReadAttributeName();
+                if ( attr != "value" )
+                    ThrowError(fFormatError, "attribute 'value' expected");
+                string valueName;
+                ReadAttributeValue(valueName);
+                value = values.FindValue(valueName);
+                if ( !EndOpeningTagSelfClosed() && values.IsInteger() ) {
+                    // read integer value
+                    SkipWSAndComments();
+                    if ( value != m_Input.GetInt4() )
+                        ThrowError(fFormatError,
+                                   "incompatible name and value of enum");
+                }
             }
         }
     }
@@ -715,7 +747,7 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 
 CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
 {
-    if ( InsideOpeningTag() && EndOpeningTagSelfClosed() ) {
+    if ( !HasAttlist() && InsideOpeningTag() && EndOpeningTagSelfClosed() ) {
         // self closed tag
         return eNullPointer;
     }
@@ -829,12 +861,16 @@ void CObjectIStreamXml::CloseStackTag(size_t level)
         EndSelfClosedTag();
     }
     else {
-        CLightString tagName = ReadName(BeginClosingTag());
-        const TFrame& frame = FetchFrameFromTop(level);
-        if (!frame.HasMemberId() || !frame.GetMemberId().HaveNoPrefix()) {
-            CLightString rest = SkipStackTagName(tagName, level);
-            if ( !rest.Empty() )
-                ThrowError(fFormatError, "unexpected tag");
+        if (m_Attlist) {
+            m_TagState = eTagInsideClosing;
+        } else {
+            CLightString tagName = ReadName(BeginClosingTag());
+            const TFrame& frame = FetchFrameFromTop(level);
+            if (!frame.HasMemberId() || !frame.GetMemberId().HaveNoPrefix()) {
+                CLightString rest = SkipStackTagName(tagName, level);
+                if ( !rest.Empty() )
+                    ThrowError(fFormatError, "unexpected tag");
+            }
         }
         EndClosingTag();
     }
@@ -857,10 +893,26 @@ bool CObjectIStreamXml::WillHaveName(TTypeInfo elementType)
     while ( elementType->GetName().empty() ) {
         if ( elementType->GetTypeFamily() != eTypeFamilyPointer )
             return false;
-        elementType = CTypeConverter<CPointerTypeInfo>::SafeCast(elementType)->GetPointedType();
+        elementType = CTypeConverter<CPointerTypeInfo>::SafeCast(
+            elementType)->GetPointedType();
     }
     // found named type
     return true;
+}
+
+bool CObjectIStreamXml::HasAttlist(void)
+{
+    if (InsideTag()) {
+        char c = SkipWS();
+        return (c != '>') && (c != '/');
+    }
+    return false;
+}
+
+bool CObjectIStreamXml::NextIsTag(void)
+{
+    BeginData();
+    return SkipWSAndComments() == '<';
 }
 
 inline
@@ -1070,9 +1122,42 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     string tmp;
     CLightString tagName;
     if (m_RejectedTag.empty()) {
-        if ( NextTagIsClosing() )
-            return kInvalidMember;
-        tagName = ReadName(BeginOpeningTag());
+        if (m_Attlist && InsideTag()) {
+            if (HasAttlist()) {
+                tagName = ReadName(SkipWS());
+            } else {
+                return kInvalidMember;
+            }
+        } else {
+            if (HasAttlist()) {
+                TMemberIndex first = classType->GetMembers().FirstIndex();
+                if (classType->GetMemberInfo(first)->GetId().IsAttlist()) {
+                    m_Attlist = true;
+                    return first;
+                }
+            }
+            if (m_Attlist) {
+                m_Attlist = false;
+                if (!NextIsTag()) {
+                    TMemberIndex ind = classType->GetMembers().FirstIndex();
+                    ++ind;
+                    if (classType->GetMemberInfo(ind)->GetId().HasNotag()) {
+                        TopFrame().SetNotag();
+                        return ind;
+                    }
+                }
+            }
+            TMemberIndex last = classType->GetMembers().LastIndex();
+            if (pos <= last) {
+                if (classType->GetMemberInfo(pos)->GetId().HasNotag()) {
+                    TopFrame().SetNotag();
+                    return pos;
+                }
+            }
+            if ( NextTagIsClosing() )
+                return kInvalidMember;
+            tagName = ReadName(BeginOpeningTag());
+        }
     } else {
         tmp = m_RejectedTag;
         tagName = tmp;
@@ -1100,7 +1185,11 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
 
 void CObjectIStreamXml::EndClassMember(void)
 {
-    CloseStackTag(0);
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+    } else {
+        CloseStackTag(0);
+    }
 }
 
 void CObjectIStreamXml::UndoClassMember(void)
@@ -1112,12 +1201,31 @@ void CObjectIStreamXml::UndoClassMember(void)
     }
 }
 
-TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
+void CObjectIStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 {
     if (!FetchFrameFromTop(1).GetSkipTag()) {
         OpenTagIfNamed(choiceType);
     }
-    CLightString tagName = ReadName(BeginOpeningTag());
+}
+void CObjectIStreamXml::EndChoice(void)
+{
+    if (!FetchFrameFromTop(1).GetSkipTag()) {
+        CloseTagIfNamed(TopFrame().GetTypeInfo());
+    }
+}
+
+TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
+{
+    CLightString tagName;
+    if (HasAttlist()) {
+        TMemberIndex first = choiceType->GetVariants().FirstIndex();
+        if (choiceType->GetVariantInfo(first)->GetId().IsAttlist()) {
+            m_Attlist = true;
+            return first;
+        }
+    }
+    m_Attlist = false;
+    tagName = ReadName(BeginOpeningTag());
     TMemberIndex ind = choiceType->GetVariants().Find(tagName);
     if ( ind != kInvalidMember ) {
         const CVariantInfo *var_info = choiceType->GetVariantInfo(ind);
@@ -1134,9 +1242,8 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
 
 void CObjectIStreamXml::EndChoiceVariant(void)
 {
-    CloseStackTag(0);
-    if (!FetchFrameFromTop(2).GetSkipTag()) {
-        CloseTagIfNamed(FetchFrameFromTop(1).GetTypeInfo());
+    if (!TopFrame().GetNotag()) {
+        CloseStackTag(0);
     }
 }
 

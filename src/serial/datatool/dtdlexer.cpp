@@ -183,21 +183,39 @@ TToken DTDLexer::LookupKeyword(void)
     switch ( CurrentTokenLength() ) {
     default:
         break;
+    case 2:
+        CHECK("ID",K_ID,2);
+        break;
     case 3:
         CHECK("ANY", K_ANY,  3);
         break;
     case 5:
         CHECK("EMPTY", K_EMPTY,  5);
+        CHECK("CDATA", K_CDATA,  5);
+        CHECK("IDREF", K_IDREF,  5);
         break;
     case 6:
         CHECK("ENTITY", K_ENTITY, 6);
         CHECK("SYSTEM", K_SYSTEM, 6);
         CHECK("PUBLIC", K_PUBLIC, 6);
+        CHECK("IDREFS", K_IDREFS, 6);
+        CHECK("#FIXED", K_FIXED,  6);
         break;
     case 7:
         CHECK("ELEMENT", K_ELEMENT, 7);
         CHECK("ATTLIST", K_ATTLIST, 7);
         CHECK("#PCDATA", K_PCDATA,  7);
+        CHECK("NMTOKEN", K_NMTOKEN, 7);
+        break;
+    case 8:
+        CHECK("NMTOKENS", K_NMTOKENS, 8);
+        CHECK("ENTITIES", K_ENTITIES, 8);
+        CHECK("NOTATION", K_NOTATION, 8);
+        CHECK("#DEFAULT", K_DEFAULT,  8);
+        CHECK("#IMPLIED", K_IMPLIED,  8);
+        break;
+    case 9:
+        CHECK("#REQUIRED", K_REQUIRED, 9);
         break;
     }
     return T_IDENTIFIER;
@@ -259,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2002/11/14 21:05:27  gouriano
+ * added support of XML attribute lists
+ *
  * Revision 1.3  2002/10/21 16:09:46  gouriano
  * added more DTD tokens
  *

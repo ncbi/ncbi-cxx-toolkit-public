@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/11/14 21:07:11  gouriano
+* added support of XML attribute lists
+*
 * Revision 1.12  2002/10/15 13:53:08  gouriano
 * use "noprefix" flag
 *
@@ -125,9 +128,10 @@ public:
         bool delayed;
         int memberTag;
         bool noPrefix;
+        bool attlist;
 
         SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
-            bool delayed, int tag, bool noPrefx);
+            bool delayed, int tag, bool noPrefx, bool attlst);
     };
     typedef list<SVariantInfo> TVariants;
 
@@ -140,7 +144,7 @@ public:
         }
 
     void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
-                    bool delayed, int tag, bool noPrefix);
+                    bool delayed, int tag, bool noPrefix, bool attlist);
 
 protected:
     void GenerateClassCode(CClassCode& code,
