@@ -1,14 +1,17 @@
 #
 # $Id$
 #
-# Generate source files and makefiles from ASN.1 spec.
+# Generate source files and makefiles from ASN.1 spec or DTD.
 # (NOTE:  hard-wired for the C++ Toolkit directory structure.)
 #
 
 SRCDIR = $(top_srcdir)/src/$(MODULE_PATH)
 INCLUDEDIR = $(top_srcdir)/include/$(MODULE_PATH)
 
-ASNFILE = $(MODULE_ASN)
+# Despite its name, MODULE_ASN may actually be a DTD.
+SPEC = $(MODULE_ASN)
+# Newer versions of new_module.sh will override IMPFILES, but we keep
+# the ASN.1-centric default for compatibility with older versions.
 IMPFILES = $(MODULE_IMPORT:=.asn)
 FILES = $(MODULE).files
 
@@ -32,8 +35,8 @@ purge_all_files:
 	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib
 
 .NO_PARALLEL:
-$(FILES): $(ASNFILE) $(DATATOOL) $(MODULE).def $(IMPDEPS)
-	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' -ocvs -pch 'ncbi_pch.hpp'
+$(FILES): $(SPEC) $(DATATOOL) $(MODULE).def $(IMPDEPS)
+	$(DATATOOL) -oR $(top_srcdir) -opm $(MODULE_SEARCH) -m $(SPEC) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def -oex '' -ocvs -pch 'ncbi_pch.hpp'
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
