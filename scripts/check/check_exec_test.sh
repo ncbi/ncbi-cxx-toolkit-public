@@ -46,9 +46,9 @@ if [ "X$1" = "X-stdin" ]; then
   trap 'rm -f $tmp' 1 2 15
   cat - > $tmp
   shift
-  (sleep 1  &  "$@" < $tmp ;  status=$? ;  wait ;  exit $status) &
+  (sleep 1  &  exec "$@" < $tmp) &
 else
-  (sleep 1  &  "$@" ;  status=$? ;  wait ;  exit $status) &
+  (sleep 1  &  exec "$@") &
 fi
 pid=$!
 trap 'kill $pid; rm -f $tmp' 1 2 15
