@@ -440,9 +440,6 @@ public:
                 x_path_unique.push_back(CDir::DeleteTrailingPathSeparator(*it));
             }
         }
-        ITERATE(vector<string>, it, x_path_unique) {
-                cout << *it << endl;
-        }
 
         // find files
         vector<string> candidates;
@@ -490,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/08/10 16:52:54  grichenk
+ * Removed debug output
+ *
  * Revision 1.25  2004/08/09 15:36:44  kuznets
  * CDllResolver added support of driver name
  *
