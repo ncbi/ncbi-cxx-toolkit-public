@@ -195,16 +195,16 @@ extern NCBI_XCONNECT_EXPORT char* MessagePlusErrno
  );
 
 
-#define LOG_WRITE_ERRNO_EX(lg, level, message, x_errno, x_descr)  do { \
-    if (lg  ||  level == eLOG_Fatal) { \
-        char buf[1024]; \
+#define LOG_WRITE_ERRNO_EX(lg, level, message, x_errno, x_descr)  do {   \
+    if (lg  ||  level == eLOG_Fatal) {                                   \
+        char _buf[1024];                                                 \
         LOG_WRITE(lg, level, MessagePlusErrno(message, x_errno, x_descr, \
-                                              buf, sizeof(buf))); \
-    } \
+                                              _buf, sizeof(_buf)));      \
+    }                                                                    \
 } while (0)
 
 
-#define LOG_WRITE_ERRNO(lg, level, message)  \
+#define LOG_WRITE_ERRNO(lg, level, message)                              \
      LOG_WRITE_ERRNO_EX(lg, level, message, errno, 0)
 
 
@@ -243,6 +243,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/04/30 16:57:41  lavr
+ * Changed internal automatic buf -> _buf to avoid name collision warnings
+ *
  * Revision 6.18  2003/04/09 19:06:01  siyan
  * Added doxygen support
  *
