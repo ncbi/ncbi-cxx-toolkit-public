@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/09 18:50:21  sandomir
+* FASTCGI mode: if programs modification date changed, break out the loop
+*
 * Revision 1.15  1999/07/08 14:10:16  sandomir
 * Simple output add on exitfastcgi command
 *
@@ -89,6 +92,10 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
+// OS
+#include <sys/stat.h>
+#include <errno.h>
+
 #if defined(HAVE_LIBFASTCGI)
 // 3rd-party headers
 # include <fcgiapp.h>
@@ -97,6 +104,8 @@
 #endif /* HAVE_LIBFASTCGI */
 
 BEGIN_NCBI_SCOPE
+
+static time_t GetModTime( const char* const* argv );
 
 
 ///////////////////////////////////////////////////////
@@ -112,6 +121,9 @@ int CCgiApplication::Run(void)
 {
 #if defined(HAVE_LIBFASTCGI)
     if ( !FCGX_IsCGI() ) {
+
+        time_t mtime = GetModTime( m_Argv );        
+        
         int iterations;
         {
             string param = GetConfig().Get("FastCGI", "Iterations");
@@ -181,7 +193,14 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
             
             _TRACE("CCgiApplication::Run: FINISHING");
             FCGX_Finish();
-        }
+
+            time_t mtimeNew = GetModTime( m_Argv );    
+            if( mtimeNew != mtime ) {
+                _TRACE("CCgiApplication::Run: program modification date changed");
+                break;
+            }
+        }        
+        
         _TRACE("CCgiApplication::Run: return");
         return 0;
     }
@@ -260,6 +279,20 @@ CCgiContext* CCgiApplication::CreateContext( CNcbiEnvironment* env,
                                              int argc, char** argv ) 
 {
     return new CCgiContext( *this, env, in, out, argc, argv );
+}
+
+//
+
+time_t GetModTime( const char* const* argv )
+{
+    _ASSERT( argv && argv[ 0 ] );
+
+    struct stat st;
+    if( stat( argv[ 0 ], &st ) != 0 ) {
+        ERR_POST(  "NCBI_NS_NCBI::GetModTime: " << strerror( errno ) );
+        THROW1_TRACE(CErrnoException,"Program status access error");
+    }
+    return st.st_mtime;
 }
 
 END_NCBI_SCOPE
