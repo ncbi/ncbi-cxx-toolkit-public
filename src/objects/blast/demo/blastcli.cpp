@@ -36,7 +36,6 @@
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <connect/ncbi_conn_stream.hpp>
 #include <objects/blast/blast__.hpp>
 #include <objects/scoremat/scoremat__.hpp>
 #include <objects/blast/blastclient.hpp>
