@@ -43,6 +43,8 @@ struct BlastSeqSrc {
    /* Functions to get information about database as a whole */
     GetInt4FnPtr      GetNumSeqs;     /**< Get number of sequences in set */
     GetInt4FnPtr      GetMaxSeqLen;   /**< Get length of longest seq in set */
+    GetInt4FnPtr      GetAvgSeqLen;   /**< Get average length of sequences in 
+                                         the set */
     GetInt8FnPtr      GetTotLen;      /**< Get tot length of all seqs in set */
     GetStrFnPtr       GetName;        /**< Get the name of the database */
     GetStrFnPtr       GetDefinition;  /**< Get the database definition */
@@ -176,6 +178,7 @@ DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*)
 
 DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*)
