@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = objmgr1
-SUB_PROJ = test
+SUB_PROJ = test demo
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
