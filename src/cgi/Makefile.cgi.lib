@@ -7,4 +7,5 @@ LIBOBJ = ncbicgi $(FASTCGI_OBJS) cgiapp cgictx ncbicgir ncbires dbres
 LIB    = xcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
-  $(NCBI_C_INCLUDE)
+  $(NCBI_C_INCLUDE) \
+  $(FASTCGI_INCLUDE)
