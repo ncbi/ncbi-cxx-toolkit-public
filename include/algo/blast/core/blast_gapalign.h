@@ -254,6 +254,22 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
         const BlastScoringOptions* score_options,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
+/** Perform a gapped alignment with traceback for PHI BLAST
+ * @param program Type of BLAST program [in]
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param gap_align The gapped alignment structure [in] [out]
+ * @param score_options Scoring parameters [in]
+ * @param q_start Offset in query where to start alignment [in]
+ * @param s_start Offset in subject where to start alignment [in]
+ * @param subject_length Maximal allowed extension in subject [in]
+ */
+Int2 PHIGappedAlignmentWithTraceback(Uint1 program, 
+        Uint1* query, Uint1* subject, 
+        BlastGapAlignStruct* gap_align, 
+        const BlastScoringOptions* score_options,
+        Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
+
 /** Convert initial HSP list to an HSP list: to be used in ungapped search.
  * Ungapped data must be available in the initial HSP list for this function 
  * to work.
@@ -266,6 +282,28 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
 Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist, 
         BLAST_SequenceBlk* subject, 
         const BlastHitSavingOptions* hit_options, 
+        BlastHSPList** hsp_list_ptr);
+
+/** Preliminary gapped alignment for PHI BLAST.
+ * @param program_number Type of BLAST program [in]
+ * @param query The query sequence block [in]
+ * @param subject The subject sequence block [in]
+ * @param gap_align The auxiliary structure for gapped alignment [in]
+ * @param score_options Options related to scoring [in]
+ * @param ext_params Options and parameters related to extensions [in]
+ * @param hit_params Options related to saving hits [in]
+ * @param init_hitlist List of initial HSPs, including offset pairs and
+ *                     pattern match lengths [in]
+ * @param hsp_list_ptr Structure containing all saved HSPs [out]
+ */
+Int2 PHIGetGappedScore (Uint1 program_number, 
+        BLAST_SequenceBlk* query, 
+        BLAST_SequenceBlk* subject, 
+        BlastGapAlignStruct* gap_align,
+        const BlastScoringOptions* score_options,
+        BlastExtensionParameters* ext_params,
+        BlastHitSavingParameters* hit_params,
+        BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr);
 
 #ifdef __cplusplus
