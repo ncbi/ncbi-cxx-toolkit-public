@@ -38,7 +38,7 @@ script_dir=`(cd "$script_dir"; pwd)`
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
 # Run command
-if [ "-$1" == "--stdin" ]; then
+if [ "X$1" = "X-stdin" ]; then
   cat - > $0.stdin.$$
   shift
   $@ < $0.stdin.$$ &
