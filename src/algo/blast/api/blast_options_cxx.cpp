@@ -95,21 +95,6 @@ CBlastOption::~CBlastOption()
 {
 }
 
-EProgram BLASTGetEProgram(Uint1 prog)
-{
-    if (prog == blast_type_blastp)
-        return eBlastp;
-    if (prog == blast_type_blastn)
-        return eBlastn;
-    if (prog == blast_type_blastx)
-        return eBlastx;
-    if (prog == blast_type_tblastn)
-        return eTblastn;
-    if (prog == blast_type_tblastx)
-        return eTblastx;
-    return eBlastUndef;
-}
-
 void
 CBlastOption::SetBlastp()
 {
@@ -391,11 +376,11 @@ CBlastOption::SetTblastn()
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
 
-    // this is needed to avoid using MemFree when the BlastDatabaseOptions
+    // this is needed to avoid using sfree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-
     SetDbGeneticCodeStr(gc);
+    delete [] gc;
 }
 
 void 
@@ -449,15 +434,11 @@ CBlastOption::SetTblastx()
     // Blast database options
     m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
 
-    // this is needed to avoid using MemFree when the BlastDatabaseOptions
+    // this is needed to avoid using sfree when the BlastDatabaseOptions
     // structure is deallocated
     unsigned char* gc = BLASTFindGeneticCode(BLAST_GENETIC_CODE);
-    if (gc) {
-        m_DbOpts->gen_code_string = 
-            (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
-        copy(gc, gc+GENCODE_STRLEN, m_DbOpts->gen_code_string);
-        delete gc;
-    }
+    SetDbGeneticCodeStr(gc);
+    delete [] gc;
 }
 
 bool
@@ -512,6 +493,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/09/03 18:45:34  camacho
+* Fixed small memory leak, removed unneeded function
+*
 * Revision 1.16  2003/09/02 21:15:11  camacho
 * Fix small memory leak
 *
