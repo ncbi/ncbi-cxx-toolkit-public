@@ -137,16 +137,16 @@ static SERV_ITER s_Open(const char* service,
         TNCBI_Time t = (TNCBI_Time) time(0);
         size_t i;
         for (i = 0; i < n_skip; i++) {
-            size_t infolen = SERV_SizeOfInfo(skip[i]);
-            SSERV_Info* info = (SSERV_Info*) malloc(infolen);
-            if (!info) {
+            size_t   skipinfolen = SERV_SizeOfInfo(skip[i]);
+            SSERV_Info* skipinfo = (SSERV_Info*) malloc(skipinfolen);
+            if (!skipinfo) {
                 SERV_Close(iter);
                 return 0;
             }
-            memcpy(info, skip[i], infolen);
-            info->time = t + 3600/*hour*/*24/*day*/*365/*year - enough :-) */;
-            if (!s_AddSkipInfo(iter, info)) {
-                free(info);
+            memcpy(skipinfo, skip[i], skipinfolen);
+            skipinfo->time = t + 3600/*hour*/*24/*day*/*365/*year :-) */;
+            if (!s_AddSkipInfo(iter, skipinfo)) {
+                free(skipinfo);
                 SERV_Close(iter);
             }
         }
@@ -471,6 +471,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2003/04/30 17:00:47  lavr
+ * Name collision resolved
+ *
  * Revision 6.45  2003/02/28 14:49:04  lavr
  * SERV_Preference(): redeclare last argument 'unsigned'
  *
