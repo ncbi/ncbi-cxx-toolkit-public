@@ -76,7 +76,7 @@ public:
     virtual CDB_Exception* Clone() const;
 
     // verbal description of severity
-    virtual const char* SeverityString(EDB_Severity sev);
+    virtual const char* SeverityString(EDB_Severity sev) const;
 
     // destructor
     virtual ~CDB_Exception() throw();
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/04 21:45:54  vakatov
+ * Added missing 'const' to CDB_Exception::SeverityString()
+ *
  * Revision 1.9  2002/07/11 18:19:19  ucko
  * Simplify #includes down to <corelib/ncbistd.hpp>.
  *

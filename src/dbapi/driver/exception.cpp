@@ -70,7 +70,7 @@ CDB_Exception* CDB_Exception::Clone() const
 }
 
 
-const char* CDB_Exception::SeverityString(EDB_Severity sev)
+const char* CDB_Exception::SeverityString(EDB_Severity sev) const
 {
     switch ( sev ) {
     case eDB_Info:     return "Info";
@@ -79,7 +79,6 @@ const char* CDB_Exception::SeverityString(EDB_Severity sev)
     case eDB_Fatal:    return "Fatal Error";
     default:           return "Unknown severity";
     }
- 
 }
 
 
@@ -457,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/09/04 21:46:12  vakatov
+ * Added missing 'const' to CDB_Exception::SeverityString()
+ *
  * Revision 1.7  2001/11/06 17:59:53  lavr
  * Formatted uniformly as the rest of the library
  *
