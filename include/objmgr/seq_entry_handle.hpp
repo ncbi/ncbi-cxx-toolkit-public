@@ -87,6 +87,8 @@ public:
 
     CSeq_entry_CI BeginSet(void);
 
+    CSeq_entry_Handle GetParentEntry(void) const;
+
 private:
     friend class CBioseq_Handle;
     friend class CSeq_entry_CI;
@@ -303,6 +305,17 @@ void CSeq_entry_Handle::x_Reset(void)
     m_Entry_Info.Reset();
 }
 
+inline
+CSeq_entry_Handle CSeq_entry_Handle::GetParentEntry(void) const
+{
+    _ASSERT(m_Entry_Info);
+    const CSeq_entry_Info* parent = m_Entry_Info->GetParentSeq_entry_Info();
+    if ( !parent ) {
+        return CSeq_entry_Handle();
+    }
+    return CSeq_entry_Handle(*m_Scope, *parent);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_entry_CI inline methods
@@ -412,13 +425,15 @@ const CSeq_entry_CI::TEntries& CSeq_entry_CI::x_GetEntries(void) const
     return m_Seq_entry.m_Entry_Info->m_Entries;
 }
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/12/03 16:40:03  grichenk
+* Added GetParentEntry()
+*
 * Revision 1.1  2003/11/28 15:12:30  grichenk
 * Initial revision
 *
