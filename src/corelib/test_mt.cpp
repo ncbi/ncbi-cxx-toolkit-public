@@ -140,7 +140,7 @@ void CThreadedApp::Init(void)
     // Prepare command line descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    // sNumThreads
+    // s_NumThreads
     arg_desc->AddDefaultKey
         ("threads", "NumThreads",
          "Total number of threads to create and run",
@@ -148,7 +148,16 @@ void CThreadedApp::Init(void)
     arg_desc->SetConstraint
         ("threads", new CArgAllow_Integers(k_NumThreadsMin, k_NumThreadsMax));
 
-    // sSpawnBy
+    // s_NumThreads (emulation in ST)
+    arg_desc->AddDefaultKey
+        ("repeats", "NumRepeats",
+         "In non-MT mode only(!) -- how many times to repeat the test. "
+         "If passed 0, then the value of argument `-threads' will be used.",
+         CArgDescriptions::eInteger, "0");
+    arg_desc->SetConstraint
+        ("repeats", new CArgAllow_Integers(0, k_NumThreadsMax));
+
+    // s_SpawnBy
     arg_desc->AddDefaultKey
         ("spawnby", "SpawnBy",
          "Threads spawning factor",
@@ -157,7 +166,7 @@ void CThreadedApp::Init(void)
         ("spawnby", new CArgAllow_Integers(k_SpawnByMin, k_SpawnByMax));
 
     // Let test application add its own arguments
-    TestApp_Args( *arg_desc);
+    TestApp_Args(*arg_desc);
 
     string prog_description =
         "MT-environment test";
@@ -173,9 +182,15 @@ int CThreadedApp::Run(void)
     // Process command line
     const CArgs& args = GetArgs();
 
-    s_NumThreads = args["threads"].AsInteger();
-    s_SpawnBy    = args["spawnby"].AsInteger();
+#if !defined(_MT)
+    s_NumThreads = args["repeats"].AsInteger();
+    if ( !s_NumThreads )
+#endif
+        s_NumThreads = args["threads"].AsInteger();
 
+    s_SpawnBy = args["spawnby"].AsInteger();
+
+    //
     assert(TestApp_Init());
 
 #if defined(_MT)
@@ -195,6 +210,7 @@ int CThreadedApp::Run(void)
         first_idx = s_NextIndex;
         s_NextIndex += s_SpawnBy;
     }}
+
     // Create and run threads
     for (int i = first_idx; i < first_idx + spawn_max; i++) {
         thr[i] = new CTestThread(i);
@@ -243,7 +259,7 @@ bool CThreadedApp::Thread_Destroy(int /*idx*/)
     return true;
 }
 
-bool CThreadedApp::TestApp_Args( CArgDescriptions& /*args*/)
+bool CThreadedApp::TestApp_Args(CArgDescriptions& /*args*/)
 {
     return true;
 }
@@ -265,6 +281,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/12 23:41:29  vakatov
+ * + cmd.-line arg `-repeats' to alternate the number of test execution repeats
+ *   in single-thread mode
+ *
  * Revision 1.7  2003/10/22 17:55:54  vasilche
  * Do not call assert() from threads - check result in main function.
  *
