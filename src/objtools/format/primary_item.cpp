@@ -164,8 +164,10 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
         s.resize(39, ' ');
         s += NStr::IntToString(alnmap.GetSeqStart(1) + 1) + '-' +
             NStr::IntToString(alnmap.GetSeqStop(1) + 1);
-        s.resize(59, ' ');
-        s += alnmap.IsNegativeStrand(1) ? 'c' : ' ';
+        if ( alnmap.IsNegativeStrand(1) ) {
+            s.resize(59, ' ');
+            s += 'c';
+        }
 
         str += '\n';
         str+= s;
@@ -215,6 +217,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/05/06 17:58:28  shomrat
+* Do not add spaces if plus strand
+*
 * Revision 1.3  2004/04/22 15:57:36  shomrat
 * New implementation of Primary item
 *
