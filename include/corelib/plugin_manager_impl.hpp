@@ -86,7 +86,8 @@ public:
     /// Create instance of TDriver
     IFace* 
     CreateInstance(const string& driver  = kEmptyStr,
-                   CVersionInfo version = NCBI_INTERFACE_VERSION(IFace)) const
+                   CVersionInfo version = NCBI_INTERFACE_VERSION(IFace),
+                   const TPluginManagerParamTree* params = 0) const
     {
         TDriver* drv = 0;
         if (driver.empty() || driver == m_DriverName) {
@@ -197,6 +198,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/13 17:21:24  kuznets
+ * Class factory CreateInstance method received an additional parameter
+ * TPluginManagerParamTree (to specify initialization parameters or prefrences)
+ *
  * Revision 1.1  2003/11/19 13:44:55  kuznets
  * Initial revision
  *

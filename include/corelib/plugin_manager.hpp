@@ -70,8 +70,10 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/version.hpp>
 #include <corelib/ncbidll.hpp>
+#include <corelib/ncbi_tree.hpp>
 
 #include <set>
+#include <string>
 
 
 BEGIN_NCBI_SCOPE
@@ -154,6 +156,10 @@ CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
 
 
 
+/// Instantiation parameters tree.
+typedef CTreePairNode<string, string>  TPluginManagerParamTree;
+
+
 /// IClassFactory<> --
 ///
 /// Class factory for the given interface.
@@ -194,12 +200,13 @@ public:
     ///  Requested interface version (as understood by the caller).
     ///  By default it will be passed the version which is current from
     ///  the calling code's point of view.
+    /// @param 
     /// @return
     ///  NULL on any error (not found entry point, version mismatch, etc.)
     virtual TClass* CreateInstance
-    (const string&  driver  = kEmptyStr,
-     CVersionInfo   version = NCBI_INTERFACE_VERSION(TClass))
-        const = 0;
+      (const string&  driver  = kEmptyStr,
+       CVersionInfo   version = NCBI_INTERFACE_VERSION(TClass),
+       const TPluginManagerParamTree* params = 0) const = 0;
 
     /// Versions of the interface exported by the factory
     virtual void GetDriverVersions(TDriverList& driver_list) const = 0;
@@ -236,10 +243,11 @@ public:
     /// @sa GetFactory()
     TClass* CreateInstance
     (const string&       driver  = kEmptyStr,
-     const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass))
+     const CVersionInfo& version = NCBI_INTERFACE_VERSION(TClass),
+     const TPluginManagerParamTree* params = 0)
     {
         TClassFactory* factory = GetFactory(driver, version);
-        return factory->CreateInstance(driver, version);
+        return factory->CreateInstance(driver, version, params);
     }
 
 
@@ -707,6 +715,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/01/13 17:21:23  kuznets
+ * Class factory CreateInstance method received an additional parameter
+ * TPluginManagerParamTree (to specify initialization parameters or prefrences)
+ *
  * Revision 1.18  2003/12/02 12:44:39  kuznets
  * Fixed minor compilation issue.
  *
