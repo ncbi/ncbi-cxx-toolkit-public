@@ -17,6 +17,7 @@ NCBI DBAPI Driver Reference</h1>
     <ul>
 		<li> <a href="#ref_Errors">Error handling</a> </li>
 		<li> <a href="#ref_Context">Driver context and connections</a> </li>
+		<li> <a href="#ref_DrvManager">Driver Manager</a> </li>
 		<li> <a href="#ref_TextImage">Text and Image Data Handling</a> </li>
 		<li> <a href="#ref_Results">Results loop</a> </li>
     </ul>
@@ -54,19 +55,24 @@ objects, and the objects which are specific to a particular RDBMS. The
 only RDBMS specific object which user should be aware of is a "Driver Context".
 The "Driver Context" is effectively a "Connection" factory. The only way
 to make a connection to the server is to call the <i>Connect()</i> method
-of a "Driver context" object. So, before doing anything with RDBMS, you
+of a "Driver Context" object. So, before doing anything with RDBMS, you
 need to create at least one driver context object. All driver contexts
 implement the same interface defined in <a href="../docxx/I_DriverContext.html">I_DriverContext</a>
 class. If you are working on a library which could be used with various
 RDBMS it is a good idea do not create the driver context inside the library,
 but take a pointer to
 <a href="../lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a>
-instead. There is no factory for the driver contexts provided. The reason
-for that is it's not always possible to statically link in one binary the
-RDBMS libraries from the different vendors. Most of them are written in
-C and the name collisions do exist.
+instead. 
+<p>
+There is no "real" factory for the driver contexts. The reason
+for that is it's not always possible to statically link in the same binary the
+RDBMS libraries from different vendors. Most of them are written in
+C and the name collisions do exist. The 
+<a href="../lxr/ident?i=C_DriverMgr&d=C">Driver Manager</a> helps to overcome
+this problem. It allowes to create a mixture of statically linked and dynamically loaded
+drivers and use them together in one executable. 
 <p>The driver context creates the connection which is RDBMS specific, but
-before return it to the caller it puts it into an "envelope" of RDBMS independent
+before returning it to the caller it puts it into an "envelope" of RDBMS independent
 object <a href="../docxx/CDB_Connection.html">CDB_Connection</a>.
 The same is true for the commands and for the results - user gets the pointer
 to RDBMS independent "envelope object" instead of the real one. This is
@@ -468,6 +474,71 @@ servers. This mechanism could also be used to group together the connections
 with some particular settings (default database, transaction isolation
 level, etc.).
 
+<a name="ref_DrvManager"></a>
+<h3>
+Driver Manager</h3>
+It's not always known upfront which <i>NCBI DBAPI driver</i> will be used in
+some particular program. Sometimes you want a driver to be a parameter in your
+program. Sometimes you need to use two different drivers in one binary but can not
+link them statically because of name collisions. Sometimes you just need the driver
+contexts factory. The 
+<a href="../lxr/ident?i=C_DriverMgr&d=C">Driver Manager</a> is intended 
+to solve these problems.
+<p>Let's rewrite our <a href="#ref_SampleProgram">Sample program</a> using the
+<b>Driver Manager</b>. The original text was.
+<pre>#include &lt;iostream>
+#include &lt;dbapi/driver/public.hpp>
+#include &lt;dbapi/driver/exception.hpp>
+
+/* Here, XXXlib has to be replaced with the real name, e.g. "ctlib" */
+#include &lt;dbapi/driver/XXXlib/interfaces.hpp>
+
+
+USING_NCBI_SCOPE;
+
+int main()
+{
+
+    try { // to be sure that we are catching all driver related exceptions
+
+        // We need to create a driver context first
+        // In real program we have to replace CXXXContext with something real
+        CXXXContext my_context;
+
+        // connecting to server "MyServer"
+        // with user name "my_user_name" and password "my_password"
+        CDB_Connection* con = my_context.Connect("MyServer", "my_user_name",
+                                                 "my_password", 0);
+        ...
+</pre>
+If we use the <b>Driver Manager</b> we could allow the driver name to be a program argument.
+<pre>#include &lt;iostream>
+#include &lt;dbapi/driver/public.hpp>
+#include &lt;dbapi/driver/exception.hpp>
+#include &lt;dbapi/driver/driver_mgr.hpp> // this is a new header
+
+
+USING_NCBI_SCOPE;
+
+int main(int argc, const char* argv[])
+{
+    try { // to be sure that we are catching all driver related exceptions
+        C_DriverMgr drv_mgr;
+        // We need to create a driver context first
+        I_DriverContext* my_context= drv_mgr.GetDriverContext(
+                                        (argc &gt; 1)? argv[1] : "ctlib");
+
+        // connecting to server "MyServer"
+        // with user name "my_user_name" and password "my_password"
+        CDB_Connection* con = my_context-&gt;Connect("MyServer", "my_user_name",
+                                                 "my_password", 0);
+        ...
+</pre>
+This fragment creates an instance of <b>Driver Manager</b>, dynamically loads driver's library,
+implicitly register this driver, creates the driver context and makes a connection to a server.
+If you don't want to load some drivers dynamically for any reason, but want to use the <b>Driver Manager</b>
+as a driver contexts factory, then you need to statically link your program with those libraries and
+explicitly registered them using functions from <em>dbapi/driver/drivers.hpp</em> header.
 <a name="ref_TextImage"></a>
 <h3>
 Text and Image Data Handling</h3>
