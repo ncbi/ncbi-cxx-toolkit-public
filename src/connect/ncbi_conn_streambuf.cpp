@@ -136,7 +136,7 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
     size_t n_read;
     EIO_Status status;
     status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize*sizeof(CT_CHAR_TYPE),
-                       &n_read, eIO_Plain);
+                       &n_read, eIO_ReadPlain);
     if (status == eIO_Closed) {
         assert(n_read == 0);
         return CT_EOF;
@@ -193,7 +193,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     // read directly from the connection
     size_t x_read;
     CONN_Read(m_Conn, buf, (n - n_read)*sizeof(CT_CHAR_TYPE),
-              &x_read, eIO_Plain);
+              &x_read, eIO_ReadPlain);
     if (x_read /= sizeof(CT_CHAR_TYPE)) {
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         *m_ReadBuf = buf[x_read - 1];
@@ -238,7 +238,7 @@ streambuf* CConn_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
                                    streamsize    /*buf_size*/)
 {
     THROW1_TRACE(CConn_Exception, "CConn_Streambuf::setbuf() not allowed");
-    return this;
+    return this; /*NOTREACHED*/
 }
 
 
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/08/07 16:32:12  lavr
+ * Changed EIO_ReadMethod enums accordingly
+ *
  * Revision 6.17  2002/06/06 19:03:25  lavr
  * Take advantage of CConn_Exception class and do not throw from destructor
  * Some housekeeping: log moved to the end
