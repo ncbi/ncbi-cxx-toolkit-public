@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2001/01/22 23:12:57  vakatov
+* CObjectIStreamAsnBinary::{Read,Skip}ClassSequential() - use cur.member "pos"
+*
 * Revision 1.50  2001/01/03 15:22:26  vasilche
 * Fixed limited buffer size for REAL data in ASN.1 binary format.
 * Fixed processing non ASCII symbols in ASN.1 text format.
@@ -921,7 +924,7 @@ void CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classTyp
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
         ExpectIndefiniteLength();
-        TMemberIndex index = classType->GetMembers().Find(tag);
+        TMemberIndex index = classType->GetMembers().Find(tag, *pos);
         if ( index == kInvalidMember )
             UnexpectedMember(tag);
 
@@ -969,7 +972,7 @@ void CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classTyp
     while ( HaveMoreElements() ) {
         TTag tag = PeekTag(eContextSpecific, true);
         ExpectIndefiniteLength();
-        TMemberIndex index = classType->GetMembers().Find(tag);
+        TMemberIndex index = classType->GetMembers().Find(tag, *pos);
         if ( index == kInvalidMember )
             UnexpectedMember(tag);
 
