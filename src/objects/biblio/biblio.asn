@@ -1,4 +1,4 @@
---$Revision: 6.1 $
+--$Revision: 6.2 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -178,7 +178,7 @@ Author ::= SEQUENCE {
         patent-assignee (3),
         translator (4) } OPTIONAL ,
     affil Affil OPTIONAL ,
-    is-corr BOOLEAN OPTIONAL }          -- TRUE if corressponding author
+    is-corr BOOLEAN OPTIONAL }          -- TRUE if corresponding author
 
 Affil ::= CHOICE {
     str VisibleString ,                 -- unparsed string
@@ -221,7 +221,7 @@ Imprint ::= SEQUENCE {                  -- Imprint group
     cprt Date OPTIONAL,                     -- copyright date, "    "   "
     part-sup VisibleString OPTIONAL ,       -- part/sup of volume
     language VisibleString DEFAULT "ENG" ,  -- put here for simplicity
-    prepub ENUMERATED {                     -- for prepublication citaions
+    prepub ENUMERATED {                     -- for prepublication citations
         submitted (1) ,                     -- submitted, not accepted
         in-press (2) ,                      -- accepted, not published
         other (255)  } OPTIONAL ,

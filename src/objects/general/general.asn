@@ -1,4 +1,4 @@
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --**********************************************************************
 --
 --  NCBI General Data elements
@@ -34,12 +34,12 @@ EXPORTS Date, Person-id, Object-id, Dbtag, Int-fuzz, User-object;
 -- } Nlm_ByteStore, PNTR Nlm_ByteStorePtr;
 --
 -- AsnTool incorporates this as a primitive type, so the definition
---   is here just for completness
+--   is here just for completeness
 -- 
 --  StringStore ::= [APPLICATION 1] IMPLICIT OCTET STRING
 --
 
--- BigInt is really an INTEGER. It is used to warn the recieving code to expect
+-- BigInt is really an INTEGER. It is used to warn the receiving code to expect
 --   a value bigger than Int4 (actually Int8). It will be stored in DataVal.bigintvalue
 --
 --   Like StringStore, AsnTool incorporates it as a primitive. The definition would be:
@@ -93,7 +93,7 @@ Name-std ::= SEQUENCE { -- Structured names
     last VisibleString ,
     first VisibleString OPTIONAL ,
     middle VisibleString OPTIONAL ,
-    full VisibleString OPTIONAL ,    -- full name eg. "J. John Poop, Esq"
+    full VisibleString OPTIONAL ,    -- full name eg. "J. John Smith, Esq"
     initials VisibleString OPTIONAL,  -- first + middle initials
     suffix VisibleString OPTIONAL ,   -- Jr, Sr, III
     title VisibleString OPTIONAL }    -- Dr., Sister, etc
