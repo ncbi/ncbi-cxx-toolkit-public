@@ -166,11 +166,11 @@ static CSeqVector s_GetCdregionPlusUpstream(CFeat_CI feat_iter,
     upstr->SetInt().SetId().Assign(id);
     if (sequence::GetStrand(first_cds_loc) == eNa_strand_minus) {
         upstr->SetInt().SetStrand(eNa_strand_minus);
-        upstr->SetInt().SetFrom(first_cds_loc.GetInt().GetTo() + 1);
+        upstr->SetInt().SetFrom(sequence::GetStop(first_cds_loc) + 1);
         upstr->SetInt().SetTo(sequence::GetLength(id, &scope) - 1);
     } else {
         upstr->SetInt().SetFrom(0);
-        upstr->SetInt().SetTo(first_cds_loc.GetInt().GetFrom() - 1);
+        upstr->SetInt().SetTo(sequence::GetStart(first_cds_loc) - 1);
     }
     CSeq_loc loc;
     loc.SetMix().AddSeqLoc(*upstr);
@@ -633,6 +633,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/12 21:50:25  jcherry
+ * s_GetCdregionPlusUpstream: don't assume that components of
+ * CDS location are intervals
+ *
  * Revision 1.4  2004/10/10 21:49:31  jcherry
  * Don't call CMappedFeat::GetMappedFeature; as of recent changes, this
  * apparently doesn't work when the feature has not been mapped.
