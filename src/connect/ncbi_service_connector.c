@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2001/10/26 21:17:59  lavr
+ * 'service=name' now always precedes other params in connects to DISPD/NCBID
+ *
  * Revision 6.28  2001/09/28 20:51:31  lavr
  * Comments revised; parameter (and SHttpConnector's) names adjusted
  * Retry logic moved entirely into s_Adjust()
@@ -273,9 +276,9 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
 static char* s_AdjustNetParams(SConnNetInfo* net_info,
                                EReqMethod    req_method,
                                const char*   cgi_name,
+                               const char*   first_arg,
+                               const char*   first_val,
                                const char*   cgi_args,
-                               const char*   last_arg,
-                               const char*   last_val,
                                const char*   static_header,
                                EMIME_Type    mime_t,
                                EMIME_SubType mime_s,
@@ -295,23 +298,27 @@ static char* s_AdjustNetParams(SConnNetInfo* net_info,
         net_info->args[sizeof(net_info->args) - 1] = 0;
     }
 
-    if (last_arg) {
-        size_t n = 0, m = strlen(net_info->args);
-
-        if (m)
-            n++/*&*/;
-        n += strlen(last_arg) +
-            (last_val ? 1/*=*/ + strlen(last_val) : 0);
-        if (n < sizeof(net_info->args) - m) {
-            char *s = net_info->args + m;
-            if (m)
-                strcat(s, "&");
-            strcat(s, last_arg);
-            if (last_val) {
-                strcat(s, "=");
-                strcat(s, last_val);
+    if (first_arg) {
+        size_t m = strlen(net_info->args);
+        int/*bool*/ amp = m ? 1 : 0;
+        size_t n = strlen(first_arg) +
+            (first_val ? 1/*=*/ + strlen(first_val) : 0) +
+            (amp ? 1/*&*/ : 0);
+        if (n < sizeof(net_info->args)) {
+            size_t p = sizeof(net_info->args) - n;
+            if (++m > p)
+                m = p;
+            memmove(&net_info->args[n], &net_info->args[0], m);
+            strcpy(net_info->args, first_arg);
+            if (first_val) {
+                strcat(net_info->args, "=");
+                strcat(net_info->args, first_val);
             }
-        }
+            if (amp)
+                net_info->args[n - 1] = '&';
+            net_info->args[n + m - 1] = 0;
+        } else
+            *net_info->args = 0;
     }
 
     if (mime_t == SERV_MIME_TYPE_UNDEFINED ||
@@ -388,8 +395,8 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
             user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
                                             NCBID_NAME,
-                                            SERV_NCBID_ARGS(&info->u.ncbid),
                                             "service", uuu->service,
+                                            SERV_NCBID_ARGS(&info->u.ncbid),
                                             user_header,
                                             info->mime_t, info->mime_s,
                                             iter_header);
@@ -405,8 +412,9 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
                                              ? eReqMethod_Post :
                                              eReqMethod_Any),
                                             SERV_HTTP_PATH(&info->u.http),
+                                            0, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
-                                            0, 0, user_header,
+                                            user_header,
                                             info->mime_t, info->mime_s,
                                             iter_header);
             break;
@@ -415,8 +423,8 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info, void* data,
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
                                             uuu->net_info->path,
-                                            uuu->net_info->args,
                                             "service", uuu->service,
+                                            uuu->net_info->args,
                                             user_header,
                                             info->mime_t, info->mime_s,
                                             iter_header);
@@ -481,8 +489,8 @@ static CONNECTOR s_Open
             }
             user_header = s_AdjustNetParams(net_info, req_method,
                                             NCBID_NAME,
-                                            SERV_NCBID_ARGS(&info->u.ncbid),
                                             "service", uuu->service,
+                                            SERV_NCBID_ARGS(&info->u.ncbid),
                                             user_header,
                                             info->mime_t, info->mime_s, 0);
             if (!user_header)
@@ -500,8 +508,9 @@ static CONNECTOR s_Open
                      ? eReqMethod_Post : eReqMethod_Any);
             user_header = s_AdjustNetParams(net_info, req_method,
                                             SERV_HTTP_PATH(&info->u.http),
+                                            0, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
-                                            0, 0, user_header,
+                                            user_header,
                                             info->mime_t, info->mime_s, 0);
             if (!user_header)
                 return 0;
@@ -511,7 +520,9 @@ static CONNECTOR s_Open
                 /* This will be a pass-thru connection, socket otherwise */
                 user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
                 user_header = s_AdjustNetParams(net_info, eReqMethod_Post,
-                                                0, 0, "service", uuu->service,
+                                                0,
+                                                "service", uuu->service,
+                                                0,
                                                 user_header,
                                                 info->mime_t, info->mime_s, 0);
                 if (!user_header)
@@ -531,8 +542,9 @@ static CONNECTOR s_Open
         user_header = s_AdjustNetParams(net_info,
                                         net_info->stateless
                                         ? eReqMethod_Post : eReqMethod_Get,
-                                        0, 0, second_try ? 0 : "service",
-                                        uuu->service, user_header,
+                                        0, second_try ? 0 : "service",
+                                        uuu->service, 0,
+                                        user_header,
                                         SERV_MIME_TYPE_UNDEFINED,
                                         SERV_MIME_SUBTYPE_UNDEFINED, 0);
         if (!user_header)
