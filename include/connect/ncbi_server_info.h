@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/05/23 19:02:47  lavr
+ * Server-info now includes rate; verbal representation changed
+ *
  * Revision 6.6  2000/05/22 16:53:07  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -88,7 +91,6 @@ typedef enum {
 } ESERV_Flags;
 typedef int TSERV_Flags;
 
-
 #define SERV_DEFAULT_FLAG       fSERV_Regular
 
 
@@ -133,13 +135,13 @@ typedef union {
 } USERV_Info;
 
 typedef struct {
-    ESERV_Type     type;
-    unsigned int   host;
-    unsigned short port;
-    ESERV_Flags    flag;
-    double         rate;
-    time_t         time;
-    USERV_Info     u;
+    ESERV_Type     type;        /* type of server */
+    unsigned int   host;        /* host the server running on */
+    unsigned short port;        /* port the server running on */
+    ESERV_Flags    flag;        /* algorithm flag for the server */
+    time_t         time;        /* relaxation/expiration time/period */
+    double         rate;        /* rate of the server */
+    USERV_Info     u;           /* server type-specific data/params */
 } SSERV_Info;
 
 

@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/05/23 19:02:49  lavr
+ * Server-info now includes rate; verbal representation changed
+ *
  * Revision 6.8  2000/05/22 16:53:11  lavr
  * Rename service_info -> server_info everywhere (including
  * file names) as the latter name is more relevant
@@ -212,17 +215,17 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         memcpy(s, attr->tag, attr->tag_len);
         s += attr->tag_len;
         *s++ = ' ';
-        n = s_Write_HostPort(s, skip_host ? 0 : info->host, info->port);
-        s += n;
+        s += s_Write_HostPort(s, skip_host ? 0 : info->host, info->port);
         *s++ = ' ';
-        n = strlen(str + reserve);
-        memmove(s, str + reserve, n+1);
-        s = str + strlen(str);
-        n = sprintf(s, "%s%lu", n ? " " : "", (unsigned long)info->time);
-        s += n;
+        if ((n = strlen(str + reserve)) != 0) {
+            memmove(s, str + reserve, n+1);
+            s = str + strlen(str);
+            *s++ = ' ';
+        }
         assert(info->flag < N_FLAG_TAGS);
         if (k_FlagTag[info->flag])
-            sprintf(s, " %s", k_FlagTag[info->flag]);
+            s += sprintf(s, "%s ", k_FlagTag[info->flag]);
+        sprintf(s, "T=%lu R=%.2f", (unsigned long)info->time, info->rate);
     }
     return str;
 }
@@ -238,6 +241,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
     int default_port;
     SSERV_Info *info;
     const char *s;
+    int n;
 
     if (!str || (*str && !isspace(*str)))
         return 0;
@@ -257,72 +261,50 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
         /* continue reading server info: optional parts: ... */
         while (*str && isspace(*str))
             str++;
-        if (*str) {
-            char *c;
+        while (*str) {
+            if (*(str + 1) == '=') {
+                unsigned long time;
+                double rate;
 
-            if ((c = strdup(str)) != 0) {
-                /* ... str = time, ... */
-                str = c;
-                while (*c && !isspace(*c))
-                    c++;
-                if (*c)
-                    *c++ = '\0';
-                while (*c && isspace(*c))
-                    c++;
-                /* ... s = algorithm tag */
-                s = c;
-                while (*c && !isspace(*c))
-                    c++;
-                if (*c)
-                    *c++ = '\0';
-                while (*c && isspace(*c))
-                    c++;
-                if (*c) {
-                    /* Something extra in the line - error */
-                    free(info);
-                    info = 0;
-                } else {
-                    unsigned long temp;
-
-                    if (sscanf(str, "%lu", &temp) < 1) {
-                        if (*s) {
-                            /* First optional spec was not a number - error */
-                            free(info);
-                            info = 0;
-                        } else {
-                            /* The only optional spec may be a flag tag... */
-                            s = str;
-                        }
-                    } else {
-                        info->time = (time_t)temp;
+                switch (toupper(*str++)) {
+                case 'T':
+                    if (!info->time && sscanf(str, "=%lu%n", &time, &n) >= 1) {
+                        str += n;
+                        info->time = (time_t)time;
                     }
-                    if (*s) {
-                        size_t i;
-                        
-                        for (i = 0; i < N_FLAG_TAGS; i++) {
-                            if (strcasecmp(s, k_FlagTag[i]) == 0)
-                                break;
-                        }
-                        if (i == N_FLAG_TAGS) {
-                            /* Flag tag not found - error */
-                            free(info);
-                            info = 0;
-                        } else {
-                            info->flag = (ESERV_Flags)i;
-                        }
+                    break;
+                case 'R':
+                    if (!info->rate && sscanf(str, "=%lf%n", &rate, &n) >= 1) {
+                        str += n;
+                        info->rate = rate;
                     }
+                    break;
                 }
-                free((char *)str);
             } else {
-                /* Allocation error */
-                free(info);
-                info = 0;
+                size_t i;
+                
+                for (i = 0; i < N_FLAG_TAGS; i++) {
+                    n = strlen(k_FlagTag[i]);
+                    if (strncasecmp(str, k_FlagTag[i],n) == 0)
+                        break;
+                }
+                if (i < N_FLAG_TAGS) {
+                    info->flag = (ESERV_Flags)i;
+                    str += n;
+                }
             }
-        } else {
-            /* Apply defaults */
-            info->flag = SERV_DEFAULT_FLAG;
-            info->time = 0;
+            if (*str && !isspace(*str))
+                break;
+            while (*str && isspace(*str))
+                str++;
         }
+        if (*str) {
+            free(info);
+            info = 0;
+        }
+    } else {
+        /* Apply defaults */
+        info->flag = SERV_DEFAULT_FLAG;
     }
     return info;
 }
@@ -406,6 +388,7 @@ SSERV_Info* SERV_CreateNcbidInfo
         info->port         = port;
         info->flag         = fSERV_Regular;
         info->time         = 0;
+        info->rate         = 0;
         info->u.ncbid.args = sizeof(info->u.ncbid);
         strcpy(SERV_NCBID_ARGS(&info->u.ncbid), args ? args : "");
     }
@@ -459,6 +442,7 @@ SSERV_Info* SERV_CreateStandaloneInfo
         info->port = port;
         info->flag = fSERV_Regular;
         info->time = 0;
+        info->rate = 0;
     }
     return info;
 }
@@ -519,7 +503,7 @@ static SSERV_Info *s_HttpGet_Read(const char** str)
 
 static SSERV_Info *s_HttpPost_Read(const char** str)
 {
-    return s_HttpAny_Read(fSERV_HttpGet, str);
+    return s_HttpAny_Read(fSERV_HttpPost, str);
 }
 
 
@@ -562,6 +546,7 @@ SSERV_Info* SERV_CreateHttpInfo
         info->port        = port;
         info->flag        = fSERV_Regular;
         info->time        = 0;
+        info->rate        = 0;
         info->u.http.path = sizeof(info->u.http);
         info->u.http.args = info->u.http.path + strlen(path ? path : "")+1;
         strcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "");
