@@ -3,8 +3,24 @@
 <head>
 <title>Load-Balancing Service Mapping Daemon (LBSMD)</title>
 </head>
-<body>
+<body bgcolor="snow" link="blue" vlink="blue">
 <center><h1>Load-Balancing Service Mapping Daemon (<tt>LBSMD</tt>)</h1></center>
+
+<h2>Contents</h2>
+
+<ol>
+<ul>
+    <li> <a href="#ref_Overview">Overview</a>
+    <li> <a href="#ref_Details"><tt>LBSMD</tt> in Details</a>
+    <li> <a href="#ref_Example">Example of Configuration File</a>
+    <li> <a href="#ref_Client">Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</a>
+    <li> <a href="#ref_Penalizer">Server Penalizer</a>
+</ul>
+</ol>
+
+<p><hr><p>
+
+<h2><a name="ref_Overview">Overview</a></h2>
 
 In general, <tt>LBSMD</tt> should be run at NCBI site on every host, which carries either public
 or private servers implementing NCBI service(s) (see, however discussion about <i>static</i> servers
@@ -55,7 +71,7 @@ which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>
 
 <p><hr><p>
 
-<h2><tt>LBSMD</tt> in Details</h2>
+<h2><a name="ref_Details"><tt>LBSMD</tt> in Details</a></h2>
 
 <tt>LBSMD</tt> is configured by means of a configuration file, which is also
 shared with <a href="DISPD.html">NCBI dispatching CGI</a>.
@@ -69,7 +85,7 @@ A comment is introduced by a hash symbol (#).
 <p>
 A configuration line of the form
 <pre>
-name=value
+<font color="#009900">name=value</font>
 </pre>
 places itself in the <i>host environment</i>. The host environment can be accessed by
 clients while making the service name resolution. Often, the host environment
@@ -88,23 +104,23 @@ preserved in <tt>value</tt>, i.e. when appear after the equal sign.
 <p>
 A <i>service</i> is defined by a line of the form
 <pre>
-service_name [check_time] server_descriptor [| launcher_info ]
+<font color="#009900">service_name [check_time] server_descriptor [| launcher_info ]</font>
 </pre>
 <ul>
-<li><tt>service_name</tt> specifies the service, for instance
+<li><font color="#CC33CC"><tt>service_name</tt></font> specifies the service, for instance
 <tt>TaxServer</tt>.
-<li><tt>[check_time]</tt> is an optional parameter (if omitted,
+<li><font color="#CC33CC"><tt>[check_time]</tt></font> is an optional parameter (if omitted,
 the surrounding square brackets must go, too),
 which specifies the number of seconds for periodic checkups.
 For example, <tt>[120]</tt> means to check the server once
 every 2 minutes. Note the square brackets - they are required.
-<li><tt>server_descriptor</tt> is a server address and related information,
-which is described in details later in this document.
+<li><font color="#CC33CC"><tt>server_descriptor</tt></font> specifies address of the server and
+supplies additional information, which is described in details later in this document.
 An example of the <tt>server_descriptor</tt>:
 <pre>
-STANDALONE somehost:1234 R=3000 L=yes S=yes B=-200
+<font color="navy">STANDALONE somehost:1234 R=3000 L=yes S=yes B=-200</font>
 </pre>
-<li><tt>launcher_info</tt> is basically a command line,
+<li><font color="#CC33CC"><tt>launcher_info</tt></font> is basically a command line,
 preceded by a pipe symbol (|), delimiting from <tt>server_descriptor</tt>.
 It is an optional argument, and is only required
 for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>.
@@ -115,65 +131,65 @@ for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>.
 <a href="../../lxr/source/include/connect/ncbi_server_info.h"><b><i>connect/ncbi_server_info.h</i></b></a>,
 consists of the following fields
 <ol>
-<tt>server_type [host][:port] [arguments] [flags]</tt><br>
+<font color="#009900"><tt>server_type [host][:port] [arguments] [flags]</tt><br></font>
 where:
 <ul type=square>
 <li><a name="ref_ServerType"><tt>server_type</tt></a> is one of the following keywords:<br>
   <ul compact type=bullet>
-  <li><tt>NCBID</tt> for servers launched by <a href="DISPD.html#ref_NCBID"><b><i>ncbid.cgi</i></b></a>;
-  <li><tt>STANDALONE</tt> for standalone servers listening on dedicated ports;
-  <li><tt>HTTP_GET</tt> for servers, which are CGI programs, accepting only <i>GET</i> request method;
-  <li><tt>HTTP_POST</tt> for servers, which are CGI programs, accepting only <i>POST</i> request method;
-  <li><tt>HTTP_POST</tt> for servers, which are CGI programs, accepting both <i>GET</i> and <i>POST</i> request methods.
+  <li><font color="#CC33CC"><tt>NCBID</tt></font> for servers launched by <a href="DISPD.html#ref_NCBID"><tt>ncbid.cgi</tt></a>;
+  <li><font color="#CC33CC"><tt>STANDALONE</tt></font> for standalone servers listening on dedicated ports;
+  <li><font color="#CC33CC"><tt>HTTP_GET</tt></font> for servers, which are CGI programs, accepting only <i>GET</i> request method;
+  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are CGI programs, accepting only <i>POST</i> request method;
+  <li><font color="#CC33CC"><tt>HTTP_POST</tt></font> for servers, which are CGI programs, accepting both <i>GET</i> and <i>POST</i> request methods.
   </ul>
-<li>Both <tt>host</tt> and <tt>port</tt> parameters are optional. Defaults are local host, and
+<li>Both <font color="#CC33CC"><tt>host</tt></font> and <font color="#CC33CC"><tt>port</tt></font> parameters are optional. Defaults are local host, and
 port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
-<a name="ref_Static">If <tt>host</tt> <u>is</u> specified</a> (even, <tt>localhost</tt>, or local host name)
+<a name="ref_Static">If <tt>host</tt> <b><u>is</u></b> specified</a> (even, <tt>localhost</tt>, or local host name)
 then the described server is not a subject for variable load-balancing, but a so-called <i>static</i>
 server. Such a server always has a constant rate, independent on the host load.
-<li><tt>arguments</tt> are required for <tt>HTTP*</tt> servers, and must give
+<li><font color="#CC33CC"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must give
 the local absolute URL of the CGI, and optionally parameters, like:
 <ol>
-  <tt>/somepath/somecgi.cgi?param1&param2=value2&param3=value3</tt>
+<font color="navy"><tt>/somepath/somecgi.cgi?param1&amp;param2=value2&amp;param3=value3</tt></font>
 </ol>
 If no parameters are to be supplied, then question mark (?) must not be
 specified.<br>
 For <tt>NCBID</tt> servers, arguments are parameters to
 pass to the server, and are formed as arguments for CGI programs, i.e.
 <ol>
-  <tt>param1&param2&param3=value</tt>
+<font color="navy"><tt>param1&amp;param2&amp;param3=value</tt></font>
 </ol>
-As a special rule, <tt>''</tt> may be used to denote empty argument for <tt>NCBID</tt> server.<br>
+As a special rule, <font color="navy"><tt>''</tt></font> (two single quotes) may be used to denote empty argument for <tt>NCBID</tt> server.<br>
 <tt>STANDALONE</tt> servers do <i>not</i> take any <tt>arguments</tt>.
-<li><tt>flags</tt> can come in no specific order (but no more than one instance of a flag is allowed),
-and essentially are the optional modifiers of the values, used by default. The following flags are
+<li><font color="#CC33CC"><tt>flags</tt></font> can come in no specific order (but no more than one instance of a flag is allowed),
+and essentially are optional modifiers of the values, used by default. The following flags are
 recognized:
 <ul type=circle>
   <li>load calculation keyword:
   <ul type=bullet>
-    <li><tt>Blast</tt> to use special algorithm for status calculation, acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
+    <li><font color="#CC33CC"><tt>Blast</tt></font> to use special algorithm for status calculation, acceptable for <a href="http://www.ncbi.nlm.nih.gov/BLAST">BLAST</a>
 	applications. The algorithm uses instant values of the host load, and thus is less conservative and more
 	reactive than the ordinary one;
-    <li><tt>Regular</tt> to use an ordinary rate calculation (default, and the only load calculation
+    <li><font color="#CC33CC"><tt>Regular</tt></font> to use an ordinary rate calculation (default, and the only load calculation
     option allowed for <a href="#ref_Static"><i>static</i></a> servers).
   </ul>
   <li>base rate:
   <ul type=bullet>
-  <li><tt>R=value</tt> sets base server reachability rate (as a floating point number),
+  <li><font color="#CC33CC"><tt>R=value</tt></font> sets base server reachability rate (as a floating point number),
   default is 1000. Any negative value makes the server unreachable, and a value of 0
   uses the default. The maximal base rate is 100000.
   </ul>
   <li>locality marker:
   <ul type=bullet>
-     <li><tt>L={yes|no}</tt> sets (if <tt>yes</tt>) the server to be <i>local only</i>. Default is <tt>no</tt>.
+     <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>. Default is <tt>no</tt>.
      <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> returns <i>local only</i> servers
      in the case of mapping with the use of <tt>LBSMD</tt> running on the same (local) host. Otherwise, if service mapping
-     occurs using network (via exchange with <a href="DISPD.html"><b><i>dispd.cgi</i></b></a>), then
+     occurs using network (via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>), then
      <i>local only</i> servers are not seen.
   </ul>
   <li>stateful server:
   <ul type=bullet>
-     <li><tt>S={yes|no}</tt> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
+     <li><font color="#CC33CC"><tt>S={yes|no}</tt></font> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
      and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Those servers are only
      accessed via creating a stream connection to the server, and the entire data transfer is to happen
      while the connection is alive. Default is <tt>no</tt>.<br>
@@ -182,12 +198,12 @@ recognized:
   </ul>
   <li><a name="ref_ContentType">content type specifier</a>:
   <ul type=bullet>
-     <li><tt>C=type/subtype</tt> specifies what is the data type that the server accepts/generates.
+     <li><font color="#CC33CC"><tt>C=type/subtype</tt></font> specifies what is the data type that the server accepts/generates.
      There is no default value for this flag.
   </ul>
   <li><a name="ref_Bonus">local bonus coefficient</a>:
   <ul type=bullet>
-     <li><tt>B=value</tt>. The interpretation of this flag depends on the sign of <tt>value</tt>. When positive,
+     <li><font color="#CC33CC"><tt>B=value</tt></font>. The interpretation of this flag depends on the sign of <tt>value</tt>. When positive,
      <tt>value</tt> specifies a multiplier, which applies to the server rate when the server is locally run.
      When zero (default), the slight default rate increase takes effect for locally run servers. When <tt>value</tt> is negative, the
      locally run server overrides those even having higher rates and preceding the local one, but only if the local server has
@@ -231,7 +247,7 @@ at (no more than 100) recent lines of the logfile on host <tt>pluto</tt>.
 <hr>
 <p>
 
-<h2>Example of Configuration File</h2>
+<h2><a name="ref_Example">Example of Configuration File</a></h2>
 
 Below is an excerpt from an example configuration file, which declares some of the host environment,
 advertizes one standalone stateful server, and one NCBID service, both implementing the same
@@ -242,9 +258,9 @@ service, and one HTTP service, which is a local service only.
 # This is a configuraiton file of LBSMD and DISPD
 #
 
-# This goes to host environment. (practical)
+# This goes to host environment (rather practical)
 db_list=a.db b.db c.db
-# And this, too. (illustrative)
+# And this does too (rather illustrative)
 my_entry="some very important value as a quoted string"
 
 # Standalone server listening on port 9999
@@ -257,12 +273,12 @@ TestService NCBID      '' Regular | /home/webuser/TestService/a.out "parameter 1
 # Local HTTP service w/o checks (note [0])
 LocalService [0] HTTP /LocalService.cgi?param=somevalue L=yes
 
-# Static service - check it each 200 seconds
-StaticService [200] STANDALONE :8888
+# Static server - check it each 200 seconds
+StaticService [200] STANDALONE localhost:8888
 
-# Static service from another host where LBSMD may even not be running
+# Static server from another host where LBSMD may even not be running
 # (no checks at all or just [0] allowed for non-local static servers)
-ForeignService [0] STANDALONE :7777 R=300
+ForeignService [0] STANDALONE foreignhost:7777 R=300
 
 # end of configuration
 </pre>
@@ -272,7 +288,7 @@ NCBI Intranet users <i>only</i> can take a look at a real configuration file on 
 
 <p><hr><p>
 
-<h2>Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</h2>
+<h2><a name="ref_Client">Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</a></h2>
 
 This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program</a>, which repeatedly
 dumps onto the screen a table, representing current contents of shared memory segment, where the daemon
@@ -344,9 +360,9 @@ might not immediately notice that the server is down, and continue dispatching t
 Usually penalty takes at most 5 seconds to propagate to all participating network hosts.
 That is, before the actual server shutdown, the following sequence of commands may be used:
 <pre>
-> ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 100 host 120'
-> sleep 5
-> shutdown the server
+<font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 100 host 120'
+&gt; sleep 5
+&gt; shutdown the server</font>
 </pre>
 
 The effect of the above is to set the maximal penalty <tt>100</tt> for the service <tt>Servicename</tt> (of type
@@ -362,7 +378,7 @@ As soon as the server is down, <tt>LBSMD</tt> detects it in the matter of severa
 
 In some circumstances, the following command may come handy:
 <pre>
-> ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'
+<font color="navy">&gt; ~ncbiduse/Service/lbsm_penalize 'Servicename STANDALONE 0 host'</font>
 </pre> 
 which resets the penalty to 0 (no penalty), and is useful, when e.g. as for the previous example, the server is restarted
 and ready in less than 120 seconds, but the penalty is still held high by <tt>LBSMD</tt>.
