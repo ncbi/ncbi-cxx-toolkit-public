@@ -1133,14 +1133,18 @@ BLAST_GetStandardAaProbabilities()
     Blast_ResFreq* standard_probabilities = NULL;
     Uint4 i = 0;
     double* retval = NULL;
-    BlastScoreBlk* sbp = NULL;
+    BlastScoreBlk* sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
 
-    retval = (double*) malloc(sbp->alphabet_size * sizeof(double));
-    if ( !retval ) {
+    if ( !sbp ) {
         return NULL;
     }
 
-    sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+    ASSERT(sbp->alphabet_size == BLASTAA_SIZE);
+    retval = (double*) malloc(sbp->alphabet_size * sizeof(double));
+    if ( !retval ) {
+        sbp = BlastScoreBlkFree(sbp);
+        return NULL;
+    }
 
     standard_probabilities = Blast_ResFreqNew(sbp);
     Blast_ResFreqStdComp(sbp, standard_probabilities);
