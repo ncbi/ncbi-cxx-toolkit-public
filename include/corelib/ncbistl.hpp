@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/01 01:18:42  vakatov
+* [HAVE_NAMESPACE]  Added an empty fake "ncbi" namespace -- MSVC++ 6.0
+* compiler starts to recognize "std::" scope only after passing through at
+* least one "namespace ncbi {}" statement(???)
+*
 * Revision 1.7  1998/11/13 00:13:51  vakatov
 * Decide whether it NCBI_OS_UNIX or NCBI_OS_MSWIN
 *
@@ -110,6 +115,7 @@
 #if defined(HAVE_NAMESPACE)
 namespace std { /* the fake one */ }
 namespace ncbi { /* the fake one, plus "std" */ NCBI_USING_NAMESPACE_STD; }
+namespace ncbi { /* the fake one */ }
 #  define BEGIN_NCBI_SCOPE namespace ncbi {
 #  define END_NCBI_SCOPE }
 #  define USING_NCBI_SCOPE using namespace ncbi
