@@ -1373,12 +1373,20 @@ void CMemoryFile::x_Map(const string&  file_name,
                 break;
             case eMMP_Write:
                 map_protect = PROT_WRITE;
-                // File access must be read + write
-                file_access = O_RDWR;
+                if  (share_attr == eMMS_Shared ) {
+                    // Must be read + write
+                    file_access = O_RDWR;
+                } else {
+                    file_access = O_RDONLY;
+                }
                 break;
             case eMMP_ReadWrite:
                 map_protect = PROT_READ | PROT_WRITE;
-                file_access = O_RDWR;
+                if  (share_attr == eMMS_Shared ) {
+                    file_access = O_RDWR;
+                } else {
+                    file_access = O_RDONLY;
+                }
                 break;
             default:
                 _TROUBLE;
@@ -1510,6 +1518,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/02/06 16:14:28  ivanov
+ * CMemomyFile::x_Map(): changed file access attribute from O_RDWR to
+ * O_RDONLY in case of private sharing.
+ *
  * Revision 1.38  2003/02/05 22:07:15  ivanov
  * Added protect and sharing parameters to the CMemoryFile constructor.
  * Added CMemoryFile::Flush() method.
