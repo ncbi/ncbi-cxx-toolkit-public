@@ -120,15 +120,29 @@ bool CBZip2Compression::DecompressBuffer(
 }
 
 
-bool CBZip2Compression::CompressFile(const string&, const string&)
+bool CBZip2Compression::CompressFile(const string& src_file,
+                                     const string& dst_file,
+                                     size_t        buf_size)
 {
-    return false;
+    CBZip2CompressionFile cf(dst_file,
+                             CCompressionFile::eMode_Write, GetLevel(),
+                             m_Verbosity, m_WorkFactor, m_SmallDecompress);
+    bool result = CCompression::x_CompressFile(src_file, cf, buf_size) &&
+                  cf.Close();
+    return result;
 }
 
 
-bool CBZip2Compression::DecompressFile(const string&, const string&)
+bool CBZip2Compression::DecompressFile(const string& src_file,
+                                       const string& dst_file,
+                                       size_t        buf_size)
 {
-    return false;
+    CBZip2CompressionFile cf(src_file,
+                             CCompressionFile::eMode_Read, GetLevel(),
+                             m_Verbosity, m_WorkFactor, m_SmallDecompress);
+    bool result = CCompression::x_DecompressFile(cf, dst_file, buf_size) &&
+                  cf.Close();
+    return result;
 }
 
 
@@ -473,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/10 16:26:23  ivanov
+ * Implemented CompressFile/DecompressFile functions.
+ *
  * Revision 1.3  2003/06/17 15:43:58  ivanov
  * Minor cosmetics and comments changes
  *
