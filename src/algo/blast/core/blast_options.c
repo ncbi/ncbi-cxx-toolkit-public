@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.90  2004/03/11 23:58:10  dondosha
+ * Set cutoff_score to 0 before calling BLAST_Cutoffs, so it knows what to calculate
+ *
  * Revision 1.89  2004/03/11 20:41:49  camacho
  * Remove dead code
  *
@@ -1386,7 +1389,8 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
    } else if (!options->phi_align) {
-      BLAST_Cutoffs(&(params->cutoff_score), &evalue, kbp, 
+      params->cutoff_score = 0;
+      BLAST_Cutoffs(&params->cutoff_score, &evalue, kbp, 
          (double)query_info->eff_searchsp_array[query_info->first_context], 
          FALSE, 0);
       /* When sum statistics is used, all HSPs above the gap trigger 
