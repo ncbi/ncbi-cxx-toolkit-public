@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/10/29 18:55:08  ivanov
+* Fixed adding blank lines at write registry file
+*
 * Revision 1.20  2001/09/11 00:52:51  vakatov
 * Fixes to R1.17 - R1.19:
 *   Renamed HasChanged() to Modified(), get rid of bugs, refined and
@@ -220,8 +223,6 @@ static bool s_WriteComment(CNcbiOstream& os, const string& comment)
             }
         }
     }
-
-    os << s_Endl;
     return os.good();
 }
 
@@ -464,9 +465,6 @@ const
         //
         const TRegSection& reg_section = section->second;
         _ASSERT( !reg_section.empty() );
-
-        // beauty line
-        os << s_Endl;
 
         // write section comment, if any
         TRegSection::const_iterator comm_entry = reg_section.find(kEmptyStr);
