@@ -49,22 +49,22 @@ FindDirPath()
 
 MakeDirs()
 {
-    COMMON_Exec mkdir -p $1
-    COMMON_Exec mkdir -p $1/bin
-    COMMON_Exec mkdir -p $1/lib
-    COMMON_Exec mkdir -p $1/etc
-    COMMON_Exec mkdir -p $1/plugins
+    COMMON_ExecRB mkdir -p $1
+    COMMON_ExecRB mkdir -p $1/bin
+    COMMON_ExecRB mkdir -p $1/lib
+    COMMON_ExecRB mkdir -p $1/etc
+    COMMON_ExecRB mkdir -p $1/plugins
 }
 
 
 DoCopy()
 {
-    COMMON_Exec $BINCOPY $1 $2
+    COMMON_ExecRB $BINCOPY $1 $2
 
     case `uname` in
         Darwin*)
         dylib_file=`echo $1 | sed "s,\.so$,.dylib",`
-        COMMON_Exec $BINCOPY $dylib_file $2
+        COMMON_ExecRB $BINCOPY $dylib_file $2
         ;;
     esac
 }
@@ -78,7 +78,7 @@ CopyFiles()
         if [ -f $src_file ]; then
             mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-            COMMON_Exec $BINCOPY $src_file $target_dir/bin/
+            COMMON_ExecRB $BINCOPY $src_file $target_dir/bin/
         else
             COMMON_Error "File not found: $src_file"
         fi
@@ -162,7 +162,8 @@ fi
 source_dir=`FindDirPath $src_dir /src/gui/gbench`
 source_dir="${source_dir}/src/gui/gbench"
 
-
+# Set the rollback escape command (used by COMMON_ExecRB)
+x_common_rb="rm -rf $target_dir"
 
 MakeDirs $target_dir
 
@@ -171,19 +172,19 @@ CopyFiles
 
 echo "Preparing scripts"
 
-COMMON_Exec cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
+COMMON_ExecRB cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
 chmod 755 ${target_dir}/bin/run-gbench.sh
 
 rm -f ${src_dir}/bin/gbench
 ln -s ${target_dir}/bin/run-gbench.sh ${src_dir}/bin/gbench
 
-COMMON_Exec cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
+COMMON_ExecRB cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
-COMMON_Exec cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
+COMMON_ExecRB cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 chmod 755 ${target_dir}/bin/move-gbench.sh
 
-COMMON_Exec ${target_dir}/bin/move-gbench.sh ${target_dir}
+COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
 
 echo "Configuring plugin cache"
 COMMON_AddRunpath ${target_dir}/lib
-COMMON_Exec ${target_dir}/bin/gbench_plugin_scan -dir ${target_dir}/plugins
+COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -dir ${target_dir}/plugins
