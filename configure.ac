@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.273 2004/02/12 16:45:56 ucko Exp $
+#  $Id: configure.ac,v 1.274 2004/02/24 20:10:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -138,6 +138,8 @@ AC_ARG_WITH(sssutils,
    [ --without-utils         do not use NCBI SSS UTIL library])
 AC_ARG_WITH(sssdb,
    [ --without-sssdb         do not use NCBI SSS DB library])
+AC_ARG_WITH(included-sss,
+   [ --without-included-sss  do not use the in-tree copy of SSS])
 AC_ARG_WITH(geo,
    [ --without-geo           do not use NCBI GEO libraries])
 AC_ARG_WITH(pubmed,
@@ -263,8 +265,9 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
-ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc sqlite \
+ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo sp pubmed \
+sybase sybase-local sybase-new ftds mysql orbacus \
+fltk opengl mesa glut bdb odbc sqlite \
 expat sablot gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -2875,6 +2878,16 @@ if test "$with_sybase" = "no" ; then
 fi
 
 if test "$with_sss" != "no" ; then
+   local_sss=${srcdir}/src/internal/sss
+   if test "${with_included_sss-yes}" = "yes" -a -z "$NCBI_SSS_PATH" \
+       -a -f "$local_sss/utils/sssdebug.hpp"; then
+      with_included_sss=yes
+      NCBI_SSS_PATH=$local_sss
+      NCBI_SSS_INCLUDE="\$(incdir)/sss"
+      NCBI_SSS_LIBPATH="\$(libdir)"
+   else
+      with_included_sss=no
+   fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
@@ -2884,7 +2897,9 @@ if test "$with_sss" != "no" ; then
       fi
    fi
    AC_MSG_CHECKING([for NCBI SSS directories in $NCBI_SSS_PATH])
-   if test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
+   if test "$with_included_sss" = "yes"; then
+      AC_MSG_RESULT([yes]) # duh
+   elif test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
       AC_MSG_RESULT([no])
       with_sss="no"
    else
@@ -2901,7 +2916,13 @@ if test "$with_sss" = "no" ; then
    LIBSSSDB=
    WithoutPackages="$WithoutPackages SSS"
 else
-   NCBI_SSS_LIBPATH="-L${NCBI_SSS_LIBPATH}"
+   if test "$with_included_sss" = "yes"; then
+      NCBI_SSS_LIBPATH= # Not needed
+      ncbi_cv_lib_sssutils=yes
+      ncbi_cv_lib_sssdb=yes
+   else
+      NCBI_SSS_LIBPATH="-L${NCBI_SSS_LIBPATH}"
+   fi
    NCBI_SSS_INCLUDE="-I${NCBI_SSS_INCLUDE}"
 
    # SSS UTILS

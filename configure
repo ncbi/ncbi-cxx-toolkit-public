@@ -888,6 +888,7 @@ Optional Packages:
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
  --without-sssdb         do not use NCBI SSS DB library
+ --without-included-sss  do not use the in-tree copy of SSS
  --without-geo           do not use NCBI GEO libraries
  --without-pubmed        do not use NCBI PubMed libraries
  --without-sybase        do not use SYBASE libraries
@@ -1611,6 +1612,12 @@ if test "${with_sssdb+set}" = set; then
 
 fi;
 
+# Check whether --with-included-sss or --without-included-sss was given.
+if test "${with_included_sss+set}" = set; then
+  withval="$with_included_sss"
+
+fi;
+
 # Check whether --with-geo or --without-geo was given.
 if test "${with_geo+set}" = set; then
   withval="$with_geo"
@@ -1959,8 +1966,9 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe strip version lfs \
-ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc sqlite \
+ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo sp pubmed \
+sybase sybase-local sybase-new ftds mysql orbacus \
+fltk opengl mesa glut bdb odbc sqlite \
 expat sablot gif jpeg tiff png xpm \
 local-lbsm serial objects dbapi app ctools gui algo internal"
 
@@ -17255,6 +17263,16 @@ if test "$with_sybase" = "no" ; then
 fi
 
 if test "$with_sss" != "no" ; then
+   local_sss=${srcdir}/src/internal/sss
+   if test "${with_included_sss-yes}" = "yes" -a -z "$NCBI_SSS_PATH" \
+       -a -f "$local_sss/utils/sssdebug.hpp"; then
+      with_included_sss=yes
+      NCBI_SSS_PATH=$local_sss
+      NCBI_SSS_INCLUDE="\$(incdir)/sss"
+      NCBI_SSS_LIBPATH="\$(libdir)"
+   else
+      with_included_sss=no
+   fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
@@ -17265,7 +17283,10 @@ if test "$with_sss" != "no" ; then
    fi
    echo "$as_me:$LINENO: checking for NCBI SSS directories in $NCBI_SSS_PATH" >&5
 echo $ECHO_N "checking for NCBI SSS directories in $NCBI_SSS_PATH... $ECHO_C" >&6
-   if test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
+   if test "$with_included_sss" = "yes"; then
+      echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6 # duh
+   elif test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
       echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
       with_sss="no"
@@ -17284,7 +17305,13 @@ if test "$with_sss" = "no" ; then
    LIBSSSDB=
    WithoutPackages="$WithoutPackages SSS"
 else
-   NCBI_SSS_LIBPATH="-L${NCBI_SSS_LIBPATH}"
+   if test "$with_included_sss" = "yes"; then
+      NCBI_SSS_LIBPATH= # Not needed
+      ncbi_cv_lib_sssutils=yes
+      ncbi_cv_lib_sssdb=yes
+   else
+      NCBI_SSS_LIBPATH="-L${NCBI_SSS_LIBPATH}"
+   fi
    NCBI_SSS_INCLUDE="-I${NCBI_SSS_INCLUDE}"
 
    # SSS UTILS
