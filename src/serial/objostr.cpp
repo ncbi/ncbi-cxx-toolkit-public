@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/12/15 22:07:02  vasilche
+* Fixed typo eNotOpen -> eNoError.
+*
 * Revision 1.56  2000/12/15 21:29:02  vasilche
 * Moved some typedefs/enums from corelib/ncbistd.hpp.
 * Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
@@ -343,7 +346,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 }
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut), m_Fail(eNotOpen), m_Flags(eFlagNone)
+    : m_Output(out, deleteOut), m_Fail(eNoError), m_Flags(eFlagNone)
 {
 }
 
