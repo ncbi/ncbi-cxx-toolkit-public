@@ -93,17 +93,15 @@ void CValidError_desc::ValidateSeqDesc(const CSeqdesc& desc)
             break;
         case CSeqdesc::e_User:
         {
-            const CUser_object& usr = desc.GetUser ();
+            const CUser_object& usr = desc.GetUser();
             const CObject_id& oi = usr.GetType();
-            if (!oi.IsStr()) {
+            if ( !oi.IsStr() ) {
                 break;
             }
-            if (!NStr::CompareNocase(oi.GetStr(), "TpaAssembly")) {
-                try {
+            if ( !NStr::CompareNocase(oi.GetStr(), "TpaAssembly") ) {
+                if ( !m_Imp.IsTPA() ) {
                     PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                         "Non-TPA record should not have TpaAssembly object", desc);
-                } catch (const runtime_error&) {
-                    return;
                 }
             }
             break;
@@ -146,6 +144,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/02/07 21:17:21  shomrat
+* Added check IsTPA
+*
 * Revision 1.2  2002/12/24 16:53:35  shomrat
 * Changes to include directives
 *
