@@ -291,6 +291,10 @@ void CDense_seg::SwapRows(TDim row1, TDim row2)
 
 void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
 {
+    if (loc.IsWhole()) {
+        return;
+    }
+
     TSeqPos row_stop  = GetSeqStop(row);
 
     size_t  ttl_loc_len = 0;
@@ -473,6 +477,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/12/19 20:15:21  todorov
+* RemapToLoc should do nothing in case of a whole Seq-loc
+*
 * Revision 1.7  2003/11/20 21:26:33  todorov
 * RemapToLoc bug fixes: + seg inc; + loc_len vs len
 *
