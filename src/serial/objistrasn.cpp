@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2001/07/25 19:12:25  grichenk
+* Added memory pre-allocation for long strings
+*
 * Revision 1.69  2001/06/11 14:35:00  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -851,6 +854,15 @@ void CObjectIStreamAsn::ReadString(string& s)
                 // ok: append char
                 if ( ++i == 128 ) {
                     // too long string -> flush it
+
+                    // Reserve extra-space to reduce heap reallocation
+                    if (s.size() == 0) {
+                        s.reserve(1024);
+                    }
+                    else if ( double(s.capacity())/(s.size()+1.0) < 1.1 ) {
+                        s.reserve(s.size()*2);
+                    }
+
                     s.append(m_Input.GetCurrentPos(), i);
                     m_Input.SkipChars(i);
                     i = 0;
@@ -863,6 +875,7 @@ void CObjectIStreamAsn::ReadString(string& s)
         UnendedString(startLine);
         throw;
     }
+    s.reserve(s.size());
     // Check the string for non-printable characters
     for (i = 0; i < s.length(); i++) {
         CheckVisibleChar(s[i], m_FixMethod, startLine);
