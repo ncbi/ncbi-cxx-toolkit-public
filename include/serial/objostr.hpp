@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/01/10 20:12:37  vasilche
+* Fixed duplicate argument names.
+* Fixed conflict between template and variable name.
+*
 * Revision 1.29  2000/01/10 19:46:32  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -166,7 +170,7 @@ public:
     virtual void WriteTypeName(const string& name);
 
     // try to write enum value name, false if none
-    virtual bool WriteEnum(const CEnumeratedTypeValues& value, long value);
+    virtual bool WriteEnum(const CEnumeratedTypeValues& values, long value);
 
     // std C types readers
     void WriteStd(const bool& data)

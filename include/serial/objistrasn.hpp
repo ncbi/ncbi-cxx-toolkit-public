@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/01/10 20:12:37  vasilche
+* Fixed duplicate argument names.
+* Fixed conflict between template and variable name.
+*
 * Revision 1.21  2000/01/10 19:46:31  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -179,7 +183,7 @@ protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member, const CMembers& members);
-    virtual void StartMember(Member& member, const CMemberId& member);
+    virtual void StartMember(Member& member, const CMemberId& id);
     virtual void StartMember(Member& member, LastMember& lastMember);
 	virtual void Begin(ByteBlock& block);
     int GetHexChar(void);

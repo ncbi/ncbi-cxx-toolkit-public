@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/01/10 20:12:36  vasilche
+* Fixed duplicate argument names.
+* Fixed conflict between template and variable name.
+*
 * Revision 1.9  2000/01/10 19:46:39  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -224,7 +228,7 @@ TTypeInfo CNullTypeInfo::GetTypeInfo(void)
     return typeInfo;
 }
 
-void CNullTypeInfo::CollectExternalObjects(COObjectList& list,
+void CNullTypeInfo::CollectExternalObjects(COObjectList& ,
                                            TConstObjectPtr object) const
 {
     if ( object != 0 ) {

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/01/10 20:12:37  vasilche
+* Fixed duplicate argument names.
+* Fixed conflict between template and variable name.
+*
 * Revision 1.15  2000/01/10 19:46:32  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -108,7 +112,7 @@ public:
     CObjectOStreamAsnBinary(CNcbiOstream& out);
     virtual ~CObjectOStreamAsnBinary(void);
 
-    virtual bool WriteEnum(const CEnumeratedTypeValues& value, long value);
+    virtual bool WriteEnum(const CEnumeratedTypeValues& values, long value);
 
     void WriteNull(void);
     void WriteByte(TByte byte);
