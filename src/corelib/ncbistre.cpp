@@ -38,6 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
+#if defined(NCBI_USE_OLD_IOSTREAM)  ||  defined(NCBI_OS_DARWIN)
 static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
                                    char delim, char delim2)
 {
@@ -87,6 +88,8 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
     is.flags(f);
     return is;
 }
+#endif  /* NCBI_USE_OLD_IOSTREAM || NCBI_OS_DARWIN */
+
 
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
@@ -95,7 +98,6 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 #else
     return s_NcbiGetline(is, str, delim, delim);
 #endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
-
 }
 
 
@@ -330,6 +332,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/05/18 04:28:18  vakatov
+ * Fix warning about "s_NcbiGetline()" being defined but not used sometimes
+ *
  * Revision 1.22  2003/03/31 21:34:01  ucko
  * s_NCBIGetline: avoid eating initial whitespace, and use portability macros.
  *
