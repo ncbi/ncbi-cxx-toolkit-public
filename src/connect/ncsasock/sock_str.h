@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:57:59  epstein
-* add RCS log revision history
+* Revision 1.3  1995/05/23 15:31:16  kans
+* new CodeWarrior 6 errors and warnings fixed
 *
+ * Revision 1.2  1995/05/17  17:57:59  epstein
+ * add RCS log revision history
+ *
  */
 
 /*
@@ -34,6 +37,10 @@
 #include <TCPPB.h>
 #include <UDPPB.h>
 #include <AddressXlation.h>
+
+#ifdef __MWERKS__
+typedef unsigned char byte;
+#endif
 
 #define TCPStateClosed		 0
 #define TCPStateListen		 2

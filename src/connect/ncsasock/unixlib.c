@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.4  1995/05/17 17:58:16  epstein
-* add RCS log revision history
+* Revision 1.5  1995/05/23 15:31:16  kans
+* new CodeWarrior 6 errors and warnings fixed
 *
+ * Revision 1.4  1995/05/17  17:58:16  epstein
+ * add RCS log revision history
+ *
  */
  
 #ifdef USEDUMP
@@ -150,6 +153,7 @@ char *getwd(where) char *where;
  */
 static int currentWD = 0;
 
+#ifndef __MWERKS__
 int chdir(pathName) char *pathName;
 {
 	WDPBRec pb;
@@ -209,6 +213,7 @@ int chdir(pathName) char *pathName;
 	
 	return(0);
 }
+#endif
 
 /*
  * Mac version of Unix system call gettimeofday. 
@@ -234,6 +239,7 @@ gettimeofday(tp,tzp) struct timeval *tp; struct timezone *tzp;
 		tzp->tz_minuteswest = 0;	/* minutes west of Greenwich */
 		tzp->tz_dsttime = 0;	/* no dst correction */
 	}
+	return(0);
 }
 
 #if 0
@@ -296,8 +302,8 @@ char *timezone(zone, dst)
 	register char *p, *q;
 	char *getenv(), *strchr();
 
-	if (p = getenv("TZNAME")) {
-		if (q = strchr(p, ',')) {
+	if ((p = getenv("TZNAME")) != NULL) {
+		if ((q = strchr(p, ',')) != NULL) {
 			if (dst)
 				return(++q);
 			else {
@@ -428,6 +434,7 @@ bfill( b, s, fill)
 {
 	for( ; s ; ++b, --s)
 		*b = fill;
+	return(0);
 }
 
 void bcopy (c1, c2, s)

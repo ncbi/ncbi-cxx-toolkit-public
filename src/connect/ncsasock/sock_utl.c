@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:58:02  epstein
-* add RCS log revision history
+* Revision 1.3  1995/05/23 15:31:16  kans
+* new CodeWarrior 6 errors and warnings fixed
 *
+ * Revision 1.2  1995/05/17  17:58:02  epstein
+ * add RCS log revision history
+ *
  */
 
 #ifdef USEDUMP
@@ -119,6 +122,7 @@ int sock_init()
 #if SOCK_UTIL_DEBUG >= 1
 	dprintf("sock_init: exiting.\n");
 #endif
+	return(0);
 }
 
 /*

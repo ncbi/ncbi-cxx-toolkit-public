@@ -14,7 +14,10 @@
  *
  * RCS Modification History:
  * $Log$
- * Revision 1.7  1995/05/18 08:23:16  epstein
+ * Revision 1.8  1995/05/23 15:31:16  kans
+ * new CodeWarrior 6 errors and warnings fixed
+ *
+ * Revision 1.7  1995/05/18  08:23:16  epstein
  * add RCS modification history (after PowerPC port)
  *
  */
@@ -603,6 +606,7 @@ int sock_tcp_recv(
 				return(sock_err(pb->ioResult));
 		}
 	}
+	return(0);
 }
 
 /*
@@ -640,6 +644,7 @@ void *sock_memset(void *s, int c, size_t n)
 	
 	for (; n > 0; n--, t++)
 		*t = c;
+	return((void *)0);
 }
 	
 

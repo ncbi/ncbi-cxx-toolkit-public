@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:58:06  epstein
-* add RCS log revision history
+* Revision 1.3  1995/05/23 15:31:16  kans
+* new CodeWarrior 6 errors and warnings fixed
 *
+ * Revision 1.2  1995/05/17  17:58:06  epstein
+ * add RCS log revision history
+ *
  */
 
 /*
@@ -419,6 +422,7 @@ int s_connect(
 		case IPPROTO_TCP:
 			return(sock_tcp_connect(sp,addr));
 	}
+	return(0);
 }
 
 /*
@@ -458,6 +462,7 @@ int s_listen(
 		case IPPROTO_TCP:
 			return(sock_tcp_listen(sp));
 	}
+	return(0);
 }
 
 /*
@@ -534,6 +539,7 @@ int s_accept(
 		case IPPROTO_TCP:
 			return(sock_tcp_accept(sp,addr,addrlen));
 	}
+	return(0);
 }
 
 /*
@@ -586,6 +592,7 @@ int s_accept_once(
 			return (returnCode ? returnCode : s );
 			}
 	}
+	return(0);
 }
 
 /*
@@ -771,6 +778,7 @@ int s_recvfrom(
 		case IPPROTO_TCP:
 			return(sock_tcp_recv(sp, buffer, buflen, flags));
 	}
+	return(0);
 }
 
 
@@ -991,6 +999,7 @@ int s_really_send(
 			return ( sock_tcp_send(sp, buffer, count,0 ));
 			break;
 		}
+	return(0);
 	}
 
 
@@ -1401,6 +1410,7 @@ int s_fcntl(
 			return(0);
 		}
 	}
+	return(0);
 }
 
 /*

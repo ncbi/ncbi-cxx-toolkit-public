@@ -14,7 +14,10 @@
  *
  * RCS Modification History:
  * $Log$
- * Revision 1.4  1995/05/18 08:23:12  epstein
+ * Revision 1.5  1995/05/23 15:31:16  kans
+ * new CodeWarrior 6 errors and warnings fixed
+ *
+ * Revision 1.4  1995/05/18  08:23:12  epstein
  * add RCS modification history (after PowerPC port)
  *
  */
@@ -145,7 +148,7 @@ StreamHashEntPtr 	shep;
 		
 	sp->sstate = SOCK_STATE_UNCONNECTED;
 	
-	if (shep = sock_new_shep(sp->stream))
+	if ((shep = sock_new_shep(sp->stream)) != NULL)
 		{
 		shep -> stream = sp->stream;
 		shep -> socket = sp;
