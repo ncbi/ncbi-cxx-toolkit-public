@@ -1,47 +1,33 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Ivanov
-*
-* File Description:
-*   Play around with the HTML library
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.3  2001/08/14 16:59:08  ivanov
-* Moved test for JavaScript popup menu in individual file "test_jsmenu"
-*
-* Revision 1.2  2001/07/16 13:57:43  ivanov
-* Added test for JavaScript popup menus (CHTMLPopupMenu).
-* Chanded application skeleton, now it based on CNCBIApplication.
-*
-* Revision 1.1  2001/06/08 19:05:27  ivanov
-* Initialization. Test application for html library
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Ivanov
+ *
+ * File Description:  Play around with the HTML library
+ *
+ */
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -74,7 +60,6 @@ static void s_TEST_SpecialChars(void)
     cout << endl;
     page.Print(cout, CNCBINode::ePlainText);
     cout << endl;
-
 }
 
 
@@ -122,6 +107,51 @@ static void s_TEST_Tags(void)
 }
 
 
+
+/////////////////////////////////
+// Table test
+//
+
+static void s_TEST_Table(void)
+{
+    cout << endl;
+
+    CHTMLPage page("Table test"); 
+
+    CHTML_table* table1 = new CHTML_table;
+    CHTML_table* table2 = new CHTML_table;
+
+    page.AppendChild(table1);
+    page.AppendChild(new CHTML_br);
+    page.AppendChild(table2);
+
+    table1->SetPlainSeparators("| "," | "," |",'-',CHTML_table::ePrintRowSep);
+
+    for ( unsigned row = 0; row < 12; ++row ) {
+        for ( unsigned col = 0; col < 4; ++col ) {
+             CHTML_tc* cell = table1->Cell(row, col, CHTML_table::eAnyCell, 1, 1 );
+             cell->AppendPlainText('@'+NStr::UIntToString(row)+','+NStr::UIntToString(col));
+        }
+    }
+
+    CHTML_tc* cell;
+    cell = table2->Cell(0, 0, CHTML_table::eAnyCell, 2, 1 );
+    cell->AppendPlainText("0,0 - 2x1");
+
+    cell = table2->Cell(1, 1, CHTML_table::eAnyCell, 1, 1 );
+    cell->AppendPlainText("1,1 - 1x1");
+
+    cell = table2->Cell(2, 2, CHTML_table::eAnyCell, 1, 1 );
+    cell->AppendPlainText("2,2 - 1x1");
+
+    cell = table2->Cell(4, 1, CHTML_table::eAnyCell, 1, 1 );
+    cell->AppendPlainText("4,1 - 1x1");
+
+    page.Print(cout, CNCBINode::ePlainText);
+    cout << endl;
+}
+
+
 ////////////////////////////////
 // Test application
 //
@@ -146,13 +176,11 @@ void CTestApplication::Init(void)
 int CTestApplication::Run(void)
 {
     cout << "---------------------------------------------" << endl;
-
     s_TEST_SpecialChars();
-
     cout << "---------------------------------------------" << endl;
-
     s_TEST_Tags();
-
+    cout << "---------------------------------------------" << endl;
+    s_TEST_Table();
     cout << "---------------------------------------------" << endl;
 
     return 0;
@@ -170,3 +198,23 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.4  2002/01/17 23:40:28  ivanov
+ * Added test to print HTML tables in plain text mode
+ *
+ * Revision 1.3  2001/08/14 16:59:08  ivanov
+ * Moved test for JavaScript popup menu in individual file "test_jsmenu"
+ *
+ * Revision 1.2  2001/07/16 13:57:43  ivanov
+ * Added test for JavaScript popup menus (CHTMLPopupMenu).
+ * Chanded application skeleton, now it based on CNCBIApplication.
+ *
+ * Revision 1.1  2001/06/08 19:05:27  ivanov
+ * Initialization. Test application for html library
+ *
+ * ===========================================================================
+ */
