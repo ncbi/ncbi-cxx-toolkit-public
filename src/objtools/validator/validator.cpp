@@ -354,6 +354,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_INST_UnexpectedIdentifierChange",
     "SEQ_INST_InternalNsInSeqLit",
     "SEQ_INST_SeqLitGapLength0",
+    "SEQ_INST_TpaAssmeblyProblem",
 
     "SEQ_DESCR_BioSourceMissing",
     "SEQ_DESCR_InvalidForType",
@@ -646,8 +647,11 @@ previous version of the record in the database.",
 //  SEQ_INST_InternalNsInSeqLit
 "There are runs of many Ns inside the SeqLit component of a delta Bioseq.",
 //  SEQ_INST_SeqLitGapLength0
-"A SeqLit component of a delta Bioseq can specify a gap, but it should " \
-"not be a gap of 0 length.",
+"A SeqLit component of a delta Bioseq can specify a gap, but it should \
+not be a gap of 0 length.",
+//  SEQ_INST_TpaAssmeblyProblem
+"Third party annotation records should have a TpaAssembly user object and a \
+Seq-hist.assembly alignment for the PRIMARY block.",
 
 /* SEQ_DESCR */
 
@@ -1139,6 +1143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/11/14 15:55:09  shomrat
+* added SEQ_INST_TpaAssemblyProblem
+*
 * Revision 1.33  2003/11/12 20:30:24  shomrat
 * added SEQ_FEAT_MultipleCdsOnMrna
 *
