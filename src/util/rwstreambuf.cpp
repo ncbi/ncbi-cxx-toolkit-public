@@ -186,8 +186,7 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     if ( !m_Reader )
         return 0;
-
-    _ASSERT(gptr()  ||  eback() == m_ReadBuf);
+    _ASSERT(!gptr()  ||  eback() == m_ReadBuf);
 
     if (!buf  ||  m <= 0)
         return 0;
@@ -206,18 +205,18 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     } else
         n_read = 0;
 
-    /* Do not even try to read directly if it
-     * can lead to waiting while we already have read at least some data.
-     */
-    if (n == 0  ||  (n_read > 0  &&  showmanyc() <= 0)) {
+    if (n == 0)
         return (streamsize) n_read;
-    }
 
-    CT_CHAR_TYPE* x_buf = gptr() && n < (size_t) m_BufSize ? m_ReadBuf : buf;
-    size_t       x_read = gptr() && n < (size_t) m_BufSize ? m_BufSize : n;
-    // read directly from device
-    m_Reader->Read(x_buf, x_read*sizeof(CT_CHAR_TYPE), &x_read);
-    if (x_read /= sizeof(CT_CHAR_TYPE)) {
+    do {
+        size_t       x_read = gptr() && n < (size_t)m_BufSize? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf = gptr() && n < (size_t)m_BufSize? m_ReadBuf : buf;
+        // read directly from device
+        ERW_Result   result = m_Reader->Read(x_buf,
+                                             x_read*sizeof(CT_CHAR_TYPE),
+                                             &x_read);
+        if (!(x_read /= sizeof(CT_CHAR_TYPE)))
+            break;
         // satisfy "usual backup condition", see standard: 27.5.2.4.3.13
         if (x_buf == m_ReadBuf) {
             size_t xx_read = x_read;
@@ -226,12 +225,17 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else if (gptr()) {
+            _ASSERT(x_read <= n);
             size_t xx_read = x_read > (size_t) m_BufSize ? m_BufSize : x_read;
             memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
-    }
-    return (streamsize)(n_read + x_read);
+        n      -= x_read;
+        n_read += x_read;
+        if (result != eRW_Success)
+            break;
+    } while ( n );
+    return (streamsize) n_read;
 }
 
 
@@ -269,6 +273,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2003/11/03 20:05:55  lavr
+ * CRWStreambuf::xsgetn() made standard-conforming
+ *
  * Revision 1.1  2003/10/22 18:10:41  lavr
  * Initial revision
  *
