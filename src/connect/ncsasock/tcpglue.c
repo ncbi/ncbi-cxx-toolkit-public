@@ -14,6 +14,9 @@
  *
  * RCS Modification History:
  * $Log$
+ * Revision 6.1  1997/12/12 22:39:24  kans
+ * DisposPtr now DisposePtr
+ *
  * Revision 6.0  1997/08/25 18:38:20  madden
  * Revision changed to 6.0
  *
@@ -248,7 +251,7 @@ OSErr xTCPRelease(
 	pb->csCode = TCPRelease;
 	io = xPBControlSync(pb);
 	if (io == noErr)
-		DisposPtr(pb->csParam.create.rcvBuff); /* there is no release pb */
+		DisposePtr(pb->csParam.create.rcvBuff); /* there is no release pb */
 	return(io);
 }
 
@@ -435,7 +438,7 @@ OSErr xUDPRelease(SocketPtr sp) {
 	pb->csCode = UDPRelease;
 	io = xPBControlSync( (TCPiopb *)pb );
 	if (io == noErr) {
-		DisposPtr(pb->csParam.create.rcvBuff);
+		DisposePtr(pb->csParam.create.rcvBuff);
 		}
 	return(io);
 	}

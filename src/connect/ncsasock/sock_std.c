@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1997/12/12 22:39:21  kans
+* DisposPtr now DisposePtr
+*
 * Revision 6.0  1997/08/25 18:38:04  madden
 * Revision changed to 6.0
 *
@@ -180,7 +183,7 @@ Ptr s_fdopen(
 	sp->outbuf = (char *)NewPtr(SOCK_IOOUTBUF_SIZE);
 	if (sp->outbuf == NULL) 
 	{
-		DisposPtr(sp->inbuf);
+		DisposePtr(sp->inbuf);
 		errno = ENOMEM;
 		return(NULL);
 	}
@@ -510,8 +513,8 @@ int s_fclose(
 	if (s_fflush(sp) == EOF) /* flush validates sp */
 		return(EOF);
 
-	if (sp->inbuf != NULL) DisposPtr(sp->inbuf);
-	if (sp->outbuf != NULL) DisposPtr(sp->outbuf);
+	if (sp->inbuf != NULL) DisposePtr(sp->inbuf);
+	if (sp->outbuf != NULL) DisposePtr(sp->outbuf);
 	
 	return(s_close(sp->fd));
 }

@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.1  1997/12/12 22:39:23  kans
+* DisposPtr now DisposePtr
+*
 * Revision 6.0  1997/08/25 18:38:12  madden
 * Revision changed to 6.0
 *
@@ -162,9 +165,9 @@ void sock_close_all()
 			sock_clear_fd(s);
 		}
 	}
-	DisposPtr((Ptr)sockets);
-	DisposPtr((Ptr)streams);
-	DisposPtr((Ptr)pbList);
+	DisposePtr((Ptr)sockets);
+	DisposePtr((Ptr)streams);
+	DisposePtr((Ptr)pbList);
 	
 	/* release name server resources */
 	(void) CloseResolver();
