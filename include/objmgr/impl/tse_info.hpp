@@ -140,7 +140,7 @@ private:
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_Info;
 
-    static pair<size_t, size_t> CTSE_Info::x_GetIndexRange(int annot_type,
+    static pair<size_t, size_t> x_GetIndexRange(int annot_type,
                                                            int feat_type);
     static size_t x_GetTypeIndex(int annot_type, int feat_type);
     static size_t x_GetTypeIndex(const SAnnotObject_Key& key);
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/07/18 16:57:52  rsmith
+* Do not leave redundant class qualifiers
+*
 * Revision 1.35  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
