@@ -54,8 +54,8 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddMasterProject   (const string& base_name);
-    void AddConfigureProject(const string& base_name);
+    void AddMasterProject   (const string& full_path);
+    void AddConfigureProject(const string& full_path);
 
     void SaveSolution(const string& file_path);
     
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/12 17:46:35  gorelenk
+ * Re-designed addition of utility projects.
+ *
  * Revision 1.6  2004/02/12 16:22:40  gorelenk
  * Changed generation of command line for custom build info.
  *
