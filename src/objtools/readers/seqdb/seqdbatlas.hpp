@@ -53,6 +53,7 @@
 
 BEGIN_NCBI_SCOPE
 
+/// CSeqDBAtlas class - a collection of memory maps.
 class CSeqDBAtlas; // WorkShop needs this forward declaration.
 
 
