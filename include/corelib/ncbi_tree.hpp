@@ -318,6 +318,7 @@ const TPairTree* PairTreeBackTraceNode(const TPairTree& tr,
     return 0;
 }
 
+
 /// Algorithm to trace the pair tree and find specified leaf along the node path
 /// 
 /// Algorithm always chooses the deepest leaf 
@@ -368,13 +369,22 @@ const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_pa
     return pfnd;
 }
 
+/// Tree traverse code returned by the traverse predicate function
+enum ETreeTraverseCode
+{
+    eTreeTraverse,           ///< Keep traversal
+    eTreeTraverseStop,       ///< Stop traversal (return form algorithm)
+    eTreeTraverseStepOver    ///< Do not traverse current node (pick the next one)
+};
+
+
 /// Depth-first tree traversal algorithm.
 ///
 /// Takes tree and visitor function and calls function for every 
 /// node in the tree.
 ///
 /// Functor should have the next prototype:
-/// bool Func(TreeNode& node, int delta_level)
+/// ETreeTraverseCode Func(TreeNode& node, int delta_level)
 ///  where node is a reference to the visited node and delta_level 
 ///  reflects the current traverse direction(depth wise) in the tree, 
 ///   0  - algorithm stays is on the same level
@@ -390,9 +400,17 @@ template<class TTreeNode, class Fun>
 Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
 {
     int delta_level = 0;
-    bool stop_scan = false;
+    ETreeTraverseCode stop_scan;
 
     stop_scan = func(tree_node, delta_level);
+    switch (stop_scan) {
+        case eTreeTraverseStop:
+        case eTreeTraverseStepOver:
+            return func;
+        case eTreeTraverse:
+            break;
+    }
+
     if (stop_scan)
         return func;
 
@@ -408,12 +426,19 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
 
     while (true) {
         tr = *it;
+        stop_scan = eTreeTraverse;
         if (tr) {
             stop_scan = func(*tr, delta_level);
-            if (stop_scan)
-                return func;
+            switch (stop_scan) {
+                case eTreeTraverseStop:
+                    return func;
+                case eTreeTraverse:
+                    break;
+            }
         }
-        if ((delta_level >= 0) && (!tr->IsLeaf())) {  // sub-node, going down
+        if ( (stop_scan != eTreeTraverseStepOver) &&
+             (delta_level >= 0) && 
+             (!tr->IsLeaf())) {  // sub-node, going down
             tree_stack.push(it);
             it = tr->SubNodeBegin();
             it_end = tr->SubNodeEnd();
@@ -434,6 +459,7 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
         }
         // same level 
         delta_level = 0;
+
     } // while
 
     func(tree_node, -1);
@@ -683,6 +709,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/01/14 17:38:05  kuznets
+ * TreeDepthFirstTraverse improved to support more traversal options
+ * (ETreeTraverseCode)
+ *
  * Revision 1.18  2004/01/14 17:02:32  kuznets
  * + PairTreeBackTraceNode
  *
