@@ -4,9 +4,13 @@
 # Build library "xstruct_util"
 #################################
 
-SRC =   struct_util \
-        su_alignment_set \
-        su_block_multiple_alignment \
-        su_sequence_set
+LIB     = xstruct_util
 
-LIB = xstruct_util
+ASN_DEP = seqset
+
+SRC     =   struct_util \
+            su_alignment_set \
+            su_block_multiple_alignment \
+            su_sequence_set
+
+
