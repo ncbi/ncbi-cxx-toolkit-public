@@ -545,6 +545,8 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         tool_exe_location = GetApp().GetDatatoolPathForApp();
     else if (prj.m_ProjType == CProjKey::eLib)
         tool_exe_location = GetApp().GetDatatoolPathForLib();
+    else if (prj.m_ProjType == CProjKey::eDll)
+        tool_exe_location = GetApp().GetDatatoolPathForApp();
     else
         return;
     //command line
@@ -603,6 +605,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/03/15 22:22:01  gorelenk
+ * Changed implementation of s_CreateDatatoolCustomBuildInfo.
+ *
  * Revision 1.26  2004/03/10 16:39:56  gorelenk
  * Changed LOG_POST inside CMsvcProjectGenerator::Generate.
  *
