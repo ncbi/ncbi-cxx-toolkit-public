@@ -713,6 +713,13 @@ evalue_compare_hsp_lists(VoidPtr v1, VoidPtr v2)
    h1 = *(BlastHSPListPtr PNTR) v1;
    h2 = *(BlastHSPListPtr PNTR) v2;
    
+   /* If any of the HSP lists is empty, it is considered "worse" than the 
+      other */
+   if (h1->hspcnt == 0)
+      return 1;
+   else if (h2->hspcnt == 0)
+      return -1;
+
    if (h1->hsp_array[0]->evalue < h2->hsp_array[0]->evalue)
       return -1;
    if (h1->hsp_array[0]->evalue > h2->hsp_array[0]->evalue)
@@ -723,6 +730,13 @@ evalue_compare_hsp_lists(VoidPtr v1, VoidPtr v2)
    if (h1->hsp_array[0]->score < h2->hsp_array[0]->score)
       return 1;
    
+   /* In case of equal best E-values and scores, order will be determined
+      by ordinal ids of the subject sequences */
+   if (h1->oid > h2->oid)
+      return -1;
+   if (h1->oid < h2->oid)
+      return 1;
+
    return 0;
 }
 
