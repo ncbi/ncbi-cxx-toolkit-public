@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  1999/05/24 13:57:55  pubmed
+* Save Command; MEDLINE, FASTA format changes
+*
 * Revision 1.39  1999/05/20 16:52:31  pubmed
 * SaveAsText action for query; minor changes in filters,labels, tabletemplate
 *
@@ -1213,7 +1216,6 @@ CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out << CHTMLHelper::GetNL()
-                   << "----------" 
                    << CHTMLHelper::GetNL();
     } else {
         return CHTML_hr_Base::PrintBegin(out,mode);
