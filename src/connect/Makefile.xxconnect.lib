@@ -13,3 +13,5 @@ SRC     = $(SRC_CXX)
 LIB     = xxconnect
 
 LIBS    = $(NETWORK_LIBS)
+
+DLL_LIB = xutil
