@@ -931,6 +931,13 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
             if (! m_MemFile) {
                 throw std::bad_alloc();
             }
+            
+            if ((m_Begin != 0) || (m_End != flength)) {
+                x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
+                atlas->PossiblyGarbageCollect(m_End - m_Begin);
+            }
+            
+            m_Data = (const char*) m_MemFile->Map(m_Begin, m_End - m_Begin);
         }
         catch(std::bad_alloc) {
             expt = "\nstd::bad_alloc.";
@@ -938,6 +945,9 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
         catch(CException & e) {
             // Make sure the string is not empty.
             expt = string("\n") + e.ReportAll();
+        }
+        catch(...) {
+            throw;
         }
         
         if (expt.length()) {
@@ -947,14 +957,7 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
             
             NCBI_THROW(CSeqDBException, eFileErr, expt);
         }
-        
-        if ((m_Begin != 0) || (m_End != flength)) {
-            x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
-            atlas->PossiblyGarbageCollect(m_End - m_Begin);
-        }
-        
-        m_Data = (const char*) m_MemFile->Map(m_Begin, m_End - m_Begin);
-        
+
         if (m_Data) {
             rv = true;
         } else {
