@@ -20,6 +20,10 @@ public:
         {
             return CBase::GetSeq_set();
         }
+    TSeq_set& SetSeq_set(void)
+        {
+            return CBase::SetSeq_set();
+        }
 };
 
 #endif // OBJECTS_SEQSET_BIOSEQ_SET_HPP

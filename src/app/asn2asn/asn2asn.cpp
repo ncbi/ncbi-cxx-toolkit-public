@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/03/07 14:10:52  vasilche
+* Fixed for reference counting.
+*
 * Revision 1.8  2000/02/17 20:07:18  vasilche
 * Generated class names now have 'C' prefix.
 *
@@ -126,6 +129,7 @@ void PrintUsage(void)
         "  -i  Filename for asn.1 input\n" <<
         "  -e  Input is a Seq-entry\n" <<
         "  -b  Input asnfile in binary mode\n" <<
+        "  -S  Skip value in file without reading it in memory (no write after)\n" <<
         "  -o  Filename for asn.1 output\n" <<
         "  -s  Output asnfile in binary mode\n" <<
         "  -l  Log errors to file named\n";
@@ -159,6 +163,7 @@ void SeqEntryProcess(CSeq_entry& sep);  /* dummy function */
 int CAsn2Asn::Run(void)
 {
     string inFile;
+    bool skip = false; 
     bool inSeqEntry = false;
     bool inBinary = false;
     string outFile;
@@ -189,6 +194,9 @@ int CAsn2Asn::Run(void)
                     break;
                 case 's':
                     outBinary = true;
+                    break;
+                case 'S':
+                    skip = true;
                     break;
                 case 'l':
                     logFile = StringArgument(GetArguments(), ++i);
@@ -264,20 +272,31 @@ int CAsn2Asn::Run(void)
     }
 
     if ( inSeqEntry ) { /* read one Seq-entry */
-        CSeq_entry entry;
-        *inObject >> entry;
-        SeqEntryProcess(entry);     /* do any processing */
-        if ( outObject.get() )
-            *outObject << entry;
+        if ( skip ) {
+            inObject->Skip(CSeq_entry::GetTypeInfo());
+        }
+        else {
+            CSeq_entry entry;
+            *inObject >> entry;
+            SeqEntryProcess(entry);     /* do any processing */
+            if ( outObject.get() )
+                *outObject << entry;
+        }
 	}
 	else {              /* read Seq-entry's from a Bioseq-set */
-        CBioseq_set entries;
-        *inObject >> entries;
-        iterate ( CBioseq_set::TSeq_set, i, entries.GetSeq_set() ) {
-            SeqEntryProcess(**i);     /* do any processing */
+        if ( skip ) {
+            inObject->Skip(CBioseq_set::GetTypeInfo());
         }
-        if ( outObject.get() )
-            *outObject << entries;
+        else {
+            CBioseq_set entries;
+            *inObject >> entries;
+            non_const_iterate ( CBioseq_set::TSeq_set, i,
+                                entries.SetSeq_set() ) {
+                SeqEntryProcess(**i);     /* do any processing */
+            }
+            if ( outObject.get() )
+                *outObject << entries;
+        }
 	}
 
     inObject.reset(0);
