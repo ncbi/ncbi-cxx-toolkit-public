@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/11/19 19:45:13  gouriano
+* added const qualifier to GetSkipTag/GetNotag functions
+*
 * Revision 1.12  2002/11/14 20:53:42  gouriano
 * added support of XML attribute lists
 *
@@ -128,10 +131,10 @@ public:
     const CMemberId& GetMemberId(void) const;
     void SetMemberId(const CMemberId& memberid);
 
-    void SetSkipTag(void);
-    bool GetSkipTag(void);
+    void SetSkipTag(bool set=true);
+    bool GetSkipTag(void) const;
     void SetNotag(bool set=true);
-    bool GetNotag(void);
+    bool GetNotag(void) const;
 
 private:
     friend class CObjectStack;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/11/19 19:45:13  gouriano
+* added const qualifier to GetSkipTag/GetNotag functions
+*
 * Revision 1.10  2002/11/14 20:53:41  gouriano
 * added support of XML attribute lists
 *
@@ -128,13 +131,13 @@ void CObjectStackFrame::SetMemberId(const CMemberId& memberid)
 }
 
 inline
-void CObjectStackFrame::SetSkipTag(void)
+void CObjectStackFrame::SetSkipTag(bool set)
 {
-    m_SkipTag = true;
+    m_SkipTag = set;
 }
 
 inline
-bool CObjectStackFrame::GetSkipTag(void)
+bool CObjectStackFrame::GetSkipTag(void) const
 {
     return m_SkipTag;
 }
@@ -145,7 +148,7 @@ void CObjectStackFrame::SetNotag(bool set)
     m_Notag = set;
 }
 inline
-bool CObjectStackFrame::GetNotag(void)
+bool CObjectStackFrame::GetNotag(void) const
 {
     return m_Notag;
 }
