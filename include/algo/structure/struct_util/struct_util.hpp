@@ -65,7 +65,8 @@ public:
     bool DoIBM(void);
 
     // do the leave-one-out (LOO) algorithm (implies IBM) using the block aligner.
-    // Numbering in these arguments starts from zero.
+    // Numbering in these arguments starts from zero. Note that this currently requires
+    // the file "data/BLOSUM62" to be present, used for PSSM calculation.
     bool DoLeaveOneOut(
         unsigned int row, const std::vector < unsigned int >& blocksToRealign,  // what to realign
         double percentile, unsigned int extension, unsigned int cutoff);        // to calculate max loop lengths
@@ -76,7 +77,7 @@ private:
     SequenceSet *m_sequenceSet;
 
     // alignment data - the idea is that since these are redundant, we'll either have the
-    // SeqAnnots+AlignmentSet or the BlockMultipleAlignment, not (necessarily) both. If one
+    // SeqAnnots+AlignmentSet or the BlockMultipleAlignment, not (usually) both. If one
     // changes, the other should be removed or recreated; if both are present, they must
     // contain the same data.
     SeqAnnotList m_seqAnnots;
@@ -98,6 +99,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/28 09:43:35  thiessen
+* add comment about data/BLOSUM62
+*
 * Revision 1.4  2004/05/26 14:30:53  thiessen
 * adjust handling of alingment data ; add row ordering
 *
