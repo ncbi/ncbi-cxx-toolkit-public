@@ -30,8 +30,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/05/18 20:41:43  lavr
+ * Beautifying: change log corrected
+ *
  * Revision 6.8  2001/05/18 19:52:24  lavr
- * Tircks in macros to keep Sun C compiler silent from warnings (details below)
+ * Tricks in macros to keep Sun C compiler silent from warnings (details below)
  *
  * Revision 6.7  2001/03/26 18:39:24  lavr
  * Casting to (unsigned char) instead of (int) for ctype char.class macros
