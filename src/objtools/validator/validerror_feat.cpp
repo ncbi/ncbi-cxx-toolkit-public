@@ -759,7 +759,8 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         ValidateCommonMRNAProduct(feat);
     }
 
-    if ( rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
+    if ( rna.IsSetExt()  &&
+	 rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.IsSetAnticodon () ) {
             ECompare comp = Compare(trna.GetAnticodon(), feat.GetLocation());
@@ -960,6 +961,9 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
             }
         }
         break;
+
+    default:
+        break;
     }// end of switch statement  
     
     // validate the feature's location
@@ -1106,6 +1110,9 @@ void CValidError_feat::ValidateImpGbquals
                     }
                 }
                 break;
+
+	    default:
+	        break;
             }
             if ( error ) {
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
@@ -1187,8 +1194,9 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
     }
 
     // biological exception
-    size_t except_num = sizeof(s_BypassMrnaTransCheck) / sizeof(string);
+    
     if ( feat.GetExcept()  &&  feat.IsSetExcept_text() ) {
+        size_t except_num = sizeof(s_BypassMrnaTransCheck) / sizeof(string);
         for ( size_t i = 0; i < except_num; ++i ) {
             if ( NStr::FindNoCase(feat.GetExcept_text(), 
                 s_BypassMrnaTransCheck[i]) != string::npos ) {
@@ -1198,19 +1206,22 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
     }
 
     CBioseq_Handle mr = m_Scope->GetBioseqHandle(feat.GetLocation());
-    if ( !mr ) {
+    CBioseq_Handle pr = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if ( !mr  ||  !pr ) {
         return;
     }
 
-    CBioseq_Handle pr = m_Scope->GetBioseqHandle(feat.GetProduct());
-
-    CSeqVector mrvec = mr.GetSeqVector();
-    CSeqVector prvec = pr.GetSeqVector();
+    CSeqVector mrvec = mr.GetSequenceView(feat.GetLocation(),
+        CBioseq_Handle::eViewMerged,
+        CBioseq_Handle::eCoding_Ncbi);
+    CSeqVector prvec = pr.GetSequenceView(feat.GetProduct(),
+        CBioseq_Handle::eViewMerged,
+        CBioseq_Handle::eCoding_Ncbi);
 
     if ( mrvec.size() != prvec.size() ) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
             "Transcript length [" + NStr::IntToString(mrvec.size()) + "] " +
-            "does not match product length [" + NStr::IntToString(mrvec.size()) +
+            "does not match product length [" + NStr::IntToString(prvec.size()) +
             "]", feat);
     } else if ( mrvec.size() > 0 ) {
         size_t mismatches = 0;
@@ -1254,12 +1265,16 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             bsh, 
             0, 0,
             CSeqFeatData::e_Rna,
-            CAnnot_CI::eOverlap_Intervals,
-            CFeat_CI::eResolve_TSE,
+            CAnnot_CI::eOverlap_TotalRange,
+            CFeat_CI::eResolve_None,
             CFeat_CI::e_Product);
-        if ( mrna  &&  (&(*mrna) != &feat) ) {
-            PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
-                "Same product Bioseq from multiple mRNA features", feat);
+        while ( mrna ) {
+            if ( (&(*mrna) != &feat) ) {
+                    PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
+                        "Same product Bioseq from multiple mRNA features", feat);
+                    break;
+            }
+            ++mrna;
         }
     }
 }
@@ -1409,9 +1424,12 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
-        eOverlap_Contained,
+        eOverlap_Simple,
         *m_Scope);
-    if ( gene ) {
+    // !!! temporary implementation. should use eOverlap_Contains in GetBest...
+    // this however is not yet supported.
+    int i = TestForOverlap(gene->GetLocation(), feat.GetLocation(), eOverlap_Contained);
+    if ( i >= 0 ) {
         return;
     }
 
@@ -1678,7 +1696,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     const CSeq_id& protid = GetId(product, m_Scope);
     bsh = m_Scope->GetBioseqHandle(protid);
 
-    CSeqVector prot_vec = bsh.GetSeqVector();
+    CSeqVector prot_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     size_t prot_len = prot_vec.size();
 
     if ( prot_len == 0 ) {
@@ -1926,7 +1944,7 @@ bool CValidError_feat::IsPartialAtSpliceSite
         // CSeqVector uses start and stop based on the strand.
     }
 
-    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
     TSeqPos len = vec.size();
 
     bool result = false;
@@ -2051,6 +2069,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/01/24 21:21:00  shomrat
+* Bug fixes in ValidateMrnaTrans & ValidateBadGeneOverlap
+*
 * Revision 1.6  2003/01/21 20:11:11  shomrat
 * Added check for RNA product mismatch
 *
