@@ -37,6 +37,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/12/29 17:45:07  lavr
+ * Heavily modified to have a stack of connectors
+ * VTable format changed; all virtual function now accept CONNECTOR as a
+ * first argument (not void* as in previous versions)
+ *
  * Revision 6.2  2000/04/07 19:59:49  vakatov
  * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
  * to "ncbi_connector.h"
@@ -59,7 +64,7 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
 
 
 /* Function type definitions for the connector method table.
- * The arguments & the behaviour of "FConnector***" functions are mostly just
+ * The arguments & the behavior of "FConnector***" functions are mostly just
  * the same as those for their counterparts "CONN_***"
  * (see in "ncbi_connection.h").
  * First argument of these functions accepts a real connector handle
@@ -67,33 +72,157 @@ typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
  */
 
 
-/* Get name of the connector(must not be NULL!)
+/* Get name of the connector (must not be NULL!)
  */
 typedef const char* (*FConnectorGetType)
-(void* connector
+(CONNECTOR       connector
  );
 
-
-/* Connect if not connected yet.
- * Reconnect with the same parameters as original connect if already connected.
+/* Open connection. Used to setup all related data structures,
+ * but not necessarily has to actually open the data channel.
  */
-typedef EIO_Status (*FConnectorConnect)
-(void*           connector,
+typedef EIO_Status (*FConnectorOpen)
+(CONNECTOR       connector,
  const STimeout* timeout
  );
 
 
-/* Wait until either read or write(dep. on the "direction" value) becomes
+/* Wait until either read or write (dep. on the "direction" value) becomes
  * available, or until "timeout" is expired, or until error occures.
- * NOTE 1: FConnectorWait is guaranteed to be called after FConnectorConnect,
- *         and only if FConnectorConnect returned "eIO_Success".
- * NOTE 2: "event" is guaranteed to be either "eIO_Read" or "eIO_Write"
+ * NOTE 1: FConnectorWait is guaranteed to be called after FConnectorOpen,
+ *         and only if FConnectorOpen returned "eIO_Success".
+ * NOTE 2: "event" is guaranteed to be either "eIO_Read" or "eIO_Write".
  */
 typedef EIO_Status (*FConnectorWait)
-(void*           connector,
+(CONNECTOR       connector,
  EIO_Event       event,
  const STimeout* timeout
  );
+
+
+/* The passed "n_written" always non-NULL, and "*n_written" always zero.
+ * It must return "eIO_Success" when (and only when) all requested data
+ * have been succefully written.
+ * It returns the # of succesfully written data (in bytes) in "*n_written".
+ * NOTE: FConnectorWrite is guaranteed to be called after FConnectorOpen,
+ *       and only if FConnectorOpen returned "eIO_Success".
+ */
+typedef EIO_Status (*FConnectorWrite)
+(CONNECTOR       connector,
+ const void*     buf,
+ size_t          size,
+ size_t*         n_written,
+ const STimeout* timeout
+ );
+
+
+/* Flush yet unwritten output data, if any.
+ * NOTE: FConnectorFlush is guaranteed to be called after FConnectorOpen,
+ *       and only if FConnectorOpen returned "eIO_Success".
+ */
+typedef EIO_Status (*FConnectorFlush)
+(CONNECTOR       connector,
+ const STimeout* timeout
+ );
+
+
+/* The passed "n_read" always non-NULL, and "*n_read" always zero.
+ * NOTE: FConnectorRead is guaranteed to be called after FConnectorOpen,
+ *       and only if FConnectorOpen returned "eIO_Success".
+ */
+typedef EIO_Status (*FConnectorRead)
+(CONNECTOR       connector,
+ void*           buf,
+ size_t          size,
+ size_t*         n_read,
+ const STimeout* timeout
+ );
+
+/* Obtain last I/O completion code from the transport level (connector).
+ * NOTE 1: FConnectorIOStatus is guaranteed to be called after FConnectorOpen,
+ *         and only if FConnectorOpen returned "eIO_Success".
+ * NOTE 2: "direction" is guaranteed to be either "eIO_Read" or "eIO_Write".
+ * NOTE 3: Should return "eIO_Success" in case of inexistent (incomplete)
+ *         low level transport, if any.
+ */
+typedef EIO_Status (*FConnectorIOStatus)
+(CONNECTOR connector,
+ EIO_Event direction
+ );
+          
+
+/* "FConnectorFlush" gets called before "FConnectorClose" automatically.
+ */
+typedef EIO_Status (*FConnectorClose)
+(CONNECTOR       connector,
+ const STimeout* timeout
+ );
+
+
+/* Standard set of connector functions to handle a connection
+ * (corresponding connectors are also here), part of CONNECTION.
+ */
+typedef struct {
+    FConnectorGetType   get_type;    CONNECTOR c_get_type;
+    FConnectorOpen      open;        CONNECTOR c_open;
+    FConnectorWait      wait;        CONNECTOR c_wait;
+#ifdef IMPLEMENTED__CONN_WaitAsync
+    FConnectorWaitAsync wait_async;  CONNECTOR c_wait_async;
+#endif
+    FConnectorWrite     write;       CONNECTOR c_write;
+    FConnectorFlush     flush;       CONNECTOR c_flush;
+    FConnectorRead      read;        CONNECTOR c_read;
+    FConnectorIOStatus  iostatus;    CONNECTOR c_iostatus;
+    FConnectorClose     close;       CONNECTOR c_close;
+    CONNECTOR           list;
+} SMetaConnector;
+
+
+#define CONN_TWO2ONE(a, b)   a##b
+
+#define CONN_SET_METHOD(meta, method, function, connector) \
+  do { \
+    meta->method = function; \
+    meta->CONN_TWO2ONE(c_,method) = connector; \
+  } while (0);
+
+
+extern EIO_Status METACONN_Add
+(SMetaConnector* meta,
+ CONNECTOR       connector
+ );
+
+
+extern EIO_Status METACONN_Remove
+(SMetaConnector* meta,
+ CONNECTOR       connector
+ );
+
+
+/* Upcall on request to setup virtual function table (e.g. from CONNECTION).
+ */
+typedef void (*FSetupVTable)
+(SMetaConnector* meta,
+ CONNECTOR       connector
+ );
+
+/* Destroy connector handle (NOT a close request!).
+ */
+typedef void (*FDestroy)
+(CONNECTOR       connector
+ );
+
+
+/* Connector specification.
+ */
+typedef struct SConnectorTag {
+    void*                 handle;    /* handle of the connector      */
+    CONNECTOR             next;      /* linked list                  */
+    SMetaConnector*       meta;      /* back link to CONNECTION      */
+    FSetupVTable          setup;     /* used in CONNECTION init      */
+    FDestroy              destroy;   /* destroys handle, can be NULL */
+} SConnector;
+
 
 #ifdef IMPLEMENTED__CONN_WaitAsync
 typedef struct {
@@ -108,87 +237,14 @@ typedef void (*FConnectorAsyncHandler)
 (SConnectorAsyncHandler* data,
  EIO_Event               event,
  EIO_Status              status
-);
+ );
 
 typedef EIO_Status (*FConnectorWaitAsync)
-(void*                   connector,
+(CONNECTOR               connector,
  FConnectorAsyncHandler  func,
  SConnectorAsyncHandler* data
  );
 #endif /* IMPLEMENTED__CONN_WaitAsync */
-
-
-/* The passed "n_written" always non-NULL, and "*n_written" always zero.
- * It must return Success status when(and only when) all requested data
- * have been succefully written.
- * It returns the # of succesfully written data(in bytes) in "*n_written".
- * NOTE: FConnectorWrite is guaranteed to be called after FConnectorConnect,
- *       and only if FConnectorConnect returned "eIO_Success".
- */
-typedef EIO_Status (*FConnectorWrite)
-(void*           connector,
- const void*     buf,
- size_t          size,
- size_t*         n_written,
- const STimeout* timeout
- );
-
-
-/* Flush yet unwritten output data, if any.
- * NOTE: FConnectorFlush is guaranteed to be called after FConnectorConnect,
- *       and only if FConnectorConnect returned "eIO_Success".
- */
-typedef EIO_Status (*FConnectorFlush)
-(void*           connector,
- const STimeout* timeout
- );
-
-
-/* The passed "n_read" always non-NULL, and "*n_read" always zero.
- * NOTE: FConnectorRead is guaranteed to be called after FConnectorConnect,
- *       and only if FConnectorConnect returned "eIO_Success".
- */
-typedef EIO_Status (*FConnectorRead)
-(void*           connector,
- void*           buf,
- size_t          size,
- size_t*         n_read,
- const STimeout* timeout
- );
-
-
-/* "FLUSH" method gets called before "CLOSE" automatically.
- * It must cleanup all internal structures and the connetctor handle itself
- * (that's why it accepts "CONNECTOR" rather than just "CONNECTOR"'s handle).
- */
-typedef EIO_Status (*FConnectorClose)
-(CONNECTOR       connector,
- const STimeout* timeout
- );
-
-
-/* Standard set of connector functions to handle a connection
- */
-typedef struct {
-  FConnectorGetType    get_type;
-  FConnectorConnect    connect;
-  FConnectorWait       wait;
-#ifdef IMPLEMENTED__CONN_WaitAsync
-  FConnectorWaitAsync  wait_async;
-#endif
-  FConnectorWrite      write;
-  FConnectorFlush      flush;
-  FConnectorRead       read;
-  FConnectorClose      close;
-} SConnectorVTable;
-
-
-/* Connector specification
- */
-typedef struct SConnectorTag {
-  void*            handle;  /* handle of the connector    */
-  SConnectorVTable vtable;  /* operations on the "handle" */
-} SConnector;
 
 
 #ifdef __cplusplus
