@@ -181,7 +181,7 @@ bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
         try {
             CBioseq_Handle hnd1 = scope->GetBioseqHandle(id1);
             CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2);
-            return hnd1  &&  (hnd1 == hnd2);
+            return hnd1  &&  hnd2  &&  (hnd1 == hnd2);
         } catch (runtime_error& e) {
             ERR_POST(e.what() << ": CSeq_id1: " << id1.DumpAsFasta()
                      << ": CSeq_id2: " << id2.DumpAsFasta());
@@ -1958,7 +1958,8 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
                 
                 if (itv.IsSetFuzz_to()) {
                     const CInt_fuzz& fuzz = itv.GetFuzz_to();
-                    CInt_fuzz::ELim lim = fuzz.GetLim();
+                    CInt_fuzz::ELim lim = fuzz.IsLim() ? 
+                        fuzz.GetLim() : CInt_fuzz::eLim_unk;
                     if (lim == CInt_fuzz::eLim_lt) {
                         retval |= eSeqlocPartial_Limwrong;
                     } else if (lim == CInt_fuzz::eLim_gt  ||
@@ -2922,6 +2923,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.51  2003/05/15 19:27:02  shomrat
+* Compare handle only if both valid; Check IsLim before GetLim
+*
 * Revision 1.50  2003/05/09 15:37:00  ucko
 * Take const CBioseq_Handle references in CFastaOstream::Write et al.
 *
