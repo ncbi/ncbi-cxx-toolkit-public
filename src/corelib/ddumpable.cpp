@@ -20,22 +20,24 @@
  *  warranties of performance, merchantability or fitness for any particular
  *  purpose.
  *
- *  Please say you saw it at NCBI
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Andrei Gourianov
  *
  * File Description:
- *   Abstract base class: defines DebugDump() functionality
+ *      Debug Dump functionality
  *
  */
 
 #include <corelib/ddumpable.hpp>
-#include <corelib/ddump_formatter_text.hpp>
-
 
 BEGIN_NCBI_SCOPE
+
+
+//---------------------------------------------------------------------------
+//  CDebugDumpable defines DebugDump() functionality (abstract base class)
 
 bool CDebugDumpable::sm_DumpEnabled = true;
 
@@ -69,12 +71,257 @@ void CDebugDumpable::DebugDumpFormat(CDebugDumpFormatter& ddf,
 }
 
 
+//---------------------------------------------------------------------------
+//  CDebugDumpContext provides client interface in the form [name=value]
+
+CDebugDumpContext::CDebugDumpContext(
+    CDebugDumpFormatter& formatter, const string& bundle)
+    : m_Parent(*this), m_Formatter(formatter), m_Title(bundle)
+{
+    m_Level = 0;
+    m_Start_Bundle = true;
+    m_Started = false;
+}
+
+CDebugDumpContext::CDebugDumpContext(CDebugDumpContext& ddc)
+    : m_Parent(ddc), m_Formatter(ddc.m_Formatter)
+{
+    m_Parent.x_VerifyFrameStarted();
+    m_Level = m_Parent.m_Level+1;
+    m_Start_Bundle = false;
+    m_Started = false;
+}
+
+CDebugDumpContext::CDebugDumpContext(CDebugDumpContext& ddc,
+    const string& bundle)
+    : m_Parent(ddc), m_Formatter(ddc.m_Formatter), m_Title(bundle)
+{
+    m_Parent.x_VerifyFrameStarted();
+    m_Level = m_Parent.m_Level+1;
+    m_Start_Bundle = true;
+    m_Started = false;
+}
+
+CDebugDumpContext::~CDebugDumpContext(void)
+{
+    if (&m_Parent == this) {
+        return;
+    }
+    x_VerifyFrameStarted();
+    x_VerifyFrameEnded();
+    if (m_Level == 1) {
+        m_Parent.x_VerifyFrameEnded();
+    }
+}
+
+
+void CDebugDumpContext::SetFrame(const string& frame)
+{
+    if (m_Started) {
+        return;
+    }
+    if (m_Start_Bundle) {
+        m_Started = m_Formatter.StartBundle( m_Level, m_Title);
+    } else {
+        m_Title = frame;
+        m_Started = m_Formatter.StartFrame( m_Level, m_Title);
+    }
+}
+
+
+void CDebugDumpContext::Log(const string& name, const string& value,
+    bool is_string, const string& comment)
+{
+    x_VerifyFrameStarted();
+    if (m_Started) {
+        m_Formatter.PutValue(m_Level, name, value, is_string, comment);
+    }
+}
+
+
+void CDebugDumpContext::Log(const string& name, bool value,
+    const string& comment)
+{
+    Log(name, NStr::BoolToString(value), false, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, long value,
+    const string& comment)
+{
+    Log(name, NStr::IntToString(value), false, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, unsigned long value,
+    const string& comment)
+{
+    Log(name, NStr::UIntToString(value), false, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, double value,
+    const string& comment)
+{
+    Log(name, NStr::DoubleToString(value), false, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, const void* value,
+    const string& comment)
+{
+    Log(name, NStr::PtrToString(value), false, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, const CDebugDumpable* value,
+    unsigned int depth)
+{
+    if ((depth != 0) && value) {
+        CDebugDumpContext ddc(*this,name);
+        value->DebugDump(ddc, depth-1);
+    } else {
+        Log(name, static_cast<const void*>(value));
+    }
+}
+
+void CDebugDumpContext::x_VerifyFrameStarted(void)
+{
+    SetFrame(m_Title);
+}
+
+void CDebugDumpContext::x_VerifyFrameEnded(void)
+{
+    if (!m_Started) {
+        return;
+    }
+    if (m_Start_Bundle) {
+        m_Formatter.EndBundle(m_Level, m_Title);
+    } else {
+        m_Formatter.EndFrame(m_Level, m_Title);
+    }
+    m_Started = false;
+}
+
+
+//---------------------------------------------------------------------------
+//  CDebugDumpFormatterText defines text debug dump formatter class
+
+CDebugDumpFormatterText::CDebugDumpFormatterText(ostream& out)
+    : m_Out(out)
+{
+}
+
+CDebugDumpFormatterText::~CDebugDumpFormatterText(void)
+{
+}
+
+bool CDebugDumpFormatterText::StartBundle(unsigned int level,
+    const string& bundle)
+{
+    if (level == 0) {
+        x_InsertPageBreak(bundle);
+    } else {
+        m_Out << endl;
+        x_IndentLine(level);
+        m_Out << (bundle.empty() ? "?" : bundle.c_str()) << " = {";
+    }
+    return true;
+}
+
+
+void CDebugDumpFormatterText::EndBundle(  unsigned int level,
+    const string& /*bundle*/)
+{
+    if (level == 0) {
+        x_InsertPageBreak();
+        m_Out << endl;
+    } else {
+        m_Out << endl;
+        x_IndentLine(level);
+        m_Out << "}";
+    }
+}
+
+
+bool CDebugDumpFormatterText::StartFrame(unsigned int level,
+    const string& frame)
+{
+    m_Out << endl;
+    x_IndentLine(level);
+    m_Out << (frame.empty() ? "?" : frame.c_str()) << " {";
+    return true;
+}
+
+
+void CDebugDumpFormatterText::EndFrame( unsigned int level,
+    const string& /*frame*/)
+{
+    m_Out << " }";
+}
+
+
+void CDebugDumpFormatterText::PutValue(unsigned int level,
+    const string& name, const string& value,
+    bool is_string, const string& comment)
+{
+    m_Out << endl;
+    x_IndentLine(level+1);
+    m_Out << name << " = " <<
+        (is_string ? "\"" : "") << value <<
+        (is_string ? "\"" : "");
+    if (!comment.empty()) {
+        m_Out << " (" << comment << ")";
+    }
+}
+
+
+
+void CDebugDumpFormatterText::x_IndentLine(
+    unsigned int level, char c, int len)
+{
+    string tmp;
+    for (int i=1; i<level; ++i) {
+        for (int l=0; l<len; ++l) {
+            tmp+=c;
+        }
+    }
+    m_Out << tmp;
+}
+
+void CDebugDumpFormatterText::x_InsertPageBreak(
+    const string& title, char c, int len)
+{
+    m_Out << endl;
+    string tmp;
+    if (!title.empty()) {
+        int i1 = (len - title.length() - 2)/2;
+        int l;
+        for (l=0; l<i1; ++l) {
+            tmp+=c;
+        }
+        tmp += " " + title + " ";
+        for (l=0; l<i1; ++l) {
+            tmp+=c;
+        }
+    } else {
+        for (int l=0; l<len; ++l) {
+            tmp+=c;
+        }
+    }
+    m_Out << tmp;
+}
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/05/28 17:59:24  gouriano
+ * all DebugDump-related classes were put in one header
+ * templates adjusted and debugged on multiple platforms
+ *
  * Revision 1.1  2002/05/17 14:27:11  gouriano
  * added DebugDump base class and function to CObject
  *
