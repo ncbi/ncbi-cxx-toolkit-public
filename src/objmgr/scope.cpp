@@ -159,6 +159,17 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 }
 
 
+CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
+{
+    iterate (CBioseq::TId, id, seq.GetId()) {
+      CBioseq_Handle bsh = GetBioseqHandle (**id);
+      return bsh;
+    }
+
+    NCBI_THROW(CException, eUnknown, "GetBioseqHandle from bioseq failed");
+}
+
+
 void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
                        const string& searchBy) const
 {
@@ -397,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/11/01 05:34:32  kans
+* added GetBioseqHandle taking CBioseq parameter
+*
 * Revision 1.32  2002/10/31 22:25:42  kans
 * added GetBioseqHandle taking CSeq_loc parameter
 *

@@ -93,6 +93,10 @@ public:
     // Get bioseq handle by seqloc
     CBioseq_Handle  GetBioseqHandle(const CSeq_loc& loc);
 
+    // Get bioseq handle by bioseq
+    CBioseq_Handle  GetBioseqHandle(const CBioseq& seq);
+
+
     // Find set of CSeq_id by a string identifier
     // The latter could be name, accession, something else
     // which could be found in CSeq_id
@@ -173,6 +177,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/11/01 05:34:06  kans
+* added GetBioseqHandle taking CBioseq parameter
+*
 * Revision 1.23  2002/10/31 22:25:09  kans
 * added GetBioseqHandle taking CSeq_loc parameter
 *
