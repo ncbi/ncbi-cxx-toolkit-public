@@ -107,7 +107,6 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
         }
     }
 
-    sbp->kbp_gap = sbp->kbp_gap_std;
     return 0;
 }
 
@@ -483,26 +482,21 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
        }
     }
 
-    /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
+    /* Set Blast_KarlinBlk* aliases, please keep these in one place! */
+    sbp->kbp = sbp->kbp_std;
+    if (scoring_options->gapped_calculation) {
+       sbp->kbp_gap = sbp->kbp_gap_std;
+    }
+
+    /* Get "ideal" values for these programs because the actual values were
+     * calculated using translated sequences */
     if (program_number == eBlastTypeBlastx ||
         program_number == eBlastTypeTblastx ||
         program_number == eBlastTypeRpsTblastn) {
-        /* Adjust the ungapped Karlin parameters */
-        sbp->kbp = sbp->kbp_std;
-        Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
-                                    query_info->last_context);
-        /* Adjust the gapped Karlin parameters, if it is a gapped search */
-        if (scoring_options->gapped_calculation) {
-           sbp->kbp = sbp->kbp_gap_std;
-          Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
-                                       query_info->last_context);
-        }
+        Blast_ReplaceUngappedKbpWithIdealKbp(sbp, 
+                                             query_info->first_context, 
+                                             query_info->last_context);
     }
-
-    /* Why are there so many Karlin block names?? */
-    sbp->kbp = sbp->kbp_std;
-    if (scoring_options->gapped_calculation)
-       sbp->kbp_gap = sbp->kbp_gap_std;
 
     return 0;
 }
