@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/04/27 16:48:44  vakatov
+* Rollback of the buggy "optimization" in CHTMLPage::CreateTemplate()
+*
 * Revision 1.12  1999/04/26 21:59:31  vakatov
 * Cleaned and ported to build with MSVC++ 6.0 compiler
 *
@@ -149,14 +152,15 @@ void CHTMLPage::CreateSubNodes(void)
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
-    string        str;  
-    char          buf[1024];
-    CNcbiIfstream ifstr(m_TemplateFile.c_str());
+    string input;  
+    char ch;
 
-    while ( ifstr.read(buf, sizeof(buf)) )
-        str.append(buf, ifstr.gcount());
+    CNcbiIfstream inFile(m_TemplateFile.c_str());
+
+    while( inFile.get(ch))
+        input += ch;
     
-    return new CHTMLText(str);
+    return new CHTMLText(input);
 }
 
 CNCBINode* CHTMLPage::CreateTitle(void) 
