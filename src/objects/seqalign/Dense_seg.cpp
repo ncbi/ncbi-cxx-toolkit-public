@@ -177,7 +177,7 @@ void CDense_seg::Validate(bool full_test) const
     if (full_test) {
         const size_t  max     = numrows * (numsegs -1);
 
-        bool strands_exist = strands.size();
+        bool strands_exist = !strands.empty();
 
         size_t numseg = 0, numrow = 0, offset = 0;
         for (numrow = 0;  numrow < numrows;  numrow++) {
@@ -296,6 +296,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/09/25 17:50:14  dicuccio
+* Changed testing of STL container size to use empty() and avoid warning on MSVC
+*
 * Revision 1.4  2003/09/16 15:31:14  todorov
 * Added validation methods. Added seq range methods
 *
