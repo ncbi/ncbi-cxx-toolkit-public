@@ -93,7 +93,6 @@ public:
         {
             return Select((unsigned long)a/sizeof(A));
         }
-
 #else
     CMutexPool(void)
         {
@@ -199,8 +198,8 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
- * Revision 1.1  2003/12/18 17:27:49  kuznets
- * Code reorganization (relocation).
+ * Revision 1.2  2003/12/30 22:14:39  vasilche
+ * Updated genbank loader and readers plugins.
  *
  * Revision 1.2  2003/12/02 00:08:15  vasilche
  * Fixed segfault in multithreaded apps.

@@ -6,7 +6,7 @@ REQUIRES = dbapi
 
 APP = test_objmgr_gbloader
 SRC = test_objmgr_gbloader
-LIB = $(OBJMGR_LIBS)
+LIB = $(NOBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

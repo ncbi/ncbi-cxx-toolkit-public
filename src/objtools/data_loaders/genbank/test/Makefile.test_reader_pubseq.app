@@ -11,7 +11,7 @@ REQUIRES = dbapi
 APP = test_reader_pubseq
 SRC = test_reader_pubseq
 
-LIB = $(OBJMGR_LIBS)
+LIB = ncbi_xreader_pubseqos dbapi_driver $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
 
-LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(DL_LIBS) $(ORIG_LIBS)
 

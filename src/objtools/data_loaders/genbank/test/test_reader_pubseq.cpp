@@ -30,7 +30,6 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
-#include <objmgr/impl/seqref_pubseq.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
@@ -68,6 +67,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.3  2003/12/30 22:14:45  vasilche
+* Updated genbank loader and readers plugins.
+*
 * Revision 1.2  2003/12/23 14:16:57  kuznets
 * Fixed include path
 *

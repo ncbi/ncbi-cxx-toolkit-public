@@ -863,7 +863,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         LOG_POST("No seq-id found");
         return;
     }
-
     handle.GetTopLevelSeqEntry();
 #if 0 // build order issues
     CHECK_WRAP();
@@ -1333,6 +1332,26 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     _ASSERT(count == seq_alignrg_cnt);
     _ASSERT(annot_set.size() == alignrg_annots_cnt);
     CHECK_END("get align set");
+#if !defined(_MT)
+    CHECK_WRAP();
+    CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
+        handle.GetBioseq().GetParentEntry()));
+    CSeq_entry* parent = entry->GetParentEntry();
+    scope.RemoveEntry(*entry);
+    handle = scope.GetBioseqHandle(id);
+    _ASSERT(!handle  ||  handle.GetBioseq().GetParentEntry() != entry);
+    if ( parent ) {
+        // Non-TSE
+        scope.AttachEntry(*parent, *entry);
+    }
+    else {
+        // TSE
+        scope.AddTopLevelSeqEntry(*entry);
+    }
+    handle = scope.GetBioseqHandle(id);
+    _ASSERT(handle);
+    CHECK_END_ALWAYS("remove/attach seq-entry");
+#endif
 }
 
 
@@ -1383,8 +1402,17 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.1  2003/12/16 17:51:16  kuznets
-* Code reorganization
+* Revision 1.2  2003/12/30 22:14:45  vasilche
+* Updated genbank loader and readers plugins.
+*
+* Revision 1.49  2003/12/22 22:32:10  grichenk
+* Enabled RemoveEntry/AttachEntry test in non-MT builds.
+*
+* Revision 1.48  2003/12/18 18:14:47  grichenk
+* Removed test for CScope::RemoveEntry() since it breaks MT test.
+*
+* Revision 1.47  2003/12/18 16:38:07  grichenk
+* Added CScope::RemoveEntry()
 *
 * Revision 1.46  2003/11/10 18:12:09  grichenk
 * Removed extra EFlags declaration from seq_map_ci.hpp

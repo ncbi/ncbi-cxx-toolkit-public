@@ -30,7 +30,6 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
-#include <objmgr/impl/seqref_id1.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
 #include <connect/ncbi_util.h>
@@ -73,6 +72,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.2  2003/12/30 22:14:45  vasilche
+* Updated genbank loader and readers plugins.
+*
 * Revision 1.1  2003/12/16 17:51:22  kuznets
 * Code reorganization
 *

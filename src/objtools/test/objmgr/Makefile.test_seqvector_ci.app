@@ -10,7 +10,7 @@ REQUIRES = dbapi
 
 APP = test_seqvector_ci
 SRC = test_seqvector_ci
-LIB = $(OBJMGR_LIBS)
+LIB = $(NOBJMGR_LIBS)
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
