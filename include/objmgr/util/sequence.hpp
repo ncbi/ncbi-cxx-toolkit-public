@@ -96,10 +96,44 @@ enum EGetIdType {
     eGetId_Default = eGetId_Best
 };
 
+
+/// Return a selected ID type for a given bioseq handle.  This function
+/// will try to use the most efficient method possible to determine which
+/// ID fulfills the requested parameter.  This version will call
+/// sequence::GetId() with the bioseq handle's seq-id.
+///
+/// @param id Source id to evaluate
+/// @param scope Scope for seq-id resolution.
+/// @param type Type of ID to return
+/// @return A requested seq-id.  This function will throw an exception of type
+///  CSeqIdFromHandleException if the request cannot be satisfied.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CBioseq_Handle& handle,
                      EGetIdType type = eGetId_Default);
 
+/// Return a selected ID type for a given bioseq handle.  This function
+/// will try to use the most efficient method possible to determine which
+/// ID fulfills the requested parameter.  The following logic is used:
+///
+/// - For seq-id type eGetId_HandleDefault, the original seq-id is returned.
+///   This satisfies the condition of returning a bioseq-handle's seq-id if
+///   sequence::GetId() is applied to a CBioseq_Handle.
+///
+/// - For seq-id type eGetId_ForceAcc, the returned set of seq-ids will first
+///   be evaluated for a "best" id (which, given seq-id scoring, will be
+///   a textseq-id if one exists).  If the returned best ID is a textseq-id,
+///   this id will be returned.  Otherwise, an exception is thrown.
+///
+/// - For seq-id type eGetId_ForceGi, the returned set of IDs is scanned for
+///   an ID of type gi.  If this is found, it is returned; otherwise, an
+///   exception is thrown.  If the supplied ID is already a gi, no work is
+///   done.
+///
+/// @param id Source id to evaluate
+/// @param scope Scope for seq-id resolution.
+/// @param type Type of ID to return
+/// @return A requested seq-id.  This function will throw an exception of type
+///  CSeqIdFromHandleException if the request cannot be satisfied.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_id& GetId(const CSeq_id& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
@@ -614,6 +648,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.56  2005/01/04 14:51:09  dicuccio
+* Improved documentation for sequence::GetId(CBioseq_Handle, ...) and
+* sequence::GetId(const CSeq_id&, ...)
+*
 * Revision 1.55  2004/12/09 18:09:14  shomrat
 * Changes to CSeqSearch
 *
