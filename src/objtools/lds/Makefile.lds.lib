@@ -3,8 +3,6 @@
 # Build library "lds"
 ###############################
 
-REQUIRES = bdb
-
 LIB = lds
 SRC = lds lds_reader lds_query
 
