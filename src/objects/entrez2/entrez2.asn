@@ -1,4 +1,4 @@
---$Revision: 1.9 $********************************************
+--$Revision: 1.10 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -204,7 +204,9 @@ Entrez2-db-info ::= SEQUENCE {          -- info for one database
   field-count INTEGER ,                 -- number of field types
   fields SEQUENCE OF Entrez2-field-info,
   link-count INTEGER ,                  -- number of link types
-  links SEQUENCE OF Entrez2-link-info }
+  links SEQUENCE OF Entrez2-link-info,
+  docsum-field-count INTEGER,
+  docsum-fields SEQUENCE OF Entrez2-docsum-field-info }
 
 Entrez2-field-info ::= SEQUENCE {       -- info about one field
   field-name Entrez2-field-id ,         -- the internal name
@@ -223,6 +225,17 @@ Entrez2-link-info ::= SEQUENCE {        -- info about one link
   db-to Entrez2-db-id ,                 -- database it links to
   data-size INTEGER OPTIONAL }          -- size of link data element    
 
+Entrez2-docsum-field-type ::= INTEGER {
+  string (1) ,
+  int    (2) ,
+  float  (3) ,
+  date-pubmed (4) }
+
+Entrez2-docsum-field-info ::= SEQUENCE {
+  field-name VisibleString,
+  field-description VisibleString,
+  field-type Entrez2-docsum-field-type }
+
 Entrez2-boolean-reply ::= SEQUENCE {
   count INTEGER ,                       -- records hit
   uids Entrez2-id-list OPTIONAL,        -- if uids requested
@@ -234,26 +247,12 @@ Entrez2-docsum-list ::= SEQUENCE {
 
 Entrez2-docsum ::= SEQUENCE {
   uid INTEGER ,                         -- primary uid (gi, pubmedid)
-  secondary-uid INTEGER OPTIONAL,       -- eg medline uid
-  caption VisibleString OPTIONAL,
-  title VisibleString OPTIONAL,
-  short-citation VisibleString OPTIONAL,-- citation, Seq-id (extra)
-  entrez-date Entrez2-dt,               -- date indexed
-  language VisibleString OPTIONAL,      -- default is English
-  create-date VisibleString OPTIONAL,   -- source create date
-  update-date VisibleString OPTIONAL,   -- source update date
-  seqlen INTEGER OPTIONAL,              -- sequence length
-  author VisibleString OPTIONAL,        -- first author
-  source VisibleString OPTIONAL,        -- journal
-  volume VisibleString OPTIONAL,
-  pages VisibleString OPTIONAL,
-  pub-type VisibleString OPTIONAL,
-  record-status VisibleString OPTIONAL,
-  no-abstract BOOLEAN OPTIONAL,         -- no abstract in system
-  translated-title BOOLEAN OPTIONAL,    -- real title not English
-  no-authors BOOLEAN OPTIONAL,          -- no authors listed
-  taxid INTEGER OPTIONAL  }             -- Taxonomy ID
-  
+  docsum-data SEQUENCE OF Entrez2-docsum-data }
+
+Entrez2-docsum-data::= SEQUENCE {
+  field-name VisibleString,
+  field-value VisibleString }
+
 Entrez2-term-list ::= SEQUENCE {
   pos INTEGER,                          -- position of first term in list
   num INTEGER,                          -- number of terms in list
@@ -294,4 +293,5 @@ Entrez2-link-count ::= SEQUENCE {        -- link count of one type
   link-count INTEGER }
 
 END
+
 
