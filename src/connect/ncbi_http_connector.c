@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/12/30 19:41:07  lavr
+ * Process error codes 301 and 302 (document moved) and reissue HTTP request
+ *
  * Revision 6.17  2001/09/28 20:48:23  lavr
  * Comments revised; parameter (and SHttpConnector's) names adjusted
  * Retry logic moved entirely into s_Adjust()
@@ -97,6 +100,7 @@
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -138,15 +142,27 @@ typedef struct {
 } SHttpConnector;
 
 
-static int/*bool*/ s_Adjust(SHttpConnector* uuu)
+static int/*bool*/ s_Adjust(SHttpConnector* uuu, char** redirect)
 {
     /* we're here because something is going wrong */
-    if (++uuu->failure_count >= uuu->net_info->max_try)
-        return 0;
-    /* adjust info before another connection attempt */
-    if (!uuu->adjust_net_info || !(*uuu->adjust_net_info)
-        (uuu->net_info, uuu->adjust_data, uuu->failure_count))
+    if (++uuu->failure_count >= uuu->net_info->max_try) {
+        if (*redirect) {
+            free(*redirect);
+            *redirect = 0;
+        }
         return 0/*false*/;
+    }
+    /* adjust info before another connection attempt */
+    if (*redirect) {
+        int status = ConnNetInfo_ParseURL(uuu->net_info, *redirect);
+        free(*redirect);
+        *redirect = 0;
+        if (!status)
+            return 0/*false*/;
+    } else if (!uuu->adjust_net_info || !(*uuu->adjust_net_info)
+               (uuu->net_info, uuu->adjust_data, uuu->failure_count))
+        return 0/*false*/;
+
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
 
     if (uuu->net_info->debug_printout)
@@ -243,6 +259,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
 
     /* the re-try loop... */
     for (;;) {
+        char* null = 0;
+
         /* connect & send HTTP header */
         uuu->sock = URL_Connect
             (uuu->net_info->host, uuu->net_info->port, uuu->net_info->path,
@@ -264,7 +282,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
             return eIO_Success;
         }
 
-        if (!s_Adjust(uuu))
+        if (!s_Adjust(uuu, &null))
             break;
     }
 
@@ -283,6 +301,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
     EIO_Status status;
 
     for (;;) {
+        char* null = 0;
         size_t size;
 
         if ((status = s_Connect(uuu)) != eIO_Success)
@@ -322,7 +341,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
         /* write failed, close socket and try to use another server */
         SOCK_Close(uuu->sock);
         uuu->sock = 0;
-        if (!s_Adjust(uuu))
+        if (!s_Adjust(uuu, &null))
             break;
     }
 
@@ -335,12 +354,13 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
 
 
 /* Parse HTTP header */
-static EIO_Status s_ReadHeader(SHttpConnector* uuu)
+static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
 {
-    int/*bool*/ server_error = 0/*false*/;
-    EIO_Status  status;
+    int/*bool*/ server_error = 0/*false*/, moved = 0/*false*/;
     BUF         buf = 0;
+    EIO_Status  status;
 
+    *redirect = 0;
     if (uuu->flags & fHCC_KeepHeader)
         return eIO_Success;
 
@@ -356,10 +376,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
                    &http_v1, &http_v2, &http_status) != 3  ||
             http_status < 200  ||  299 < http_status) {
             server_error = 1/*true*/;
+            if (http_status == 301 || http_status == 302)
+                moved = 1;
         }
 
         /* skip HTTP header */
-        if (uuu->net_info->debug_printout || uuu->parse_http_hdr) {
+        if (uuu->net_info->debug_printout || uuu->parse_http_hdr || moved) {
             char data[256], *header;
             size_t hdrsize, n_read;
 
@@ -393,6 +415,32 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu)
                 if (!(*uuu->parse_http_hdr)
                     (header, uuu->adjust_data, server_error))
                     server_error = 1;
+            }
+
+            if (moved && header) {
+                const char k_LocationTag[] = "\nLocation: ";
+                char* location = strstr(header, k_LocationTag);
+
+                if (location) {
+                    char* s;
+
+                    location += sizeof(k_LocationTag) - 1;
+                    if (!(s = strchr(location, '\r')))
+                        *strchr(location, '\n') = 0;
+                    else
+                        *s = 0;
+                    while (*location) {
+                        if (isspace((unsigned char)(*location)))
+                            location++;
+                        else
+                            break;
+                    }
+                    for (s = location; *s; s++)
+                        if (isspace((unsigned char)(*s)))
+                            break;
+                    *s = 0;
+                    *redirect = strdup(location);
+                }
             }
 
             if (header)
@@ -440,19 +488,22 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu)
     } else if ((uuu->flags & fHCC_SureFlush) || BUF_Size(uuu->obuf)) {
         /* "WRITE" mode and data (or just flag) pending */
         if (uuu->can_connect != eCC_None) {
+            char* redirect = 0;
             for (;;) {
                 if (s_ConnectAndSend(uuu) != eIO_Success) {
                     break;    
-                } else if (s_ReadHeader(uuu) == eIO_Success) {
+                } else if (s_ReadHeader(uuu, &redirect) == eIO_Success) {
                     s_Disconnect(uuu, 1/*drop_unread*/);
                     break;
                 } else {
                     SOCK_Close(uuu->sock);
                     uuu->sock = 0;
-                    if (!s_Adjust(uuu))
+                    if (!s_Adjust(uuu, &redirect))
                         break;
+                    assert(redirect == 0);
                 }
             }
+            assert(redirect == 0);
         }
         /* Discard all data */
         BUF_Read(uuu->ibuf, 0, BUF_Size(uuu->ibuf));
@@ -650,6 +701,7 @@ static EIO_Status s_VT_Read
  const STimeout* timeout)
 {
     SHttpConnector* uuu = (SHttpConnector*) connector->handle;
+    char* redirect = 0;
     EIO_Status status;
     size_t x_read;
 
@@ -671,14 +723,16 @@ static EIO_Status s_VT_Read
             break;
         /* first read:  parse and skip HTTP header */
         uuu->first_read = 0;
-        if ((status = s_ReadHeader(uuu)) == eIO_Success)
+        if ((status = s_ReadHeader(uuu, &redirect)) == eIO_Success)
             break;
 
         SOCK_Close(uuu->sock);
         uuu->sock = 0;
-        if (!s_Adjust(uuu))
+        if (!s_Adjust(uuu, &redirect))
             break;
+        assert(redirect == 0);
     }
+    assert(redirect == 0);
 
     /* Success or re-tries exceeded: discard all pending output data */
     BUF_Read(uuu->obuf, 0, BUF_Size(uuu->obuf));
