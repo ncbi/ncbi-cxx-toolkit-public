@@ -208,7 +208,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_SHUTDOWN_WR    SHUT_WR
 #  ifndef SHUT_RDWR
 #    define SHUT_RDWR         2
-#  endif
+#  endif /*SHUT_RDWR*/
 #  define SOCK_SHUTDOWN_RDWR  SHUT_RDWR
 #  ifndef INADDR_NONE
 #    define INADDR_NONE       (unsigned int)(-1)
@@ -336,7 +336,7 @@ typedef struct SOCK_tag {
 #ifdef NCBI_OS_UNIX
     /* filename for UNIX socket */
     char            file[1];
-#endif
+#endif /*NCBI_OS_UNIX*/
 } SOCK_struct;
 
 
@@ -631,7 +631,7 @@ static void s_DoLog
                 const struct sockaddr_un* un = (const struct sockaddr_un*) sa;
                 strncpy0(tail, un->sun_path, sizeof(tail) - 1);
             }
-#endif
+#endif /*NCBI_OS_UNIX*/
             else
                 strcpy(tail, "???");
         }
@@ -762,9 +762,9 @@ static void s_ShowDataLayout(void)
                           "\tn_written: %u\n"
                           "\tn_in:      %u\n"
                           "\tn_out:     %u"
-#ifdef NCBI_OS_UNIX
+#  ifdef NCBI_OS_UNIX
                           "\n\tfile:      %u"
-#endif
+#  endif /*NCBI_OS_UNIX*/
                           , (unsigned int) sizeof(SOCK_struct),
                           offsetof(SOCK_struct, sock),
                           offsetof(SOCK_struct, id),
@@ -786,9 +786,9 @@ static void s_ShowDataLayout(void)
                           offsetof(SOCK_struct, n_written),
                           offsetof(SOCK_struct, n_in),
                           offsetof(SOCK_struct, n_out)
-#ifdef NCBI_OS_UNIX
+#  ifdef NCBI_OS_UNIX
                           , offsetoff(SOCK_struct, file)
-#endif
+#  endif /*NCBI_OS_UNIX*/
                           ));
 }
 
@@ -1281,7 +1281,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
         }
         lsock->n_accept++;
         assert(addr.sin_family == AF_INET);
-        /* man accept(2) notes that non-blocking state is not inherited */
+        /* man accept(2) notes that non-blocking state may not be inherited */
         if ( !s_SetNonblock(x_sock, 1/*true*/) ) {
             CORE_LOGF(eLOG_Error, ("SOCK#%u[%u]: [LSOCK::Accept]  Cannot"
                                    " set accepted socket to non-blocking mode",
@@ -1476,7 +1476,7 @@ static EIO_Status s_Connect(SOCK            sock,
     assert(sock->type == eSOCK_ClientSide);
 #ifdef NCBI_OS_UNIX
     assert(!sock->file[0]);
-#endif
+#endif /*NCBI_OS_UNIX*/
 
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
@@ -1954,7 +1954,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
                 if (!sock->file[0])
                     sprintf(addr, "\"%.*s\"", (int) sizeof(addr)-3,sock->file);
                 else
-#endif
+#endif /*NCBI_OS_UNIX*/
                     HostPortToString(sock->host, ntohs(sock->port),
                                      addr, sizeof(addr));
                 CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
@@ -2205,7 +2205,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
             x_errno != SOCK_ENOTCONN
 #else
             x_errno != SOCK_ENOTCONN  ||  sock->pending
-#endif
+#endif /*UNIX flavors*/
             )
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
                                ("%s[SOCK::s_Shutdown]  Failed shutdown(%s)",
@@ -2386,7 +2386,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         struct sockaddr_in in;
 #ifdef NCBI_OS_UNIX
         struct sockaddr_un un;
-#endif
+#endif /*NCBI_OS_UNIX*/
     } peer;
     SOCK               x_sock;
     TSOCK_Handle       xx_sock;
@@ -2421,7 +2421,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
 #else
     if (peer.sa.sa_family != AF_INET)
         return eIO_InvalidArg;
-#endif
+#endif /*NCBI_OS_UNIX*/
 
     /* store initial data */
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
@@ -2447,7 +2447,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         }
         socklen = strlen(peer.un.sun_path);
     } else
-#endif
+#endif /*NCBI_OS_UNIX*/
         socklen = 0;
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
         BUF_Destroy(w_buf);
@@ -2464,7 +2464,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
 #else
     x_sock->host     = peer.in.sin_addr.s_addr;
     x_sock->port     = peer.in.sin_port;
-#endif
+#endif /*NCBI_OS_UNIX*/
     x_sock->log      = log;
     x_sock->type     = (on_close != eSCOT_KeepOnClose
                         ? eSOCK_ServerSide
@@ -2517,12 +2517,12 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
 
 #ifdef NCBI_OS_UNIX
     if (sock->file[0]) {
-        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect]  Called for "
-                               "UNIX socket", s_ID(sock, _id)));
+        CORE_LOGF(eLOG_Error, ("%s[SOCK::Reconnect]  Called for UNIX socket "
+                               "\"%s\"", s_ID(sock, _id), sock->file));
         assert(0);
         return eIO_InvalidArg;
     }
-#endif
+#endif /*NCBI_OS_UNIX*/
 
     /* close the socket if necessary */
     if (sock->sock != SOCK_INVALID)
@@ -2957,7 +2957,7 @@ extern char* SOCK_GetPeerAddressString(SOCK   sock,
     if (sock->file[0])
         strncpy0(buf, sock->file, buflen - 1);
     else
-#endif
+#endif /*NCBI_OS_UNIX*/
         HostPortToString(sock->host, ntohs(sock->port), buf, buflen);
     return buf;
 }
@@ -3818,6 +3818,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.119  2003/07/18 20:04:49  lavr
+ * Close all preprocessor conditional with #endif showing the condition
+ *
  * Revision 6.118  2003/07/17 18:28:50  lavr
  * On I/O errors in connected socket: modify only direction affected, not both
  *
@@ -3885,7 +3888,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
  * Added EOF-on-read as a trace event to log when verbose mode is on
  *
  * Revision 6.97  2003/05/05 11:41:09  rsmith
- * added defines and declarations to allow cross compilation Mac->Win32 using Metrowerks Codewarrior.
+ * added defines and declarations to allow cross compilation Mac->Win32
+ * using Metrowerks Codewarrior.
  *
  * Revision 6.96  2003/04/30 17:00:18  lavr
  * Added on-stack buffers for small datagrams; few name collisions resolved
