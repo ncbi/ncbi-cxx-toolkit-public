@@ -61,8 +61,9 @@ static int s_SeqFeatTypeOrder[] = {
 };
 
 // Corresponds to SortFeatItemListByPos from the C toolkit
-int CSeq_feat::x_CompareLong(const CSeq_feat& f2,
-                             const CSeq_loc& loc1, const CSeq_loc& loc2) const
+int CSeq_feat::CompareNonLocation(const CSeq_feat& f2,
+                                  const CSeq_loc& loc1,
+                                  const CSeq_loc& loc2) const
 {
     CSeqFeatData::E_Choice type1 = GetData().Which();
     CSeqFeatData::E_Choice type2 = f2.GetData().Which();
@@ -149,6 +150,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.12  2003/02/26 17:53:06  vasilche
+ * Added public version of feature comparison assuming that
+ * total range check is done already.
+ *
  * Revision 6.11  2003/02/24 18:52:57  vasilche
  * Added optional mapped locations arguments to feature comparison.
  *

@@ -74,13 +74,14 @@ public:
     // Optional locations are used for features with locations
     // re-mapped to a master sequence
     static int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2);
+    int CompareNonLocation(const CSeq_feat& f2,
+                           const CSeq_loc& loc1, const CSeq_loc& loc2) const;
+
     int Compare(const CSeq_feat& f2) const;
     int Compare(const CSeq_feat& f2,
                 const CSeq_loc& mapped1, const CSeq_loc& mapped2) const;
 
 private:
-    int x_CompareLong(const CSeq_feat& f2,
-                      const CSeq_loc& loc1, const CSeq_loc& loc2) const;
 
     // Prohibit copy constructor and assignment operator
     CSeq_feat(const CSeq_feat& value);
@@ -121,7 +122,7 @@ int CSeq_feat::Compare(const CSeq_feat& f2,
                        const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
     int diff = CompareLocations(loc1, loc2);
-    return diff != 0? diff: x_CompareLong(f2, loc1, loc2);
+    return diff != 0? diff: CompareNonLocation(f2, loc1, loc2);
 }
 
 
@@ -154,6 +155,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2003/02/26 17:53:06  vasilche
+* Added public version of feature comparison assuming that
+* total range check is done already.
+*
 * Revision 1.11  2003/02/24 18:52:57  vasilche
 * Added optional mapped locations arguments to feature comparison.
 *
