@@ -1901,7 +1901,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
         return retval;
     }
 
-    CSeq_loc_CI i2(loc);
+    CSeq_loc_CI i2(loc, CSeq_loc_CI::eEmpty_Allow);
     for ( ; i2; ++i2 ) {
         const CSeq_loc* slp = &(i2.GetSeq_loc());
         switch (slp->Which()) {
@@ -2357,7 +2357,7 @@ void CCdregion_translate::ReadSequenceByLocation (string& seq,
     CSeqVector seqv = bsh.GetSequenceView (loc,
                                            CBioseq_Handle::eViewConstructed,
                                            CBioseq_Handle::eCoding_Iupac);
-    seqv.GetSeqData(0, seqv.size() - 1, seq);
+    seqv.GetSeqData(0, seqv.size(), seq);
 }
 
 void CCdregion_translate::TranslateCdregion (string& prot,
@@ -2907,6 +2907,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.56  2003/06/05 18:08:36  shomrat
+* Allow empty location when computing SeqLocPartial; Adjust GetSeqData in cdregion translation
+*
 * Revision 1.55  2003/06/02 18:58:25  dicuccio
 * Fixed #include directives
 *
