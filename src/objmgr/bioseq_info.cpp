@@ -845,7 +845,7 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_inst& inst) const
 TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_id& whole) const
 {
     CConstRef<CBioseq_Info> ref =
-        GetTSE_Info().FindBioseq(CSeq_id_Handle::GetHandle(whole));
+        GetTSE_Info().FindBioseqMatch(CSeq_id_Handle::GetHandle(whole));
     if ( !ref ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CBioseq_Info::x_CalcBioseqLength: "
@@ -994,6 +994,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/10/25 16:53:36  vasilche
+* Lookup Bioseq by matching Seq-id.
+*
 * Revision 1.26  2004/10/18 13:57:04  vasilche
 * Added support for split assembly.
 *
