@@ -42,7 +42,7 @@
 /* This header must go last */
 #include "test_assert.h"
 
-#if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1)
+#if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1) || defined(NCBI_OS_DARWIN)
    /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
    /* For OSF1 (and FreeBSD) see also: /usr/include/netinet/udp_var.h   */
 #  define MAX_DGRAM_SIZE (9*1024)
@@ -326,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/10/27 19:00:32  lavr
+ * Limit datagram size for Darwin (which is BSD based)
+ *
  * Revision 6.11  2003/05/29 18:03:06  lavr
  * Changed one client's message
  *
