@@ -284,7 +284,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
       /* Also add 1 to all indices, because lookup table indices count 
          from 1. */
       from -= word_length - 2;
-      last_offset = to + 2 - extra_length;
+      last_offset = to - extra_length;
       amb_cond = TRUE;
 
       for (index = from; index <= last_offset; index++) {
