@@ -101,13 +101,15 @@ public:
     CAnnot_CI& operator-- (void);
 
     /// Check if iterator points to an object
-    DECLARE_OPERATOR_BOOL(IsValid());
+    DECLARE_OPERATOR_BOOL(x_IsValid());
 
     CSeq_annot_Handle& operator*(void) const;
     CSeq_annot_Handle* operator->(void) const;
 
 private:
     void x_Collect(void);
+
+    bool x_IsValid(void) const;
 
     CAnnot_CI operator++ (int);
     CAnnot_CI operator-- (int);
@@ -156,6 +158,13 @@ CSeq_annot_Handle* CAnnot_CI::operator->(void) const
 }
 
 
+inline
+bool CAnnot_CI::x_IsValid(void) const
+{
+    return m_Iterator != m_SeqAnnotSet.end();
+}
+
+
 /* @} */
 
 
@@ -165,6 +174,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/03/15 22:05:28  grichenk
+* Fixed operator bool.
+*
 * Revision 1.31  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
