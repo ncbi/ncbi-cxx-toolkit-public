@@ -96,6 +96,7 @@ APPP_BRA = \
 +if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
    expendable=false ; \
+   test -f requirements  ||  touch -t 197001010000 requirements ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if $(MAKE_APP) -q requirements ; then \
@@ -105,6 +106,7 @@ APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
      fi; \
    done ; \
+   test -s requirements  ||  rm -f requirements ; \
 fi
 
 CHECK_BRA = \
