@@ -587,10 +587,6 @@ void UpdateViewer::ImportStructure(void)
     // determine the master sequence for new alignments
     const Sequence *master = GetMasterSequence();
     if (!master) return;
-    if (!master->molecule) {
-        ERRORMSG("Can't import another structure unless master sequence has structure");
-        return;
-    }
     if (master->parentSet->objects.size() == 1 && master->parentSet->frameMap.size() != 1) {
         ERRORMSG("Can't import another structure when current structure has multiple models");
         return;
@@ -654,14 +650,16 @@ void UpdateViewer::ImportStructure(void)
     mmdbID = biostruc->GetId().front()->GetMmdb_id().Get();
 
     // make sure Biostruc is of correct type
-    if (biostruc->GetModel().size() != 1 ||
-        (master->parentSet->isAlphaOnly &&
-            biostruc->GetModel().front()->GetType() != eModel_type_ncbi_backbone) ||
-        (!master->parentSet->isAlphaOnly &&
-            biostruc->GetModel().front()->GetType() != eModel_type_ncbi_all_atom)) {
-        ERRORMSG("Biostruc does not match current data - should be "
-            << (master->parentSet->isAlphaOnly ? "alpha-only" : "one-coordinate-per-atom") << " model");
-        return;
+    if (master->molecule) {
+        if (biostruc->GetModel().size() != 1 ||
+            (master->parentSet->isAlphaOnly &&
+                biostruc->GetModel().front()->GetType() != eModel_type_ncbi_backbone) ||
+            (!master->parentSet->isAlphaOnly &&
+                biostruc->GetModel().front()->GetType() != eModel_type_ncbi_all_atom)) {
+            ERRORMSG("Biostruc does not match current data - should be "
+                << (master->parentSet->isAlphaOnly ? "alpha-only" : "one-coordinate-per-atom") << " model");
+            return;
+        }
     }
 
     // make list of protein chains in this structure
@@ -796,20 +794,39 @@ void UpdateViewer::ImportStructure(void)
             ERRORMSG("No matching id for MMDB sequence " << (*w)->identifier->ToString());
     }
 
-    // create null-alignment
+    // create VAST alignments (or null-alignments if master is unstructured)
     AlignmentList newAlignments;
-    int masterFrom = -1, masterTo = -1;
-    const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
-    if (multiple) {
-        BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
-        multiple->GetUngappedAlignedBlocks(&aBlocks);
-        if (aBlocks.size() > 0) {
-            masterFrom = aBlocks.front()->GetRangeOfRow(0)->from;
-            masterTo = aBlocks.back()->GetRangeOfRow(0)->to;
+    if (master->molecule) {
+        int masterFrom = -1, masterTo = -1;
+        const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
+        if (multiple) {
+            BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
+            multiple->GetUngappedAlignedBlocks(&aBlocks);
+            if (aBlocks.size() > 0) {
+                masterFrom = aBlocks.front()->GetRangeOfRow(0)->from;
+                masterTo = aBlocks.back()->GetRangeOfRow(0)->to;
+            }
+        }
+        GetVASTAlignments(newSequences, master, &newAlignments,
+            &pendingStructureAlignments, masterFrom, masterTo);
+    } else {
+        SequenceList::const_iterator s, se = newSequences.end();
+        for (s=newSequences.begin(); s!=se; ++s) {
+            // create initially empty alignment
+            BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+            (*seqs)[0] = master;
+            (*seqs)[1] = *s;
+            BlockMultipleAlignment *newAlignment =
+                new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager);
+            // finalize alignment
+            if (!newAlignment->AddUnalignedBlocks() || !newAlignment->UpdateBlockMapAndColors(false)) {
+                ERRORMSG("ImportStructure() - error finalizing alignment");
+                delete newAlignment;
+                continue;
+            }
+            newAlignments.push_back(newAlignment);
         }
     }
-    GetVASTAlignments(newSequences, master, &newAlignments,
-        &pendingStructureAlignments, masterFrom, masterTo);
 
     // add new alignment to update list
     if (newAlignments.size() == newSequences.size())
@@ -821,14 +838,20 @@ void UpdateViewer::ImportStructure(void)
     }
 
     // will add Biostruc and structure alignments to ASN data later on, after merge
-    pendingStructures.push_back(biostruc);
-
-    // inform user of success
-    wxMessageBox("The structure has been successfully imported! However, it will not appear until you\n"
-        "save this data to a file and then re-load it in a new session. And depending on the type\n"
-        "of data, it still might not appear unless the corresponding new pairwise alignment has\n"
-        "been merged into the multiple alignment.",
-        "Structure Added", wxOK | wxICON_INFORMATION, *viewerWindow);
+    if (master->molecule) {
+        pendingStructures.push_back(biostruc);
+        wxMessageBox("The structure has been successfully imported! However, it will not appear until you\n"
+            "save this data to a file and then re-load it in a new session. And depending on the type\n"
+            "of data, it still might not appear unless the corresponding new pairwise alignment has\n"
+            "been merged into the multiple alignment.",
+            "Structure Added", wxOK | wxICON_INFORMATION, *viewerWindow);
+    } else {
+        // sort of assumes alignment with non-structured master is CDD, or uses cache mechanism...
+        wxMessageBox("The selected sequence from this structure has been imported! However, the structure\n"
+            "itself can not appear in the structure window until the sequence has been merged into the\n"
+            "multiple alignment and the alignment has been remastered to a structured sequence.",
+            "Sequence Added", wxOK | wxICON_INFORMATION, *viewerWindow);
+    }
 }
 
 void UpdateViewer::SavePendingStructures(void)
@@ -1140,6 +1163,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2004/06/25 14:12:22  thiessen
+* allow structures to be imported into non-structured alignment
+*
 * Revision 1.75  2004/06/23 20:34:53  thiessen
 * sho geometry violations in alignments added to import window
 *
