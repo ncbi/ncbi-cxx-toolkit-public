@@ -424,11 +424,23 @@ const AlignmentUtility::SeqAnnotList& AlignmentUtility::GetSeqAnnots(void)
     return m_seqAnnots;
 }
 
+const BLAST_Matrix_ * AlignmentUtility::GetPSSM(void)
+{
+    // first we need to do IBM -> BlockMultipleAlignment
+    if (!m_currentMultiple && !DoIBM())
+            return NULL;
+
+	return m_currentMultiple->GetPSSM();
+}
+
 END_SCOPE(struct_util)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/10 14:18:18  thiessen
+* add GetPSSM()
+*
 * Revision 1.9  2004/05/28 10:22:13  thiessen
 * use delete[] for array
 *
