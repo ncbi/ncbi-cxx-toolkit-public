@@ -113,7 +113,7 @@ int ScanForCpGs(const string& acc, CScope &scope, ostream& strictFile,
         ITERATE(CCpGIslands, i, cpgIsles) {
             relaxedFile << acc << "\t" << *i << endl;
         }
-`
+
         cpgIsles.Calc(200, 500, 0.5, 0.6);
         ITERATE(CCpGIslands, i, cpgIsles) {
             strictFile << acc << "\t" << *i << endl;
@@ -177,6 +177,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/17 15:35:12  johnson
+ * remove stray char
+ *
  * Revision 1.1  2003/06/17 15:12:24  johnson
  * initial revision
  *
