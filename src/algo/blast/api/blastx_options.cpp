@@ -42,8 +42,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CBlastxOptionsHandle::CBlastxOptionsHandle()
+CBlastxOptionsHandle::CBlastxOptionsHandle(EAPILocality locality)
+    : CBlastProteinOptionsHandle(locality)
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
     SetDefaults();
     m_Opts->SetProgram(eBlastx);
 }
@@ -86,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/16 21:49:26  bealer
+ * - Add locality flag for Blast4 API
+ *
  * Revision 1.1  2003/11/26 18:24:00  camacho
  * +Blast Option Handle classes
  *

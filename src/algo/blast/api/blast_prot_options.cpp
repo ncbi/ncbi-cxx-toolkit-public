@@ -43,7 +43,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CBlastProteinOptionsHandle::CBlastProteinOptionsHandle()
+CBlastProteinOptionsHandle::CBlastProteinOptionsHandle(EAPILocality locality)
+    : CBlastOptionsHandle(locality)
 {
     SetDefaults();
     m_Opts->SetProgram(eBlastp);
@@ -87,8 +88,9 @@ CBlastProteinOptionsHandle::SetGappedExtensionDefaults()
 void
 CBlastProteinOptionsHandle::SetScoringOptionsDefaults()
 {
-    SetMatrixName("BLOSUM62");
-    SetMatrixPath(FindMatrixPath(GetMatrixName(), true).c_str());
+    const char * mname("BLOSUM62");
+    SetMatrixName(mname);
+    SetMatrixPath(FindMatrixPath(mname, true).c_str());
     SetGapOpeningCost(BLAST_GAP_OPEN_PROT);
     SetGapExtensionCost(BLAST_GAP_EXTN_PROT);
     SetGappedMode();
@@ -145,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/16 21:49:26  bealer
+ * - Add locality flag for Blast4 API
+ *
  * Revision 1.1  2003/11/26 18:24:00  camacho
  * +Blast Option Handle classes
  *

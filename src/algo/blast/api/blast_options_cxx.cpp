@@ -39,12 +39,283 @@
 #include <algo/blast/core/blast_gapalign.h>
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/blast/Blast4_cutoff.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBlastOptions::CBlastOptions()
+CBlastOptions::CBlastOptions(EAPILocality locality = eLocal)
+    : m_Local (0),
+      m_Remote(0)
+{
+    if (locality != eRemote) {
+        m_Local = new CBlastOptionsLocal();
+    }
+    if (locality != eLocal) {
+        m_Remote = new CBlastOptionsRemote();
+    }
+}
+
+CBlastOptions::~CBlastOptions()
+{
+    if (m_Local) {
+        delete m_Local;
+    }
+    if (m_Remote) {
+        delete m_Remote;
+    }
+}
+
+// Note: only some of the options are supported for the remote case;
+// for now, I will throw a string exception if the option is not
+// available.
+
+int xyz_throwing = 0;
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const EProgram & v)
+{
+    switch(opt) {
+    case eBlastOpt_Program:
+        return;
+    }
+    
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
+            int(opt), v, __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
+{
+    switch(opt) {
+    case eBlastOpt_WordSize:
+        x_SetParam("WordSize", v);
+        return;
+        
+    case eBlastOpt_StrandOption:
+        {
+            typedef objects::EBlast4_strand_type TSType;
+            TSType strand;
+            bool set_strand = true;
+            
+            switch(v) {
+            case 1:
+                strand = eBlast4_strand_type_forward_strand;
+                break;
+                
+            case 2:
+                strand = eBlast4_strand_type_reverse_strand;
+                break;
+                
+            case 3:
+                strand = eBlast4_strand_type_both_strands;
+                break;
+                
+            default:
+                set_strand = false;
+            }
+            
+            if (set_strand) {
+                x_SetParam("StrandOption", strand);
+                return;
+            }
+        }
+        
+    case eBlastOpt_WindowSize:
+        x_SetParam("WindowSize", v);
+        return;
+        
+    case eBlastOpt_GapOpeningCost:
+        x_SetParam("GapOpeningCost", v);
+        return;
+        
+    case eBlastOpt_GapExtensionCost:
+        x_SetParam("GapExtensionCost", v);
+        return;
+        
+    case eBlastOpt_HitlistSize:
+        x_SetParam("HitlistSize", v);
+        return;
+        
+    case eBlastOpt_CutoffScore:
+        if (0) {
+            typedef objects::CBlast4_cutoff TCutoff;
+            CRef<TCutoff> cutoff(new TCutoff);
+            cutoff->SetRaw_score(v);
+            
+            x_SetParam("CutoffScore", cutoff);
+        }
+        return;
+        
+    case eBlastOpt_MatchReward:
+        x_SetParam("MatchReward", v);
+        return;
+        
+    case eBlastOpt_MismatchPenalty:
+        x_SetParam("MismatchPenalty", v);
+        return;
+
+    case eBlastOpt_WordThreshold:
+        x_SetParam("WordThreshold", v);
+        return;
+    }
+    
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
+            int(opt), v, __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const double & v)
+{
+    switch(opt) {
+    case eBlastOpt_EvalueThreshold:
+        {
+            typedef objects::CBlast4_cutoff TCutoff;
+            CRef<TCutoff> cutoff(new TCutoff);
+            cutoff->SetE_value(v);
+            
+            x_SetParam("EvalueThreshold", cutoff);
+        }
+        return;
+        
+    case eBlastOpt_PercentIdentity:
+        x_SetParam("PercentIdentity", v);
+        return;
+    }
+    
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%f), line (%d).",
+            int(opt), v, __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const char * v)
+{
+    switch(opt) {
+    case eBlastOpt_FilterString:
+        x_SetParam("FilterString", v);
+        return;
+        
+    case eBlastOpt_MatrixName:
+        x_SetParam("MatrixName", v);
+        return;
+    }
+    
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%.20s), line (%d).",
+            int(opt), v, __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
+{
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and TSeqLocVector (size %d), line (%d).",
+            int(opt), v.size(), __LINE__);
+    
+    x_Throwx(string("err:") + errbuf);
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedContainerType & v)
+{
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
+            int(opt), v, __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedExtensionMethod & v)
+{
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%d), line (%d).",
+            int(opt), v, __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
+{
+    switch(opt) {
+    case eBlastOpt_GappedMode:
+        {
+            bool ungapped = ! v;
+            x_SetParam("UngappedMode", ungapped); // inverted
+            return;
+        }
+        
+    case eBlastOpt_OutOfFrameMode:
+        x_SetParam("OutOfFrameMode", v);
+        return;
+        
+    case eBlastOpt_UseRealDbSize:
+        x_SetParam("UseRealDbSize", v);
+        return;
+    }
+    
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%s), line (%d).",
+            int(opt), (v ? "true" : "false"), __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const Int8 & v)
+{
+    switch(opt) {
+    case eBlastOpt_EffectiveSearchSpace:
+        x_SetParam("EffectiveSearchSpace", v);
+        return;
+    }
+    
+    char errbuf[1024];
+    
+    sprintf(errbuf, "tried to set option (%d) and value (%f), line (%d).",
+            int(opt), double(v), __LINE__);
+    
+    if (xyz_throwing)
+        x_Throwx(string("err:") + errbuf);
+    else
+        cout << "** WOULDA THROWN: " << errbuf << endl;
+}
+
+
+CBlastOptionsLocal::CBlastOptionsLocal()
 {
     m_QueryOpts.Reset((QuerySetUpOptions*)calloc(1, sizeof(QuerySetUpOptions)));
     m_InitWordOpts.Reset((BlastInitialWordOptions*)calloc(1, sizeof(BlastInitialWordOptions)));
@@ -57,14 +328,14 @@ CBlastOptions::CBlastOptions()
     m_ProtOpts.Reset((PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions)));
 }
 
-CBlastOptions::~CBlastOptions()
+CBlastOptionsLocal::~CBlastOptionsLocal()
 {
 }
 
 #define GENCODE_STRLEN 64
 
 void 
-CBlastOptions::SetDbGeneticCode(int gc)
+CBlastOptionsLocal::SetDbGeneticCode(int gc)
 {
 
     m_DbOpts->genetic_code = gc;
@@ -77,7 +348,7 @@ CBlastOptions::SetDbGeneticCode(int gc)
 }
 
 bool
-CBlastOptions::Validate() const
+CBlastOptionsLocal::Validate() const
 {
     Blast_Message* blmsg = NULL;
     string msg;
@@ -106,7 +377,7 @@ CBlastOptions::Validate() const
 }
 
 void
-CBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastOptionsLocal::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 {
     ddc.SetFrame("CBlastOptions");
     DebugDumpValue(ddc,"m_Program", m_Program);
@@ -204,7 +475,7 @@ x_BlastScoringOptions_cmp(const BlastScoringOptions* a,
 }
 
 bool
-operator==(const CBlastOptions& lhs, const CBlastOptions& rhs)
+operator==(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs)
 {
     if (&lhs == &rhs)
         return true;
@@ -257,10 +528,11 @@ operator==(const CBlastOptions& lhs, const CBlastOptions& rhs)
 }
 
 bool
-operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs)
+operator!=(const CBlastOptionsLocal& lhs, const CBlastOptionsLocal& rhs)
 {
     return !(lhs == rhs);
 }
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -269,6 +541,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2004/01/16 21:49:26  bealer
+* - Add locality flag for Blast4 API
+*
 * Revision 1.32  2003/12/04 18:35:33  dondosha
 * Correction in assigning the genetic code string option
 *

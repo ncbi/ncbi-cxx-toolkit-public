@@ -42,7 +42,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle()
+CBlastNucleotideOptionsHandle::CBlastNucleotideOptionsHandle(EAPILocality locality)
+    : CBlastOptionsHandle(locality)
 {
     SetDefaults();
 }
@@ -57,6 +58,9 @@ CBlastNucleotideOptionsHandle::SetDefaults()
 void
 CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
     SetLookupTableDefaults();
     SetQueryOptionDefaults();
     SetInitialWordOptionsDefaults();
@@ -69,6 +73,9 @@ CBlastNucleotideOptionsHandle::SetTraditionalBlastnDefaults()
 void
 CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
     SetMBLookupTableDefaults();
     SetQueryOptionDefaults();
     SetMBInitialWordOptionsDefaults();
@@ -224,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/16 21:49:26  bealer
+ * - Add locality flag for Blast4 API
+ *
  * Revision 1.1  2003/11/26 18:23:59  camacho
  * +Blast Option Handle classes
  *
