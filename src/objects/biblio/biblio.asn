@@ -1,4 +1,4 @@
---$Revision: 1.5 $
+--$Revision: 1.6 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -120,7 +120,7 @@ Affil ::= CHOICE {
     city VisibleString OPTIONAL ,       -- Author Affiliation, City
     sub VisibleString OPTIONAL ,        -- Author Affiliation, County Sub
     country VisibleString OPTIONAL ,    -- Author Affiliation, Country
-	street VisibleString OPTIONAL }     -- street address, not ANSI
+	street VisibleString OPTIONAL }}    -- street address, not ANSI
 
     -- Title Group
     -- Valid for = A = Analytic (Cit-art)
