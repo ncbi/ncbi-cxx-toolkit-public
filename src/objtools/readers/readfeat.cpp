@@ -52,6 +52,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
@@ -103,6 +104,7 @@ public:
         eQual_muid,
         eQual_note,
         eQual_number,
+        eQual_operon,
         eQual_organism,
         eQual_partial,
         eQual_PCR_conditions,
@@ -211,7 +213,7 @@ public:
     ~CFeature_table_reader_imp(void);
 
     // read 5-column feature table and return Seq-annot
-    CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIfstream& ifs,
+    CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                              const string& seqid,
                                              const string& annotname);
 
@@ -236,6 +238,8 @@ private:
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
+                                   EQual qtype, const string& val);
+    bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& qual, const string& val);
@@ -306,6 +310,8 @@ static FeatInit feat_key_to_subtype [] = {
     { "Num",                CSeqFeatData::eSubtype_num                },
     { "N_region",           CSeqFeatData::eSubtype_N_region           },
     { "old_sequence",       CSeqFeatData::eSubtype_old_sequence       },
+    { "operon",             CSeqFeatData::eSubtype_operon             },
+    { "oriT",               CSeqFeatData::eSubtype_oriT               },
     { "polyA_signal",       CSeqFeatData::eSubtype_polyA_signal       },
     { "polyA_site",         CSeqFeatData::eSubtype_polyA_site         },
     { "precursor_RNA",      CSeqFeatData::eSubtype_preRNA             },
@@ -333,7 +339,7 @@ static FeatInit feat_key_to_subtype [] = {
     { "Site-ref",           CSeqFeatData::eSubtype_site_ref           },
     { "snoRNA",             CSeqFeatData::eSubtype_snoRNA             },
     { "snRNA",              CSeqFeatData::eSubtype_snRNA              },
-    { "source",             CSeqFeatData::eSubtype_source             },
+    { "source",             CSeqFeatData::eSubtype_biosrc             },
     { "Src",                CSeqFeatData::eSubtype_biosrc             },
     { "stem_loop",          CSeqFeatData::eSubtype_stem_loop          },
     { "STS",                CSeqFeatData::eSubtype_STS                },
@@ -389,6 +395,7 @@ static QualInit qual_key_to_subtype [] = {
     { "mod_base",             CFeature_table_reader_imp::eQual_mod_base             },
     { "note",                 CFeature_table_reader_imp::eQual_note                 },
     { "number",               CFeature_table_reader_imp::eQual_number               },
+    { "operon",               CFeature_table_reader_imp::eQual_operon               },
     { "organism",             CFeature_table_reader_imp::eQual_organism             },
     { "partial",              CFeature_table_reader_imp::eQual_partial              },
     { "PCR_conditions",       CFeature_table_reader_imp::eQual_PCR_conditions       },
@@ -823,6 +830,16 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
 }
 
 
+bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
+                                                        EQual qtype, const string& val)
+
+{
+    CBioSource& bsp = sfdata.SetBiosrc ();
+    /* not just needs to be passed EQual */
+    return false;
+}
+
+
 bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                                      EQual qtype, const string& qual, const string& val)
 
@@ -888,7 +905,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                 case CSeqFeatData::e_Rna:
                     if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
                     break;
-                case CSeqFeatData::e_Imp:
+                case CSeqFeatData::e_Biosrc:
+                    if (x_AddQualifierToBioSrc (sfdata, qtype, val)) return true;
+                    break;
+               case CSeqFeatData::e_Imp:
                     if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
                     break;
                 case CSeqFeatData::e_Region:
@@ -1077,7 +1097,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature (CRef<CSeq_feat> sfp, CSe
 }
 
 
-CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstream& ifs, const string& seqid, const string& annotname)
+CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream& ifs, const string& seqid, const string& annotname)
 
 {
     string line;
@@ -1185,10 +1205,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
                             x_AddIntervalToFeature (sfp, mix, seqid, start, stop, partial5, partial3);
 
                         } else {
-                            // post error - unrecognized feaure key
+                            // post error - unrecognized feature key
                         }
                     } else {
-                        // post error - unrecognized feaure key
+                        // post error - unrecognized feature key
                     }
 
                 } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && val.empty ()) {
@@ -1213,7 +1233,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIfstrea
 
 // public access functions
 
-CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& ifs)
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIstream& ifs)
 {
     string line, fst, scd, seqid, annotname;
     int pos;
@@ -1236,6 +1256,35 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIfstream& i
     }
 
     // then read features from 5-column table
+
+    CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname);
+
+    // go through all features and demote single interval seqlocmix to seqlocint
+
+    for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
+        CSeq_feat& feat = *fi;
+        CSeq_loc& location = feat.SetLocation ();
+        if (location.IsMix ()) {
+            CSeq_loc_mix& mx = location.SetMix ();
+            switch (mx.Get ().size ()) {
+                case 0:
+                    location.SetNull ();
+                    break;
+                case 1:
+                    feat.SetLocation (*mx.Set ().front ());
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    return sap;
+}
+
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (CNcbiIstream& ifs, const string& seqid, const string& annotname)
+{
+    // just read features from 5-column table
 
     CRef<CSeq_annot> sap = x_GetImplementation ().ReadSequinFeatureTable (ifs, seqid, annotname);
 
