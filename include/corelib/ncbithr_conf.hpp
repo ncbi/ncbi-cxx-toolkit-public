@@ -42,6 +42,11 @@
 #    include <sys/errno.h>
 #endif
 
+/** @addtogroup Threads
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 
@@ -88,9 +93,14 @@ typedef void* TWrapperArg;
 
 END_NCBI_SCOPE
 
+/* @} */
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/03/31 13:16:59  siyan
+ * Added doxygen support
+ *
  * Revision 1.2  2002/09/20 14:14:05  vasilche
  * Fixed inconsistency of NCBI_*_THREADS macros
  *
