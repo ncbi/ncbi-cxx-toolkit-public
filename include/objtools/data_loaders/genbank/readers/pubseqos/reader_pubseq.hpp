@@ -76,9 +76,7 @@ private:
 
 
     void x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi);
-    CDB_RPCCmd* x_SendRequest(const CSeqref& seqref,
-                              CDB_Connection* db_conn,
-                              bool is_snp);
+    CDB_RPCCmd* x_SendRequest(const CSeqref& seqref, CDB_Connection* db_conn);
     CDB_Result* x_ReceiveData(CDB_RPCCmd& cmd);
 
     CRef<CTSE_Info> x_ReceiveMainBlob(CDB_Result& result);
@@ -152,6 +150,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.28  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.27  2004/02/04 17:48:24  kuznets
 * Fixed naming of entry points
 *

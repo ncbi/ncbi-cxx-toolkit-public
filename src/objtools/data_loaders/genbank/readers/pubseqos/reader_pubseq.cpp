@@ -61,6 +61,31 @@ BEGIN_SCOPE(objects)
 static CAtomicCounter s_pubseq_readers;
 #endif
 
+static int s_GetDebugLevel(void)
+{
+    const char* env = getenv("GENBANK_PUBSEQOS_DEBUG");
+    if ( !env || !*env ) {
+        return 0;
+    }
+    try {
+        return NStr::StringToInt(env);
+    }
+    catch ( ... ) {
+        return 0;
+    }
+}
+
+#ifdef _DEBUG
+static int GetDebugLevel(void)
+{
+    static int ret = s_GetDebugLevel();
+    return ret;
+}
+#else
+# defined s_GetDebugLevel() (0)
+#endif
+
+
 CPubseqReader::CPubseqReader(TConn noConn,
                              const string& server,
                              const string& user,
@@ -296,9 +321,9 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
             
         while(result->Fetch()) {
             CDB_Int giGot(gi);
-            CDB_Int sat;
-            CDB_Int satKey;
-            CDB_Int extFeat;
+            CDB_Int satGot;
+            CDB_Int satKeyGot;
+            CDB_Int extFeatGot;
             
             _TRACE("next fetch: " << result->NofItems() << " items");
             for ( unsigned pos = 0; pos < result->NofItems(); ++pos ) {
@@ -309,21 +334,21 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
                     _TRACE("gi: "<<giGot.Value());
                 }
                 else if (name == "sat" ) {
-                    result->GetItem(&sat);
-                    _TRACE("sat: "<<sat.Value());
+                    result->GetItem(&satGot);
+                    _TRACE("sat: "<<satGot.Value());
                 }
                 else if(name == "sat_key") {
-                    result->GetItem(&satKey);
-                    _TRACE("sat_key: "<<satKey.Value());
+                    result->GetItem(&satKeyGot);
+                    _TRACE("sat_key: "<<satKeyGot.Value());
                 }
                 else if(name == "extra_feat" || name == "ext_feat") {
-                    result->GetItem(&extFeat);
+                    result->GetItem(&extFeatGot);
 #ifdef _DEBUG
-                    if ( extFeat.IsNULL() ) {
+                    if ( extFeatGot.IsNULL() ) {
                         _TRACE("ext_feat = NULL");
                     }
                     else {
-                        _TRACE("ext_feat = "<<extFeat.Value());
+                        _TRACE("ext_feat = "<<extFeatGot.Value());
                     }
 #endif
                 }
@@ -332,16 +357,45 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
                 }
             }
 
-            _ASSERT(sat.Value() != eSatellite_SNP);
-            srs.push_back(Ref(new CSeqref(giGot.Value(),
-                                          sat.Value(), satKey.Value())));
-            if ( TrySNPSplit() ) {
-                if ( extFeat.IsNULL() ) {
-                    AddSNPSeqref(srs, giGot.Value(), CSeqref::fPossible);
+            _ASSERT(satGot.Value() != CSeqref::eSat_SNP);
+            int gi = giGot.Value();
+            int sat = satGot.Value();
+
+            if ( TrySNPSplit() && sat != CSeqref::eSat_ANNOT ) {
+                {{
+                    // main blob
+                    int sat_key = satKeyGot.Value();
+                    srs.push_back(Ref(new CSeqref(gi, sat, sat_key)));
+                }}
+                if ( !extFeatGot.IsNULL() ) {
+                    int ext_feat = extFeatGot.Value();
+                    while ( ext_feat ) {
+                        int bit = ext_feat & ~(ext_feat-1);
+                        ext_feat -= bit;
+#ifdef GENBANK_USE_SNP_SATELLITE_15
+                        if ( bit == CSeqref::eSubSat_SNP ) {
+                            AddSNPSeqref(srs, gi);
+                            continue;
+                        }
+#endif
+                        srs.push_back(Ref(new CSeqref(gi,
+                                                      CSeqref::eSat_ANNOT,
+                                                      gi,
+                                                      bit,
+                                                      CSeqref::fHasExternal)));
+                    }
                 }
-                else if ( extFeat.Value() & 1 ) {
-                    AddSNPSeqref(srs, giGot.Value());
-                }
+            }
+            else {
+                // whole blob
+                int sat = satGot.Value();
+                int sat_key = satKeyGot.Value();
+                int ext_feat = extFeatGot.IsNULL()? 0: extFeatGot.Value();
+                srs.push_back(Ref(new CSeqref(gi,
+                                              sat,
+                                              sat_key,
+                                              ext_feat,
+                                              CSeqref::fHasAllLocal)));
             }
         }
     }
@@ -351,7 +405,7 @@ void CPubseqReader::x_RetrieveSeqrefs(TSeqrefs& srs, CDB_RPCCmd& cmd, int gi)
 CRef<CTSE_Info> CPubseqReader::GetTSEBlob(const CSeqref& seqref, TConn conn)
 {
     CDB_Connection* db_conn = x_GetConnection(conn);
-    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn, false));
+    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn));
     auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
     return x_ReceiveMainBlob(*result);
 }
@@ -361,25 +415,22 @@ CRef<CSeq_annot_SNP_Info> CPubseqReader::GetSNPAnnot(const CSeqref& seqref,
                                                      TConn conn)
 {
     CDB_Connection* db_conn = x_GetConnection(conn);
-    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn, true));
+    auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(seqref, db_conn));
     auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
     return x_ReceiveSNPAnnot(*result);
 }
 
 
 CDB_RPCCmd* CPubseqReader::x_SendRequest(const CSeqref& seqref,
-                                         CDB_Connection* db_conn,
-                                         bool is_snp)
+                                         CDB_Connection* db_conn)
 {
     auto_ptr<CDB_RPCCmd> cmd(db_conn->RPC("id_get_asn", 4));
     CDB_Int giIn(seqref.GetGi());
     CDB_SmallInt satIn(seqref.GetSat());
     CDB_Int satKeyIn(seqref.GetSatKey());
-    bool is_external = is_snp;
-    bool load_external = is_external || !TrySNPSplit();
-    CDB_Int ext_feat(load_external);
+    CDB_Int ext_feat(seqref.GetSubSat());
 
-    _TRACE("x_SendRequest: "<<seqref.print()<<", ext_feat="<<load_external);
+    _TRACE("x_SendRequest: "<<seqref.print());
 
     cmd->SetParam("@gi", &giIn);
     cmd->SetParam("@sat_key", &satKeyIn);
@@ -445,6 +496,10 @@ CRef<CTSE_Info> CPubseqReader::x_ReceiveMainBlob(CDB_Result& result)
     
     CReader::SetSeqEntryReadHooks(in);
     in >> *seq_entry;
+
+    if ( GetDebugLevel() >= 8 ) {
+        NcbiCout << MSerial_AsnText << *seq_entry;
+    }
 
     return Ref(new CTSE_Info(*seq_entry));
 }
@@ -529,6 +584,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.53  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.52  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *

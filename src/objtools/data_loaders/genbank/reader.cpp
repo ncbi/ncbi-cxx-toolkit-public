@@ -162,16 +162,15 @@ void CReader::SetSeqEntryReadHooks(CObjectIStream& in)
 
 bool CReader::IsSNPSeqref(const CSeqref& seqref)
 {
-    return seqref.GetSat() == eSatellite_SNP;
+    return seqref.GetSat() == CSeqref::eSat_SNP;
 }
 
 
 void CReader::AddSNPSeqref(TSeqrefs& srs, int gi, CSeqref::TFlags flags)
 {
-    flags |= CSeqref::fHasExternal;
-    CRef<CSeqref> sr(new CSeqref(gi, eSatellite_SNP, gi));
-    sr->SetFlags(flags);
-    srs.push_back(sr);
+    srs.push_back(Ref(new CSeqref(gi, CSeqref::eSat_SNP, gi,
+                                  CSeqref::eSubSat_main,
+                                  flags | CSeqref::fHasExternal)));
 }
 
 
@@ -279,6 +278,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.35  2004/06/30 21:02:02  vasilche
+ * Added loading of external annotations from 26 satellite.
+ *
  * Revision 1.34  2004/06/15 14:08:22  vasilche
  * Added parsing split info with split sequences.
  *

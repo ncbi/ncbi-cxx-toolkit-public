@@ -35,7 +35,7 @@ BEGIN_SCOPE(objects)
 
 CSeqref::CSeqref(void)
     : m_Flags(fHasAllLocal),
-      m_Gi(0), m_Sat(0), m_SatKey(0),
+      m_Gi(0), m_Sat(0), m_SubSat(eSubSat_main), m_SatKey(0),
       m_Version(0)
 {
 }
@@ -43,7 +43,15 @@ CSeqref::CSeqref(void)
 
 CSeqref::CSeqref(int gi, int sat, int satkey)
     : m_Flags(fHasAllLocal),
-      m_Gi(gi), m_Sat(sat), m_SatKey(satkey),
+      m_Gi(gi), m_Sat(sat), m_SubSat(eSubSat_main), m_SatKey(satkey),
+      m_Version(0)
+{
+}
+
+
+CSeqref::CSeqref(int gi, int sat, int satkey, TSubSat subsat, TFlags flags)
+    : m_Flags(flags),
+      m_Gi(gi), m_Sat(sat), m_SubSat(subsat), m_SatKey(satkey),
       m_Version(0)
 {
 }
@@ -57,7 +65,10 @@ CSeqref::~CSeqref(void)
 const string CSeqref::print(void) const
 {
     CNcbiOstrstream ostr;
-    ostr << "SeqRef("<<GetSat()<<','<<GetSatKey()<<','<<GetGi()<<')';
+    ostr << "SeqRef(" << GetSat();
+    if ( GetSubSat() != eSubSat_main )
+        ostr << '.' << GetSubSat();
+    ostr << ',' << GetSatKey() << ',' << GetGi() << ')';
     return CNcbiOstrstreamToString(ostr);
 }
 
@@ -65,7 +76,10 @@ const string CSeqref::print(void) const
 const string CSeqref::printTSE(void) const
 {
     CNcbiOstrstream ostr;
-    ostr << "TSE(" << GetSat() << ',' << GetSatKey() << ')';
+    ostr << "TSE(" << GetSat();
+    if ( GetSubSat() != eSubSat_main )
+        ostr << '.' << GetSubSat();
+    ostr << ',' << GetSatKey() << ')';
     return CNcbiOstrstreamToString(ostr);
 }
 
@@ -73,7 +87,10 @@ const string CSeqref::printTSE(void) const
 const string CSeqref::printTSE(const TKeyByTSE& key)
 {
     CNcbiOstrstream ostr;
-    ostr << "TSE(" << key.first << ',' << key.second << ')';
+    ostr << "TSE(" << key.first.first;
+    if ( key.first.second != eSubSat_main )
+        ostr << '.' << key.first.second;
+    ostr << ',' << key.second << ')';
     return CNcbiOstrstreamToString(ostr);
 }
 
@@ -84,6 +101,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2004/06/30 21:02:02  vasilche
+ * Added loading of external annotations from 26 satellite.
+ *
  * Revision 1.2  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

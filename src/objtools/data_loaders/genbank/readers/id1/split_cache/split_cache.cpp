@@ -499,6 +499,22 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
     LINE("Processing: " << id.AsFastaString());
     {{
         CLevelGuard level(m_RecursionLevel);
+        if ( m_Resplit ) {
+            CConstRef<CSeqref> seqref;
+            int version;
+            {{
+                WAIT_LINE << "Resolving Seq-id...";
+                seqref = m_Loader->GetSatSatkey(id);
+                version = m_Reader->GetVersion(*seqref, 0);
+            }}
+            string blob_key = m_Reader->GetBlobKey(*seqref);
+            if ( m_Cache->GetSize(blob_key, version,
+                                  m_Reader->GetSkeletonSubkey()) ) {
+                WAIT_LINE << "Removing old cache data...";
+                m_Cache->Store(blob_key, version,
+                               m_Reader->GetSkeletonSubkey(), 0, 0);
+            }
+        }
         CBioseq_Handle bh;
         {{
             WAIT_LINE << "Loading Bioseq...";
@@ -610,7 +626,7 @@ void CSplitCacheApp::ProcessBlob(const CSeq_entry_Handle& tse)
 {
     CConstRef<CSeqref> seqref = GetSeqref(tse);
     {
-        pair<int, int> key = seqref->GetKeyByTSE();
+        CSeqref::TKeyByTSE key = seqref->GetKeyByTSE();
         pair<TProcessedBlobs::iterator, bool> ins =
             m_ProcessedBlobs.insert(key);
         if ( !ins.second ) {
@@ -632,12 +648,9 @@ void CSplitCacheApp::ProcessBlob(const CSeq_entry_Handle& tse)
     }
 
     string blob_key = m_Reader->GetBlobKey(*seqref);
-    if ( m_Cache->GetSize(blob_key, version, "Skeleton") ) {
-        if ( m_Resplit ) {
-            WAIT_LINE << "Removing old split data...";
-            m_Cache->Remove(blob_key);
-        }
-        else {
+    if ( m_Cache->GetSize(blob_key, version,
+                          m_Reader->GetSkeletonSubkey()) ) {
+        if ( !m_Resplit ) {
             LINE("Already splitted: skipping");
             return;
         }
@@ -761,6 +774,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.20  2004/06/15 14:07:39  vasilche
 * Added possibility to split sequences.
 *

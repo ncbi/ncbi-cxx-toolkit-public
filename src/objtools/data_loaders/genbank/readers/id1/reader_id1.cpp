@@ -425,42 +425,47 @@ int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 }
 
 
-typedef pair<const char*, CReader::ESatellite> TSatPair;
-static const TSatPair sc_SatArray[] = {
-    TSatPair("SNP",        CReader::eSatellite_SNP),
-    TSatPair("ti",         CReader::eSatellite_TRACE),
-    TSatPair("TR_ASSM_CH", CReader::eSatellite_TR_ASSM_CH),
-    TSatPair("TRACE_ASSM", CReader::eSatellite_TRACE_ASSM),
-    TSatPair("TRACE_CHGR", CReader::eSatellite_TRACE_CHGR)
+typedef pair<CSeqref::ESat, CSeqref::ESubSat> TSK;
+typedef pair<const char*, TSK> TSI;
+static const TSI sc_SatIndex[] = {
+    TSI("ANNOT:CDD",  TSK(CSeqref::eSat_ANNOT,      CSeqref::eSubSat_CDD)),
+    TSI("ANNOT:MGS",  TSK(CSeqref::eSat_ANNOT,      CSeqref::eSubSat_MGS)),
+    TSI("ANNOT:SNP",  TSK(CSeqref::eSat_ANNOT,      CSeqref::eSubSat_SNP)),
+    TSI("SNP",        TSK(CSeqref::eSat_SNP,        CSeqref::eSubSat_main)),
+    TSI("ti",         TSK(CSeqref::eSat_TRACE,      CSeqref::eSubSat_main)),
+    TSI("TR_ASSM_CH", TSK(CSeqref::eSat_TR_ASSM_CH, CSeqref::eSubSat_main)),
+    TSI("TRACE_ASSM", TSK(CSeqref::eSat_TRACE_ASSM, CSeqref::eSubSat_main)),
+    TSI("TRACE_CHGR", TSK(CSeqref::eSat_TRACE_CHGR, CSeqref::eSubSat_main))
 };
-typedef CStaticArrayMap<const char*, CReader::ESatellite, PNocase> TSatMap;
-static const TSatMap sc_SatMap(sc_SatArray, sizeof (sc_SatArray));
+typedef CStaticArrayMap<const char*, TSK, PNocase> TSatMap;
+static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex));
 
 
 void CId1Reader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
 {
     if ( id.IsGeneral()  &&  id.GetGeneral().GetTag().IsId() ) {
         const CDbtag& dbtag = id.GetGeneral();
-        const CObject_id& objid = dbtag.GetTag();
-
-        int sat = 0;
-        int sat_key = objid.GetId();
-        if (sat_key != 0) {
-            TSatMap::const_iterator iter =
-                sc_SatMap.find(dbtag.GetDb().c_str());
-            if (iter != sc_SatMap.end()) {
-                sat = iter->second;
-            } else {
+        const string& db = dbtag.GetDb();
+        int id = dbtag.GetTag().GetId();
+        if ( id != 0 ) {
+            TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
+            if ( iter != sc_SatMap.end() ) {
+                srs.push_back(Ref(new CSeqref(id,
+                                              iter->second.first,
+                                              id,
+                                              iter->second.second,
+                                              CSeqref::fHasAllLocal)));
+                return;
+            }
+            else {
                 try {
-                    sat = NStr::StringToInt(dbtag.GetDb());
+                    srs.push_back(Ref(new CSeqref(0,
+                                                  NStr::StringToInt(db),
+                                                  id)));
+                    return;
                 }
                 catch (...) {
                 }
-            }
-
-            if (sat != 0) {
-                srs.push_back(Ref(new CSeqref(0, sat, sat_key)));
-                return;
             }
         }
     }
@@ -495,17 +500,44 @@ void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
                  "negative sat/satkey");
         return;
     }
-    CRef<CSeqref> ref(new CSeqref(gi, info.GetSat(), info.GetSat_key()));
-    ref->SetVersion(x_GetVersion(info));
-    srs.push_back(ref);
    
     if ( TrySNPSplit() ) {
-        if ( !info.IsSetExtfeatmask() ) {
-            AddSNPSeqref(srs, gi, CSeqref::fPossible);
+        {{
+            // add main blob
+            int sat = info.GetSat();
+            int sat_key = info.GetSat_key();
+            CRef<CSeqref> ref(new CSeqref(gi, sat, sat_key));
+            ref->SetVersion(x_GetVersion(info));
+            srs.push_back(ref);
+        }}
+        if ( info.IsSetExtfeatmask() ) {
+            int ext_feat = info.GetExtfeatmask();
+            while ( ext_feat ) {
+                int bit = ext_feat & ~(ext_feat-1);
+                ext_feat -= bit;
+#ifdef GENBANK_USE_SNP_SATELLITE_15
+                if ( bit == CSeqref::eSubSat_SNP ) {
+                    AddSNPSeqref(srs, gi);
+                    continue;
+                }
+#endif
+                srs.push_back(Ref(new CSeqref(gi,
+                                              CSeqref::eSat_ANNOT,
+                                              gi,
+                                              bit,
+                                              CSeqref::fHasExternal)));
+            }
         }
-        else if ( info.GetExtfeatmask() & 1 ) {
-            AddSNPSeqref(srs, gi);
-        }
+    }
+    else {
+        // whole blob
+        int sat = info.GetSat();
+        int sat_key = info.GetSat_key();
+        int ext_feat = info.IsSetExtfeatmask()? info.GetExtfeatmask(): 0;
+        CRef<CSeqref> ref(new CSeqref(gi, sat, sat_key, ext_feat,
+                                      CSeqref::fHasAllLocal));
+        ref->SetVersion(x_GetVersion(info));
+        srs.push_back(ref);
     }
 }
 
@@ -522,7 +554,7 @@ int CId1Reader::GetVersion(const CSeqref& seqref, TConn conn)
 int CId1Reader::x_GetVersion(const CSeqref& seqref, TConn conn)
 {
     CID1server_request id1_request;
-    x_SetParams(seqref, id1_request.SetGetblobinfo(), IsSNPSeqref(seqref));
+    x_SetParams(seqref, id1_request.SetGetblobinfo());
     
     CID1server_back    id1_reply;
     x_ResolveId(id1_reply, id1_request, conn);
@@ -684,7 +716,7 @@ void CId1Reader::x_GetTSEBlob(CID1server_back& id1_reply,
     try {
 #endif
         CConn_ServiceStream* stream = x_GetConnection(conn);
-        x_SendRequest(seqref, stream, false);
+        x_SendRequest(seqref, stream);
         x_ReadTSEBlob(id1_reply, seqref, *stream);
         
 #ifdef ID1_COLLECT_STATS
@@ -725,7 +757,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
     try {
 #endif
         CConn_ServiceStream* stream = x_GetConnection(conn);
-        x_SendRequest(seqref, stream, true);
+        x_SendRequest(seqref, stream);
 
 #ifdef ID1_COLLECT_STATS
         size_t compressed;
@@ -780,22 +812,19 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
 
 void CId1Reader::x_SetParams(const CSeqref& seqref,
-                             CID1server_maxcomplex& params,
-                             bool is_snp)
+                             CID1server_maxcomplex& params)
 {
-    bool is_external = is_snp;
-    bool skip_extfeat = !is_external && TrySNPSplit();
-    enum {
-        kNoExtFeat = 1<<4
-    };
-    EEntry_complexities maxplex = eEntry_complexities_entry;
-    if ( skip_extfeat ) {
-        maxplex = EEntry_complexities(int(maxplex) | kNoExtFeat);
-    }
-    params.SetMaxplex(maxplex);
+    int bits = (~seqref.GetSubSat() & 0xffff) << 4;
+    params.SetMaxplex(eEntry_complexities_entry | bits);
     params.SetGi(seqref.GetGi());
     params.SetEnt(seqref.GetSatKey());
-    params.SetSat(NStr::IntToString(seqref.GetSat()));
+    if ( seqref.GetSat() == CSeqref::eSat_ANNOT ) {
+        params.SetMaxplex(eEntry_complexities_entry); // TODO: TEMP: remove
+        params.SetSat("ANNOT:"+NStr::IntToString(seqref.GetSubSat()));
+    }
+    else {
+        params.SetSat(NStr::IntToString(seqref.GetSat()));
+    }
 }
 
 
@@ -815,11 +844,10 @@ int CId1Reader::x_GetVersion(const CID1blob_info& info) const
 
 
 void CId1Reader::x_SendRequest(const CSeqref& seqref,
-                               CConn_ServiceStream* stream,
-                               bool is_snp)
+                               CConn_ServiceStream* stream)
 {
     CID1server_request id1_request;
-    x_SetParams(seqref, id1_request.SetGetsefromgi(), is_snp);
+    x_SetParams(seqref, id1_request.SetGetsefromgi());
     CObjectOStreamAsnBinary out(*stream);
     out << id1_request;
     out.Flush();
@@ -901,6 +929,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.82  2004/06/30 21:02:02  vasilche
+ * Added loading of external annotations from 26 satellite.
+ *
  * Revision 1.81  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

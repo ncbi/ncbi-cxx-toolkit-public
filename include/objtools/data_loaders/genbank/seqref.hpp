@@ -41,18 +41,10 @@ BEGIN_SCOPE(objects)
 class NCBI_XREADER_EXPORT CSeqref : public CObject
 {
 public:
-    CSeqref(void);
-    CSeqref(int gi, int sat, int satkey);
-    virtual ~CSeqref(void);
-    
     typedef TSeqPos TPos;
     typedef unsigned TConn;
 
-    typedef pair<int, int> TKeyByTSE;
-
-    const string print(void)    const;
-    const string printTSE(void) const;
-    static const string printTSE(const TKeyByTSE& key);
+    typedef pair<pair<int, int>, int> TKeyByTSE;
 
     enum FFlags {
         fHasCore     = 1 << 0,
@@ -72,6 +64,32 @@ public:
     };
     typedef int TFlags;
 
+    enum ESat {
+        eSat_SNP        = 15,
+        eSat_ANNOT      = 26,
+        eSat_TRACE      = 28,
+        eSat_TRACE_ASSM = 29,
+        eSat_TR_ASSM_CH = 30,
+        eSat_TRACE_CHGR = 31
+    };
+
+    enum ESubSat {
+        eSubSat_main =    0,
+        eSubSat_SNP  = 1<<0,
+        eSubSat_CDD  = 1<<3,
+        eSubSat_MGS  = 1<<4
+    };
+    typedef int TSubSat;
+
+    CSeqref(void);
+    CSeqref(int gi, int sat, int satkey);
+    CSeqref(int gi, int sat, int satkey, TSubSat subsat, TFlags flags);
+    virtual ~CSeqref(void);
+    
+    const string print(void)    const;
+    const string printTSE(void) const;
+    static const string printTSE(const TKeyByTSE& key);
+
     int GetGi() const
         {
             return m_Gi;
@@ -80,6 +98,10 @@ public:
         {
             return m_Sat;
         }
+    int GetSubSat() const
+        {
+            return m_SubSat;
+        }
     int GetSatKey() const
         {
             return m_SatKey;
@@ -87,31 +109,36 @@ public:
 
     TKeyByTSE GetKeyByTSE(void) const
         {
-            return TKeyByTSE(m_Sat, m_SatKey);
+            return TKeyByTSE(pair<int, int>(m_Sat, m_SubSat), m_SatKey);
         }
 
     bool SameTSE(const CSeqref& seqRef) const
         {
-            return m_Sat == seqRef.m_Sat && m_SatKey == seqRef.m_SatKey;
+            return
+                m_Sat == seqRef.m_Sat &&
+                m_SubSat == seqRef.m_SubSat &&
+                m_SatKey == seqRef.m_SatKey;
         }
     bool SameSeq(const CSeqref& seqRef) const
         {
-            return m_Sat == seqRef.m_Sat && m_SatKey == seqRef.m_SatKey &&
-                m_Gi == seqRef.m_Gi;
+            return m_Gi == seqRef.m_Gi && SameTSE(seqRef);
         }
     bool LessByTSE(const CSeqref& seqRef) const
         {
-            return
-                m_Sat < seqRef.m_Sat ||
-                m_Sat == seqRef.m_Sat && m_SatKey < seqRef.m_SatKey;
+            if ( m_Sat != seqRef.m_Sat ) {
+                return m_Sat < seqRef.m_Sat;
+            }
+            if ( m_SubSat != seqRef.m_SubSat ) {
+                return m_SubSat < seqRef.m_SubSat;
+            }
+            return m_SatKey < seqRef.m_SatKey;
         }
     bool LessBySeq(const CSeqref& seqRef) const
         {
-            return
-                m_Sat < seqRef.m_Sat ||
-                m_Sat == seqRef.m_Sat &&
-                (m_SatKey < seqRef.m_SatKey ||
-                 m_SatKey == seqRef.m_SatKey && m_Gi < seqRef.m_Gi);
+            if ( m_Gi != seqRef.m_Gi ) {
+                return m_Gi < seqRef.m_Gi;
+            }
+            return LessByTSE(seqRef);
         }
 
     TFlags  GetFlags() const
@@ -137,6 +164,7 @@ protected:
 
     int m_Gi;
     int m_Sat;
+    int m_SubSat; // external features mask
     int m_SatKey;
     int m_Version;
 };
@@ -147,6 +175,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.1  2004/01/13 16:55:53  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

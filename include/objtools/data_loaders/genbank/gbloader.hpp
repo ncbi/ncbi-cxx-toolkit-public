@@ -135,7 +135,7 @@ public:
     // typedefs from CReader
     typedef unsigned TConn;
     typedef vector< CRef<CSeqref> > TSeqrefs;
-    typedef pair<int, int> TKeyByTSE;
+    typedef pair<pair<int, int>, int> TKeyByTSE;
     typedef int TMask;
     typedef CPluginManager<CReader>   TReader_PluginManager;
 
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.49  2004/06/30 21:02:02  vasilche
+ * Added loading of external annotations from 26 satellite.
+ *
  * Revision 1.48  2004/01/13 21:58:42  vasilche
  * Requrrected new version
  *

@@ -210,11 +210,14 @@ void CCachedId1Reader::SetIdCache(IIntCache* id_cache)
 
 string CCachedId1Reader::GetBlobKey(const CSeqref& seqref) const
 {
-    int sat = seqref.GetSat();
-    int sat_key = seqref.GetSatKey();
-
     char szBlobKeyBuf[256];
-    sprintf(szBlobKeyBuf, "%i-%i", sat, sat_key);
+    if ( seqref.GetSubSat() == CSeqref::eSubSat_main ) {
+        sprintf(szBlobKeyBuf, "%i-%i", seqref.GetSat(), seqref.GetSatKey());
+    }
+    else {
+        sprintf(szBlobKeyBuf, "%i.%i-%i",
+                seqref.GetSat(), seqref.GetSubSat(), seqref.GetSatKey());
+    }
     return szBlobKeyBuf;
 }
 
@@ -300,7 +303,7 @@ void CCachedId1Reader::PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id)
 
 bool CCachedId1Reader::x_GetIdCache(const string& key,
                                     const string& subkey,
-                                    vector<int>& ints)
+                                    TSeqrefsData& data)
 {
     CStopWatch sw;
     if ( CollectStatistics() ) {
@@ -308,9 +311,9 @@ bool CCachedId1Reader::x_GetIdCache(const string& key,
     }
 
     size_t size = m_IdCache->GetSize(key, 0, subkey);
-    ints.resize(size / sizeof(int));
+    data.resize(size / sizeof(int));
     if ( size == 0 || size % sizeof(int) != 0 ||
-         !m_IdCache->Read(key, 0, subkey, &ints[0], size) ) {
+         !m_IdCache->Read(key, 0, subkey, &data[0], size) ) {
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
             LogStat("CId1Cache: failed to read id cache record for id",
@@ -363,14 +366,14 @@ bool CCachedId1Reader::x_GetIdCache(const string& key,
 
 void CCachedId1Reader::x_StoreIdCache(const string& key,
                                       const string& subkey,
-                                      const vector<int>& ints)
+                                      const TSeqrefsData& data)
 {
     CStopWatch sw;
     if ( CollectStatistics() ) {
         sw.Start();
     }
     
-    m_IdCache->Store(key, 0, subkey, &ints[0], ints.size()*sizeof(int));
+    m_IdCache->Store(key, 0, subkey, &data[0], data.size()*sizeof(int));
     
     if ( CollectStatistics() ) {
         double time = sw.Elapsed();
@@ -401,49 +404,65 @@ void CCachedId1Reader::x_StoreIdCache(const string& key,
 }
 
 
-bool CCachedId1Reader::GetSeqrefs(const string& key, TSeqrefs& srs)
+static const int SEQREF_MAGIC = 0x32fbc506;
+static const size_t SEQREF_SIZE = 6;
+
+/*
+  CSeqrefs are stored as vector of ints in the following order:
+  
+  [0] SEQREF_MAGIC
+  [1] zero or more of {
+        [0] gi
+        [1] sat
+        [2] sub_sat
+        [3] sat_key
+        [4] flags
+        [5] version
+      }
+*/
+
+bool CCachedId1Reader::x_DecodeSeqrefs(const TSeqrefsData& data, TSeqrefs& srs)
 {
-    vector<int> data;
-    if ( !x_GetIdCache(key, GetSeqrefsSubkey(), data) ) {
+    if ( data.size() % SEQREF_SIZE != 1 || data.front() != SEQREF_MAGIC ) {
         return false;
     }
-    if ( data.size() % 5 != 0 || data.size() > 50 ) {
-        return false;
-    }
-    ITERATE ( vector<int>, it, data ) {
-        int gi      = *it++;
-        int sat     = *it++;
-        int satkey  = *it++;
-        int version = *it++;
-        int flags   = *it;
-        CRef<CSeqref> sr(new CSeqref(gi, sat, satkey));
+    for ( size_t i = 1; i+SEQREF_SIZE <= data.size(); i += SEQREF_SIZE ) {
+        int gi      = data[i+0];
+        int sat     = data[i+1];
+        int sub_sat = data[i+2];
+        int sat_key = data[i+3];
+        int flags   = data[i+4];
+        int version = data[i+5];
+        CRef<CSeqref> sr(new CSeqref(gi, sat, sat_key, sub_sat, flags));
         sr->SetVersion(version);
-        sr->SetFlags(flags);
         srs.push_back(sr);
     }
     return true;
 }
 
 
-void CCachedId1Reader::StoreSeqrefs(const string& key, const TSeqrefs& srs)
+void CCachedId1Reader::x_EncodeSeqrefs(TSeqrefsData& data, const TSeqrefs& srs)
 {
-    vector<int> data;
+    data.push_back(SEQREF_MAGIC);
     ITERATE ( TSeqrefs, it, srs ) {
         const CSeqref& sr = **it;
         data.push_back(sr.GetGi());
         data.push_back(sr.GetSat());
+        data.push_back(sr.GetSubSat());
         data.push_back(sr.GetSatKey());
-        data.push_back(sr.GetVersion());
         data.push_back(sr.GetFlags());
+        data.push_back(sr.GetVersion());
     }
-    x_StoreIdCache(key, GetSeqrefsSubkey(), data);
+    _ASSERT(data.size() % SEQREF_SIZE == 1 && data.front() == SEQREF_MAGIC);
 }
 
 
 bool CCachedId1Reader::GetSeqrefs(int gi, TSeqrefs& srs)
 {
     if ( m_IdCache ) {
-        return GetSeqrefs(GetIdKey(gi), srs);
+        TSeqrefsData data;
+        return x_GetIdCache(GetIdKey(gi), GetSeqrefsSubkey(), data) &&
+            x_DecodeSeqrefs(data, srs);
     }
     else if ( m_OldIdCache) {
         CStopWatch sw;
@@ -451,7 +470,7 @@ bool CCachedId1Reader::GetSeqrefs(int gi, TSeqrefs& srs)
             sw.Start();
         }
 
-        vector<int> data;
+        TSeqrefsData data;
         if ( !m_OldIdCache->Read(gi, 0, data) ) {
             if ( CollectStatistics() ) {
                 double time = sw.Elapsed();
@@ -461,27 +480,8 @@ bool CCachedId1Reader::GetSeqrefs(int gi, TSeqrefs& srs)
             }
             return false;
         }
-    
-        _ASSERT(data.size() == 4 || data.size() == 8);
 
-        for ( size_t pos = 0; pos + 4 <= data.size(); pos += 4 ) {
-            int sat = data[pos];
-            int satkey = data[pos+1];
-            int version = data[pos+2];
-            int flags = data[pos+3];
-            CRef<CSeqref> sr(new CSeqref(gi, sat, satkey));
-            sr->SetVersion(version);
-            sr->SetFlags(flags);
-            srs.push_back(sr);
-        }
-
-        if ( CollectStatistics() ) {
-            double time = sw.Elapsed();
-            LogStat("CId1Cache: resolved gi", gi, time);
-            resolve_gi_count++;
-            resolve_gi_time += time;
-        }
-        return true;
+        return x_DecodeSeqrefs(data, srs);
     }
     else {
         return false;
@@ -492,7 +492,9 @@ bool CCachedId1Reader::GetSeqrefs(int gi, TSeqrefs& srs)
 void CCachedId1Reader::StoreSeqrefs(int gi, const TSeqrefs& srs)
 {
     if ( m_IdCache ) {
-        StoreSeqrefs(GetIdKey(gi), srs);
+        TSeqrefsData data;
+        x_EncodeSeqrefs(data, srs);
+        x_StoreIdCache(GetIdKey(gi), GetSeqrefsSubkey(), data);
     }
     else if ( m_OldIdCache ) {
         CStopWatch sw;
@@ -500,26 +502,10 @@ void CCachedId1Reader::StoreSeqrefs(int gi, const TSeqrefs& srs)
             sw.Start();
         }
 
-        vector<int> data;
-
-        ITERATE ( TSeqrefs, it, srs ) {
-            const CSeqref& sr = **it;
-            data.push_back(sr.GetSat());
-            data.push_back(sr.GetSatKey());
-            data.push_back(sr.GetVersion());
-            data.push_back(sr.GetFlags());
-        }
-
-        _ASSERT(data.size() == 4 || data.size() == 8);
+        TSeqrefsData data;
+        x_EncodeSeqrefs(data, srs);
 
         m_OldIdCache->Store(gi, 0, data);
-
-        if ( CollectStatistics() ) {
-            double time = sw.Elapsed();
-            LogStat("CId1Cache: saved gi", gi, time);
-            resolve_gi_count++;
-            resolve_gi_time += time;
-        }
     }
 }
 
@@ -527,7 +513,9 @@ void CCachedId1Reader::StoreSeqrefs(int gi, const TSeqrefs& srs)
 bool CCachedId1Reader::GetSeqrefs(const CSeq_id& id, TSeqrefs& srs)
 {
     if ( m_IdCache ) {
-        return GetSeqrefs(GetIdKey(id), srs);
+        TSeqrefsData data;
+        return x_GetIdCache(GetIdKey(id), GetSeqrefsSubkey(), data) &&
+            x_DecodeSeqrefs(data, srs);
     }
     else {
         return false;
@@ -538,7 +526,9 @@ bool CCachedId1Reader::GetSeqrefs(const CSeq_id& id, TSeqrefs& srs)
 void CCachedId1Reader::StoreSeqrefs(const CSeq_id& id, const TSeqrefs& srs)
 {
     if ( m_IdCache ) {
-        StoreSeqrefs(GetIdKey(id), srs);
+        TSeqrefsData data;
+        x_EncodeSeqrefs(data, srs);
+        x_StoreIdCache(GetIdKey(id), GetSeqrefsSubkey(), data);
     }
 }
 
@@ -554,33 +544,16 @@ int CCachedId1Reader::GetBlobVersion(const CSeqref& seqref)
         }
     }
     else if ( m_OldIdCache ) {
-        CStopWatch sw;
-        if ( CollectStatistics() ) {
-            sw.Start();
-        }
-
-        vector<int> data;
+        TSeqrefsData data;
         if ( !m_OldIdCache->Read(seqref.GetSatKey(), seqref.GetSat(), data) ) {
-            if ( CollectStatistics() ) {
-                double time = sw.Elapsed();
-                LogStat("CId1Cache: failed to get blob version",
-                        seqref.printTSE(), time);
-                resolve_ver_count++;
-                resolve_ver_time += time;
-            }
             return 0;
         }
     
-        _ASSERT(data.size() == 1);
-
-        if ( CollectStatistics() ) {
-            double time = sw.Elapsed();
-            LogStat("CId1Cache: got blob version", seqref.printTSE(), time);
-            resolve_ver_count++;
-            resolve_ver_time += time;
+        if ( data.size() != 1 ) {
+            return 0;
         }
 
-        return data[0];
+        return data.front();
     }
     return 0;
 }
@@ -594,24 +567,11 @@ void CCachedId1Reader::StoreBlobVersion(const CSeqref& seqref, int version)
                        version);
     }
     else if ( m_OldIdCache ) {
-        CStopWatch sw;
-        if ( CollectStatistics() ) {
-            sw.Start();
-        }
-
-        vector<int> data;
+        TSeqrefsData data;
         data.push_back(version);
-
         _ASSERT(data.size() == 1);
 
         m_OldIdCache->Store(seqref.GetSatKey(), seqref.GetSat(), data);
-
-        if ( CollectStatistics() ) {
-            double time = sw.Elapsed();
-            LogStat("CId1Cache: saved blob version", seqref.printTSE(), time);
-            resolve_ver_count++;
-            resolve_ver_time += time;
-        }
     }
 }
 
@@ -1377,6 +1337,10 @@ bool CCachedId1Reader::LoadData(const string& key, int version,
                                 const char* suffix,
                                 CID2_Reply_Data& data)
 {
+    if ( !m_BlobCache->GetSize(key, version, suffix) ) {
+        return false;
+    }
+
     auto_ptr<IReader> reader(m_BlobCache->GetReadStream(key, version, suffix));
     if ( !reader.get() ) {
         return false;
@@ -1409,6 +1373,10 @@ bool CCachedId1Reader::LoadData(const string& key, int version,
 bool CCachedId1Reader::LoadData(const string& key, const char* suffix,
                                 int version, CID2_Reply_Data& data)
 {
+    if ( !m_OldBlobCache->GetSize(key + suffix, version) ) {
+        return false;
+    }
+
     auto_ptr<IReader> reader(m_OldBlobCache->GetReadStream(key + suffix,
                                                           version));
     if ( !reader.get() ) {
@@ -1529,6 +1497,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.27  2004/06/30 21:02:02  vasilche
+ * Added loading of external annotations from 26 satellite.
+ *
  * Revision 1.26  2004/06/29 14:27:21  vasilche
  * Fixed enum values in ID2-Reply-Data (compression/type/format).
  * Added recognition of old & incorrect values.

@@ -46,6 +46,8 @@
 
 #include <objmgr/split/blob_splitter_params.hpp>
 
+#include <objtools/data_loaders/genbank/seqref.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class ICache;
@@ -144,7 +146,7 @@ public:
 protected:
     CConstRef<CSeqref> GetSeqref(CSeq_entry_Handle tse);
 
-    typedef set< pair<int, int> > TProcessedBlobs;
+    typedef set<CSeqref::TKeyByTSE> TProcessedBlobs;
     typedef set<CSeq_id_Handle> TProcessedIds;
 
 private:
@@ -176,6 +178,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.11  2004/06/15 14:07:39  vasilche
 * Added possibility to split sequences.
 *

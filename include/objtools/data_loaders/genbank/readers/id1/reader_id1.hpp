@@ -110,11 +110,9 @@ protected:
                      TConn conn);
 
     void x_SendRequest(const CSeqref& seqref,
-                       CConn_ServiceStream* stream,
-                       bool is_snp);
+                       CConn_ServiceStream* stream);
     void x_SetParams(const CSeqref& seqref,
-                     CID1server_maxcomplex& params,
-                     bool is_snp);
+                     CID1server_maxcomplex& params);
 
     int x_GetVersion(const CID1blob_info& info) const;
 
@@ -185,6 +183,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.35  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.34  2004/02/04 17:44:01  kuznets
 * Fixed naming of DLL entry points.
 *

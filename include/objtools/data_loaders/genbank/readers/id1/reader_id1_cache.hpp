@@ -99,18 +99,22 @@ protected:
     
     void PrintStatistics(void) const;
 
+    typedef vector<int> TSeqrefsData;
+
     bool x_GetIdCache(const string& key,
                       const string& subkey,
-                      vector<int>& ints);
+                      TSeqrefsData& ints);
     bool x_GetIdCache(const string& key,
                       const string& subkey,
                       int& value);
     void x_StoreIdCache(const string& key,
                         const string& subkey,
-                        const vector<int>& ints);
+                        const TSeqrefsData& ints);
     void x_StoreIdCache(const string& key,
                         const string& subkey,
                         const int& value);
+    bool x_DecodeSeqrefs(const TSeqrefsData& data, TSeqrefs& srs);
+    void x_EncodeSeqrefs(TSeqrefsData& data, const TSeqrefs& srs);
     
     int x_GetVersion(const CSeqref& seqref, TConn conn);
 
@@ -131,9 +135,6 @@ protected:
 
     bool GetSeqrefs(const CSeq_id& id, TSeqrefs& srs);
     void StoreSeqrefs(const CSeq_id& id, const TSeqrefs& srs);
-
-    bool GetSeqrefs(const string& key, TSeqrefs& srs);
-    void StoreSeqrefs(const string& key, const TSeqrefs& srs);
 
     void StoreBlobVersion(const CSeqref& seqref, int version);
 
@@ -177,6 +178,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.18  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.17  2004/06/29 14:27:21  vasilche
 * Fixed enum values in ID2-Reply-Data (compression/type/format).
 * Added recognition of old & incorrect values.

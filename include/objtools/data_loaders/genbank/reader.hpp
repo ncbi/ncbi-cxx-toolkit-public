@@ -36,6 +36,8 @@
 #include <objtools/data_loaders/genbank/seqref.hpp>
 #include <vector>
 
+#define GENBANK_USE_SNP_SATELLITE_15 1
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
@@ -95,14 +97,6 @@ public:
     // -1 - never
     virtual int GetConst(const string& const_name) const;
 
-    enum ESatellite {
-        eSatellite_SNP = 15,
-        eSatellite_TRACE = 28,
-        eSatellite_TRACE_ASSM = 29,
-        eSatellite_TR_ASSM_CH = 30,
-        eSatellite_TRACE_CHGR = 31
-    };
-
     enum {
         kSNP_EntryId = 0,
         kSNP_ChunkId = 0
@@ -131,6 +125,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.40  2004/06/30 21:02:02  vasilche
+* Added loading of external annotations from 26 satellite.
+*
 * Revision 1.39  2004/03/16 17:49:18  vasilche
 * Use enum constant for TRACE_CHGR entries
 *
