@@ -259,7 +259,7 @@ check_add_p: check_add_p.needs-reqs
 
 all_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@+if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) all; else true; fi
-	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
+	@+if $(RELEVANT_SUBS); then $(MAKE) $(MFLAGS) configurables  &&  $(SUB_BRA_P) all_p $(SUB_KET_P); else true; fi
 
 clean_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(MAKE) $(MFLAGS) clean; else true; fi
