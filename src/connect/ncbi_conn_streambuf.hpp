@@ -33,7 +33,6 @@
  *
  */
 
-#include <util/stream_utils.hpp>
 #include <connect/ncbi_connection.h>
 
 
@@ -41,8 +40,15 @@ BEGIN_NCBI_SCOPE
 
 
 #ifdef NCBI_COMPILER_MIPSPRO
+#  include <util/stream_utils.hpp>
 #  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
+#  if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
+#    ifdef HAVE_IOS_XALLOC
+#      undef  HAVE_BUGGY_IOS_CALLBACKS
+#      define HAVE_BUGGY_IOS_CALLBACKS 1
+#    endif
+#  endif
 #  define CConn_StreambufBase streambuf
 #endif/*NCBI_COMPILER_MIPSPRO*/
 
@@ -87,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/09/22 20:45:27  lavr
+ * Define HAVE_BUGGY_IOS_CALLBACKS locally (not to depend on xutil, excl IRIX)
+ *
  * Revision 6.20  2003/05/20 18:05:53  lavr
  * x_LogIfError() to accept and print approproate file location
  *
