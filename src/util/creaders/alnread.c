@@ -208,7 +208,7 @@ s_ReportBadCharError
 {
     TErrorInfoPtr eip;
     const char *  err_format =
-                          "%d bad characters (%c) found at position %d (%s)";
+                          "%d bad characters (%c) found at position %d (%s).";
 
     if (errfunc == NULL  ||  num_bad == 0  ||  bad_char == 0
         ||  reason == NULL) {
@@ -367,7 +367,7 @@ s_ReportLineLengthError
 {
     TErrorInfoPtr eip;
     char *        msg;
-    const char *  format = "Expected length %d, actual length %d";
+    const char *  format = "Expected line length %d, actual length %d";
     int           len;
 
     if (lip == NULL  ||  report_error == NULL) {
@@ -4266,6 +4266,9 @@ s_GetBestCharacterLength
         prev_offset = new_offset;
     }
     best_num_chars = s_GetMostPopularSize (pattern_length_list);
+    if (best_num_chars == 0  &&  pattern_length_list != NULL) {
+        best_num_chars = pattern_length_list->size_value;
+    }
     s_SizeInfoFree (pattern_length_list);
     pattern_length_list = NULL;
     return best_num_chars;
@@ -4458,6 +4461,33 @@ static void s_InsertNewOffsets
         }
         prev_offset = new_offset;
     }
+    
+    /* iterate through the last block */
+    for (line_diff = 0;
+         line_diff < block_length && lip != NULL; 
+         line_diff ++) {
+        lip = lip->next;
+    }
+
+    /* if we have room for one more sequence, or even most of one more sequence, add it */
+    if (lip != NULL  &&  ! s_SkippableString (lip->data)) {
+        splice_offset = s_IntLinkNew (line_diff + prev_offset->ival, prev_offset);
+    }
+}
+
+
+/* This function returns true if the string contains digits, false otherwise */
+static EBool s_ContainsDigits (char *data)
+{
+    char *cp;
+
+    if (data == NULL) return eFalse;
+    for (cp = data; *cp != 0; cp++) {
+        if (isdigit (*cp)) {
+            return eTrue;
+        }
+    }
+    return eFalse;
 }
 
 
@@ -4488,7 +4518,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
          lip != NULL  &&  ! s_FoundStopLine (lip->data);
          lip = lip->next)
     {
-        if (s_SkippableString (lip->data)) {
+        if (s_SkippableString (lip->data)  ||  s_ContainsDigits(lip->data)) {
             s_AddLengthRepeat (list, 0);
         } else {
             s_AddLengthRepeat (list, strlen (lip->data));
@@ -4510,6 +4540,9 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
 
     /* resolve unusual distances between anchor patterns */
     best_length = s_GetMostPopularPatternLength (offset_list);
+    if (best_length < 1  &&  offset_list != NULL  && offset_list->next != NULL) {
+        best_length = offset_list->next->ival - offset_list->ival;
+    }
     best_num_chars = s_GetBestCharacterLength (token_list, offset_list,
                                              best_length);
     s_InsertNewOffsets (token_list, offset_list, best_length, best_num_chars,
@@ -5126,6 +5159,9 @@ s_ConvertDataToOutput
         afp->ids [index] = strdup (arsp->id);
     }
     best_length = s_GetMostPopularSize (lengths);
+    if (best_length == 0  &&  lengths != NULL) {
+        best_length = lengths->size_value;
+    }   
 
     for (index = 0;  index < afp->num_sequences;  index++) {
         if (afp->sequences [index] == NULL) {
@@ -5205,8 +5241,10 @@ ReadAlignmentFile
 
     s_ReprocessIds (afrp);
 
+#if 0 /* this step was removed by indexer request */
     /* Note - have to check deflines after reprocessing IDs */
     s_AreDeflinesIdentical (afrp);
+#endif
 
     if (s_s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
         s_AlignFileRawFree (afrp);
@@ -5222,6 +5260,11 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/16 21:05:15  bollin
+ * Added some improvements to the portion of the alignment reader that deals
+ * with contiguous alignments that do not have a '>' at the beginning of each
+ * ID.
+ *
  * Revision 1.8  2004/03/16 16:25:38  bollin
  * Added function to recognize a file as ASN.1 and reject immediately
  *
