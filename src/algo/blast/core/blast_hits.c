@@ -287,7 +287,8 @@ BlastOOFGetNumIdentities(Uint1* query, Uint1* subject,
       return -1;
 
 
-   if (program == blast_type_tblastn) {
+   if (program == blast_type_tblastn ||
+       program == blast_type_rpstblastn) {
        q = &query[hsp->query.offset];
        s = &subject[hsp->subject.offset];
    } else {
