@@ -239,31 +239,28 @@ TSeqPos CSeqMap_CI_SegmentInfo::GetRefPosition(void) const
                    "Iterator out of range");
     }
     const CSeqMap::CSegment& seg = x_GetSegment();
-    TSignedSeqPos skip;
+    TSeqPos skip;
     if ( !seg.m_RefMinusStrand ) {
-        skip = m_LevelRangePos - seg.m_Position;
+        skip = m_LevelRangePos >= seg.m_Position ?
+            m_LevelRangePos - seg.m_Position : 0;
     }
     else {
-        skip = (seg.m_Position + seg.m_Length) - m_LevelRangeEnd;
+        TSeqPos seg_end = seg.m_Position + seg.m_Length;
+        skip = seg_end > m_LevelRangeEnd ?
+            seg_end - m_LevelRangeEnd : 0;
     }
-    if ( skip < 0 )
-        skip = 0;
     return seg.m_RefPosition + skip;
 }
 
 
 TSeqPos CSeqMap_CI_SegmentInfo::x_GetTopOffset(void) const
 {
-    TSignedSeqPos offset;
     if ( !m_MinusStrand ) {
-        offset = min(x_GetLevelRealPos(), m_LevelRangeEnd) - m_LevelRangePos;
+        TSeqPos min_pos = min(x_GetLevelRealPos(), m_LevelRangeEnd);
+        return min_pos > m_LevelRangePos ? min_pos - m_LevelRangePos : 0;
     }
-    else {
-        offset = m_LevelRangeEnd - max(x_GetLevelRealEnd(), m_LevelRangePos);
-    }
-    if ( offset < 0 )
-        offset = 0;
-    return offset;
+    TSeqPos max_pos = max(x_GetLevelRealEnd(), m_LevelRangePos);
+    return m_LevelRangeEnd > max_pos ? m_LevelRangeEnd - max_pos : 0;
 }
 
 
@@ -566,6 +563,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/02/01 21:54:18  grichenk
+* Fixed TSignedSeqPos overflow problem
+*
 * Revision 1.34  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *
