@@ -10,7 +10,8 @@
     running the following commands: <pre>
 .../bin/depgraph .../lib/lib* > depgraph.out
 .../bin/depgraph2dot -simplify -in depgraph.out -out depgraph.dot
-dot -Tgif -o depgraph.gif depgraph.dot
+dot -Tgif -o depgraph.gif.tmp depgraph.dot
+giftopnm depgraph.gif.tmp | pnmtoppm '#FFFFFF' | ppmtogif -transparent '#FFFFFF' > depgraph.gif
 </pre>
 where <tt>dot</tt> comes from AT&T's
 <a href="http://www.research.att.com/sw/tools/graphviz/">Graphviz</a>
