@@ -227,6 +227,29 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp,
                              Uint1 program, Int4* num_ident_ptr, 
                              Int4* align_length_ptr);
 
+/** Calculate length of an HSP as length in query plus length of gaps in 
+ * query. If gap information is unavailable, return maximum between length in
+ * query and in subject.
+ * @param hsp An HSP structure [in]
+ * @param length Length of this HSP [out]
+ * @param gaps Total number of gaps in this HSP [out]
+ * @param gap_opens Number of gap openings in this HSP [out] 
+ */
+void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
+                                Int4* gaps_out, Int4* gap_opens_out);
+
+/** Adjust HSP endpoint offsets according to strand/frame; return values in
+ * 1-offset coordinates instead of internal 0-offset.
+ * @param hsp An HSP structure [in]
+ * @param q_start Start of alignment in query [out]
+ * @param q_end End of alignment in query [out]
+ * @param s_start Start of alignment in subject [out]
+ * @param q_end End of alignment in subject [out]
+ */
+void 
+Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
+                            Int4* s_start, Int4* s_end);
+
 /********************************************************************************
           HSPList API
 ********************************************************************************/
