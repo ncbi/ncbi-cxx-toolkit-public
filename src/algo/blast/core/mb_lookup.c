@@ -283,8 +283,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
       ecode = 0;
       /* Also add 1 to all indices, because lookup table indices count 
          from 1. */
-      from -= word_length - 1;
-      last_offset = to + 1 - extra_length;
+      from -= word_length - 2;
+      last_offset = to + 2 - extra_length;
       amb_cond = TRUE;
 
       for (index = from; index <= last_offset; index++) {
@@ -564,7 +564,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             if (q_off && (total_hits >= max_hits))
                break;
             while (q_off) {
-               q_offsets[total_hits] = q_off;
+               q_offsets[total_hits] = q_off - 1;
                s_offsets[total_hits++] = s_off;
                q_off = mb_lt->next_pos[q_off];
             }
@@ -590,7 +590,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
             if (q_off && (total_hits >= max_hits))
                break;
             while (q_off) {
-               q_offsets[total_hits] = q_off;
+               q_offsets[total_hits] = q_off - 1;
                s_offsets[total_hits++] = s_off; 
                q_off = mb_lt->next_pos[q_off];
             }
@@ -805,7 +805,7 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
             fprintf(logfp0, "%ld\t%ld\t%ld\n", query_offset, 
                     subject_offset, index);
 #endif
-            *(q_ptr++) = query_offset;
+            *(q_ptr++) = query_offset - 1;
             *(s_ptr++) = subject_offset;
             ++hitsfound;
             query_offset = mb_lt->next_pos[query_offset];
@@ -880,7 +880,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
              fprintf(logfp0, "%ld\t%ld\t%ld\n", query_offset, 
                      subject_offset, index);
 #endif
-             *(q_ptr++) = query_offset;
+             *(q_ptr++) = query_offset - 1;
              *(s_ptr++) = subject_offset;
              ++hitsfound;
              query_offset = mb_lt->next_pos[query_offset];
@@ -893,7 +893,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
           if (query_offset && (hitsfound >= max_hits))
              break;
           while (query_offset) {
-             q_offsets[hitsfound] = query_offset;
+             q_offsets[hitsfound] = query_offset - 1;
              s_offsets[hitsfound++] = subject_offset;
              query_offset = mb_lt->next_pos2[query_offset];
           }
@@ -930,7 +930,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
                fprintf(logfp0, "%ld\t%ld\t%ld\n", query_offset, 
                        subject_offset, index);
 #endif
-               *(q_ptr++) = query_offset;
+               *(q_ptr++) = query_offset - 1;
                *(s_ptr++) = subject_offset;
                ++hitsfound;
                query_offset = mb_lt->next_pos[query_offset];
@@ -944,7 +944,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             if (query_offset && (hitsfound >= max_hits))
                break;
             while (query_offset) {
-               q_offsets[hitsfound] = query_offset;
+               q_offsets[hitsfound] = query_offset - 1;
                s_offsets[hitsfound++] = subject_offset;
                query_offset = mb_lt->next_pos2[query_offset];
             }
