@@ -42,6 +42,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
+#define UTIL_C_PROCESSING 1
 #include "tdsutil.h"
 #ifdef DMALLOC
 #include <dmalloc.h>
