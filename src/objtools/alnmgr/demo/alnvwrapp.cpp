@@ -57,6 +57,8 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <objtools/alnmgr/alnvwr.hpp>
+#include <objtools/alnmgr/alnpos_ci.hpp>
+
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -71,7 +73,7 @@ void LogTime(const string& s)
         prev_t=t;
     }
     
-    NcbiCout << s << " " << (int)(t-prev_t) << endl;
+    NcbiCout << s << " " << (int)(t-prev_t) << NcbiEndl;
 }
 
 class CAlnVwrApp : public CNcbiApplication
@@ -82,6 +84,7 @@ class CAlnVwrApp : public CNcbiApplication
     void             View7();
     void             View8(int aln_pos);
     void             View9(int row0, int row1);
+    void             View10(int row0, int row1);
     void             GetSeqPosFromAlnPosDemo();
 private:
     CRef<CObjectManager> m_ObjMgr;
@@ -136,7 +139,10 @@ void CAlnVwrApp::Init(void)
          "8. Demonstrate obtaining column vector in two alternative ways.\n"
          "   (Use numeric param n to choose alignment position)\n"
          "9. Print relative residue index mapping for two rows.\n"
-         "   (Use row0 and row1 params to choose the rows)\n",
+         "   (Use row0 and row1 params to choose the rows)\n"
+         "10. Iterate through alignment positions and show corresponding\n"
+         "    native sequence positions for two chosen rows\n"
+         "    (Use row0 and row1 params to choose the rows)\n",
          CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
@@ -200,6 +206,7 @@ void CAlnVwrApp::LoadDenseg(void)
     if (asn_type == "Dense-seg") {
         CRef<CDense_seg> ds(new CDense_seg);
         *in >> *ds;
+        ds->Validate();
         m_AV = new CAlnVec(*ds, *m_Scope);
     } else if (asn_type == "Seq-submit") {
         CRef<CSeq_submit> ss(new CSeq_submit);
@@ -271,7 +278,7 @@ void CAlnVwrApp::View7()
                     << m_AV->GetStop(row, seg) 
                     << "]"
                     << NcbiEndl;
-                for(int i=0; i<m_AV->GetLen(seg); i++) {
+                for(TSeqPos i=0; i<m_AV->GetLen(seg); i++) {
                     NcbiCout << m_AV->GetResidue(row, m_AV->GetAlnStart(seg)+i);
                 }
                 NcbiCout << NcbiEndl;
@@ -323,12 +330,24 @@ void CAlnVwrApp::View9(int row0, int row1)
     m_AV->GetResidueIndexMap(row0, row1, aln_rng, result, rng0, rng1);
 
     size_t size = result.size();
-    NcbiCout << "(" << rng0.GetFrom() << "-" << rng0.GetTo() << ")" << endl;
-    NcbiCout << "(" << rng1.GetFrom() << "-" << rng1.GetTo() << ")" << endl;
+    NcbiCout << "(" << rng0.GetFrom() << "-" << rng0.GetTo() << ")" << NcbiEndl;
+    NcbiCout << "(" << rng1.GetFrom() << "-" << rng1.GetTo() << ")" << NcbiEndl;
     for (size_t i = 0; i < size; i++) {
         NcbiCout << result[i] << " ";
     }
-    NcbiCout << endl;
+    NcbiCout << NcbiEndl;
+}
+
+
+void CAlnVwrApp::View10(int row0, int row1)
+{
+    CAlnPos_CI it(*m_AV);
+    do {
+        NcbiCout << it.GetAlnPos() << "\t"
+                 << it.GetSeqPos(row0) << "\t"
+                 << it.GetSeqPos(row1) << NcbiEndl;
+    } while (++it);
+    NcbiCout << NcbiEndl;
 }
 
 
@@ -355,7 +374,6 @@ int CAlnVwrApp::Run(void)
 
     LoadDenseg();
 
-    NcbiCout << "-----" << endl;
 
     if (args["a"]) {
         m_AV->SetAnchor(args["a"].AsInteger());
@@ -399,6 +417,11 @@ int CAlnVwrApp::Run(void)
         case 9:
             View9(row0, row1);
             break;
+        case 10:
+            View10(row0, row1);
+            break;
+        default:
+            NcbiCout << "Unknown view format." << NcbiEndl;
         }
     }
     return 0;
@@ -419,6 +442,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/09/20 15:03:23  todorov
+* Invclude a demo view using the new CAlnPos_CI class
+*
 * Revision 1.3  2004/09/16 18:25:41  todorov
 * CAlnVwr::PopsetStyle flags change
 *
