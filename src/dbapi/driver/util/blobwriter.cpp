@@ -161,6 +161,7 @@ int main(int argc, char* argv[])
 
         unsigned int n;
         int k= 0;
+        bool is_text= false;
 
         while (lcmd->HasMoreResults()) {
             CDB_Result* r = lcmd->Result();
@@ -191,7 +192,7 @@ int main(int argc, char* argv[])
                         num_col_name= r->ItemName(j);
                         break;
 
-                    case eDB_Text:
+                    case eDB_Text: is_text= true;
                     case eDB_Image:
                         blob_column[k++]= r->ItemName(j);
                     }
@@ -204,7 +205,7 @@ int main(int argc, char* argv[])
         delete lcmd;
         delete con;
 
-        CSimpleBlobStore sbs(table_name, key_col_name, num_col_name, blob_column);
+        CSimpleBlobStore sbs(table_name, key_col_name, num_col_name, blob_column, is_text);
 
         CBlobLoader bload(my_context, server_name, user_name, passwd, &sbs);
 
@@ -223,6 +224,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/24 19:41:46  soussov
+ * adjusts to new blobstore API
+ *
  * Revision 1.2  2004/05/17 21:18:21  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
