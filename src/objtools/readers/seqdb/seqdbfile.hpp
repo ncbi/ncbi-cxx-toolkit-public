@@ -258,6 +258,10 @@ public:
                    Uint4 & start,
                    Uint4 & end) const;
     
+    inline bool
+    GetSeqStart(Uint4   oid,
+                Uint4 & start) const;
+    
     char GetSeqType(void) const
     {
         return x_GetSeqType();
@@ -344,6 +348,14 @@ CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
     } else {
         end = SeqDB_GetStdOrd(& m_AmbRegion[oid]);
     }
+    
+    return true;
+}
+
+bool
+CSeqDBIdxFile::GetSeqStart(Uint4 oid, Uint4 & start) const
+{
+    start = SeqDB_GetStdOrd(& m_SeqRegion[oid]);
     
     return true;
 }

@@ -399,6 +399,16 @@ public:
     /// Translate an Accession to a list of OIDs.
     void AccessionToOids(const string & acc, vector<TOID> & oids) const;
     
+    /// Find the sequence closest to the given offset into the database.
+    /// 
+    /// The database volumes can be viewed as a single array of
+    /// residues, partitioned into sequences in OID order.  The length
+    /// of this array is given by GetTotalLength().  This method
+    /// returns the OID of the sequence at the given offset into the
+    /// array.  It is used to split the database into sections which
+    /// are approximately equal in number of residues.
+    Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
+    
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
