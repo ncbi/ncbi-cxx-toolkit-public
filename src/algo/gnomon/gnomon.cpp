@@ -234,7 +234,7 @@ void CGnomon::Run(void)
     }
 
     // TSeqPos is unsigned, so from is always > 0
-    to = min(to, m_Seq.size());
+    to = min(to, (TSeqPos)m_Seq.size());
     if (from > to) {
         swap (from, to);
     }
@@ -355,6 +355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/06 00:51:05  ucko
+ * Adjust usage of min for platforms with 64-bit size_t.
+ *
  * Revision 1.2  2003/11/05 21:15:24  ucko
  * Fixed usage of ITERATE.  (m_Seq is a vector, not a string.)
  *
