@@ -27,21 +27,10 @@ $fmsearch = "./search.cgi";
 ##$ssifilter = "./perlssi.pl";
 
 ## What directories on your server/hosting account would you like to search
-## If there is more than one directory, seperate them with a comma
-
-if ($ENV{'SCRIPT_FILENAME'} =~ m"/private/htdocs") {
-    $webbase    = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC";
-    $searchbase = "/web/private/htdocs/intranet/ieb/ToolBox/CPP_DOC";
-} else {
-    $webbase    = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC";
-    $searchbase = "/web/public/htdocs/IEB/ToolBox/CPP_DOC";
-}
 
 @searchdirs = (
                "",
 ##               "docxx",
-               "internal",
-               "internal/idx",
                "libs",
                "libs/gui",
                "libs/om",
@@ -54,6 +43,18 @@ if ($ENV{'SCRIPT_FILENAME'} =~ m"/private/htdocs") {
                "tools/hello",
                "tools/id1_fetch"
               );
+
+## If there is more than one directory, seperate them with a comma
+
+if ($ENV{'SCRIPT_FILENAME'} =~ m"/private/htdocs") {
+    $webbase    = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC";
+    $searchbase = "/web/private/htdocs/intranet/ieb/ToolBox/CPP_DOC";
+    @searchdirs_private = ("internal", "internal/idx");
+    push(@searchdirs, @searchdirs_private);
+} else {
+    $webbase    = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC";
+    $searchbase = "/web/public/htdocs/IEB/ToolBox/CPP_DOC";
+}
 
 ## What is the extensions of the files to be searched
 ## If you want to use more than one extension seperate them via comma
