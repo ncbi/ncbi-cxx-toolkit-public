@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2002/05/06 19:17:33  lavr
+ * Take advantage of SERV_ServiceName()
+ *
  * Revision 6.36  2002/04/26 16:28:51  lavr
  * SSERVICE_Params: reset added for use in open/close pairs
  * No checks for CONN_DEFAULT_TIMEOUT: now real timeouts always go from CONN
@@ -166,7 +169,7 @@
 
 typedef struct SServiceConnectorTag {
     const char*        name;            /* Verbal connector type             */
-    const char*        service;         /* Requested service name            */
+    const char*        service;         /* Service name (final) to use       */
     TSERV_Type         types;           /* Server types, record keeping only */
     SConnNetInfo*      net_info;        /* Connection information            */
     SERV_ITER          iter;            /* Dispatcher information            */
@@ -817,7 +820,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc = (SConnector*)        malloc(sizeof(SConnector));
     xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector));
     xxx->name     = 0;
-    xxx->service  = strdup(service);
+    xxx->service  = SERV_ServiceName(service);
     xxx->net_info = net_info
         ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service);
     if (types & fSERV_StatelessOnly)
