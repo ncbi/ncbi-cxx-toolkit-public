@@ -41,7 +41,7 @@ USING_NCBI_SCOPE;
 int main(int argc, char* argv[])
 {
     if (argc != 2) {
-        return 1;
+        return 99;
     }
     string driver_name = argv[1];
 
@@ -67,6 +67,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/03/12 16:52:49  ivanov
+ * Changed exit code to 99 if running without parameter
+ *
  * Revision 1.1  2003/03/11 21:35:13  ivanov
  * Renaming check_dbapi_driver -> dbapi_driver_check
  *
