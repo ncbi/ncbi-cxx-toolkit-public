@@ -1,0 +1,11 @@
+[-]
+_export =
+
+[PC-AssayDataSession]
+data._type = vector
+
+[PC-AssayResults]
+data._type = vector
+
+[PC-AssayDescription]
+results._type = vector

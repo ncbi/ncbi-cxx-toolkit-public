@@ -1,0 +1,356 @@
+-- $Id: pcassay.asn,v 1.1 2004/06/17 17:43:23 bolton Exp $
+-- ===========================================================================
+--
+--                            PUBLIC DOMAIN NOTICE
+--               National Center for Biotechnology Information
+--
+--  This software/database is a "United States Government Work" under the
+--  terms of the United States Copyright Act.  It was written as part of
+--  the author's official duties as a United States Government employee and
+--  thus cannot be copyrighted.  This software/database is freely available
+--  to the public for use. The National Library of Medicine and the U.S.
+--  Government have not placed any restriction on its use or reproduction.
+--
+--  Although all reasonable efforts have been taken to ensure the accuracy
+--  and reliability of the software and data, the NLM and the U.S.
+--  Government do not and cannot warrant the performance or results that
+--  may be obtained by using this software or data. The NLM and the U.S.
+--  Government disclaim all warranties, express or implied, including
+--  warranties of performance, merchantability or fitness for any particular
+--  purpose.
+--
+--  Please cite the author in any work or product based on this material.
+--
+-- ===========================================================================
+--
+-- Authors:  NCBI Structure Group
+--
+-- File Description:
+--      ASN.1 definitions for PubChem biological assay data database
+--
+-- ===========================================================================
+
+NCBI-PCAssay DEFINITIONS ::= BEGIN
+
+IMPORTS Pub                 FROM NCBI-Pub
+        Date, Object-id     FROM NCBI-General
+        PC-ID, PC-Source    FROM NCBI-PCSubstance;
+
+-- EXPORTS ;
+
+
+PC-AssayContainer ::= SEQUENCE OF PC-AssaySubmit
+
+
+-- Container for Data Depositions and Assay Definitions
+PC-AssaySubmit ::= SEQUENCE {
+    source            PC-Source,                                 -- Data Source for this Submission
+    descr             PC-AssayDescription              OPTIONAL, -- Assay Description
+    data              SEQUENCE OF PC-AssayDataSession  OPTIONAL  -- Assay Data Depositions
+}
+
+
+-- Assay Result Session Definition to detail a deposition of Assay Data
+--   Must have provided or previously defined an Assay Description for this data deposition.
+PC-AssayDataSession ::= SEQUENCE {
+    -- Internal/External Tracking Information
+    did               PC-ID,                               -- Assay Data Session ID/Version  [Either valid ID or, 
+                                                           --   if "did-source" is to be used, a "0" dummy value]
+                                                           --   Note: Version is for internal use (only?)
+                                                           --   Note: A valid ID is greater than "0"
+    did-source        PC-Source                  OPTIONAL, -- External Identifier(s) for this Assay Data Session
+                                                           --   Note: May be used in-lieu of "did"
+                                                           --   Note: This is non-optional if "did" ID is "0"
+
+    aid               INTEGER,                             -- Assay Description ID/Version  [Either valid ID or, 
+                                                           --   if "aid-source" is to be used, a "0" dummy value]
+                                                           --   Note: A valid ID is greater than "0"
+    aid-source        PC-Source                  OPTIONAL, -- External Identifier for this Assay Description
+                                                           --   Note: May be used in-lieu of "aid"
+                                                           --   Note: This is non-optional if "aid" is "0"
+
+    -- External Tracking Information
+    date              Date,                                -- Deposition Release/Submission Date
+    source-id         Object-id                  OPTIONAL, -- External Identifier for Deposition (for Indexing)
+
+    -- Assay Result Data
+    data              SEQUENCE OF PC-AssayResults,         -- Deposited Assay Results (vector)
+    comment           SEQUENCE OF VisibleString  OPTIONAL  -- Comments about this deposition
+}
+
+
+-- Assay Results provided for a given Substance tested, with respect to the results types defined in the 
+--   referenced Assay Description
+--   Note: Data values may be in any arbitrary order
+PC-AssayResults ::= SEQUENCE {
+    -- Internal/External Tracking Information
+    sid               INTEGER,                             -- Tested Substance ID/Version  [Either valid ID or, 
+                                                           --   if "sid-source" is to be used, a "0" dummy value]
+                                                           --   Note: A valid ID is greater than "0"
+    sid-source        PC-Source                  OPTIONAL, -- External Identifier for this Substance
+                                                           --   Note: May be used in-lieu of "sid"
+                                                           --   Note: This is non-optional if "sid" is "0"
+
+    -- Assay Result Data for this Sample
+    --   Note: Users need populate only those "tid"s, for which there is data, in any order.
+    activity          INTEGER {                            -- Activity Summary
+                          inactive        (1),             -- Substance is considered Inactive
+                          active          (2),             -- Substance is considered Active
+                          inconclusive    (3),             -- Substance is Inconclusive
+                          unknown         (4)              -- Substance Activity is Unknown
+                      }                          OPTIONAL,
+    data              SEQUENCE OF PC-AssayData             -- Data Values (vector)
+}
+
+
+-- Substance Tested Assay Results for a given Assay Result Type defined in the referenced Assay Description
+PC-AssayData ::= SEQUENCE {
+    tid               INTEGER,                            -- Assay Result Field Type ID
+                                                          --   Note: Result Field ID's must be greater than "0"
+    value             CHOICE {                            -- Assay Result
+                          ival    INTEGER,
+                          fval    REAL,
+                          bval    BOOLEAN,
+                          sval    VisibleString
+                      },
+    comment           VisibleString             OPTIONAL, -- Cell level Annotation
+    original          VisibleString             OPTIONAL, -- Original Assay Result (if parsed)
+    delta             CHOICE {                            -- Error Bars
+                          rdev    REAL,
+                          idev    INTEGER
+                      }                         OPTIONAL,
+    qualifier         INTEGER {                           -- Value Qualifier
+                          eq      (1),                    -- Equal Symbol (or explicit "No Qualifier")
+                          gt      (2),                    -- Greater than Symbol
+                          lt      (3),                    -- Less than Symbol
+                          ge      (4),                    -- Greater than Equal Symbol
+                          le      (5)                     -- Less than Equal Symbol
+                      }                         OPTIONAL
+}
+
+
+-- Assay Description provided by an Organization that describes the assay/protocol performed and defines the 
+--   measured end-points and parameters to be stored.  An Assay Description is not a database table.  You can 
+--   define as many Result Definitions as needed and they need not be used by all Substances tested.
+--
+-- Note:  After initial submission, Users cannot add new Result Definitions or modify existing Result Definitions
+--        beyond the description text; however, users can change the Assay Description Information, as desired.
+PC-AssayDescription ::= SEQUENCE {
+    -- Internal/External Tracking Information
+    aid               PC-ID,                               -- Assay Description ID/Version  [Either valid ID or, 
+                                                           --   if "aid-source" is to be used, a "0" dummy value]
+                                                           --   Note: Version is for internal use (only?)
+                                                           --   Note: A valid ID is greater than "0"
+    aid-source        PC-Source                  OPTIONAL, -- External Identifier(s) for this Assay Description
+                                                           --   Note: May be used in-lieu of "aid"
+                                                           --   Note: This is non-optional if "aid" ID is "0"
+
+    -- Assay Description Information
+    name              SEQUENCE OF VisibleString  OPTIONAL, -- Set of terms that classify this Assay
+    description       SEQUENCE OF VisibleString  OPTIONAL, -- Description of Assay
+    procedure         SEQUENCE OF VisibleString  OPTIONAL, -- Procedure used to generate results
+    comment           SEQUENCE OF VisibleString  OPTIONAL, -- Comments provided by Depositor
+    pub               SEQUENCE OF Pub            OPTIONAL, -- Articles Describing this Assay
+
+    -- Allowed Assay Result Types
+    results           SEQUENCE OF PC-ResultType,           -- Allowed Result Definitions (vector)
+    summary           SEQUENCE OF PC-ActSummary  OPTIONAL  -- Activity Summary Definitions (for result filtering)
+}
+
+
+-- Categorical Summarization of Assay Results
+--     Allows the assayist to provide criteria to allow algorithmic determination
+--     of a result summary for a given substance.  Conflict resolution assumes
+--     "inconclusive" determination has highest priority, followed by "inactive" and,
+--     lastly, by "active".
+PC-ActSummary ::= SEQUENCE {
+    active            SEQUENCE OF PC-ActStatement  OPTIONAL, -- Active Criteria
+    inactive          SEQUENCE OF PC-ActStatement  OPTIONAL, -- Inactive Criteria
+    inconclusive      SEQUENCE OF PC-ActStatement  OPTIONAL  -- Inconclusive Criteria
+}
+
+
+-- A logical statement specified in Reverse Polish Notation (RPN),
+-- e.g. "tid1 tid2 mult 100.0 < tid3 3.0 > AND"
+-- maps to "((tid1 * tid2) < 100.0) && (tid3 > 3.0)"
+PC-ActStatement ::= SEQUENCE OF PC-ActElement
+
+
+-- An element in the logical statement
+PC-ActElement ::= CHOICE {
+     tid               INTEGER,                             -- Result Field Type to be used
+                                                            --   Note: Result Field ID's must be greater than "0"
+     op                PC-ActOperator,                      -- Boolean or arithmetic operator
+     value             PC-ActValue                          -- Value used for comparison
+}
+
+
+-- A Value used in an Activity Statement
+--    [Please Note: Only comparison and logical operators are supported for non-real values]
+PC-ActValue ::= CHOICE {
+    sval               VisibleString,
+    rval               REAL
+}
+
+
+-- An operator in the logical statement.
+-- arithmetic operators should be applied only to values.
+PC-ActOperator ::= INTEGER {
+        -- Comparison Operators
+        eq          (1),                                    -- Equal Symbol (or explicit "No Qualifier")
+        gt          (2),                                    -- Greater than Symbol
+        lt          (3),                                    -- Less than Symbol
+        ge          (4),                                    -- Greater than Equal Symbol
+        le          (5),                                    -- Less than Equal Symbol
+
+        -- Logical Operators
+        and         (6),                                    -- Logical AND
+        or          (7),                                    -- Logical OR
+        not         (8),                                    -- Logical NOT
+
+        -- Arithmetic Operators
+        mult        (9),                                    -- Arithmetic Multiplication
+        divide     (10),                                    -- Arithmetic Divide
+        add        (11),                                    -- Arithmetic Add
+        sub        (12),                                    -- Arithmetic Subtract
+
+        -- Value Transformations
+        ln         (13),                                    -- Natural Log  (ln x)
+        exp        (14),                                    -- Natural Exponent  (e**x)
+        log10      (15),                                    -- Log Base 10  (log10 x)
+        power10    (16),                                    -- Power of 10  (10**x)
+        invert     (17)                                     -- Inversion (1/x)
+}
+
+
+-- Definition of Allowed Result Types for a given Assay
+PC-ResultType ::= SEQUENCE {
+    -- Tracking or Description Information
+    tid               INTEGER,                             -- Assay Result Field Type ID
+                                                           --   [Either valid ID or a "0" dummy value]
+                                                           --   Note: Must be greater than "0" or invalid, "0"
+                                                           --   Note: Initial deposition must give a dummy value
+    name              VisibleString,                       -- Name of the Result Field
+    description       SEQUENCE OF VisibleString  OPTIONAL, -- Description of the Result Field
+    attribution       SEQUENCE OF Pub            OPTIONAL, -- Citation or Xref Information
+
+    -- Result Data Type or Validation Information
+    type             INTEGER {                             -- Result Data Type
+                         float            (1),
+                         int              (2),
+                         bool             (3),
+                         string           (4),
+                         parsedfloat      (5),             -- String that is interpreted into a real
+                         parsedint        (6)              -- String that is interpreted into an integer
+                     },
+    allowed          CHOICE {                              -- Allowed Result Values
+                         fset             SEQUENCE OF REAL,
+                         iset             SEQUENCE OF INTEGER,
+                         sset             SEQUENCE OF VisibleString
+                     }                           OPTIONAL,
+    unit             INTEGER {                             -- Units for Value
+                         ppt              (1),             -- Parts per Thousand
+                         ppm              (2),             -- Parts per Million
+                         ppb              (3),             -- Parts per Billion
+                         mm               (4),             -- milliM
+                         um               (5),             -- microM
+                         nm               (6),             -- nanoM
+                         pm               (7),             -- picoM
+                         fm               (8),             -- femtoM
+                         mgml             (9),             -- milligrams per mL
+                         ugml            (10),             -- micrograms per mL
+                         ngml            (11),             -- nanograms per mL
+                         pgml            (12),             -- picograms per mL
+                         fgml            (13),             -- femtograms per mL
+                         m               (14),             -- Molar
+                         percent         (15),             -- Percent
+                         ratio           (16),             -- Ratio
+                         sec             (17),             -- Seconds
+                         rsec            (18),             -- Reciprocal Seconds
+                         min             (19),             -- Minutes
+                         rmin            (20),             -- Reciprocal Minutes
+                         day             (21),             -- Days
+                         rday            (22),             -- Reciprocal Days
+                         none           (254),
+                         unspecified    (255)
+                     }                           OPTIONAL,
+    sunit            VisibleString               OPTIONAL, -- Unit Type (as a String)
+    transform        INTEGER {                             -- Value Transformation Details
+                         linear           (1),             -- Linear Scale (x)
+                         ln               (2),             -- Natural Log Scale (ln x)
+                         log              (3),             -- Log Base 10 Scale (log10 x)
+                         reciprocal       (4),             -- Reciprocal Scale (1/x)
+                         negative         (5),             -- Negative Linear Scale (-x)
+                         nlog             (6),             -- Negative Log Base 10 Scale (-log10 x)
+                         nln              (7)              -- Negative Natural Log Scane (-ln x)
+                     }                           OPTIONAL,
+    stransform       VisibleString               OPTIONAL  -- Value Transform Type (as a String)
+}
+
+END
+
+-- ===========================================================================
+-- $Log: pcassay.asn,v $
+-- Revision 1.1  2004/06/17 17:43:23  bolton
+-- Moved PubChem ASN.1 specification objects "pcsubstance" and "pcassay" to
+-- the primary object location from the internal PubChem location.
+--
+-- Revision 1.18  2004/06/10 13:24:18  bolton
+-- Changes made to in documentation and enumerations to detail that "0" is an
+-- invalid ID and an invalid enumeration.
+--
+-- Revision 1.17  2004/06/04 11:55:21  bolton
+-- Added ability to allow external identifiers at all levels.  Added improved
+-- documentation to reflect the current use of various sections of the spec.
+--
+-- Revision 1.16  2004/06/01 14:14:26  bolton
+-- Forgot to remove PC-Source record at the PC-AssayDescription level.
+--
+-- Revision 1.15  2004/05/28 18:32:52  bolton
+-- Slightly modified and improved accessioning scheme and associated
+-- documentation.
+--
+-- Revision 1.14  2004/05/18 12:16:05  bolton
+-- Assay Data Session and Assay Description tweaks.
+--
+-- Revision 1.13  2004/05/14 10:51:44  bolton
+-- Switched ordering of PC-AssayDescription and PC-AssayDataSession in the
+-- PC-AssayContainer Object.
+--
+-- Revision 1.12  2004/05/12 13:05:02  bolton
+-- Major overhaul of the deposition/accession scheme.  Minor tweaks.
+--
+-- Revision 1.11  2004/05/03 12:48:39  bolton
+-- Added a root container object that holds both assay deposition and assay
+-- description data.  Fixed a minor inconsistency with negative Log 10 label.
+--
+-- Revision 1.10  2004/04/08 11:55:14  bolton
+-- Removed repeat of "Log" tag.
+--
+-- Revision 1.9  2004/04/08 11:50:42  bolton
+-- Modifications to allow more/better: X-refs for Assay descriptions; activity
+-- summarization programmatically; and Result Type units.
+--
+-- Revision 1.8  2004/04/01 19:29:53  bolton
+-- New version to reflect PubChem group consensus.
+--
+-- Revision 1.7  2004/03/05 16:18:50  bolton
+-- Removed orphaned "PC-History" and "PC-Replacement".
+--
+-- Revision 1.6  2004/03/04 20:30:14  bolton
+-- Minor fixes to allow compilation.
+--
+-- Revision 1.5  2004/03/04 20:13:53  bolton
+-- Continued development of "pcassay", following latest pubchem meeting.
+--
+-- Revision 1.4  2004/03/02 15:20:21  thiessen
+-- make pcsubstance and pcassay build on UNIX
+--
+-- Revision 1.3  2004/02/27 18:39:28  bolton
+-- Changes to share "PC-Source" from "pcsubstance" to "pcassay".
+--
+-- Revision 1.2  2004/02/26 15:17:30  bolton
+-- Minor changes to make "pcassay" library compile.
+--
+-- ===========================================================================
+

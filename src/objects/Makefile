@@ -2,7 +2,8 @@ MODULES = omssa access biblio blast blastdb cdd cn3d docsum biotree \
           entrez2 entrezgene featdef gbseq general id1 id2 insdseq \
           medlars medline mim mla mmdb1 mmdb2 mmdb3 ncbimime objprt \
           proj pub pubmed scoremat seq seqalign seqblock seqcode \
-          seqfeat seqloc seqsplit seqres seqset submit taxon1 tinyseq
+          seqfeat seqloc seqsplit seqres seqset submit taxon1 tinyseq \
+          pcsubstance pcassay
 
 new_module = $(builddir)/new_module.sh
 
