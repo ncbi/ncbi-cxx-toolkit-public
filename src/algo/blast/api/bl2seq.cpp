@@ -344,7 +344,7 @@ CBl2Seq::x_SetupQueries()
     x_SetupQueryInfo();
 
     int buflen = mi_clsQueryInfo->total_length;
-    Uint1* buf = (Uint1*) calloc(buflen, sizeof(Uint1));
+    Uint1* buf = (Uint1*) calloc((buflen+1), sizeof(Uint1));
     if ( !buf ) {
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
     }
@@ -628,6 +628,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2003/08/28 15:48:23  madden
+ * Make buf one longer for sentinel byte
+ *
  * Revision 1.24  2003/08/25 17:15:49  camacho
  * Removed redundant typedef
  *
