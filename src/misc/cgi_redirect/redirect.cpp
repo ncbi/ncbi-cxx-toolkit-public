@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 // Default page template
 const char* const kDefaultRedirectTemplate = "\
 <html><head><title><@TITLE@></title></head>\n \
-<body> \
+<body>\n \
     <center>\n \
     <h1><@HEADER@></h1>\n \
     <h3><@MESSAGE@></h3>\n \
@@ -245,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 13:31:44  ivanov
+ * Added missed \n in the default template
+ *
  * Revision 1.1  2004/02/09 19:32:34  ivanov
  * Initial revision
  *
