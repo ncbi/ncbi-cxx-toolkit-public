@@ -52,7 +52,7 @@ public:
 
 public:
 
-    CLDS_Database(string db_name)
+    CLDS_Database(const string& db_name)
     : m_LDS_DbName(db_name)
     {}
 
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/06/18 18:46:46  kuznets
+ * Minor fix.
+ *
  * Revision 1.9  2003/06/16 15:39:03  kuznets
  * Removing dead code.
  *
