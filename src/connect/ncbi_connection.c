@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/02/09 17:34:18  lavr
+ * CONN_GetType added; severities of some messages changed
+ *
  * Revision 6.6  2001/01/25 16:55:48  lavr
  * CONN_ReInit bugs fixed
  *
@@ -152,7 +155,7 @@ extern EIO_Status CONN_ReInit
     if (!connector && !conn->meta.list) {
         status = eIO_Unknown;
         CONN_LOG(eLOG_Error,
-                 "[CONN_Reinit]  Cannot reinit empty connection with NULL");
+                 "[CONN_ReInit]  Cannot reinit empty connection with NULL");
         return status;    
     }
 
@@ -175,7 +178,7 @@ extern EIO_Status CONN_ReInit
                                              conn->l_timeout);
                 if (status != eIO_Success) {
                     CONN_LOG(connector ? eLOG_Error : eLOG_Warning,
-                             "[CONN_Reinit]  Cannot close current connection");
+                             "[CONN_ReInit]  Cannot close current connection");
                     if (connector)
                         return status;
                 }
@@ -190,7 +193,7 @@ extern EIO_Status CONN_ReInit
                     break;
                 status = eIO_Unknown;
                 CONN_LOG(eLOG_Error,
-                         "[CONN_Reinit]  Cannot reinit connection partially");
+                         "[CONN_ReInit]  Partial re-init not allowed");
                 return status;
             }
         }
@@ -330,12 +333,13 @@ extern EIO_Status CONN_Wait
         eIO_NotSupported;
     
     if (status != eIO_Success) {
-        ELOG_Level level = eLOG_Error;
         if (status == eIO_Timeout) {
-            level = (timeout && !timeout->sec && !timeout->usec)
-                ? eLOG_Note : eLOG_Warning;
+            ELOG_Level level = (timeout && !timeout->sec && !timeout->usec)
+                ? eLOG_Trace : eLOG_Warning;
+            CONN_LOG(level, "[CONN_Wait]  I/O timed out");
+        } else {
+            CONN_LOG(eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
         }
-        CONN_LOG(level, "[CONN_Wait]  Error waiting on i/o");
     }
     
     return status;
@@ -449,10 +453,10 @@ static EIO_Status s_CONN_Read
     
     if (status != eIO_Success) {
         if (*n_read) {
-            CONN_LOG(eLOG_Note, "[CONN_Read]  Read error");
+            CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
             return eIO_Success;
         } else {
-            CONN_LOG((status == eIO_Closed ? eLOG_Note : eLOG_Warning),
+            CONN_LOG((status == eIO_Closed ? eLOG_Trace : eLOG_Warning),
                      "[CONN_Read]  Cannot read data");
             return status;  /* error or EOF */
         }
@@ -523,14 +527,20 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 }
 
 
-extern EIO_Status CONN_Close
-(CONN conn)
+extern EIO_Status CONN_Close(CONN conn)
 {
     if (conn->meta.list)
         CONN_ReInit(conn, 0);
     BUF_Destroy(conn->buf);
     free(conn);
     return eIO_Success;
+}
+
+
+extern const char* CONN_GetType(CONN conn)
+{
+    return conn->meta.get_type ?
+        (*conn->meta.get_type)(conn->meta.c_get_type) : 0;
 }
 
 
