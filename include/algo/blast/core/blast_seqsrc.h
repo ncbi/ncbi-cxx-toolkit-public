@@ -164,8 +164,6 @@ typedef struct BlastSeqSrcIterator {
     /** Size of the chunks to advance over the BlastSeqSrc, also size of 
       * oid_list member */
     unsigned int  chunk_sz;
-    /* Starting oid for the next chunk/range */
-    unsigned int next_oid;
 } BlastSeqSrcIterator;
 
 /** Allocated and initialized an iterator over a BlastSeqSrc. 
