@@ -671,6 +671,7 @@ private:
     bool GraphsOnBioseq(const CBioseq& seq) const;
     bool IsOtherDNA(const CBioseq& seq) const;
     bool IsSynthetic(const CBioseq& seq) const;
+    bool x_IsActiveFin(const CBioseq& seq) const;
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
     
@@ -873,6 +874,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/07/15 18:26:43  shomrat
+* Added x_IsActiveFin
+*
 * Revision 1.33  2003/07/02 21:03:38  shomrat
 * Added ValidateCDSPartial
 *
