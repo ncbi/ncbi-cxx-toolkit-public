@@ -545,10 +545,11 @@ static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offs
 
 Int4 DiagNew(BLAST_DiagTablePtr * diag, Int4 window_size, Int4 longest_seq)
 {
-  *diag = Malloc(sizeof(BLAST_DiagTable));
+  *diag = (BLAST_DiagTablePtr) Malloc(sizeof(BLAST_DiagTable));
 
   (*diag)->diag_array_length = 2 * longest_seq;
-  (*diag)->diag_array = Malloc( (*diag)->diag_array_length * sizeof(DiagStruct));
+  (*diag)->diag_array = (DiagStructPtr) 
+     Malloc( (*diag)->diag_array_length * sizeof(DiagStruct));
   (*diag)->window = window_size;
   DiagClear(*diag);
 
