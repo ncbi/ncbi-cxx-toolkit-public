@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/04/19 18:36:04  vakatov
+* Fixed for non-zero "pos" in s_Compare()
+*
 * Revision 1.27  2000/04/17 04:15:08  vakatov
 * NStr::  extended Compare(), and allow case-insensitive string comparison
 * NStr::  added ToLower() and ToUpper()
@@ -168,7 +171,7 @@ int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
         n = str.length() - pos;
     }
 
-    const char* s = str.data();
+    const char* s = str.data() + pos;
     while (n  &&  *pattern  &&  char_diff(*s, *pattern) == 0) {
         s++;  pattern++;  n--;
     }
@@ -200,7 +203,7 @@ int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
     if (n_cmp > pattern.length()) {
         n_cmp = pattern.length();
     }
-    const char* s = str.data();
+    const char* s = str.data() + pos;
     const char* p = pattern.data();
     while (n_cmp  &&  char_diff(*s, *p) == 0) {
         s++;  p++;  n_cmp--;
