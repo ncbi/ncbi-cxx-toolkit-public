@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/09/24 14:37:52  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
 * Revision 1.4  2001/09/24 13:29:54  thiessen
 * fix wxPanel issues
 *
@@ -156,6 +159,7 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
 
     // call sizer stuff
     topSizer->Fit(this);
+    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/09/24 14:37:52  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
 * Revision 1.6  2001/09/24 13:29:54  thiessen
 * fix wxPanel issues
 *
@@ -146,6 +149,7 @@ AnnotateDialog::AnnotateDialog(wxWindow *parent, StyleManager *manager, const St
 
     // call sizer stuff
     topSizer->Fit(this);
+    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 }
 
@@ -468,6 +472,7 @@ AnnotationEditorDialog::AnnotationEditorDialog(wxWindow *parent,
 
     // call sizer stuff
     topSizer->Fit(this);
+    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 
     // select name, so user can quickly change it

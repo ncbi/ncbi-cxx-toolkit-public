@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/09/24 14:37:53  thiessen
+* more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
+*
 * Revision 1.7  2001/09/24 13:29:55  thiessen
 * fix wxPanel issues
 *
@@ -328,6 +331,7 @@ GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     panel->SetAutoLayout(true);
     panel->SetSizer(item0);
     item0->Fit(this);
+    item0->Fit(panel);
     item0->SetSizeHints(this);
 }
 
