@@ -244,7 +244,7 @@ CDbBlast::TrimBlastHSPResults()
                 /* Free the extra HSPs */
                 for (hsp_index = allowed_hsp_num; 
                      hsp_index < hsp_list->hspcnt; ++hsp_index)
-                    BlastHSPFree(hsp_list->hsp_array[hsp_index]);
+                    Blast_HSPFree(hsp_list->hsp_array[hsp_index]);
                 hsp_list->hspcnt = allowed_hsp_num;
             }
             total_hsps += hsp_list->hspcnt;
@@ -317,6 +317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2004/04/21 17:33:46  madden
+ * Rename BlastHSPFree to Blast_HSPFree
+ *
  * Revision 1.21  2004/03/24 22:12:46  dondosha
  * Fixed memory leaks
  *
