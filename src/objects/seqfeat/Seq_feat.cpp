@@ -257,7 +257,7 @@ void CSeq_feat::AddDbxref(const string& db, int tag)
 }
 
 
-CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db)
+CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db) const
 {
     if (IsSetDbxref()) {
         ITERATE (TDbxref, iter, GetDbxref()) {
@@ -271,7 +271,7 @@ CConstRef<CDbtag> CSeq_feat::GetNamedDbxref(const string& db)
 }
 
 
-string CSeq_feat::GetNamedQual(const string& qual_name)
+string CSeq_feat::GetNamedQual(const string& qual_name) const
 {
     if (IsSetQual()) {
         ITERATE (TQual, iter, GetQual()) {
@@ -293,6 +293,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.21  2004/10/12 13:28:18  dicuccio
+ * GetNamedDbxref() / GetNamedQual(): made const
+ *
  * Revision 6.20  2004/10/04 17:20:45  dicuccio
  * Doxygen-ated comments.  Added GetNamedDbxref() / GetNamedQual()
  *
