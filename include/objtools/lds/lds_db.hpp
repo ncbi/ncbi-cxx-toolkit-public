@@ -106,6 +106,7 @@ struct NCBI_LDS_EXPORT SLDS_ObjectAttrDB : public CBDB_File
     CBDB_FieldString  object_title;
     CBDB_FieldString  organism;
     CBDB_FieldString  keywords;
+    CBDB_FieldString  seq_ids;
 
     SLDS_ObjectAttrDB();
 };
@@ -181,6 +182,7 @@ inline SLDS_ObjectAttrDB::SLDS_ObjectAttrDB()
     BindData("object_title", &object_title, 512);
     BindData("organism", &organism, 256);
     BindData("keywords", &keywords, 1024);
+    BindData("seq_ids", &seq_ids, 65536);
 }
 
 
@@ -198,6 +200,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2003/06/13 15:59:05  kuznets
+* Added space separated list of all sequence ids (object attributes)
+*
 * Revision 1.8  2003/06/04 16:33:32  kuznets
 * Increased length of object_title field in SLDS_ObjectAttrDB
 *
