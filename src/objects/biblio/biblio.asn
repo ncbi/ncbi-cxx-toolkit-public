@@ -1,4 +1,4 @@
---$Revision: 3.0 $
+--$Revision: 3.1 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -137,7 +137,8 @@ Affil ::= CHOICE {
     street VisibleString OPTIONAL ,    -- street address, not ANSI
     email VisibleString OPTIONAL ,
     fax VisibleString OPTIONAL ,
-    phone VisibleString OPTIONAL }}
+    phone VisibleString OPTIONAL ,
+    postal-code VisibleString OPTIONAL }}
 
     -- Title Group
     -- Valid for = A = Analytic (Cit-art)
