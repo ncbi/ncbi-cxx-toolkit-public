@@ -249,8 +249,8 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
                    TFeatChoice  feat  = CSeqFeatData::e_not_set);
     SAnnotSelector(TFeatChoice  feat);
-    SAnnotSelector(TAnnotChoice annot, TFeatChoice  feat, int feat_product);
-    SAnnotSelector(TFeatChoice  feat, int feat_product);
+    SAnnotSelector(TAnnotChoice annot, TFeatChoice  feat, bool feat_product);
+    SAnnotSelector(TFeatChoice  feat, bool feat_product);
     
     SAnnotSelector& SetAnnotChoice(TAnnotChoice choice)
         {
@@ -270,7 +270,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
-    int GetFeatProduct(void) const
+    bool GetFeatProduct(void) const
         {
             return m_FeatProduct;
         }
@@ -434,7 +434,7 @@ protected:
     static void x_Add(TAnnotsNames& names, const CAnnotName& name);
     static void x_Del(TAnnotsNames& names, const CAnnotName& name);
 
-    int                   m_FeatProduct;  // "true" for searching products
+    bool                  m_FeatProduct;  // "true" for searching products
     int                   m_ResolveDepth;
     EOverlapType          m_OverlapType;
     EResolveMethod        m_ResolveMethod;
@@ -460,6 +460,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/01/23 16:14:45  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.22  2003/11/13 19:12:51  grichenk
 * Added possibility to exclude TSEs from annotations request.
 *

@@ -46,6 +46,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqalign/seqalign__.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -68,7 +69,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
       m_Dst_id(&master_loc_empty.SetEmpty()),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
-      m_LastType(CSeq_loc::e_not_set),
+      m_LastType(CAnnotObject_Ref::eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
 {
@@ -114,7 +115,7 @@ bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos,
         m_LastStrand = Reverse(src_strand);
         dst_pos = m_Shift - src_pos;
     }
-    m_LastType = CSeq_loc::e_Pnt;
+    m_LastType = CAnnotObject_Ref::eMappedObjType_Seq_point;
     m_TotalRange += m_LastRange.SetFrom(dst_pos).SetTo(dst_pos);
     return true;
 }
@@ -146,7 +147,7 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
         dst_from = m_Shift - src_to;
         dst_to = m_Shift - src_from;
     }
-    m_LastType = CSeq_loc::e_Int;
+    m_LastType = CAnnotObject_Ref::eMappedObjType_Seq_interval;
     m_TotalRange += m_LastRange.SetFrom(dst_from).SetTo(dst_to);
     return true;
 }
@@ -155,22 +156,22 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
 inline
 void CSeq_loc_Conversion::CheckDstInterval(void)
 {
-    if ( m_LastType != CSeq_loc::e_Int ) {
+    if ( m_LastType != CAnnotObject_Ref::eMappedObjType_Seq_interval ) {
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Wrong last location type");
     }
-    m_LastType = CSeq_loc::e_not_set;
+    m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
 }
 
 
 inline
 void CSeq_loc_Conversion::CheckDstPoint(void)
 {
-    if ( m_LastType != CSeq_loc::e_Pnt ) {
+    if ( m_LastType != CAnnotObject_Ref::eMappedObjType_Seq_point ) {
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Wrong last location type");
     }
-    m_LastType = CSeq_loc::e_not_set;
+    m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
 }
 
 
@@ -204,20 +205,21 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
 }
 
 
-void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>& dst)
+void CSeq_loc_Conversion::SetDstLoc(CRef<CObject>* dst)
 {
-    if ( !dst ) {
+    CSeq_loc* loc = 0;
+    if ( !(*dst) ) {
         switch ( m_LastType ) {
-        case CSeq_loc::e_Int:
-            dst.Reset(new CSeq_loc);
-            dst->SetInt(*GetDstInterval());
+        case CAnnotObject_Ref::eMappedObjType_Seq_interval:
+            dst->Reset(loc = new CSeq_loc);
+            loc->SetInt(*GetDstInterval());
             break;
-        case CSeq_loc::e_Pnt:
-            dst.Reset(new CSeq_loc);
-            dst->SetPnt(*GetDstPoint());
+        case CAnnotObject_Ref::eMappedObjType_Seq_point:
+            dst->Reset(loc = new CSeq_loc);
+            loc->SetPnt(*GetDstPoint());
             break;
         default:
-            dst = m_Dst_loc_Empty;
+            *dst = m_Dst_loc_Empty;
             break;
         }
     }
@@ -227,11 +229,13 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>& dst)
 }
 
 
-bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
-                                  bool always)
+bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CObject>* dst,
+                                  EConvertFlag flag)
 {
-    dst.Reset();
+    dst->Reset();
+    CSeq_loc* loc = 0;
     _ASSERT(!IsSpecialLoc());
+    m_LastType = CAnnotObject_Ref::eMappedObjType_Seq_loc;
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
     case CSeq_loc::e_Feat:
@@ -241,15 +245,15 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         break;
     case CSeq_loc::e_Null:
     {
-        dst.Reset(new CSeq_loc);
-        dst->SetNull();
+        dst->Reset(loc = new CSeq_loc);
+        loc->SetNull();
         break;
     }
     case CSeq_loc::e_Empty:
     {
         if ( GoodSrcId(src.GetEmpty()) ) {
-            dst.Reset(new CSeq_loc);
-            dst->SetEmpty(GetDstId());
+            dst->Reset(loc = new CSeq_loc);
+            loc->SetEmpty(GetDstId());
         }
         break;
     }
@@ -280,8 +284,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
             if ( ConvertInterval(**i) ) {
                 if ( !dst_ints ) {
-                    dst.Reset(new CSeq_loc);
-                    dst_ints = &dst->SetPacked_int().Set();
+                    dst->Reset(loc = new CSeq_loc);
+                    dst_ints = &loc->SetPacked_int().Set();
                 }
                 dst_ints->push_back(GetDstInterval());
             }
@@ -300,8 +304,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
             TSeqPos dst_pos = ConvertPos(*i);
             if ( dst_pos != kInvalidSeqPos ) {
                 if ( !dst_pnts ) {
-                    dst.Reset(new CSeq_loc);
-                    CPacked_seqpnt& pnts = dst->SetPacked_pnt();
+                    dst->Reset(loc = new CSeq_loc);
+                    CPacked_seqpnt& pnts = loc->SetPacked_pnt();
                     pnts.SetId(GetDstId());
                     dst_pnts = &pnts.SetPoints();
                     if ( src_pack_pnts.IsSetStrand() ) {
@@ -319,11 +323,13 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
         CSeq_loc_mix::Tdata* dst_mix = 0;
         CRef<CSeq_loc> dst_loc;
+        CRef<CObject> dst_obj;
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-            if ( Convert(**i, dst_loc, true) ) {
+            if ( Convert(**i, &dst_obj, eCnvAlways) ) {
                 if ( !dst_mix ) {
-                    dst.Reset(new CSeq_loc);
-                    dst_mix = &dst->SetMix().Set();
+                    dst->Reset(loc = new CSeq_loc);
+                    dst_obj.Reset(loc);
+                    dst_mix = &loc->SetMix().Set();
                 }
                 dst_mix->push_back(dst_loc);
             }
@@ -335,11 +341,13 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
         CSeq_loc_equiv::Tdata* dst_equiv = 0;
         CRef<CSeq_loc> dst_loc;
+        CRef<CObject> dst_obj;
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, dst_loc, true) ) {
+            if ( Convert(**i, &dst_obj, eCnvAlways) ) {
                 if ( !dst_equiv ) {
-                    dst.Reset(new CSeq_loc);
-                    dst_equiv = &dst->SetEquiv().Set();
+                    dst->Reset(loc = new CSeq_loc);
+                    dst_obj.Reset(loc);
+                    dst_equiv = &loc->SetEquiv().Set();
                 }
                 dst_equiv->push_back(dst_loc);
             }
@@ -351,8 +359,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         const CSeq_bond& src_bond = src.GetBond();
         CSeq_bond* dst_bond = 0;
         if ( ConvertPoint(src_bond.GetA()) ) {
-            dst.Reset(new CSeq_loc);
-            dst_bond = &dst->SetBond();
+            dst->Reset(loc = new CSeq_loc);
+            dst_bond = &loc->SetBond();
             dst_bond->SetA(*GetDstPoint());
             if ( src_bond.IsSetB() ) {
                 dst_bond->SetB().Assign(src_bond.GetB());
@@ -361,8 +369,8 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         if ( src_bond.IsSetB() ) {
             if ( ConvertPoint(src_bond.GetB()) ) {
                 if ( !dst_bond ) {
-                    dst.Reset(new CSeq_loc);
-                    dst_bond = &dst->SetBond();
+                    dst->Reset(loc = new CSeq_loc);
+                    dst_bond = &loc->SetBond();
                     dst_bond->SetA().Assign(src_bond.GetA());
                 }
                 dst_bond->SetB(*GetDstPoint());
@@ -374,52 +382,585 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
         NCBI_THROW(CAnnotException, eBadLocation,
                    "Unsupported location type");
     }
-    if ( always && IsSpecialLoc() ) {
+    if ( flag == eCnvAlways && IsSpecialLoc() ) {
         SetDstLoc(dst);
     }
-    return dst;
+    return *dst;
 }
 
 
-void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, int index)
+void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
 {
     Reset();
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
-        if ( index == 0 ) {
-            Convert(obj.GetFeatFast()->GetLocation(), ref.m_MappedLocation, false);
+        if ( loctype != eProduct ) {
+            Convert(obj.GetFeatFast()->GetLocation(),
+                &ref.m_MappedObject);
         }
         else {
-            Convert(obj.GetFeatFast()->GetProduct(), ref.m_MappedLocation, false);
+            Convert(obj.GetFeatFast()->GetProduct(),
+                &ref.m_MappedObject);
         }
         break;
     case CSeq_annot::C_Data::e_Graph:
-        Convert(obj.GetGraphFast()->GetLoc(), ref.m_MappedLocation, false);
+        Convert(obj.GetGraphFast()->GetLoc(),
+            &ref.m_MappedObject);
         break;
     case CSeq_annot::C_Data::e_Align:
-        // TODO: map align
+        const CSeq_align& orig_align = ref.GetAlign();
+        CRef<CSeq_align_Mapper> mapped_align;
+        Convert(orig_align, &mapped_align);
+        ref.m_MappedObject.Reset(mapped_align.GetPointerOrNull());
+        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_align;
         return;
     }
-    SetMappedLocation(ref, index);
+    SetMappedLocation(ref, loctype);
 }
 
 
-void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref, int index)
+CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align)
+    : m_OrigAlign(&align),
+      m_DstAlign(0),
+      m_HaveStrands(false)
 {
-    ref.m_MappedIndex = index;
-    ref.m_Partial |= m_Partial;
-    ref.m_TotalRange = m_TotalRange;
-    ref.m_MappedType = m_LastType;
-    if ( IsSpecialLoc() ) {
-        _ASSERT(!ref.m_MappedLocation);
-        // special interval or point
-        ref.m_MappedLocation = m_Dst_loc_Empty;
-        ref.m_MappedStrand = m_LastStrand;
-        m_LastType = CSeq_loc::e_not_set;
+    switch ( align.GetSegs().Which() ) {
+    case CSeq_align::C_Segs::e_Dendiag:
+        x_Init(align.GetSegs().GetDendiag());
+        break;
+    case CSeq_align::C_Segs::e_Denseg:
+        x_Init(align.GetSegs().GetDenseg());
+        break;
+    case CSeq_align::C_Segs::e_Std:
+        x_Init(align.GetSegs().GetStd());
+        break;
+    case CSeq_align::C_Segs::e_Packed:
+        x_Init(align.GetSegs().GetPacked());
+        break;
+    case CSeq_align::C_Segs::e_Disc:
+        // x_Init(align.GetSegs().GetDisc());
+        break;
+    }
+}
+
+
+void CSeq_align_Mapper::x_Init(const TDendiag& diags)
+{
+    ITERATE(TDendiag, diag_it, diags) {
+        const CDense_diag& diag = **diag_it;
+        int dim = diag.GetDim();
+        if (dim != (int)diag.GetIds().size()) {
+            ERR_POST(Warning << "Invalid 'ids' size in dendiag");
+            dim = min(dim, (int)diag.GetIds().size());
+        }
+        if (dim != (int)diag.GetStarts().size()) {
+            ERR_POST(Warning << "Invalid 'starts' size in dendiag");
+            dim = min(dim, (int)diag.GetStarts().size());
+        }
+        m_HaveStrands = diag.IsSetStrands();
+        if (m_HaveStrands && dim != (int)diag.GetStrands().size()) {
+            ERR_POST(Warning << "Invalid 'strands' size in dendiag");
+            dim = min(dim, (int)diag.GetStrands().size());
+        }
+        SAlignment_Segment seg(diag.GetLen());
+        CDense_diag::TIds::const_iterator id_it = diag.GetIds().begin();
+        CDense_diag::TStarts::const_iterator start_it = diag.GetStarts().begin();
+        CDense_diag::TStrands::const_iterator strand_it;
+        if ( m_HaveStrands ) {
+            strand_it = diag.GetStrands().begin();
+        }
+        ENa_strand strand = eNa_strand_unknown;
+        for (int i = 0; i < dim; ++i) {
+            if ( m_HaveStrands ) {
+                strand = *strand_it;
+                ++strand_it;
+            }
+            seg.AddRow(**id_it, *start_it, m_HaveStrands, strand, 0);
+            ++id_it;
+            ++start_it;
+        }
+        m_SrcSegs.push_back(seg);
+    }
+}
+
+
+void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
+{
+    int dim    = denseg.GetDim();
+    int numseg = denseg.GetNumseg();
+    // claimed dimension may not be accurate :-/
+    if (numseg != (int)denseg.GetLens().size()) {
+        ERR_POST(Warning << "Invalid 'lens' size in denseg");
+        numseg = min(numseg, (int)denseg.GetLens().size());
+    }
+    if (dim != (int)denseg.GetIds().size()) {
+        ERR_POST(Warning << "Invalid 'ids' size in denseg");
+        dim = min(dim, (int)denseg.GetIds().size());
+    }
+    if (dim*numseg != (int)denseg.GetStarts().size()) {
+        ERR_POST(Warning << "Invalid 'starts' size in denseg");
+        dim = min(dim*numseg, (int)denseg.GetStarts().size()) / numseg;
+    }
+    m_HaveStrands = denseg.IsSetStrands();
+    if (m_HaveStrands && dim*numseg != (int)denseg.GetStrands().size()) {
+        ERR_POST(Warning << "Invalid 'strands' size in denseg");
+        dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
+    }
+    CDense_seg::TStarts::const_iterator start_it =
+        denseg.GetStarts().begin();
+    CDense_seg::TLens::const_iterator len_it =
+        denseg.GetLens().begin();
+    CDense_seg::TStrands::const_iterator strand_it;
+    if ( m_HaveStrands ) {
+        strand_it = denseg.GetStrands().begin();
+    }
+    ENa_strand strand = eNa_strand_unknown;
+    for (int seg = 0;  seg < numseg;  seg++, ++len_it) {
+        CDense_seg::TIds::const_iterator id_it =
+            denseg.GetIds().begin();
+        SAlignment_Segment seg(*len_it);
+        for (int seq = 0;  seq < dim;  seq++, ++start_it, ++id_it) {
+            if ( m_HaveStrands ) {
+                strand = *strand_it;
+                ++strand_it;
+            }
+            seg.AddRow(**id_it, *start_it, m_HaveStrands, strand, 0);
+        }
+        m_SrcSegs.push_back(seg);
+    }
+}
+
+
+void CSeq_align_Mapper::x_Init(const TStd& sseg)
+{
+    typedef map<CSeq_id_Handle, int> TSegLenMap;
+    TSegLenMap seglens;
+
+    ITERATE ( CSeq_align::C_Segs::TStd, it, sseg ) {
+        const CStd_seg& stdseg = **it;
+        int dim = stdseg.GetDim();
+        if (dim != stdseg.GetLoc().size()) {
+            ERR_POST(Warning << "Invalid 'loc' size in std-seg");
+            dim = min(dim, (int)stdseg.GetLoc().size());
+        }
+        if (stdseg.IsSetIds()
+            && dim != stdseg.GetIds().size()) {
+            ERR_POST(Warning << "Invalid 'ids' size in std-seg");
+            dim = min(dim, (int)stdseg.GetIds().size());
+        }
+        SAlignment_Segment seg(0); // length is unknown yet
+        int seg_len = 0;
+        bool multi_width = false;
+        ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
+            const CSeq_loc& loc = **it_loc;
+            const CSeq_id* id = 0;
+            int start = -1;
+            int len = 0;
+            ENa_strand strand = eNa_strand_unknown;
+            switch ( loc.Which() ) {
+            case CSeq_loc::e_Empty:
+                id = &loc.GetEmpty();
+                break;
+            case CSeq_loc::e_Int:
+                id = &loc.GetInt().GetId();
+                start = loc.GetInt().GetFrom();
+                len = loc.GetInt().GetTo() - start + 1; // ???
+                if ( loc.GetInt().IsSetStrand() ) {
+                    strand = loc.GetInt().GetStrand();
+                    m_HaveStrands = true;
+                }
+            default:
+                NCBI_THROW(CAnnotException, eBadLocation,
+                           "Unsupported location type in std-seg");
+            }
+            if (len > 0) {
+                if (seg_len == 0) {
+                    seg_len = len;
+                }
+                else if (len != seg_len) {
+                    multi_width = true;
+                    if (len/3 == seg_len) {
+                        seg_len = len;
+                    }
+                    else if (len*3 != seg_len) {
+                        NCBI_THROW(CAnnotException, eBadLocation,
+                                   "Invalid segment length in std-seg");
+                    }
+                }
+            }
+            seglens[seg.AddRow(*id, len, m_HaveStrands, strand, 0).m_Id] = len;
+        }
+        seg.m_Len = seg_len;
+        if ( multi_width ) {
+            // Adjust each segment width. Do not check if sequence always
+            // has the same width.
+            for (int i = 0; i < seg.m_Rows.size(); ++i) {
+                if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
+                    seg.m_Rows[i].m_Width = 3;
+                }
+            }
+        }
+        seglens.clear();
+        m_SrcSegs.push_back(seg);
+    }
+}
+
+
+void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
+{
+    int dim    = pseg.GetDim();
+    int numseg = pseg.GetNumseg();
+    // claimed dimension may not be accurate :-/
+    if (numseg != (int)pseg.GetLens().size()) {
+        ERR_POST(Warning << "Invalid 'lens' size in packed-seg");
+        numseg = min(numseg, (int)pseg.GetLens().size());
+    }
+    if (dim != (int)pseg.GetIds().size()) {
+        ERR_POST(Warning << "Invalid 'ids' size in packed-seg");
+        dim = min(dim, (int)pseg.GetIds().size());
+    }
+    if (dim*numseg != (int)pseg.GetStarts().size()) {
+        ERR_POST(Warning << "Invalid 'starts' size in packed-seg");
+        dim = min(dim*numseg, (int)pseg.GetStarts().size()) / numseg;
+    }
+    m_HaveStrands = pseg.IsSetStrands();
+    if (m_HaveStrands && dim*numseg != (int)pseg.GetStrands().size()) {
+        ERR_POST(Warning << "Invalid 'strands' size in packed-seg");
+        dim = min(dim*numseg, (int)pseg.GetStrands().size()) / numseg;
+    }
+    CPacked_seg::TStarts::const_iterator start_it =
+        pseg.GetStarts().begin();
+    CPacked_seg::TLens::const_iterator len_it =
+        pseg.GetLens().begin();
+    CPacked_seg::TStrands::const_iterator strand_it;
+    if ( m_HaveStrands ) {
+        strand_it = pseg.GetStrands().begin();
+    }
+    ENa_strand strand = eNa_strand_unknown;
+    CPacked_seg::TPresent::const_iterator pr_it =
+        pseg.GetPresent().begin();
+    for (int seg = 0;  seg < numseg;  seg++, ++len_it) {
+        CPacked_seg::TIds::const_iterator id_it =
+            pseg.GetIds().begin();
+        SAlignment_Segment seg(*len_it);
+        for (int seq = 0;  seq < dim;  seq++, ++start_it, ++id_it, ++pr_it) {
+            if ( m_HaveStrands ) {
+                strand = *strand_it;
+                ++strand_it;
+            }
+            seg.AddRow(**id_it, (*pr_it ? *start_it : -1),
+                m_HaveStrands, strand, 0);
+        }
+        m_SrcSegs.push_back(seg);
+    }
+}
+
+
+void CSeq_align_Mapper::x_Init(const CSeq_align_set& align_set)
+{
+    const CSeq_align_set::Tdata& data = align_set.Get();
+    ITERATE(CSeq_align_set::Tdata, it, data) {
+        m_SubAligns.push_back(CSeq_align_Mapper(**it));
+    }
+}
+
+
+bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments)
+{
+    // Each segment must contain the same set of IDs,
+    // in the same order. If width is set for an ID,
+    // it should be the same over all intervals on the ID.
+    typedef vector<int> TWidths;
+    TWidths wid;
+
+    if ( !segments.size() ) {
+        return false; // empty alignment is not valid
+    }
+    SAlignment_Segment seg0 = segments[0];
+    for (int nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
+        wid.push_back(seg0.m_Rows[nrow].m_Width);
+    }
+    for (int nseg = 1; nseg < segments.size(); ++nseg) {
+        // skip for dendiags
+        if (segments[nseg].m_Rows.size() != seg0.m_Rows.size()) {
+            return false;
+        }
+
+        for (int nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
+            // skip for dendiags
+            if (seg0.m_Rows[nrow].m_Id != segments[nseg].m_Rows[nrow].m_Id) {
+                return false;
+            }
+            if (seg0.m_Rows[nrow].m_Width != 0) {
+                if (wid[nrow] == 0) {
+                    wid[nrow] = seg0.m_Rows[nrow].m_Width;
+                }
+                if (seg0.m_Rows[nrow].m_Width != wid[nrow]) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
+                                     int row_idx,
+                                     CSeq_loc_Conversion& cvt)
+{
+    // start and stop on the original sequence
+    int start = sseg.m_Rows[row_idx].m_Start;
+    int stop = start + sseg.m_Len;
+    cvt.Reset();
+    if ( start >= 0
+        &&  cvt.ConvertInterval(start, stop, sseg.m_Rows[row_idx].m_Strand) ) {
+        // At least part of the interval was converted. Calculate
+        // trimming coords, trim each row.
+        int dl = cvt.m_Src_from <= start ? 0 : cvt.m_Src_from - start;
+        int dr = cvt.m_Src_to >= stop ? 0 : cvt.m_Src_to - stop;
+        SAlignment_Segment dseg(sseg.m_Len - dl + dr);
+        for (int i = 0; i < sseg.m_Rows.size(); ++i) {
+            if (i == row_idx) {
+                // translate id and coords
+                dseg.AddRow(cvt.GetDstId(),
+                    cvt.m_LastRange.GetFrom(),
+                    sseg.m_Rows[i].m_IsSetStrand,
+                    cvt.m_LastStrand,
+                    sseg.m_Rows[i].m_Width)
+                    .SetMapped();
+            }
+            else {
+                int dst_start = sseg.m_Rows[i].m_Start < 0 ? -1
+                    : sseg.m_Rows[i].m_Start + dl;
+                dseg.AddRow(*sseg.m_Rows[i].m_Id.GetSeqId(),
+                    dst_start,
+                    sseg.m_Rows[i].m_IsSetStrand, sseg.m_Rows[i].m_Strand,
+                    sseg.m_Rows[i].m_Width);
+            }
+        }
+        sseg.m_Mappings.push_back(dseg);
+        cvt.m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
     }
     else {
-        _ASSERT(ref.m_MappedLocation);
+        // Empty mapping. Remove the row.
+        SAlignment_Segment dseg = sseg;
+        dseg.m_Rows[row_idx].m_Id =
+            CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(*cvt.m_Dst_id);
+        dseg.m_Rows[row_idx].m_Start = -1;
+        sseg.m_Mappings.push_back(dseg);
+    }
+}
+
+
+bool CSeq_align_Mapper::x_ConvertSegments(TSegments& segs,
+                                          CSeq_loc_Conversion& cvt)
+{
+    bool res = false;
+    NON_CONST_ITERATE(TSegments, ss, segs) {
+        // Check already mapped parts
+        if (ss->m_Mappings.size() > 0) {
+            if ( x_ConvertSegments(ss->m_Mappings, cvt) ) {
+                // Don't use source segment if the ID was
+                // found in mappings.
+                res = true;
+                continue;
+            }
+        }
+        // Check the original segment - some IDs may be mapped more than once.
+        // This should not happen if the ID is present in mappings.
+        for (int row = 0; row < ss->m_Rows.size(); ++row) {
+            if (ss->m_Rows[row].m_Id == cvt.m_Src_id_Handle) {
+                x_MapSegment(*ss, row, cvt);
+                cvt.m_Partial = true;
+                res = true;
+            }
+        }
+    }
+    return res;
+}
+
+
+void CSeq_align_Mapper::Convert(CSeq_loc_Conversion& cvt)
+{
+    _ASSERT(m_SubAligns.size() > 0  ||  x_IsValidAlign(m_SrcSegs));
+
+    m_DstAlign.Reset();
+
+    if (m_SubAligns.size() > 0) {
+        NON_CONST_ITERATE(TSubAligns, it, m_SubAligns) {
+            it->Convert(cvt);
+        }
+        return;
+    }
+    x_ConvertSegments(m_SrcSegs, cvt);
+}
+
+
+void CSeq_align_Mapper::x_GetDstSegments(const TSegments& ssegs,
+                                         TSegments& dsegs) const
+{
+    ITERATE(TSegments, ss, ssegs) {
+        if (ss->m_Mappings.size() == 0) {
+            // umapped segment, use as-is
+            dsegs.push_back(*ss);
+            continue;
+        }
+        x_GetDstSegments(ss->m_Mappings, dsegs);
+    }
+}
+
+
+CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
+{
+    if (m_DstAlign) {
+        return m_DstAlign;
+    }
+
+    m_DstSegs.clear();
+    x_GetDstSegments(m_SrcSegs, m_DstSegs);
+
+    _ASSERT(m_SubAligns.size() > 0  ||  x_IsValidAlign(m_DstSegs));
+    CRef<CSeq_align> dst(new CSeq_align);
+    dst->Assign(*m_OrigAlign);
+    dst->ResetScore();
+    dst->SetSegs().Reset();
+    switch ( m_OrigAlign->GetSegs().Which() ) {
+    case CSeq_align::C_Segs::e_Dendiag:
+        {
+            TDendiag& diags = dst->SetSegs().SetDendiag();
+            ITERATE(TSegments, seg_it, m_DstSegs) {
+                const SAlignment_Segment& seg = *seg_it;
+                CRef<CDense_diag> diag(new CDense_diag);
+                // scores ???
+                diag->SetDim(seg.m_Rows.size());
+                diag->SetLen(seg.m_Len);
+                ITERATE(SAlignment_Segment::TRows, row, seg.m_Rows) {
+                    CRef<CSeq_id> id(new CSeq_id);
+                    id->Assign(*row->m_Id.GetSeqId());
+                    diag->SetIds().push_back(id);
+                    diag->SetStarts().push_back(row->m_Start);
+                    if (seg.m_HaveStrands) { // per-segment strands
+                        diag->SetStrands().push_back(row->m_Strand);
+                    }
+                }
+                diags.push_back(diag);
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Denseg:
+        {
+            CDense_seg& dseg = dst->SetSegs().SetDenseg();
+            // dseg.SetScores().Assign(m_OrigAnnot->GetDenseg().GetScores();
+            dseg.SetDim(m_DstSegs[0].m_Rows.size());
+            dseg.SetNumseg(m_DstSegs.size());
+            ITERATE(SAlignment_Segment::TRows, row, m_DstSegs[0].m_Rows) {
+                CRef<CSeq_id> id(new CSeq_id);
+                id->Assign(*row->m_Id.GetSeqId());
+                dseg.SetIds().push_back(id);
+                dseg.SetWidths().push_back(row->m_Width ? row->m_Width : 1);
+            }
+            ITERATE(TSegments, seg_it, m_DstSegs) {
+                dseg.SetLens().push_back(seg_it->m_Len);
+                ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+                    dseg.SetStarts().push_back(row->m_Start);
+                    if (m_HaveStrands) { // per-alignment strands
+                        dseg.SetStrands().push_back(row->m_Strand);
+                    }
+                }
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Std:
+        {
+            TStd& std_segs = dst->SetSegs().SetStd();
+            ITERATE(TSegments, seg_it, m_DstSegs) {
+                CRef<CStd_seg> std_seg(new CStd_seg);
+                // scores ???
+                std_seg->SetDim(seg_it->m_Rows.size());
+                ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+                    CRef<CSeq_id> id(new CSeq_id);
+                    id->Assign(*row->m_Id.GetSeqId());
+                    std_seg->SetIds().push_back(id);
+                    CRef<CSeq_loc> loc(new CSeq_loc);
+                    if (row->m_Start < 0) {
+                        // empty
+                        loc->SetEmpty(*id);
+                    }
+                    else {
+                        // interval
+                        loc->SetInt().SetId(*id);
+                        loc->SetInt().SetFrom(row->m_Start);
+                        loc->SetInt().SetTo(row->m_Start + seg_it->m_Len);
+                        if (row->m_IsSetStrand) {
+                            loc->SetInt().SetStrand(row->m_Strand);
+                        }
+                    }
+                    std_seg->SetLoc().push_back(loc);
+                }
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Packed:
+        {
+            CPacked_seg& pseg = dst->SetSegs().SetPacked();
+            // pseg.SetScores().Assign(m_OrigAnnot->GetPacked().GetScores();
+            pseg.SetDim(m_DstSegs[0].m_Rows.size());
+            pseg.SetNumseg(m_DstSegs.size());
+            ITERATE(SAlignment_Segment::TRows, row, m_DstSegs[0].m_Rows) {
+                CRef<CSeq_id> id(new CSeq_id);
+                id->Assign(*row->m_Id.GetSeqId());
+                pseg.SetIds().push_back(id);
+            }
+            ITERATE(TSegments, seg_it, m_DstSegs) {
+                pseg.SetLens().push_back(seg_it->m_Len);
+                ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
+                    pseg.SetStarts().push_back(row->m_Start);
+                    pseg.SetPresent().push_back(row->m_Start >= 0);
+                    if (m_HaveStrands) {
+                        pseg.SetStrands().push_back(row->m_Strand);
+                    }
+                }
+            }
+            break;
+        }
+    case CSeq_align::C_Segs::e_Disc:
+        {
+            CSeq_align_set::Tdata& data = dst->SetSegs().SetDisc().Set();
+            ITERATE(TSubAligns, it, m_SubAligns) {
+                data.push_back(it->GetDstAlign());
+            }
+            break;
+        }
+    }
+    return m_DstAlign = dst;
+}
+
+
+void CSeq_loc_Conversion::Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst)
+{
+    dst->Reset(new CSeq_align_Mapper(src));
+    (*dst)->Convert(*this);
+}
+
+
+void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
+                                            ELocationType loctype)
+{
+    ref.SetProduct(loctype == eProduct);
+    ref.SetPartial(m_Partial || ref.IsPartial());
+    ref.m_TotalRange = m_TotalRange;
+    ref.m_MappedObjectType = m_LastType;
+    if ( IsSpecialLoc() ) {
+        _ASSERT(!ref.m_MappedObject);
+        // special interval or point
+        ref.m_MappedObject = m_Dst_loc_Empty;
+        ref.m_MappedStrand = m_LastStrand;
+        m_LastType = CAnnotObject_Ref::eMappedObjType_not_set;
+    }
+    else {
+        _ASSERT(ref.m_MappedObject);
     }
 }
 
@@ -455,41 +996,51 @@ CSeq_loc_Conversion_Set::BeginRanges(CSeq_id_Handle id,
 }
 
 
-void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref, int index)
+void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
+                                      CSeq_loc_Conversion::ELocationType loctype)
 {
     if (m_IdMap.size() == 1  &&  m_IdMap.begin()->second.size() == 1) {
         // No multiple mappings
-        m_IdMap.begin()->second.begin()->second->Convert(ref, index);
+        m_IdMap.begin()->second.begin()->second->Convert(ref, loctype);
         return;
     }
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    CRef<CSeq_loc> mapped_loc;
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
-        if ( index == 0 ) {
-            Convert(obj.GetFeatFast()->GetLocation(), ref.m_MappedLocation);
+        if ( loctype != CSeq_loc_Conversion::eProduct ) {
+            Convert(obj.GetFeatFast()->GetLocation(), &mapped_loc);
+            ref.m_MappedObject.Reset(mapped_loc.GetPointerOrNull());
         }
         else {
-            Convert(obj.GetFeatFast()->GetProduct(), ref.m_MappedLocation);
+            Convert(obj.GetFeatFast()->GetProduct(), &mapped_loc);
+            ref.m_MappedObject.Reset(mapped_loc.GetPointerOrNull());
         }
+        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_loc;
         break;
     case CSeq_annot::C_Data::e_Graph:
-        Convert(obj.GetGraphFast()->GetLoc(), ref.m_MappedLocation);
+        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
+        ref.m_MappedObject.Reset(mapped_loc.GetPointerOrNull());
+        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_loc;
         break;
     case CSeq_annot::C_Data::e_Align:
-        // TODO: map align
+        const CSeq_align& orig_align = ref.GetAlign();
+        CRef<CSeq_align_Mapper> mapped_align;
+        Convert(orig_align, &mapped_align);
+        ref.m_MappedObject.Reset(mapped_align.GetPointerOrNull());
+        ref.m_MappedObjectType = CAnnotObject_Ref::eMappedObjType_Seq_align;
         break;
     }
-    ref.m_MappedIndex = index;
-    ref.m_Partial = m_Partial;
+    ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
+    ref.SetPartial(m_Partial);
     ref.m_TotalRange = m_TotalRange;
-    ref.m_MappedType = CSeq_loc::e_not_set;
 }
 
 
 bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
-                                           CRef<CSeq_loc>& dst)
+                                           CRef<CSeq_loc>* dst)
 {
-    _ASSERT(dst);
+    _ASSERT(*dst);
     bool res = false;
     TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
         src.GetPoint(), src.GetPoint());
@@ -497,7 +1048,7 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
         CSeq_loc_Conversion& cvt = *mit->second;
         cvt.Reset();
         if (cvt.ConvertPoint(src)) {
-            dst->SetPnt(*cvt.GetDstPoint());
+            (*dst)->SetPnt(*cvt.GetDstPoint());
             m_TotalRange += cvt.GetTotalRange();
             res = true;
             break;
@@ -509,9 +1060,9 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
-                                              CRef<CSeq_loc>& dst)
+                                              CRef<CSeq_loc>* dst)
 {
-    _ASSERT(dst);
+    _ASSERT(*dst);
     CRef<CSeq_loc> tmp(new CSeq_loc);
     CPacked_seqint::Tdata& ints = tmp->SetPacked_int().Set();
     TRange total_range(TRange::GetEmpty());
@@ -535,10 +1086,10 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         }
     }
     if (ints.size() > 1) {
-        dst.Reset(tmp);
+        dst->Reset(tmp);
     }
     else if (ints.size() == 1) {
-        dst->SetInt(**ints.begin());
+        (*dst)->SetInt(**ints.begin());
     }
     m_TotalRange += total_range;
     // does not guarantee the whole interval is mapped, but should work
@@ -548,9 +1099,9 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
 }
 
 
-bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
+bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
 {
-    dst.Reset(new CSeq_loc);
+    dst->Reset(new CSeq_loc);
     bool res = false;
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
@@ -561,7 +1112,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
         break;
     case CSeq_loc::e_Null:
     {
-        dst->SetNull();
+        (*dst)->SetNull();
         res = true;
         break;
     }
@@ -573,7 +1124,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
             CSeq_loc_Conversion& cvt = *mit->second;
             cvt.Reset();
             if ( cvt.GoodSrcId(src.GetEmpty()) ) {
-                dst->SetEmpty(cvt.GetDstId());
+                (*dst)->SetEmpty(cvt.GetDstId());
                 res = true;
                 break;
             }
@@ -605,10 +1156,10 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     case CSeq_loc::e_Packed_int:
     {
         const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
-        CPacked_seqint::Tdata& dst_ints = dst->SetPacked_int().Set();
+        CPacked_seqint::Tdata& dst_ints = (*dst)->SetPacked_int().Set();
         ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
             CRef<CSeq_loc> dst_int(new CSeq_loc);
-            bool mapped = ConvertInterval(**i, dst_int);
+            bool mapped = ConvertInterval(**i, &dst_int);
             if (mapped) {
                 if ( dst_int->IsInt() ) {
                     dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
@@ -663,10 +1214,10 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     {
         const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
         CRef<CSeq_loc> dst_loc;
-        CSeq_loc_mix::Tdata& dst_mix = dst->SetMix().Set();
+        CSeq_loc_mix::Tdata& dst_mix = (*dst)->SetMix().Set();
         ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
             dst_loc.Reset(new CSeq_loc);
-            if ( Convert(**i, dst_loc) ) {
+            if ( Convert(**i, &dst_loc) ) {
                 dst_mix.push_back(dst_loc);
                 res = true;
             }
@@ -678,9 +1229,9 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
     {
         const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
         CRef<CSeq_loc> dst_loc;
-        CSeq_loc_equiv::Tdata& dst_equiv = dst->SetEquiv().Set();
+        CSeq_loc_equiv::Tdata& dst_equiv = (*dst)->SetEquiv().Set();
         ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-            if ( Convert(**i, dst_loc) ) {
+            if ( Convert(**i, &dst_loc) ) {
                 dst_equiv.push_back(dst_loc);
                 res = true;
             }
@@ -693,7 +1244,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
         const CSeq_bond& src_bond = src.GetBond();
         // using mix, not bond, since mappings may have
         // different strand, fuzz etc.
-        dst->SetBond();
+        (*dst)->SetBond();
         CRef<CSeq_point> pntA(0);
         CRef<CSeq_point> pntB(0);
         TRangeIterator mit = BeginRanges(
@@ -722,7 +1273,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
                 }
             }
         }
-        CSeq_bond& dst_bond = dst->SetBond();
+        CSeq_bond& dst_bond = (*dst)->SetBond();
         if ( bool(pntA)  ||  bool(pntB) ) {
             if ( bool(pntA) ) {
                 dst_bond.SetA(*pntA);
@@ -748,12 +1299,27 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
 }
 
 
+void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
+                                      CRef<CSeq_align_Mapper>* dst)
+{
+    dst->Reset(new CSeq_align_Mapper(src));
+    NON_CONST_ITERATE(TIdMap, id_it, m_IdMap) {
+        NON_CONST_ITERATE(TRangeMap, range_it, id_it->second) {
+            (*dst)->Convert(*range_it->second);
+        }
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/01/23 16:14:48  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.10  2004/01/02 16:06:53  grichenk
 * Skip location mapping for seq-aligns
 *

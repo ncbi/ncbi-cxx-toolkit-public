@@ -44,7 +44,7 @@ CMappedGraph& CMappedGraph::Set(const CAnnotObject_Ref& annot)
     m_MappedGraph.Reset();
     m_Partial = annot.IsPartial();
 
-    _ASSERT(annot.GetMappedIndex() == 0);
+    _ASSERT(!annot.IsProduct());
     m_MappedLoc.Reset(annot.GetMappedLocation());
     return *this;
 }
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/01/23 16:14:48  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.20  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

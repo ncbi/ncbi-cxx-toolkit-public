@@ -85,7 +85,7 @@ SAnnotSelector::SAnnotSelector(TFeatChoice feat)
 
 SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
                                TFeatChoice feat,
-                               int feat_product)
+                               bool feat_product)
     : SAnnotTypeSelector(annot),
       m_FeatProduct(feat_product),
       m_ResolveDepth(kMax_Int),
@@ -106,7 +106,7 @@ SAnnotSelector::SAnnotSelector(TAnnotChoice annot,
 }
 
 SAnnotSelector::SAnnotSelector(TFeatChoice feat,
-                               int feat_product)
+                               bool feat_product)
     : SAnnotTypeSelector(feat),
       m_FeatProduct(feat_product),
       m_ResolveDepth(kMax_Int),
@@ -302,6 +302,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/23 16:14:47  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.3  2003/11/13 19:12:52  grichenk
 * Added possibility to exclude TSEs from annotations request.
 *

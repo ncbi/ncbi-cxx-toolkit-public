@@ -395,7 +395,7 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
         }
     }
     CRef<CSeq_loc> dst(new CSeq_loc);
-    if (!conv_set.Convert(loc, dst)) {
+    if (!conv_set.Convert(loc, &dst)) {
         dst.Reset();
     }
     return dst;
@@ -408,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/01/23 16:14:47  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.50  2004/01/22 20:10:40  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

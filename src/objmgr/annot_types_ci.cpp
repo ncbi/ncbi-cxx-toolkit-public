@@ -78,16 +78,15 @@ inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object.GetSeq_annot_Info()),
       m_AnnotObject_Index(object.GetSeq_annot_Info().GetAnnotObjectIndex(object)),
-      m_MappedIndex(0),
       m_ObjectType(eType_Seq_annot_Info),
-      m_Partial(false),
-      m_MappedType(CSeq_loc::e_not_set),
+      m_MappedFlags(0),
+      m_MappedObjectType(eMappedObjType_not_set),
       m_MappedStrand(eNa_strand_unknown)
 {
     if ( object.IsFeat() ) {
         const CSeq_feat& feat = *object.GetFeatFast();
         if ( feat.IsSetPartial() ) {
-            m_Partial = feat.GetPartial();
+            SetPartial(feat.GetPartial());
         }
     }
 }
@@ -98,10 +97,9 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    TSeqPos index)
     : m_Object(&snp_annot),
       m_AnnotObject_Index(index),
-      m_MappedIndex(0),
       m_ObjectType(eType_Seq_annot_SNP_Info),
-      m_Partial(false),
-      m_MappedType(CSeq_loc::e_not_set),
+      m_MappedFlags(0),
+      m_MappedObjectType(eMappedObjType_not_set),
       m_MappedStrand(eNa_strand_unknown)
 {
 }
@@ -146,12 +144,6 @@ const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
 }
 
 
-void CAnnotObject_Ref::SetPartial(bool value)
-{
-    m_Partial = value;
-}
-
-
 inline
 void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
                                     CSeq_loc_Conversion* cvt)
@@ -162,10 +154,9 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
         snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
     if ( !cvt ) {
         m_TotalRange.SetFrom(src_from).SetTo(src_to);
-        m_Partial = false;
-        m_MappedLocation.Reset();
-        m_MappedIndex = 0;
-        m_MappedType = CSeq_loc::e_Pnt;
+        m_MappedFlags = 0;
+        m_MappedObject.Reset();
+        m_MappedObjectType = eMappedObjType_Seq_point;
         m_MappedStrand = src_strand;
         return;
     }
@@ -179,7 +170,7 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
         // interval
         _VERIFY(cvt->ConvertInterval(src_from, src_to, src_strand));
     }
-    cvt->SetMappedLocation(*this, 0);
+    cvt->SetMappedLocation(*this, CSeq_loc_Conversion::eLocation);
 }
 
 
@@ -187,11 +178,12 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc) const
 {
     _ASSERT(MappedNeedsUpdate());
 
-    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetEmpty()));
+    CRef<CSeq_id> id(const_cast<CSeq_id*>(
+        static_cast<const CSeq_id*>(m_MappedObject.GetPointerOrNull())));
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
-    if ( m_MappedType == CSeq_loc::e_Pnt ) {
+    if ( m_MappedObjectType == eMappedObjType_Seq_point ) {
         CSeq_point& point = loc->SetPnt();
         point.SetId(*id);
         point.SetPoint(m_TotalRange.GetFrom());
@@ -219,14 +211,15 @@ void CAnnotObject_Ref::UpdateMappedLocation(CRef<CSeq_loc>& loc,
 {
     _ASSERT(MappedNeedsUpdate());
 
-    CRef<CSeq_id> id(const_cast<CSeq_id*>(&m_MappedLocation->GetEmpty()));
+    CRef<CSeq_id> id(const_cast<CSeq_id*>(
+        static_cast<const CSeq_id*>(m_MappedObject.GetPointerOrNull())));
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
     else {
         loc->Reset();
     }
-    if ( m_MappedType == CSeq_loc::e_Pnt ) {
+    if ( m_MappedObjectType == eMappedObjType_Seq_point ) {
         if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
             pnt_ref.Reset(new CSeq_point);
         }
@@ -352,7 +345,7 @@ bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
         const CSeq_loc* x_loc = x.GetMappedLocation();
         const CSeq_loc* y_loc = y.GetMappedLocation();
         if ( !x_loc ) {
-            if ( x.GetMappedIndex() == 0 ) {
+            if ( !x.IsProduct() ) {
                 x_loc = &x_feat->GetLocation();
             }
             else {
@@ -361,7 +354,7 @@ bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
             }
         }
         if ( !y_loc ) {
-            if ( y.GetMappedIndex() == 0 ) {
+            if ( !y.IsProduct() ) {
                 y_loc = &y_feat->GetLocation();
             }
             else {
@@ -666,7 +659,9 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
         NON_CONST_ITERATE(CAnnotDataCollector::TAnnotMappingSet, amit,
             m_DataCollector->m_AnnotMappingSet) {
             CAnnotObject_Ref annot_ref = amit->first;
-            amit->second.Convert(annot_ref, m_FeatProduct);
+            amit->second.Convert(annot_ref,
+                m_FeatProduct ? CSeq_loc_Conversion::eProduct :
+                CSeq_loc_Conversion::eLocation);
             m_AnnotSet.push_back(annot_ref);
         }
         m_DataCollector->m_AnnotMappingSet.clear();
@@ -1137,10 +1132,12 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
                 
             CAnnotObject_Ref annot_ref(annot_info);
             if ( cvt ) {
-                cvt->Convert(annot_ref, m_FeatProduct);
+                cvt->Convert(annot_ref,
+                    m_FeatProduct ? CSeq_loc_Conversion::eProduct :
+                    CSeq_loc_Conversion::eLocation);
             }
             else {
-                annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct);
+                annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct != 0);
             }
             if ( x_AddObject(annot_ref, cvt) ) {
                 return;
@@ -1346,12 +1343,25 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
 }
 
 
+const CSeq_align_Mapper* CAnnotObject_Ref::GetMappedSeq_align(void) const
+{
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align);
+    if (!m_MappedObject) {
+        return 0; // no mapped align, use the original one
+    }
+    return static_cast<const CSeq_align_Mapper*>(m_MappedObject.GetPointer());
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2004/01/23 16:14:47  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.104  2004/01/22 20:10:40  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

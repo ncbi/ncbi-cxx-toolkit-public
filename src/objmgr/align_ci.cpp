@@ -33,6 +33,7 @@
 #include <objmgr/align_ci.hpp>
 
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/seq_loc_cvt.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -73,7 +74,12 @@ const CSeq_align& CAlign_CI::operator* (void) const
 {
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
-    return annot.GetAlign();
+    if (!m_MappedAlign) {
+        const CSeq_align_Mapper* mapper = annot.GetMappedSeq_align();
+        m_MappedAlign = mapper ? mapper->GetDstAlign().GetPointer()
+            : &annot.GetAlign();
+    }
+    return *m_MappedAlign;
 }
 
 
@@ -81,8 +87,22 @@ const CSeq_align* CAlign_CI::operator-> (void) const
 {
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
-    return &annot.GetAlign();
+    if (!m_MappedAlign) {
+        const CSeq_align_Mapper* mapper = annot.GetMappedSeq_align();
+        m_MappedAlign = mapper ? mapper->GetDstAlign().GetPointer()
+            : &annot.GetAlign();
+    }
+    return m_MappedAlign.GetPointer();
 }
+
+
+const CSeq_align& CAlign_CI::GetOriginalSeq_align(void) const
+{
+    const CAnnotObject_Ref& annot = Get();
+    _ASSERT(annot.IsAlign());
+    return annot.GetAlign();
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -90,6 +110,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/01/23 16:14:47  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.18  2003/08/14 20:05:19  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.

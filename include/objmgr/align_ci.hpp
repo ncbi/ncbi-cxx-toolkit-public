@@ -75,23 +75,32 @@ public:
     CAlign_CI& operator++ (void);
     CAlign_CI& operator-- (void);
     operator bool (void) const;
+
+    // Mapped alignment, not the original one
     const CSeq_align& operator* (void) const;
     const CSeq_align* operator-> (void) const;
+
+    const CSeq_align& GetOriginalSeq_align(void) const;
+
 private:
     CAlign_CI operator++ (int);
     CAlign_CI operator-- (int);
+
+    mutable CConstRef<CSeq_align> m_MappedAlign;
 };
 
 
 inline
 CAlign_CI::CAlign_CI(void)
+    : m_MappedAlign(0)
 {
     return;
 }
 
 inline
 CAlign_CI::CAlign_CI(const CAlign_CI& iter)
-    : CAnnotTypes_CI(iter)
+    : CAnnotTypes_CI(iter),
+      m_MappedAlign(0)
 {
     return;
 }
@@ -100,7 +109,8 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
+      m_MappedAlign(0)
 {
 }
 
@@ -110,7 +120,8 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
+      m_MappedAlign(0)
 {
 }
 
@@ -118,7 +129,8 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
 inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
     : CAnnotTypes_CI(annot,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
+                     SAnnotSelector(CSeq_annot::C_Data::e_Align)),
+      m_MappedAlign(0)
 {
 }
 
@@ -127,7 +139,8 @@ inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
+      m_MappedAlign(0)
 {
 }
 
@@ -135,7 +148,8 @@ CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
 inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry)
     : CAnnotTypes_CI(scope, entry,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
+                     SAnnotSelector(CSeq_annot::C_Data::e_Align)),
+      m_MappedAlign(0)
 {
 }
 
@@ -144,7 +158,8 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
+      m_MappedAlign(0)
 {
 }
 
@@ -153,6 +168,7 @@ inline
 CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
 {
     CAnnotTypes_CI::operator=(iter);
+    m_MappedAlign.Reset();
     return *this;
 }
 
@@ -160,6 +176,7 @@ inline
 CAlign_CI& CAlign_CI::operator++ (void)
 {
     Next();
+    m_MappedAlign.Reset();
     return *this;
 }
 
@@ -167,6 +184,7 @@ inline
 CAlign_CI& CAlign_CI::operator-- (void)
 {
     Prev();
+    m_MappedAlign.Reset();
     return *this;
 }
 
@@ -183,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/01/23 16:14:45  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.21  2003/08/04 17:02:57  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

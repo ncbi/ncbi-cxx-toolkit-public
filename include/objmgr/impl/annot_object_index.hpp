@@ -77,12 +77,12 @@ struct SAnnotObject_Index
 {
     SAnnotObject_Index(void)
         : m_AnnotObject_Info(0),
-          m_AnnotLocationIndex(0)
+          m_AnnotLocationIndex(false)
         {
         }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;
-    int                                 m_AnnotLocationIndex;
+    bool                                m_AnnotLocationIndex;
     CRef< CObjectFor<CHandleRange> >    m_HandleRange;
 };
 
@@ -168,6 +168,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/01/23 16:14:46  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.3  2003/11/26 17:55:55  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

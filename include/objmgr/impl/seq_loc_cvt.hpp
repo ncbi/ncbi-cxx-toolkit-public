@@ -40,6 +40,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/annot_types_ci.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -51,7 +52,7 @@ BEGIN_SCOPE(objects)
 
 class CSeqMap_CI;
 class CScope;
-class CAnnotObject_Ref;
+class CSeq_align_Mapper;
 
 class CSeq_id;
 class CSeq_loc;
@@ -89,10 +90,21 @@ public:
                          ENa_strand src_strand);
     bool ConvertInterval(const CSeq_interval& src);
 
-    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
-                 bool always = false);
+    enum EConvertFlag {
+        eCnvDefault,
+        eCnvAlways
+    };
+    enum ELocationType {
+        eLocation,
+        eProduct
+    };
 
-    void Convert(CAnnotObject_Ref& obj, int index);
+    bool Convert(const CSeq_loc& src, CRef<CObject>* dst,
+                 EConvertFlag flag = eCnvDefault);
+
+    void Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst);
+
+    void Convert(CAnnotObject_Ref& obj, ELocationType loctype);
 
     void Reset(void);
 
@@ -114,7 +126,7 @@ public:
     
     ENa_strand ConvertStrand(ENa_strand strand) const;
 
-    void SetMappedLocation(CAnnotObject_Ref& ref, int index);
+    void SetMappedLocation(CAnnotObject_Ref& ref, ELocationType loctype);
 
 private:
     void CheckDstInterval(void);
@@ -123,7 +135,7 @@ private:
     CRef<CSeq_interval> GetDstInterval(void);
     CRef<CSeq_point> GetDstPoint(void);
 
-    void SetDstLoc(CRef<CSeq_loc>& loc);
+    void SetDstLoc(CRef<CObject>* loc);
 
     bool IsSpecialLoc(void) const;
 
@@ -157,7 +169,7 @@ private:
     bool           m_Partial;
     
     //   Last Point, Interval or other simple location's conversion result:
-    CSeq_loc::E_Choice m_LastType;
+    CAnnotObject_Ref::EMappedObjectType m_LastType;
     TRange         m_LastRange;
     ENa_strand     m_LastStrand;
 
@@ -165,6 +177,7 @@ private:
     CHeapScope     m_Scope;
 
     friend class CSeq_loc_Conversion_Set;
+    friend class CSeq_align_Mapper;
 };
 
 
@@ -180,16 +193,18 @@ public:
 
     void Add(CSeq_loc_Conversion& cvt);
     TRangeIterator BeginRanges(CSeq_id_Handle id, TSeqPos from, TSeqPos to);
-    void Convert(CAnnotObject_Ref& obj, int index);
-    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+    void Convert(CAnnotObject_Ref& obj,
+                 CSeq_loc_Conversion::ELocationType loctype);
+    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void Convert(const CSeq_align& src, CRef<CSeq_align_Mapper>* dst);
     void SetScope(CHeapScope& scope)
         {
             m_Scope = scope;
         }
 
 private:
-    bool ConvertPoint(const CSeq_point& src, CRef<CSeq_loc>& dst);
-    bool ConvertInterval(const CSeq_interval& src, CRef<CSeq_loc>& dst);
+    bool ConvertPoint(const CSeq_point& src, CRef<CSeq_loc>* dst);
+    bool ConvertInterval(const CSeq_interval& src, CRef<CSeq_loc>* dst);
 
     TIdMap         m_IdMap;
     bool           m_Partial;
@@ -198,10 +213,90 @@ private:
 };
 
 
+struct SAlignment_Segment
+{
+    struct SAlignment_Row
+    {
+        SAlignment_Row(const CSeq_id& id,
+                       int start,
+                       bool is_set_strand,
+                       ENa_strand strand,
+                       int width);
+
+        void SetMapped(void);
+
+        CSeq_id_Handle m_Id;
+        int            m_Start;
+        bool           m_IsSetStrand;
+        ENa_strand     m_Strand;
+        int            m_Width; // not stored in ASN.1, width of a character
+        bool           m_Mapped;
+    };
+    typedef vector<SAlignment_Row> TRows;
+
+    SAlignment_Segment(int len);
+
+    SAlignment_Row& AddRow(const CSeq_id& id,
+                           int start,
+                           bool is_set_strand,
+                           ENa_strand strand,
+                           int width);
+
+    typedef vector<SAlignment_Segment> TSegments;
+
+    int       m_Len;
+    TRows     m_Rows;
+    bool      m_HaveStrands;
+    TSegments m_Mappings;
+};
+
+
+class CSeq_align_Mapper : public CObject
+{
+public:
+    typedef CSeq_align::C_Segs::TDendiag TDendiag;
+    typedef CSeq_align::C_Segs::TStd TStd;
+    CSeq_align_Mapper(const CSeq_align& align);
+    ~CSeq_align_Mapper(void) {}
+
+    void Convert(CSeq_loc_Conversion& cvt);
+
+    CRef<CSeq_align> GetDstAlign(void) const;
+
+private:
+    typedef SAlignment_Segment::TSegments TSegments;
+
+    void x_Init(const TDendiag& diags);
+    void x_Init(const CDense_seg& denseg);
+    void x_Init(const TStd& sseg);
+    void x_Init(const CPacked_seg& pseg);
+    void x_Init(const CSeq_align_set& align_set);
+
+    void x_MapSegment(SAlignment_Segment& sseg,
+                      int row_idx,
+                      CSeq_loc_Conversion& cvt);
+    bool x_ConvertSegments(TSegments& segs, CSeq_loc_Conversion& cvt);
+    void x_GetDstSegments(const TSegments& ssegs, TSegments& dsegs) const;
+
+    // Used for e_Disc alignments
+    typedef vector<CSeq_align_Mapper>  TSubAligns;
+
+    static bool x_IsValidAlign(TSegments segments);
+
+    CConstRef<CSeq_align>        m_OrigAlign;
+    mutable CRef<CSeq_align>     m_DstAlign;
+    TSegments                    m_SrcSegs;
+    mutable TSegments            m_DstSegs;
+    TSubAligns                   m_SubAligns;
+    bool                         m_HaveStrands;
+};
+
+
 inline
 bool CSeq_loc_Conversion::IsSpecialLoc(void) const
 {
-    return m_LastType != CSeq_loc::e_not_set;
+    return m_LastType == CAnnotObject_Ref::eMappedObjType_Seq_point
+        || m_LastType == CAnnotObject_Ref::eMappedObjType_Seq_interval;
 }
 
 
@@ -269,12 +364,61 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
 }
 
 
+inline
+SAlignment_Segment::SAlignment_Segment(int len)
+    : m_Len(len),
+      m_HaveStrands(false)
+{
+    return;
+}
+
+
+inline
+SAlignment_Segment::SAlignment_Row::SAlignment_Row(const CSeq_id& id,
+                                                   int start,
+                                                   bool is_set_strand,
+                                                   ENa_strand strand,
+                                                   int width)
+    : m_Id(CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id)),
+      m_Start(start),
+      m_IsSetStrand(is_set_strand),
+      m_Strand(strand),
+      m_Width(width),
+      m_Mapped(false)
+{
+    return;
+}
+
+
+inline
+void SAlignment_Segment::SAlignment_Row::SetMapped(void)
+{
+    m_Mapped = true;
+}
+
+
+inline
+SAlignment_Segment::SAlignment_Row& SAlignment_Segment::AddRow(const CSeq_id& id,
+                                                               int start,
+                                                               bool is_set_strand,
+                                                               ENa_strand strand,
+                                                               int width)
+{
+    m_Rows.push_back(SAlignment_Row(id, start, is_set_strand, strand, width));
+    m_HaveStrands |= is_set_strand;
+    return m_Rows.back();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/23 16:14:46  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.7  2003/11/10 18:11:03  grichenk
 * Moved CSeq_loc_Conversion_Set to seq_loc_cvt
 *

@@ -146,9 +146,9 @@ private:
     const CSeq_feat& x_MakeMappedFeature(void) const;
     const CSeq_loc& x_MakeMappedLocation(void) const;
 
-    bool IsMappedLocation(int index) const
+    bool IsMappedLocation(bool product) const
         {
-            return m_AnnotObject_Ref.IsMappedLocation(index);
+            return m_AnnotObject_Ref.IsMappedLocation(product);
         }
     const CSeq_loc& GetMappedLocation(void) const;
 
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/01/23 16:14:46  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.34  2003/11/07 16:01:26  vasilche
 * Added CMappedFeat::GetSeq_annot().
 *

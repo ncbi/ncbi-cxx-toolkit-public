@@ -323,6 +323,11 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                 CDense_seg::TIds::const_iterator it_id =
                     denseg.GetIds().begin();
                 for (int seq = 0;  seq < dim;  seq++, ++it_start, ++it_id) {
+                    ENa_strand strand = eNa_strand_unknown;
+                    if ( denseg.IsSetStrands() ) {
+                        strand = *it_strand;
+                    }
+                    ++it_strand;
                     if ( *it_start < 0 )
                         continue;
                     CSeq_loc loc;
@@ -330,8 +335,7 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
                     loc.SetInt().SetFrom(*it_start);
                     loc.SetInt().SetTo(*it_start + *it_len - 1);
                     if ( denseg.IsSetStrands() ) {
-                        loc.SetInt().SetStrand(*it_strand);
-                        ++it_strand;
+                        loc.SetInt().SetStrand(strand);
                     }
                     hrmap.AddLocation(loc);
                 }
@@ -420,6 +424,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/01/23 16:14:47  grichenk
+* Implemented alignment mapping
+*
 * Revision 1.30  2004/01/22 20:10:40  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.
