@@ -78,6 +78,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/03/06 23:54:10  lavr
+ * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
+ * Added:   SOCK_gethostbyaddr
+ *
  * Revision 6.9  2001/03/02 20:05:15  lavr
  * Typos fixed
  *
@@ -455,13 +459,25 @@ extern unsigned int SOCK_htonl
 
 
 /* Return INET host address (in network byte order) of the
- * specified host, which can be either domain name or an IP address in
+ * specified host (or local host, if hostname is passed as NULL),
+ * which can be either domain name or an IP address in
  * dotted notation (e.g. "123.45.67.89\0"). Return 0 on error.
  */
-extern unsigned int SOCK_gethostaddr
+extern unsigned int SOCK_gethostbyname
 (const char* hostname  /* [in]  return current host address if hostname is 0 */
  );
 
+
+/* Take INET host address (in network byte order) and fill out the
+ * the provided buffer with the name, which the address corresponds to
+ * (in case of multiple names the primary name is used). Return value 0
+ * means error, while success is denoted by the 'name' argument returned.
+ */
+extern char* SOCK_gethostbyaddr
+(unsigned int host,    /* [in]  host address in network byte order           */
+ char*        name,    /* [out] buffer to put the name to                    */
+ size_t       namelen  /* [in]  size (bytes) of the buffer above             */
+ );
 
 #ifdef __cplusplus
 } /* extern "C" */

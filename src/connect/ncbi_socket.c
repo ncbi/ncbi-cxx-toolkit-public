@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/03/06 23:54:20  lavr
+ * Renamed: SOCK_gethostaddr -> SOCK_gethostbyname
+ * Added:   SOCK_gethostbyaddr
+ *
  * Revision 6.18  2001/03/02 20:10:29  lavr
  * Typos fixed
  *
@@ -707,7 +711,7 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* Get address of the remote host (assume the same host if it is NULL) */
     assert(host  ||  sock->host);
-    x_host = host ? SOCK_gethostaddr(host) : sock->host;
+    x_host = host ? SOCK_gethostbyname(host) : sock->host;
     if (!x_host) {
         if ( CORE_GetLOG() ) {
             char str[128];
@@ -1434,7 +1438,7 @@ extern unsigned int SOCK_htonl(unsigned int value)
 }
 
 
-extern unsigned int SOCK_gethostaddr(const char* hostname)
+extern unsigned int SOCK_gethostbyname(const char* hostname)
 {
     unsigned int host;
     char buf[1024];
@@ -1471,4 +1475,38 @@ extern unsigned int SOCK_gethostaddr(const char* hostname)
 #endif
     }
     return host;
+}
+
+
+extern char* SOCK_gethostbyaddr(unsigned int host,
+                                char*        name,
+                                size_t       namelen)
+{
+    verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
+
+    if (host && name && namelen) {
+        struct hostent* hp;
+#if defined(HAVE_GETHOSTBYADDR_R)
+        struct hostent x_hp;
+        char x_buf[1024];
+        int x_errno;
+
+        hp = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET,
+                             &x_hp, x_buf, sizeof(x_buf), &x_errno);
+        if (!hp || strlen(hp->h_name) >= namelen - 1)
+            return 0;
+        strncpy(name, hp->h_name, namelen - 1);
+        name[namelen - 1] = 0;
+#else
+        CORE_LOCK_WRITE;
+        hp = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
+        if (!hp || strlen(hp->h_name) >= namelen - 1)
+            return 0;
+        strncpy(name, hp->h_name, namelen - 1);
+        CORE_UNLOCK;
+#endif
+        name[namelen - 1] = 0;
+        return name;
+    }
+    return 0;
 }
