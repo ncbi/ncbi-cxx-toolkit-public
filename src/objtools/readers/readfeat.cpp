@@ -55,14 +55,14 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 
-#include <objects/seqfeat/readfeat.hpp>
+#include <objtools/readers/readfeat.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class NCBI_SEQFEAT_EXPORT CFeature_table_reader_imp
+class /* NCBI_XOBJREAD_EXPORT */ CFeature_table_reader_imp
 {
 public:
     enum EQual {
