@@ -83,8 +83,8 @@ int CGridClientTestApp::Run(void)
 {
     CArgs args = GetArgs();
 
-    unsigned jcount = 10;
-    int vsize = 100000;
+    unsigned jcount = 5;
+    int vsize = 10000;
     if (args["jcount"]) {
         jcount = args["jcount"].AsInteger();
     }
@@ -209,6 +209,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/31 21:15:35  didenko
+ * Chenged parameters default values
+ *
  * Revision 1.1  2005/03/31 16:19:30  didenko
  * Initial version
  *
