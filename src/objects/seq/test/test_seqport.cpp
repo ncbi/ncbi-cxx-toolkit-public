@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/01/10 20:34:15  clausen
+ * Added tests for GetIupacaa3, GetCode, and GetIndex
+ *
  * Revision 1.3  2001/12/07 18:52:05  grichenk
  * Updated "#include"-s and forward declarations to work with the
  * new datatool version.
@@ -557,7 +560,101 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
     uLength = 0;
     cout << "Enter length of sequence to Convert: ";
     cin >> uLength;
-    
+  
+    // Test CSeqportUtil::GetIupacaa3
+    while (true) {
+        cout << "Test GetIupacaa3() (1=Yes, 0=No): ";
+        cin >> nResponse;
+        if (!nResponse) {
+            break;
+        }
+        int ncbistdaa;
+        cout << "Enter Ncbistdaa code: ";
+        cin >> ncbistdaa;
+        string iupacaa3;
+        iupacaa3 = CSeqportUtil::GetIupacaa3(ncbistdaa);
+        cout << "Iupacaa3 is : " << iupacaa3 << endl;
+    }
+
+    //Test CSeqportUtil.GetCode()
+    while (true) {
+        cout << "Test GetCode (1=Yes, 0=No): ";
+        cin >> nResponse;
+        if (!nResponse) {
+            break;
+        }
+        
+        cout << "Enter code type (0=Iupacna, 1=Iupacaa, 2=Ncibeaa, 3=Ncbistdaa): ";
+        int ctype;
+        cin >> ctype;
+        CSeq_data::E_Choice code_type;
+        switch (ctype) {
+        case 0:
+            code_type = CSeq_data::e_Iupacna;
+            break;
+        case 1:
+            code_type = CSeq_data::e_Iupacaa;
+            break;
+        case 2:
+            code_type = CSeq_data::e_Ncbieaa;
+            break;
+        case 3:
+            code_type = CSeq_data::e_Ncbistdaa;
+            break;
+        default:
+            code_type = CSeq_data::e_not_set;
+        }
+        if (code_type == CSeq_data::e_not_set) {
+            continue;
+        }
+        
+        int idx;
+        cout << "Enter index: ";
+        cin >> idx;
+        string code;
+        code = CSeqportUtil::GetCode(code_type, idx);
+        cout << "Code is : " << code << endl;
+    }
+
+    //Test CSeqportUtil.GetIndex()
+    while (true) {
+        cout << "Test GetIndex (1=Yes, 0=No): ";
+        cin >> nResponse;
+        if (!nResponse) {
+            break;
+        }
+        
+        cout << "Enter code type (0=Iupacna, 1=Iupacaa, 2=Ncibeaa, 3=Ncbistdaa): ";
+        int ctype;
+        cin >> ctype;
+        CSeq_data::E_Choice code_type;
+        switch (ctype) {
+        case 0:
+            code_type = CSeq_data::e_Iupacna;
+            break;
+        case 1:
+            code_type = CSeq_data::e_Iupacaa;
+            break;
+        case 2:
+            code_type = CSeq_data::e_Ncbieaa;
+            break;
+        case 3:
+            code_type = CSeq_data::e_Ncbistdaa;
+            break;
+        default:
+            code_type = CSeq_data::e_not_set;
+        }
+        if (code_type == CSeq_data::e_not_set) {
+            continue;
+        }
+        
+        string code;
+        cout << "Enter code: ";
+        cin >> code;
+        int idx = CSeqportUtil::GetIndex(code_type, code);
+        cout << "Index is : " << idx << endl;
+    }
+
   
     //Do ambigutity checking
     cout << "Get Ambigs (1 = Yes, 0 = No)? ";
