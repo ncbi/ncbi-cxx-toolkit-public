@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/07/14 20:18:58  vasilche
+* Fixed lost reference to vector element bug.
+*
 * Revision 1.18  1999/07/13 20:18:19  vasilche
 * Changed types naming.
 *
@@ -668,7 +671,7 @@ TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
         return 0;
     case CObjectStreamBinaryDefs::eMemberReference:
         {
-            const string& memberName = ReadStringValue();
+            string memberName = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadPointer: member " << memberName);
             CIObjectInfo info = ReadObjectPointer();
             CTypeInfo::TMemberIndex index =
@@ -713,7 +716,7 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
     switch ( ReadByte() ) {
     case CObjectStreamBinaryDefs::eMemberReference:
         {
-            const string& memberName = ReadStringValue();
+            string memberName = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadObjectPointer: member " <<
                    memberName);
             CIObjectInfo info = ReadObjectPointer();

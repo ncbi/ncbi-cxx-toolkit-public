@@ -67,11 +67,13 @@ int CTestSerial::Run(void)
 
         {
             {
-                CObjectOStreamBinary(ofstream("test.bin")) << write;
+                CObjectOStreamBinary(ofstream("test.bin",
+											  ios::binary)) << write;
             }
             CSerialObject read;
             {
-                CObjectIStreamBinary(ifstream("test.bin")) >> read;
+                CObjectIStreamBinary(ifstream("test.bin",
+											  ios::binary)) >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
@@ -79,7 +81,8 @@ int CTestSerial::Run(void)
 
         {
             {
-                CObjectOStreamAsnBinary(ofstream("test.asnb")) << write;
+                CObjectOStreamAsnBinary(ofstream("test.asnb",
+											     ios::binary)) << write;
             }
             CSerialObject read;
             {
