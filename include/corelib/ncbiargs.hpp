@@ -31,11 +31,16 @@
  * File Description:
  *   Command-line arguments' processing:
  *      descriptions  -- CArgDescriptions,  CArgDesc
+ *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
  *      parsed values -- CArgs,             CArgValue
  *      exceptions    -- CArgException, ARG_THROW()
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2000/10/20 20:25:53  vakatov
+ * Redesigned/reimplemented the user-defined arg.value constraints
+ * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
+ *
  * Revision 1.8  2000/10/06 21:57:51  butanaev
  * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
  *
@@ -74,10 +79,14 @@
 BEGIN_NCBI_SCOPE
 
 class CNcbiArguments;
+class CArgAllow;
+
 
 ///////////////////////////////////////////////////////
 //  Parsing and validating command-line arguments according to
 //  the user-provided descriptions
+//
+//  See also in:  "doc/programming_manual/argdescr.html"
 
 
 // Command string:
@@ -119,9 +128,6 @@ public:
     CArgException(const string& what, const string& arg_value) THROWS_NONE;
 };
 
-// ARG_THROW("What", "Value")
-#define ARG_THROW(what, value)  THROW_TRACE(CArgException, (what, value))
-
 
 
 //
@@ -130,16 +136,16 @@ public:
 
 class CArgValue : public CObject
 {
-  friend class CArgs;
+    friend class CArgs;
 public:
     // Get the argument's value
     const string&  AsString(void) const { return m_String; }
 
     // These functions throw an exception if you requested the wrong
     // value type (e.g. if called "AsInteger()" for a "boolean" arg).
-    virtual long            AsInteger     (void) const;
-    virtual double          AsDouble      (void) const;
-    virtual bool            AsBoolean     (void) const;
+    virtual long   AsInteger(void) const;
+    virtual double AsDouble (void) const;
+    virtual bool   AsBoolean(void) const;
 
     enum EFlags {
         // for "AsInputFile" and "AsOutputFile"
@@ -148,19 +154,21 @@ public:
         fToBinary  = 0x4  // change file open mode to binary
     };
 
-    virtual CNcbiIstream&  AsInputFile  (EFlags changeModeTo = fUnchanged) const;
-    virtual CNcbiOstream&  AsOutputFile (EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiIstream& AsInputFile (EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
 
 protected:
     // Prohibit explicit instantiation of "CArg" objects
-    CArgValue(const string& value, bool isDefault);
+    CArgValue(const string& value, bool is_default);
     virtual ~CArgValue(void);
 
 private:
     // Value of the argument as passed to the constructor ("value")
     string m_String;
-    bool m_IsDefaultValue;
+    // TRUE if was not specified by user (i.e. was assigned the default value)
+    bool   m_IsDefaultValue;
 };
+
 
 
 //
@@ -169,7 +177,7 @@ private:
 // according to the arg. descriptions given by the user in "CArgDescriptions".
 //
 // NOTE:  the extra arguments can be accessed using virtual names:
-//           "#1", "#2", "#3", ...
+//           "#1", "#2", "#3", ..., "#<GetNExtra()>"
 //        in the order of insertion (by method Add).
 //
 
@@ -179,14 +187,7 @@ public:
     CArgs(void);
     ~CArgs(void);
 
-    // Add new argument name + value.
-    // Throw an exception if the "name" is not an empty string, and if
-    // there is an argument with this name already.
-    // HINT:  use empty "name" to add extra (unnamed) args, and they will be
-    // automagically assigned with the virtual names: "#1", "#2", "#3", ...
-    void Add(const string& name, CArgValue* arg);
-
-    // Return TRUE if there is argument with name "name"
+    // Return TRUE if there was a description for argument with name "name"
     bool Exist(const string& name) const;
     // Return TRUE if argument with name "name" was provided in command line
     bool IsProvided(const string& name) const;
@@ -197,12 +198,18 @@ public:
 
     // Get the number of passed unnamed (extra) position args
     unsigned GetNExtra(void) const { return m_nExtra; }
-
     // Return N-th extra (unnamed) position arg value,  N = 1..GetNExtra()
     const CArgValue& operator [](unsigned idx) const;
 
     // Print all agruments to the string "str"
     void Print(string& str) const;
+
+    // Add new argument name + value.
+    // Throw an exception if the "name" is not an empty string, and if
+    // there is an argument with this name already.
+    // HINT:  use empty "name" to add extra (unnamed) args, and they will be
+    // automagically assigned with the virtual names: "#1", "#2", "#3", ...
+    void Add(const string& name, CArgValue* arg);
 
 private:
     typedef map< string, CRef<CArgValue> >  TArgs;
@@ -228,48 +235,12 @@ public:
                                        bool optional=false) const = 0;
     virtual string GetUsageCommentAttr(bool optional=false) const = 0;
     virtual string GetUsageCommentBody(void)                const = 0;
-    virtual CArgValue* ProcessArgument(const string& value, bool isDefault = false) const = 0;
+    virtual string GetUsageConstraint(void)                 const = 0;
+    virtual CArgValue* ProcessArgument(const string& value,
+                                       bool is_default = false) const = 0;
+    virtual void SetConstraint(CArgAllow* constraint) = 0;
 };
 
-
-//
-// Class describing what values an argument allowing to have
-//
-
-class CArgAllow
-{
-public:
-  virtual ~CArgAllow();
-  virtual bool Allow(const string &value) = 0;
-};
-
-
-//
-// Class allowing an argument to have values withing given interval
-//
-
-class CArgAllowIntInterval : public CArgAllow
-{
-public:
-  CArgAllowIntInterval(int a, int b);
-  virtual bool Allow(const string &value);
-private:
-  int m_a, m_b;
-};
-
-
-//
-// Class allowing an argument to have particular value
-//
-
-class CArgAllowValue : public CArgAllow
-{
-public:
-  CArgAllowValue(const string &value);
-  virtual bool Allow(const string &value);
-private:
-  string m_value;
-};
 
 
 //
@@ -347,7 +318,8 @@ public:
 
     // Provide description for the extra position args -- the ones
     // that have not been described by AddPlain().
-    // By default, no extra (unnamed) position args are allowed.
+    // By default, no extra (unnamed) position args are allowed, and you
+    // have to call SetConstraint() to enable them.
     // The name of this description is always empty string.
     // Throw an exception if the extra arg. description already exists.
     void AddExtra(const string& comment,  // def = "extra argument"
@@ -369,6 +341,11 @@ public:
     // described (named) position args (i.e. the # of calls to AddPlain).
     void SetConstraint(EConstraint policy, unsigned num_args = 0);
 
+    // Additional (user-defined) restriction on the argument value
+    // NOTE: "constraint" must be allocated by "new" and must not be
+    //       freed by "delete" after it has been passed to CArgDescriptions!
+    void SetConstraint(const string& name, CArgAllow* constraint);
+
     // Check if there is already a description with name "name".
     bool Exist(const string& name) const;
 
@@ -381,28 +358,20 @@ public:
                          const string& usage_description,
                          SIZE_TYPE     usage_width = 78);
 
-    // Printout the USAGE using the provided arg. descriptions and
-    // the usage context, to the string "str". Return "str".
+    // Printout USAGE to the string "str" using provided arg. descriptions
+    // and usage context. Return "str".
     string& PrintUsage(string& str) const;
 
     // Check if the "name" is syntaxically correct: it can contain only
     // alphanumeric characters and underscore ('_')
     static bool VerifyName(const string& name);
 
-    //
-    // Put a restrriction on an argument value
-    //
-    void Allow(const string &name, CArgAllow *allow);
-
 private:
     typedef map< string, AutoPtr<CArgDesc> >  TArgs;
     typedef TArgs::iterator                   TArgsI;
     typedef TArgs::const_iterator             TArgsCI;
     typedef vector<string>                    TPlainArgs;  // (better use deque<> here; later)
-    typedef vector< AutoPtr<CArgAllow> >      TArgAllowList;
-    typedef map<string, TArgAllowList>        TAllow;
 
-    TAllow       m_Allow;
     TArgs        m_Args;        // assoc.map of arguments' name/descr
     TPlainArgs   m_PlainArgs;   // pos. args, ordered by position in cmd.-line
     EConstraint  m_Constraint;  // policy for the position args
@@ -462,6 +431,76 @@ public:
 #endif /* NO_INCLASS_TMPL */
 
     CArgs* CreateArgs(const CNcbiArguments& argv) const;
+};
+
+
+
+///////////////////////////////////////////////////////
+// Classes to describe additional (user-defined) constraints
+// to impose upon the argument value.
+//
+
+
+// Abstract base class
+//
+
+class CArgAllow : public CObject
+{
+public:
+    virtual bool   Verify(const string &value) const = 0;
+    virtual string GetUsage(void) const = 0;
+protected:
+    // prohibit from the allocation in stack or in the static data segment,
+    // and from the explicit deallocation by "delete"
+    virtual ~CArgAllow(void);
+};
+
+
+
+// Allow an argument to have only particular string values
+// Example:  SetConstraint("a1", (*new CArgAllow_Strings, "foo", "bar", "etc"))
+//
+
+class CArgAllow_Strings : public CArgAllow
+{
+public:
+    CArgAllow_Strings& operator,(const string& value); 
+    virtual bool   Verify(const string& value) const;
+    virtual string GetUsage(void) const;
+private:
+    set<string> m_Strings;
+};
+
+
+// Allow an argument to have only integer values falling within given interval
+// Example:  SetConstraint("a2", new CArgAllow_Integers(-3, 34))
+//
+
+class CArgAllow_Integers : public CArgAllow
+{
+public:
+    CArgAllow_Integers(long x_min, long x_max);
+    virtual bool   Verify(const string& value) const;
+    virtual string GetUsage(void) const;
+private:
+    long m_Min;
+    long m_Max;
+};
+
+
+// Allow an argument to have only integer values falling within given interval
+// Example:  SetConstraint("a2", new CArgAllow_Doubles(0.01, 0.99))
+//
+
+class CArgAllow_Doubles : public CArgAllow
+{
+public:
+    CArgAllow_Doubles(double x_min, double x_max);
+    virtual bool   Verify(const string& value) const;
+    virtual string GetUsage(void) const;
+private:
+    double m_Min;
+    double m_Max;
 };
 
 

@@ -28,11 +28,16 @@
  * File Description:
  *   Command-line arguments' processing:
  *      descriptions  -- CArgDescriptions,  CArgDesc
+ *      constraints   -- CArgAllow;  CArgAllow_{Strings,Integers,Doubles}
  *      parsed values -- CArgs,             CArgValue
  *      exceptions    -- CArgException, ARG_THROW()
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2000/10/20 20:25:55  vakatov
+ * Redesigned/reimplemented the user-defined arg.value constraints
+ * mechanism (CArgAllow-related classes and methods). +Generic clean-up.
+ *
  * Revision 1.13  2000/10/13 16:26:30  vasilche
  * Added heuristic for detection of CObject allocation in heap.
  *
@@ -82,6 +87,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 //  CArgException::
@@ -93,6 +99,7 @@ CArgException::CArgException(const string& what)
     return;
 }
 
+
 CArgException::CArgException(const string& what, const string& arg_value)
     THROWS_NONE
 : runtime_error(what + ":  " + arg_value)
@@ -100,50 +107,64 @@ CArgException::CArgException(const string& what, const string& arg_value)
     return;
 }
 
+
+// ARG_THROW("What", "Value")
+#define ARG_THROW(what, value)  THROW_TRACE(CArgException, (what, value))
+
+
+
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
 //  Internal classes:
 //    CArg_***::
 
+
 ///////////////////////////////////////////////////////
 //  CArgValue::
 
-CArgValue::CArgValue(const string& value, bool isDefault)
+CArgValue::CArgValue(const string& value, bool is_default)
     : CObject(eCanDelete)
 {
-  m_String = value;
-  m_IsDefaultValue = isDefault;
+    m_String         = value;
+    m_IsDefaultValue = is_default;
 }
+
 
 CArgValue::~CArgValue(void)
 {
     return;
 }
 
+
 long CArgValue::AsInteger(void) const
 {
-    ARG_THROW("Not implemented", AsString());
+    ARG_THROW("Attempt to cast to a wrong (Integer) type", AsString());
 }
+
 
 double CArgValue::AsDouble(void) const
 {
-    ARG_THROW("Not implemented", AsString());
+    ARG_THROW("Attempt to cast to a wrong (Double) type", AsString());
 }
+
 
 bool CArgValue::AsBoolean(void) const
 {
-    ARG_THROW("Not implemented", AsString());
+    ARG_THROW("Attempt to cast to a wrong (Boolean) type", AsString());
 }
 
-CNcbiIstream &CArgValue::AsInputFile(EFlags) const
+
+CNcbiIstream& CArgValue::AsInputFile(EFlags /*changeModeTo*/) const
 {
-    ARG_THROW("Not implemented", AsString());
+    ARG_THROW("Attempt to cast to a wrong (InputFile) type", AsString());
 }
 
-CNcbiOstream &CArgValue::AsOutputFile(EFlags) const
+
+CNcbiOstream& CArgValue::AsOutputFile(EFlags /*changeModeTo*/) const
 {
-    ARG_THROW("Not implemented", AsString());
+    ARG_THROW("Attempt to cast to a wrong (OutputFile) type", AsString());
 }
+
 
 ///////////////////////////////////////////////////////
 //  CArg_String::
@@ -151,14 +172,15 @@ CNcbiOstream &CArgValue::AsOutputFile(EFlags) const
 class CArg_String : public CArgValue
 {
 public:
-    CArg_String(const string& value, bool isDefault);
+    CArg_String(const string& value, bool is_default);
 };
 
-inline CArg_String::CArg_String(const string& value, bool isDefault)
-    : CArgValue(value, isDefault)
+inline CArg_String::CArg_String(const string& value, bool is_default)
+    : CArgValue(value, is_default)
 {
     return;
 }
+
 
 ///////////////////////////////////////////////////////
 //  CArg_Alnum::
@@ -166,11 +188,12 @@ inline CArg_String::CArg_String(const string& value, bool isDefault)
 class CArg_Alnum : public CArgValue
 {
 public:
-    CArg_Alnum(const string& value, bool isDefault);
+    CArg_Alnum(const string& value, bool is_default);
 };
 
-inline CArg_Alnum::CArg_Alnum(const string& value, bool isDefault)
-    : CArgValue(value, isDefault)
+
+inline CArg_Alnum::CArg_Alnum(const string& value, bool is_default)
+    : CArgValue(value, is_default)
 {
     for (string::const_iterator it = value.begin();  it != value.end(); ++it) {
         if ( !isalnum(*it) ) {
@@ -179,21 +202,22 @@ inline CArg_Alnum::CArg_Alnum(const string& value, bool isDefault)
     }
 }
 
+
 ///////////////////////////////////////////////////////
 //  CArg_Integer::
 
 class CArg_Integer : public CArgValue
 {
 public:
-    CArg_Integer(const string& value, bool isDefault);
+    CArg_Integer(const string& value, bool is_default);
     virtual long AsInteger(void) const;
 private:
     long m_Integer;
 };
 
 
-inline CArg_Integer::CArg_Integer(const string& value, bool isDefault)
-    : CArgValue(value, isDefault)
+inline CArg_Integer::CArg_Integer(const string& value, bool is_default)
+    : CArgValue(value, is_default)
 {
     try {
         m_Integer = NStr::StringToLong(value);
@@ -203,10 +227,12 @@ inline CArg_Integer::CArg_Integer(const string& value, bool isDefault)
     }
 }
 
+
 long CArg_Integer::AsInteger(void) const
 {
     return m_Integer;
 }
+
 
 ///////////////////////////////////////////////////////
 //  CArg_Double::
@@ -214,15 +240,15 @@ long CArg_Integer::AsInteger(void) const
 class CArg_Double : public CArgValue
 {
 public:
-    CArg_Double(const string& value, bool isDefault);
+    CArg_Double(const string& value, bool is_default);
     virtual double AsDouble(void) const;
 private:
     double m_Double;
 };
 
 
-inline CArg_Double::CArg_Double(const string& value, bool isDefault)
-    : CArgValue(value, isDefault)
+inline CArg_Double::CArg_Double(const string& value, bool is_default)
+    : CArgValue(value, is_default)
 {
     try {
         m_Double = NStr::StringToDouble(value);
@@ -232,10 +258,12 @@ inline CArg_Double::CArg_Double(const string& value, bool isDefault)
     }
 }
 
+
 double CArg_Double::AsDouble(void) const
 {
     return m_Double;
 }
+
 
 ///////////////////////////////////////////////////////
 //  CArg_Boolean::
@@ -243,21 +271,23 @@ double CArg_Double::AsDouble(void) const
 class CArg_Boolean : public CArgValue
 {
 public:
-    CArg_Boolean(bool value, bool isDefault);
-    CArg_Boolean(const string& value, bool isDefault);
+    CArg_Boolean(bool value, bool is_default);
+    CArg_Boolean(const string& value, bool is_default);
     virtual bool AsBoolean(void) const;
 private:
     bool m_Boolean;
 };
 
-inline CArg_Boolean::CArg_Boolean(bool value, bool isDefault)
-    : CArgValue( NStr::BoolToString(value), isDefault )
+
+inline CArg_Boolean::CArg_Boolean(bool value, bool is_default)
+    : CArgValue( NStr::BoolToString(value), is_default )
 {
     m_Boolean = value;
 }
 
-inline CArg_Boolean::CArg_Boolean(const string& value, bool isDefault)
-    : CArgValue(value, isDefault)
+
+inline CArg_Boolean::CArg_Boolean(const string& value, bool is_default)
+    : CArgValue(value, is_default)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
@@ -267,10 +297,12 @@ inline CArg_Boolean::CArg_Boolean(const string& value, bool isDefault)
     }
 }
 
+
 bool CArg_Boolean::AsBoolean(void) const
 {
     return m_Boolean;
 }
+
 
 ///////////////////////////////////////////////////////
 //  CArg_InputFile::
@@ -280,70 +312,73 @@ class CArg_InputFile : public CArgValue
 public:
     CArg_InputFile(const string&       value,
                    IOS_BASE::openmode  openmode,
-                   bool                delay_open, bool isDefault);
+                   bool                delay_open, bool is_default);
     ~CArg_InputFile();
     virtual CNcbiIstream& AsInputFile(EFlags changeModeTo = fUnchanged) const;
 
 private:
     void Open(void) const;
-    mutable IOS_BASE::openmode   m_OpenMode;
-    mutable CNcbiIstream *m_InputFile;
-    mutable bool m_DeleteFlag;
+    mutable IOS_BASE::openmode  m_OpenMode;
+    mutable CNcbiIstream*       m_InputFile;
+    mutable bool                m_DeleteFlag;
 };
 
-inline void CArg_InputFile::Open(void) const
+
+void CArg_InputFile::Open(void) const
 {
-  if(m_InputFile)
-    return;
+    if ( m_InputFile )
+        return;
 
-  string fileName = AsString();
-  if(fileName == "-")
-  {
-    m_InputFile = &cin;
-    m_DeleteFlag = false;
-  }
-  else
-  {
-    m_InputFile = new CNcbiIfstream(fileName.c_str(), IOS_BASE::in | m_OpenMode);
-    m_DeleteFlag = true;
-  }
+    if (AsString() == "-") {
+        m_InputFile  = &cin;
+        m_DeleteFlag = false;
+    } else {
+        m_InputFile  = new CNcbiIfstream(AsString().c_str(),
+                                         IOS_BASE::in | m_OpenMode);
+        m_DeleteFlag = true;
+    }
 
-  if (! m_InputFile || ! *m_InputFile)
-    ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
+    if ( !*m_InputFile ) {
+        ARG_THROW("CArg_InputFile::  cannot open for reading", AsString());
+    }
 }
 
-inline CArg_InputFile::CArg_InputFile(const string&      value,
-                                      IOS_BASE::openmode openmode,
-                                      bool               delay_open, bool isDefault)
-:
-CArgValue(value, isDefault),
-m_OpenMode(openmode),
-m_InputFile(0),
-m_DeleteFlag(true)
+
+CArg_InputFile::CArg_InputFile(const string&      value,
+                               IOS_BASE::openmode openmode,
+                               bool               delay_open,
+                               bool               is_default)
+: CArgValue(value, is_default),
+  m_OpenMode(openmode),
+  m_InputFile(0),
+  m_DeleteFlag(true)
 {
-  if(! delay_open )
-    Open();
+    if ( !delay_open )
+        Open();
 }
+
 
 CArg_InputFile::~CArg_InputFile()
 {
-  if(m_InputFile && m_DeleteFlag)
-    delete m_InputFile;
+    if (m_InputFile  &&  m_DeleteFlag)
+        delete m_InputFile;
 }
+
 
 CNcbiIstream& CArg_InputFile::AsInputFile(EFlags changeModeTo) const
 {
-  if(changeModeTo != fUnchanged && m_InputFile)
-    ARG_THROW("Cannot change open mode in non-deffered open file argument", AsString());
+    if (changeModeTo != fUnchanged  &&  m_InputFile) {
+        ARG_THROW("Cannot change open mode in non-deffered open file argument",
+                  AsString());
+    }
 
-  if(changeModeTo == fToText)
-    m_OpenMode &= ~CArgDescriptions::fBinary;
+    if (changeModeTo == fToText)
+        m_OpenMode &= ~CArgDescriptions::fBinary;
+    if (changeModeTo == fToBinary)
+        m_OpenMode |= CArgDescriptions::fBinary;
 
-  if(changeModeTo == fToBinary)
-    m_OpenMode |= CArgDescriptions::fBinary;
-
-  Open();
-  return *m_InputFile;
+    Open();
+    return *m_InputFile;
 }
 
 
@@ -353,74 +388,80 @@ CNcbiIstream& CArg_InputFile::AsInputFile(EFlags changeModeTo) const
 class CArg_OutputFile : public CArgValue
 {
 public:
-  CArg_OutputFile(const string&      value,
-                  IOS_BASE::openmode openmode,
-                  bool               delay_open, bool isDefault);
-  ~CArg_OutputFile();
+    CArg_OutputFile(const string&      value,
+                    IOS_BASE::openmode openmode,
+                    bool               delay_open,
+                    bool               is_default);
+    ~CArg_OutputFile();
 
-  virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
+    virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
+
 private:
-  void Open(void) const;
-  mutable IOS_BASE::openmode m_OpenMode;
-  mutable CNcbiOstream *m_OutputFile;
-  mutable bool m_DeleteFlag;
+    void Open(void) const;
+    mutable IOS_BASE::openmode  m_OpenMode;
+    mutable CNcbiOstream*       m_OutputFile;
+    mutable bool                m_DeleteFlag;
 };
 
 
-inline void CArg_OutputFile::Open(void) const
+void CArg_OutputFile::Open(void) const
 {
-  if(m_OutputFile)
-    return;
+    if ( m_OutputFile )
+        return;
 
-  string fileName = AsString();
-  if(fileName == "-")
-  {
-    m_OutputFile = &cout;
-    m_DeleteFlag = false;
-  }
-  else
-  {
-    m_OutputFile = new CNcbiOfstream(AsString().c_str(), IOS_BASE::out | m_OpenMode);
-    m_DeleteFlag = true;
-  }
+    if (AsString() == "-") {
+        m_OutputFile = &cout;
+        m_DeleteFlag = false;
+    } else {
+        m_OutputFile = new CNcbiOfstream(AsString().c_str(),
+                                         IOS_BASE::out | m_OpenMode);
+        m_DeleteFlag = true;
+    }
 
-  if (!m_OutputFile || ! *m_OutputFile)
-    ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
+    if ( !*m_OutputFile ) {
+        ARG_THROW("CArg_OutputFile::  cannot open for writing", AsString());
+    }
 }
 
-inline CArg_OutputFile::CArg_OutputFile(const string&      value,
-                                        IOS_BASE::openmode openmode,
-                                        bool               delay_open, bool isDefault)
-:
-CArgValue(value, isDefault),
-m_OpenMode(openmode),
-m_OutputFile(0),
-m_DeleteFlag(true)
+
+CArg_OutputFile::CArg_OutputFile(const string&      value,
+                                 IOS_BASE::openmode openmode,
+                                 bool               delay_open,
+                                 bool               is_default)
+    : CArgValue(value, is_default),
+      m_OpenMode(openmode),
+      m_OutputFile(0),
+      m_DeleteFlag(true)
 {
-  if (! delay_open )
-    Open();
+    if ( !delay_open )
+        Open();
 }
+
 
 CArg_OutputFile::~CArg_OutputFile()
 {
-  if(m_OutputFile && m_DeleteFlag)
-    delete m_OutputFile;
+    if (m_OutputFile  &&  m_DeleteFlag)
+        delete m_OutputFile;
 }
+
 
 CNcbiOstream& CArg_OutputFile::AsOutputFile(EFlags changeModeTo) const
 {
-  if(changeModeTo != fUnchanged && ! m_OutputFile)
-    ARG_THROW("Cannot change open mode in non-deffered open file argument", AsString());
+    if (changeModeTo != fUnchanged  &&  !m_OutputFile) {
+        ARG_THROW("Cannot change open mode in non-deffered open file argument",
+                  AsString());
+    }
 
-  if(changeModeTo == fToText)
-    m_OpenMode &= ~CArgDescriptions::fBinary;
+    if (changeModeTo == fToText)
+        m_OpenMode &= ~CArgDescriptions::fBinary;
+    if (changeModeTo == fToBinary)
+        m_OpenMode |= CArgDescriptions::fBinary;
 
-  if(changeModeTo == fToBinary)
-    m_OpenMode |= CArgDescriptions::fBinary;
-
-  Open();
-  return *m_OutputFile;
+    Open();
+    return *m_OutputFile;
 }
+
+
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -456,10 +497,13 @@ public:
                                        bool optional=false) const;
     virtual string GetUsageCommentAttr(bool optional=false) const;
     virtual string GetUsageCommentBody(void) const;
-
-    virtual CArgValue* ProcessArgument(const string& value, bool isDefault = false) const;
+    virtual string GetUsageConstraint(void) const;
+    virtual CArgValue* ProcessArgument(const string& value,
+                                       bool          is_default = false) const;
+    virtual void SetConstraint(CArgAllow* constraint);
 
     const string& GetComment(void) const { return m_Comment; }
+
 private:
     string m_Comment;  // help (what this arg. is about)
 };
@@ -471,10 +515,12 @@ inline CArgDesc_Flag::CArgDesc_Flag(const string& comment)
     return;
 }
 
+
 CArgDesc_Flag::~CArgDesc_Flag(void)
 {
     return;
 }
+
 
 string CArgDesc_Flag::GetUsageSynopsis(const string& name, bool /*optional*/)
     const
@@ -482,19 +528,36 @@ string CArgDesc_Flag::GetUsageSynopsis(const string& name, bool /*optional*/)
     return "-" + name;
 }
 
+
 string CArgDesc_Flag::GetUsageCommentAttr(bool /*optional*/) const
 {
     return "Flag";
 }
+
 
 string CArgDesc_Flag::GetUsageCommentBody(void) const
 {
     return m_Comment;
 }
 
-CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/, bool isDefault) const
+
+string CArgDesc_Flag::GetUsageConstraint(void) const
 {
-    return new CArg_Boolean(true, isDefault);
+    return NcbiEmptyString;
+}
+
+
+CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/,
+                                          bool          is_default) const
+{
+    return new CArg_Boolean(true, is_default);
+}
+
+
+void CArgDesc_Flag::SetConstraint(CArgAllow* constraint)
+{
+    ARG_THROW("Attempt to add constraint to a flag argument",
+              constraint ? constraint->GetUsage() : NcbiEmptyString);
 }
 
 
@@ -516,7 +579,10 @@ public:
     virtual string GetUsageSynopsis   (const string& name,
                                        bool optional=false) const;
     virtual string GetUsageCommentAttr(bool optional=false) const;
-    virtual CArgValue* ProcessArgument(const string& value, bool isDefault = false) const;
+    virtual string GetUsageConstraint(void) const;
+    virtual CArgValue* ProcessArgument(const string& value,
+                                       bool          is_default = false) const;
+    virtual void SetConstraint(CArgAllow* constraint);
 
     CArgDescriptions::EType  GetType   (void) const { return m_Type; }
     CArgDescriptions::TFlags GetFlags  (void) const { return m_Flags; }
@@ -525,8 +591,8 @@ private:
     CArgDescriptions::EType  m_Type;
     CArgDescriptions::TFlags m_Flags;
     string                   m_DefaultValue;
+    CRef<CArgAllow>          m_Constraint;
 };
-
 
 
 CArgDesc_Plain::CArgDesc_Plain
@@ -551,56 +617,81 @@ CArgDesc_Plain::CArgDesc_Plain
         if (flags == 0)
             return;
     }
+
     ARG_THROW("Argument type/flags mismatch",
               "(type=" + CArgDescriptions::GetTypeName(type) +
               ", flags=" + NStr::UIntToString(flags) + ")");
 }
+
 
 CArgDesc_Plain::~CArgDesc_Plain(void)
 {
     return;
 }
 
+
 string CArgDesc_Plain::GetUsageSynopsis(const string& name, bool optional)
     const
 {
-  string tmp = name;
-  if(tmp.empty())
-    tmp = "...";
+    string tmp = name;
+    if( tmp.empty() )
+        tmp = "...";
 
-  if(optional)
-    return "[" + tmp + "]";
-  else
-    return "<" + tmp + ">";
+    if ( optional ) {
+        return "[" + tmp + "]";
+    } else {
+        return "<" + tmp + ">";
+    }
 }
+
 
 string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const
 {
-    if ( optional )
+    if ( optional ) {
         return CArgDescriptions::GetTypeName(GetType());
-    else
-        return CArgDescriptions::GetTypeName(GetType()) + ", optional"; 
+    } else {
+        return CArgDescriptions::GetTypeName(GetType()) + ", optional";
+    }
 }
 
-CArgValue* CArgDesc_Plain::ProcessArgument(const string& value, bool isDefault) const
+
+string CArgDesc_Plain::GetUsageConstraint(void) const
 {
+    if ( !m_Constraint )
+        return NcbiEmptyString;
+
+    return m_Constraint->GetUsage();
+}
+
+
+
+CArgValue* CArgDesc_Plain::ProcessArgument(const string& value,
+                                           bool          is_default) const
+{
+    // Check against additional (user-defined) constraints, if any imposed
+    if (m_Constraint  &&  !m_Constraint->Verify(value)) {
+        ARG_THROW("Illegal value (must be " + m_Constraint->GetUsage() +
+                  ")", value);
+    }
+
+    // Process according to the argument type
     switch ( GetType() ) {
     case CArgDescriptions::eString:
-        return new CArg_String(value, isDefault);
+        return new CArg_String(value, is_default);
     case CArgDescriptions::eAlnum:
-        return new CArg_Alnum(value, isDefault);
+        return new CArg_Alnum(value, is_default);
     case CArgDescriptions::eBoolean:
-        return new CArg_Boolean(value, isDefault);
+        return new CArg_Boolean(value, is_default);
     case CArgDescriptions::eInteger:
-        return new CArg_Integer(value, isDefault);
+        return new CArg_Integer(value, is_default);
     case CArgDescriptions::eDouble:
-        return new CArg_Double(value, isDefault);
+        return new CArg_Double(value, is_default);
     case CArgDescriptions::eInputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
         IOS_BASE::openmode openmode = 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
-        return new CArg_InputFile(value, openmode, delay_open, isDefault);
+        return new CArg_InputFile(value, openmode, delay_open, is_default);
     }
     case CArgDescriptions::eOutputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fPreOpen) == 0;
@@ -609,13 +700,21 @@ CArgValue* CArgDesc_Plain::ProcessArgument(const string& value, bool isDefault) 
             openmode |= IOS_BASE::binary;
         if (GetFlags() & CArgDescriptions::fAppend)
             openmode |= IOS_BASE::app;
-        return new CArg_OutputFile(value, openmode, delay_open, isDefault);
+        return new CArg_OutputFile(value, openmode, delay_open, is_default);
     }
-    }
+    } /* switch GetType() */
 
+    // Something is very wrong...
     _TROUBLE;
     ARG_THROW("Unknown argument type #", NStr::IntToString((int) GetType()));
 }
+
+
+void CArgDesc_Plain::SetConstraint(CArgAllow* constraint)
+{
+    m_Constraint = constraint;
+}
+
 
 
 //
@@ -643,7 +742,7 @@ private:
 };
 
 
-inline CArgDesc_OptionalKey::CArgDesc_OptionalKey
+CArgDesc_OptionalKey::CArgDesc_OptionalKey
 (const string&            synopsis,
  const string&            comment,
  CArgDescriptions::EType  type,
@@ -661,16 +760,19 @@ inline CArgDesc_OptionalKey::CArgDesc_OptionalKey
     }
 }
 
+
 CArgDesc_OptionalKey::~CArgDesc_OptionalKey(void)
 {
     return;
 }
+
 
 string CArgDesc_OptionalKey::GetUsageSynopsis(const string& name,
                                               bool /*optional*/) const
 {
     return "[" + name + " " + GetSynopsis() + "]";
 }
+
 
 string CArgDesc_OptionalKey::GetUsageCommentAttr(bool /*optional*/) const
 {
@@ -696,7 +798,6 @@ public:
     virtual string GetUsageSynopsis   (const string& name,
                                        bool optional=false) const;
     virtual string GetUsageCommentAttr(bool optional=false) const;
-
 private:
     // prohibit GetDefault!
     const string& GetDefault(void) const { _TROUBLE;  return NcbiEmptyString; }
@@ -713,16 +814,19 @@ inline CArgDesc_Key::CArgDesc_Key
     return;
 }
 
+
 CArgDesc_Key::~CArgDesc_Key(void)
 {
     return;
 }
+
 
 string CArgDesc_Key::GetUsageSynopsis(const string& name, bool /*optional*/)
     const
 {
     return "-" + name + " " + GetSynopsis();
 }
+
 
 string CArgDesc_Key::GetUsageCommentAttr(bool /*optional*/) const
 {
@@ -781,10 +885,12 @@ bool CArgs::Exist(const string& name) const
     return (m_Args.find(name) != m_Args.end());
 }
 
+
 bool CArgs::IsProvided(const string& name) const
 {
   return Exist(name) && ! (*this)[name].m_IsDefaultValue;
 }
+
 
 const CArgValue& CArgs::operator [](const string& name) const
 {
@@ -826,10 +932,6 @@ void CArgs::Print(string& str) const
 ///////////////////////////////////////////////////////
 //  CArgDescriptions::
 //
-//  NOTE:  see in "ncbienv1.cpp" for the following methods:
-//            CArgDescriptions::PrintUsage
-//            CArgDescriptions::x_PrintUsage
-
 
 CArgDescriptions::CArgDescriptions(void)
     : m_Args(),
@@ -949,6 +1051,19 @@ void CArgDescriptions::SetConstraint(EConstraint policy, unsigned num_args)
 }
 
 
+void CArgDescriptions::SetConstraint(const string& name,
+                                     CArgAllow*    constraint)
+{
+    CRef<CArgAllow> safe_delete(constraint);
+
+    TArgsI it = m_Args.find(name);
+    if (it == m_Args.end()) {
+        ARG_THROW("Attempt to set constraint for undescribed argument", name);
+    }
+    it->second->SetConstraint(constraint);
+}
+
+
 bool CArgDescriptions::Exist(const string& name) const
 {
     return (m_Args.find(name) != m_Args.end());
@@ -1037,7 +1152,8 @@ void CArgDescriptions::x_PreCheck(void) const
 
 // (return TRUE if "arg2" was used)
 bool CArgDescriptions::x_CreateArg
-(const string& arg1, bool have_arg2, const string& arg2,
+(const string& arg1,
+ bool have_arg2, const string& arg2,
  unsigned* n_plain, CArgs& args)
     const
 {
@@ -1067,7 +1183,8 @@ bool CArgDescriptions::x_CreateArg
     // Check for too many plain/extra arguments
     if ((m_Constraint == eEqual  ||  m_Constraint == eLessOrEqual)  &&
         *n_plain > (m_ConstrArgs ? m_ConstrArgs : m_PlainArgs.size())) {
-        ARG_THROW("Too many position arguments", NStr::UIntToString(*n_plain));
+        ARG_THROW("Too many positional arguments",
+                  NStr::UIntToString(*n_plain));
     }
 
     // Get arg. description
@@ -1094,23 +1211,6 @@ bool CArgDescriptions::x_CreateArg
         arg2_used = true;
     } else {
         value = &arg1;
-    }
-
-    // Check whether the value is allowed
-    TAllow::const_iterator it1 = m_Allow.find(tag);
-    if (it1 != m_Allow.end()) {
-        bool allowed = false;
-        const TArgAllowList& l = it1->second;
-        for (TArgAllowList::const_iterator lit = l.begin();
-             lit != l.end();  ++lit) {
-            if ((*lit)->Allow(*value)) {
-                allowed = true;
-                break;
-            }
-        }
-        if ( !allowed ) {
-            ARG_THROW(tag + " : value not allowed", *value);
-        }
     }
 
     // Process argument value and add it to the "args"
@@ -1146,52 +1246,21 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
     }
 
     // Check if all mandatory "<key> <value>" arguments are passed in
-    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it)
-    {
-      CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
-      if(arg && ! args.Exist(it->first))
-        ARG_THROW("Must specify mandatory argument, with key", it->first);
+    for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
+        CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
+        if (arg  &&  !args.Exist(it->first))
+            ARG_THROW("Must specify mandatory argument, with key", it->first);
 
-      // Add optional arguments if they are not provided in a command line
-      CArgDesc_OptionalKey* optArg = dynamic_cast<CArgDesc_OptionalKey*>(it->second.get());
-      if(optArg && ! args.Exist(it->first))
-        args.Add(it->first, optArg->ProcessArgument(optArg->GetDefault(), true));
+        // Default optional arguments (if not provided in a command line)
+        CArgDesc_OptionalKey* optArg =
+            dynamic_cast<CArgDesc_OptionalKey*>(it->second.get());
+        if (optArg  &&  !args.Exist(it->first)) {
+            args.Add(it->first,
+                     optArg->ProcessArgument(optArg->GetDefault(), true));
+        }
     }
 }
 
-
-void foobar_test(int argc, const char* argv[]) {
-    const CArgDescriptions desc;
-    desc.CreateArgs(argc, argv);
-}
-
-#if 0
-CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& ncbi_args) const
-{
-    // Pre-processing consistency checks
-    x_PreCheck();
-
-    // Create new "CArgs" to fill up
-    auto_ptr<CArgs> args(new CArgs());
-
-    // Parse all cmd.line args one after another, add the results to "args"
-    unsigned n_plain = 0;
-    for (SIZE_TYPE i = 0;  i < ncbi_args.Size();  i++) {
-        bool advance_one_arg = 
-            x_CreateArg(ncbi_args[i],
-                        (i + 1 < ncbi_args.Size()) ? &ncbi_args[i+1] : 0,
-                        &n_plain, *args);
-        if ( advance_one_arg )
-            i++;
-    }
-
-    // Post-processing consistency checks
-    x_PostCheck(*args, n_plain);
-
-    // Success
-    return args.release();
-}
-#endif
 
 void CArgDescriptions::SetUsageContext
 (const string& usage_name,
@@ -1245,11 +1314,11 @@ void CArgDescriptions::x_AddDesc(const string& name, CArgDesc& arg)
 class CArgUsage {
 public:
     const string*   m_Name;
-    const CArgDesc* m_Arg;
+    const CArgDesc* m_Desc;
     bool            m_Optional;
-    CArgUsage(void) : m_Name(0), m_Arg(0), m_Optional(false) {} 
-    CArgUsage(const string& name, const CArgDesc& arg, bool optional=false)
-        : m_Name(&name), m_Arg(&arg), m_Optional(optional) {} 
+    CArgUsage(void) : m_Name(0), m_Desc(0), m_Optional(false) {}
+    CArgUsage(const string& name, const CArgDesc& desc, bool optional = false)
+        : m_Name(&name), m_Desc(&desc), m_Optional(optional) {}
 };
 
 
@@ -1258,7 +1327,7 @@ static void s_PrintSynopsis(string& str, const CArgUsage& arg,
 {
     const static string s_NewLine("\n   ");
 
-    string s = arg.m_Arg->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
+    string s = arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
 
     if (*pos + s.length() > width) {
         str += s_NewLine;
@@ -1309,12 +1378,18 @@ static void s_PrintComment(string& str, const CArgUsage& arg, SIZE_TYPE width)
 {
     // print synopsis, plus type and other attributes
     str += "\n ";
-    str += arg.m_Arg->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
+    str += arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
     str += "    ";
-    str += arg.m_Arg->GetUsageCommentAttr(arg.m_Optional);
+    str += arg.m_Desc->GetUsageCommentAttr(arg.m_Optional);
+
+    // print constraint info, if any
+    string constr = arg.m_Desc->GetUsageConstraint();
+    if ( !constr.empty() ) {
+        str += constr.insert(0, "\n     * constraint:  ");
+    }
 
     // print description
-    s_PrintCommentBody(str, arg.m_Arg->GetUsageCommentBody(), width);
+    s_PrintCommentBody(str, arg.m_Desc->GetUsageCommentBody(), width);
 }
 
 
@@ -1323,11 +1398,13 @@ inline bool s_IsOptionalPlain
  CArgDescriptions::EConstraint constraint,
  unsigned                      n_constraint)
 {
-    return (constraint == CArgDescriptions::eAny  ||
-            constraint == CArgDescriptions::eLessOrEqual  ||
-            (constraint == CArgDescriptions::eMoreOrEqual  &&
-             n_constraint != 0  &&  n >= n_constraint));
+    return
+        (constraint == CArgDescriptions::eAny  ||
+         constraint == CArgDescriptions::eLessOrEqual  ||
+         (constraint == CArgDescriptions::eMoreOrEqual  &&
+          n_constraint != 0  &&  n >= n_constraint));
 }
+
 
 inline bool s_IsAvailableExtra
 (unsigned                      n,
@@ -1346,6 +1423,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
     typedef list<CArgUsage>       TList;
     typedef TList::iterator       TListI;
     typedef TList::const_iterator TListCI;
+
     TList args;
 
     // Keys and Flags
@@ -1377,8 +1455,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
 
         args.push_back(CArgUsage
                        (it->first, *it->second,
-                        s_IsOptionalPlain(n,
-                                          m_Constraint, m_ConstrArgs)));
+                        s_IsOptionalPlain(n, m_Constraint, m_ConstrArgs)));
     }
 
     // Extra
@@ -1474,35 +1551,130 @@ CArgs* CArgDescriptions::CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv)
 
 #endif /* NO_INCLASS_TMPL */
 
+
 CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 {
     return CreateArgs(args.Size(), args);
 }
 
-CArgAllow::~CArgAllow()
-{}
 
-CArgAllowIntInterval::CArgAllowIntInterval(int a, int b) : m_a(a), m_b(b)
-{}
 
-bool CArgAllowIntInterval::Allow(const string &value)
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+// CArgAllow::
+//   CArgAllow_Strings::
+//   CArgAllow_Integers::
+//   CArgAllow_Doubles::
+//
+
+
+///////////////////////////////////////////////////////
+//  CArgAllow::
+//
+
+CArgAllow::~CArgAllow(void)
 {
-    int v = NStr::StringToInt(value);
-    return m_a <= v && v <= m_b;
+    return;
 }
 
-CArgAllowValue::CArgAllowValue(const string &value) : m_value(value)
-{}
 
-bool CArgAllowValue::Allow(const string &value)
+
+///////////////////////////////////////////////////////
+//  CArgAllow_Strings::
+//
+
+CArgAllow_Strings& CArgAllow_Strings::operator,(const string& value)
 {
-    return m_value == value;
+    m_Strings.insert(value);
+    return *this;
 }
 
-void CArgDescriptions::Allow(const string &name, CArgAllow *allow)
-{
 
-  m_Allow[name].push_back(AutoPtr<CArgAllow>(allow));
+bool CArgAllow_Strings::Verify(const string &value) const
+{
+    return (m_Strings.find(value) != m_Strings.end());
+}
+
+
+string CArgAllow_Strings::GetUsage(void) const
+{
+    if ( m_Strings.empty() ) {
+        return "ERROR:  Constraint with no values allowed(?!)";
+    }
+
+    string str = "{ ";
+    set<string>::const_iterator it = m_Strings.begin();
+    for (;;) {
+        str += "`";
+        str += *it;
+
+        ++it;
+        if (it == m_Strings.end()) {
+            str += "'";
+            break;
+        }
+
+        str += "', ";
+    }
+
+    str += " }";
+    return str;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgAllow_Integers::
+//
+
+CArgAllow_Integers::CArgAllow_Integers(long x_min, long x_max)
+    : m_Min(x_min), m_Max(x_max)
+{
+    return;
+}
+
+
+bool CArgAllow_Integers::Verify(const string& value) const
+{
+    long val = NStr::StringToLong(value);
+    return (m_Min <= val  &&  val <= m_Max);
+}
+
+
+string CArgAllow_Integers::GetUsage(void) const
+{
+    return
+        NStr::IntToString(m_Min) +
+        " <= X <= " +
+        NStr::IntToString(m_Max);
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CArgAllow_Doubles::
+//
+
+CArgAllow_Doubles::CArgAllow_Doubles(double x_min, double x_max)
+    : m_Min(x_min), m_Max(x_max)
+{
+    return;
+}
+
+
+bool CArgAllow_Doubles::Verify(const string& value) const
+{
+    double val = NStr::StringToDouble(value);
+    return (m_Min <= val  &&  val <= m_Max);
+}
+
+
+string CArgAllow_Doubles::GetUsage(void) const
+{
+    return
+        NStr::DoubleToString(m_Min) +
+        " <= X <= " +
+        NStr::DoubleToString(m_Max);
 }
 
 
