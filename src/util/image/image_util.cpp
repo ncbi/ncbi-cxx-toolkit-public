@@ -30,6 +30,7 @@
  */
 
 #include <util/image/image_util.hpp>
+#include <util/image/image_exception.hpp>
 #include <corelib/ncbi_limits.hpp>
 
 
@@ -151,12 +152,68 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
 }
 
 
+void CImageUtil::FlipX(CImage& image)
+{
+    const size_t scanline_size = image.GetWidth() * image.GetDepth();
+    const size_t depth         = image.GetDepth();
+    for (size_t i = 0;  i < image.GetHeight();  ++i) {
+        size_t start = 0;
+        size_t end   = scanline_size;
+        unsigned char* start_ptr = image.SetData() + scanline_size * i;
+        unsigned char* end_ptr   = image.SetData() + scanline_size * (i + 1);
+        end_ptr -= depth;
+
+        switch (depth) {
+        case 3:
+            for ( ; end_ptr > start_ptr;  end_ptr -= depth, start_ptr += depth) {
+                std::swap(*(start_ptr    ), *(end_ptr    ));
+                std::swap(*(start_ptr + 1), *(end_ptr + 1));
+                std::swap(*(start_ptr + 2), *(end_ptr + 2));
+            }
+            break;
+
+        case 4:
+            for ( ; end_ptr > start_ptr;  end_ptr -= depth, start_ptr += depth) {
+                std::swap(*(start_ptr    ), *(end_ptr    ));
+                std::swap(*(start_ptr + 1), *(end_ptr + 1));
+                std::swap(*(start_ptr + 2), *(end_ptr + 2));
+                std::swap(*(start_ptr + 3), *(end_ptr + 3));
+            }
+            break;
+
+        default:
+            NCBI_THROW(CImageException, eInvalidDimension, "unhandled depth");
+            break;
+        }
+    }
+}
+
+
+void CImageUtil::FlipY(CImage& image)
+{
+    size_t scanline_size = image.GetWidth() * image.GetDepth();
+    size_t start = 0;
+    size_t end   = image.GetHeight() - 1;
+
+    for ( ; end > start;  --end, ++start) {
+        unsigned char* start_ptr = image.SetData() + scanline_size * start;
+        unsigned char* end_ptr   = image.SetData() + scanline_size * end;
+        for (size_t i = 0;  i < scanline_size;  ++i) {
+            std::swap(start_ptr[i], end_ptr[i]);
+        }
+    }
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/18 13:50:54  dicuccio
+ * Added FlipX() and FlipY() routines to flip an image about an axis
+ *
  * Revision 1.2  2003/12/16 16:16:56  dicuccio
  * Fixed compiler warnings
  *
