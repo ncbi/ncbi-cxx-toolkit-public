@@ -358,8 +358,8 @@ const;</font>
 <br><font color="#008080"><b>&nbsp;&nbsp; </b>void Delete(const string&amp;
 name);</font>
 <p>These methods can also be applied to the unnamed postional arguments
-(as a <i>group</i>),&nbsp; using
-<br><i>Exist(NcbiEmptyString) </i>and<i> Delete(NcbiEmptyString).</i>
+(as a <i>group</i>),&nbsp; using: <i>Exist(NcbiEmptyString) </i>and<i>
+Delete(NcbiEmptyString).</i>
 <h4>
 <a NAME="ref_CArgDescriptions_StdValueTypes"></a>Standard types: type restrictions
 imposed on the input argument <i>values</i></h4>
@@ -391,11 +391,13 @@ is defined as:
 <a NAME="ref_CArgDescriptions_UserValueTypes"></a><i>CArgAllow</i> class:
 user-defined restrictions on the range of allowed values</h4>
 Further restrictions on the allowed values can be specified using the <i>CArgDescriptions::SetConstraint()
-</i>method with the <i><a href="../docxx/CArgAllow.html">CArgAllow</a></i>
-class. For example:
-<blockquote><font color="#008080">CArgDescriptions args;</font>
-<br><font color="#008080">.................................................</font>
-<br><font color="#008080">CArgAllow* constraint = new CArgAllow_Integers(5,
+</i>method
+with the <i><a href="../docxx/CArgAllow.html">CArgAllow</a></i> class.
+For example:
+<blockquote><font color="#008080">CArgDescriptions args;</font><font color="#008080"></font>
+<p><font color="#008080">// add descriptions for "firstint" and "nextint"
+using AddXxx( ...)</font><font color="#008080"></font>
+<p><font color="#008080">CArgAllow* constraint = new CArgAllow_Integers(5,
 10);</font>
 <br><font color="#008080">args.SetConstraint("firstInt", constraint);</font>
 <br><font color="#008080">args.SetConstraint("nextInt", constraint);</font></blockquote>
@@ -411,20 +413,23 @@ the constructors will use <i>min/max </i>comparisions to generate a valid
 range.
 <p>A third class derived from the <i>CArgAllow</i> class is the <i><a href="../docxx/CArgAllow_Strings.html">CArgAllow_Strings</a></i>
 class.&nbsp; In this case, the set of allowed values can not be specified
-by a <i>range,</i> but the following construct can be used to enlist all
-eligible string values:
-<blockquote><font color="#008080">CArgAllow* constraint = (new CArgAllow_Strings())->Allow("this)->Allow("that")->Allow("etc");</font>
+by a <i>range,</i> but the following construct can be used to enumerate
+all eligible string values:
+<blockquote><font color="#008080">CArgAllow* constraint = (new CArgAllow_Strings())-></font>
+<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Allow("this)->Allow("that")->Allow("etc");</font>
 <br><font color="#008080">args.SetConstraint("someString", constraint);</font></blockquote>
 Here, the constructor takes no arguments, and the <i>Allow() </i>method
 returns <i>this</i>. Thus, a list of allowed strings can be specified by
-daisy-chaining a set of calls to <i>Allow</i>(). A bit unusual yet shorter
-notation can also be used by engaging the comma operator, like this:
-<blockquote><font color="#008080">args.SetConstraint("someString",&nbsp;
+daisy-chaining a set of calls to <i>Allow</i>(). A bit unusual yet terser
+notation can also be used by engaging the comma operator, as in:
+<blockquote><font color="#008080">args.SetConstraint("someString",</font>
+<br><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &amp;(*new CArgAllow_Strings, "this", "that", "etc"));</font></blockquote>
-If the value provided on the command line is not within the allowed range
-(or set of string values) specified for that argument, then an exception
-will be thrown.&nbsp; This exception can be caught and handled in the usual
-manner, as&nbsp; described in the discussion of <a href="#ref_CArgDescriptions_Usage">Generating
+If the value provided on the command line is not in the allowed set of
+values specified for that argument, then an exception will be thrown.&nbsp;
+This exception can be caught and handled in the usual manner, as&nbsp;
+described in the discussion of <a href="#ref_CArgDescriptions_Usage">Generating
 a <i>USAGE </i>message.</a>
 <h4>
 <a NAME="ref_CArgDescriptions_Number"></a>Constraining the number of positional
@@ -482,9 +487,9 @@ follows:
 </tr>
 </table></center>
 
-<p>A single shared description can also be registered for all additional
+<p>A single shared description is registered for all additional
 <i>unnamed</i>
-positional arguments,&nbsp; using the <i>AddExtra()</i> method. By default,
+positional arguments,&nbsp; via the <i>AddExtra()</i> method. By default,
 <i>unnamed</i>
 positional arguments are always optional, unless a constraint policy has
 been explicitly set which requires them. We consider next how the number
@@ -496,8 +501,8 @@ If this method was invoked<i> K</i> times, where <i>N &lt; K</i>, then
 an exception will be thrown if there are only <i>N</i> arguments.&nbsp;
 A second type of error might occur yet go undetected, when <i>unnamed</i>
 positional arguments can appear. In this case, it is possible to erroneously
-satisfy the required number of named positional arguments by incorrectly
-associating the trailing unnamed positional arguments with the remaining
+satisfy the required number of <i>named</i> positional arguments by incorrectly
+associating the trailing <i>unnamed</i> positional arguments with the remaining
 named descriptions.
 <p>More generally, the default behavior is equivalent to what would result
 from having called <i>SetConstraint(eEqual, n)</i>, where <i>n</i> is the
@@ -513,8 +518,8 @@ type mismatch or missing arguments. <i>CArgDescriptions::CreateArgs()&nbsp;</i>
 checks the command line arguments against the descriptions which have been
 registered. The first step of this process involves a <i>pre-check</i>
 that tests to see if the constraint policy is satisfiable. If so, then
-the individual argument values are loaded and matched against their descriptions,
-and a <i>post-check</i> is performed, to ensure that all of the mandatory
+the individual argument values are loaded and matched against their descriptions.&nbsp;
+A <i>post-check</i> is then performed, to ensure that all of the mandatory
 arguments are present and that the positional arguments satisfy the constraint
 policy.
 <p>Exceptions which are thrown during argument processing can be presented
@@ -524,7 +529,6 @@ provides a sounder interface to the application, and can be done as follows:
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...executed inside CNcbiApplication::Run()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDescr;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CNcbiArguments myArgs = GetArguments();
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgs args;</font></pre>
 
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
@@ -532,7 +536,8 @@ provides a sounder interface to the application, and can be done as follows:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; catch (exception&amp; e) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; e.what() &lt;&lt; endl;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDescr.SetUsageContext(GetArguments().GetProgramName(), "(program description)");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDescr.SetUsageContext(GetArguments().GetProgramName(),&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "(program description)");
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string a;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; argDesc.PrintUsage(a);
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return -1;
@@ -545,10 +550,10 @@ positional arguments is valid, and (2) it creates an instance of the <i><a href=
 class, described below.
 <p>The <i>SetUsageContext()</i> method is used to define the name of the
 program and its description, as it will be displayed by the <i>USAGE</i>
-message that is generated. <i>PrintUsage(some_string)</i> writes its message
-to <i>some_string, </i>and returns that <i>string</i>, so that it can be
-used with an output operator. The output generated when an exception occurs
-might look something like:
+message. <i>PrintUsage(some_string)</i> writes its message to <i>some_string,
+</i>and returns that <i>string</i>, so that it can be used with an output
+operator. The output generated when an exception occurs might look something
+like:
 <pre><font color="#000080">Must specify mandatory argument:&nbsp; "-i &lt;MyInputFile>"&nbsp;
 SYNOPSIS
 &nbsp;&nbsp; myApplic -text -i MyInputFile [-l MyLogFile]&nbsp;
@@ -601,9 +606,8 @@ and is added to a container managed by the <i>CArgs</i> object.&nbsp; All
 <i>named</i>
 arguments can be accessed&nbsp; using the [] operator, as in: <i>myCArgs["f"]</i>,
 where "f" is the name registered for that argument. There are two ways
-to access the <i>Nth</i> unnamed positional argument: <i>myCArgs["#N"]
+to access the <i>Nth</i> <i>unnamed</i> positional argument: <i>myCArgs["#N"]
 </i>and
-
 <i>myCArgs[N],&nbsp; </i>where<i> 1 &lt;= N &lt;= GetNExtra().</i>
 <p><a NAME="ref_CArgValue"></a>
 <h3>
@@ -655,7 +659,8 @@ demonstrates the usage of these classes for argument processing. See also
 <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">test_ncbiargs.cpp</a></i>,
 and <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">asn2asn.cpp</a></i>
 for more examples.
-<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;&nbsp;
+<p><i><a href="applic.html">previous&nbsp;</a></i>&nbsp;&nbsp;&nbsp; <i><a href="../index.html">up</a></i>&nbsp;&nbsp;
+
 <i><a href="registry.html">next&nbsp;</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >

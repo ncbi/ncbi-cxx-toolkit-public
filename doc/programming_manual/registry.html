@@ -34,7 +34,7 @@ on unix systems. The convention for all platforms now is to name such files
 where * is by default the application name.&nbsp; Unless you explicitly
 override the default behavior, the <i><a href="applic.html#CNcbiApplication">CNcbiApplication</a></i>
 class looks for a configuration file with the default name.&nbsp; You can
-override this by call your application's <i><a href="applic.html#appmain">AppMain()
+override this by calling your application's <i><a href="applic.html#appmain">AppMain()
 </a></i>method
 with the full set of arguments:
 <center>
@@ -80,10 +80,9 @@ and at the end&nbsp; "</tt>
 1. An example configuration file</blockquote>
 </blockquote>
 </blockquote>
-Comments are indicated by a leading semi-colon, and all comments and empty
-lines are ignored by the registry file parser.&nbsp; Line continuations,
-as usual, are indicated with a backslash escape. More generally,&nbsp;
-backslashes are processed as:
+All comments and empty lines are ignored by the registry file parser.&nbsp;
+Line continuations, as usual, are indicated with a backslash escape. More
+generally,&nbsp; backslashes are processed as:
 <ul>
 <li>
 [backslash] + [backslash] is converted into a single [backslash]</li>
@@ -133,8 +132,9 @@ value with the same name</li>
 be truncated from the value</li>
 </ul>
 By default, all of the configuration's parameters are <i>persistent,overridable</i>,
-and <i>truncatable</i>.&nbsp; The class definition defines the <i>EFlags</i>
-enumeration for specifying these attributes, and a related typedef, <i>TFlags</i>:
+and <i>truncatable</i>.&nbsp; The <i>EFlags</i> enumeration that quantifies
+these attributes, and the related <i>typedef</i> <i>TFlags</i>, are defined
+as:
 <blockquote>
 <blockquote>
 <blockquote><tt><font color="#005050">&nbsp;&nbsp;&nbsp; enum EFlags {</font></tt>
@@ -150,18 +150,21 @@ eNoOverride&nbsp; = 0x200,</font></tt>
 eTruncate&nbsp;&nbsp;&nbsp; = 0x4,</font></tt>
 <br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 eNoTruncate&nbsp; = 0x400</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; };</font></tt></blockquote>
+<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; };<br>
+&nbsp;&nbsp;&nbsp; typedef int TFlags;</font></tt></blockquote>
 </blockquote>
 </blockquote>
-<tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-typedef int TFlags;</font></tt>
-<p>Many of <i>CNcbiRegistry</i>'s methods take an optional <i>TFlags</i>
-argument, which qualifies the selected values with respect to these attributes.
-<font color="#000000">The
-class constructor takes two arguments - an input stream, and an optional
-<i>TFlags</i> argument, where the latter can be used to specify that all
-of the values should be stored as <i>transient</i> rather than in the default
-mode, which is <i>persistent</i>:</font>
+<i>TFlags</i> is simply used to clarify that an <i>int</i> derived from
+a combination of <i>EFlags</i> is expected - not a "regular" <i>int</i>.&nbsp;
+Many of <i>CNcbiRegistry</i>'s methods take an optional <i>TFlags</i> argument,
+which qualifies the selected values with respect to these attributes.
+<font color="#000000"></font>
+<p><font color="#000000">The </font><i>CNcbiRegistry </i><font color="#000000">class
+constructor takes two arguments - an input stream, and an optional
+<i>TFlags</i>
+argument, where the latter can be used to specify that all of the values
+should be stored as <i>transient</i> rather than in the default mode, which
+is <i>persistent</i>:</font>
 <center>
 <p><tt><font color="#005050">CNcbiRegistry(CNcbiIstream&amp; is, TFlags
 flags = 0);</font></tt></center>
@@ -175,13 +178,14 @@ possible to load additional parameters from a specified file using the
 = 0);</font></tt></center>
 
 <p>Valid flags for the <i>Read() </i>method include<font color="#000000"><i>eTransient
-</i>and<i> eNoOverride. </i></font>The default is that all values are stored
-as <i>persistent</i>, and that these stored values <i>can</i> be overidden
-when a new value associated with the same name is loaded.&nbsp; Either
-or both of these defaults can be modified by specifying <font color="#000000"><i>eTransient,
-eNoOverride,
-</i>or<i> </i>(<i>eTransient | eNoOverride</i>) as the <i>flags</i>
-argument in the above expression.</font>
+</i>and<i>
+eNoOverride. </i></font>The default is that all values are stored as <i>persistent</i>,
+and that these stored values <i>can</i> be overidden when a new value associated
+with the same name is loaded.&nbsp; Either or both of these defaults can
+be modified by specifying <font color="#000000"><i>eTransient, eNoOverride,
+</i>or<i>
+</i>(<i>eTransient | eNoOverride</i>) as the <i>flags</i> argument in the
+above expression.</font>
 <p>The <i>Write() </i>method takes as its sole argument, a destination
 stream to which only the <i>persistent</i> configuration parameters will
 be written.
@@ -189,7 +193,7 @@ be written.
 <center>
 <p><tt><font color="#005050">&nbsp;&nbsp;&nbsp; bool Set(const string&amp;
 section, const string&amp; name,</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 const string&amp; value, TFlags flags = 0);</font></tt></center>
 
 <p>Here, valid flag values include <font color="#000000"><i>ePersistent,
@@ -205,23 +209,24 @@ of <i>persistent</i> parameters will be searched. On success, Get() returns
 the stored value string, on failure, the empty string is returned.</font>
 <center>
 <p><tt><font color="#005050">const string&amp; Get(const string&amp; section,
-const string&amp; name, EFlags flags = 0) const;</font></tt></center>
+const string&amp; name, TFlags flags = 0) const;</font></tt></center>
 
 <h3>
 <a NAME="methods"></a><font color="#000000">Additonal methods</font></h3>
 Four additional methods are defined in the interface.
-<p><tt><font color="#005050">&nbsp;bool Empty(void);</font></tt>
+<p><tt><font color="#005050">&nbsp;bool Empty(void) const;</font></tt>
 <br><tt><font color="#005050">&nbsp;void Clear(void);</font></tt>
 <br><tt><font color="#005050">&nbsp;void EnumerateSections(list&lt;string>*
-sections);</font></tt>
+sections) const;</font></tt>
 <br><tt><font color="#005050">&nbsp;void EnumerateEntries(const string&amp;
-section,&nbsp; list&lt;string>* entries);</font></tt><i></i>
+section,&nbsp; list&lt;string>* entries) const;</font></tt>
 <p><i>Empty() </i>returns<i> true </i>if the registry is empty. <i>Clear()
-</i>empties out the registry,&nbsp; discarding all stored parameters. <i>EnumerateSections()&nbsp;</i>
+</i>empties
+out the registry,&nbsp; discarding all stored parameters. <i>EnumerateSections()&nbsp;</i>
 writes the list of section names to the string <i>sections.&nbsp;</i> <i>EnumerateEntries()&nbsp;</i>
 writes the list of parameter names in <i>section </i>to<i> entries.</i>
-<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; 
-<i><a href="../index.html">up</a></i>&nbsp;&nbsp;
+<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i>&nbsp;
+
 <i><a href="diag.html">next</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
