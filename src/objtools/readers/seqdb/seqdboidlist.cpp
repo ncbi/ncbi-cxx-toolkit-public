@@ -91,7 +91,7 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, CSeqDBLockHold & locked)
     
     // Pad memory space to word boundary, add 8 bytes for "insurance".
     
-    Uint4 num_oids = volset.GetNumSeqs();
+    Uint4 num_oids = volset.GetNumOIDs();
     Uint4 byte_length = ((num_oids + 31) / 32) * 4 + 8;
     
     m_Bits   = (TUC*) m_Atlas.Alloc(byte_length, locked);
