@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/12 05:49:31  vakatov
+ * Get rid of unused "argc", "argv" in main()
+ *
  * Revision 6.1  2001/01/11 23:09:36  lavr
  * Initial revision
  *
@@ -69,7 +72,7 @@ const size_t kBufferSize = 50*1024;
 END_NCBI_SCOPE
 
 
-int main(int argc, const char* argv[])
+int main(void)
 {
     USING_NCBI_SCOPE;
 
