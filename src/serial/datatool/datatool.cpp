@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/04/16 17:53:45  kholodov
+* Added: Option -dn to specify the DTD file name in XML header
+*
 * Revision 1.49  2000/12/26 22:24:53  vasilche
 * Updated for new behaviour of CNcbiArgs.
 *
@@ -174,6 +177,7 @@
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/generate.hpp>
 #include <serial/datatool/datatool.hpp>
+#include <serial/objostrxml.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -226,6 +230,9 @@ void CDataTool::Init(void)
                       CArgDescriptions::eInputFile);
     d->AddOptionalKey("t", "type",
                       "binary value type (see \"-d\" argument)",
+                      CArgDescriptions::eString);
+    d->AddOptionalKey("dn", "filename",
+                      "DTD module name in XML header (no extension)",
                       CArgDescriptions::eString);
     d->AddFlag("F",
                "read value completely into memory");
@@ -408,6 +415,13 @@ bool CDataTool::ProcessData(void)
         // no input data
         outFormat = eSerial_None;
     }
+
+    // Set DTD file name
+    if( const CArgValue& dn = args["dn"] ) {
+      SetDTDFileName(dn.AsString());
+    }
+    else
+      SetDTDFileName("");
 
     if ( const CArgValue& F = args["F"] ) {
         // read fully in memory
