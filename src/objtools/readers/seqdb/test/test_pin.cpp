@@ -42,6 +42,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbifile.hpp>
 #include <util/random_gen.hpp>
