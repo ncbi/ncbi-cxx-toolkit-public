@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2001/05/25 18:10:40  thiessen
+* programDir path fix
+*
 * Revision 1.45  2001/05/25 15:18:23  thiessen
 * fixes for visual id settings in wxGTK
 *
@@ -378,7 +381,7 @@ bool Cn3DApp::OnInit(void)
     else if (wxPathOnly(argv[0]) == "")
         programDir = workingDir;
     else
-        programDir = workingDir + wxFILE_SEP_PATH + programDir;
+        programDir = workingDir + wxFILE_SEP_PATH + wxPathOnly(argv[0]);
     workingDir = workingDir + wxFILE_SEP_PATH;
     programDir = programDir + wxFILE_SEP_PATH;
 
