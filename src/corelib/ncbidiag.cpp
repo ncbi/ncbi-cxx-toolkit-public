@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/12/07 15:27:28  ucko
+* Switch CDiagRecycler over to current form of SetDiagHandler.
+*
 * Revision 1.40  2001/12/03 22:06:31  juran
 * Use 'special environment' flag to indicate that a fatal error
 * must throw an exception rather than abort.  (Mac only.)
@@ -187,7 +190,7 @@ public:
     CDiagRecycler(void) {};
     ~CDiagRecycler(void)
     {
-        SetDiagHandler(0, 0, 0);
+        SetDiagHandler(0, false);
     }
 };
 
