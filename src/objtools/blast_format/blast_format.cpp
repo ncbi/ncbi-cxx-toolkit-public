@@ -40,15 +40,14 @@ Detailed Contents:
 static char const rcsid[] = "$Id$";
 
 #include <objmgr/object_manager.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objtools/alnmgr/util/blast_format.hpp>
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
-USING_SCOPE(blast);
 
 CBlastFormatOptions::CBlastFormatOptions(EProgram program, 
     CNcbiOstream &ostr) THROWS((CBlastException))
@@ -60,15 +59,15 @@ CBlastFormatOptions::CBlastFormatOptions(EProgram program,
    
    m_print_options = 0;
    m_align_options = 0;
-   m_align_options += TXALIGN_COMPRESS;
-   m_align_options += TXALIGN_END_NUM;
-   m_align_options += TXALIGN_SHOW_GI;
-   m_print_options += TXALIGN_SHOW_GI;
+   m_align_options += ALIGN_COMPRESS;
+   m_align_options += ALIGN_END_NUM;
+   m_align_options += ALIGN_SHOW_GI;
+   m_print_options += ALIGN_SHOW_GI;
    
-   m_align_options += TXALIGN_MATRIX_VAL;
-   m_align_options += TXALIGN_SHOW_QS;
+   m_align_options += ALIGN_MATRIX_VAL;
+   m_align_options += ALIGN_SHOW_QS;
    if (program == eBlastx)
-      m_align_options += TXALIGN_BLASTX_SPECIAL;
+      m_align_options += ALIGN_BLASTX_SPECIAL;
    
    m_align_view = BLAST_ALIGN_VIEW;
 }
@@ -130,7 +129,7 @@ BLAST_FormatResults(TSeqAlignVector &seqalignv,
     TSeqLocInfoVector &maskv, const CBlastFormatOptions* format_options, 
     bool is_ooframe)
 {
-    int index;
+    unsigned int index;
     
     list <CDisplaySeqalign::FeatureInfo*> featureInfo;
     
@@ -147,3 +146,5 @@ BLAST_FormatResults(TSeqAlignVector &seqalignv,
 
     return 0;
 }
+END_SCOPE(blast)
+END_NCBI_SCOPE
