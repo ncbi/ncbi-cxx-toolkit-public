@@ -944,6 +944,66 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
 }
 
 
+CSeq_id::CSeq_id(const CDbtag& dbtag, bool set_as_general)
+{
+    int version = -1;
+    string acc;
+
+    if (dbtag.GetTag().IsStr()) {
+        acc = dbtag.GetTag().GetStr();
+        string::size_type pos = acc.find_last_of(".");
+        if (pos != string::npos) {
+            version = NStr::StringToInt(acc.substr(pos + 1, acc.length() - pos));
+            acc.erase(pos);
+        }
+    }
+
+    switch (dbtag.GetType()) {
+    case CDbtag::eDbtagType_GenBank:
+        try {
+            int gi = NStr::StringToInt(acc);
+            SetGi(gi);
+        }
+        catch (...) {
+            SetGenbank().SetAccession(acc);
+            if (version != -1) {
+                SetGenbank().SetVersion(version);
+            }
+        }
+        break;
+
+    case CDbtag::eDbtagType_EMBL:
+        SetEmbl().SetAccession(acc);
+        if (version != -1) {
+            SetEmbl().SetVersion(version);
+        }
+        break;
+
+    case CDbtag::eDbtagType_DDBJ:
+        SetDdbj().SetAccession(acc);
+        if (version != -1) {
+            SetDdbj().SetVersion(version);
+        }
+        break;
+
+    case CDbtag::eDbtagType_GI:
+        if (dbtag.GetTag().IsStr()) {
+            SetGi(NStr::StringToInt(dbtag.GetTag().GetStr()));
+        } else {
+            SetGi(dbtag.GetTag().GetId());
+        }
+        break;
+
+    case CDbtag::eDbtagType_bad:
+    default:
+        // not understood as a sequence id - leave as e_not_set
+        if (set_as_general) {
+            SetGeneral().Assign(dbtag);
+        }
+        break;
+    }
+}
+
 
 //SeqIdFastAConstructors
 CSeq_id::CSeq_id( const string& the_id )
@@ -1357,6 +1417,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.70  2004/01/21 18:04:20  dicuccio
+ * Added ctor to create a seq-id from a given dbtag, performing conversion to
+ * specific seq-id types where possible
+ *
  * Revision 6.69  2004/01/20 16:59:38  ucko
  * CSeq_id::IdentifyAccession: identify IDs consisting solely of digits as GIs.
  *

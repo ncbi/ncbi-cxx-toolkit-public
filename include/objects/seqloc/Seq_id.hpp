@@ -72,6 +72,9 @@ public:
     // a raw accession (with optional version).
     CSeq_id( const string& the_id );
 
+    // Construct a seq-id from a dbtag
+    CSeq_id(const CDbtag& tag, bool set_as_general = true);
+
     // With proper choice
     CSeq_id(CSeq_id_Base::E_Choice the_type,
             int           int_seq_id);     // see explanation in x_Init below
@@ -382,6 +385,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2004/01/21 18:04:20  dicuccio
+ * Added ctor to create a seq-id from a given dbtag, performing conversion to
+ * specific seq-id types where possible
+ *
  * Revision 1.37  2004/01/16 22:11:15  ucko
  * Update for new CSerializable interface.
  *
