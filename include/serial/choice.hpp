@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/12/12 21:10:25  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.19  2000/10/03 17:22:30  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -180,6 +183,7 @@ public:
     const CItemsInfo& GetVariants(void) const;
     const CVariantInfo* GetVariantInfo(TMemberIndex index) const;
     const CVariantInfo* GetVariantInfo(const CIterator& i) const;
+    const CVariantInfo* GetVariantInfo(const string& name) const;
 
     CVariantInfo* AddVariant(const char* variantId,
                              const void* variantPtr,

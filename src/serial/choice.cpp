@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/12/12 21:08:07  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.31  2002/11/14 20:55:47  gouriano
 * added support of XML attribute lists
 *
@@ -373,6 +376,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
 
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     in.BeginChoice(choiceType);
+    BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
         in.ThrowError(in.fFormatError,
@@ -389,7 +393,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
                           "choice variant id expected");
         variantInfo = choiceType->GetVariantInfo(index);
     }
-    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
+    in.TopFrame().SetMemberId(variantInfo->GetId());
 
     variantInfo->ReadVariant(in, objectPtr);
 
@@ -447,6 +451,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
 
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     in.BeginChoice(choiceType);
+    BEGIN_OBJECT_FRAME_OF(in, eFrameChoiceVariant);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
         in.ThrowError(in.fFormatError,
@@ -463,7 +468,8 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
                           "choice variant id expected");
         variantInfo = choiceType->GetVariantInfo(index);
     }
-    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
+
+    in.TopFrame().SetMemberId(variantInfo->GetId());
 
     variantInfo->SkipVariant(in);
 

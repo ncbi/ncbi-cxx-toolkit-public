@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.75  2002/11/14 20:49:52  gouriano
 * added BeginChoice/EndChoice methods
 *
@@ -347,6 +350,7 @@ class CObjectInfoMI;
 
 class CClassTypeInfo;
 class CChoiceTypeInfo;
+class CChoiceTypeInfoFunctions;
 class CContainerTypeInfo;
 class CObjectStreamCopier;
 
@@ -821,6 +825,7 @@ public:
     CHookDataKey<CReadObjectHook> m_ObjectHookKey;
     CHookDataKey<CReadClassMemberHook> m_ClassMemberHookKey;
     CHookDataKey<CReadChoiceVariantHook> m_ChoiceVariantHookKey;
+    friend class CChoiceTypeInfoFunctions;
 };
 
 inline

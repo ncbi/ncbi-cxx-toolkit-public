@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.2  2000/11/01 20:35:27  vasilche
 * Removed ECanDelete enum and related constructors.
 *
@@ -157,12 +160,14 @@ public:
             if ( WhichChoice(choiceType, choicePtr) != kEmptyChoice )
                 Get(choicePtr).Reset();
         }
-    static void SelectChoice(const CChoiceTypeInfo* /*choiceType*/,
+    static void SelectChoice(const CChoiceTypeInfo* choiceType,
                              void* choicePtr,
                              TMemberIndex index)
         {
             typedef typename CClassType::E_Choice E_Choice;
-            Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice));
+            if (WhichChoice(choiceType,choicePtr) != index) {
+                Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice));
+            }
         }
     static void SelectDelayBuffer(void* choicePtr,
                                   TMemberIndex index)

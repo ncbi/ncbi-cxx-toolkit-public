@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.18  2002/11/26 22:01:38  gouriano
 * added HasMoreElements method
 *
@@ -212,6 +215,8 @@ protected:
     virtual void EndContainer(void);
     virtual bool BeginContainerElement(TTypeInfo elementType);
     virtual void EndContainerElement(void);
+    void BeginArrayElement(TTypeInfo elementType);
+    void EndArrayElement(void);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);

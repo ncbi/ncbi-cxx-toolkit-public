@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.6  2002/11/14 20:52:55  gouriano
 * added support of attribute lists
 *
@@ -91,6 +94,9 @@ void CObjectOStreamXml::OpenTag(const string& name, bool close)
     OpenTagEnd();
     OpenTagStart();
     m_Output.PutString(name);
+#if defined(NCBI_SERIAL_IO_TRACE)
+    TraceTag(name);
+#endif
     if (close) {
         OpenTagEnd();
     }
@@ -104,6 +110,9 @@ void CObjectOStreamXml::CloseTag(const string& name)
     } else {
         CloseTagStart();
         m_Output.PutString(name);
+#if defined(NCBI_SERIAL_IO_TRACE)
+    TraceTag(name);
+#endif
         CloseTagEnd();
     }
 }

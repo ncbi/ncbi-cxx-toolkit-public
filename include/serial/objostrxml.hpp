@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/12/12 21:10:26  gouriano
+* implemented handling of complex XML containers
+*
 * Revision 1.22  2002/11/14 20:52:55  gouriano
 * added support of attribute lists
 *
@@ -258,6 +261,8 @@ protected:
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
     virtual void BeginClassMember(const CMemberId& id);
+            void BeginClassMember(TTypeInfo memberType,
+                                  const CMemberId& id);
     virtual void EndClassMember(void);
 
     virtual void BeginChoice(const CChoiceTypeInfo* choiceType);
@@ -273,6 +278,10 @@ protected:
 
     // Write current separator to the stream
     virtual void WriteSeparator(void);
+
+#if defined(NCBI_SERIAL_IO_TRACE)
+    void TraceTag(const string& name);
+#endif
 
 private:
     void WriteString(const char* str, size_t length);
