@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2004/10/22 15:11:29  kans
+ * added functions for getting and setting partial flags
+ *
  * Revision 1.6  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.
@@ -89,6 +92,14 @@ public:
     // destructor
     ~CPacked_seqpnt(void);
 
+    // check left (5') or right (3') end of location for e_Lim fuzz
+    bool IsPartialLeft  (void) const;
+    bool IsPartialRight (void) const;
+
+    // set / remove e_Lim fuzz on left (5') or right (3') end
+    void SetPartialLeft  (bool val);
+    void SetPartialRight (bool val);
+        
     // Add a point to the collection. 
     void AddPoint(TSeqPos point);
     void AddPoints(const TPoints& points);
@@ -101,6 +112,7 @@ private:
     CPacked_seqpnt(const CPacked_seqpnt& value);
     CPacked_seqpnt& operator=(const CPacked_seqpnt& value);
 
+    bool x_IsMinusStrand(void) const;
 };
 
 

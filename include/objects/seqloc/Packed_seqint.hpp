@@ -70,6 +70,14 @@ public:
     // get the length of the pieces
     TSeqPos GetLength(void) const;
 
+    // check left (5') or right (3') end of location for e_Lim fuzz
+    bool IsPartialLeft  (void) const;
+    bool IsPartialRight (void) const;
+
+    // set / remove e_Lim fuzz on left (5') or right (3') end
+    void SetPartialLeft (bool val);
+    void SetPartialRight(bool val);
+
     /// for convenience
     void AddInterval(const CSeq_interval& ival);
     void AddInterval(const CSeq_id& id, TSeqPos from, TSeqPos to,
@@ -108,6 +116,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/10/22 15:11:29  kans
+ * added functions for getting and setting partial flags
+ *
  * Revision 1.8  2004/09/01 15:33:44  grichenk
  * Check strand in GetStart and GetEnd. Circular length argument
  * made optional.
