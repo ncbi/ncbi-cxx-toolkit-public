@@ -1,7 +1,8 @@
 # Hacked up in various ways, since Autoconf's version doesn't quite
-# suit our (elaborate) needs.
+# suit our (unusual) conventions.  (Originally from status.m4)
 m4_define([_AC_SRCPATHS],
 [#ac_builddir=. # Useless!
+ac_builddir=$builddir
 dnl Base source directories on path to *input* file.
 if test -n "$ac_file_in"; then
    ac_dir_in=`AS_DIRNAME(["$ac_file_in"])`
@@ -27,28 +28,23 @@ case $srcdir in
     fi ;;
   [[\\/]]* | ?:[[\\/]]* )  # Absolute path.
     ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir
-    ac_abs_srcdir=$real_srcdir$ac_dir_suffix;
-    ac_abs_top_srcdir=$real_srcdir ;;
+    ac_top_srcdir=$srcdir ;;
   *) # Relative path.
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_builddir$srcdir
-    ac_abs_srcdir=$ac_top_builddir$real_srcdir$ac_dir_suffix
-    ac_abs_top_srcdir=$ac_top_builddir$real_srcdir ;;
+    ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
-# Don't blindly perform a `cd $1/$ac_foo && $smart_pwd` since $ac_foo can be
-# absolute.
-ac_abs_builddir=`cd $1 && $smart_pwd`
-ac_abs_top_builddir=`cd $1 && cd ${ac_top_builddir}. && $smart_pwd`
-#ac_builddir=$ac_top_builddir/build # Much more useful than "."!
-ac_builddir=$builddir
-#ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-#ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+# Do not use `cd foo && pwd` to compute absolute paths, because
+# the directories may not exist.
+AS_SET_CATFILE([ac_abs_builddir],   [`$smart_pwd`],     [$1])
+AS_SET_CATFILE([ac_abs_top_builddir],
+                                    [$ac_abs_builddir], [${ac_top_builddir}.])
+AS_SET_CATFILE([ac_abs_top_srcdir], [$ac_dir_in],       [$real_srcdir])
+AS_SET_CATFILE([ac_abs_srcdir],     [$ac_abs_top_srcdir], [$ac_dir_suffix])
 ])# _AC_SRCPATHS
 
 
-# Copied from autoconf 2.53, but rearranged to make bash a last resort
-# due to issues with sourcing .bashrc.
+# Copied from autoconf 2.59 (m4sh.m4), but rearranged to make bash a
+# last resort due to issues with sourcing .bashrc.
 m4_define([_AS_LINENO_PREPARE],
 [_AS_LINENO_WORKS || {
   # Find who we are.  Look in the path if we contain no path at all
@@ -71,14 +67,16 @@ m4_define([_AS_LINENO_PREPARE],
   '')
     for as_base in sh ksh sh5 bash; do
       _AS_PATH_WALK([/bin$PATH_SEPARATOR/usr/bin$PATH_SEPARATOR$PATH],
-	 [case $as_dir in
-	 /*)
-	   if ("$as_dir/$as_base" -c '_AS_LINENO_WORKS') 2>/dev/null; then
-	     CONFIG_SHELL=$as_dir/$as_base
-	     export CONFIG_SHELL
-	     exec "$CONFIG_SHELL" "$[0]" ${1+"$[@]"}
-	   fi;;
-	 esac
+         [case $as_dir in
+         /*)
+           if ("$as_dir/$as_base" -c '_AS_LINENO_WORKS') 2>/dev/null; then
+             AS_UNSET(BASH_ENV)
+             AS_UNSET(ENV)
+             CONFIG_SHELL=$as_dir/$as_base
+             export CONFIG_SHELL
+             exec "$CONFIG_SHELL" "$[0]" ${1+"$[@]"}
+           fi;;
+         esac
        done]);;
   esac
 

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.343 2005/01/27 22:12:59 ucko Exp $
+#  $Id: configure.ac,v 1.344 2005/01/31 15:31:38 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -38,7 +38,7 @@
 #
 #############################################################################
 
-AC_PREREQ(2.56)
+AC_PREREQ(2.59)
 
 dnl Set up lock.  The diversion magic lets this occur before AC_INIT, which
 dnl already interferes with other configure processes.
