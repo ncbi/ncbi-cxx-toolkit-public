@@ -43,7 +43,7 @@ static const char* s_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
                               const char* def_value)
 {
-    char        key[250];
+    char        key[256];
     char*       sec;
     const char* val;
 
@@ -105,7 +105,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                                                 (service  &&  *service
                                                  ? strlen(service) + 1 : 0));
     /* aux. storage for the string-to-int conversions, etc. */
-    char   str[32];
+    char   str[256];
     int    val;
     double dbl;
     char*  s;
@@ -210,8 +210,18 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
                          strcasecmp(str, "true") == 0  ||
                          strcasecmp(str, "yes" ) == 0));
 
-    /* has no user header yet... */
-    info->http_user_header = 0;
+    /* user header (with optional '\r\n' added automagically) */
+    REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
+    if (*str) {
+        size_t len = strlen(str);
+        if (str[len - 1] != '\n'  &&  len < sizeof(str) - 2) {
+            str[len++] = '\r';
+            str[len++] = '\n';
+            str[len]   = '\0';
+        }
+        info->http_user_header = strdup(str);
+    }
+
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
     /* store service name for which this structure has been created */
@@ -1497,6 +1507,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.66  2005/02/24 19:00:45  lavr
+ * +CONN_HTTP_USER_HEADER
+ *
  * Revision 6.65  2004/10/14 13:51:42  lavr
  * StringToHostPort() to allow NULL ptrs
  *

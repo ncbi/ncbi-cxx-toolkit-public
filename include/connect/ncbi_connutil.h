@@ -184,6 +184,9 @@ typedef struct {
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
 
+#define REG_CONN_HTTP_USER_HEADER "USER_HEADER"
+#define DEF_CONN_HTTP_USER_HEADER 0
+
 
 /* This function to fill out the "*info" structure using
  * registry entries named (see above) in macros REG_CONN_<NAME>:
@@ -643,6 +646,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2005/02/24 19:00:33  lavr
+ * +CONN_HTTP_USER_HEADER
+ *
  * Revision 6.36  2004/09/16 16:19:16  lavr
  * Mention [in opening comment summary] that EMIME_Type is defined here
  *
