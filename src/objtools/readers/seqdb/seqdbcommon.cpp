@@ -108,51 +108,52 @@ static bool s_SeqDB_DBExists(const string & dbname, char dbtype)
             CFile(dbname + "." + dbtype + "in").Exists());
 }
 
-string SeqDB_FindBlastDBPath(const string & dbname, char dbtype)
+static string s_SeqDB_TryPaths(const string & blast_paths,
+                               const string & dbname,
+                               char           dbtype)
 {
-    const string failed;
-    string attempt = SeqDB_CombinePath(".", dbname);
+    vector<string> roads;
+    NStr::Tokenize(blast_paths, ":", roads, NStr::eMergeDelims);
     
-    if (s_SeqDB_DBExists(attempt, dbtype)) {
-        return attempt;
-    }
+    string result;
     
-    CNcbiEnvironment env;
-    const string & blastdb(env.Get("BLASTDB"));
-    
-    if (! blastdb.empty()) {
-        vector<string> roads;
-        NStr::Tokenize(blastdb, ":", roads, NStr::eMergeDelims);
+    for(Uint4 i = 0; i < roads.size(); i++) {
+        string attempt = SeqDB_CombinePath(roads[i], dbname);
         
-        for(Uint4 i = 0; i < roads.size(); i++) {
-            attempt = SeqDB_CombinePath(roads[i], dbname);
-            
-            if (s_SeqDB_DBExists(attempt, dbtype)) {
-                return attempt;
-            }
+        if (s_SeqDB_DBExists(attempt, dbtype)) {
+            result = attempt;
+            break;
         }
     }
     
+    return result;
+}
+
+string SeqDB_FindBlastDBPath(const string & dbname, char dbtype)
+{
+    // Local directory first;
+    
+    string pathology(".:");
+    
+    // Then, BLASTDB;
+    
+    CNcbiEnvironment env;
+    pathology += env.Get("BLASTDB");
+    pathology += ":";
+    
+    // Finally, the config file.
+    
     CMetaRegistry::SEntry sentry =
         CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    
-    if (! sentry.registry) {
-        return failed;
+
+    if (sentry.registry) {
+        pathology += sentry.registry->Get("BLAST", "BLASTDB");
+        pathology += ":";
     }
     
-    string regstr = sentry.registry->Get("BLAST", "BLASTDB");
+    // Time to field test this new and terrible weapon.
     
-    if (regstr.empty()) {
-        return failed;
-    }
-    
-    attempt = SeqDB_CombinePath(regstr, dbname);
-    
-    if (s_SeqDB_DBExists(attempt, dbtype)) {
-        return attempt;
-    }
-    
-    return failed;
+    return s_SeqDB_TryPaths(pathology, dbname, dbtype);
 }
 
 END_NCBI_SCOPE
