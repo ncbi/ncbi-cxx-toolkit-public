@@ -266,7 +266,7 @@ string& CConn_MemoryStream::ToString(string& str)
     if (sb) {
         if (CONN_Read(sb->GetCONN(), &str[0], size, &size, eIO_ReadPlain)
             != eIO_Success) {
-            str.clear();
+            str.erase();
         } else
             str.resize(size);
     }
@@ -313,6 +313,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2004/10/27 14:16:38  ucko
+ * CConn_MemoryStream::ToString: use erase() rather than clear(), which
+ * GCC 2.95 doesn't support.
+ *
  * Revision 6.34  2004/10/26 20:30:52  lavr
  * +CConn_MemoryStream::ToString()
  *
