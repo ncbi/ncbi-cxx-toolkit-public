@@ -508,7 +508,7 @@ provides a sounder interface to the application, and can be done as follows:
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // ...executed inside CNcbiApplication::Run()
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDescr;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgs args;</font></pre>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgs* args;</font></pre>
 
 <pre><font color="#008080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; args = argDescr.CreateArgs( GetArguments() );
