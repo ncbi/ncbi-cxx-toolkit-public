@@ -85,9 +85,10 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
 
         sbp->read_in_matrix = TRUE;
         BLAST_ScoreSetAmbigRes(sbp, 'X');
-        sbp->name = p = strdup(scoring_options->matrix);
+        sbp->name = strdup(scoring_options->matrix);
         /* protein matrices are in all caps by convention */
-        while (*p != NULLB) *p++ = toupper(*p);
+        for (p = sbp->name; *p != NULLB; p++)
+            *p = toupper(*p);
         status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
         if (status)
             return status;
