@@ -25,55 +25,40 @@
  *
  * Authors:  Maxim Didenko
  *
- * File Description:
+ * File Description:  NetSchedule grid client sample
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#include <connect/services/netschedule_client.hpp>
-#include <connect/services/netcache_client.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
-
-#include <math.h>
-#include <algorithm>
+#include <connect/services/grid_client.hpp>
+#include <connect/services/grid_client_app.hpp>
 
 USING_NCBI_SCOPE;
 
-class CGridClientSample : public CNcbiApplication
+class CGridClientSampleApp : public CGridClientApp
 {
 public:
-    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
-    typedef CPluginManager<CNetCacheClient>    TPMNetCache;
 
-    void Init(void);
-    int Run(void);
-
-private:
-    TPMNetSchedule            m_PM_NetSchedule;
-    TPMNetCache               m_PM_NetCache;
+    virtual void Init(void);
+    virtual int Run(void);
 
 };
 
-void CGridClientSample::Init(void)
+void CGridClientSampleApp::Init(void)
 {
+    /// Don't forget to call it
+    CGridClientApp::Init();
+
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Grid client sample");
-
-    arg_desc->AddOptionalKey("jcount", 
-                             "jcount",
-                             "Number of jobs to submit",
-                             CArgDescriptions::eInteger);
 
     arg_desc->AddOptionalKey("vsize", 
                              "vsize",
@@ -82,171 +67,79 @@ void CGridClientSample::Init(void)
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
-
-    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetschedule);
-    m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
-
-    //SetDiagPostFlag(eDPF_Trace);
-    //SetDiagPostLevel(eDiag_Info);
-
 }
 
-int CGridClientSample::Run(void)
+int CGridClientSampleApp::Run(void)
 {
     CArgs args = GetArgs();
 
-    auto_ptr<CNetScheduleClient> ns_client;
-    auto_ptr<CNetCacheClient>    nc_client;
-
-    CConfig conf(GetConfig());
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netschedule_tree = 
-            param_tree->FindSubNode(kNetScheduleDriverName);
-
-    if (!netschedule_tree) 
-        return 1;
-
-     ns_client.reset( 
-            m_PM_NetSchedule.CreateInstance(
-                    kNetScheduleDriverName,
-                    CVersionInfo(TPMNetSchedule::TInterfaceVersion::eMajor,
-                                 TPMNetSchedule::TInterfaceVersion::eMinor,
-                                 TPMNetSchedule::TInterfaceVersion::ePatchLevel), 
-                                 netschedule_tree)
-                                 );
-
-     param_tree = conf.GetTree();
-     const TPluginManagerParamTree* netcache_tree = 
-             param_tree->FindSubNode(kNetCacheDriverName);
-
-    if (!netcache_tree)
-        return 1;
-
-    nc_client.reset( 
-            m_PM_NetCache.CreateInstance(
-                    kNetCacheDriverName,
-                    CVersionInfo(TPMNetCache::TInterfaceVersion::eMajor,
-                                 TPMNetCache::TInterfaceVersion::eMinor,
-                                 TPMNetCache::TInterfaceVersion::ePatchLevel), 
-                                 netcache_tree)
-                       );
-
-    CNetCacheNSStorage storage(nc_client);
-    unsigned jcount = 10;
     int vsize = 100000;
-    if (args["jcount"]) {
-        jcount = args["jcount"].AsInteger();
-    }
     if (args["vsize"]) {
         vsize = args["vsize"].AsInteger();
     }
 
-    CNetScheduleClient::EJobStatus status;
-    NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
+    NcbiCout << "Submit a job..." << NcbiEndl;
 
-    string job_key;
-    string input1 = "Hello ";
-    typedef map<string, vector<double>* > TJobs;
-    TJobs jobs;
-    for (unsigned i = 0; i < jcount; ++i) {
-        string ns_key;
-        vector<double>* dvec = new vector<double>;
-        CNcbiOstream& os = storage.CreateOStream(ns_key);
-        os << vsize << ' ';
-        srand( (unsigned)time( NULL ) );
-        for (int j = 0; j < vsize; ++j) {
-            double d = rand()*0.2;
-            os << d << ' ';
-            dvec->push_back(d);
-        }
-        storage.Reset();
-        string job_key = ns_client->SubmitJob(ns_key);
-        sort(dvec->begin(),dvec->end());
-        jobs[job_key] = dvec;
+    /// Get a job submiter
+    CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
 
-        if (i % 1000 == 0) {
-            NcbiCout << "." << flush;
-        }
+    /// Get an ouptut stream
+    CNcbiOstream& os = job_submiter.GetOStream();
+
+    /// Send jobs input data
+    os << vsize << ' ';
+    srand( (unsigned)time( NULL ) );
+    for (int j = 0; j < vsize; ++j) {
+    double d = rand()*0.2;
+        os << d << ' ';
     }
+
+    /// Submit a job
+    string job_key = job_submiter.Submit();
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
 
-    NcbiCout << "Waiting for jobs..." << jobs.size() << NcbiEndl;
-    unsigned cnt = 0;
-    SleepMilliSec(100);
-    
-    while (jobs.size()) {
-        NON_CONST_ITERATE(TJobs, it, jobs) {
-            const string& jk = it->first;
-            vector<double>* dvec = it->second;
-            string output;
-            int ret_code;
-            string err_msg;
-            status = ns_client->GetStatus(jk, &ret_code, &output,&err_msg);
+    NcbiCout << "Waiting for job " << job_key << "..." << NcbiEndl;
 
-            if (status == CNetScheduleClient::eDone) {
-                CNcbiIstream& is = storage.GetIStream(output);
-                int count;
-                is >> count;
-                vector<double> resvec;
-                for (int i = 0; i < count; ++i) {
-                    if (!is.good()) {
-                        LOG_POST( "Input stream error. Index : " << i );
-                        break;
-                    }
-                    double d;
-                    is >> d;
-                    resvec.push_back(d);
-                }
-                storage.Reset();
-                if (resvec.size() == dvec->size()) {
-                    for(size_t i = 0; i < resvec.size(); ++i) {
-                        if( fabs((*dvec)[i] - resvec[i]) > 0.001 ) {
-                            LOG_POST( "Test failed! Wrong vector element." );
-                            break;
-                        }
-                    }
-                }
-                else {
-                    LOG_POST( "Test failed! Wrong vector size."  );
-                }
-                LOG_POST( "Job " << jk << " done." );
-                delete dvec;
-                jobs.erase(it);
-                ++cnt;
-                break;
-            } 
-            else if (status == CNetScheduleClient::eFailed) {
-                LOG_POST( "Job " << jk << " failed : " << err_msg );
-                delete dvec;
-                jobs.erase(it);
-                ++cnt;
-                break;
-            }
+    unsigned int cnt = 0;
+    while (1) {
+        SleepMilliSec(100);
 
-            /*else 
-            if (status != CNetScheduleClient::ePending) {
-                if (status == CNetScheduleClient::eJobNotFound) {
-                    NcbiCerr << "Job lost:" << jk << NcbiEndl;
+        /// Get a job status
+        CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
+        CNetScheduleClient::EJobStatus status;
+        status = job_status.GetStatus();
+
+        /// A job is done here
+        if (status == CNetScheduleClient::eDone) {
+            /// Get an input stream
+            CNcbiIstream& is = job_status.GetIStream();
+            int count;
+
+            /// Get the result
+            is >> count;
+            vector<double> resvec;
+            for (int i = 0; i < count; ++i) {
+                if (!is.good()) {
+                    LOG_POST( "Input stream error. Index : " << i );
+                    break;
                 }
-                jobs.erase(it);
-                ++cnt;
-                break;                
-            }*/
-            
-            ++cnt;
-            if (cnt % 1000 == 0) {
-                NcbiCout << "Waiting for " 
-                         << jobs.size() 
-                         << " jobs."
-                         << NcbiEndl;
-                // it is necessary to give system a rest periodically
-                SleepMilliSec(2000);
-                // check status of only first 1000 jobs
-                // since the JS queue execution priority is FIFO
-                break;
+                double d;
+                is >> d;
+                resvec.push_back(d);
             }
+            LOG_POST( "Job " << job_key << " is done." );
+            break;
         }
 
+        /// A job has failed
+        else if (status == CNetScheduleClient::eFailed) {
+            LOG_POST( "Job " << job_key << " failed : " 
+                             << job_status.GetErrorMessage() );
+            break;
+        }
+        if (++cnt % 1000 == 0) {
+            NcbiCout << "Still waiting..." << NcbiEndl;
+        }
     }
     return 0;
 }
@@ -254,13 +147,16 @@ int CGridClientSample::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CGridClientSample().AppMain(argc, argv, 0, eDS_Default, "grid_client_sample.ini");
+    return CGridClientSampleApp().AppMain(argc, argv, 0, eDS_Default, "grid_client_sample.ini");
 } 
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/25 16:29:38  didenko
+ * Rewritten to use new Grid Client framework
+ *
  * Revision 1.2  2005/03/24 15:35:35  didenko
  * Made it compile on Unixes
  *
