@@ -368,7 +368,7 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 
     
     tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout, 
-		     (int)m_Timeout, (int)m_Timeout);
+		     (int)m_Timeout, 0 /*(int)m_Timeout*/);
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
@@ -417,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/01/28 19:59:00  soussov
+ * removing the long query timout
+ *
  * Revision 1.6  2002/01/17 22:14:40  soussov
  * changes driver registration
  *

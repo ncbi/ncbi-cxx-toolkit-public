@@ -264,8 +264,7 @@ private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
 
     void TDS_SetTimeout(void) {
-	m_Link->tds_socket->timeout= m_Link->tds_socket->longquery_timeout= 
-	    (TDS_INT)(m_Context->TDS_GetTimeout());
+	m_Link->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
     }
 
     DBPROCESS*      m_Link;
@@ -707,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/28 19:57:13  soussov
+ * removing the long query timout
+ *
  * Revision 1.3  2002/01/14 20:38:01  soussov
  * timeout support for tds added
  *
