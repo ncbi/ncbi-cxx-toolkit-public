@@ -530,12 +530,11 @@ _PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
 
 /** Validate that there are no flanking gaps in the multiple sequence alignment
  * @param msa multiple sequence alignment data structure [in]
- * @param ignore_consensus TRUE if query sequence should be ignored [in]
  * @return PSIERR_STARTINGGAP or PSIERR_ENDINGGAP if validation fails, 
  * else PSI_SUCCESS
  */
 static int
-_PSIValidateNoFlankingGaps(const _PSIMsa* msa, Boolean ignore_consensus)
+_PSIValidateNoFlankingGaps(const _PSIMsa* msa)
 {
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     Uint4 s = 0;            /* index on sequences */
@@ -543,8 +542,12 @@ _PSIValidateNoFlankingGaps(const _PSIMsa* msa, Boolean ignore_consensus)
     ASSERT(msa);
 
     /* Look for starting gaps in alignments */
-    s = ignore_consensus ? 1 : 0;
-    for ( ; s < msa->dimensions->num_seqs + 1; s++) {
+    for (s = 0; s < msa->dimensions->num_seqs + 1; s++) {
+
+        if ( !msa->use_sequence[s] ) {
+            continue;
+        }
+
         /* find the first aligned residue */
         for (p = 0; p < msa->dimensions->query_length; p++) {
             if (msa->cell[s][p].is_aligned) {
@@ -558,8 +561,12 @@ _PSIValidateNoFlankingGaps(const _PSIMsa* msa, Boolean ignore_consensus)
     }
 
     /* Look for ending gaps in alignments */
-    s = ignore_consensus ? 1 : 0;
-    for ( ; s < msa->dimensions->num_seqs + 1; s++) {
+    for (s = 0; s < msa->dimensions->num_seqs + 1; s++) {
+
+        if ( !msa->use_sequence[s] ) {
+            continue;
+        }
+
         /* find the first aligned residue */
         for (p = msa->dimensions->query_length - 1; p >= 0; p--) {
             if (msa->cell[s][p].is_aligned) {
@@ -652,7 +659,7 @@ _PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
         return PSIERR_BADPARAM;
     }
 
-    retval = _PSIValidateNoFlankingGaps(msa, ignore_consensus);
+    retval = _PSIValidateNoFlankingGaps(msa);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
@@ -2304,6 +2311,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/10/19 14:28:38  camacho
+ * Fix memory access error
+ *
  * Revision 1.29  2004/10/18 14:33:14  camacho
  * 1. Added validation routines
  * 2. Fixed bug in calculating sequence weights
