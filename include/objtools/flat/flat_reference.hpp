@@ -61,7 +61,7 @@ class CPub_equiv;
 class CPub_set;
 class CTitle;
 
-class CFlatReference : public IFlatItem
+class NCBI_FLAT_EXPORT CFlatReference : public IFlatItem
 {
 public:
     enum ECategory {
@@ -73,6 +73,7 @@ public:
 
     CFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
                    const CFlatContext& ctx);
+    ~CFlatReference();
     // also drops duplicates and cleans up remaining items
     static void Sort(vector<CRef<CFlatReference> >& v, CFlatContext& ctx);
 
@@ -135,6 +136,11 @@ private: // XXX - many of these should become pointers
     void x_AddAuthors(const CAuth_list& auth);
     void x_SetJournal(const CTitle& title, const CFlatContext& ctx);
     void x_AddImprint(const CImprint& imp, const CFlatContext& ctx);
+
+private:
+    /// forbidden
+    CFlatReference(const CFlatReference&);
+    CFlatReference& operator=(const CFlatReference&);
 };
 
 
@@ -156,6 +162,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/31 13:11:33  dicuccio
+* Added export specifiers.  Implemented dtor, added hidden copy ctor/alignment
+* operator to satisfy requirements of predeclaration.
+*
 * Revision 1.4  2003/06/02 16:01:39  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

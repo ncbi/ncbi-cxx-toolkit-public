@@ -139,6 +139,11 @@ CFlatReference::CFlatReference(const CPubdesc& pub, const CSeq_loc* loc,
 }
 
 
+CFlatReference::~CFlatReference()
+{
+}
+
+
 void CFlatReference::Sort(vector<CRef<CFlatReference> >& v, CFlatContext& ctx)
 {
     // XXX -- implement!
@@ -646,6 +651,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/03/31 13:11:33  dicuccio
+* Added export specifiers.  Implemented dtor, added hidden copy ctor/alignment
+* operator to satisfy requirements of predeclaration.
+*
 * Revision 1.11  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *
