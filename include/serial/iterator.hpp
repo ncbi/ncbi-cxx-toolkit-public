@@ -49,7 +49,7 @@ class CTreeIterator;
 
 // class holding information about root of non-modifiable object hierarchy
 // Do not use it directly
-class CBeginInfo : public pair<TObjectPtr, TTypeInfo>
+class NCBI_XSERIAL_EXPORT CBeginInfo : public pair<TObjectPtr, TTypeInfo>
 {
     typedef pair<TObjectPtr, TTypeInfo> CParent;
 public:
@@ -77,7 +77,7 @@ public:
 
 // class holding information about root of non-modifiable object hierarchy
 // Do not use it directly
-class CConstBeginInfo : public pair<TConstObjectPtr, TTypeInfo>
+class NCBI_XSERIAL_EXPORT CConstBeginInfo : public pair<TConstObjectPtr, TTypeInfo>
 {
     typedef pair<TConstObjectPtr, TTypeInfo> CParent;
 public:
@@ -111,7 +111,7 @@ public:
 
 // class describing stack level of traversal
 // do not use it directly
-class CConstTreeLevelIterator {
+class NCBI_XSERIAL_EXPORT CConstTreeLevelIterator {
 public:
     typedef CConstBeginInfo TBeginInfo;
     typedef TBeginInfo::TObjectInfo TObjectInfo;
@@ -128,7 +128,7 @@ public:
     static bool HaveChildren(const CConstObjectInfo& object);
 };
 
-class CTreeLevelIterator
+class NCBI_XSERIAL_EXPORT CTreeLevelIterator
 {
 public:
     typedef CBeginInfo TBeginInfo;
@@ -167,7 +167,10 @@ public:
             _DEBUG_ARG(m_LastCall = eNone);
             Init(beginInfo);
         }
-    virtual ~CTreeIteratorTmpl(void);
+    virtual ~CTreeIteratorTmpl(void)
+        {
+            Reset();
+        }
 
 
     // get information about current object
@@ -189,11 +192,31 @@ public:
         }
 
     // reset iterator to initial state
-    void Reset(void);
+    void Reset(void)
+        {
+            m_CurrentObject.Reset();
+            m_VisitedObjects.reset(0);
+            _DEBUG_ARG(m_LastCall = eNone);
+            while ( !m_Stack.empty() )
+                m_Stack.pop();
+            _ASSERT(!*this);
+        }
 
-    void Next(void);
+    void Next(void)
+        {
+            _ASSERT(CheckValid());
+            m_CurrentObject.Reset();
 
-    void SkipSubTree(void);
+            _ASSERT(!m_Stack.empty());
+            if ( Step(m_Stack.top()->Get()) )
+                Walk();
+        }
+
+    void SkipSubTree(void)
+        {
+            _ASSERT(CheckValid());
+            m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
+        }
 
     // check whether iterator is not finished
     operator bool(void) const
@@ -231,22 +254,87 @@ protected:
             return m_CurrentObject;
         }
 
-    void ReportNonValid(void) const;
+    void ReportNonValid(void) const
+        {
+            ERR_POST("Object iterator was used without checking its validity");
+        }
 
-    virtual bool CanSelect(const CConstObjectInfo& object);
-    virtual bool CanEnter(const CConstObjectInfo& object);
+    virtual bool CanSelect(const CConstObjectInfo& obj)
+        {
+            if ( !obj )
+                return false;
+            TVisitedObjects* visitedObjects = m_VisitedObjects.get();
+            if ( visitedObjects ) {
+                if ( !visitedObjects->insert(obj.GetObjectPtr()).second ) {
+                    // already visited
+                    return false;
+                }
+            }
+	        return true;
+        }
+
+    virtual bool CanEnter(const CConstObjectInfo& object)
+        {
+            return CConstTreeLevelIterator::HaveChildren(object);
+        }
 
 protected:
     // have to make these methods protected instead of private due to
     // bug in GCC
+#ifdef NCBI_OS_MSWIN
+    CTreeIteratorTmpl(const TThis&) { THROW1_TRACE(runtime_error, "cannot copy"); }
+    TThis& operator=(const TThis&) { THROW1_TRACE(runtime_error, "cannot copy"); }
+#else
     CTreeIteratorTmpl(const TThis&);
     TThis& operator=(const TThis&);
+#endif
 
-    void Init(const TBeginInfo& beginInfo);
+    void Init(const TBeginInfo& beginInfo)
+        {
+            Reset();
+            if ( !beginInfo.first || !beginInfo.second )
+                return;
+            if ( beginInfo.m_DetectLoops )
+                m_VisitedObjects.reset(new TVisitedObjects);
+            m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
+            Walk();
+        }
 
 private:
-    bool Step(const TObjectInfo& object);
-    void Walk(void);
+    bool Step(const TObjectInfo& current)
+        {
+            if ( CanEnter(current) ) {
+                AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
+                if ( nextLevel && nextLevel->Valid() ) {
+                    m_Stack.push(nextLevel);
+                    return true;
+                }
+            }
+            // skip all finished iterators
+            _ASSERT(!m_Stack.empty());
+            do {
+                m_Stack.top()->Next();
+                if ( m_Stack.top()->Valid() ) {
+                    // next child on this level
+                    return true;
+                }
+                m_Stack.pop();
+            } while ( !m_Stack.empty() );
+            return false;
+        }
+
+    void Walk(void)
+        {
+            _ASSERT(!m_Stack.empty());
+            TObjectInfo current;
+            do {
+                current = m_Stack.top()->Get();
+                if ( CanSelect(current) ) {
+                    m_CurrentObject = current;
+                    return;
+                }
+            } while ( Step(current) );
+        }
 
 #if _DEBUG
     mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
@@ -263,7 +351,7 @@ private:
 typedef CTreeIteratorTmpl<CConstTreeLevelIterator> CTreeConstIterator;
 
 // CTreeIterator is base class for all iterators over modifiable object
-class CTreeIterator : public CTreeIteratorTmpl<CTreeLevelIterator>
+class NCBI_XSERIAL_EXPORT CTreeIterator : public CTreeIteratorTmpl<CTreeLevelIterator>
 {
     typedef CTreeIteratorTmpl<CTreeLevelIterator> CParent;
 public:
@@ -309,8 +397,16 @@ protected:
             Init(beginInfo);
         }
 
-    virtual bool CanSelect(const CConstObjectInfo& object);
-    virtual bool CanEnter(const CConstObjectInfo& object);
+    virtual bool CanSelect(const CConstObjectInfo& object)
+        {
+            return CParent::CanSelect(object) &&
+                object.GetTypeInfo()->IsType(m_NeedType);
+        }
+    virtual bool CanEnter(const CConstObjectInfo& object)
+        {
+            return CParent::CanEnter(object) &&
+                object.GetTypeInfo()->MayContainType(m_NeedType);
+        }
 
     TTypeInfo GetIteratorType(void) const
         {
@@ -634,7 +730,7 @@ public:
 };
 
 // get special typeinfo of CObject
-class CObjectGetTypeInfo
+class NCBI_XSERIAL_EXPORT CObjectGetTypeInfo
 {
 public:
     static TTypeInfo GetTypeInfo(void);
@@ -708,13 +804,13 @@ END_NCBI_SCOPE
 
 #endif  /* ITERATOR__HPP */
 
-
-
-/* ---------------------------------------------------------------------------
+/*
+ * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.22  2002/12/23 18:38:51  dicuccio
-* Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
-* Moved all CVS logs to the end.
+* Revision 1.23  2002/12/23 19:02:30  dicuccio
+* Moved template function bodies from .cpp -> .hpp to make MSVC happy.  Added an
+* #ifdef'd wrapper to unimplemented protected ctors - MSVC doesn't like these.
+* Log to end
 *
 * Revision 1.21  2002/06/13 15:15:19  ucko
 * Add [explicit] CSerialObject-based constructors, which should get rid
