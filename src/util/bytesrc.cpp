@@ -57,17 +57,28 @@ CByteSourceReader::~CByteSourceReader(void)
 }
 
 
-CRef<CSubSourceCollector> CByteSourceReader::SubSource(size_t /*prevent*/)
+CRef<CSubSourceCollector> 
+CByteSourceReader::SubSource(size_t /*prevent*/,CRef<CSubSourceCollector>& parent)
 {
-    return CRef<CSubSourceCollector>(new CMemorySourceCollector());
+    return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent));
 }
 
+
+CSubSourceCollector::CSubSourceCollector(CRef<CSubSourceCollector>& parent)
+ : m_ParentSubSource(parent)
+{
+}
 
 CSubSourceCollector::~CSubSourceCollector(void)
 {
-    return;
 }
 
+void CSubSourceCollector::AddChunk(const char* buffer, size_t bufferLength)
+{
+    if (!m_ParentSubSource.IsNull()) {
+        m_ParentSubSource->AddChunk(buffer,bufferLength);
+    }
+}
 
 /* Mac compiler doesn't like getting these flags as unsigned int (thiessen)
 static inline
@@ -197,16 +208,21 @@ bool CSubFileByteSourceReader::EndOfData(void) const
 }
 
 
-CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(size_t prepend)
+CRef<CSubSourceCollector> 
+CFileByteSourceReader::SubSource(size_t prepend, 
+                                 CRef<CSubSourceCollector>& parent)
 {
     return CRef<CSubSourceCollector>(new CFileSourceCollector(m_FileSource,
-                                    m_Stream->tellg() - TFileOff(prepend)));
+                                    m_Stream->tellg() - TFileOff(prepend),
+                                    parent));
 }
 
 
 CFileSourceCollector::CFileSourceCollector(const CConstRef<CFileByteSource>& s,
-                                           TFilePos start)
-    : m_FileSource(s),
+                                           TFilePos start,
+                                           CRef<CSubSourceCollector>& parent)
+    : CSubSourceCollector(parent),
+      m_FileSource(s),
       m_Start(start),
       m_Length(0)
 {
@@ -214,9 +230,10 @@ CFileSourceCollector::CFileSourceCollector(const CConstRef<CFileByteSource>& s,
 }
 
 
-void CFileSourceCollector::AddChunk(const char* /*buffer*/,
+void CFileSourceCollector::AddChunk(const char* buffer,
                                     size_t bufferLength)
 {
+    CSubSourceCollector::AddChunk(buffer, bufferLength);
     m_Length += TFileOff(bufferLength);
 }
 
@@ -289,10 +306,16 @@ bool CMemoryByteSourceReader::EndOfData(void) const
     return !m_CurrentChunk;
 }
 
+CMemorySourceCollector::CMemorySourceCollector(CRef<CSubSourceCollector>& parent)
+: CSubSourceCollector(parent)
+{
+}
 
 void CMemorySourceCollector::AddChunk(const char* buffer,
                                       size_t bufferLength)
 {
+    CSubSourceCollector::AddChunk(buffer, bufferLength);
+
     m_LastChunk = new CMemoryChunk(buffer, bufferLength, m_LastChunk);
     if ( !m_FirstChunk )
         m_FirstChunk = m_LastChunk;
@@ -311,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2003/09/25 12:47:36  kuznets
+ * Added subsource chaining
+ *
  * Revision 1.19  2003/02/26 21:32:00  gouriano
  * modify C++ exceptions thrown by this library
  *
