@@ -371,7 +371,7 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
        status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
    }
 
-   return 0;
+   return status;
 }
 
 
@@ -528,8 +528,6 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
 
    if (sbp == NULL)
       return 1;
-
-   eff_len_options = eff_len_params->options; 
 
    /* use overriding value from effective lengths options or the real value
       from effective lengths parameters. */
