@@ -153,10 +153,10 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         "ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62 
       scope: scope to fetch your sequence */
     CDisplaySeqalign(const CSeq_align_set & seqalign,
-                     list < SeqlocInfo * >&maskSeqloc,
-                     list < FeatureInfo * >&externalFeature,
-                     const int matrix[][kPMatrixSize],
-                     CScope & scope);
+                     CScope & scope,
+                     list < SeqlocInfo * >* maskSeqloc = NULL,
+                     list < FeatureInfo * >* externalFeature = NULL,
+                     const int matrix[][kPMatrixSize] = NULL);
 
     // Destructor
     ~CDisplaySeqalign();
@@ -246,8 +246,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
 
 
 private:
-
-
+    
     struct insertInformation {
         int alnStart;               // aln coords. insert right after this
                                     // position
@@ -275,9 +274,9 @@ private:
     };
     CConstRef < CSeq_align_set > m_SeqalignSetRef;  // reference to seqalign set
                                                     // for displaying
-    list < SeqlocInfo * >&m_Seqloc; // display character option for list of
+    list < SeqlocInfo * >* m_Seqloc; // display character option for list of
                                     // seqloc 
-    list < FeatureInfo * >&m_QueryFeature;  // external feature such as phiblast
+    list < FeatureInfo * >* m_QueryFeature;  // external feature such as phiblast
                                             // pattern
     CScope & m_Scope;
     CAlnVec *m_AV;                  // current aln vector
@@ -289,9 +288,6 @@ private:
     SeqLocCharOption m_SeqLocChar;  // character for seqloc display
     SeqLocColorOption m_SeqLocColor;        // clolor for seqloc display
     int m_LineLen;                  // number of sequence character per line
-    int m_IdStartMargin;            // margin between seqid and start number
-    int m_StartSequenceMargin;      // margin between start number and sequence
-    int m_SeqStopMargin;            // margin between sequence and stop number
     bool m_IsDbNa;
     bool m_IsQueryNa;
     bool m_IsDbGi;
@@ -311,12 +307,13 @@ private:
     MiddleLineStyle m_MidLineStyle;
       // helper functions
     void DisplayAlnvec(CNcbiOstream & out);
-    const void PrintDefLine(const CBioseq_Handle & bspHandle, list<int>& use_this_gi,
+    const void PrintDefLine(const CBioseq_Handle & bspHandle, 
+                            list<int>& use_this_gi,
                             CNcbiOstream & out) const;
     // display sequence, start is seqalign coodinate
     const void OutputSeq(string & sequence, const CSeq_id & id, int start, 
-                         int len, int frame, bool colorMismatch, 
-                         list<alnSeqlocInfo*> loc_list,
+                         int len, int frame, int row, bool colorMismatch, 
+                         list<alnSeqlocInfo*> loc_list, 
                          CNcbiOstream & out) const;
 
     int getNumGaps();               // Count number of total gaps
@@ -366,6 +363,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.24  2005/02/14 19:04:28  jianye
+*changed constructor
+*
 *Revision 1.23  2004/09/27 14:33:28  jianye
 *modify use_this_gi logic
 *
