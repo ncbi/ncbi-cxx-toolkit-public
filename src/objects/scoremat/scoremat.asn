@@ -1,4 +1,4 @@
---$Id: scoremat.asn,v 1.8 2004/07/19 17:34:54 papadopo Exp $
+--$Id: scoremat.asn,v 1.9 2004/08/05 17:29:47 camacho Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -30,10 +30,13 @@
 --
 -- ===========================================================================
 -- $Log: scoremat.asn,v $
--- Revision 1.8  2004/07/19 17:34:54  papadopo
--- change weights and position frequencies to type REAL, remove their associated scaling factors
+-- Revision 1.9  2004/08/05 17:29:47  camacho
+-- Changes to Score-matrix specification:
+-- 1. is_protein has a default value of TRUE
+-- 2. identifier becomes optional
+-- 3. unassigned and other members of freq-Ratios are removed.
 --
--- Revision 1.8  2004/07/19 17:06:26  papadopo
+-- Revision 1.8  2004/07/19 17:34:54  papadopo
 -- change weights and position frequencies to type REAL, remove their associated scaling factors
 --
 -- Revision 1.7  2004/02/23 15:42:24  camacho
@@ -114,13 +117,19 @@ CoreDef ::= SEQUENCE {
 -- provided to specify the storage order.
 
 Score-matrix ::= SEQUENCE {
-    is-protein   BOOLEAN,	-- Is the matrix for proteins
-    identifier   Object-id,	-- name of matrix (e.g., "blosum62") or number
-    comments     SEQUENCE OF VisibleString OPTIONAL, -- comments on matrix.
+    -- Is the this a protein or nucleotide scoring matrix?
+    is-protein   BOOLEAN DEFAULT TRUE,	
+
+    -- name of matrix (e.g., "blosum62") or number
+    identifier   Object-id OPTIONAL,	
+
+    -- comments on matrix.
+    comments     SEQUENCE OF VisibleString OPTIONAL, 
 
     -- The dimensions of the matrix are returned so the client can
     -- verify that all data was received.  Both dimensions are returned for
     -- non-symmetric matrices (psi-blast uses these).
+
     nrows        INTEGER,	-- number of rows
     ncolumns     INTEGER,	-- number of columns
 
@@ -135,6 +144,7 @@ Score-matrix ::= SEQUENCE {
     -- values of scoring matrix. Non-symmetric matrices are stored as described
     -- by the byrow field
     scores       SEQUENCE OF INTEGER OPTIONAL, 
+
     -- are matrices stored row by row?
     byrow        BOOLEAN DEFAULT FALSE, 
 
@@ -153,17 +163,15 @@ Score-matrix ::= SEQUENCE {
     -- sequence weights for individual cells
     weights      SEQUENCE OF REAL OPTIONAL, 
 
-    -- frequencies used in pseudocount method
-    freq-Ratios  INTEGER { unassigned  (0),
-                           blosum62    (1),
+    -- underlying score matrix frequency ratios used in pseudocount method
+    freq-Ratios  INTEGER { blosum62    (1),
                            blosum45    (2),
                            blosum80    (3),
                            blosum50    (4),
                            blosum90    (5),
                            pam30       (6),
                            pam70       (7),
-                           pam250      (8),
-                           other     (255)
+                           pam250      (8)
                          } OPTIONAL,           
 
     -- scaling factor for the scores
@@ -179,9 +187,9 @@ Score-matrix ::= SEQUENCE {
 
 Score-matrix-parameters ::= SEQUENCE {
 	matrix		Score-matrix,	
-        lambda          REAL OPTIONAL,
-	kappa           REAL OPTIONAL,
-	h               REAL OPTIONAL,
+    lambda      REAL OPTIONAL,
+	kappa       REAL OPTIONAL,
+	h           REAL OPTIONAL,
 	constraints	CoreDef OPTIONAL
 }
 
