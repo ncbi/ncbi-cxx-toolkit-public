@@ -258,8 +258,8 @@ public:
     bool GetSumStatisticsMode() const;
     void SetSumStatisticsMode(bool m = true);
 
-    int GetLongestIntronLength() const; // for tblastn w/ linking HSPs
-    void SetLongestIntronLength(int l); // for tblastn w/ linking HSPs
+    int GetLongestIntronLength() const; // for linking HSPs with uneven gaps
+    void SetLongestIntronLength(int l); // for linking HSPs with uneven gaps
 
     /// Returns true if gapped BLAST is set, false otherwise
     bool GetGappedMode() const;
@@ -1254,14 +1254,14 @@ public:
         }
     }
 
-    int GetLongestIntronLength() const // for tblastn w/ linking HSPs
+    int GetLongestIntronLength() const // for linking HSPs with uneven gaps
     {
         if (! m_Local) {
             x_Throwx("Error: GetLongestIntronLength() not available.");
         }
         return m_Local->GetLongestIntronLength();
     }
-    void SetLongestIntronLength(int l) // for tblastn w/ linking HSPs
+    void SetLongestIntronLength(int l) // for linking HSPs with uneven gaps
     {
         if (m_Local) {
             m_Local->SetLongestIntronLength(l);
@@ -2439,6 +2439,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2004/08/16 19:46:05  dondosha
+* Reflect in comments that uneven gap linking works now not just for tblastn
+*
 * Revision 1.69  2004/07/08 20:20:02  gorelenk
 * Added missed export spec. to GetProgramFromBlastProgramType
 *
