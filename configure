@@ -3855,8 +3855,9 @@ case "$host_os:$compiler" in
    ;;
 
  *:Compaq)
-   CPPFLAGS="-D__USE_STD_IOSTREAM -distinguish_nested_enums $CPPFLAGS"
-   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
+   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
+   CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
+   DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
    case "$host_os" in
       osf*)
         # Suppress link warnings; otherwise, we get "weak symbol multiply

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.281 2004/03/31 18:06:53 ucko Exp $
+#  $Id: configure.ac,v 1.282 2004/03/31 21:40:47 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -732,8 +732,9 @@ case "$host_os:$compiler" in
    ;;
 
  *:Compaq)
-   CPPFLAGS="-D__USE_STD_IOSTREAM -distinguish_nested_enums $CPPFLAGS"
-   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
+   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
+   CXXFLAGS="-tweak -nocompress -distinguish_nested_enums $CXXFLAGS"
+   DEPFLAGS="$DEPFLAGS -distinguish_nested_enums"
    case "$host_os" in
       osf*)
         # Suppress link warnings; otherwise, we get "weak symbol multiply
