@@ -337,8 +337,8 @@ evalue_compare_hsps(const void* v1, const void* v2)
    return 0;
 }
 
-/** Comparison callback function for sorting HSPs by diagonal and removing
- * the HSPs contained in or identical to other HSPs.
+/** Comparison callback function for sorting HSPs by diagonal and flagging
+ * the HSPs contained in or identical to other HSPs for future deletion.
 */
 static int
 diag_uniq_compare_hsps(const void* v1, const void* v2)
@@ -361,13 +361,6 @@ diag_uniq_compare_hsps(const void* v1, const void* v2)
    else if (h1->context > h2->context)
       return 1;
    
-   /* If the two HSP's have same coordinates, they are equal */
-   if (h1->query.offset == h2->query.offset && 
-       h1->query.end == h2->query.end && 
-       h1->subject.offset == h2->subject.offset &&
-       h1->subject.end == h2->subject.end)
-      return 0;
-   
    /* Check if one HSP is contained in the other, if so, 
       leave only the longer one, given it has lower evalue */
    if (h1->query.offset >= h2->query.offset && 
@@ -375,19 +368,31 @@ diag_uniq_compare_hsps(const void* v1, const void* v2)
        h1->subject.offset >= h2->subject.offset && 
        h1->subject.end <= h2->subject.end && 
        h1->evalue >= h2->evalue) { 
-      *hp1 = BlastHSPFree(*hp1);
-      return 1; 
+      (*hp1)->score = 0;
    } else if (h1->query.offset <= h2->query.offset &&  
               h1->query.end >= h2->query.end &&  
               h1->subject.offset <= h2->subject.offset && 
               h1->subject.end >= h2->subject.end && 
               h1->evalue <= h2->evalue) { 
-      *hp2 = BlastHSPFree(*hp2);
-      return -1; 
+      (*hp2)->score = 0;
    }
    
    return (h1->query.offset - h1->subject.offset) -
       (h2->query.offset - h2->subject.offset);
+}
+
+static int
+null_compare_hsps(const void* v1, const void* v2)
+{
+   BlastHSP* h1,* h2;
+   
+   h1 = *((BlastHSP**) v1);
+   h2 = *((BlastHSP**) v2);
+   
+   if ((h1 && h2) || (!h1 && !h2))
+      return 0;
+   else if (!h1) return 1;
+   else return -1;
 }
 
 /** Are the two HSPs within a given diagonal distance of each other? */
@@ -403,11 +408,22 @@ BlastSortUniqHspArray(BlastHSPList* hsp_list)
    Int2 context;
    double evalue;
 
-   qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-            diag_uniq_compare_hsps);
+   qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
+         diag_uniq_compare_hsps);
+   /* Delete all HSPs that were flagged in qsort */
+   for (index = 0, new_hspcnt = 0; index < hsp_list->hspcnt; ++index) {
+      if (hsp_array[index]->score == 0) {
+         hsp_array[index] = BlastHSPFree(hsp_array[index]);
+      }
+   }      
+   /* Move all nulled out HSPs to the end */
+   qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
+         null_compare_hsps);
+
    for (index=1, new_hspcnt=0; index<hsp_list->hspcnt; index++) {
-      if (hsp_array[index]==NULL) 
-	 continue;
+      if (!hsp_array[index])
+         break;
+
       q_off = hsp_array[index]->query.offset;
       s_off = hsp_array[index]->subject.offset;
       q_end = hsp_array[index]->query.end;
