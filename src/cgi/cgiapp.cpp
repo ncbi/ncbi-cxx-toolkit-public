@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/08 14:10:16  sandomir
+* Simple output add on exitfastcgi command
+*
 * Revision 1.14  1999/06/11 20:30:26  vasilche
 * We should catch exception by reference, because catching by value
 * doesn't preserve comment string.
@@ -154,6 +157,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                 // checking for exit request
                 if ( ctx->GetRequest().GetEntries().find("exitfastcgi") !=
                      ctx->GetRequest().GetEntries().end() ) {
+                    ostr << "Content-Type: text/html\r\n\r\nDone";
                     _TRACE("CCgiApplication::Run: aborting by request");
                     FCGX_Finish();
                     break;
@@ -174,6 +178,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                          << e.what());
                 // ignore for next iteration
             }
+            
             _TRACE("CCgiApplication::Run: FINISHING");
             FCGX_Finish();
         }
