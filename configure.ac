@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.354 2005/03/08 20:50:30 ucko Exp $
+#  $Id: configure.ac,v 1.355 2005/03/10 16:11:45 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1375,8 +1375,8 @@ esac
 
 AC_CHECK_PROG(CCACHE, ccache, ccache, [])
 if test -n "$CCACHE" ; then
-   CC_WRAPPER="$CC_WRAPPER $CCACHE"
-   CXX_WRAPPER="$CXX_WRAPPER $CCACHE"
+   CC_WRAPPER="$CCACHE $CC_WRAPPER"
+   CXX_WRAPPER="$CCACHE $CXX_WRAPPER"
 fi
 
 # Note the path, since syntax is version-specific....

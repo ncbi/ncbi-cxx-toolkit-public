@@ -5136,8 +5136,8 @@ echo "${ECHO_T}no" >&6
 fi
 
 if test -n "$CCACHE" ; then
-   CC_WRAPPER="$CC_WRAPPER $CCACHE"
-   CXX_WRAPPER="$CXX_WRAPPER $CCACHE"
+   CC_WRAPPER="$CCACHE $CC_WRAPPER"
+   CXX_WRAPPER="$CCACHE $CXX_WRAPPER"
 fi
 
 # Note the path, since syntax is version-specific....
