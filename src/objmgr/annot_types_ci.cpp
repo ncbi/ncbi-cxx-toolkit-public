@@ -34,6 +34,8 @@
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -59,7 +61,9 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
         new CAnnot_Collector(type, bioseq.GetScope()))
 {
     m_DataCollector->GetSelector().CheckAnnotType(type);
-    m_DataCollector->x_Initialize(bioseq);
+    m_DataCollector->x_Initialize(bioseq,
+                                  CRange<TSeqPos>::GetWhole(),
+                                  eNa_strand_unknown);
     Rewind();
 }
 
@@ -73,6 +77,28 @@ CAnnotTypes_CI::CAnnotTypes_CI(TAnnotType type,
         new CAnnot_Collector(type, scope))
 {
     m_DataCollector->GetSelector().CheckAnnotType(type);
+    if ( loc.IsWhole() ) {
+        CBioseq_Handle bh = scope.GetBioseqHandle(loc.GetWhole());
+        if ( bh ) {
+            m_DataCollector->x_Initialize(bh,
+                                          CRange<TSeqPos>::GetWhole(),
+                                          eNa_strand_unknown);
+            Rewind();
+            return;
+        }
+    }
+    else if ( loc.IsInt() ) {
+        const CSeq_interval& seq_int = loc.GetInt();
+        CBioseq_Handle bh = scope.GetBioseqHandle(seq_int.GetId());
+        if ( bh ) {
+            CRange<TSeqPos> range(seq_int.GetFrom(), seq_int.GetTo());
+            ENa_strand strand =
+                seq_int.IsSetStrand()? seq_int.GetStrand(): eNa_strand_unknown;
+            m_DataCollector->x_Initialize(bh, range, strand);
+            Rewind();
+            return;
+        }
+    }
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
     m_DataCollector->x_Initialize(master_loc);
@@ -131,6 +157,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.125  2005/04/05 13:43:28  vasilche
+* Use optimized variant of x_Initialize().
+*
 * Revision 1.124  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *
