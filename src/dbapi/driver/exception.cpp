@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 //  CDB_Exception::
 //
 
-CDB_Exception::CDB_Exception(EType type, EDBSeverity severity, int err_code,
+CDB_Exception::CDB_Exception(EType type, EDB_Severity severity, int err_code,
                              const string& originated_from, const string& msg)
 {
     m_Type           = type;
@@ -88,7 +88,7 @@ CDB_Exception* CDB_DSEx::Clone() const
 //  CDB_RPCEx::
 //
 
-CDB_RPCEx::CDB_RPCEx(EDBSeverity severity, int err_code,
+CDB_RPCEx::CDB_RPCEx(EDB_Severity severity, int err_code,
                      const string& originated_from, const string& msg,
                      const string& proc_name, int proc_line)
     : CDB_Exception(eRPC, severity, err_code, originated_from, msg)
@@ -111,7 +111,7 @@ CDB_Exception* CDB_RPCEx::Clone() const
 //  CDB_SQLEx::
 //
 
-CDB_SQLEx::CDB_SQLEx(EDBSeverity severity, int err_code,
+CDB_SQLEx::CDB_SQLEx(EDB_Severity severity, int err_code,
                      const string& originated_from, const string& msg,
                      const string& sql_state, int batch_line)
     : CDB_Exception(eSQL, severity, err_code, originated_from, msg)
@@ -252,10 +252,10 @@ CDB_MultiEx::CDB_MultiExStorage::~CDB_MultiExStorage()
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CDBUserHandler::
+//  CDB_UserHandler::
 //
 
-CDBUserHandler::~CDBUserHandler()
+CDB_UserHandler::~CDB_UserHandler()
 {
     return;
 }
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 20:08:32  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.2  2001/09/24 19:18:38  vakatov
  * Fixed a couple of typos
  *

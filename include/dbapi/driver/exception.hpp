@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-enum EDBSeverity {
+enum EDB_Severity {
     eDB_Info,
     eDB_Warning,
     eDB_Error,
@@ -70,7 +70,7 @@ public:
 
     // access
     EType          Type()            const  { return m_Type;           }
-    EDBSeverity    Severity()        const  { return m_Severity;       }
+    EDB_Severity   Severity()        const  { return m_Severity;       }
     int            ErrCode()         const  { return m_ErrCode;        }
     const string&  OriginatedFrom()  const  { return m_OriginatedFrom; }
     const string&  Message()         const  { return m_Message;        }
@@ -83,15 +83,15 @@ public:
 
 protected:
     // constructor
-    CDB_Exception(EType type, EDBSeverity severity, int err_code,
+    CDB_Exception(EType type, EDB_Severity severity, int err_code,
                   const string& originated_from, const string& msg);
 
     // data
-    EType       m_Type;
-    EDBSeverity m_Severity;
-    int         m_ErrCode;
-    string      m_OriginatedFrom;
-    string      m_Message;
+    EType        m_Type;
+    EDB_Severity m_Severity;
+    int          m_ErrCode;
+    string       m_OriginatedFrom;
+    string       m_Message;
 };
 
 
@@ -99,7 +99,7 @@ protected:
 class CDB_DSEx : public CDB_Exception
 {
 public:
-    CDB_DSEx(EDBSeverity severity, int err_code,
+    CDB_DSEx(EDB_Severity severity, int err_code,
              const string& originated_from, const string& msg)
         : CDB_Exception(eDS, severity, err_code, originated_from, msg) {
         return;
@@ -113,7 +113,7 @@ public:
 class CDB_RPCEx : public CDB_Exception
 {
 public:
-    CDB_RPCEx(EDBSeverity severity, int err_code,
+    CDB_RPCEx(EDB_Severity severity, int err_code,
               const string& originated_from, const string& msg,
               const string& proc_name, int proc_line);
 
@@ -132,7 +132,7 @@ private:
 class CDB_SQLEx : public CDB_Exception
 {
 public:
-    CDB_SQLEx(EDBSeverity severity, int err_code,
+    CDB_SQLEx(EDB_Severity severity, int err_code,
               const string& originated_from, const string& msg,
               const string& sql_state, int batch_line);
 
@@ -178,7 +178,7 @@ public:
 class CDB_ClientEx : public CDB_Exception
 {
 public:
-    CDB_ClientEx(EDBSeverity severity, int err_code,
+    CDB_ClientEx(EDB_Severity severity, int err_code,
                  const string& originated_from, const string& msg)
         : CDB_Exception(eClient, severity, err_code, originated_from, msg) {
         return;
@@ -238,15 +238,15 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CDBUserHandler::  base class for user-defined handlers
+// CDB_UserHandler::  base class for user-defined handlers
 //
 
-class CDBUserHandler
+class CDB_UserHandler
 {
 public:
     // Return TRUE if "ex" is processed, FALSE if not (or if "ex" is NULL)
     virtual bool HandleIt(CDB_Exception* ex) = 0;
-    virtual ~CDBUserHandler();
+    virtual ~CDB_UserHandler();
 };
 
 
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 20:08:29  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.3  2001/09/27 16:46:29  vakatov
  * Non-const (was const) exception object to pass to the user handler
  *

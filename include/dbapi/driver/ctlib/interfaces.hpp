@@ -147,22 +147,24 @@ protected:
 
     virtual bool IsAlive();
 
-    virtual CDB_LangCmd*     LangCmd     (const string& lang_query,
-                                          unsigned int  nof_params = 0);
-    virtual CDB_RPCCmd*      RPC         (const string& rpc_name,
-                                          unsigned int  nof_args);
-    virtual CDB_BCPInCmd*    BCPIn       (const string& table_name,
-                                          unsigned int  nof_columns);
-    virtual CDB_CursorCmd*   Cursor      (const string& cursor_name,
-                                          const string& query,
-                                          unsigned int  nof_params,
-                                          unsigned int  batch_size = 1);
-    virtual CDB_SendDataCmd* SendDataCmd (ITDescriptor& desc,
-                                          size_t        data_size,
-                                          bool          log_it = true);
+    virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
+                                          unsigned int    nof_params = 0);
+    virtual CDB_RPCCmd*      RPC         (const string&   rpc_name,
+                                          unsigned int    nof_args);
+    virtual CDB_BCPInCmd*    BCPIn       (const string&   table_name,
+                                          unsigned int    nof_columns);
+    virtual CDB_CursorCmd*   Cursor      (const string&   cursor_name,
+                                          const string&   query,
+                                          unsigned int    nof_params,
+                                          unsigned int    batch_size = 1);
+    virtual CDB_SendDataCmd* SendDataCmd (I_ITDescriptor& desc,
+                                          size_t          data_size,
+                                          bool            log_it = true);
 
-    virtual bool SendData(ITDescriptor& desc, CDB_Image& img, bool log_it=true);
-    virtual bool SendData(ITDescriptor& desc, CDB_Text&  txt, bool log_it=true);
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
+                          bool log_it = true);
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
+                          bool log_it = true);
     virtual bool Refresh();
     virtual const string& ServerName() const;
     virtual const string& UserName()   const;
@@ -171,8 +173,8 @@ protected:
     virtual bool IsReusable() const;
     virtual const string& PoolName() const;
     virtual I_DriverContext* Context() const;
-    virtual void PushMsgHandler(CDBUserHandler* h);
-    virtual void PopMsgHandler (CDBUserHandler* h);
+    virtual void PushMsgHandler(CDB_UserHandler* h);
+    virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual void Release();
 
     virtual ~CTL_Connection();
@@ -180,7 +182,7 @@ protected:
     void DropCmd(CDB_BaseEnt& cmd);
 
 private:
-    bool x_SendData(ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
+    bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
 
     CS_CONNECTION*  m_Link;
     CTLibContext*   m_Context;
@@ -402,18 +404,18 @@ class CTL_RowResult : public I_Result
 protected:
     CTL_RowResult(CS_COMMAND* cmd);
 
-    virtual EDBResType    ResultType() const;
-    virtual unsigned int  NofItems() const;
-    virtual const char*   ItemName    (unsigned int item_num) const;
-    virtual size_t        ItemMaxSize (unsigned int item_num) const;
-    virtual EDB_Type      ItemDataType(unsigned int item_num) const;
-    virtual bool          Fetch();
-    virtual int           CurrentItemNo() const;
-    virtual CDB_Object*   GetItem(CDB_Object* item_buf = 0);
-    virtual size_t        ReadItem(void* buffer, size_t buffer_size,
-                                   bool* is_null = 0);
-    virtual ITDescriptor* GetImageOrTextDescriptor();
-    virtual bool          SkipItem();
+    virtual EDB_ResType     ResultType() const;
+    virtual unsigned int    NofItems() const;
+    virtual const char*     ItemName    (unsigned int item_num) const;
+    virtual size_t          ItemMaxSize (unsigned int item_num) const;
+    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+    virtual bool            Fetch();
+    virtual int             CurrentItemNo() const;
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual size_t          ReadItem(void* buffer, size_t buffer_size,
+                                     bool* is_null = 0);
+    virtual I_ITDescriptor* GetImageOrTextDescriptor();
+    virtual bool            SkipItem();
 
     virtual ~CTL_RowResult();
 
@@ -440,8 +442,8 @@ class CTL_ParamResult : public CTL_RowResult
 protected:
     CTL_ParamResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
 
-    virtual EDBResType ResultType() const {
-        return eParamResult;
+    virtual EDB_ResType ResultType() const {
+        return eDB_ParamResult;
     }
 };
 
@@ -459,8 +461,8 @@ class CTL_ComputeResult : public CTL_RowResult
 protected:
     CTL_ComputeResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
 
-    virtual EDBResType ResultType() const {
-        return eComputeResult;
+    virtual EDB_ResType ResultType() const {
+        return eDB_ComputeResult;
     }
 };
 
@@ -473,8 +475,8 @@ class CTL_StatusResult :  public CTL_RowResult
 protected:
     CTL_StatusResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
 
-    virtual EDBResType ResultType() const {
-        return eStatusResult;
+    virtual EDB_ResType ResultType() const {
+        return eDB_StatusResult;
     }
 };
 
@@ -491,8 +493,8 @@ class CTL_CursorResult :  public CTL_RowResult
 protected:
     CTL_CursorResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
 
-    virtual EDBResType ResultType() const {
-        return eCursorResult;
+    virtual EDB_ResType ResultType() const {
+        return eDB_CursorResult;
     }
 
     virtual ~CTL_CursorResult();
@@ -505,7 +507,7 @@ protected:
 //  CTL_ITDescriptor::
 //
 
-class CTL_ITDescriptor : public ITDescriptor
+class CTL_ITDescriptor : public I_ITDescriptor
 {
     friend class CTL_RowResult;
     friend class CTL_Connection;
@@ -551,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2001/09/27 20:08:30  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.4  2001/09/27 15:41:28  soussov
  * CTL_Connection::Release() added
  *

@@ -177,7 +177,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 }
 
 
-CDB_SendDataCmd* CTL_Connection::SendDataCmd(ITDescriptor& descr_in,
+CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                              size_t data_size, bool log_it)
 {
     if ( !data_size ) {
@@ -223,13 +223,13 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(ITDescriptor& descr_in,
 }
 
 
-bool CTL_Connection::SendData(ITDescriptor& desc, CDB_Image& img, bool log_it)
+bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
 {
     return x_SendData(desc, img, log_it);
 }
 
 
-bool CTL_Connection::SendData(ITDescriptor& desc, CDB_Text& txt, bool log_it)
+bool CTL_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
 {
     return x_SendData(desc, txt, log_it);
 }
@@ -309,13 +309,13 @@ I_DriverContext* CTL_Connection::Context() const
 }
 
 
-void CTL_Connection::PushMsgHandler(CDBUserHandler* h)
+void CTL_Connection::PushMsgHandler(CDB_UserHandler* h)
 {
     m_MsgHandlers.Push(h);
 }
 
 
-void CTL_Connection::PopMsgHandler(CDBUserHandler* h)
+void CTL_Connection::PopMsgHandler(CDB_UserHandler* h)
 {
     m_MsgHandlers.Pop(h);
 }
@@ -349,7 +349,7 @@ void CTL_Connection::DropCmd(CDB_BaseEnt& cmd)
 }
 
 
-bool CTL_Connection::x_SendData(ITDescriptor& descr_in, CDB_Stream& img,
+bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                                 bool log_it)
 {
     CS_INT size = (CS_INT) img.Size();
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 20:08:33  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.3  2001/09/27 15:42:09  soussov
  * CTL_Connection::Release() added
  *

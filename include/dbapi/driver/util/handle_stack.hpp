@@ -46,8 +46,8 @@ public:
     CDBHandlerStack(const CDBHandlerStack& s);
     CDBHandlerStack& operator= (const CDBHandlerStack& s);
 
-    void Push(CDBUserHandler* h);
-    void Pop (CDBUserHandler* h, bool last = true);
+    void Push(CDB_UserHandler* h);
+    void Pop (CDB_UserHandler* h, bool last = true);
 
     void PostMsg(CDB_Exception* ex);
 
@@ -56,9 +56,9 @@ public:
     }
     
 private:
-    CDBUserHandler** m_Stack;
-    int              m_TopItem;
-    int              m_Room;
+    CDB_UserHandler** m_Stack;
+    int               m_TopItem;
+    int               m_Room;
 };
 
 
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 20:08:31  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.2  2001/09/27 16:46:31  vakatov
  * Non-const (was const) exception object to pass to the user handler
  *

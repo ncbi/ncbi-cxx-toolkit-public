@@ -38,10 +38,10 @@ BEGIN_NCBI_SCOPE
 
 
 ////////////////////////////////////////////////////////////////////////////
-//  ITDescriptor::
+//  I_ITDescriptor::
 //
 
-ITDescriptor::~ITDescriptor()
+I_ITDescriptor::~I_ITDescriptor()
 {
     return;
 }
@@ -122,22 +122,22 @@ I_Result::~I_Result()
 //  I_DriverContext::
 //
 
-void I_DriverContext::PushCntxMsgHandler(CDBUserHandler* h)
+void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h)
 {
     m_CntxHandlers.Push(h);
 }
 
-void I_DriverContext::PopCntxMsgHandler(CDBUserHandler* h)
+void I_DriverContext::PopCntxMsgHandler(CDB_UserHandler* h)
 {
     m_CntxHandlers.Pop(h);
 }
 
-void I_DriverContext::PushDefConnMsgHandler(CDBUserHandler* h)
+void I_DriverContext::PushDefConnMsgHandler(CDB_UserHandler* h)
 {
     m_ConnHandlers.Push(h);
 }
 
-void I_DriverContext::PopDefConnMsgHandler(CDBUserHandler* h)
+void I_DriverContext::PopDefConnMsgHandler(CDB_UserHandler* h)
 {
     m_ConnHandlers.Pop(h);
 }
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 20:08:32  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.3  2001/09/26 23:23:29  vakatov
  * Moved the err.message handlers' stack functionality (generic storage
  * and methods) to the "abstract interface" level.

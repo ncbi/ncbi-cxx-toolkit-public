@@ -78,9 +78,9 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
 }
 
 
-EDBResType CTL_RowResult::ResultType() const
+EDB_ResType CTL_RowResult::ResultType() const
 {
-    return eRowResult;
+    return eDB_RowResult;
 }
 
 
@@ -770,7 +770,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
-ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
+I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
 {
     if ((unsigned int) m_CurrItem >= m_NofCols  ||  m_CurrItem == -1) {
         return 0;
@@ -881,6 +881,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 20:08:33  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.2  2001/09/26 23:23:31  vakatov
  * Moved the err.message handlers' stack functionality (generic storage
  * and methods) to the "abstract interface" level.

@@ -68,15 +68,15 @@ public:
                                     unsigned int  nof_params,
                                     unsigned int  batch_size = 1);
     // "Send-data" command
-    virtual CDB_SendDataCmd* SendDataCmd(ITDescriptor& desc,
-                                         size_t        data_size, 
-                                         bool          log_it = true);
+    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
+                                         size_t          data_size, 
+                                         bool            log_it = true);
 
     // Shortcut to send text and image to the server without using the
     // "Send-data" command (SendDataCmd)
-    virtual bool SendData(ITDescriptor& desc, CDB_Text& txt,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Text& txt,
                           bool log_it = true);
-    virtual bool SendData(ITDescriptor& desc, CDB_Image& img,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
                           bool log_it = true);
 
     // Reset the connection to the "ready" state (cancel all active commands)
@@ -100,10 +100,10 @@ public:
     virtual I_DriverContext* Context() const;
 
     // Put the message handler into message handler stack
-    virtual void PushMsgHandler(CDBUserHandler* h);
+    virtual void PushMsgHandler(CDB_UserHandler* h);
 
     // Remove the message handler (and all above it) from the stack
-    virtual void PopMsgHandler(CDBUserHandler* h);
+    virtual void PopMsgHandler(CDB_UserHandler* h);
 
     // Destructor
     virtual ~CDB_Connection();
@@ -127,7 +127,7 @@ class CDB_Result : public I_Result
 {
 public:
     // Get type of the result
-    virtual EDBResType ResultType() const;
+    virtual EDB_ResType ResultType() const;
 
     // Get # of items (columns) in the result
     virtual unsigned int NofItems() const;
@@ -169,7 +169,7 @@ public:
     // Return NULL if this result does not (or cannot) have img/text descriptor.
     // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
     //       before calling this method!
-    virtual ITDescriptor* GetImageOrTextDescriptor();
+    virtual I_ITDescriptor* GetImageOrTextDescriptor();
 
     // Skip result item
     virtual bool SkipItem();
@@ -414,6 +414,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/27 20:08:29  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.1  2001/09/21 23:39:52  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

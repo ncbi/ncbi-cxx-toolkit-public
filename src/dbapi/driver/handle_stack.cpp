@@ -39,25 +39,25 @@ BEGIN_NCBI_SCOPE
 CDBHandlerStack::CDBHandlerStack(size_t n)
 {
     m_Room    = (n < 8) ? 8 : (int) n;
-    m_Stack   = new CDBUserHandler* [m_Room];
+    m_Stack   = new CDB_UserHandler* [m_Room];
     m_TopItem = 0;
 }
 
 
-void CDBHandlerStack::Push(CDBUserHandler* h)
+void CDBHandlerStack::Push(CDB_UserHandler* h)
 {
     if (m_TopItem >= m_Room) {
-        CDBUserHandler** t = m_Stack;
+        CDB_UserHandler** t = m_Stack;
         m_Room += m_Room / 2;
-        m_Stack = new CDBUserHandler* [m_Room];
-        memcpy(m_Stack, t, m_TopItem * sizeof(CDBUserHandler*));
+        m_Stack = new CDB_UserHandler* [m_Room];
+        memcpy(m_Stack, t, m_TopItem * sizeof(CDB_UserHandler*));
         delete [] t;
     }
     m_Stack[m_TopItem++] = h;
 }
 
 
-void CDBHandlerStack::Pop(CDBUserHandler* h, bool last)
+void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 {
     int i;
 
@@ -82,8 +82,8 @@ void CDBHandlerStack::Pop(CDBUserHandler* h, bool last)
 
 CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s)
 {
-    m_Stack = new CDBUserHandler* [s.m_Room];
-    memcpy(m_Stack, s.m_Stack, s.m_TopItem * sizeof(CDBUserHandler*));
+    m_Stack = new CDB_UserHandler* [s.m_Room];
+    memcpy(m_Stack, s.m_Stack, s.m_TopItem * sizeof(CDB_UserHandler*));
     m_TopItem = s.m_TopItem;
     m_Room    = s.m_Room;
 }
@@ -93,10 +93,10 @@ CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 {
     if (m_Room < s.m_TopItem) {
         delete [] m_Stack;
-        m_Stack = new CDBUserHandler* [s.m_Room];
+        m_Stack = new CDB_UserHandler* [s.m_Room];
         m_Room = s.m_Room;
     }
-    memcpy(m_Stack, s.m_Stack, s.m_TopItem * sizeof(CDBUserHandler*));
+    memcpy(m_Stack, s.m_Stack, s.m_TopItem * sizeof(CDB_UserHandler*));
     m_TopItem = s.m_TopItem;
     return *this;
 }
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/09/27 20:08:32  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.2  2001/09/27 16:46:32  vakatov
  * Non-const (was const) exception object to pass to the user handler
  *

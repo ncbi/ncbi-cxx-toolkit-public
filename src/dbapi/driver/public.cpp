@@ -96,20 +96,20 @@ CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
     return m_Connect->Cursor(cursor_name, query, nof_params, batch_size);
 }
 
-CDB_SendDataCmd* CDB_Connection::SendDataCmd(ITDescriptor& desc,
+CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
                                              size_t data_size, bool log_it)
 {
     s_CheckConnection(m_Connect, "SendDataCmd");
     return m_Connect->SendDataCmd(desc, data_size, log_it);
 }
 
-bool CDB_Connection::SendData(ITDescriptor& desc, CDB_Text& txt, bool log_it)
+bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
 {
     s_CheckConnection(m_Connect, "SendData(txt)");
     return m_Connect->SendData(desc, txt, log_it);
 }
 
-bool CDB_Connection::SendData(ITDescriptor& desc, CDB_Image& img, bool log_it)
+bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
 {
     s_CheckConnection(m_Connect, "SendData(image)");
     return m_Connect->SendData(desc, img, log_it);
@@ -163,13 +163,13 @@ I_DriverContext* CDB_Connection::Context() const
     return m_Connect->Context();
 }
 
-void CDB_Connection::PushMsgHandler(CDBUserHandler* h)
+void CDB_Connection::PushMsgHandler(CDB_UserHandler* h)
 {
     s_CheckConnection(m_Connect, "PushMsgHandler");
     m_Connect->PushMsgHandler(h);
 }
 
-void CDB_Connection::PopMsgHandler(CDBUserHandler* h)
+void CDB_Connection::PopMsgHandler(CDB_UserHandler* h)
 {
     s_CheckConnection(m_Connect, "PopMsgHandler");
     m_Connect->PopMsgHandler(h);
@@ -211,7 +211,7 @@ inline void s_CheckResult(I_Result* res, const string& method_name)
 }
 
 
-EDBResType CDB_Result::ResultType() const
+EDB_ResType CDB_Result::ResultType() const
 {
     s_CheckResult(m_Res, "ResultType");
     return m_Res->ResultType();
@@ -265,7 +265,7 @@ size_t CDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
     return m_Res->ReadItem(buffer, buffer_size, is_null);
 }
 
-ITDescriptor* CDB_Result::GetImageOrTextDescriptor()
+I_ITDescriptor* CDB_Result::GetImageOrTextDescriptor()
 {
     s_CheckResult(m_Res, "GetImageOrTextDescriptor");
     return m_Res->GetImageOrTextDescriptor();
@@ -669,6 +669,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/27 20:08:32  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.1  2001/09/21 23:40:00  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)

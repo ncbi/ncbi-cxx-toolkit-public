@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 //  C_DefCntxErrHandler::
 //
 
-class C_DefCntxErrHandler : public CDBUserHandler
+class C_DefCntxErrHandler : public CDB_UserHandler
 {
 public:
     virtual bool HandleIt(CDB_Exception* ex);
@@ -422,7 +422,7 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 
     if (r == CS_SUCCEED  &&  p_pot != 0  &&  p_pot->NofItems() > 0) {
         CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
-        EDBSeverity sev = eDB_Error;
+        EDB_Severity sev = eDB_Error;
         if (msg->severity == CS_SV_INFORM) {
             sev = eDB_Info;
         }
@@ -565,7 +565,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
         hs->PostMsg(&dl);
     }
     else {
-        EDBSeverity sev =
+        EDB_Severity sev =
             (msg->severity < 10) ? eDB_Info :
             (msg->severity = 10) ? eDB_Warning :
             (msg->severity < 16) ? eDB_Error :
@@ -843,6 +843,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 20:08:33  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.3  2001/09/27 16:46:34  vakatov
  * Non-const (was const) exception object to pass to the user handler
  *

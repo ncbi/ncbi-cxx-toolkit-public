@@ -66,32 +66,32 @@ class CDB_SendDataCmd;
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  ITDescriptor::
+//  I_ITDescriptor::
 //
 // Image or Text descriptor.
 //
 
-class ITDescriptor
+class I_ITDescriptor
 {
 public:
-    virtual ~ITDescriptor();
+    virtual ~I_ITDescriptor();
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  EDBResType::
+//  EDB_ResType::
 //
 // Type of result set
 //
 
-enum EDBResType {
-    eRowResult,
-    eParamResult,
-    eComputeResult,
-    eStatusResult,
-    eCursorResult
+enum EDB_ResType {
+    eDB_RowResult,
+    eDB_ParamResult,
+    eDB_ComputeResult,
+    eDB_StatusResult,
+    eDB_CursorResult
 };
 
 
@@ -304,7 +304,7 @@ class I_Result : public CDB_BaseEnt
 {
 protected:
     // Get type of the result
-    virtual EDBResType ResultType() const = 0;
+    virtual EDB_ResType ResultType() const = 0;
 
     // Get # of items (columns) in the result
     virtual unsigned int NofItems() const = 0;
@@ -345,7 +345,7 @@ protected:
     // Return NULL if this result does not (or cannot) have img/text descriptor.
     // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
     //       before calling this method!
-    virtual ITDescriptor* GetImageOrTextDescriptor() = 0;
+    virtual I_ITDescriptor* GetImageOrTextDescriptor() = 0;
 
     // Skip result item
     virtual bool SkipItem() = 0;
@@ -402,17 +402,17 @@ public:
 
     // Add message handler "h" to process 'context-wide' (not bound 
     // to any particular connection) error messages.
-    virtual void PushCntxMsgHandler(CDBUserHandler* h);
+    virtual void PushCntxMsgHandler(CDB_UserHandler* h);
 
     // Remove message handler "h" and all handlers above it in the stack
-    virtual void PopCntxMsgHandler(CDBUserHandler* h);
+    virtual void PopCntxMsgHandler(CDB_UserHandler* h);
 
     // Add `per-connection' err.message handler "h" to the stack of default
     // handlers which are inherited by all newly created connections.
-    virtual void PushDefConnMsgHandler(CDBUserHandler* h);
+    virtual void PushDefConnMsgHandler(CDB_UserHandler* h);
 
     // Remove `per-connection' mess. handler "h" and all above it in the stack.
-    virtual void PopDefConnMsgHandler(CDBUserHandler* h);
+    virtual void PopDefConnMsgHandler(CDB_UserHandler* h);
 
     virtual ~I_DriverContext();
 
@@ -471,14 +471,14 @@ protected:
                                   unsigned int  nof_params,
                                   unsigned int  batch_size = 1) = 0;
     // "Send-data" command
-    virtual CDB_SendDataCmd* SendDataCmd(ITDescriptor& desc, size_t data_size,
+    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc, size_t data_size,
                                          bool log_it = true) = 0;
 
     // Shortcut to send text and image to the server without using the
     // "Send-data" command (SendDataCmd)
-    virtual bool SendData(ITDescriptor& desc, CDB_Text& txt,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Text& txt,
                           bool log_it = true) = 0;
-    virtual bool SendData(ITDescriptor& desc, CDB_Image& img,
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
                           bool log_it = true) = 0;
 
     // Reset the connection to the "ready" state (cancel all active commands)
@@ -502,10 +502,10 @@ protected:
     virtual I_DriverContext* Context() const = 0;
 
     // Put the message handler into message handler stack
-    virtual void PushMsgHandler(CDBUserHandler* h) = 0;
+    virtual void PushMsgHandler(CDB_UserHandler* h) = 0;
 
     // Remove the message handler (and all above it) from the stack
-    virtual void PopMsgHandler(CDBUserHandler* h) = 0;
+    virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
 
     // These methods to allow the children of I_Connection to create
     // various command-objects
@@ -529,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 20:08:29  vakatov
+ * Added "DB_" (or "I_") prefix where it was missing
+ *
  * Revision 1.3  2001/09/26 23:23:26  vakatov
  * Moved the err.message handlers' stack functionality (generic storage
  * and methods) to the "abstract interface" level.
