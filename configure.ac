@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.13 2001/10/12 20:09:47 ucko Exp $
+#  $Id: configure.ac,v 1.14 2001/10/12 22:29:43 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1975,7 +1975,7 @@ fi
 
 ## `app' projects
 
-if test "$with_app" != "yes" ; then
+if test "$with_app" = "no" ; then
    NoConfProjects="$NoConfProjects app"
 fi
 
@@ -1987,7 +1987,7 @@ if test ! -f ${srcdir}/src/app/Makefile.in  -o  \
    with_app="no"
 fi
 
-if test "$with_app" = "yes"  &&  test -n "$objects" ; then
+if test "$with_app" = "yes" ; then
    WithProjects="$WithProjects app"
    app="app"
 else

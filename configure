@@ -6133,7 +6133,7 @@ fi
 
 ## `app' projects
 
-if test "$with_app" != "yes" ; then
+if test "$with_app" = "no" ; then
    NoConfProjects="$NoConfProjects app"
 fi
 
@@ -6147,7 +6147,7 @@ echo "$as_me: error: \"--with-app:  APP sources are missing\"" >&2;}
    with_app="no"
 fi
 
-if test "$with_app" = "yes"  &&  test -n "$objects" ; then
+if test "$with_app" = "yes" ; then
    WithProjects="$WithProjects app"
    app="app"
 else
