@@ -34,8 +34,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.11  2000/08/28 16:21:05  golikov
-* Added DeleteElements for multimap with Compare class
+* Revision 1.12  2000/08/29 18:32:38  vakatov
+* Rollback R1.11 to R1.10
 *
 * Revision 1.10  2000/07/27 16:05:25  golikov
 * Added DeleteElements for multimap
@@ -249,18 +249,6 @@ template<class Key, class Element>
 inline void DeleteElements(map<Key, Element*>& m)
 {
     for ( typename map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
-        delete i->second;
-    }
-	m.clear();
-}
-
-// delete all elements from map containing pointers
-// clear container afterwards
-template<class Key, class Element, class Compare>
-inline void DeleteElements(map<Key, Element*, Compare>& m)
-{
-    for ( typename map<Key, Element*, Compare>::iterator i = m.begin();
-          i != m.end(); ++i ) {
         delete i->second;
     }
 	m.clear();
