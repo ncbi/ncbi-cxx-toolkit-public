@@ -131,7 +131,7 @@ private:
 };
 
 
-class NCBI_XUTIL_EXPORT CResultByteSourceReader : public CByteSourceReader
+class NCBI_XOBJMGR_EXPORT CResultByteSourceReader : public CByteSourceReader
 {
 public:
     CResultByteSourceReader(CDB_Result* result);
@@ -150,6 +150,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2003/04/15 16:31:37  dicuccio
+* Placed CResultByteSourceReader in XOBJMGR Win32 export namespace (was
+* erroneously in XUTIL)
+*
 * Revision 1.2  2003/04/15 15:30:14  vasilche
 * Added include <memory> when needed.
 * Removed buggy buffer in printing methods.
