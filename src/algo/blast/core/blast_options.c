@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.54  2003/08/26 21:53:33  madden
+ * Protein alphabet is 26 chars, not 25
+ *
  * Revision 1.53  2003/08/11 15:01:59  dondosha
  * Added algo/blast/core to all #included headers
  *
@@ -806,7 +809,7 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptions* *options)
    
    if (program_number != blast_type_blastn) {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
-      (*options)->alphabet_size = 25;
+      (*options)->alphabet_size = 26;
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
       if (program_number == blast_type_blastp)
