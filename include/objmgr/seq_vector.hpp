@@ -90,6 +90,7 @@ public:
     // Fill the buffer string with the sequence data for the interval
     // [start, stop).
     void GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const;
+    void GetSeqData(const_iterator start, const_iterator stop, string& buffer) const;
 
     typedef CSeq_inst::TMol TMol;
 
@@ -116,6 +117,7 @@ public:
     TResidue GetGapChar(void) const;
 
     bool CanGetRange(TSeqPos from, TSeqPos to) const;
+    bool CanGetRange(const_iterator from, const_iterator to) const;
 
     const_iterator begin(void) const;
     const_iterator end(void) const;
@@ -224,6 +226,14 @@ bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
 
 
 inline
+bool CSeqVector::CanGetRange(const_iterator from, const_iterator to) const
+{
+    return m_SeqMap->CanResolveRange(
+        m_Scope, from.GetPos(), to.GetPos(), m_Strand);
+}
+
+
+inline
 CSeqVector::TMol CSeqVector::GetSequenceType(void) const
 {
     return m_Mol;
@@ -251,12 +261,23 @@ void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 }
 
 
+inline
+void CSeqVector::GetSeqData(const_iterator start, const_iterator stop, string& buffer) const
+{
+    m_Iterator.GetSeqData(start.GetPos(), stop.GetPos(), buffer);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/12/02 16:42:49  grichenk
+* Fixed GetSeqData to return empty string if start > stop.
+* Added GetSeqData(const_iterator, const_iterator, string).
+*
 * Revision 1.46  2003/10/24 19:28:12  vasilche
 * Added implementation of CSeqVector::empty().
 *

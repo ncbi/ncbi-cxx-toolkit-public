@@ -295,6 +295,10 @@ inline
 void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 {
     SetPos(start);
+    if (start > stop) {
+        buffer.erase();
+        return;
+    }
     GetSeqData(buffer, stop - start);
 }
 
@@ -313,6 +317,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/12/02 16:42:50  grichenk
+* Fixed GetSeqData to return empty string if start > stop.
+* Added GetSeqData(const_iterator, const_iterator, string).
+*
 * Revision 1.15  2003/10/08 14:16:55  vasilche
 * Removed circular reference CSeqVector <-> CSeqVector_CI.
 *
