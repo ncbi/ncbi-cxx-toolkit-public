@@ -17,8 +17,8 @@
 
 echo "[`date`]"
 
-cvs_location=`echo '$Source$' | sed "s%\$\Source: *\([^$][^$]*\)\$.*%\1%"`
-cvs_revision=`echo '$Revision$' | sed "s%\$\Revision: *\([^$][^$]*\)\$.*%\1%"`
+cvs_location=`echo '$Source$' | sed "s%\$[S]ource: *\([^$][^$]*\)\$.*%\1%"`
+cvs_revision=`echo '$Revision$' | sed "s%\$[R]evision: *\([^$][^$]*\)\$.*%\1%"`
 
 script_name=`basename $0`
 script_dir=`dirname $0`
@@ -38,7 +38,7 @@ Usage()
 {
   cat <<EOF 1>&2
 Usage:
-   $script_name <install_dir> [--without-bin] [--srcdir=DIR]
+   $script_name <install_dir> [--without-bin] [--srcdir=DIR] [--drop-suffix]
 
 Synopsis:
    Install NCBI C++ build tree -- built libs, apps, and configured headers
@@ -52,6 +52,9 @@ Arguments:
    --without-bin  -- do not install executables (from "bin/" dir)
    --srcdir=DIR   -- required if <install_dir> is an absolute path to a dir,
                      which (or whose parent) is not a NCBI C++ top source dir
+   --drop-suffix  -- when adjusting paths embedded in makefiles, replace
+                     directory names of the form "c++*" (e.g. "c++.new")
+                     with "c++" to allow for more graceful switch-overs.
 
 Script's:  CVS location/revision, run directory, and run command:
    $cvs_location | R$cvs_revision
@@ -60,6 +63,7 @@ Script's:  CVS location/revision, run directory, and run command:
 
 ERROR:  $1
 EOF
+# This comment supplies another ' to work around an emacs highlighting bug.
 
   kill $$
   exit 1
@@ -76,6 +80,7 @@ for x_arg in "$@" ; do
     --without-bin )  with_bin="no" ;;
     --move        )  with_move="yes" ;;
     --srcdir=*    )  new_srcdir=`echo "$x_arg" | sed 's%--srcdir=%%'` ;;
+    --drop-suffix )  extra_sed='s%/c[+][+][^/ '\''"]*%/c++%g' ;;
     * )  Usage "Unknown argument \"$x_arg\""
   esac
 done
@@ -203,6 +208,7 @@ for f in $files ; do
       s%^ *BINCOPY *=.*%BINCOPY = @:%;
       s%^ *BINTOUCH *=.*%BINTOUCH = @:%;
       s%^\(old_srcdir='\''\).*\('\''\) *$%\1'$new_srcdir'\2%
+      '"$extra_sed"'
    ' "$script_dir/$f" > "$install_builddir/$f"
 
    test $? -eq 0  || Usage "Failed to copy (w/adjustment) $install_builddir/$f"
