@@ -42,7 +42,9 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/embl_formatter.hpp>
+#include <objtools/format/gff_formatter.hpp>
 #include <objtools/format/context.hpp>
+#include <objtools/format/flat_expt.hpp>
 #include "utils.hpp"
 
 
@@ -60,19 +62,20 @@ CFlatItemFormatter* CFlatItemFormatter::New(TFormat format)
 {
     switch ( format ) {
     case CFlatFileGenerator::eFormat_GenBank:
-        //case CFlatFileGenerator<>::eFormat_GBSeq:
-        //case CFlatFileGenerator<>::eFormat_Index:
         return new CGenbankFormatter;
         
     case CFlatFileGenerator::eFormat_EMBL:
         return new CEmblFormatter;
-        
+
+    case CFlatFileGenerator::eFormat_GFF:
+        return new CGFFFormatter;
+
     case CFlatFileGenerator::eFormat_DDBJ:
-        //return new CDdbjGatherItems;
-        break;
-        
+    case CFlatFileGenerator::eFormat_GBSeq:
+    case CFlatFileGenerator::eFormat_FTable:
     default:
-        // Throw exception - unrecognized format
+        NCBI_THROW(CFlatException, eNotSupported, 
+            "This format is currently not supported");
         break;
     }
 
@@ -223,6 +226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:17:42  shomrat
+* added support for GFF formatter
+*
 * Revision 1.2  2003/12/18 17:43:35  shomrat
 * context.hpp moved
 *
