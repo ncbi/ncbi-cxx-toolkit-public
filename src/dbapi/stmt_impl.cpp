@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2003/06/16 19:43:58  kholodov
+* Added: SQL command logging
+*
 * Revision 1.10  2002/12/16 18:56:50  kholodov
 * Fixed: memory leak in CStatement object
 *
@@ -163,6 +166,7 @@ void CStatement::Execute(const string& sql)
 
     SetFailed(false);
 
+    _TRACE("Sending SQL: " + sql);
     m_cmd = m_conn->GetCDB_Connection()->LangCmd(sql, m_params.size());
 
     ExecuteLast();
