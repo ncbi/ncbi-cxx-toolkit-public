@@ -43,6 +43,8 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
                                    char delim, char delim2)
 {
     CT_INT_TYPE ch;
+    char        buf[1024];
+    SIZE_TYPE   pos = 0;
 
     IOS_BASE::fmtflags f = is.flags();
     is.unsetf(IOS_BASE::skipws);
@@ -73,9 +75,14 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
             is.clear(NcbiFailbit | is.rdstate());      
             break;
         }
-        
-        str.append(1, CT_TO_CHAR_TYPE(ch));
+
+        buf[pos++] = CT_TO_CHAR_TYPE(ch);
+        if (pos == sizeof(buf)) {
+            str.append(buf, pos);
+            pos = 0;
+        }
     }
+    str.append(buf, pos);
     if (ch == EOF) 
         is.clear(NcbiEofbit | is.rdstate());      
     if ( !i )
@@ -94,7 +101,20 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 {
 #if !defined(NCBI_USE_OLD_IOSTREAM)
-    return getline(is, str, delim);
+    // return getline(is, str, delim); // slow -- appends chars individually
+    char buf[1024];
+    str.erase();
+    while (is.good()) {
+        CT_INT_TYPE nextc = is.get();
+        if (CT_EQ_INT_TYPE(nextc, CT_EOF) 
+            ||  CT_EQ_INT_TYPE(nextc, CT_TO_INT_TYPE(delim))) {
+            break;
+        }
+        is.putback(nextc);
+        is.get(buf, sizeof(buf), delim);
+        str.append(buf, is.gcount());
+    }
+    return is;
 #else
     return s_NcbiGetline(is, str, delim, delim);
 #endif /* ndef!else NCBI_USE_OLD_IOSTREAM */
@@ -340,6 +360,10 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/08/25 21:14:58  ucko
+ * [s_]NcbiGetline: take care to append characters to str in bulk rather
+ * than one at a time, which can be pretty inefficient.
+ *
  * Revision 1.25  2003/08/19 17:06:12  ucko
  * Actually conditionalize the Windows-specific operator<<....
  *
