@@ -153,20 +153,29 @@ public:
     TNumseg GetNumberOfInsertedSegmentsOnRight(TNumrow row, TNumseg seg) const;
     TNumseg GetNumberOfInsertedSegmentsOnLeft (TNumrow row, TNumseg seg) const;
 
-    //Position mapping funcitons
+    //
+    // Position mapping funcitons
+    // 
+    // Note: Some of the mapping functions have optional parameters
+    //       ESearchDirection dir and bool try_reverse_dir 
+    //       which are used in case an exact match is not found.
+    //       If nothing is found in the ESearchDirection dir and 
+    //       try_reverse_dir == true will search in the opposite dir.
+
     TNumseg       GetSeg                 (TSeqPos aln_pos)              const;
     // if seq_pos falls outside the seq range or into an unaligned region
-    // and dir is provided, will return the first seg in according to dir;
-    // if still nothing is found will reverse dir if try_reverse_dir is set
+    // and dir is provided, will return the first seg in according to dir
     TNumseg       GetRawSeg              (TNumrow row, TSeqPos seq_pos,
                                           ESearchDirection dir = eNone,
                                           bool try_reverse_dir = true) const;
-    TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos) const;
+    // if seq_pos is outside the seq range or within an unaligned region or
+    // within an insert dir/try_reverse_dir will be used
+    TSignedSeqPos GetAlnPosFromSeqPos    (TNumrow row, TSeqPos seq_pos,
+                                          ESearchDirection dir = eNone,
+                                          bool try_reverse_dir = true) const;
     TSignedSeqPos GetSeqPosFromSeqPos    (TNumrow for_row,
                                           TNumrow row, TSeqPos seq_pos) const;
-    // if seq pos is a gap, will search (if direction specified) 
-    // in the neighbouring segments; if still none found will reverse direction
-    // if try_reverse_dir is set
+    // if seq pos is a gap, will use dir/try_reverse_dir
     TSignedSeqPos GetSeqPosFromAlnPos    (TNumrow for_row,
                                           TSeqPos aln_pos,
                                           ESearchDirection dir = eNone,
@@ -568,6 +577,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/03/07 17:30:14  todorov
+* + ESearchDirection dir, bool try_reverse_dir for GetAlnPosFromSeqPos
+*
 * Revision 1.17  2003/03/04 16:18:58  todorov
 * Added advance search options for GetRawSeg
 *

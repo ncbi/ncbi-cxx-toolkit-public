@@ -330,22 +330,69 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
 }
     
 
-TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos) const
+TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
+                                           ESearchDirection dir,
+                                           bool try_reverse_dir) const
 {
-    TNumseg raw_seg = GetRawSeg(row, seq_pos);
+    TNumrow dim = m_DS->GetDim();
+
+    TNumseg raw_seg = GetRawSeg(row, seq_pos, dir, try_reverse_dir);
     if (raw_seg < 0) { // out of seq range
         return -1;
     }
+
+    TSeqPos start = m_DS->GetStarts()[raw_seg * dim + row];
+    TSeqPos len   = m_DS->GetLens()[raw_seg];
+    TSeqPos stop  = start + len -1;
+    bool    plus  = IsPositiveStrand(row);
+
     CNumSegWithOffset seg = x_GetSegFromRawSeg(raw_seg);
-    if (seg.GetOffset()) {
-        return -1; // it is offset
+
+    if (dir == eNone) {
+        if (seg.GetOffset()) {
+            // seq_pos is within an insert
+            return -1;
+        } 
     } else {
-        TSeqPos delta
-            = seq_pos - m_DS->GetStarts()[raw_seg * m_DS->GetDim() + row];
-        return (m_AlnStarts[seg.GetAlnSeg()]
-                + (IsPositiveStrand(row) ? delta
-                   : (m_DS->GetLens()[raw_seg] - 1 - delta)));
-    }
+        // check if within unaligned region or an insert
+
+        if ((plus ? seq_pos < start : seq_pos > stop)  ||
+            seg.GetOffset()  &&  
+            (dir == eRight  ||
+             dir == (plus ? eForward : eBackwards))) {
+
+            // seek the nearest alnpos on the right
+            if (seg.GetAlnSeg() < GetNumSegs() - 1) {
+                return GetAlnStart(seg.GetAlnSeg() + 1);
+            } else if (try_reverse_dir) {
+                return GetAlnStop(seg.GetAlnSeg());
+            } else {
+                return -1;
+            }
+
+        }
+        if ((plus ? seq_pos > stop : seq_pos < start)  ||
+            seg.GetOffset()  &&
+            (dir == eLeft  ||
+             dir == (plus ? eBackwards : eForward))) {
+            
+            // seek the nearest alnpos on left
+            if (seg.GetAlnSeg() >= 0) {
+                return GetAlnStop(seg.GetAlnSeg());
+            } else if (try_reverse_dir) {
+                return GetAlnStart(seg.GetAlnSeg() + 1);
+            } else {
+                return -1;
+            }
+
+        }
+    } 
+
+    // main case: seq_pos is within an alnseg
+    //assert(seq_pos >= start  &&  seq_pos <= stop);
+    TSeqPos delta = seq_pos - start;
+    return m_AlnStarts[seg.GetAlnSeg()]
+        + (plus ? delta : len - 1 - delta);
 }
 
 TSignedSeqPos CAlnMap::GetSeqPosFromAlnPos(TNumrow for_row,
@@ -801,6 +848,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/03/07 17:30:26  todorov
+* + ESearchDirection dir, bool try_reverse_dir for GetAlnPosFromSeqPos
+*
 * Revision 1.25  2003/03/04 16:19:05  todorov
 * Added advance search options for GetRawSeg
 *
