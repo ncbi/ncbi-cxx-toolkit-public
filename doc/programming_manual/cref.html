@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Smart Pointers: the CRef Class</title>
+  </head>
+
+  <body bgcolor = white>
+    <h1>Smart pointers, <i>auto_ptrs</i>, and the <i>CRef</i> Class</h1>
+
+C programmers are well-acquainted with the advantages and pitfalls of using pointers. As is often 
+the case, the good news is also the bad news: 
+<ul>
+<li> memory can be dynamically allocated as needed, but may not be deallocated as needed, due
+	  to unanticipated execution paths;
+<li> void pointers allow heterogeneous function arguments of different types, but type
+	  information may not be there when you need it.
+</ul>
+
+C++ adds some additional considerations to pointer management: STL containers cannot hold <i>
+reference</i> objects, so you are left with the choice of using either pointers or <i>copies</i>
+of objects. Neither choice is attractive, as pointers can cause memory leaks and the copy 
+constructor may be expensive. <p>
+
+The idea behind a C++ <i>smart pointer</i> is to create a wrapper class object capable of
+holding a pointer.  The wrapper class's constructors and destructors can then handle memory
+management as the object goes in and out of scope. The problem with this solution is that it
+does not handle multiple pointers to the same resource properly, and it raises the issue of
+ownership. This is essentially what the STL <i>auto_ptr</i> offers, and is only safe to use
+when the lifetime of the resource maps into the lifetime of a single scope.<p>
+
+The NCBI <i>CRef</i> class addresses these issues by defining a reference-counted smart pointer:
+the resource cannot be deallocated until <i>all</i> references to it have ceased to exist. In
+addition, the <i>CRef</i> class implements methods of obtaining type information about the
+resource pointed to. 
+
+
+
+	  <p>
+
+  </body>
+</html>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>
