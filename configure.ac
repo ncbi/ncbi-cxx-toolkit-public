@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.41 2002/03/15 21:42:33 ucko Exp $
+#  $Id: configure.ac,v 1.42 2002/03/15 22:28:48 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2291,7 +2291,7 @@ case "$with_projects" in
         fi
      fi
      ;;
- no) AC_SUBST(PROJECTS, ""); with_projects= ;;
+ no) with_projects="" ;  AC_SUBST(PROJECTS, "") ;;
  /*) AC_SUBST(PROJECTS, $with_projects) ;;
  * ) AC_SUBST(PROJECTS, "\$(top_srcdir)/$with_projects") ;;
 esac

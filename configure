@@ -7997,8 +7997,8 @@ echo "$as_me: WARNING: default projects file \"projects\" is a dangling link." >
         fi
      fi
      ;;
- no) PROJECTS=""
-; with_projects= ;;
+ no) with_projects="" ;  PROJECTS=""
+ ;;
  /*) PROJECTS=$with_projects
  ;;
  * ) PROJECTS="\$(top_srcdir)/$with_projects"
