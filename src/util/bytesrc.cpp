@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/16 17:55:40  grichenk
+* Redesigned support for non-blocking sream read operations
+*
 * Revision 1.10  2001/05/11 20:41:19  grichenk
 * Added support for non-blocking stream reading
 *
@@ -110,7 +113,7 @@ bool CByteSourceReader::EndOfData(void) const
 
 CRef<CByteSourceReader> CStreamByteSource::Open(void)
 {
-    return new CStreamByteSourceReader(this, m_Stream, m_Use_Non_Blocking_Read);
+    return new CStreamByteSourceReader(this, m_Stream);
 }
 
 size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
@@ -119,13 +122,11 @@ size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
     m_Stream->read(buffer, bufferLength);
     return m_Stream->gcount();
 #else
-    if (m_Use_Non_Blocking_Read) {
-        return m_Stream->readsome(buffer, bufferLength);
-    }
-    else {
-        m_Stream->read(buffer, bufferLength);
-        return m_Stream->gcount();
-    }
+    size_t n = m_Stream->readsome(buffer, bufferLength);
+    if (n != 0  ||  m_Stream->eof())
+        return n;
+    m_Stream->read(buffer, 1);
+    return m_Stream->readsome(buffer+1, bufferLength-1) + 1;
 #endif
 }
 

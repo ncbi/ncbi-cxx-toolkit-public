@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/05/16 17:55:37  grichenk
+ * Redesigned support for non-blocking sream read operations
+ *
  * Revision 1.4  2001/05/11 20:41:16  grichenk
  * Added support for non-blocking stream reading
  *
@@ -188,7 +191,7 @@ int CId1FetchApp::Run(void)
         //### Use CObjectIStream::Open() since only this function
         //### supports opening streams with non-blocking read.
         CObjectIStream& id1_server_input = *CObjectIStream::Open
-            (eSerial_AsnBinary, id1_server, false, true);
+            (eSerial_AsnBinary, id1_server, false);
         id1_server_input >> id1_response;
     }}
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2001/05/16 17:55:39  grichenk
+* Redesigned support for non-blocking sream read operations
+*
 * Revision 1.76  2001/05/11 20:41:17  grichenk
 * Added support for non-blocking stream reading
 *
@@ -389,14 +392,13 @@ CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
 }
 
 CRef<CByteSource> CObjectIStream::GetSource(CNcbiIstream& inStream,
-                                            bool deleteInStream,
-                                            bool use_non_blocking_read)
+                                            bool deleteInStream)
 {
     if ( deleteInStream ) {
-        return new CFStreamByteSource(inStream, use_non_blocking_read);
+        return new CFStreamByteSource(inStream);
     }
     else {
-        return new CStreamByteSource(inStream, use_non_blocking_read);
+        return new CStreamByteSource(inStream);
     }
 }
 
@@ -426,11 +428,9 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
-                                     bool deleteInStream,
-                                     bool use_non_blocking_read)
+                                     bool deleteInStream)
 {
-    return Create(format, GetSource(inStream, deleteInStream,
-        use_non_blocking_read));
+    return Create(format, GetSource(inStream, deleteInStream));
 }
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
