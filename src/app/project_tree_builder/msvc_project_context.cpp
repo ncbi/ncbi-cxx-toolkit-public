@@ -203,10 +203,12 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                     lib_ok = false;
                     break;
                 }
+/*
                 if ( !CMsvcSite::IsLibOk(lib_info) ) {
                     lib_ok = false;
                     break;
                 }
+*/
             }
             if (lib_ok) {
                 m_Requires.push_back(component);
@@ -335,7 +337,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( !lib_info.m_Libs.empty() ) {
+        if ( CMsvcSite::IsLibOk(lib_info, true) && !lib_info.m_Libs.empty() ) {
             copy(lib_info.m_Libs.begin(), 
                  lib_info.m_Libs.end(), 
                  back_inserter(additional_libs));
@@ -378,7 +380,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( !lib_info.m_LibPath.empty() ) {
+        if ( CMsvcSite::IsLibOk(lib_info, true) && !lib_info.m_LibPath.empty() ) {
             dir_list.push_back(lib_info.m_LibPath);
         }
     }
@@ -932,6 +934,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/11/29 17:03:39  gouriano
+ * Add 3rd party library dependencies on per-configuration basis
+ *
  * Revision 1.40  2004/11/23 20:12:12  gouriano
  * Tune libraries with the choice for each configuration independently
  *

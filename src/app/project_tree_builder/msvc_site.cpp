@@ -381,15 +381,17 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
         }
         return false;
     }
-    ITERATE(list<string>, p, lib_info.m_Libs) {
-        const string& lib = *p;
-        string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
-        if ( !lib_path_abs.empty() &&
-             !CDirEntry(lib_path_abs).Exists() ) {
-            if (!silent) {
-                LOG_POST(Warning << "No LIB : " + lib_path_abs);
+    if ( !lib_info.m_LibPath.empty()) {
+        ITERATE(list<string>, p, lib_info.m_Libs) {
+            const string& lib = *p;
+            string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
+            if ( !lib_path_abs.empty() &&
+                !CDirEntry(lib_path_abs).Exists() ) {
+                if (!silent) {
+                    LOG_POST(Warning << "No LIB : " + lib_path_abs);
+                }
+                return false;
             }
-            return false;
         }
     }
 
@@ -438,6 +440,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/11/29 17:03:39  gouriano
+ * Add 3rd party library dependencies on per-configuration basis
+ *
  * Revision 1.21  2004/11/23 20:12:12  gouriano
  * Tune libraries with the choice for each configuration independently
  *
