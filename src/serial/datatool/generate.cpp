@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/10/01 17:04:31  gouriano
+* corrections to eliminate redundant info in the generation report
+*
 * Revision 1.41  2002/10/01 14:20:30  gouriano
 * added more generation report data
 *
@@ -341,9 +344,7 @@ void CCodeGenerator::GenerateCode(void)
         code->GenerateCode();
         string fileName;
         code->GenerateHPP(m_HPPDir, fileName);
-        listGenerated.push_back( fileName);
         code->GenerateCPP(m_CPPDir, fileName);
-        listGenerated.push_back( fileName);
         if (code->GenerateUserHPP(m_HPPDir, fileName)) {
             listGenerated.push_back( fileName);
         } else {
@@ -383,18 +384,33 @@ void CCodeGenerator::GenerateCode(void)
         for (int  user=0;  user<2; ++user)  {
         for (int local=0; local<2; ++local) {
         for (int   cpp=0;   cpp<2; ++cpp)   {
-            fileList << (user ? "USER" : "GENERATED") << "_"
+            fileList << (user ? "SKIPPED" : "GENERATED") << "_"
                 << (cpp ? "CPP" : "HPP") << (local ? "_LOCAL" : "") << " =";
             list<string> *lst = (user ? &listUntouched : &listGenerated);
-            for (list<string>::iterator i=lst->begin(); i != lst->end(); ++i) {
+            for (list<string>::iterator i=lst->begin();
+                i != lst->end(); ++i) {
                 CDirEntry entry(*i);
-                bool is_cpp = (NStr::CompareNocase(entry.GetExt(),".cpp") == 0);
+                bool is_cpp = (NStr::CompareNocase(entry.GetExt(),".cpp")==0);
                 if ((is_cpp && cpp) || (!is_cpp && !cpp)) {
                     fileList << ' ';
                     if (local) {
-                        fileList << entry.GetName();
+                        fileList << entry.GetBase();
                     } else {
-                        fileList << CDirEntry::ConvertToOSPath(entry.GetPath());
+                        string pp = entry.GetPath();
+                        size_t found;
+                        if (is_cpp) {
+                            if (!m_CPPDir.empty() &&
+                                (found = pp.find(m_CPPDir)) == 0) {
+                                pp.erase(0,m_CPPDir.length()+1);
+                            }
+                        } else {
+                            if (!m_HPPDir.empty() &&
+                                (found = pp.find(m_HPPDir)) == 0) {
+                                pp.erase(0,m_HPPDir.length()+1);
+                            }
+                        }
+                        CDirEntry ent(CDirEntry::ConvertToOSPath(pp));
+                        fileList << ent.GetDir() << ent.GetBase();
                     }
                 }
 
