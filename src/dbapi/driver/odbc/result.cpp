@@ -43,9 +43,9 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
 {
     switch (t) {
     case SQL_WCHAR:
-    case SQL_CHAR:         return eDB_Char;
+    case SQL_CHAR:         return (prec < 256)? eDB_Char : eDB_LongChar;
     case SQL_WVARCHAR:
-    case SQL_VARCHAR:      return eDB_VarChar;
+    case SQL_VARCHAR:      return (prec < 256)? eDB_VarChar : eDB_LongChar;
     case SQL_LONGVARCHAR:  return eDB_Text;
     case SQL_LONGVARBINARY:
     case SQL_WLONGVARCHAR: return eDB_Image;
@@ -56,10 +56,10 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
     case SQL_INTEGER:      return eDB_Int;
     case SQL_REAL:         return eDB_Float;
     case SQL_FLOAT:        return eDB_Double;
-    case SQL_BINARY:       return eDB_Binary;
+    case SQL_BINARY:       return (prec < 256)? eDB_Binary : eDB_LongBinary;
     case SQL_BIT:          return eDB_Bit;
     case SQL_TINYINT:      return eDB_TinyInt;
-    case SQL_VARBINARY:    return eDB_VarBinary;
+    case SQL_VARBINARY:    return (prec < 256)? eDB_VarBinary : eDB_LongBinary;
     case SQL_TYPE_TIMESTAMP: 
         return (prec > 16 || dec_digits > 0)? eDB_DateTime : eDB_SmallDateTime;
     default:               return eDB_UnsupportedType;
@@ -204,7 +204,7 @@ static void xConvert2CDB_Numeric(CDB_Numeric* d, SQL_NUMERIC_STRUCT& s)
 
 CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
 {
-    char buffer[2048];
+    char buffer[8*1024];
     int outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
@@ -214,24 +214,34 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     case SQL_WVARCHAR: {
         switch (item_buf->GetType()) {
         case eDB_VarBinary:
-            outlen= xGetData(SQL_C_BINARY, buffer, 2048);
+            outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
             else ((CDB_VarBinary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_Binary:
-            outlen= xGetData(SQL_C_BINARY, buffer, 2048);
+            outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
             else ((CDB_Binary*) item_buf)->SetValue(buffer, outlen);
             break;
+        case eDB_LongBinary:
+            outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
+            if ( outlen <= 0) item_buf->AssignNULL();
+            else ((CDB_LongBinary*) item_buf)->SetValue(buffer, outlen);
+            break;
         case eDB_VarChar:
-            outlen= xGetData(SQL_C_CHAR, buffer, 2048);
+            outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
             else *((CDB_VarChar*)  item_buf) = buffer;
             break;
         case eDB_Char:
-            outlen= xGetData(SQL_C_CHAR, buffer, 2048);
+            outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
             else *((CDB_Char*)     item_buf) = buffer;
+            break;
+        case eDB_LongChar:
+            outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
+            if ( outlen <= 0) item_buf->AssignNULL();
+            else *((CDB_LongChar*)     item_buf) = buffer;
             break;
         default:
             throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
@@ -244,24 +254,34 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     case SQL_VARBINARY: {
         switch ( item_buf->GetType() ) {
         case eDB_VarBinary:
-            outlen= xGetData(SQL_C_BINARY, buffer, 2048);
+            outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
             else ((CDB_VarBinary*) item_buf)->SetValue(buffer, outlen);
             break;
         case eDB_Binary:
-            outlen= xGetData(SQL_C_BINARY, buffer, 2048);
+            outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
             if ( outlen <= 0) item_buf->AssignNULL();
             else ((CDB_Binary*) item_buf)->SetValue(buffer, outlen);
             break;
+        case eDB_LongBinary:
+            outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
+            if ( outlen <= 0) item_buf->AssignNULL();
+            else ((CDB_LongBinary*) item_buf)->SetValue(buffer, outlen);
+            break;
         case eDB_VarChar:
-            outlen= xGetData(SQL_C_CHAR, buffer, 2048);
+            outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if (outlen <= 0) item_buf->AssignNULL();
             else *((CDB_VarChar*)  item_buf) = buffer;
             break;
         case eDB_Char:
-            outlen= xGetData(SQL_C_CHAR, buffer, 2048);
+            outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
             if (outlen <= 0) item_buf->AssignNULL();
             else *((CDB_Char*) item_buf) = buffer;
+            break;
+        case eDB_LongChar:
+            outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
+            if (outlen <= 0) item_buf->AssignNULL();
+            else *((CDB_LongChar*) item_buf) = buffer;
             break;
         default:
             throw CDB_ClientEx(eDB_Error, 430020, "CODBC_*Result::GetItem",
@@ -459,9 +479,9 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         case eDB_Text: {
             CDB_Stream* val = (CDB_Stream*) item_buf;
             for(;;) {
-                switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, 2048, &f)) {
+                switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
                 case SQL_SUCCESS_WITH_INFO:
-                    if(f == SQL_NO_TOTAL) f= 2047;
+                    if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
                     else if(f < 0) m_Reporter.ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
@@ -483,9 +503,9 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         case eDB_Image: {
             CDB_Stream* val = (CDB_Stream*) item_buf;
             for(;;) {
-                switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, 2048, &f)) {
+                switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
                 case SQL_SUCCESS_WITH_INFO:
-                    if(f == SQL_NO_TOTAL || f > 2048) f= 2048;
+                    if(f == SQL_NO_TOTAL || f > sizeof(buffer)) f= sizeof(buffer);
                     else m_Reporter.ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
@@ -520,7 +540,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
 
 CDB_Object* CODBC_RowResult::xMakeItem()
 {
-    char buffer[2048];
+    char buffer[8*1024];
     int outlen;
 
     switch(m_ColFmt[m_CurrItem].DataType) {
@@ -528,20 +548,41 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     case SQL_CHAR: 
     case SQL_VARCHAR: 
     case SQL_WVARCHAR: {
-        outlen= xGetData(SQL_C_CHAR, buffer, 2048);
-        CDB_VarChar* val = (outlen < 0)
-            ? new CDB_VarChar() : new CDB_VarChar(buffer, (size_t) outlen);
+        outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
+		if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
+			CDB_VarChar* val = (outlen < 0)	
+				? new CDB_VarChar() : new CDB_VarChar(buffer, (size_t) outlen);
         
-        return val;
+			return val;
+		}
+		else {
+			CDB_LongChar* val = (outlen < 0)	
+				? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) : 
+				new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize, 
+						buffer);
+        
+			return val;
+		}
+
     }
 
     case SQL_BINARY:
     case SQL_VARBINARY: {
-        outlen= xGetData(SQL_C_BINARY, buffer, 2048);
-        CDB_VarBinary* val = (outlen <= 0)
-            ? new CDB_VarBinary() : new CDB_VarBinary(buffer, (size_t)outlen);
+        outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
+		if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
+	        CDB_VarBinary* val = (outlen <= 0)
+		        ? new CDB_VarBinary() : new CDB_VarBinary(buffer, (size_t)outlen);
         
-        return val;
+			return val;
+		}
+		else {
+			CDB_LongBinary* val = (outlen < 0)	
+				? new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize) : 
+				new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize, 
+						buffer, (size_t) outlen);
+        
+			return val;
+		}
     }
 
     case SQL_BIT: {
@@ -619,9 +660,9 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         SQLINTEGER f;
 
         for(;;) {
-            switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, 2048, &f)) {
+            switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
             case SQL_SUCCESS_WITH_INFO:
-                if(f == SQL_NO_TOTAL) f= 2047;
+                if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
                 else if(f < 0) m_Reporter.ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
@@ -644,9 +685,9 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         CDB_Image* val = new CDB_Image;
         SQLINTEGER f;
         for(;;) {
-            switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, 2048, &f)) {
+            switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
             case SQL_SUCCESS_WITH_INFO:
-                if(f == SQL_NO_TOTAL) f= 2048;
+                if(f == SQL_NO_TOTAL) f= sizeof(buffer);
                 else if(f < 0) m_Reporter.ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
@@ -990,6 +1031,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/05/08 20:30:24  soussov
+ * CDB_LongChar CDB_LongBinary added
+ *
  * Revision 1.6  2003/01/31 16:51:03  lavr
  * Remove unused variable "e" from catch() clause
  *

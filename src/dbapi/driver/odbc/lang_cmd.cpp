@@ -299,6 +299,7 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
         const string& name  =  m_Params.GetParamName(n);
         CDB_Object&   param = *m_Params.GetParam(n);
         const char*   type;
+		char tbuf[64];
 
         switch (param.GetType()) {
         case eDB_Int: {
@@ -350,6 +351,15 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
                              SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
             break;
         }
+        case eDB_LongChar: {
+            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+			sprintf(tbuf,"varchar(%d)", val.Size());
+            type= tbuf;
+            indicator[n]= SQL_NTS;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+                             SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
+            break;
+        }
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             type = "varbinary(255)";
@@ -364,6 +374,16 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
             indicator[n]= val.Size();
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
+            break;
+        }
+        case eDB_LongBinary: {
+            CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+			sprintf(tbuf,"varbinary(%d)", val.Size());
+            type= tbuf;
+            type = "varbinary(255)";
+            indicator[n]= val.DataSize();
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+                             SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
             break;
         }
         case eDB_Float: {
@@ -461,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/08 20:30:24  soussov
+ * CDB_LongChar CDB_LongBinary added
+ *
  * Revision 1.1  2002/06/18 22:06:24  soussov
  * initial commit
  *

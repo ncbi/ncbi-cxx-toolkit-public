@@ -328,7 +328,7 @@ CODBC_RPCCmd::~CODBC_RPCCmd()
 bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                                    CMemPot& bind_guard, SQLINTEGER* indicator)
 {
-    char p_nm[16];
+    char p_nm[16], tbuf[32];
     // check if we do have a named parameters (first named - all named)
     bool param_named= !m_Params.GetParamName(0).empty();
 
@@ -387,6 +387,15 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                              SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
             break;
         }
+        case eDB_LongChar: {
+            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+			sprintf(tbuf,"varchar(%d)", val.Size());
+            type= tbuf;
+            indicator[n]= SQL_NTS;
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+                             SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
+            break;
+        }
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             type = "varbinary(255)";
@@ -401,6 +410,15 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             indicator[n]= val.Size();
             SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
+            break;
+        }
+        case eDB_LongBinary: {
+            CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+			sprintf(tbuf,"varbinary(%d)", val.Size());
+            type= tbuf;
+            indicator[n]= val.DataSize();
+            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+                             SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
             break;
         }
         case eDB_Float: {
@@ -523,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/05/08 20:30:24  soussov
+ * CDB_LongChar CDB_LongBinary added
+ *
  * Revision 1.2  2003/05/05 20:48:47  ucko
  * +<stdio.h> for sprintf
  *

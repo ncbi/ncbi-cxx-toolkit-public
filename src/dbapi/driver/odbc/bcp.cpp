@@ -101,9 +101,12 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                              SQL_VARLEN_DATA, 0, 0, SQLNUMERIC, i + 1);
                 break;
             case eDB_Char:
+            case eDB_VarChar:
+			case eDB_LongChar:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA,(BYTE*) "", 1, SQLCHARACTER, i + 1);
                 break;
+#if 0
             case eDB_VarChar:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA,(BYTE*) "", 1, SQLCHARACTER, i + 1);
@@ -112,7 +115,10 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA, 0, 0, SQLBINARY, i + 1);
                 break;
+#endif
+            case eDB_Binary:
             case eDB_VarBinary:
+			case eDB_LongBinary:
                 r = bcp_bind(m_Cmd, (BYTE*) pb, 0,
                              SQL_VARLEN_DATA, 0, 0, SQLBINARY, i + 1);
                 break;
@@ -216,6 +222,14 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
+        case eDB_LongChar: {
+            CDB_LongChar& val = dynamic_cast<CDB_LongChar&> (param);
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+                == SUCCEED &&
+                bcp_collen(m_Cmd, val.IsNULL() ? SQL_NULL_DATA : SQL_VARLEN_DATA, i + 1)
+                == SUCCEED ? SUCCEED : FAIL;
+        }
+        break;
         case eDB_Binary: {
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
@@ -231,6 +245,15 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 == SUCCEED &&
                 bcp_collen(m_Cmd,
                            val.IsNULL() ? SQL_NULL_DATA : (Int4) val.Size(), i + 1)
+                == SUCCEED ? SUCCEED : FAIL;
+        }
+        break;
+        case eDB_LongBinary: {
+            CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
+            r = bcp_colptr(m_Cmd, (!val.IsNULL())? ((BYTE*) val.Value()) : (BYTE*)pb, i + 1)
+                == SUCCEED &&
+                bcp_collen(m_Cmd,
+                           val.IsNULL() ? SQL_NULL_DATA : (Int4) val.DataSize(), i + 1)
                 == SUCCEED ? SUCCEED : FAIL;
         }
         break;
@@ -424,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/08 20:30:24  soussov
+ * CDB_LongChar CDB_LongBinary added
+ *
  * Revision 1.3  2002/09/12 14:14:59  soussov
  * fixed typo in binding [var]char/binary with NULL value
  *
