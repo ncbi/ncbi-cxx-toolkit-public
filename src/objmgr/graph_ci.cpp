@@ -86,6 +86,9 @@ CGraph_CI::CGraph_CI(CScope& scope,
                      scope, loc,
                      overlap_type, resolve)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -97,6 +100,9 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      bioseq, start, stop,
                      overlap_type, resolve)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -111,6 +117,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/03/23 19:37:33  grichenk
+* Added m_Graph in constructors
+*
 * Revision 1.23  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

@@ -209,6 +209,9 @@ CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, sel)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -217,6 +220,9 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, start, stop, sel)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -224,6 +230,9 @@ inline
 CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -232,6 +241,9 @@ CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, sel)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -239,6 +251,9 @@ inline
 CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -247,6 +262,9 @@ CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, sel)
 {
+    if ( IsValid() ) {
+        m_Graph.Set(Get());
+    }
 }
 
 
@@ -294,6 +312,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/03/23 19:37:41  grichenk
+* Added m_Graph in constructors
+*
 * Revision 1.32  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
