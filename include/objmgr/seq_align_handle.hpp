@@ -59,7 +59,7 @@ class CSeq_annot_Handle;
 ///  Proxy to access seq-align objects data
 ///
 
-class CSeq_align_Handle
+class NCBI_XOBJMGR_EXPORT CSeq_align_Handle
 {
 public:
     CSeq_align_Handle(void);
@@ -184,6 +184,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/12/20 16:03:13  dicuccio
+* Added export specifier
+*
 * Revision 1.3  2004/09/28 19:41:59  kononenk
 * Added doxygen formatting
 *
