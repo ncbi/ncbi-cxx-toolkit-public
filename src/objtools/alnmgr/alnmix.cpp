@@ -696,6 +696,8 @@ void CAlnMix::x_Merge()
                 starts[start1] = seg;
                 seg->m_StartIts[seq1] = 
                     lo_start_i = hi_start_i = starts.begin();
+
+                second_row_fits = eSecondRowFitsOk;
                 // DONE!
             } else {
                 // some starts exist already
@@ -1978,6 +1980,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.95  2004/05/25 19:16:33  todorov
+* initialize second_row_fits
+*
 * Revision 1.94  2004/05/25 16:00:10  todorov
 * remade truncation of overlaps
 *
