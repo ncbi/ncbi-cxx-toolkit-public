@@ -163,19 +163,19 @@ void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
                    "Incompatible version of SNP table");
     }
     m_Strings.resize(size);
-    char buff[max_length];
+    AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
     NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
         stream.read(reinterpret_cast<char*>(&size), sizeof(size));
         if ( !stream || (size > max_length) ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Incompatible version of SNP table");
         }
-        stream.read(buff, size);
+        stream.read(buf.get(), size);
         if ( !stream ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Incompatible version of SNP table");
         }
-        it->assign(buff, buff+size);
+        it->assign(buf.get(), buf.get()+size);
     }
 }
 
@@ -409,6 +409,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.6  2003/10/21 15:21:21  vasilche
+ * Avoid use of non-constant array sizes of stack arrays.
+ *
  * Revision 1.5  2003/10/21 14:27:35  vasilche
  * Added caching of gi -> sat,satkey,version resolution.
  * SNP blobs are stored in cache in preprocessed format (platform dependent).
