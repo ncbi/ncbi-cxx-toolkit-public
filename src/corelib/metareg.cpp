@@ -45,19 +45,14 @@ DEFINE_CLASS_STATIC_MUTEX(CMetaRegistry::sm_Mutex);
 
 CMetaRegistry::~CMetaRegistry()
 {
-    ITERATE (vector<SEntry>, it, m_Contents) {
-        // optionally save if modified?
-        if ( !(it->flags & fDontOwn) ) {
-            delete it->registry;
-        }
-    }
+    // XX - optionally save modified registries?
 }
 
 
 CMetaRegistry::SEntry
 CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                       CMetaRegistry::TFlags flags,
-                      CNcbiRegistry::TFlags reg_flags, CNcbiRegistry* reg,
+                      IRegistry::TFlags reg_flags, IRWRegistry* reg,
                       const string& name0, CMetaRegistry::ENameStyle style0)
 {
     _TRACE("CMetaRegistry::Load: looking for " << name);
@@ -118,7 +113,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                 result.registry = reg;
                 reg->Read(in, reg_flags);
             } else {
-                result.registry = new CNcbiRegistry(in, reg_flags);
+                result.registry.Reset(new CNcbiRegistry(in, reg_flags));
             }
 
             if ( CDirEntry::IsAbsolutePath(name) ) {
@@ -165,10 +160,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
     SEntry result;
     result.flags     = flags;
     result.reg_flags = reg_flags;
-    result.registry  = 0;
-    if (reg  &&  !(flags & fDontOwn) ) {
-        delete reg;
-    }
+    result.registry.Reset();
     return result;
 }
 
@@ -259,6 +251,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/01/10 16:56:49  ucko
+ * Support working with arbitrary IRWRegistry objects, and take
+ * advantage of the fact that they're CObjects these days.
+ *
  * Revision 1.13  2005/01/10 16:23:05  ucko
  * Adjust default search path (now ordered like the C Toolkit's), and add
  * support for NCBI_CONFIG_PATH and NCBI_DONT_USE_LOCAL_CONFIG.

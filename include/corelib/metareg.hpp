@@ -48,8 +48,7 @@ public:
 
     /// General flags
     enum EFlags {
-        fPrivate = 0x1, ///< Do not cache, or support automatic saving.
-        fDontOwn = 0x2  ///< Do not attempt to delete on destruction.
+        fPrivate = 0x1 ///< Do not cache, or support automatic saving.
     };
     typedef int TFlags; ///< Binary OR of "EFlags"
 
@@ -66,14 +65,14 @@ public:
 #endif
     };
 
-    typedef CNcbiRegistry::TFlags TRegFlags;
+    typedef IRegistry::TFlags TRegFlags;
 
     /// m_ActualName is always an absolute path (or empty)
     struct SEntry {
-        string         actual_name;
-        TFlags         flags;
-        TRegFlags      reg_flags;
-        CNcbiRegistry* registry;
+        string            actual_name;
+        TFlags            flags;
+        TRegFlags         reg_flags;
+        CRef<IRWRegistry> registry;
     };
 
     static CMetaRegistry& Instance(void);
@@ -88,12 +87,13 @@ public:
     /// @param flags
     ///   Any relevant options from EFlags above.
     /// @param reg
-    ///   Existing registry object to reuse, if non-NULL.  (If it wasn't
-    //    empty, automatically causes fPrivate to be set in flags.)
+    ///   If NULL, yield a new CNcbiRegistry.  Otherwise, populate the
+    ///   supplied registry (and don't try to share it if it didn't
+    ///   start out empty).
     /// @return
     ///   On success, .actual_name will contain the absolute path to
-    ///   the file ultimately loaded, and .registry will point to a
-    ///   CNcbiRegistry object containing its contents (owned by this
+    ///   the file ultimately loaded, and .registry will point to an
+    ///   IRWRegistry object containing its contents (owned by this
     ///   class unless fPrivate or fDontOwn was given).
     ///   On failure, .actual_name will be empty and .registry will be
     ///   NULL.
@@ -101,7 +101,7 @@ public:
                        ENameStyle     style     = eName_AsIs,
                        TFlags         flags     = 0,
                        TRegFlags      reg_flags = 0,
-                       CNcbiRegistry* reg       = 0);
+                       IRWRegistry*   reg       = 0);
 
     /// Accessors for the search path for unqualified names.  If the
     /// environment NCBI_CONFIG_PATH is set, the default is to look there
@@ -132,7 +132,7 @@ private:
 
     /// name0 and style0 are the originally requested name and style
     SEntry x_Load(const string& name,  ENameStyle style,
-                  TFlags flags, TRegFlags reg_flags, CNcbiRegistry* reg,
+                  TFlags flags, TRegFlags reg_flags, IRWRegistry* reg,
                   const string& name0, ENameStyle style0);
 
     const TSearchPath& x_GetSearchPath(void) const { return m_SearchPath; }
@@ -173,8 +173,8 @@ inline
 CMetaRegistry::SEntry CMetaRegistry::Load(const string& name,
                                           CMetaRegistry::ENameStyle style,
                                           CMetaRegistry::TFlags flags,
-                                          CNcbiRegistry::TFlags reg_flags,
-                                          CNcbiRegistry* reg)
+                                          IRegistry::TFlags reg_flags,
+                                          IRWRegistry* reg)
 {
     return Instance().x_Load(name, style, flags, reg_flags, reg, name, style);
 }
@@ -222,6 +222,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/01/10 16:56:45  ucko
+* Support working with arbitrary IRWRegistry objects, and take
+* advantage of the fact that they're CObjects these days.
+*
 * Revision 1.9  2005/01/10 16:22:56  ucko
 * Adjust default search path (now ordered like the C Toolkit's), and add
 * support for NCBI_CONFIG_PATH and NCBI_DONT_USE_LOCAL_CONFIG.
