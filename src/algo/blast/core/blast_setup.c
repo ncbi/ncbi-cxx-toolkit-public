@@ -436,7 +436,9 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
        if ((status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, 
                         query_blk->sequence, query_info)) != 0) {
           Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-             "Query completely filtered; nothing left to search");
+             "Could not calculate ungapped Karlin-Altschul parameters due "
+             "to an invalid query sequence. Please verify the query "
+             "sequence(s) and/or filtering options");
           return status;
        }
 
