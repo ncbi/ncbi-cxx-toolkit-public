@@ -181,6 +181,15 @@ CBl2Seq::Run() THROWS((CBlastException))
     return x_Results2SeqAlign();
 }
 
+void
+CBl2Seq::PartialRun() THROWS((CBlastException))
+{
+    //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
+    SetupSearch();
+    m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
+    ScanDB();
+}
+
 
 void 
 CBl2Seq::SetupSearch()
@@ -330,6 +339,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2004/06/29 14:17:24  papadopo
+ * add PartialRun and GetResults methods to CBl2Seq
+ *
  * Revision 1.57  2004/06/28 13:40:51  madden
  * Use BlastMaskInformation rather than BlastMaskLoc in BLAST_MainSetUp
  *

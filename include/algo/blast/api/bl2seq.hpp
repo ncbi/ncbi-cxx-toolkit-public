@@ -133,11 +133,17 @@ public:
     /// that correspond to that query-subject alignment.
     virtual TSeqAlignVector Run() THROWS((CBlastException));
 
+    /// Runs the search but does not produce seqalign output
+    virtual void PartialRun() THROWS((CBlastException));
+
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
     const vector< CConstRef<objects::CSeq_loc> >& GetFilteredQueryRegions() const;
     /// Retrieves the diagnostics information returned from the engine
     BlastDiagnostics* GetDiagnostics() const;
+
+    /// Retrieves the list of HSP results from the engine
+    BlastHSPResults* GetResults() const;
 
 protected:
     /// Process the queries, do setup, and build the lookup table.
@@ -285,6 +291,11 @@ inline BlastDiagnostics* CBl2Seq::GetDiagnostics() const
     return mi_pDiagnostics;
 }
 
+inline BlastHSPResults* CBl2Seq::GetResults() const
+{
+    return mi_pResults;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -294,6 +305,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/06/29 14:17:24  papadopo
+* add PartialRun and GetResults methods to CBl2Seq
+*
 * Revision 1.35  2004/06/27 18:49:17  coulouri
 * doxygen fixes
 *
