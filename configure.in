@@ -244,36 +244,25 @@ fi
 
 
 #### DLLs
+case "$compiler" in
+ GCC )
+   CFLAGS_DLL="-fPIC"
+   CXXFLAGS_DLL="-fPIC"
+   ;;
+ WorkShop5 | MIPSpro73 )
+   CFLAGS_DLL="-KPIC"
+   CXXFLAGS_DLL="-KPIC"
+   ;;
+esac
+
 if test "$with_dll" != "no" ; then
-   case "$compiler" in
-    GCC )
-      CFLAGS="$CFLAGS -fPIC"
-      CXXFLAGS="$CXXFLAGS -fPIC"
-      ;;
-    WorkShop5 | MIPSpro73 )
-      CFLAGS="$CFLAGS -KPIC"
-      CXXFLAGS="$CXXFLAGS -KPIC"
-      ;;
-   esac
+  CFLAGS="$CFLAGS $CFLAGS_DLL"
+  CXXFLAGS="$CXXFLAGS $CXXFLAGS_DLL"
 fi
 
 if test "$with_dll" = "yes" ; then
    lib_dll="dll"
    CONF_lib_ext="${CONF_dll_ext:=.so}"
-
-   case "$compiler" in
-    GCC | MIPSpro73 )
-      LINKDLL="$CXX -shared -o"
-      ;;
-    WorkShop5 )
-      LINKDLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
-      ;;
-    * )
-      if test -z "$LINKDLL" ; then
-         AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
-      fi
-      ;;
-   esac
 
    case "$host:$compiler" in
     *-linux*:GCC | mips-sgi-irix6\.*:GCC | *:WorkShop5 | *:MIPSpro73 )
@@ -283,6 +272,20 @@ if test "$with_dll" = "yes" ; then
       ;;
    esac
 fi
+
+case "$compiler" in
+ GCC | MIPSpro73 )
+   LINKDLL="$CXX -shared -o"
+   ;;
+ WorkShop5 )
+   LINKDLL="$CXX $WS64_CFLAGS -G -h \$@ -o"
+   ;;
+ * )
+   if test "$with_dll" = "yes"  &&  test -z "$LINKDLL" ; then
+      AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
+   fi
+   ;;
+esac
 
 
 #### Multi-Thread safety
@@ -659,8 +662,9 @@ AC_MSG_RESULT()
 
 AC_MSG_CHECKING(for union semun)
 AC_TRY_COMPILE(
-   [#include <sys/sem.h>],
-   [union semun { double a;  void* b; } ],
+   [#include <sys/sem.h>
+   union semun { double a;  void* b; };],
+   ,
    ,
    AC_DEFINE_UNQUOTED(HAVE_SEMUN, 1)
 )
