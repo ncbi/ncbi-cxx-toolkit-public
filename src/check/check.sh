@@ -12,6 +12,7 @@
 #     file:[full:]rel_fname
 #     mail:[full:]addr1,addr2,...
 #     post:[full:]url
+#     stat:addr1,addr2,...
 #     watch:addr1,addr2,...
 #     debug
 #
@@ -29,7 +30,7 @@ trap "rm -f $err_log" 1 2 15
 n_arg=0
 for arg in "$@" ; do
    n_arg=`expr $n_arg + 1`
-   test $n_arg -lt 5   &&  continue
+   test $n_arg -lt 6  &&  continue
 
    if test "$arg" = "debug" ; then
       set -xv
@@ -151,6 +152,9 @@ for dest in "$@" ; do
          mail_list="$mail_list $loc"
       fi
       ;;
+    stat )
+      stat_list="$stat_list $loc"
+      ;;
     watch )
       loc=`echo "$loc" | sed 's/,/ /g'`
       watch_list="$watch_list $loc"
@@ -166,7 +170,7 @@ done
 
 # Compose "full" results archive, if necessary
 if test "$need_check" = "yes" ; then
-  $run_script ./check.sh concat_err
+   $run_script ./check.sh concat_err
 fi
 
 # Post results to the specified locations
@@ -195,7 +199,7 @@ if test -n "$mail_list_full" ; then
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
         echo "To: $mailto"
-        echo "Subject: [C++ CHECK] $subject"
+        echo "Subject: [C++ CHECK]  $subject"
         echo
         echo "$subject"; echo
         cat $summary_res
@@ -218,12 +222,24 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
    done
 fi
 
+# Post check statistics
+if test -n "$stat_list"  -a  -s "$error_res" ; then
+   for loc in $stat_list ; do
+      mailto=`echo "$loc" | sed 's/,/ /g'`
+      {
+        echo "To: $mailto"
+        echo "Subject: [C++ STAT] [`date '+%Y-%m-%d %H:%M'`]  $subject"
+        cat $summary_res
+      } | $sendmail $mailto  ||  err_list="$err_list STAT_ERR:\"$loc\""
+   done
+fi
+
 # Post errors to watchers
 if test -n "$watch_list" ; then
    if test -n "$err_list"  -o  "$debug" = "yes" ; then
       {
         echo "To: $watch_list"
-        echo "Subject: [C++ WATCH] $signature"
+        echo "Subject: [C++ WATCH]  $signature"
         echo
         echo "$err_list"
         echo
