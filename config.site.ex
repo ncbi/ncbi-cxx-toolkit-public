@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: config.site.ex,v 1.6 2003/08/14 17:39:00 ucko Exp $
+# $Id: config.site.ex,v 1.7 2003/11/25 16:04:13 ucko Exp $
 
 ### You can control where the C++ Toolkit's configure script looks for
 ### various packages by copying or renaming this file to "config.site"
@@ -96,7 +96,7 @@
 
 ### NCBI GEO libraries
 
-# NCBI_GEO_PATH="$NCBI/geo"
+# NCBI_GEO_PATH="$NCBI/geo/BUILD"
 # NCBI_GEO_INCLUDE="$NCBI_GEO_PATH/include"
 
 ### NCBI PubMed libraries ($bit64_sfx automatically added unless present)

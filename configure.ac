@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.236 2003/11/14 19:29:57 ucko Exp $
+#  $Id: configure.ac,v 1.237 2003/11/25 16:04:15 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1251,7 +1251,7 @@ esac
 if test -z "$with_runpath"; then
    # Don't allow libdir values containing variable expansions,
    # including in particular the default "${exec_prefix}/lib"
-   if test -n "$libdir"  &&  expr "$libdir" : '[^$]*$' >/dev/null; then
+   if test -n "$libdir"  &&  expr "$libdir" : '[[^$]]*$' >/dev/null; then
       with_runpath=$libdir
    elif test -n "$exec_prefix"  -a  "$exec_prefix" != "NONE" ; then
       with_runpath=$exec_prefix/lib
@@ -2877,7 +2877,7 @@ if test "$with_sssdb" = "no"  -o  "$with_sssutils" = "no" ; then
 fi
 
 if test "$with_geo" != "no" ; then
-   NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo"}
+   NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/BUILD"}
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
       NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_pfx}${release_debug}${bit64_sfx}"
