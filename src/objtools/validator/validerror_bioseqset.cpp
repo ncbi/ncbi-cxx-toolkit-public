@@ -296,6 +296,7 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
     const CBioSource*   biosrc  = 0;
     const string        *first_taxname = 0;
     static const string influenza = "Influenza virus ";
+    static const string sp = " sp. ";
     
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {
@@ -331,6 +332,18 @@ void CValidError_bioseqset::ValidatePopSet(const CBioseq_set& seqset)
             continue;
         }
         
+        // drops severity if first mismatch is same up to sp.
+        EDiagSev sev = eDiag_Error;
+        SIZE_TYPE pos = NStr::Find(taxname, sp);
+        if ( pos != NPOS ) {
+            SIZE_TYPE len = pos + sp.length();
+            if ( NStr::strncasecmp(first_taxname->c_str(), 
+                                   taxname.c_str(),
+                                   len) == 0 ) {
+                sev = eDiag_Warning;
+            }
+        }
+
         PostErr(eDiag_Error, eErr_SEQ_DESCR_InconsistentBioSources,
             "Population set contains inconsistent organisms.",
             *seqit);
@@ -405,6 +418,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/02/14 15:11:57  shomrat
+* population study check for inconsistent organisms drops severity if first mismatch is same up to sp.
+*
 * Revision 1.6  2003/02/07 21:18:38  shomrat
 * Initialize variable
 *
