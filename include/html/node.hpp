@@ -233,7 +233,7 @@ public:
         fAddTrace              = 0x1, ///< Enable tag trace.
         fCatchAll              = 0x2, ///< Catch all other exceptions and
                                       ///< rethrow CHTMLException.
-        fDisableCheckRecursion = 0x4, ///< Disable to throw exception if
+        fDisableCheckRecursion = 0x4  ///< Disable to throw exception if
                                       ///<  nodes tree have endless recursion.
     };
     typedef int TExceptionFlags;      ///< Binary OR of "EExceptionFlags"
@@ -287,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/03/18 12:28:15  ivanov
+ * Remove extra comma after last enum value in EExceptionFlags.
+ *
  * Revision 1.25  2004/03/10 20:14:44  ivanov
  * Added new exception flag fDisableCheckRecursion.
  * By default endless nodes recursion check is enabled.
