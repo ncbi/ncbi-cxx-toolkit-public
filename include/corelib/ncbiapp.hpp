@@ -289,11 +289,12 @@ protected:
     /// Set these flags if you insist on using compiler-specific defaults
     /// for standard "C++" I/O streams (Cin/Cout/Cerr).
     enum EStdioSetup {
+        fDefault_SyncWithStdio  = 0x01,
         ///< Use compiler-specific default as pertains to the synchronizing
         ///< of "C++" Cin/Cout/Cerr streams with their "C" counterparts.
-        fDefault_SyncWithStdio  = 0x01,
-        ///< Use compiler-specific default of Cin buffer size.
+
         fDefault_CinBufferSize  = 0x02
+        ///< Use compiler-specific default of Cin buffer size.
     };
     typedef int TStdioSetupFlags;  ///< Binary OR of "EStdioSetup"
 
@@ -474,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/07/17 00:05:33  siyan
+ * Changed doc on some enum types so Doxygen picks them up better.
+ *
  * Revision 1.35  2003/07/07 13:55:13  siyan
  * Added documentation and made documentation consistent. Made it easier
  * for Doxygen to pick up necessary documentation.
