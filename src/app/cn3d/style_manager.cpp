@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/06/14 00:34:02  thiessen
+* asn additions
+*
 * Revision 1.36  2001/06/08 14:47:06  thiessen
 * fully functional (modal) render settings panel
 *
@@ -161,11 +164,22 @@
 #include "cn3d/style_dialog.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
 
 ///// StyleSettings stuff /////
+
+CCn3d_style_settings * StyleSettings::CreateASNStyleSettings(void) const
+{
+	return NULL;
+}
+
+bool StyleSettings::LoadSettingsFromASN(const CCn3d_style_settings& styleASN)
+{
+	return false;
+}
 
 void StyleSettings::SetToSecondaryStructure(void)
 {
@@ -935,6 +949,16 @@ bool StyleManager::EditGlobalStyle(wxWindow *parent, const StructureSet *set)
 {
     StyleDialog dialog(parent, &globalStyle, set);
     return (dialog.ShowModal() == wxOK);
+}
+
+CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
+{
+    return NULL;
+}
+
+bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styleDictionary)
+{
+	return false;
 }
 
 END_SCOPE(Cn3D)

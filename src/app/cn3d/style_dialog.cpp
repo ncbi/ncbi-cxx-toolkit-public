@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/06/14 00:34:01  thiessen
+* asn additions
+*
 * Revision 1.3  2001/06/08 14:47:06  thiessen
 * fully functional (modal) render settings panel
 *
@@ -160,7 +163,7 @@ StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const 
     // construct the panel
     wxSizer *topSizer = LayoutNotebook(this, false);
 
-    // hook in the stuff the wxDesigned code created
+    // hook in the stuff that the wxDesigner-based code (LayoutPage2()) created
     fpSpaceFill = gfpSpaceFill;
     fpBallRadius = gfpBallRadius;
     fpStickRadius = gfpStickRadius;
@@ -417,9 +420,19 @@ bool StyleDialog::SetControls(const StyleSettings& settings)
     return okay;
 }
 
+// same as hitting done button
 void StyleDialog::OnCloseWindow(wxCommandEvent& event)
 {
-    EndModal(wxCANCEL);
+    StyleSettings dummy;
+    if (GetValues(&dummy)) {
+        if (changedSinceApply) {
+            *editedSettings = dummy;
+            GlobalMessenger()->PostRedrawAllStructures();
+            GlobalMessenger()->PostRedrawAllSequenceViewers();
+        }
+    } else
+        wxBell();
+    EndModal(wxOK);
 }
 
 void StyleDialog::OnButton(wxCommandEvent& event)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2001/06/14 00:33:23  thiessen
+* asn additions
+*
 * Revision 1.46  2001/06/05 13:21:17  thiessen
 * fix structure alignment list problems
 *
@@ -321,10 +324,6 @@ class CoordSet;
 class StructureObject : public StructureBase
 {
 public:
-    // isRawBiostrucFromMMDB says whether this is "raw" MMDB data - with all its various models
-    StructureObject(StructureBase *parent,
-        const ncbi::objects::CBiostruc& biostruc, bool isMaster, bool isRawBiostrucFromMMDB);
-
     // public data
 
     static const int NO_MMDB_ID;
@@ -332,13 +331,15 @@ public:
     std::string pdbID;
     Matrix *transformToMaster;
 
-    ~StructureObject(void) { if (transformToMaster) delete transformToMaster; }
-
     // an object has one ChemicalGraph that can be applied to one or more
     // CoordSets to generate the object's model(s)
     const ChemicalGraph *graph;
     typedef std::list < const CoordSet * > CoordSetList;
     CoordSetList coordSets;
+
+    // min and max atomic temperatures
+    static const double NO_TEMPERATURE;
+    double minTemperature, maxTemperature;
 
     // map of internal domainID -> Molecule and MMDB-assigned id
     typedef std::map < int, const Molecule * > DomainMap;
@@ -360,6 +361,11 @@ private:
     const bool isMaster;
 
 public:
+    // isRawBiostrucFromMMDB says whether this is "raw" MMDB data - with all its various models
+    StructureObject(StructureBase *parent,
+        const ncbi::objects::CBiostruc& biostruc, bool isMaster, bool isRawBiostrucFromMMDB);
+    ~StructureObject(void) { if (transformToMaster) delete transformToMaster; }
+
     bool IsMaster(void) const { return isMaster; }
     bool IsSlave(void) const { return !isMaster; }
     int NDomains(void) const { return domainMap.size(); }

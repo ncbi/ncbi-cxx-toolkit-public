@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/06/14 00:34:01  thiessen
+* asn additions
+*
 * Revision 1.63  2001/06/07 19:05:38  thiessen
 * functional (although incomplete) render settings panel ; highlight title - not sequence - upon mouse click
 *
@@ -243,6 +246,7 @@
 #include <objects/mmdb3/Residue_pntrs.hpp>
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/cn3d/Cn3d_style_dictionary.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <connect/ncbi_util.h>
@@ -829,6 +833,10 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     GlobalMessenger()->SequenceWindowsSave();
     if (dataChanged) RemoveUnusedSequences();
 
+    // create and temporarily attach a style dictionary to the data (and then remove it again,
+    // so it's never out of date)
+    CRef < CCn3d_style_dictionary > styleDictionary(styleManager->CreateASNStyleDictionary());
+
     std::string err;
     bool writeOK = false;
     if (mimeData)
@@ -839,9 +847,11 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
         dataChanged = 0;
     } else {
         ERR_POST(Error << "Write failed: " << err);
-        return false;
     }
-    return true;
+
+    // remove style dictionary from asn
+
+    return writeOK;
 }
 
 // because the frame map (for each frame, a list of diplay lists) is complicated
@@ -972,10 +982,12 @@ void StructureSet::SelectedAtom(unsigned int name)
 
 
 const int StructureObject::NO_MMDB_ID = -1;
+const double StructureObject::NO_TEMPERATURE = -1.0;
 
 StructureObject::StructureObject(StructureBase *parent,
     const CBiostruc& biostruc, bool master, bool isRawBiostrucFromMMDB) :
-    StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL)
+    StructureBase(parent), isMaster(master), mmdbID(NO_MMDB_ID), transformToMaster(NULL),
+    minTemperature(NO_TEMPERATURE), maxTemperature(NO_TEMPERATURE)
 {
     // set numerical id simply based on # objects in parentSet
     id = parentSet->objects.size() + 1;

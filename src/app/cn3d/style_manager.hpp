@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/06/14 00:33:24  thiessen
+* asn additions
+*
 * Revision 1.25  2001/06/07 19:04:50  thiessen
 * functional (although incomplete) render settings panel
 *
@@ -113,6 +116,9 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <objects/cn3d/Cn3d_style_dictionary.hpp>
+#include <objects/cn3d/Cn3d_style_settings.hpp>
+
 #include <string>
 
 #include "cn3d/vector_math.hpp"
@@ -126,12 +132,14 @@ BEGIN_SCOPE(Cn3D)
 // annotations. It is meant to contain all settings that can be saved on
 // a per-output file basis.
 
+// values of enumerations must match those in cn3d.asn!
+
 class StyleSettings
 {
 public:
     // for different types of backbone displays
     enum eBackboneType {
-        eOff,
+        eOff = 1,
         eTrace,
         ePartial,
         eComplete
@@ -140,7 +148,7 @@ public:
     // available drawing styles (not all necessarily applicable to all objects)
     enum eDrawingStyle {
         // for atoms and bonds
-        eWire,
+        eWire = 1,
         eTubes,
         eBallAndStick,
         eSpaceFill,
@@ -154,14 +162,14 @@ public:
 
     // available color schemes (not all necessarily applicable to all objects)
     enum eColorScheme {
-        eElement,
+        eElement = 1,
         eObject,
         eMolecule,
         eDomain,
         eSecondaryStructure,
         eUserSelect,
 
-        // different alignment conservation coloring (currently only used for proteinBackbone)
+        // different alignment conservation coloring (currently only used for proteins)
         eAligned,
         eIdentity,
         eVariety,
@@ -205,12 +213,16 @@ public:
     void SetToWireframe(void);
     void SetToAlignment(StyleSettings::eColorScheme protBBType);
 
-    // copy settings
-    StyleSettings& operator = (const StyleSettings& v);
-
     // default and copy constructors
     StyleSettings::StyleSettings(void) { SetToSecondaryStructure(); }
     StyleSettings::StyleSettings(const StyleSettings& orig) { *this = orig; }
+
+    // copy settings
+    StyleSettings& operator = (const StyleSettings& v);
+
+    // to convert to/from asn
+    ncbi::objects::CCn3d_style_settings * CreateASNStyleSettings(void) const;
+    bool LoadSettingsFromASN(const ncbi::objects::CCn3d_style_settings& styleASN);
 };
 
 class StructureSet;
@@ -266,6 +278,10 @@ public:
     // check style option consistency
     bool CheckStyleSettings(StyleSettings *settings, const StructureSet *set);
     bool CheckGlobalStyleSettings(const StructureSet *set);
+
+    // load/save asn style dictionary to/from current styles
+    ncbi::objects::CCn3d_style_dictionary * CreateASNStyleDictionary(void) const;
+    bool LoadFromASNStyleDictionary(const ncbi::objects::CCn3d_style_dictionary& styleDictionary);
 
 private:
     StyleSettings globalStyle;
