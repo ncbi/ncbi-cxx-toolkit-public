@@ -38,7 +38,7 @@ BEGIN_SCOPE(objects)
 
 
 
-struct SLDS_FileDB : public CBDB_File
+struct NCBI_LDS_EXPORT SLDS_FileDB : public CBDB_File
 {
     CBDB_FieldInt4     file_id;
     CBDB_FieldString   file_name;
@@ -52,7 +52,7 @@ struct SLDS_FileDB : public CBDB_File
 
 
 
-struct SLDS_AnnotDB : public CBDB_File
+struct NCBI_LDS_EXPORT SLDS_AnnotDB : public CBDB_File
 {
     CBDB_FieldInt4    annot_id;
     CBDB_FieldInt4    file_id;
@@ -63,7 +63,7 @@ struct SLDS_AnnotDB : public CBDB_File
 };
 
 
-struct SLDS_ObjectTypeDB : public CBDB_File
+struct NCBI_LDS_EXPORT SLDS_ObjectTypeDB : public CBDB_File
 {
     CBDB_FieldInt4    object_type;
     CBDB_FieldString  type_name;
@@ -72,7 +72,7 @@ struct SLDS_ObjectTypeDB : public CBDB_File
 };
 
 
-struct SLDS_ObjectDB : public CBDB_File
+struct NCBI_LDS_EXPORT SLDS_ObjectDB : public CBDB_File
 {
     CBDB_FieldInt4    object_id;
 
@@ -90,7 +90,7 @@ struct SLDS_ObjectDB : public CBDB_File
 };
 
 
-struct SLDS_Annot2ObjectDB : public CBDB_File
+struct NCBI_LDS_EXPORT SLDS_Annot2ObjectDB : public CBDB_File
 {
     CBDB_FieldInt4  object_id;
     CBDB_FieldInt4  annot_id;
@@ -99,7 +99,7 @@ struct SLDS_Annot2ObjectDB : public CBDB_File
 };
 
 
-struct SLDS_ObjectAttrDB : public CBDB_File
+struct NCBI_LDS_EXPORT SLDS_ObjectAttrDB : public CBDB_File
 {
     CBDB_FieldInt4    object_attr_id;
 
@@ -112,7 +112,7 @@ struct SLDS_ObjectAttrDB : public CBDB_File
 
 
 // Structure puts together all tables used in LDS
-struct SLDS_TablesCollection
+struct NCBI_LDS_EXPORT SLDS_TablesCollection
 {
     SLDS_FileDB          file_db;
     SLDS_ObjectTypeDB    object_type_db;
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2003/06/03 19:14:02  kuznets
+* Added lds dll export/import specifications
+*
 * Revision 1.6  2003/05/30 20:26:33  kuznets
 * Fixed field binding in "objects"
 *

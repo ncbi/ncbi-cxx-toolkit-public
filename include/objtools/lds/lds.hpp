@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 // LDS database.
 //
 
-class CLDS_Database
+class NCBI_LDS_EXPORT CLDS_Database
 {
 public:
     // Object type string to database id map
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/03 19:14:02  kuznets
+ * Added lds dll export/import specifications
+ *
  * Revision 1.4  2003/06/03 14:07:46  kuznets
  * Include paths changed to reflect the new directory structure
  *

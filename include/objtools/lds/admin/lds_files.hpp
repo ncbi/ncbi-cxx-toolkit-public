@@ -47,7 +47,7 @@ BEGIN_SCOPE(objects)
 // SLDS_FileDB related methods.
 //
 
-class CLDS_File
+class NCBI_LDS_EXPORT CLDS_File
 {
 public:
     CLDS_File(SLDS_FileDB& file_db)
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/03 19:14:02  kuznets
+ * Added lds dll export/import specifications
+ *
  * Revision 1.4  2003/06/03 14:07:46  kuznets
  * Include paths changed to reflect the new directory structure
  *

@@ -47,7 +47,7 @@ BEGIN_SCOPE(objects)
 // SLDS_ObjectDB and SLDS_AnnotDB related methods.
 //
 
-class CLDS_Object
+class NCBI_LDS_EXPORT CLDS_Object
 {
 public:
     CLDS_Object(SLDS_TablesCollection& db, const map<string, int>& obj_map);    
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/03 19:14:02  kuznets
+ * Added lds dll export/import specifications
+ *
  * Revision 1.4  2003/06/03 14:07:46  kuznets
  * Include paths changed to reflect the new directory structure
  *

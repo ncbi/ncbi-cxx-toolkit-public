@@ -40,7 +40,7 @@ BEGIN_SCOPE(objects)
 // Thrown if error is specific to the local data storage.
 //
 
-class CLDS_Exception : public CBDB_Exception
+class NCBI_LDS_EXPORT CLDS_Exception : public CBDB_Exception
 {
 public:
     enum EErrCode {
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/03 19:14:02  kuznets
+ * Added lds dll export/import specifications
+ *
  * Revision 1.1  2003/05/22 13:24:45  kuznets
  * Initial revision
  *
