@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2001/09/24 20:28:48  lavr
+ * +SERV_Reset(); SERV_Close() changed to utilize SERV_Reset()
+ *
  * Revision 6.26  2001/09/10 21:19:48  lavr
  * SERV_Print():  Client version tag added
  * SERV_OpenEx(): Firewall type handling
@@ -277,15 +280,25 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 }
 
 
-void SERV_Close(SERV_ITER iter)
+void SERV_Reset(SERV_ITER iter)
 {
     size_t i;
     if (!iter)
         return;
-    if (iter->op && iter->op->Close)
-        (*iter->op->Close)(iter);
     for (i = 0; i < iter->n_skip; i++)
         free(iter->skip[i]);
+    iter->n_skip = 0;
+    iter->last = 0;
+}
+
+
+void SERV_Close(SERV_ITER iter)
+{
+    if (!iter)
+        return;
+    if (iter->op && iter->op->Close)
+        (*iter->op->Close)(iter);
+    SERV_Reset(iter);
     if (iter->skip)
         free(iter->skip);
     free(iter);
