@@ -61,7 +61,7 @@ typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 // see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
 NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
-                           vector<CRef<CSeq_loc> >* lcv = 0);
+                           int* counter = 0, vector<CRef<CSeq_loc> >* lcv = 0);
 
 
 
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/07 21:12:56  ucko
+* Support a counter for assigning local IDs to sequences with no ID given.
+*
 * Revision 1.2  2003/08/06 19:08:28  ucko
 * Slight interface tweak to ReadFasta: report lowercase locations in a
 * vector with one entry per Bioseq rather than a consolidated Seq_loc_mix.
