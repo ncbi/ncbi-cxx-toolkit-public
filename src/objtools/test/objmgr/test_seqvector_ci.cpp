@@ -264,6 +264,7 @@ int CTestApp::Run(void)
         cout << "Can not find gi " << gi << endl;
         return 0;
     }
+    cout << "Testing gi " << gi << endl;
 
     // Create seq-vector
     m_Vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
@@ -285,9 +286,12 @@ int CTestApp::Run(void)
 
     // stop > length test
     cout << "Testing past-end read (stop > size)... ";
-    vit.GetSeqData(
-        max<TSeqPos>(m_Vect.size(), 100) - 100, m_Vect.size() + 1, buf);
-    if ( !x_CheckBuf(buf, max<TSeqPos>(m_Vect.size(), 100) - 100, 100) ) {
+    vit.GetSeqData(max<TSeqPos>(m_Vect.size(), 100) - 100,
+                   m_Vect.size() + 1,
+                   buf);
+    if ( !x_CheckBuf(buf,
+                     max<TSeqPos>(m_Vect.size(), 100) - 100,
+                     min<TSeqPos>(m_Vect.size(), 100)) ) {
         cout << "ERROR: GetSeqData() failed -- invalid data" << endl;
         throw runtime_error("Past-end read test failed");
     }
@@ -482,6 +486,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/09 20:35:32  vasilche
+* Fixed test on short sequences (<100).
+*
 * Revision 1.1  2003/12/16 17:51:23  kuznets
 * Code reorganization
 *
