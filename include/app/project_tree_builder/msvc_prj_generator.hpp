@@ -54,7 +54,7 @@ public:
     CMsvcProjectGenerator(const list<SConfigInfo>& configs);
     ~CMsvcProjectGenerator(void);
     
-    bool Generate(const CProjItem& prj);
+    void Generate(const CProjItem& prj);
 
 private:
 
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/10 19:49:07  gorelenk
+ * Changed Generate in CMsvcProjectGenerator .
+ *
  * Revision 1.9  2004/03/05 20:35:30  gorelenk
  * Removed declaration of CollectSources,  CollectHeaders, CollectInlines and
  * CollectResources member-functions of class CMsvcProjectGenerator.
