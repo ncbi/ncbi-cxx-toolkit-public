@@ -71,11 +71,13 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     NStr::Tokenize(dbname_list, " ", m_DBList, NStr::eMergeDelims);
     x_ResolveNames(prot_nucl);
     
-    set<string> recurse;
+    CSeqDBAliasStack recurse;
     
     x_ExpandAliases("-", prot_nucl, recurse, locked);
     
     m_Atlas.Unlock(locked);
+    
+    _ASSERT(recurse.Size() == 0);
 }
 
 // Private Constructor
@@ -86,29 +88,27 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
 // This constructor constructs subnodes by calling x_ExpandAliases,
 // which calls this constructor again with the subnode's arguments.
 // But no node should be its own ancestor.  To prevent this kind of
-// recursive loop, each file adds its full path to a set of strings
-// and does not create a subnode for any path already in that set.
-// 
-// The set (recurse) is passed BY VALUE so that two branches of the
-// same file can contain equivalent nodes.  A more efficient method
-// for allowing this kind of sharing might be to pass by reference,
-// removing the current node path from the set after construction.
+// recursive loop, each file adds its full path to a stack of strings
+// and will not create a subnode for any path already in that set.
 
-CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
-                                 const string   & dbpath,
-                                 const string   & dbname,
-                                 char             prot_nucl,
-                                 set<string>      recurse,
-                                 CSeqDBLockHold & locked)
+CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas      & atlas,
+                                 const string     & dbpath,
+                                 const string     & dbname,
+                                 char               prot_nucl,
+                                 CSeqDBAliasStack & recurse,
+                                 CSeqDBLockHold   & locked)
     : m_Atlas(atlas),
       m_DBPath(dbpath)
 {
     string full_filename( x_MkPath(m_DBPath, dbname, prot_nucl) );
-    recurse.insert(full_filename);
+    
+    recurse.Push(full_filename);
     
     x_ReadValues(full_filename, locked);
     NStr::Tokenize(m_Values["DBLIST"], " ", m_DBList, NStr::eMergeDelims);
     x_ExpandAliases(dbname, prot_nucl, recurse, locked);
+    
+    recurse.Pop();
 }
 
 void CSeqDBAliasNode::x_ResolveNames(char prot_nucl)
@@ -259,10 +259,10 @@ void CSeqDBAliasNode::x_ReadValues(const string   & fname,
     m_Atlas.RetRegion(bp);
 }
 
-void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
-                                      char             prot_nucl,
-                                      set<string>    & recurse,
-                                      CSeqDBLockHold & locked)
+void CSeqDBAliasNode::x_ExpandAliases(const string     & this_name,
+                                      char               prot_nucl,
+                                      CSeqDBAliasStack & recurse,
+                                      CSeqDBLockHold   & locked)
 {
     if (m_DBList.empty()) {
         string situation;
@@ -290,7 +290,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
         
         string new_db_loc( x_MkPath(m_DBPath, m_DBList[i], prot_nucl) );
         
-        if (recurse.find(new_db_loc) != recurse.end()) {
+        if (recurse.Exists(new_db_loc)) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        "Illegal configuration: DB alias files are mutually recursive.");

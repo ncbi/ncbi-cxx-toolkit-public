@@ -79,6 +79,117 @@ public:
 };
 
 
+/// CSeqDBAliasStack
+/// 
+/// When expanding a CSeqDBAliasNode, a test must be done to determine
+/// whether each child nodes has already been expanded in this branch
+/// of the traversal.  This class provides a set mechanism which
+/// tracks node ancestry.
+
+class CSeqDBAliasStack {
+public:
+    /// Constructor
+    CSeqDBAliasStack()
+        : m_Count(0)
+    {
+        m_NodeNames.resize(1);
+    }
+    
+    /// Check whether the stack contains the specified string.
+    ///
+    /// This iterates over the vector of strings and returns true if
+    /// the specified string is found.
+    ///
+    /// @param name
+    ///   The alias file base name to add.
+    /// @return
+    ///   True if the string was found in the stack.
+    bool Exists(const string & name)
+    {
+        for(unsigned i=0; i<m_Count; i++) {
+            if (m_NodeNames[i] == name) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /// Push a new string onto to the stack.
+    ///
+    /// The specified string is added to the stack.
+    ///
+    /// @param name
+    ///   The alias file base name to add.
+    void Push(const string & name)
+    {
+        // This design aims at efficiency (cycles, not memory).
+        // Specifically, it tries to accomplish the following:
+        //
+        // 1. The m_NodeNames vector will be resized at most ln2(N)
+        //    times where N is the maximal DEPTH of traversal.
+        //
+        // 2. Strings are not deallocated on return from lower depths,
+        //    instead they are left in place as buffers for future
+        //    allocations.
+        //
+        // 3. A particular element of the string array should be
+        //    reallocated at most ln2(M/16) times, where M is the
+        //    maximal length of the string, regardless of the number
+        //    of traversals through that node-depth.
+        //
+        // The vector is always resize()d, whereas string data is
+        // reserve()d.  We want vector.size == vector.capacity at all
+        // times.  If vector.size fluctuated with each adding and
+        // removing of an element, the strings between old-size and
+        // new-size might be allocated and freed.  With strings, the
+        // resize method might cause blanking of memory, but the
+        // reserve method should not.  In either case, the string size
+        // will be set by operator=.
+        
+        if (m_NodeNames.size() == m_Count) {
+            m_NodeNames.resize(m_NodeNames.size() * 2);
+        }
+        
+        string & cur_node = m_NodeNames[m_Count++];
+        
+        // The following should not affect results, but may serve to
+        // accomplish efficiency goal #3 above.
+        
+        if (cur_node.size() < name.size()) {
+            if (name.size() <= 8) {
+                cur_node.reserve(16);
+            } else {
+                cur_node.reserve(name.size() * 2);
+            }
+        }
+        
+        // This should preserve capacity (and never allocate).
+        
+        cur_node.assign(name.data(), name.length());
+    }
+    
+    /// Remove the top element of the stack
+    void Pop()
+    {
+        _ASSERT(m_Count);
+        m_Count--;
+    }
+    
+    /// Return the number of in-use elements.
+    unsigned Size()
+    {
+        return m_Count;
+    }
+    
+private:
+    /// List of node names.
+    vector<string> m_NodeNames;
+    
+    /// Number of in-use node names.
+    unsigned m_Count;
+};
+
+
 /// CSeqDBAliasNode class
 ///
 /// This is one node of the alias node tree, an n-ary tree which
@@ -281,12 +392,12 @@ private:
     ///   Node history for cycle detection
     /// @param locked
     ///   The lock holder object for this thread
-    CSeqDBAliasNode(CSeqDBAtlas    & atlas,
-                    const string   & dbpath,
-                    const string   & dbname,
-                    char             prot_nucl,
-                    set<string>      recurse,
-                    CSeqDBLockHold & locked);
+    CSeqDBAliasNode(CSeqDBAtlas      & atlas,
+                    const string     & dbpath,
+                    const string     & dbname,
+                    char               prot_nucl,
+                    CSeqDBAliasStack & recurse,
+                    CSeqDBLockHold   & locked);
     
     /// Read the alias file
     ///
@@ -338,10 +449,10 @@ private:
     ///   Set of all ancestor nodes for this node.
     /// @param locked
     ///   The lock holder object for this thread
-    void x_ExpandAliases(const string   & this_name,
-                         char             prot_nucl,
-                         set<string>    & recurse,
-                         CSeqDBLockHold & locked);
+    void x_ExpandAliases(const string     & this_name,
+                         char               prot_nucl,
+                         CSeqDBAliasStack & recurse,
+                         CSeqDBLockHold   & locked);
     
     /// Build a resolved path from components
     ///
