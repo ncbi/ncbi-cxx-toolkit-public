@@ -253,26 +253,6 @@ void CValidError_feat::ValidateSeqFeatData
 }
 
 
-bool CValidError_feat::SerialNumberInComment(const string& comment)
-{
-    size_t pos = comment.find('[', 0);
-    while ( pos != string::npos ) {
-        ++pos;
-        if ( isdigit(comment[pos]) ) {
-            while ( isdigit(comment[pos]) ) {
-                ++pos;
-            }
-            if ( comment[pos] == ']' ) {
-                return true;
-            }
-        }
-
-        pos = comment.find('[', pos);
-    }
-    return false;
-}
-
-
 bool CValidError_feat::IsPlastid(int genome)
 {
     if ( genome == CBioSource::eGenome_chloroplast  ||
@@ -1309,7 +1289,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             CFeat_CI::eResolve_None,
             CFeat_CI::e_Product);
         while ( mrna ) {
-            if ( &mrna->GetMappedFeature() != &feat ) {
+            if ( &(mrna->GetOriginalFeature()) != &feat ) {
                     PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
                         "Same product Bioseq from multiple mRNA features", feat);
                     break;
@@ -1387,25 +1367,20 @@ void CValidError_feat::ValidateCommonCDSProduct
     if ( !sfp ) {
         return;
     }
-
-    // !!!
-    // IMPORTANT: currently we are unable to perform this test because
-    // of the way feature indexing is implemented. We have no access to the 
-    // "original" Cdregion feature object, only to a copy of it.
-    /**
+    
     if ( &feat != sfp ) {
         // if genomic product set, with one cds on contig and one on cdna,
         // do not report.
         if ( m_Imp.IsGPS() ) {
-            if ( nuc != prod ) {
+            // feature packaging test will do final contig vs. cdna check
+            CBioseq_Handle sfh = m_Scope->GetBioseqHandle(sfp->GetLocation());
+            if ( nuc != sfh ) {
                 return;
             }
         }
+        PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts, 
+            "Same product Bioseq from multiple CDS features", feat);
     }
-    
-    PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts, 
-        "Same product Bioseq from multiple CDS features", feat);
-    **/
 }
 
 
@@ -2064,7 +2039,7 @@ void CValidError_feat::ValidateFeatComment
 (const string& comment,
  const CSeq_feat& feat)
 {
-    if ( SerialNumberInComment(comment) ) {
+    if ( m_Imp.IsSerialNumberInComment(comment) ) {
         PostErr(eDiag_Info, eErr_SEQ_FEAT_SerialInComment,
             "Feature comment may refer to reference by serial number - "
             "attach reference specific comments to the reference "
@@ -2164,6 +2139,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/02/12 18:05:52  shomrat
+* SerialNumberInComment was moved to validerror_imp; and a few bug fixes
+*
 * Revision 1.15  2003/02/10 15:54:02  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *
