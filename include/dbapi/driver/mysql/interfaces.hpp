@@ -28,7 +28,8 @@
  *
  * Author:  Anton Butanayev
  *
- * File Description:  Driver for MySQL server
+ * File Description:
+ *    Driver for MySQL server
  *
  */
 
@@ -38,168 +39,210 @@
 
 BEGIN_NCBI_SCOPE
 
+
 class CMySQLContext;
 class CMySQL_Connection;
 class CMySQL_LangCmd;
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CMySQLContext::
+//
+
 class CMySQLContext : public I_DriverContext
 {
+    friend class CMySQL_Connection;
 
 public:
-  CMySQLContext();
-  virtual ~CMySQLContext();
+    CMySQLContext();
 
-  virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
-  virtual bool SetTimeout      (unsigned int nof_secs = 0);
-  virtual bool SetMaxTextImageSize(size_t nof_bytes);
+    virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
+    virtual bool SetTimeout      (unsigned int nof_secs = 0);
+    virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-  virtual bool IsAbleTo(ECapability cpb) const;
-  virtual CDB_Connection* Connect(const string &srv_name,
-                                  const string &user_name,
-                                  const string &passwd,
-                                  TConnectionMode mode,
-                                  bool reusable  = false,
-                                  const string &pool_name = kEmptyStr);
+    virtual CDB_Connection* Connect(const string&   srv_name,
+                                    const string&   user_name,
+                                    const string&   passwd,
+                                    TConnectionMode mode,
+                                    bool            reusable  = false,
+                                    const string&   pool_name = kEmptyStr);
 
-  virtual unsigned int NofConnections(const string &srv_name = kEmptyStr) const;
+    virtual unsigned int NofConnections(const string& srv_name = kEmptyStr)
+        const;
 
+    virtual bool IsAbleTo(ECapability cpb) const;
 
-private:
-  friend class CMySQL_Connection;
+    virtual ~CMySQLContext();
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CMySQL_Connection::
+//
 
 class CMySQL_Connection : public I_Connection
 {
+    friend class CMySQLContext;
+
 protected:
-  friend class CMySQLContext;
+    CMySQL_Connection(CMySQLContext* cntx,
+                      const string&  srv_name,
+                      const string&  user_name,
+                      const string&  passwd);
 
-  CMySQL_Connection(CMySQLContext* cntx,
-                    const string &srv_name,
-                    const string &user_name,
-                    const string &passwd);
+    virtual ~CMySQL_Connection();
 
-  virtual ~CMySQL_Connection();
+    virtual bool IsAlive();
 
-  virtual bool IsAlive();
-
-  virtual CDB_LangCmd *LangCmd(const string &lang_query,
-                               unsigned int nof_params = 0);
-
-  virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor &desc,
-                                       size_t data_size,
-                                       bool log_it = true);
-
-  virtual CDB_RPCCmd *RPC(const string &rpc_name,
-                          unsigned int nof_args);
-
-  virtual CDB_BCPInCmd *BCPIn(const string &table_name,
-                              unsigned int nof_columns);
-
-  virtual CDB_CursorCmd *Cursor(const string &cursor_name,
-                                const string &query,
-                                unsigned int nof_params,
-                                unsigned int batch_size = 1);
+    virtual CDB_LangCmd*     LangCmd(const string& lang_query,
+                                     unsigned int  nof_params = 0);
+    virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
+                                         size_t          data_size,
+                                         bool            log_it = true);
+    virtual CDB_RPCCmd*      RPC(const string& rpc_name,
+                                 unsigned int  nof_args);
+    virtual CDB_BCPInCmd*    BCPIn(const string& table_name,
+                                   unsigned int  nof_columns);
+    virtual CDB_CursorCmd* Cursor(const string& cursor_name,
+                                  const string& query,
+                                  unsigned int nof_params,
+                                  unsigned int batch_size = 1);
 
 
-  virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
-                        bool log_it = true);
-  virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
-                        bool log_it = true);
-  virtual bool Refresh();
-  virtual const string& ServerName() const;
-  virtual const string& UserName()   const;
-  virtual const string& Password()   const;
-  virtual I_DriverContext::TConnectionMode ConnectMode() const;
-  virtual bool IsReusable() const;
-  virtual const string& PoolName() const;
-  virtual I_DriverContext* Context() const;
-  virtual void PushMsgHandler(CDB_UserHandler* h);
-  virtual void PopMsgHandler (CDB_UserHandler* h);
-  virtual void Release();
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
+                          bool log_it = true);
+    virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
+                          bool log_it = true);
 
+    virtual bool Refresh();
+    virtual const string& ServerName() const;
+    virtual const string& UserName()   const;
+    virtual const string& Password()   const;
+    virtual I_DriverContext::TConnectionMode ConnectMode() const;
+    virtual bool IsReusable() const;
+    virtual const string& PoolName() const;
+    virtual I_DriverContext* Context() const;
+    virtual void PushMsgHandler(CDB_UserHandler* h);
+    virtual void PopMsgHandler (CDB_UserHandler* h);
+    virtual void Release();
 
-  void DropCmd(CDB_BaseEnt& cmd);
+    void DropCmd(CDB_BaseEnt& cmd);
 
 private:
-  friend class CMySQL_LangCmd;
-  friend class CMySQL_RowResult;
+    friend class CMySQL_LangCmd;
+    friend class CMySQL_RowResult;
 
-  CMySQLContext *m_Context;
-  MYSQL m_MySQL;
-
+    CMySQLContext* m_Context;
+    MYSQL          m_MySQL;
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CMySQL_LangCmd::
+//
 
 class CMySQL_LangCmd : public I_LangCmd
 {
-  friend class CMySQL_Connection;
-protected:
-  CMySQL_LangCmd(CMySQL_Connection* conn,
-                 const string& lang_query, unsigned int nof_params);
-  virtual ~CMySQL_LangCmd();
+    friend class CMySQL_Connection;
 
-  virtual bool More(const string& query_text);
-  virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-  virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
-  virtual bool Send();
-  virtual bool WasSent() const;
-  virtual bool Cancel();
-  virtual bool WasCanceled() const;
-  virtual CDB_Result* Result();
-  virtual bool HasMoreResults() const;
-  virtual bool HasFailed() const;
-  virtual int  RowCount() const;
-  virtual void Release();
+protected:
+    CMySQL_LangCmd(CMySQL_Connection* conn,
+                   const string&      lang_query,
+                   unsigned int       nof_params);
+    virtual ~CMySQL_LangCmd();
+
+    virtual bool        More(const string& query_text);
+    virtual bool        BindParam(const string& param_name,
+                                  CDB_Object*   param_ptr);
+    virtual bool        SetParam(const string& param_name,
+                                 CDB_Object*   param_ptr);
+    virtual bool        Send();
+    virtual bool        WasSent() const;
+    virtual bool        Cancel();
+    virtual bool        WasCanceled() const;
+    virtual CDB_Result* Result();
+    virtual bool        HasMoreResults() const;
+    virtual bool        HasFailed() const;
+    virtual int         RowCount() const;
+    virtual void        Release();
+
 private:
-  CMySQL_Connection *m_Connect;
-  string m_Query;
-  bool m_HasResults;
+    CMySQL_Connection* m_Connect;
+    string             m_Query;
+    bool               m_HasResults;
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  SMySQL_ColDescr::
+//
 
 struct SMySQL_ColDescr
 {
-  unsigned long max_length;
-  EDB_Type data_type;
-  string  col_name;
+    unsigned long max_length;
+    EDB_Type      data_type;
+    string        col_name;
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CMySQL_RowResult::
+//
 
 class CMySQL_RowResult : public I_Result
 {
-protected:
-  friend class CMySQL_LangCmd;
-  CMySQL_RowResult(CMySQL_Connection* conn);
-  virtual ~CMySQL_RowResult();
+    friend class CMySQL_LangCmd;
 
-  virtual EDB_ResType ResultType() const;
-  virtual unsigned int NofItems() const;
-  virtual const char *ItemName(unsigned int item_num) const;
-  virtual size_t ItemMaxSize(unsigned int item_num) const;
-  virtual EDB_Type ItemDataType(unsigned int item_num) const;
-  virtual bool Fetch();
-  virtual int CurrentItemNo() const;
-  virtual CDB_Object *GetItem(CDB_Object* item_buf = 0);
-  virtual size_t ReadItem(void* buffer, size_t buffer_size,
-                          bool* is_null = 0);
-  virtual I_ITDescriptor *GetImageOrTextDescriptor();
-  virtual bool SkipItem();
+protected:
+    CMySQL_RowResult(CMySQL_Connection* conn);
+    virtual ~CMySQL_RowResult();
+
+    virtual EDB_ResType     ResultType() const;
+    virtual unsigned int    NofItems() const;
+    virtual const char*     ItemName(unsigned int item_num) const;
+    virtual size_t          ItemMaxSize(unsigned int item_num) const;
+    virtual EDB_Type        ItemDataType(unsigned int item_num) const;
+    virtual bool            Fetch();
+    virtual int             CurrentItemNo() const;
+    virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
+    virtual size_t          ReadItem(void* buffer, size_t buffer_size,
+                                     bool* is_null = 0);
+    virtual I_ITDescriptor* GetImageOrTextDescriptor();
+    virtual bool            SkipItem();
 
 private:
-  MYSQL_RES *m_Result;
-  MYSQL_ROW m_Row;
-  unsigned long *m_Lengths;
-  CMySQL_Connection *m_Connect;
-  int m_CurrItem;
-  unsigned int m_NofCols;
-  SMySQL_ColDescr *m_ColFmt;
-
+    MYSQL_RES*         m_Result;
+    MYSQL_ROW          m_Row;
+    unsigned long*     m_Lengths;
+    CMySQL_Connection* m_Connect;
+    int                m_CurrItem;
+    unsigned int       m_NofCols;
+    SMySQL_ColDescr*   m_ColFmt;
 };
+
 
 END_NCBI_SCOPE
 
+
 #endif
+
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/01/06 20:23:06  vakatov
+ * Formally reformatted to closer meet the C++ Toolkit / DBAPI style
+ *
  * Revision 1.2  2002/08/28 17:17:57  butanaev
  * Improved error handling, demo app.
  *
