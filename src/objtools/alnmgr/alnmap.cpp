@@ -707,9 +707,11 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
                           TNumseg first_seg, TNumseg last_seg,
                           TGetChunkFlags flags) const
 {
+    TSegTypeFlags type, test_type;
+
     // add the participating segments to the vector
     for (TNumseg seg = first_seg;  seg <= last_seg;  seg++) {
-        TSegTypeFlags type = x_GetRawSegType(row, seg);
+        type = x_GetRawSegType(row, seg);
 
         // see if the segment needs to be skipped
         if (x_SkipType(type, flags)) {
@@ -724,13 +726,23 @@ void CAlnMap::x_GetChunks(CAlnChunkVec * vec,
         vec->m_StartSegs.push_back(seg); // start seg
 
         // find the stop seg
-        while (seg < last_seg  &&
-               x_CompareAdjacentSegTypes(type,
-                                         x_GetRawSegType(row, seg+1),
-                                         flags)) {
-            seg++;
+        TNumseg test_seg = seg;
+        while (test_seg < last_seg) {
+            test_seg++;
+            test_type = x_GetRawSegType(row, test_seg);
+            if (x_CompareAdjacentSegTypes(type, test_type, flags)) {
+                seg = test_seg;
+                continue;
+            }
+
+            // include included gaps if desired
+            if (flags & fIgnoreGaps  &&  !(test_type & fSeq)  &&
+                x_CompareAdjacentSegTypes(type & ~fSeq, test_type, flags)) {
+                continue;
+            }
+            break;
         }
-        vec->m_StopSegs.push_back(seg); 
+        vec->m_StopSegs.push_back(seg);
     }
 }
 
@@ -754,8 +766,11 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     chunk->SetRange().Set(from, to);
     chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, start_seg));
 
+    TSegTypeFlags type;
     for (CAlnMap::TNumseg seg = start_seg + 1;  seg <= stop_seg;  seg++) {
-        if ( !chunk->IsGap() ) {
+        type = m_AlnMap.x_GetRawSegType(m_Row, seg);
+        if (type & fSeq) {
+            // extend the range
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().Set(chunk->GetRange().GetFrom(),
                                       chunk->GetRange().GetTo()
@@ -766,8 +781,8 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                                       chunk->GetRange().GetTo());
             }
         }
-        chunk->SetType(chunk->GetType()
-                       | m_AlnMap.x_GetRawSegType(m_Row, seg));
+        // extend the type
+        chunk->SetType(chunk->GetType() | type);
     }
 
     //determine the aln range
@@ -848,6 +863,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/03/20 16:38:21  todorov
+* +fIgnoreGaps for GetXXXChunks
+*
 * Revision 1.26  2003/03/07 17:30:26  todorov
 * + ESearchDirection dir, bool try_reverse_dir for GetAlnPosFromSeqPos
 *
