@@ -57,7 +57,13 @@ public:
     enum ENameStyle {
         eName_AsIs,   ///< Take the specified filename as is
         eName_Ini,    ///< Add .ini, dropping existing extensions as needed
-        eName_DotRc   ///< Transform into .*rc
+        eName_DotRc,  ///< Transform into .*rc
+        /// C Toolkit style; mostly useful with name = "ncbi"
+#ifdef NCBI_OS_MSWIN
+        eName_RcOrIni = eName_Ini
+#else
+        eName_RcOrIni = eName_DotRc
+#endif
     };
 
     typedef CNcbiRegistry::TFlags TRegFlags;
@@ -198,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/08/14 17:37:26  ucko
+* +eName_RcOrIni (for .ncbirc / ncbi.ini)
+*
 * Revision 1.3  2003/08/12 19:01:55  vakatov
 * Minor, formal code style amendments
 *
