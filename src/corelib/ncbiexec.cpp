@@ -96,7 +96,7 @@ static int s_SpawnUnix(const ESpawnFunc func, const CExec::EMode mode,
             fclose(stdout);
             fclose(stderr);
         }
-        int status;
+        int status =-1;
         switch (func) {
         case eV:
             status = execv(cmdname, const_cast<char**>(argv));
@@ -349,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/07/16 15:04:22  ivanov
+ * Fixed warning about uninitialized variable in s_SpawnUnix()
+ *
  * Revision 1.7  2002/07/15 16:38:50  ivanov
  * Fixed bug in macro GET_EXEC_ARGS -- write over array bound
  *
