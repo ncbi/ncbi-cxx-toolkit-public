@@ -363,7 +363,7 @@ void DTDParser::BeginEntityContent(void)
 
     Consume();
     tok = Next();
-    if (tok == T_IDENTIFIER) {
+    if (tok != T_IDENTIFIER) {
         ParseError("identifier");
     }
 //    _ASSERT(tok == T_IDENTIFIER);
@@ -477,13 +477,22 @@ void DTDParser::ParseAttributesContent(const string& name)
 void DTDParser::ConsumeAttributeContent(DTDElement& node,
                                         const string& id_name)
 {
+    bool skip;
+    bool done=false;
     DTDAttribute attrib;
     attrib.SetName(id_name);
-    for (bool done=false; !done;) {
+    for (done=skip=false; !done;) {
         switch(Next()) {
         default:
             ParseError("Unknown token", "token");
 //            _ASSERT(0);
+            break;
+        case T_ENTITY:
+            PushEntityLexer(NextToken().GetText());
+            skip = true;
+            break;
+        case T_EOF:
+            PopEntityLexer();
             break;
         case T_IDENTIFIER:
             done = true;
@@ -544,8 +553,12 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
             attrib.SetValueType(DTDAttribute::eFixed);
             break;
         }
-        if (!done) {
-            Consume();
+        if (skip) {
+            skip=false;
+        } else {
+            if (!done) {
+                Consume();
+            }
         }
     }
     node.AddAttribute(attrib);
@@ -962,6 +975,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2003/01/14 19:02:09  gouriano
+ * added parsing of entities as attribute contents
+ *
  * Revision 1.7  2002/12/17 16:24:43  gouriano
  * replaced _ASSERTs by throwing an exception
  *
