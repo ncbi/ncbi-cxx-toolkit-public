@@ -332,7 +332,10 @@ public:
     bool EndOfData(void) const;
 
 private:
-    size_t GetCurrentChunkAvailable(void) const;
+    size_t GetCurrentChunkAvailable(void) const
+        {
+            return m_CurrentChunk->GetDataSize() - m_CurrentChunkOffset;
+        }
 
 private:
     CConstRef<CMemoryChunk> m_CurrentChunk;
@@ -471,6 +474,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2004/08/04 14:32:18  vasilche
+ * Fixed bug detected by MSVC 7.
+ *
  * Revision 1.23  2003/12/31 20:52:17  gouriano
  * added possibility to seek (when possible) in CByteSourceReader
  *

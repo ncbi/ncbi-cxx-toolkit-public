@@ -429,7 +429,6 @@ CMemoryChunk::CMemoryChunk(const char* data, size_t dataSize,
     if ( prevChunk ) {
         prevChunk->m_NextChunk = this;
     }
-    prevChunk = this;
 }
 
 
@@ -473,12 +472,6 @@ CMemoryByteSourceReader::CMemoryByteSourceReader(CConstRef<CMemoryChunk> bytes)
 
 CMemoryByteSourceReader::~CMemoryByteSourceReader(void)
 {
-}
-
-
-size_t CMemoryByteSourceReader::GetCurrentChunkAvailable(void) const
-{
-    return m_CurrentChunk->GetDataSize() - m_CurrentChunkOffset;
 }
 
 
@@ -665,6 +658,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/08/04 14:32:18  vasilche
+ * Fixed bug detected by MSVC 7.
+ *
  * Revision 1.33  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
