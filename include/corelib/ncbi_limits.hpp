@@ -76,19 +76,19 @@
 
 BEGIN_NCBI_SCOPE
 
-//
-//  Pre-declaration of the "numeric_limits<>" template
-//  Forcibly overrides (using preprocessor) the original "numeric_limits<>"!
-//
+///
+///  Pre-declaration of the "numeric_limits<>" template
+///  Forcibly overrides (using preprocessor) the original "numeric_limits<>"!
+///
 
 #  define numeric_limits ncbi_numeric_limits
 template <class T> class numeric_limits;
 
 
-//
-//  Auxiliary macro to implement (a limited edition of) the
-//  "numeric_limits<>" template
-//
+///
+///  Auxiliary macro to implement (a limited edition of) the
+///  "numeric_limits<>" template
+///
 
 #  define NCBI_NUMERIC_LIMITS(type, alias) \
   template <> \
@@ -146,12 +146,67 @@ END_NCBI_SCOPE
 #endif // !HAVE_LIMITS  ||  NCBI_COMPILER_WORKSHOP
 
 
+BEGIN_NCBI_SCOPE
+
+/// Generic template to get STD limits by a variable.
+/// Typical use:
+/// <pre>
+///  int a = 10; 
+///  
+/// @note 
+///   Causes a compile-time failure if used
+///    instead of the specialized implementations.
+template<typename T> 
+inline numeric_limits<T> get_limits(const T&)
+{
+	typename T::TypeIsNotSupported tmp; 
+	return numeric_limits<T>();
+}
+
+/// Macro to declare specilized get_limits
+#  define NCBI_GET_NUMERIC_LIMITS(type) \
+    EMPTY_TEMPLATE \
+    inline numeric_limits<type> get_limits(const type&) \
+	{ return numeric_limits<type>(); }
+
+NCBI_GET_NUMERIC_LIMITS(         char)
+NCBI_GET_NUMERIC_LIMITS(signed   char)
+NCBI_GET_NUMERIC_LIMITS(unsigned char)
+
+NCBI_GET_NUMERIC_LIMITS(signed   short)
+NCBI_GET_NUMERIC_LIMITS(unsigned short)
+
+NCBI_GET_NUMERIC_LIMITS(signed   int)
+NCBI_GET_NUMERIC_LIMITS(unsigned int)
+
+NCBI_GET_NUMERIC_LIMITS(signed   long)
+NCBI_GET_NUMERIC_LIMITS(unsigned long)
+
+NCBI_GET_NUMERIC_LIMITS(float)
+NCBI_GET_NUMERIC_LIMITS(double)
+
+#  if (SIZEOF_LONG_LONG > 0)
+NCBI_GET_NUMERIC_LIMITS(signed   long long)
+NCBI_GET_NUMERIC_LIMITS(unsigned long long)
+#  endif
+
+#  if defined(NCBI_USE_INT64)
+NCBI_GET_NUMERIC_LIMITS(signed   __int64)
+NCBI_GET_NUMERIC_LIMITS(unsigned __int64)
+#  endif
+
+
+END_NCBI_SCOPE
+
 /* @} */
 
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2004/06/01 12:09:45  kuznets
+ * + get_limits
+ *
  * Revision 1.6  2003/04/01 14:18:50  siyan
  * Added doxygen support
  *
