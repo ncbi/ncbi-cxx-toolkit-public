@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/03/21 21:23:30  lavr
+ * Explicit type converion size_t -> unsigned in printf
+ *
  * Revision 6.17  2001/03/20 22:03:32  lavr
  * BUGFIX in SERV_Print (miscalculation of buflen for accepted server types)
  *
@@ -314,7 +317,7 @@ char* SERV_Print(SERV_ITER iter)
                 s2++;
             memmove(s1, s2, strlen(s2) + 1);
         }
-        buflen = sprintf(buffer, "Skip-Info-%u: ", i + 1); 
+        buflen = sprintf(buffer, "Skip-Info-%u: ", (unsigned)i + 1); 
         assert(buflen < sizeof(buffer)-1);
         if (!BUF_Write(&buf, buffer, buflen) ||
             !BUF_Write(&buf, str, strlen(str)) ||
