@@ -410,9 +410,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     BlastMask *last_filter_out = NULL;
     Uint1 *buffer;              /* holds sequence for plus strand or protein. */
     Boolean reverse;            /* Indicates the strand when masking filtered locations */
-    BlastMask *mask_slp, *next_mask_slp;        /* Auxiliary locations for lower 
-                                                   case masks */
+    BlastMask *mask_slp, *next_mask_slp; /* Auxiliary locations for lower 
+                                            case masks */
     Int4 context_offset;
+    Boolean no_forward_strand; 
 
     if ((status =
          BlastScoringOptionsValidate(program_number, scoring_options,
@@ -457,19 +458,29 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     mask_slp = NULL;
     *filter_out = NULL;
 
+    no_forward_strand = (query_info->first_context > 0);
+
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
         context_offset = query_info->context_offsets[context];
         buffer = &query_blk->sequence[context_offset];
+        /* For each query, check if forward strand is present */
+        if ((context & 1) == 0)
+           no_forward_strand = FALSE;
+
         if ((query_length = BLAST_GetQueryLength(query_info, context)) <= 0)
+        {
+           if ((context & 1) == 0)
+              no_forward_strand = TRUE;
            continue;
+        }
 
         reverse = (is_na && ((context & 1) != 0));
         index = (is_na ? context / 2 : context);
 
         /* It is not necessary to do filtering on the reverse strand - the 
            masking locations are the same as on the forward strand */
-        if (!reverse) {
+        if (!reverse || no_forward_strand) {
             if ((status = BlastSetUp_Filter(program_number, buffer,
                                             query_length, 0,
                                             qsup_options->filter_string,
