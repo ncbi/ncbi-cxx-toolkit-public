@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.53 2002/04/05 21:20:09 ucko Exp $
+#  $Id: configure.ac,v 1.54 2002/04/05 22:16:03 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1101,7 +1101,6 @@ elif test "$x_have_unistd" = "yes" ; then
      osf)     AC_DEFINE(NCBI_OS_OSF1,    1, [Define to 1 on Digital Unix.]) ;;
      solaris) AC_DEFINE(NCBI_OS_SOLARIS, 1, [Define to 1 on Solaris.])      ;;
    esac
-   fi
 else
    AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])

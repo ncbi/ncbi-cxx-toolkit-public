@@ -4977,7 +4977,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
       ;;
    esac
-   fi
 else
 
 cat >>confdefs.h <<\_ACEOF
