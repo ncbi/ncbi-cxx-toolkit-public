@@ -1,0 +1,147 @@
+--**********************************************************************
+--
+--  Definitions for CDD's 
+--
+--  NCBI Structure Group
+--
+--  National Center for Biotechnology Information
+--  National Institutes of Health
+--  Bethesda, MD 20894 USA
+--
+--  October 1999
+--
+--  asntool -m cdd.asn -w 100 -o cdd.h
+--  asntool -B objcdd -m cdd.asn -G -w 100 -I objseq.h objsset.h -K cdd.h -M asn.all
+--**********************************************************************
+
+NCBI-Cdd DEFINITIONS ::=
+-- NCBI Conserved Domain Definition
+
+
+BEGIN
+
+EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set;
+
+IMPORTS  Date                 FROM NCBI-General
+         Pub                  FROM NCBI-Pub
+         Biostruc-annot-set   FROM MMDB
+         Bioseq               FROM NCBI-Sequence
+         Seq-annot            FROM NCBI-Sequence
+         Seq-entry            FROM NCBI-Seqset
+         Org-ref              FROM NCBI-Organism
+         Seq-interval         FROM NCBI-Seqloc
+         Score-set            FROM NCBI-Seqalign;
+
+-- Cdd's should not exist without a unique integer id, but alternative 
+-- id's may be present as well.
+
+Global-id ::= SEQUENCE {
+             accession      VisibleString,
+             release        VisibleString OPTIONAL,
+             version        INTEGER       OPTIONAL, -- version 0 is the seed
+             database       VisibleString OPTIONAL  -- this is NOT the source!
+             }                                      -- rather the database the
+                                                    -- object resides in
+
+Cdd-id ::= CHOICE {
+             uid            INTEGER,
+             gid            Global-id
+             }
+
+Cdd-id-set ::= SEQUENCE OF Cdd-id
+
+-- The description of CDD's refers to the specific set of aligned sequences,
+-- the region that is being aligned and the information contained in the
+-- alignment. It may contain a lengthy comment
+-- describing the function of the domain as well as its origin and all
+-- other anecdotal information that can't be pressed into a rigid scheme.
+-- Crosslinks to reference papers available in PubMed are possible as well.
+-- There can be as many of these as you want in the CDD.
+
+Cdd-descr ::= CHOICE {
+                othername   VisibleString, -- alternative names for the CDD
+                category    VisibleString, -- intracellular, extracellular, etc.
+                comment     VisibleString, -- this is where annotations go
+                reference   Pub,           -- a citation 
+                create-date Date,          -- valid for the current version
+                tax-source  Org-ref,       -- holds the highest common node
+                source      VisibleString, -- the database the seeds were created
+                                           -- from, e.g. SMART, PFAM, etc..
+                status      INTEGER { unassigned(0),
+                                      finished-ok(1),     -- to indicate
+                                      pending-release(2), -- processing status
+                                      other-asis(3),      -- or final type
+                                      matrix-only(4),     -- 
+                                      other(255) }        -- for CD production
+              }
+
+Cdd-descr-set ::= SET OF Cdd-descr
+
+-- the Cdd-tree contains the hierarchy of CDDs.  This object is separate from
+-- the Cdd's themselves to allow it to be retrieved separately and to
+-- operate as an index.
+
+Cdd-tree ::= SEQUENCE {
+            name          VisibleString,
+            id            Cdd-id-set,
+            description   Cdd-descr-set OPTIONAL,
+            parents       Cdd-id-set OPTIONAL,
+            children      Cdd-id-set OPTIONAL,
+            siblings      Cdd-id-set OPTIONAL
+            }
+
+Cdd-tree-set ::= SEQUENCE OF Cdd-tree
+
+-- Matrix definitions, these are supposed to store PSSMs and corresponding 
+-- matrices of relative residue frequencies.
+-- the number of columns and rows is listed explicitly, values in columns
+-- are stored column by column, i.e. in groups of nrows values for each column
+
+Matrix ::= SEQUENCE {
+  ncolumns      INTEGER,
+  nrows         INTEGER,
+  row-labels    SEQUENCE OF VisibleString OPTIONAL,
+  scale-factor  INTEGER,
+  columns       SEQUENCE OF INTEGER
+}
+
+-- definition for matrix of pairwise "distances", stored as the upper 
+-- triangle of a sqared n x n matrix (excluding the diagonal), this is
+-- supposed to store pairwise percentages of identical residues, pairwise
+-- alignment scores or E-values from pairwise BLAST sequence comparisons
+
+Triangle ::= SEQUENCE {
+  nelements     INTEGER,
+  scores        Score-set
+}
+
+-- the Cdd is the basic ASN.1 object storing an annotated and curated
+-- set of alignments (formulated as a set of pairwise master-slave
+-- alignments). 
+-- The alignment data are contained in Seq-align-sets and Biostruc-feature-sets.
+-- Version numbers in Global-ids are meant to be updated every time the Cdd is changed
+-- in a way that does not require Global-ids to be changed (sequences added in update
+-- cycle, annotation changed)
+
+Cdd ::= SEQUENCE {
+  name          VisibleString,
+  id            Cdd-id-set,
+  description   Cdd-descr-set OPTIONAL,
+  seqannot      SEQUENCE OF Seq-annot OPTIONAL, -- contains the alignment
+  features      Biostruc-annot-set OPTIONAL, -- contains structure alignments
+                                             -- or "core" definitions
+  sequences     Seq-entry OPTIONAL,          -- store as bioseq-set inside seq-entry
+  profile-range Seq-interval OPTIONAL,       -- profile for this region only
+                                             -- also stores the Seq-id of the master
+  trunc-master  Bioseq OPTIONAL,             -- holds the truncated master
+                                             -- which may be something like a
+                                             -- consensus, but still refers to the
+                                             -- sequence coord. frame in profile-range
+  posfreq       Matrix OPTIONAL,             -- relative residue frequencies
+  scoremat      Matrix OPTIONAL,             -- Position dependent score matrix
+  distance      Triangle OPTIONAL            -- pairwise distances for all seqs.
+}
+
+Cdd-set ::= SET OF Cdd
+
+END
