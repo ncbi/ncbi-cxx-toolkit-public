@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/05/30 23:31:44  vakatov
+ * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
+ * implementation to work properly with GCC on IRIX64 platforms
+ *
  * Revision 6.5  2000/03/24 23:12:08  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -657,7 +661,7 @@ static EIO_Status s_Connect(SOCK            sock,
         {{
             struct timeval tv;
             EIO_Status status =
-                s_Select(x_sock, eIO_Write,s_to2tv(timeout, &tv));
+                s_Select(x_sock, eIO_Write, s_to2tv(timeout, &tv));
             if (status != eIO_Success  &&  CORE_GetLOG()) {
                 char str[256];
                 sprintf(str,
@@ -1175,29 +1179,25 @@ extern int SOCK_gethostname(char*  name,
 }
 
 
-extern int SOCK_host2inaddr(unsigned int host,
-                            char*        buf,
-                            size_t       buflen)
+extern int SOCK_ntoa(unsigned int host,
+                     char*        buf,
+                     size_t       buf_size)
 {
-    struct in_addr addr_struct;
-    char*          addr_string;
+    const unsigned char* b = (const unsigned char*) &host;
+    char str[16];
 
-    if ( !buf )
-        return 1/*failed*/;
+    verify(sprintf(str, "%u.%u.%u.%u",
+                   (unsigned) b[0], (unsigned) b[1],
+                   (unsigned) b[2], (unsigned) b[3]) > 0);
+    assert(strlen(str) < sizeof(str));
 
-    CORE_LOCK_WRITE;
-    addr_struct.s_addr = host;
-    addr_string = inet_ntoa(addr_struct);
-    if (!addr_string  ||  strlen(addr_string) >= buflen) {
-        char str[96];
-        sprintf(str, "[SOCK_host2inaddr]  Cannot convert %x", host);
-        CORE_LOG(eLOG_Error, str);
+    if (strlen(str) >= buf_size) {
+        CORE_LOG(eLOG_Error, "[SOCK_ntoa]  Buffer too small");
         buf[0] = '\0';
-        return 1/*failed*/;
+        return -1/*failed*/;
     }
-    strcpy(buf, addr_string);
-    CORE_UNLOCK;
-
+        
+    strcpy(buf, str);
     return 0/*success*/;
 }
 

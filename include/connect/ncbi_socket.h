@@ -67,11 +67,15 @@
  * Auxiliary:
  *
  *  SOCK_gethostname
- *  SOCK_host2inaddr
+ *  SOCK_ntoa
  *  SOCK_htonl
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/05/30 23:31:37  vakatov
+ * SOCK_host2inaddr() renamed to SOCK_ntoa(), the home-made out-of-scratch
+ * implementation to work properly with GCC on IRIX64 platforms
+ *
  * Revision 6.3  2000/03/24 23:12:04  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -379,11 +383,12 @@ extern int SOCK_gethostname
 
 /* Return zero on success.  Vaguely related to the BSD inet_ntoa().
  */
-extern int SOCK_host2inaddr
-(unsigned int host,   /* [in]  must be in the network byte-order           */
- char*        buf,    /* [out] to be filled by smth. like "123.45.67.89\0" */
- size_t       buflen  /* [in]  max # of bytes allowed to put to "buf"      */
+extern int SOCK_ntoa
+(unsigned int host,     /* [in]  must be in the network byte-order           */
+ char*        buf,      /* [out] to be filled by smth. like "123.45.67.89\0" */
+ size_t       buf_size  /* [in]  max # of bytes to put to "buf", >= 16 */
  );
+
 
 /* See man for the BSD htonl().
  */
