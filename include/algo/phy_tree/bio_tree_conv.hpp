@@ -37,6 +37,12 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup Tree
+ *
+ * @{
+ */
+
+
 // --------------------------------------------------------------------------
 
 /// Visitor functor to convert bio tree nodes to dynamic tree
@@ -558,12 +564,19 @@ public:
 
 };
 
+
+/* @} */
+
+
 END_NCBI_SCOPE 
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/08 11:15:44  kuznets
+ * Doxygen formatting (group Tree)
+ *
  * Revision 1.6  2004/08/18 12:14:35  kuznets
  * Type castings for compatibility with new CBioTree node
  *

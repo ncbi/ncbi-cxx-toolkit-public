@@ -47,6 +47,11 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup Tree
+ *
+ * @{
+ */
+
 
 /// Feature Id. All bio tree dynamic features are encoded by feature ids.
 /// Ids are shared among the tree nodes. Feature id to feature name map is 
@@ -468,6 +473,9 @@ void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
                const CBioTreeDynamic::TBioTreeNode& node);
 
 
+/* @} */
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CBioTree<TBioNode>
@@ -585,6 +593,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/10/08 11:15:44  kuznets
+ * Doxygen formatting (group Tree)
+ *
  * Revision 1.17  2004/08/18 17:48:25  ucko
  * Remove duplicate typedef for CBioTree<>::TBioTreeNode.
  *
