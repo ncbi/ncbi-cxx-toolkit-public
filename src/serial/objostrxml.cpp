@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/11/20 21:22:51  gouriano
+* corrected processing of unnamed sequences as choice variants
+*
 * Revision 1.37  2002/11/19 19:48:51  gouriano
 * added support of XML attributes of choice variants
 *
@@ -934,12 +937,18 @@ void CObjectOStreamXml::EndChoice(void)
 void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                            const CMemberId& id)
 {
-    OpenStackTag(0);
+    if (id.HasNotag()) {
+        TopFrame().SetNotag();
+    } else {
+        OpenStackTag(0);
+    }
 }
 
 void CObjectOStreamXml::EndChoiceVariant(void)
 {
-    CloseStackTag(0);
+    if (!TopFrame().GetNotag()) {
+        CloseStackTag(0);
+    }
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO

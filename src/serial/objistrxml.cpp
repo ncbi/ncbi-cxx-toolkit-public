@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/11/20 21:22:51  gouriano
+* corrected processing of unnamed sequences as choice variants
+*
 * Revision 1.28  2002/11/19 19:48:52  gouriano
 * added support of XML attributes of choice variants
 *
@@ -424,7 +427,17 @@ CLightString CObjectIStreamXml::ReadName(char c)
     else {
         m_Input.SkipChars(i);
     }
+    m_LastTag = CLightString(ptr, i);
     return CLightString(ptr, i);
+}
+
+CLightString CObjectIStreamXml::RejectedName(void)
+{
+    _ASSERT(!m_RejectedTag.empty());
+    m_LastTag = m_RejectedTag;
+    m_RejectedTag.erase();
+    m_TagState = eTagInsideOpening;
+    return m_LastTag;
 }
 
 void CObjectIStreamXml::SkipAttributeValue(char c)
@@ -1139,7 +1152,6 @@ TMemberIndex
 CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                                     TMemberIndex pos)
 {
-    string tmp;
     CLightString tagName;
     if (m_RejectedTag.empty()) {
         if (m_Attlist && InsideTag()) {
@@ -1183,14 +1195,19 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             tagName = ReadName(BeginOpeningTag());
         }
     } else {
-        tmp = m_RejectedTag;
-        tagName = tmp;
-        m_TagState = eTagInsideOpening;
-        m_RejectedTag.erase();
+        tagName = RejectedName();
     }
-    m_LastTag = tagName;
 
     TMemberIndex ind = classType->GetMembers().Find(tagName);
+/*
+    if (ind == kInvalidMember) {
+        ind = classType->GetMembers().FindDeep(tagName);
+        if (ind != kInvalidMember) {
+            TopFrame().SetNotag();
+            UndoClassMember();
+        }
+    }
+*/
     if ( ind != kInvalidMember ) {
         const CMemberInfo *mem_info = classType->GetMemberInfo(ind);
         if (mem_info->GetId().HaveNoPrefix()) {
@@ -1249,8 +1266,19 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
         }
     }
     m_Attlist = false;
-    tagName = ReadName(BeginOpeningTag());
+    if (m_RejectedTag.empty()) {
+        tagName = ReadName(BeginOpeningTag());
+    } else {
+        tagName = RejectedName();
+    }
     TMemberIndex ind = choiceType->GetVariants().Find(tagName);
+    if (ind == kInvalidMember) {
+        ind = choiceType->GetVariants().FindDeep(tagName);
+        if (ind != kInvalidMember) {
+            TopFrame().SetNotag();
+            UndoClassMember();
+        }
+    }
     if ( ind != kInvalidMember ) {
         const CVariantInfo *var_info = choiceType->GetVariantInfo(ind);
         if (var_info->GetId().HaveNoPrefix()) {
@@ -1266,7 +1294,7 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
 
 void CObjectIStreamXml::EndChoiceVariant(void)
 {
-    if (!TopFrame().GetNotag()) {
+    if (!FetchFrameFromTop(1).GetNotag()) {
         CloseStackTag(0);
     }
 }

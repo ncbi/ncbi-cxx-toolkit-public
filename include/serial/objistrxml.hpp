@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/11/20 21:21:58  gouriano
+* corrected processing of unnamed sequences as choice variants
+*
 * Revision 1.16  2002/11/14 20:51:27  gouriano
 * added support of attribute lists
 *
@@ -253,6 +256,7 @@ private:
     void ReadTagData(string& s);
 
     CLightString ReadName(char c);
+    CLightString RejectedName(void);
     CLightString ReadAttributeName(void);
     void ReadAttributeValue(string& value);
 
