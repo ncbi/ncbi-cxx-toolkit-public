@@ -262,8 +262,13 @@ static void s_GetRnaRefLabel
                 in_seq.SetIupacaa().Set() = str_aa_code;
                 CSeqportUtil::Convert(in_seq, &out_seq,
                                       CSeq_data::e_Ncbistdaa);
-                aa_code = out_seq.GetNcbistdaa().Get()[0];
-                tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                if (out_seq.GetNcbistdaa().Get().size()) {
+                    aa_code = out_seq.GetNcbistdaa().Get()[0];
+                    tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                } else {
+                    s_GetRnaRefLabelFromComment(feat, label, label_type,
+                                                type_label);
+                }
                 break;
             case CTrna_ext::C_Aa::e_Ncbieaa:
                 // Convert an e_Ncbieaa code to an Iupacaa3 code for the label
@@ -273,8 +278,13 @@ static void s_GetRnaRefLabel
                 in_seq.SetNcbieaa().Set() = str_aa_code;
                 CSeqportUtil::Convert(in_seq, &out_seq,
                                       CSeq_data::e_Ncbistdaa);
-                aa_code = out_seq.GetNcbistdaa().Get()[0];
-                tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                if (out_seq.GetNcbistdaa().Get().size()) {
+                    aa_code = out_seq.GetNcbistdaa().Get()[0];
+                    tmp_label = CSeqportUtil::GetIupacaa3(aa_code);
+                } else {
+                    s_GetRnaRefLabelFromComment(feat, label, label_type,
+                                                type_label);
+                }
                 break;
             case CTrna_ext::C_Aa::e_Ncbi8aa:
                 // Convert an e_Ncbi8aa code to an Iupacaa3 code for the label
@@ -597,6 +607,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/08/26 16:29:41  ucko
+* Be even more careful with TRNA extensions.
+*
 * Revision 1.4  2002/08/21 15:30:30  ucko
 * Handle empty tRNA extensions.
 *
