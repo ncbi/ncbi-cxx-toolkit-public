@@ -14621,7 +14621,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-   if test "$am_cv_search_iconv" != "none required"; then
+   if test "$ac_cv_search_iconv" != "none required"; then
       for l in iconv; do
          LIBS="-l$l $orig_LIBS"
          cat >conftest.$ac_ext <<_ACEOF

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.323 2004/09/20 14:39:56 ucko Exp $
+#  $Id: configure.ac,v 1.324 2004/09/25 17:59:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2348,7 +2348,7 @@ AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
       iconv(cd,NULL,NULL,NULL,NULL);
       iconv_close(cd);],
      ac_cv_search_iconv="none required")
-   if test "$am_cv_search_iconv" != "none required"; then
+   if test "$ac_cv_search_iconv" != "none required"; then
       for l in iconv; do
          LIBS="-l$l $orig_LIBS"
          AC_TRY_LINK([#include <stdlib.h>
