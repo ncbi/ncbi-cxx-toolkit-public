@@ -69,7 +69,7 @@ BlastCoreAuxStructFree(BlastCoreAuxStructPtr aux_struct)
  * @param subject_length Length of the original nucleotide subject sequence;
  *                       tblastn only [in]
  */
-void TranslateHSPsToDNAPCoord(Uint1 program, 
+static void TranslateHSPsToDNAPCoord(Uint1 program, 
         BlastInitHitListPtr init_hitlist, BlastQueryInfoPtr query_info,
         Int2 subject_frame, Int4 subject_length)
 {
@@ -670,10 +670,12 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 {
    BlastCoreAuxStructPtr aux_struct = NULL;
    BlastThrInfoPtr thr_info = NULL;
-   Int4 oid; /* Subject ordinal id in the database */
+   Int4 start = 0, stop = 0, index;
    Int4Ptr oid_list = NULL;
-   Int4 start = 0, stop = 0, oid_list_length = 0, index;
    Boolean use_oid_list = FALSE;
+#if THREADS_IMPLEMENTED
+   Int4 oid, oid_list_length = 0; /* Subject ordinal id in the database */
+#endif
    BlastHSPListPtr hsp_list; 
    BlastInitialWordParametersPtr word_params;
    BlastExtensionParametersPtr ext_params;
