@@ -1789,60 +1789,60 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 
     // Find first and last Seq-loc
     const CSeq_loc *first = 0, *last = 0;
-    CTypeConstIterator<CSeq_loc> i1(ConstBegin(loc));
-    for (++i1; i1; ++i1) {
-        if (!first) {
-            first = &(*i1);
+    for ( CSeq_loc_CI loc_iter(loc); loc_iter; ++loc_iter ) {
+        if ( first == 0 ) {
+            first = &(loc_iter.GetSeq_loc());
         }
-        last = &(*i1);
+        last = &(loc_iter.GetSeq_loc());
     }
     if (!first) {
         return retval;
     }
 
-    CTypeConstIterator<CSeq_loc> i2(ConstBegin(loc));
-    for (++i2; i2; ++i2) {
-        switch ((*i2).Which()) {
+    CSeq_loc_CI i2(loc);
+    for ( ; i2; ++i2 ) {
+        const CSeq_loc* slp = &(i2.GetSeq_loc());
+        switch (slp->Which()) {
         case CSeq_loc::e_Null:
-            if (&(*i2) == first) {
+            if (slp == first) {
                 retval |= eSeqlocPartial_Start;
-            } else if (&(*i2) == last) {
+            } else if (slp == last) {
                 retval |= eSeqlocPartial_Stop;
             } else {
                 retval |= eSeqlocPartial_Internal;
             }
             break;
         case CSeq_loc::e_Int:
-            if ((*i2).GetInt().IsSetFuzz_from()) {
-                const CInt_fuzz& fuzz = (*i2).GetInt().GetFuzz_from();
+            if (slp->GetInt().IsSetFuzz_from()) {
+                const CInt_fuzz& fuzz = slp->GetInt().GetFuzz_from();
                 if (fuzz.Which() == CInt_fuzz::e_Lim) {
                     CInt_fuzz::ELim lim = fuzz.GetLim();
                     if (lim == CInt_fuzz::eLim_gt) {
                         retval |= eSeqlocPartial_Limwrong;
                     } else if (lim == CInt_fuzz::eLim_lt  ||
                         lim == CInt_fuzz::eLim_unk) {
-                        if ((*i2).GetInt().IsSetStrand()  &&
-                            (*i2).GetInt().GetStrand() == eNa_strand_minus) {
-                            if (&(*i2) == last) {
+                        if (slp->GetInt().IsSetStrand()  &&
+                            slp->GetInt().GetStrand() == eNa_strand_minus) {
+                            if (slp == last) {
                                 retval |= eSeqlocPartial_Stop;
                             } else {
                                 retval |= eSeqlocPartial_Internal;
                             }
-                            if ((*i2).GetInt().GetFrom() != 0) {
-                                if (&(*i2) == last) {
+                            if (slp->GetInt().GetFrom() != 0) {
+                                if (slp == last) {
                                     retval |= eSeqlocPartial_Nostop;
                                 } else {
                                     retval |= eSeqlocPartial_Nointernal;
                                 }
                             }
                         } else {
-                            if (&(*i2) == first) {
+                            if (slp == first) {
                                 retval |= eSeqlocPartial_Start;
                             } else {
                                 retval |= eSeqlocPartial_Internal;
                             }
-                            if ((*i2).GetInt().GetFrom() != 0) {
-                                if (&(*i2) == first) {
+                            if (slp->GetInt().GetFrom() != 0) {
+                                if (slp == first) {
                                     retval |= eSeqlocPartial_Nostart;
                                 } else {
                                     retval |= eSeqlocPartial_Nointernal;
@@ -1853,43 +1853,43 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
                 }
             }
 
-            if ((*i2).GetInt().IsSetFuzz_to()) {
-                const CInt_fuzz& fuzz = (*i2).GetInt().GetFuzz_to();
+            if (slp->GetInt().IsSetFuzz_to()) {
+                const CInt_fuzz& fuzz = slp->GetInt().GetFuzz_to();
                 CInt_fuzz::ELim lim = fuzz.GetLim();
                 if (lim == CInt_fuzz::eLim_lt) {
                     retval |= eSeqlocPartial_Limwrong;
                 } else if (lim == CInt_fuzz::eLim_gt  ||
                     lim == CInt_fuzz::eLim_unk) {
                     CBioseq_Handle hnd =
-                        scope->GetBioseqHandle((*i2).GetInt().GetId());
+                        scope->GetBioseqHandle(slp->GetInt().GetId());
                     CBioseq_Handle::TBioseqCore bc = hnd.GetBioseqCore();
                     bool miss_end = false;
-                    const CSeq_interval& itv = (*i2).GetInt();
+                    const CSeq_interval& itv = slp->GetInt();
                     if (itv.GetTo() != bc->GetInst().GetLength() - 1) {
                         miss_end = true;
                     }
                     if (itv.IsSetStrand()  &&
                         itv.GetStrand() == eNa_strand_minus) {
-                        if (&(*i2) == first) {
+                        if (slp == first) {
                             retval |= eSeqlocPartial_Start;
                         } else {
                             retval |= eSeqlocPartial_Internal;
                         }
                         if (miss_end) {
-                            if (&(*i2) == first /* was last */) {
+                            if (slp == first /* was last */) {
                                 retval |= eSeqlocPartial_Nostart;
                             } else {
                                 retval |= eSeqlocPartial_Nointernal;
                             }
                         }
                     } else {
-                        if (&(*i2) == last) {
+                        if (slp == last) {
                             retval |= eSeqlocPartial_Stop;
                         } else {
                             retval |= eSeqlocPartial_Internal;
                         }
                         if (miss_end) {
-                            if (&(*i2) == last) {
+                            if (slp == last) {
                                 retval |= eSeqlocPartial_Nostop;
                             } else {
                                 retval |= eSeqlocPartial_Nointernal;
@@ -1900,16 +1900,16 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             }
             break;
         case CSeq_loc::e_Pnt:
-            if ((*i2).GetPnt().IsSetFuzz()) {
-                const CInt_fuzz& fuzz = (*i2).GetPnt().GetFuzz();
+            if (slp->GetPnt().IsSetFuzz()) {
+                const CInt_fuzz& fuzz = slp->GetPnt().GetFuzz();
                 if (fuzz.Which() == CInt_fuzz::e_Lim) {
                     CInt_fuzz::ELim lim = fuzz.GetLim();
                     if (lim == CInt_fuzz::eLim_gt  ||
                         lim == CInt_fuzz::eLim_lt  ||
                         lim == CInt_fuzz::eLim_unk) {
-                        if (&(*i2) == first) {
+                        if (slp == first) {
                             retval |= eSeqlocPartial_Start;
-                        } else if (&(*i2) == last) {
+                        } else if (slp == last) {
                             retval |= eSeqlocPartial_Stop;
                         } else {
                             retval |= eSeqlocPartial_Internal;
@@ -1919,16 +1919,16 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             }
             break;
         case CSeq_loc::e_Packed_pnt:
-            if ((*i2).GetPacked_pnt().IsSetFuzz()) {
-                const CInt_fuzz& fuzz = (*i2).GetPacked_pnt().GetFuzz();
+            if (slp->GetPacked_pnt().IsSetFuzz()) {
+                const CInt_fuzz& fuzz = slp->GetPacked_pnt().GetFuzz();
                 if (fuzz.Which() == CInt_fuzz::e_Lim) {
                     CInt_fuzz::ELim lim = fuzz.GetLim();
                     if (lim == CInt_fuzz::eLim_gt  ||
                         lim == CInt_fuzz::eLim_lt  ||
                         lim == CInt_fuzz::eLim_unk) {
-                        if (&(*i2) == first) {
+                        if (slp == first) {
                             retval |= eSeqlocPartial_Start;
-                        } else if (&(*i2) == last) {
+                        } else if (slp == last) {
                             retval |= eSeqlocPartial_Stop;
                         } else {
                             retval |= eSeqlocPartial_Internal;
@@ -1940,11 +1940,13 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
         case CSeq_loc::e_Whole:
         {
             // Get the Bioseq referred to by Whole
-            CBioseq_Handle bsh = scope->GetBioseqHandle((*i2).GetWhole());
-
+            CBioseq_Handle bsh = scope->GetBioseqHandle(slp->GetWhole());
+            if ( !bsh ) {
+                break;
+            }
             // Check for CMolInfo on the biodseq
             CSeqdesc_CI di( bsh, CSeqdesc::e_Molinfo );
-            if ( di ) {
+            if ( !di ) {
                 // If no CSeq_descr, nothing can be done
                 break;
             }
@@ -1955,14 +1957,14 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
             }
             switch (mi.GetCompleteness()) {
             case CMolInfo::eCompleteness_no_left:
-                if (&(*i2) == first) {
+                if (slp == first) {
                     retval |= eSeqlocPartial_Start;
                 } else {
                     retval |= eSeqlocPartial_Internal;
                 }
                 break;
             case CMolInfo::eCompleteness_no_right:
-                if (&(*i2) == last) {
+                if (slp == last) {
                     retval |= eSeqlocPartial_Stop;
                 } else {
                     retval |= eSeqlocPartial_Internal;
@@ -2813,6 +2815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2003/02/06 20:59:16  shomrat
+* Bug fix in SeqLocPartialCheck
+*
 * Revision 1.33  2003/01/22 21:02:23  ucko
 * Fix stupid logic error in SRelLoc's constructor; change LocationOffset
 * to return -1 rather than crashing if the locations don't intersect.
