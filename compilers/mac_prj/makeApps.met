@@ -20,6 +20,12 @@ property pDynaLibExt : ".dylib"
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
 
+-- whether to refresh the files and libraries in existing projects
+property pUpdateExistingProjects : true
+
+-- Whether to have the projects use CVS or not.
+property pProjectsCVSEnabled : true
+
 -- But profiling doesn't work for Mach-O Codewarrior projects currently.
 property pCreateProfiledTargets : false
 
@@ -27,11 +33,12 @@ property pCreateProfiledTargets : false
 property pShouldBuild : true
 
 -- do test/demo applications
-property pBuildDemos :	false
+property pBuildDemos : true
 
 property pStationeryName : "ApplicationStationery"
 
-property pTargetKeyWords : "MSL BSD Debug Final"
+property pTargetKeyWords : {"MSL", "BSD", "Debug", "Final"}
+property pDefaultTargets : {"BSD", "Debug"}
 
 --
 --  Set Global variables
@@ -376,10 +383,10 @@ on GetMyPath()
 		myPath contains "Smile.app" then
 		-- Oops! running under script editor. 'me' is Script Editor not this script.
 		-- use the location this script is supposed to be in.
-		return gDistribRoot & "compilers:mac_prj"
+		return gDistribRoot & "compilers:mac_prj:"
 	else
 		tell application "Finder"
-			return container of myPath as string
+			return (container of myPath as string) & ":"
 		end tell
 	end if
 end GetMyPath
@@ -738,7 +745,6 @@ on SetupTarget(proj, targetIndex)
 end SetupTarget
 
 
-
 on GetTargetFiles(i)
 	tell application "CodeWarrior IDE"
 		-- get the target
@@ -843,13 +849,14 @@ on UpdateTarget(proj, targetIndex)
 				-- NOTE: if the following line is within a tell "Codewarrior" block then
 				--  the following Add Files command will fail.
 				
-				copy alias (projPath & i) to end of filesToAdd
+				copy alias fileFullPath to end of filesToAdd
 				--end try
 			end if
 		end repeat
 		
 		tell application "CodeWarrior IDE"
 			if ((count of filesToAdd) is not 0) then
+				--display dialog filesToAdd
 				Add Files filesToAdd
 				set targetFileList to my GetTargetFiles(targetIndex)
 			end if
@@ -918,6 +925,7 @@ on CreateProject(proj)
 		
 		set projFilename to proj's name & pProjectFileExt
 		set projPathname to gProjectsDir & projFilename
+		set openedProject to false
 		if pAlwaysCreateProjects or not (exists file projPathname of application "Finder") then
 			
 			try
@@ -930,6 +938,7 @@ on CreateProject(proj)
 				tell application "Finder" to delete file (gProjectsDir & ".DS_Store")
 			end try
 			Create Project projPathname from stationery alias stationeryName
+			set openedProject to false
 			if the name of window 1 is "Project Messages" then
 				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
@@ -937,23 +946,26 @@ on CreateProject(proj)
 			repeat with i from 1 to (count targets of project document 1)
 				my SetupTarget(proj, i)
 			end repeat
-			set the current target of project document 1 to target 1 of project document 1
-			
-			Close Project
-		else
+		else if pUpdateExistingProjects then
 			-- project already exists. Make sure it has all right files.
 			open (projPathname)
+			set openedProject to false
 			if the name of window 1 is "Project Messages" then
 				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
 			repeat with i from 1 to (count targets of project document 1)
 				my UpdateTarget(proj, i)
 			end repeat
+		end if
+		if openedProject then
+			if pProjectsCVSEnabled then
+				--try
+				Set Preferences of panel "VCS Setup" to {VCS Active:true, Connection Method:"mwCVS"}
+				--end try
+			end if
 			set the current target of project document 1 to target 1 of project document 1
-			
 			Close Project
 		end if
-		
 	end tell
 end CreateProject
 
@@ -961,6 +973,8 @@ on CreateAndBuildAllProjects()
 	CreateFolder(gProjectsDir)
 	CleanupFiles(gProjectsDir)
 	set targetSpecs to GetTargetSpecs()
+	
+	tell application "CodeWarrior IDE" to activate
 	
 	repeat with proj in gProjectData
 		CreateProject(proj)
@@ -995,12 +1009,33 @@ on GetTargetSpecs()
 			set targetSpecs to targetSpecs & MakeTargetSpec(f)
 		end if
 	end repeat
-	-- no Build files? match everything.
+	-- no Build files? Ask what to build.
 	if (count items of targetSpecs) is 0 then
-		set targetSpecs to {""}
+		set targetSpecs to {AskForTargetSpec()}
 	end if
 	return targetSpecs
 end GetTargetSpecs
+
+on AskForTargetSpec()
+	try
+		choose from list pTargetKeyWords default items pDefaultTargets Â
+			with prompt "Choose Target types to compile:" cancel button name "Build All" with multiple selections allowed
+	on error errmsg number errnum
+		if errnum is -1713 then -- no user interaction allowed.
+			return "" -- build all
+		else
+			error errmsg number errnum
+		end if
+	end try
+	set targ to result
+	if targ is false then
+		return "" -- build all
+	end if
+	set {stid, text item delimiters of AppleScript} to {text item delimiters of AppleScript, " "}
+	set targ to targ as string
+	set text item delimiters of AppleScript to stid
+	return targ
+end AskForTargetSpec
 
 on MakeTargetSpec(f)
 	set tspec to ""
@@ -1113,8 +1148,6 @@ with timeout of 60000 seconds
 	SetGlobals()
 	SetProjectData()
 	CopyHeaders()
-	
-	tell application "CodeWarrior IDE" to activate
 	
 	CreateAndBuildAllProjects()
 	
