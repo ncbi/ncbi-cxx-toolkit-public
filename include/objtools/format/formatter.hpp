@@ -71,13 +71,6 @@ class IFormatter : public CObject
 {
 public:
     
-    // types
-    typedef CFlatFileGenerator::TFormat         TFormat;
-    typedef CFlatFileGenerator::TMode           TMode;
-    typedef CFlatFileGenerator::TStyle          TStyle;
-    typedef CFlatFileGenerator::TFlags          TFlags;
-    typedef CFlatFileGenerator::TFilter         TFilter;
-
     // control methods
     virtual void Start       (IFlatTextOStream& text_os) = 0;
     virtual void StartSection(IFlatTextOStream& text_os) = 0;
@@ -120,6 +113,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 22:46:45  shomrat
+* using types in flag file
+*
 * Revision 1.2  2004/01/14 15:53:12  shomrat
 * const removed
 *

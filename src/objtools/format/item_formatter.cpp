@@ -61,18 +61,18 @@ const string CFlatItemFormatter::s_GenbankMol[] = {
 CFlatItemFormatter* CFlatItemFormatter::New(TFormat format)
 {
     switch ( format ) {
-    case CFlatFileGenerator::eFormat_GenBank:
+    case eFormat_GenBank:
         return new CGenbankFormatter;
         
-    case CFlatFileGenerator::eFormat_EMBL:
+    case eFormat_EMBL:
         return new CEmblFormatter;
 
-    case CFlatFileGenerator::eFormat_GFF:
+    case eFormat_GFF:
         return new CGFFFormatter;
 
-    case CFlatFileGenerator::eFormat_DDBJ:
-    case CFlatFileGenerator::eFormat_GBSeq:
-    case CFlatFileGenerator::eFormat_FTable:
+    case eFormat_DDBJ:
+    case eFormat_GBSeq:
+    case eFormat_FTable:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
@@ -226,6 +226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 22:54:00  shomrat
+* using types in flag file
+*
 * Revision 1.3  2004/01/14 16:17:42  shomrat
 * added support for GFF formatter
 *

@@ -54,13 +54,6 @@ class CFlatGatherer : public CObject
 {
 public:
     
-    // types
-    typedef CFlatFileGenerator::TFormat         TFormat;
-    typedef CFlatFileGenerator::TMode           TMode;
-    typedef CFlatFileGenerator::TStyle          TStyle;
-    typedef CFlatFileGenerator::TFlags          TFlags;
-    typedef CFlatFileGenerator::TFilter         TFilter;
-
     // virtual constructor
     static CFlatGatherer* New(TFormat format);
 
@@ -72,7 +65,7 @@ protected:
     CFlatGatherer(void) {}
 
     // Gather the header part of the report (locus/defline/accession ...)
-    // This is sone in a sparate function for EMBL to override.
+    // This is done in a separate function for EMBL to override.
     // The body of the report is the same for all formats.
     virtual void x_GatherHeader(CFFContext& ctx, CFlatItemOStream& os) const;
         
@@ -144,6 +137,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 22:47:14  shomrat
+* using types in flag file
+*
 * Revision 1.3  2004/02/11 16:41:30  shomrat
 * modification to feature gathering methods
 *

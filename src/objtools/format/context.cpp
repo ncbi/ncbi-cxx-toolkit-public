@@ -256,9 +256,9 @@ bool CBioseqContext::x_IsGPS(void) const
 
 bool CBioseqContext::DoContigStyle(void) const
 {
-    if ( m_Ctx->GetStyle()  == CFlatFileGenerator::eStyle_Contig ) {
+    if ( m_Ctx->IsStyleContig() ) {
         return true;
-    } else if ( m_Ctx->GetStyle()  == CFlatFileGenerator::eStyle_Normal ) {
+    } else if ( m_Ctx->IsStyleNormal() ) {
         if ( (IsSegmented()  &&  !HasParts())  ||
              (IsDelta()  &&  !IsDeltaLitOnly()) ) {
             return true;
@@ -548,34 +548,34 @@ bool CBioseqContext::x_IsDeltaLitOnly(const CBioseq& seq)
 //
 // Flags
 CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
-    m_HideImpFeat((flags & CFlatFileGenerator::fHideImportedFeatures) != 0),
-    m_HideSnpFeat((flags & CFlatFileGenerator::fHideSNPFeatures) != 0),
-    m_HideExonFeat((flags & CFlatFileGenerator::fHideExonFeatures) != 0),
-    m_HideIntronFeat((flags & CFlatFileGenerator::fHideIntronFeatures) != 0),
-    m_HideRemImpFeat((flags & CFlatFileGenerator::fHideRemoteImpFeats) != 0),
-    m_HideGeneRIFs((flags & CFlatFileGenerator::fHideGeneRIFs) != 0),
-    m_OnlyGeneRIFs((flags & CFlatFileGenerator::fOnlyGeneRIFs) != 0),
-    m_HideCDSProdFeats((flags & CFlatFileGenerator::fHideCDSProdFeatures) != 0),
-    m_HideCDDFeats((flags & CFlatFileGenerator::fHideCDDFeats) != 0),
-    m_LatestGeneRIFs((flags & CFlatFileGenerator::fLatestGeneRIFs) != 0),
-    m_ShowContigFeatures((flags & CFlatFileGenerator::fShowContigFeatures) != 0),
-    m_ShowContigSources((flags & CFlatFileGenerator::fShowContigSources) != 0),
-    m_ShowContigAndSeq((flags & CFlatFileGenerator::fShowContigAndSeq) != 0),
-    m_CopyGeneToCDNA((flags & CFlatFileGenerator::fCopyGeneToCDNA) != 0),
-    m_CopyCDSFromCDNA((flags & CFlatFileGenerator::fCopyCDSFromCDNA) != 0),
-    m_DoHtml((flags & CFlatFileGenerator::fProduceHTML) != 0)
+    m_HideImpFeat((flags & fHideImportedFeatures) != 0),
+    m_HideSnpFeat((flags & fHideSNPFeatures) != 0),
+    m_HideExonFeat((flags & fHideExonFeatures) != 0),
+    m_HideIntronFeat((flags & fHideIntronFeatures) != 0),
+    m_HideRemImpFeat((flags & fHideRemoteImpFeats) != 0),
+    m_HideGeneRIFs((flags & fHideGeneRIFs) != 0),
+    m_OnlyGeneRIFs((flags & fOnlyGeneRIFs) != 0),
+    m_HideCDSProdFeats((flags & fHideCDSProdFeatures) != 0),
+    m_HideCDDFeats((flags & fHideCDDFeats) != 0),
+    m_LatestGeneRIFs((flags & fLatestGeneRIFs) != 0),
+    m_ShowContigFeatures((flags & fShowContigFeatures) != 0),
+    m_ShowContigSources((flags & fShowContigSources) != 0),
+    m_ShowContigAndSeq((flags & fShowContigAndSeq) != 0),
+    m_CopyGeneToCDNA((flags & fCopyGeneToCDNA) != 0),
+    m_CopyCDSFromCDNA((flags & fCopyCDSFromCDNA) != 0),
+    m_DoHtml((flags & fProduceHTML) != 0)
 {
     switch ( mode ) {
-    case CFlatFileGenerator::eMode_Release:
+    case eMode_Release:
         x_SetReleaseFlags();
         break;
-    case CFlatFileGenerator::eMode_Entrez:
+    case eMode_Entrez:
         x_SetEntrezFlags();
         break;
-    case CFlatFileGenerator::eMode_GBench:
+    case eMode_GBench:
         x_SetGBenchFlags();
         break;
-    case CFlatFileGenerator::eMode_Dump:
+    case eMode_Dump:
         x_SetDumpFlags();
         break;
     }
@@ -584,117 +584,121 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
 
 void CFFContext::CFlags::x_SetReleaseFlags(void)
 {
-    m_SupressLocalId    = true;
-    m_ValidateFeats     = true;
-    m_IgnorePatPubs     = true;
-    m_DropShortAA       = true;
-    m_AvoidLocusColl    = true;
-    m_IupacaaOnly       = true;
-    m_DropBadCitGens    = true;
-    m_NoAffilOnUnpub    = true;
-    m_DropIllegalQuals  = true;
-    m_CheckQualSyntax   = true;
-    m_NeedRequiredQuals = true;
-    m_NeedOrganismQual  = true;
-    m_NeedAtLeastOneRef = true;
-    m_CitArtIsoJta      = true;
-    m_DropBadDbxref     = true;
-    m_UseEmblMolType    = true;
-    m_HideBankItComment = true;
-    m_CheckCDSProductId = true;
-    m_SupressSegLoc     = true;
-    m_SrcQualsToNote    = true;
-    m_HideEmptySource   = true;
-    m_GoQualsToNote     = true;
-    m_GeneSynsToNote    = true;
-    m_ForGBRelease      = true;
+    m_SupressLocalId     = true;
+    m_ValidateFeats      = true;
+    m_IgnorePatPubs      = true;
+    m_DropShortAA        = true;
+    m_AvoidLocusColl     = true;
+    m_IupacaaOnly        = true;
+    m_DropBadCitGens     = true;
+    m_NoAffilOnUnpub     = true;
+    m_DropIllegalQuals   = true;
+    m_CheckQualSyntax    = true;
+    m_NeedRequiredQuals  = true;
+    m_NeedOrganismQual   = true;
+    m_NeedAtLeastOneRef  = true;
+    m_CitArtIsoJta       = true;
+    m_DropBadDbxref      = true;
+    m_UseEmblMolType     = true;
+    m_HideBankItComment  = true;
+    m_CheckCDSProductId  = true;
+    m_SupressSegLoc      = true;
+    m_SrcQualsToNote     = true;
+    m_HideEmptySource    = true;
+    m_GoQualsToNote      = true;
+    m_GeneSynsToNote     = true;
+    m_ForGBRelease       = true;
+    m_HideUnclassPartial = true;
 }
 
 
 void CFFContext::CFlags::x_SetEntrezFlags(void)
 {
-    m_SupressLocalId    = false;
-    m_ValidateFeats     = true;
-    m_IgnorePatPubs     = true;
-    m_DropShortAA       = true;
-    m_AvoidLocusColl    = true;
-    m_IupacaaOnly       = false;
-    m_DropBadCitGens    = true;
-    m_NoAffilOnUnpub    = true;
-    m_DropIllegalQuals  = true;
-    m_CheckQualSyntax   = true;
-    m_NeedRequiredQuals = true;
-    m_NeedOrganismQual  = true;
-    m_NeedAtLeastOneRef = false;
-    m_CitArtIsoJta      = true;
-    m_DropBadDbxref     = true;
-    m_UseEmblMolType    = true;
-    m_HideBankItComment = true;
-    m_CheckCDSProductId = false;
-    m_SupressSegLoc     = false;
-    m_SrcQualsToNote    = true;
-    m_HideEmptySource   = true;
-    m_GoQualsToNote     = true;
-    m_GeneSynsToNote    = true;
-    m_ForGBRelease      = false;
+    m_SupressLocalId     = false;
+    m_ValidateFeats      = true;
+    m_IgnorePatPubs      = true;
+    m_DropShortAA        = true;
+    m_AvoidLocusColl     = true;
+    m_IupacaaOnly        = false;
+    m_DropBadCitGens     = true;
+    m_NoAffilOnUnpub     = true;
+    m_DropIllegalQuals   = true;
+    m_CheckQualSyntax    = true;
+    m_NeedRequiredQuals  = true;
+    m_NeedOrganismQual   = true;
+    m_NeedAtLeastOneRef  = false;
+    m_CitArtIsoJta       = true;
+    m_DropBadDbxref      = true;
+    m_UseEmblMolType     = true;
+    m_HideBankItComment  = true;
+    m_CheckCDSProductId  = false;
+    m_SupressSegLoc      = false;
+    m_SrcQualsToNote     = true;
+    m_HideEmptySource    = true;
+    m_GoQualsToNote      = true;
+    m_GeneSynsToNote     = true;
+    m_ForGBRelease       = false;
+    m_HideUnclassPartial = true;
 }
 
 
 void CFFContext::CFlags::x_SetGBenchFlags(void)
 {
-    m_SupressLocalId    = false;
-    m_ValidateFeats     = false;
-    m_IgnorePatPubs     = false;
-    m_DropShortAA       = false;
-    m_AvoidLocusColl    = false;
-    m_IupacaaOnly       = false;
-    m_DropBadCitGens    = false;
-    m_NoAffilOnUnpub    = true;
-    m_DropIllegalQuals  = false;
-    m_CheckQualSyntax   = false;
-    m_NeedRequiredQuals = false;
-    m_NeedOrganismQual  = false;
-    m_NeedAtLeastOneRef = false;
-    m_CitArtIsoJta      = false;
-    m_DropBadDbxref     = false;
-    m_UseEmblMolType    = false;
-    m_HideBankItComment = false;
-    m_CheckCDSProductId = false;
-    m_SupressSegLoc     = false;
-    m_SrcQualsToNote    = false;
-    m_HideEmptySource   = false;
-    m_GoQualsToNote     = false;
-    m_GeneSynsToNote    = false;
-    m_ForGBRelease      = false;
+    m_SupressLocalId     = false;
+    m_ValidateFeats      = false;
+    m_IgnorePatPubs      = false;
+    m_DropShortAA        = false;
+    m_AvoidLocusColl     = false;
+    m_IupacaaOnly        = false;
+    m_DropBadCitGens     = false;
+    m_NoAffilOnUnpub     = true;
+    m_DropIllegalQuals   = false;
+    m_CheckQualSyntax    = false;
+    m_NeedRequiredQuals  = false;
+    m_NeedOrganismQual   = false;
+    m_NeedAtLeastOneRef  = false;
+    m_CitArtIsoJta       = false;
+    m_DropBadDbxref      = false;
+    m_UseEmblMolType     = false;
+    m_HideBankItComment  = false;
+    m_CheckCDSProductId  = false;
+    m_SupressSegLoc      = false;
+    m_SrcQualsToNote     = false;
+    m_HideEmptySource    = false;
+    m_GoQualsToNote      = false;
+    m_GeneSynsToNote     = false;
+    m_ForGBRelease       = false;
+    m_HideUnclassPartial = false;
 }
 
 
 void CFFContext::CFlags::x_SetDumpFlags(void)
 {
-    m_SupressLocalId    = false;
-    m_ValidateFeats     = false;
-    m_IgnorePatPubs     = false;
-    m_DropShortAA       = false;
-    m_AvoidLocusColl    = false;
-    m_IupacaaOnly       = false;
-    m_DropBadCitGens    = false;
-    m_NoAffilOnUnpub    = false;
-    m_DropIllegalQuals  = false;
-    m_CheckQualSyntax   = false;
-    m_NeedRequiredQuals = false;
-    m_NeedOrganismQual  = false;
-    m_NeedAtLeastOneRef = false;
-    m_CitArtIsoJta      = false;
-    m_DropBadDbxref     = false;
-    m_UseEmblMolType    = false;
-    m_HideBankItComment = false;
-    m_CheckCDSProductId = false;
-    m_SupressSegLoc     = false;
-    m_SrcQualsToNote    = false;
-    m_HideEmptySource   = false;
-    m_GoQualsToNote     = false;
-    m_GeneSynsToNote    = false;
-    m_ForGBRelease      = false;
+    m_SupressLocalId     = false;
+    m_ValidateFeats      = false;
+    m_IgnorePatPubs      = false;
+    m_DropShortAA        = false;
+    m_AvoidLocusColl     = false;
+    m_IupacaaOnly        = false;
+    m_DropBadCitGens     = false;
+    m_NoAffilOnUnpub     = false;
+    m_DropIllegalQuals   = false;
+    m_CheckQualSyntax    = false;
+    m_NeedRequiredQuals  = false;
+    m_NeedOrganismQual   = false;
+    m_NeedAtLeastOneRef  = false;
+    m_CitArtIsoJta       = false;
+    m_DropBadDbxref      = false;
+    m_UseEmblMolType     = false;
+    m_HideBankItComment  = false;
+    m_CheckCDSProductId  = false;
+    m_SupressSegLoc      = false;
+    m_SrcQualsToNote     = false;
+    m_HideEmptySource    = false;
+    m_GoQualsToNote      = false;
+    m_GeneSynsToNote     = false;
+    m_ForGBRelease       = false;
+    m_HideUnclassPartial = false;
 }
 
 
@@ -705,6 +709,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:49:04  shomrat
+* using types in flag file
+*
 * Revision 1.4  2004/02/11 16:49:16  shomrat
 * added user customization flags
 *

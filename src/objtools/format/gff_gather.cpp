@@ -59,9 +59,9 @@ void CGFFGatherer::x_DoSingleSection
     ctx.SetActiveBioseq(seq);
 
     if ( (ctx.IsNa()  &&  
-          ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipNucleotides) != 0))  ||
+          ((ctx.GetFilterFlags() & fSkipNucleotides) != 0))  ||
          (ctx.IsProt()  &&
-          ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipProteins) != 0)) ) {
+          ((ctx.GetFilterFlags() & fSkipProteins) != 0)) ) {
         return;
     }
 
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 22:53:33  shomrat
+* using types in flag file
+*
 * Revision 1.2  2004/02/11 16:53:57  shomrat
 * separate gather of features and source-features
 *

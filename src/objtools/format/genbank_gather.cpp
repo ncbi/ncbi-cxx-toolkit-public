@@ -73,9 +73,7 @@ CGenbankGatherer::CGenbankGatherer(void)
 
 bool s_ShowBaseCount(CFFContext& ctx)
 { 
-    CFlatFileGenerator::TMode mode = ctx.GetMode();
-    return (mode == CFlatFileGenerator::eMode_Dump  ||
-            mode == CFlatFileGenerator::eMode_GBench);
+    return (ctx.IsModeDump()  ||  ctx.IsModeGBench());
 }
 
 
@@ -97,9 +95,9 @@ void CGenbankGatherer::x_DoSingleSection
     ctx.SetActiveBioseq(seq);
 
     if ( (ctx.IsNa()  &&  
-          ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipNucleotides) != 0))  ||
+          ((ctx.GetFilterFlags() & fSkipNucleotides) != 0))  ||
          (ctx.IsProt()  &&
-          ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipProteins) != 0)) ) {
+          ((ctx.GetFilterFlags() & fSkipProteins) != 0)) ) {
         return;
     }
 
@@ -126,7 +124,7 @@ void CGenbankGatherer::x_DoSingleSection
         x_GatherWGS(ctx);
     } else if ( ctx.IsRSGenome() ) {
         ItemOS() << new CGenomeItem(ctx);
-    } else if ( ctx.GetStyle() == CFlatFileGenerator::eStyle_Contig ) {
+    } else if ( ctx.IsStyleContig() ) {
         if ( ctx.ShowContigFeatures() ) {
             x_GatherFeatures();
         }
@@ -206,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:53:05  shomrat
+* using types in flag file
+*
 * Revision 1.4  2004/02/11 16:53:08  shomrat
 * x_GatherFeature signature changed
 *

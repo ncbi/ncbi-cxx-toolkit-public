@@ -91,20 +91,20 @@ USING_SCOPE(sequence);
 CFlatGatherer* CFlatGatherer::New(TFormat format)
 {
     switch ( format ) {
-    case CFlatFileGenerator::eFormat_GenBank:
+    case eFormat_GenBank:
         //case CFlatFileGenerator<>::eFormat_GBSeq:
         //case CFlatFileGenerator<>::eFormat_Index:
         return new CGenbankGatherer;
         
-    case CFlatFileGenerator::eFormat_EMBL:
+    case eFormat_EMBL:
         return new CEmblGatherer;
 
-    case CFlatFileGenerator::eFormat_GFF:
+    case eFormat_GFF:
         return new CGFFGatherer;
         
-    case CFlatFileGenerator::eFormat_DDBJ:
-    case CFlatFileGenerator::eFormat_GBSeq:
-    case CFlatFileGenerator::eFormat_FTable:
+    case eFormat_DDBJ:
+    case eFormat_GBSeq:
+    case eFormat_FTable:
     default:
         NCBI_THROW(CFlatException, eNotSupported, 
             "This format is currently not supported");
@@ -190,10 +190,8 @@ void CFlatGatherer::x_GatherBioseq(const CBioseq& seq) const
 
     bool segmented = seq.GetInst().CanGetRepr()  &&
         seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg;
-    CFlatFileGenerator::TStyle style = m_Context->GetStyle();
-    if ( segmented  &&
-         (style == CFlatFileGenerator::eStyle_Normal  ||
-          style == CFlatFileGenerator::eStyle_Segment) ) {
+    if ( segmented  && 
+         (m_Context->IsStyleNormal()  ||  m_Context->IsStyleSegment()) ) {
         // display individual segments (multiple sections)
         x_DoMultipleSections(seq);
     } else {
@@ -458,9 +456,7 @@ void CFlatGatherer::x_IdComments(CFFContext& ctx) const
 
     if ( local_id != 0 ) {
         if ( ctx.IsTPA()  ||  ctx.IsGED() ) {
-            CFlatFileGenerator::TMode mode = ctx.GetMode();
-            if ( mode == CFlatFileGenerator::eMode_GBench  ||  
-                 mode == CFlatFileGenerator::eMode_Dump ) {
+            if ( ctx.IsModeGBench()  ||  ctx.IsModeDump() ) {
                 // !!! create a CLocalIdComment(*local_id, ctx)
             }
         }
@@ -533,8 +529,7 @@ void CFlatGatherer::x_HistoryComments(CFFContext& ctx) const
         }
     }
 
-    if ( hist.IsSetReplaces()  &&
-         ctx.GetMode() == CFlatFileGenerator::eMode_GBench) {
+    if ( hist.IsSetReplaces()  &&  ctx.IsModeGBench() ) {
         const CSeq_hist::TReplaces& r = hist.GetReplaces();
         if ( r.CanGetDate()  &&  !r.GetIds().empty() ) {
             x_AddComment(new CHistComment(CHistComment::eReplaces,
@@ -873,7 +868,11 @@ void CFlatGatherer::x_GatherFeatures(void) const
     CFlatItemOStream& out = *m_ItemOS;
 
     SAnnotSelector sel;
-    s_SetSelection(sel, ctx);
+    const SAnnotSelector* selp = ctx.GetAnnotSelector();
+    if ( selp == 0 ) {
+        s_SetSelection(sel, ctx);
+        selp = &sel;
+    }
 
     // optionally map gene from genomic onto cDNA
     if ( ctx.IsGPS()  &&  ctx.CopyGeneToCDNA()  &&
@@ -891,7 +890,7 @@ void CFlatGatherer::x_GatherFeatures(void) const
     }
 
     // collect features
-    for ( CFeat_CI it(scope, *ctx.GetLocation(), sel); it; ++it ) {
+    for ( CFeat_CI it(scope, *ctx.GetLocation(), *selp); it; ++it ) {
         out << new CFeatureItem(*it, ctx);
 
         // Add more features depending on user preferences
@@ -930,11 +929,24 @@ void CFlatGatherer::x_GatherFeatures(void) const
     }
 
     if ( ctx.IsProt() ) {
-        for ( CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
+        CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
                          SAnnotSelector::eOverlap_Intervals,
                          CFeat_CI::eResolve_All, CFeat_CI::e_Product);
-             it;  ++it) {
-            out << new CFeatureItem(*it, ctx, &it->GetProduct(), true);
+        while ( it ) {
+            switch ( it->GetData().Which() ) {
+            case CSeqFeatData::e_Cdregion:
+                out << new CFeatureItem(*it, ctx, &it->GetProduct(), true);
+                break;
+            case CSeqFeatData::e_Prot:
+                // for RefSeq records or GenBank not release_mode
+                if ( ctx.IsRefSeq()  ||  !ctx.ForGBRelease() ) {
+                    out << new CFeatureItem(*it, ctx, &it->GetProduct(), true);
+                }
+                break;
+            default:
+                break;
+            }
+            ++it;
         }
     }
 }
@@ -1036,6 +1048,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:52:41  shomrat
+* using types in flag file
+*
 * Revision 1.4  2004/02/11 16:52:12  shomrat
 * completed implementation of featture gathering
 *

@@ -47,7 +47,8 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
+//#include <objtools/format/flat_file_generator.hpp>
+#include <objtools/format/flat_file_flags.hpp>
 #include <objtools/format/items/reference_item.hpp>
 
 
@@ -226,11 +227,6 @@ class CFFContext : public CObject
 public:
  
     // types
-    typedef CFlatFileGenerator::TFormat       TFormat;
-    typedef CFlatFileGenerator::TMode         TMode;
-    typedef CFlatFileGenerator::TStyle        TStyle;
-    typedef CFlatFileGenerator::TFilter       TFilter;
-    typedef CFlatFileGenerator::TFlags        TFlags;
     typedef CBioseqContext::TRef              TRef;
     typedef CBioseqContext::TReferences       TReferences;
 
@@ -244,49 +240,49 @@ public:
     TFormat GetFormat(void) const;
     void SetFormat(TFormat format);
     bool IsFormatGenBank(void) const {
-        return GetFormat() == CFlatFileGenerator::eFormat_GenBank;
+        return GetFormat() == eFormat_GenBank;
     }
     bool IsFormatEMBL   (void) const {
-        return GetFormat() == CFlatFileGenerator::eFormat_EMBL;
+        return GetFormat() == eFormat_EMBL;
     }
     bool IsFormatDDBJ   (void) const {
-        return GetFormat() == CFlatFileGenerator::eFormat_DDBJ;
+        return GetFormat() == eFormat_DDBJ;
     }
     bool IsFormatGBSeq  (void) const {
-        return GetFormat() == CFlatFileGenerator::eFormat_GBSeq;
+        return GetFormat() == eFormat_GBSeq;
     }
     bool IsFormatFTable (void) const {
-        return GetFormat() == CFlatFileGenerator::eFormat_FTable;
+        return GetFormat() == eFormat_FTable;
     }
 
     TMode GetMode(void) const;
     void SetMode(TMode mode);
     bool IsModeRelease(void) const {
-        return GetMode() == CFlatFileGenerator::eMode_Release;
+        return GetMode() == eMode_Release;
     }
     bool IsModeEntrez (void) const {
-        return GetMode() == CFlatFileGenerator::eMode_Entrez;
+        return GetMode() == eMode_Entrez;
     }
     bool IsModeGBench (void) const {
-        return GetMode() == CFlatFileGenerator::eMode_GBench;
+        return GetMode() == eMode_GBench;
     }
     bool IsModeDump   (void) const {
-        return GetMode() == CFlatFileGenerator::eMode_Dump;
+        return GetMode() == eMode_Dump;
     }
 
     TStyle GetStyle(void) const;
     void SetStyle(TStyle style);
     bool IsStyleNormal (void) const {
-        return GetStyle() == CFlatFileGenerator::eStyle_Normal;
+        return GetStyle() == eStyle_Normal;
     }
     bool IsStyleSegment(void) const {
-        return GetStyle() == CFlatFileGenerator::eStyle_Segment;
+        return GetStyle() == eStyle_Segment;
     }
     bool IsStyleMaster (void) const {
-        return GetStyle() == CFlatFileGenerator::eStyle_Master;
+        return GetStyle() == eStyle_Master;
     }
     bool IsStyleContig (void) const {
-        return GetStyle() == CFlatFileGenerator::eStyle_Contig;
+        return GetStyle() == eStyle_Contig;
     }
     bool DoContigStyle(void);
 
@@ -372,6 +368,10 @@ public:
     const CMasterContext* Master(void) const { return m_Master; }
     const CBioseqContext* Bioseq(void) const { return m_Bioseq; }
 
+    const SAnnotSelector* GetAnnotSelector(void) const;
+    SAnnotSelector* SetAnnotSelector(void);
+    void SetAnnotSelector(const SAnnotSelector&);
+
     // flags
     bool SupressLocalId    (void) const { return x_Flags().SupressLocalId();     }
     bool ValidateFeats     (void) const { return x_Flags().ValidateFeats();      }
@@ -397,6 +397,7 @@ public:
     bool GoQualsToNote     (void) const { return x_Flags().GoQualsToNote();      }
     bool GeneSynsToNote    (void) const { return x_Flags().GeneSynsToNote();     }
     bool ForGBRelease      (void) const { return x_Flags().ForGBRelease();       }
+    bool HideUnclassPartial(void) const { return x_Flags().HideUnclassPartial(); }
 
     bool HideImpFeat       (void) const { return x_Flags().HideImpFeat();        }
     bool HideSnpFeat       (void) const { return x_Flags().HideSnpFeat();        }
@@ -426,30 +427,31 @@ private:
         CFlags(TMode mode, TFlags flags);
         
         // mode dependant flags
-        bool SupressLocalId   (void) const  { return m_SupressLocalId;    }
-        bool ValidateFeats    (void) const  { return m_ValidateFeats;     }
-        bool IgnorePatPubs    (void) const  { return m_IgnorePatPubs;     }
-        bool DropShortAA      (void) const  { return m_DropShortAA;       }
-        bool AvoidLocusColl   (void) const  { return m_AvoidLocusColl;    }
-        bool IupacaaOnly      (void) const  { return m_IupacaaOnly;       }
-        bool DropBadCitGens   (void) const  { return m_DropBadCitGens;    }
-        bool NoAffilOnUnpub   (void) const  { return m_NoAffilOnUnpub;    }
-        bool DropIllegalQuals (void) const  { return m_DropIllegalQuals;  }
-        bool CheckQualSyntax  (void) const  { return m_CheckQualSyntax;   }
-        bool NeedRequiredQuals(void) const  { return m_NeedRequiredQuals; }
-        bool NeedOrganismQual (void) const  { return m_NeedOrganismQual;  }
-        bool NeedAtLeastOneRef(void) const  { return m_NeedAtLeastOneRef; }
-        bool CitArtIsoJta     (void) const  { return m_CitArtIsoJta;      }
-        bool DropBadDbxref    (void) const  { return m_DropBadDbxref;     }
-        bool UseEmblMolType   (void) const  { return m_UseEmblMolType;    }
-        bool HideBankItComment(void) const  { return m_HideBankItComment; }
-        bool CheckCDSProductId(void) const  { return m_CheckCDSProductId; }
-        bool SupressSegLoc    (void) const  { return m_SupressSegLoc;     }
-        bool SrcQualsToNote   (void) const  { return m_SrcQualsToNote;    }
-        bool HideEmptySource  (void) const  { return m_HideEmptySource;   }
-        bool GoQualsToNote    (void) const  { return m_GoQualsToNote;     }
-        bool GeneSynsToNote   (void) const  { return m_GeneSynsToNote;    }
-        bool ForGBRelease     (void) const  { return m_ForGBRelease;      }
+        bool SupressLocalId    (void) const { return m_SupressLocalId;     }
+        bool ValidateFeats     (void) const { return m_ValidateFeats;      }
+        bool IgnorePatPubs     (void) const { return m_IgnorePatPubs;      }
+        bool DropShortAA       (void) const { return m_DropShortAA;        }
+        bool AvoidLocusColl    (void) const { return m_AvoidLocusColl;     }
+        bool IupacaaOnly       (void) const { return m_IupacaaOnly;        }
+        bool DropBadCitGens    (void) const { return m_DropBadCitGens;     }
+        bool NoAffilOnUnpub    (void) const { return m_NoAffilOnUnpub;     }
+        bool DropIllegalQuals  (void) const { return m_DropIllegalQuals;   }
+        bool CheckQualSyntax   (void) const { return m_CheckQualSyntax;    }
+        bool NeedRequiredQuals (void) const { return m_NeedRequiredQuals;  }
+        bool NeedOrganismQual  (void) const { return m_NeedOrganismQual;   }
+        bool NeedAtLeastOneRef (void) const { return m_NeedAtLeastOneRef;  }
+        bool CitArtIsoJta      (void) const { return m_CitArtIsoJta;       }
+        bool DropBadDbxref     (void) const { return m_DropBadDbxref;      }
+        bool UseEmblMolType    (void) const { return m_UseEmblMolType;     }
+        bool HideBankItComment (void) const { return m_HideBankItComment;  }
+        bool CheckCDSProductId (void) const { return m_CheckCDSProductId;  }
+        bool SupressSegLoc     (void) const { return m_SupressSegLoc;      }
+        bool SrcQualsToNote    (void) const { return m_SrcQualsToNote;     }
+        bool HideEmptySource   (void) const { return m_HideEmptySource;    }
+        bool GoQualsToNote     (void) const { return m_GoQualsToNote;      }
+        bool GeneSynsToNote    (void) const { return m_GeneSynsToNote;     }
+        bool ForGBRelease      (void) const { return m_ForGBRelease;       }
+        bool HideUnclassPartial(void) const { return m_HideUnclassPartial; }
 
         // custumizable flags
         bool HideImpFeat       (void) const  { return m_HideImpFeat;        }
@@ -501,6 +503,7 @@ private:
         bool m_GoQualsToNote;
         bool m_GeneSynsToNote;
         bool m_ForGBRelease;
+        bool m_HideUnclassPartial;   // hide unclassified partial
 
         // custom flags
         bool m_HideImpFeat;
@@ -536,6 +539,8 @@ private:
     
     CRef<CMasterContext> m_Master;
     CRef<CBioseqContext> m_Bioseq;
+
+    auto_ptr<SAnnotSelector>    m_Selector;
 };
 
 
@@ -549,7 +554,7 @@ private:
 /****************************************************************************/
 
 inline
-CFFContext::TFormat CFFContext::GetFormat(void) const
+TFormat CFFContext::GetFormat(void) const
 {
     return m_Format;
 }
@@ -563,7 +568,7 @@ void CFFContext::SetFormat(TFormat format)
 
 
 inline
-CFFContext::TMode CFFContext::GetMode(void) const
+TMode CFFContext::GetMode(void) const
 {
     return m_Mode;
 }
@@ -577,7 +582,7 @@ void CFFContext::SetMode(TMode mode)
 
 
 inline
-CFFContext::TStyle CFFContext::GetStyle(void) const
+TStyle CFFContext::GetStyle(void) const
 {
     return m_Style;
 }
@@ -598,7 +603,7 @@ bool CFFContext::DoContigStyle(void)
 
 
 inline
-CFFContext::TFilter CFFContext::GetFilterFlags(void) const
+TFilter CFFContext::GetFilterFlags(void) const
 {
     return m_FilterFlags;
 }
@@ -1023,6 +1028,31 @@ bool CFFContext::IsGPS(void) const
 }
 
 
+inline
+const SAnnotSelector* CFFContext::GetAnnotSelector(void) const
+{
+    return m_Selector.get();
+}
+
+
+inline
+SAnnotSelector* CFFContext::SetAnnotSelector(void)
+{
+    if ( m_Selector.get() == 0 ) {
+        m_Selector.reset(new SAnnotSelector);
+    }
+
+    return m_Selector.get();
+}
+
+
+inline
+void CFFContext::SetAnnotSelector(const SAnnotSelector& sel)
+{
+    m_Selector.reset(new SAnnotSelector(sel));
+}
+
+
 /****************************************************************************/
 /*                               CMasterContext                             */
 /****************************************************************************/
@@ -1398,6 +1428,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 22:47:41  shomrat
+* using types in flag file
+*
 * Revision 1.3  2004/02/11 16:39:49  shomrat
 * added more user customization flags
 *

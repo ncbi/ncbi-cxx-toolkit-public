@@ -70,9 +70,9 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq& seq) const
     ctx.SetActiveBioseq(seq);
 
     if ( (ctx.IsNa()  &&  
-          ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipNucleotides) != 0))  ||
+          ((ctx.GetFilterFlags() & fSkipNucleotides) != 0))  ||
          (ctx.IsProt()  &&
-          ((ctx.GetFilterFlags() & CFlatFileGenerator::fSkipProteins) != 0)) ) {
+          ((ctx.GetFilterFlags() & fSkipProteins) != 0)) ) {
         return;
     }
 
@@ -103,10 +103,7 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq& seq) const
     x_GatherSourceFeatures();
     x_GatherFeatures();
     // Base count
-    TMode mode = ctx.GetMode();
-    if ( ctx.IsNa()                                 &&
-         (mode == CFlatFileGenerator::eMode_GBench  ||
-          mode == CFlatFileGenerator::eMode_Dump) ) {
+    if ( ctx.IsNa()  &&  (ctx.IsModeGBench()  ||  ctx.IsModeDump()) ) {
         ItemOS() << new CBaseCountItem(ctx);
     }
     // Sequenece
@@ -124,6 +121,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/11 22:50:01  shomrat
+* using types in flag file
+*
 * Revision 1.4  2004/02/11 16:50:31  shomrat
 * gather source features separately
 *
