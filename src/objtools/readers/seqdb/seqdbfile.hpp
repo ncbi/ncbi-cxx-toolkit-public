@@ -1,5 +1,5 @@
-#ifndef CORELIB__SEQDB__SEQDBFILE_HPP
-#define CORELIB__SEQDB__SEQDBFILE_HPP
+#ifndef OBJTOOLS_READERS_SEQDB__SEQDBFILE_HPP
+#define OBJTOOLS_READERS_SEQDB__SEQDBFILE_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -561,6 +561,6 @@ bool inline CSeqDBHdrFile::x_NeedHdrFile(void)
 
 END_NCBI_SCOPE
 
-#endif // CORELIB__SEQDB__SEQDBFILE_HPP
+#endif // OBJTOOLS_READERS_SEQDB__SEQDBFILE_HPP
 
 

@@ -1,5 +1,5 @@
-#ifndef CORELIB__SEQDB__SEQDBALIAS_HPP
-#define CORELIB__SEQDB__SEQDBALIAS_HPP
+#ifndef OBJTOOLS_READERS_SEQDB__SEQDBALIAS_HPP
+#define OBJTOOLS_READERS_SEQDB__SEQDBALIAS_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -191,6 +191,6 @@ private:
 
 END_NCBI_SCOPE
 
-#endif // CORELIB__SEQDB__SEQDBALIAS_HPP
+#endif // OBJTOOLS_READERS_SEQDB__SEQDBALIAS_HPP
 
 
