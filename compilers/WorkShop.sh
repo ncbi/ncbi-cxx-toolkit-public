@@ -68,8 +68,8 @@ shift
 ## Build directory (optional)
 if test -n "$1" ; then
   case "$1" in
-   -* )  EXEC_PREFIX="" ;;
-   *  )  EXEC_PREFIX="--exec-prefix=$1" ; shift ;;
+   -* )  BUILD_ROOT="" ;;
+   *  )  BUILD_ROOT="--with-build-root=$1" ; shift ;;
   esac
 fi
 
@@ -77,4 +77,4 @@ fi
 ## Configure
 export CC CXX CCC
 
-${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $EXEC_PREFIX $ARCH --with-internal "$@"
+${CONFIG_SHELL-/bin/sh} `dirname $0`/../configure $HELP $BUILD_ROOT $ARCH --with-internal "$@"
