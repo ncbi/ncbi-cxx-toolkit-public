@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.14  2000/11/15 20:34:54  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -248,10 +252,9 @@ public:
     struct ByLength {
         bool operator()(const SSubString& s1, const SSubString& s2) const
             {
-                int sizeDiff = s1.value.size() - s2.value.size();
-                if ( sizeDiff > 0 )
+                if ( s1.value.size() > s2.value.size() )
                     return true;
-                if ( sizeDiff < 0 )
+                if ( s1.value.size() < s2.value.size() )
                     return false;
                 return s1.order < s2.order;
             }
@@ -263,14 +266,15 @@ public:
 string MakeFileName(const string& fname, size_t addLength)
 {
     string name = Identifier(fname);
-    int remove = name.size() + addLength - MAX_FILE_NAME_LENGTH;
-    if ( remove <= 0 )
+    size_t fullLength = name.size() + addLength;
+    if ( fullLength <= MAX_FILE_NAME_LENGTH )
         return name;
+    size_t remove = fullLength - MAX_FILE_NAME_LENGTH;
     // we'll have to truncate very long filename
 
     _TRACE("MakeFileName(\""<<fname<<"\", "<<addLength<<") remove="<<remove);
     // 1st step: parse name dividing by '_' sorting elements by their size
-    int removeable = 0; // removeable part of string
+    SIZE_TYPE removeable = 0; // removeable part of string
     typedef set<SSubString, SSubString::ByLength> TByLength;
     TByLength byLength;
     {
@@ -295,7 +299,7 @@ string MakeFileName(const string& fname, size_t addLength)
     _TRACE("MakeFileName: removeable="<<removeable);
 
     // if removeable part of string too small...
-    if ( removeable - remove < int(MAX_FILE_NAME_LENGTH - addLength) / 2 ) {
+    if ( removeable - remove < size_t(MAX_FILE_NAME_LENGTH - addLength) / 2 ) {
         // we'll do plain truncate
         _TRACE("MakeFileName: return \""<<name.substr(0, MAX_FILE_NAME_LENGTH - addLength)<<"\"");
         return name.substr(0, MAX_FILE_NAME_LENGTH - addLength);

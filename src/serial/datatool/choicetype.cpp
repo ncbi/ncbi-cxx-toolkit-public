@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.20  2000/11/08 17:02:50  vasilche
 * Added generation of modular DTD files.
 *
@@ -146,6 +150,7 @@ TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
     return new CAnyTypeChoice();
 }
 
+static
 TMemberIndex GetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
                                    TConstObjectPtr choicePtr)
 {
@@ -154,6 +159,7 @@ TMemberIndex GetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
     return choice->index;
 }
 
+static
 void SetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
                            TObjectPtr choicePtr,
                            TMemberIndex index)
@@ -162,6 +168,7 @@ void SetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
     choice->index = index;
 }
 
+static
 void ResetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
                              TObjectPtr choicePtr)
 {
@@ -263,7 +270,7 @@ AutoPtr<CTypeStrings> CChoiceDataType::GetFullCType(void) const
         code->SetObject(true);
         iterate ( TMembers, i, GetMembers() ) {
             AutoPtr<CTypeStrings> varType = (*i)->GetType()->GetFullCType();
-            bool delayed = !GetVar((*i)->GetName()+".Delay").empty();
+            bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
             code->AddVariant((*i)->GetName(), varType, delayed);
         }
         SetParentClassTo(*code);

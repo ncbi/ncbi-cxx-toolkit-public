@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.27  2000/11/15 20:34:55  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -437,19 +441,29 @@ string CDataTypeModule::GetFileNamePrefix(void) const
     return GetModuleContainer().GetFileNamePrefix();
 }
 
-const string& CDataTypeModule::GetVar(const string& section,
-                                      const string& value) const
+const string& CDataTypeModule::GetVar(const string& typeName,
+                                      const string& varName) const
 {
-    _ASSERT(!section.empty());
-    _ASSERT(!value.empty());
+    _ASSERT(!typeName.empty());
+    _ASSERT(!varName.empty());
     const CNcbiRegistry& registry = GetConfig();
-    const string& s1 = registry.Get(GetName() + '.' + section, value);
-    if ( !s1.empty() )
-        return s1;
-    const string& s2 = registry.Get(section, value);
-    if ( !s2.empty() )
-        return s2;
-    return registry.Get(GetName(), value);
+    {
+        const string& s = registry.Get(GetName() + '.' + typeName, varName);
+        if ( !s.empty() )
+            return s;
+    }
+    {
+        const string& s = registry.Get(typeName, varName);
+        if ( !s.empty() )
+            return s;
+    }
+    {
+        const string& s = registry.Get(GetName(), varName);
+        if ( !s.empty() )
+            return s;
+    }
+    // default section
+    return registry.Get("-", varName);
 }
 
 END_NCBI_SCOPE

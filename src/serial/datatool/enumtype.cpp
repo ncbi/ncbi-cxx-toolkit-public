@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.17  2000/11/15 20:34:54  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -118,7 +122,7 @@ bool CEnumDataType::IsInteger(void) const
 }
 
 CEnumDataType::TValue& CEnumDataType::AddValue(const string& valueName,
-                                               long value)
+                                               AnyType::TInteger value)
 {
     m_Values.push_back(TValue(valueName, value));
     return m_Values.back();
@@ -231,11 +235,11 @@ TObjectPtr CEnumDataType::CreateDefault(const CDataValue& value) const
 {
     const CIdDataValue* id = dynamic_cast<const CIdDataValue*>(&value);
     if ( id == 0 ) {
-        return new int(dynamic_cast<const CIntDataValue&>(value).GetValue());
+        return new AnyType::TInteger(dynamic_cast<const CIntDataValue&>(value).GetValue());
     }
     iterate ( TValues, i, m_Values ) {
         if ( i->GetName() == id->GetValue() )
-            return new int(i->GetValue());
+            return new AnyType::TInteger(i->GetValue());
     }
     value.Warning("illegal ENUMERATED value: " + id->GetValue());
     return 0;

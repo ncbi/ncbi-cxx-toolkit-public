@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/20 17:26:33  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.22  2000/11/15 20:34:55  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -130,7 +134,7 @@ CReferenceDataType::CReferenceDataType(const string& n)
 {
 }
 
-void CReferenceDataType::PrintASN(CNcbiOstream& out, int indent) const
+void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 {
     out << m_UserTypeName;
 }

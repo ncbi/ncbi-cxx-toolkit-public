@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/11/20 17:26:32  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.44  2000/11/08 17:50:18  vasilche
 * Fixed compilation error on MSVC.
 *
@@ -301,8 +305,9 @@ void GetFileOut(FileInfo& info, const char* typeArg, const char* name,
     info.name = FileOutArgument(name);
 }
 
-extern "C"
-int main(int argc, const char*argv[])
+int DataTool(int argc, const char* argv[]);
+
+int DataTool(int argc, const char* argv[])
 {
     SetDiagStream(&NcbiCerr);
     SetDiagPostLevel(eDiag_Warning);
@@ -630,3 +635,10 @@ void CopyValue(CFileSet& types, const string& defTypeName,
 }
 
 END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
+
+int main(int argc, const char* argv[])
+{
+    return DataTool(argc, argv);
+}

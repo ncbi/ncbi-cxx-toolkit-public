@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/11/20 17:26:31  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.30  2000/11/15 20:34:54  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -335,7 +339,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         isObject = true;
     }
     else {
-        isObject = !GetVar("Object").empty();
+        isObject = !GetVar("_object").empty();
     }
 */
     code->SetHaveUserClass(haveUserClass);
@@ -349,10 +353,10 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
             _ASSERT(!defaultCode.empty());
         }
 
-        bool delayed = !GetVar((*i)->GetName()+".Delay").empty();
+        bool delayed = !GetVar((*i)->GetName()+"._delay").empty();
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
         code->AddMember((*i)->GetName(), memberType,
-                        (*i)->GetType()->GetVar("Pointer"),
+                        (*i)->GetType()->GetVar("_pointer"),
                         optional, defaultCode, delayed);
     }
     SetParentClassTo(*code);

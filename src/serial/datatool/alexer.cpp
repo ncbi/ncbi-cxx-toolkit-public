@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/20 17:26:31  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.12  2000/11/15 20:34:53  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -144,7 +148,7 @@ const AbstractToken& AbstractLexer::FillNextToken(void)
     return m_NextToken;
 }
 
-char AbstractLexer::FillChar(int index)
+char AbstractLexer::FillChar(size_t index)
 {
     char* pos = m_Position + index;
     if ( pos >= m_AllocEnd ) {

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/11/20 17:26:33  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.55  2000/11/15 20:34:56  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -285,14 +289,14 @@ bool CDataType::CheckType(void) const
     return true;
 }
 
-const string& CDataType::GetVar(const string& value) const
+const string& CDataType::GetVar(const string& varName) const
 {
     const CDataType* parent = GetParentType();
     if ( !parent ) {
-        return GetModule()->GetVar(m_MemberName, value);
+        return GetModule()->GetVar(m_MemberName, varName);
     }
     else {
-        return parent->GetVar(m_MemberName + '.' + value);
+        return parent->GetVar(m_MemberName + '.' + varName);
     }
 }
 
@@ -425,7 +429,7 @@ string CDataType::InheritFromClass(void) const
 
 const CDataType* CDataType::InheritFromType(void) const
 {
-    const string& parentName = GetVar("_parent");
+    const string& parentName = GetVar("_parent_type");
     if ( !parentName.empty() )
         return ResolveGlobal(parentName);
     return 0;

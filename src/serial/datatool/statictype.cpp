@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/11/20 17:26:33  vasilche
+* Fixed warnings on 64 bit platforms.
+* Updated names of config variables.
+*
 * Revision 1.19  2000/11/15 20:34:55  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -128,7 +132,7 @@ TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
                  GetASNKeyword() + string(" default not implemented"));
 }
 
-void CStaticDataType::PrintASN(CNcbiOstream& out, int indent) const
+void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 {
     out << GetASNKeyword();
 }
@@ -449,7 +453,7 @@ bool CIntDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CIntDataType::CreateDefault(const CDataValue& value) const
 {
-    return new int(dynamic_cast<const CIntDataValue&>(value).GetValue());
+    return new AnyType::TInteger(dynamic_cast<const CIntDataValue&>(value).GetValue());
 }
 
 string CIntDataType::GetDefaultString(const CDataValue& value) const
