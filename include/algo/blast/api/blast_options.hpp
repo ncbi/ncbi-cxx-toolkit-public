@@ -332,8 +332,6 @@ CBlastOption::SetMatrixName(const char* matrix)
 
     m_LutOpts->matrixname = StringSave(matrix);
     m_ScoringOpts->matrix = StringSave(matrix);
-
-    /// @todo Adjust gap opening and extension penalties?
 }
 
 inline int
@@ -357,14 +355,7 @@ CBlastOption::GetLookupTableType() const
 inline void
 CBlastOption::SetLookupTableType(int type)
 {
-    _ASSERT(type == MB_LOOKUP_TABLE || 
-            type == NA_LOOKUP_TABLE || 
-            type == AA_LOOKUP_TABLE);
-
     m_LutOpts->lut_type = type;
-
-    if (type == MB_LOOKUP_TABLE)
-        m_LutOpts->scan_step = COMPRESSION_RATIO;
 }
 
 inline short
@@ -377,15 +368,6 @@ inline void
 CBlastOption::SetWordSize(short ws)
 {
     m_LutOpts->word_size = ws;
-
-    if (m_Program == CBlastOption::eBlastn) {
-        // Variable word size can only be used for word sizes divisible by
-        // COMPRESSION_RATIO (4)
-        if (m_LutOpts->word_size % COMPRESSION_RATIO == 0)
-            m_LutOpts->scan_step = m_LutOpts->word_size - 8 + 1;
-        else
-            m_LutOpts->scan_step = m_LutOpts->word_size - 8 + COMPRESSION_RATIO;
-    }
 }
 
 inline int
@@ -397,7 +379,6 @@ CBlastOption::GetAlphabetSize() const
 inline void
 CBlastOption::SetAlphabetSize(int s)
 {
-    _ASSERT(s == 25 || s == BLASTNA_SIZE);
     m_LutOpts->alphabet_size = s;
 }
 
@@ -434,10 +415,6 @@ CBlastOption::GetMBTemplateType() const
 inline void
 CBlastOption::SetMBTemplateType(unsigned char type)
 {
-    _ASSERT(type == MB_WORD_CODING || 
-            type == MB_WORD_OPTIMAL || 
-            type == MB_TWO_TEMPLATES);
-
     m_LutOpts->mb_template_type = type;
 }
 
@@ -464,6 +441,7 @@ inline void
 CBlastOption::SetFilterString(const char* f)
 {
     m_QueryOpts->filter_string = (char*) MemFree(m_QueryOpts->filter_string);
+#if 0
     if (!StringICmp(f, "T")) {
         if (m_Program == CBlastOption::eBlastn)
             m_QueryOpts->filter_string = StringSave("D");
@@ -472,6 +450,8 @@ CBlastOption::SetFilterString(const char* f)
     } else {
         m_QueryOpts->filter_string = StringSave(f);
     }
+#endif
+    m_QueryOpts->filter_string = StringSave(f);
 }
 
 inline ENa_strand
@@ -483,8 +463,7 @@ CBlastOption::GetStrandOption() const
 inline void
 CBlastOption::SetStrandOption(ENa_strand s)
 {
-    if (m_Program == CBlastOption::eBlastn)
-        m_QueryOpts->strand_option = (unsigned char) s;
+    m_QueryOpts->strand_option = (unsigned char) s;
 }
 
 #if 0
@@ -560,13 +539,6 @@ CBlastOption::GetExtendWordMethod() const
 inline void
 CBlastOption::SetExtendWordMethod(int ew)
 {
-    _ASSERT(ew & EXTEND_WORD_BLASTN ||
-            ew & EXTEND_WORD_DIAG_ARRAY ||
-            ew & EXTEND_WORD_MB_STACKS ||
-            ew & EXTEND_WORD_AG ||
-            ew & EXTEND_WORD_VARIABLE_SIZE ||
-            ew & EXTEND_WORD_UNGAPPED);
-
     m_InitWordOpts->extend_word_method |= ew;
 }
 
@@ -628,25 +600,7 @@ CBlastOption::GetGapExtnAlgorithm() const
 inline void
 CBlastOption::SetGapExtnAlgorithm(int a)
 {
-    _ASSERT(a >= EXTEND_DYN_PROG && a < EXTEND_ALGO_MAX);
-
     m_ExtnOpts->algorithm_type = a;
-
-    if (m_Program == CBlastOption::eBlastn) {
-        if (m_ExtnOpts->algorithm_type == EXTEND_GREEDY) {
-            m_ScoringOpts->gap_open = BLAST_GAP_OPEN_MEGABLAST;
-            m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_MEGABLAST;
-            m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_GREEDY;
-        } else {
-            m_ScoringOpts->gap_open = BLAST_GAP_OPEN_NUCL;
-            m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_NUCL;
-            m_ExtnOpts->gap_x_dropoff = BLAST_GAP_X_DROPOFF_NUCL;
-        }
-    } else {
-        m_ScoringOpts->gap_open = BLAST_GAP_OPEN_PROT;
-        m_ScoringOpts->gap_extend = BLAST_GAP_EXTN_PROT;
-    }
-
 }
 
 /******************* Hit saving options *************************/
@@ -927,9 +881,11 @@ CBlastOption::GetOutOfFrameMode() const
 inline void 
 CBlastOption::SetOutOfFrameMode(bool m)
 {
+#if 0
     if (m_Program != CBlastOption::eBlastx && m == true)
         NCBI_THROW(CBlastException, eBadParameter, 
                 "Out-of-Frame only allowed for blastx");
+#endif
     m_ScoringOpts->is_ooframe = m;
 }
 
@@ -988,6 +944,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/16 19:51:12  camacho
+* Removed logic of default setting from mutator member functions
+*
 * Revision 1.2  2003/07/14 22:17:17  camacho
 * Convert CSeq_loc to BlastMaskPtr
 *
