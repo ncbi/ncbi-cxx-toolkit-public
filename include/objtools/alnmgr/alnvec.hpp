@@ -1,4 +1,3 @@
-
 #ifndef OBJECTS_ALNMGR___ALNVEC__HPP
 #define OBJECTS_ALNMGR___ALNVEC__HPP
 
@@ -81,6 +80,16 @@ public:
     string& GetAlnSeqString(string& buffer,
                             TNumrow row, 
                             const CAlnMap::TSignedRange& aln_rng)         const;
+
+    // get the seq string for the whole alignment
+    // optionally, get the inserts and screen limit coords
+    string& GetWholeAlnSeqString(TNumrow       row,
+                                 string&       buffer,
+                                 TSeqPosList * insert_starts = 0,
+                                 TSeqPosList * insert_lens = 0,
+                                 unsigned int  scrn_width = 0,
+                                 TSeqPosList * scrn_lefts = 0,
+                                 TSeqPosList * scrn_rights = 0) const;
 
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
     TResidue              GetResidue     (TNumrow row, TSeqPos aln_pos) const;
@@ -344,6 +353,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2003/07/17 22:46:09  todorov
+ * +GetWholeAlnSeqString
+ *
  * Revision 1.20  2003/06/02 16:01:38  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

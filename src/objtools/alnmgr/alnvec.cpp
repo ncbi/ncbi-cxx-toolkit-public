@@ -204,6 +204,156 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
 }
 
 
+string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
+                                      string&       buffer,
+                                      TSeqPosList * insert_starts,
+                                      TSeqPosList * insert_lens,
+                                      unsigned int  scrn_width,
+                                      TSeqPosList * scrn_lefts,
+                                      TSeqPosList * scrn_rights) const
+{
+    TSeqPos aln_pos = 0, len = 0, curr_pos = 0, anchor_pos = 0, scrn_pos = 0;
+    TSignedSeqPos start = -1, stop = -1, scrn_lft_seq_pos = -1, scrn_rgt_seq_pos = -1;
+    TNumseg seg;
+    int pos, nscrns, delta;
+    
+    TSeqPos aln_len = GetAlnStop() + 1;
+
+    bool anchored = IsSetAnchor();
+    bool plus     = IsPositiveStrand(row);
+
+    const bool record_inserts = insert_starts && insert_lens;
+    const bool record_coords  = scrn_width && scrn_lefts && scrn_rights;
+
+    // allocate space for the row
+    buffer.reserve(aln_len + 1);
+    string buff;
+    
+    // in order to make sure m_Seq{Left,Right}Segs[row] are initialized
+    GetSeqStart(row);
+    GetSeqStop(row);
+
+    const TNumseg& left_seg = m_SeqLeftSegs[row];
+    const TNumseg& right_seg = m_SeqRightSegs[row];
+
+    // loop through all segments
+    for (seg = 0, pos = row, aln_pos = 0, anchor_pos = m_Anchor;
+         seg < m_NumSegs;
+         ++seg, pos += m_NumRows, anchor_pos += m_NumRows, aln_pos += len) {
+        
+        len = m_Lens[seg];
+        
+        if ((start = m_Starts[pos]) >= 0) {
+            
+            stop = start + len - 1;
+            
+            if (anchored  &&  m_Starts[anchor_pos] < 0) {
+                // record the insert if requested
+                if (record_inserts) {
+                    insert_starts->push_back(start);
+                    insert_lens->push_back(stop);
+                }
+            } else {
+                // add regular sequence to buffer
+                GetSeqString(buff, row, start, stop);
+                buffer += buff;
+                
+                // take care of coords if necessary
+                if (record_coords) {
+                    if (scrn_lft_seq_pos < 0) {
+                        scrn_lft_seq_pos = plus ? start : stop;
+                        if (scrn_rgt_seq_pos < 0) {
+                            scrn_rgt_seq_pos = scrn_lft_seq_pos;
+                        }
+                    }
+                    // previous scrns
+                    nscrns = (aln_pos - scrn_pos) / scrn_width;
+                    for (int i = 0; i < nscrns; i++) {
+                        scrn_lefts->push_back(scrn_lft_seq_pos);
+                        scrn_rights->push_back(scrn_rgt_seq_pos);
+                        if (i == 0) {
+                            scrn_lft_seq_pos = plus ? start : stop;
+                        }
+                        scrn_pos += scrn_width;
+                    }
+                    if (nscrns > 0) {
+                        scrn_lft_seq_pos = plus ? start : stop;
+                    }
+                    // current scrns
+                    nscrns = (aln_pos + len - scrn_pos) / scrn_width;
+                    curr_pos = aln_pos;
+                    for (int i = 0; i < nscrns; i++) {
+                        delta = plus ?
+                            scrn_width - (curr_pos - scrn_pos) :
+                            curr_pos - scrn_pos - scrn_width;
+                        
+                        scrn_lefts->push_back(scrn_lft_seq_pos);
+                        if (plus ?
+                            scrn_lft_seq_pos < start :
+                            scrn_lft_seq_pos > stop) {
+                            scrn_lft_seq_pos = (plus ? start : stop) +
+                                delta;
+                            scrn_rgt_seq_pos = scrn_lft_seq_pos +
+                                (plus ? -1 : 1);
+                        } else {
+                            scrn_lft_seq_pos += delta;
+                            scrn_rgt_seq_pos += delta;
+                        }
+                        if (seg == left_seg  &&
+                            !scrn_rights->size()) {
+                            if (plus) {
+                                scrn_rgt_seq_pos--;
+                            } else {
+                                scrn_rgt_seq_pos++;
+                            }
+                        }
+                        scrn_rights->push_back(scrn_rgt_seq_pos);
+                        curr_pos = scrn_pos += scrn_width;
+                    }
+                    if (aln_pos + len <= scrn_pos) {
+                        scrn_lft_seq_pos = -1; // reset
+                    }
+                    scrn_rgt_seq_pos = plus ? stop : start;
+                }
+            }
+            
+        } else {
+            
+            // add appropriate number of gap/end chars
+            char* ch_buff = new char[len+1];
+            char fill_ch;
+            
+            if (seg < left_seg  ||  seg > right_seg  &&  right_seg > 0) {
+                fill_ch = GetEndChar();
+            } else {
+                fill_ch = GetGapChar(row);
+            }
+            
+            memset(ch_buff, fill_ch, len);
+            ch_buff[len] = 0;
+            buffer += ch_buff;
+            delete[] ch_buff;
+        }
+
+    }
+    
+    // take care of the remaining coords if necessary
+    if (record_coords) {
+        // previous scrns
+        nscrns = (aln_pos - scrn_pos) / (aln_len % scrn_width);
+        for (int i = 0; i < nscrns; i++) {
+            scrn_lefts->push_back(scrn_lft_seq_pos);
+            scrn_rights->push_back(scrn_rgt_seq_pos);
+            if (i == 0) {
+                scrn_lft_seq_pos = scrn_rgt_seq_pos;
+            }
+            scrn_pos += scrn_width;
+        }
+    }
+    return buffer;
+}
+
+
 //
 // CreateConsensus()
 //
@@ -640,6 +790,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/07/17 22:45:56  todorov
+* +GetWholeAlnSeqString
+*
 * Revision 1.31  2003/07/15 21:13:54  todorov
 * rm bioseq_handle ref
 *
