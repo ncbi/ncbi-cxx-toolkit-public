@@ -184,6 +184,7 @@ KSTAT_LIBS   = @KSTAT_LIBS@
 RPCSVC_LIBS  = @RPCSVC_LIBS@
 CRYPT_LIBS   = @CRYPT_LIBS@
 DL_LIBS      = @DL_LIBS@
+RT_LIBS      = @RT_LIBS@
 
 # This is a temporary workaround for Solaris/Intel platforms where
 # we had to do a kludgy patch to work around a faulty Sybase "tli" lib.
