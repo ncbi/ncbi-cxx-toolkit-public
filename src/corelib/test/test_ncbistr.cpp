@@ -121,9 +121,9 @@ static const SStrCompare s_StrCompare[] = {
 
 
 typedef struct {
-    const char* pchar;  // String input
-    int base;           // Radix base 
-    Uint8 expected;     // Expected value
+    const char* pchar;    // String input
+    int         base;     // Radix base 
+    Uint8       expected; // Expected value
 } SRadixTest;
 
 
@@ -151,7 +151,16 @@ int CTestApplication::Run(void)
 {
     static const string s_Strings[] = {
         "",
+        ".",
+        "..",
+        ".0",
+        ".0.",
+        "..0",
+        ".01",
         "1.",
+        "1.1",
+        "1.1.",
+        "1..",
         "-2147483649",
         "-2147483648",
         "-1",
@@ -172,28 +181,28 @@ int CTestApplication::Run(void)
     const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
 
     //        CExceptionReporterStream reporter(cerr);
-        //        CExceptionReporter::SetDefault(&reporter);
-        //        CExceptionReporter::EnableDefault(false);
-        //        CExceptionReporter::EnableDefault(true);
+    //        CExceptionReporter::SetDefault(&reporter);
+    //        CExceptionReporter::EnableDefault(false);
+    //        CExceptionReporter::EnableDefault(true);
     //        CExceptionReporter::SetDefault(0);
-
+    
     SetupDiag(eDS_ToStdout);
-        /*
+    /*
+      
+      CExceptionReporter::EnableDefault(true);
+      cerr << endl;
+      NCBI_REPORT_EXCEPTION(
+      "****** default reporter (stream) ******",e);
 
-        CExceptionReporter::EnableDefault(true);
-        cerr << endl;
-        NCBI_REPORT_EXCEPTION(
-            "****** default reporter (stream) ******",e);
-
-        CExceptionReporter::SetDefault(0);
-        cerr << endl;
-        NCBI_REPORT_EXCEPTION(
+      CExceptionReporter::SetDefault(0);
+      cerr << endl;
+      NCBI_REPORT_EXCEPTION(
             "****** default reporter (diag) ******",e);
-        */
-
+    */
+    
     for (size_t i = 0;  i < count;  ++i) {
         const string& str = s_Strings[i];
-        NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
+        NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
 
         {{
             int value = NStr::StringToNumeric(str);
@@ -209,7 +218,6 @@ int CTestApplication::Run(void)
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
-//        STD_CATCH("TestStrings");
 
         try {
             unsigned int value = NStr::StringToUInt(str);
@@ -281,7 +289,7 @@ int CTestApplication::Run(void)
         {"C5D", 16, 3165},
         {"FFFF", 16, 65535},
         {"17ABCDEF", 16, 397135343},
-        {"BADBADBA", 16, 3134959034},
+        {"BADBADBA", 16, 3134959034U},
         {"7", 8, 7},
         {"17", 8, 15},
         {"177", 8, 127},
@@ -292,11 +300,11 @@ int CTestApplication::Run(void)
         {"10", 2, 2},
         {"11", 2, 3},
         {"100", 2, 4},
-        {"101", 2, 5},
+        {"101", 2, 5}, 
         {"110", 2, 6},
         {"111", 2, 7},
 
-		// Invalid values come next
+        // Invalid values come next
         {"10ABCDEFGH", 16, 0},
         {"12345A", 10, 0},
         {"012345678", 8, 0},
@@ -608,6 +616,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2003/02/27 15:34:23  lavr
+ * Add tests for stray dots in numbers
+ *
  * Revision 6.15  2003/02/26 20:35:13  siyan
  * Added/deleted whitespaces to conform to existing code style.
  *
