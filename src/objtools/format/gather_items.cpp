@@ -625,13 +625,13 @@ void CFlatGatherer::x_HTGSComments(CFFContext& ctx) const
 
 void CFlatGatherer::x_FeatComments(CFFContext& ctx) const
 {
-
+    // !!!
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// ORIGIN
+// SEQUENCE
 
 // We use multiple items to represent the sequence.
 void CFlatGatherer::x_GatherSequence(void) const
@@ -848,7 +848,36 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
 
 void s_SetSelection(SAnnotSelector& sel, CFFContext& ctx)
 {
-    sel.SetFeatType(CSeqFeatData::e_not_set);  // get all feature
+    // set feature types to be collected
+    {{
+        sel.SetFeatType(CSeqFeatData::e_not_set);  // start with everything
+        // source features are collected elsewhere
+        sel.ExcludeFeatType(CSeqFeatData::e_Biosrc);
+        // some feature types are always excluded (deprecated?)
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_pub);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite);
+        sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_seq);
+        // exclude other types based on user flags
+        if ( ctx.HideImpFeats() ) {
+            sel.ExcludeFeatType(CSeqFeatData::e_Imp);
+        }
+        if ( ctx.HideRemImpFeats() ) {
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+        }
+        if ( ctx.HideSnpFeats() ) {
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_variation);
+        }
+        if ( ctx.HideExonFeats() ) {
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
+        }
+        if ( ctx.HideIntronFeats() ) {
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
+        }
+    }}
     sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
     sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);     // !!! should be set according to user flags
     if ( GetStrand(*ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus ) {
@@ -863,8 +892,6 @@ void CFlatGatherer::x_GatherFeatures(void) const
 {
     CFFContext& ctx = *m_Context;
     CScope& scope = ctx.GetScope();
-    typedef CConstRef<CFeatureItemBase> TFFRef;
-    list<TFFRef> l, l2;
     CFlatItemOStream& out = *m_ItemOS;
 
     SAnnotSelector sel;
@@ -1048,6 +1075,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 18:11:25  shomrat
+* Set feature iterator selector based on user flags
+*
 * Revision 1.5  2004/02/11 22:52:41  shomrat
 * using types in flag file
 *
