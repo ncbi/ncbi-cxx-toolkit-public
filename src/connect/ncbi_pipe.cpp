@@ -144,8 +144,8 @@ CPipeHandle::CPipeHandle()
 
 CPipeHandle::~CPipeHandle()
 {
-    const STimeout kZeroZimeout = {0,0};
-    Close(0, &kZeroZimeout);
+    static const STimeout kZeroTimeout = {0, 0};
+    Close(0, &kZeroTimeout);
 }
 
 
@@ -275,7 +275,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         m_ProcHandle = pinfo.hProcess;
         assert(m_ProcHandle != INVALID_HANDLE_VALUE);
 
-        // Restore remapped handles back to original state
+        // Restore remapped handles back to their original states
         if ( !SetStdHandle(STD_INPUT_HANDLE,  stdin_handle) ) {
             throw "Failed to remap stdin for parent process";
         }
@@ -359,7 +359,7 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
         }
     }
     if ( exitcode ) {
-        *exitcode = (int)x_exitcode;
+        *exitcode = (int) x_exitcode;
     }
     return status;
 }
@@ -374,27 +374,25 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
         }
         ::CloseHandle(m_ChildStdIn);
         m_ChildStdIn = INVALID_HANDLE_VALUE;
-        return eIO_Success;
+        break;
     case CPipe::eStdOut:
         if (m_ChildStdOut == INVALID_HANDLE_VALUE) {
             return eIO_Closed;
         }
         ::CloseHandle(m_ChildStdOut);
         m_ChildStdOut = INVALID_HANDLE_VALUE;
-        return eIO_Success;
+        break;
     case CPipe::eStdErr:
         if (m_ChildStdErr == INVALID_HANDLE_VALUE) {
             return eIO_Closed;
         }
         ::CloseHandle(m_ChildStdErr);
         m_ChildStdErr = INVALID_HANDLE_VALUE;
-        return eIO_Success;
-    default:
-        // Should never get here
-        assert(0);
         break;
+    default:
+        return eIO_InvalidArg;
     }
-    return eIO_InvalidArg;
+    return eIO_Success;
 }
 
 
@@ -612,7 +610,7 @@ private:
 
 CPipeHandle::CPipeHandle()
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
-      m_Pid(-1), m_Flags(0)
+      m_Pid((pid_t)(-1)), m_Flags(0)
 {
     return;
 }
@@ -620,8 +618,8 @@ CPipeHandle::CPipeHandle()
 
 CPipeHandle::~CPipeHandle()
 {
-    const STimeout kZeroZimeout = {0,0};
-    Close(0, &kZeroZimeout);
+    static const STimeout kZeroTimeout = {0, 0};
+    Close(0, &kZeroTimeout);
 }
 
 
@@ -640,7 +638,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
     fd_pipe_err[1] = -1;
 
     try {
-        if (m_Pid != -1) {
+        if (m_Pid != (pid_t)(-1)) {
             throw "Pipe is already open";
         }
         need_delete_handles = true; 
@@ -760,12 +758,12 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
 EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
 {    
+    EIO_Status    status    = eIO_Unknown;
     unsigned long x_timeout = 1;
     int           x_options = 0;
     int           x_exitcode;
-    EIO_Status    status    = eIO_Unknown;
 
-    if (m_Pid == -1) {
+    if (m_Pid == (pid_t)(-1)) {
         status = eIO_Closed;
     } else {
         // If timeout is not infinite
@@ -835,27 +833,25 @@ EIO_Status CPipeHandle::CloseHandle(CPipe::EChildIOHandle handle)
         }
         close(m_ChildStdIn);
         m_ChildStdIn = -1;
-        return eIO_Success;
+        break;
     case CPipe::eStdOut:
         if (m_ChildStdOut == -1) {
             return eIO_Closed;
         }
         close(m_ChildStdOut);
         m_ChildStdOut = -1;
-        return eIO_Success;
+        break;
     case CPipe::eStdErr:
         if (m_ChildStdErr == -1) {
             return eIO_Closed;
         }
         close(m_ChildStdErr);
         m_ChildStdErr = -1;
-        return eIO_Success;
-    default:
-        // should never get here
-        assert(0);
         break;
+    default:
+        return eIO_InvalidArg;
     }
-    return eIO_InvalidArg;
+    return eIO_Success;
 }
 
 
@@ -867,7 +863,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_Pid == -1) {
+        if (m_Pid == (pid_t)(-1)) {
             status = eIO_Closed;
             throw "Pipe is closed";
         }
@@ -919,7 +915,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
     EIO_Status status = eIO_Unknown;
 
     try {
-        if (m_Pid == -1) {
+        if (m_Pid == (pid_t)(-1)) {
             status = eIO_Closed;
             throw "Pipe is closed";
         }
@@ -998,16 +994,17 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
     if (timeout  &&  !timeout->sec  &&  !timeout->usec) {
         return eIO_Timeout;
     }
-    // Auto-resume if interrupted by a signal
-    for (;;) {
+    for (;;) { // Auto-resume if interrupted by a signal
+        struct timeval* tmp;
         struct timeval  tm;
-        struct timeval* tmp = 0;
 
         if ( timeout ) {
-            tm.tv_sec = timeout->sec;
+            // NB: Timeout has been normalized already
+            tm.tv_sec  = timeout->sec;
             tm.tv_usec = timeout->usec;
             tmp = &tm;
-        } 
+        } else
+            tmp = 0;
         fd_set rfds;
         fd_set wfds;
         fd_set efds;
@@ -1034,7 +1031,7 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
             }
             break;
         } else if (errno != EINTR) {
-            throw "Failed select on pipe";
+            throw "Failed select() on pipe";
         }
     }
     return eIO_Success;
@@ -1051,7 +1048,8 @@ EIO_Status CPipeHandle::x_Wait(int fd, EIO_Event direction,
 //
 
 CPipe::CPipe(void)
-    : m_PipeHandle(0), m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
+    : m_PipeHandle(0), m_ReadHandle(eStdOut),
+      m_ReadStatus(eIO_Closed), m_WriteStatus(eIO_Closed),
       m_ReadTimeout(0), m_WriteTimeout(0), m_CloseTimeout(0)
  
 {
@@ -1136,25 +1134,29 @@ EIO_Status CPipe::Read(void* buf, size_t count, size_t* read,
     }
     if (from_handle == eDefault)
         from_handle = m_ReadHandle;
-    if (!buf  ||  from_handle == eStdIn) {
+    if (from_handle == eStdIn) {
+        return eIO_InvalidArg;
+    }
+    if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
-    EIO_Status status = m_PipeHandle->Read(buf, count, read, from_handle,
-                                           m_ReadTimeout);
-    m_ReadStatus = status;
-    return status;
+    m_ReadStatus = m_PipeHandle->Read(buf, count, read, from_handle,
+                                      m_ReadTimeout);
+    return m_ReadStatus;
 }
 
 
 EIO_Status CPipe::SetReadHandle(EChildIOHandle from_handle)
 {
-    if (from_handle == eStdIn)
+    if (from_handle == eStdIn) {
         return eIO_Unknown;
-    if (from_handle != eDefault)
+    }
+    if (from_handle != eDefault) {
         m_ReadHandle = from_handle;
+    }
     return eIO_Success;
 }
 
@@ -1164,16 +1166,15 @@ EIO_Status CPipe::Write(const void* buf, size_t count, size_t* written)
     if ( written ) {
         *written = 0;
     }
-    if ( !buf ) {
+    if (count  &&  !buf) {
         return eIO_InvalidArg;
     }
     if ( !m_PipeHandle ) {
         return eIO_Unknown;
     }
-    EIO_Status status = m_PipeHandle->Write(buf, count, written,
-                                            m_WriteTimeout);
-    m_WriteStatus = status;
-    return status;
+    m_WriteStatus = m_PipeHandle->Write(buf, count, written,
+                                        m_WriteTimeout);
+    return m_WriteStatus;
 }
 
 
@@ -1198,7 +1199,7 @@ EIO_Status CPipe::SetTimeout(EIO_Event event, const STimeout* timeout)
     }
     switch ( event ) {
     case eIO_Close:
-        m_CloseTimeout  = s_SetTimeout(timeout, &m_CloseTimeoutValue);
+        m_CloseTimeout = s_SetTimeout(timeout, &m_CloseTimeoutValue);
         break;
     case eIO_Read:
         m_ReadTimeout  = s_SetTimeout(timeout, &m_ReadTimeoutValue);
@@ -1239,6 +1240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/09/25 04:40:42  lavr
+ * Fixed uninitted member in ctor; few more minor changes
+ *
  * Revision 1.31  2003/09/23 21:08:37  lavr
  * PipeStreambuf and special stream removed: now all in ncbi_conn_stream.cpp
  *
