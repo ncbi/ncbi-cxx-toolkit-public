@@ -39,6 +39,7 @@
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <set>
 #include <utility>
@@ -51,7 +52,6 @@ class CDataLoader;
 class CSeqMap;
 class CScope;
 class CBioseq_Info;
-class CTSE_Info;
 class CSynonymsSet;
 struct SSeq_id_ScopeInfo;
 
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/27 17:10:12  ucko
+* +tse_info.hpp due to use of CConstRef<CTSE_Info>
+*
 * Revision 1.7  2003/11/17 16:03:13  grichenk
 * Throw exception in CBioseq_Handle if the parent scope has been reset
 *
