@@ -106,14 +106,19 @@ EOF
       if test $driver = "dblib"  -a  $server = $server_mssql ; then
          continue
       fi
-      if test \( $driver = "ftds"  -o  $driver = "ftds7" \)  -a \
-                 $server = $server_mssql ; then
+      # do not run tests wit a boolk copy operations 
+      # on Sybase databases with the "ftds" driver
+      if test \( $driver = "ftds" -a $server = $server_mssql \) \
+            -o $driver != "ftds" ; then
           cmd="dbapi_bcp -d $driver -S $server"
           RunSimpleTest "dbapi_bcp"
-          cmd="dbapi_cursor -d $driver -S $server"
-          RunSimpleTest "dbapi_cursor"
           cmd="dbapi_testspeed -d $driver -S $server"
           RunSimpleTest "dbapi_testspeed"
+      fi
+      # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
+      if test $driver != "ftds" -a $server != $server_mssql ; then
+          cmd="dbapi_cursor -d $driver -S $server"
+          RunSimpleTest "dbapi_cursor"
       fi
       cmd="dbapi_query -d $driver -S $server"
       RunSimpleTest "dbapi_query"
