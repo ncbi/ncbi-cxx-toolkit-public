@@ -301,6 +301,7 @@ public:
         : m_Msg(msg)
     {
         cout << "Executing task [" << m_Msg << "]..." << endl;
+        m_Watch.Start();
         m_E1 = m_Watch.Elapsed();
     }
     
@@ -578,7 +579,7 @@ int test1(int argc, char ** argv)
                 full_version = true;
             }
             
-            CStopWatch sw;
+            CStopWatch sw(true);
             
             double e[4];
             
@@ -1387,7 +1388,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-xlate4]";
         
         if (s == "-gilist") {
-            CStopWatch sw;
+            CStopWatch sw(true);
             
             double e1 = sw.Elapsed();
             CSeqDB db(dbname, seqtype);
@@ -2673,7 +2674,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-file-gi-list2]";
         
         if (s == "-file-gi-list") {
-            CStopWatch sw;
+            CStopWatch sw(true);
             double e1, e2, e3, e4, e5;
             e1 = sw.Elapsed();
             
