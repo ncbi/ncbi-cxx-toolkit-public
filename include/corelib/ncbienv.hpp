@@ -38,6 +38,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <map>
 #include <deque>
 
@@ -190,15 +191,15 @@ public:
     void Add(const string& arg);
 
     /// Get program name.
-    const string& GetProgramName(void) const;
+    const string& GetProgramName(bool follow_links = false) const;
 
     /// Get program base name.
-    string GetProgramBasename(void) const;
+    string GetProgramBasename(bool follow_links = false) const;
 
     /// Get program directory name.
     ///
     /// Program name includes the last '/'.
-    string GetProgramDirname (void) const;
+    string GetProgramDirname (bool follow_links = false) const;
 
     /// Set program name.
     void SetProgramName(const string& program_name);
@@ -207,6 +208,9 @@ private:
     string        m_ProgramName;  ///< Program name if different from the
                                   ///< default m_Args[0]
     deque<string> m_Args;         ///< Queue of arguments
+
+    mutable string     m_ResolvedName;
+    mutable CFastMutex m_ResolvedNameMutex;
 };
 
 
@@ -219,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/09/30 15:09:44  ucko
+ * CNcbiArguments::GetProgram{Name,Basename,Dirname}: optionally resolve symlinks.
+ *
  * Revision 1.11  2003/07/25 12:26:19  siyan
  * Documentation changes.
  *

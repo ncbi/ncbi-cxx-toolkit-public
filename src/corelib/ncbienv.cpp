@@ -33,8 +33,12 @@
  */
 
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbifile.hpp>
 #include <algorithm>
 
+#ifdef NCBI_OS_LINUX
+#include <unistd.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -175,21 +179,34 @@ void CNcbiArguments::Reset(int argc, const char* const* argv,
 }
 
 
-const string& CNcbiArguments::GetProgramName(void) const
+const string& CNcbiArguments::GetProgramName(bool follow_links) const
 {
-    if ( !m_ProgramName.empty() )
+    if (follow_links) {
+        CFastMutexGuard LOCK(m_ResolvedNameMutex);
+        if ( !m_ResolvedName.size() ) {
+#ifdef NCBI_OS_LINUX
+            string proc_link = "/proc/" + NStr::IntToString(getpid()) + "/exe";
+            m_ResolvedName = CDirEntry::NormalizePath(proc_link, true);
+#else
+            m_ResolvedName = CDirEntry::NormalizePath(GetProgramName(false),
+                                                      true);
+#endif
+        }
+        return m_ResolvedName;
+    } else if ( !m_ProgramName.empty() ) {
         return m_ProgramName;
-    if ( m_Args.size() )
+    } else if ( m_Args.size() ) {
         return m_Args[0];
-
-    static const string kDefProgramName("ncbi");
-    return kDefProgramName;
+    } else {
+        static const string kDefProgramName("ncbi");
+        return kDefProgramName;
+    }
 }
 
 
-string CNcbiArguments::GetProgramBasename(void) const
+string CNcbiArguments::GetProgramBasename(bool follow_links) const
 {
-    const string& name = GetProgramName();
+    const string& name = GetProgramName(follow_links);
     SIZE_TYPE base_pos = name.find_last_of("/\\:");
     if (base_pos == NPOS)
         return name;
@@ -197,9 +214,9 @@ string CNcbiArguments::GetProgramBasename(void) const
 }
 
 
-string CNcbiArguments::GetProgramDirname(void) const
+string CNcbiArguments::GetProgramDirname(bool follow_links) const
 {
-    const string& name = GetProgramName();
+    const string& name = GetProgramName(follow_links);
     SIZE_TYPE base_pos = name.find_last_of("/\\:");
     if (base_pos == NPOS)
         return NcbiEmptyString;
@@ -210,6 +227,8 @@ string CNcbiArguments::GetProgramDirname(void) const
 void CNcbiArguments::SetProgramName(const string& program_name)
 {
     m_ProgramName = program_name;
+    CFastMutexGuard LOCK(m_ResolvedNameMutex);
+    m_ResolvedName.erase();
 }
 
 
@@ -225,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/30 15:10:11  ucko
+ * CNcbiArguments::GetProgram{Name,Basename,Dirname}: optionally resolve symlinks.
+ *
  * Revision 1.6  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *
