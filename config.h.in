@@ -94,6 +94,9 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
+/* Define to 1 if you have the `lchown' function. */
+#undef HAVE_LCHOWN
+
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 

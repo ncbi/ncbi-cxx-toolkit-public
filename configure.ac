@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.357 2005/03/17 19:11:32 ucko Exp $
+#  $Id: configure.ac,v 1.358 2005/03/22 15:45:21 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1993,7 +1993,7 @@ AC_SEARCH_LIBS(sched_yield, rt,
 
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf vsnprintf \
-               getpagesize)
+               getpagesize lchown)
 AC_LANG_POP(C)
 
 # We want the program to return 0, which is *false* in C.  Also, since
