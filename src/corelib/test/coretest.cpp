@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2001/01/30 00:40:28  vakatov
+* Do not use arg "envp[]" in main() -- as it is not working on MAC
+*
 * Revision 1.70  2000/12/11 20:42:52  vakatov
 * + NStr::PrintableString()
 *
@@ -1192,10 +1195,10 @@ CTestApplication::~CTestApplication()
 static CTestApplication theTestApplication;
 
 
-int main(int argc, const char* argv[], const char* envp[])
+int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     ERR_POST("This message goes to the default diag.stream, CERR");
 
     // Execute main application function
-    return theTestApplication.AppMain(argc, argv, envp, eDS_ToMemory);
+    return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
