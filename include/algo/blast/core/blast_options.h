@@ -808,6 +808,7 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
  * @return 1 in case of memory allocation failure or if psi_options is NULL, 0
  * in case of success
  */
+NCBI_XBLAST_EXPORT
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options);
 
 /** Validates the PSI BLAST options so that they have sane values.
@@ -819,6 +820,7 @@ Int2 PSIBlastOptionsValidate(const PSIBlastOptions* psi_options,
                              Blast_Message** blast_msg);
 
 /** Deallocate PSI BLAST options */
+NCBI_XBLAST_EXPORT
 PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options);
 
 /** Allocates the BlastDatabase options structure and sets the default
