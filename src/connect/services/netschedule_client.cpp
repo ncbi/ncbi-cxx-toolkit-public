@@ -44,6 +44,7 @@ BEGIN_NCBI_SCOPE
 
 const string kNetSchedule_KeyPrefix = "JSID";
 
+
 unsigned CNetSchedule_GetJobId(const string&  key_str)
 {
     unsigned job_id;
@@ -373,6 +374,23 @@ string CNetScheduleClient::ServerVersion()
     return m_Tmp;
 }
 
+void CNetScheduleClient::DropQueue()
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "DROPQ ");
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+
+    WaitForServer();
+
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+}
+
 void CNetScheduleClient::CommandInitiate(const string& command, 
                                          const string& job_key,
                                          string*       answer)
@@ -469,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/28 12:19:40  kuznets
+ * +DropQueue()
+ *
  * Revision 1.3  2005/02/10 20:01:19  kuznets
  * +GetJob(), +PutResult()
  *
