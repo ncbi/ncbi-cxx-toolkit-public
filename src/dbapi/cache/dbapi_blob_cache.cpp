@@ -615,13 +615,17 @@ void CDBAPI_Cache::Open(const string& driver,
 
 
 void CDBAPI_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
-                                      int             timeout,
-                                      int             max_timeout)
+                                      unsigned int    timeout,
+                                      unsigned int    max_timeout)
 {
     CFastMutexGuard guard(x_DBAPI_BLOB_CacheMutex);
     m_TimeStampFlag = policy;
     m_Timeout = timeout;
-    m_MaxTimeout =  max_timeout;
+    if (max_timeout) {
+        m_MaxTimeout = max_timeout > timeout ? max_timeout : timeout;
+    } else {
+        m_MaxTimeout = 0;
+    }
 }
 
 CDBAPI_Cache::TTimeStampFlags CDBAPI_Cache::GetTimeStampPolicy() const
@@ -650,7 +654,7 @@ void CDBAPI_Cache::Store(const string&  key,
                          const string&  subkey,
                          const void*    data,
                          size_t         size,
-                         int            /*time_to_live*/)
+                         unsigned int   /*time_to_live*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
@@ -825,7 +829,7 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 IWriter* CDBAPI_Cache::GetWriteStream(const string&    key,
                                       int              version,
                                       const string&    subkey,
-                                      int              /*time_to_live*/)
+                                      unsigned int    /*time_to_live*/)
 {
     if (m_VersionFlag == eDropAll || m_VersionFlag == eDropOlder) {
         Purge(key, subkey, 0, m_VersionFlag);
@@ -1215,6 +1219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/03 17:55:01  kuznets
+ * All time related parameters made unsigned
+ *
  * Revision 1.12  2004/11/03 17:09:16  kuznets
  * ICache revision 2. Add individual timeouts
  *

@@ -239,8 +239,8 @@ public:
     // ICache interface 
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
-                                    int             timeout,
-                                    int             max_timeout=0);
+                                    unsigned int    timeout,
+                                    unsigned int     max_timeout = 0);
     virtual bool IsOpen() const { return m_CacheDB != 0; }
 
     virtual TTimeStampFlags GetTimeStampPolicy() const;
@@ -252,7 +252,7 @@ public:
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       int            time_to_live = 0);
+                       unsigned int   time_to_live = 0);
 
     virtual size_t GetSize(const string&  key,
                            int            version,
@@ -271,7 +271,7 @@ public:
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
-                                    int              time_to_live = 0);
+                                    unsigned int     time_to_live = 0);
 
     virtual void Remove(const string& key);
 
@@ -428,16 +428,16 @@ private:
 
 
 private:
-    string                  m_Path;       ///< Path to storage
-    string                  m_Name;       ///< Cache name
-    CPIDGuard*              m_PidGuard;   ///< Cache lock
-    bool                    m_ReadOnly;   ///< read-only flag
-    CBDB_Env*               m_Env;        ///< Common environment for cache DBs
+    string                  m_Path;         ///< Path to storage
+    string                  m_Name;         ///< Cache name
+    CPIDGuard*              m_PidGuard;     ///< Cache lock
+    bool                    m_ReadOnly;     ///< read-only flag
+    CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
-    int                     m_Timeout;      ///< Timeout expiration policy
-    int                     m_MaxTimeout;   ///< Maximum time to live
+    unsigned                m_Timeout;      ///< Timeout expiration policy
+    unsigned                m_MaxTimeout;   ///< Maximum time to live
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
     CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attrs
@@ -524,6 +524,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/11/03 17:54:04  kuznets
+ * All time related parameters made unsigned
+ *
  * Revision 1.38  2004/11/03 17:07:29  kuznets
  * ICache revision2. Add individual timeouts
  *

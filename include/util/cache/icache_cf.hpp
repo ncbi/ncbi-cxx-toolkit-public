@@ -129,9 +129,6 @@ public:
         const string kCFParam_timestamp_purge_on_startup   = "purge_on_startup";
         static 
         const string kCFParam_timestamp_check_expiration   = "check_expiration";
-        static 
-        const string kCFParam_timestamp_individual_timing_priority 
-            = "individual_timing_priority";
 
         list<string> opt;
         NStr::Split(options, " \t", opt);
@@ -163,21 +160,19 @@ public:
                 ts_flag |= ICache::fCheckExpirationAlways;
                 continue;
             }
-            if (NStr::CompareNocase(opt_value, 
-                          kCFParam_timestamp_individual_timing_priority)==0) {
-                ts_flag |= ICache::fIndividualTimingPriority;
-                continue;
-            }
             LOG_POST(Warning 
                       << "ICache::ClassFactory: Unknown timeout policy parameter: "
                       << opt_value);
         } // ITERATE
 
 
-        int timeout = 
+        unsigned int timeout = (unsigned int)
             this->GetParamInt(params, kCFParam_timeout, false, 60 * 60);
-        int max_timeout = 
+        unsigned int max_timeout = (unsigned int)
             this->GetParamInt(params, kCFParam_max_timeout, false, 0);
+
+        if (max_timeout && max_timeout < timeout)
+            max_timeout = timeout;
 
         if (ts_flag) {
             icache->SetTimeStampPolicy(ts_flag, timeout, max_timeout);
@@ -193,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/11/03 17:53:47  kuznets
+ * All time related parameters made unsigned
+ *
  * Revision 1.4  2004/11/03 17:07:05  kuznets
  * ICache revision2. Add individual timeouts
  *

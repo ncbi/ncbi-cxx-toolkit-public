@@ -92,11 +92,7 @@ public:
         fPurgeOnStartup             = (1 << 4),
 
         /// Expiration timeout is checked on any access to cache element
-        fCheckExpirationAlways      = (1 << 5),
-        
-        /// Individual time-to-live may exceed the cache wide settings
-        /// (Used to allow long term storage of important information)
-        fIndividualTimingPriority   = (1 << 6)
+        fCheckExpirationAlways      = (1 << 5)
     };
 
     typedef ETimeStampFlags ETimeStampPolicy;
@@ -106,16 +102,16 @@ public:
 
     /// Set timestamp update policy
     /// @param policy
-    ///   ORed combination of TimeStampUpdatePolicy masks.
+    ///   A bitwise combination of "ETimeStampFlags".
     /// @param timeout
-    ///   Global expiration timeout (in seconds)
-    ///   (can be changed on the individual BLOB basis)
+    ///   Default expiration timeout for the stored BLOBs.
     /// @param max_timeout
     ///   Maximum value for individually set BLOB timeouts. 
-    ///   Zero means it is equal to the default "timeout".
+    ///   If "max_timeout" < "timeout", then it 'll be set to "timeout".
+    ///
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
-                                    int             timeout,
-                                    int             max_timeout = 0) = 0;
+                                    unsigned int    timeout,
+                                    unsigned int    max_timeout = 0) = 0;
 
     /// Get timestamp policy
     /// @return
@@ -125,7 +121,7 @@ public:
     /// Get expiration timeout
     /// @return
     ///    Expiration timeout in seconds
-    /// @sa GetExpirationPolicy(), SetExpirationPolicy()
+    /// @sa SetTimeStampPolicy
     virtual int GetTimeout() const = 0;
 
     /// @return
@@ -169,13 +165,13 @@ public:
     /// @param size 
     ///    data buffer size in bytes (chars)
     /// @param time_to_live
-    ///    Individual timeout
+    ///    Individual timeout. Cannot exceed max timeout.
     virtual void Store(const string&  key,
                        int            version,
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       int            time_to_live = 0) = 0;
+                       unsigned int   time_to_live = 0) = 0;
 
     /// Check if BLOB exists, return BLOB size.
     ///
@@ -241,7 +237,7 @@ public:
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
-                                    int              time_to_live = 0) = 0;
+                                    unsigned int     time_to_live = 0) = 0;
 
     /// Remove all versions of the specified BLOB
     ///
@@ -319,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/03 17:53:47  kuznets
+ * All time related parameters made unsigned
+ *
  * Revision 1.10  2004/11/03 17:21:15  kuznets
  * Formatting...cosmetics...
  *

@@ -138,8 +138,8 @@ public:
     // ICache interface 
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
-                                    int             timeout,
-                                    int             max_timeout=0);
+                                    unsigned int    timeout,
+                                    unsigned int    max_timeout = 0);
     virtual bool IsOpen() const { return m_Conn != 0; }
     virtual TTimeStampFlags GetTimeStampPolicy() const;
     virtual int GetTimeout() const;
@@ -150,7 +150,7 @@ public:
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       int            time_to_live = 0);
+                       unsigned int   time_to_live = 0);
     virtual size_t GetSize(const string&  key,
                            int            version,
                            const string&  subkey);
@@ -175,7 +175,7 @@ public:
     virtual IWriter* GetWriteStream(const string&   key,
                                     int             version,
                                     const string&   subkey,
-                                    int             time_to_live = 0);
+                                    unsigned int    time_to_live = 0);
 
     virtual void Remove(const string& key);
 
@@ -248,8 +248,8 @@ private:
     IConnection*            m_Conn;         ///< db connection
     bool                    m_OwnConnection;///< Connection ownership flag
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
-    int                     m_Timeout;      ///< Timeout expiration policy
-    int                     m_MaxTimeout;   ///< Maximum timeout
+    unsigned int            m_Timeout;      ///< Timeout expiration policy
+    unsigned int            m_MaxTimeout;   ///< Maximum timeout
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
     string                  m_TempDir;      ///< Directory for temp files
     string                  m_TempPrefix;   ///< Temp prefix
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/03 17:54:50  kuznets
+ * All time related parameters made unsigned
+ *
  * Revision 1.10  2004/11/03 17:08:46  kuznets
  * ICache revision2. Add individual timeouts
  *

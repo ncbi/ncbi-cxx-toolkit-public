@@ -806,13 +806,18 @@ void CBDB_Cache::x_Close()
 }
 
 void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
-                                    int             timeout,
-                                    int             max_timeout)
+                                    unsigned int    timeout,
+                                    unsigned int    max_timeout)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
     m_TimeStampFlag = policy;
     m_Timeout = timeout;
-    m_MaxTimeout = max_timeout;
+
+    if (max_timeout) {
+        m_MaxTimeout = max_timeout > timeout ? max_timeout : timeout;
+    } else {
+        m_MaxTimeout = 0;
+    }
 }
 
 CBDB_Cache::TTimeStampFlags CBDB_Cache::GetTimeStampPolicy() const
@@ -841,7 +846,7 @@ void CBDB_Cache::Store(const string&  key,
                        const string&  subkey,
                        const void*    data,
                        size_t         size,
-                       int            time_to_live)
+                       unsigned int   time_to_live)
 {
     if (IsReadOnly()) {
         return;
@@ -1094,7 +1099,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
-                                    int              time_to_live)
+                                    unsigned int     time_to_live)
 {
     if (IsReadOnly()) {
         return 0;
@@ -2099,6 +2104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2004/11/03 17:54:19  kuznets
+ * All time related parameters made unsigned
+ *
  * Revision 1.89  2004/11/03 17:07:45  kuznets
  * ICache revision2. Add individual timeouts
  *
