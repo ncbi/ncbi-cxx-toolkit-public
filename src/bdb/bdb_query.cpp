@@ -139,6 +139,7 @@ ETreeTraverseCode s_ResetQueryNode(CTreeNode<CBDB_QueryNode>& tr, int delta)
     if (qnode.GetType() != CBDB_QueryNode::eValue) {
         qnode.SetValue(kEmptyStr);
     }
+    qnode.SetAltValue(kEmptyStr);
 
     return eTreeTraverse;
 }
@@ -265,6 +266,20 @@ private:
     CResourcePool<string> m_StrPool;   /// Pool of string variables   
 };
 
+/// Create new matcher
+///
+/// @internal
+static
+CBoyerMooreMatcher* s_MakeNewMatcher(const string& search_value)
+{
+    CBoyerMooreMatcher* matcher =
+        new CBoyerMooreMatcher(search_value,
+                               NStr::eNocase,
+                               CBoyerMooreMatcher::ePrefixMatch);
+    matcher->InitCommonDelimiters();
+    return matcher;
+}
+
 
 /// Base class for functions of the evaluation engine
 ///
@@ -340,10 +355,7 @@ public:
         CBoyerMooreMatcher* matcher = m_MatcherVector[arg_idx];
         if (!matcher) {
             m_MatcherVector[arg_idx] = matcher = 
-                new CBoyerMooreMatcher(search_value,
-                                       NStr::eNocase,
-                                       CBoyerMooreMatcher::ePrefixMatch);
-            matcher->InitCommonDelimiters();
+                s_MakeNewMatcher(search_value);
         }
         CBDB_File::TUnifiedFieldIndex fidx = BDB_find_field(dbf, *matcher);
         
@@ -577,6 +589,7 @@ void CBDB_FileScanner::Scan(CBDB_Query& query)
                 break;
             }
         }
+        query.ResetQueryClause();
     } // while
 }
 
@@ -594,6 +607,7 @@ void CBDB_FileScanner::Scan(CBDB_FileCursor& cur,
                 break;
             }
         }
+        query.ResetQueryClause();
     } // while
 }
 
@@ -640,10 +654,7 @@ public:
                 
                 if (!m_Matcher) {
                     const string& search_value = qnode.GetValue();
-                    m_Matcher = new CBoyerMooreMatcher(search_value,
-                                                       NStr::eNocase,
-                                   CBoyerMooreMatcher::ePrefixMatch);
-
+                    m_Matcher = s_MakeNewMatcher(search_value);
                 }
                 CBDB_File::TUnifiedFieldIndex fidx;
                 fidx = BDB_find_field(dbf, *m_Matcher);
@@ -859,6 +870,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/11 18:42:01  kuznets
+ * code cleaned up, minor bug fix
+ *
  * Revision 1.6  2004/03/11 13:16:10  kuznets
  * Bug fixed corner case when query is one word only
  *
