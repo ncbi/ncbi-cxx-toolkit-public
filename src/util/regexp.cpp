@@ -94,6 +94,9 @@ static int s_GetRealCompileFlags(CRegexp::TCompile compile_flags)
     if ( F_ISSET(compile_flags, CRegexp::fCompile_ungreedy ) {
         flags |= PCRE_UNGREEDY;
     }
+    if ( F_ISSET(compile_flags, CRegexp::fCompile_extended ) {
+        flags |= PCRE_EXTENDED;
+    }
     return flags;
 }
 
@@ -408,6 +411,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/22 18:03:01  ivanov
+ * Added flag CRegexp::fCompile_extended.
+ *
  * Revision 1.10  2004/11/22 17:15:23  ivanov
  * Introduce fCompile_* and fMatch_* flags.
  * The eCompile_* and eMatch_* are depricated now.

@@ -100,7 +100,8 @@ public:
         fCompile_ignore_case = 0x80000001,
         fCompile_dotall      = 0x80000002,
         fCompile_newline     = 0x80000004,
-        fCompile_ungreedy    = 0x80000008
+        fCompile_ungreedy    = 0x80000008,
+        fCompile_extended    = 0x80000010
     };
     // Deprecated flags
     enum ECompile_deprecated {
@@ -576,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/11/22 18:02:39  ivanov
+ * Added flag CRegexp::fCompile_extended.
+ *
  * Revision 1.12  2004/11/22 17:15:23  ivanov
  * Introduce fCompile_* and fMatch_* flags.
  * The eCompile_* and eMatch_* are depricated now.
