@@ -185,6 +185,9 @@ static double GetCutoffEvalue(EBlastProgramType program)
       return CUTOFF_E_TBLASTN;
    case eBlastTypeTblastx:
       return CUTOFF_E_TBLASTX;
+   case eBlastTypeUndefined:
+   default:
+      abort(); /* should never happer */
    }
    return 0;
 }
@@ -1423,6 +1426,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.123  2004/07/07 15:05:03  camacho
+ * Handle eBlastTypeUndefined in switch stmt
+ *
  * Revision 1.122  2004/07/06 15:42:15  dondosha
  * Use EBlastProgramType enumeration type instead of Uint1 for program argument in all functions
  *
