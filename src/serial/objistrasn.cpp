@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/18 16:26:49  vasilche
+* Fixed bug with unget() in MSVS
+*
 * Revision 1.4  1999/06/17 21:08:51  vasilche
 * Fixed bug with unget()
 *
@@ -87,37 +90,75 @@ bool IsAlphaNum(char c)
 }
 
 CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
-    : m_Input(in)
+    : m_Input(in), m_GetChar(-1), m_UngetChar(-1)
 {
+}
+
+inline char CObjectIStreamAsn::GetChar(void)
+{
+	int unget = m_UngetChar;
+	if ( unget >= 0 ) {
+	    m_UngetChar = -1;
+		m_GetChar = unget;
+		return char(unget);
+	}
+	else {
+		char c;
+		if ( !m_Input.get(c) ) {
+			throw runtime_error("unexpected EOF");
+		}
+		m_GetChar = (unsigned char)c;
+		return c;
+	}
+}
+
+inline char CObjectIStreamAsn::GetChar0(void)
+{
+	int unget = m_UngetChar;
+	if ( unget >= 0 ) {
+	    m_UngetChar = -1;
+		m_GetChar = unget;
+		return char(unget);
+	}
+	else {
+		throw runtime_error("bad GetChar0 call");
+	}
+}
+
+inline void CObjectIStreamAsn::UngetChar(void)
+{
+    if ( m_UngetChar >= 0 || m_GetChar < 0 ) {
+        throw runtime_error("cannot unget");
+    }
+	m_UngetChar = m_GetChar;
+	m_GetChar = -1;
 }
 
 inline char CObjectIStreamAsn::GetChar(bool skipWhiteSpace)
 {
-    if ( skipWhiteSpace )
+    if ( skipWhiteSpace ) {
         SkipWhiteSpace();
-
-    char c;
-    if ( !m_Input.get(c) ) {
-        THROW1_TRACE(runtime_error, "unexpected EOF");
-    }
-    _TRACE("GET '" << c << "'");
-    return c;
+		return GetChar0();
+	}
+	else {
+		return GetChar();
+	}
 }
 
-void CObjectIStreamAsn::UngetChar()
+inline bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 {
-    _TRACE("UNGET");
-    if ( !m_Input.unget() ) {
-        THROW1_TRACE(runtime_error, "cannot unget");
-    }
-}
-
-bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
-{
-    if ( GetChar(skipWhiteSpace) == expect )
-        return true;
-    UngetChar();
-    return false;
+	if ( skipWhiteSpace ) {
+		if ( SkipWhiteSpace() == expect ) {
+			GetChar0();
+			return true;
+		}
+	}
+	else {
+		if ( GetChar() == expect )
+			return true;
+		UngetChar();
+	}
+	return false;
 }
 
 inline void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
@@ -127,19 +168,31 @@ inline void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
     }
 }
 
-bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
+inline bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
                                       bool skipWhiteSpace)
 {
-    char c = GetChar(skipWhiteSpace);
-    if ( c == choiceTrue )
-        return true;
-    else if ( c == choiceFalse )
-        return false;
-    else {
-        UngetChar();
-        THROW1_TRACE(runtime_error, string("'") + choiceTrue +
-                     "' or '" + choiceFalse + "' expected");
-    }
+	if ( skipWhiteSpace ) {
+		char c = SkipWhiteSpace();
+		if ( c == choiceTrue ) {
+			GetChar0();
+			return true;
+		}
+		else if ( c == choiceFalse ) {
+			GetChar0();
+			return false;
+		}
+	}
+	else {
+		char c = GetChar(skipWhiteSpace);
+	    if ( c == choiceTrue )
+		    return true;
+	    else if ( c == choiceFalse )
+		    return false;
+		else
+	        UngetChar();
+	}
+    THROW1_TRACE(runtime_error, string("'") + choiceTrue +
+                 "' or '" + choiceFalse + "' expected");
 }
 
 void CObjectIStreamAsn::ExpectString(const string& s, bool skipWhiteSpace)
@@ -151,10 +204,11 @@ void CObjectIStreamAsn::ExpectString(const string& s, bool skipWhiteSpace)
     }
 }
 
-void CObjectIStreamAsn::SkipWhiteSpace(void)
+char CObjectIStreamAsn::SkipWhiteSpace(void)
 {
     for ( ;; ) {
-        switch ( GetChar() ) {
+		char c = GetChar();
+        switch ( c ) {
         case ' ':
         case '\r':
         case '\t':
@@ -162,7 +216,7 @@ void CObjectIStreamAsn::SkipWhiteSpace(void)
             break;
         default:
             UngetChar();
-            return;
+            return c;
         }
     }
 }
@@ -215,8 +269,8 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
 
 void CObjectIStreamAsn::Read(TObjectPtr object, TTypeInfo typeInfo)
 {
-    if ( GetChar(typeInfo->GetName()[0], true) ) {
-        UngetChar();
+	char c = SkipWhiteSpace();
+    if ( c == typeInfo->GetName()[0] || c == '[' ) {
         string id = ReadId();
         if ( id != typeInfo->GetName() ) {
             THROW1_TRACE(runtime_error, "invalid object type: " + id +
@@ -274,7 +328,7 @@ void CObjectIStreamAsn::ReadStd(unsigned short& data)
 
 void CObjectIStreamAsn::ReadStd(int& data)
 {
-    SkipWhiteSpace();
+//    SkipWhiteSpace();
     m_Input >> data;
     if ( !m_Input )
         THROW1_TRACE(runtime_error, "overflow error");
@@ -347,17 +401,24 @@ string CObjectIStreamAsn::ReadString(void)
 
 string CObjectIStreamAsn::ReadId(void)
 {
+	string s;
     char c = GetChar(true);
-    if ( !IsAlpha(c) ) {
-        UngetChar();
-        THROW1_TRACE(runtime_error, "unexpected char in id");
-    }
-    string s;
-    s += c;
-    while ( IsAlphaNum(c = GetChar()) ) {
-        s += c;
-    }
-    UngetChar();
+	if ( c == '[' ) {
+		while ( (c = GetChar()) != ']' ) {
+			s += c;
+		}
+	}
+	else {
+	    if ( !IsAlpha(c) ) {
+		    UngetChar();
+			THROW1_TRACE(runtime_error, "unexpected char in id");
+	    }
+	    s += c;
+		while ( IsAlphaNum(c = GetChar()) ) {
+			s += c;
+	    }
+		UngetChar();
+	}
     return s;
 }
 
@@ -401,7 +462,7 @@ CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
         }
     default:
         UngetChar();
-        if ( IsAlpha(c) ) {
+        if ( IsAlpha(c) || c == '[' ) {
             string className = ReadId();
             ExpectString("::=", true);
             _TRACE("CObjectIStreamAsn::ReadPointer: new " << className);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/18 16:26:49  vasilche
+* Fixed bug with unget() in MSVS
+*
 * Revision 1.3  1999/06/17 21:08:49  vasilche
 * Fixed bug with unget()
 *
@@ -108,17 +111,23 @@ private:
     void SkipBlock(void);
 
     // low level methods
-    char GetChar(bool skipWhiteSpace = false);
-    bool GetChar(char c, bool skipWhiteSpace = false);
+    char GetChar(void);
+    char GetChar0(void); // get char after call to UngetChar
     void UngetChar(void);
+
+	// parse methods
+    char GetChar(bool skipWhiteSpace);
+    bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
     bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
     void ExpectString(const string& s, bool skipWhiteSpace = false);
     bool ReadEscapedChar(char& out, char terminator);
 
-    void SkipWhiteSpace(void);
+    char SkipWhiteSpace(void);
 
     CNcbiIstream& m_Input;
+	int m_GetChar;
+	int m_UngetChar;
 };
 
 //#include <objistrb.inl>

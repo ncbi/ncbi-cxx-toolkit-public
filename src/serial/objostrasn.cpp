@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/18 16:26:49  vasilche
+* Fixed bug with unget() in MSVS
+*
 * Revision 1.3  1999/06/17 20:42:07  vasilche
 * Fixed storing/loading of pointers.
 *
@@ -215,7 +218,12 @@ void CObjectOStreamAsn::WriteString(const string& str)
 
 void CObjectOStreamAsn::WriteId(const string& str)
 {
-    m_Output << str;
+	if ( str.find(' ') != NPOS || str.find('<') != NPOS || str.find(':') != NPOS ) {
+		m_Output << '[' << str << ']';
+	}
+	else {
+		m_Output << str;
+	}
 }
 
 void CObjectOStreamAsn::WriteMemberName(const string& str)
