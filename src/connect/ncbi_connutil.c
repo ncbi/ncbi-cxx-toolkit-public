@@ -123,7 +123,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* dispatcher port number */
     REG_VALUE(REG_CONN_PORT, str, 0);
     val = atoi(str);
-    info->port = (unsigned short) (val > 0 ? val : DEF_CONN_PORT);
+    info->port = (unsigned short)(val > 0 ? val : DEF_CONN_PORT);
 
     /* service path */
     REG_VALUE(REG_CONN_PATH, info->path, DEF_CONN_PATH);
@@ -154,10 +154,10 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
             ((dbl - info->timeout->sec) * 1000000);
     }
 
-    /* max. # of attempts to establish a connection */
+    /* max. # of attempts to establish connection */
     REG_VALUE(REG_CONN_MAX_TRY, str, 0);
     val = atoi(str);
-    info->max_try = (unsigned int) (val > 0 ? val : DEF_CONN_MAX_TRY);
+    info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
 
     /* HTTP proxy server? */
     REG_VALUE(REG_CONN_HTTP_PROXY_HOST, info->http_proxy_host,
@@ -1476,6 +1476,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2003/05/20 21:25:24  lavr
+ * Limit SConnNetInfo::max_try by reasonable "short" value
+ *
  * Revision 6.56  2003/05/19 16:44:45  lavr
  * Minor style adjustements
  *

@@ -120,7 +120,7 @@ typedef struct {
     char           args[1024];       /* service: args(e.g. for a CGI script) */
     EReqMethod     req_method;       /* method to use in the request         */
     STimeout*      timeout;          /* ptr to i/o tmo (infinite if NULL)    */
-    unsigned int   max_try;          /* max. # of attempts to connect (>= 1) */
+    unsigned short max_try;          /* max. # of attempts to connect (>= 1) */
     char           http_proxy_host[256]; /* hostname of HTTP proxy server    */
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
     char           proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv */
@@ -634,6 +634,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2003/05/20 21:24:01  lavr
+ * Limit SConnNetInfo::max_try by reasonable "short" value
+ *
  * Revision 6.29  2003/04/09 17:58:47  siyan
  * Added doxygen support
  *
