@@ -153,8 +153,7 @@ void CId2Reader::x_Disconnect(TConn conn)
 void CId2Reader::x_Reconnect(TConn conn)
 {
     _ASSERT(m_Connections.count(conn));
-    ERR_POST("CPubseqReader: PubSeqOS GenBank connection failed: "
-             "reconnecting...");
+    ERR_POST("CId2Reader: ID2 GenBank connection failed: reconnecting...");
     m_Connections[conn].reset();
 }
 
