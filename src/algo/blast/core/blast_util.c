@@ -658,7 +658,7 @@ Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number)
    Int2 frame=255;
 
    if (prog_number == eBlastTypeBlastn) {
-      if (context_number % 2 == 0)
+      if (context_number % NUM_STRANDS == 0)
          frame = 1;
       else
          frame = -1;
@@ -670,7 +670,7 @@ Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number)
       frame = 0;
    } else if (prog_number == eBlastTypeBlastx || 
               prog_number == eBlastTypeTblastx) {
-      context_number = context_number % 6;
+      context_number = context_number % NUM_FRAMES;
       frame = (context_number < 3) ? context_number+1 : -context_number+2;
    }
    
@@ -703,10 +703,12 @@ Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context)
 
 BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
 {
-   sfree(query_info->context_offsets);
-   sfree(query_info->length_adjustments);
-   sfree(query_info->eff_searchsp_array);
-   sfree(query_info);
+   if (query_info) {
+      sfree(query_info->context_offsets);
+      sfree(query_info->length_adjustments);
+      sfree(query_info->eff_searchsp_array);
+      sfree(query_info);
+   }
    return NULL;
 }
 
