@@ -76,6 +76,13 @@ struct SSERV_IterTag {
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
  * For now, this call is to exclusively support MYgethostbyname() replacement
  * of standard gethostbyname() libcall in apache Web daemon (see in daemons/).
+ *
+ * NOTE: Preference 0 does not prohibit the preferred_host to be selected;
+ *       nor preference 100 ultimately opts for the preferred_host; rather,
+ *       the preference is considered as an estimate for the selection
+ *       probability when all other conditions for favoring the host are
+ *       optimal, i.e., preference 0 actually means not to favor the preferred
+ *       host at all, while 100 means to opt for one as much as possible.
  */
 SSERV_Info* SERV_GetInfoP
 (const char*         service,       /* service name                          */
@@ -135,6 +142,9 @@ double SERV_Preference(double pref, double gap, unsigned int n);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2003/03/07 22:21:55  lavr
+ * Explain what is "preference" for SERV_GetInfoP()
+ *
  * Revision 6.20  2003/02/28 14:49:09  lavr
  * SERV_Preference(): redeclare last argument 'unsigned'
  *
