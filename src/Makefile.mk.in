@@ -133,6 +133,7 @@ STATIC     = @STATIC@
 LINK_DLL     = @LINK_DLL@
 CFLAGS_DLL   = @CFLAGS_DLL@
 CXXFLAGS_DLL = @CXXFLAGS_DLL@
+LDFLAGS_DLL  = $(LDFLAGS)
 
 # To enable extra, potentially unsafe, optimization
 CFAST = @CFAST@

@@ -52,7 +52,7 @@ XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
 
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XLIB)
-	$(LINK_DLL) $(XLIB) $(XLIBOBJ) $(XLOBJ) $(XDLL_LIB) $(LIBS)
+	$(LINK_DLL) $(XLIB) $(LDFLAGS_DLL) $(XLIBOBJ) $(XLOBJ) $(XDLL_LIB) $(LIBS)
 	@echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
