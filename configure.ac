@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.190 2003/05/23 14:36:03 ucko Exp $
+#  $Id: configure.ac,v 1.191 2003/05/23 17:41:53 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -186,8 +186,8 @@ AC_ARG_WITH(odbc2,
    [ --without-odbc          do not use ODBC])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
-AC_ARG_WITH(jpeg2,
-   [ --without-jpeg          do not use lib(un)gif])
+AC_ARG_WITH(gif2,
+   [ --without-gif           do not use lib(un)gif])
 AC_ARG_WITH(jpeg,
    [ --with-jpeg=DIR         use libjpeg installation in DIR])
 AC_ARG_WITH(jpeg2,
@@ -2905,6 +2905,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(tiff,
 ## etc.
 
 # Paths?
+with_ungif=$with_gif
 NCBI_CHECK_THIRD_PARTY_LIB(ungif,
  AC_LANG_PROGRAM([extern "C" {
                   #include <gif_lib.h>

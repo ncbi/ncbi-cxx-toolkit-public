@@ -911,7 +911,7 @@ Optional Packages:
  --with-odbc=DIR         use ODBC installation in DIR
  --without-odbc          do not use ODBC
  --with-gif=DIR          use lib(un)gif installation in DIR
- --without-jpeg          do not use lib(un)gif
+ --without-gif           do not use lib(un)gif
  --with-jpeg=DIR         use libjpeg installation in DIR
  --without-jpeg          do not use libjpeg
  --with-png=DIR          use libpng installation in DIR
@@ -1738,9 +1738,9 @@ if test "${with_gif+set}" = set; then
 
 fi;
 
-# Check whether --with-jpeg2 or --without-jpeg2 was given.
-if test "${with_jpeg2+set}" = set; then
-  withval="$with_jpeg2"
+# Check whether --with-gif2 or --without-gif2 was given.
+if test "${with_gif2+set}" = set; then
+  withval="$with_gif2"
 
 fi;
 
@@ -12917,6 +12917,7 @@ _ACEOF
 ## etc.
 
 # Paths?
+with_ungif=$with_gif
 if test "$with_ungif" != "no"; then
     case "$with_ungif" in
        yes | "" ) ;;
