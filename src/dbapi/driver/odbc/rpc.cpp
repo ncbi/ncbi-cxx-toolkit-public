@@ -32,6 +32,7 @@
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -522,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/05/05 20:48:47  ucko
+ * +<stdio.h> for sprintf
+ *
  * Revision 1.1  2002/06/18 22:06:25  soussov
  * initial commit
  *
