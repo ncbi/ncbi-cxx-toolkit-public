@@ -127,7 +127,6 @@ static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Char pos, Int4 len,
   Int4 i; /*index on seq*/
   Int4 end; /*count of number of 4-mer iterations needed*/
   Int4 remain; /*0,1,2,3 DNA letters left over*/
-  Uint1 suffixRemnant; /*part of seq that is beyond last 4-mer in a byte*/
   Int4 j; /*index on suffixRemnant*/
   Int4 twiceNumHits = 0; /*twice the number of hits*/
 
