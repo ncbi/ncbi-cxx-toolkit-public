@@ -217,7 +217,8 @@ CDB_Connection *CPubseqReader::x_NewConnection(void)
 }
 
 
-void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
+void CPubseqReader::ResolveSeq_id(CReaderRequestResult& /*result*/,
+                                  CLoadLockBlob_ids& ids,
                                   const CSeq_id& id,
                                   TConn conn)
 {
@@ -328,7 +329,7 @@ void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
                         blob_id.SetSat(eSat_ANNOT);
                         blob_id.SetSatKey(gi);
                         blob_id.SetSubSat(bit);
-                        ids.AddBlob_id(blob_id, fBlobHasExternal);
+                        ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
                     }
                 }
             }
@@ -347,7 +348,8 @@ void CPubseqReader::ResolveSeq_id(CLoadLockBlob_ids& ids,
 }
 
 
-void CPubseqReader::ResolveSeq_id(CLoadLockSeq_ids& ids,
+void CPubseqReader::ResolveSeq_id(CReaderRequestResult& /*result*/,
+                                  CLoadLockSeq_ids& ids,
                                   const CSeq_id& id,
                                   TConn conn)
 {

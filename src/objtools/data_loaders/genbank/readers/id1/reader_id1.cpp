@@ -111,7 +111,8 @@ static int GetDebugLevel(void)
 enum EDebugLevel
 {
     eTraceConn = 4,
-    eTraceASN = 5
+    eTraceASN = 5,
+    eTraceASNData = 8
 };
 
 
@@ -410,60 +411,108 @@ typedef CStaticArrayMap<const char*, TSK, PNocase> TSatMap;
 static const TSatMap sc_SatMap(sc_SatIndex, sizeof(sc_SatIndex));
 
 
-void CId1Reader::ResolveSeq_id(CLoadLockBlob_ids& ids,
+void CId1Reader::ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockBlob_ids& ids,
                                const CSeq_id& id,
                                TConn conn)
 {
+    if ( id.IsGi() ) {
+        ResolveGi(ids, id.GetGi(), conn);
+        return;
+    }
+
     if ( id.IsGeneral()  &&  id.GetGeneral().GetTag().IsId() ) {
         const CDbtag& dbtag = id.GetGeneral();
         const string& db = dbtag.GetDb();
-        int id = dbtag.GetTag().GetId();
-        if ( id != 0 ) {
+        int num = dbtag.GetTag().GetId();
+        if ( num != 0 ) {
             TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
             if ( iter != sc_SatMap.end() ) {
                 CBlob_id blob_id;
                 blob_id.SetSat(iter->second.first);
-                blob_id.SetSatKey(id);
+                blob_id.SetSatKey(num);
                 blob_id.SetSubSat(iter->second.second);
                 ids.AddBlob_id(blob_id, fBlobHasAllLocal);
                 return;
             }
+            /*
+              numeric value in place of DB will not work anyway
             else {
                 try {
                     CBlob_id blob_id;
                     blob_id.SetSat(NStr::StringToInt(db));
-                    blob_id.SetSatKey(id);
+                    blob_id.SetSatKey(num);
                     ids.AddBlob_id(blob_id, fBlobHasAllLocal);
                     return;
                 }
                 catch (...) {
                 }
             }
+            */
         }
     }
-    int gi;
-    if ( id.IsGi() ) {
-        gi = id.GetGi();
+
+    CLoadLockSeq_ids seq_ids(result, id);
+    if ( !seq_ids->IsLoadedGi() ) {
+        seq_ids->SetLoadedGi(ResolveSeq_id_to_gi(id, conn));
     }
-    else {
-        gi = ResolveSeq_id_to_gi(id, conn);
+    int gi = seq_ids->GetGi();
+    if ( !gi ) {
+        return;
     }
-    ResolveGi(ids, gi, conn);
+
+    CLoadLockBlob_ids gi_ids(result, CSeq_id_Handle::GetGiHandle(gi));
+    if ( !gi_ids.IsLoaded() ) {
+        ResolveGi(gi_ids, gi, conn);
+        gi_ids.SetLoaded();
+    }
+
+    // copy info from gi to original seq-id
+    ITERATE ( CLoadInfoBlob_ids, it, *gi_ids ) {
+        ids.AddBlob_id(it->first, it->second);
+    }
 }
 
 
-void CId1Reader::ResolveSeq_id(CLoadLockSeq_ids& ids,
-                                const CSeq_id& id,
-                                TConn conn)
+void CId1Reader::ResolveSeq_id(CReaderRequestResult& result,
+                               CLoadLockSeq_ids& ids,
+                               const CSeq_id& id,
+                               TConn conn)
 {
-    int gi;
     if ( id.IsGi() ) {
-        gi = id.GetGi();
+        ResolveGi(ids, id.GetGi(), conn);
+        return;
     }
-    else {
-        gi = ResolveSeq_id_to_gi(id, conn);
+
+    if ( id.IsGeneral()  &&  id.GetGeneral().GetTag().IsId() ) {
+        const CDbtag& dbtag = id.GetGeneral();
+        const string& db = dbtag.GetDb();
+        int num = dbtag.GetTag().GetId();
+        if ( num != 0 ) {
+            TSatMap::const_iterator iter = sc_SatMap.find(db.c_str());
+            if ( iter != sc_SatMap.end() ) {
+                ids.AddSeq_id(id);
+                return;
+            }
+        }
     }
-    ResolveGi(ids, gi, conn);
+
+    CLoadLockSeq_ids seq_ids(result, id);
+    if ( !ids->IsLoadedGi() ) {
+        ids->SetLoadedGi(ResolveSeq_id_to_gi(id, conn));
+    }
+    int gi = seq_ids->GetGi();
+
+    CLoadLockSeq_ids gi_ids(result, CSeq_id_Handle::GetGiHandle(gi));
+    if ( !gi_ids.IsLoaded() ) {
+        ResolveGi(gi_ids, gi, conn);
+        gi_ids.SetLoaded();
+    }
+
+    // copy info from gi to original seq-id
+    ITERATE ( CLoadInfoSeq_ids, it, *gi_ids ) {
+        ids.AddSeq_id(*it);
+    }
 }
 
 
@@ -530,7 +579,7 @@ void CId1Reader::ResolveGi(CLoadLockBlob_ids& ids, int gi, TConn conn)
                 blob_id.SetSat(eSat_ANNOT);
                 blob_id.SetSatKey(gi);
                 blob_id.SetSubSat(bit);
-                ids.AddBlob_id(blob_id, fBlobHasExternal);
+                ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
             }
         }
     }
@@ -671,7 +720,11 @@ void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
             x_ReadBlobReply(id1_reply, obj_stream, blob_id);
             if ( GetDebugLevel() >= eTraceConn   ) {
                 NcbiCout << "CId1Reader("<<conn<<"): Received";
-                if ( GetDebugLevel() >= eTraceASN ) {
+                if ( GetDebugLevel() >= eTraceASNData ||
+                     GetDebugLevel() >= eTraceASN &&
+                     !(id1_reply.IsGotseqentry() ||
+                       id1_reply.IsGotdeadseqentry() ||
+                       id1_reply.IsGotsewithinfo()) ) {
                     NcbiCout << ": " << MSerial_AsnText << id1_reply;
                 }
                 else {

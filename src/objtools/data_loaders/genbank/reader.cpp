@@ -418,9 +418,9 @@ void CReader::LoadBlobs(CReaderRequestResult& result,
                         TContentsMask mask)
 {
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( !ids ) {
+    if ( !ids.IsLoaded() ) {
         ResolveString(result, seq_id);
-        if ( !ids ) {
+        if ( !ids.IsLoaded() ) {
             return;
         }
     }
@@ -435,9 +435,9 @@ void CReader::LoadBlobs(CReaderRequestResult& result,
                         TContentsMask mask)
 {
     CLoadLockBlob_ids ids(result, seq_id);
-    if ( !ids ) {
+    if ( !ids.IsLoaded() ) {
         ResolveSeq_id(result, seq_id);
-        if ( !ids ) {
+        if ( !ids.IsLoaded() ) {
             return;
         }
     }
@@ -509,7 +509,7 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
     if ( !ids.IsLoaded() ) {
         CReaderRequestConn conn(result);
         try {
-            ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
+            ResolveSeq_id(result, ids, *seq_id.GetSeqId(), conn);
             ids.SetLoaded();
         }
         catch ( CLoaderException& exc ) {
@@ -544,7 +544,7 @@ void CId1ReaderBase::ResolveSeq_ids(CReaderRequestResult& result,
     if ( !ids.IsLoaded() ) {
         CReaderRequestConn conn(result);
         try {
-            ResolveSeq_id(ids, *seq_id.GetSeqId(), conn);
+            ResolveSeq_id(result, ids, *seq_id.GetSeqId(), conn);
             ids.SetLoaded();
         }
         catch ( CLoaderException& exc ) {
@@ -709,10 +709,9 @@ void CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
                                const TBlob_id& blob_id, TChunk_id chunk_id)
 {
     CLoadLockBlob blob(result, blob_id);
-    _ASSERT(blob);
-    _ASSERT(blob.IsLoaded());
+    _ASSERT(blob && blob.IsLoaded());
     CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
-    if ( chunk_info.NotLoaded() ) {
+    if ( !chunk_info.IsLoaded() ) {
         CInitGuard init(chunk_info, result);
         if ( init ) {
             CReaderRequestConn conn(result);
@@ -767,7 +766,7 @@ void CId1ReaderBase::AddSNPBlob_id(CLoadLockBlob_ids& ids, int gi)
     blob_id.SetSubSat(CID2_Blob_Id::eSub_sat_snp);
     blob_id.SetSatKey(gi);
     //blob_id.SetVersion(0);
-    ids.AddBlob_id(blob_id, fBlobHasExternal);
+    ids.AddBlob_id(blob_id, fBlobHasExtFeat);
 }
 
 

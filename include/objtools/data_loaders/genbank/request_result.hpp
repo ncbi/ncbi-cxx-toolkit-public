@@ -98,6 +98,14 @@ public:
     CLoadInfoSeq_ids(void);
     ~CLoadInfoSeq_ids(void);
 
+    bool IsLoadedGi(void);
+    int GetGi(void) const
+        {
+            _ASSERT(m_GiLoaded);
+            return m_Gi;
+        }
+    void SetLoadedGi(int gi);
+
     const_iterator begin(void) const
         {
             return m_Seq_ids.begin();
@@ -117,6 +125,8 @@ public:
 
 public:
     TSeq_ids    m_Seq_ids;
+    bool        m_GiLoaded;
+    int         m_Gi;
 };
 
 
@@ -278,14 +288,6 @@ public:
             return Get().IsLoaded();
         }
     void SetLoaded(CObject* obj = 0);
-    operator bool(void) const
-        {
-            return IsLoaded();
-        }
-    bool operator!(void) const
-        {
-            return !IsLoaded();
-        }
 
     TInfo& Get(void)
         {
