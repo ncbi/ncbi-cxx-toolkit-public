@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.22  2003/08/15 19:48:43  kholodov
+* Fixed: const method GetBlobSize()
+*
 * Revision 1.21  2003/08/12 21:08:39  kholodov
 * Added: AsNotNullString() method
 *
@@ -583,7 +586,7 @@ size_t CVariant::Append(const void* buf, size_t len)
     }
 }
 
-size_t CVariant::GetBlobSize()
+size_t CVariant::GetBlobSize() const
 {
 
     switch(GetType()) {

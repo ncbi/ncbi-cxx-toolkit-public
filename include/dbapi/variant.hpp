@@ -182,7 +182,7 @@ public:
     CDB_Object* GetNonNullData() const;
 
     // Methods to work with BLOB data (Text and Image)
-    size_t GetBlobSize();
+    size_t GetBlobSize() const;
     size_t Read(void* buf, size_t len);
     size_t Append(const void* buf, size_t len);
     // Truncates from buffer end to buffer start. 
@@ -236,6 +236,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.15  2003/08/15 19:48:26  kholodov
+ * Fixed: const method GetBlobSize()
+ *
  * Revision 1.14  2003/08/12 21:11:22  kholodov
  * Added: AsNotNullString() method
  *
