@@ -481,8 +481,8 @@ static EIO_Status s_Select(size_t                n,
         for (i = 0; i < n; i++) {
             if ( !socks[i].sock )
                 continue;
-            if (socks[i].sock->sock != SOCK_INVALID  &&
-                (socks[i].event & eIO_ReadWrite) != 0) {
+            if (socks[i].sock->sock != SOCK_INVALID  &&  socks[i].event  &&
+                (EIO_Event)(socks[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
                 switch (socks[i].event) {
                 case eIO_ReadWrite:
                 case eIO_Write:
@@ -530,7 +530,8 @@ static EIO_Status s_Select(size_t                n,
         if (n_fds > 0)
             break;
 
-        if (n_fds < 0  &&  SOCK_ERRNO != SOCK_EINTR) {
+        /* n_fds < 0 */
+        if (SOCK_ERRNO != SOCK_EINTR) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Trace,
                            "[SOCK::s_Select]  Failed select()");
             return eIO_Unknown;
@@ -1065,6 +1066,7 @@ static EIO_Status s_Recv(SOCK        sock,
     int x_errno;
 
     *n_read = 0;
+
     /* Check against an invalid socket */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error, "[SOCK::Read]  Invalid socket");
@@ -1198,19 +1200,17 @@ static EIO_Status s_SelectStallsafe(size_t                n,
 }
 
 
-/* Write data to the socket "as is" (the whole buffer at once)
+/* Write data to the socket "as is" (as many bytes at once as possible)
  */
 static EIO_Status s_WriteWhole(SOCK        sock,
                                const void* buf,
                                size_t      size,
                                size_t*     n_written)
 {
-    const char* x_buf  = (const char*) buf;
-    int         x_size = (int) size;
     int         x_errno;
 
-    if ( n_written )
-        *n_written = 0;
+    *n_written = 0;
+
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error, "[SOCK::Write]  Invalid socket");
         assert(0);
@@ -1227,25 +1227,18 @@ static EIO_Status s_WriteWhole(SOCK        sock,
 
     for (;;) {
         /* try to write */
-        int x_written = send(sock->sock, (char*) x_buf, x_size, 0);
+        int x_written = send(sock->sock, buf, size, 0);
         if (x_written >= 0) {
             /* statistics & logging */
             if (sock->log_data == eOn  ||
                 (sock->log_data == eDefault  &&  s_LogData == eOn)) {
-                s_DoLogData(sock, eIO_Write, x_buf, (size_t) x_written);
+                s_DoLogData(sock, eIO_Write, buf, (size_t) x_written);
             }
             sock->n_written += x_written;
 
-            /* */
-            if ( n_written )
-                *n_written += x_written;
+            *n_written = x_written;
             sock->w_status = eIO_Success;
-            if (x_written == x_size)
-                break; /* all data has been successfully sent */
-            x_buf  += x_written;
-            x_size -= x_written;
-            assert(x_size > 0);
-            continue; /* there is unsent data */
+            break/*done*/;
         }
         x_errno = SOCK_ERRNO;
         /* dont want to handle all possible errors... let them be "unknown" */
@@ -1262,6 +1255,8 @@ static EIO_Status s_WriteWhole(SOCK        sock,
             status = s_SelectStallsafe(1, &poll, sock->w_timeout, 0);
             if (status != eIO_Success)
                 return status;
+            if (poll.revent == eIO_Close)
+                return eIO_Unknown;
             assert(poll.event == eIO_Write  &&  poll.revent == eIO_Write);
             continue;
         }
@@ -1288,25 +1283,37 @@ static EIO_Status s_WriteSliced(SOCK        sock,
                                 size_t      size,
                                 size_t*     n_written)
 {
-    EIO_Status status    = eIO_Success;
-    size_t     x_written = 0;
+    EIO_Status status = eIO_Success;
+
+    *n_written = 0;
 
     while (size  &&  status == eIO_Success) {
-        size_t n_io = (size > SOCK_WRITE_SLICE) ? SOCK_WRITE_SLICE : size;
+        size_t n_io = size > SOCK_WRITE_SLICE ? SOCK_WRITE_SLICE : size;
         size_t n_io_done;
         status = s_WriteWhole(sock, (char*)buf + x_written, n_io, &n_io_done);
-        if ( n_io_done ) {
-            x_written += n_io_done;
-            size      -= n_io_done;
-        }
+        *n_written += n_io_done;
+        if (n_io != n_io_done)
+            break;
+        size       -= n_io_done;
     }
 
-    if ( n_written )
-        *n_written = x_written;
     return status;
 }
 #endif /* SOCK_WRITE_SLICE */
 
+
+static EIO_Status s_Write(SOCK        sock,
+                          const void* buf,
+                          size_t      size,
+                          size_t*     n_written)
+{
+    /* Do a write */
+#if defined(SOCK_WRITE_SLICE)
+    return s_WriteSliced(sock, buf, size, n_written);
+#else
+    return s_WriteWhole (sock, buf, size, n_written);
+#endif
+}
 
 
 extern EIO_Status SOCK_Create(const char*     host,
@@ -1516,14 +1523,17 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
 extern EIO_Status SOCK_Poll(size_t          n,
                             SSOCK_Poll      socks[],
                             const STimeout* timeout,
-                            size_t*         ready)
+                            size_t*         n_ready)
 {
     struct timeval tv;
 
-    if ((n == 0) ^ (socks == NULL))
+    if ((n == 0) ^ (socks == NULL)) {
+        if ( n_ready )
+            *n_ready = 0;
         return eIO_InvalidArg;
+    }
 
-    return s_SelectStallsafe(n, socks, s_to2tv(timeout, &tv), ready);
+    return s_SelectStallsafe(n, socks, s_to2tv(timeout, &tv), n_ready);
 }
 
 
@@ -1577,33 +1587,41 @@ extern EIO_Status SOCK_Read(SOCK           sock,
                             size_t*        n_read,
                             EIO_ReadMethod how)
 {
+    EIO_Status status;
+    size_t x_read;
+
     switch ( how ) {
-    case eIO_ReadPlain: {
-        return s_Recv(sock, buf, size, n_read, 0/*false*/);
-    }
+    case eIO_ReadPlain:
+        status = s_Recv(sock, buf, size, &x_read, 0/*false, read*/);
+        break;
 
-    case eIO_ReadPeek: {
-        return s_Recv(sock, buf, size, n_read, 1/*true*/);
-    }
+    case eIO_ReadPeek:
+        status = s_Recv(sock, buf, size, &x_read, 1/*true, peek*/);
+        break;
 
-    case eIO_ReadPersist: {
-        EIO_Status status = eIO_Success;
-        *n_read = 0;
+    case eIO_ReadPersist:
+        x_read = 0;
         do {
-            size_t x_read;
-            status = SOCK_Read(sock, (char*) buf + (buf ? *n_read : 0), size,
-                               &x_read, eIO_ReadPlain);
-            *n_read += x_read;
+            size_t xx_read;
+            status = SOCK_Read(sock, (char*) buf + (buf ? x_read : 0), size,
+                               &xx_read, eIO_ReadPlain);
+            x_read += xx_read;
             if (status != eIO_Success)
-                return status;
-            size    -= x_read;
-        } while (size);
-        return eIO_Success;
-    }
+                break;
+            size   -= xx_read;
+        } while ( size );
+        break;
+
+    default:
+        assert(0);
+        x_read = 0;
+        status = eIO_Unknown;
+        break;
     }
 
-    assert(0);
-    return eIO_Unknown;
+    if ( n_read )
+        *n_read = x_read;
+    return status;
 }
 
 
@@ -1635,17 +1653,43 @@ extern EIO_Status SOCK_Status(SOCK      sock,
 }
 
 
-extern EIO_Status SOCK_Write(SOCK        sock,
-                             const void* buf,
-                             size_t      size,
-                             size_t*     n_written)
+extern EIO_Status SOCK_Write(SOCK            sock,
+                             const void*     buf,
+                             size_t          size,
+                             size_t*         n_written,
+                             EIO_WriteMethod how)
 {
-    /* Do write */
-#if defined(SOCK_WRITE_SLICE)
-    return s_WriteSliced(sock, buf, size, n_written);
-#else
-    return s_WriteWhole (sock, buf, size, n_written);
-#endif
+    EIO_Status status;
+    size_t x_written;
+
+    switch ( how ) {
+    case eIO_WritePlain:
+        status = s_Write(sock, buf, size, &x_written);
+        break;
+
+    case eIO_WritePersist:
+        x_written = 0;
+        do {
+            size_t xx_written;
+            status = SOCK_Write(sock, (char*) buf + x_written, size,
+                                &xx_written, eIO_WritePlain);
+            x_written += xx_written;
+            if (status != eIO_Success)
+                break;
+            size      -= xx_written;
+        } while ( size );
+        break;
+
+    default:
+        assert(0);
+        x_written = 0;
+        status = eIO_Unknown;
+        break;
+    }
+
+    if ( n_written )
+        *n_written = x_written;
+    return status;
 }
 
 
@@ -1901,6 +1945,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2002/08/12 15:06:38  lavr
+ * Implementation of plain and persistent SOCK_Write()
+ *
  * Revision 6.54  2002/08/07 16:36:45  lavr
  * Added SOCK_SetInterruptOnSignal[API] calls and support placeholders
  * Renamed SOCK_GetAddress() -> SOCK_GetPeerAddress() and enum
