@@ -44,7 +44,7 @@
 BEGIN_NCBI_SCOPE
 
 
-static const size_t kBufferSize = 1024*1024;
+static const size_t kBufferSize = 512*1024;
 
 
 static CNcbiRegistry* s_CreateRegistry(void)
@@ -239,6 +239,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2004/10/26 17:56:42  lavr
+ * 'Bounce' does not allow more than 1M, so send less (512k) of test data
+ *
  * Revision 6.33  2004/05/17 20:58:22  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
