@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/05/13 20:13:29  vasilche
+* Catch errors while closing broken CObjectOStream.
+*
 * Revision 1.80  2003/04/30 15:45:38  gouriano
 * added catching all exceptions when flashing stream in ThrowError
 *
@@ -492,11 +495,17 @@ CObjectOStream::~CObjectOStream(void)
 void CObjectOStream::Close(void)
 {
     if (m_Fail != fNotOpen) {
-        m_Fail = fNotOpen;
-        m_Output.Flush();
-        if ( m_Objects )
-            m_Objects->Clear();
-        ClearStack();
+        try {
+            m_Output.Flush();
+            if ( m_Objects )
+                m_Objects->Clear();
+            ClearStack();
+            m_Fail = fNotOpen;
+        }
+        catch (...) {
+            if ( InGoodState() )
+                ThrowError(fWriteError, "cannot close");
+        }
     }
 }
 
