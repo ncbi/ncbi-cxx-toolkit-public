@@ -420,7 +420,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
                     }
                     if (seq_piece->length > xL)
                         seq_piece->length = xL;
-                    if ( seg.m_MinusStrand ) {
+                    if ( seg.m_MinusStrand  &&  seq_piece->src_data != 0 ) {
                         // Convert data, update location
                         CSeq_data* tmp = new CSeq_data;
                         CSeqportUtil::ReverseComplement(
@@ -1918,6 +1918,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/09/16 19:59:36  grichenk
+* Fixed getting reference to a gap on minus strand
+*
 * Revision 1.62  2002/09/10 19:55:49  grichenk
 * Throw exception when unable to create resolved seq-map
 *
