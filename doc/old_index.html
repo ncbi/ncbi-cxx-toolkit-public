@@ -1,272 +1,134 @@
-<!--#set var="TITLE" value="C++/STL Guide for NCBI SWG" -->
+<!-- $Id$ -->
+<!--#set var="TITLE" value="NCBI C++ Toolkit -- Home Page" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<h1>
-C++/STL Developer Guide for NCBI SWG</h1>
+<h1><a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/index.html">NCBI C++ Toolkit -- Home Page</a></h1>
 
-<ul>
-<li>
-CVS location: <i>internal/c++/doc</i></li>
+<p></p>
 
-<li>
-Public WWW docs (the latest version): <i><a href="http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/index.html">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/index.html</a></i></li>
-
-<li>
-Internal WWW docs (the latest version): <i><a href="http://intranet.ncbi/ieb/ToolBox/CPP_DOC/index.html">http://intranet.ncbi/ieb/ToolBox/CPP_DOC/index.html</a></i></li>
-
-<li>
-Source snapshots (<tt>ncbi_cxx_.*</tt>): <i><a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/">ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/</a></i></li>
-
-<li>
-Mailing lists:
-<ul>
-<li> Generic:
-<i><a href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp">http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp</a></i></li>
-</li>
-<li> CVS logs:
-<i><a href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-cvs">http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-cvs</a></i></li>
-</li>
-<li> Announces:
-<i><a href="http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-announce">http://www.ncbi.nlm.nih.gov/mailman/listinfo/cpp-announce</a></i></li>
-</li>
-</ul>
-
-</ul>
-
-</ul>
-
-<h4>
-<a href="faq.html"><i>F.A.Q.</i> is here</a></h4>
-
-<b>Source Browser</b>
-<ul>
-<li>
-<a href="lxr/source/">Source
-navigation</a>, <a href="lxr/ident/">identifier
-search</a>, <a href="lxr/search/">freetext
-search</a>, and <a href="lxr/find/">file
-search</a></li>
-
-<li>
-<a href="docxx/index.html">Index</a> and <a href="docxx/HIER.html">class
-hierarchy</a> (alphabetically ordered)</li>
-</ul>
-
-
-<b>Programming Manual</b>
-<ul>
-<li>
-Setting up the work environment</li>
-
-<ul>
-<li>
-<a href="programming_manual/outside_tree.html">Working in a separate directory</a></li>
-
-<li>
-<a href="programming_manual/sub_tree.html">Working independently in a C++
-subtree</a></li>
-
-<li>
-<a href="programming_manual/inside_tree.html">Working within the C++ source
-tree</a></li>
-
-<li>
-<a href="programming_manual/objects.html">Working with the serializable
-object classes</a></li>
-</ul>
-
-<li>
-Some NCBI C++ Toolkit Basics</li>
-
-<ul>
-<li>
-<a href="programming_manual/applic.html">Writing a simple application project</a></li>
-
-<li>
-<a href="programming_manual/argdescr.html">Using the CArgDescriptions class</a></li>
-
-<li>
-<a href="programming_manual/registry.html">The CNcbiRegistry class</a></li>
-
-<li>
-<a href="programming_manual/diag.html">Diagnostic Streams</a></li>
-
-<li>
-<a href="programming_manual/exceptions.html">Exception handling in the
-NCBI C++ Toolkit</a></li>
-
-<li>
-<a href="programming_manual/cref.html">Smart pointers: <i>auto_ptr&lt;></i>
-and <i>CRef&lt;></i> template classes</a></li>
-</ul>
-
-<li>
-CGI Applications</li>
-
-<ul>
-<li>
-[-] <a href="programming_manual/cgi.html">Developing CGI applications</a></li>
-
-<li>
-[-] <a href="programming_manual/webpgs.html">Generating web pages with
-the HTML classes</a></li>
-
-<li>
-[-] <a href="programming_manual/htmlcgi.html">An example web-based CGI
-application</a></li>
-
-<li>
-[+] <a href="programming_manual/cgi_diag.html">CGI Diagnostic Handling</a></li>
-</ul>
-
-<li>
-Using Object Type Information</li>
-
-<ul>
-<li>
-[~] <a href="programming_manual/traverse.html">Traversing a data structure</a></li>
-
-<li>
-[+] <a href="programming_manual/typeinfo.html">Runtime Object Type Information</a></li>
-
-<li>
-[-] <a href="programming_manual/usrtypeinfo.html">User-defined Type Information</a>.</li>
-
-<li>
-[-] <a href="programming_manual/iterators.html">The NCBI C++ Toolkit Iterators</a></li>
-</ul>
-
-<li>
-Serialization</li>
-
-<ul>
-<li>
-[-] <i><a href="programming_manual/objstream.html">CObject[IO]Streams</a></i></li>
-
-<li>
-[+] <a href="programming_manual/asn.html">Processing serial data</a></li>
-
-<li>
-[+] <a href="programming_manual/choice.html">Choice objects in the NCBI
-C++ Toolkit</a></li>
-</ul>
-
-<li>
-<a href="programming_manual/Examples.html">Programming Examples</a></li>
-</ul>
-
-
-<b>Reference Manual</b>
-<ul>
-<li>
-<a href="config.html">Installation and configuration</a></li>
-
-<li>
-<a href="new_proj.html">Starting new C++ project</a></li>
-
-<li>
-<a href="new_mod.html">Starting new C++ module(source &amp; headers)</a></li>
-
-<li>
-<a href="style.html">Naming conventions, Indentation and Bracing, Etc.</a></li>
-
-<li>
-<a href="tips.html">Introduction to some of C++ and STL features and techniques</a></li>
-
-<li>
-<a href="dont_use.html">C++/STL pit-falls and discouraged/prohibited features</a></li>
-
-<li>
-<a href="types.html">Standard NCBI C++ types</a></li>
-
-<li>
-<a href="libs/c_cxx.html">Using NCBI C and C++ Toolkits together</a></li>
-</ul>
-
-
-<b>Libraries, Tools, Applications, Demo, Tests and Support</b>
-<ul>
-<li>
-<a href="tools.html">Tools and applications</a></li>
-<li>
-<a href="libs.html">Libraries</a></li>
-<li>
-<a href="support.html">Tests and Support</a></li>
-</ul>
-
-
-<b>Miscellaneous</b>
-<ul>
-<li>
-<a href="http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/dec96pub/index.html">
-[Doc] ISO/ANSI C++ Draft Standard Working Papers <i>(Intranet only)</i></a></li>
-
-<li>
-<a href="http://search.microsoft.com/us/dev/">[Doc] MSDN Online Search
-</a></li>
-
-<li>
-<a href="books.html">[Literature] Books and links to C++ and STL manuals</a></li>
-
-<li>
-<a href="mkfiles.html">[Example] NCBI C++ makefile hierarchy for project
-<i>"corelib/"</i></a></li>
-
-<li>
-<a href="src_tree.gif">[Chart] NCBI C++ source tree hierarchy</a></li>
-
-<li>
-<a href="bld_tree.gif">[Chart] NCBI C++ build tree hierarchy</a></li>
-
-<li>
-<a href="depgraph.html">[Chart] NCBI C++ Library Dependency graph</a></li>
-
-<li>
-<a href="internal/idx/index.html">[Doc] NCBI IDX Database Documentation <i>(Intranet only)</i></a></li>
-
-</ul>
+<!--include virtual="./ssi/search.shtml" -->
 
 <hr>
+
+<!--  Main 'chapters'   -->
+
+<ul>
+<li> <h2> Overview </h2></li>
+    <ul>
+	<li>
+<!--	[x] <a href="intro_NEW.html"><b>Introduction</b></a></li>-->
+	[x] <b>Introduction</b></li>
+
+	<li>
+	[x] <a href="get_started.html"><b>Getting Started</b></a></li>
+
+	</ul><p></p>
+
+<li> <h2> Development Framework </h2></li>
+	<ul>
+	<li>
+	<!--[-] <a href="ftp://ncbi.nlm.nih.gov/toolbox/ncbi_tools++/CURRENT/"><b>Downloads and CVS Retrieval</b></a></li>-->
+	[x] <a href="download.html"><b>Retrieve the Source Code</b></a></li>
+
+
+	<li>
+	<!--[-] <a href="config.html"><b>Installation and Configuration</b></a></li>-->
+	[x] <a href="config.html"><b>Configure, Build and Install</b></a></li>
+
+	<li>
+	<!--[-] <a href="programming_manual/outside_tree.html"><b>Project Creation and Management</b></a></li>-->
+	[x] <a href="projects.html"><b>Create and Manage Projects</b></a></li>
+
+	<li>
+	<!--[-] <a href="style.html"><b>Programming Policies and Guidelines</b></a></li>-->
+	[x] <a href="policies.html"><b>Programming Policies and Guidelines</b></a></li>
+
+	</ul><p></p>
+
+<li> <h2> Software </h2></li>
+	<ul>
+	<li>
+	<!--[-] <a href="libs.html"><b> Library Reference</b></a></li>-->
+	[x] <a href="libs.html"><b>C++ Toolkit Library Reference</b></a>
+<!--	<dl><dt/><dd>
+	[-] <span class=red> Deprecated current </span> <a href="libs.html"><b>C++ Toolkit Library Reference</b></a></dd></dl> -->
+	</li>
+
+	<li>
+	[x] <a href="tools.html"><b> Tools</b></a></li>
+
+	<li>
+	<!--[-] <a href="examples.html"><b>Examples </b></a></li>-->
+	[x] <a href="examples.html"><b>Examples</b></a></li>
+
+	<li>
+	[x] <a href="tests.html#ref_TestDatatool"><b>Tests</b></a></li>
+
+	<li>
+    [x] <a href="libs/c_cxx.html"><b>Working with the NCBI C Toolkit</b></a></li>
+
+	</ul><p></p>
+
+<a name="ref_Help"></a>
+<li> <h2> Help and Support </h2></li>
+	<ul>
+	<a name="ref_SBrowser"></a>
+	<li>
+	[x] <a href="source_browser.html"><b>Source Browser</b></a></li>
+
+	<!--
+		<ul>
+		<li>
+		<a href="/lxr/source/">Source
+		navigation</a>, <a href="/lxr/ident/">identifier
+		search</a>, <a href="/lxr/search/">freetext
+		search</a>, and <a href="/lxr/find/">file
+		search</a></li>
+
+		<li>
+		<a href="/docxx/index.html">Index</a> and
+		<a href="/docxx/HIER.html">class
+		hierarchy</a> (alphabetically ordered)</li>
+		</ul>
+	-->
+
+	<li>
+	<!--[-] <a href="faq.html"><b>FAQ</b> <font size=-1>(Frequently Asked Questions)</font></a></li>-->
+	[x] <a href="faq.html"><b>FAQ</b> <font size=-1>(Frequently Asked Questions)</font></a></li>
+
+	<li>
+	[x] <a href="mailing_lists.html"><b>Mailing Lists</b></a></li>
+
+	<li>
+	<!--[-] <a href="links.html"><b> Useful Documentation Links</b></a></li>-->
+	[x] <a href="links.html"><b> Useful Documentation Links</b></a></li><p></p>
+
+	</ul><p></p>
+
+</ul>
+
+<!--  End main 'chapters' list -->
+
+<hr>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
+
+<!-- Begin footer content -->
+
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
-<tr>
-<td>
-<address>
-<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
-</td>
-
-<td><!-- <td align=center><i>$Revision$</i></td> --></td>
-
-<td ALIGN=RIGHT><i>$Date$</i></td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:vasilche@ncbi.nlm.nih.gov">Eugene Vasilchenko</a></address>
-</td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
-</td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
-</td>
-</tr>
-
-<tr>
-<td>
-<address>
-<a href="mailto:lewisg@ncbi.nlm.nih.gov">Lewis Geer</a></address>
-</td>
-</tr>
+<script>
+<!--
+print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('vasilche', 'Eugene Vasilchenko');
+print_author('lavr', 'Anton Lavrentiev');
+print_author('zimmerma', 'Diane Zimmerman');
+print_author('lewisg', 'Lewis Geer');
+print_author('lanczyck', 'Chris Lanczycki');
+// -->
+</script>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

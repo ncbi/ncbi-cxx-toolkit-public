@@ -1,16 +1,28 @@
-<!--#set var="TITLE" value="Installation and configuration" -->
+<!-- $Id$ -->
+<!--#set var="TITLE" value="NCBI C++ Toolkit:  Configure, Build and Install" -->
+<!--#set var="HEADING" value="Configure, Build and Install the Toolkit" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<h1>Installation and configuration</h1>
+<a name="ref_ConfigTop"></a>
+
+<p>
+This page describes how to get the NCBI C++ sources, and how to
+configure/deploy a build directory with the <i>ncbiconf.h</i> header and
+all makefiles configured to work on the specified platform with
+the specified compiler (and other tools) and flags.  For a basic discussion
+of these issues, consult the <a href="get_started.html#ref_InstBasics"><i>Getting Started</i></a> page.
+<p>
 
 <ul>
   <li> <a href="#ref_Source">
-       NCBI C++ source code repository</a> 
+       NCBI C++ source code repository</a>
   <li> <a href="#ref_Configure">
        Configuration and installation script <b><i>configure</i></b></a>
   <li> <a href="#ref_Build">
 		  Structure of the <i>build tree</i> produced by <b><i>configure</i></b></a>
+  <p>
+
   <li> <a href="#ref_Running">
        Running the <b><i>configure</i></b> script</a>
 		 <ul>
@@ -20,6 +32,8 @@
 			<i>Debug</i> vs. <i>Release</i> configuration</a>
 		   <li> <a href="#ref_DLL">
 			Building shared libraries (DLLs)</a>
+		   <li> <a href="#ref_DLL_OK">
+			Supported Platforms for DLL Builds</a>
 		   <li> <a href="#ref_RunPath">
 			Hard-coding run-time DLL path into the executables and DLLs</a>
 		   <li> <a href="#ref_MT">
@@ -41,7 +55,7 @@
          <li> <a href="#ref_Optional">
          Optional projects</a>
 		 <li> <a href="#ref_ProjectList">
-         Finer-grained control of projects: <i>--with-projects</i></a> 
+         Finer-grained control of projects: <i>--with-projects</i></a>
          <li> <a href="#ref_Misc">
          Miscellaneous: <i>--without-exe, --without-execopy,
 	 --with-lib-rebuilds(=ask)</i></a>
@@ -52,6 +66,8 @@
          Pre-built configuration headers
          (<i>compilers/ncbiconf.*</i>) </a>
 		 </ul>
+  <p>
+
   <li> <a href="#ref_Reconf">
        Quick reconfiguration</a>
 	 </a>
@@ -59,6 +75,8 @@
        An example of configuration, installation and build</a>
   <li> <a href="#ref_Compilers">
        List of supported compilers</a>
+  <p>
+
   <li> <a href="#ref_AdHoc">
        Ad-hoc installations</a>
 	 <ul>
@@ -68,7 +86,7 @@
 		  <li> <a href="#ref_MsvcProjDownload">
 		    Getting the Toolkit sources</a>
 		  <li> <a href="#ref_MsvcProjFiles">
-		    Working with project files</a>		    
+		    Working with project files</a>
 		  <li> <a href="#ref_MsvcProjTree">
 		    Building the whole NCBI C++ tree locally</a>
 		  <li> <a href="#ref_MsvcProjCXX">
@@ -93,15 +111,10 @@
 	 </ul>
 </ul>
 
-<p>
-This page describes how to get the NCBI C++ sources, and how to
-configure/deploy a build directory with the <i>ncbiconf.h</i> header and
-all makefiles configured to work on the specified platform with
-the specified compiler (and other tools) and flags.
+<hr>
 
-<br></br>
 <a name="ref_Source"></a>
-<h2>NCBI C++ source code repository</h2>
+<h2>NCBI C++ source code repository <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 The NCBI C++ Toolkit sources and data can be
@@ -160,9 +173,10 @@ The resultant <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> will conta
        located in <i><b>src/corelib/</b></i>
 </ul>
 
+<hr>
 
 <a name="ref_Configure"></a>
-<h2>Configuration and installation script <b><i>configure</i></b></h2>
+<h2>Configuration and installation script <b><i>configure</i></b> <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 Different compilers compile C++ (and even C!) code differently --
@@ -175,7 +189,7 @@ file naming conventions on different platforms.
 Thus, a configuration is needed to encounter the platform-
 and compiler-specific features.
 For this purpose, we are using the GNU
-<a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a> 
+<a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a>
 utility to automatically generate compiler-specific header file
 <i>ncbiconf.h</i> and makefiles that would work for the given platform.
 
@@ -192,7 +206,7 @@ During the configuration process, many compiler features are tested,
 and the results of this testing are recorded in the configuration header
 <i>ncbiconf.h</i> by the means of C preprocessor variables. E.g., the
 preprocessor variable <i>"NO_INCLASS_TMPL"</i> indicates whether the
-compiler supports template class methods; another example of the information 
+compiler supports template class methods; another example of the information
 contained in <i>ncbiconf.h</i> are preprocessor variables used to
 define <a href="types.html#ref_IntFixed">sized integer</a> and
 <a href="types.html#ref_BigScalar"><i>BigScalar</i></a> types.
@@ -218,7 +232,7 @@ of the resultant
 
 <p>
 User can create as many such build trees as he needs.  All these
-trees would refer to just the same (origin) NCBI C++ 
+trees would refer to just the same (origin) NCBI C++
 <a href="src_tree.gif"><i>source tree</i></a> and <i>include tree</i>,
 while each
 <a href="bld_tree.gif"><i>build tree</i></a>
@@ -230,10 +244,11 @@ This is to allow one to build
 libraries and executables using different compilers and/or flags, yet from
 the same sources, and in a uniform way.
 
-
 <br></br>
+<hr>
+
 <a name="ref_Build"></a>
-<h2>Structure of the <i>build tree</i> produced by <b><i>configure</i></b></h2>
+<h2>Structure of the <i>build tree</i> produced by <i>configure</i> <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 Each configuration process results in a new <i>build tree</i>.
@@ -277,14 +292,18 @@ The structure of the tree is as follows (see also in
        the configuration process.
 </ul>
 
+<hr>
 
 <a name="ref_Running"></a>
-<h2>Running the <b><i>configure</i></b> script</h2>
+<h2>Running the <b><i>configure</i></b> script <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 <a name="ref_GetHelp"></a>
 <h4>Getting synopsis of available configuration options</h4>
 
+<dl>
+    <dt>
+    <dd>
 To get the list of available configuration options, just run
 <i><b>configure --help</b></i>.
 You can see the NCBI-specific options at the very end of the printout.
@@ -293,11 +312,15 @@ You can see the NCBI-specific options at the very end of the printout.
 in the <i>"Directory and file names:"</i> section of the help printout (such as
 <i><b>--prefix=, --bindir=</b></i>, etc.), as they are not used by the NCBI
 <i><b>configure</b></i> script.
+</dl>
 
 <p>
 <a name="ref_DebugVsRelease"></a>
 <h4><i>Debug</i> vs. <i>Release</i> configuration</h4>
 
+<dl>
+    <dt>
+    <dd>
 The following two <i><b>configure</b></i> flags control whether to target for
 the <i>Debug</i> or <i>Release</i> version. These options (default is
 <i><b>--with-debug</b></i>) control the appearance of preprocessor
@@ -318,13 +341,15 @@ flags <b>-D_DEBUG</b> and <b>-DNDEBUG</b>, and compiler/linker flags
        unconditionally strip <b>-DNDEBUG</b> and <b>-O</b>
   <li> default: <i><b>--with-debug --without-optimization</b></i>
 </ul>
-
+</dl>
 
 <p>
-<br>
 <a name="ref_DLL"></a>
 <h4>Building shared libraries (DLLs)</h4>
 
+<dl>
+    <dt>
+    <dd>
 On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
 <ul>
   <li> <i><b>--with-dll --with-static</b></i> --
@@ -341,7 +366,7 @@ On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
        build libraries as <i>dynamic</i>; <br>
 		 however, if the library project makefile specifies
 		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = lib</i></a>,
-       then build the library as <i>static</i>		  
+       then build the library as <i>static</i>
   <li> <i><b>--without-dll</b></i> --
        always build <i>static</i> libraries, <br>
 		 even if the library project makefile specifies
@@ -352,7 +377,15 @@ On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
 		  <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>,
        then build the library as <i>dynamic</i>
 </ul>
+</dl>
 
+<p>
+<a name="ref_DLL_OK"></a>
+<h4>Supported Platforms for DLL Builds</h4>
+
+<dl>
+    <dt>
+    <dd>
 We have succeeded in building NCBI C++ Toolkit libs as DLLs on at least
 the following platforms:
 <ul>
@@ -406,14 +439,15 @@ the following platforms:
 On any other platform, the <i><b>--without-dll</b></i> scenario will be
 enforced unconditionally (even if you explicitly specified
 <i><b>--with-dll</b></i>).
-
+</dl>
 
 <p>
-<br>
 <a name="ref_RunPath"></a>
 <h4>Hard-coding run-time DLL path into the executables and DLLs</h4>
 
-
+<dl>
+    <dt>
+    <dd>
 In order to be able to <i>run</i> executables linked against
 dynamic libraries (DLLs), you have to specify these DLLs' location
 (<i>runpath</i>). It can be done by hard-coding (using linker flags like
@@ -421,7 +455,7 @@ dynamic libraries (DLLs), you have to specify these DLLs' location
 <ul>
   <li><i><b>--with-runpath</b></i> --
     hard-code the path to the <i><b>lib/</b></i> dir
-    of the Toolkit <i>build tree</i> 
+    of the Toolkit <i>build tree</i>
   </li>
   <li><i><b>--with-runpath=</b>/foo/bar</i> --
     hard-code the path to the user-defined <i><b>/foo/bar</b></i> dir
@@ -465,10 +499,10 @@ executables and install them into production. <br>
 Then you can re-re-configure your build tree back with its original flags
 (without the "<i><b>--with-runpath=</b>/some_path/foo</i>"), and continue with
 your development cycle, again using local in-tree DLLs.
+</dl>
 
 
 <p>
-<br>
 <a name="ref_MT"></a>
 <h4>Multi-Thread safe compilation, and linking with MT libraries</h4>
 
@@ -482,11 +516,14 @@ your development cycle, again using local in-tree DLLs.
 		  <a href="#ref_TableLocalization"><b><i>$(THREAD_LIBS)</i></b></a> -->
   <li> default: <i><b>--without-mt</b></i>
 </ul>
+<dl>
+    <dt>
+    <dd>
+</dl>
 
 
 
 <p>
-<br>
 <a name="ref_64"></a>
 <h4>Building in 64-bit mode</h4>
 
@@ -495,11 +532,13 @@ your development cycle, again using local in-tree DLLs.
 		  compile all code and build executables in 64-bit mode
   <li> default: <i><b>--without-64</b></i>
 </ul>
-
+<dl>
+    <dt>
+    <dd>
+</dl>
 
 
 <p>
-<br>
 <a name="ref_GnuMakeAutodep"></a>
 <h4>Automatic generation of dependencies (for GNU <i>make</i> only)</h4>
 
@@ -513,23 +552,30 @@ your development cycle, again using local in-tree DLLs.
 		  GNU <i>make</i>;  if it does, then <i><b>--with-autodep</b></i>, else
 		  <i><b>--with-autodep</b></i>
 </ul>
+
+<dl>
+    <dt>
+    <dd>
 Also, you can always switch between these two variants "manually", after
 the configuration is done, by setting the value of variable
 <i><b>Rules</b></i> in
 <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
-to either <i><b>rules</b></i> or <i><b>rules_with_autodep</b></i>. 
+to either <i><b>rules</b></i> or <i><b>rules_with_autodep</b></i>.
 
 <p>
 NOTE: You <b>must</b> use GNU <i>make</i> if you configured with
 <i><b>--with-autodep</b></i>, as in this case the makefiles would use
 very specific GNU <i>make</i> features!
+</dl>
 
 
 <p>
-<br>
 <a name="ref_NamingBuildTree"></a>
 <h4>Naming the <i>build tree</i></h4>
 
+<dl>
+    <dt>
+    <dd>
 The configuration process will produce the new <i>build tree</i>
 in some default subdirectory of the root source directory, and the base name
 of this subdirectory will reflect the compiler name and a <i>Release/Debug</i>
@@ -564,31 +610,42 @@ There is also a special case with "<i><b>--with-build-root=</b>.</i>"
 for those who prefer to put object files, libraries and executables to where
 the sources are located. But be advised that this will disallow you
 to configure for other <i>build trees</i>.
+</dl>
 
 <p>
-<br>
 <a name="ref_AfterConf"></a>
 <h4>After-configure user callback script</h4>
 
+<dl>
+    <dt>
+    <dd>
 You can specify your own script to call from the <i>configure</i>
 script after the configuration is complete:
 <ul>
   <li> <i><b>--with-extra-action=</b>"&lt;some_action&gt;"</i>
 </ul>
+
+<p>
 where <i>&lt;some_action&gt;</i> can be some script with parameters.
 The trick here is that in the &lt;some_action&gt; string, all
 occurrences of "<i>{}</i>" will be replaced by the build dir name.
-<br><i>Example:</i>
-<br>&nbsp;&nbsp;&nbsp;<i>configure <b>--with-extra-action=</b>"echo foobar {}"</i>
-<br>will execute (after the configuration is done):
-<br>&nbsp;&nbsp;&nbsp;<i>echo foobar /home/user/c++/GCC-Debug</i>.
+
+<p>
+<i>Example:</i>
+<p>&nbsp;&nbsp;&nbsp;<i>configure <b>--with-extra-action=</b>"echo foobar {}"</i>
+
+<p>will execute (after the configuration is done):
+<p>&nbsp;&nbsp;&nbsp;<i>echo foobar /home/user/c++/GCC-Debug</i>.
+</dl>
 
 
 <p>
-<br>
 <a name="ref_ToolsAndFlags"></a>
 <h4>Tools and flags</i></h4>
 
+<dl>
+    <dt>
+    <dd>
 There is a predefined set of tools and flags used in the build process.
 User can alternate these tools and flags by setting the following
 environment variables for the <b><i>configure</i></b> script.
@@ -692,7 +749,7 @@ be engaged in the makefiles:
   <li> To compile C++ sources:
     <br> <b><i>$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) .....</i></b>
   <li> To compose a library:
-    <br> <b><i> $(AR)     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i> 
+    <br> <b><i> $(AR)     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i>
 	 <br> <b><i> $(RANLIB) </i></b> <i>libXXX.a</i>
 </i></b>
   <li> To link an executable:
@@ -703,14 +760,15 @@ For more info on these and other variables see in the
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html">autoconf documentation</a>.
 The specified tools and flags will then be "frozen" inside the makefiles of
 <i>build tree</i> produced by this <b><i>configure</i></b> run.
-
+</dl>
 
 <p>
-<br>
 <a name="ref_Localization"></a>
 <h4>Localization for the system and third-party packages</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 There is some configuration info that usually cannot be guessed or detected
 automatically, and thus in most cases it must be specified "manually" for
 the given local host's working environment.
@@ -846,7 +904,7 @@ It is also possible to override <b>WXWIN_PATH</b> by
 <b><i>--with-orbacus=DIR</i></b>.
 <p>
 Based on the above, <b><i>configure</i></b> will derive the following variables
-to use in the generated makefiles: 
+to use in the generated makefiles:
 
 <br></br>
 <a name="ref_TableLocalization1"></a>
@@ -1048,13 +1106,16 @@ to use in the generated makefiles:
   </tr>
 
 </table>
+&nbsp;<p>
+</dl>
 
 <p>
-<br>
 <a name="ref_ProhibitPackage"></a>
 <h4>Prohibiting the use of some of the system and third-party packages</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 Some of the above system and third-party packages can
 be prohibited to use -- using the following <b><i>configure</i></b>
 flags:
@@ -1074,14 +1135,15 @@ flags:
   <li> <i><b>--without-pubmed</b></i> (NCBI PubMed) </li>
   <li> <i><b>--without-orbacus</b></i> (ORBacus CORBA) </li>
 </ul>
-
+</dl>
 
 <p>
-<br>
 <a name="ref_Optional"></a>
 <h4>Optional projects</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 You can control whether to build the following core packages
 using the following <b><i>configure</i></b> flags:
 <ul>
@@ -1130,13 +1192,16 @@ using the following <b><i>configure</i></b> flags:
 				}/internal</b></i> directories
   </li>
 </ul>
+</dl>
 
 
 <p>
-<br>
 <a name="ref_ProjectList"></a>
 <h4>Finer-grained control of projects: <i>--with-projects</i></h4>
 
+<dl>
+    <dt>
+    <dd>
 If the above options aren't specific enough for you, you can also tell
 <tt>configure</tt> which projects you want to build by passing the
 flag <i><b>--with-projects=FILE</b></i>, where <b>FILE</b> contains a
@@ -1152,12 +1217,14 @@ in util.  With this option, the <tt>make</tt> target <tt>all_p</tt>
 will build all selected projects under the current directory.  If
 there is a project you want to keep track of but not automatically
 build, you can follow its name with "&nbsp;update-only".
+
 <p>
 <b>NOTE:</b> The flags listed <a href="#ref_Optional">above</a> still
 apply; for instance, you still need <i><b>--with-internal</b></i> to
 enable internal projects.
+</dl>
 
-<br>
+<p>
 <a name="ref_Misc"></a>
 <h4>Miscellaneous: <i>--without-exe, --without-execopy, --with-lib-rebuilds(=ask)</i></h4>
 
@@ -1173,7 +1240,11 @@ enable internal projects.
           As above, but prompt before any needed rebuilds.  (Do not
           prompt for libraries that are up-to-date.)
 </ul>
+<dl>
+    <dt>
+    <dd>
 
+<p>
 Here's a more detailed explanation of
 <i><b>--with-lib-rebuilds</b></i>:  There are three modes of operation.
 <ul>
@@ -1196,21 +1267,24 @@ Here's a more detailed explanation of
   or because nothing relevant has changed) and building an updated
   version.
 </ul>
+</dl>
 
 
 <p>
-<br>
 <a name="ref_Wrappers"></a>
 <h4>Compiler-specific <b><i>configure</i></b> wrappers</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 Most of the non-GCC compilers require special tools and additional
 mandatory flags to compile and link C++ code properly. That's why we
 have to have special scripts that perform the required non-standard
 compiler-specific pre-initialization for the used
 <a href="#ref_ToolsAndFlags">tools and flags</a> before running
 <b><i>configure</i></b>.
-<br>
+
+<p>
 These wrapper scripts are located in the <i><b>compilers/</b></i>
 directory, and now we have such wrappers for SUN WorkShop (5.0, 5.1 and 5.2)
 MIPSpro 7.3, GCC/Cygwin-NT, KCC, and MSVC++ compilers:
@@ -1227,18 +1301,19 @@ MIPSpro 7.3, GCC/Cygwin-NT, KCC, and MSVC++ compilers:
   </ul>
 Note, that these scripts accept all regular <b><i>configure</i></b> flags
 and then pass them to the <b><i>configure</i></b> script.
-
+</dl>
 
 <p>
-<br>
 <a name="ref_PreBuiltHeaders"></a>
 <h4>Pre-built configuration headers</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 Although it is possible to run <b><i>configure</i></b> under Windows NT,
 (as we do for the MSVC++ compiler), however it requires having a
 <i>sh</i>-compatible command interpreter installed on your PC.
-In-house, we run <i><b>msvc_nt.bash</b></i> using 
+In-house, we run <i><b>msvc_nt.bash</b></i> using
 <a href="http://www.lns.cornell.edu/public/COMP/info/bash/bashref_toc.html">
 <i>bash</i></a> in the
 <a href="http://sourceware.cygnus.com/cygwin/">CYGWIN</a>
@@ -1258,12 +1333,13 @@ MSVC++ users can use this header and a ready-to-use hierarchy of
 The same is for Mac Metrowerks CodeWarrior on PowerPC --
 we have a manually maintained <i><b>compilers/ncbiconf.mac</b></i>
 (however we dont have a ready-to-use Mac-specific project tree).
+</dl>
 
-
-<p>
 <br>
+<hr>
+
 <a name="ref_Reconf"></a>
-<h2>Quick reconfiguration</h2>
+<h2>Quick reconfiguration <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 
 <p>
@@ -1316,8 +1392,10 @@ arguments as were provided during the original configuration) is the slowest.
 
 <p>
 <br>
+<hr>
+
 <a name="ref_Example"></a>
-<h2>An example of configuration, installation and build</h2>
+<h2>An example of configuration, installation and build <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 To retrieve, configure, install and build all available NCBI C++ projects:
 
@@ -1327,11 +1405,11 @@ To retrieve, configure, install and build all available NCBI C++ projects:
 cvs checkout -d ~/cpp_foo internal/c++
 
 
-# Configure for WorkShop 5.0 compilers, then build recursively
+# Configure for WorkShop 6.0 compilers, then build recursively
 cd ~/cpp_foo
-compilers/WorkShop5.sh 32 my_build_dir
+compilers/WorkShop6.sh 32 my_build_dir
 
-cd my_build_dir
+cd my_build_dir/build
 make all_r
 
 
@@ -1339,14 +1417,16 @@ make all_r
 cd ~/cpp_foo
 ./configure
 
-cd GCC-Debug
+cd GCC-Debug/build
 make all_r
 </pre>
 
 
 <br>
+<hr>
+
 <a name="ref_Compilers"></a>
-<h2>List of supported compilers</h2>
+<h2>List of supported compilers <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 As for now, at least the following compilers give enough support
@@ -1436,21 +1516,22 @@ directories.
 
 <p>
 <br>
+<hr>
+
 <a name="ref_AdHoc"></a>
-<h2>Ad-hoc installations</h2>
+<h2>Ad-hoc installations <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h2>
 
 <p>
 <a name="ref_MsvcProj"></a>
-<h3>MS Visual C++</h3>
+<h3>MS Visual C++ <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h3>
 
 <p>
 <a name="ref_MsvcProjDownload"></a>
 <h4>Getting the Toolkit sources</h4>
 
-<p>
-
-
-<p>
+<dl>
+    <dt>
+    <dd>
 Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
 <i><b>C:\cxx</b></i>. You can do it one of the following ways:
 <ul>
@@ -1467,12 +1548,16 @@ Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
 		  to build any (or all) of MSVC++ project configurations.
 		  The archive also contains pre-generated ASN classes.</li>
 </ul>
+</dl>
 
 
 <p>
 <a name="ref_MsvcProjFiles"></a>
 <h4>Working with NCBI C++ project files</h4>
 
+<dl>
+    <dt>
+    <dd>
 Project files for NCBI C++ Toolkit are now generated automatically from the template project files,
 which are kept in the CVS repository. Click <a href="msvc_prj.html">here</a> to know how this is done, or
 if you wish to modify and/or add the NCBI C++ Toolkit project files.
@@ -1491,12 +1576,15 @@ There is a short summary:
 	(template) project file to the multi-configuration one (containing all of the following configurations:
 	<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>).</li>
 </ul>
+</dl>
 
 <p>
 <a name="ref_MsvcProjTree"></a>
 <h4>Building the whole NCBI C++ tree locally</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 Now, if you want to use MS Visual C++ IDE to work with these sources, then you have to do exactly the following:
 <p>
 <ul>
@@ -1532,7 +1620,7 @@ After the installation is complete you can build the Toolkit projects in two dif
   		<li> <b>all_gui</b> -- all GUI stuff (libraries plus applications)
   		<li> <b>all_gui_libs</b> -- GUI libraries only
   		<li> <b>all_tools</b> -- non-graphics tools and their related libraries
-  		<li> <b>all_tools_libs</b> -- non-graphics libraries only  		
+  		<li> <b>all_tools_libs</b> -- non-graphics libraries only
   		<li> any single library and/or application -- other projects in this workspace</li>
    	</ul>
     	You can build <i>any</i> project in any of Debug and/or Release versions. To switch among Debug or
@@ -1541,16 +1629,15 @@ After the installation is complete you can build the Toolkit projects in two dif
 		then the target <b>all</b> is made nearly equivalent to <b>all_core</b> because almost every other project requires
 		serialization libraries (<i>objects</i>) to be present.
 </ul>
-
-
-<p>
-
+</dl>
 
 <p>
 <a name="ref_MsvcProjCXX"></a>
 <h4>Using pre-built NCBI C++ Toolkit in your projects</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 If you don't want to build the whole NCBI C++ tree, but just
 need to <i>use</i> the NCBI C++ Toolkit functionality in your own, separate projects,
 there are pre-built libraries located at:
@@ -1594,13 +1681,15 @@ If, however, you need to trace through the library source code, then you have to
 <p>
 In either case, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
 to make sure that it is built compatible with the chosen NCBI C++ libraries.
-
+</dl>
 
 <p>
 <a name="ref_MsvcProjWxwin"></a>
 <h4>Using wxWindows</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 The pre-built versions of this library (<a href="wxwin_setup.html">modified</a> to suit certain requirements),
 along with include files, sources, documentation and project files,
 which we provide, are all put to:
@@ -1696,13 +1785,15 @@ Moreover, if a project file is being commited to the CVS, and it has been
 <p>
 As always, don't forget to provide the right <a href="#ref_MsvcProjSettings">compiler settings</a> for your project
 to make sure that it is built compatible with the chosen libraries.
-
+</dl>
 
 <p>
 <a name="ref_MsvcProjC"></a>
 <h4>Using NCBI C Toolkit</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 There are projects (such as <b>ctools</b>, <b>xasn</b> etc) that engage the
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">NCBI C Toolkit</a>.
 To build these, you have to have the NCBI C Toolkit libraries and
@@ -1744,12 +1835,15 @@ locally, or via <tt>\\DIZZY\</tt>), then the project <a href="msvc_prj.html#comm
 both paths (relative and absolute) for both include files and libraries.
 <p>
 Please refer to the following section for mandatory project settings.
+</dl>
 
 <p>
 <a name="ref_MsvcProjSettings"></a>
 <h4>Mandatory project settings (RTTI, MT-safety)</h4>
 
-<p>
+<dl>
+    <dt>
+    <dd>
 When you compose your own, out-of-the-tree projects, which use pre-built C/C++ Toolkit or wxWindows
 libraries (which are built in <b><i>MT-safe</i></b> mode, with <b>/MT</b> flag),
 you have to make sure that your projects are built in MT-safe mode as well.
@@ -1763,19 +1857,21 @@ you have to make sure that your projects are built in MT-safe mode as well.
       <li> <i>"Debug Multithreaded"</i> for the <b>DebugMT</b> configuration
     </ul>
 </ul>
-
-
+</dl>
 
 <p>
+<hr>
+
 <a name="ref_Mac"></a>
-<h3>Macintosh</h3>
+<h3>Macintosh <font size=-2><span class=nava>[<a href="#ref_ConfigTop">TOP</a>]</span></font></h3>
 
 <p>
 <a name="ref_MacProjDownload"></a>
 <h4>Getting the Toolkit sources</h4>
 
-
-<p>
+<dl>
+    <dt>
+    <dd>
 Suppose you need to deploy the NCBI C++ tree to your local Mac, in directory
 <i><b>cxx</b></i>. You can do it one of the following ways:
 <ul>
@@ -1792,31 +1888,33 @@ Suppose you need to deploy the NCBI C++ tree to your local Mac, in directory
         ready to build any (or all) of the Mac project configurations.
 		  The archive also contains pre-generated ASN classes.</li>
 </ul>
-
+</dl>
 
 <p>
 <a name="ref_MacProjTree"></a>
 <h4>Building the whole NCBI C++ tree locally</h4>
 
+<dl>
+    <dt>
+    <dd>
 The directions are <a href="config_mac.html">here</a>.
+</dl>
 
 
 <br></br>
 <hr>
-<table border=0 width="100%" cellspacing=0>
-<tr>
-<td align=left>
-  <address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
-</td>
-<!-- <td align=center><i>$Revision$</i></td> -->
 
-<td align=right><i>$Date$</i></td>
-</tr>
-<tr>
-<td align=left>
-  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a> (Part of MSVC++ support)</address> 
-</td>
-</tr>
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
+
+<table border=0 width="100%" cellspacing=0>
+<script>
+<!--
+print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+print_author('lavr', 'Anton Lavrentiev');
+//-->
+</script>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

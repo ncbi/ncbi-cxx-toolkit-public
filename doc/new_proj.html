@@ -1,16 +1,28 @@
-<!--#set var="TITLE" value="Starting a new C++ project" -->
+<!-- $Id$ -->
+<!--#set var="TITLE" value="NCBI C++ Toolkit:  New Projects" -->
+<!--#set var="HEADING" value="Starting New Projects" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
 
-<h1>Starting a new C++ project</h1>
+<p></p>
+<a name="ref_Checkout"></a>
+The following assumes that you have all of the necessary Toolkit components.
+If you need to obtain part or all of the Toolkit's source tree, consult the
+<a href="download.html#ref_FTP">FTP instructions</a> or <a href="cvs.html">CVS checkout
+procedures</a>.   Please visit the <a href="get_started.html"><i>Getting Started</i></a> page for a broad
+overview of the NCBI C++ Toolkit and its use.
+
 
 <ul>
-  <li> <a href="#ref_Checkout">
-    Retrieve NCBI C++ source tree from CVS</a>
+
+  <li> <a href="#ref_ProjectStructure">
+    New Projects:  Location and File Structure</a>
   <li> <a href="#ref_Structure">
-    CVS tree structure of NCBI C++ projects</a>
+    Projects and the Toolkit's CVS Tree Structure</a>
   <li> <a href="#ref_Create">
     Creating a CVS directory for a new C++ project</a>
+  <li><a href="#ref_NewModule">
+    Starting New Modules</a>
   <li> <a href="#ref_Makefile">
     Project makefiles and sub-projects</a>
   <ul>
@@ -37,13 +49,13 @@
     </ul>
   </ul>
   <li> <a href="#ref_Outside">
-    Developing a project(lib, application) outside of the NCBI C++ tree</a>
+    New Project (lib, application) Development Aids</a>
     <ul>
       <li> <a href="#ref_OutsideImport">
-           <b><i>import_project.sh</i></b> -- project from the NCBI C++ tree
+           <b><i>import_project.sh</i></b> -- prepare a new project that lives in an NCBI C++ subtree
            </a>
       <li> <a href="#ref_OutsideCreate">
-           <b><i>new_project.sh</i></b> -- project only using the NCBI C++ tree
+           <b><i>new_project.sh</i></b> -- prepare a new project that only links to the NCBI C++ tree
            </a>
       <li> <a href="#ref_OutsideHello">
            <b><i>hello.sh</i></b> -- a simple demo CGI application HELLO
@@ -54,47 +66,81 @@
    (project <i><b>corelib/</b></i>)</a>
 </ul>
 
+<hr>
+
+<p></p>
+<a name="ref_ProjectStructure"></a>
+<h2> New Projects:  Location and File Structure </h2>
+Before creating the new project, you must decide if you need to work within a C++ source tree
+(or subtree) or merely need to link with the Toolkit libraries and work in a separate directory.
+The later case is simpler and allows you to work independently in a private directory, but
+it is not an option if the Toolkit source, headers, or <i>Makefiles</i> are to be directly
+used or altered during the new project's development.
+
+<ul>
+    <li><a href="programming_manual/inside_tree.html">Work in the Full Toolkit Source Tree</a></li>
+    <li><a href="programming_manual/sub_tree.html">Work in a Toolkit Subtree</a></li>
+    <li><a href="programming_manual/outside_tree.html">Work in a Separate Directory</a></li>
+</ul>
+
+<p></p>
 <p>
-<br>
-<a name="ref_Checkout"></a>
-<h2>Retrieve NCBI C++ source tree from CVS</h2>
+Regardless of where you build your new project, it must adopt and maintain
+a particular structure.  Specifically,
+each project's <a href="lxr/source/src/"><i>source tree</i></a> relative to $NCBI<tt>/c++</tt>
+should contain:
+<ul>
+    <li> <b><i>include/*.hpp</i></b> --  project's public headers
+    <li> <b><i>src/*.{cpp, hpp}</i></b> --  project's source files and private headers
+    <li> <b><i>src/Makefile.in</i></b> -- a <a href="new_proj.html#ref_MakeMeta"><i>meta-makefile</i></a>
+          template to specify which local projects (described in <i>Makefile.*.in</i>)
+          and sub-projects (located in the project subdirectories) must be built
+    <li> <b><i>src/Makefile.&lt;project_name&gt;.{lib, app}[.in]</i></b> -- one or more <i>customized makefiles</i> to build a library or an application
+    <li> <b><i>src/Makefile.*[.in]</i></b> -- "free style" makefiles (if any)
+    <li> sub-project directories (if any)
+</ul>
 
-<p>
-You can checkout the whole NCBI C++ source tree from CVS to your local
-directory (<i>e.g.</i>, <b><i>foo/c++/</i></b>) just by running:
-<pre>
-cd foo
-cvs checkout -d c++ internal/c++
-</pre>
+<!--
+<a name="ref_Basics"></a>
+<h4> NCBI C++ Toolkit Basics</h4>
 
-<p>
-However, the whole NCBI C++ tree is very big because it contains a lot
-of internal user projects. There are also numerous platform-specific
-files (and even whole sub-trees) which you will never need unless you
-work on other platforms.
+<ul>
+  <li>
+  <a href="programming_manual/applic.html">Writing a simple application project</a></li>
 
-<br>
-To help one to retrieve the sources which are suitable for your
-platform, there are auxiliary scripts
-<b><i>scripts/cvs_core.sh</i></b> and
-<b><i>scripts/cvs_core_msvc.bat</i></b> to checkout only core (basic
-and portable) NCBI C++ toolkit sources.
+  <li>
+  <a href="programming_manual/argdescr.html">Using the CArgDescriptions class</a></li>
 
-<p>
-For the detailed info on the CVS utility see <a
-href="http://www.cs.utah.edu/csinfo/texinfo/cvs/cvs_toc.html">the CVS
-online manual</a> or run the commands <i>"man cvs"</i> or <i>"cvs
---help"</i> on your workstation.
+  <li>
+  <a href="programming_manual/registry.html">The CNcbiRegistry class</a></li>
 
+  <li>
+  <a href="programming_manual/diag.html">Diagnostic Streams</a></li>
+
+  <li>
+  <a href="programming_manual/exceptions.html">Exception handling in the NCBI C++ Toolkit</a></li>
+
+  <li>
+  <a href="programming_manual/cref.html">Smart pointers: <i>auto_ptr&lt;></i> and <i>CRef&lt;></i> template classes</a></li>
+</ul>
+-->
+
+<hr>
 
 <p>
 <br>
 <a name="ref_Structure"></a>
-<h2>CVS tree structure of NCBI C++ projects</h2>
+<h2>Projects and the Toolkit's CVS Tree Structure</h2>
+
+<font size=-1>
+(For the overall NCBI C++ CVS tree structure see
+<a href="config.html#ref_Source">the configuration page</a>.)
+</font>
 
 <p>
-(For the overall NCBI C++ CVS tree structure see
-<a href="config.html#ref_Source">the NCBI C++ source code repository</a>.)
+Even if you work outside of the C++ tree, it is necessary to understand
+how the Toolkit uses <i>makefiles</i>, <i>meta-makefiles</i>, and <i>makefile templates</i>,
+and the CVS tree structure.
 
 <p>
 The standard CVS location for NCBI C++/STL projects is
@@ -139,19 +185,14 @@ very top level contains:
     </ul>
 
   <p>
-    <li> Tree of project directories, each contains:
-      <ul>
-        <li> <b><i>*.cpp, *.hpp, *.inl</i></b> --
-          project's source files and private headers
-        <li> <b><i>Makefile.in</i></b> --
-          a <a href="#ref_MakeMeta"><i>meta-makefile</i></a>
-          to specify which local projects (described in <i>Makefile.*.in</i>)
-          and sub-projects(located in the project subdirectories) must be built
-        <li> <b><i>Makefile.*.lib[.in], Makefile.*.app[.in]</i></b> --
-          <i>customized makefiles</i> to build a library or an application
-        <li> <b><i>Makefile.*[.in]</i></b> -- "free style" makefiles
-        <li> sub-project directories (if any)
-      </ul>
+  <li> The contents of each project are detailed <a href="#ref_ProjectStructure">above</a>.
+      If your project is to become part of the Toolkit tree, you need to ensure that
+      all <i>makefiles</i> and <i>Makefile*.in</i> templates are available so the
+      master <i>makefiles</i> can properly
+      configure and build it (see <a href="new_proj.html#ref_Makefile">"Project Makefiles and Sub-Projects"</a> below).
+      You will also need to <a href="#ref_Create">prepare CVS directories</a>
+      to hold the new source and header files.</li>
+
 </ul>
 
 
@@ -161,9 +202,7 @@ very top level contains:
 
 <p>
 To create your new project (<i>e.g.</i>, "bar_proj") directories in the
-NCBI C++ CVS tree (assuming that the whole NCBI C++ has been
-<a href="#ref_Checkout">checked out</a>
-to directory <b><i>foo/c++/</i></b>):<pre>
+NCBI C++ CVS tree to directory <b><i>foo/c++/</i></b>):<pre>
 cd foo/c++/include && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
 cd foo/c++/src     && mkdir bar_proj && cvs add -m "Project Bar" bar_proj
 </pre>
@@ -176,6 +215,19 @@ NOTE: remember to add this new project directory to the <i>$(SUB_PROJ)</i>
 list of the upper level <a href="#ref_MakeMeta"><i>meta-makefile</i></a>
 configurable template (<i>e.g.</i>, for this particular case, to
 <b><i>foo/c++/src/Makefile.in</i></b>).
+
+
+<p>
+<br>
+<a name="ref_NewModule"></a>
+<h2> Starting New Modules </h2>
+
+<p></p>
+Projects consist of modules, which are most often a pair of source (*.cpp)
+and header (*.hpp) files.  To help create new modules, template source &amp; header files
+may be used, or you may modify the sample code generated by the script
+<a href="scripts_usage.html#ref_New_ProjectUsage"><tt>new_project.sh</tt></a>.
+See the <a href="new_mod.html">new modules page</a> for details.
 
 
 <p>
@@ -195,11 +247,11 @@ A typical <i>meta-makefile</i> template(e.g. <i><b>Makefile.in</b></i> in your
 <b><i>foo/c++/src/bar_proj/</i></b> dir) looks like that:
 <pre>
 # Makefile.bar_u1, Makefile.bar_u1 ...
-USR_PROJ = bar_u1 bar_u2 ...  
+USR_PROJ = bar_u1 bar_u2 ...
 # Makefile.bar_l1.lib, Makefile.bar_l1.lib ...
-LIB_PROJ = bar_l1 bar_l2 ...  
+LIB_PROJ = bar_l1 bar_l2 ...
 # Makefile.bar_a1.app, Makefile.bar_a1.app ...
-APP_PROJ = bar_a1 bar_l2 ...  
+APP_PROJ = bar_a1 bar_l2 ...
 SUB_PROJ = app sub_proj1 sub_proj2
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
@@ -774,7 +826,7 @@ in the <b>USR_PROJ</b> macro of the project's
 
 <p>
 Now, during the project build (and before any <i>customized makefiles</i>
-are processed), your makefile will be called with one of the 
+are processed), your makefile will be called with one of the
 <a href="#ref_MakeProjTarget">standard make targets</a> from the
 project's build directory. Additionally, the
 <a href="#ref_TablePath"><b>builddir</b></a> and
@@ -808,7 +860,7 @@ And, of course, it provides build rules for all the
 File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
 
 # Build a code generator for hard-coding the chrom data into an obj file
-# Generate header and source "humchrom_dat.[ch]" from data file 
+# Generate header and source "humchrom_dat.[ch]" from data file
 # "humchrom.dat"
 # Deploy the header to the compiler-specific include dir
 # Compile source code
@@ -841,10 +893,10 @@ humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
     -cp -p humchrom_dat.c humchrom_dat.save.c
     $(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat
         -f humchrom_dat
-    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h  
+    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h
         $(incdir)/humchrom_dat.h
     -rm humchrom_dat.h
-    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c 
+    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c
         humchrom_dat.save.c
     mv humchrom_dat.save.c humchrom_dat.c
     touch humchrom_dat.dep
@@ -1027,7 +1079,7 @@ Here are the keywords you can list in REQUIRES in a customized
 <p>
 <br>
 <a name="ref_Outside"></a>
-<h2>Developing a project (lib, application) outside of the NCBI C++ tree</h2>
+<h2>New Project (lib, application) Development Aids</h2>
 
 NOTE:  in NCBI, you can use the scripts located in the pre-built NCBI C++
 toolkit directory <b><i>$NCBI/c++/scripts/.</i></b>
@@ -1053,7 +1105,7 @@ This makefile will also contain a reference to the pre-built NCBI C++ toolkit.
 For <a href="new_project.import.session">EXAMPLE</a>:
 <br>&nbsp;&nbsp;&nbsp;
 <b>
-   import_project.sh hello
+   <a href="scripts_usage.html#ref_Import_ProjectUsage">import_project.sh</a> hello
 </b>
 <br>
 will check out the whole <b>hello</b> demo project from the NCBI C++ tree
@@ -1071,12 +1123,21 @@ Now you can just go to the created working directory
 <p>
 <br>
 <a name="ref_OutsideCreate"></a>
-<h3><b><i>scripts/new_project.sh &lt;name&gt; lib|app [builddir]</i></b> </h3>
+<h3><b><i>scripts/new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></i></b> </h3>
 
-<p>
-This script will help you to write a makefile for a new, from-scratch
-project which uses the NCBI C++ toolkit (and probably the C toolkit as
-well).  You will just have to slightly edit the resultant makefile to:
+<p></p>
+This script will create a startup <i>makefile</i> for a new, from-scratch
+project called "<tt>name</tt>" which uses the NCBI C++ Toolkit (and possibly the C Toolkit as
+well).  For new libraries, <tt>type=lib</tt> while for new applications <tt>type=app</tt>.
+
+<p></p>
+Sample code will be included in the project directory for new applications; different samples
+are available for <tt>type=app[/basic]</tt> (a command-line argument demo application based on the <tt>corelib</tt> library),
+<tt>type=app/cgi</tt> (for a CGI or Fast-CGI application), and <tt>type=app/objects</tt>
+(for an application using ASN.1 objects).
+
+<p></p>
+You will need to slightly edit the resultant <i>makefile</i> to:
 <ul>
   <li> specify the name of your library (or application)
   <li> specify the list of source files going to it
@@ -1089,30 +1150,30 @@ well).  You will just have to slightly edit the resultant makefile to:
 <p>
 For <a href="new_project.create.session"> EXAMPLE</a>:
 
-<br> &nbsp;&nbsp;&nbsp;
-<b>
-   new_project.sh foo lib
-</b>
-<br>
-will create a model makefile <b><i>Makefile.foo_lib</i></b> to build
-a library using tools and flags hard-coded in
-<b><i>$NCBI/c++/Debug/build/Makefile.mk</i></b>,
-and headers from <b><i>$NCBI/c++/include/</i></b>.
-Now, after specifying the library name, list of source files, etc.,
-you can just go to the created working directory
-<b><i>foo/</i></b> and build your library using:
-<br> &nbsp;&nbsp;&nbsp;
-<b>
-   make -f Makefile.foo_lib
-</b>
+<pre>
+   new_project.sh foo app/basic
+</pre>
 
 <br>
-You can easily change the active version of NCBI C++ toolkit
-by manually setting variable <b>$(builddir)</b> in
-<b><i>Makefile.foo_lib</i></b> to the desired toolkit path, e.g.:
-<br> &nbsp;&nbsp;&nbsp;
-<b><i>builddir = $(NCBI)/c++/GCC-Release/build</i></b>
+creates a model <i>makefile</i> <tt>Makefile.foo_app</tt> to build
+an application using tools and flags hard-coded in <tt>$NCBI/c++/Debug/build/Makefile.mk</tt>,
+and headers from <tt>$NCBI/c++/include/</tt>.  The file <tt>/tmp/foo/foo.cpp</tt> is
+also created; you can either replace this with your own <tt>foo.cpp</tt> or modify its sample
+code as required.
 
+<p></p>
+Now, after specifying the application name, list of source files, etc.,
+you can just go to the created working directory <tt>foo/</tt> and build your application using:
+
+<pre>
+   make -f Makefile.foo_app
+</pre>
+
+<p>
+You can easily change the active version of NCBI C++ Toolkit
+by manually setting variable <b>$(builddir)</b> in the file
+<tt>Makefile.foo_app</tt> to the desired Toolkit path, e.g.,
+<tt>builddir = </tt>$(NCBI)/<tt>c++/GCC-Release/build</tt>
 
 <p>
 <br>
@@ -1136,11 +1197,17 @@ in section
 
 <br></br>
 <hr>
+
+<!--#include virtual="./ssi/navlinks.shtml" -->
+
+<hr>
+
 <table border=0 width="100%" cellspacing=0>
-  <tr>
-    <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-    <td align=right>($Date$)</td></tr>
+<script>
+<!--
+print_author('vakatov', 'Denis Vakatov', '$Date$', 'ncbi.nlm.nih.gov');
+// -->
+</script>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->

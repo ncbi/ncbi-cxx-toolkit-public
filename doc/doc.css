@@ -3,3 +3,40 @@ XMP     { font-family: Courier; font-size: 11pt; color: #008080; }
 TT.code { font-family: Courier; font-size: 11pt; color: #008080; }
 VAR     { font-style:italic;}
 EM      { font-style:normal; font-weight:bold;}
+
+/*  OL/UL.bold and OL/UL.normal are used in concert for nested lists.
+    (see libs.html).
+
+    <ol class=bold>...<ul class=normal>
+    will bold the outer ordered list elements, but keep a normal font
+    weight for the nested unordered list elements.  */
+
+OL.normal   { font-weight: normal; font-style: normal; }
+OL.bold     { font-weight: bold; font-style: normal; }
+
+UL.normal   { font-weight: normal; font-style: normal; }
+UL.bold     { font-weight: bold; font-style: normal; }
+
+OL UL       { font-weight: normal; font-style: normal; }
+
+
+/*  Used to make internal document navigation-link style text (i.e. [Top],
+    and links to source files in the library reference).
+    *   font-size (relative or absolute) doesn't work w/ NS4.78;
+    *   With ABSOLUTE size specifications use the redundant
+        <font size=...><tag class=absolute-size-changing-class>...</tag></font>
+        to ensure there is an effect in NS4 browsers; <font> ignored if browser
+        can apply tag's style.
+    *   With RELATIVE-size changing classes, the font tag WILL be applied after tag's affect.
+    *   relative font-sizes w/in <hN> tags aren't always handled as expected on NS6.0  */
+
+A.nava       { font-weight: normal; font-size: 7pt; }
+A.navr       { font-weight: normal; font-size: smaller; }
+
+SPAN.nava    { font-weight: normal; font-size: 7pt; }
+SPAN.navait  { font-weight: normal; font-size: 8pt; font-style: italic;}
+SPAN.navr    { font-weight: normal; font-size: smaller; }
+
+/*  Used to highlight text during internal documentation review  */
+
+SPAN.red    { background: red; }
