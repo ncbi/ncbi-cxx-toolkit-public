@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = sample asn2asn asn2flat id1_fetch blast_client convert_seq \
-           nmer_repeats objmgr gi2taxid netcache netschedule
+           nmer_repeats objmgr gi2taxid netcache netschedule winmasker
 
 EXPENDABLE_SUB_PROJ = cn3d project_tree_builder
 
