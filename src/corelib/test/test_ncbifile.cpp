@@ -370,8 +370,7 @@ static void s_TEST_File(void)
         assert( f1.Exists() );
         assert( f2.Exists() );
 
-        assert( f2.Rename(f3.GetPath(), CFile::fRF_Backup |
-	                                CFile::fRF_Overwrite) );
+        assert( f2.Rename(f3.GetPath(), CFile::fRF_Backup) );
         assert( f2.Exists() );
         assert( f3.Exists() );
         assert( CFile("file3" + f3.GetBackupSuffix()).Exists() );
@@ -986,6 +985,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/03/23 15:38:39  ivanov
+ * Removed redundant fRF_Overwrite flag
+ *
  * Revision 1.45  2005/03/22 14:22:32  ivanov
  * Added CSymLink test. Added tests for Copy/Rename methods.
  * Dropped MacOS 9 support.
