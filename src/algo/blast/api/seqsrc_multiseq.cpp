@@ -25,13 +25,11 @@
 *
 * Author:  Ilya Dondoshansky
 *
-* File Description:
-*   Implementation of the BlastSeqSrc interface for a vector of sequence 
-*   locations.
-*
 */
 
-static char const rcsid[] = "$Id$";
+/// @file multiseq_src.cpp
+/// Implementation of the BlastSeqSrc interface for a vector of sequence 
+/// locations.
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -45,7 +43,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-MultiSeqInfo::MultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
+CMultiSeqInfo::CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
     : m_vSeqVector(seq_vector)
 {
     m_ibIsProt = (program == eBlastp || program == eBlastx);
@@ -61,7 +59,7 @@ MultiSeqInfo::MultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program)
     m_iAvgLength = 0;
 }
 
-MultiSeqInfo::~MultiSeqInfo()
+CMultiSeqInfo::~CMultiSeqInfo()
 {
     NON_CONST_ITERATE(vector<BLAST_SequenceBlk*>, itr, m_ivSeqBlkVec) {
         *itr = BlastSequenceBlkFree(*itr);
@@ -69,7 +67,7 @@ MultiSeqInfo::~MultiSeqInfo()
     m_ivSeqBlkVec.clear();
 }
 
-void* MultiSeqInfo::GetSeqId(int index)
+void* CMultiSeqInfo::GetSeqId(int index)
 {
     CSeq_id* seqid = 
         const_cast<CSeq_id*>(&sequence::GetId(*m_vSeqVector[index].seqloc,
@@ -78,7 +76,7 @@ void* MultiSeqInfo::GetSeqId(int index)
     return (void*) seqid;
 }
 
-void* MultiSeqInfo::GetSeqLoc(int index)
+void* CMultiSeqInfo::GetSeqLoc(int index)
 {
     return (void*) &m_vSeqVector[index];
 }
@@ -91,7 +89,7 @@ static Int4 MultiSeqGetMaxLength(void* multiseq_handle, void*)
 {
     Int4 retval = 0;
     Uint4 index;
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
     ASSERT(seq_info);
     
@@ -114,7 +112,7 @@ static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void*)
     Uint4 num_seqs = 0;
     Uint4 avg_length;
     Uint4 index;
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
     ASSERT(seq_info);
 
@@ -136,7 +134,7 @@ static Int4 MultiSeqGetAvgLength(void* multiseq_handle, void*)
  */
 static Int4 MultiSeqGetNumSeqs(void* multiseq_handle, void*)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
     ASSERT(seq_info);
     return seq_info->GetNumSeqs();
@@ -175,7 +173,7 @@ static char* MultiSeqGetDate(void* /*multiseq_handle*/, void*)
  */
 static Boolean MultiSeqGetIsProt(void* multiseq_handle, void*)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
     ASSERT(seq_info);
 
@@ -189,7 +187,7 @@ static Boolean MultiSeqGetIsProt(void* multiseq_handle, void*)
  */
 static Int2 MultiSeqGetSequence(void* multiseq_handle, void* args)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
     GetSeqArg* seq_args = (GetSeqArg*) args;
     Int4 index;
 
@@ -225,7 +223,7 @@ static Int2 MultiSeqGetSequence(void* multiseq_handle, void* args)
  */
 static ListNode* MultiSeqGetSeqId(void* multiseq_handle, void* args)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
     Int4 index;
     ListNode* seqid_wrap;
 
@@ -271,7 +269,7 @@ static char* MultiSeqGetSeqIdStr(void* multiseq_handle, void* args)
  */
 static ListNode* MultiSeqGetSeqLoc(void* multiseq_handle, void* args)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
     Int4 index;
     ListNode* seqloc_wrap;
 
@@ -293,7 +291,7 @@ static ListNode* MultiSeqGetSeqLoc(void* multiseq_handle, void* args)
  */
 static Int4 MultiSeqGetSeqLen(void* multiseq_handle, void* args)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*)multiseq_handle;
     Int4 index;
 
     ASSERT(seq_info);
@@ -326,7 +324,7 @@ static Int4 MultiSeqIteratorNext(void* seqsrc, BlastSeqSrcIterator* itr)
 static Int2 MultiSeqGetNextChunk(void* multiseq_handle, 
                                  BlastSeqSrcIterator* itr)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
 
     ASSERT(itr);
 
@@ -342,7 +340,7 @@ static Int2 MultiSeqGetNextChunk(void* multiseq_handle,
 
 ListNode* MultiSeqGetErrorMessage(void* multiseq_handle, void*)
 {
-    MultiSeqInfo* seq_info = (MultiSeqInfo*) multiseq_handle;
+    CMultiSeqInfo* seq_info = (CMultiSeqInfo*) multiseq_handle;
     Blast_Message* error_msg = seq_info->GetErrorMessage();
     ListNode* retval = NULL;
     if (error_msg) {
@@ -354,13 +352,13 @@ ListNode* MultiSeqGetErrorMessage(void* multiseq_handle, void*)
 
 BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 {
-    MultiSeqSrcNewArgs* seqsrc_args = (MultiSeqSrcNewArgs*) args;
+    SMultiSeqSrcNewArgs* seqsrc_args = (SMultiSeqSrcNewArgs*) args;
 
     if (!retval)
         return NULL;
     
-    MultiSeqInfo* seq_info = 
-        new MultiSeqInfo(seqsrc_args->seq_vector, seqsrc_args->program);
+    CMultiSeqInfo* seq_info = 
+        new CMultiSeqInfo(seqsrc_args->seq_vector, seqsrc_args->program);
     
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seq_info */
@@ -392,7 +390,8 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src)
 {
     if (!seq_src) 
         return NULL;
-    MultiSeqInfo* seq_info = (MultiSeqInfo*)GetDataStructure(seq_src);
+    CMultiSeqInfo* seq_info = static_cast<CMultiSeqInfo*>
+                                (GetDataStructure(seq_src));
 
     delete seq_info;
     sfree(seq_src);
@@ -405,8 +404,9 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
 {
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
-    MultiSeqSrcNewArgs* args =
-        (MultiSeqSrcNewArgs*) calloc(1, sizeof(MultiSeqSrcNewArgs));;
+    // FIXME: Why are we using calloc? Why not use operator new?
+    SMultiSeqSrcNewArgs* args =
+        (SMultiSeqSrcNewArgs*) calloc(1, sizeof(SMultiSeqSrcNewArgs));;
     args->seq_vector = (TSeqLocVector) seq_vector;
     args->program = program;
     bssn_info.constructor = &MultiSeqSrcNew;
@@ -419,6 +419,9 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
         error_msg = (Blast_Message*) error_wrap->ptr;
     if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
         throw CBlastException(__FILE__, __LINE__, 0,
+                              // FIXME: There is no guarantee that
+                              // error_msg->code maps to a CBlastException
+                              // error code, this could be meaningless
                               (CBlastException::EErrCode) error_msg->code,
                               error_msg->message);
     }

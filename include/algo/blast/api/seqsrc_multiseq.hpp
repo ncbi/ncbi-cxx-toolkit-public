@@ -39,32 +39,29 @@
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
 #include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/blast_exception.hpp>
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-//USING_SCOPE(blast);
 BEGIN_SCOPE(blast)
 
 /// Encapsulates the arguments needed to initialize multi-sequence source.
-typedef struct MultiSeqSrcNewArgs {
+typedef struct {
     TSeqLocVector seq_vector;
     EProgram program;
-} MultiSeqSrcNewArgs;
+} SMultiSeqSrcNewArgs;
 
-/// Contains information about all sequences in a set
-class MultiSeqInfo : public CObject 
+/// Contains information about all sequences in a set.
+class CMultiSeqInfo : public CObject 
 {
 public: 
     /// Constructor from a vector of sequence location/scope pairs and a 
     /// BLAST program type.
-    MultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program);
-    ~MultiSeqInfo();
+    CMultiSeqInfo(const TSeqLocVector& seq_vector, EProgram program);
+    ~CMultiSeqInfo();
     /// Setter and getter functions for the private fields
     Uint4 GetMaxLength();
     void SetMaxLength(Uint4 val);
@@ -87,42 +84,42 @@ private:
     Blast_Message* m_icErrMsg; ///< Error message in case of set up failure
 };
 
-inline Uint4 MultiSeqInfo::GetMaxLength()
+inline Uint4 CMultiSeqInfo::GetMaxLength()
 {
     return m_iMaxLength;
 }
 
-inline void MultiSeqInfo::SetMaxLength(Uint4 length)
+inline void CMultiSeqInfo::SetMaxLength(Uint4 length)
 {
     m_iMaxLength = length;
 }
 
-inline Uint4 MultiSeqInfo::GetAvgLength()
+inline Uint4 CMultiSeqInfo::GetAvgLength()
 {
     return m_iAvgLength;
 }
 
-inline void MultiSeqInfo::SetAvgLength(Uint4 length)
+inline void CMultiSeqInfo::SetAvgLength(Uint4 length)
 {
     m_iAvgLength = length;
 }
 
-inline bool MultiSeqInfo::GetIsProtein()
+inline bool CMultiSeqInfo::GetIsProtein()
 {
     return m_ibIsProt;
 }
 
-inline Uint4 MultiSeqInfo::GetNumSeqs()
+inline Uint4 CMultiSeqInfo::GetNumSeqs()
 {
     return m_ivSeqBlkVec.size();
 }
 
-inline BLAST_SequenceBlk* MultiSeqInfo::GetSeqBlk(int index)
+inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 {
     return m_ivSeqBlkVec[index];
 }
 
-inline Blast_Message* MultiSeqInfo::GetErrorMessage()
+inline Blast_Message* CMultiSeqInfo::GetErrorMessage()
 {
     return m_icErrMsg;
 }
@@ -162,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/19 18:56:48  camacho
+ * Change class & structure names to follow C++ toolkit conventions
+ *
  * Revision 1.3  2004/03/15 22:34:50  dondosha
  * Added extern "C" for 2 functions to eliminate Sun compiler warnings
  *
