@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/10/15 13:47:59  gouriano
+* modified to handle "standard" (generated from DTD) XML i/o
+*
 * Revision 1.23  2002/09/26 18:11:01  gouriano
 * added more checks for MemberId
 *
@@ -928,9 +931,17 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
         while ( !NextTagIsClosing() ) {
-            OpenStackTag(0);
-            cType->AddElement(containerPtr, *this);
-            CloseStackTag(0);
+            bool tagIsOpen = false;
+            if (!FetchFrameFromTop(1).GetSkipTag()) {
+                OpenStackTag(0);
+                tagIsOpen = true;
+            }
+            do {
+                cType->AddElement(containerPtr, *this);
+            } while (!m_RejectedTag.empty());
+            if (tagIsOpen) {
+                CloseStackTag(0);
+            }
         }
 
         END_OBJECT_FRAME();
@@ -981,9 +992,17 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
 {
     BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
 
-    OpenTag(namedTypeInfo);
+    bool tagIsOpen = false;
+    if (!FetchFrameFromTop(1).GetSkipTag()) {
+        OpenTag(namedTypeInfo);
+        tagIsOpen = true;
+    } else {
+        TopFrame().SetSkipTag();
+    }
     ReadObject(object, typeInfo);
-    CloseTag(namedTypeInfo);
+    if (tagIsOpen) {
+        CloseTag(namedTypeInfo);
+    }
 
     END_OBJECT_FRAME();
 }
@@ -991,12 +1010,16 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
 
 void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
-    OpenTagIfNamed(classInfo);
+    if (!FetchFrameFromTop(1).GetSkipTag()) {
+        OpenTagIfNamed(classInfo);
+    }
 }
 
 void CObjectIStreamXml::EndClass(void)
 {
-    CloseTagIfNamed(TopFrame().GetTypeInfo());
+    if (!FetchFrameFromTop(1).GetSkipTag()) {
+        CloseTagIfNamed(TopFrame().GetTypeInfo());
+    }
 }
 
 void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
@@ -1019,7 +1042,11 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
     CLightString tagName = ReadName(BeginOpeningTag());
     TMemberIndex ind = classType->GetMembers().Find(tagName);
     if ( ind != kInvalidMember ) {
-        if (classType->GetMemberInfo(ind)->GetId().HaveNoPrefix()) {
+        const CMemberInfo *mem_info = classType->GetMemberInfo(ind);
+        if (mem_info->GetId().HaveNoPrefix()) {
+            if (mem_info->GetTypeInfo()->GetTypeFamily() != eTypeFamilyPrimitive) {
+                TopFrame().SetSkipTag();
+            }
             return ind;
         }
     }
@@ -1034,13 +1061,27 @@ TMemberIndex
 CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                                     TMemberIndex pos)
 {
-    if ( NextTagIsClosing() )
-        return kInvalidMember;
+    string tmp;
+    CLightString tagName;
+    if (m_RejectedTag.empty()) {
+        if ( NextTagIsClosing() )
+            return kInvalidMember;
+        tagName = ReadName(BeginOpeningTag());
+    } else {
+        tmp = m_RejectedTag;
+        tagName = tmp;
+        m_TagState = eTagInsideOpening;
+        m_RejectedTag.erase();
+    }
+    m_LastTag = tagName;
 
-    CLightString tagName = ReadName(BeginOpeningTag());
     TMemberIndex ind = classType->GetMembers().Find(tagName);
     if ( ind != kInvalidMember ) {
-        if (classType->GetMemberInfo(ind)->GetId().HaveNoPrefix()) {
+        const CMemberInfo *mem_info = classType->GetMemberInfo(ind);
+        if (mem_info->GetId().HaveNoPrefix()) {
+            if (mem_info->GetTypeInfo()->GetTypeFamily() != eTypeFamilyPrimitive) {
+                TopFrame().SetSkipTag();
+            }
             return ind;
         }
     }
@@ -1056,10 +1097,31 @@ void CObjectIStreamXml::EndClassMember(void)
     CloseStackTag(0);
 }
 
+void CObjectIStreamXml::UndoClassMember(void)
+{
+    _ASSERT(InsideOpeningTag());
+    if (InsideOpeningTag()) {
+        m_RejectedTag = m_LastTag;
+        m_TagState = eTagOutside;
+    }
+}
+
 TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
-    OpenTagIfNamed(choiceType);
+    if (!FetchFrameFromTop(1).GetSkipTag()) {
+        OpenTagIfNamed(choiceType);
+    }
     CLightString tagName = ReadName(BeginOpeningTag());
+    TMemberIndex ind = choiceType->GetVariants().Find(tagName);
+    if ( ind != kInvalidMember ) {
+        const CVariantInfo *var_info = choiceType->GetVariantInfo(ind);
+        if (var_info->GetId().HaveNoPrefix()) {
+            if (var_info->GetTypeInfo()->GetTypeFamily() != eTypeFamilyPrimitive) {
+                TopFrame().SetSkipTag();
+            }
+            return ind;
+        }
+    }
     CLightString id = SkipStackTagName(tagName, 0, '_');
     return choiceType->GetVariants().Find(id);
 }
@@ -1067,7 +1129,9 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
 void CObjectIStreamXml::EndChoiceVariant(void)
 {
     CloseStackTag(0);
-    CloseTagIfNamed(FetchFrameFromTop(1).GetTypeInfo());
+    if (!FetchFrameFromTop(2).GetSkipTag()) {
+        CloseTagIfNamed(FetchFrameFromTop(1).GetTypeInfo());
+    }
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO

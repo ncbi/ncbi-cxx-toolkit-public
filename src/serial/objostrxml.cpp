@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/10/15 13:47:59  gouriano
+* modified to handle "standard" (generated from DTD) XML i/o
+*
 * Revision 1.32  2002/10/08 18:59:38  grichenk
 * Check for null pointers in containers (assert in debug mode,
 * warning in release).
@@ -684,11 +687,17 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 
         if ( cType->InitIterator(i, containerPtr) ) {
             do {
-                OpenStackTag(0);
+                bool tagIsOpen = false;
+                if (!FetchFrameFromTop(1).GetSkipTag()) {
+                    OpenStackTag(0);
+                    tagIsOpen = true;
+                }
 
                 WriteObject(cType->GetElementPtr(i), elementType);
 
-                CloseStackTag(0);
+                if (tagIsOpen) {
+                    CloseStackTag(0);
+                }
             } while ( cType->NextElement(i) );
         }
 
@@ -712,12 +721,19 @@ void CObjectOStreamXml::WriteNamedType(TTypeInfo namedTypeInfo,
                                        TTypeInfo typeInfo,
                                        TConstObjectPtr object)
 {
+    bool tagIsOpen = false;
     BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    if (FetchFrameFromTop(1).GetSkipTag()) {
+        TopFrame().SetSkipTag();
+    }
     OpenTag(namedTypeInfo);
+    tagIsOpen = true;
 
     WriteObject(object, typeInfo);
 
-    CloseTag(namedTypeInfo);
+    if (tagIsOpen) {
+        CloseTag(namedTypeInfo);
+    }
     END_OBJECT_FRAME();
 }
 
@@ -764,16 +780,28 @@ void CObjectOStreamXml::EndClassMember(void)
 void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
                                    TConstObjectPtr classPtr)
 {
+    bool tagIsOpen = false;
     if ( !classType->GetName().empty() ) {
         BEGIN_OBJECT_FRAME2(eFrameClass, classType);
-        OpenTag(classType);
+        if (FetchFrameFromTop(1).GetSkipTag()) {
+            ETypeFamily type = classType->GetTypeFamily();
+            if (type == eTypeFamilyClass) {
+                OpenTag(classType);
+                tagIsOpen = true;
+            }
+        } else {
+            OpenTag(classType);
+            tagIsOpen = true;
+        }
         
         for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
             classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
         }
         
         EolIfEmptyTag();
-        CloseTag(classType);
+        if (tagIsOpen) {
+            CloseTag(classType);
+        }
         END_OBJECT_FRAME();
     }
     else {
@@ -788,11 +816,26 @@ void CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
                                          TConstObjectPtr memberPtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
-    OpenStackTag(0);
-    
+    bool tagIsOpen = false;
+    if (memberId.HaveNoPrefix()) {
+        ETypeFamily type = memberType->GetTypeFamily();
+        if ((type != eTypeFamilyPrimitive) && (type != eTypeFamilyContainer)) {
+            TopFrame().SetSkipTag();
+        }
+        if ((type != eTypeFamilyContainer) && (type != eTypeFamilyPointer)) {
+            OpenStackTag(0);
+            tagIsOpen = true;
+        }
+    } else {
+        OpenStackTag(0);
+        tagIsOpen = true;
+    }
+
     WriteObject(memberPtr, memberType);
-    
-    CloseStackTag(0);
+
+    if (tagIsOpen) {
+        CloseStackTag(0);
+    }
     END_OBJECT_FRAME();
 }
 
@@ -815,7 +858,7 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
 #endif
 
 void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
-                                           const CMemberId& /*id*/)
+                                           const CMemberId& id)
 {
     OpenTagIfNamed(choiceType);
     OpenStackTag(0);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2002/10/15 13:48:00  gouriano
+* modified to handle "standard" (generated from DTD) XML i/o
+*
 * Revision 1.90  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -1056,6 +1059,7 @@ void CObjectIStream::ReadClassRandom(const CClassTypeInfo* classType,
 void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
                                          TObjectPtr classPtr)
 {
+    TMemberIndex prevIndex = kInvalidMember;
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     BeginClass(classType);
     
@@ -1063,6 +1067,17 @@ void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
 
     TMemberIndex index;
     while ( (index = BeginClassMember(classType, *pos)) != kInvalidMember ) {
+
+        const CMemberInfo *mem_info = classType->GetMemberInfo(index);
+        if (mem_info->GetId().HaveNoPrefix()) {
+            if (mem_info->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
+                if ((prevIndex != kInvalidMember) && (prevIndex > index)) {
+                    UndoClassMember();
+                    break;
+                }
+            }
+            prevIndex = index;
+        }
 
         ReadClassSequentialContentsMember();
 
