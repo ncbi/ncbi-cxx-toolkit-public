@@ -59,8 +59,8 @@ XLIBOBJ     = $(SOURCES:=@obj_ext@)
 XLOBJ       = $(LOBJ:=@obj_ext@)
 XLIB        = $(LIB:%=@lib_pre@%@lib_ext@)
 XLIBDEP     = .$(LIB).dep
-XLIBLINK    = @lib_pre@$(LIB)$(STATIC)@lib_ext@
-XLIBDEPLINK = .$(LIB)$(STATIC).dep
+XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
+XLIBDEPLINK = .$(LIB)-static.dep
 
 $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
