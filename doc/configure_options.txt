@@ -1,4 +1,8 @@
-`configure' configures ncbi-tools++ 0.0 to adapt to many kinds of systems.
+The `configure' script configures ncbi-tools++ 0.0 to adapt to many 
+kinds of systems.  Below is usage and options list, obtainable from
+the command-line with 'configure --help'.
+
+
 
 Usage: configure [OPTION]... [VAR=VALUE]...
 
