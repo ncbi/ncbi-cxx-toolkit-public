@@ -2,79 +2,82 @@
 #define NCBI_CONN_STREAM__HPP
 
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov, Anton Lavrentiev
-*
-* File Description:
-*   CONN-based C++ streams
-*
-* Classes:
-*   CConn_IOStream - base class derived from "std::iostream" to perform I/O
-*                    by means of underlying CConn_Streambuf (implemented
-*                    privately in ncbi_conn_streambuf.[ch]pp).
-*
-*   CConn_SocketStream  - I/O stream based on socket connector.
-*
-*   CConn_HttpStream    - I/O stream based on HTTP connector (that is,
-*                         the stream, which connects to HTTP server and
-*                         exchanges information using HTTP protocol).
-*
-*   CConn_ServiceStream - I/O stream based on service connector, which is
-*                         able to exchange data to/from a named service
-*                         that can be found via dispatcher/load-balancing
-*                         daemon and implemented as either HTTP GCI,
-*                         standalone server, or NCBID service.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 6.8  2001/09/24 20:25:57  lavr
-* +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
-*
-* Revision 6.7  2001/04/24 21:18:41  lavr
-* Default timeout is set as a special value CONN_DEFAULT_TIMEOUT.
-* Removed wrong log for R6.6.
-*
-* Revision 6.5  2001/02/09 17:38:16  lavr
-* Typo fixed in comments
-*
-* Revision 6.4  2001/01/12 23:48:51  lavr
-* GetCONN method added
-*
-* Revision 6.3  2001/01/11 23:04:04  lavr
-* Bugfixes; tie is now done at streambuf level, not in iostream
-*
-* Revision 6.2  2001/01/10 21:41:08  lavr
-* Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
-* Everything is now wordly documented.
-*
-* Revision 6.1  2001/01/09 23:35:24  vakatov
-* Initial revision (draft, not tested in run-time)
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov, Anton Lavrentiev
+ *
+ * File Description:
+ *   CONN-based C++ streams
+ *
+ * Classes:
+ *   CConn_IOStream - base class derived from "std::iostream" to perform I/O
+ *                    by means of underlying CConn_Streambuf (implemented
+ *                    privately in ncbi_conn_streambuf.[ch]pp).
+ *
+ *   CConn_SocketStream  - I/O stream based on socket connector.
+ *
+ *   CConn_HttpStream    - I/O stream based on HTTP connector (that is,
+ *                         the stream, which connects to HTTP server and
+ *                         exchanges information using HTTP protocol).
+ *
+ *   CConn_ServiceStream - I/O stream based on service connector, which is
+ *                         able to exchange data to/from a named service
+ *                         that can be found via dispatcher/load-balancing
+ *                         daemon and implemented as either HTTP GCI,
+ *                         standalone server, or NCBID service.
+ *
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.9  2001/12/07 22:55:41  lavr
+ * More comments added
+ *
+ * Revision 6.8  2001/09/24 20:25:57  lavr
+ * +SSERVICE_Extra* parameter for CConn_ServiceStream::CConn_ServiceStream()
+ *
+ * Revision 6.7  2001/04/24 21:18:41  lavr
+ * Default timeout is set as a special value CONN_DEFAULT_TIMEOUT.
+ * Removed wrong log for R6.6.
+ *
+ * Revision 6.5  2001/02/09 17:38:16  lavr
+ * Typo fixed in comments
+ *
+ * Revision 6.4  2001/01/12 23:48:51  lavr
+ * GetCONN method added
+ *
+ * Revision 6.3  2001/01/11 23:04:04  lavr
+ * Bugfixes; tie is now done at streambuf level, not in iostream
+ *
+ * Revision 6.2  2001/01/10 21:41:08  lavr
+ * Added classes: CConn_SocketStream, CConn_HttpStream, CConn_ServiceStream.
+ * Everything is now wordly documented.
+ *
+ * Revision 6.1  2001/01/09 23:35:24  vakatov
+ * Initial revision (draft, not tested in run-time)
+ *
+ * ===========================================================================
+ */
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_connector.h>
@@ -108,8 +111,10 @@ public:
      const STimeout* timeout  = CONN_DEFAULT_TIMEOUT,
      streamsize      buf_size = kConn_DefBufSize,
      bool            do_tie   = true);
-    CONN GetCONN() const;
     virtual ~CConn_IOStream(void);
+
+    // Throws exception if the underlying stream buffer is not CONN-based.
+    CONN GetCONN() const;
 };
 
 
