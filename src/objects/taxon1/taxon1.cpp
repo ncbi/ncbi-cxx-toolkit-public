@@ -29,7 +29,7 @@
  *     NCBI Taxonomy information retreival library implementation
  *
  */
-
+#include <algorithm>
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <connect/ncbi_conn_stream.hpp>
@@ -219,6 +219,53 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
     return NULL;
 }
 
+class PFindMod {
+public:
+    void SetModToMatch( const CRef< COrgMod >& mod ) {
+	CanonizeName( mod->GetSubname(), m_sName );
+	m_nType = mod->GetSubtype();
+    }
+
+    bool operator()( const CRef< COrgMod >& mod ) const {
+	if( m_nType == mod->GetSubtype() ) {
+	    string sCanoName;
+	    CanonizeName( mod->GetSubname(), sCanoName );
+	    return ( sCanoName == m_sName );
+	}
+	return false;
+    }
+
+    void CanonizeName( const string& in, string& out ) const {
+	bool bSpace = true;
+	char prevc = '\0';
+	for( size_t i = 0; i < in.size(); ++i ) {
+	    if( bSpace ) {
+		if( !isspace(in[i]) ) {
+		    bSpace = false;
+		    if( prevc )
+			out += tolower(prevc);
+		    prevc = in[i];
+		}
+	    } else {
+		if( prevc )
+		    out += tolower(prevc);
+		if( isspace(in[i]) ) {
+		    prevc = ' ';
+		    bSpace = true;
+		} else {
+		    prevc = in[i];
+		}
+	    }
+	}
+	if( prevc && prevc != ' ' )
+	    out += tolower(prevc);
+    }
+
+private:
+    string  m_sName;
+    int     m_nType;
+};
+
 CConstRef< CTaxon2_data >
 CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 {
@@ -247,22 +294,69 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
             inp_orgRef.SetSyn() = src.GetSyn();
         }
 	
+	// Remember old modifiers
+	COrgName::TMod modd;
+	modd.swap( inp_orgRef.SetOrgname().SetMod() );
+	//        if( !inp_orgRef.GetOrgname().IsSetMod() ) {
+	const COrgName::TMod& mods = src.GetOrgname().GetMod();
+	PFindMod predMod;
+
+	// Service stuff
+	CTaxon1_req req;
+	CTaxon1_resp resp;
+	CRef<CTaxon1_info> pModInfo = new CTaxon1_info();
+	// Copy with object copy as well
+	for( COrgName::TMod::const_iterator ci = mods.begin();
+	     ci != mods.end();
+	     ++ci ) {
+	    // Check if there is no such modifier in the destination
+	    predMod.SetModToMatch( *ci );
+	    COrgName::TMod::iterator di =
+		find_if( modd.begin(), modd.end(), predMod );
+	    if( di != modd.end() ) { // Modifier found
+		modd.erase( di );
+	    }
+	}
+	// Check the remaining modifiers for validity
+	for( COrgName::TMod::iterator di = modd.begin();
+	     di != modd.end(); ) { // Check modifier that was not found
+	    pModInfo->SetIval1( tax_id );
+	    pModInfo->SetIval2( (*di)->GetSubtype() );
+	    pModInfo->SetSval( (*di)->GetSubname() );
+	    
+	    req.SetGetorgmod( *pModInfo );
+	    try {
+		if( SendRequest( req, resp ) ) {
+		    if( !resp.IsGetorgmod() ) { // error
+			SetLastError( 
+				     "ERROR: Response type is not Getorgmod" );
+		    } else {
+			++di;
+			continue;
+		    }
+		} else if( resp.IsError()
+			   && resp.GetError().GetLevel() 
+			   == CTaxon1_error::eLevel_none ) {
+		    // Just delete modifier
+		}
+	    } catch( exception& e ) {
+		SetLastError( e.what() );
+	    }
+	    modd.erase( di );
+	}
+// 	// Copy all modifiers from source
+// 	for( COrgName::TMod::const_iterator ci = mods.begin();
+// 	     ci != mods.end();
+// 	     ++ci ) {
+// 	    COrgMod* pMod = new COrgMod;
+// 	    SerialAssign<COrgMod>( *pMod, ci->GetObject() );
+// 	    modd.push_back( pMod );
+// 	}
         /* copy orgname */
-        SerialAssign<COrgName>( inp_orgRef.SetOrgname(), src.GetOrgname() );
-  
-        if( !inp_orgRef.GetOrgname().IsSetMod() ) {
-            inp_orgRef.SetOrgname().ResetMod();
-            const COrgName::TMod& mods = src.GetOrgname().GetMod();
-            COrgName::TMod& modd = inp_orgRef.SetOrgname().SetMod();
-            // Copy with object copy as well
-            for( COrgName::TMod::const_iterator ci = mods.begin();
-                 ci != mods.end();
-                 ++ci ) {
-                COrgMod* pMod = new COrgMod;
-                SerialAssign<COrgMod>( *pMod, ci->GetObject() );
-                modd.push_back( pMod );
-            }
-        }
+        inp_orgRef.SetOrgname().Assign( src.GetOrgname() );
+	// Set modifiers
+	COrgName::TMod& inp_mods = inp_orgRef.SetOrgname().SetMod();
+	inp_mods.splice( inp_mods.end(), modd );
 
         if( src.GetOrgname().IsSetLineage() )
             inp_orgRef.SetOrgname()
@@ -732,6 +826,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.6  2002/08/06 16:12:34  domrach
+ * Merging of modifiers is now performed in LookupMerge
+ *
  * Revision 6.5  2002/07/25 15:01:56  grichenk
  * Replaced non-const GetXXX() with SetXXX()
  *
