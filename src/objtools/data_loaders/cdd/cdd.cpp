@@ -38,6 +38,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/impl/data_source.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 #include <objtools/data_loaders/cdd/cdd.hpp>
 
@@ -63,12 +65,6 @@ CCddDataLoader::TRegisterLoaderInfo CCddDataLoader::RegisterInObjectManager(
 string CCddDataLoader::GetLoaderNameFromArgs(void)
 {
     return "CDD_DataLoader";
-}
-
-
-CCddDataLoader::CCddDataLoader(void)
-    : CDataLoader(GetLoaderNameFromArgs())
-{
 }
 
 
@@ -127,12 +123,67 @@ void CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 
 END_SCOPE(objects)
+
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+const string kDataLoader_Cdd_DriverName("cdd");
+
+class CCdd_DataLoaderCF : public CDataLoaderFactory
+{
+public:
+    CCdd_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_Cdd_DriverName) {}
+    virtual ~CCdd_DataLoaderCF(void) {}
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
+};
+
+
+CDataLoader* CCdd_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Use constructor without arguments
+        return CCddDataLoader::RegisterInObjectManager(om).GetLoader();
+    }
+    // IsDefault and Priority arguments may be specified
+    return CCddDataLoader::RegisterInObjectManager(
+        om,
+        GetIsDefault(params),
+        GetPriority(params)).GetLoader();
+}
+
+
+extern "C"
+{
+
+void NCBI_EntryPoint_DataLoader_Cdd(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CCdd_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.6  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

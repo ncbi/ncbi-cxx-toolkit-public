@@ -47,6 +47,8 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
@@ -361,12 +363,98 @@ CRef<CSeq_annot> CUsrFeatDataLoader::GetAnnot(const CSeq_id_Handle& idh)
     return annot;
 }
 
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+const string kDataLoader_UsrFeat_DriverName("usrfeat");
+
+class CUsrFeat_DataLoaderCF : public CDataLoaderFactory
+{
+public:
+    CUsrFeat_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_UsrFeat_DriverName) {}
+    virtual ~CUsrFeat_DataLoaderCF(void) {}
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
+};
+
+
+CDataLoader* CUsrFeat_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Can not create loader without arguments
+        return 0;
+    }
+    // Parse params
+    const string& input_file =
+        GetParam(GetDriverName(), params,
+        kCFParam_UsrFeat_InputFile, true, kEmptyStr);
+    const string& temp_file =
+        GetParam(GetDriverName(), params,
+        kCFParam_UsrFeat_TempFile, true, kEmptyStr);
+    const string& delete_file_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_UsrFeat_TempFile, true, kEmptyStr);
+    bool delete_file = (delete_file_str == "1");
+    const string& offset_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_UsrFeat_Offset, true, kEmptyStr);
+    CUsrFeatDataLoader::EOffset offset =
+        CUsrFeatDataLoader::EOffset(NStr::StringToInt(offset_str));
+    const string& type =
+        GetParam(GetDriverName(), params,
+        kCFParam_UsrFeat_Type, false, kEmptyStr);
+    const string& id_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_UsrFeat_GivenId, false, kEmptyStr);
+    CRef<CSeq_id> id;
+    if ( !id_str.empty() ) {
+        id.Reset(new CSeq_id(id_str));
+    }
+    return CUsrFeatDataLoader::RegisterInObjectManager(
+        om,
+        input_file,
+        temp_file,
+        delete_file,
+        offset,
+        type,
+        id.GetPointerOrNull(),
+        GetIsDefault(params),
+        GetPriority(params)).GetLoader();
+}
+
+
+extern "C"
+{
+
+void NCBI_EntryPoint_DataLoader_UsrFeat(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CUsrFeat_DataLoaderCF>::
+        NCBI_EntryPointImpl(info_list, method);
+}
+
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/02 17:34:44  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.6  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

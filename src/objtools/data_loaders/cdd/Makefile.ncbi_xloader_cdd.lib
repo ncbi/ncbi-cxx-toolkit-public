@@ -1,8 +1,8 @@
 # $Id$
 
-# Build library "xloader_cdd"
+# Build library "ncbi_xloader_cdd"
 ###############################
 
-LIB = xloader_cdd
+LIB = ncbi_xloader_cdd
 SRC = cdd
 

@@ -58,9 +58,6 @@ public:
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(void);
 
-    // Public constructor not to break CSimpleClassFactoryImpl code
-    CCddDataLoader(void);
-
     void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
 
 private:
@@ -79,12 +76,39 @@ private:
 
 
 END_SCOPE(objects)
+
+
+extern NCBI_XLOADER_CDD_EXPORT const string kDataLoader_Cdd_DriverName;
+
+extern "C"
+{
+
+void NCBI_XLOADER_CDD_EXPORT NCBI_EntryPoint_DataLoader_Cdd(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
+
+inline
+void NCBI_XLOADER_CDD_EXPORT NCBI_EntryPoint_DataLoader_ncbi_xloader_cdd(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_Cdd(info_list, method);
+}
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.5  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

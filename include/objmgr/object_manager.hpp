@@ -67,9 +67,6 @@ class CScope_Impl;
 
 class CSeq_id_Mapper;
 
-// Name used for object manager in TPluginManagerParamTree
-extern const string kObjectManagerPtrName;
-
 // Structure returned by RegisterInObjectManager() method
 template<class TLoader>
 struct SRegisterLoaderInfo
@@ -221,6 +218,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/08/02 17:34:43  grichenk
+* Added data_loader_factory.cpp.
+* Renamed xloader_cdd to ncbi_xloader_cdd.
+* Implemented data loader factories for all loaders.
+*
 * Revision 1.28  2004/07/30 14:23:23  ucko
 * Make kObjectManagerPtrName extern (defined in object_manager.cpp) to
 * ensure that it's always properly available on WorkShop.

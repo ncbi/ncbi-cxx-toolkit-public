@@ -37,6 +37,11 @@
 
 BEGIN_NCBI_SCOPE
 
+// Parameter names used by loader factory
+
+const string kCFParam_Sage_InputFile  = "InputFile";  // = string, mandatory
+const string kCFParam_Sage_TempFile   = "TempFile";   // = string, mandatory
+const string kCFParam_Sage_DeleteFile = "DeleteFile"; // = bool ("1" = true)
 
 //
 // class CSageDataLoader interprets a text-file database as a set of SAGE tags
@@ -124,12 +129,38 @@ private:
 };
 
 
+extern NCBI_XLOADER_TABLE_EXPORT const string kDataLoader_Sage_DriverName;
+
+extern "C"
+{
+
+void NCBI_XLOADER_TABLE_EXPORT NCBI_EntryPoint_DataLoader_Sage(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
+
+inline 
+void NCBI_XLOADER_TABLE_EXPORT
+NCBI_EntryPoint_DataLoader_ncbi_xloader_sage(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_Sage(info_list, method);
+}
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.7  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

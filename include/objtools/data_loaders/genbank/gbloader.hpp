@@ -129,6 +129,16 @@ private:
 };
 
 
+// Parameter names used by loader factory
+
+const string kCFParam_GB_ReaderPtr  = "ReaderPtr";  // = CReader*
+const string kCFParam_GB_ReaderName = "ReaderName"; // = string
+
+
+// string: any value except "TakeOwnership" results in eNoOwnership
+const string kCFParam_GB_Ownership = "Ownership";
+
+
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
@@ -137,7 +147,6 @@ public:
     typedef vector< CRef<CSeqref> >   TSeqrefs;
     typedef pair<pair<int, int>, int> TKeyByTSE;
     typedef int                       TMask;
-    typedef CPluginManager<CReader>   TReader_PluginManager;
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
@@ -149,22 +158,14 @@ public:
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(CReader* driver = 0);
 
-    struct SGBLoaderParam
-    {
-        SGBLoaderParam(TReader_PluginManager* plugin_manager,
-                       EOwnership             take_plugin_manager)
-            : m_PluginManager(plugin_manager),
-              m_TakeManager(take_plugin_manager) {}
-        TReader_PluginManager* m_PluginManager;
-        EOwnership             m_TakeManager;
-    };
+    // Select reader by name. If failed, select default reader.
+    // Reader name may be the same as in environment: PUBSEQOS or ID1
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
-        TReader_PluginManager *plugin_manager,
-        EOwnership            take_plugin_manager,
+        const string&   reader_name,
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs(const SGBLoaderParam& param);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const string& reader_name);
 
     virtual ~CGBDataLoader(void);
   
@@ -183,16 +184,15 @@ public:
     const CSeqref& GetSeqref(const CTSE_Info& tse_info);
   
 private:
-    typedef CParamLoaderMaker<CGBDataLoader, CReader*>       TReaderMaker;
-    typedef CParamLoaderMaker<CGBDataLoader, SGBLoaderParam> TPluginMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, CReader*>       TReaderPtrMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, const string&>  TReaderNameMaker;
     friend class CParamLoaderMaker<CGBDataLoader, CReader*>;
-    friend class CParamLoaderMaker<CGBDataLoader, SGBLoaderParam>;
+    friend class CParamLoaderMaker<CGBDataLoader, const string&>;
 
     CGBDataLoader(const string& loader_name,
                   CReader*      driver);
-
-    CGBDataLoader(const string&         loader_name,
-                  const SGBLoaderParam& param);
+    CGBDataLoader(const string& loader_name,
+                  const string& reader_name);
 
     struct STSEinfo : public CObject
     {
@@ -221,12 +221,10 @@ private:
         ~STSEinfo();
     };
 
-    typedef map<TKeyByTSE, CRef<STSEinfo> >    TSr2TSEinfo;
-    typedef map<CSeq_id_Handle, CRef<SSeqrefs> >        TSeqId2Seqrefs;
-  
+    typedef map<TKeyByTSE, CRef<STSEinfo> >      TSr2TSEinfo;
+    typedef map<CSeq_id_Handle, CRef<SSeqrefs> > TSeqId2Seqrefs;
+
     CRef<CReader>           m_Driver;
-    TReader_PluginManager*  m_ReaderPluginManager;
-    EOwnership              m_OwnReaderPluginManager;
 
     TSr2TSEinfo     m_Sr2TseInfo;
   
@@ -263,9 +261,8 @@ private:
     void            x_GetChunk(CRef<STSEinfo> tse,
                                CTSE_Chunk_Info& chunk_info);
     void            x_Check(const STSEinfo* me = 0);
-    void            x_CreateReaderPluginManager(void);
     CReader*        x_CreateReader(const string& env);
-    void            x_CreateDriver(void);
+    void            x_CreateDriver(const string& driver_name = kEmptyStr);
 
     CRef<STSEinfo> GetTSEinfo(const CTSE_Info& tse_info);
 
@@ -275,12 +272,40 @@ private:
 
 
 END_SCOPE(objects)
+
+
+extern NCBI_XLOADER_GENBANK_EXPORT const string kDataLoader_GB_DriverName;
+
+extern "C"
+{
+
+void NCBI_XLOADER_GENBANK_EXPORT NCBI_EntryPoint_DataLoader_GB(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
+
+inline 
+void NCBI_XLOADER_GENBANK_EXPORT
+NCBI_EntryPoint_DataLoader_ncbi_xloader_genbank(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_GB(info_list, method);
+}
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 #endif
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.53  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.52  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

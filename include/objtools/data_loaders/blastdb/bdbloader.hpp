@@ -35,7 +35,6 @@
 */
 
 #include <objmgr/data_loader.hpp>
-#include <objmgr/impl/data_source.hpp>
 #include <readdb.h>
 
 BEGIN_NCBI_SCOPE
@@ -47,6 +46,12 @@ BEGIN_SCOPE(objects)
 //   Data loader implementation that uses the blast databases.
 //   Note: Only full bioseqs can be requested, not parts of a sequence.
 //
+
+// Parameter names used by loader factory
+
+const string kCFParam_BlastDb_DbName = "DbName"; // = string
+const string kCFParam_BlastDb_DbType = "DbType"; // = EDbType (e.g. "Protein")
+
 
 class NCBI_XLOADER_BLASTDB_EXPORT CBlastDbDataLoader : public CDataLoader
 {
@@ -100,11 +105,39 @@ private:
 };
 
 END_SCOPE(objects)
+
+
+extern NCBI_XLOADER_BLASTDB_EXPORT const string kDataLoader_BlastDb_DriverName;
+
+extern "C"
+{
+
+void NCBI_XLOADER_BLASTDB_EXPORT NCBI_EntryPoint_DataLoader_BlastDb(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
+
+inline 
+void NCBI_XLOADER_BLASTDB_EXPORT
+NCBI_EntryPoint_DataLoader_ncbi_xloader_blastdb(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_BlastDb(info_list, method);
+}
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.6  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.5  2004/07/28 14:02:56  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

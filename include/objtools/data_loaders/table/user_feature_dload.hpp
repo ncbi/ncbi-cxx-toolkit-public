@@ -39,6 +39,19 @@
 
 BEGIN_NCBI_SCOPE
 
+// Parameter names used by loader factory
+
+// Mandatory arguments
+const string kCFParam_UsrFeat_InputFile  = "InputFile";  // = string
+const string kCFParam_UsrFeat_TempFile   = "TempFile";   // = string
+const string kCFParam_UsrFeat_DeleteFile = "DeleteFile"; // = bool ("1" = true)
+const string kCFParam_UsrFeat_Offset     = "Offset";     // = int (0/1)
+
+// Optional arguments
+const string kCFParam_UsrFeat_Type       = "Type";       // = string
+const string kCFParam_UsrFeat_GivenId    = "GivenId";    // = fasta id string
+
+
 //
 // class CFeatureDataLoader interprets a text-file database 
 // as a set of features
@@ -159,12 +172,38 @@ private:
 };
 
 
+extern NCBI_XLOADER_TABLE_EXPORT const string kDataLoader_UsrFeat_DriverName;
+
+extern "C"
+{
+
+void NCBI_XLOADER_TABLE_EXPORT NCBI_EntryPoint_DataLoader_UsrFeat(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
+
+inline 
+void NCBI_XLOADER_TABLE_EXPORT
+NCBI_EntryPoint_DataLoader_ncbi_xloader_usrfeat(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_UsrFeat(info_list, method);
+}
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.5  2004/07/28 15:31:44  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

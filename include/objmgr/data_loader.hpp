@@ -35,7 +35,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/object_manager.hpp>
-#include <objmgr/data_loader_factory.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <set>
 
@@ -210,6 +209,9 @@ private:
 
 
 END_SCOPE(objects)
+
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 1, 0, 0);
+
 END_NCBI_SCOPE
 
 
@@ -217,6 +219,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/08/02 17:34:43  grichenk
+* Added data_loader_factory.cpp.
+* Renamed xloader_cdd to ncbi_xloader_cdd.
+* Implemented data loader factories for all loaders.
+*
 * Revision 1.29  2004/07/28 14:02:56  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *

@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/data_loader_factory.hpp>
 
 #include <ctools/asn_converter.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -42,10 +43,11 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 //=======================================================================
 // BlastDbDataLoader Public interface 
-// 
+//
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -196,12 +198,90 @@ CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 }
 
 END_SCOPE(objects)
+
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+const string kDataLoader_BlastDb_DriverName("blastdb");
+
+class CBlastDb_DataLoaderCF : public CDataLoaderFactory
+{
+public:
+    CBlastDb_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_BlastDb_DriverName) {}
+    virtual ~CBlastDb_DataLoaderCF(void) {}
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
+};
+
+
+CDataLoader* CBlastDb_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Use constructor without arguments
+        return CBlastDbDataLoader::RegisterInObjectManager(om).GetLoader();
+    }
+    // Parse params, select constructor
+    const string& dbname =
+        GetParam(GetDriverName(), params,
+        kCFParam_BlastDb_DbName, false, kEmptyStr);
+    const string& dbtype_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_BlastDb_DbType, false, kEmptyStr);
+    if ( !dbname.empty() ) {
+        // Use database name
+        CBlastDbDataLoader::EDbType dbtype = CBlastDbDataLoader::eUnknown;
+        if ( !dbtype_str.empty() ) {
+            if (NStr::CompareNocase(dbtype_str, "Nucleotide") == 0) {
+                dbtype = CBlastDbDataLoader::eNucleotide;
+            }
+            else if (NStr::CompareNocase(dbtype_str, "Protein") == 0) {
+                dbtype = CBlastDbDataLoader::eProtein;
+            }
+        }
+        return CBlastDbDataLoader::RegisterInObjectManager(
+            om,
+            dbname,
+            dbtype,
+            GetIsDefault(params),
+            GetPriority(params)).GetLoader();
+    }
+    // IsDefault and Priority arguments may be specified
+    return CBlastDbDataLoader::RegisterInObjectManager(om).GetLoader();
+}
+
+
+extern "C"
+{
+
+void NCBI_EntryPoint_DataLoader_BlastDb(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CBlastDb_DataLoaderCF>::
+        NCBI_EntryPointImpl(info_list, method);
+}
+
+}
+
+
 END_NCBI_SCOPE
 
 
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.9  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.8  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

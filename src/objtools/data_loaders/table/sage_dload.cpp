@@ -47,6 +47,8 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
+#include <objmgr/data_loader_factory.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -315,12 +317,80 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
 }
 
 
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+const string kDataLoader_Sage_DriverName("sage");
+
+class CSage_DataLoaderCF : public CDataLoaderFactory
+{
+public:
+    CSage_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_Sage_DriverName) {}
+    virtual ~CSage_DataLoaderCF(void) {}
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
+};
+
+
+CDataLoader* CSage_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Can not create loader without arguments
+        return 0;
+    }
+    // Parse params
+    const string& input_file =
+        GetParam(GetDriverName(), params,
+        kCFParam_Sage_InputFile, true, kEmptyStr);
+    const string& temp_file =
+        GetParam(GetDriverName(), params,
+        kCFParam_Sage_TempFile, true, kEmptyStr);
+    const string& delete_file_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_Sage_TempFile, false, "1");
+    bool delete_file = (delete_file_str == "1");
+
+    return CSageDataLoader::RegisterInObjectManager(
+        om,
+        input_file,
+        temp_file,
+        delete_file,
+        GetIsDefault(params),
+        GetPriority(params)).GetLoader();
+}
+
+
+extern "C"
+{
+
+void NCBI_EntryPoint_DataLoader_Sage(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CSage_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/02 17:34:44  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.8  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

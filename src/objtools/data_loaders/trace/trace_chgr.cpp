@@ -31,12 +31,14 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/data_source.hpp>
+#include <objmgr/data_loader_factory.hpp>
 #include <objtools/data_loaders/trace/trace_chgr.hpp>
 #include <objects/id1/id1_client.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/ID1SeqEntry_info.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -131,12 +133,69 @@ CID1Client& CTraceChromatogramLoader::x_GetClient()
 
 
 END_SCOPE(objects)
+
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+const string kDataLoader_Trace_DriverName("trace");
+
+class CTrace_DataLoaderCF : public CDataLoaderFactory
+{
+public:
+    CTrace_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_Trace_DriverName) {}
+    virtual ~CTrace_DataLoaderCF(void) {}
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
+};
+
+
+CDataLoader* CTrace_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Use constructor without arguments
+        return CTraceChromatogramLoader::
+            RegisterInObjectManager(om).GetLoader();
+    }
+    // IsDefault and Priority arguments may be specified
+    return CTraceChromatogramLoader::RegisterInObjectManager(
+        om,
+        GetIsDefault(params),
+        GetPriority(params)).GetLoader();
+}
+
+
+extern "C"
+{
+
+void NCBI_EntryPoint_DataLoader_Trace(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CTrace_DataLoaderCF>::
+        NCBI_EntryPointImpl(info_list, method);
+}
+
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/02 17:34:44  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.5  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

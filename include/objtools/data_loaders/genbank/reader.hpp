@@ -119,12 +119,17 @@ public:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "omreader", 1, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CReader,  "xreader", 1, 1, 0);
 
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.41  2004/08/02 17:34:43  grichenk
+* Added data_loader_factory.cpp.
+* Renamed xloader_cdd to ncbi_xloader_cdd.
+* Implemented data loader factories for all loaders.
+*
 * Revision 1.40  2004/06/30 21:02:02  vasilche
 * Added loading of external annotations from 26 satellite.
 *

@@ -37,17 +37,24 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/data_loader.hpp>
 
 
 BEGIN_NCBI_SCOPE
-
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "omdataloader", 1, 0, 0);
-
 BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
 /////////////////////////////////////////////////////////////////////////////
+
+// Parameters used by all factories
+
+const string kCFParam_ObjectManagerPtr     = "ObjectManagerPtr";     // pointer
+const string kCFParam_DataLoader_Priority  = "DataLoader_Priority";  // int
+
+// string: any value except "Default" results in eNonDefault
+const string kCFParam_DataLoader_IsDefault = "DataLoader_IsDefault";
+
 
 class NCBI_XOBJMGR_EXPORT CDataLoaderFactory
     : public IClassFactory<CDataLoader>
@@ -60,6 +67,7 @@ public:
     CDataLoaderFactory(const string& driver_name, int patch_level = -1);
     virtual ~CDataLoaderFactory() {}
 
+    const string& GetDriverName(void) const { return m_DriverName; }
     void GetDriverVersions(TDriverList& info_list) const;
 
     CDataLoader* 
@@ -68,9 +76,17 @@ public:
                    const TPluginManagerParamTree* params = 0) const;
 
 protected:
+    // True if params != 0 and node name corresponds to expected name
+    bool ValidParams(const TPluginManagerParamTree* params) const;
+
     virtual CDataLoader* CreateAndRegister(
         CObjectManager& om,
         const TPluginManagerParamTree* params) const = 0;
+
+    CObjectManager::EIsDefault GetIsDefault(
+        const TPluginManagerParamTree* params) const;
+    CObjectManager::TPriority GetPriority(
+        const TPluginManagerParamTree* params) const;
 
 private:
     CObjectManager* x_GetObjectManager(
@@ -97,62 +113,14 @@ public:
 protected:
     virtual CDataLoader* CreateAndRegister(
         CObjectManager& om,
-        const TPluginManagerParamTree* /*params*/) const
+        const TPluginManagerParamTree* params) const
     {
-        return TDataLoader::RegisterInObjectManager(om).GetLoader();
+        return TDataLoader::RegisterInObjectManager(
+            om,
+            GetIsDefault(params),
+            GetPriority(params)).GetLoader();
     }
 };
-
-
-inline
-CDataLoaderFactory::CDataLoaderFactory(const string& driver_name,
-                                       int           patch_level) 
-    : m_DriverVersionInfo(
-        ncbi::CInterfaceVersion<CDataLoader>::eMajor, 
-        ncbi::CInterfaceVersion<CDataLoader>::eMinor, 
-        patch_level >= 0 ?
-        patch_level : ncbi::CInterfaceVersion<CDataLoader>::ePatchLevel),
-        m_DriverName(driver_name)
-{
-    _ASSERT(!m_DriverName.empty());
-}
-
-
-inline
-void CDataLoaderFactory::GetDriverVersions(TDriverList& info_list) const
-{
-    info_list.push_back(TDriverInfo(m_DriverName, m_DriverVersionInfo));
-}
-
-
-inline CDataLoader* CDataLoaderFactory::CreateInstance(
-    const string&                  driver,
-    CVersionInfo                   version,
-    const TPluginManagerParamTree* params) const
-{
-    CDataLoader* loader = 0;
-    if (driver.empty() || driver == m_DriverName) {
-        if (version.Match(NCBI_INTERFACE_VERSION(CDataLoader))
-                            != CVersionInfo::eNonCompatible) {
-            CObjectManager* om = x_GetObjectManager(params);
-            _ASSERT(om);
-            loader = CreateAndRegister(*om, params);
-        }
-    }
-    return loader;
-}
-
-
-inline
-CObjectManager* CDataLoaderFactory::x_GetObjectManager(
-    const TPluginManagerParamTree* params) const
-{
-    const string& om_str =
-        GetParam(m_DriverName, params, kObjectManagerPtrName, false, "0");
-    CObjectManager* om = static_cast<CObjectManager*>(
-        const_cast<void*>(NStr::StringToPtr(om_str)));
-    return om ? om : &*CObjectManager::GetInstance();
-}
 
 
 END_SCOPE(objects)
@@ -161,6 +129,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/02 17:34:43  grichenk
+* Added data_loader_factory.cpp.
+* Renamed xloader_cdd to ncbi_xloader_cdd.
+* Implemented data loader factories for all loaders.
+*
 * Revision 1.6  2004/07/28 14:02:56  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *

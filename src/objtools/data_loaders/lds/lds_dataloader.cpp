@@ -42,6 +42,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/data_source.hpp>
+#include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 
@@ -332,27 +333,75 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
-class CLDS_DataLoaderCF :
-  public CSimpleDataLoaderFactory<objects::CLDS_DataLoader>
+const string kDataLoader_LDS_DriverName("lds");
+
+class CLDS_DataLoaderCF : public CDataLoaderFactory
 {
 public:
-    typedef CSimpleDataLoaderFactory<objects::CLDS_DataLoader> TParent;
+    CLDS_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_LDS_DriverName) {}
+    virtual ~CLDS_DataLoaderCF(void) {}
 
-    CLDS_DataLoaderCF() : TParent("CLDS_DataLoader")
-    {}
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
 };
+
+
+CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Use constructor without arguments
+        return CLDS_DataLoader::RegisterInObjectManager(om).GetLoader();
+    }
+    // Parse params, select constructor
+    const string& database_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_LDS_Database, false, kEmptyStr);
+    const string& db_path =
+        GetParam(GetDriverName(), params,
+        kCFParam_LDS_DbPath, false, kEmptyStr);
+    if ( !database_str.empty() ) {
+        // Use existing database
+        CLDS_Database* db = dynamic_cast<CLDS_Database*>(
+            static_cast<CDataLoader*>(
+            const_cast<void*>(NStr::StringToPtr(database_str))));
+        if ( db ) {
+            return CLDS_DataLoader::RegisterInObjectManager(
+                om,
+                *db,
+                GetIsDefault(params),
+                GetPriority(params)).GetLoader();
+        }
+    }
+    if ( !db_path.empty() ) {
+        // Use db path
+        return CLDS_DataLoader::RegisterInObjectManager(
+            om,
+            db_path,
+            GetIsDefault(params),
+            GetPriority(params)).GetLoader();
+    }
+    // IsDefault and Priority arguments may be specified
+    return CLDS_DataLoader::RegisterInObjectManager(
+        om,
+        GetIsDefault(params),
+        GetPriority(params)).GetLoader();
+}
 
 
 extern "C"
 {
 
-void NCBI_XLOADER_LDS_EXPORT 
-NCBI_EntryPoint_DataLoader_LDS(CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
-                               CPluginManager<CDataLoader>::EEntryPointRequest method)
+void NCBI_EntryPoint_DataLoader_LDS(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
 {
     CHostEntryPointImpl<CLDS_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
 }
-
 
 }
 
@@ -362,6 +411,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/08/02 17:34:44  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.18  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

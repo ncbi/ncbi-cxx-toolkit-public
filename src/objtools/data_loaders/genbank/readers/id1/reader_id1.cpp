@@ -893,7 +893,7 @@ void CId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
 
 END_SCOPE(objects)
 
-const string kId1ReaderDriverName("id1_reader");
+const string kId1ReaderDriverName("id1");
 
 
 /// Class factory for ID1 reader
@@ -929,6 +929,11 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.83  2004/08/02 17:34:44  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.82  2004/06/30 21:02:02  vasilche
  * Added loading of external annotations from 26 satellite.
  *

@@ -47,6 +47,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/data_loader_factory.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -56,6 +57,7 @@
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/interfaces.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/plugin_manager_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -105,39 +107,13 @@ CGBDataLoader::STSEinfo::~STSEinfo()
     " tse=" << ((stse).tseinfop? (stse).tseinfop->GetSeq_entryCore().GetPointer(): 0)
 
 
-// Create driver specified in "env"
-/*
-CReader* s_CreateReader(string env)
-{
-#if defined(HAVE_PUBSEQ_OS)
-    if (env == DRV_PUBSEQOS) {
-        try {
-            return new CPubseqReader;
-        }
-        catch ( exception& e ) {
-            GBLOG_POST("CPubseqReader is not available ::" << e.what());
-            return 0;
-        }
-        catch ( ... ) {
-            LOG_POST("CPubseqReader:: unable to init ");
-            return 0;
-        }
-    }
-#endif
-    if (env == DRV_ID1) {
-        return new CId1Reader;
-    }
-    return 0;
-}
-*/
-
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     CReader*        driver,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TReaderMaker maker(driver);
+    TReaderPtrMaker maker(driver);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -150,20 +126,18 @@ string CGBDataLoader::GetLoaderNameFromArgs(CReader* /*driver*/)
 
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
-    CObjectManager&        om,
-    TReader_PluginManager* plugin_manager,
-    EOwnership             take_plugin_manager,
+    CObjectManager& om,
+    const string&   reader_name,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority priority)
+    CObjectManager::TPriority  priority)
 {
-    SGBLoaderParam param(plugin_manager, take_plugin_manager);
-    TPluginMaker maker(param);
+    TReaderNameMaker maker(reader_name);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(const SGBLoaderParam& param)
+string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/)
 {
     return "GBLOADER";
 }
@@ -172,31 +146,12 @@ string CGBDataLoader::GetLoaderNameFromArgs(const SGBLoaderParam& param)
 CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver)
   : CDataLoader(loader_name),
     m_Driver(driver),
-    m_ReaderPluginManager(0),
     m_UseListHead(0),
     m_UseListTail(0)
 {
     GBLOG_POST( "CGBDataLoader");
     if ( !m_Driver ) {
         x_CreateDriver();
-// Commented out by kuznets Dec 03, 2003
-/*
-        const char* env = ::getenv(DRV_ENV_VAR);
-        if (!env) {
-            env = DEFAULT_DRV_ORDER; // default drivers' order
-        }
-        list<string> drivers;
-        NStr::Split(env, ":", drivers);
-        ITERATE ( list<string>, drv, drivers ) {
-            m_Driver = s_CreateReader(*drv);
-            if ( m_Driver )
-                break;
-        }
-        if(!m_Driver) {
-            NCBI_THROW(CLoaderException, eNoConnection,
-                       "Could not create driver: " + string(env));
-        }
-*/
     }
   
     size_t i = m_Driver->GetParallelLevel();
@@ -209,21 +164,17 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver)
     //GBLOG_POST( "CGBDataLoader("<<loader_name<<"::" <<gc_threshold << ")" );
 }
 
+
 CGBDataLoader::CGBDataLoader(const string& loader_name,
-                             const SGBLoaderParam& param)
+                             const string& reader_name)
   : CDataLoader(loader_name),
     m_Driver(0),
-    m_ReaderPluginManager(param.m_PluginManager),
-    m_OwnReaderPluginManager(param.m_TakeManager),
     m_UseListHead(0),
     m_UseListTail(0)
 {
     GBLOG_POST( "CGBDataLoader");
-    if (!m_ReaderPluginManager) {
-        x_CreateReaderPluginManager();
-    }
-    x_CreateDriver();
-
+    x_CreateDriver(reader_name);
+  
     size_t i = m_Driver->GetParallelLevel();
     m_Locks.m_Pool.SetSize(i<=0?10:i);
     m_Locks.m_SlowTraverseMode=0;
@@ -231,34 +182,17 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,
     m_TseCount=0;
     m_TseGC_Threshhold = 100;
     m_InvokeGC=false;
-}
-
-void CGBDataLoader::x_CreateReaderPluginManager(void)
-{
-    if (m_OwnReaderPluginManager == eTakeOwnership) {
-        delete m_ReaderPluginManager;
-        m_ReaderPluginManager = 0;
-    }
-
-    m_ReaderPluginManager = new TReader_PluginManager;
-    m_OwnReaderPluginManager = eTakeOwnership;
-
-    TReader_PluginManager::FNCBI_EntryPoint ep1 = NCBI_EntryPoint_Id1Reader;
-    m_ReaderPluginManager->RegisterWithEntryPoint(ep1);
-
-#if defined(HAVE_PUBSEQ_OS)
-    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_EntryPoint_Reader_Pubseqos;
-    m_ReaderPluginManager->RegisterWithEntryPoint(ep2);
-#endif
-
+    //GBLOG_POST( "CGBDataLoader("<<loader_name<<"::" <<gc_threshold << ")" );
 }
 
 
-void CGBDataLoader::x_CreateDriver(void)
+void CGBDataLoader::x_CreateDriver(const string& driver_name)
 {
-    if (!m_ReaderPluginManager) {
-        x_CreateReaderPluginManager();
-        _ASSERT(m_ReaderPluginManager);
+    if ( !driver_name.empty() ) {
+        m_Driver = x_CreateReader(driver_name);
+        if ( m_Driver ) {
+            return;
+        }
     }
 
     const char* env = ::getenv(DRV_ENV_VAR);
@@ -277,44 +211,42 @@ void CGBDataLoader::x_CreateDriver(void)
         NCBI_THROW(CLoaderException, eNoConnection,
                    "Could not create driver: " + string(env));
     }
-
 }
 
 
 CReader* CGBDataLoader::x_CreateReader(const string& env)
 {
-    _ASSERT(m_ReaderPluginManager);
+    typedef CPluginManager<CReader> TReader_PluginManager;
+    TReader_PluginManager ReaderPluginManager;
+
+#define REGISTER_READER_ENTRY_POINTS
+
+#if defined(REGISTER_READER_ENTRY_POINTS)
+    TReader_PluginManager::FNCBI_EntryPoint ep1 = NCBI_EntryPoint_Id1Reader;
+    ReaderPluginManager.RegisterWithEntryPoint(ep1);
 
 #if defined(HAVE_PUBSEQ_OS)
-    if (env == DRV_PUBSEQOS) {
-        try {
-            return m_ReaderPluginManager->CreateInstance("pubseq_reader");
-        }
-        catch ( exception& e ) {
-            GBLOG_POST("CPubseqReader is not available ::" << e.what());
-            return 0;
-        }
-        catch ( ... ) {
-            LOG_POST("CPubseqReader:: unable to init ");
-            return 0;
-        }
-    }
-#endif
-    if (env == DRV_ID1) {
-        try {
-            return m_ReaderPluginManager->CreateInstance("id1_reader");
-        }
-        catch ( exception& e ) {
-            LOG_POST("CId1Reader is not available ::" << e.what());
-            return 0;
-        }
-        catch ( ... ) {
-            LOG_POST("CId1Reader:: unable to init ");
-            return 0;
-        }
-    }
-    return 0;
+    TReader_PluginManager::FNCBI_EntryPoint ep2 = NCBI_EntryPoint_Reader_Pubseqos;
+    ReaderPluginManager.RegisterWithEntryPoint(ep2);
+#endif // HAVE_PUBSEQ_OS
 
+#endif // REGISTER_READER_ENTRY_POINTS
+
+    string reader_name = env;
+    NStr::ToLower(reader_name);
+    try {
+        return ReaderPluginManager.CreateInstance(reader_name);
+    }
+    catch ( exception& e ) {
+        LOG_POST(env << " reader is not available ::" << e.what());
+        return 0;
+    }
+    catch ( ... ) {
+        LOG_POST(env << " reader unable to init ");
+        return 0;
+    }
+
+    return 0;
 }
 
 
@@ -330,9 +262,6 @@ CGBDataLoader::~CGBDataLoader(void)
         x_DropTSEinfo(m_UseListHead);
     }
     m_Bs2Sr.clear();
-    if (m_OwnReaderPluginManager == eTakeOwnership) {
-        delete m_ReaderPluginManager;
-    }
 }
 
 
@@ -349,6 +278,7 @@ static const char* const s_ChoiceName[] = {
     "eAnnot",
     "???"
 };
+
 
 static
 const size_t kChoiceNameCount = sizeof(s_ChoiceName)/sizeof(s_ChoiceName[0]);
@@ -1191,12 +1121,93 @@ CGBDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 
 
 END_SCOPE(objects)
+
+// ===========================================================================
+
+USING_SCOPE(objects);
+
+const string kDataLoader_GB_DriverName("genbank");
+
+class CGB_DataLoaderCF : public CDataLoaderFactory
+{
+public:
+    CGB_DataLoaderCF(void)
+        : CDataLoaderFactory(kDataLoader_GB_DriverName) {}
+    virtual ~CGB_DataLoaderCF(void) {}
+
+protected:
+    virtual CDataLoader* CreateAndRegister(
+        CObjectManager& om,
+        const TPluginManagerParamTree* params) const;
+};
+
+
+CDataLoader* CGB_DataLoaderCF::CreateAndRegister(
+    CObjectManager& om,
+    const TPluginManagerParamTree* params) const
+{
+    if ( !ValidParams(params) ) {
+        // Use constructor without arguments
+        return CGBDataLoader::RegisterInObjectManager(om).GetLoader();
+    }
+    // Parse params, select constructor
+    const string& reader_ptr_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_GB_ReaderPtr, false, "0");
+    CReader* reader = dynamic_cast<CReader*>(
+        static_cast<CObject*>(
+        const_cast<void*>(NStr::StringToPtr(reader_ptr_str))));
+    if ( reader ) {
+        return CGBDataLoader::RegisterInObjectManager(
+            om,
+            reader,
+            GetIsDefault(params),
+            GetPriority(params)).GetLoader();
+    }
+    // Try to use reader name
+    const string& reader_name =
+        GetParam(GetDriverName(), params,
+        kCFParam_GB_ReaderName, false, kEmptyStr);
+    if ( !reader_name.empty() ) {
+        return CGBDataLoader::RegisterInObjectManager(
+            om,
+            reader_name,
+            GetIsDefault(params),
+            GetPriority(params)).GetLoader();
+    }
+    // IsDefault and Priority arguments may be specified
+    return CGBDataLoader::RegisterInObjectManager(
+        om,
+        0, // no reader
+        GetIsDefault(params),
+        GetPriority(params)).GetLoader();
+}
+
+
+extern "C"
+{
+
+void NCBI_EntryPoint_DataLoader_GB(
+    CPluginManager<CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<CDataLoader>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CGB_DataLoaderCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+}
+
+
 END_NCBI_SCOPE
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2004/08/02 17:34:44  grichenk
+* Added data_loader_factory.cpp.
+* Renamed xloader_cdd to ncbi_xloader_cdd.
+* Implemented data loader factories for all loaders.
+*
 * Revision 1.110  2004/07/28 14:02:57  grichenk
 * Improved MT-safety of RegisterInObjectManager(), simplified the code.
 *

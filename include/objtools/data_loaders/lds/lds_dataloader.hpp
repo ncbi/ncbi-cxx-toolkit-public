@@ -48,6 +48,12 @@ class CLDS_Database;
 // CDataLoader implementation for LDS.
 //
 
+// Parameter names used by loader factory
+
+const string kCFParam_LDS_Database = "Database"; // = CLDS_Database*
+const string kCFParam_LDS_DbPath   = "DbPath";   // = string
+
+
 class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
@@ -108,14 +114,40 @@ private:
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
 };
 
-
 END_SCOPE(objects)
+
+
+extern NCBI_XLOADER_LDS_EXPORT const string kDataLoader_LDS_DriverName;
+
+extern "C"
+{
+
+void NCBI_XLOADER_LDS_EXPORT NCBI_EntryPoint_DataLoader_LDS(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method);
+
+inline 
+void NCBI_XLOADER_LDS_EXPORT NCBI_EntryPoint_DataLoader_ncbi_xloader_lds(
+    CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
+    CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
+{
+    NCBI_EntryPoint_DataLoader_LDS(info_list, method);
+}
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/08/02 17:34:43  grichenk
+ * Added data_loader_factory.cpp.
+ * Renamed xloader_cdd to ncbi_xloader_cdd.
+ * Implemented data loader factories for all loaders.
+ *
  * Revision 1.12  2004/07/28 14:02:57  grichenk
  * Improved MT-safety of RegisterInObjectManager(), simplified the code.
  *

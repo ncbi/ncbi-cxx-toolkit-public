@@ -547,7 +547,7 @@ size_t CResultBtSrcRdr::Read(char* buffer, size_t bufferLength)
 END_SCOPE(objects)
 
 
-const string kPubseqReaderDriverName("pubseq_reader");
+const string kPubseqReaderDriverName("pubseqos");
 
 
 /// Class factory for Pubseq reader
@@ -584,6 +584,11 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.55  2004/08/02 17:34:44  grichenk
+* Added data_loader_factory.cpp.
+* Renamed xloader_cdd to ncbi_xloader_cdd.
+* Implemented data loader factories for all loaders.
+*
 * Revision 1.54  2004/06/30 21:09:39  vasilche
 * Fixed typo in release mode.
 *
