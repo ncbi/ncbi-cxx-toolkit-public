@@ -2402,6 +2402,7 @@ void CValidError_impl::ValidatePopSet(const CBioseq_set& seqset)
     const CBioSource*   biosrc  = 0;
     const string        *first_taxname = 0, 
                         *taxname = 0;
+    static const string influenza = "Influenza virus ";
 
     CTypeConstIterator<CBioseq> seqit(ConstBegin(seqset));
     for (; seqit; ++seqit) {
@@ -2424,13 +2425,16 @@ void CValidError_impl::ValidatePopSet(const CBioseq_set& seqset)
             continue;
         }
 
-        if (NStr::CompareNocase(*first_taxname, taxname) == 0) {
+	// Make sure all the taxnames in the set are the same.
+        if ( NStr::CompareNocase(*first_taxname, taxname) == 0 ) {
             continue;
         }
 
-        if ( NStr::CompareNocase(taxname, "Influenza virus ")        == 0  &&
-             NStr::CompareNocase(*first_taxname, "Influenza virus ") == 0  &&
-             NStr::CompareNocase(*first_taxname, 0, 17, taxname) == 0 )    {
+	// if the names differ issue an error with the exception of Influenza
+	// virus, where we allow different types of it in the set.
+        if ( NStr::StartsWith(taxname, influenza, NStr::eNocase)         &&
+             NStr::StartsWith(*first_taxname, influenza, NStr::eNocase)  &&
+             NStr::CompareNocase(*first_taxname, 0, influenza.length() + 1, taxname) == 0 ) {
             continue;
         }
 
@@ -5832,8 +5836,8 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
-* Revision 1.27  2002/11/19 16:48:25  shomrat
-* Style change and minor bug fix for ValidateSeqSet branch
+* Revision 1.28  2002/11/19 19:54:50  shomrat
+* Bug fix in ValidatePopSet
 *
 * Revision 1.26  2002/11/18 19:48:44  grichenk
 * Removed "const" from datatool-generated setters
