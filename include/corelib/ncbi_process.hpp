@@ -49,10 +49,12 @@
 #  include <corelib/ncbi_os_mswin.hpp>
 #endif
 
+
 /** @addtogroup Process
  *
  * @{
  */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -105,7 +107,7 @@ public:
     /// @return
     ///   TRUE  - if the process is still running.
     ///   FALSE - if the process did not exist or was already terminated.
-    bool IsAlive(void);
+    bool IsAlive(void) const;
 
     /// Terminate process.
     ///
@@ -115,7 +117,7 @@ public:
     /// @return
     ///   TRUE  - if the process did not exist or was successfully terminated.
     ///   FALSE - if the process is still running and cannot be terminated.
-    bool Kill(unsigned long timeout = kDefaultKillTimeout);
+    bool Kill(unsigned long timeout = kDefaultKillTimeout) const;
 
     /// Wait until process terminates.
     ///
@@ -126,7 +128,7 @@ public:
     /// @return
     ///   - Exit code of the process, if no errors.
     ///   - (-1), if error has occured.
-    int Wait(unsigned long timeout = kMax_ULong);
+    int Wait(unsigned long timeout = kMax_ULong) const;
 
 private:
     long          m_Process;   ///< Process identifier.
@@ -221,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/01 20:23:58  ivanov
+ * Added const specifier to CProcess class member functions
+ *
  * Revision 1.1  2003/09/25 16:52:08  ivanov
  * Initial revision. CPIDGuard class moved from ncbi_system.hpp.
  *

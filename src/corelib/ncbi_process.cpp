@@ -76,7 +76,7 @@ TPid CProcess::GetCurrentPid(void)
 }
 
 
-bool CProcess::IsAlive(void)
+bool CProcess::IsAlive(void) const
 {
 #ifdef NCBI_OS_UNIX
     if ( kill((TPid)m_Process, 0) < 0  &&  errno != EPERM ) {
@@ -108,7 +108,7 @@ bool CProcess::IsAlive(void)
 }
 
 
-bool CProcess::Kill(unsigned long timeout)
+bool CProcess::Kill(unsigned long timeout) const
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = (TPid)m_Process;
@@ -206,7 +206,7 @@ bool CProcess::Kill(unsigned long timeout)
 }
 
 
-int CProcess::Wait(unsigned long timeout)
+int CProcess::Wait(unsigned long timeout) const
 {
 #if defined(NCBI_OS_UNIX)
     TPid  pid     = (TPid)m_Process;
@@ -362,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/01 20:23:26  ivanov
+ * Added const specifier to CProcess class member functions
+ *
  * Revision 1.2  2003/09/25 17:18:21  ucko
  * UNIX: +<unistd.h> for getpid()
  *
