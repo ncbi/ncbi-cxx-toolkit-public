@@ -18,7 +18,7 @@
         <li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
         <li> <a href="#ref_NamingFuncArg">Function arguments</a>
         <li> <a href="#ref_NamingConst">Constants</a>
-        <li> <a href="#ref_NamingCVar">Class member variables</a>
+        <li> <a href="#ref_NamingCVar">Class and structure member variables</a>
         <li> <a href="#ref_NamingCFunc">Class member functions</a>
         <li> <a href="#ref_NamingStatic">Module static functions and data</a>
         <li> <a href="#ref_NamingGlobal">
@@ -106,11 +106,13 @@
 
   <a name="ref_NamingCVar"></a>
   <tr><th colspan=2 align=left height=40>
-      &nbsp;&nbsp;&nbsp;Class member variables</th></tr>
+      &nbsp;&nbsp;&nbsp;Class and structure member variables</th></tr>
   <tr><td><i><b>m_</b>ClassMemberName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
-      class C { short m_MyClassData; }</span></td></tr>
+      class C { short m_MyClassData; };</span></td></tr>
+  <tr><td><i><b>m_</b>StructFieldName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
+      struct S { int my_struct_field; };</span></td></tr>
   <tr><td><i><b>sm_</b>ClassStaticMemberName</i><!--NCBI_MARK--></td><td><span class="ncbi_ccode">
-      class C { static double sm_MyClassStaticData; }</span></td></tr>
+      class C { static double sm_MyClassStaticData; };</span></td></tr>
 
   <a name="ref_NamingCFunc"></a>
   <tr><th colspan=2 align=left height=40>
