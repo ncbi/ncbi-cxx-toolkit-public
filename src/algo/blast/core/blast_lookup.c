@@ -65,12 +65,21 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
 		      Boolean is_protein)
 {
    LookupTable* lookup = *lut = 
-      (LookupTable*) malloc(sizeof(LookupTable));
+      (LookupTable*) calloc(1, sizeof(LookupTable));
+
+   ASSERT(lookup != NULL);
 
   if (is_protein) {
+    Int4 i;
+
     lookup->charsize = ilog2(opt->alphabet_size) + 1;
     lookup->wordsize = opt->word_size;
-    lookup->backbone_size = iexp(2,lookup->charsize*opt->word_size);
+
+    lookup->backbone_size = 0;
+    for(i=0;i<lookup->wordsize;i++)
+        lookup->backbone_size |= (opt->alphabet_size - 1) << (i * lookup->charsize);
+    lookup->backbone_size += 1;
+
     lookup->mask = makemask(opt->word_size * lookup->charsize);
   } else {
      lookup->word_length = opt->word_size;
@@ -90,8 +99,11 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
   lookup->threshold = opt->threshold;
   lookup->thin_backbone = 
      (Int4**) calloc(lookup->backbone_size , sizeof(Int4*));
+  ASSERT(lookup->thin_backbone != NULL);
+
   lookup->use_pssm = opt->use_pssm;
   lookup->neighbors=NULL;
+  lookup->overflow=NULL;
   return 0;
 }
 
@@ -105,16 +117,17 @@ Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
   Int4 * chain = NULL;
     
   /* compute its index, */
+
   _ComputeIndex(lookup->wordsize,lookup->charsize,lookup->mask, w, &index);
 
   ASSERT(index < lookup->backbone_size);
-      
+
   /* if backbone cell is null, initialize a new chain */
   if (lookup->thin_backbone[index] == NULL)
     {
       chain_size = 8;
       hits_in_chain = 0;
-      chain = (Int4*) malloc( chain_size * sizeof(Int4) );
+      chain = (Int4*) calloc( chain_size, sizeof(Int4) );
       ASSERT(chain != NULL);
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
@@ -133,6 +146,8 @@ Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
     {
       chain_size = chain_size * 2;
       chain = (Int4*) realloc(chain, chain_size * sizeof(Int4) );
+      ASSERT(chain != NULL);
+
       lookup->thin_backbone[index] = chain;
       chain[0] = chain_size;
     }
@@ -157,10 +172,12 @@ Int4 _BlastAaLookupFinalize(LookupTable* lookup)
 /* allocate the new lookup table */
  lookup->thick_backbone = (LookupBackboneCell *)
     calloc(lookup->backbone_size , sizeof(LookupBackboneCell));
+    ASSERT(lookup->thick_backbone != NULL);
 
  /* allocate the pv_array */
  lookup->pv = (PV_ARRAY_TYPE *)
-    calloc((lookup->backbone_size >> PV_ARRAY_BTS) , sizeof(PV_ARRAY_TYPE));
+    calloc((lookup->backbone_size >> PV_ARRAY_BTS) + 1 , sizeof(PV_ARRAY_TYPE));
+  ASSERT(lookup->pv != NULL);
 
  /* find out how many cells have >3 hits */
  for(i=0;i<lookup->backbone_size;i++)
@@ -176,7 +193,8 @@ Int4 _BlastAaLookupFinalize(LookupTable* lookup)
  lookup->longest_chain = longest_chain;
 
  /* allocate the overflow array */
- lookup->overflow = (Int4*) malloc( overflow_cells_needed * sizeof(Int4) );
+ lookup->overflow = (Int4*) calloc( overflow_cells_needed, sizeof(Int4) );
+ ASSERT(lookup->overflow != NULL);
 
 /* for each position in the lookup table backbone, */
 for(i=0;i<lookup->backbone_size;i++)
@@ -261,6 +279,7 @@ static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
   Int4 i;
 
   *index = 0;
+
   for(i=0;i<wordsize;i++)
 {
     *index = ((*index << charsize) | word[i]) & mask;
@@ -437,6 +456,7 @@ Int4 MakeAllWordSequence(LookupTable* lookup)
   lookup->neighbors_length = len;
 
   lookup->neighbors = (Uint1*) malloc( len );
+  ASSERT(lookup->neighbors != NULL);
 
   /* generate the de Bruijn sequence */
 
@@ -445,7 +465,7 @@ Int4 MakeAllWordSequence(LookupTable* lookup)
   /* unwrap it */
 
   for(i=0;i<(n-1);i++)
-    lookup->neighbors[len-((n-1)+1)+i] = lookup->neighbors[i];
+    lookup->neighbors[len-n+1+i] = lookup->neighbors[i];
   
   return 0;
 }
@@ -978,7 +998,8 @@ static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
     {
       chain_size = 8;
       hits_in_chain = 0;
-      chain = malloc( chain_size * sizeof(Int4) );
+      chain = calloc( chain_size, sizeof(Int4) );
+      ASSERT(chain != NULL);
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
       lookup->thin_backbone[index] = chain;
@@ -996,6 +1017,7 @@ static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
     {
       chain_size = chain_size * 2;
       chain = realloc(chain, chain_size * sizeof(Int4) );
+      ASSERT(chain != NULL);
       lookup->thin_backbone[index] = chain;
       chain[0] = chain_size;
     }
