@@ -49,60 +49,145 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Import definitions from the ncbi::blast scope.
+
 USING_SCOPE(ncbi::blast);
 
-class CStringLit
-{
+/// Wrapped String Literal
+///
+/// This class is a wrapper for a string literal.  By wrapping the
+/// string, type information is attached to the data, and C++ static
+/// typing prevents one class from being assigned to a field which is
+/// of the wrong type.  The methods in the CNetblastSearchOpts::Apply
+/// take varying several sets of arguments, which could easily be
+/// confused.  This technique makes it easy to see errors in local
+/// contexts (such as within the Apply method definition), because the
+/// class name matches the type of data.  If the wrong set of classes
+/// is passed to one of the methods named Same(), Remote(), and
+/// Local(), it is detected as a type error.
+
+class CStringLit {
 public:
+    /// Constructor
+    ///
+    /// The data is stored in the object by copying the pointer, which
+    /// means that the provided string should endure for the lifetime
+    /// of this object (such as a string literal).
+    /// 
+    /// @param x
+    ///   The data this class will store.
     explicit CStringLit(const char * x)
         : m_ptr(x)
     {
     }
     
-    operator const char *(void)
+    /// An implicit conversion to const char *.
+    ///
+    /// This object can be automatically converted to a const char
+    /// pointer.
+    operator const char *()
     {
         return m_ptr;
     }
     
-    operator string(void)
+    /// An implicit conversion to string.
+    ///
+    /// This object can be automatically converted to a string object.
+    operator string()
     {
         return string(m_ptr);
     }
 
 private:
+    /// The string this object manages.
     const char * m_ptr;
 };
 
-class CUserOpt : public CStringLit
-{
+/// User Option
+///
+/// This class contains the command line argument the user will
+/// provide to set this option's value.
+
+class CUserOpt : public CStringLit {
 public:
+    /// Constructor
+    ///
+    /// The user option is stored in the object by passing it to the
+    /// base class.  This constructor is explicit, to prevent implicit
+    /// conversions from strings or character pointers.
+    /// 
+    /// @param x
+    ///   The user option as a string literal.
+    
     explicit CUserOpt(const char * x)
         : CStringLit(x)
     {
     }
 };
 
-class CNetName : public CStringLit
-{
+/// Blast4 Network API Option Name
+///
+/// This class contains the blast4 api option name.  The blast4 API
+/// communicates options using a key-value pair idiom.
+
+class CNetName : public CStringLit {
 public:
+    /// Constructor
+    ///
+    /// The option's network name is stored in the object by passing
+    /// it to the base class.  This constructor is explicit, to
+    /// prevent implicit conversions from strings or character
+    /// pointers.
+    /// 
+    /// @param x
+    ///   The blast4 network name as a string literal.
+    
     explicit CNetName(const char * x)
         : CStringLit(x)
     {
     }
 };
 
-class CArgKey : public CStringLit
-{
+/// Argument Key
+///
+/// This is just a unique string that acts as a handle to access the
+/// option from the NCBI command line processing classes.
+
+class CArgKey : public CStringLit {
 public:
+    /// Constructor
+    ///
+    /// The CArgDesc argument key is stored in the object by passing
+    /// it to the base class.  This constructor is explicit, to
+    /// prevent implicit conversions from strings or character
+    /// pointers.
+    /// 
+    /// @param x
+    ///   The argument key as a string literal.
+    
     explicit CArgKey(const char * x)
         : CStringLit(x)
     {
     }
 };
 
-class COptDesc : public CStringLit
-{
+/// Command Line Option Description
+///
+/// This class contains a description of the option which will be
+/// provided in the program's usage documentation.  This documentation
+/// is shown when a user runs the program with the command line option
+/// "-" or enters incorrect command line options.
+
+class COptDesc : public CStringLit {
 public:
+    /// Constructor
+    ///
+    /// The option description is stored in the object by passing it
+    /// to the base class.  This constructor is explicit, to prevent
+    /// implicit conversions from strings or character pointers.
+    /// 
+    /// @param x
+    ///   The option description as a string literal.
     explicit COptDesc(const char * x)
         : CStringLit(x)
     {
@@ -124,8 +209,7 @@ public:
 /// and CArgs interface adjustments.
 /// @sa NetblastSearchOpts - see also.
 
-class COptionWalker
-{
+class COptionWalker {
 public:
     /// Read a boolean field.
     void ReadOpt(const CArgs & args,
@@ -177,7 +261,7 @@ public:
                 const char       * comment);
 
     /// Require this boolean function
-    virtual bool NeedRemote(void) = 0;
+    virtual bool NeedRemote() = 0;
 };
 
 
@@ -217,10 +301,18 @@ Solution 2: Create a traitsy solution.  The Set(...) methods will use
 
 extern bool trace_blast_api;
 
+/// This macro produces stderr output if trace_blast_api is set.
+
 #define WRITE_API_IDENT(NAME)                                \
     if (trace_blast_api) {                                   \
         cerr << "BlastAPI call: Set" # NAME "(...)" << endl; \
     }
+
+
+/// This provides the start of a class definition, including the
+/// SetValue() method and an error version of the Set() method.  The
+/// first argument is a name of a blast option field, and the second
+/// is an expression to compute the value of the option.
 
 #define OPT_HANDLER_START(NAMESEG, EXPR)       \
 template <class BlOptTp>                       \
@@ -236,12 +328,14 @@ public:                                        \
     template<class ValT, class OptsT>          \
     void Set(OptsT &, ValT &)             \
     {                                          \
-        /*cerr << "In ["              */       \
-        /*     << __PRETTY_FUNCTION__ */       \
-        /*     << "]:\n";             */       \
         throw runtime_error                    \
             ("program / parm mismatch");       \
     }
+
+/// This macro continues the option handler definition by providing a
+/// Set() method that will apply the method to a given blast options
+/// class.  Each field can be applied to a number of options classes,
+/// where each class corresponds to blastn, blastp, or similar.
 
 #define OPT_HANDLER_SUPPORT(OPTIONTYPE) \
     template<class ValT>                \
@@ -251,9 +345,16 @@ public:                                        \
         SetValue(opts, V);              \
     }
 
+/// This ends the class by providing the terminating brace -- in a way
+/// that will hopefully not confuse automatic indentation programs.
+
 #define OPT_HANDLER_END() }
 
+
 // Helper and Shortcut Handler Sets
+
+/// This macro builds an option handler that applies one search option
+/// to all available blast options classes.
 
 #define OPT_HANDLER_SUPPORT_ALL(NAME)               \
 OPT_HANDLER_START(NAME, V)                          \
@@ -264,6 +365,10 @@ OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle)     \
 OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle)  \
 OPT_HANDLER_END()
 
+/// This macro builds an option handler that applies one search option
+/// to all available blast options classes, using an expression to
+/// compute the search option value.
+
 #define OPT_HANDLER_EXPR_ALL(NAME, EXPR)            \
 OPT_HANDLER_START(NAME, EXPR)                       \
 OPT_HANDLER_SUPPORT(CBlastxOptionsHandle)           \
@@ -273,12 +378,18 @@ OPT_HANDLER_SUPPORT(CBlastProteinOptionsHandle)     \
 OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle)  \
 OPT_HANDLER_END()
 
+/// This macro applies the given search option to all nucleotide
+/// classes (currently this only includes one class).
+
 #define OPT_HANDLER_SUPPORT_NUCL(NAME)              \
 OPT_HANDLER_START(NAME, V)                          \
 OPT_HANDLER_SUPPORT(CBlastNucleotideOptionsHandle)  \
 OPT_HANDLER_END()
 
 // Translated Query (blastx, tblastx)
+
+/// This macro applies the given search option to all types of
+/// searches which utilize query translation.
 
 #define OPT_HANDLER_SUPPORT_TRQ(NAME)       \
 OPT_HANDLER_START(NAME, V)                  \
@@ -288,16 +399,18 @@ OPT_HANDLER_END()
 
 // Translated DB (tblastx, tblastn)
 
+/// This macro applies a given search option to all types of searches
+/// which utilize database translation.
+
 #define OPT_HANDLER_SUPPORT_TRD(NAME)       \
 OPT_HANDLER_START(NAME, V)                  \
 OPT_HANDLER_SUPPORT(CTBlastnOptionsHandle)  \
 OPT_HANDLER_SUPPORT(CTBlastxOptionsHandle)  \
 OPT_HANDLER_END()
 
-// CRemoteBlast option .. i.e. a program option rather than an
-// algorithmic option.  Because it is sent to CRemoteBlast, it does
-// not need to deal with Protein vs. Nucleot; rather, it needs to
-// support only the CRemoteBlast type.  Only EXPR type is defined.
+/// This macro applies the option to the CRemoteBlast class.  The
+/// option is considered a program option rather than an algorithm
+/// option.  This macro uses EXPR to compute the option value.
 
 #define OPT_HANDLER_RB_EXPR(NAME,EXPR) \
 OPT_HANDLER_START(NAME, EXPR)          \
@@ -329,43 +442,79 @@ OPT_HANDLER_SUPPORT_NUCL(MatchReward);
 OPT_HANDLER_RB_EXPR(EntrezQuery, V.c_str());
 
 
-class CNetblastSearchOpts
-{
+/// Search Options for the Remote Blast Application
+///
+/// This class acts as the primary interface for the set of search
+/// options available to the remote_blast demo application.  It
+/// contains the relevant data in COptional<> template objects, and
+/// defines the properties of the fields using the code in the Apply()
+/// template method.
+
+class CNetblastSearchOpts {
 public:
-    /// Default constructor - used by CreateInterface().
-    CNetblastSearchOpts(void)
+    /// Default Constructor
+    ///
+    /// This constructor is used by the CreateInterface() function,
+    /// which needs to iterate over the fields before any option
+    /// values are available, to build the list of input fields.
+    CNetblastSearchOpts()
     {
     }
     
-    /// CArgs constructor - reads the values from the provided CArgs object.
+    /// CArgs Based Constructor
+    ///
+    /// Construct the object, filling in the fields from the provided
+    /// CArgs object.
     CNetblastSearchOpts(const CArgs & a);
     
-    /// Create an interface for the program based on parameters in Apply().
+    /// Create an interface for the application.
+    ///
+    /// This method creates an interface for the program based on
+    /// the option behaviour defined in the Apply() method.
     static void CreateInterface(CArgDescriptions & ui);
     
     /// Apply the operation specified by "op" to each search option.
     ///
-    
     /// This will apply the operation specified by "op" (which is
     /// probably derived from OptionWalker) to each search option.
-    /// The object should have methods Local(), Remote(), and Same(),
-    /// which take 4, 2, and 5 parameters) respectively.  To add a new
-    /// option, you should another op.xxx() line here (or for remote
-    /// options, calculate the field's value (possibly from local
-    /// options) in the section marked "Computations & Remote values").
-    /// @param op Object defining an operation over the search options.
+    /// This method does not take a remote blast object or options
+    /// handle object, and is meant for tasks where those objects are
+    /// irrelevant.  The OptionWalker derived class defines all
+    /// relevant behavior here - this class just provides a way to
+    /// apply that code to all of the available options at once.
+    /// 
+    /// @param op
+    ///   Object defining an operation over the search options.
     /// @sa OptionWalker, InterfaceBuilder, OptionReader, SearchParamBuilder.
-    
-    // Non-remote versions don't need to know about the algo/blast/api
-    // class objects, so we send null CRef<>s here.
     
     template <class OpWlkTp>
     void Apply(OpWlkTp & op)
     {
-        // This could perhaps be done better..
+        // Non-remote versions don't need to know about the class
+        // objects, so we send a null CRef<> here.
+        
         CRef<CRemoteBlast> cb4o;
         Apply(op, cb4o, cb4o);
     }
+    
+    /// Apply the operation specified by "op" to each search option.
+    ///
+    /// This will apply the operation specified by "op" (which is
+    /// probably derived from OptionWalker) to each search option.
+    /// The object should have methods Local(), Remote(), and Same(),
+    /// which take 4, 2, and 5 parameters) respectively.  To add a new
+    /// option, one should provde an op.xxx() line here (or, for remote
+    /// options, calculate the field's value (possibly from local
+    /// options) in the section of this method marked "Computations &
+    /// Remote values").
+    /// 
+    /// @param op
+    ///   Object defining an operation over the search options.
+    /// @param cboh
+    ///   Blast options object to pass to the Same() or Remote() methods.
+    /// @param cb4o
+    ///   Remote Blast API object to pass to the Same() or Remote() methods.
+    /// @sa OptionWalker, InterfaceBuilder, OptionReader, SearchParamBuilder.
     
     template <class OpWlkTp, class BlOptTp>
     void Apply(OpWlkTp            & op,
@@ -511,13 +660,13 @@ public:
     }
     
     /// Get the number of alignments to display.
-    TOptInteger NumAligns(void)
+    TOptInteger NumAligns()
     {
         return m_NumAlgn;
     }
     
-    /// Returns gapped alignment flag.
-    TOptBool Gapped(void)
+    /// Returns the gapped alignment flag.
+    TOptBool Gapped()
     {
         return m_Gapped;
     }
@@ -525,26 +674,62 @@ public:
 private:
     // Optional search parameters
     
+    /// The evalue cutoff.
     TOptDouble  m_Evalue;
+    
+    /// The gap opening cost.
     TOptInteger m_GapOpen;
+    
+    /// The gap extension cost.
     TOptInteger m_GapExtend;
+    
+    /// The word size for this search.
     TOptInteger m_WordSize;
+    
+    /// The name of a standard blast matrix.
     TOptString  m_MatrixName;
+    
+    /// The penalty for a mismatch in a nucleotide search.
     TOptInteger m_NucPenalty;
+
+    /// The reward for a match in a nucleotide search.
     TOptInteger m_NucReward;
+    
+    /// The number of descriptions lines to display.
     TOptInteger m_NumDesc;
+    
+    /// The number of pairwise alignments to show.
     TOptInteger m_NumAlgn;
+    
+    /// The threshold for inclusion of hits in a PSI blast search.
     TOptInteger m_Thresh;
+    
+    /// A flag indicated whether the alignment should be gapped.
     TOptBool    m_Gapped;
+    
+    /// The genetic code of the input query.
     TOptInteger m_QuGenCode;
+    
+    /// The genetic code used by the specified database.
     TOptInteger m_DbGenCode;
+    
+    /// A flag indicating whether to assume that the input query's
+    /// defline is accurate.
     TOptBool    m_BelieveDef;
+    
+    /// The size of the search space.
     TOptDouble  m_Searchspc;
+    
+    /// A PHI blast query pattern.
     TOptString  m_PhiQuery;
+    
+    /// The types of filtering the search will use.
     TOptString  m_FilterString;
+    
+    /// An Entrez query limiting the parts of the database to include.
     TOptString  m_EntrezQuery;
-        
-    /// Internal method used by CreateInterface.
+    
+    /// A helper method for the CreateInterface static method.
     void x_CreateInterface2(CArgDescriptions & ui);
 };
 
@@ -552,6 +737,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/11/01 19:22:26  bealer
+ * - Doxyg. docs for search_opts.hpp.
+ *
  * Revision 1.5  2004/04/16 14:30:03  bealer
  * - Fix compiler warnings.
  *
