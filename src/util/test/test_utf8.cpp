@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/18 16:32:24  ivanov
+* Change types TUnicodeChar, TUnicodeString to simple types.
+* TUnicode char to long, TUnicodeString to vector<long>.
+*
 * Revision 1.1  2001/04/06 19:16:04  ivanov
 * Initial revision
 *
@@ -78,9 +82,9 @@ int CTestUtf8::Run(void)
     const size_t MAX_TEST_NUM=5;
     string sRes;
     string s;
-    utf8::TUnicodeString v;
+    vector<long> v;
     utf8::EConversionStatus stat;
-    unsigned char ch;
+    char ch;
     size_t len;
     
 

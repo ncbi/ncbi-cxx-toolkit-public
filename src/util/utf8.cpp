@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/18 16:31:59  ivanov
+* Change types TUnicodeChar, TUnicodeString to simple types.
+* TUnicode char to long, TUnicodeString to vector<long>.
+*
 * Revision 1.1  2001/04/06 19:14:37  ivanov
 * Initial revision
 *
@@ -153,13 +157,13 @@ static unsigned char tblTransA[] =
 // NOTE:  If the UTF-8 symbol has no ASCII-7 equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
-unsigned char StringToChar(const string&      src,
-                           size_t*            seq_len,
-                           bool               ascii_table,
-                           EConversionStatus* status)
+char StringToChar(const string&      src,
+                  size_t*            seq_len,
+                  bool               ascii_table,
+                  EConversionStatus* status)
 {
-    TUnicodeChar  dst_code;    // UTF-code symbol code
-    unsigned char dst_char;    // Result character
+    long dst_code;            // UTF-code symbol code
+    unsigned char dst_char;   // Result character
     EConversionStatus stat;   // Temporary status     
 
     // Process one UTF character
@@ -192,10 +196,10 @@ unsigned char StringToChar(const string&      src,
 //
 string StringToAscii(const string& src, bool ascii_table)
 {
-    string        dst;      // String to result 
-    unsigned char ch;       // Temporary UTF symbol code
-    size_t        utf_len;  // Length of UTF symbol
-    size_t        src_len;  // Length source string
+    string  dst;      // String to result 
+    char    ch;       // Temporary UTF symbol code
+    size_t  utf_len;  // Length of UTF symbol
+    size_t  src_len;  // Length source string
 
     src_len=src.size();
 
@@ -218,13 +222,13 @@ string StringToAscii(const string& src, bool ascii_table)
 // NOTE:  If the UTF-8 symbol has no Unicode equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
-TUnicodeChar StringToCode(const string&      src,
-                          size_t*            seq_len,
-                          EConversionStatus* status)
+long StringToCode(const string&      src,
+                  size_t*            seq_len,
+                  EConversionStatus* status)
 {
     unsigned char ch = src.data()[0];
     size_t utf_len = 0;
-    TUnicodeChar dst_code = 0;
+    long dst_code = 0;
         
     // If character less then 0x80 we put it as is
     if (ch < 0x80)
@@ -247,7 +251,7 @@ TUnicodeChar StringToCode(const string&      src,
     }
 
     // Broken unicode sequence
-    if (utf_len > src.size()) RETURN_LS ((TUnicodeChar)kSkipChar,1,eSkip);
+    if (utf_len > src.size()) RETURN_LS ((long)kSkipChar,1,eSkip);
         
     unsigned char mask = 0xFF;
     mask = mask >> utf_len; 
@@ -269,12 +273,12 @@ TUnicodeChar StringToCode(const string&      src,
 // using StringToCode().
 // Return resulting vector.
 //
-TUnicodeString StringToVector (const string& src)
+vector<long> StringToVector (const string& src)
 {
-    TUnicodeString dst;      // String to result 
-    TUnicodeChar   ch;       // Unicode symbol code
-    size_t         utf_len;  // Length of Unucode symbol
-    size_t         src_len;  // Length of source string
+    vector<long> dst;      // String to result 
+    long         ch;       // Unicode symbol code
+    size_t       utf_len;  // Length of Unucode symbol
+    size_t       src_len;  // Length of source string
 
     src_len=src.size();
 
@@ -296,7 +300,7 @@ TUnicodeString StringToVector (const string& src)
 // NOTE:  If the Unicode symbol has no ASCII-7 equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
-unsigned char CodeToChar(const TUnicodeChar src, EConversionStatus* status)
+char CodeToChar(const long src, EConversionStatus* status)
 {
     unsigned char ch;
 
@@ -306,13 +310,13 @@ unsigned char CodeToChar(const TUnicodeChar src, EConversionStatus* status)
     {
       ch = tblTransA[src-0x1E00];
       if (!ch) RETURN_S (kOutrangeChar,eOutrange)
-         else  RETURN_S (ch,eSuccess);
+         else  RETURN_S ((char)ch,eSuccess);
     }
     if ((src >= 0xFE20) && (src <= 0xFE2F)) RETURN_S (kSkipChar,eSkip);
     if (src > 0x2FF) RETURN_S (kOutrangeChar,eOutrange);
     ch = tblTrans[src-0x80];
     if (!ch) RETURN_S (kOutrangeChar,eOutrange)
-    RETURN_S (ch,eSuccess);
+    RETURN_S ((char)ch,eSuccess);
 }
 
 
