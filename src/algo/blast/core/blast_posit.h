@@ -70,7 +70,7 @@ typedef struct Kappa_posSearchItems {
  * aliases refer to fields in the BlastScoreBlk structure and are NOT owned by
  * this structure */
 typedef struct Kappa_compactSearchItems {
-    /** Query sequence data in ncbistdaa format [alias] */
+    /** Query sequence data in ncbistdaa format without sentinel bytes [alias]*/
     Uint1*              query;                 
     /** Length of the sequence above */
     int                 qlength;
@@ -121,7 +121,8 @@ Kappa_posSearchItems*
 Kappa_posSearchItemsFree(Kappa_posSearchItems* posSearchItems);
 
 /** Creates a new Kappa_compactSearchItems structure
- * @param query query sequence data in ncbistdaa format [in]
+ * @param query query sequence data in ncbistdaa format without sentinel 
+ * bytes [in]
  * @param queryLength length of the sequence above [in]
  * @param sbp BLAST scoring block structure [in]
  * @return newly allocated structure or NULL if out of memory
@@ -154,6 +155,9 @@ int Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/02/25 19:47:45  camacho
+ * Added documentation
+ *
  * Revision 1.4  2005/02/23 17:24:41  camacho
  * 1. Moved prototype of _PSIUpdateLambdaK to blast_psi_priv.h
  * 2. Removed unneeded fields from Kappa_compactSearchItems
