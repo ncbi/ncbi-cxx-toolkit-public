@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/07/12 15:24:59  grichenk
+* Reverted changes related to CObjectManager singleton
+*
 * Revision 1.22  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
@@ -153,9 +156,6 @@ class CSeq_id_Mapper;
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
-    static CObjectManager& GetObjectManager(void);
-    // Direct usage of the constructor is deprecated,
-    // use GetObjectManager() instead.
     CObjectManager(void);
     virtual ~CObjectManager(void);
 
