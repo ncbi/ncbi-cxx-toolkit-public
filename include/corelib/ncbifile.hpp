@@ -40,6 +40,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
+#include <memory>
 #include <vector>
 
 
@@ -915,6 +916,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/10/23 03:18:53  ucko
+ * +<memory> for auto_ptr
+ *
  * Revision 1.28  2003/10/08 15:44:53  ivanov
  * Added CDirEntry::DeleteTrailingPathSeparator()
  *
