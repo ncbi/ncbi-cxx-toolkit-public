@@ -28,10 +28,17 @@
  *
  * Author:  Mike DiCuccio
  *
- * File Description:
- *    Defines to provide correct exporting from DLLs in Windows.
- *    These are necessary to compile DLLs with Visual C++ - exports must be
- *    explicitly labeled as such.
+ */
+
+/// @file mswin_export.h
+///   Defines to provide correct exporting from DLLs in Windows.
+///   These are necessary to compile DLLs with Visual C++ - exports must be
+///   explicitly labeled as such.
+
+
+/** @addtogroup WinDLL
+ *
+ * @{
  */
 
 
@@ -1086,9 +1093,18 @@
 
 #endif  /*  CORELIB___MSWIN_EXPORT__H  */
 
+
+/* @} */
+
+
+
+
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.83  2004/09/07 18:09:21  vakatov
+ * DOXIGEN'ization
+ *
  * Revision 1.82  2004/08/19 16:24:17  jcherry
  * Added NCBI_SEQTEST_EXPORT (to NCBI_SEQ)
  *
