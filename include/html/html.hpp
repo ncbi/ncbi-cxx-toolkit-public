@@ -412,6 +412,42 @@ public:
 };
 
 
+// An html block element
+class CHTMLBlockElement: public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    CHTMLBlockElement(const char* tagname)
+        : CParent(tagname)
+    { }
+    CHTMLBlockElement(const char* tagname, const char* text)
+        : CParent(tagname, text)
+    { }
+    CHTMLBlockElement(const char* tagname, const string& text)
+        : CParent(tagname, text)
+    { }
+    CHTMLBlockElement(const char* tagname, CNCBINode* node)
+        : CParent(tagname, node)
+    { }
+    CHTMLBlockElement(const string& tagname)
+        : CParent(tagname)
+    { }
+    CHTMLBlockElement(const string& tagname, const char* text)
+        : CParent(tagname, text)
+    { }
+    CHTMLBlockElement(const string& tagname, const string& text)
+        : CParent(tagname, text)
+    { }
+    CHTMLBlockElement(const string& tagname, CNCBINode* node)
+        : CParent(tagname, node)
+    { }
+    ~CHTMLBlockElement(void);
+
+    // prints tag close
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
+};
+
+
 class CHTMLComment : public CHTMLNode
 {
     typedef CHTMLNode CParent;
@@ -1194,18 +1230,18 @@ DECLARE_HTML_ELEMENT( object,     CHTMLElement);
 DECLARE_HTML_ELEMENT( style,      CHTMLElement);
 DECLARE_HTML_ELEMENT( title,      CHTMLElement);
 DECLARE_HTML_ELEMENT( address,    CHTMLElement);
-DECLARE_HTML_ELEMENT( blockquote, CHTMLElement);
+DECLARE_HTML_ELEMENT( blockquote, CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( center,     CHTMLElement);
-DECLARE_HTML_ELEMENT( div,        CHTMLElement);
-DECLARE_HTML_ELEMENT( h1,         CHTMLElement);
-DECLARE_HTML_ELEMENT( h2,         CHTMLElement);
-DECLARE_HTML_ELEMENT( h3,         CHTMLElement);
-DECLARE_HTML_ELEMENT( h4,         CHTMLElement);
-DECLARE_HTML_ELEMENT( h5,         CHTMLElement);
-DECLARE_HTML_ELEMENT( h6,         CHTMLElement);
-DECLARE_HTML_ELEMENT( p,          CHTMLElement);
+DECLARE_HTML_ELEMENT( div,        CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( h1,         CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( h2,         CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( h3,         CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( h4,         CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( h5,         CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( h6,         CHTMLBlockElement);
+DECLARE_HTML_ELEMENT( p,          CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( pnop,       CHTMLOpenElement);
-DECLARE_HTML_ELEMENT( pre,        CHTMLElement);
+DECLARE_HTML_ELEMENT( pre,        CHTMLBlockElement);
 DECLARE_HTML_ELEMENT( dt,         CHTMLElement);
 DECLARE_HTML_ELEMENT( dd,         CHTMLElement);
 DECLARE_HTML_ELEMENT( li,         CHTMLElement);
@@ -1259,6 +1295,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2002/12/24 14:56:20  ivanov
+ * Fix for R1.76:  HTML classes for tags <h1-6>, <p>, <div>. <pre>, <blockquote>
+ * now inherits from CHTMLBlockElement (not CHTMElement as before)
+ *
  * Revision 1.61  2002/12/20 19:19:30  ivanov
  * Added SPAN tag support
  *

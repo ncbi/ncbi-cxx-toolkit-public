@@ -427,7 +427,7 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     CParent::PrintEnd(out, mode);
 
-    if ( mode == eHTML ) {
+    if ( mode != ePlainText ) {
         const TMode* previous = mode.GetPreviousContext();
         if ( previous ) {
             CNCBINode* parent = previous->GetNode();
@@ -439,6 +439,16 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
             out << endl;
         }
     }
+    return out;
+}
+
+CHTMLBlockElement::~CHTMLBlockElement(void)
+{
+}
+
+CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
+{
+    CParent::PrintEnd(out, mode);
     if ( mode == ePlainText ) {
         out << endl;
     }
@@ -2030,6 +2040,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2002/12/24 14:56:03  ivanov
+ * Fix for R1.76:  HTML classes for tags <h1-6>, <p>, <div>. <pre>, <blockquote>
+ * now inherits from CHTMLBlockElement (not CHTMElement as before)
+ *
  * Revision 1.78  2002/12/20 19:20:19  ivanov
  * Added SPAN tag support
  *
