@@ -605,7 +605,7 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
 #define SCRIPT_INS_COL  0x40
 #define SCRIPT_DEL_COL  0x80
 
-static Int4
+Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset, 
 	Int4* b_offset, Int4** sapp, BlastGapAlignStruct* gap_align, 
 	const BlastScoringParameters* score_params, Int4 query_offset, 
