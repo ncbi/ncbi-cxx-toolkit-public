@@ -206,7 +206,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
-           BlastQueryInfo* query_info, BlastScoreBlk* sbp);
+           const BlastQueryInfo* query_info, BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score, e-value and percent identity after taking
  * into account the ambiguity information. Used for ungapped searches with 
@@ -226,7 +226,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp,
            Uint1* query_start, Uint1* subject_start,
            const BlastInitialWordParameters* word_params, 
            const BlastHitSavingParameters* hit_params, 
-           BlastQueryInfo* query_info, BlastScoreBlk* sbp);
+           const BlastQueryInfo* query_info, BlastScoreBlk* sbp);
 
 /** Calculate number of identities in an HSP.
  * @param query The query sequence [in]
@@ -329,7 +329,7 @@ Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list,
  * performing multiple tests when linking HSPs. No adjustment is made if 0. [in]
  */
 NCBI_XBLAST_EXPORT
-Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
+Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, Boolean gapped_calculation, 
         BlastScoreBlk* sbp, double gap_decay_rate);
 
@@ -388,7 +388,7 @@ Int2
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastInitialWordParameters* word_params,
-   const BlastHitSavingParameters* hit_params, BlastQueryInfo* query_info, 
+   const BlastHitSavingParameters* hit_params, const BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src);
 
