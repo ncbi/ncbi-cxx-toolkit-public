@@ -33,7 +33,10 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbithr.hpp>
+#include <connect/services/netcache_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 #include <connect/services/grid_worker_app.hpp>
+#include <connect/services/grid_default_factories.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
 #include <connect/threaded_server.hpp>
 
@@ -184,99 +187,6 @@ void CWorkerNodeThreadedServer::Process(SOCK sock)
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class CNetScheduleStorageFactory_NetCache : public INetScheduleStorageFactory
-{
-public:
-    CNetScheduleStorageFactory_NetCache(const IRegistry& reg);
-    virtual ~CNetScheduleStorageFactory_NetCache() {}
-
-    virtual INetScheduleStorage* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetCacheClient>    TPMNetCache;
-    TPMNetCache               m_PM_NetCache;
-    const IRegistry& m_Registry;
-};
-CNetScheduleStorageFactory_NetCache::
-        CNetScheduleStorageFactory_NetCache(const IRegistry& reg)
-: m_Registry(reg)
-{
-    m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
-}
-
-INetScheduleStorage* 
-CNetScheduleStorageFactory_NetCache::CreateInstance(void)
-{
-    CConfig conf(m_Registry);
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netcache_tree = 
-            param_tree->FindSubNode(kNetCacheDriverName);
-
-    auto_ptr<CNetCacheClient> nc_client;
-    if (netcache_tree) {
-        nc_client.reset( 
-            m_PM_NetCache.CreateInstance(
-                    kNetCacheDriverName,
-                    CVersionInfo(TPMNetCache::TInterfaceVersion::eMajor,
-                                 TPMNetCache::TInterfaceVersion::eMinor,
-                                 TPMNetCache::TInterfaceVersion::ePatchLevel), 
-                                 netcache_tree)
-                       );
-    }
-
-    return new CNetCacheNSStorage(nc_client);
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class CNetScheduleClientFactory : public INetScheduleClientFactory
-{
-public:
-    CNetScheduleClientFactory(const IRegistry& reg);
-    virtual ~CNetScheduleClientFactory() {}
-
-    virtual CNetScheduleClient* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
-    TPMNetSchedule            m_PM_NetSchedule;
-    const IRegistry& m_Registry;
-};
-
-CNetScheduleClientFactory::CNetScheduleClientFactory(const IRegistry& reg)
-: m_Registry(reg)
-{
-    m_PM_NetSchedule.RegisterWithEntryPoint(NCBI_EntryPoint_xnetschedule);
-}
-CNetScheduleClient* CNetScheduleClientFactory::CreateInstance(void)
-{
-    auto_ptr<CNetScheduleClient> ret;
-
-    CConfig conf(m_Registry);
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netschedule_tree = 
-            param_tree->FindSubNode(kNetScheduleDriverName);
-
-    if (netschedule_tree) {
-        ret.reset( 
-            m_PM_NetSchedule.CreateInstance(
-                    kNetScheduleDriverName,
-                    CVersionInfo(TPMNetSchedule::TInterfaceVersion::eMajor,
-                                 TPMNetSchedule::TInterfaceVersion::eMinor,
-                                 TPMNetSchedule::TInterfaceVersion::ePatchLevel), 
-                                 netschedule_tree)
-                                 );
-        ret->ActivateRequestRateControl(false);
-    }
-    return ret.release();
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -304,18 +214,22 @@ CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory,
     if (!m_JobFactory.get())
         NCBI_THROW(CGridWorkerAppException,
                    eJobFactoryIsNotSet, "The JobFactory is not set.");
-    if (!m_StorageFactory.get())
-        m_StorageFactory.reset(
-            new CNetScheduleStorageFactory_NetCache(GetConfig()) 
-                              );
-    if (!m_ClientFactory.get())
-        m_ClientFactory.reset(
-            new CNetScheduleClientFactory(GetConfig())
-                              );
-
 }
 CGridWorkerApp::~CGridWorkerApp()
 {
+}
+
+void CGridWorkerApp::Init(void)
+{
+    CNcbiApplication::Init();
+    if (!m_StorageFactory.get()) 
+        m_StorageFactory.reset(
+            new CNetScheduleStorageFactory_NetCache(GetConfig()) 
+                              );
+    if (!m_ClientFactory.get()) 
+        m_ClientFactory.reset(
+            new CNetScheduleClientFactory(GetConfig())
+                              );
 }
 
 int CGridWorkerApp::Run(void)
@@ -389,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/25 16:27:02  didenko
+ * Moved defaults factories the their own header file
+ *
  * Revision 1.4  2005/03/24 15:06:20  didenko
  * Got rid of warnnings about missing virtual destructors.
  *
