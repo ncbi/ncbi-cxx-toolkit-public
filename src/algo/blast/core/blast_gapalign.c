@@ -2876,34 +2876,41 @@ static int
 score_compare_match(const void* v1, const void* v2)
 
 {
-	BlastInitHSP* h1,* h2;
+    BlastInitHSP* h1,* h2;
 
-	h1 = *(BlastInitHSP**) v1;
-	h2 = *(BlastInitHSP**) v2;
+    h1 = *(BlastInitHSP**) v1;
+    h2 = *(BlastInitHSP**) v2;
 
-	if (h1 == NULL || h2 == NULL || 
-            !h1->ungapped_data || !h2->ungapped_data)
-		return 0;
+    if (h1 == NULL || h2 == NULL || 
+        !h1->ungapped_data || !h2->ungapped_data)
+        return 0;
 
-	if (h1->ungapped_data->score < h2->ungapped_data->score) 
-		return 1;
-	if (h1->ungapped_data->score > h2->ungapped_data->score)
-		return -1;
+    if (h1->ungapped_data->score < h2->ungapped_data->score) 
+        return 1;
+    if (h1->ungapped_data->score > h2->ungapped_data->score)
+        return -1;
+    
+    
+    /* Tie breaks: starting offset in subject; then length
+     * (equivalent to ending offset in subject), then starting
+     * offset in query.
+     */
+    if (h1->ungapped_data->s_start < h2->ungapped_data->s_start)
+        return 1;
+    if (h1->ungapped_data->s_start > h2->ungapped_data->s_start )
+        return -1;
 
-   /* Tie breaks: starting offset in subject; then length
-    * (equivalent to ending offset in subject).
-    */
-   if (h1->ungapped_data->s_start < h2->ungapped_data->s_start)
-      return 1;
-   if (h1->ungapped_data->s_start > h2->ungapped_data->s_start )
-      return -1;
+    if (h1->ungapped_data->length < h2->ungapped_data->length)
+        return 1;
+    if (h1->ungapped_data->length > h2->ungapped_data->length)
+        return -1;
 
-   if (h1->ungapped_data->length < h2->ungapped_data->length)
-      return 1;
-   if (h1->ungapped_data->length > h2->ungapped_data->length)
-      return -1;
-
-	return 0;
+    if( h1->ungapped_data->q_start < h2->ungapped_data->q_start )
+        return 1;
+    if( h1->ungapped_data->q_start > h2->ungapped_data->q_start )
+        return -1;
+   
+    return 0;
 }
 
 /** Size of a window in which to look for best starting points for 
@@ -2991,105 +2998,106 @@ Blast_GappedScorePrelimTest(EBlastProgramType program_number,
         BlastInitHSP** init_hsp_array, Int4 init_hsp_count,
         BlastGappedStats* gapped_stats)
 {
-   BlastInitHSP* init_hsp = NULL;
-   BlastInitHSP init_hsp_tmp;
-   Int4 index;
-   BLAST_SequenceBlk query_tmp;
-   Int4 context;
-   Int4 **orig_pssm;
-   Boolean further_process = FALSE;
-   Int4 gap_trigger;
-   Int4 cutoff_score;
-   Boolean is_prot;
-   Int4 max_offset;
-   Int2 status = 0;
+    BlastInitHSP* init_hsp = NULL;
+    BlastInitHSP init_hsp_tmp;
+    Int4 index;
+    BLAST_SequenceBlk query_tmp;
+    Int4 context;
+    Int4 **orig_pssm;
+    Boolean further_process = FALSE;
+    Int4 gap_trigger;
+    Int4 cutoff_score;
+    Boolean is_prot;
+    Int4 max_offset;
+    Int2 status = 0;
+    
+    gap_trigger = ext_params->gap_trigger;
+    cutoff_score = hit_params->cutoff_score;
+    is_prot = (program_number != eBlastTypeBlastn);
+    orig_pssm = gap_align->sbp->posMatrix;
 
-   gap_trigger = ext_params->gap_trigger;
-   cutoff_score = hit_params->cutoff_score;
-   is_prot = (program_number != eBlastTypeBlastn);
-   orig_pssm = gap_align->sbp->posMatrix;
+    qsort(init_hsp_array, init_hsp_count,
+          sizeof(BlastInitHSP*), score_compare_match);
 
-   qsort(init_hsp_array, init_hsp_count,
-         sizeof(BlastInitHSP*), score_compare_match);
+    /* If no initial HSP passes the e-value threshold so far, check if any 
+       would do after gapped alignment, and exit if none are found. 
+       Only attempt to extend initial HSPs whose scores are already above 
+       gap trigger */
+    
+    if (init_hsp_array[0]->ungapped_data && 
+        init_hsp_array[0]->ungapped_data->score < cutoff_score) {
+        init_hsp_tmp.ungapped_data = NULL;
+        for (index=0; index<init_hsp_count; index++) {
+            init_hsp = init_hsp_array[index];
 
-   /* If no initial HSP passes the e-value threshold so far, check if any 
-      would do after gapped alignment, and exit if none are found. 
-      Only attempt to extend initial HSPs whose scores are already above 
-      gap trigger */
-   if (init_hsp_array[0]->ungapped_data && 
-       init_hsp_array[0]->ungapped_data->score < cutoff_score) {
-      init_hsp_tmp.ungapped_data = NULL;
-      for (index=0; index<init_hsp_count; index++) {
-         init_hsp = init_hsp_array[index];
+            if (init_hsp->ungapped_data && 
+                init_hsp->ungapped_data->score < gap_trigger)
+                break;
 
-         if (init_hsp->ungapped_data && 
-             init_hsp->ungapped_data->score < gap_trigger)
-            break;
+            if (gapped_stats) {
+                ++gapped_stats->extra_extensions;
+                ++gapped_stats->extensions;
+            }
 
-         if (gapped_stats) {
-            ++gapped_stats->extra_extensions;
-            ++gapped_stats->extensions;
-         }
+            /* Don't modify initial HSP's coordinates here, because it will be 
+               done again if further processing is required */
+            GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
+                                   &init_hsp_tmp, &context);
+            if (orig_pssm)
+                gap_align->sbp->posMatrix = orig_pssm + 
+                    query_info->context_offsets[context];
 
-         /* Don't modify initial HSP's coordinates here, because it will be 
-            done again if further processing is required */
-         GetRelativeCoordinates(query, query_info, init_hsp, &query_tmp, 
-                                &init_hsp_tmp, &context);
-         if (orig_pssm)
-            gap_align->sbp->posMatrix = orig_pssm + 
-                                query_info->context_offsets[context];
+            if(is_prot && !score_params->options->is_ooframe) {
+                max_offset = 
+                    BlastGetStartForGappedAlignment(query_tmp.sequence, 
+                                                    subject->sequence, gap_align->sbp,
+                                                    init_hsp_tmp.ungapped_data->q_start,
+                                                    init_hsp_tmp.ungapped_data->length,
+                                                    init_hsp_tmp.ungapped_data->s_start,
+                                                    init_hsp_tmp.ungapped_data->length);
+                init_hsp_tmp.s_off += max_offset - init_hsp_tmp.q_off;
+                init_hsp_tmp.q_off = max_offset;
+            }
 
-         if(is_prot && !score_params->options->is_ooframe) {
-            max_offset = 
-               BlastGetStartForGappedAlignment(query_tmp.sequence, 
-                  subject->sequence, gap_align->sbp,
-                  init_hsp_tmp.ungapped_data->q_start,
-                  init_hsp_tmp.ungapped_data->length,
-                  init_hsp_tmp.ungapped_data->s_start,
-                  init_hsp_tmp.ungapped_data->length);
-            init_hsp_tmp.s_off += max_offset - init_hsp_tmp.q_off;
-            init_hsp_tmp.q_off = max_offset;
-         }
+            if (is_prot) {
+                status =  
+                    BLAST_ProtGappedAlignment(program_number, &query_tmp, 
+                                              subject, gap_align, score_params, &init_hsp_tmp);
+            } else {
+                status = 
+                    BLAST_DynProgNtGappedAlignment(&query_tmp, subject, 
+                                                   gap_align, score_params, &init_hsp_tmp);
+            }
+            if (status) {
+                further_process = FALSE;
+                break;
+            }
+            if (gap_align->score >= cutoff_score) {
+                further_process = TRUE;
+                break;
+            }
+        }
+        sfree(init_hsp_tmp.ungapped_data);
+    } else {
+        index = 0;
+        further_process = TRUE;
+        if (gapped_stats)
+            ++gapped_stats->seqs_ungapped_passed;
+    }
 
-         if (is_prot) {
-            status =  
-               BLAST_ProtGappedAlignment(program_number, &query_tmp, 
-                  subject, gap_align, score_params, &init_hsp_tmp);
-         } else {
-            status = 
-               BLAST_DynProgNtGappedAlignment(&query_tmp, subject, 
-                  gap_align, score_params, &init_hsp_tmp);
-         }
-         if (status) {
-            further_process = FALSE;
-            break;
-         }
-         if (gap_align->score >= cutoff_score) {
-            further_process = TRUE;
-            break;
-         }
-      }
-      sfree(init_hsp_tmp.ungapped_data);
-   } else {
-      index = 0;
-      further_process = TRUE;
-      if (gapped_stats)
-         ++gapped_stats->seqs_ungapped_passed;
-   }
-
-   if (!further_process) {
-      /* Free the ungapped data */
-      for (index = 0; index < init_hsp_count; ++index) {
+    if (! further_process) {
+        /* Free the ungapped data */
+        for (index = 0; index < init_hsp_count; ++index) {
             sfree(init_hsp_array[index]->ungapped_data);
-      }
-      sfree(init_hsp_array);
-      gap_align->sbp->posMatrix = orig_pssm;
-   } else if (index > 0) { /* Sort again, if necessary */
-      qsort(init_hsp_array, init_hsp_count,
-               sizeof(BlastInitHSP*), score_compare_match);
-   }
+        }
+        sfree(init_hsp_array);
+        gap_align->sbp->posMatrix = orig_pssm;
+    } else if (index > 0) {
+        qsort(init_hsp_array, init_hsp_count,
+              sizeof(BlastInitHSP*), score_compare_match);
+    }
 
-   return further_process;
+    return further_process;
 }
 
 Int2 BLAST_GetGappedScore (EBlastProgramType program_number, 
