@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/09/23 21:16:07  vasilche
+* Removed dependance on asn.h
+*
 * Revision 1.24  1999/09/23 18:56:58  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -136,7 +139,9 @@
 #include <serial/objistrasn.hpp>
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
-#include <asn.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -718,7 +723,11 @@ void CObjectIStreamAsn::SkipString(void)
 }
 unsigned CObjectIStreamAsn::GetAsnFlags(void)
 {
+#if HAVE_NCBI_C
     return ASNIO_TEXT;
+#else
+    return 0;
+#endif
 }
 
 void CObjectIStreamAsn::AsnOpen(AsnIo& )

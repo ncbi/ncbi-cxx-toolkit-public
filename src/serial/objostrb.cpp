@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/23 21:16:09  vasilche
+* Removed dependance on asn.h
+*
 * Revision 1.19  1999/09/23 18:57:02  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -97,7 +100,9 @@
 #include <serial/objostrb.hpp>
 #include <serial/objstrb.hpp>
 #include <serial/memberid.hpp>
-#include <asn.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+#endif
 
 using namespace NCBI_NS_NCBI::CObjectStreamBinaryDefs;
 
@@ -418,7 +423,11 @@ void CObjectOStreamBinary::WriteBytes(const ByteBlock& ,
 
 unsigned CObjectOStreamBinary::GetAsnFlags(void)
 {
+#if HAVE_NCBI_C
     return ASNIO_BIN;
+#else
+    return 0;
+#endif
 }
 
 void CObjectOStreamBinary::AsnWrite(AsnIo& , const char* data, size_t length)

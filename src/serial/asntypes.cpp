@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/09/23 21:16:07  vasilche
+* Removed dependance on asn.h
+*
 * Revision 1.23  1999/09/23 20:25:03  vasilche
 * Added support HAVE_NCBI_C
 *
@@ -114,9 +117,50 @@
 #include <serial/autoptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
-#include <asn.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+#else
+union dataval {
+	void* ptrvalue;
+	int intvalue;
+	double realvalue;
+	bool boolvalue;
+};
+
+struct valnode {
+	int choice;          /* to pick a choice */
+	dataval data;              /* attached data */
+	valnode* next;  /* next in linked list */
+};
+struct bsunit {             /* for building multiline strings */
+	void* str;            /* the string piece */
+	int len_avail,
+        len;
+	bsunit* next;
+};
+struct bytestore {
+	int seekptr,       /* current position */
+		totlen,             /* total stored data length in bytes */
+		chain_offset;       /* offset in ByteStore of first byte in curchain */
+	bsunit* chain;       /* chain of elements */
+	bsunit*	curchain;           /* the BSUnit containing seekptr */
+};
+#endif
 
 BEGIN_NCBI_SCOPE
+
+static inline
+void* Alloc(size_t size)
+{
+	return NotNull(calloc(size, 1));
+}
+
+template<class T>
+static inline
+T* Alloc(T*& ptr)
+{
+	return ptr = static_cast<T*>(Alloc(sizeof(T)));
+}
 
 class BytestorePtr {
 public:
@@ -157,19 +201,6 @@ private:
     bsunit* unit;
     size_t pos;
 };
-
-static inline
-void* Alloc(size_t size)
-{
-	return NotNull(calloc(size, 1));
-}
-
-template<class T>
-static inline
-T* Alloc(T*& ptr)
-{
-	return ptr = static_cast<T*>(Alloc(sizeof(T)));
-}
 
 #if !HAVE_NCBI_C
 END_NCBI_SCOPE
@@ -226,12 +257,12 @@ bytestore* BSDup(bytestore* bs)
 		totlen -= len;
 	}
 	if ( totlen != 0 )
-		THROW1_TRACE(runtime_error, "bad totlen in bytestore");
+		THROW1_TRACE(std::runtime_error, "bad totlen in bytestore");
 	return copy;
 }
 
 static
-Int4 BSWrite(bytestore* bs, VoidPtr vdata, Int4 vlength)
+Int4 BSWrite(bytestore* bs, void* vdata, Int4 vlength)
 {
     char* data = static_cast<char*>(vdata);
     Int4 length = vlength;
@@ -270,7 +301,7 @@ Int4 BSWrite(bytestore* bs, VoidPtr vdata, Int4 vlength)
 	}
     return vlength;
 }
-};
+}
 
 BEGIN_NCBI_SCOPE
 #endif
@@ -468,89 +499,6 @@ bool CSetOfTypeInfo::RandomOrder(void) const
 {
     return true;
 }
-
-#if 0 
-CTypeInfoMap<CAsnPointerTypeInfo> CAsnPointerTypeInfo::sm_Map;
-
-size_t CAsnPointerTypeInfo::GetSize(void) const
-{
-    return sizeof(void*);
-}
-
-bool CAsnPointerTypeInfo::IsDefault(TConstObjectPtr object) const
-{
-    return Get(object) == 0;
-}
-
-bool CAsnPointerTypeInfo::Equals(TConstObjectPtr object1,
-                             TConstObjectPtr object2) const
-{
-    object1 = Get(object1);
-    object2 = Get(object2);
-    if ( object1 == 0 || object2 == 0 )
-        THROW1_TRACE(runtime_error, "null ASN struct pointer");
-    return GetAsnTypeInfo()->Equals(object1, object2);
-}
-
-void CAsnPointerTypeInfo::SetDefault(TObjectPtr dst) const
-{
-    Get(dst) = 0;
-}
-
-void CAsnPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
-{
-    src = Get(src);
-    if ( src == 0 )
-        THROW1_TRACE(runtime_error, "null ASN struct pointer");
-
-    TTypeInfo asnType = GetAsnTypeInfo();
-    TObjectPtr dstObj = Get(dst);
-    if ( dstObj == 0 ) {
-        _TRACE("null ASN struct pointer");
-        dstObj = Get(dst) = asnType->Create();
-        _TRACE("new " << asnType->GetName() << ": " << unsigned(dstObj));
-    }
-    dst = dstObj;
-
-    asnType->Assign(dst, src);
-}
-
-void CAsnPointerTypeInfo::CollectExternalObjects(COObjectList& l,
-                                                 TConstObjectPtr object) const
-{
-    _TRACE("AsnPointer<" << GetAsnTypeInfo()->GetName() << ">::Collect: " << unsigned(object));
-    object = Get(object);
-    if ( object == 0 )
-        THROW1_TRACE(runtime_error, "null ASN struct pointer");
-    GetAsnTypeInfo()->CollectObjects(l, object);
-}
-
-void CAsnPointerTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
-{
-    object = Get(object);
-    if ( object == 0 )
-        THROW1_TRACE(runtime_error, "null ASN struct pointer");
-    out.WriteExternalObject(object, GetAsnTypeInfo());
-}
-
-void CAsnPointerTypeInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
-{
-    TTypeInfo asnType = GetAsnTypeInfo();
-    _TRACE("AsnPointer<" << asnType->GetName() << ">::ReadData(" << unsigned(object) << ")");
-
-    TObjectPtr objData = Get(object);
-    if ( objData == 0 ) {
-        _TRACE("null ASN struct pointer");
-        objData = Get(object) = asnType->Create();
-        _TRACE("new " << asnType->GetName() << ": " << unsigned(objData));
-    }
-    object = objData;
-
-    in.ReadExternalObject(object, asnType);
-}
-#endif
 
 void CChoiceTypeInfo::AddVariant(const CMemberId& id,
                                  const CTypeRef& typeRef)
@@ -761,6 +709,7 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     }
 }
 
+#if HAVE_NCBI_C
 map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
 
 COldAsnTypeInfo::COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
@@ -819,6 +768,7 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
     if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0)) == 0 )
         THROW1_TRACE(runtime_error, "read fault");
 }
+#endif
 
 CEnumeratedTypeInfo::CEnumeratedTypeInfo(const string& name, bool isInteger)
     : CParent(name), m_Integer(isInteger)

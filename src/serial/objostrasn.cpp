@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/09/23 21:16:08  vasilche
+* Removed dependance on asn.h
+*
 * Revision 1.24  1999/09/23 20:25:04  vasilche
 * Added support HAVE_NCBI_C
 *
@@ -127,7 +130,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/memberid.hpp>
-#include <asn.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -342,7 +347,11 @@ void CObjectOStreamAsn::End(const ByteBlock& )
 
 unsigned CObjectOStreamAsn::GetAsnFlags(void)
 {
+#if HAVE_NCBI_C
     return ASNIO_TEXT;
+#else
+    return 0;
+#endif
 }
 
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/23 21:16:08  vasilche
+* Removed dependance on asn.h
+*
 * Revision 1.21  1999/09/23 20:25:04  vasilche
 * Added support HAVE_NCBI_C
 *
@@ -104,7 +107,9 @@
 #include <serial/objlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
-#include <asn.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -372,6 +377,7 @@ void CObjectOStream::End(const ByteBlock& )
 {
 }
 
+#if HAVE_NCBI_C
 extern "C" {
     Int2 LIBCALLBACK WriteAsn(Pointer object, CharPtr data, Uint2 length)
     {
@@ -382,6 +388,7 @@ extern "C" {
         return length;
     }
 }
+#endif
 
 CObjectOStream::AsnIo::AsnIo(CObjectOStream& out)
     : m_Out(out)

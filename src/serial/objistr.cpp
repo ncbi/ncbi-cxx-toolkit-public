@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/23 21:16:07  vasilche
+* Removed dependance on asn.h
+*
 * Revision 1.25  1999/09/23 20:25:04  vasilche
 * Added support HAVE_NCBI_C
 *
@@ -117,7 +120,9 @@
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/typemapper.hpp>
-#include <asn.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -595,6 +600,7 @@ const CObject& CObjectIStream::GetRegisteredObject(TIndex index) const
     return m_Objects[index];
 }
 
+#if HAVE_NCBI_C
 extern "C" {
     Int2 LIBCALLBACK ReadAsn(Pointer object, CharPtr data, Uint2 length)
     {
@@ -604,6 +610,7 @@ extern "C" {
         return static_cast<CObjectIStream::AsnIo*>(object)->Read(data, length);
     }
 }
+#endif
 
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
     : m_In(in), m_Count(0)
