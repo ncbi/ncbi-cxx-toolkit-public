@@ -59,9 +59,6 @@ extern "C" {
 
 #define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & 0x03)
 
-/** Number of translation frames */
-#define NUM_FRAMES 6
-
 #if 0
 /** Retrieve a sequence from the BLAST database
  * @param db BLAST database [in]

@@ -54,6 +54,9 @@ extern "C" {
 #endif
 void __sfree(void** x); /* implemented in lib/util.c */
 
+/******************** Preprocessor definitions ******************************/
+
+/** Program type */
 #define blast_type_blastn 0
 #define blast_type_blastp 1
 #define blast_type_blastx 2
@@ -71,6 +74,18 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #ifndef GAP_CHAR
 #define GAP_CHAR 0
 #endif
+
+/** Compression ratio of nucleotide bases (4 bases in 1 byte) */
+#ifndef COMPRESSION_RATIO
+#define COMPRESSION_RATIO 4
+#endif
+
+/** Number of frames to which we translate in translating searches */
+#ifndef NUM_FRAMES
+#define NUM_FRAMES 6
+#endif
+
+/********************* Structure definitions ********************************/
 
 /** Structure for keeping the query masking information */
 typedef struct BlastMaskLoc {
@@ -167,8 +182,6 @@ typedef struct BlastReturnStat {
                              extensions with traceback */
    double gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastReturnStat;
-
-#define COMPRESSION_RATIO 4
 
 #ifdef __cplusplus
 }
