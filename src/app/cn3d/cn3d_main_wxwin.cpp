@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.148  2002/07/23 17:39:53  thiessen
+* use wxFileDialog for save dialog
+*
 * Revision 1.147  2002/07/23 15:46:49  thiessen
 * print out more BLAST info; tweak save file name
 *
@@ -2133,10 +2136,20 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     wxString outputFolder = wxString(userDir.c_str(), userDir.size() - 1); // remove trailing /
     wxFileName fn(currentFile.c_str());
-    wxString outputFilename = wxFileSelector(
-        "Choose a filename for output", outputFolder, fn.GetName(), fn.GetExt(),
+    wxFileDialog dialog(this, "Choose a filename for output", outputFolder,
+#ifdef __WXGTK__
+        fn.GetFullName(),
+#else
+        fn.GetName(),
+#endif
         "All Files|*.*|Binary ASN (*.val)|*.val|ASCII CDD (*.acd)|*.acd|ASCII ASN (*.prt)|*.prt",
         wxSAVE | wxOVERWRITE_PROMPT);
+    dialog.SetFilterIndex(fn.GetExt() == "val" ? 1 : (fn.GetExt() == "acd" ? 2 :
+        (fn.GetExt() == "prt" ? 3 : 0)));
+    wxString outputFilename;
+    if (dialog.ShowModal() == wxID_OK)
+        outputFilename = dialog.GetPath();
+
     TESTMSG("save file: '" << outputFilename.c_str() << "'");
 
     if (!outputFilename.IsEmpty()) {
