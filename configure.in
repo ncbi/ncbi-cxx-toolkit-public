@@ -673,6 +673,13 @@ AC_MSG_RESULT()
 ### Common-use system and miscellaneous libs
 THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
 NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
+MATH_LIBS=${MATH_LIBS:="-lm"}
+
+
+### Save original compilator/linker flags
+orig_CPPFLAGS="$CPPFLAGS"
+orig_LIBS="$LIBS"
+
 
 ## KSTAT system library and kstat_XXX() functions
 KSTAT_LIBS=${KSTAT_LIBS:="-lkstat"}
@@ -699,11 +706,6 @@ AC_TRY_LINK(
    [RPCSVC_LIBS=""]
 )
 AC_MSG_RESULT([$RPCSVC_LIBS])
-
-
-### Save original compilator/linker flags
-orig_CPPFLAGS="$CPPFLAGS"
-orig_LIBS="$LIBS"
 
 
 ## SYBASE libraries
@@ -982,6 +984,7 @@ AC_SUBST(f_outexe)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
+AC_SUBST(MATH_LIBS)
 AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(SYBASE_INCLUDE)
