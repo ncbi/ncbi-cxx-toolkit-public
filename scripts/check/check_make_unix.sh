@@ -305,10 +305,8 @@ RunTest() {
             }' $x_tmp/\$\$.out >> \$x_test_out
 
          # Get application execution time
-         if [ \$result -eq 0 ]; then
-            exec_time=\`tail -3 $x_tmp/\$\$.out | tr '\n' '?'\`
-            exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
-         fi
+         exec_time=\`tail -3 $x_tmp/\$\$.out | tr '\n' '?'\`
+         exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
          rm -f $x_tmp/\$\$.out
 
          # Write result of the test into the his output file
@@ -330,8 +328,8 @@ RunTest() {
             echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
             count_ok=\`expr \$count_ok + 1\`
          else
-            echo "ERR --  \$x_cmd"
-            echo "ERR [\$result] --  \$x_cmd" >> \$res_log
+            echo "ERR --  \$x_cmd     (\$exec_time)"
+            echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
             count_err=\`expr \$count_err + 1\`
          fi
       else
