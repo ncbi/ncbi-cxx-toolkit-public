@@ -44,6 +44,8 @@
          Prohibiting the use of some of the system and third-party packages</a>
          <li> <a href="#ref_Optional">
          Optional projects</a>
+		 <li> <a href="#ref_ProjectList">
+         Finer-grained control of projects: <i>--with-projects</i></a> 
          <li> <a href="#ref_Misc">
          Miscellaneous: <i>--without-exe, --without-execopy,
 	 --with-lib-rebuilds(=ask)</i></a>
@@ -1081,6 +1083,28 @@ using the following <b><i>configure</i></b> flags:
 
 
 <p>
+<br>
+<a name="ref_ProjectList"></a>
+<h4>Finer-grained control of projects: <i>--with-projects</i></h4>
+
+If the above options aren't specific enough for you, you can also tell
+<tt>configure</tt> which projects you want to build by passing the
+flag <i><b>--with-projects=FILE</b></i>, where <b>FILE</b> contains a
+list of
+<a href="http://www.ciser.cornell.edu/info/regex.html"><i>extended
+regular expressions</i></a> indicating which directories to build in.
+For instance, a file containing the lines <pre>
+corelib$
+util
+</pre>
+would request a non-recursive build in corelib and a recursive build
+in util.  With this option, the <tt>make</tt> target <tt>all_p</tt>
+will build all selected projects under the current directory.
+<p>
+<b>NOTE:</b> The flags listed <a href="#ref_Optional">above</a> still
+apply; for instance, you still need <i><b>--with-internal</b></i> to
+enable internal projects.
+
 <br>
 <a name="ref_Misc"></a>
 <h4>Miscellaneous: <i>--without-exe, --without-execopy, --with-lib-rebuilds(=ask)</i></h4>

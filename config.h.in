@@ -1,25 +1,11 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader.  */
-
-/* Define if type char is unsigned and you are not using gcc.  */
-#ifndef __CHAR_UNSIGNED__
-#undef __CHAR_UNSIGNED__
-#endif
+/* config.h.in.  Generated automatically from configure.ac by autoheader.  */
+/* These two come from standard macros, but are no longer automatic. (!) */
 
 /* Define to empty if the keyword does not work.  */
 #undef const
 
 /* Define if your system has its own `getloadavg' function.  */
 #undef HAVE_GETLOADAVG
-
-/* Define to `unsigned' if <sys/types.h> doesn't define.  */
-#undef size_t
-
-/* Define if you have the ANSI C header files.  */
-#undef STDC_HEADERS
-
-/* Define if your processor stores words with the most significant
-   byte first (like Motorola and SPARC, unlike Intel and VAX).  */
-#undef WORDS_BIGENDIAN
 
 /* It is the NCBI C++ Toolkit */
 #undef NCBI_CXX_TOOLKIT
@@ -78,6 +64,9 @@
 
 /* strcasecmp() */
 #undef HAVE_STRCASECMP
+
+/* Microsoft C++ specific */
+#undef SIZEOF___INT64
 
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
@@ -143,59 +132,98 @@
 /* Architecture size */
 #undef NCBI_PLATFORM_BITS
 
-/* The number of bytes in a __int64.  */
-#undef SIZEOF___INT64
+/* Define if type `char' is unsigned and you are not using gcc.  */
+#ifndef __CHAR_UNSIGNED__
+# undef __CHAR_UNSIGNED__
+#endif
 
-/* The number of bytes in a char.  */
-#undef SIZEOF_CHAR
-
-/* The number of bytes in a double.  */
-#undef SIZEOF_DOUBLE
-
-/* The number of bytes in a int.  */
-#undef SIZEOF_INT
-
-/* The number of bytes in a long.  */
-#undef SIZEOF_LONG
-
-/* The number of bytes in a long double.  */
-#undef SIZEOF_LONG_DOUBLE
-
-/* The number of bytes in a long long.  */
-#undef SIZEOF_LONG_LONG
-
-/* The number of bytes in a short.  */
-#undef SIZEOF_SHORT
-
-/* The number of bytes in a size_t.  */
-#undef SIZEOF_SIZE_T
-
-/* The number of bytes in a void*.  */
-#undef SIZEOF_VOIDP
-
-/* Define if you have the <fstream> header file.  */
+/* Define if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
-/* Define if you have the <fstream.h> header file.  */
+/* Define if you have the <fstream.h> header file. */
 #undef HAVE_FSTREAM_H
 
-/* Define if you have the <iostream> header file.  */
+/* Define if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
 
-/* Define if you have the <iostream.h> header file.  */
+/* Define if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
-/* Define if you have the <strstrea.h> header file.  */
+/* Define if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define if you have the <strstrea.h> header file. */
 #undef HAVE_STRSTREA_H
 
-/* Define if you have the <strstream> header file.  */
+/* Define if you have the <strstream> header file. */
 #undef HAVE_STRSTREAM
 
-/* Define if you have the <strstream.h> header file.  */
+/* Define if you have the <strstream.h> header file. */
 #undef HAVE_STRSTREAM_H
 
-/* Define if you have the <unistd.h> header file.  */
+/* Define if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if you have the <windows.h> header file.  */
+/* Define if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t
+
+/* The size of a `__int64', as computed by sizeof. */
+#undef SIZEOF___INT64
+
+/* The size of a `char', as computed by sizeof. */
+#undef SIZEOF_CHAR
+
+/* The size of a `double', as computed by sizeof. */
+#undef SIZEOF_DOUBLE
+
+/* The size of a `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of a `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of a `long double', as computed by sizeof. */
+#undef SIZEOF_LONG_DOUBLE
+
+/* The size of a `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
+
+/* The size of a `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
+/* The size of a `size_t', as computed by sizeof. */
+#undef SIZEOF_SIZE_T
+
+/* The size of a `void*', as computed by sizeof. */
+#undef SIZEOF_VOIDP
+
+/* Define if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define if your processor stores words with the most significant byte first
+   (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN

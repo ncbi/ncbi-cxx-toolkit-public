@@ -120,3 +120,21 @@ clean_r: clean
 	@$(SUB_BRA) clean_r $(SUB_KET)
 purge_r: purge 
 	@$(SUB_BRA) purge_r $(SUB_KET)
+
+top_srcdir = @top_srcdir@
+PROJECTS = @PROJECTS@ # File listing relevant project directories.
+
+# This file contains the actual patterns to grep for, formed by
+# prepending "build/" to each original pattern as an anchor.
+RELEVANT_FILE = $(builddir)/relevant.patterns
+$(RELEVANT_FILE): $(PROJECTS)
+	@sed -e 's@^@build/@' $< >> $@
+
+# Commands to see whether project directories are relevant.
+RELEVANT = egrep -f $(RELEVANT_FILE) > /dev/null
+RELEVANT_DIR = pwd | $(RELEVANT)
+RELEVANT_SUBS = find "`pwd`" -type d | $(RELEVANT)
+
+all_p: $(RELEVANT_FILE)
+	@if $(RELEVANT_DIR); then make all; else true; fi
+	@if $(RELEVANT_SUBS); then $(SUB_BRA) all_p $(SUB_KET); else true; fi

@@ -1,3 +1,11 @@
+/* These two come from standard macros, but are no longer automatic. (!) */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define if your system has its own `getloadavg' function.  */
+#undef HAVE_GETLOADAVG
+
 /* It is the NCBI C++ Toolkit */
 #undef NCBI_CXX_TOOLKIT
 
