@@ -257,12 +257,12 @@ static int LookupBLASTResidueNumberFromThreaderResidueNumber(unsigned char r)
             (r < ThreaderResidues.size()) ? ThreaderResidues[r] : 'X');
 }
 
-static Int4 Round(double d)
+int Round(double d)
 {
     if (d >= 0.0)
-        return (Int4) (d + 0.5);
+        return (int) (d + 0.5);
     else
-        return (Int4) (d - 0.5);
+        return (int) (d - 0.5);
 }
 
 const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
@@ -1648,6 +1648,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/28 19:32:04  thiessen
+* expose a few useful functions
+*
 * Revision 1.12  2004/06/23 00:56:08  thiessen
 * fix delete row vector synchronization problem
 *

@@ -50,6 +50,9 @@ typedef struct _blast_matrix BLAST_Matrix_;
 
 BEGIN_SCOPE(struct_util)
 
+extern int LookupBLASTResidueNumberFromCharacter(unsigned char r);
+extern int Round(double d);
+
 class Sequence;
 class Block;
 class UngappedAlignedBlock;
@@ -364,6 +367,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/07/28 19:31:33  thiessen
+* expose a few useful functions
+*
 * Revision 1.1  2004/06/14 13:49:16  thiessen
 * make BlockMultipleAlignment and Sequence classes public
 *
