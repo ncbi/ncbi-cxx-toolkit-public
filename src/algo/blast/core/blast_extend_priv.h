@@ -27,7 +27,7 @@
  *
  */
 
-/** @file blast_extend_pri.h
+/** @file blast_extend_priv.h
  * Structures used for BLAST extension @todo FIXME: elaborate description
  * rename to nt_ungapped.h?
  */
