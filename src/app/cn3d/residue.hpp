@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/24 18:43:15  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.9  2000/08/17 14:22:00  thiessen
 * added working StyleManager
 *
@@ -141,6 +144,7 @@ private:
     AtomInfoMap atomInfos;
 
 public:
+    int NAtoms(void) const { return atomInfos.size(); }
     const AtomInfo * GetAtomInfo(int aID) const
     { 
         AtomInfoMap::const_iterator info=atomInfos.find(aID);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/24 18:43:15  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.2  2000/07/27 13:30:10  thiessen
 * remove 'using namespace ...' from all headers
 *
@@ -79,6 +82,22 @@ public:
 };
 
 extern PeriodicTableClass PeriodicTable; // one global copy for now
+
+
+// general utility functions
+
+inline bool IsMetal(int atomicNumber)
+{
+    if ((atomicNumber >= 3 && atomicNumber <= 4) ||      // Li..Be
+        (atomicNumber >= 11 && atomicNumber <= 13) ||    // Na..Al
+        (atomicNumber >= 19 && atomicNumber <= 32) ||    // K..Ge
+        (atomicNumber >= 37 && atomicNumber <= 51) ||    // Rb..Sb
+        (atomicNumber >= 55 && atomicNumber <= 84) ||    // Cs..Po
+        (atomicNumber >= 87 && atomicNumber <= 109))     // Fr..Mt
+        return true;
+
+    return false;
+}
 
 END_SCOPE(Cn3D)
 

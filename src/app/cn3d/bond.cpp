@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/24 18:43:52  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.11  2000/08/11 12:58:31  thiessen
 * added worm; get 3d-object coords from asn1
 *
@@ -142,15 +145,6 @@ bool Bond::Draw(const AtomSet *atomSet) const
         return false;
     }
 
-    // get Style
-    BondStyle bondStyle;
-    if (!parentSet->styleManager->GetBondStyle(this, atom1, atom2, &bondStyle))
-        return false;
-    // don't show bond if either atom isn't visible
-    if (bondStyle.end1.style == StyleManager::eNotDisplayed ||
-        bondStyle.end2.style == StyleManager::eNotDisplayed)
-        return true;
-
     // get Atom* for appropriate altConf
     if (!atomSet) {
         ERR_POST(Error << "Bond::Draw(data) - NULL AtomSet*");
@@ -161,6 +155,16 @@ bool Bond::Draw(const AtomSet *atomSet) const
     if (!a1) return true;
     const Atom *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
     if (!a2) return true;
+
+    // get Style
+    BondStyle bondStyle;
+    if (!parentSet->styleManager->GetBondStyle(this, atom1, atom2,
+            (a1->site - a2->site).length(), &bondStyle))
+        return false;
+    // don't show bond if either atom isn't visible
+    if (bondStyle.end1.style == StyleManager::eNotDisplayed &&
+        bondStyle.end2.style == StyleManager::eNotDisplayed)
+        return true;
 
     // get prev, next alphas if drawing worm virtual bond
     const Vector *site0 = NULL, *site3 = NULL;

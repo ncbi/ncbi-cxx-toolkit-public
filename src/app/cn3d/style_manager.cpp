@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/24 18:43:52  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.9  2000/08/21 19:31:48  thiessen
 * add style consistency checking
 *
@@ -306,13 +309,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     const Element *element = PeriodicTable.GetElement(info->atomicNumber);
 
     // determine radius
-    StyleSettings::eDrawingStyle style;
-    if (backboneStyle)
-        style = backboneStyle->style;
-    else
-        style = generalStyle->style;
-
-    switch (style) {
+    switch (backboneStyle ? backboneStyle->style : generalStyle->style) {
         case StyleSettings::eWire:
         case StyleSettings::eWireWorm:
         case StyleSettings::eTubeWorm:
@@ -345,13 +342,7 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         atomStyle->color = Vector(1,1,0); // highlight color
     else {
 
-        StyleSettings::eColorScheme colorScheme;
-        if (backboneStyle)
-            colorScheme = backboneStyle->colorScheme;
-        else
-            colorScheme = generalStyle->colorScheme;
-
-        switch (colorScheme) {
+        switch (backboneStyle ? backboneStyle->colorScheme : generalStyle->colorScheme) {
             case StyleSettings::eElement:
                 atomStyle->color = element->color;
                 break;
@@ -383,7 +374,11 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     // determine transparency
     if (molecule->IsSolvent())
         atomStyle->style = eTransparentAtom;
-    else
+    else if (IsMetal(info->atomicNumber) ||
+             (molecule->NResidues() == 1 && residue->NAtoms() == 1)) {
+        atomStyle->style = eTransparentAtom;
+        atomStyle->radius = element->vdWRadius;  // always big spheres for metals or isolated atoms
+    } else
         atomStyle->style = eSolidAtom;
 
     atomStyle->name = info->glName;
@@ -433,7 +428,7 @@ static bool SetBondStyleFromResidueStyle(StyleSettings::eDrawingStyle style,
 // style pointers (backboneStyle, generalStyle). Show/hide status is taken
 // from the atoms - if either is hidden, the bond isn't shown either.
 bool StyleManager::GetBondStyle(const Bond *bond,
-        const AtomPntr& atom1, const AtomPntr& atom2,
+        const AtomPntr& atom1, const AtomPntr& atom2, double bondLength,
         BondStyle *bondStyle) const
 {
     const StructureObject *object;
@@ -442,6 +437,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     const Residue::AtomInfo
         *info1 = object->graph->GetAtomInfo(atom1), 
         *info2 = object->graph->GetAtomInfo(atom2);
+
     AtomStyle atomStyle1, atomStyle2;
     const StyleSettings::BackboneStyle *backboneStyle1, *backboneStyle2;
     const StyleSettings::GeneralStyle *generalStyle1, *generalStyle2;
@@ -454,17 +450,9 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         atomStyle2.style == eNotDisplayed)
         BOND_NOT_DISPLAYED;
 
-    // if this is a virtual bond, but style isn't eTrace, don't display
-    if (bond->order == Bond::eVirtual &&
-        (backboneStyle1->type != StyleSettings::eTrace ||
-         backboneStyle2->type != StyleSettings::eTrace))
-        BOND_NOT_DISPLAYED;
-
     bondStyle->end1.name = info1->glName;
     bondStyle->end2.name = info2->glName;
-    bondStyle->end1.color = atomStyle1.color;
-    bondStyle->end2.color = atomStyle2.color;
-    bondStyle->end1.atomCap = bondStyle->end2.atomCap = bondStyle->midCap = false;
+    bondStyle->midCap = false;
 
     // use connection style if bond is between molecules
     if (atom1.mID != atom2.mID) {
@@ -479,92 +467,112 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             ERR_POST(Error << "StyleManager::GetBondStyle() - invalid connection style");
             return false;
         }
-        return true;
     }
+
+    // otherwise, need to query atom style to figure bond style parameters
+    else {
+
+        // if this is a virtual bond, but style isn't eTrace, don't display
+        if (bond->order == Bond::eVirtual &&
+            (backboneStyle1->type != StyleSettings::eTrace ||
+            backboneStyle2->type != StyleSettings::eTrace))
+            BOND_NOT_DISPLAYED;
     
-    const StyleSettings&
-        settings1 = GetStyleForResidue(object, atom1.mID, atom1.rID),
-        settings2 = GetStyleForResidue(object, atom2.mID, atom2.rID);
+        bondStyle->end1.color = atomStyle1.color;
+        bondStyle->end2.color = atomStyle2.color;
+        bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
 
-    StyleSettings::eDrawingStyle style1;
-    if (backboneStyle1)
-        style1 = backboneStyle1->style;
-    else
-        style1 = generalStyle1->style;
-    if (!SetBondStyleFromResidueStyle(style1, settings1, &(bondStyle->end1)))
-        return false;
+        const StyleSettings&
+            settings1 = GetStyleForResidue(object, atom1.mID, atom1.rID),
+            settings2 = GetStyleForResidue(object, atom2.mID, atom2.rID);
 
-    StyleSettings::eDrawingStyle style2;
-    if (backboneStyle2)
-        style2 = backboneStyle2->style;
-    else
-        style2 = generalStyle2->style;
-    if (!SetBondStyleFromResidueStyle(style2, settings2, &(bondStyle->end2)))
-        return false;
-
-    // don't show bonds between SpaceFill atoms
-    if (style1 == StyleSettings::eSpaceFill && style2 == StyleSettings::eSpaceFill)
-        BOND_NOT_DISPLAYED;
-
-    // special case for bonds between side chain and residue - make whole bond
-    // same style/color as side chain side
-    if (info2->classification == Residue::eSideChainAtom &&
-        (info1->classification == Residue::eAlphaBackboneAtom ||
-         info1->classification == Residue::ePartialBackboneAtom ||
-         info1->classification == Residue::eCompleteBackboneAtom)
-        ) {
-        bondStyle->end1.style = bondStyle->end2.style;
-        bondStyle->end1.color = bondStyle->end2.color;
-        bondStyle->end1.radius = bondStyle->end2.radius;
-    } else if (info1->classification == Residue::eSideChainAtom &&
-               (info2->classification == Residue::eAlphaBackboneAtom ||
-                info2->classification == Residue::ePartialBackboneAtom ||
-                info2->classification == Residue::eCompleteBackboneAtom)) {
-        bondStyle->end2.style = bondStyle->end1.style;
-        bondStyle->end2.color = bondStyle->end1.color;
-        bondStyle->end2.radius = bondStyle->end1.radius;
-    }
-        
-    // add midCap if style or radius for two sides of bond is different;
-    if (bondStyle->end1.style != bondStyle->end2.style ||
-        bondStyle->end1.radius != bondStyle->end2.radius)
-        bondStyle->midCap = true;
-
-    // atomCaps needed at ends of thick worms when at end of chain, or if
-    // internal residues are hidden or of a different style
-    if (bondStyle->end1.style == StyleManager::eThickWormBond ||
-        bondStyle->end1.style == StyleManager::eThickWormBond) {
-
-        const Residue::AtomInfo *infoV;
-        AtomStyle atomStyleV;
-        const StyleSettings::BackboneStyle *backboneStyleV;
-        const StyleSettings::GeneralStyle *generalStyleV;
-
-        if (bondStyle->end1.style == StyleManager::eThickWormBond &&
-                (!bond->previousVirtual ||
-                 !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
-                 !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1,
-                     &atomStyleV, &backboneStyleV, &generalStyleV) ||
-                 atomStyleV.style == StyleManager::eNotDisplayed ||
-                 backboneStyleV->style != style1))
-            bondStyle->end1.atomCap = true;
-
-        if (bondStyle->end2.style == StyleManager::eThickWormBond &&
-                (!bond->nextVirtual ||
-                 !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
-                 !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2,
-                     &atomStyleV, &backboneStyleV, &generalStyleV) ||
-                  atomStyleV.style == StyleManager::eNotDisplayed ||
-                  backboneStyleV->style != style2))
-            bondStyle->end2.atomCap = true;
-    }
-
-    // set worm tension, tighter for smaller protein alpha-helix
-    if (bond->order == Bond::eVirtual) {
-        if (info1->residue->IsAminoAcid())
-            bondStyle->tension = -0.8;
+        StyleSettings::eDrawingStyle style1;
+        if (backboneStyle1)
+            style1 = backboneStyle1->style;
         else
-            bondStyle->tension = -0.4;
+            style1 = generalStyle1->style;
+        if (!SetBondStyleFromResidueStyle(style1, settings1, &(bondStyle->end1)))
+            return false;
+
+        StyleSettings::eDrawingStyle style2;
+        if (backboneStyle2)
+            style2 = backboneStyle2->style;
+        else
+            style2 = generalStyle2->style;
+        if (!SetBondStyleFromResidueStyle(style2, settings2, &(bondStyle->end2)))
+            return false;
+
+        // special case for bonds between side chain and residue - make whole bond
+        // same style/color as side chain side
+        if (info2->classification == Residue::eSideChainAtom &&
+            (info1->classification == Residue::eAlphaBackboneAtom ||
+            info1->classification == Residue::ePartialBackboneAtom ||
+            info1->classification == Residue::eCompleteBackboneAtom)
+            ) {
+            bondStyle->end1.style = bondStyle->end2.style;
+            bondStyle->end1.color = bondStyle->end2.color;
+            bondStyle->end1.radius = bondStyle->end2.radius;
+        } else if (info1->classification == Residue::eSideChainAtom &&
+                (info2->classification == Residue::eAlphaBackboneAtom ||
+                    info2->classification == Residue::ePartialBackboneAtom ||
+                    info2->classification == Residue::eCompleteBackboneAtom)) {
+            bondStyle->end2.style = bondStyle->end1.style;
+            bondStyle->end2.color = bondStyle->end1.color;
+            bondStyle->end2.radius = bondStyle->end1.radius;
+        }
+        
+        // add midCap if style or radius for two sides of bond is different;
+        if (bondStyle->end1.style != bondStyle->end2.style ||
+            bondStyle->end1.radius != bondStyle->end2.radius)
+            bondStyle->midCap = true;
+
+        // atomCaps needed at ends of thick worms when at end of chain, or if
+        // internal residues are hidden or of a different style
+        if (bondStyle->end1.style == StyleManager::eThickWormBond ||
+            bondStyle->end1.style == StyleManager::eThickWormBond) {
+
+            const Residue::AtomInfo *infoV;
+            AtomStyle atomStyleV;
+            const StyleSettings::BackboneStyle *backboneStyleV;
+            const StyleSettings::GeneralStyle *generalStyleV;
+
+            if (bondStyle->end1.style == StyleManager::eThickWormBond &&
+                    (!bond->previousVirtual ||
+                    !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
+                    !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1,
+                        &atomStyleV, &backboneStyleV, &generalStyleV) ||
+                    atomStyleV.style == StyleManager::eNotDisplayed ||
+                    backboneStyleV->style != style1))
+                bondStyle->end1.atomCap = true;
+
+            if (bondStyle->end2.style == StyleManager::eThickWormBond &&
+                    (!bond->nextVirtual ||
+                    !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
+                    !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2,
+                        &atomStyleV, &backboneStyleV, &generalStyleV) ||
+                    atomStyleV.style == StyleManager::eNotDisplayed ||
+                    backboneStyleV->style != style2))
+                bondStyle->end2.atomCap = true;
+        }
+
+        // set worm tension, tighter for smaller protein alpha-helix
+        if (bond->order == Bond::eVirtual) {
+            if (info1->residue->IsAminoAcid())
+                bondStyle->tension = -0.8;
+            else
+                bondStyle->tension = -0.4;
+        }
+    }
+
+    // if atom is larger than half bond length, don't show that half of the bond
+    bondLength /= 2;
+    if (atomStyle1.radius > bondLength) {
+        bondStyle->end1.style = StyleManager::eNotDisplayed;
+        bondStyle->midCap = true;
+    }
+    if (atomStyle2.radius > bondLength) {
+        bondStyle->end2.style = StyleManager::eNotDisplayed;
+        bondStyle->midCap = true;
     }
 
     return true;

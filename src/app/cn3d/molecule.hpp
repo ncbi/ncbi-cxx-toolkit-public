@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/24 18:43:15  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.6  2000/08/07 00:20:18  thiessen
 * add display list mechanism
 *
@@ -109,6 +112,8 @@ public:
     bool IsNucleotide(void) const { return (type == eDNA || type == eRNA); }
     bool IsSolvent(void) const { return (type == eSolvent); }
     bool IsHeterogen(void) const { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
+
+    int NResidues(void) const { return residues.size(); }
     const Residue::AtomInfo * GetAtomInfo(int rID, int aID) const
     { 
         ResidueMap::const_iterator info=residues.find(rID);

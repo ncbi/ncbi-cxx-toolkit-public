@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/08/24 18:43:52  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.21  2000/08/21 17:22:38  thiessen
 * add primitive highlighting for testing
 *
@@ -110,6 +113,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <math.h>
+#include <stdlib.h> // for rand, srand
 
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/structure_set.hpp"
@@ -761,6 +765,12 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
         glLoadName(static_cast<GLuint>(i->ptr->name));
         glPushMatrix();
         glTranslated(i->siteGL.x, i->siteGL.y, i->siteGL.z);
+
+        // apply a random spin so they're not all facing the same direction
+        srand(static_cast<unsigned int>(fabs(i->ptr->site.x * 1000)));
+        glRotated(360.0*rand()/RAND_MAX,
+            1.0*rand()/RAND_MAX - 0.5, 1.0*rand()/RAND_MAX - 0.5, 1.0*rand()/RAND_MAX - 0.5);
+
         gluSphere(qobj, i->ptr->radius, atomSlices, atomStacks);
         glPopMatrix();
     }
@@ -774,7 +784,8 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
 
 void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, double alpha)
 {
-    if (atomStyle.radius <= 0.0) return;
+    if (atomStyle.style == StyleManager::eNotDisplayed || atomStyle.radius <= 0.0)
+        return;
 
     if (atomStyle.style == StyleManager::eSolidAtom) {
         SetColor(GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
@@ -1057,43 +1068,48 @@ static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
 void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
     const BondStyle& style, const Vector *site0, const Vector* site3)
 {
+    GLenum colorType;
     Vector midpoint = (site1 + site2) / 2;
 
-    GLenum colorType =
-        (style.end1.style == StyleManager::eLineBond || 
-         style.end1.style == StyleManager::eLineWormBond || 
-         style.end1.radius <= 0.0)
-        ? GL_AMBIENT : GL_DIFFUSE;
-    SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
-    glLoadName(static_cast<GLuint>(style.end1.name));
-    if (style.end1.style == StyleManager::eLineWormBond || 
-         style.end1.style == StyleManager::eThickWormBond) 
-        DrawHalfWorm(site0, site1, site2, site3,
-            (style.end1.style == StyleManager::eThickWormBond) ? style.end1.radius : 0.0,
-            style.end1.atomCap, style.midCap, 
-            style.tension, wormSides, wormSegments);
-    else
-        DrawHalfBond(site1, midpoint,
-            style.end1.style, style.end1.radius,
-            style.end1.atomCap, style.midCap, bondSides);
+    if (style.end1.style != StyleManager::eNotDisplayed) {
+        colorType =
+            (style.end1.style == StyleManager::eLineBond || 
+            style.end1.style == StyleManager::eLineWormBond || 
+            style.end1.radius <= 0.0)
+            ? GL_AMBIENT : GL_DIFFUSE;
+        SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
+        glLoadName(static_cast<GLuint>(style.end1.name));
+        if (style.end1.style == StyleManager::eLineWormBond || 
+            style.end1.style == StyleManager::eThickWormBond) 
+            DrawHalfWorm(site0, site1, site2, site3,
+                (style.end1.style == StyleManager::eThickWormBond) ? style.end1.radius : 0.0,
+                style.end1.atomCap, style.midCap, 
+                style.tension, wormSides, wormSegments);
+        else
+            DrawHalfBond(site1, midpoint,
+                style.end1.style, style.end1.radius,
+                style.end1.atomCap, style.midCap, bondSides);
+    }
 
-    colorType =
-        (style.end2.style == StyleManager::eLineBond ||
-         style.end2.style == StyleManager::eLineWormBond || 
-         style.end2.radius <= 0.0)
-        ? GL_AMBIENT : GL_DIFFUSE;
-    SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
-    glLoadName(static_cast<GLuint>(style.end2.name));
-    if (style.end2.style == StyleManager::eLineWormBond || 
-         style.end2.style == StyleManager::eThickWormBond) 
-        DrawHalfWorm(site3, site2, site1, site0,
-            (style.end2.style == StyleManager::eThickWormBond) ? style.end2.radius : 0.0,
-            style.end2.atomCap, style.midCap, 
-            style.tension, wormSides, wormSegments);
-    else
-        DrawHalfBond(midpoint, site2,
-            style.end2.style, style.end2.radius,
-            style.midCap, style.end2.atomCap, bondSides);
+    if (style.end2.style != StyleManager::eNotDisplayed) {
+        colorType =
+            (style.end2.style == StyleManager::eLineBond ||
+            style.end2.style == StyleManager::eLineWormBond || 
+            style.end2.radius <= 0.0)
+            ? GL_AMBIENT : GL_DIFFUSE;
+        SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
+        glLoadName(static_cast<GLuint>(style.end2.name));
+        if (style.end2.style == StyleManager::eLineWormBond || 
+            style.end2.style == StyleManager::eThickWormBond) 
+            DrawHalfWorm(site3, site2, site1, site0,
+                (style.end2.style == StyleManager::eThickWormBond) ? style.end2.radius : 0.0,
+                style.end2.atomCap, style.midCap, 
+                style.tension, wormSides, wormSegments);
+        else
+            DrawHalfBond(midpoint, site2,
+                style.end2.style, style.end2.radius,
+                style.midCap, style.end2.atomCap, bondSides);
+    }
 }
 
 void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& style)

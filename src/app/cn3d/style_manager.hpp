@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/24 18:43:15  thiessen
+* tweaks for transparent sphere display
+*
 * Revision 1.10  2000/08/21 19:31:17  thiessen
 * add style consistency checking
 *
@@ -186,7 +189,7 @@ public:
         const StyleSettings::BackboneStyle* *saveBackboneStyle = NULL,
         const StyleSettings::GeneralStyle* *saveGeneralStyle = NULL) const;
     bool GetBondStyle(const Bond *bond,
-            const AtomPntr& atom1, const AtomPntr& atom2,
+            const AtomPntr& atom1, const AtomPntr& atom2, double bondLength,
             BondStyle *bondStyle) const;
     bool GetHelixStyle(const StructureObject *object,
         const Helix3D& helix, HelixStyle *helixStyle) const;
