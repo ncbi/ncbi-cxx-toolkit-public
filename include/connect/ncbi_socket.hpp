@@ -340,6 +340,17 @@ public:
 //  CSocket::
 //
 
+inline EIO_Status CSocket::Shutdown(EIO_Event how)
+{
+    return m_Socket ? SOCK_Shutdown(m_Socket, how) : eIO_Closed;
+}
+
+
+inline EIO_Status CSocket::Wait(EIO_Event event, const STimeout* timeout)
+{
+    return m_Socket ? SOCK_Wait(m_Socket, event, timeout) : eIO_Closed; 
+}
+
 
 inline EIO_Status CSocket::PushBack(const void* buf, size_t size)
 {
@@ -550,6 +561,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/02/20 17:55:09  lavr
+ * Inlining CSocket::Shutdown() and CSocket::Wait()
+ *
  * Revision 6.19  2003/02/14 22:03:32  lavr
  * Add internal CSocket timeouts and document them
  *

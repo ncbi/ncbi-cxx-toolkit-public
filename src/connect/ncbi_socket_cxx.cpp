@@ -154,12 +154,6 @@ EIO_Status CSocket::Reconnect(const STimeout* timeout)
 }
 
 
-EIO_Status CSocket::Shutdown(EIO_Event how)
-{
-    return m_Socket ? SOCK_Shutdown(m_Socket, how) : eIO_Closed;
-}
-
-
 EIO_Status CSocket::Close(void)
 {
     if ( !m_Socket )
@@ -169,12 +163,6 @@ EIO_Status CSocket::Close(void)
         ? SOCK_Close(m_Socket) : eIO_Success;
     m_Socket = 0;
     return status;
-}
-
-
-EIO_Status CSocket::Wait(EIO_Event event, const STimeout* timeout)
-{
-    return m_Socket ? SOCK_Wait(m_Socket, event, timeout) : eIO_Closed; 
 }
 
 
@@ -229,7 +217,7 @@ EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
 }
 
 
-inline const STimeout* CSocket::GetTimeout(EIO_Event event) const
+const STimeout* CSocket::GetTimeout(EIO_Event event) const
 {
     switch (event) {
     case eIO_Open:
@@ -507,6 +495,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/02/20 17:55:39  lavr
+ * Inlining CSocket::Shutdown() and CSocket::Wait()
+ *
  * Revision 6.11  2003/02/14 22:03:43  lavr
  * Add internal CSocket timeouts and document them
  *
