@@ -55,16 +55,20 @@
 #  endif
 #  include <iomanip.h>
 #  define IO_PREFIX
-#  define IOS_BASE   ::ios
-#  define IOS_PREFIX ::ios
-#  define SEEKOFF    seekoff
+#  define IOS_BASE      ::ios
+#  define IOS_PREFIX    ::ios
+#  define PUBSYNC       sync
+#  define PUBSEEKPOS    seekpos
+#  define PUBSEEKOFF    seekoff
 
 #elif defined(HAVE_IOSTREAM)
 #  if defined(NCBI_USE_OLD_IOSTREAM)
 #    undef NCBI_USE_OLD_IOSTREAM
 #  endif
 #  if defined(NCBI_COMPILER_GCC)
-#    if NCBI_COMPILER_VERSION >= 310
+#    if NCBI_COMPILER_VERSION < 300
+#      define NO_PUBSYNC
+#    elif NCBI_COMPILER_VERSION >= 310
 // Don't bug us about including <strstream>.
 #      define _CPP_BACKWARD_BACKWARD_WARNING_H 1
 #    endif
@@ -76,19 +80,32 @@
 #  if defined(HAVE_NO_STD)
 #    define IO_PREFIX
 #  else
-#    define IO_PREFIX  NCBI_NS_STD
+#    define IO_PREFIX   NCBI_NS_STD
 #  endif
 #  if defined HAVE_NO_IOS_BASE
 #    define IOS_BASE    IO_PREFIX::ios
 #  else
 #    define IOS_BASE    IO_PREFIX::ios_base
 #  endif
-#  define IOS_PREFIX  IO_PREFIX::ios
-#  define SEEKOFF     pubseekoff
+#  define IOS_PREFIX    IO_PREFIX::ios
+
+#  ifdef NO_PUBSYNC
+#    define PUBSYNC     sync
+#    define PUBSEEKOFF  seekoff
+#    define PUBSEEKPOS  seekpos
+#  else
+#    define PUBSYNC     pubsync
+#    define PUBSEEKOFF  pubseekoff
+#    define PUBSEEKPOS  pubseekpos
+#  endif
 
 #else
-#  error "Cannot find neither <iostream> nor <iostream.h>!"
+#  error "Neither <iostream> nor <iostream.h> can be found!"
 #endif
+
+// obsolete
+#define SEEKOFF         PUBSEEKOFF
+
 
 #include <string>
 
@@ -119,33 +136,33 @@ typedef IO_PREFIX::ofstream      CNcbiOfstream;
 typedef IO_PREFIX::fstream       CNcbiFstream;
 
 // Standard I/O streams
-#define NcbiCin   IO_PREFIX::cin
-#define NcbiCout  IO_PREFIX::cout
-#define NcbiCerr  IO_PREFIX::cerr
-#define NcbiClog  IO_PREFIX::clog
+#define NcbiCin                  IO_PREFIX::cin
+#define NcbiCout                 IO_PREFIX::cout
+#define NcbiCerr                 IO_PREFIX::cerr
+#define NcbiClog                 IO_PREFIX::clog
 
 // I/O manipulators
-#define NcbiEndl   IO_PREFIX::endl
-#define NcbiEnds   IO_PREFIX::ends
-#define NcbiFlush  IO_PREFIX::flush
-#define NcbiDec    IO_PREFIX::dec
-#define NcbiHex    IO_PREFIX::hex
-#define NcbiOct    IO_PREFIX::oct
-#define NcbiWs     IO_PREFIX::ws
+#define NcbiEndl                 IO_PREFIX::endl
+#define NcbiEnds                 IO_PREFIX::ends
+#define NcbiFlush                IO_PREFIX::flush
+#define NcbiDec                  IO_PREFIX::dec
+#define NcbiHex                  IO_PREFIX::hex
+#define NcbiOct                  IO_PREFIX::oct
+#define NcbiWs                   IO_PREFIX::ws
 
-#define NcbiSetbase       IO_PREFIX::setbase
-#define NcbiResetiosflags IO_PREFIX::resetiosflags
-#define NcbiSetiosflags   IO_PREFIX::setiosflags
-#define NcbiSetfill       IO_PREFIX::setfill
-#define NcbiSetprecision  IO_PREFIX::setprecision
-#define NcbiSetw          IO_PREFIX::setw
+#define NcbiSetbase              IO_PREFIX::setbase
+#define NcbiResetiosflags        IO_PREFIX::resetiosflags
+#define NcbiSetiosflags          IO_PREFIX::setiosflags
+#define NcbiSetfill              IO_PREFIX::setfill
+#define NcbiSetprecision         IO_PREFIX::setprecision
+#define NcbiSetw                 IO_PREFIX::setw
 
 // I/O state
-#define NcbiGoodbit  IOS_PREFIX::goodbit
-#define NcbiEofbit   IOS_PREFIX::eofbit
-#define NcbiFailbit  IOS_PREFIX::failbit
-#define NcbiBadbit   IOS_PREFIX::badbit
-#define NcbiHardfail IOS_PREFIX::hardfail
+#define NcbiGoodbit              IOS_PREFIX::goodbit
+#define NcbiEofbit               IOS_PREFIX::eofbit
+#define NcbiFailbit              IOS_PREFIX::failbit
+#define NcbiBadbit               IOS_PREFIX::badbit
+#define NcbiHardfail             IOS_PREFIX::hardfail
 
 // Read from "is" to "str" up to the delimiter symbol "delim"(or EOF)
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim);
@@ -157,37 +174,37 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str);
 
 // "char_traits" may not be defined(e.g. EGCS egcs-2.91.66)
 #if defined(HAVE_NO_CHAR_TRAITS)
-#  define CT_INT_TYPE     int
-#  define CT_CHAR_TYPE    char
-#  define CT_POS_TYPE     CNcbiStreampos
-#  define CT_OFF_TYPE     CNcbiStreamoff
-#  define CT_EOF          EOF
+#  define CT_INT_TYPE      int
+#  define CT_CHAR_TYPE     char
+#  define CT_POS_TYPE      CNcbiStreampos
+#  define CT_OFF_TYPE      CNcbiStreamoff
+#  define CT_EOF           EOF
 inline CT_INT_TYPE  ct_not_eof(CT_INT_TYPE i) {
     return i == CT_EOF ? 0 : i;
 }
-#  define CT_NOT_EOF      ct_not_eof
+#  define CT_NOT_EOF       ct_not_eof
 inline CT_INT_TYPE  ct_to_int_type(CT_CHAR_TYPE c) {
     return (unsigned char)c;
 }
-#  define CT_TO_INT_TYPE  ct_to_int_type
+#  define CT_TO_INT_TYPE   ct_to_int_type
 inline CT_CHAR_TYPE ct_to_char_type(CT_INT_TYPE i) {
     return (unsigned char)i;
 }
-#  define CT_TO_CHAR_TYPE ct_to_char_type
+#  define CT_TO_CHAR_TYPE  ct_to_char_type
 inline bool ct_eq_int_type(CT_INT_TYPE i1, CT_INT_TYPE i2) {
     return i1 == i2;
 }
-#  define CT_EQ_INT_TYPE ct_eq_int_type
+#  define CT_EQ_INT_TYPE   ct_eq_int_type
 #else  /* HAVE_NO_CHAR_TRAITS */
-#  define CT_INT_TYPE     NCBI_NS_STD::char_traits<char>::int_type
-#  define CT_CHAR_TYPE    NCBI_NS_STD::char_traits<char>::char_type
-#  define CT_POS_TYPE     NCBI_NS_STD::char_traits<char>::pos_type
-#  define CT_OFF_TYPE     NCBI_NS_STD::char_traits<char>::off_type
-#  define CT_EOF          NCBI_NS_STD::char_traits<char>::eof()
-#  define CT_NOT_EOF      NCBI_NS_STD::char_traits<char>::not_eof
-#  define CT_TO_INT_TYPE  NCBI_NS_STD::char_traits<char>::to_int_type
-#  define CT_TO_CHAR_TYPE NCBI_NS_STD::char_traits<char>::to_char_type
-#  define CT_EQ_INT_TYPE  NCBI_NS_STD::char_traits<char>::eq_int_type
+#  define CT_INT_TYPE      NCBI_NS_STD::char_traits<char>::int_type
+#  define CT_CHAR_TYPE     NCBI_NS_STD::char_traits<char>::char_type
+#  define CT_POS_TYPE      NCBI_NS_STD::char_traits<char>::pos_type
+#  define CT_OFF_TYPE      NCBI_NS_STD::char_traits<char>::off_type
+#  define CT_EOF           NCBI_NS_STD::char_traits<char>::eof()
+#  define CT_NOT_EOF       NCBI_NS_STD::char_traits<char>::not_eof
+#  define CT_TO_INT_TYPE   NCBI_NS_STD::char_traits<char>::to_int_type
+#  define CT_TO_CHAR_TYPE  NCBI_NS_STD::char_traits<char>::to_char_type
+#  define CT_EQ_INT_TYPE   NCBI_NS_STD::char_traits<char>::eq_int_type
 #endif /* HAVE_NO_CHAR_TRAITS */
 
 // CNcbiOstrstreamToString class helps to convert CNcbiOstream buffer to string
@@ -341,10 +358,12 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 #endif
 
 
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/08/16 17:53:54  lavr
+ * PUBSYNC, PUBSEEK* macros; SEEKOFF obsoleted; some formatting done
+ *
  * Revision 1.28  2002/08/01 18:42:48  ivanov
  * + NcbiGetlineEOL() -- moved from ncbireg and renamed
  *
