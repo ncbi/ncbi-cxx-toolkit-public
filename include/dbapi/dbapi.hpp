@@ -32,6 +32,9 @@
  *
  */
 
+/// @file dbapi.hpp
+/// Defines the database API innterfaces for a variety of DBMS.
+
 #include <corelib/ncbiobj.hpp>
 #include <dbapi/driver_mgr.hpp>
 #include <dbapi/variant.hpp>
@@ -47,222 +50,342 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  EDataSource::
-//
-//  Data source platform
-//
-// enum EDataSource {
-//   eSybase,
-//   eMsSql
-// };
+///
+///  EDataSource --
+///
+///  Data source platform
+///
+/// enum EDataSource {
+///   eSybase,
+///   eMsSql
+/// };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  EAllowLog::
-//
-//  Allow transaction log (general, to avoid using bools)
-//
+///
+///  EAllowLog --
+///
+///  Allow transaction log (general, to avoid using bools).
+///
 enum EAllowLog {
-   eDisableLog,
-   eEnableLog
+   eDisableLog,     ///< Disables log.
+   eEnableLog       ///< Enables log.
 };  
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  IResultSetMetaData::
-//
-//  Used for retrieving column information from a resultset, such as 
-//  total number of columns, type, name, etc.
-//
+///
+///  IResultSetMetaData --
+///
+///  Interface class defines retrieving column information from a resultset,
+///  such as total number of columns, type, name, etc.
 
 class NCBI_DBAPI_EXPORT IResultSetMetaData 
 {
 public:
+    /// Destructor.
+    ///
+    /// Clean up the metadata for the resultset.
     virtual ~IResultSetMetaData();
 
+    /// Get total number of columns in resultset.
     virtual unsigned int GetTotalColumns() const = 0;
+
+    /// Get data type for column in the resultset.
+    ///
+    /// @param col
+    ///   Column number
     virtual EDB_Type     GetType    (unsigned int col) const = 0;
+
+    /// Get maximum size for column.
+    ///
+    /// @param col
+    ///   Column number
     virtual int          GetMaxSize (unsigned int col) const = 0;
+
+    /// Get name of column.
+    ///
+    /// @param col
+    ///   Column number
     virtual string       GetName    (unsigned int col) const = 0;
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  IResultSet::
-//
-//  Used to retrieve a resultset from a query or cursor
-//
+///
+///  IResultSet --
+///
+///  Used to retrieve a resultset from a query or cursor
 
 class NCBI_DBAPI_EXPORT IResultSet
 {
 public:
+    /// Destructor.
+    ///
+    /// Clean up the resultset.
     virtual ~IResultSet();
 
-    // See in <dbapi/driver/interfaces.hpp> for the list of result types
+    /// Get result type.
+    ///
+    /// @sa
+    ///   See in <dbapi/driver/interfaces.hpp> for the list of result types.
     virtual EDB_ResType GetResultType() = 0;
 
-    // Get next row.
-    // NOTE:  no results are fetched before first call to this function.
+    /// Get next row.
+    ///
+    /// NOTE: no results are fetched before first call to this function.
     virtual bool Next() = 0;
 
-    // All data (for BLOB data see below) is returned as CVariant.
+    /// Get variant given a column number.
+    ///
+    /// @param col
+    ///   Column number.
+    /// @return
+    ///   All data (for BLOB data see below) is returned as CVariant.
     virtual const CVariant& GetVariant(unsigned int col) = 0;
+
+    /// Get variant given a column name.
+    ///
+    /// @param colName
+    ///   Column name.
+    /// @return
+    ///   All data (for BLOB data see below) is returned as CVariant.
     virtual const CVariant& GetVariant(const string& colName) = 0;
 
-    // Disables column binding.
-    // False by default
+    /// Disables column binding.
+    ///
+    /// False by default.
+    /// @param
+    ///   Disables binding when set to true.
     virtual void DisableBind(bool b) = 0;
 
-    // If this mode is true, BLOB data is returned as CVariant
-    // False by default
+    /// Bind blob to variant.
+    ///
+    /// If this mode is true, BLOB data is returned as CVariant
+    /// False by default.
+    /// @param
+    ///   Disables blob binding when set to true.
     virtual void BindBlobToVariant(bool b) = 0;
   
-    // Reads unformatted data, returns bytes actually read.
-    // Advances to next column as soon as data is read from the previous one.
-    // Returns 0 when the column data is fully read
-    // Valid only when the column binding is off (see DisableBind())
+    /// Read unformtted data.
+    ///
+    /// Reads unformatted data, returns bytes actually read.
+    /// Advances to next column as soon as data is read from the previous one.
+    /// Returns 0 when the column data is fully read
+    /// Valid only when the column binding is off (see DisableBind())
+    /// @param buf
+    ///   Buffer to read data.
+    /// @param size
+    ///   Amount of data to read.
+    /// @return
+    ///   Actual number of bytes read.
     virtual size_t Read(void* buf, size_t size) = 0;
 
-    // Return true if the last column read was NULL.
-    // Valid only when the column binding is off (see DisableBind())
+    /// Determine if last column was NULL.
+    ///
+    /// Valid only when the column binding is off.
+    /// @return
+    ///   Return true if the last column read was NULL.
+    /// @sa
+    ///   DisableBind().
     virtual bool WasNull() = 0;
 
-    // Returns current column number (while using Read())
+    /// Get column number.
+    ///
+    /// @return
+    ///   Returns current column number (while using Read()).
     virtual int GetColumnNo() = 0;
 
-    // Returns total number of columns in the resultset
+    /// Get total columns.
+    ///
+    /// @return
+    ///   Returns total number of columns in the resultset
     virtual unsigned int GetTotalColumns() = 0;
   
-    // Streams for handling BLOBs.
-    // NOTE: buf_size is the size of internal buffer, default 1024
+    /// Get Blob output stream.
+    ///
+    /// @param buf_size
+    ///   buf_size is the size of internal buffer, default 1024.
     virtual istream& GetBlobIStream(size_t buf_size = 1024) = 0;
-    // blob_size is the size of the BLOB to be written
-    // log_it enables transaction log for BLOB insert by default.
-    // Make sure you have enough log segment space, or disable it
+
+    /// Get Blob output stream.
+    ///
+    /// @param blob_size
+    ///   blob_size is the size of the BLOB to be written.
+    /// @param log_it
+    ///    Enables transaction log for BLOB (enabled by default).
+    ///    Make sure you have enough log segment space, or disable it.
+    /// @param buf_size
+    ///   The size of internal buffer, default 1024.
     virtual ostream& GetBlobOStream(size_t blob_size, 
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
-    // Support for NCBI reader interface
+    /// Get the Blob Reader.
+    ///
+    /// @param
+    ///  Pointer to the Blob Reader.
     virtual IReader* GetBlobReader() = 0;
 
-    // Close resultset
+    /// Close resultset.
     virtual void Close() = 0;
 
-    // Get column description.
+    /// Get Metadata.
+    ///
+    /// @return
+    ///   Pointer to result metadata.
     virtual const IResultSetMetaData* GetMetaData() = 0;
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  IStatement::
-//
-//  Interface for a SQL statement
-//
+///
+///  IStatement --
+///
+///  Interface for a SQL statement
 
 class NCBI_DBAPI_EXPORT IStatement
 {
 public:
+    /// Destructor.
     virtual ~IStatement();
   
-    // Get resulset. For statements with no resultset returns 0
+    /// Get resulset.
+    ///
+    /// @return
+    ///   Pointer to resultset. For statements with no resultset return 0.
     virtual IResultSet* GetResultSet() = 0;
 
-    // Check if there is more results available
+    /// Check for more results available..
+    ///
+    /// @return
+    ///   Return true, if there are more results available.
     virtual bool HasMoreResults() = 0;
 
-    // Check if the statement failed
+    /// Check if the statement failed.
+    ///
+    /// @return
+    ///   Return true, if the statement failed.
     virtual bool Failed() = 0;
   
-    // Check if resultset is not empty
+    /// Check if resultset has rows.
+    ///
+    /// @return
+    ///   Return true, if resultset has rows.
     virtual bool HasRows() = 0;
 
-    // Purge results
-    // NOTE: Calls fetch for every resultset received until
-    // finished. 
+    /// Purge results.
+    ///
+    /// Calls fetch for every resultset received until
+    /// finished. 
     virtual void PurgeResults() = 0;
 
-    // Cancel statement
-    // NOTE: Rolls back current transaction
+    /// Cancel statement.
+    ///
+    /// Rolls back current transaction.
     virtual void Cancel() = 0;
 
-    // Close statement
+    /// Close statement.
     virtual void Close() = 0;
   
-    // Executes one or more SQL statements
+    /// Executes one or more SQL statements.
+    ///
+    /// @param sql
+    ///   SQL statement to execute.
     virtual void Execute(const string& sql) = 0;
 
-    // Executes SQL statement with no results returned
-    // NOTE: All resultsets are discarded.
+    /// Executes SQL statement with no results returned.
+    ///
+    /// All resultsets are discarded.
+    /// @param sql
+    ///   SQL statement to execute.
     virtual void ExecuteUpdate(const string& sql) = 0;
 
-    // Exectues SQL statement and returns the first resultset.
-    // NOTE: If there is more than one resultset, the rest remain
-    // pending unless either PurgeResults() is called or next statement
-    // is run or the statement is closed.
+    /// Exectues SQL statement and returns the first resultset.
+    ///
+    /// If there is more than one resultset, the rest remain
+    /// pending unless either PurgeResults() is called or next statement
+    /// is run or the statement is closed.
+    /// @param sql
+    ///   SQL statement to execute.
+    /// @return
+    ///   Pointer to result set.
     virtual IResultSet* ExecuteQuery(const string& sql) = 0;
 
-    // Executes the last command (with changed parameters, if any)
+    /// Executes the last command (with changed parameters, if any).
     virtual void ExecuteLast() = 0;
 
-    // Set input/output parameter
+    /// Set input/output parameter.
+    /// 
+    /// @param v
+    ///   Parameter value.
+    /// @param name
+    ///   Parameter name.
     virtual void SetParam(const CVariant& v, 
 	  		  const string& name) = 0;
 
-    // Clear parameter list
+    /// Clear parameter list.
     virtual void ClearParamList() = 0;
 
-    // Get total of rows returned. 
-    // NOTE: Valid only after all rows are retrieved from a resultset
+    /// Get total of rows returned. 
+    ///
+    /// Valid only after all rows are retrieved from a resultset
     virtual int GetRowCount() = 0;
 
-    // Get the parent connection
-    // NOTE: if the original connections was cloned, returns cloned
-    // connection
+    /// Get the parent connection.
+    ///
+    /// If the original connections was cloned, returns cloned
+    /// connection.
     virtual class IConnection* GetParentConn() = 0;
 
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  ICallableStatement::
-//
-//  Used for calling a stored procedure thru RPC call
-//
+///
+///  ICallableStatement --
+///
+///  Used for calling a stored procedure thru RPC call
 
 class NCBI_DBAPI_EXPORT ICallableStatement : public virtual IStatement
 {
 public:
+    /// Destructor.
     virtual ~ICallableStatement();
   
-    // Execute stored procedure
+    /// Execute stored procedure.
     virtual void Execute() = 0;
 
-    // Executes stored procedure no results returned
-    // NOTE: All resultsets are discarded.
+    /// Executes stored procedure no results returned.
+    ///
+    /// NOTE: All resultsets are discarded.
     virtual void ExecuteUpdate() = 0;
 
-    // Get return status from the stored procedure
+    /// Get return status from the stored procedure.
     virtual int GetReturnStatus() = 0;
 
-    // Set input parameters
+    /// Set input parameters.
+    /// 
+    /// @param v
+    ///   Parameter value.
+    /// @param name
+    ///   Parameter name.
     virtual void SetParam(const CVariant& v, 
                           const string& name) = 0;
 
-    // Set output parameter, which will be returned as resultset
-    // NOTE: use CVariant(EDB_Type type) constructor or 
-    // factory method CVariant::<type>(0) to create empty object
-    // of a particular type
+    /// Set output parameter, which will be returned as resultset.
+    ///
+    /// NOTE: Use CVariant(EDB_Type type) constructor or 
+    /// factory method CVariant::<type>(0) to create empty object
+    /// of a particular type.
+    /// @param v
+    ///   Parameter value.
+    /// @param name
+    ///   Parameter name.
     virtual void SetOutputParam(const CVariant& v, const string& name) = 0;
 
 protected:
@@ -275,233 +398,309 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  ICursor::
-//
-//  Interface for a cursor
-//
+///
+///  ICursor --
+///
+///  Interface for a cursor.
 
 class NCBI_DBAPI_EXPORT ICursor
 {
 public:
-
+    /// Destructor.
     virtual ~ICursor();
   
-    // Set input parameter
+    /// Set input parameter.
+    ///
+    /// @param v
+    ///   Parameter value.
+    /// @param name
+    ///   Parameter name.
     virtual void SetParam(const CVariant& v, 
 			const string& name) = 0;
 
-    // Open cursor and get corresponding resultset
+    /// Open cursor and get corresponding resultset.
     virtual IResultSet* Open() = 0;
 
-    // Get output stream for BLOB updates, requires BLOB column number
-    // NOTE: blob_size is the size of the BLOB to be written
-    // log_it enables transaction log for BLOB insert by default.
-    // Make sure you have enough log segment space, or disable it
+    /// Get output stream for BLOB updates, requires BLOB column number.
+    ///
+    /// @param col
+    ///   Column number.
+    /// @param blob_size
+    ///   blob_size is the size of the BLOB to be written.
+    /// @param log_it
+    ///    Enables transaction log for BLOB (enabled by default).
+    ///    Make sure you have enough log segment space, or disable it.
+    /// @param buf_size
+    ///   The size of internal buffer, default 1024.
     virtual ostream& GetBlobOStream(unsigned int col,
                                     size_t blob_size, 
                                     EAllowLog log_it = eEnableLog,
                                     size_t buf_size = 1024) = 0;
 
-    // Implementation of IWriter interface
+    /// Get Blob Writer.
+    ///
+    /// Implementation of IWriter interface
+    /// @param col
+    ///   Column number.
+    /// @param blob_size
+    ///   blob_size is the size of the BLOB to be written.
+    /// @param log_it
+    ///   Enables transaction log for BLOB (enabled by default).
+    ///   Make sure you have enough log segment space, or disable it.
     virtual IWriter* GetBlobWriter(unsigned int col,
                                    size_t blob_size, 
                                    EAllowLog log_it = eEnableLog) = 0;
-    // Update statement for cursor
+    /// Update statement for cursor.
+    ///
+    /// @param table
+    ///   table name.
+    /// @param updateSql
+    ///   SQL statement.
     virtual void Update(const string& table, const string& updateSql) = 0;
 
-    // Delete statement for cursor
+    /// Delete statement for cursor.
+    ///
+    /// @param table
+    ///   table name.
     virtual void Delete(const string& table) = 0;
 
-    // Cancel cursor
+    /// Cancel cursor
     virtual void Cancel() = 0;
     
-    // Close cursor
+    /// Close cursor
     virtual void Close() = 0;
   
-    // Get the parent connection
-    // NOTE: if the original connections was cloned, returns cloned
-    // connection
+    /// Get the parent connection
+    ///
+    /// NOTE: If the original connections was cloned, returns cloned
+    /// connection.
     virtual class IConnection* GetParentConn() = 0;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  IBulkInsert::
-//
-//  Interface for bulk insert
-//
+///
+///  IBulkInsert --
+///
+///  Interface for bulk insert
 
 class NCBI_DBAPI_EXPORT IBulkInsert
 {
 public:
-
+    /// Destructor.
     virtual ~IBulkInsert();
   
-    // Bind columns
+    /// Bind column.
+    ///
+    /// @param col
+    ///   Column number.
+    /// @param v
+    ///   Variant value.
     virtual void Bind(unsigned int col, CVariant* v) = 0;
 
-    // Add row to the batch
+    /// Add row to the batch
     virtual void AddRow() = 0;
 
-    // Store batch of rows
+    /// Store batch of rows
     virtual void StoreBatch() = 0;
 
-    // Cancel bulk insert
+    /// Cancel bulk insert
     virtual void Cancel() = 0;
 
-    // Complete batch
+    /// Complete batch
     virtual void Complete() = 0;
 
-    // Close
+    /// Close
     virtual void Close() = 0;
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  IConnection::
-//
-//  Interface for a database connection
-//
+///
+///  IConnection::
+///
+///  Interface for a database connection.
 
 class NCBI_DBAPI_EXPORT IConnection 
 {
 public:
+    /// Which connection mode.
     enum EConnMode {
-        eBulkInsert = I_DriverContext::fBcpIn,
-        ePasswordEncrypted = I_DriverContext::fPasswordEncrypted 
+        eBulkInsert = I_DriverContext::fBcpIn,  ///< Bulk insert mode.
+        ePasswordEncrypted  ///< Encrypted password mode.
+                    = I_DriverContext::fPasswordEncrypted 
     };
 
-    // Destructor
+    /// Destructor.
     virtual ~IConnection();
 
     // Connection modes
+
+    /// Set connection mode.
+    ///
+    /// @param mode
+    ///   Mode to set to.
     virtual void SetMode(EConnMode mode) = 0;
+
+    /// Reset connection mode.
+    ///
+    /// @param mode
+    ///   Mode to reset to.
     virtual void ResetMode(EConnMode mode) = 0;
+
+    /// Get mode mask.
     virtual unsigned int GetModeMask() = 0;
 
-    // Force single connection mode, default false
-    // NOTE: disable this mode before using BLOB output streams
-    // from IResultSet, because extra connection is needed 
-    // in this case
+    /// Force single connection mode, default false
+    ///
+    /// Disable this mode before using BLOB output streams
+    /// from IResultSet, because extra connection is needed 
+    /// in this case.
     virtual void ForceSingle(bool enable) = 0;
 
-    // Get parent datasource object
+    /// Get parent datasource object.
     virtual IDataSource* GetDataSource() = 0;
 
-    // Connect to the database
+    /// Connect to the database.
+    ///
+    /// @param user
+    ///   User name.
+    /// @param password
+    ///   User's password.
+    /// @param server
+    ///   Server to connect to.
+    /// @param database
+    ///   Database to connect to.
     virtual void Connect(const string& user,
 			 const string& password,
 			 const string& server,
 			 const string& database = kEmptyStr) = 0;
 
-    // Clone existing connection. All settings are copied except
-    // message handlers
+    /// Clone existing connection. 
+    ///
+    /// All settings are copied except message handlers.
     virtual IConnection* CloneConnection() = 0;
 
-    // Set current database
+    /// Set current database.
+    ///
+    /// @param name
+    ///   Name of database to set to.
     virtual void SetDatabase(const string& name) = 0;
 
-    // Get current database
+    /// Get current database
     virtual string GetDatabase() = 0;
 
-    // Check if the connection is alive
+    /// Check if the connection is alive
     virtual bool IsAlive() = 0;
 
     // NEW INTERFACE: no additional connections created
     // while using the next four methods.
     // Objects obtained with these methods can't be used
     // simultaneously (like opening cursor while a stored
-    // procedure is running on the same connection)
+    // procedure is running on the same connection).
 
-    // Get statement object for regular SQL queries
+    /// Get statement object for regular SQL queries.
     virtual IStatement* GetStatement() = 0;
   
-    // Get callable statement object for stored procedures
+    /// Get callable statement object for stored procedures.
+    ///
+    /// @param proc
+    ///   Stored procedure name.
+    /// @param nofArgs
+    ///   Number of arguments.
     virtual ICallableStatement* GetCallableStatement(const string& proc, 
                                                      int nofArgs = 0) = 0;
 
-    // Get cursor object
+    /// Get cursor object.
     virtual ICursor* GetCursor(const string& name, 
                                const string& sql,
                                int nofArgs = 0,
                                int batchSize = 1) = 0;
 
-    // Create bulk insert object
+    /// Create bulk insert object.
+    ///
+    /// @param table_name
+    ///   table name.
+    /// @param nof_cols
+    ///   Number of columns.
     virtual IBulkInsert* GetBulkInsert(const string& table_name,
                                        unsigned int nof_cols) = 0;
     // END OF NEW INTERFACE
 
-    // Get statement object for regular SQL queries
+    /// Get statement object for regular SQL queries.
     virtual IStatement* CreateStatement() = 0;
   
-    // Get callable statement object for stored procedures
+    /// Get callable statement object for stored procedures.
     virtual ICallableStatement* PrepareCall(const string& proc, 
                                             int nofArgs = 0) = 0;
 
-    // Get cursor object
+    /// Get cursor object.
     virtual ICursor* CreateCursor(const string& name, 
                                   const string& sql,
                                   int nofArgs = 0,
                                   int batchSize = 1) = 0;
 
-    // Create bulk insert object
+    /// Create bulk insert object.
     virtual IBulkInsert* CreateBulkInsert(const string& table_name,
                                           unsigned int nof_cols) = 0;
-    // Close connection
+    /// Close connection.
     virtual void Close() = 0;
 
-    // If enabled, redirects all error messages 
-    // to CDB_MultiEx object (see below)
+    /// If enabled, redirects all error messages 
+    /// to CDB_MultiEx object (see below).
     virtual void MsgToEx(bool v) = 0;
 
-    // Returns all error messages as a CDB_MultiEx object
+    /// Returns all error messages as a CDB_MultiEx object.
     virtual CDB_MultiEx* GetErrorAsEx() = 0;
 
-    // Returns all error messages as a single string
+    /// Returns all error messages as a single string
     virtual string GetErrorInfo() = 0;
 
-    // Returns the internal driver connection object
+    /// Returns the internal driver connection object
     virtual CDB_Connection* GetCDB_Connection() = 0;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  IDataSource::
-//
-//  Interface for a datasource
-//
+///
+///  IDataSource --
+///
+///  Interface for a datasource
 
 class NCBI_DBAPI_EXPORT IDataSource
 {
     friend class CDriverManager;
 
 protected:
-    // Prohibit explicit deletion. Use CDriverManager::DestroyDs() call
+    /// Protected Destructor.
+    ///
+    /// Prohibits explicit deletion.
+    /// Use CDriverManager::DestroyDs() call, instead.
     virtual ~IDataSource();
 
 public:
-    // Get connection
+    /// Get connection.
     virtual IConnection* CreateConnection() = 0;
 
+    /// Set login timeout.
     virtual void SetLoginTimeout(unsigned int i) = 0;
 
-    // Set the output stream for server messages.
-    // Set it to zero to disable any output and collect
-    // messages in CDB_MultiEx (see below)
+    /// Set the output stream for server messages.
+    ///
+    /// Set it to zero to disable any output and collect
+    /// messages in CDB_MultiEx (see below).
+    /// @param out
+    ///   Output stream to set to.
     virtual void SetLogStream(ostream* out) = 0;
 
-    // Returns all server messages as a CDB_MultiEx object
+    /// Returns all server messages as a CDB_MultiEx object.
     virtual CDB_MultiEx* GetErrorAsEx() = 0;
 
-    // Returns all server messages as a single string
+    /// Returns all server messages as a single string.
     virtual string GetErrorInfo() = 0;
 
-    // Returns the pointer to the general driver interface
+    /// Returns the pointer to the general driver interface.
     virtual I_DriverContext* GetDriverContext() = 0;
 };
 
@@ -515,6 +714,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/07/26 14:41:38  siyan
+ * Added doxygen comments.
+ *
  * Revision 1.31  2004/07/20 17:55:09  kholodov
  * Added: IReader/IWriter support for BLOB I/O
  *
