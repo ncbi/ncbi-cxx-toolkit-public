@@ -46,9 +46,6 @@
 extern "C" {
 #endif
 
-/** How many subject sequences to process in one database chunk. */
-#define BLAST_DB_CHUNK_SIZE 1024
-
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.
  * @param program_number Type of BLAST program [in]
