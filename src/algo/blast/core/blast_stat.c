@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.11  2003/07/28 03:41:49  camacho
+ * Use f{open,close,gets} instead of File{Open,Close,Gets}
+ *
  * Revision 1.10  2003/07/25 21:12:28  coulouri
  * remove constructions of the form "return sfree();" and "a=sfree(a);"
  *
@@ -1528,7 +1531,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
 
         /* 1. Try local directory */
         if(FileLength(matrix) > 0)
-            fp = FileOpen(matrix, "r");
+            fp = fopen(matrix, "r");
         
         /* 2. Try configuration file */
         if (fp == NULL) {
@@ -1542,12 +1545,12 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
                matrix_dir = StringSave(string);
                sprintf(string, "%s%s", matrix_dir, matrix);
                if(FileLength(string) > 0) {
-                  fp = FileOpen(string, "r");
+                  fp = fopen(string, "r");
                } else {
                   sprintf(string, "%s%s%s%s", matrix_dir, 
                           alphabet_type, DIRDELIMSTR, matrix);
                   if(FileLength(string) > 0)
-                     fp = FileOpen(string, "r");
+                     fp = fopen(string, "r");
                }
                sfree(matrix_dir);
             }
@@ -1557,7 +1560,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
         if(fp == NULL) {
             sprintf(string, "data%s%s", DIRDELIMSTR, matrix);
             if(FileLength(string) > 0)
-                fp = FileOpen(string, "r");
+                fp = fopen(string, "r");
         }
  
 #ifdef OS_UNIX
@@ -1572,7 +1575,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
             }
 
             if(FileLength(string) > 0)
-                fp = FileOpen(string, "r");
+                fp = fopen(string, "r");
             
             /* Try again without "aa" or "nt" */
             if (fp == NULL) {
@@ -1583,7 +1586,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
                 }
 
                 if(FileLength(string) > 0)
-                    fp = FileOpen(string, "r");
+                    fp = fopen(string, "r");
             }
         }
 #endif
@@ -1595,10 +1598,10 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
         }
         
         if((status=BlastScoreBlkMatRead(sbp, fp)) != 0) {
-            FileClose(fp);
+            fclose(fp);
             return status;
         }
-        FileClose(fp);
+        fclose(fp);
     } else {
         if((status=BlastScoreBlkMatCreate(sbp)) != 0)
             return status;
@@ -1806,7 +1809,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     }
     
     /* Read the residue names for the second alphabet */
-    while (FileGets(buf, sizeof(buf), fp) != NULL) {
+    while (fgets(buf, sizeof(buf), fp) != NULL) {
         ++lineno;
         if (StrChr(buf, '\n') == NULL) {
 #if THREADS_IMPLEMENTED
@@ -1851,7 +1854,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
         sbp->mat_dim2 = a2cnt;
     }
-    while (FileGets(buf, sizeof(buf), fp) != NULL)  {
+    while (fgets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
         if ((cp = StrChr(buf, '\n')) == NULL) {
 #if THREADS_IMPLEMENTED

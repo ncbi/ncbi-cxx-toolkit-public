@@ -726,7 +726,7 @@ Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
 
 #ifdef DEBUG_LOG
-   FILE *logfp0 = FileOpen("new0.log", "a");
+   FILE *logfp0 = fopen("new0.log", "a");
 #endif   
 
    abs_start = subject->sequence;
@@ -761,7 +761,7 @@ Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
    *end_offset = 
      ((s - abs_start) - mb_lt->compressed_wordsize)*COMPRESSION_RATIO;
 #ifdef DEBUG_LOG
-   FileClose(logfp0);
+   fclose(logfp0);
 #endif
 
    return hitsfound;
@@ -788,7 +788,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
 
 #ifdef DEBUG_LOG
-   FILE *logfp0 = FileOpen("new0.log", "a");
+   FILE *logfp0 = fopen("new0.log", "a");
 #endif   
    
    abs_start = subject->sequence;
@@ -889,7 +889,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
    *end_offset = 
      ((s - abs_start) - mb_lt->compressed_wordsize)*COMPRESSION_RATIO;
 #ifdef DEBUG_LOG
-   FileClose(logfp0);
+   fclose(logfp0);
 #endif
 
    return hitsfound;
