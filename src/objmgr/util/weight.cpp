@@ -113,7 +113,7 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
     for (CFeat_CI feat(handle, 0, 0, CSeqFeatData::e_not_set,
-                       CFeat_CI::eResolve_All);
+                       CFeat_CI::eResolve_TSE);
          feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/05/06 17:12:29  ucko
+* Take advantage of new eResolve_TSE option.
+*
 * Revision 1.6  2002/05/06 16:11:49  ucko
 * Update for new OM; move CVS log to end.
 *
