@@ -59,14 +59,25 @@ BEGIN_SCOPE(objects)
 
 static int resolve_id_count = 0;
 static double resolve_id_time = 0;
+
 static int resolve_gi_count = 0;
 static double resolve_gi_time = 0;
-static int blob_count = 0;
-static double bytes_count = 0;
-static double last_bytes_count = 0;
-static double bytes_time = 0;
-static double compr_size = 0;
-static double decompr_size = 0;
+
+static int resolve_ver_count = 0;
+static double resolve_ver_time = 0;
+
+static double last_object_bytes = 0;
+
+static int main_blob_count = 0;
+static double main_bytes = 0;
+static double main_time = 0;
+
+static int snp_blob_count = 0;
+static double snp_compressed = 0;
+static double snp_uncompressed = 0;
+static double snp_time = 0;
+static double snp_total_read_time = 0;
+static double snp_decompression_time = 0;
 
 static bool GetConnectionStatistics(void)
 {
@@ -82,7 +93,9 @@ static bool ConnectionStatistics(void)
 }
 
 CId1Reader::CId1Reader(TConn noConn)
+    : m_NoMoreConnections(false)
 {
+    noConn=1; // limit number of simultaneous connections to one
 #if !defined(NCBI_THREADS)
     noConn=1;
 #endif
@@ -101,23 +114,50 @@ CId1Reader::~CId1Reader()
     SetParallelLevel(0);
     if ( ConnectionStatistics() ) {
         if ( resolve_id_count ) {
-            LOG_POST("Total: resolved ids "<<resolve_id_count<<" in "<<
+            LOG_POST("Resolution: resolved "<<resolve_id_count<<" ids in "<<
                      (resolve_id_time*1000)<<" ms "<<
                      (resolve_id_time*1000/resolve_id_count)<<" ms/one");
         }
         if ( resolve_gi_count ) {
-            LOG_POST("Total: resolved "<<resolve_gi_count<<" in "<<
+            LOG_POST("Resolution: resolved "<<resolve_gi_count<<" gis in "<<
                      (resolve_gi_time*1000)<<" ms "<<
                      (resolve_gi_time*1000/resolve_gi_count)<<" ms/one");
         }
-        LOG_POST("Total: loaded "<<blob_count<<" blobs "<<
-                 (bytes_count/1024)<<" kB in "<<
-                 (bytes_time*1000)<<" ms "<<
-                 (bytes_count/bytes_time/1024)<<" kB/s");
-        if ( compr_size ) {
-            LOG_POST("Total SNP: "<<(compr_size/1024)<<" kB -> decompressed "<<
-                     (decompr_size/1024)<<" kB, compession ratio: "<<
-                     (decompr_size/compr_size));
+        if ( resolve_ver_count ) {
+            LOG_POST("Resolution: got "<<resolve_ver_count<<" blob ver in "<<
+                     (resolve_ver_time*1000)<<" ms "<<
+                     (resolve_ver_time*1000/resolve_ver_count)<<" ms/one");
+        }
+        if ( main_blob_count ) {
+            LOG_POST("Non-SNP: loaded "<<main_blob_count<<" blobs "<<
+                     (main_bytes/1024)<<" kB in "<<
+                     (main_time*1000)<<" ms "<<
+                     (main_bytes/main_time/1024)<<" kB/s");
+        }
+        if ( snp_blob_count ) {
+            LOG_POST("SNP: loaded "<<snp_blob_count<<" blobs "<<
+                     (snp_compressed/1024)<<" kB in "<<
+                     (snp_time*1000)<<" ms "<<
+                     (snp_compressed/snp_time/1024)<<" kB/s");
+            LOG_POST("SNP decompression: "<<(snp_compressed/1024)<<" kB -> "<<
+                     (snp_uncompressed/1024)<<" kB, compession ratio: "<<
+                     (snp_uncompressed/snp_compressed));
+            double snp_parse_time = snp_time - snp_total_read_time;
+            LOG_POST("SNP times: decompression : "<<
+                     (snp_decompression_time*1000)<<
+                     " ms, total read time: "<<
+                     (snp_total_read_time*1000)<<
+                     " ms, parse time: "<<
+                     (snp_parse_time*1000)<<" ms");
+        }
+        int total_blob_count = main_blob_count + snp_blob_count;
+        if ( total_blob_count ) {
+            double total_bytes = main_bytes + snp_compressed;
+            double total_time = main_time + snp_time;
+            LOG_POST("Total: loaded "<<total_blob_count<<" blobs "<<
+                     (total_bytes/1024)<<" kB in "<<
+                     (total_time*1000)<<" ms "<<
+                     (total_bytes/total_time/1024)<<" kB/s");
         }
     }
 }
@@ -149,7 +189,14 @@ CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
     conn = conn % m_Pool.size();
     CConn_ServiceStream* ret = m_Pool[conn];
     if ( !ret ) {
-        ret = m_Pool[conn] = x_NewConnection();
+        ret = x_NewConnection();
+
+        if ( !ret ) {
+            NCBI_THROW(CLoaderException, eConnectionFailed,
+                       "too many connections failed: probably server is dead");
+        }
+
+        m_Pool[conn] = ret;
     }
     return ret;
 }
@@ -166,42 +213,57 @@ void CId1Reader::Reconnect(TConn conn)
 
 CConn_ServiceStream* CId1Reader::x_NewConnection(void)
 {
-    _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
-    STimeout tmout;
-    tmout.sec = 20;
-    tmout.usec = 0;
-    return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
+    for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
+        try {
+            _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
+            STimeout tmout;
+            tmout.sec = 20;
+            tmout.usec = 0;
+            return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
+        }
+        catch ( CException& exc ) {
+            ERR_POST("CId1Reader::x_NewConnection: "
+                     "cannot connect: " << exc.what());
+        }
+    }
+    m_NoMoreConnections = true;
+    return 0;
 }
 
 void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs,
                                  const CSeq_id& seqId,
                                  TConn conn)
 {
-    x_RetrieveSeqrefs(srs, seqId, x_GetConnection(conn));
-}
-
-
-void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
-                                   const CSeq_id& seqId,
-                                   CConn_ServiceStream* stream)
-{
     int gi;
     if ( !seqId.IsGi() ) {
-        gi = x_ResolveSeq_id_to_gi(seqId, stream);
+        gi = x_ResolveSeq_id_to_gi(seqId, conn);
     }
     else {
         gi = seqId.GetGi();
     }
 
     if ( gi ) {
-        x_RetrieveSeqrefs(srs, gi, stream);
+        x_RetrieveSeqrefs(srs, gi, conn);
     }
+}
+
+
+int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
+                                      TConn conn)
+{
+    CID1server_request id1_request;
+    id1_request.SetGetgi(const_cast<CSeq_id&>(seqId));
+
+    CID1server_back id1_reply;
+    x_ResolveId(id1_reply, id1_request, conn);
+
+    return id1_reply.IsGotgi()? id1_reply.GetGotgi(): 0;
 }
 
 
 void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
                                    int gi,
-                                   CConn_ServiceStream* stream)
+                                   TConn conn)
 {
     CID1server_request id1_request;
     {{
@@ -211,7 +273,7 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
     }}
     
     CID1server_back id1_reply;
-    x_GetBlobInfo(id1_reply, id1_request, stream);
+    x_ResolveId(id1_reply, id1_request, conn);
 
     if ( !id1_reply.IsGotblobinfo() ) {
         return;
@@ -219,7 +281,7 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
 
     const CID1blob_info& info = id1_reply.GetGotblobinfo();
     CRef<CSeqref> ref(new CSeqref(gi, info.GetSat(), info.GetSat_key()));
-    x_UpdateVersion(*ref, info);
+    ref->SetVersion(x_GetVersion(info));
     srs.push_back(ref);
    
     if ( TrySNPSplit() ) {
@@ -233,92 +295,79 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
 }
 
 
-int CId1Reader::GetVersion(const CSeqref& seqref,
-                           TConn conn)
+int CId1Reader::GetVersion(const CSeqref& seqref, TConn conn)
 {
     if ( seqref.GetVersion() == 0 ) {
-        CID1server_request id1_request;
-        x_SetParams(seqref, id1_request.SetGetblobinfo(), IsSNPSeqref(seqref));
-
-        CID1server_back    id1_reply;
-        x_GetBlobInfo(id1_reply, id1_request, x_GetConnection(conn));
-        
-        if ( id1_reply.IsGotblobinfo() ) {
-            x_UpdateVersion(const_cast<CSeqref&>(seqref),
-                            id1_reply.GetGotblobinfo());
-        }
+        const_cast<CSeqref&>(seqref).SetVersion(x_GetVersion(seqref, conn));
     }
     return seqref.GetVersion();
 }
 
 
-void CId1Reader::x_GetBlobInfo(CID1server_back& id1_reply,
-                               const CID1server_request& id1_request,
-                               CConn_ServiceStream* stream)
+int CId1Reader::x_GetVersion(const CSeqref& seqref, TConn conn)
 {
-    CStopWatch sw;
-    if ( ConnectionStatistics() ) {
-        sw.Start();
-    }
-
-    {{
-        CObjectOStreamAsnBinary out(*stream);
-        out << id1_request;
-    }}
+    CID1server_request id1_request;
+    x_SetParams(seqref, id1_request.SetGetblobinfo(), IsSNPSeqref(seqref));
     
-    {{
-        CObjectIStreamAsnBinary in(*stream);
-        in >> id1_reply;
-    }}
-
-    if ( ConnectionStatistics() ) {
-        double time = sw.Elapsed();
-        LOG_POST("CId1Reader: resolved gi in "<<(time*1000)<<" ms");
-        resolve_gi_count++;
-        resolve_gi_time += time;
+    CID1server_back    id1_reply;
+    x_ResolveId(id1_reply, id1_request, conn);
+    
+    if ( id1_reply.IsGotblobinfo() ) {
+        return x_GetVersion(id1_reply.GetGotblobinfo());
+    }
+    else {
+        return 1; // default non-zero version
     }
 }
 
 
-int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                                      CConn_ServiceStream* stream)
+void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
+                             const CID1server_request& id1_request,
+                             TConn conn)
 {
     CStopWatch sw;
     if ( ConnectionStatistics() ) {
         sw.Start();
     }
 
+    CConn_ServiceStream* stream = x_GetConnection(conn);
     {{
-        CID1server_request id1_request;
-        id1_request.SetGetgi(const_cast<CSeq_id&>(seqId));
-        
         CObjectOStreamAsnBinary out(*stream);
         out << id1_request;
+        out.Flush();
     }}
     
-    CID1server_back id1_reply;
     {{
         CObjectIStreamAsnBinary in(*stream);
         in >> id1_reply;
     }}
 
-    int gi;
-    if ( !id1_reply.IsGotgi() ) {
-        gi = 0;
-    }
-    else {
-        gi = id1_reply.GetGotgi();
-    }
-    
     if ( ConnectionStatistics() ) {
         double time = sw.Elapsed();
-        LOG_POST("CId1Reader: resolved "<<seqId.AsFastaString()<<" in "<<
-                 (time*1000)<<" ms");
-        resolve_id_count++;
-        resolve_id_time += time;
+        if ( id1_request.Which() == CID1server_request::e_Getgi ) {
+            LOG_POST("CId1Reader: resolved id "<<
+                     id1_request.GetGetgi().AsFastaString()<<
+                     " in "<<(time*1000)<<" ms");
+            resolve_id_count++;
+            resolve_id_time += time;
+        }
+        else if ( id1_request.Which() == CID1server_request::e_Getblobinfo ) {
+            const CID1server_maxcomplex& req = id1_request.GetGetblobinfo();
+            if ( req.IsSetSat() ) {
+                LOG_POST("CId1Reader: got blob version TSE("<<
+                         req.GetSat()<<","<<req.GetEnt()<<
+                         ") in "<<(time*1000)<<" ms");
+                resolve_ver_count++;
+                resolve_ver_time += time;
+            }
+            else {
+                LOG_POST("CId1Reader: resolved gi "<<req.GetGi()<<
+                         " in "<<(time*1000)<<" ms");
+                resolve_gi_count++;
+                resolve_gi_time += time;
+            }
+        }
     }
-
-    return gi;
 }
 
 
@@ -387,10 +436,10 @@ void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
     if ( ConnectionStatistics() ) {
         double time = sw.Elapsed();
         LOG_POST("CId1Reader: read blob "<<seqref.printTSE()<<" "<<
-                 (last_bytes_count/1024)<<" kB in "<<(time*1000)<<" ms");
-        blob_count++;
-        bytes_count += last_bytes_count;
-        bytes_time += time;
+                 (last_object_bytes/1024)<<" kB in "<<(time*1000)<<" ms");
+        main_blob_count++;
+        main_bytes += last_object_bytes;
+        main_time += time;
     }
 }
 
@@ -408,7 +457,9 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
     CConn_ServiceStream* stream = x_GetConnection(conn);
     x_SendRequest(seqref, stream, true);
 
-    size_t compr_size;
+    size_t compressed;
+    double decompression_time;
+    double total_read_time;
     {{
         const size_t kSkipHeader = 2, kSkipFooter = 2;
         
@@ -419,7 +470,10 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         CResultZBtSrcRdr src2(&src);
         
         x_ReadSNPAnnot(snp_info, seqref, src2);
-        compr_size = src2.GetCompressedSize();
+
+        compressed = src2.GetCompressedSize();
+        decompression_time = src2.GetDecompressionTime();
+        total_read_time = src2.GetTotalReadTime();
         
         Id1ReaderSkipBytes(src, kSkipFooter);
     }}
@@ -427,12 +481,13 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
     if ( ConnectionStatistics() ) {
         double time = sw.Elapsed();
         LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
-                 (compr_size/1024)<<" kB in "<<(time*1000)<<" ms");
-        blob_count++;
-        bytes_count += compr_size;
-        compr_size += compr_size;
-        decompr_size += last_bytes_count;
-        bytes_time += time;
+                 (compressed/1024)<<" kB in "<<(time*1000)<<" ms");
+        snp_blob_count++;
+        snp_compressed += compressed;
+        snp_uncompressed += last_object_bytes;
+        snp_time += time;
+        snp_decompression_time += decompression_time;
+        snp_total_read_time += total_read_time;
     }
 }
 
@@ -457,8 +512,7 @@ void CId1Reader::x_SetParams(const CSeqref& seqref,
 }
 
 
-void CId1Reader::x_UpdateVersion(CSeqref& seqref,
-                                 const CID1blob_info& info)
+int CId1Reader::x_GetVersion(const CID1blob_info& info) const
 {
     int version = info.GetBlob_state();
     if ( version < 0 ) {
@@ -469,7 +523,7 @@ void CId1Reader::x_UpdateVersion(CSeqref& seqref,
         // so that we will not reask version in future
         version = 1;
     }
-    seqref.SetVersion(version);
+    return version;
 }
 
 
@@ -489,12 +543,20 @@ void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
                             const CSeqref& /*seqref*/,
                             CNcbiIstream& stream)
 {
-    CObjectIStreamAsnBinary in(stream);
-    CReader::SetSeqEntryReadHooks(in);
+    CObjectIStreamAsnBinary obj_stream(stream);
 
-    in >> id1_reply;
+    x_ReadBlob(id1_reply, obj_stream);
+}
 
-    last_bytes_count = in.GetStreamOffset();
+
+void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
+                            CObjectIStream& stream)
+{
+    CReader::SetSeqEntryReadHooks(stream);
+
+    stream >> id1_reply;
+
+    last_object_bytes = stream.GetStreamOffset();
 }
 
 
@@ -502,12 +564,11 @@ void CId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                 const CSeqref& /*seqref*/,
                                 CByteSourceReader& reader)
 {
-    auto_ptr<CObjectIStream> in;
-    in.reset(CObjectIStream::Create(eSerial_AsnBinary, reader));
+    CObjectIStreamAsnBinary in(reader);
 
-    snp_info.Read(*in);
+    snp_info.Read(in);
 
-    last_bytes_count = in->GetStreamOffset();
+    last_object_bytes = in.GetStreamOffset();
 }
 
 
@@ -517,6 +578,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.51  2003/10/21 14:27:35  vasilche
+ * Added caching of gi -> sat,satkey,version resolution.
+ * SNP blobs are stored in cache in preprocessed format (platform dependent).
+ * Limit number of connections to GenBank servers.
+ * Added collection of ID1 loader statistics.
+ *
  * Revision 1.50  2003/10/14 21:06:25  vasilche
  * Fixed compression statistics.
  * Disabled caching of SNP blobs.

@@ -125,8 +125,9 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         if ( gb_qual.GetQual() != kId_allele ) {
             return eSNP_Bad_WrongTextId;
         }
-        Int1 allele_index = annot_info.x_GetAlleleIndex(gb_qual.GetVal());
-        if ( allele_index < 0 ) {
+        TAlleleIndex allele_index =
+            annot_info.x_GetAlleleIndex(gb_qual.GetVal());
+        if ( allele_index == kNo_AlleleIndex ) {
             //NcbiCout << "Bad allele: \"" << gb_qual.GetVal() << "\"\n";
             return eSNP_Complex_AlleleLengthBad;
         }
@@ -138,7 +139,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
     }
 #else
     while ( alleles_count < kMax_AllelesCount ) {
-        m_AllelesIndices[alleles_count++] = -1;
+        m_AllelesIndices[alleles_count++] = kNo_AlleleIndex;
     }
 #endif
 
@@ -203,10 +204,10 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
             return eSNP_Complex_WeightBadValue;
         }
         int value = user_data.GetInt();
-        if ( value < 0 || value > kMax_UI1 ) {
+        if ( value < 0 || value > kMax_Weight ) {
             return eSNP_Complex_WeightBadValue;
         }
-        m_Weight = Uint1(value);
+        m_Weight = TWeight(value);
         have_weight = true;
     }
     if ( !have_weight ) {
@@ -239,10 +240,10 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         strand = interval.GetStrand();
         m_ToPosition = interval.GetTo();
         int delta = m_ToPosition - interval.GetFrom();
-        if ( delta <= 0 || delta > kMax_I1 ) {
+        if ( delta <= 0 || delta > kMax_PositionDelta ) {
             return eSNP_Complex_LocationIsNotPoint;
         }
-        m_PositionDelta = Int1(delta);
+        m_PositionDelta = TPositionDelta(delta);
         break;
     }
     default:
@@ -262,12 +263,12 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
 
     if ( feat.IsSetComment() ) {
         m_CommentIndex = annot_info.x_GetCommentIndex(feat.GetComment());
-        if ( m_CommentIndex < 0 ) {
+        if ( m_CommentIndex == kNo_CommentIndex ) {
             return eSNP_Complex_HasComment;
         }
     }
     else {
-        m_CommentIndex = -1;
+        m_CommentIndex = kNo_CommentIndex;
     }
 
     if ( id->Which() != CSeq_id::e_Gi ) {
@@ -318,7 +319,7 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
                                      const CSeq_annot_SNP_Info& annot_info) const
 {
     { // comment
-        if ( m_CommentIndex < 0 ) {
+        if ( m_CommentIndex == kNo_CommentIndex ) {
             feat.ResetComment();
         }
         else {
@@ -330,8 +331,8 @@ void SSNP_Info::x_UpdateSeq_featData(CSeq_feat& feat,
         CSeq_feat::TQual& qual = feat.SetQual();
         size_t i;
         for ( i = 0; i < kMax_AllelesCount; ++i ) {
-            Int1 allele_index = m_AllelesIndices[i];
-            if ( allele_index < 0 ) {
+            TAlleleIndex allele_index = m_AllelesIndices[i];
+            if ( allele_index == kNo_AlleleIndex ) {
                 break;
             }
             CGb_qual* gb_qual;
@@ -371,7 +372,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     x_UpdateSeq_featData(feat, annot_info);
     { // location
         TSeqPos to_position = m_ToPosition;
-        Int1 position_delta = m_PositionDelta;
+        TPositionDelta position_delta = m_PositionDelta;
         int gi = annot_info.GetGi();
         ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
         if ( position_delta == 0 ) {
@@ -409,7 +410,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     x_UpdateSeq_featData(feat, annot_info);
     { // location
         TSeqPos to_position = m_ToPosition;
-        Int1 position_delta = m_PositionDelta;
+        TPositionDelta position_delta = m_PositionDelta;
         int gi = annot_info.GetGi();
         ENa_strand strand = MinusStrand()? eNa_strand_minus: eNa_strand_plus;
         if ( position_delta == 0 ) {
@@ -467,6 +468,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.6  2003/10/21 14:27:35  vasilche
+ * Added caching of gi -> sat,satkey,version resolution.
+ * SNP blobs are stored in cache in preprocessed format (platform dependent).
+ * Limit number of connections to GenBank servers.
+ * Added collection of ID1 loader statistics.
+ *
  * Revision 1.5  2003/09/30 16:22:04  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

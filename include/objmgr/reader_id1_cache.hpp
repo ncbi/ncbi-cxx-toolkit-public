@@ -35,6 +35,7 @@
 BEGIN_NCBI_SCOPE
 
 class IBLOB_Cache;
+class IIntCache;
 class IReader;
 class IWriter;
 
@@ -46,23 +47,18 @@ class NCBI_XOBJMGR_EXPORT CCachedId1Reader : public CId1Reader
 {
 public:
     CCachedId1Reader(TConn noConn = 5, 
-                     IBLOB_Cache* cache = 0,
-                     EOwnership take_ownership = eNoOwnership);
+                     IBLOB_Cache* blob_cache = 0,
+                     IIntCache* id_cache = 0);
     ~CCachedId1Reader();
 
-    void SetCache(IBLOB_Cache* cache, EOwnership take_ownership = eNoOwnership);
+    void SetBlobCache(IBLOB_Cache* blob_cache);
+    void SetIdCache(IIntCache* id_cache);
+
 protected:
     
-    /// Return IReader interface if BLOB described by the seqref 
-    /// exists in cache. If IBLOB_Cache is not set or 
-    /// BLOB does not exist function returns NULL
-    IReader* OpenBlob(const CSeqref& seqref, int version);
+    void x_RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
+    int x_GetVersion(const CSeqref& seqref, TConn conn);
 
-    /// Return IWriter interface to store BLOB described by the seqref
-    /// Function returns NULL if IBLOB_Cache interface is not set.
-    IWriter* StoreBlob(const CSeqref& seqref, int version);
-
-protected:
     void x_GetBlob(CID1server_back& id1_reply,
                    const CSeqref& seqref,
                    TConn conn);
@@ -73,13 +69,38 @@ protected:
     void x_ReadBlob(CID1server_back& id1_reply,
                     const CSeqref&   seqref,
                     CNcbiIstream&    stream);
+    /*
     void x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                         const CSeqref& seqref,
                         CByteSourceReader&  reader);
+    */
 
     /// Return BLOB key string based on CSeqref Sat() and SatKey()
     /// @sa CSeqref::Sat(), CSeqref::SatKey()
     string x_GetBlobKey(const CSeqref& seqref);
+
+    /// Return IReader interface if BLOB described by the seqref 
+    /// exists in cache. If IBLOB_Cache is not set or 
+    /// BLOB does not exist function returns NULL
+    IReader* OpenBlobReader(const CSeqref& seqref);
+
+    /// Return IWriter interface to store BLOB described by the seqref
+    /// Function returns NULL if IBLOB_Cache interface is not set.
+    IWriter* OpenBlobWriter(const CSeqref& seqref);
+
+
+    bool GetBlobInfo(int gi, TSeqrefs& sr);
+    void StoreBlobInfo(int gi, const TSeqrefs& sr);
+
+    int GetSNPBlobVersion(int gi);
+    void StoreSNPBlobVersion(int gi, int version);
+
+    bool LoadBlob(CID1server_back& id1_reply, const CSeqref& seqref);
+
+    bool LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
+                      const CSeqref& seqref);
+    void StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
+                       const CSeqref& seqref);
 
 private:
 
@@ -87,8 +108,8 @@ private:
     CCachedId1Reader& operator=(const CCachedId1Reader&);
 
 private:
-    IBLOB_Cache*   m_Cache; 
-    EOwnership     m_OwnCache;
+    IBLOB_Cache*   m_BlobCache;
+    IIntCache*     m_IdCache;
 };
 
 
@@ -98,6 +119,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2003/10/21 14:27:34  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.6  2003/10/14 18:31:53  vasilche
 * Added caching support for SNP blobs.
 * Added statistics collection of ID1 connection.

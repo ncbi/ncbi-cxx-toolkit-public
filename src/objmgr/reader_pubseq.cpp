@@ -61,8 +61,10 @@ CPubseqReader::CPubseqReader(TConn noConn,
                              const string& server,
                              const string& user,
                              const string& pswd)
-    : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL)
+    : m_Server(server) , m_User(user), m_Password(pswd), m_Context(NULL),
+      m_NoMoreConnections(false)
 {
+    noConn=1; // limit number of simultaneous connections to one
 #if !defined(HAVE_SYBASE_REENTRANT)
     noConn=1;
 #endif
@@ -121,7 +123,14 @@ CDB_Connection* CPubseqReader::x_GetConnection(TConn conn)
     conn = conn % m_Pool.size();
     CDB_Connection* ret = m_Pool[conn];
     if ( !ret ) {
-        ret = m_Pool[conn] = x_NewConnection();
+        ret = x_NewConnection();
+
+        if ( !ret ) {
+            NCBI_THROW(CLoaderException, eConnectionFailed,
+                       "too many connections failed: probably server is dead");
+        }
+
+        m_Pool[conn] = ret;
     }
     return ret;
 }
@@ -138,39 +147,55 @@ void CPubseqReader::Reconnect(TConn conn)
 
 CDB_Connection *CPubseqReader::x_NewConnection(void)
 {
-    if ( m_Context.get() == NULL ) {
-        C_DriverMgr drvMgr;
-        //DBAPI_RegisterDriver_CTLIB(drvMgr);
-        //DBAPI_RegisterDriver_DBLIB(drvMgr);
-        string errmsg;
-        FDBAPI_CreateContext createContextFunc =
-            drvMgr.GetDriver("ctlib",&errmsg);
-        if ( !createContextFunc ) {
-            LOG_POST(errmsg);
-#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-            throw runtime_error("No ctlib available");
-#else
-            createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
+    for ( int i = 0; !m_NoMoreConnections && i < 3; ++i ) {
+        if ( m_Context.get() == NULL ) {
+            C_DriverMgr drvMgr;
+            //DBAPI_RegisterDriver_CTLIB(drvMgr);
+            //DBAPI_RegisterDriver_DBLIB(drvMgr);
+            string errmsg;
+            FDBAPI_CreateContext createContextFunc =
+                drvMgr.GetDriver("ctlib",&errmsg);
             if ( !createContextFunc ) {
                 LOG_POST(errmsg);
-                throw runtime_error("Neither ctlib nor dblib are available");
-            }
+#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
+                m_NoMoreConnections = true;
+                NCBI_THROW(CLoaderException, eConnectionFailed,
+                           "Neither ctlib nor dblib are available");
+#else
+                createContextFunc = drvMgr.GetDriver("dblib",&errmsg);
+                if ( !createContextFunc ) {
+                    LOG_POST(errmsg);
+                    m_NoMoreConnections = true;
+                    NCBI_THROW(CLoaderException, eConnectionFailed,
+                               "Neither ctlib nor dblib are available");
+                }
 #endif
+            }
+            map<string,string> args;
+            args["packet"]="3584"; // 7*512
+            m_Context.reset((*createContextFunc)(&args));
+            //m_Context.reset((*createContextFunc)(0));
         }
-        map<string,string> args;
-        args["packet"]="3584"; // 7*512
-        m_Context.reset((*createContextFunc)(&args));
-        //m_Context.reset((*createContextFunc)(0));
-    }
-    auto_ptr<CDB_Connection> conn(m_Context->Connect(m_Server,
-                                                     m_User, m_Password, 0));
-    if ( conn.get() ) {
-        auto_ptr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
-        if ( cmd.get() ) {
-            cmd->Send();
+        try {
+            auto_ptr<CDB_Connection> conn(m_Context->Connect(m_Server,
+                                                             m_User,
+                                                             m_Password,
+                                                             0));
+            if ( conn.get() ) {
+                auto_ptr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
+                if ( cmd.get() ) {
+                    cmd->Send();
+                }
+            }
+            return conn.release();
+        }
+        catch ( CException& exc ) {
+            ERR_POST("CPubseqReader::x_NewConnection: "
+                     "cannot connect: " << exc.what());
         }
     }
-    return conn.release();
+    m_NoMoreConnections = true;
+    return 0;
 }
 
 
@@ -386,16 +411,13 @@ CDB_Result* CPubseqReader::x_ReceiveData(CDB_RPCCmd& cmd)
 
 CRef<CTSE_Info> CPubseqReader::x_ReceiveMainBlob(CDB_Result& result)
 {
-    CResultBtSrc src(&result);
-
-    auto_ptr<CObjectIStream> in
-        (CObjectIStream::Create(eSerial_AsnBinary, src));
-        
-    CReader::SetSeqEntryReadHooks(*in);
-
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
 
-    *in >> *seq_entry;
+    CResultBtSrcRdr reader(&result);
+    CObjectIStreamAsnBinary in(reader);
+    
+    CReader::SetSeqEntryReadHooks(in);
+    in >> *seq_entry;
 
     return Ref(new CTSE_Info(*seq_entry));
 }
@@ -409,31 +431,12 @@ CRef<CSeq_annot_SNP_Info> CPubseqReader::x_ReceiveSNPAnnot(CDB_Result& result)
         CResultBtSrcRdr src(&result);
         CResultZBtSrcRdr src2(&src);
         
-        auto_ptr<CObjectIStream> in
-            (CObjectIStream::Create(eSerial_AsnBinary, src2));
+        CObjectIStreamAsnBinary in(src2);
         
-        snp_annot_info->Read(*in);
+        snp_annot_info->Read(in);
     }}
     
     return snp_annot_info;
-}
-
-
-CResultBtSrc::CResultBtSrc(CDB_Result* result)
-    : m_Result(result)
-{
-}
-
-
-CResultBtSrc::~CResultBtSrc()
-{
-}
-
-
-
-CRef<CByteSourceReader> CResultBtSrc::Open(void)
-{
-    return CRef<CByteSourceReader>(new CResultBtSrcRdr(m_Result));
 }
 
 
@@ -465,6 +468,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.38  2003/10/21 14:27:35  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.37  2003/10/14 21:06:25  vasilche
 * Fixed compression statistics.
 * Disabled caching of SNP blobs.

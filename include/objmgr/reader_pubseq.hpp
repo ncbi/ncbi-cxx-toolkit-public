@@ -96,6 +96,7 @@ private:
     string                    m_Password;
     auto_ptr<I_DriverContext> m_Context;
     vector<CDB_Connection *>  m_Pool;
+    bool                      m_NoMoreConnections;
 };
 
 
@@ -106,6 +107,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.17  2003/10/21 14:27:34  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.16  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

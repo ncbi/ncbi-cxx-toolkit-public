@@ -49,19 +49,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJMGR_EXPORT CResultBtSrc : public CByteSource
-{
-public:
-    CResultBtSrc(CDB_Result* result);
-    ~CResultBtSrc();
-
-    virtual CRef<CByteSourceReader> Open(void);
-
-private:
-    CDB_Result* m_Result;
-};
-
-
 class NCBI_XOBJMGR_EXPORT CResultBtSrcRdr : public CByteSourceReader
 {
 public:
@@ -81,6 +68,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.11  2003/10/21 14:27:35  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.10  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

@@ -67,6 +67,10 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
 
+// cache
+#include <objmgr/reader_id1_cache.hpp>
+#include <bdb/bdb_blobcache.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -82,6 +86,9 @@ class CDemoApp : public CNcbiApplication
 public:
     virtual void Init(void);
     virtual int  Run (void);
+
+
+    auto_ptr<CBDB_BLOB_Cache> bdb_cache;
 };
 
 
@@ -160,6 +167,9 @@ void CDemoApp::Init(void)
     arg_desc->AddDefaultKey("feat_subtype", "FeatSubType",
                             "Subtype of features to select",
                             CArgDescriptions::eInteger, "-1");
+
+    arg_desc->AddFlag("cache",
+                      "use BDB cache");
 
     // Program description
     string prog_description = "Example of the C++ object manager usage\n";
@@ -715,12 +725,86 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
 
-    // Create genbank data loader and register it with the OM.
-    // The last argument "eDefault" informs the OM that the loader
-    // must be included in scopes during the CScope::AddDefaults() call.
-    pOm->RegisterDataLoader(
-        *new CGBDataLoader("ID", 0, 2),
-        CObjectManager::eDefault);
+#if 1
+    if ( args["cache"] ) {
+        // caching options
+        CNcbiRegistry& reg = GetConfig();
+
+        string cache_path = ".genbank_cache";
+        //CSystemPath::ResolvePath("<home>", "cache");
+        cache_path    = reg.GetString("LOCAL_CACHE", "Path", cache_path,
+                                      CNcbiRegistry::eErrPost);
+        int cache_age = reg.GetInt("LOCAL_CACHE", "Age", 5,
+                                   CNcbiRegistry::eErrPost);
+
+        auto_ptr<CCachedId1Reader> id1_reader;
+
+        if (!cache_path.empty()) {
+            try {
+                {{
+                    // make sure our cache directory exists first
+                    CDir dir(cache_path);
+                    if ( !dir.Exists() ) {
+                        dir.Create();
+                    }
+                }}
+
+                bdb_cache.reset(new CBDB_BLOB_Cache());
+                bdb_cache->Open(cache_path.c_str());
+
+                // Cache cleaning
+                // Objects age should be assigned in days, negative value
+                // means cleaning is disabled
+
+                if (cache_age == 0) {
+                    cache_age = 5;   // keep objects for 5 days (default)
+                }
+
+                if (cache_age) {
+                    CTime time_stamp(CTime::eCurrent);
+                    time_t age = time_stamp.GetTimeT();
+
+                    age -= 60 * 60 * 24 * cache_age;
+
+                    bdb_cache->Purge(age);
+                }
+
+                bdb_cache->GetIntCache()->SetExpirationTime(24*60*60);
+                id1_reader.reset(new CCachedId1Reader(5,
+                                                      bdb_cache.get(),
+                                                      bdb_cache->GetIntCache()));
+                LOG_POST(Info << "ID1 cache enabled in " << cache_path);
+            }
+            catch(CException& e) {
+                LOG_POST(Error << "ID1 cache initialization failed in "
+                         << cache_path << ": "
+                         << e.what());
+            }
+#ifndef _DEBUG
+            catch(...) {
+                LOG_POST(Error << "ID1 cache initialization failed in "
+                         << cache_path);
+            }
+#endif
+        } else {
+            LOG_POST(Info << "ID1 cache disabled.");
+        }
+
+        CRef<CGBDataLoader> loader(new CGBDataLoader("GenBank",
+                                                     id1_reader.release(),
+                                                     2));
+        pOm->RegisterDataLoader(*loader, CObjectManager::eDefault);
+    }
+    else
+#endif
+    {
+        // Create genbank data loader and register it with the OM.
+        // The last argument "eDefault" informs the OM that the loader
+        // must be included in scopes during the CScope::AddDefaults() call.
+        pOm->RegisterDataLoader(
+            *new CGBDataLoader("ID", 0, 2),
+            CObjectManager::eDefault);
+    }
 
     // Create a new scope.
     CScope scope(*pOm);
@@ -1040,6 +1124,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/10/21 14:27:35  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.43  2003/10/14 18:29:05  vasilche
 * Added -exclude_named option.
 *

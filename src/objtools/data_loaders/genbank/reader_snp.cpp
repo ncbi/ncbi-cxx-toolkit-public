@@ -31,6 +31,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objmgr/reader.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/reader_snp.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -56,6 +57,10 @@
 #include <serial/objectio.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasnb.hpp>
+
+#include <util/reader_writer.hpp>
 
 #include <algorithm>
 #include <numeric>
@@ -116,40 +121,83 @@ CSeq_annot_SNP_Info::~CSeq_annot_SNP_Info(void)
 }
 
 
-int CIndexedStrings::GetIndex(const string& s, int max_index)
+size_t CIndexedStrings::GetIndex(const string& s, size_t max_index)
 {
     TIndices::iterator it = m_Indices.lower_bound(s);
     if ( it != m_Indices.end() && it->first == s ) {
         return it->second;
     }
-    int index = m_Strings.size();
-    if ( index >= max_index ) {
-        return -1;
+    size_t index = m_Strings.size();
+    if ( index <= max_index ) {
+        //NcbiCout << "string["<<index<<"] = \"" << s << "\"\n";
+        m_Strings.push_back(s);
+        m_Indices.insert(it, TIndices::value_type(s, index));
     }
-    //NcbiCout << "string["<<index<<"] = \"" << s << "\"\n";
-    m_Strings.push_back(s);
-    m_Indices.insert(it, TIndices::value_type(s, index));
+    else {
+        _ASSERT(index == max_index + 1);
+    }
     return index;
 }
 
 
-Int1 CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
+void CIndexedStrings::StoreTo(CNcbiOstream& stream) const
 {
-    if ( allele.size() > 5 )
-        return -1;
+    unsigned size = m_Strings.size();
+    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    ITERATE ( TStrings, it, m_Strings ) {
+        size = it->size();
+        stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        stream.write(it->data(), size);
+    }
+}
+
+
+void CIndexedStrings::LoadFrom(CNcbiIstream& stream,
+                               size_t max_index,
+                               size_t max_length)
+{
+    unsigned size;
+    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+    if ( !stream || (size > unsigned(max_index+1)) ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Incompatible version of SNP table");
+    }
+    m_Strings.resize(size);
+    char buff[max_length];
+    NON_CONST_ITERATE ( TStrings, it, m_Strings ) {
+        stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+        if ( !stream || (size > max_length) ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Incompatible version of SNP table");
+        }
+        stream.read(buff, size);
+        if ( !stream ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Incompatible version of SNP table");
+        }
+        it->assign(buff, buff+size);
+    }
+}
+
+
+SSNP_Info::TAlleleIndex
+CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
+{
+    if ( allele.size() > SSNP_Info::kMax_AlleleLength )
+        return SSNP_Info::kNo_AlleleIndex;
     if ( m_Alleles.IsEmpty() ) {
         // prefill by small alleles
         for ( const char* c = "-NACGT"; *c; ++c ) {
-            m_Alleles.GetIndex(string(1, *c), kMax_I1);
+            m_Alleles.GetIndex(string(1, *c), SSNP_Info::kMax_AlleleIndex);
         }
         for ( const char* c1 = "ACGT"; *c1; ++c1 ) {
             string s(1, *c1);
             for ( const char* c2 = "ACGT"; *c2; ++c2 ) {
-                m_Alleles.GetIndex(s+*c2, kMax_I1);
+                m_Alleles.GetIndex(s+*c2, SSNP_Info::kMax_AlleleIndex);
             }
         }
     }
-    return Int1(m_Alleles.GetIndex(allele, kMax_I1));
+    return m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
 }
 
 
@@ -181,6 +229,82 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
     entry->SetSet().SetSeq_set(); // it's not optional
     entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
     return entry;
+}
+
+
+void CSeq_annot_SNP_Info::Reset(void)
+{
+    m_Gi = 0;
+    m_Comments.Clear();
+    m_Alleles.Clear();
+    m_SNP_Set.clear();
+    m_Seq_annot.Reset();
+}
+
+
+static const unsigned MAGIC = 0x12340001;
+
+void CSeq_annot_SNP_Info::StoreTo(CNcbiOstream& stream) const
+{
+    // header
+    stream.write(reinterpret_cast<const char*>(&MAGIC), sizeof(MAGIC));
+    stream.write(reinterpret_cast<const char*>(&m_Gi), sizeof(m_Gi));
+
+    // strings
+    m_Comments.StoreTo(stream);
+    m_Alleles.StoreTo(stream);
+
+    // simple SNPs
+    unsigned size = m_SNP_Set.size();
+    stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    stream.write(reinterpret_cast<const char*>(&*m_SNP_Set.begin()),
+                 size*sizeof(SSNP_Info));
+
+    // complex SNPs
+    CObjectOStreamAsnBinary obj_stream(stream);
+    obj_stream << *m_Seq_annot;
+}
+
+
+void CSeq_annot_SNP_Info::LoadFrom(CNcbiIstream& stream)
+{
+    // header
+    unsigned magic;
+    stream.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+    if ( !stream || magic != MAGIC ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Incompatible version of SNP table");
+    }
+    stream.read(reinterpret_cast<char*>(&m_Gi), sizeof(m_Gi));
+
+    // strings
+    m_Comments.LoadFrom(stream,
+                        SSNP_Info::kMax_CommentIndex,
+                        SSNP_Info::kMax_CommentLength);
+    m_Alleles.LoadFrom(stream,
+                       SSNP_Info::kMax_AlleleIndex,
+                       SSNP_Info::kMax_AlleleLength);
+
+    // simple SNPs
+    unsigned size;
+    stream.read(reinterpret_cast<char*>(&size), sizeof(size));
+    if ( stream ) {
+        m_SNP_Set.resize(size);
+        stream.read(reinterpret_cast<char*>(&*m_SNP_Set.begin()),
+                    size*sizeof(SSNP_Info));
+    }
+
+    // complex SNPs
+    CObjectIStreamAsnBinary obj_stream(stream);
+    if ( !m_Seq_annot ) {
+        m_Seq_annot.Reset(new CSeq_annot);
+    }
+    obj_stream >> *m_Seq_annot;
+
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Incompatible version of SNP table");
+    }
 }
 
 
@@ -240,6 +364,29 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
                                               const CObjectInfo& /*ftable*/)
 {
+    /*
+    CObjectIStreamAsnBinary* bin = dynamic_cast<CObjectIStreamAsnBinary*>(&in);
+    if ( bin ) {
+        char buffer[100];
+        size_t count = 0;
+        try {
+            count = bin->PeekBytes(buffer, sizeof(buffer));
+        }
+        catch ( ... ) {
+            count = 0;
+        }
+        string s;
+        s.reserve(100);
+        for ( size_t i = 0; i < count; ++i ) {
+            char b = buffer[i];
+            s += "0123456789abcdef"[(b>>4)&15];
+            s += "0123456789abcdef"[(b)&15];
+            s += ' ';
+        }
+        s += '\n';
+        NcbiCout << s;
+    }
+    */
     if ( !m_Feat ) {
         m_Feat.Reset(new CSeq_feat);
     }
@@ -262,6 +409,12 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2003/10/21 14:27:35  vasilche
+ * Added caching of gi -> sat,satkey,version resolution.
+ * SNP blobs are stored in cache in preprocessed format (platform dependent).
+ * Limit number of connections to GenBank servers.
+ * Added collection of ID1 loader statistics.
+ *
  * Revision 1.4  2003/09/30 16:22:03  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

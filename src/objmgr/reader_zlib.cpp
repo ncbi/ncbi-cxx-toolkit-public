@@ -30,6 +30,7 @@
 #include <objmgr/impl/reader_zlib.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
+#include <corelib/ncbitime.hpp>
 #include <util/compress/zlib.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -52,6 +53,11 @@ public:
             return m_CompressedSize;
         }
 
+    double GetDecompressionTime(void) const
+        {
+            return m_DecompressionTime;
+        }
+
     enum {
         kMax_UncomprSize = 128*1024,
         kMax_ComprSize = 128*1024
@@ -68,11 +74,13 @@ private:
     CZipCompression   m_Decompressor;
     vector<char>      m_Compressed;
     size_t            m_CompressedSize;
+    double            m_DecompressionTime;
 };
 
 
 CResultZBtSrcRdr::CResultZBtSrcRdr(CByteSourceReader* src)
-    : m_Src(src), m_Type(eType_unknown)
+    : m_Src(src), m_Type(eType_unknown),
+      m_TotalReadTime(0)
 {
 }
 
@@ -84,9 +92,17 @@ CResultZBtSrcRdr::~CResultZBtSrcRdr()
 
 size_t CResultZBtSrcRdr::Read(char* buffer, size_t buffer_length)
 {
+    CStopWatch sw;
+    if ( 1 ) {
+        sw.Start();
+    }
     EType type = m_Type;
     if ( type == eType_plain ) {
-        return m_Src->Read(buffer, buffer_length);
+        size_t ret = m_Src->Read(buffer, buffer_length);
+        if ( 1 ) {
+            m_TotalReadTime += sw.Elapsed();
+        }
+        return ret;
     }
 
     if ( type == eType_unknown ) {
@@ -108,6 +124,9 @@ size_t CResultZBtSrcRdr::Read(char* buffer, size_t buffer_length)
                 // or header is not "ZIP"
                 _TRACE("CResultZBtSrcRdr: non-ZIP: " << got_already);
                 m_Type = eType_plain;
+                if ( 1 ) {
+                    m_TotalReadTime += sw.Elapsed();
+                }
                 return got_already;
             }
         } while ( got_already != kHeaderSize );
@@ -119,7 +138,11 @@ size_t CResultZBtSrcRdr::Read(char* buffer, size_t buffer_length)
         m_Decompressor.reset(new CResultZBtSrcX(m_Src));
     }
 
-    return m_Decompressor->Read(buffer, buffer_length);
+    size_t ret = m_Decompressor->Read(buffer, buffer_length);
+    if ( 1 ) {
+        m_TotalReadTime += sw.Elapsed();
+    }
+    return ret;
 }
 
 
@@ -129,8 +152,15 @@ size_t CResultZBtSrcRdr::GetCompressedSize(void) const
 }
 
 
+double CResultZBtSrcRdr::GetDecompressionTime(void) const
+{
+    return m_Decompressor.get()? m_Decompressor->GetDecompressionTime(): 0.;
+}
+
+
 CResultZBtSrcX::CResultZBtSrcX(CByteSourceReader* src)
-    : m_Src(src), m_BufferPos(0), m_BufferEnd(0), m_CompressedSize(0)
+    : m_Src(src), m_BufferPos(0), m_BufferEnd(0),
+      m_CompressedSize(0), m_DecompressionTime(0)
 {
 }
 
@@ -183,18 +213,24 @@ void CResultZBtSrcX::ReadLength(void)
                    "Uncompressed size is too large");
     }
     m_Compressed.reserve(compr_size);
-    //s_ResultZBtSrcX_compr_size += compr_size;
     if ( x_Read(&m_Compressed[0], compr_size) != compr_size ) {
         NCBI_THROW(CLoaderException, eCompressionError,
                    "Compressed data is not complete");
     }
     m_BufferPos = m_BufferEnd;
     m_Buffer.reserve(uncompr_size);
+    CStopWatch sw;
+    if ( 1 ) {
+        sw.Start();
+    }
     if ( !m_Decompressor.DecompressBuffer(&m_Compressed[0], compr_size,
                                           &m_Buffer[0], uncompr_size,
                                           &uncompr_size) ) {
         NCBI_THROW(CLoaderException, eCompressionError,
                    "Decompression failed");
+    }
+    if ( 1 ) {
+        m_DecompressionTime += sw.Elapsed();
     }
     m_BufferEnd = uncompr_size;
     m_BufferPos = 0;
@@ -219,6 +255,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.9  2003/10/21 14:27:35  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.8  2003/10/14 22:36:08  ucko
 * Fix typo in last log message
 *

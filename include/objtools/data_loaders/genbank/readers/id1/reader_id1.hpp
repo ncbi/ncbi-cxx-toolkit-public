@@ -36,6 +36,7 @@ BEGIN_NCBI_SCOPE
 
 class CConn_ServiceStream;
 class CByteSourceReader;
+class CObjectIStream;
 
 BEGIN_SCOPE(objects)
 
@@ -61,12 +62,17 @@ public:
     virtual void SetParallelLevel(TConn noConn);
     virtual void Reconnect(TConn conn);
 
-    int GetVersion(const CSeqref& seqref,
-                   TConn conn);
+    int GetVersion(const CSeqref& seqref, TConn conn);
 
 protected:
     CConn_ServiceStream* x_GetConnection(TConn conn);
     CConn_ServiceStream* x_NewConnection(void);
+
+    virtual int x_ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn);
+    virtual void x_RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
+
+    virtual int x_GetVersion(const CSeqref& seqref, TConn conn);
+
 
     virtual void x_GetBlob(CID1server_back& id1_reply,
                            const CSeqref&   seqref,
@@ -78,13 +84,15 @@ protected:
     virtual void x_ReadBlob(CID1server_back& id1_reply,
                             const CSeqref&   seqref,
                             CNcbiIstream&    stream);
+    void x_ReadBlob(CID1server_back& id1_reply,
+                    CObjectIStream& stream);
     virtual void x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
                                 const CSeqref&       seqref,
                                 CByteSourceReader&   reader);
 
-    void x_GetBlobInfo(CID1server_back& id1_reply,
-                       const CID1server_request& id1_request,
-                       CConn_ServiceStream* stream);
+    void x_ResolveId(CID1server_back& id1_reply,
+                     const CID1server_request& id1_request,
+                     TConn conn);
 
     void x_SendRequest(const CSeqref& seqref,
                        CConn_ServiceStream* stream,
@@ -92,23 +100,15 @@ protected:
     void x_SetParams(const CSeqref& seqref,
                      CID1server_maxcomplex& params,
                      bool is_snp);
-    void x_UpdateVersion(CSeqref& seqref,
-                         const CID1blob_info& info);
+
+    int x_GetVersion(const CID1blob_info& info) const;
 
 private:
-
-    void x_RetrieveSeqrefs(TSeqrefs& sr,
-                           const CSeq_id &seqId,
-                           CConn_ServiceStream* stream);
-    void x_RetrieveSeqrefs(TSeqrefs& sr,
-                           int gi,
-                           CConn_ServiceStream* stream);
-    int x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                              CConn_ServiceStream* stream);
 
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
 
     vector<CConn_ServiceStream *> m_Pool;
+    bool                          m_NoMoreConnections;
 };
 
 
@@ -119,6 +119,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.23  2003/10/21 14:27:34  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.22  2003/10/14 18:31:53  vasilche
 * Added caching support for SNP blobs.
 * Added statistics collection of ID1 connection.

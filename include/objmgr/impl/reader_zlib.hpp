@@ -60,6 +60,11 @@ public:
     virtual size_t Read(char* buffer, size_t bufferLength);
 
     size_t GetCompressedSize(void) const;
+    double GetDecompressionTime(void) const;
+    double GetTotalReadTime(void) const
+        {
+            return m_TotalReadTime;
+        }
 
 private:
     CResultZBtSrcRdr(const CResultZBtSrcRdr&);
@@ -68,6 +73,7 @@ private:
     CRef<CByteSourceReader>  m_Src;
     EType                    m_Type;
     auto_ptr<CResultZBtSrcX> m_Decompressor;
+    double                   m_TotalReadTime;
 };
 
 
@@ -77,6 +83,12 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2003/10/21 14:27:35  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.4  2003/10/15 13:43:57  vasilche
 * Removed obsolete class CResultZBtSrc.
 * Some code formatting.

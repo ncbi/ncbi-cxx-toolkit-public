@@ -45,6 +45,8 @@
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
+class IWriter;
+class IReader;
 
 BEGIN_SCOPE(objects)
 
@@ -117,23 +119,38 @@ public:
                           CRef<CSeq_interval>& seq_interval,
                           const CSeq_annot_SNP_Info& annot_info) const;
 
+    typedef int TSNPId;
+    typedef Int1 TPositionDelta;
     enum {
         kMax_PositionDelta = kMax_I1
     };
+    typedef Uint1 TCommentIndex;
     enum {
-        kMax_CommentIndex = kMax_I1
+        kNo_CommentIndex   = kMax_UI1,
+        kMax_CommentIndex  = kNo_CommentIndex - 1,
+        kMax_CommentLength = 65530
+    };
+    typedef Uint1 TAlleleIndex;
+    enum {
+        kNo_AlleleIndex    = kMax_UI1,
+        kMax_AlleleIndex   = kNo_AlleleIndex - 1,
+        kMax_AlleleLength  = 5
     };
     enum {
-        kMax_AllelesCount = 4
+        kMax_AllelesCount  = 4
+    };
+    typedef Uint1 TWeight;
+    enum {
+        kMax_Weight        = kMax_I1
     };
 
-    TSeqPos     m_ToPosition;
-    int         m_SNP_Id;
-    bool        m_MinusStrand;
-    Int1        m_PositionDelta;
-    Int1        m_CommentIndex;
-    Uint1       m_Weight;
-    Int1        m_AllelesIndices[kMax_AllelesCount];
+    TSeqPos         m_ToPosition;
+    TSNPId          m_SNP_Id;
+    bool            m_MinusStrand;
+    TPositionDelta  m_PositionDelta;
+    TCommentIndex   m_CommentIndex;
+    TWeight         m_Weight;
+    TAlleleIndex    m_AllelesIndices[kMax_AllelesCount];
 };
 
 
@@ -154,16 +171,19 @@ public:
             return m_Indices.empty();
         }
 
-    int GetIndex(const string& s, int max_index);
+    size_t GetIndex(const string& s, size_t max_index);
 
-    const string& GetString(int index) const
+    const string& GetString(size_t index) const
         {
             return m_Strings[index];
         }
 
+    void StoreTo(CNcbiOstream& stream) const;
+    void LoadFrom(CNcbiIstream& stream, size_t max_index, size_t max_length);
+
 private:
     typedef vector<string> TStrings;
-    typedef map<string, int> TIndices;
+    typedef map<string, size_t> TIndices;
 
     TStrings m_Strings;
     TIndices m_Indices;
@@ -195,11 +215,16 @@ public:
 
     const SSNP_Info& GetSNP_Info(size_t index) const;
 
+    void Reset(void);
+
+    void StoreTo(CNcbiOstream& stream) const;
+    void LoadFrom(CNcbiIstream& stream);
+
 protected:
-    Int1 x_GetCommentIndex(const string& comment);
-    const string& x_GetComment(Int1 index) const;
-    Int1 x_GetAlleleIndex(const string& allele);
-    const string& x_GetAllele(Int1 index) const;
+    SSNP_Info::TCommentIndex x_GetCommentIndex(const string& comment);
+    const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
+    SSNP_Info::TAlleleIndex x_GetAlleleIndex(const string& allele);
+    const string& x_GetAllele(SSNP_Info::TAlleleIndex index) const;
 
     bool x_SetGi(int gi);
     void x_AddSNP(const SSNP_Info& snp_info);
@@ -337,21 +362,26 @@ const CSeq_annot& CSeq_annot_SNP_Info::GetSeq_annot(void) const
 
 
 inline
-Int1 CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
+SSNP_Info::TCommentIndex
+CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
 {
-    return m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
+    return comment.size() > SSNP_Info::kMax_CommentLength?
+        SSNP_Info::kNo_CommentIndex:
+        m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
 }
 
 
 inline
-const string& CSeq_annot_SNP_Info::x_GetComment(Int1 index) const
+const string&
+CSeq_annot_SNP_Info::x_GetComment(SSNP_Info::TCommentIndex index) const
 {
     return m_Comments.GetString(index);
 }
 
 
 inline
-const string& CSeq_annot_SNP_Info::x_GetAllele(Int1 index) const
+const string&
+CSeq_annot_SNP_Info::x_GetAllele(SSNP_Info::TAlleleIndex index) const
 {
     return m_Alleles.GetString(index);
 }
@@ -378,6 +408,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/10/21 14:27:35  vasilche
+* Added caching of gi -> sat,satkey,version resolution.
+* SNP blobs are stored in cache in preprocessed format (platform dependent).
+* Limit number of connections to GenBank servers.
+* Added collection of ID1 loader statistics.
+*
 * Revision 1.6  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
