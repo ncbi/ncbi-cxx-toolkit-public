@@ -70,6 +70,8 @@ public:
 
     // Return reference on database tables
     SLDS_TablesCollection& GetTables() { return m_db; }
+
+    const TObjTypeMap& GetObjTypeMap() const { return m_ObjTypeMap; }
 private:
     // Loads types map from m_ObjectTypeDB to memory.
     void x_LoadTypeMap();
@@ -91,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/11 15:30:56  kuznets
+ * Added GetObjTypeMap() member function.
+ *
  * Revision 1.6  2003/06/06 16:35:51  kuznets
  * Added CLDS_Database::GetTables()
  *
