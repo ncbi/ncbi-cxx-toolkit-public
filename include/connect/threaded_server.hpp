@@ -92,6 +92,8 @@ public:
     // Implementor must take care of closing socket when done
     virtual void Process(SOCK sock) = 0;
 
+    unsigned int GetPort() const { return m_Port; }
+
 protected:
     // Runs synchronously when request queue is full
     // Implementor must take care of closing socket when done
@@ -130,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2004/09/29 15:20:36  kuznets
+ * +GetPort()
+ *
  * Revision 6.10  2004/08/19 12:43:38  dicuccio
  * Dropped unnecessary export specifier
  *
