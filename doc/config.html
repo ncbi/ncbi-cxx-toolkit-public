@@ -72,11 +72,13 @@ the specified compiler (and other tools) and flags.
 </a>
 
 <p>
-The NCBI C++ sources can be obtained from internal NCBI
-CVS tree (<i><b>"$CVSROOT/internal/c++/"</b></i>) or
-from a distribution archive. In either case, the root directory will
-contain the <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> which
-includes:
+The NCBI C++ toolkit sources and data can be
+<a href="new_proj.html#ref_Checkout">retrieved</a> from the internal NCBI
+CVS tree -- either directly from <i><b>"$CVSROOT/internal/c++/"</b></i>, or using
+auxiliary scripts <b><i>scripts/cvs_core.sh</i></b></a> and
+<b><i>scripts/cvs_core_msvc.bat</i></b>.
+
+The resultant <a href="src_tree.gif"><i>NCBI C++  source tree</i></a> will contain:
 <ul>
   <li> set of files needed for the platform-specific
 		 <a href="#ref_Running">configuration and installation</a>:
@@ -103,10 +105,20 @@ includes:
        this one, <i>doc/config.html</i>) and guidelines
        for (hopefully) <b>everybody</b> writing on C++ in NCBI SWG
 
+  <li> <i><b>scripts/</b></i> -- auxiliary scripts, such as
+		  <a href="new_proj.html#ref_OutsideImport">
+			 <b><i>import_project.sh</i></b></a>,
+		  <a href="new_proj.html#ref_OutsideCreate">
+			 <b><i>new_project.sh</i></b></a>,
+		  <a href="new_proj.html#ref_Checkout">
+			 <b><i>cvs_core.sh</i></b></a>,
+        etc.
+
   <li> <i><b>src/</b></i> -- a hierarchical directory tree of
        <a href="new_proj.html">NCBI C++ projects</a>. Here go
        all source files (<i>*.cpp, *.c</i>), private header and inline files
-       (<i>*.hpp, *.inl, *.h</i>), makefiles (<i>Makefile.*</i>),
+       (<i>*.hpp, *.inl, *.h</i>), makefiles (<i>Makefile.*</i>, including
+       <a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>),
        scripts (<i>*.sh</i>), and maybe some project-specific data
 
   <li> <i><b>include/</b></i> -- a hierarchical directory tree whose
