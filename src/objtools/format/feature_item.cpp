@@ -61,6 +61,7 @@
 #include <objmgr/util/feature.hpp>
 
 #include <util/static_set.hpp>
+#include <util/static_map.hpp>
 #include <util/sequtil/sequtil.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 
@@ -96,11 +97,21 @@ const CGb_qual* s_GetQual(const CSeq_feat& feat, const string& qual)
 }
 
 
+static bool s_ValidId(const CSeq_id& id)
+{
+    return id.IsGenbank()  ||  id.IsEmbl()    ||  id.IsDdbj()  ||
+           id.IsOther()    ||  id.IsPatent()  ||  
+           id.IsTpg()      ||  id.IsTpe()     ||  id.IsTpd();
+}
+
+
 static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
 {
     if ( !ctx.Config().CheckCDSProductId() ) {
         return true;
     }
+    
+    CScope& scope = ctx.GetScope();
 
     // non-pseudo CDS must have /product
     bool pseudo = feat.CanGetPseudo()  &&  feat.GetPseudo();
@@ -108,7 +119,7 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
         const CGene_ref* grp = feat.GetGeneXref();
         if ( grp == 0 ) {
             CConstRef<CSeq_feat> gene = 
-                GetOverlappingGene(feat.GetLocation(), ctx.GetScope());
+                GetOverlappingGene(feat.GetLocation(), scope);
             if ( gene ) {
                 pseudo = gene->CanGetPseudo()  &&  gene->GetPseudo();
                 if ( !pseudo ) {
@@ -125,7 +136,7 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
     if ( feat.CanGetLocation() ) {
         const CSeq_loc& loc = feat.GetLocation();
         if ( loc.IsPartialLeft()  &&  !loc.IsPartialRight() ) {
-            if ( GetLength(loc, &ctx.GetScope()) <= 5 ) {
+            if ( GetLength(loc, &scope) <= 5 ) {
                 just_stop = true;
             }
         }
@@ -143,11 +154,24 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
         } catch ( CException& ) {}
         if ( id != 0 ) {
             if ( (id->IsGi()  &&  id->GetGi() > 0) ||  id->IsLocal() ) {
-                // !!! make sure the product has a valid accession
-                return true;
-            } else if ( id->IsGenbank()  ||  id->IsEmbl()    ||  id->IsDdbj()  ||
-                        id->IsOther()    ||  id->IsPatent()  ||  
-                        id->IsTpg()      ||  id->IsTpe()     ||  id->IsTpd() ) {
+                CBioseq_Handle prod = scope.GetBioseqHandle(*id);
+                if ( prod ) {
+                    ITERATE (CBioseq_Handle::TId, it, prod.GetId()) {
+                        if ( s_ValidId(*it->GetSeqId()) ) {
+                            const CTextseq_id* tsip = it->GetSeqId()->GetTextseq_Id();
+                            if ( tsip != 0  &&  tsip->IsSetAccession()  &&
+                                 ValidateAccession(tsip->GetAccession()) ) {
+                                return true;
+                            }
+                        }
+                    }
+                } else if ( id->IsGi()  &&  id->GetGi() > 0 ) {
+                    // RELEASE_MODE requires that /protein_id is an accession
+                    // !!! need to be able to retrieve accession from server withou
+                    // retrieving the entire bioseq
+                    return true;
+                }
+            } else if ( s_ValidId(*id) ) {
                 const CTextseq_id* tsip = id->GetTextseq_Id();
                 if ( tsip != 0  &&  tsip->CanGetAccession()  &&
                      ValidateAccession(tsip->GetAccession()) ) {
@@ -286,8 +310,10 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
         return true;
     }
     
+    const CFlatFileConfig& cfg = ctx.Config();
+
     // check feature customization flags
-    if ( ctx.Config().ValidateFeats()  &&
+    if ( cfg.ValidateFeats()  &&
         (subtype == CSeqFeatData::eSubtype_bad  ||
          subtype == CSeqFeatData::eSubtype_virion) ) {
         return true;
@@ -297,7 +323,6 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
         return true;
     }
     
-    const CFlatFileConfig& cfg = ctx.Config();
     if ( cfg.HideImpFeats()  &&  type == CSeqFeatData::e_Imp ) {
         return true;
     }
@@ -314,7 +339,7 @@ static bool s_SkipFeature(const CSeq_feat& feat, CBioseqContext& ctx)
         return true;
     }
 
-    if ( cfg.HideRemoteImpFeats()  &&  subtype == CSeqFeatData::eSubtype_imp ) {
+    if ( cfg.HideRemoteImpFeats()  &&  type == CSeqFeatData::e_Imp ) {
         if ( subtype == CSeqFeatData::eSubtype_variation  ||
              subtype == CSeqFeatData::eSubtype_exon       ||
              subtype == CSeqFeatData::eSubtype_intron     ||
@@ -550,27 +575,6 @@ CFeatureItem::CFeatureItem
     x_GatherInfo(ctx);
 }
 
-// constructor from CMappedFeat
-/*
-CFeatureItem::CFeatureItem
-(const CMappedFeat& mfeat,
- CBioseqContext& ctx,
- const CSeq_loc* loc,
- EMapped mapped) :
-    CFeatureItemBase(mfeat.GetOriginalFeature(), ctx), m_Mapped(mapped)
-{
-    if ( loc != 0 ) {
-        m_Loc.Reset(loc);
-    } else {
-        if ( ctx.IsPart() ) {
-            m_Loc.Reset(&mfeat.GetOriginalFeature().GetLocation());
-        } else {
-            m_Loc.Reset(&mfeat.GetLocation());
-        }
-    }
-    x_GatherInfo(ctx);
-}
-*/
 
 void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
 {
@@ -583,24 +587,6 @@ void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
     x_AddQuals(ctx);
 }
 
-/*
-void CFeatureItem::x_FixLocation(CBioseqContext& ctx)
-{
-    if (! m_Loc->IsMix() ) {
-        return;
-    }
-
-    bool partial5 = m_Loc->IsPartialLeft();
-    bool partial3 = m_Loc->IsPartialRight();
-
-    CRef<CSeq_loc> loc(SeqLocMerge(ctx.GetHandle(), m_Loc->GetMix().Get(),
-        fFuseAbutting | fAddNulls));
-    loc->SetPartialLeft(partial5);
-    loc->SetPartialRight(partial3);
-
-    m_Loc.Reset(loc);
-}
-*/
 
 void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
 {
@@ -1652,7 +1638,7 @@ void CFeatureItem::x_AddProtQuals
     if ( processed == CProt_ref::eProcessed_preprotein  &&
          !ctx.IsRefSeq()  &&  !ctx.IsProt()  &&  
          feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_preprotein ) {
-        TQuals::iterator product = m_Quals.Find(eFQ_product);
+        TQI product = m_Quals.Find(eFQ_product);
         if (  product != m_Quals.end() ) {
             x_AddQual(eFQ_encodes, product->second);
             x_RemoveQuals(eFQ_product);
@@ -1671,9 +1657,10 @@ struct SLegalImport {
 
 void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
 {
-    static const SLegalImport kLegalImports[] = {
+    typedef pair<const char*, EFeatureQualifier> TLegalImport;
+    static const TLegalImport kLegalImports[] = {
         // Must be in case-insensitive alphabetical order!
-#define DO_IMPORT(x) { #x, eFQ_##x }
+#define DO_IMPORT(x) TLegalImport(#x, eFQ_##x)
         DO_IMPORT(allele),
         DO_IMPORT(bound_moiety),
         DO_IMPORT(clone),
@@ -1681,6 +1668,7 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
         DO_IMPORT(cons_splice),
         DO_IMPORT(direction),
         DO_IMPORT(EC_number),
+        DO_IMPORT(evidence),
         DO_IMPORT(frequency),
         DO_IMPORT(function),
         DO_IMPORT(insertion_seq),
@@ -1691,7 +1679,7 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
         DO_IMPORT(organism),
         DO_IMPORT(PCR_conditions),
         DO_IMPORT(phenotype),
-        { "product", eFQ_product_quals },
+        TLegalImport("product", eFQ_product_quals),
         DO_IMPORT(replace),
         DO_IMPORT(rpt_family),
         DO_IMPORT(rpt_type),
@@ -1701,21 +1689,21 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
         DO_IMPORT(usedin)
 #undef DO_IMPORT
     };
-    static const SLegalImport* kLegalImportsEnd
-        = kLegalImports + sizeof(kLegalImports)/sizeof(SLegalImport);
+    typedef const CStaticArrayMap<const char*, EFeatureQualifier, PNocase> TLegalImportMap;
+    static TLegalImportMap kLegalImportMap(kLegalImports, sizeof(kLegalImports));
 
     ITERATE (CSeq_feat::TQual, it, quals) {
-        const string&       name = (*it)->GetQual();
-        const SLegalImport* li   = lower_bound(kLegalImports, kLegalImportsEnd,
-                                               name, PNocase());
+        const char* name = (*it)->GetQual().c_str();
+        const TLegalImportMap::const_iterator li = kLegalImportMap.find(name);
         EFeatureQualifier   slot = eFQ_illegal_qual;
-        if (li != kLegalImportsEnd && !NStr::CompareNocase(li->m_Name,name)) {
-            slot = li->m_Value;
+        if ( li != kLegalImportMap.end() ) {
+            slot = li->second;
         }
         switch (slot) {
         case eFQ_codon:
         case eFQ_cons_splice:
         case eFQ_direction:
+        case eFQ_evidence:
         case eFQ_mod_base:
         case eFQ_number:
         case eFQ_rpt_type:
@@ -1744,10 +1732,13 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
 
 void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 {
-    if ( GetContext()->Config().IsFormatFTable() ) {
+    const CFlatFileConfig& cfg = GetContext()->Config();
+
+    if ( cfg.IsFormatFTable() ) {
         ff.SetQuals() = m_FTableQuals;
         return;
     }
+
     ff.SetQuals().reserve(m_Quals.Size());
     CFlatFeature::TQuals& qvec = ff.SetQuals();
 
@@ -1778,7 +1769,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(sec_str_type);
     DO_QUAL(heterogen);
 
-    if ( !GetContext()->Config().GoQualsToNote() ) {
+    if ( !cfg.GoQualsToNote() ) {
         DO_QUAL(go_component);
         DO_QUAL(go_function);
         DO_QUAL(go_process);
@@ -1805,7 +1796,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(exception);
     DO_QUAL(frequency);
     DO_QUAL(EC_number);
-    x_FormatQual(eFQ_gene_map,    "map", qvec);
+    x_FormatQual(eFQ_gene_map, "map", qvec);
     DO_QUAL(allele);
     DO_QUAL(map);
     DO_QUAL(mod_base);
@@ -1930,6 +1921,10 @@ const CFlatStringQVal* CFeatureItem::x_GetStringQual(EFeatureQualifier slot) con
 
 void CFeatureItem::x_CleanQuals(void) const
 {
+    if ( GetContext()->Config().DropIllegalQuals() ) {
+        x_DropIllegalQuals();
+    }
+
     const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
     if ( gene != 0 ) {
         // /gene same as feature.comment will suppress /note
@@ -1945,6 +1940,128 @@ void CFeatureItem::x_CleanQuals(void) const
             if ( NStr::Equal(gene->GetValue(), prod_desc->GetValue()) ) {
                 x_RemoveQuals(eFQ_prot_desc);
             }
+        }
+    }
+}
+
+
+typedef pair<EFeatureQualifier, CSeqFeatData::EQualifier> TQualPair;
+static const TQualPair sc_GbToFeatQualMap[] = {
+    TQualPair(eFQ_none, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_allele, CSeqFeatData::eQual_allele),
+    TQualPair(eFQ_anticodon, CSeqFeatData::eQual_anticodon),
+    TQualPair(eFQ_bond, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_bond_type, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_bound_moiety, CSeqFeatData::eQual_bound_moiety),
+    TQualPair(eFQ_cds_product, CSeqFeatData::eQual_product),
+    TQualPair(eFQ_citation, CSeqFeatData::eQual_citation),
+    TQualPair(eFQ_clone, CSeqFeatData::eQual_clone),
+    TQualPair(eFQ_coded_by, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_codon, CSeqFeatData::eQual_codon),
+    TQualPair(eFQ_codon_start, CSeqFeatData::eQual_codon_start),
+    TQualPair(eFQ_cons_splice, CSeqFeatData::eQual_cons_splice),
+    TQualPair(eFQ_db_xref, CSeqFeatData::eQual_db_xref),
+    TQualPair(eFQ_derived_from, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_direction, CSeqFeatData::eQual_direction),
+    TQualPair(eFQ_EC_number, CSeqFeatData::eQual_EC_number),
+    TQualPair(eFQ_encodes, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_evidence, CSeqFeatData::eQual_evidence),
+    TQualPair(eFQ_exception, CSeqFeatData::eQual_exception),
+    TQualPair(eFQ_exception_note, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_figure, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_frequency, CSeqFeatData::eQual_frequency),
+    TQualPair(eFQ_function, CSeqFeatData::eQual_function),
+    TQualPair(eFQ_gene, CSeqFeatData::eQual_gene),
+    TQualPair(eFQ_gene_desc, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_gene_allele, CSeqFeatData::eQual_allele),
+    TQualPair(eFQ_gene_map, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_gene_syn, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_gene_syn_refseq, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_gene_note, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_gene_xref, CSeqFeatData::eQual_db_xref),
+    TQualPair(eFQ_go_component, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_go_function, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_go_process, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_heterogen, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_illegal_qual, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_insertion_seq, CSeqFeatData::eQual_insertion_seq),
+    TQualPair(eFQ_label, CSeqFeatData::eQual_label),
+    TQualPair(eFQ_locus_tag, CSeqFeatData::eQual_locus_tag),
+    TQualPair(eFQ_map, CSeqFeatData::eQual_map),
+    TQualPair(eFQ_maploc, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_mod_base, CSeqFeatData::eQual_mod_base),
+    TQualPair(eFQ_modelev, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_number, CSeqFeatData::eQual_number),
+    TQualPair(eFQ_operon, CSeqFeatData::eQual_operon),
+    TQualPair(eFQ_organism, CSeqFeatData::eQual_organism),
+    TQualPair(eFQ_partial, CSeqFeatData::eQual_partial),
+    TQualPair(eFQ_PCR_conditions, CSeqFeatData::eQual_PCR_conditions),
+    TQualPair(eFQ_peptide, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_phenotype, CSeqFeatData::eQual_phenotype),
+    TQualPair(eFQ_product, CSeqFeatData::eQual_product),
+    TQualPair(eFQ_product_quals, CSeqFeatData::eQual_product),
+    TQualPair(eFQ_prot_activity, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_prot_comment, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_prot_EC_number, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_prot_note, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_prot_method, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_prot_conflict, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_prot_desc, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_prot_missing, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_prot_name, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_prot_names, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_protein_id, CSeqFeatData::eQual_protein_id),
+    TQualPair(eFQ_pseudo, CSeqFeatData::eQual_pseudo),
+    TQualPair(eFQ_region, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_region_name, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_replace, CSeqFeatData::eQual_replace),
+    TQualPair(eFQ_rpt_family, CSeqFeatData::eQual_rpt_family),
+    TQualPair(eFQ_rpt_type, CSeqFeatData::eQual_rpt_type),
+    TQualPair(eFQ_rpt_unit, CSeqFeatData::eQual_rpt_unit),
+    TQualPair(eFQ_rrna_its, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_selenocysteine_note, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_seqfeat_note, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_site, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_site_type, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_standard_name, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_transcription, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_transcript_id, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_transcript_id_note, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_transl_except, CSeqFeatData::eQual_transl_except),
+    TQualPair(eFQ_transl_table, CSeqFeatData::eQual_transl_table),
+    TQualPair(eFQ_translation, CSeqFeatData::eQual_translation),
+    TQualPair(eFQ_transposon, CSeqFeatData::eQual_transposon),
+    TQualPair(eFQ_trna_aa, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_trna_codons, CSeqFeatData::eQual_note),
+    TQualPair(eFQ_usedin, CSeqFeatData::eQual_usedin),
+    TQualPair(eFQ_xtra_prod_quals, CSeqFeatData::eQual_note)
+};
+typedef CStaticArrayMap<EFeatureQualifier, CSeqFeatData::EQualifier> TQualMap;
+static const TQualMap sc_QualMap(sc_GbToFeatQualMap, sizeof(sc_GbToFeatQualMap));
+
+static CSeqFeatData::EQualifier s_GbToSeqFeatQual(EFeatureQualifier qual)
+{
+    TQualMap::const_iterator it = sc_QualMap.find(qual);
+    if ( it != sc_QualMap.end() ) {
+        return it->second;
+    }
+    return CSeqFeatData::eQual_bad;
+}
+
+
+void CFeatureItem::x_DropIllegalQuals(void) const
+{
+    const CSeqFeatData& data = m_Feat->GetData();
+
+    TQI it = m_Quals.begin();
+    while ( it != m_Quals.end() ) {
+        CSeqFeatData::EQualifier qual = s_GbToSeqFeatQual(it->first);
+        if ( !data.IsLegalQualifier(qual) ) {
+            it = m_Quals.Erase(it);
+        } else {
+            ++it;
         }
     }
 }
@@ -2884,6 +3001,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/05/19 14:47:19  shomrat
+* Check for illegal qualifiers in RELEASE mode
+*
 * Revision 1.23  2004/05/08 12:12:00  dicuccio
 * Use best ID representation for protein products
 *
