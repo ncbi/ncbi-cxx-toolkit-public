@@ -71,11 +71,11 @@ public:
     }
 
     /******************* Subject sequence options *******************/
-    const unsigned char* GetDbGeneticCodeStr() const {
-        return m_Opts->GetDbGeneticCodeStr();
+    int GetDbGeneticCode() const {
+        return m_Opts->GetDbGeneticCode();
     }
-    void SetDbGeneticCodeStr(const unsigned char* gc_str) {
-        m_Opts->SetDbGeneticCodeStr(gc_str);
+    void SetDbGeneticCodeStr(int gc) {
+        m_Opts->SetDbGeneticCode(gc);
     }
 
 protected:
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/03 16:34:59  dondosha
+ * SetDbGeneticCode now fills both integer and string option
+ *
  * Revision 1.1  2003/11/26 18:22:18  camacho
  * +Blast Option Handle classes
  *
