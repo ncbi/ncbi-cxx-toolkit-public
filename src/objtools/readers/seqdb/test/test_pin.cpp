@@ -402,13 +402,16 @@ int test1(int argc, char ** argv)
         } else desc += " [-here]";
         
         if (s == "-bs9") {
+            
+            // These require: -lncbitool -lz -lncbiobj -lncbi
+            
             const char * dbname = "nt";
             
             bool is_prot = false;
             Uint4 gi = 12831944;
             
             ostringstream oss_fn;
-            oss_fn << dbname << "." << gi;
+            oss_fn << "." << dbname << "." << gi;
             
             {
                 CSeqDB db(dbname, is_prot ? 'p' : 'n');
@@ -437,7 +440,7 @@ int test1(int argc, char ** argv)
                 BioseqPtr bsp = readdb_get_bioseq(rdfp, oid);
                 
                 if (bsp) {
-                    string fn = string("seqdb") + oss_fn.str() + ".txt";
+                    string fn = string("readdb") + oss_fn.str() + ".txt";
                     
                     AsnIoPtr myaip = AsnIoOpen((char*) fn.c_str(), "w");
                     BioseqAsnWrite(bsp, myaip, NULL);
