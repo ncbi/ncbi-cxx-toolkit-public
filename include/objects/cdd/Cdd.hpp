@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2002/11/07 02:01:41  hurwitz
+ * added GetGIFromSequenceList
+ *
  * Revision 1.13  2002/11/05 23:34:36  thiessen
  * Status -> status
  *
@@ -130,6 +133,7 @@ public:
     int    GetAlignmentLength();                      // total number aligned residues
     int    GetPSSMLength();                           // number of residues in master, from first to last aligned residue
     bool   GetGI(int Row, int& GI);                   // get GI of Row
+    int    GetGIFromSequenceList(int SeqIndex);       // get GI from sequence list
     bool   GetPDB(int Row, const CPDB_seq_id*& pPDB); // get PDB ID of Row
     int    GetLowerBound(int Row);                    // get Row lower alignment bound
     int    GetUpperBound(int Row);                    // get Row upper alignment bound

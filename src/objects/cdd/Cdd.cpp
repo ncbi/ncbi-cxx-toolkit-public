@@ -960,6 +960,43 @@ void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad
 }
 
 
+int CCdd::GetGIFromSequenceList(int SeqIndex) {
+//-------------------------------------------------------------------------
+// get GI from the list of sequences.
+// return -1 if no GI is found.
+//-------------------------------------------------------------------------
+  list< CRef< CSeq_entry > >::const_iterator  i;
+  list< CRef< CSeq_id > >::const_iterator  j;
+  int  SeqCount, IDCount;
+
+  if (IsSetSequences()) {
+    if (GetSequences().IsSet()) {
+      // count to the SeqIndex sequence
+      SeqCount = 0;
+      for (i=GetSequences().GetSet().GetSeq_set().begin();
+           i!=GetSequences().GetSet().GetSeq_set().end(); i++) {
+        if (SeqCount == SeqIndex) {
+          if ((*i)->IsSeq()) {
+            // look through IDs for a gi
+            IDCount = 0;
+            for (j = (*i)->GetSeq().GetId().begin();
+                 j != (*i)->GetSeq().GetId().end(); j++) {
+              if ((*j)->IsGi()) {
+                return((*j)->GetGi());
+              }
+              IDCount++;
+            }
+          }
+        }
+        SeqCount++;
+        if (SeqCount > SeqIndex) break;
+      }
+    }
+  }
+  return(-1);
+}
+
+
 bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
 //-------------------------------------------------------------------------
 // get a SeqID from a list of sequences.
@@ -1557,6 +1594,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2002/11/07 02:01:54  hurwitz
+ * added GetGIFromSequenceList
+ *
  * Revision 1.22  2002/11/04 21:29:09  grichenk
  * Fixed usage of const CRef<> and CRef<> constructor
  *
