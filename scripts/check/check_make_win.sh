@@ -41,7 +41,8 @@ res_bin="bin"
 
 # Field delimiters in the list (this symbols used directly in the "sed" command)
 x_delim=" ____ "
-x_delim_internal="~"  
+x_delim_internal="~"
+x_tmp="/tmp"
 
 x_list=$1
 x_out=$2
@@ -272,13 +273,13 @@ RunTest() {
 
    # Run check
    check_exec="$x_root_dir/scripts/check/check_exec.sh"
-   \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >/tmp/\$\$.out 2>&1
+   \$check_exec \$x_timeout \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
    result=\$?
    sed -e '/ ["][$][@]["].*\$/ {
       s/^.*: //
       s/ ["][$][@]["].*$//
-      }' /tmp/\$\$.out >> \$x_test_out
-   rm -f /tmp/\$\$.out
+      }' $x_tmp/\$\$.out >> \$x_test_out
+   rm -f $x_tmp/\$\$.out
 
    # Write result of the test into the his output file
    echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
