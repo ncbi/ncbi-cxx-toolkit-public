@@ -84,18 +84,6 @@ bool CAlnMix::x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
 }
 
 
-inline
-bool CAlnMix::x_CompareAlnSegIndexes(const CAlnMixSegment* aln_seg1,
-                                     const CAlnMixSegment* aln_seg2) 
-{
-    return
-        aln_seg1->m_Index1 < aln_seg2->m_Index1 ||
-        aln_seg1->m_Index1 == aln_seg2->m_Index1 &&
-        aln_seg1->m_Index2 < aln_seg2->m_Index2;
-        
-}
-
-
 void CAlnMix::x_Reset()
 {
     if (m_DS) {
@@ -660,6 +648,7 @@ void CAlnMix::x_Merge()
             if (seq2) {
                 // save the orig seq2, since we may be modifying match below
                 CAlnMixSeq * orig_seq2 = seq2;
+
                 while (!x_SecondRowFits(match)) {
                     if (!seq2->m_ExtraRow) {
                         // create an extra row
@@ -809,18 +798,19 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             start_i--;
             
             // no overlap, check for consistency
-            if ( !m_IndependentDSs  ||
-                 start_i->second->m_StartIts.find(seq1) != 
-                 start_i->second->m_StartIts.end()) {
-                if (match->m_StrandsDiffer) {
-                    if (start_i->second->m_StartIts[seq1]->first <
-                        start1 + len) {
-                        return false;
-                    }
-                } else {
-                    if (start_i->second->m_StartIts[seq1]->first + 
-                        start_i->second->m_Len > start1) {
-                        return false;
+            if ( !m_IndependentDSs ) {
+                CAlnMixSegment::TStartIterators::iterator start_it_i =
+                    start_i->second->m_StartIts.find(seq1);
+                if (start_it_i != start_i->second->m_StartIts.end()) {
+                    if (match->m_StrandsDiffer) {
+                        if (start_it_i->second->first < start1 + len) {
+                            return false;
+                        }
+                    } else {
+                        if (start_it_i->second->first + 
+                            start_i->second->m_Len > start1) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -835,14 +825,16 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
         // check the overlap for consistency
         while (start_i != starts2.end()  &&  
                start_i->first < start2 + len) {
-            if ( !m_IndependentDSs  ||
-                 start_i->second->m_StartIts.find(seq1) != 
-                 start_i->second->m_StartIts.end()) {
-                if (start_i->second->m_StartIts[seq1]->first != start1 + 
-                    (match->m_StrandsDiffer ?
-                     start2 + len - start_i->first :
-                     start_i->first - start2)) {
-                    return false;
+            if ( !m_IndependentDSs ) {
+                CAlnMixSegment::TStartIterators::iterator start_it_i =
+                    start_i->second->m_StartIts.find(seq1);
+                if (start_it_i != start_i->second->m_StartIts.end()) {
+                    if (start_it_i->second->first != start1 + 
+                        (match->m_StrandsDiffer ?
+                         start2 + len - start_i->first :
+                         start_i->first - start2)) {
+                        return false;
+                    }
                 }
             }
             start_i++;
@@ -850,18 +842,19 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
 
         // check above for consistency
         if (start_i != starts2.end()) {
-            if ( !m_IndependentDSs  ||
-                 start_i->second->m_StartIts.find(seq1) != 
-                 start_i->second->m_StartIts.end()) {
-                if (match->m_StrandsDiffer) {
-                    if (start_i->second->m_StartIts[seq1]->first + 
-                        start_i->second->m_Len > start1) {
-                        return false;
-                    }
-                } else {
-                    if (start_i->second->m_StartIts[seq1]->first < 
-                        start1 + len) {
-                        return false;
+            if ( !m_IndependentDSs ) {
+                CAlnMixSegment::TStartIterators::iterator start_it_i =
+                    start_i->second->m_StartIts.find(seq1);
+                if (start_it_i != start_i->second->m_StartIts.end()) {
+                    if (match->m_StrandsDiffer) {
+                        if (start_it_i->second->first + 
+                            start_i->second->m_Len > start1) {
+                            return false;
+                        }
+                    } else {
+                        if (start_it_i->second->first < start1 + len) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -984,95 +977,90 @@ void CAlnMix::x_CreateSegmentsVector()
         }
         // for each refseq segment
         while (refseq->m_StartIt != refseq->m_Starts.end()) {
-            CAlnMixSegment * refseq_seg = refseq->m_StartIt->second;
+            stack< CRef<CAlnMixSegment> > seg_stack;
+            seg_stack.push(refseq->m_StartIt->second);
             
-            // check the gapped segments on the left
-            ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
-                     refseq_seg->m_StartIts) {
-                CAlnMixSeq * row = start_its_i->first;
-                if (row == refseq) {
-                    continue;
-                }
-                int index = 0;
-                while (row->m_StartIt != start_its_i->second) {
-#if OBJECTS_ALNMGR___ALNMIX__DBG
-                    if (row->m_PositiveStrand  &&
-                        row->m_StartIt->first > start_its_i->second->first  ||
-                        !row->m_PositiveStrand  &&
-                        row->m_StartIt->first < start_its_i->second->first) {
-                        string errstr = 
-                            string("CAlnMix::x_CreateSegmentsVector():")
-                            + " Internal error: Integrity broken"
-                            + " row=" + NStr::IntToString(row->m_RowIndex)
-                            + " row->m_StartIt->first="
-                            + NStr::IntToString(row->m_StartIt->first)
-                            + " start_its_i->second->first="
-                            + NStr::IntToString(start_its_i->second->first)
-                            + " strand="
-                            + (row->m_PositiveStrand ? "plus" : "minus");
-                        NCBI_THROW(CAlnException, eMergeFailure, errstr);
+            while ( !seg_stack.empty() ) {
+                
+                bool pop_seg = true;
+                // check the gapped segments on the left
+                ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
+                         seg_stack.top()->m_StartIts) {
+
+                    CAlnMixSeq * row = start_its_i->first;
+
+                    if (row->m_StartIt != start_its_i->second) {
+                        seg_stack.push(row->m_StartIt->second);
+                        pop_seg = false;
+                        break;
                     }
+                }
+
+                if (pop_seg) {
+
+                    // inc/dec iterators for each row of the seg
+                    ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
+                             seg_stack.top()->m_StartIts) {
+                        CAlnMixSeq * row = start_its_i->first;
+
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+                        if (row->m_PositiveStrand  &&
+                            row->m_StartIt->first > 
+                            start_its_i->second->first  ||
+                            !row->m_PositiveStrand  &&
+                            row->m_StartIt->first <
+                            start_its_i->second->first) {
+                            string errstr =
+                                string("CAlnMix::x_CreateSegmentsVector():")
+                                + " Internal error: Integrity broken" +
+                                " row=" + NStr::IntToString(row->m_RowIndex)
+                                + " row->m_StartIt->first="
+                                + NStr::IntToString(row->m_StartIt->first)
+                                + " start_its_i->second->first=" +
+                                NStr::IntToString(start_its_i->second->first)
+                                + " strand=" +
+                                (row->m_PositiveStrand ? "plus" : "minus");
+                            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+                        }
 #endif
-                    // index the segment
-                    CRef<CAlnMixSegment> seg = row->m_StartIt->second;
-                    seg->m_Index1 = index++;
-                    seg->m_Index2 = row->m_RowIndex;
-                    gapped_segs.push_back(seg);
-                    
-                    // inc/dec iterators for each row of the gapped seg
-                    ITERATE (CAlnMixSegment::TStartIterators, row_i,
-                             seg->m_StartIts) {
-                        CAlnMixSeq * r = row_i->first;
-                        if (r->m_PositiveStrand) {
-                            r->m_StartIt++;
+
+                        if (row->m_PositiveStrand) {
+                            row->m_StartIt++;
                         } else {
-                            if (r->m_StartIt == r->m_Starts.begin()) {
-                                r->m_StartIt = r->m_Starts.end();
+                            if (row->m_StartIt == row->m_Starts.begin()) {
+                                row->m_StartIt = row->m_Starts.end();
                             } else {
-                                r->m_StartIt--;
+                                row->m_StartIt--;
                             }
                         }
                     }
-                }
-                if (row->m_PositiveStrand) {
-                    row->m_StartIt++;
-                } else {
-                    if (row->m_StartIt == row->m_Starts.begin()) {
-                        row->m_StartIt = row->m_Starts.end();
+
+                    if (seg_stack.size() > 1) {
+                        // add to the gapped segments
+                        gapped_segs.push_back(seg_stack.top());
+                        seg_stack.pop();
                     } else {
-                        row->m_StartIt--;
+                        // add the gapped segments if any
+                        if (gapped_segs.size()) {
+                            if (m_MergeFlags & fGapJoin) {
+                                // request to try to align
+                                // gapped segments w/ equal len
+                                x_ConsolidateGaps(gapped_segs);
+                            } else if (m_MergeFlags & fMinGap) {
+                                // request to try to align 
+                                // all gapped segments
+                                x_MinimizeGaps(gapped_segs);
+                            }
+                            NON_CONST_ITERATE (TSegmentsContainer,
+                                               seg_i, gapped_segs) {
+                                m_Segments.push_back(&**seg_i);
+                            }
+                            gapped_segs.clear();
+                        }
+                        // add the refseq segment
+                        m_Segments.push_back(seg_stack.top());
+                        seg_stack.pop();
                     }
-                }
-            }
-            
-            // add the gapped segments if any
-            if (gapped_segs.size()) {
-                sort(gapped_segs.begin(), gapped_segs.end(),
-                     x_CompareAlnSegIndexes);
-                
-                if (m_MergeFlags & fGapJoin) {
-                    // request for trying to align gapped segments w/ equal len
-                    x_ConsolidateGaps(gapped_segs);
-                } else if (m_MergeFlags & fMinGap) {
-                    // request for trying to align all gapped segments
-                    x_MinimizeGaps(gapped_segs);
-                }
-                NON_CONST_ITERATE (TSegmentsContainer, seg_i, gapped_segs) {
-                    m_Segments.push_back(&**seg_i);
-                }
-                gapped_segs.clear();
-            }
-            
-            // add the refseq segment
-            m_Segments.push_back(refseq_seg);
-            
-            if (refseq->m_PositiveStrand) {
-                refseq->m_StartIt++;
-            } else {
-                if (refseq->m_StartIt == refseq->m_Starts.begin()) {
-                    refseq->m_StartIt = refseq->m_Starts.end();
-                } else {
-                    refseq->m_StartIt--;
                 }
             }
         }
@@ -1407,6 +1395,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2003/05/30 17:42:03  todorov
+* 1) Bug fix in x_SecondRowFits
+* 2) x_CreateSegmentsVector now uses a stack to order the segs
+*
 * Revision 1.48  2003/05/23 18:11:42  todorov
 * More detailed exception txt
 *
