@@ -211,8 +211,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menu = new wxMenu;
     menu->Append(MID_SHOW_HIDE, "&Pick Structures...");
     menu->AppendSeparator();
-    menu->Append(MID_SHOW_ALL, "Show &Everything");
-    menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains");
+    menu->Append(MID_SHOW_ALL, "Show &Everything\te");
+    menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains\td");
     menu->Append(MID_SHOW_ALIGNED, "Show &Aligned Residues");
     menu->Append(MID_SHOW_SELECTED_RESIDUES, "Show &Selected Residues");
     menu->Append(MID_SHOW_SELECTED_DOMAINS, "Show Selected Do&mains");
@@ -1411,6 +1411,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/05/07 14:02:47  thiessen
+* add accelerators
+*
 * Revision 1.9  2003/05/06 19:10:47  thiessen
 * add show aligned domains key shortcut 'd'
 *
