@@ -124,7 +124,7 @@ ListNode* ListNodeAddPointer (ListNode** head, Uint1 choice,
 *      if str == NULL, does not add a ListNode
 *
 *****************************************************************************/
-ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, char* str)
+ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, const char* str)
 {
 	ListNode* newnode;
 
@@ -182,56 +182,3 @@ ListNode* ListNodeFreeData (ListNode* vnp)
 	}
 	return NULL;
 }
-
-/*****************************************************************************
-*
-*   ListNodeLen(vnp)
-*      returns the number of nodes in the linked list
-*
-*****************************************************************************/
-Int4 ListNodeLen (ListNode* vnp)
-{
-	Int4 len;
-
-	len = 0;
-	while (vnp != NULL) {
-		len++;
-		vnp = vnp->next;
-	}
-	return len;
-}
-
-/*****************************************************************************
-*
-*   ListNodeSort(list, compar)
-*   	Copied from SortListNode in jzcoll, renamed, for more general access
-*   	Makes array from ListNode list, calls HeapSort, reconnects ListNode list
-*
-*****************************************************************************/
-ListNode* ListNodeSort (ListNode* list, 
-               int (*compar )(const void *, const void *))
-{
-	ListNode* tmp,** head;
-	Int4 count, i;
-
-	if (list == NULL) return NULL;
-	
-	count = ListNodeLen (list);
-	head = (ListNode* *) calloc (((size_t) count + 1), sizeof (ListNode*));
-	for (tmp = list, i = 0; tmp != NULL && i < count; i++) {
-		head [i] = tmp;
-		tmp = tmp->next;
-	}
-
-	qsort (head, (size_t) count, sizeof (ListNode*), compar);
-	for (i = 0; i < count; i++) {
-		tmp = head [i];
-		tmp->next = head [i + 1];
-	}
-	list = head [0];
-	sfree (head);
-
-	return list;
-}
-
-
