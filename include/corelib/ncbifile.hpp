@@ -682,6 +682,14 @@ public:
     /// Define a vector of pointers to directory entries.
     typedef vector< AutoPtr<CDirEntry> > TEntries;
 
+    /// Modes for GetEntries
+    /// @sa GetEntries
+    enum EGetEntriesMode {
+        eAllEntries,        ///< All included
+        eIgnoreRecursive    ///< Supress self recursive elements (like "..")
+    };
+
+
     /// Get directory entries based on the specified "mask".
     ///
     /// @param mask
@@ -689,7 +697,8 @@ public:
     ///   if set to "kEmptyStr".
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const string& mask = kEmptyStr) const;
+    TEntries GetEntries(const string&   mask = kEmptyStr,
+                        EGetEntriesMode mode = eAllEntries) const;
 
     /// Get directory entries based on the specified set of"masks".
     ///
@@ -697,7 +706,8 @@ public:
     ///   Use to select only files that match this set of masks.
     /// @return
     ///   An array containing all directory entries.
-    TEntries GetEntries(const vector<string>& masks) const;
+    TEntries GetEntries(const vector<string>& masks,
+                        EGetEntriesMode       mode = eAllEntries) const;
 
     /// Create the directory using "dirname" passed in the constructor.
     /// 
@@ -728,6 +738,97 @@ public:
 };
 
 
+/// File finding flags
+enum EFindFiles {
+    fFF_File       = (1<<0),             ///< find files
+    fFF_Dir        = (1<<1),             ///< find directories
+    fFF_Recursive  = (1<<2),             ///< decsend into sub-dirs
+    fFF_Default    = fFF_File | fFF_Dir  ///< default behaviour
+};
+
+/// bitwise OR of "EFindFiles"
+typedef int TFindFiles; 
+
+
+/// Find files in the specified directory
+template<class TFindFunc>
+TFindFunc FindFilesInDir(const CDir&            dir,
+                         const vector<string>&  masks,
+                         TFindFunc              find_func,
+                         TFindFiles             flags = fFF_Default)
+{
+    CDir::TEntries contents = dir.GetEntries(masks, CDir::eIgnoreRecursive);
+
+    ITERATE(typename CDir::TEntries, it, contents) {
+        const CDirEntry& dir_entry = **it;
+
+        if (dir_entry.IsDir()) {
+            if (flags & fFF_Dir) {
+                find_func(dir_entry);
+            }
+
+            if (flags & fFF_Recursive) {
+                CDir nested_dir(dir_entry.GetPath());
+                find_func = 
+                  FindFilesInDir(nested_dir, masks, find_func, flags);
+            }
+        }
+        else
+        if (dir_entry.IsFile() && (flags & fFF_File)) {
+            find_func(dir_entry);
+        }
+    } // ITERATE
+    return find_func;
+}
+
+
+/// Generic algorithm for file search
+///
+/// Algorithm scans the provided directories using iterators,
+/// finds files to match the masks and stores all calls functor
+/// object for all found entries
+/// Functor call should match: void Functor(const CDirEntry& dir_entry)
+///
+
+template<class TPathIterator, 
+         class TMaskIterator, 
+         class TFindFunc>
+TFindFunc FindFiles(TPathIterator path_begin,
+                    TPathIterator path_end,
+                    TMaskIterator mask_begin,
+                    TMaskIterator mask_end,
+                    TFindFunc     find_func,
+                    TFindFiles    flags = fFF_Default)
+{
+    vector<string> masks;
+    for (; mask_begin != mask_end; ++mask_begin) {
+        masks.push_back(*mask_begin);
+    }
+
+    for (; path_begin != path_end; ++path_begin) {
+        const string& dir_name = *path_begin;
+
+        CDir dir(dir_name);
+        find_func = FindFilesInDir(dir, masks, find_func, flags);
+    } // for
+    return find_func;
+}
+
+/// Functor for generic FindFiles, adds file name to the specified container
+template<class TNames>
+class CFindFileNamesFunc
+{
+public:
+    CFindFileNamesFunc(TNames& names) : m_FileNames(&names) {}
+
+    void operator()(const CDirEntry& dir_entry)
+    {
+        m_FileNames->push_back(dir_entry.GetPath());
+    }
+protected:
+    TNames*  m_FileNames;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -740,18 +841,12 @@ template<class TContainer, class It1>
 void FindFiles(TContainer&           out, 
                It1                   first_path, 
                It1                   last_path, 
-               const vector<string>& masks)
+               const vector<string>& masks,
+               TFindFiles            flags = fFF_Default)
 {
-    for (; first_path != last_path; ++first_path) {
-        const string& dir_name = *first_path;
-        CDir dir(dir_name);
-        
-        CDir::TEntries contents = dir.GetEntries(masks);
-
-        ITERATE(CDir::TEntries, it, contents) {
-            out.push_back((*it)->GetPath());
-        }
-    } // for
+    CFindFileNamesFunc<TContainer> func(out);
+    FindFiles(first_path, last_path, 
+              masks.begin(), masks.end(), func, flags);
 }
 
 
@@ -766,15 +861,12 @@ void FindFiles(TContainer&           out,
 template<class TContainer, class It1, class It2>
 void FindFiles(TContainer&      out, 
                It1  first_path, It1 last_path, 
-               It2  first_mask, It2 last_mask)
+               It2  first_mask, It2 last_mask,
+               TFindFiles           flags = fFF_Default)
 {
-    // converting masks to vector as understood by CDir::GetEntries()
-    vector<string> masks;
-    for (; first_mask != last_mask; ++first_mask) {
-        masks.push_back(*first_mask);
-    }
-
-    FindFiles(out, first_path, last_path, masks);
+    CFindFileNamesFunc<TContainer> func(out);
+    FindFiles(first_path, last_path, 
+              first_mask, last_mask, func, flags);
 }
 
 
@@ -1044,6 +1136,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/04/29 15:14:17  kuznets
+ * + Generic FindFile algorithm capable of recursive searches
+ * CDir::GetEntries received additional parameter to ignore self
+ * recursive directory entries (".", "..")
+ *
  * Revision 1.38  2004/04/28 19:04:16  ucko
  * Give GetType(), IsFile(), and IsDir() an optional EFollowLinks
  * parameter (currently only honored on Unix).

@@ -1446,7 +1446,8 @@ static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
 #endif
 
 
-CDir::TEntries CDir::GetEntries(const string& mask) const
+CDir::TEntries CDir::GetEntries(const string&   mask,
+                                EGetEntriesMode mode) const
 {
     TEntries contents;
     string x_mask    = mask.empty() ? string("*") : mask;
@@ -1463,8 +1464,24 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
     struct _finddata_t entry;
     long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
     if (desc != -1) {
-        contents.push_back(new CDirEntry(path_base + entry.name));
+        CDirEntry* dir_entry = new CDirEntry(path_base + entry.name);
+        if (mode == eIgnoreRecursive) {
+            if ((::strcmp(entry.name, ".") == 0) ||
+                (::strcmp(entry.name, "..") == 0)) 
+            {
+                delete dir_entry;
+                dir_entry = 0;
+            }
+        }
+        if (dir_entry)
+            contents.push_back(dir_entry);
+
         while ( _findnext(desc, &entry) != -1 ) {
+            if (mode == eIgnoreRecursive) {
+                if ((::strcmp(entry.name, ".") == 0) ||
+                    (::strcmp(entry.name, "..") == 0)) continue;
+            }
+
             contents.push_back(new CDirEntry(path_base + entry.name));
         }
         _findclose(desc);
@@ -1475,6 +1492,10 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
             if ( MatchesMask(entry->d_name, x_mask.c_str()) ) {
+                if (mode == eIgnoreRecursive) {
+                    if ((::strcmp(entry->d_name, ".") == 0) ||
+                        (::strcmp(entry->d_name, "..") == 0)) continue;
+                }
                 contents.push_back(new CDirEntry(path_base + entry->d_name));
             }
         }
@@ -1500,7 +1521,8 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
 }
 
 
-CDir::TEntries CDir::GetEntries(const vector<string>& masks) const
+CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
+                                EGetEntriesMode        mode) const
 {
     if (masks.empty())
         return GetEntries();
@@ -1516,23 +1538,41 @@ CDir::TEntries CDir::GetEntries(const vector<string>& masks) const
     // Append to the "path" mask for all files in directory
     string pattern = path_base + string("*");
 
+    bool skip_recursive_entry;
+
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
     long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
     if (desc != -1) {
+        skip_recursive_entry =
+            (mode == eIgnoreRecursive) &&
+            ((::strcmp(entry.name, ".") == 0) ||
+             (::strcmp(entry.name, "..") == 0));
+
         // check all masks
-        ITERATE(vector<string>, it, masks) {
-            const string& mask = *it;
-            if (mask.empty()) {
-                contents.push_back(new CDirEntry(path_base + entry.name));
-                break;
-            }
-            if (MatchesMask(entry.name, mask.c_str()) ) {
-                contents.push_back(new CDirEntry(path_base + entry.name));
-                break;
-            }                
-        } // ITERATE
+        if (!skip_recursive_entry) {
+            ITERATE(vector<string>, it, masks) {
+                const string& mask = *it;
+                if (mask.empty()) {
+                    contents.push_back(new CDirEntry(path_base + entry.name));
+                    break;
+                }
+                if (MatchesMask(entry.name, mask.c_str()) ) {
+                    contents.push_back(new CDirEntry(path_base + entry.name));
+                    break;
+                }                
+            } // ITERATE
+        }
+
         while ( _findnext(desc, &entry) != -1 ) {
+            skip_recursive_entry =
+                (mode == eIgnoreRecursive) &&
+                ((::strcmp(entry.name, ".") == 0) ||
+                 (::strcmp(entry.name, "..") == 0));
+
+            if (skip_recursive_entry) {
+                continue;
+            }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
                 if (mask.empty()) {
@@ -1553,14 +1593,24 @@ CDir::TEntries CDir::GetEntries(const vector<string>& masks) const
     DIR* dir = opendir(GetPath().c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
+
+            bool skip_recursive_entry =
+                    (mode == eIgnoreRecursive) &&
+                    ((::strcmp(entry->d_name, ".") == 0) ||
+                     (::strcmp(entry->d_name, "..") == 0));
+            if (skip_recursive_entry) {
+                continue;
+            }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
                 if (mask.empty()) {
-                    contents.push_back(new CDirEntry(path_base + entry->d_name));
+                    contents.push_back(
+                         new CDirEntry(path_base + entry->d_name));
                     break;
                 }
                 if ( MatchesMask(entry->d_name, mask.c_str()) ) {
-                    contents.push_back(new CDirEntry(path_base + entry->d_name));
+                    contents.push_back(
+                         new CDirEntry(path_base + entry->d_name));
                     break;
                 }
             } // ITERATE
@@ -1969,6 +2019,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2004/04/29 15:14:34  kuznets
+ * + Generic FindFile algorithm capable of recursive searches
+ * CDir::GetEntries received additional parameter to ignore self
+ * recursive directory entries (".", "..")
+ *
  * Revision 1.75  2004/04/28 19:04:29  ucko
  * Give GetType(), IsFile(), and IsDir() an optional EFollowLinks
  * parameter (currently only honored on Unix).
