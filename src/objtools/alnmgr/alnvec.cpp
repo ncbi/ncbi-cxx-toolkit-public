@@ -91,7 +91,7 @@ string CAlnVec::GetSeqString(TNumrow row, TSeqPos from, TSeqPos to) const
 }
 
 
-string CAlnVec::GetSeqString(TNumrow row, TNumseg seg, int offset) const
+string CAlnVec::GetSegSeqString(TNumrow row, TNumseg seg, int offset) const
 {
     string buff;
     x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
@@ -397,6 +397,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/09/19 18:24:15  todorov
+* New function name for GetSegSeqString to avoid confusion
+*
 * Revision 1.4  2002/09/19 17:40:16  todorov
 * fixed m_Anchor setting in case of consensus
 *

@@ -65,9 +65,9 @@ public:
 
     CScope& GetScope(void) const;
 
-    string GetSeqString(TNumrow row, TSeqPos from, TSeqPos to)        const;
-    string GetSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
-    string GetSeqString(TNumrow row, const CRange<TSeqPos>& range)    const;
+    string GetSeqString(TNumrow row, TSeqPos from, TSeqPos to)           const;
+    string GetSeqString(TNumrow row, const CAlnMap::TRange& range)       const;
+    string GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
 
     const CBioseq_Handle&   GetBioseqHandle(TNumrow row)                  const;
     CSeqVector::TResidue    GetResidue     (TNumrow row, TSeqPos aln_pos) const;
@@ -270,6 +270,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/09/19 18:22:28  todorov
+* New function name for GetSegSeqString to avoid confusion
+*
 * Revision 1.4  2002/09/19 18:19:18  todorov
 * fixed unsigned to signed return type for GetConsensusSeq{Start,Stop}
 *
