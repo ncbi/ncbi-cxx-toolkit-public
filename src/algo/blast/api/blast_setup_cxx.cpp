@@ -33,6 +33,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/metareg.hpp>
 #include <corelib/ncbifile.hpp>
 
 #include <objmgr/object_manager.hpp>
@@ -265,10 +266,11 @@ BLASTGetMatrixPath(const char* matrix_name, bool is_prot)
         return retval;
     }
 
-    // FIXME: Try the ncbi configuration file
-    ifstream is("/netopt/ncbi_tools/.ncbirc");
-    CNcbiRegistry reg(is);
-    string path = reg.Get("NCBI", "Data");
+    // Obtain the matrix path from the ncbi configuration file
+    CMetaRegistry& mr = CMetaRegistry::Instance();
+    CMetaRegistry::SEntry sentry;
+    sentry = mr.Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    string path = sentry.registry->Get("NCBI", "Data");
 
     full_path = CFile::MakePath(path, mtx);
     if (CFile(full_path).Exists()) {
@@ -355,6 +357,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/14 13:51:24  camacho
+* Use CMetaRegistry class to load the ncbi config file
+*
 * Revision 1.12  2003/08/11 15:17:39  dondosha
 * Added algo/blast/core to all #included headers
 *
