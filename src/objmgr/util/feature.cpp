@@ -181,7 +181,7 @@ static void s_GetRnaRefLabelFromComment
  ELabelType       label_type,
  const string*    type_label)
 {
-    if (feat.IsSetComment() & !feat.GetComment().empty()) {
+    if (feat.IsSetComment()  &&  !feat.GetComment().empty()) {
         if (label_type == eContent  &&  type_label != 0
             &&  feat.GetComment().find(*type_label) == string::npos) {
             *label += *type_label + "-" + feat.GetComment();
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2003/08/08 18:12:19  dicuccio
+* Fixed bug in s_GetRnaRefLabel(): inadverted '&' instead of '&&'
+*
 * Revision 1.10  2003/07/22 21:48:26  vasilche
 * Use typedef for member access.
 *
