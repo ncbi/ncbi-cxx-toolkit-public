@@ -110,12 +110,13 @@ SetDisplayParameters(CDisplaySeqalign &display,
     } else if (align_view ==  4) {
         AlignOption += CDisplaySeqalign::eMultiAlign;
     }
-
+    
+    AlignOption += CDisplaySeqalign::eShowMiddleLine;
     if(program == eBlastn){
-        AlignOption += CDisplaySeqalign::eShowBarMiddleLine;
-        display.SetAlignType(CDisplaySeqalign::eNuc);
+      display.SetMiddleLineStyle (CDisplaySeqalign::eBar); 
+      display.SetAlignType(CDisplaySeqalign::eNuc);
     } else {
-        AlignOption += CDisplaySeqalign::eShowCharMiddleLine;
+        display.SetMiddleLineStyle (CDisplaySeqalign::eChar);
         display.SetAlignType(CDisplaySeqalign::eProt);
     }
     AlignOption += CDisplaySeqalign::eShowBlastInfo;
