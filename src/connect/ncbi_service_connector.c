@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/04/26 20:20:57  lavr
+ * Default tags are explicilty used to differ from a Web browser
+ *
  * Revision 6.15  2001/04/25 15:49:54  lavr
  * Memory leaks in Open (when unsuccessul) fixed
  *
@@ -252,6 +255,14 @@ static void s_AdjustNetInfo(SConnNetInfo* net_info,
 }
 
 
+/* Although all additional HTTP tags, which comprise dispatching, have
+ * default values, which in most cases are fine with us, we will use
+ * these tags explicitly to distinguish calls originated within the service
+ * connector from the calls from a Web browser, for example. This technique
+ * would allow the dispatcher to decide whether to use more expensive
+ * dispatching (inlovling loopback connections) in case of browser.
+ */
+
 #ifdef __cplusplus
 extern "C" {
     static int s_AdjustInfo(SConnNetInfo *, void *,unsigned int);
@@ -271,7 +282,9 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
     while (1) {
         if (!(info = SERV_GetNextInfo(uuu->iter)))
             return 0/*false - not adjusted*/;
-        /* Skip any 'stateful_capable' issues here */
+        /* Skip any 'stateful_capable' issues here, which might
+         * have left behind a failed stateful dispatching with a
+         * fallback to stateless HTTP mode */
         if (!info->sful)
             break;
     }
@@ -285,8 +298,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                         NCBID_NAME,
                         SERV_NCBID_ARGS(&info->u.ncbid),
                         "service", uuu->serv);
-        /* NCBID tag, optional but good to have */
-        header = "Connection-Mode: STATELESS\r\n";
+        header = "Connection-Mode: STATELESS\r\n"; /*default*/
         break;
     case fSERV_Http:
     case fSERV_HttpGet:
@@ -298,11 +310,13 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                         SERV_HTTP_PATH(&info->u.http),
                         SERV_HTTP_ARGS(&info->u.http),
                         0, 0);
+        header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
         break;
     case fSERV_Standalone:
         s_AdjustNetInfo(net_info, eReqMethod_Post,
                         uuu->info->path, 0,
                         "service", uuu->serv);
+        header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
         break;
     default:
         assert(0);
@@ -339,7 +353,7 @@ static CONNECTOR s_Open
             if (net_info->stateless) {
                 /* Connection request with data */
                 req_method = eReqMethod_Post;
-                header = "Connection-Mode: STATELESS\r\n";
+                header = "Connection-Mode: STATELESS\r\n"; /*default*/
             } else {
                 /* We will wait for conn-info back */
                 req_method = eReqMethod_Get;
@@ -353,8 +367,8 @@ static CONNECTOR s_Open
         case fSERV_Http:
         case fSERV_HttpGet:
         case fSERV_HttpPost:
-            /* Connection directly to CGI, no specific tags required */
-            header = "";
+            /* Connection directly to CGI */
+            header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             req_method =
                 info->type == fSERV_HttpGet
                 ? eReqMethod_Get :
@@ -368,7 +382,7 @@ static CONNECTOR s_Open
         case fSERV_Standalone:
             if (net_info->stateless) {
                 /* This will be a pass-thru connection, socket otherwise */
-                header = "";
+                header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
                 s_AdjustNetInfo(net_info, eReqMethod_Post,
                                 0, 0,
                                 "service", uuu->serv);
@@ -384,10 +398,10 @@ static CONNECTOR s_Open
                         net_info->stateless ? eReqMethod_Post : eReqMethod_Get,
                         0, 0, "service", uuu->serv);
         header = net_info->stateless
-            ? "Client-Mode: STATELESS_ONLY\r\n"
-            "Relay-Mode: FIREWALL\r\n"
+            ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
+              "Relay-Mode: FIREWALL\r\n"
             : "Client-Mode: STATEFUL_CAPABLE\r\n"
-            "Relay-Mode: FIREWALL\r\n";
+              "Relay-Mode: FIREWALL\r\n";
     }
 
     if (header) {
@@ -445,7 +459,7 @@ static CONNECTOR s_Open
                                           ? eSCC_DebugPrintout
                                           : 0);
         }
-        net_info->max_try = 1000000000/*very large number*/;
+        net_info->max_try = 1000000000/*very large number so we can retry*/;
         return HTTP_CreateConnectorEx(net_info, fHCC_AutoReconnect,
                                       s_ParseHeader, s_AdjustInfo,
                                       uuu/*adj.data*/, 0/*cleanup.data*/);
@@ -554,7 +568,7 @@ static EIO_Status s_VT_Open
         if (uuu->meta.open) {
             EIO_Status status = (*uuu->meta.open)(uuu->meta.c_open, timeout);
             if (status != eIO_Success) {
-                s_Close(connector, timeout, 0/*close_dispatcher*/);
+                s_Close(connector, timeout, 0/*close_dispatcher - don't!*/);
                 continue;
             }
         }
