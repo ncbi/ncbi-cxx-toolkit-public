@@ -1,4 +1,5 @@
 
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -20,6 +21,9 @@ property pDynaLibExt : ".dylib"
 
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
+
+-- Whether to have the projects use CVS or not.
+property pProjectsCVSEnabled : true
 
 -- But profiling doesn't work for Mach-O Codewarrior projects currently.
 property pCreateProfiledTargets : false
@@ -249,6 +253,13 @@ on SetProjectData()
 		AddSimpleProjectListFiles("tables", {}, "util:tables", {"raw_scoremat.c"})
 		AddSimpleProject("bdb", {"bdb"}, "bdb")
 		
+		set xblastfiles to {Â
+			mkFileData(gSourceDir & "algo:blast:api"), Â
+			mkFileData(gSourceDir & "algo:blast:core") Â
+				}
+		AddProject(ProjectData("xblast", {}, xblastfiles))
+		AddSimpleProject("blast", {}, "algo:blast:core")
+		
 		set libdbFiles to {Â
 			mkFileData(gBdbRootFolder & "btree"), Â
 			mkFileDataExceptFiles(gBdbRootFolder & "common", {"util_arg.c"}), Â
@@ -366,8 +377,11 @@ on SetProjectData()
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
+		AddGuiProject("w_flek", {}, "widgets:Flek")
+		(*
 		AddProject(ProjectData("w_flek", {"fltk"}, {GuiFileDataList("widgets:Flek", Â
 			{"Fl_Toggle_Node", "Fl_Toggle_Tree"})}))
+		*)
 		AddGuiProject("w_seq", {}, "widgets:seq")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
 		AddGuiProject("w_seq_icon", {}, "widgets:seq_icon")
@@ -1016,9 +1030,6 @@ on CreateProject(proj)
 			repeat with i from 1 to (count targets of project document 1)
 				my SetupTarget(proj, i)
 			end repeat
-			set the current target of project document 1 to target 1 of project document 1
-			
-			Close Project
 		else
 			-- project already exists. Make sure it has all right files.
 			open (projPathname)
@@ -1028,10 +1039,14 @@ on CreateProject(proj)
 			repeat with i from 1 to (count targets of project document 1)
 				my UpdateTarget(proj, i)
 			end repeat
-			set the current target of project document 1 to target 1 of project document 1
-			
-			Close Project
 		end if
+		if pProjectsCVSEnabled then
+			--try
+			Set Preferences of panel "VCS Setup" to {VCS Active:true, Connection Method:"mwCVS"}
+			--end try
+		end if
+		set the current target of project document 1 to target 1 of project document 1
+		Close Project
 		
 	end tell
 end CreateProject
