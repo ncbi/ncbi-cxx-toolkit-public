@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/02/04 18:09:57  vasilche
+* Adde binary option to files.
+*
 * Revision 1.6  2000/02/04 17:57:45  vasilche
 * Fixed for new generated classes interface.
 *
@@ -159,6 +162,7 @@ int CAsn2Asn::Run(void)
     bool outBinary = false;
     string logFile;
     CNcbiDiagStream logStream(&NcbiCerr);
+	SetDiagPostLevel(eDiag_Error);
 
     if ( GetArguments().Size() == 1 )
         PrintUsage();
@@ -217,7 +221,11 @@ int CAsn2Asn::Run(void)
         inStream = &NcbiCin;
     }
     else {
-        inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str()));
+		if ( inBinary )
+			inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str(),
+														 IOS_BASE::in | IOS_BASE::binary));
+		else
+			inFStream.reset(inStream = new CNcbiIfstream(inFile.c_str()));
         if ( !*inStream )
             ERR_POST(Fatal << "Cannot open file: " << inFile);
     }
@@ -236,7 +244,11 @@ int CAsn2Asn::Run(void)
         outStream = &NcbiCout;
     }
     else {
-        outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str()));
+		if ( outBinary )
+			outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str(),
+														   IOS_BASE::out | IOS_BASE::binary));
+		else
+	        outFStream.reset(outStream = new CNcbiOfstream(outFile.c_str()));
         if ( !*outStream )
             ERR_POST(Fatal << "Cannot open file: " << outFile);
     }
