@@ -142,9 +142,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
         if (tgt_row == ref_row) {
             continue;
         }
-        ERR_POST(Info << "aln: " << alnmap.GetSeqId(tgt_row).AsFastaString()
-                 << "; sense: " << (ref_sign * ref_width)
-                 << " -> " << (tgt_sign * tgt_width));
         CRef<CAlnMap::CAlnChunkVec> chunks
             = alnmap.GetAlnChunks(tgt_row, alnmap.GetSeqAlnRange(tgt_row),
                                   CAlnMap::fSkipUnalignedGaps);
@@ -158,11 +155,6 @@ void CGFF3_Formatter::x_FormatDenseg(const CAlignmentItem& aln,
             CAlnMap::TSegTypeFlags        flags     = chunk->GetType();
             ref_piece.SetFrom(ref_piece.GetFrom() + ref_start);
             ref_piece.SetTo  (ref_piece.GetTo()   + ref_start);
-            ERR_POST(Info << "chunk " << i << ": flags " << flags
-                     << ", seq "
-                     << tgt_piece.GetFrom() << '-' << tgt_piece.GetTo()
-                     << ", aln "
-                     << ref_piece.GetFrom() << '-' << ref_piece.GetTo());
             if (flags & CAlnMap::fNotAlignedToSeqOnAnchor) {
                 _ASSERT(flags & CAlnMap::fSeq);
                 type       = 'I';
@@ -293,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/06/22 15:31:40  ucko
+* Remove debugging output.
+*
 * Revision 1.1  2004/06/21 18:53:52  ucko
 * New formatter for GFF version 3.
 *
