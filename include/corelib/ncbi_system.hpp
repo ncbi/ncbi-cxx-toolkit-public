@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/12/09 06:27:36  vakatov
+* GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
+*
 * Revision 1.5  2001/11/08 21:31:07  ivanov
 * Renamed GetCPUNumber() -> GetCpuCount()
 *
@@ -76,7 +79,7 @@ enum ELimitsExitCode {
 
 
 // Parameter's type for limit's print handler
-typedef void *TLimitsPrintParameter;
+typedef void* TLimitsPrintParameter;
 
 // Type of handler for print dump info after generating any limitation event
 typedef void (*TLimitsPrintHandler)(ELimitsExitCode, size_t, CTime&, TLimitsPrintParameter);
@@ -111,14 +114,13 @@ extern bool SetHeapLimit(size_t max_heap_size,
  * NOTE:  "max_cpu_time" == 0 will lift off the CPU time restrictions.
  */
 extern bool SetCpuTimeLimit(size_t max_cpu_time,
-                         TLimitsPrintHandler handler = 0, 
-                         TLimitsPrintParameter parameter = 0);
+                            TLimitsPrintHandler handler = 0, 
+                            TLimitsPrintParameter parameter = 0);
 
 /* [UNIX & Windows]
- * Return number of active CPUs
+ * Return number of active CPUs (never less than 1).
  */
-
-extern int GetCpuCount(void);
+extern unsigned int GetCpuCount(void);
 
 
 END_NCBI_SCOPE

@@ -34,6 +34,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/12/09 06:27:39  vakatov
+* GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
+*
 * Revision 1.15  2001/11/16 16:39:58  ivanov
 * Typo, fixed NCBI_OS_WIN -> NCBI_OS_MSWIN
 *
@@ -387,21 +390,21 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 
 /*  Return number of active CPUs */
 
-int GetCpuCount(void)
+unsigned int GetCpuCount(void)
 {
 #if defined(NCBI_OS_MSWIN)
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    return (int)sysInfo.dwNumberOfProcessors;
+    return (unsigned int) sysInfo.dwNumberOfProcessors;
 
 #elif defined(NCBI_OS_UNIX)
-    int nproc = 0;
+    long nproc = 0;
 #   if defined(_SC_NPROC_ONLN)
     nproc = sysconf(_SC_NPROC_ONLN);
 #   elif defined(_SC_NPROCESSORS_ONLN)
     nproc = sysconf(_SC_NPROCESSORS_ONLN);
 #   endif
-    return  nproc <= 0 ? 1 : nproc;
+    return nproc <= 0 ? 1 : (unsigned int) nproc;
 
 #else
     return 1;
