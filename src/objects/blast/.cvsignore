@@ -1,2 +1,4 @@
 *.files
 [A-Z]*.cpp
+client.cpp
+client_.cpp
