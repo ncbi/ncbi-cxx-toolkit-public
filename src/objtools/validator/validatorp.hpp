@@ -60,6 +60,7 @@ class CFeat_CI;
 class CPub_set;
 class CAuthor;
 class CTitle;
+class CDesc_CI;
 
 BEGIN_SCOPE(validator)
 
@@ -107,6 +108,7 @@ enum EErrType {
     eErr_SEQ_INST_HistoryGiCollision,
     eErr_SEQ_INST_GiWithoutAccession,
     eErr_SEQ_INST_MultipleAccessions,
+    eErr_SEQ_INST_HistAssemblyMissing,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -509,6 +511,7 @@ public:
     void ValidateSeqIds(const CBioseq& seq);
     void ValidateInst(const CBioseq& seq);
     void ValidateBioseqContext(const CBioseq& seq);
+    void ValidateHistory(const CBioseq& seq);
 
 private:
     
@@ -525,6 +528,9 @@ private:
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGeneNames(const CBioseq& seq);
     void ValidateSeqDescContext(const CBioseq& seq);
+
+    void ValidateSecondaryAccConflict(const string& primary_acc,
+        const CBioseq& seq, int choice);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
     void CheckForBiosourceOnBioseq(const CBioseq& seq);
@@ -543,6 +549,7 @@ private:
     bool GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc);
     bool IsDifferentDbxrefs(const list< CRef< CDbtag > >& dbxref1,
         const list< CRef< CDbtag > >& dbxref2);
+    bool IsHistAssemblyMissing(const CBioseq& seq);
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
 };
@@ -696,6 +703,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/01/24 20:39:40  shomrat
+* Added history validation for bioseq
+*
 * Revision 1.7  2003/01/21 20:20:43  shomrat
 * Added private methods to facilitate the PubDesc Validation
 *
