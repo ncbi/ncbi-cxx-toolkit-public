@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/03/17 16:49:55  vasilche
+* Added copyright message to generated files.
+* All objects pointers in choices now share the only CObject pointer.
+* All setters/getters made public until we'll find better solution.
+*
 * Revision 1.10  2000/03/15 14:18:39  vasilche
 * Forgot to fix _ASSERT() expression.
 *
@@ -291,7 +296,8 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         "\n";
 
     GenerateClassCode(code,
-                      haveUserClass? code.ClassPublic(): code.ClassProtected(),
+                      code.ClassPublic(),
+                      //haveUserClass? code.ClassPublic(): code.ClassProtected(),
                       methodPrefix, codeClassName);
 
     // constructors/destructor code
@@ -335,7 +341,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 }
 
 void CClassTypeStrings::GenerateClassCode(CClassCode& code,
-                                          CNcbiOstream& getters,
+                                          CNcbiOstream& setters,
                                           const string& methodPrefix,
                                           const string& codeClassName) const
 {
@@ -364,14 +370,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     }
 
     bool generateMainReset = true;
-    // generate member getters/setters
+    // generate member getters & setters
     {
-        getters <<
-            "    // members\n";
+        code.ClassPublic() <<
+            "    // members getters\n";
+        setters <<
+            "    // members setters\n";
         iterate ( TMembers, i, m_Members ) {
             // generate IsSet... method
             if ( i->optional ) {
-                getters <<
+                code.ClassPublic() <<
                     "    bool IsSet"<<i->cName<<"(void);\n";
                 code.InlineMethods() <<
                     "inline\n"
@@ -414,7 +422,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 generateMainReset = false;
             }
             else {
-                getters <<
+                setters <<
                     "    void Reset"<<i->cName<<"(void);\n";
             }
             // inline only when non reference and doesn't have reset code
@@ -468,7 +476,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 "\n";
 
             // generate getter
-            getters <<
+            code.ClassPublic() <<
                 "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
             code.InlineMethods() <<
                 "inline\n"
@@ -481,7 +489,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate setter
             if ( i->ref ) {
                 // generate reference setter
-                getters <<
+                setters <<
                     "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value);\n";
                 code.Methods() <<
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
@@ -501,7 +509,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 code.Methods() <<
                     "}\n"
                     "\n";
-                getters <<
+                setters <<
                     "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
                 if ( i->canBeNull ) {
                     // we have to init ref before returning
@@ -533,7 +541,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             else {
                 if ( i->type->CanBeInSTL() ) {
-                    getters <<
+                    setters <<
                         "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
                     code.InlineMethods() <<
                         "inline\n"
@@ -548,7 +556,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "}\n"
                         "\n";
                 }
-                getters <<
+                setters <<
                     "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
                 code.InlineMethods() <<
                     "inline\n"<<
@@ -570,7 +578,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( i->optional ) {
                     THROW1_TRACE(runtime_error, "the only member of adaptor class is optional");
                 }
-                getters <<
+                code.ClassPublic() <<
                     "    operator const "<<i->tName<<"& (void) const;\n"
                     "    operator "<<i->tName<<"& (void);\n";
                 code.InlineMethods() <<
@@ -588,7 +596,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "\n";
             }
 
-            getters <<
+            setters <<
                 "\n";
         }
     }
