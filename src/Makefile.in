@@ -11,7 +11,7 @@ include ./Makefile.mk
 #################################
 
 
-MANDATORY_PROJ  = corelib util connect cgi html misc hello
+MANDATORY_PROJ  = corelib util connect cgi html misc
 
 OPTIONAL_PROJ   = @serial@ @bdb@ sqlite @dbapi@ @objects@ objmgr objtools \
    ctools @algo@ @app@ @internal@
