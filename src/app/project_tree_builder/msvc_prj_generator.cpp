@@ -663,8 +663,8 @@ static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
     CDir dir(dir_name);
     if ( dir.GetEntries("*.module").empty() ) 
         return false;
-    if ( dir.GetEntries("*.asn").empty() ||
-         dir.GetEntries("*.dtd").empty() ) 
+    if ( dir.GetEntries("*.asn").empty() &&
+         dir.GetEntries("*.dtd").empty()  ) 
         return false;
 
     return true;
@@ -834,6 +834,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/02/25 20:19:36  gorelenk
+ * Changed implementation of function s_IsInsideDatatoolSourceDir.
+ *
  * Revision 1.21  2004/02/25 19:42:35  gorelenk
  * Changed implementation of function s_IsProducedByDatatool.
  *
