@@ -71,6 +71,7 @@
 #include <corelib/version.hpp>
 #include <corelib/ncbidll.hpp>
 #include <corelib/ncbi_tree.hpp>
+#include <corelib/ncbiobj.hpp>
 
 #include <set>
 #include <string>
@@ -251,6 +252,10 @@ protected:
 class CPluginManager_DllResolver;
 
 
+struct CPluginManagerBase : public CObject
+{
+};
+
 
 /// CPluginManager<> --
 ///
@@ -264,7 +269,7 @@ class CPluginManager_DllResolver;
 /// Template class is protected by mutex and safe for use from diffrent threads
 
 template <class TClass, class TIfVer = CInterfaceVersion<TClass> >
-class CPluginManager
+class CPluginManager : public CPluginManagerBase
 {
 public:
     typedef IClassFactory<TClass, TIfVer> TClassFactory;
@@ -838,6 +843,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/08/02 13:51:29  kuznets
+ * Derived CPluginManager from CObject
+ *
  * Revision 1.26  2004/07/29 15:37:59  dicuccio
  * Rearranged export specifier - comes before return value
  *
