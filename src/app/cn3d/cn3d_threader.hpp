@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/04/12 18:54:22  thiessen
+* fix memory leak for PSSM-only threading
+*
 * Revision 1.8  2001/04/12 18:09:40  thiessen
 * add block freezing
 *
@@ -103,7 +106,7 @@ public:
 
 class BlockMultipleAlignment;
 class Sequence;
-class Molecule;
+class StructureBase;
 
 class Threader
 {
@@ -150,8 +153,8 @@ private:
     typedef std::map < const Sequence *, Bioseq_fwddecl * > BioseqMap;
     BioseqMap bioseqs;
 
-    // holds Fld_Mtf structures already calculated for a given Molecule
-    typedef std::map < const Molecule *, Fld_Mtf_fwddecl * > ContactMap;
+    // holds Fld_Mtf structures already calculated for a given object (Molecule or Sequence)
+    typedef std::map < const StructureBase *, Fld_Mtf_fwddecl * > ContactMap;
     ContactMap contacts;
 
     // threading structure setups

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/04/12 18:54:39  thiessen
+* fix memory leak for PSSM-only threading
+*
 * Revision 1.11  2001/04/12 18:10:00  thiessen
 * add block freezing
 *
@@ -288,7 +291,8 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     static const int MIN_LOOP_MAX = 2;
     static const int EXTENSION_MAX = 10;
 
-    BlockMultipleAlignment::UngappedAlignedBlockList *alignedBlocks = multiple->GetUngappedAlignedBlocks();
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+        alignedBlocks(multiple->GetUngappedAlignedBlocks());
     Cor_Def *corDef = NewCorDef(alignedBlocks->size());
 
     // zero loop constraints for tails
@@ -352,7 +356,6 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     // no fixed segments
     corDef->fll.n = 0;
 
-    delete alignedBlocks;
     return corDef;
 }
 
@@ -813,14 +816,20 @@ static void GetMinimumLoopLengths(const Molecule *mol, const AtomSet *atomSet, F
 Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
 {
     if (!masterSequence) return NULL;
-    if (!masterSequence->molecule || masterSequence->molecule->parentSet->isAlphaOnly)
-        return NewFldMtf(masterSequence->sequenceString.size(), 0, 0);
 
     const Molecule *mol = masterSequence->molecule;
 
-    // return cached copy if we've already constructed a Fld_Mtf for this Molecule
-    ContactMap::iterator c = contacts.find(mol);
+    // return cached copy if we've already constructed a Fld_Mtf for this master
+    ContactMap::iterator c = mol ? contacts.find(mol) : contacts.find(masterSequence);
     if (c != contacts.end()) return c->second;
+
+    // work-around to allow PSSM-only threading when master has no structure (or only C-alphas)
+    Fld_Mtf *fldMtf;
+    if (!mol || mol->parentSet->isAlphaOnly) {
+        fldMtf = NewFldMtf(masterSequence->sequenceString.size(), 0, 0);
+        contacts[masterSequence] = fldMtf;
+        return fldMtf;
+    }
 
     // for convenience so subroutines don't have to keep looking this up... Use first
     // CoordSet if multiple model (e.g., NMR)
@@ -837,7 +846,7 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     GetContacts(virtualCoordinates, &resResContacts, &resPepContacts);
 
     // create Fld_Mtf, and store contacts in it
-    Fld_Mtf *fldMtf = NewFldMtf(mol->residues.size(), resResContacts.size(), resPepContacts.size());
+    fldMtf = NewFldMtf(mol->residues.size(), resResContacts.size(), resPepContacts.size());
     resPepContacts.sort();  // not really necessary, but makes same order as Cn3D for comparison/testing
     TranslateContacts(resResContacts, resPepContacts, fldMtf);
 
@@ -1166,7 +1175,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     Seq_Mtf *seqMtf = NULL;
     Rcx_Ptl *rcxPtl = NULL;
     Fld_Mtf *fldMtf = NULL;
-    BlockMultipleAlignment::UngappedAlignedBlockList *aBlocks = NULL;
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> aBlocks;
     std::vector < int > residueNumbers;
     bool retval = false;
     int row;
@@ -1186,7 +1195,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
 
     // get aligned blocks
-    aBlocks = multiple->GetUngappedAlignedBlocks();
+    aBlocks.reset(multiple->GetUngappedAlignedBlocks());
 
     for (row=0; row<multiple->NRows(); row++) {
 
@@ -1199,7 +1208,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         // sum score types (weightPSSM already built into seqMtf & rcxPtl)
         double
             scorePSSM = (weightPSSM > 0.0) ?
-                CalculatePSSMScore(aBlocks, row, residueNumbers, seqMtf) : 0.0,
+                CalculatePSSMScore(aBlocks.get(), row, residueNumbers, seqMtf) : 0.0,
             scoreContacts = (weightPSSM < 1.0) ?
                 CalculateContactScore(multiple, row, residueNumbers, fldMtf, rcxPtl) : 0.0,
             score = (scorePSSM + scoreContacts) / SCALING_FACTOR;
@@ -1217,7 +1226,6 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
 cleanup:
     if (seqMtf) FreeSeqMtf(seqMtf);
     if (rcxPtl) FreeRcxPtl(rcxPtl);
-    if (aBlocks) delete aBlocks;
     return retval;
 }
 
