@@ -110,6 +110,12 @@ void CId1FetchApp::Init(void)
          CArgDescriptions::eOutputFile,
          0);
 
+    // Server to connect
+    arg_desc->AddDefaultKey
+        ("server", "Server",
+         "ID1 server name",
+         CArgDescriptions::eString, "ID1");
+
     // Program description
     string prog_description =
         "Fetch SeqEntry from ID server by its GI id";
@@ -157,8 +163,9 @@ int CId1FetchApp::Run(void)
     }
 
     // Open connection to ID1 server
+    string server_name = args["server"].AsString();
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
-    CConn_ServiceStream id1_server("ID1", fSERV_Any, 0, 0, &tmout);
+    CConn_ServiceStream id1_server(server_name, fSERV_Any, 0, 0, &tmout);
     {{
         CObjectOStreamAsnBinary id1_server_output(id1_server);
 
@@ -232,6 +239,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2004/09/07 14:25:09  vasilche
+ * Allow to change ID1 service name by command line arguments.
+ *
  * Revision 1.13  2004/05/21 21:41:40  gorelenk
  * Added PCH ncbi_pch.hpp
  *
