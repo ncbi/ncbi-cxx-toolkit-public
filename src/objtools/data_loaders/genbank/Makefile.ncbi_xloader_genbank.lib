@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = gbloader
+SRC = gbloader gbload_util
 
 LIB = ncbi_xloader_genbank
 
