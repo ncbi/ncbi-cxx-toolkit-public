@@ -311,8 +311,14 @@ void CAlnMix::Add(const CDense_seg &ds)
                         ENa_strand strand1 = eNa_strand_plus;
                         ENa_strand strand2 = eNa_strand_plus;
                         if (strands_exist) {
-                            strand1 = ds.GetStrands()[seg_off + row1];
-                            strand2 = ds.GetStrands()[seg_off + row2];
+                            if (ds.GetStrands()[seg_off + row1] 
+                                == eNa_strand_minus) {
+                                strand1 = eNa_strand_minus;
+                            }
+                            if (ds.GetStrands()[seg_off + row2] 
+                                == eNa_strand_minus) {
+                                strand2 = eNa_strand_minus;
+                            }
 
                             if (strand1 == eNa_strand_minus  &&
                                 strand2 != eNa_strand_minus  ||
@@ -1027,6 +1033,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2002/12/27 17:27:13  todorov
+* Force positive strand in all cases but negative
+*
 * Revision 1.8  2002/12/27 16:39:13  todorov
 * Fixed a bug in the single Dense-seg case.
 *
