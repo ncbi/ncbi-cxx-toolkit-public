@@ -40,6 +40,7 @@ Contents: header file for block IMPALA
 #include <blast.h>
 #include <blastdef.h>
 
+#define NEG_INFINITY  BLAST_SCORE_MIN
 
 typedef struct alignPiece {
   Int4 queryStart;

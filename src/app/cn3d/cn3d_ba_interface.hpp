@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/08/13 20:46:36  thiessen
+* add global block aligner
+*
 * Revision 1.3  2002/08/01 01:59:26  thiessen
 * fix type syntax error
 *
@@ -68,7 +71,7 @@ public:
     // the given master and one of the given sequences. If the alignment algorithm fails to
     // align the new sequence, it will include a null-alignment for that sequence.
     void CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultipleAlignment *multiple,
-        const AlignmentList& toRealign, AlignmentList *newAlignments);
+        const AlignmentList& toRealign, AlignmentList *newAlignments, bool localAlignment);
 
     // brings up a dialog that lets the user set block aligner options
     void SetOptions(wxWindow* parent);

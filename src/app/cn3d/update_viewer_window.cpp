@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2002/08/13 20:46:38  thiessen
+* add global block aligner
+*
 * Revision 1.46  2002/08/01 01:55:16  thiessen
 * add block aligner options dialog
 *
@@ -207,7 +210,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
     EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
-    EVT_MENU_RANGE(MID_BLOCKALIGN_OPTIONS, MID_BLOCKALIGN_ONE,  UpdateViewerWindow::OnBlockAlign)
+    EVT_MENU_RANGE(MID_BLOCKALIGN_OPTIONS, MID_GLOBAL_BLOCKALIGN_ONE,   UpdateViewerWindow::OnBlockAlign)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -237,7 +240,8 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
     menu->AppendSeparator();
     menu->Append(MID_BLOCKALIGN_OPTIONS, "Block Aligner &Options...");
-    menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
+    menu->Append(MID_LOCAL_BLOCKALIGN_ONE, "&Local Block Align Single", "", true);
+    menu->Append(MID_GLOBAL_BLOCKALIGN_ONE, "&Global Block Align Single", "", true);
     menu->AppendSeparator();
     menu->Append(MID_SET_REGION, "Set &Region", "", true);
     menuBar->Append(menu, "Al&gorithms");
@@ -438,12 +442,20 @@ void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
 
 void UpdateViewerWindow::OnBlockAlign(wxCommandEvent& event)
 {
-    if (event.GetId() == MID_BLOCKALIGN_ONE) {
-        CancelAllSpecialModesExcept(MID_BLOCKALIGN_ONE);
-        if (DoBlockAlignSingle())
+    if (event.GetId() == MID_LOCAL_BLOCKALIGN_ONE) {
+        CancelAllSpecialModesExcept(MID_LOCAL_BLOCKALIGN_ONE);
+        if (DoLocalBlockAlignSingle())
             SetCursor(*wxCROSS_CURSOR);
         else
-            BlockAlignSingleOff();
+            LocalBlockAlignSingleOff();
+    }
+
+    else if (event.GetId() == MID_GLOBAL_BLOCKALIGN_ONE) {
+        CancelAllSpecialModesExcept(MID_GLOBAL_BLOCKALIGN_ONE);
+        if (DoGlobalBlockAlignSingle())
+            SetCursor(*wxCROSS_CURSOR);
+        else
+            GlobalBlockAlignSingleOff();
     }
 
     else if (event.GetId() == MID_BLOCKALIGN_OPTIONS) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/08/13 20:46:37  thiessen
+* add global block aligner
+*
 * Revision 1.42  2002/07/27 12:29:52  thiessen
 * fix block aligner crash
 *
@@ -873,7 +876,7 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
 }
 
-void UpdateViewer::BlockAlignUpdate(BlockMultipleAlignment *alignment)
+void UpdateViewer::BlockAlignUpdate(BlockMultipleAlignment *alignment, bool localAlignment)
 {
     const BlockMultipleAlignment *multipleForPSSM = alignmentManager->GetCurrentMultipleAlignment();
     if (!multipleForPSSM) {
@@ -892,7 +895,7 @@ void UpdateViewer::BlockAlignUpdate(BlockMultipleAlignment *alignment)
         toRealign.push_back(alignment);
         BlockAligner::AlignmentList newAlignments;
         alignmentManager->blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
-            multipleForPSSM, toRealign, &newAlignments);
+            multipleForPSSM, toRealign, &newAlignments, localAlignment);
         if (newAlignments.size() != 1) {
             ERR_POST(Warning <<
                 "block aligner failed to find any significant alignment; alignment unchanged");

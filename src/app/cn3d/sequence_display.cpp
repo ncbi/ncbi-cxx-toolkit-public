@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2002/08/13 20:46:37  thiessen
+* add global block aligner
+*
 * Revision 1.53  2002/07/26 15:28:48  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -726,10 +729,17 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
-            // Block align single
-            if (updateWindow->DoBlockAlignSingle()) {
-                updateWindow->updateViewer->BlockAlignUpdate(alignment);
-                if (!controlDown) updateWindow->BlockAlignSingleOff();
+            // local Block align single
+            if (updateWindow->DoLocalBlockAlignSingle()) {
+                updateWindow->updateViewer->BlockAlignUpdate(alignment, true);
+                if (!controlDown) updateWindow->LocalBlockAlignSingleOff();
+                return false;
+            }
+
+            // global Block align single
+            if (updateWindow->DoGlobalBlockAlignSingle()) {
+                updateWindow->updateViewer->BlockAlignUpdate(alignment, false);
+                if (!controlDown) updateWindow->GlobalBlockAlignSingleOff();
                 return false;
             }
 

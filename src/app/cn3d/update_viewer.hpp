@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/08/13 20:46:37  thiessen
+* add global block aligner
+*
 * Revision 1.15  2002/07/26 15:28:48  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -137,7 +140,7 @@ public:
     void BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple);
 
     // run block alignment algorithm on an update
-    void BlockAlignUpdate(BlockMultipleAlignment *alignment);
+    void BlockAlignUpdate(BlockMultipleAlignment *alignment, bool localAlignment);
 
     // save pending structures
     void SavePendingStructures(void);

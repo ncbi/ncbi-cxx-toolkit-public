@@ -38,7 +38,7 @@ Contents: header file for block IMPALA
 /*
  * $Id$
  *
- * This file is the same as Alejandro's blocka.h as of 7/29/02
+ * This file is the same as Alejandro's blocka.h as of 8/13/02
  */
 
 #include <ncbi.h>
@@ -46,6 +46,7 @@ Contents: header file for block IMPALA
 #include <blast.h>
 #include <blastdef.h>
 
+#define NEG_INFINITY  BLAST_SCORE_MIN
 
 typedef struct alignPiece {
   Int4 queryStart;

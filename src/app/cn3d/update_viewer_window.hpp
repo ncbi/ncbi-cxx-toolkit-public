@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/08/13 20:46:38  thiessen
+* add global block aligner
+*
 * Revision 1.27  2002/08/01 01:55:16  thiessen
 * add block aligner options dialog
 *
@@ -160,7 +163,8 @@ private:
         MID_BLAST_ONE,
         MID_BLAST_PSSM_ONE,
         MID_BLOCKALIGN_OPTIONS,
-        MID_BLOCKALIGN_ONE,
+        MID_LOCAL_BLOCKALIGN_ONE,
+        MID_GLOBAL_BLOCKALIGN_ONE,
         MID_SET_REGION,
         MID_MERGE_ONE,
         MID_MERGE_ALL,
@@ -193,9 +197,14 @@ private:
         menuBar->Check(MID_BLAST_PSSM_ONE, false);
         SetCursor(wxNullCursor);
     }
-    void BlockAlignSingleOff(void)
+    void LocalBlockAlignSingleOff(void)
     {
-        menuBar->Check(MID_BLOCKALIGN_ONE, false);
+        menuBar->Check(MID_LOCAL_BLOCKALIGN_ONE, false);
+        SetCursor(wxNullCursor);
+    }
+    void GlobalBlockAlignSingleOff(void)
+    {
+        menuBar->Check(MID_GLOBAL_BLOCKALIGN_ONE, false);
         SetCursor(wxNullCursor);
     }
     void SetRegionOff(void)
@@ -225,7 +234,8 @@ public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
-    bool DoBlockAlignSingle(void) const { return menuBar->IsChecked(MID_BLOCKALIGN_ONE); }
+    bool DoLocalBlockAlignSingle(void) const { return menuBar->IsChecked(MID_LOCAL_BLOCKALIGN_ONE); }
+    bool DoGlobalBlockAlignSingle(void) const { return menuBar->IsChecked(MID_GLOBAL_BLOCKALIGN_ONE); }
     bool DoSetRegion(void) const { return menuBar->IsChecked(MID_SET_REGION); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
@@ -235,7 +245,8 @@ public:
         if (id != MID_THREAD_ONE && DoThreadSingle()) ThreadSingleOff();
         if (id != MID_BLAST_ONE && DoBlastSingle()) BlastSingleOff();
         if (id != MID_BLAST_PSSM_ONE && DoBlastPSSMSingle()) BlastPSSMSingleOff();
-        if (id != MID_BLOCKALIGN_ONE && DoBlockAlignSingle()) BlockAlignSingleOff();
+        if (id != MID_LOCAL_BLOCKALIGN_ONE && DoLocalBlockAlignSingle()) LocalBlockAlignSingleOff();
+        if (id != MID_GLOBAL_BLOCKALIGN_ONE && DoGlobalBlockAlignSingle()) GlobalBlockAlignSingleOff();
         if (id != MID_SET_REGION && DoSetRegion()) SetRegionOff();
         if (id != MID_MERGE_ONE && DoMergeSingle()) MergeSingleOff();
         if (id != MID_DELETE_ONE && DoDeleteSingle()) DeleteSingleOff();

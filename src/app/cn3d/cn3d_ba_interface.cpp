@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/08/13 20:46:35  thiessen
+* add global block aligner
+*
 * Revision 1.8  2002/08/09 18:24:08  thiessen
 * improve/add magic formula to avoid Windows symbol clashes
 *
@@ -107,11 +110,14 @@ void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks, Int4 *allowedGap
 extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
     Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
     Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold);
+extern void globalFindAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
+    Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
+    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold);
 extern void LIBCALL sortAlignPieces(Int4 numBlocks);
 extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 queryLength, Uint1Ptr seq,
     Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps, Int4 scoreThresholdMultipleBlock,
     SeqIdPtr subject_id, SeqIdPtr query_id, Int4* bestFirstBlock, Int4 *bestLastBlock, Nlm_FloatHi Lambda,
-    Nlm_FloatHi K, Int4 searchSpaceSize);
+    Nlm_FloatHi K, Int4 searchSpaceSize, Boolean localAlignment);
 extern void freeBestPairs(Int4 numBlocks);
 extern void freeAlignPieceLists(Int4 numBlocks);
 extern void freeBestScores(Int4 numBlocks);
@@ -260,7 +266,7 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
 }
 
 void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultipleAlignment *multiple,
-    const AlignmentList& toRealign, AlignmentList *newAlignments)
+    const AlignmentList& toRealign, AlignmentList *newAlignments, bool localAlignment)
 {
     // parameters passed to Alejandro's functions
     Int4 numBlocks;
@@ -345,14 +351,18 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
                 ((*s)->alignTo + 1) : query->Length();
 
         // actually do the block alignment
-        findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition, numBlocks,
-            blockStarts, blockEnds, masterLength, thisScoreMat, scoreThresholdSingleBlock);
+        if (localAlignment)
+            findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition, numBlocks,
+                blockStarts, blockEnds, masterLength, thisScoreMat, scoreThresholdSingleBlock);
+        else
+            globalFindAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition, numBlocks,
+                blockStarts, blockEnds, masterLength, thisScoreMat, scoreThresholdSingleBlock);
         sortAlignPieces(numBlocks);
         results = makeMultiPieceAlignments(convertedQuery, numBlocks,
             queryLength, masterSequence, masterLength,
             blockStarts, blockEnds, allowedGaps, scoreThresholdMultipleBlock,
             subject_id, query_id, &bestFirstBlock, &bestLastBlock,
-            Lambda, K, searchSpaceSize);
+            Lambda, K, searchSpaceSize, (localAlignment ? TRUE : FALSE));
 
         // process results; assume first result SeqAlign is the highest scoring
         if (results) {
