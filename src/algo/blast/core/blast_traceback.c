@@ -353,6 +353,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
    Int4Ptr translated_length = 0, translated_length_orig;
    Uint1Ptr nucl_sequence = NULL, nucl_sequence_rev = NULL;
    CharPtr genetic_code = NULL;
+   BLAST_KarlinBlkPtr PNTR kbp;
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -542,8 +543,13 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             keep = TRUE;
             if (program == blast_type_blastp ||
                 program == blast_type_blastn) {
+               if (hit_options->is_gapped && program != blast_type_blastn)
+                  kbp = sbp->kbp_gap;
+               else
+                  kbp = sbp->kbp;
+
                hsp->evalue = 
-                  BlastKarlinStoE_simple(hsp->score, sbp->kbp[hsp->context],
+                  BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
                      query_info->eff_searchsp_array[hsp->context]);
                if (hsp->evalue > hit_options->expect_value) 
                   /* put in for comp. based stats. */
@@ -569,7 +575,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                  program == blast_type_psitblastn) && 
                 hit_options->longest_intron > 0) {
                hsp->evalue = 
-                  BlastKarlinStoE_simple(hsp->score, sbp->kbp[hsp->context],
+                  BlastKarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
                      query_info->eff_searchsp_array[hsp->context]);
             }
 
