@@ -185,16 +185,21 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
     NStr::Split(str, delim, toks);
 
     CConstRef<CUser_field> f(this);
-    list<string>::const_iterator last = toks.end()--;
+    list<string>::const_iterator last = toks.end();
+    --last;
 
     ITERATE (list<string>, iter, toks) {
         CConstRef<CUser_field> new_f;
         ITERATE (TData::TFields, field_iter, f->GetData().GetFields()) {
             const CUser_field& field = **field_iter;
-            if (field.GetLabel().GetStr() == *iter  &&
-                (iter != last  &&  field.GetData().IsFields())) {
-                new_f = *field_iter;
-                break;
+            if (field.GetLabel().GetStr() == *iter) {
+                if (iter != last  &&  field.GetData().IsFields()) {
+                    new_f = *field_iter;
+                    break;
+                } else if (iter == last) {
+                    new_f = *field_iter;
+                    break;
+                }
             }
         }
 
@@ -227,15 +232,20 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
     NStr::Split(str, delim, toks);
 
     CRef<CUser_field> f(this);
-    list<string>::const_iterator last = toks.end()--;
+    list<string>::const_iterator last = toks.end();
+    --last;
     ITERATE (list<string>, iter, toks) {
         CRef<CUser_field> new_f;
         NON_CONST_ITERATE (TData::TFields, field_iter, f->SetData().SetFields()) {
             const CUser_field& field = **field_iter;
-            if (field.GetLabel().GetStr() == *iter  &&
-                (iter != last  &&  field.GetData().IsFields())) {
-                new_f = *field_iter;
-                break;
+            if (field.GetLabel().GetStr() == *iter) {
+                if (iter != last  &&  field.GetData().IsFields()) {
+                    new_f = *field_iter;
+                    break;
+                } else if (iter == last) {
+                    new_f = *field_iter;
+                    break;
+                }
             }
         }
 
@@ -271,6 +281,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/11/24 15:55:19  dicuccio
+* Fixed bugs in identifying last iterator; fixed handling of tail fields (favor
+* tags not fields)
+*
 * Revision 1.1  2004/11/22 16:03:19  dicuccio
 * Added subfield access to a user field, with delimited hierarchichal access; the
 * API is similar to that in CUser_object
