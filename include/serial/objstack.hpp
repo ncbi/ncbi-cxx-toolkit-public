@@ -85,6 +85,7 @@ public:
 
     const char* GetFrameTypeName(void) const;
     string GetFrameInfo(void) const;
+    string GetFrameName(void) const;
 
 private:
     friend class CObjectStack;
@@ -151,6 +152,11 @@ private:
     try {
 
 #define END_OBJECT_FRAME_OF(Stream) \
+    } catch (CSerialException& s_expt) { \
+        std::string msg((Stream).TopFrame().GetFrameName()); \
+        (Stream).PopErrorFrame(); \
+        s_expt.AddFrameInfo(msg); \
+        throw; \
     } catch (CException& expt) { \
         std::string msg((Stream).TopFrame().GetFrameInfo()); \
         (Stream).PopErrorFrame(); \
@@ -204,6 +210,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/10/27 19:18:03  grichenk
+* Reformatted object stream error messages
+*
 * Revision 1.21  2003/08/25 15:58:32  gouriano
 * added possibility to use namespaces in XML i/o streams
 *

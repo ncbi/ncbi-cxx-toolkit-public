@@ -73,6 +73,13 @@ public:
         }
     }
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
+
+public:
+    // Combine steram frames info into single message
+    void AddFrameInfo(string frame_info);
+    virtual void ReportExtra(ostream& out) const;
+private:
+    string m_FrameStack;
 };
 
 class NCBI_XSERIAL_EXPORT CUnassignedMember : public CSerialException
@@ -133,6 +140,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/10/27 19:18:03  grichenk
+* Reformatted object stream error messages
+*
 * Revision 1.13  2003/04/29 18:29:06  gouriano
 * object data member initialization verification
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/10/27 19:18:03  grichenk
+* Reformatted object stream error messages
+*
 * Revision 1.14  2003/07/02 18:07:29  gouriano
 * check for stack depth in GetStackTraceASN (not to abort when stack is empty)
 *
@@ -236,6 +239,45 @@ string CObjectStackFrame::GetFrameInfo(void) const
     }
     if (m_MemberId) {
         info += ", Member name= " + m_MemberId->GetName();
+    }
+    return info;
+}
+
+
+string CObjectStackFrame::GetFrameName(void) const
+{
+    string info;
+    switch ( GetFrameType() ) {
+    case eFrameClassMember:
+    case eFrameChoiceVariant:
+        {
+            if ( m_MemberId ) {
+                const CMemberId& id = *m_MemberId;
+                info = '.';
+                if ( !id.GetName().empty() ) {
+                    info += id.GetName();
+                }
+                else {
+                    info += '[';
+                    info += NStr::IntToString(id.GetTag());
+                    info += ']';
+                }
+            }
+        }
+        break;
+    case eFrameArrayElement:
+        info = "[]";
+        break;
+    case eFrameArray:
+        info = "[]";
+        break;
+    case eFrameNamed:
+        info = GetTypeInfo()->GetName();
+        break;
+    default:
+        {
+            break;
+        }
     }
     return info;
 }

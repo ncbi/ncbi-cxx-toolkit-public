@@ -33,6 +33,18 @@
 
 BEGIN_NCBI_SCOPE
 
+void CSerialException::AddFrameInfo(string frame_info)
+{
+    m_FrameStack = frame_info + m_FrameStack;
+}
+
+void CSerialException::ReportExtra(ostream& out) const
+{
+    if ( !m_FrameStack.empty() ) {
+        out << " at " << m_FrameStack;
+    }
+}
+
 const char* CInvalidChoiceSelection::GetErrCodeString(void) const
 {
     switch ( GetErrCode() ) {
@@ -116,6 +128,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/10/27 19:18:03  grichenk
+* Reformatted object stream error messages
+*
 * Revision 1.10  2003/03/11 17:59:39  gouriano
 * reimplement CInvalidChoiceSelection exception
 *
