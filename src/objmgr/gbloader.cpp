@@ -157,7 +157,9 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
         m_Driver = s_CreateReader(*drv);
     }
     if(!m_Driver) {
-        throw runtime_error("Could not create driver: " + string(env));
+        THROW1_TRACE(runtime_error,
+                     "CGBDataLoader::CGBDataLoader: "
+                     "Could not create driver: " + string(env));
     }
   
     size_t i = m_Driver->GetParallelLevel();
@@ -174,11 +176,11 @@ CGBDataLoader::~CGBDataLoader(void)
 {
     GBLOG_POST( "~CGBDataLoader");
     CGBLGuard g(m_Locks,"~CGBDataLoader");
-    if ( m_TseCount ) {
-        ERR_POST("CGBDataLoader::~CGBDataLoader: not all TSE were dropped: "<<
-                 m_TseCount);
-    }
     while ( m_UseListHead ) {
+        if ( m_UseListHead->tseinfop ) {
+            ERR_POST("CGBDataLoader::~CGBDataLoader: TSE not dropped: "<<
+                     m_UseListHead->key->printTSE());
+        }
         x_DropTSEinfo(m_UseListHead);
     }
     m_Bs2Sr.clear();
@@ -650,7 +652,7 @@ bool CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
             g.Local();
             global_mutex_was_released=true;
 
-            int try_cnt = 2;
+            int try_cnt = 3;
             while( try_cnt-- > 0 ) {
                 CReader::TConn conn = m_Locks.m_Pool.Select(&*tse);
                 try {
@@ -689,13 +691,15 @@ bool CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                 }
             }
             if ( try_cnt < 0 ) {
-                LOG_POST("CGBLoader:GetData: Data Request failed :: "
+                ERR_POST("CGBLoader:GetData: data request failed: "
                          "exceeded maximum attempts count");
                 g.Lock();
                 g.Lock(&*tse);
                 tse->locked--;
                 x_UpdateDropList(tse); // move up as just checked
-                throw runtime_error("CGBLoader:GetData: Multiple attempts to retrieve data failed");
+                THROW1_TRACE(runtime_error,
+                             "CGBLoader:GetData: "
+                             "Multiple attempts to retrieve data failed");
             }
         }
         g.Lock();
@@ -749,7 +753,7 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
   
     SSeqrefs::TSeqrefs osr;
     bool got = false;
-    for ( int try_cnt = 2; !got && try_cnt > 0; --try_cnt ) {
+    for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
         CTimerGuard tg(m_Timer);
         CReader::TConn conn = m_Locks.m_Pool.Select(&*sr);
         try {
@@ -773,7 +777,11 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
         }
     }
     if ( !got ) {
-        throw runtime_error("Network trouble - failed to connect to NCBI ID services");
+        ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve request failed: "
+                 "exceeded maximum attempts count");
+        THROW1_TRACE(runtime_error,
+                     "CGBLoader:x_ResolveHandle: "
+                     "Multiple attempts to resolve Seq-id failed");
     }
 
     swap(sr->m_Sr, osr);
@@ -922,6 +930,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/06/11 14:54:06  vasilche
+* Fixed wrong error message in CGBDataLoader destructor when
+* some data requests were failed.
+*
 * Revision 1.75  2003/06/10 19:01:07  vasilche
 * Fixed loader methods string.
 *
