@@ -719,7 +719,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     m_CacheDB->key = key;
     m_CacheDB->version = version;
-    m_CacheDB->subkey = (m_TimeStampFlag & fTrackSubKey) ? subkey : "";
+    m_CacheDB->subkey = subkey;
     
     ret = m_CacheDB->Fetch();
     if (ret != eBDB_Ok) {
@@ -758,7 +758,7 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
 
     m_CacheDB->key = key;
     m_CacheDB->version = version;
-    m_CacheDB->subkey = key;
+    m_CacheDB->subkey = subkey;
 
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     return 
@@ -1977,6 +1977,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/12/29 15:39:59  vasilche
+ * Fixed subkey value in GetReadStream/GetWriteStream.
+ *
  * Revision 1.33  2003/12/29 12:57:15  kuznets
  * Changes in Purge() method to make cursor loop lock independent
  * from the record delete function
