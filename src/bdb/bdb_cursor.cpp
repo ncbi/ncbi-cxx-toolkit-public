@@ -243,9 +243,6 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
         cond_from = m_CondFrom;
     }
 
-    From.m_Condition.ResetUnassigned();
-    To.m_Condition.ResetUnassigned();
-
     unsigned int flag;
 
     switch ( cond_from ) {
@@ -308,21 +305,37 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
         fdir = m_FetchDirection;
 
     unsigned int flag = (fdir == eForward) ? DB_NEXT : DB_PREV;
-    EBDB_ErrCode ret = m_Dbf.ReadCursor(m_DBC, flag);
-    if (ret != eBDB_Ok)
-        return ret;
+    EBDB_ErrCode ret;
 
-    if ( !TestTo() )
-        ret = eBDB_NotFound;
-
-    // Check if we have fallen out of the FROM range
-    if (m_CondFrom == eEQ) {
-        int cmp =
-            m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
-                                    From.m_Condition.GetFieldsAssigned());
-        if (cmp != 0) {
+    while (1) {
+        ret = m_Dbf.ReadCursor(m_DBC, flag);
+        if (ret != eBDB_Ok) {
             ret = eBDB_NotFound;
+            break;
         }
+
+        if ( !TestTo() ) {
+            ret = eBDB_NotFound;
+            break;
+        }
+
+        // Check if we have fallen out of the FROM range
+        if (m_CondFrom == eEQ) {
+            int cmp =
+                m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
+                                        From.m_Condition.GetFieldsAssigned());
+            if (cmp != 0) {
+                ret = eBDB_NotFound;
+            }
+        }
+        break;
+
+    } // while
+
+    if (ret != eBDB_Ok)
+    {
+        From.m_Condition.ResetUnassigned();
+        To.m_Condition.ResetUnassigned();
     }
 
     return ret;
@@ -418,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/30 20:25:42  kuznets
+ * Bug fix
+ *
  * Revision 1.3  2003/04/29 19:07:22  kuznets
  * Cosmetics..
  *

@@ -291,11 +291,9 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
 CBDB_File::CBDB_File()
     : CBDB_RawFile(),
       m_KeyBuf(new CBDB_BufferManager),
-      m_DataBuf(new CBDB_BufferManager),
       m_BufsAttached(false),
       m_BufsCreated(false)
 {
-    m_DataBuf->SetNullable();
 }
 
 
@@ -320,10 +318,16 @@ void CBDB_File::BindData(const char* field_name,
                          ENullable   is_nullable)
 {
     _ASSERT(!IsOpen());
-    _ASSERT(m_DataBuf.get());
     _ASSERT(data_field);
 
     data_field->SetName(field_name);
+
+    if (m_DataBuf.get() == 0) {  // data buffer is not yet created 
+        auto_ptr<CBDB_BufferManager> dbuf(new CBDB_BufferManager);
+        m_DataBuf = dbuf;
+        m_DataBuf->SetNullable();
+    }
+
     m_DataBuf->Bind(data_field);
     if ( buf_size )
         data_field->SetBufferSize(buf_size);
@@ -507,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/30 20:25:42  kuznets
+ * Bug fix
+ *
  * Revision 1.3  2003/04/29 19:07:22  kuznets
  * Cosmetics..
  *
