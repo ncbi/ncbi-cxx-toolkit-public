@@ -616,11 +616,13 @@ BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *opti
  * @param options The options structure [in] [out]
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param greedy In how many stages of the search greedy alignment is 
- *               used (values 0, 1, 2)? [in]
+ *               used (values 0, 1, 2)? FIXME [in]
  * @param x_dropoff X-dropoff parameter value for preliminary gapped 
  *                  extensions [in]
  * @param x_dropoff_final X-dropoff parameter value for final gapped 
  *                        extensions with traceback [in]
+ * @todo the greedy parameter to this function is tied to the blast_driver's
+ * command line argument for greedy... couldn't this be EBlastPrelimGapExt?
 */
 NCBI_XBLAST_EXPORT
 Int2
