@@ -157,7 +157,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
 
    translated_subject = (program_number == blast_type_tblastn
                          || program_number == blast_type_tblastx
-                         || program_number == blast_type_psitblastn);
+                         || program_number == blast_type_rpstblastn);
 
    if (translated_subject) {
       first_context = 0;
@@ -293,9 +293,10 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       PHIGetEvalue(hsp_list, gap_align->sbp);
    } else {
       /* Calculate e-values for all HSPs. Skip this step
-         for RPS blast, since all the E values would likely
-         be zero. */
-      if (gap_align->rps_blast == FALSE)
+         for RPS blast, since calculating the E values 
+         requires precomputation that has not been done yet */
+      if (program_number != blast_type_rpsblast &&
+          program_number != blast_type_rpstblastn)
          status = BLAST_GetNonSumStatsEvalue(program_number, query_info, 
                      hsp_list, score_options->gapped_calculation, 
                      gap_align->sbp);
@@ -477,8 +478,10 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    BLAST_SequenceBlk concat_db;
    RPSAuxInfo *rps_info;
    BlastHSPResults prelim_results;
+   Uint1 *orig_query_seq = NULL;
 
-   if (program_number != blast_type_blastp)
+   if (program_number != blast_type_rpsblast &&
+       program_number != blast_type_rpstblastn)
       return -1;
    if (results->num_queries != 1)
       return -2;
@@ -503,7 +506,6 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    scale_factor = rps_info->scale_factor;
    internal_psi_options->scalingFactor = scale_factor;
    gap_align->positionBased = TRUE;
-   gap_align->rps_blast = TRUE;
    gap_align->sbp->posMatrix = lookup->rps_pssm;
    word_params->cutoff_score = (Int4)(scale_factor *
                                      (double)word_params->cutoff_score);
@@ -536,6 +538,18 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    dbsize = BLASTSeqSrcGetTotLen(seq_src) + num_db_seqs;
    if (dbsize > INT4_MAX)
       return -3;
+
+   /* If this is a translated search, pack the query into
+      ncbi2na format (exclude the starting sentinel); otherwise 
+      just use the input query */
+
+   if (program_number == blast_type_rpstblastn) {
+       orig_query_seq = query->sequence_start;
+       query->sequence_start++;
+       if (BLAST_PackDNA(query->sequence_start, query->length,
+                         NCBI4NA_ENCODING, &query->sequence) != 0)
+           return -4;
+   }
 
    /* Concatenate all of the DB sequences together, and pretend
       this is a large multiplexed sequence. Note that because the
@@ -573,10 +587,10 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       search space sizes for the concatenated DB. This means that
       E-values cannot be calculated after hits are found. */
 
-   BLAST_SearchEngineCore(program_number, &concat_db, &concat_db_info, query,
-      lookup_wrap, gap_align, internal_score_options, word_params, ext_params,
-      hit_params, internal_psi_options, db_options, return_stats, aux_struct,
-      &hsp_list);
+   BLAST_SearchEngineCore(program_number, &concat_db, &concat_db_info, 
+         query, lookup_wrap, gap_align, internal_score_options, 
+         word_params, ext_params, hit_params, internal_psi_options, 
+         db_options, return_stats, aux_struct, &hsp_list);
 
    /* save the resulting list of HSPs. 'query' and 'subject' are
       still reversed */
@@ -584,9 +598,9 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    if (hsp_list && hsp_list->hspcnt > 0) {
       return_stats->prelim_gap_passed += hsp_list->hspcnt;
       /* Save the HSPs into a hit list */
-      BLAST_SaveHitlist(program_number, &concat_db, query, &prelim_results,
-         hsp_list, hit_params, &concat_db_info, gap_align->sbp,
-         internal_score_options, NULL);
+      BLAST_SaveHitlist(program_number, &concat_db, query, 
+         &prelim_results, hsp_list, hit_params, &concat_db_info, 
+         gap_align->sbp, internal_score_options, NULL);
    }
 
    /* Change the results from a single hsplist with many 
@@ -594,6 +608,15 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       'query' and 'subject' offsets are still reversed. */
 
    RPSUpdateResults(results, &prelim_results);
+
+   /* for a translated search, throw away the packed version
+      of the query and replace with the original (excluding the
+      starting sentinel) */
+
+   if (program_number == blast_type_rpstblastn) {
+       sfree(query->sequence);
+       query->sequence = query->sequence_start;
+   }
 
    /* Do the traceback. After this call, query and 
       subject have reverted to their traditional meanings. */
@@ -611,10 +634,13 @@ BLAST_RPSSearchEngine(Uint1 program_number,
    /* free the internal structures used */
    /* Do not destruct score block here */
 
+   if (program_number == blast_type_rpstblastn) {
+      query->sequence_start = orig_query_seq;
+      query->sequence = orig_query_seq + 1;
+   }
    sfree(prelim_results.hitlist_array);
    gap_align->sbp->posMatrix = NULL;
    gap_align->positionBased = FALSE;
-   gap_align->rps_blast = FALSE;
    gap_align->sbp = NULL;
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
