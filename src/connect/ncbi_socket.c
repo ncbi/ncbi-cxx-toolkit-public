@@ -1386,6 +1386,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
 
     *x_errno = 0;
     assert(sock->pending);
+    if (sock->w_status == eIO_Closed)
+        return eIO_Closed;
     if ( !writeable ) {
         poll.sock      = sock;
         poll.event     = eIO_Write;
@@ -1406,7 +1408,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
         if ( !*x_errno )
             *x_errno = SOCK_ERRNO;
         if (*x_errno == SOCK_ECONNREFUSED)
-            status = eIO_Closed;
+            sock->w_status = status = eIO_Closed;
         else if (status == eIO_Success)
             status = eIO_Unknown;
     }
@@ -2066,9 +2068,13 @@ static EIO_Status s_Write(SOCK        sock,
     }
 
     if ((status = s_WritePending(sock, sock->w_timeout, 0)) != eIO_Success) {
-        if (status != eIO_Timeout)
+        if (status != eIO_Timeout) {
             sock->w_status = status;
-        return size == 0  &&  status != eIO_Timeout ? eIO_Success : status;
+            if (status == eIO_Closed)
+                return status;
+        } else if (size == 0)
+            return status;
+        return size ? status : eIO_Success;
     }
 
     assert(sock->w_len == 0);
@@ -3701,6 +3707,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.111  2003/05/21 04:00:12  lavr
+ * Latch connection refusals in SOCK state properly
+ *
  * Revision 6.110  2003/05/20 21:20:41  lavr
  * Special treatment of size==0 in SOCK_Write()
  *
