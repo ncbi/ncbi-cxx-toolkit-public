@@ -644,7 +644,6 @@ bool CValidError_imp::Validate
     }
 
     // Graphs:
-
     if ( m_PrgCallback ) {
         m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Graph;
         m_PrgInfo.m_Current = m_NumGraph;
@@ -669,6 +668,15 @@ bool CValidError_imp::Validate
             return true;
         }
     }
+    SIZE_TYPE misplaced = graph_validator.GetNumMisplacedGraphs();
+    if ( misplaced > 0 ) {
+        string num = NStr::IntToString(misplaced);
+        PostErr(eDiag_Critical, eErr_SEQ_PKG_GraphPackagingProblem,
+            string("There ") + ((misplaced > 1) ? "are" : "is") + num + 
+            " mispackaged graph" + ((misplaced > 1) ? "s" : "") + " in this record.",
+            se);
+    }
+
     // Annotation:
     if ( m_PrgCallback ) {
         m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Annot;
@@ -2342,6 +2350,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/12/17 19:16:15  shomrat
+* Notify graph packaging problem
+*
 * Revision 1.43  2003/12/15 19:09:34  shomrat
 * seq-id ordering not adequate for binary_search algorithm
 *
