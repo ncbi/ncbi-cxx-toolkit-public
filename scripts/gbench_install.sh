@@ -284,8 +284,10 @@ COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 echo "Making links to executable plugins"
 # don't make links for *~ (emacs backup files) or #*# (autosave)
 for f in ${source_dir}/../plugins/algo/executables/*[^~#]; do
-    echo copying executable: `basename $f`
-    COMMON_ExecRB cp -p $f ${target_dir}/executables
+    if [ ! -d $f ]; then
+        echo copying executable: `basename $f`
+        COMMON_ExecRB cp -p $f ${target_dir}/executables
+    fi
 done
 
 # Do this last, to be sure the symlink doesn't end up dangling.
