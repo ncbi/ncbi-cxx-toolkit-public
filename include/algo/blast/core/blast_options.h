@@ -220,6 +220,7 @@ typedef enum ESeedExtensionMethod {
 
 /** Options needed for initial word finding and processing */
 typedef struct BlastInitialWordOptions {
+   double gap_trigger; /**< Score in bits for starting gapped extension */
    Int4 window_size; /**< Maximal allowed distance between 2 hits in case 2 
                         hits are required to trigger the extension */
    ESeedContainerType container_type; /**< How to store offset pairs for initial
@@ -237,10 +238,10 @@ typedef struct BlastInitialWordOptions {
 /** Expect values corresponding to the default cutoff
  *  scores for all ungapped and gapped blastn alignments.
  */
-#define CUTOFF_E_BLASTN 0.025  /**< default evalue (blastn) */
+#define CUTOFF_E_BLASTN 0.05  /**< default evalue (blastn) */
 #define CUTOFF_E_BLASTP 1e-300 /**< default evalue (ungapped blastp) */
-#define CUTOFF_E_BLASTX 0.5 /**< default evalue (ungapped blastx) */
-#define CUTOFF_E_TBLASTN 0.5 /**< default evalue (ungapped tblastn) */
+#define CUTOFF_E_BLASTX 1.0 /**< default evalue (ungapped blastx) */
+#define CUTOFF_E_TBLASTN 1.0 /**< default evalue (ungapped tblastn) */
 #define CUTOFF_E_TBLASTX 1e-300/**< default evalue (tblastx) */
 
 /** Parameter block that contains a pointer to BlastInitialWordOptions
@@ -287,7 +288,6 @@ typedef struct BlastExtensionOptions {
    double gap_x_dropoff; /**< X-dropoff value for gapped extension (in bits) */
    double gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                   extension (in bits) */
-   double gap_trigger; /**< Score in bits for starting gapped extension */
    EBlastPrelimGapExt ePrelimGapExt; /**< type of preliminary gapped extension (normally) for calculating
                               score. */
    EBlastTbackExt eTbackExt; /**< type of traceback extension. */
@@ -300,7 +300,6 @@ typedef struct BlastExtensionParameters {
    Int4 gap_x_dropoff; /**< X-dropoff value for gapped extension (raw) */
    Int4 gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                extension (raw) */
-   Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastExtensionParameters;
 
 /** Should sum statistics be performed? If not set, the engine decides this
@@ -383,7 +382,10 @@ typedef struct BlastLinkHSPParameters {
 typedef struct BlastHitSavingParameters {
    BlastHitSavingOptions* options; /**< The original (unparsed) options. */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
-                         provided by the user */
+                         provided by the user if no sum stats, the lowest score
+                         to attempt linking on if sum stats are used.*/
+   Int4 cutoff_score_max; /**< Raw cutoff score corresponding to the e-value 
+                         provided by user, cutoff_score should always <= this. */
    BlastLinkHSPParameters* link_hsp_params; /**< Parameters for linking HSPs
                                                with sum statistics; linking 
                                                is not done if NULL. */
@@ -603,7 +605,6 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * @param word_options The initial word options [in]
  * @param hit_params The hit saving options (needed to calculate cutoff score 
  *                    for ungapped extensions) [in]
- * @param ext_params Extension parameters (containing gap trigger value) [in]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
  * @param subject_length Average subject sequence length [in]
@@ -614,7 +615,7 @@ Int2
 BlastInitialWordParametersNew(EBlastProgramType program_number, 
    const BlastInitialWordOptions* word_options, 
    const BlastHitSavingParameters* hit_params, 
-   const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    Uint4 subject_length,
    BlastInitialWordParameters* *parameters);
@@ -624,8 +625,6 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
  * @param hit_params The hit saving parameters, needed to calculate cutoff 
  *                   score for ungapped extensions. The HSP linking cutoff
  *                   might have to be adjusted here. [in] [out]
- * @param ext_params Extension parameters, containing gap trigger value,
- *                   which might be changed in this function [in] [out]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
  * @param subject_length Average subject sequence length [in]
@@ -635,7 +634,7 @@ NCBI_XBLAST_EXPORT
 Int2
 BlastInitialWordParametersUpdate(EBlastProgramType program_number, 
    const BlastHitSavingParameters* hit_params, 
-   const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, Uint4 subject_length,
    BlastInitialWordParameters* parameters);
 
@@ -926,7 +925,6 @@ Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number,
 
 /** Update BlastLinkHSPParameters, using calculated values of other parameters.
  * @param word_params Initial word parameters [in]
- * @param ext_params Extension parameters [in]
  * @param hit_params Hit saving parameters, including the link HSP 
  *                   parameters [in] [out]
  * @param gapped_calculation Is this a gapped search? [in]
@@ -934,7 +932,6 @@ Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 Int2 
 BlastLinkHSPParametersUpdate(const BlastInitialWordParameters* word_params,
-                             const BlastExtensionParameters* ext_params,
                              const BlastHitSavingParameters* hit_params,
                              Boolean gapped_calculation);
 
@@ -951,7 +948,6 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  *
  * @param program_number Number of the BLAST program [in]
  * @param options The given hit saving options [in]
- * @param ext_params Extension parameters containing the gap trigger value [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 
  *            e-value [in]
  * @param query_info Query information, needed for calculating score cutoff 
@@ -962,15 +958,12 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersNew(EBlastProgramType program_number, 
         const BlastHitSavingOptions* options, 
-        const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
         BlastHitSavingParameters* *parameters);
 
 /** Updates cutoff scores in hit saving parameters. 
  * @param program_number Number of the BLAST program [in]
- * @param ext_params Extension parameters containing the gap trigger 
- *                   value [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 
  *            e-value [in]
  * @param query_info Query information, needed for calculating score cutoff 
@@ -981,7 +974,6 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
  */
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
-        const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
         BlastHitSavingParameters* parameters);
@@ -1047,7 +1039,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * @param query_info Query(ies) information [in]
  * @param sbp Scoring statistical parameters [in]
  * @param link_hsp_params Parameters for linking HSPs [in] [out]
- * @param ext_params Extension parameters (gap_trigger used) [in]
+ * @param word_params InitialWordParameters  (cutoff_score used for small gaps) [in]
  * @param db_length Total length of database (non-database search if 0) [in]
  * @param subject_length Length of the subject sequence. [in]
  * 
@@ -1056,7 +1048,7 @@ NCBI_XBLAST_EXPORT
 void
 CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
-   const BlastExtensionParameters* ext_params,
+   const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length);
 
 #ifdef __cplusplus
