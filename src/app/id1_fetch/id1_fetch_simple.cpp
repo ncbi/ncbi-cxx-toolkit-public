@@ -78,12 +78,15 @@ void CId1FetchApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI
-    arg_desc->AddKey
+    arg_desc->AddOptionalKey
         ("gi", "SeqEntryID",
          "GI id of the Seq-Entry to fetch",
          CArgDescriptions::eInteger);
-    arg_desc->SetConstraint
-        ("gi", new CArgAllow_Integers(0, 99999999));
+    // Request
+    arg_desc->AddOptionalKey
+        ("req", "Request",
+         "ID1 request in ASN.1 text format",
+         CArgDescriptions::eString);
 
     // Output format
     arg_desc->AddDefaultKey
@@ -138,9 +141,19 @@ int CId1FetchApp::Run(void)
     
     // Compose request to ID1 server
     CID1server_request id1_request;
-    int gi = args["gi"].AsInteger();
-    //    id1_request.SetGetsefromgi().SetGi() = gi;
-    id1_request.SetGetseqidsfromgi() = gi;
+    if ( args["gi"] ) {
+        int gi = args["gi"].AsInteger();
+        //    id1_request.SetGetsefromgi().SetGi() = gi;
+        id1_request.SetGetseqidsfromgi() = gi;
+    }
+    else if ( args["req"] ) {
+        string text = args["req"].AsString();
+        if ( text.find("::=") == NPOS ) {
+            text = "ID1server-request ::= " + text;
+        }
+        CNcbiIstrstream in(text.data(), text.size());
+        in >> MSerial_AsnText >> id1_request;
+    }
 
     // Open connection to ID1 server
     STimeout tmout;  tmout.sec = 9;  tmout.usec = 0;  
@@ -218,6 +231,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2004/02/20 20:04:08  vasilche
+ * Added possibility to send any request to ID1.
+ *
  * Revision 1.11  2002/06/12 16:51:55  lavr
  * Take advantage of CONNECT_Init()
  *
