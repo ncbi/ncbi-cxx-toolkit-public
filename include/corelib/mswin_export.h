@@ -1101,6 +1101,7 @@
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
+#  define NCBI_XBLASTFORMAT_EXPORT
 #  define NCBI_XCGI_EXPORT
 #  define NCBI_XCGI_REDIRECT_EXPORT
 #  define NCBI_XHTML_EXPORT
@@ -1138,7 +1139,7 @@
 #define NCBI_TEST_MT_EXPORT
 #define NCBI_XALNUTIL_EXPORT
 #define NCBI_XALNTOOL_EXPORT
-
+#define NCBI_XBLASTFORMAT_EXPORT
 
 
 #endif  /*  CORELIB___MSWIN_EXPORT__H  */
@@ -1152,6 +1153,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.92  2005/01/25 17:37:29  jianye
+ * Added NCBI_XBLASTFORMAT_EXPORT
+ *
  * Revision 1.91  2005/01/18 17:59:02  dicuccio
  * Drop NCBI_XBLAST_EXPORT from main export list - maintained separately in
  * blast_export.h, duplicated here
