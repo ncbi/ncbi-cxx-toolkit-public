@@ -79,6 +79,9 @@ public:
     /// Get default set of search engine definitions.
     static string GetDefaultDefinitions(void);
 
+    /// Check if the host is listed in definitions.
+    bool IsListedHost(const string& host) const;
+
 private:
     typedef multimap<string, string> THostMap;
 
@@ -91,6 +94,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/02/17 20:27:25  grichenk
+* Added IsListedHost()
+*
 * Revision 1.2  2004/12/09 16:35:45  grichenk
 * Added GetDefaultDefinitions. Doxygenized comments.
 *

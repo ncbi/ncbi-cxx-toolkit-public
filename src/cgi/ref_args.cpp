@@ -90,6 +90,7 @@ void CRefArgs::AddDefinitions(const string& host_mask,
     }
 }
 
+
 string CRefArgs::GetQueryString(const string& referrer) const
 {
     // Remove http:// prefix
@@ -127,6 +128,17 @@ string CRefArgs::GetQueryString(const string& referrer) const
 }
 
 
+bool CRefArgs::IsListedHost(const string& host) const
+{
+    ITERATE(THostMap, it, m_HostMap) {
+        if (NStr::FindNoCase(host, it->first) != NPOS) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -134,6 +146,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/02/17 20:27:25  grichenk
+* Added IsListedHost()
+*
 * Revision 1.3  2004/12/16 20:11:48  yasmax
 * Corrected length of host
 *
