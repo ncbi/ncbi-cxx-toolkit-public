@@ -33,6 +33,12 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2001/05/21 15:10:32  ivanov
+ * Added (with Denis Vakatov) automatic read on write data from the socket
+ * (stall protection).
+ * Added functions SOCK_SetReadOnWriteAPI(), SOCK_SetReadOnWrite()
+ * and internal function s_SelectStallsafe().
+ *
  * Revision 6.27  2001/04/25 19:16:01  juran
  * Set non-blocking mode on Mac OS. (from pjc)
  *
@@ -306,6 +312,7 @@ typedef struct SOCK_tag {
     STimeout        c_to;       /* finite close timeout value (aux., temp.) */
     unsigned int    host;       /* peer host (in the network byte order) */
     unsigned short  port;       /* peer port (in the network byte order) */
+    ESwitch         r_on_w;     /* enable/disable automatic read-on-write */
     BUF             buf;        /* read buffer */
 
     /* current status and EOF indicator */
@@ -669,6 +676,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->port = x_port;
     BUF_SetChunkSize(&(*sock)->buf, SOCK_BUF_CHUNK_SIZE);
     (*sock)->log_data = eDefault;
+    (*sock)->r_on_w   = eDefault;
     (*sock)->id = ++s_ID_Counter * 1000;
     return eIO_Success;
 }
@@ -721,6 +729,13 @@ extern EIO_Status LSOCK_GetOSHandle(LSOCK  lsock,
 /******************************************************************************
  *  SOCKET
  */
+
+
+/* Read-while-writing switch.
+ * NOTE: no read-while-writing by default
+ */
+static ESwitch s_ReadOnWrite = eDefault;
+
 
 
 /* Connect the (pre-allocated) socket to the specified "host:port" peer.
@@ -1041,6 +1056,61 @@ static EIO_Status s_Recv(SOCK        sock,
 }
 
 
+/* Stall protection: try pull incoming data from the socket.
+ * Available only for eIO_Write & eIO_ReadWrite events.
+ * For event == eIO_Read, or if read-on-write is disabled, or if
+ * the READ stream is closed, then this function 
+ * is equivalent to s_Select().
+ */
+static EIO_Status s_SelectStallsafe(SOCK                  sock,
+                                    EIO_Event             event,
+                                    const struct timeval* timeout)
+{
+    EIO_Status status;
+    static struct timeval s_ZeroTimeout = {0, 0};
+
+    /* just checking */
+    if (sock->sock == SOCK_INVALID) {
+        CORE_LOG(eLOG_Error,
+                 "[SOCK::s_Select]  Attempted to stall protection on an "
+                 "invalid socket");
+        assert(0);
+        return eIO_Unknown;
+    }
+
+    /* check if to use a "regular" s_Select() */
+    if (event == eIO_Read  ||
+        sock->r_status == eIO_Closed  ||
+        (sock->r_on_w == eOff  ||
+         (sock->r_on_w == eDefault  &&  s_ReadOnWrite == eOff))) {
+        /* wait until event (up to timeout) */
+        return s_Select(sock->sock, event, timeout);
+    }
+
+    /* check if immediately writeable */
+    status = s_Select(sock->sock, event, &s_ZeroTimeout);
+    if (status != eIO_Timeout)
+        return status;
+
+    /* do wait (and try read data if it is not writeable yet) */
+    do {
+        /* try upread data to the internal buffer */
+        s_NCBI_Recv(sock, 0, 1000000/*read as much as possible*/, 1/*peek*/);
+
+        /* wait for r/w */
+        status = s_Select(sock->sock, eIO_ReadWrite, timeout);
+        if (status == eIO_Success  &&
+            s_Select(sock->sock, eIO_Write, &s_ZeroTimeout) == eIO_Success) {
+            break;  /* can write now */
+        }
+    }
+    while (status == eIO_Success);
+
+    /* return status;*/
+    return status;
+}
+
+
 /* Write data to the socket "as is" (the whole buffer at once)
  */
 static EIO_Status s_WriteWhole(SOCK        sock,
@@ -1081,9 +1151,11 @@ static EIO_Status s_WriteWhole(SOCK        sock,
         x_errno = SOCK_ERRNO;
 
         /* blocked -- retry if unblocked before the timeout is expired */
+        /* (use stall protection if specified) */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
-            EIO_Status status =
-                s_Select(sock->sock, eIO_Write, sock->w_timeout);
+            /* stall protection:  try pull incoming data from the socket */
+            EIO_Status status = s_SelectStallsafe(sock, eIO_Write, 
+                                                  sock->w_timeout);
             if (status != eIO_Success)
                 return status;
             continue;
@@ -1157,6 +1229,7 @@ extern EIO_Status SOCK_Create(const char*     host,
 
     /* Success */
     x_sock->log_data = eDefault;
+    x_sock->r_on_w   = eDefault;
     x_sock->id = ++s_ID_Counter * 1000;
     *sock = x_sock;
     return eIO_Success;
@@ -1281,10 +1354,10 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         return eIO_InvalidArg;
     }
 
-    /* Do select */
+    /* Do wait */
     {{
         struct timeval tv;
-        return s_Select(sock->sock, event, s_to2tv(timeout, &tv));
+        return s_SelectStallsafe(sock, event, s_to2tv(timeout, &tv));
     }}
 }
 
@@ -1450,6 +1523,17 @@ extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
     return eIO_Success;
 }
 
+
+extern void SOCK_SetReadOnWriteAPI(ESwitch on_off)
+{
+    s_ReadOnWrite = on_off;
+}
+
+
+extern void SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
+{
+    sock->r_on_w = on_off;
+}
 
 
 extern int SOCK_gethostname(char*  name,
