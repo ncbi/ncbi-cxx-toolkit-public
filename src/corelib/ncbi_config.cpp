@@ -268,12 +268,118 @@ TParamTree* ParamTree_ConvertRegToTree(const CNcbiRegistry& reg)
 }
 
 
+const string& 
+ParamTree_GetString(const string&         driver_name,
+                    const TParamTree*     params,
+                    const string&         param_name, 
+                    ENcbiConfigErrAction  on_error,
+                    const string&         default_value)
+{
+    const TParamTree* tn = params->FindSubNode(param_name);
+
+    if (tn == 0 || tn->GetValue().empty()) {
+        if (on_error == eConfErr_NoThrow) {
+            return default_value;
+        }
+        string msg = 
+            "Cannot init plugin " + driver_name 
+                            + ", missing parameter:" + param_name;
+        NCBI_THROW(CConfigException, eParameterMissing, msg);
+    }
+    return tn->GetValue();
+}
+
+int ParamTree_GetInt(const string&         driver_name,
+                     const TParamTree*     params,
+                     const string&         param_name, 
+                     ENcbiConfigErrAction  on_error,
+                     int                   default_value)
+{
+    const string& param =
+        ParamTree_GetString(driver_name,
+                            params,
+                            param_name,
+                            on_error,
+                            kEmptyStr);
+
+    if (param.empty()) {
+        if (on_error == eConfErr_Throw) {
+            string msg = 
+                "Cannot init " + driver_name 
+                                + ", empty parameter:" + param_name;
+            NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            return default_value;
+        }
+    }
+
+    try {
+        return NStr::StringToInt(param, 10, NStr::eCheck_Need);
+    }
+    catch (CStringException& ex)
+    {
+        if (on_error == eConfErr_Throw) {
+            string msg = 
+                "Cannot init " + driver_name 
+                                + ", incorrect parameter format:" 
+                                + param_name  + " : " + param
+                                + " " + ex.what();
+            NCBI_THROW(CConfigException, eParameterMissing, msg);
+        }
+    }
+    return default_value;
+}
+
+
+bool ParamTree_GetBool(const string&         driver_name,
+                       const TParamTree*     params,
+                       const string&         param_name, 
+                       ENcbiConfigErrAction  on_error,
+                       bool                   default_value)
+{
+    const string& param =
+        ParamTree_GetString(driver_name,
+                            params,
+                            param_name,
+                            on_error,
+                            kEmptyStr);
+
+    if (param.empty()) {
+        if (on_error == eConfErr_Throw) {
+            string msg = 
+                "Cannot init " + driver_name 
+                               + ", empty parameter:" + param_name;
+            NCBI_THROW(CConfigException, eParameterMissing, msg);
+        } else {
+            return default_value;
+        }
+    }
+
+    try {
+        return NStr::StringToBool(param);
+    }
+    catch (CStringException& ex)
+    {
+        if (on_error == eConfErr_Throw) {
+            string msg = 
+                "Cannot init " + driver_name 
+                               + ", incorrect parameter format:" 
+                               + param_name  + " : " + param 
+                               + ". " + ex.what();
+            NCBI_THROW(CConfigException, eParameterMissing, msg);
+        }
+    }
+    return default_value;
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/23 13:46:31  kuznets
+ * + ParamTree_Get... functions
+ *
  * Revision 1.3  2004/09/22 16:52:58  ucko
  * +<memory> for auto_ptr<>
  *
