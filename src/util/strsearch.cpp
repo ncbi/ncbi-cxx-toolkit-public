@@ -116,7 +116,9 @@ void CBoyerMooreMatcher::AddDelimiters(const string& word_delimeters)
     for (int i = 0; i < sm_AlphabetSize; ++i) {
         char ch = m_CaseSensitive ? i : toupper(i);
         string::size_type n = word_d.find_first_of(ch);
-        m_WordDelimiters[i] |= (n != string::npos);
+        if (n != NPOS) {
+            m_WordDelimiters[i] = true;
+        }
     }
 }
 
@@ -138,11 +140,6 @@ void CBoyerMooreMatcher::InitCommonDelimiters()
 {
     if (m_WholeWord == 0) {
         m_WholeWord = eWholeWordMatch;
-    }
-
-    string word_d = word_delimeters;
-    if (m_CaseSensitive == NStr::eNocase) {
-        NStr::ToUpper(word_d);
     }
 
     for (int i = 0; i < sm_AlphabetSize; ++i) {
@@ -261,6 +258,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/04 18:25:20  ucko
+* Fix compilation errors in previous revision.
+*
 * Revision 1.9  2004/03/04 17:37:48  kuznets
 * CBoyerMooreMatcher added functions to work with different word delimiters
 *
