@@ -9,3 +9,5 @@ SRC = ncbicgi cgiapp cgictx ncbicgir ncbires dbres \
 LIB    = xfcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
+
+REQUIRES = unix

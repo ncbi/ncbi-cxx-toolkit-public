@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.28 2002/01/30 06:34:59 vakatov Exp $
+#  $Id: configure.ac,v 1.29 2002/01/31 23:22:47 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -205,7 +205,8 @@ for x_arg in "$@" ; do
       ;;
 
       --with-extra-action=* | --exec-prefix=* | --with-build-root=* \
-      | --with-projects=* | --cache-file=* | --build=* | --host=* | [[A-Z]*=*] \
+      | --with-projects=* | --cache-file=* | --build=* | --host=* \
+      | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
@@ -572,8 +573,7 @@ changequote([, ])dnl
       ARCH_CFLAGS="-64"
       ;;
     * )
-      AC_MSG_ERROR(["Do not know how to compile 64-bit with compiler $CXX $compiler_ver
-	$host:$compiler"])
+      AC_MSG_ERROR(["Do not know how to compile 64-bit with compiler $CXX $compiler_ver $host:$compiler"])
       ;;
    esac
 else
@@ -606,31 +606,29 @@ LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 #### Flags to enable (potentially unsafe) extra optimization.
 if test -z "${CFAST+set}"; then
    case "$compiler" in
-       GCC)
-   	  CFAST="-O9 -fomit-frame-pointer -finline-functions"
-	  CFAST="$CFAST -ffast-math -fstrict-aliasing"
-   	  ;;
-       WorkShop*)
-   	  # Include ARCH_CFLAGS here because -fast implies -xtarget=native.
-   	  CFAST="-fast $ARCH_CFLAGS"
-	  ;;
-       KCC)
-          CFAST="+K3"
-	  case "$host_os" in
-	     solaris*)
-	        CFAST="$CFAST -fast $ARCH_CFLAGS"
-		;;
-	  esac
-          ;;
-       ICC)
-          CFAST="-O3 -axW -ip"
-	  ;;
-       MIPSpro*)
-          CFAST="-O3 -Ofast"
-	  ;;
-       *)
-   	  CFAST="-O"
-   	  ;;
+      GCC )
+        CFAST="-O9 -fomit-frame-pointer -finline-functions"
+        CFAST="$CFAST -ffast-math -fstrict-aliasing"
+        ;;
+      WorkShop* )
+        # Include ARCH_CFLAGS here because -fast implies -xtarget=native.
+        CFAST="-fast $ARCH_CFLAGS"
+        ;;
+      KCC )
+        CFAST="+K3"
+        case "$host_os" in
+           solaris* )  CFAST="$CFAST -fast $ARCH_CFLAGS" ;;
+        esac
+        ;;
+      ICC )
+        CFAST="-O3 -axW -ip"
+        ;;
+      MIPSpro* )
+        CFAST="-O3 -Ofast"
+        ;;
+      * )
+        CFAST="-O"
+        ;;
    esac
 fi
 : ${CXXFAST='$(CFAST)'}
@@ -741,10 +739,10 @@ case "$compiler" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -mimpure-text -o"
-	;;
+        ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
-	;;
+        ;;
    esac
    ;;
  WorkShop* )
@@ -817,27 +815,27 @@ fi
 
 
 #### Tools
-dnl AC_PROG_AWK
 AC_PROG_LN_S
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cr, ErrorCannotFind_AR)
 AC_CHECK_PROG(STRIP, strip, strip, :)
 case "$host_os" in
-    irix*)
-	# lorder and tsort exist but don't work.
-	LORDER=echo
-	TSORT=cat
-	;;
-    *)
-	AC_CHECK_PROG(LORDER, lorder, lorder, echo)
-	AC_CHECK_PROG(TSORT, tsort, tsort, cat)
-	if test "$LORDER" = echo -o "$TSORT" = cat; then
-	# We need a matched pair...either lorder:tsort or echo:cat.
-	    LORDER=echo
-	    TSORT=cat
-	fi
-	;;
+   irix* )
+     # lorder and tsort exist but don't work.
+     LORDER=echo
+     TSORT=cat
+     ;;
+   * )
+     AC_CHECK_PROG(LORDER, lorder, lorder, echo)
+     AC_CHECK_PROG(TSORT, tsort, tsort, cat)
+     if test "$LORDER" = echo -o "$TSORT" = cat ; then
+       # We need a matched pair...either lorder:tsort or echo:cat.
+       LORDER=echo
+       TSORT=cat
+     fi
+     ;;
 esac
+
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -852,6 +850,7 @@ else
    with_suffix=${with_suffix:="no"}
 fi
 
+
 #### Release/Debug
    if test "$with_debug" = "no" ; then
       release_debug="Release"
@@ -861,6 +860,7 @@ fi
       D_SFX=d
    fi
    DEBUG_SFX=${release_debug}
+
 
 #### Add "Release"/"Debug" and "MT", "DLL", "64" suffixes to "${build_root}"
 if test "$with_suffix" != "no" ; then
@@ -1037,9 +1037,7 @@ elif test "$x_have_unistd" = "yes" ; then
 
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
-   UNIX_LIB_PROJ='$(UNIX_LIB_PROJ)'
-   UNIX_APP_PROJ='$(UNIX_APP_PROJ)'
-   UNIX_SUB_PROJ='$(UNIX_SUB_PROJ)'
+   WithFeatures="$WithFeatures unix"
 else
    AC_DEFINE_UNQUOTED(NCBI_OS_MAC, 1)
    AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
@@ -1647,13 +1645,13 @@ if test "$with_wxwin" != "no" ; then
    WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_ARCH_PATH/bin"}
    WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_ARCH_PATH/lib"}
 #    if test -n "$WXWIN_GTK"; then
-# 	WXWIN_GTK=wx_gtk
-# 	if test "$with_debug" != "no"; then
-# 	   if test -f "$WXWIN_LIBPATH/libwx_gtkd.a"
-# 		-o -f "$WXWIN_LIBPATH/libwx_gtkd.so"; then
-# 	      WXWIN_GTK=wx_gtkd
-# 	   fi
-# 	fi
+#    WXWIN_GTK=wx_gtk
+#    if test "$with_debug" != "no"; then
+#       if test -f "$WXWIN_LIBPATH/libwx_gtkd.a"
+#       -o -f "$WXWIN_LIBPATH/libwx_gtkd.so"; then
+#          WXWIN_GTK=wx_gtkd
+#       fi
+#    fi
 #    fi    
 
    if test -x "$WXWIN_BINPATH/wx-config" ; then
@@ -1949,43 +1947,43 @@ elif test "$with_orbacus" != no; then
 fi
 AC_MSG_CHECKING([for ORBacus])
 if test "$with_orbacus" != no; then
-    fullpath=${ORBACUS_PATH}/${release_debug}${mt_sfx}${bit64_sfx}
-    LIBOB="-lOB"
-    if test "$with_mt" = yes; then
-	LIBOB="$LIBOB -lJTC"
-	LIBIMR="-lIMR"
-    else
-	LIBIMR=
-    fi
-    if test -f ${fullpath}/inc/OB/Config.h; then
-	: ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
-	: ${ORBACUS_LIBPATH="-L$fullpath/lib ${CONF_f_runpath}${fullpath}/lib"}
-    elif test -f ${ORBACUS_PATH}/include/OB/Config.h; then
-	: ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
-	: ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
-    fi
-    CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
-    LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
-    AC_TRY_LINK(
-       [#include <OB/CORBA.h>
-], [
-  int c = 0;
-  char* v[] = { NULL };
-  CORBA::ORB_var orb = CORBA::ORB_init(c, v);
-  if (!CORBA::is_nil(orb)) orb->destroy();
-],
-       [AC_DEFINE(HAVE_ORBACUS)],
-       [with_orbacus="no"])
+   fullpath=${ORBACUS_PATH}/${release_debug}${mt_sfx}${bit64_sfx}
+   LIBOB="-lOB"
+   if test "$with_mt" = "yes" ; then
+      LIBOB="$LIBOB -lJTC"
+      LIBIMR="-lIMR"
+   else
+      LIBIMR=
+   fi
+   if test -f ${fullpath}/inc/OB/Config.h ; then
+      : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
+      : ${ORBACUS_LIBPATH="-L$fullpath/lib ${CONF_f_runpath}${fullpath}/lib"}
+   elif test -f ${ORBACUS_PATH}/include/OB/Config.h ; then
+     : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include"}
+     : ${ORBACUS_LIBPATH="-L$ORBACUS_PATH/lib ${CONF_f_runpath}${ORBACUS_PATH}/lib"}
+   fi
+   CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
+   LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
+   AC_TRY_LINK(
+      [#include <OB/CORBA.h>],
+      [
+        int c = 0;
+        char* v[] = { NULL };
+        CORBA::ORB_var orb = CORBA::ORB_init(c, v);
+        if (!CORBA::is_nil(orb)) orb->destroy();
+      ],
+      [AC_DEFINE(HAVE_ORBACUS)],
+      [with_orbacus="no"])
 fi
 if test "$with_orbacus" = no; then
-    WithoutPackages="$WithoutPackages ORBacus"
-    ORBACUS_PATH=No_ORBacus
-    ORBACUS_INCLUDE=
-    ORBACUS_LIBPATH=
-    LIBOB=
-    LIBIMR=
+   WithoutPackages="$WithoutPackages ORBacus"
+   ORBACUS_PATH=No_ORBacus
+   ORBACUS_INCLUDE=
+   ORBACUS_LIBPATH=
+   LIBOB=
+   LIBIMR=
 else
-    WithPackages="$WithPackages ORBacus"
+   WithPackages="$WithPackages ORBacus"
 fi
 AC_MSG_RESULT([$ORBACUS_PATH])
 # Sigh... without this, the linker pulls in the contents of the cache
@@ -2399,9 +2397,6 @@ AC_SUBST(serial_ws50_rtti_kludge)
 
 AC_SUBST(UNIX_SRC)
 AC_SUBST(UNIX_USR_PROJ)
-AC_SUBST(UNIX_LIB_PROJ)
-AC_SUBST(UNIX_APP_PROJ)
-AC_SUBST(UNIX_SUB_PROJ)
 
 AC_SUBST(compiler)
 AC_SUBST(compiler_root)

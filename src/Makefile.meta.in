@@ -52,9 +52,8 @@ USRP_KET = || $(NOTK_BRA) exit 1 $(NOTK_KET) ; \
 fi
 
 LIBP_BRA = \
-if test ! -z "$(LIB_PROJ)"  ||  test ! -z "@UNIX_LIB_PROJ@" \
-	|| test ! -z "$(EXPENDABLE_LIB_PROJ)" ; then \
-   x_project="$(LIB_PROJ) @UNIX_LIB_PROJ@ - $(EXPENDABLE_LIB_PROJ)" ; \
+if test ! -z "$(LIB_PROJ)"  -o  ! -z "$(EXPENDABLE_LIB_PROJ)" ; then \
+   x_project="$(LIB_PROJ) - $(EXPENDABLE_LIB_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
@@ -69,9 +68,8 @@ fi
 
 @APP_NOBUILD@
 APPP_BRA = \
-if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" \
-	|| test ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
-   x_project="$(APP_PROJ) @UNIX_APP_PROJ@ - $(EXPENDABLE_APP_PROJ)" ; \
+if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
+   x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
@@ -91,9 +89,8 @@ CHECK_KET = ||  exit 4 ; \
 fi
 
 CHECK_ADD_BRA = \
-if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" \
-	|| test ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
-   x_project="$(APP_PROJ) @UNIX_APP_PROJ@ - $(EXPENDABLE_APP_PROJ)" ; \
+if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
+   x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
    expendable=false ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
@@ -126,9 +123,8 @@ check_add:
 ### Recursive build -- in the [SUB_PROJ] directories
 
 SUB_BRA = \
-if test ! -z "$(SUB_PROJ)"  ||  test ! -z "@UNIX_SUB_PROJ@" \
-	|| test ! -z "$(EXPENDABLE_SUB_PROJ)" ; then \
-    x_subproj="$(SUB_PROJ) @UNIX_SUB_PROJ@ - $(EXPENDABLE_SUB_PROJ)" ; \
+if test ! -z "$(SUB_PROJ)"  -o  ! -z "$(EXPENDABLE_SUB_PROJ)" ; then \
+    x_subproj="$(SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)" ; \
     expendable=false ; \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
@@ -173,10 +169,10 @@ RELEVANT_DIR = pwd | $(RELEVANT)
 RELEVANT_SUBS = find "`pwd`" -type d | $(RELEVANT)
 
 SUB_BRA_P = \
-if test ! -z "$(SUB_PROJ)"  ||  test ! -z "@UNIX_SUB_PROJ@" \
+if test ! -z "$(SUB_PROJ)" \
 	|| test ! -z "$(POTENTIAL_SUB_PROJ)" \
 	|| test ! -z "$(EXPENDABLE_SUB_PROJ)" ; then \
-    x_subproj="$(SUB_PROJ) @UNIX_SUB_PROJ@ $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)" ; \
+    x_subproj="$(SUB_PROJ) $(POTENTIAL_SUB_PROJ) - $(EXPENDABLE_SUB_PROJ)" ; \
     expendable=false ; \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
