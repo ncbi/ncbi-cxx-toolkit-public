@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/07 22:00:58  vakatov
+ * Upcase((const string&) GetMol()) -- expl.cast (for WorkShop5 compiler)
+ *
  * Revision 6.6  2000/12/26 17:28:55  vasilche
  * Simplified and formatted code.
  *
@@ -83,7 +86,7 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
     // format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {
-	return s << Upcase(GetMol()) << '|' << char(GetChain());
+	return s << Upcase((const string&) GetMol()) << '|' << char(GetChain());
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
