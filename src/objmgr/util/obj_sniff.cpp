@@ -68,20 +68,20 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
     const CTypeInfo *type_info = object.GetTypeInfo();
     const string& class_name = type_info->GetName();
 
-    m_Sniffer->ObjectFoundPre(object, m_Sniffer->GetStreamOffset());
+    m_Sniffer->OnObjectFoundPre(object, m_Sniffer->GetStreamOffset());
      
     DefaultRead(in, object);
 
-    m_Sniffer->ObjectFoundPost(object);
+    m_Sniffer->OnObjectFoundPost(object);
 }
 
 
-void CObjectsSniffer::ObjectFoundPre(const CObjectInfo& object, 
-                                     size_t stream_offset)
+void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& object, 
+                                       size_t stream_offset)
 {
 }
 
-void CObjectsSniffer::ObjectFoundPost(const CObjectInfo& object)
+void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& object)
 {
 }
 
@@ -201,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2003/05/22 16:47:22  kuznets
+* ObjectFound methods renamed to OnObjectFound.
+*
 * Revision 1.3  2003/05/21 14:28:27  kuznets
 * Implemented ObjectFoundPre, ObjectFoundPost
 *
