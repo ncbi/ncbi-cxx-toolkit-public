@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/04/24 21:29:04  lavr
+ * CONN_DEFAULT_TIMEOUT is used everywhere when timeout is not set explicitly
+ *
  * Revision 6.10  2001/02/26 22:52:44  kans
  * Initialize x_read in s_CONN_Read
  *
@@ -121,15 +124,16 @@ typedef struct SConnectionTag {
     SConnectorAsyncHandler async_data; /* info of curr. async event handler */
 #endif
     eCONN_State            state;      /* connection state                  */
-    /* "[c|r|w|l]_timeout" is either 0 or points to "[cc|rr|ww|ll]_timeout" */
-    STimeout* c_timeout;               /* timeout on connect                */
-    STimeout* r_timeout;               /* timeout on reading                */
-    STimeout* w_timeout;               /* timeout on writing                */
-    STimeout* l_timeout;               /* timeout on close                  */
-    STimeout  cc_timeout;              /* storage for "c_timeout"           */
-    STimeout  rr_timeout;              /* storage for "r_timeout"           */
-    STimeout  ww_timeout;              /* storage for "w_timeout"           */
-    STimeout  ll_timeout;              /* storage for "l_timeout"           */
+    /* "[c|r|w|l]_timeout" is either 0 (means infinite), CONN_DEFAULT_TIMEOUT
+       (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
+    const STimeout* c_timeout;         /* timeout on connect                */
+    const STimeout* r_timeout;         /* timeout on reading                */
+    const STimeout* w_timeout;         /* timeout on writing                */
+    const STimeout* l_timeout;         /* timeout on close                  */
+    STimeout        cc_timeout;        /* storage for "c_timeout"           */
+    STimeout        rr_timeout;        /* storage for "r_timeout"           */
+    STimeout        ww_timeout;        /* storage for "w_timeout"           */
+    STimeout        ll_timeout;        /* storage for "l_timeout"           */
 } SConnection;
 
 
@@ -146,6 +150,10 @@ extern EIO_Status CONN_Create
     
     if (conn) {
         conn->state = eCONN_Unusable;
+        conn->c_timeout = CONN_DEFAULT_TIMEOUT;
+        conn->r_timeout = CONN_DEFAULT_TIMEOUT;
+        conn->w_timeout = CONN_DEFAULT_TIMEOUT;
+        conn->l_timeout = CONN_DEFAULT_TIMEOUT;
         status = CONN_ReInit(conn, connector);
         if (status != eIO_Success) {
             free(conn);
@@ -264,39 +272,37 @@ extern void CONN_SetTimeout
  const STimeout* new_timeout)
 {
     if (event == eIO_Open) {
-        if (new_timeout) {
+        if (new_timeout && new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->cc_timeout = *new_timeout;
             conn->c_timeout  = &conn->cc_timeout;
         } else
-            conn->c_timeout  = 0;
-
+            conn->c_timeout  = new_timeout;
         return;
     }
 
     if (event == eIO_Close) {
-        if (new_timeout) {
+        if (new_timeout && new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->ll_timeout = *new_timeout;
             conn->l_timeout  = &conn->ll_timeout;
         } else
-            conn->l_timeout  = 0;
-
+            conn->l_timeout  = new_timeout;
         return;
     }
 
     if (event == eIO_ReadWrite || event == eIO_Read) {
-        if ( new_timeout ) {
+        if (new_timeout && new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->rr_timeout = *new_timeout;
             conn->r_timeout  = &conn->rr_timeout;
         } else
-            conn->r_timeout  = 0;
+            conn->r_timeout  = new_timeout;
     }
 
     if (event == eIO_ReadWrite || event == eIO_Write) {
-        if ( new_timeout ) {
+        if (new_timeout && new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->ww_timeout = *new_timeout;
             conn->w_timeout  = &conn->ww_timeout;
         } else
-            conn->w_timeout  = 0;
+            conn->w_timeout  = new_timeout;
     }
 }
 
@@ -347,7 +353,8 @@ extern EIO_Status CONN_Wait
     
     if (status != eIO_Success) {
         if (status == eIO_Timeout) {
-            ELOG_Level level = (timeout && !timeout->sec && !timeout->usec)
+            ELOG_Level level = (timeout && timeout != CONN_DEFAULT_TIMEOUT &&
+                                !timeout->sec && !timeout->usec)
                 ? eLOG_Trace : eLOG_Warning;
             CONN_LOG(level, "[CONN_Wait]  I/O timed out");
         } else {
