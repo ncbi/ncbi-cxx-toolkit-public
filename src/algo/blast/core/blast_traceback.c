@@ -989,9 +989,6 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
    /* Set the raw X-dropoff value for the final gapped extension with 
       traceback */
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
-   /* For traceback, dynamic programming structure will be allocated on
-      the fly, proportionally to the subject length */
-   sfree(gap_align->dyn_prog);
 
    sbp = gap_align->sbp;
    
@@ -1065,9 +1062,6 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
    /* Set the raw X-dropoff value for the final gapped extension with 
       traceback */
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
-   /* For traceback, dynamic programming structure will be allocated on
-      the fly, proportionally to the subject length */
-   sfree(gap_align->dyn_prog);
 
    sbp = gap_align->sbp;
 

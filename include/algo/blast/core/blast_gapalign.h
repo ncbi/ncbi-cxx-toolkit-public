@@ -79,8 +79,6 @@ typedef struct BlastGapAlignStruct {
    GapStateArrayStruct* state_struct; /**< Structure to keep extension 
                                                 state information */
    GapEditBlock* edit_block; /**< The traceback (gap) information */
-   BlastGapDP* dyn_prog; /**< Preallocated memory for the dynamic 
-                              programming extension */
    GreedyAlignMem* greedy_align_mem;/**< Preallocated memory for the greedy 
                                          gapped extension */
    BlastScoreBlk* sbp; /**< Pointer to the scoring information block */

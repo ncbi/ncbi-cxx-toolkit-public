@@ -519,7 +519,6 @@ BlastGapAlignStruct*
 BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
 {
    GapEditBlockDelete(gap_align->edit_block);
-   sfree(gap_align->dyn_prog);
    if (gap_align->greedy_align_mem)
       BLAST_GreedyAlignsfree(gap_align->greedy_align_mem);
    GapStateFree(gap_align->state_struct);
@@ -553,12 +552,7 @@ BLAST_GapAlignStructNew(const BlastScoringOptions* score_options,
 
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff;
 
-   if (ext_params->options->algorithm_type == EXTEND_DYN_PROG) {
-      gap_align->dyn_prog = (BlastGapDP*) 
-         malloc((query_length+2)*sizeof(BlastGapDP));
-      if (!gap_align->dyn_prog)
-         gap_align = BLAST_GapAlignStructFree(gap_align);
-   } else {
+   if (ext_params->options->algorithm_type != EXTEND_DYN_PROG) {
       max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
       gap_align->greedy_align_mem = 
          BLAST_GreedyAlignMemAlloc(score_options, ext_params, 
@@ -681,10 +675,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
     edit_script[0] = state_struct->state_array;
     edit_script_row = state_struct->state_array;
 
-    if (gap_align->dyn_prog)
-        score_array = gap_align->dyn_prog;
-    else
-        score_array = (BlastGapDP*)malloc((N + 2) * sizeof(BlastGapDP));
+    score_array = (BlastGapDP*)malloc((N + 2) * sizeof(BlastGapDP));
     score = -gap_open_extend;
     score_array[0].best = 0;
     score_array[0].best_gap = -gap_open_extend;
@@ -939,8 +930,7 @@ ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset,
       
     sfree(edit_script_row);
     sfree(edit_script);
-    if (!gap_align->dyn_prog)
-        sfree(score_array);
+    sfree(score_array);
     align_len -= data.sapp - S;
     if (align_len > 0)
         memset(data.sapp, 0, align_len);
