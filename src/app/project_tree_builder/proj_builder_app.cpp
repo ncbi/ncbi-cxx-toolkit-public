@@ -110,6 +110,9 @@ void CProjBulderApp::Init(void)
                             "MSVC Solution to buld.",
 						    CArgDescriptions::eString);
 
+    arg_desc->AddFlag      ("dll", 
+                            "Dll(s) will be buit instead of static libraries.",
+						    true);
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -481,6 +484,18 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 }
 
 
+const CBuildType& CProjBulderApp::GetBuildType(void)
+{
+    if ( !m_BuildType.get() ) {
+        CArgs args = GetArgs();
+        bool dll_build = args["dll"];
+        m_BuildType = auto_ptr<CBuildType>(new CBuildType(dll_build));
+    }    
+    return *m_BuildType;
+
+}
+
+
 string CProjBulderApp::GetDatatoolId(void) const
 {
     return GetConfig().GetString("Datatool", "datatool", "datatool");
@@ -527,6 +542,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/03/02 23:35:41  gorelenk
+ * Changed implementation of CProjBulderApp::Init (added flag "dll").
+ * Added implementation of CProjBulderApp::GetBuildType.
+ *
  * Revision 1.26  2004/03/02 16:25:41  gorelenk
  * Added include for proj_tree_builder.hpp.
  *
