@@ -137,17 +137,17 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
     return okay;
 }
 
-// for loading (binary) ASN data via HTTP connection
+// for loading ASN data via HTTP connection
 template < class ASNClass >
 bool GetAsnDataViaHTTP(
     const std::string& host, const std::string& path, const std::string& args,
-    ASNClass *asnObject, std::string *err,
-    bool binaryData = true, unsigned short port = 80)
+    ASNClass *asnObject, std::string *err, bool binaryData = true, unsigned short port = 80)
 {
     err->erase();
     bool okay = false;
 
     // set up registry field to set GET connection method for HTTP
+    REG origREG = CORE_GetREG();
     ncbi::CNcbiRegistry* reg = new ncbi::CNcbiRegistry;
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
@@ -165,12 +165,12 @@ bool GetAsnDataViaHTTP(
         *inObject >> *asnObject;
         okay = true;
 
-    } catch (std::exception&) {
-        *err = "Network connection failed or data is not in expected format";
+    } catch (std::exception& e) {
+        *err = string("Network connection failed or data is not in expected format; error: ") + e.what();
     }
     ncbi::SetDiagTrace(ncbi::eDT_Default);
 
-    CORE_SetREG(NULL);
+    CORE_SetREG(origREG);
     return okay;
 }
 
@@ -181,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/09/23 10:30:56  thiessen
+* keep and restore original registry
+*
 * Revision 1.20  2004/06/28 19:31:38  thiessen
 * more user-friendly error message
 *
