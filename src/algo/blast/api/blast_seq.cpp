@@ -78,7 +78,7 @@ BLAST_SetUpQueryInfo(TSeqLocVector &slp,
    query_info->num_queries = slp.size();
    query_info->last_context = query_info->num_queries*num_frames - 1;
 
-   if ((strand = sequence::GetStrand(*slp[0].first, slp[0].second))
+   if ((strand = sequence::GetStrand(*slp[0].m_Seqloc, slp[0].m_Scope))
        == eNa_strand_minus) {
        if (translate)
            query_info->first_context = 3;
@@ -108,9 +108,9 @@ BLAST_SetUpQueryInfo(TSeqLocVector &slp,
    
    /* Fill the context offsets */
    for (index = 0; index <= query_info->last_context; index += num_frames) {
-      length = sequence::GetLength(*slp[index/num_frames].first, slp[index/num_frames].second);
-      strand = sequence::GetStrand(*slp[index/num_frames].first, 
-                   slp[index/num_frames].second);
+      length = sequence::GetLength(*slp[index/num_frames].m_Seqloc, slp[index/num_frames].m_Scope);
+      strand = sequence::GetStrand(*slp[index/num_frames].m_Seqloc, 
+                   slp[index/num_frames].m_Scope);
       if (translate) {
          Int2 first_frame, last_frame;
          if (strand == eNa_strand_plus) {
@@ -299,8 +299,8 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
            Int4 na_length;
            Uint1 strand;
            
-           na_length = sequence::GetLength(*slp[i].first, slp[i].second);
-           strand = sequence::GetStrand(*slp[i].first, slp[i].second);
+           na_length = sequence::GetLength(*slp[i].m_Seqloc, slp[i].m_Scope);
+           strand = sequence::GetStrand(*slp[i].m_Seqloc, slp[i].m_Scope);
            /* Retrieve nucleotide sequence in an auxiliary buffer; 
               then translate into the appropriate place in the 
               preallocated buffer */
@@ -317,7 +317,8 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
                frame_start = 0;
                frame_end = 5;
            }
-           BLASTFillSequenceBuffer(*slp[i].first, slp[i].second, encoding, TRUE, TRUE, na_buffer);
+           BLASTFillSequenceBuffer(*slp[i].m_Seqloc, slp[i].m_Scope,
+                                   encoding, TRUE, TRUE, na_buffer);
            buffer_var = na_buffer + 1;
       
            for (frame = frame_start; frame <= frame_end; frame++) {
@@ -336,7 +337,7 @@ BLAST_GetSequence(TSeqLocVector & slp, BlastQueryInfo* query_info,
               might not be initialized here. */
            if (query_info)
                offset = query_info->context_offsets[index];
-           BLASTFillSequenceBuffer(*slp[i].first, slp[i].second, encoding, 
+           BLASTFillSequenceBuffer(*slp[i].m_Seqloc, slp[i].m_Scope, encoding, 
                add_sentinel_bytes, (num_frames == 2), &buffer[offset]);
        }
    }

@@ -344,7 +344,6 @@ CBl2Seq::x_SetupQueries()
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = x_GetNumberOfFrames(m_eProgram);
     ITERATE(TSeqLocVector, itr, m_tQueries) {
-
         if (translate) {
             Uint1* na_buffer = NULL;
             int na_length = 0;
@@ -457,7 +456,6 @@ CBl2Seq::x_SetupSubjects()
     Int8 dblength = 0;
 
     ITERATE(TSeqLocVector, itr, m_tSubjects) {
-
         Uint1* buf = NULL;  // stores compressed sequence
         int buflen = 0;     // length of the buffer above
         BLAST_SequenceBlk* subj = (BLAST_SequenceBlk*) 
@@ -604,6 +602,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2003/08/18 19:58:50  dicuccio
+ * Fixed compilation errors after change from pair<> to SSeqLoc
+ *
  * Revision 1.17  2003/08/18 17:07:41  camacho
  * Introduce new SSeqLoc structure (replaces pair<CSeq_loc, CScope>).
  * Change in function to read seqlocs from files.
