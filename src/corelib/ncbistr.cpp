@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/06/01 19:05:40  vasilche
+* NStr::StringToInt now reports errors for tailing symbols in release version too
+*
 * Revision 1.29  2000/05/01 19:02:25  vasilche
 * Force argument in NStr::StringToInt() etc to be full number.
 * This check will be in DEBUG version for month.
@@ -292,7 +295,8 @@ string& NStr::ToUpper(string& str) {
     return str;
 }
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
+#if 1
 # define CHECK_ENDPTR() \
     if ( *endptr != '\0' ) { \
         THROW1_TRACE(runtime_error, "no symbols should be after number"); \
