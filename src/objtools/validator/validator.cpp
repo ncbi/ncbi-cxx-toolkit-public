@@ -722,7 +722,7 @@ different.",
  A stop codon was not found on this sequence, although one was \
 expected.",
 
-"An unparsed \transl_except qualifier was found. This indicates a parser \
+"An unparsed transl_except qualifier was found. This indicates a parser \
 problem.",
 
 "The name and description of the protein is missing from this entry. \
@@ -994,8 +994,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.1  2002/12/19 21:21:13  shomrat
-* Initial submition after split of former implementation
+* Revision 1.2  2002/12/23 20:19:22  shomrat
+* Redundan character removed
 *
 *
 * ===========================================================================
