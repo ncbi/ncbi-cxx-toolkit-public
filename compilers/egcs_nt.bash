@@ -18,6 +18,8 @@ set -a
 NCBI_C_INCLUDE=""
 NCBI_C_LIB=""
 
+CONF_exe_ext=".exe"
+
 CONFIG_SHELL="bash"
 $CONFIG_SHELL ./configure --exec_prefix="${USR_BUILD_DIR:=$DEF_BUILD_DIR}"
 

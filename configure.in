@@ -119,18 +119,21 @@ AC_PROG_CXX
 AC_PROG_RANLIB
 AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR) 
 
-#### Turn on compilation warnings and some compiler-specific flags and features
-obj_ext=".o"
-lib_pre="lib"
-lib_l_pre="-l"
-lib_ext=".a"
-lib_l_ext=""
-exe_ext=""
-f_compile="-c "
-f_outobj="-o "
-f_outlib=""
-f_libpath="-L"
-f_outexe="-o "
+
+#### Turn on compilation warnings and adjust
+#### some compiler-specific flags and features
+
+if test "$CONF_obj_ext"   = " " ;  then obj_ext="" ; else obj_ext="${CONF_obj_ext:=.o}" ; fi
+if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pre:=lib}" ; fi
+if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
+if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
+if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
+if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
+if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
+if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_outobj:=-o }" ; fi
+if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
+if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
+if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
 
 changequote(, )dnl
 if test "$GCC" = "yes" ; then
@@ -143,17 +146,6 @@ elif test "$CXX" = "cl.exe /TP" ; then
    # MSVC++ compiler
    script_shell=""
    make_shell=""
-   obj_ext=".obj"
-   lib_ext=".lib"
-   lib_l_ext=".lib"
-   lib_pre=""
-   lib_l_pre=""
-   exe_ext=".exe"
-   f_compile="/c "
-   f_outobj="/Fo"
-   f_outlib="/OUT:"
-   f_libpath="/LIBPATH:"
-   f_outexe="/OUT:"
 fi
 changequote([, ])dnl
 
