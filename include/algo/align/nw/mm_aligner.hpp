@@ -44,10 +44,13 @@
 
 #include "nw_aligner.hpp"
 #include <list>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-// MM algorithm encapsulation
+struct SCoordRect; // auxiliary structure, see below
+
+// Myers-Miller algorithm encapsulation
 //
 
 class CMMAligner: public CNWAligner
@@ -64,16 +67,15 @@ public:
     // Run this algorithm, return the alignment's score
     virtual TScore Run();
 
+    void    EnableMultipleThreads(bool enable = true) {
+        m_mt = enable;
+    }
+
 protected:
 
     TScore                   m_score;
     list<ETranscriptSymbol>  m_TransList;
-    
-    struct SCoordRect {
-        size_t i1, j1, i2, j2;
-        SCoordRect(size_t l, size_t t, size_t r, size_t b):
-            i1(l), j1(t), i2(r), j2(b) {}
-    };
+    bool                     m_mt; // multiple threads
     
     void x_DoSubmatrix(const SCoordRect& submatr,
                    list<ETranscriptSymbol>::iterator translist_pos,
@@ -108,6 +110,17 @@ protected:
     size_t x_ExtendSubpath(vector<unsigned char>::const_iterator trace_it,
                            bool direction,
                            list<ETranscriptSymbol>& subpath) const;
+
+    friend class CMTRunHalf;
+
+};
+
+// auxiliary structure
+    
+struct SCoordRect {
+    size_t i1, j1, i2, j2;
+    SCoordRect(size_t l, size_t t, size_t r, size_t b):
+        i1(l), j1(t), i2(r), j2(b) {}
 };
 
 
@@ -117,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/01/21 16:36:22  kapustin
+ * Support multi-thread interface
+ *
  * Revision 1.1  2003/01/21 12:33:10  kapustin
  * Initial revision
  *
