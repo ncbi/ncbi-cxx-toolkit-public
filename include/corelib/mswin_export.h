@@ -125,6 +125,7 @@
 #  define NCBI_MIM_EXPORTS
 #  define NCBI_OBJPRT_EXPORTS
 #  define NCBI_TINYSEQ_EXPORTS
+#  define NCBI_ENTREZGENE_EXPORTS
 #endif
 
 
@@ -1484,6 +1485,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.66  2004/03/16 19:44:01  gorelenk
+ * Added definition of NCBI_ENTREZGENE_EXPORTS to
+ * definition of NCBI_MISC_EXPORTS .
+ *
  * Revision 1.65  2004/03/15 17:16:47  gorelenk
  * Removed #undef NCBI_DLL_BUILD when defined _LIB .
  *
