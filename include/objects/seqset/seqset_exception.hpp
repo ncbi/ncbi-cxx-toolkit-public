@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -68,6 +69,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/19 13:05:57  dicuccio
+* Added include for ncbistr (for CParseTemplException)
+*
 * Revision 1.2  2004/08/17 14:35:42  dicuccio
 * Don't export inline classes
 *
