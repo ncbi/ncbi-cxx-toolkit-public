@@ -1,0 +1,2 @@
+LIB = xnetblastcli
+SRC = blastclient blastclient_

@@ -1,3 +1,2 @@
-LIB = $(TMPL)
-SRC = $(LIB)__ $(LIB)___ blastclient blastclient_
-
+LIB = xnetblast
+SRC = $(TMPL)__ $(TMPL)___
