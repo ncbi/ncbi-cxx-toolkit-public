@@ -50,8 +50,8 @@ class CAlnMixSegment;
 class CAlnMixSeq;
 class CAlnMixMatch;
 
-class NCBI_XALNMGR_EXPORT CAlnMix : public CObject,
-                                    public CSeq_align::SSeqIdChooser
+class NCBI_XALNMGR_EXPORT CAlnMix : public CSeq_align::SSeqIdChooser
+// Note that SSeqIdChooser derives from CObject, so CAlnMix *is* also a CObject.
 {
 public:
 
@@ -325,6 +325,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2004/03/15 17:46:03  todorov
+* Avoid multiple inheritance since Workshop has problems placing the vtables.
+* Now CAlnMix inherits from SSeqIdChooser which inherits from CObject
+*
 * Revision 1.35  2004/03/09 17:15:46  todorov
 * + SSeqIdChooser implementation
 *
