@@ -114,7 +114,7 @@ int CSampleNetScheduleNode::Run(void)
     int       no_jobs_counter = 0;
     unsigned  jobs_done = 0;
 
-    int       node_status; 
+    int       node_status = 0; 
     bool      first_try = true;
 
 
@@ -206,6 +206,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/07 17:39:25  kuznets
+ * Fixed GCC warning
+ *
  * Revision 1.1  2005/03/07 17:32:47  kuznets
  * Initial revision
  *
