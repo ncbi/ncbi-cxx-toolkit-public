@@ -144,7 +144,7 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk)
        sfree(seq_blk->sequence);
    if (seq_blk->sequence_start_allocated)
        sfree(seq_blk->sequence_start);
-   if (seq_blk->oof_sequence)
+   if (seq_blk->oof_sequence_allocated)
        sfree(seq_blk->oof_sequence);
 
    return 0;
@@ -156,9 +156,23 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
       return NULL;
 
    BlastSequenceBlkClean(seq_blk);
-   BlastMaskLocFree(seq_blk->lcase_mask);
+   if (seq_blk->lcase_mask_allocated)
+      BlastMaskLocFree(seq_blk->lcase_mask);
    sfree(seq_blk);
    return NULL;
+}
+
+void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy, 
+                          BLAST_SequenceBlk* src) 
+{
+   ASSERT(copy);
+   ASSERT(src);
+   
+   *copy = BlastMemDup(src, sizeof(BLAST_SequenceBlk));
+   (*copy)->sequence_allocated = FALSE;
+   (*copy)->sequence_start_allocated = FALSE;
+   (*copy)->oof_sequence_allocated = FALSE;
+   (*copy)->lcase_mask_allocated = FALSE;
 }
 
 Int2 BlastProgram2Number(const char *program, Uint1 *number)
@@ -749,6 +763,7 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlk* query_blk,
    /* The mixed-frame protein sequence buffer will be saved in 
       'sequence_start' */
    query_blk->oof_sequence = buffer;
+   query_blk->oof_sequence_allocated = TRUE;
 
    return 0;
 }

@@ -70,6 +70,15 @@ Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk);
 /** Deallocate memory for a sequence block */
 BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk);
 
+/** Copies contents of the source sequence block without copying sequence 
+ * buffers; sets all "field_allocated" booleans to FALSE, to make sure 
+ * fields are not freed on the call to BlastSequenceBlkFree.
+ * @param copy New sequence block [out]
+ * @param src Input sequence block [in]
+ */
+void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy, 
+                          BLAST_SequenceBlk* src);
+
 /** Set number for a given program type.  Return is zero on success.
  * @param program string name of program [in]
  * @param number number of program [out]
