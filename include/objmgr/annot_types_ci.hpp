@@ -301,7 +301,6 @@ private:
 
     bool x_NeedSNPs(void) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
-    bool x_MatchType(const CAnnotObject_Info& annot_info) const;
     bool x_MatchRange(const CHandleRange& hr,
                       const CRange<TSeqPos>& range,
                       const SAnnotObject_Index& index) const;
@@ -653,6 +652,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/02/05 19:53:39  grichenk
+* Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
+*
 * Revision 1.62  2004/02/04 18:05:32  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

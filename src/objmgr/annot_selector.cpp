@@ -320,10 +320,44 @@ void SAnnotSelector::x_InitializeAnnotTypesSet(void)
 }
 
 
-SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
+SAnnotSelector& SAnnotSelector::IncludeAnnotType(TAnnotType type)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set) {
+        SAnnotTypeSelector::SetAnnotType(type);
+    }
+    else if (m_AnnotTypesSet.size() > 0  ||  !IncludedAnnotType(type)) {
+        x_InitializeAnnotTypesSet();
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetAnnotTypeRange(type);
+        for (size_t i = range.first; i < range.second; ++i) {
+            m_AnnotTypesSet[i] = true;
+        }
+    }
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::ExcludeAnnotType(TAnnotType type)
 {
     if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
-        ||  m_AnnotTypesSet.size() > 0  ||  !IncludedFeatType(type)) {
+        ||  m_AnnotTypesSet.size() > 0  ||  IncludedAnnotType(type)) {
+        x_InitializeAnnotTypesSet();
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetAnnotTypeRange(type);
+        for (size_t i = range.first; i < range.second; ++i) {
+            m_AnnotTypesSet[i] = false;
+        }
+    }
+    return *this;
+}
+
+
+SAnnotSelector& SAnnotSelector::IncludeFeatType(TFeatType type)
+{
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set) {
+        SAnnotTypeSelector::SetFeatType(type);
+    }
+    else if (m_AnnotTypesSet.size() > 0  ||  !IncludedFeatType(type)) {
         x_InitializeAnnotTypesSet();
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
@@ -352,8 +386,10 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
 
 SAnnotSelector& SAnnotSelector::IncludeFeatSubtype(TFeatSubtype subtype)
 {
-    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set
-        ||  m_AnnotTypesSet.size() > 0  ||  !IncludedFeatSubtype(subtype)) {
+    if (GetAnnotType() == CSeq_annot::C_Data::e_not_set) {
+        SAnnotTypeSelector::SetFeatSubtype(subtype);
+    }
+    else if (m_AnnotTypesSet.size() > 0  ||  !IncludedFeatSubtype(subtype)) {
         x_InitializeAnnotTypesSet();
         m_AnnotTypesSet[CAnnotType_Index::GetSubtypeIndex(subtype)] = true;
     }
@@ -372,20 +408,37 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatSubtype(TFeatSubtype subtype)
 }
 
 
+bool SAnnotSelector::IncludedAnnotType(TAnnotType type) const
+{
+    if (m_AnnotTypesSet.size() > 0) {
+        CAnnotType_Index::TIndexRange range =
+            CAnnotType_Index::GetAnnotTypeRange(type);
+        for (size_t i = range.first; i < range.second; ++i) {
+            if (m_AnnotTypesSet[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return GetAnnotType() == CSeq_annot::C_Data::e_not_set
+        || GetAnnotType() == type;
+}
+
+
 bool SAnnotSelector::IncludedFeatType(TFeatType type) const
 {
     if (m_AnnotTypesSet.size() > 0) {
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            if (!m_AnnotTypesSet[i]) {
-                return false;
+            if (m_AnnotTypesSet[i]) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
-    return (GetFeatType() == type || GetFeatType() == CSeqFeatData::e_not_set)
-        &&  GetFeatSubtype() == CSeqFeatData::eSubtype_any;
+    return GetFeatType() == CSeqFeatData::e_not_set
+        || GetFeatType() == type;
 }
 
 
@@ -399,12 +452,27 @@ bool SAnnotSelector::IncludedFeatSubtype(TFeatSubtype subtype) const
 }
 
 
+bool SAnnotSelector::MatchType(const CAnnotObject_Info& annot_info) const
+{
+    if (annot_info.GetFeatSubtype() != CSeqFeatData::eSubtype_any) {
+        return IncludedFeatSubtype(annot_info.GetFeatSubtype());
+    }
+    if (annot_info.GetFeatType() != CSeqFeatData::e_not_set) {
+        return IncludedFeatType(annot_info.GetFeatType());
+    }
+    return IncludedAnnotType(annot_info.GetAnnotType());
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/02/05 19:53:40  grichenk
+* Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
+*
 * Revision 1.6  2004/02/05 16:05:49  vasilche
 * Fixed int <-> unsigned warning.
 *

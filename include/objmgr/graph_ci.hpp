@@ -208,7 +208,7 @@ inline
 CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotType(CSeq_annot::C_Data::e_Graph))
+                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Graph))
 {
 }
 
@@ -218,7 +218,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotType(CSeq_annot::C_Data::e_Graph))
+                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Graph))
 {
 }
 
@@ -235,7 +235,7 @@ inline
 CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
                     SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.SetAnnotType(CSeq_annot::C_Data::e_Graph))
+                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Graph))
 {
 }
 
@@ -252,7 +252,7 @@ inline
 CGraph_CI::CGraph_CI(CScope& scope, const CSeq_entry& entry,
                     SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.SetAnnotType(CSeq_annot::C_Data::e_Graph))
+                     sel.IncludeAnnotType(CSeq_annot::C_Data::e_Graph))
 {
 }
 
@@ -301,6 +301,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/02/05 19:53:40  grichenk
+* Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
+*
 * Revision 1.29  2004/02/04 18:05:32  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

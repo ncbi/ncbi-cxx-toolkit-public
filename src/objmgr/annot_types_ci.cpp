@@ -770,36 +770,6 @@ CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 
 
 inline
-bool CAnnotTypes_CI::x_MatchType(const CAnnotObject_Info& annot_info) const
-{
-    if ( GetAnnotType() != CSeq_annot::C_Data::e_not_set ) {
-#ifdef _DEBUG
-        if ( GetAnnotType() != annot_info.GetAnnotType() ) {
-            LOG_POST("invalid annot-choice: " <<
-                     annot_info.GetAnnotType() << " != " << GetAnnotType());
-            return false;
-        }
-#endif
-        if ( GetAnnotType() == CSeq_annot::C_Data::e_Ftable ) {
-#ifdef _DEBUG
-            if ( !IncludedFeatSubtype(annot_info.GetFeatSubtype()) ) {
-                LOG_POST("invalid feat-subtype: " <<
-                         annot_info.GetFeatSubtype());
-                return false;
-            }
-            if ( !IncludedFeatType(annot_info.GetFeatType()) ) {
-                LOG_POST("invalid feat-choice: " <<
-                         annot_info.GetFeatType());
-                return false;
-            }
-#endif
-        }
-    }
-    return true;
-}
-
-
-inline
 bool CAnnotTypes_CI::x_NeedSNPs(void) const
 {
     if ( GetAnnotType() != CSeq_annot::C_Data::e_not_set ) {
@@ -1155,7 +1125,7 @@ void CAnnotTypes_CI::x_SearchRange(const CTSE_Info& tse,
             const CAnnotObject_Info& annot_info =
                 *aoit->second.m_AnnotObject_Info;
 
-            _ASSERT(x_MatchType(annot_info));
+            _ASSERT(MatchType(annot_info));
 
             if ( annot_info.IsChunkStub() ) {
                 const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
@@ -1304,7 +1274,7 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
     // Collect all annotations from the annot
     ITERATE ( SAnnotObjects_Info::TObjectInfos, aoit,
               annot_info.m_ObjectInfos.GetInfos() ) {
-        if ( !x_MatchType(*aoit) ) {
+        if ( !MatchType(*aoit) ) {
             continue;
         }
         CAnnotObject_Ref annot_ref(*aoit);
@@ -1391,6 +1361,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2004/02/05 19:53:40  grichenk
+* Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
+*
 * Revision 1.109  2004/02/04 18:05:38  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

@@ -37,6 +37,7 @@
 #include <corelib/ncbi_limits.h>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objmgr/impl/annot_object.hpp>
 
 #include <vector>
 
@@ -254,9 +255,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     
     SAnnotSelector& SetAnnotType(TAnnotType type)
         {
-            if (type != CSeq_annot::C_Data::e_Ftable) {
-                x_ClearAnnotTypesSet();
-            }
+            x_ClearAnnotTypesSet();
             SAnnotTypeSelector::SetAnnotType(type);
             return *this;
         }
@@ -275,13 +274,20 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    SAnnotSelector& IncludeAnnotType(TAnnotType type);
+    SAnnotSelector& ExcludeAnnotType(TAnnotType type);
     SAnnotSelector& IncludeFeatType(TFeatType type);
     SAnnotSelector& ExcludeFeatType(TFeatType type);
     SAnnotSelector& IncludeFeatSubtype(TFeatSubtype subtype);
     SAnnotSelector& ExcludeFeatSubtype(TFeatSubtype subtype);
 
+    // Return true if at least one subtype of the type is included
+    // or selected type is not set (any).
+    bool IncludedAnnotType(TAnnotType type) const;
     bool IncludedFeatType(TFeatType type) const;
     bool IncludedFeatSubtype(TFeatSubtype subtype) const;
+
+    bool MatchType(const CAnnotObject_Info& annot_info) const;
 
     bool GetFeatProduct(void) const
         {
@@ -485,6 +491,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/02/05 19:53:39  grichenk
+* Fixed type matching in SAnnotSelector. Added IncludeAnnotType().
+*
 * Revision 1.24  2004/02/04 18:05:31  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.
