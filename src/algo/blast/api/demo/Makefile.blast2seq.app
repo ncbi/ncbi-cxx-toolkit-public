@@ -1,7 +1,7 @@
 APP = blast2seq
 SRC = blast2seq blast_input
 LIB = xblast xnetblastcli xnetblast seqdb blastdb scoremat xobjutil xobjread \
-      tables $(OBJMGR_LIBS)
+      tables $(GENBANK_LDEP)
 
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
