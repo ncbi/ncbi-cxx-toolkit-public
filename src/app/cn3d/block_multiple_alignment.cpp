@@ -1050,6 +1050,27 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     return true;
 }
 
+bool BlockMultipleAlignment::ZipAlignResidue(int row, int alignmentIndex, bool moveRight, eUnalignedJustification justification)
+{
+    if (blockMap[alignmentIndex].block->IsAligned()) {
+        TRACEMSG("residue is already aligned");
+        return false;
+    }
+
+    UngappedAlignedBlock *aBlock = dynamic_cast<UngappedAlignedBlock*>(
+        moveRight ? GetBlockAfter(blockMap[alignmentIndex].block) : GetBlockBefore(blockMap[alignmentIndex].block));
+    if (!aBlock) {
+        TRACEMSG("no aligned block to the " << (moveRight ? "right" : "left"));
+        return false;
+    }
+
+    return ShiftRow(row, alignmentIndex,
+        GetAlignmentIndex(row,
+            (moveRight ? aBlock->GetRangeOfRow(row)->from : aBlock->GetRangeOfRow(row)->to),
+            justification),
+        justification);
+}
+
 bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalignedJustification justification)
 {
     // is this an aligned block?
@@ -1943,6 +1964,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/10/01 13:07:44  thiessen
+* add ZipAlignResidue
+*
 * Revision 1.62  2004/09/27 15:33:04  thiessen
 * add block info content optimization on ctrl+shift+click
 *

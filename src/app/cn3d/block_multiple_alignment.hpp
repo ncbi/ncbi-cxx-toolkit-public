@@ -207,6 +207,9 @@ public:
     // aligned block; returns true if any shift occurs.
     bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
 
+    // only if the residue is unaligned, move it into the first aligned position of the adjacent aligned block
+    bool ZipAlignResidue(int row, int alignmentIndex, bool moveRight, eUnalignedJustification justification);
+
     // scans for the best position of a particular block; returns true if the block moved
     bool OptimizeBlock(int row, int alignmentIndex, eUnalignedJustification justification);
 
@@ -430,6 +433,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/10/01 13:07:44  thiessen
+* add ZipAlignResidue
+*
 * Revision 1.45  2004/09/27 15:33:04  thiessen
 * add block info content optimization on ctrl+shift+click
 *

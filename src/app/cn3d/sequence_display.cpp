@@ -688,19 +688,33 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
     int columnTo, int rowTo)
 {
-    // special shift-by-one if shift/ctrl click w/ no drag
+    // special shift operations if shift/ctrl click w/ no drag
     if (columnFrom == columnTo && rowFrom == rowTo) {
-        if (shiftDown && !controlDown && columnTo > 0)
-            --columnTo;
-        else if (controlDown && !shiftDown && columnTo < maxRowWidth-1)
-            ++columnTo;
-        else if (shiftDown && controlDown) {
-            BlockMultipleAlignment *alignment = GetAlignmentForRow(rowFrom);
-            DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
-            if (alignment && alnRow &&
-                    alignment->OptimizeBlock(alnRow->row, columnFrom, (*viewerWindow)->GetCurrentJustification()))
-                UpdateAfterEdit(alignment);
-            return;
+        BlockMultipleAlignment *alignment = GetAlignmentForRow(rowFrom);
+        if (alignment) {
+            int alnBlockNum = alignment->GetAlignedBlockNumber(columnFrom);
+            if (alnBlockNum > 0) {
+                // operations on aligned blocks
+                if (shiftDown && !controlDown && columnTo > 0)                  // shift left
+                    --columnTo;
+                else if (controlDown && !shiftDown && columnTo < maxRowWidth-1) // shift right
+                    ++columnTo;
+                else if (shiftDown && controlDown) {                            // optimize block
+                    DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
+                    if (alnRow && alignment->OptimizeBlock(alnRow->row, columnFrom, (*viewerWindow)->GetCurrentJustification()))
+                        UpdateAfterEdit(alignment);
+                    return;
+                }
+            } else {
+                // operations on unaligned blocks
+                if ((shiftDown && !controlDown) || (controlDown && !shiftDown)) {
+                    DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
+                    if (alnRow && alignment->ZipAlignResidue(alnRow->row, columnFrom,
+                            controlDown, (*viewerWindow)->GetCurrentJustification()))
+                        UpdateAfterEdit(alignment);
+                    return;
+                }
+            }
         }
     }
 
@@ -1295,6 +1309,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/10/01 13:07:44  thiessen
+* add ZipAlignResidue
+*
 * Revision 1.76  2004/09/27 21:40:46  thiessen
 * add highlight cache
 *
