@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  1999/10/19 22:21:48  vakatov
+ * Put the call to "gethostbyname()" into a CRITICAL_SECTION
+ *
  * Revision 6.2  1999/10/19 16:16:01  vakatov
  * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
  * not #define'd
@@ -737,8 +740,14 @@ static ESOCK_Status s_Connect(SOCK                 sock,
         char x_buf[1024];
         int  x_err;
         hp = gethostbyname_r(host, &x_hp, x_buf, sizeof(x_buf), &x_err);
+        if ( hp )
+          memcpy(&x_host, hp->h_addr, sizeof(x_host));
 #else
+        BEGIN_CRITICAL_SECTION;
         hp = gethostbyname(host);
+        if ( hp )
+          memcpy(&x_host, hp->h_addr, sizeof(x_host));
+        END_CRITICAL_SECTION;
 #endif
         if ( !hp ) {
             if ( s_ErrHandler ) {
@@ -749,7 +758,6 @@ static ESOCK_Status s_Connect(SOCK                 sock,
             }
             return eSOCK_Unknown;
         }
-        memcpy(&x_host, hp->h_addr, sizeof(x_host));
     }
 
     /* Set the port to connect to(assume the same port if "port" is zero) */
