@@ -149,13 +149,12 @@ private:
         }
     CSeq_id& GetDstId(void)
         {
-            return *m_Dst_id;
+            return m_Dst_loc_Empty->SetEmpty();
         }
 
     // Translation parameters:
     //   Source id and bounds:
     CSeq_id_Handle m_Src_id_Handle;
-    TSeqPos        m_Src_length;
     TSeqPos        m_Src_from;
     TSeqPos        m_Src_to;
 
@@ -427,6 +426,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/02/23 15:23:16  grichenk
+* Removed unused members
+*
 * Revision 1.11  2004/02/06 16:07:26  grichenk
 * Added CBioseq_Handle::GetSeq_entry_Handle()
 * Fixed MapLocation()

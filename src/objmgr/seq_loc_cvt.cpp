@@ -61,12 +61,10 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
                                          const CSeq_id_Handle& src_id,
                                          CScope* scope)
     : m_Src_id_Handle(src_id),
-      m_Src_length(kInvalidSeqPos),
       m_Src_from(0),
       m_Src_to(0),
       m_Shift(0),
       m_Reverse(false),
-      m_Dst_id(&master_loc_empty.SetEmpty()),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
       m_LastType(eMappedObjType_not_set),
@@ -81,7 +79,6 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
 CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
                                          CScope* scope)
     : m_Src_id_Handle(master_id),
-      m_Src_length(kInvalidSeqPos),
       m_Src_from(0),
       m_Src_to(kInvalidSeqPos - 1),
       m_Shift(0),
@@ -92,10 +89,8 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
 {
-    m_Dst_id.Reset(new CSeq_id);
-    m_Dst_id->Assign(*master_id.GetSeqId());
     m_Dst_loc_Empty.Reset(new CSeq_loc);
-    m_Dst_loc_Empty->SetEmpty(*m_Dst_id);
+    m_Dst_loc_Empty->SetEmpty().Assign(*master_id.GetSeqId());
     Reset();
 }
 
@@ -778,7 +773,7 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
         // Empty mapping. Remove the row.
         SAlignment_Segment dseg = sseg;
         dseg.m_Rows[row_idx].m_Id =
-            CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(*cvt.m_Dst_id);
+            CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(cvt.GetDstId());
         dseg.m_Rows[row_idx].m_Start = -1;
         sseg.m_Mappings.push_back(dseg);
     }
@@ -989,7 +984,8 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
     ref.SetTotalRange(m_TotalRange);
     if ( IsSpecialLoc() ) {
         // special interval or point
-        ref.SetMappedSeq_id(*m_Dst_id, m_LastType == eMappedObjType_Seq_point);
+        ref.SetMappedSeq_id(GetDstId(),
+                            m_LastType == eMappedObjType_Seq_point);
         ref.SetMappedStrand(m_LastStrand);
         m_LastType = eMappedObjType_not_set;
     }
@@ -1363,6 +1359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/02/23 15:23:16  grichenk
+* Removed unused members
+*
 * Revision 1.21  2004/02/19 19:25:09  vasilche
 * Hidded implementation of CAnnotObject_Ref.
 * Added necessary access methods.
