@@ -347,29 +347,27 @@ private:
     
     /// Set an integer parameter (not used yet).
     /// @param name Name of option.
-    /// @param name Pointer to integer value to use.
-    void x_SetOneParam(const char * name, const int * x);
+    /// @param value Pointer to integer value to use.
+    void x_SetOneParam(const char * name, const int * value);
     
     /// Set a list of integers.
     /// @param name Name of option.
-    /// @param name Pointer to list of integers to use.
-    void x_SetOneParam(const char * name, const list<int> * x);
+    /// @param value Pointer to list of integers to use.
+    void x_SetOneParam(const char * name, const list<int> * value);
     
     /// Set a string parameter.
     /// @param name Name of option.
-    /// @param name Pointer to pointer to null delimited string.
-    void x_SetOneParam(const char * name, const char ** x);
+    /// @param value Pointer to pointer to null delimited string.
+    void x_SetOneParam(const char * name, const char ** value);
     
     /// Set a matrix parameter.
     /// @param name Name of option (probably MatrixTable).
-    /// @param name Pointer to Score-matrix-parameters object.
+    /// @param matrix Pointer to Score-matrix-parameters object.
     void x_SetOneParam(const char * name, 
                        objects::CScore_matrix_parameters * matrix);
     
-    /// Set a matrix parameter.
-    /// @param name Name of option (probably MatrixTable).
-    /// @param name Pointer to Score-matrix-parameters object.
-    int x_GetState(void);
+    /// Determine what state the search is in.
+    EState x_GetState(void);
     
     /// Poll until done, return the CBlast4_get_search_results_reply.
     /// @return Pointer to GSR reply object or NULL if search failed.
@@ -445,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/09 15:55:29  bealer
+ * - Fix comments and use enum for return type of x_GetState().
+ *
  * Revision 1.7  2004/06/08 17:56:25  bealer
  * - Add documentation for all methods and members.
  *
