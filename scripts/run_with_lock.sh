@@ -18,7 +18,9 @@ esac
 if "$get_lock" "$command" $$; then
     trap 'clean_up' 1 2 15
     "$@"
+    status=$?
     clean_up
+    exit $status
 else
     exit 1
 fi
