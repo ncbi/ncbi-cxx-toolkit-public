@@ -48,9 +48,10 @@
  */
  
 #include <errno.h>
-#include <neterrno.h>
 #include <stdlib.h>				// malloc, free
 #include <string.h>				// memcpy, memset
+
+#include <neterrno.h>
 #include "SocketsInternal.h"
 
 static OTNotifyUPP gSocketNotifyUPP = NULL;
