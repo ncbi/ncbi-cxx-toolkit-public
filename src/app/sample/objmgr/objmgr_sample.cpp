@@ -244,6 +244,7 @@ int CSampleObjmgrApplication::Run(void)
     // is constructed not from a Seq-loc, but from a Bioseq handle and the
     // start/stop points on the Bioseq. If both start and stop are 0, then the
     // whole Bioseq is used.
+    sel.SetLimitTSE(bioseq_handle.GetTopLevelEntry());
     unsigned ranged_tse_feat_count = 0;
     for (CFeat_CI feat_it(bioseq_handle, 0, 999, sel); feat_it; ++feat_it) {
         ranged_tse_feat_count++;
@@ -286,6 +287,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2004/10/19 19:24:38  grichenk
+ * Fixed limit by TSE.
+ *
  * Revision 1.19  2004/09/07 14:12:35  grichenk
  * Use GetIds() and Seq-annot handle.
  *
