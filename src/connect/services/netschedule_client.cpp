@@ -195,7 +195,7 @@ CNetScheduleClient::~CNetScheduleClient()
 {
 }
 
-void CNetScheduleClient::SetRequestRateControl(bool on_off)
+void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
 {
     m_RequestRateControl = on_off;
 }
@@ -246,6 +246,21 @@ void CNetScheduleClient::CancelJob(const string& job_key)
 
     CheckOK(&m_Tmp);
 }
+
+void CNetScheduleClient::DropJob(const string& job_key)
+{
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    CheckConnect(job_key);
+    CSockGuard sg(*m_Sock);
+
+    CommandInitiate("DROJ ", job_key, &m_Tmp);
+
+    CheckOK(&m_Tmp);
+}
+
 
 void CNetScheduleClient::SetRunTimeout(const string& job_key, 
                                        unsigned      time_to_run)
@@ -763,6 +778,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/03/15 14:48:56  kuznets
+ * +DropJob()
+ *
  * Revision 1.8  2005/03/10 14:17:58  kuznets
  * +SetRunTimeout()
  *

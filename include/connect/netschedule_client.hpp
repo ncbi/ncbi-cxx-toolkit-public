@@ -121,7 +121,7 @@ public:
     /// you need competing threads all use CNetScheduleClient 
     /// (even separate instances).
     ///
-    void SetRequestRateControl(bool on_off);
+    void ActivateRequestRateControl(bool on_off);
 
     /// Return TRUE if request rate control is ON
     bool RequestRateControl() const { return m_RequestRateControl; }
@@ -261,6 +261,9 @@ public:
     virtual
     void ReturnJob(const string& job_key);
 
+    /// Delete job
+    virtual
+    void DropJob(const string& job_key);
 
     /// Set job execution timeout
     ///
@@ -516,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/03/15 14:48:14  kuznets
+ * +DropJob()
+ *
  * Revision 1.9  2005/03/10 14:17:36  kuznets
  * +SetRunTimeout()
  *
