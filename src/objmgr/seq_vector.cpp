@@ -102,6 +102,21 @@ CSeqVector::~CSeqVector(void)
 }
 
 
+inline
+void CSeqVector::x_UpdateCachePtr(void) const
+{
+    m_Cache = m_CacheData.empty()? 0: &m_CacheData[0];
+}
+
+
+inline
+void CSeqVector::x_ResizeCache(size_t size) const
+{
+    m_CacheData.resize(size);
+    x_UpdateCachePtr();
+}
+
+
 CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
 {
     if (&vec != this) {
@@ -111,7 +126,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_Coding = vec.m_Coding;
         m_Strand = vec.m_Strand;
         m_CacheData = vec.m_CacheData;
-        m_Cache = &m_CacheData[0];
+        x_UpdateCachePtr();
         m_CachePos = vec.m_CachePos;
         m_CacheLen = vec.m_CacheLen;
     }
@@ -160,14 +175,6 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void) const
 
 static const TSeqPos kCacheSize = 16384;
 static const TSeqPos kCacheKeep = kCacheSize / 16;
-
-
-inline
-void CSeqVector::x_ResizeCache(size_t size) const
-{
-    m_CacheData.resize(size);
-    m_Cache = &m_CacheData[0];
-}
 
 
 CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos) const
@@ -691,6 +698,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/05/05 21:00:26  vasilche
+* Fix assignment of empty CSeqVector.
+*
 * Revision 1.47  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.

@@ -119,6 +119,7 @@ private:
     TResidue x_GetResidue(TSeqPos pos) const;
     // fill part of cache
     void x_ResizeCache(size_t size) const;
+    void x_UpdateCachePtr(void) const;
     void x_FillCache(TSeqPos start, TSeqPos end) const;
     void x_ConvertCache(TCache_I pos, size_t count, TCoding from, TCoding to) const;
     void x_ReverseCache(TCache_I pos, size_t count, TCoding coding) const;
@@ -181,6 +182,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/05/05 21:00:27  vasilche
+* Fix assignment of empty CSeqVector.
+*
 * Revision 1.30  2003/04/29 19:51:12  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
