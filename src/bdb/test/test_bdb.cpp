@@ -1790,6 +1790,33 @@ static void s_TEST_ICache(void)
     assert(data2[2] == data[2]);
     assert(data2[3] == data[3]);
 
+
+    // Test read-only mode of operation
+
+    vector<int> data3;
+
+    bdb_cache.OpenReadOnly(".", "bcache");
+
+    sz = bdb_cache.GetSize("test_key1", 1, "");
+    assert(sz);
+
+    sz = sz / sizeof(int);
+    assert(sz == data.size());
+
+    data3.resize(sz);
+    void* dp3 = &data3[0];
+
+    res = bdb_cache.Read("test_key1", 1, "", dp3, sz * sizeof(int));
+
+    assert(data3[0] == data[0]);
+    assert(data3[1] == data[1]);
+    assert(data3[2] == data[2]);
+    assert(data3[3] == data[3]);
+
+    bdb_cache.Store("test_key11", 1, "", dp, data.size() * sizeof(int));
+    sz = bdb_cache.GetSize("test_key11", 1, "");
+    assert(sz == 0);
+
 }
 
 
@@ -1885,6 +1912,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2004/06/14 16:11:15  kuznets
+ * Test for read-only cache
+ *
  * Revision 1.46  2004/05/25 18:48:51  kuznets
  * Added cache RAM size parameter to CBDB_Cache::Open.
  *
