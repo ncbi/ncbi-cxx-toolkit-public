@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CMLAClient : public CMLAClient_Base
+class NCBI_MLA_EXPORT CMLAClient : public CMLAClient_Base
 {
     typedef CMLAClient_Base Tparent;
 public:
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/28 17:37:25  jcherry
+* Added export specifier
+*
 * Revision 1.1  2003/04/09 16:00:13  ucko
 * Give all RPC clients unique basenames.
 *

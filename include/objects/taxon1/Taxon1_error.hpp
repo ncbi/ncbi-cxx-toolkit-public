@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2005/03/28 17:37:01  jcherry
+ * Added export specifier
+ *
  * Revision 1.2  2002/01/31 00:30:11  vakatov
  * Get rid of "std::" which is unnecessary and sometimes un-compilable.
  * Also done some source identation/beautification.
@@ -59,7 +62,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CTaxon1_error : public CTaxon1_error_Base
+class NCBI_TAXON1_EXPORT CTaxon1_error : public CTaxon1_error_Base
 {
     typedef CTaxon1_error_Base Tparent;
 public:
