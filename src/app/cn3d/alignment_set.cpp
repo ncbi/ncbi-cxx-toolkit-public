@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/03/28 23:02:16  thiessen
+* first working full threading
+*
 * Revision 1.14  2001/01/30 20:51:19  thiessen
 * minor fixes
 *
@@ -126,6 +129,11 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
             return true;
         return false;
     }
+    if (sid.IsSwissprot() && sid.GetSwissprot().IsSetAccession()) {
+        if (sid.GetSwissprot().GetAccession() == seq->accession)
+            return true;
+        return false;
+    }
     ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
     return false;
 }
@@ -148,6 +156,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
             ERR_POST(Error << "AlignmentSet::AlignmentSet() - confused by alignment data format");
             return;
         }
+        if (n != seqAnnots.begin()) TESTMSG("multiple Seq-annots");
 
         CSeq_annot::C_Data::TAlign::const_iterator
             a, ae = n->GetObject().GetData().GetAlign().end();

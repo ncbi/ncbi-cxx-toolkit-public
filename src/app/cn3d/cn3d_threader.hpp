@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/28 23:01:38  thiessen
+* first working full threading
+*
 * Revision 1.3  2001/03/22 00:32:36  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -49,6 +52,9 @@
 
 #include <map>
 #include <list>
+#include <vector>
+
+#include "cn3d/vector_math.hpp"
 
 // to avoid having to include many C-toolkit headers here
 struct bioseq;
@@ -84,9 +90,31 @@ public:
     bool Realign(const BlockMultipleAlignment *masterMultiple,
         const AlignmentList *originalAlignments, AlignmentList *newAlignments);
 
+    // to hold virtual residue, sidechain positions
+    enum { MISSING_COORDINATE = 0, VIRTUAL_RESIDUE, VIRTUAL_PEPTIDE };
+    typedef struct {
+        unsigned char type;
+        Vector coord;
+        int disulfideWith;    // if Cysteine, virtual coord index of any disulfide-bound Cys; -1 otherwise
+    } VirtualCoordinate;
+    typedef std::vector < VirtualCoordinate > VirtualCoordinateList;
+
+    // for (temporary) storage of contacts
+    typedef struct {
+        int
+          vc1, vc2,     // virtual coord index
+          distanceBin;
+    } Contact;
+    typedef std::list < Contact > ContactList;
+
 private:
-    typedef std::map < const Sequence *, Bioseq_fwddecl* > BioseqMap;
+    // holds Bioseqs associated with the current Sequences
+    typedef std::map < const Sequence *, Bioseq_fwddecl * > BioseqMap;
     BioseqMap bioseqs;
+
+    // holds Fld_Mtf structures already calculated for a given Molecule
+    typedef std::map < const Molecule *, Fld_Mtf_fwddecl * > ContactMap;
+    ContactMap contacts;
 
     // threading structure setups
     Seq_Mtf_fwddecl * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);

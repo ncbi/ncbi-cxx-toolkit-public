@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/03/28 23:02:17  thiessen
+* first working full threading
+*
 * Revision 1.20  2001/02/16 00:40:01  thiessen
 * remove unused sequences from asn data
 *
@@ -249,6 +252,8 @@ Sequence::Sequence(StructureBase *parent, ncbi::objects::CBioseq& bioseq) :
             pdbID = s->GetObject().GetLocal().GetStr();
         } else if (s->GetObject().IsGenbank() && s->GetObject().GetGenbank().IsSetAccession()) {
             accession = s->GetObject().GetGenbank().GetAccession();
+        } else if (s->GetObject().IsSwissprot() && s->GetObject().GetSwissprot().IsSetAccession()) {
+            accession = s->GetObject().GetSwissprot().GetAccession();
         }
     }
     if (gi == VALUE_NOT_SET && pdbID.size() == 0) {

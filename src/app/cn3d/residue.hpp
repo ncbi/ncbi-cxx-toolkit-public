@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/03/28 23:01:38  thiessen
+* first working full threading
+*
 * Revision 1.13  2001/03/23 23:31:30  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -151,14 +154,17 @@ public:
     bool IsAminoAcid(void) const { return (type == eAminoAcid); }
     bool Draw(const AtomSet *atomSet) const;
 
+    typedef std::map < int , const AtomInfo * > AtomInfoMap;
+
 private:
     // mapped by Atom-id
-    typedef std::map < int , const AtomInfo * > AtomInfoMap;
     AtomInfoMap atomInfos;
     int nAtomsPresentInAllCoordSets;
 
 public:
     int NAtoms(void) const { return nAtomsPresentInAllCoordSets; }
+
+    const AtomInfoMap& GetAtomInfos(void) const { return atomInfos; }
     const AtomInfo * GetAtomInfo(int aID) const
     {
         AtomInfoMap::const_iterator info=atomInfos.find(aID);

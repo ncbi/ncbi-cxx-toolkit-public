@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/28 23:02:17  thiessen
+* first working full threading
+*
 * Revision 1.4  2001/03/22 00:33:18  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -72,7 +75,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
-    ViewerWindowBase(parentUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,200), wxSize(1000,300)),
+    ViewerWindowBase(parentUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,50), wxSize(1000,300)),
     updateViewer(parentUpdateViewer)
 {
     wxMenu *menu = new wxMenu;

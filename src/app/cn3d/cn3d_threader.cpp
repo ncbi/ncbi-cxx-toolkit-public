@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/03/28 23:02:16  thiessen
+* first working full threading
+*
 * Revision 1.4  2001/03/23 23:31:56  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -60,6 +63,9 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/residue.hpp"
+#include "cn3d/coord_set.hpp"
+#include "cn3d/atom_set.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -109,6 +115,9 @@ Threader::~Threader(void)
 {
     BioseqMap::iterator i, ie = bioseqs.end();
     for (i=bioseqs.begin(); i!=ie; i++) BioseqFree(i->second);
+
+    ContactMap::iterator c, ce = contacts.end();
+    for (c=contacts.begin(); c!=ce; c++) FreeFldMtf(c->second);
 }
 
 static void AddSeqId(const Sequence *sequence, SeqIdPtr *id, bool addAllTypes)
@@ -546,6 +555,230 @@ Gib_Scd * Threader::CreateGibScd(bool fast, int nRandomStarts)
     return(gsp);
 }
 
+#define NO_VIRTUAL_COORDINATE(coord) \
+    do { coord->type = Threader::MISSING_COORDINATE; return; } while (0)
+
+static void GetVirtualResidue(const AtomSet *atomSet, const Molecule *mol,
+    const Residue *res, Threader::VirtualCoordinate *coord)
+{
+    // find coordinates of key atoms
+    const AtomCoord *C = NULL, *CA = NULL, *CB = NULL, *N = NULL;
+    Residue::AtomInfoMap::const_iterator a, ae = res->GetAtomInfos().end();
+    for (a=res->GetAtomInfos().begin(); a!=ae; a++) {
+        AtomPntr ap(mol->id, res->id, a->first);
+        if (a->second->atomicNumber == 6) {
+            if (a->second->code == " C  ")
+                C = atomSet->GetAtom(ap, true);
+            else if (a->second->code == " CA ")
+                CA = atomSet->GetAtom(ap, true);
+            else if (a->second->code == " CB ")
+                CB = atomSet->GetAtom(ap, true);
+        } else if (a->second->atomicNumber == 7 && a->second->code == " N  ")
+            N = atomSet->GetAtom(ap, true);
+        if (C && CA && CB && N) break;
+    }
+    if (!C || !CA || !N) NO_VIRTUAL_COORDINATE(coord);
+
+    // find direction of real or idealized C-beta
+    Vector toCB;
+
+    // if C-beta present, vector is in its direction
+    if (CB) {
+        toCB = CB->site - CA->site;
+    }
+
+    // ... else need to calculate a C-beta direction (not C-beta position!)
+    else {
+        Vector CaN, CaC, cross, bisect;
+        CaN = N->site - CA->site;
+        CaC = C->site - CA->site;
+        // for a true bisector, these vectors should be normalized! but they aren't in other
+        // versions of the threader (Cn3D/C and S), so the average is used instead...
+//        CaN.normalize();
+//        CaC.normalize();
+        bisect = CaN + CaC;
+        bisect.normalize();
+        cross = vector_cross(CaN, CaC);
+        cross.normalize();
+        toCB = 0.816497 * cross - 0.57735 * bisect;
+    }
+
+    // virtual C-beta location is 2.4 A away from C-alpha in the C-beta direction
+    toCB.normalize();
+    coord->coord = CA->site + 2.4 * toCB;
+    coord->type = Threader::VIRTUAL_RESIDUE;
+
+    // is this disulfide-bound?
+    Molecule::DisulfideMap::const_iterator ds = mol->disulfideMap.find(res->id);
+    coord->disulfideWith =
+        (ds == mol->disulfideMap.end()) ? -1 :
+        (ds->second - 1) * 2;   // calculate virtualCoordinate index from other residueID
+}
+
+static void GetVirtualPeptide(const AtomSet *atomSet, const Molecule *mol,
+    const Residue *res1, const Residue *res2, Threader::VirtualCoordinate *coord)
+{
+    if (res1->alphaID == Residue::NO_ALPHA_ID || res2->alphaID == Residue::NO_ALPHA_ID)
+        NO_VIRTUAL_COORDINATE(coord);
+
+    AtomPntr ap1(mol->id, res1->id, res1->alphaID), ap2(mol->id, res2->id, res2->alphaID);
+    const AtomCoord
+        *atom1 = atomSet->GetAtom(ap1, true),   // 'true' means just use first alt coord
+        *atom2 = atomSet->GetAtom(ap2, true);
+    if (!atom1 || !atom2) NO_VIRTUAL_COORDINATE(coord);
+
+    coord->coord = (atom1->site + atom2->site) / 2;
+    coord->type = Threader::VIRTUAL_PEPTIDE;
+    coord->disulfideWith = -1;
+}
+
+static void GetVirtualCoordinates(const Molecule *mol, const AtomSet *atomSet,
+    Threader::VirtualCoordinateList *virtualCoordinates)
+{
+    virtualCoordinates->resize(2 * mol->residues.size() - 1);
+    Molecule::ResidueMap::const_iterator r, re = mol->residues.end();
+    const Residue *prevResidue = NULL;
+    int i = 0;
+    for (r=mol->residues.begin(); r!=re; r++) {
+        if (prevResidue)
+            GetVirtualPeptide(atomSet, mol,
+                prevResidue, r->second, &(virtualCoordinates->at(i++)));
+        prevResidue = r->second;
+        GetVirtualResidue(atomSet, mol,
+            r->second, &(virtualCoordinates->at(i++)));
+    }
+}
+
+static const int MAX_DISTANCE_BIN = 5;
+static int BinDistance(const Vector& p1, const Vector& p2)
+{
+    double dist = (p2 - p1).length();
+    int bin;
+
+    if (dist > 10.0)
+        bin = MAX_DISTANCE_BIN + 1;
+    else if (dist > 9.0)
+        bin = 5;
+    else if (dist > 8.0)
+        bin = 4;
+    else if (dist > 7.0)
+        bin = 3;
+    else if (dist > 6.0)
+        bin = 2;
+    else if (dist > 5.0)
+        bin = 1;
+    else
+        bin = 0;
+
+    return bin;
+}
+
+static void GetContacts(const Threader::VirtualCoordinateList& coords,
+    Threader::ContactList *resResContacts, Threader::ContactList *resPepContacts)
+{
+    int i, j, bin;
+
+    // loop i through whole chain, just to report all missing coords
+    for (i=0; i<coords.size(); i++) {
+        if (coords[i].type == Threader::MISSING_COORDINATE) {
+            ERR_POST(Warning << "Threader::CreateFldMtf() - unable to determine virtual coordinate for "
+                << ((i%2 == 0) ? "sidechain " : "peptide ") << (i/2));
+            continue;
+        }
+
+        for (j=i+10; j<coords.size(); j++) {    // must be at least 10 virtual bonds away
+
+            if (coords[j].type == Threader::MISSING_COORDINATE ||
+                // not interested in peptide-peptide contacts
+                (coords[i].type == Threader::VIRTUAL_PEPTIDE &&
+                 coords[j].type == Threader::VIRTUAL_PEPTIDE) ||
+                // don't include disulfide-bonded cysteine pairs
+                (coords[i].disulfideWith == j || coords[j].disulfideWith == i)
+                ) continue;
+
+            bin = BinDistance(coords[i].coord, coords[j].coord);
+            if (bin <= MAX_DISTANCE_BIN) {
+                // add residue-residue contact - res1 is lower-numbered residue
+                if (coords[i].type == Threader::VIRTUAL_RESIDUE &&
+                    coords[j].type == Threader::VIRTUAL_RESIDUE) {
+                    resResContacts->resize(resResContacts->size() + 1);
+                    resResContacts->back().vc1 = i;
+                    resResContacts->back().vc2 = j;
+                    resResContacts->back().distanceBin = bin;
+                }
+                // add residue-peptide contact
+                else {
+                    resPepContacts->resize(resPepContacts->size() + 1);
+                    resPepContacts->back().distanceBin = bin;
+                    // peptide must go in vc2
+                    if (coords[i].type == Threader::VIRTUAL_RESIDUE) {
+                        resPepContacts->back().vc1 = i;
+                        resPepContacts->back().vc2 = j;
+                    } else {
+                        resPepContacts->back().vc2 = i;
+                        resPepContacts->back().vc1 = j;
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void TranslateContacts(const Threader::ContactList& resResContacts,
+    const Threader::ContactList& resPepContacts, Fld_Mtf *fldMtf)
+{
+    int i;
+    Threader::ContactList::const_iterator c;
+    for (i=0, c=resResContacts.begin(); i<resResContacts.size(); i++, c++) {
+        fldMtf->rrc.r1[i] = c->vc1 / 2;  // threader coord points to (res,pep) pair
+        fldMtf->rrc.r2[i] = c->vc2 / 2;
+        fldMtf->rrc.d[i] = c->distanceBin;
+    }
+    for (i=0, c=resPepContacts.begin(); i<resPepContacts.size(); i++, c++) {
+        fldMtf->rpc.r1[i] = c->vc1 / 2;
+        fldMtf->rpc.p2[i] = c->vc2 / 2;
+        fldMtf->rpc.d[i] = c->distanceBin;
+    }
+}
+
+// for sorting contacts
+inline bool operator < (const Threader::Contact& c1, const Threader::Contact& c2)
+{
+    return (c1.vc1 < c2.vc1 || (c1.vc1 == c2.vc1 && c1.vc2 < c2.vc2));
+}
+
+static void GetMinimumLoopLengths(const Molecule *mol, const AtomSet *atomSet, Fld_Mtf *fldMtf)
+{
+    int i, j;
+    const AtomCoord *a1, *a2;
+    Molecule::ResidueMap::const_iterator r1, r2, re = mol->residues.end();
+    for (r1=mol->residues.begin(), i=0; r1!=re; r1++, i++) {
+
+        if (r1->second->alphaID == Residue::NO_ALPHA_ID)
+            a1 = NULL;
+        else {
+            AtomPntr ap1(mol->id, r1->second->id, r1->second->alphaID);
+            a1 = atomSet->GetAtom(ap1, true);   // 'true' means just use first alt coord
+        }
+
+        for (r2=r1, j=i; r2!=re; r2++, j++) {
+
+            if (i == j) {
+                fldMtf->mll[i][j] = 0;
+            } else {
+                if (r2->second->alphaID == Residue::NO_ALPHA_ID)
+                    a2 = NULL;
+                else {
+                    AtomPntr ap2(mol->id, r2->second->id, r2->second->alphaID);
+                    a2 = atomSet->GetAtom(ap2, true);
+                }
+                fldMtf->mll[i][j] = fldMtf->mll[j][i] =
+                    (!a1 || !a2) ? 0 : (int) (((a2->site - a1->site).length() - 2.7) / 3.4);
+            }
+        }
+    }
+}
+
 Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
 {
     if (!masterSequence) return NULL;
@@ -553,8 +786,35 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
         return NewFldMtf(masterSequence->sequenceString.size(), 0, 0);
 
     const Molecule *mol = masterSequence->molecule;
-    Fld_Mtf *fldMtf = NewFldMtf(mol->residues.size(), 0, 0);
 
+    // return cached copy if we've already constructed a Fld_Mtf for this Molecule
+    ContactMap::iterator c = contacts.find(mol);
+    if (c != contacts.end()) return c->second;
+
+    // for convenience so subroutines don't have to keep looking this up... Use first
+    // CoordSet if multiple model (e.g., NMR)
+    const StructureObject *object;
+    if (!mol->GetParentOfType(&object)) return NULL;
+    const AtomSet *atomSet = object->coordSets.front()->atomSet;
+
+    // get virtual coordinates for this chain
+    VirtualCoordinateList virtualCoordinates;
+    GetVirtualCoordinates(mol, atomSet, &virtualCoordinates);
+
+    // check for contacts of virtual coords separated by >= 10 virtual bonds
+    ContactList resResContacts, resPepContacts;
+    GetContacts(virtualCoordinates, &resResContacts, &resPepContacts);
+
+    // create Fld_Mtf, and store contacts in it
+    Fld_Mtf *fldMtf = NewFldMtf(mol->residues.size(), resResContacts.size(), resPepContacts.size());
+    resPepContacts.sort();  // not really necessary, but makes same order as Cn3D for comparison/testing
+    TranslateContacts(resResContacts, resPepContacts, fldMtf);
+
+    // fill out min. loop lengths
+    GetMinimumLoopLengths(mol, atomSet, fldMtf);
+
+    TESTMSG("created Fld_Mtf for " << mol->pdbID << " chain '" << (char) mol->pdbChain << "'");
+    contacts[mol] = fldMtf;
     return fldMtf;
 }
 
@@ -562,7 +822,7 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
     const AlignmentList *originalAlignments, AlignmentList *newAlignments)
 {
     // will eventually be variables...
-    static const double weightPSSM = 1.0;
+    static const double weightPSSM = 0.5;
     static const double loopLengthMultiplier = 1.5;
     static const int nRandomStarts = 1;
 
@@ -644,15 +904,19 @@ bool Threader::Realign(const BlockMultipleAlignment *masterMultiple,
         thdTbl = NewThdTbl(nResults, corDef->sll.n);
 
         // actually run the threader (finally!)
+        TESTMSG("threading " << (*p)->GetSequenceOfRow(1)->GetTitle());
         success = atd(fldMtf, corDef, qrySeq, rcxPtl, gibScd, thdTbl, seqMtf,
             trajectory, zscs, SCALING_FACTOR, weightPSSM);
 
         if (success) {
+            TESTMSG("threading succeeded");
 #ifdef DEBUG_THREADER
             pFile = fopen("Thd_Tbl.debug.txt", "w");
             PrintThdTbl(thdTbl, pFile);
             fclose(pFile);
 #endif
+        } else {
+            TESTMSG("threading failed!");
         }
 
 cleanup2:
@@ -665,7 +929,6 @@ cleanup2:
 cleanup:
     if (seqMtf) FreeSeqMtf(seqMtf);
     if (corDef) FreeCorDef(corDef);
-    if (fldMtf) FreeFldMtf(fldMtf);
     if (rcxPtl) FreeRcxPtl(rcxPtl);
     if (gibScd) FreeGibScd(gibScd);
     if (trajectory) delete trajectory;
