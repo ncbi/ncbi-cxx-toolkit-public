@@ -630,7 +630,8 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
 
     SAnnotSelector sel;
     sel.SetOverlapIntervals()
-        .SetExcludeExternal()
+        .ExcludeNamedAnnots("SNP")
+        //.SetExcludeExternal()
         .SetResolveAll()
         .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
 
@@ -695,7 +696,8 @@ CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
 
                 SAnnotSelector cds_sel(sel);
                 cds_sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion)
-                    .SetExcludeExternal();
+                    //.SetExcludeExternal()
+                    ;
                 CFeat_CI other_iter(scope, mrna.GetProduct(), cds_sel);
                 for ( ;  other_iter  &&  !mrna_feat;  ++other_iter) {
                     const CSeq_feat& cds = other_iter->GetOriginalFeature();
@@ -748,7 +750,7 @@ CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
 
     SAnnotSelector sel;
     sel.SetOverlapIntervals()
-        .SetExcludeExternal()
+        //.SetExcludeExternal()
         .SetResolveAll()
         .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
 
@@ -881,7 +883,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
         if (gene_id != 0) {
             CFeat_CI feat_it(scope, mrna_feat.GetLocation(),
                              SAnnotSelector()
-                             .SetExcludeExternal()
+                             //.SetExcludeExternal()
                              .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
                              .SetOverlapIntervals()
                              .SetResolveTSE());
@@ -915,7 +917,7 @@ CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
         ref->GetLabel(&ref_str);
         CFeat_CI feat_it(scope, mrna_feat.GetLocation(),
                          SAnnotSelector()
-                         .SetExcludeExternal()
+                         //.SetExcludeExternal()
                          .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
                          .SetOverlapIntervals()
                          .SetResolveTSE());
@@ -973,7 +975,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
         ref->GetLabel(&ref_str);
         CFeat_CI feat_it(scope, cds_feat.GetLocation(),
                          SAnnotSelector()
-                         .SetExcludeExternal()
+                         //.SetExcludeExternal()
                          .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
                          .SetOverlapIntervals()
                          .SetResolveTSE());
@@ -1030,7 +1032,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
     CFeat_CI feat_it(scope, gene_feat.GetLocation(),
                      SAnnotSelector()
-                     .SetExcludeExternal()
+                     //.SetExcludeExternal()
                      .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA)
                      .SetOverlapTotalRange()
                      .SetResolveAll());
@@ -1253,7 +1255,7 @@ const CSeq_feat* GetCDSForProduct(const CBioseq_Handle& bsh)
     if ( bsh ) {
         CFeat_CI fi(bsh,
                     SAnnotSelector(CSeqFeatData::e_Cdregion)
-                    .SetExcludeExternal()
+                    //.SetExcludeExternal()
                     .SetByProduct());
         if ( fi ) {
             // return the first one (should be the one packaged on the
@@ -1280,7 +1282,8 @@ const CSeq_feat* GetPROTForProduct(const CBioseq_Handle& bsh)
 {
     if ( bsh ) {
         CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Prot).SetByProduct()
-                         .SetExcludeExternal());
+                         //.SetExcludeExternal()
+                         );
         if ( fi ) {
             return &(fi->GetOriginalFeature());
         }
@@ -1306,7 +1309,7 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& bsh)
     if ( bsh ) {
         SAnnotSelector as;
         as.SetFeatSubtype(CSeqFeatData::eSubtype_mRNA)
-            .SetExcludeExternal()
+            //.SetExcludeExternal()
             .SetByProduct();
 
         CFeat_CI fi(bsh, as);
@@ -2632,6 +2635,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.122  2005/02/28 17:10:56  vasilche
+* Do not exclude external annotations as they are marked properly by ID2 reader now.
+*
 * Revision 1.121  2005/02/23 19:20:21  dicuccio
 * Guard against loading external annotations where not needed
 *
