@@ -460,7 +460,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         CProjItem dll;
         s_InitalizeDllProj(dll_id, dll_info, &dll, tree_dst);
 
-        bool complete = true;
+        bool is_empty = true;
         CProjectItemsTree::TProjects::const_iterator k;
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
@@ -476,14 +476,18 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             }
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
+            is_empty = false;
         }
         k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib, dll_id));
         if (k != tree_src.m_Projects.end()) {
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
+            is_empty = false;
         }
-        if ( complete ) {
+        if ( !is_empty ) {
             tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
+        } else {
+            LOG_POST(Info << "Skipping empty DLL project: " + dll_id);
         }
     }
 }
@@ -553,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/12/01 15:28:38  gouriano
+ * Skip empty DLL projects
+ *
  * Revision 1.23  2004/10/12 16:18:26  ivanov
  * Added configurable file support
  *
