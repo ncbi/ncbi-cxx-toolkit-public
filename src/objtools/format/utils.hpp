@@ -78,8 +78,7 @@ struct SDeltaSeqSummary
     {}
 };
 
-void GetDeltaSeqSummary(const CBioseq& seq, CScope& scope,
-                        SDeltaSeqSummary& summary);
+void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary);
 
 const string& GetTechString(int tech);
 
@@ -96,8 +95,7 @@ struct SModelEvidance
     {}
 };
 
-bool GetModelEvidance(const CBioseq_Handle& bsh, CScope& scope, 
-                      SModelEvidance& me);
+bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me);
 
 
 const char* GetAAName(unsigned char aa, bool is_ascii);
@@ -111,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/22 15:54:37  shomrat
+* Use CBioseq_Handle instead of CBioseq
+*
 * Revision 1.5  2004/04/07 14:29:19  shomrat
 * + GetAAName
 *

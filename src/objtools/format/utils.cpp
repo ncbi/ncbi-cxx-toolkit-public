@@ -270,22 +270,21 @@ void DateToString(const CDate& date, string& str,  bool is_cit_sub)
 }
 
 
-void GetDeltaSeqSummary
-(const CBioseq& seq,
- CScope& scope,
- SDeltaSeqSummary& summary)
+void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 {
-    _ASSERT(seq.CanGetInst());
-    _ASSERT(seq.GetInst().CanGetRepr());
-    _ASSERT(seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta);
-    _ASSERT(seq.GetInst().CanGetExt());
-    _ASSERT(seq.GetInst().GetExt().IsDelta());
+    if ( !seq.IsSetInst()                                ||
+         !seq.IsSetInst_Repr()                           ||
+         !(seq.GetInst_Repr() == CSeq_inst::eRepr_delta) ||
+         !seq.IsSetInst_Ext()                            ||
+         !seq.GetInst_Ext().IsDelta() ) {
+        return;
+    }
 
     SDeltaSeqSummary temp;
+    CScope& scope = seq.GetScope();
 
-    const CDelta_ext::Tdata& segs = seq.GetInst().GetExt().GetDelta().Get();
+    const CDelta_ext::Tdata& segs = seq.GetInst_Ext().GetDelta().Get();
     temp.num_segs = segs.size();
-    
     
     size_t len = 0;
 
@@ -488,16 +487,13 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
 }
 
 
-bool GetModelEvidance
-(const CBioseq_Handle& bsh,
- CScope& scope,
- SModelEvidance& me)
+bool GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
 {
     if ( s_GetModelEvidance(bsh, me) ) {
         return true;
     }
 
-    if ( CSeq_inst::IsAa(bsh.GetBioseqMolType()) ) {
+    if ( CSeq_inst::IsAa(bsh.GetInst_Mol()) ) {
         CBioseq_Handle nuc = sequence::GetNucleotideParent(bsh);
         if ( nuc  ) {
             return s_GetModelEvidance(nuc, me);
@@ -534,6 +530,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/22 15:54:47  shomrat
+* Use CBioseq_Handle instead of CBioseq
+*
 * Revision 1.6  2004/04/07 14:29:16  shomrat
 * + GetAAName
 *
