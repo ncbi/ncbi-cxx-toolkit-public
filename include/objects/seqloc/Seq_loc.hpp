@@ -93,8 +93,8 @@ public:
     typedef CRange<TSeqPos> TRange;
 
     TRange GetTotalRange(void) const;
-    void CheckId(const CSeq_id*& id) const;
-    
+    void InvalidateTotalRangeCache(void);
+ 
     // Special case for circular sequences. No ID is checked for
     // circular locations. If the sequence is not circular
     // (seq_len == kInvalidSeqPos) all functions work like GetTotalRange()
@@ -116,6 +116,12 @@ public:
     void SetId(CSeq_id& id); // stores id
     void SetId(const CSeq_id& id); // stores a new copy of id
 
+    // check that the 'id' field in all parts of the location is the same
+    // as the specifies id.
+    // if the id parameter is NULL will return the location's id (if unique)
+    void CheckId(const CSeq_id*& id) const;
+    void InvalidateIdCache(void);
+
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
 
@@ -132,9 +138,7 @@ private:
 
     TRange x_UpdateTotalRange(void) const;
     TRange x_CalculateTotalRangeCheckId(const CSeq_id*& id) const;
-    void x_InvalidateTotalRangeCache(void);
     void x_CheckId(const CSeq_id*& id) const;
-    void x_InvalidateIdCache(void);
     void x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const;
     void x_ChangeToMix(const CSeq_loc& other);
     void x_ChangeToPackedInt(const CSeq_loc& other);
@@ -235,14 +239,14 @@ private:
 /////////////////// CSeq_loc inline methods
 
 inline
-void CSeq_loc::x_InvalidateTotalRangeCache(void)
+void CSeq_loc::InvalidateTotalRangeCache(void)
 {
     m_TotalRangeCache.SetFrom(TSeqPos(kDirtyCache));
 }
 
 
 inline 
-void CSeq_loc::x_InvalidateIdCache(void)
+void CSeq_loc::InvalidateIdCache(void)
 {
     m_IdCache = 0;
 }
@@ -251,8 +255,8 @@ void CSeq_loc::x_InvalidateIdCache(void)
 inline 
 void CSeq_loc::x_InvalidateCache(void)
 {
-    x_InvalidateTotalRangeCache();
-    x_InvalidateIdCache();
+    InvalidateTotalRangeCache();
+    InvalidateIdCache();
 }
 
 
@@ -287,7 +291,7 @@ void CSeq_loc::CheckId(const CSeq_id*& id) const
 inline
 void CSeq_loc::SetId(const CSeq_id& id)
 {
-    x_InvalidateIdCache();
+    InvalidateIdCache();
     CRef<CSeq_id> nc_id(new CSeq_id);
     nc_id->Assign(id);
     SetId(*nc_id);
@@ -428,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/01/29 21:07:08  shomrat
+ * Made cache invalidation methods public
+ *
  * Revision 1.32  2004/01/28 17:16:31  shomrat
  * Added methods to ease the construction of objects
  *
