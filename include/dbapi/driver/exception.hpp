@@ -4,30 +4,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                        
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
  *
- *  This software/database is a "United States Government Work" under the 
- *  terms of the United States Copyright Act.  It was written as part of  
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.  
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
  *  Government have not placed any restriction on its use or reproduction.
  *
  *  Although all reasonable efforts have been taken to ensure the accuracy
- *  and reliability of the software and data, the NLM and the U.S.        
- *  Government do not and cannot warrant the performance or results that  
- *  may be obtained by using this software or data. The NLM and the U.S.  
- *  Government disclaim all warranties, express or implied, including     
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                              
+ *  purpose.
  *
- *  Please cite the author in any work or product based on this material. 
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Vladimir Soussov, Denis Vakatov
- * 
+ *
  * File Description:  Exceptions
  *
  */
@@ -69,6 +69,7 @@ public:
     };
 
     // exception::what()
+    // NOTE:  it's not thread-safe!
     virtual const char* what() const throw();
 
     // access
@@ -78,11 +79,14 @@ public:
     const string&  OriginatedFrom()  const  { return m_OriginatedFrom; }
     const string&  Message()         const  { return m_Message;        }
 
-    // clone
-    virtual CDB_Exception* Clone() const;
+    // text representation of the exception type and severity
+    virtual const char* TypeString    () const = 0;
+    const char*         SeverityString() const
+    { return SeverityString(Severity()); }
+    static const char*  SeverityString(EDB_Severity sev);
 
-    // verbal description of severity
-    virtual const char* SeverityString(EDB_Severity sev) const;
+    // clone
+    virtual CDB_Exception* Clone() const = 0;
 
     // destructor
     virtual ~CDB_Exception() throw();
@@ -98,6 +102,14 @@ protected:
     int          m_ErrCode;
     string       m_OriginatedFrom;
     string       m_Message;
+
+    // composing the text for "what()"
+    mutable string m_What;
+    virtual void x_ComposeWhat(void) const;
+
+    // standard components used to compose "what()"
+    string& x_StartOfWhat(string* str) const;
+    string& x_EndOfWhat  (string* str) const;
 };
 
 
@@ -111,6 +123,7 @@ public:
         return;
     }
 
+    virtual const char*    TypeString() const;
     virtual CDB_Exception* Clone() const;
 };
 
@@ -127,7 +140,11 @@ public:
     const string& ProcName()  const { return m_ProcName; }
     int           ProcLine()  const { return m_ProcLine; }
 
+    virtual const char*    TypeString() const;
     virtual CDB_Exception* Clone() const;
+
+protected:
+    virtual void x_ComposeWhat(void) const;
 
 private:
     string m_ProcName;
@@ -147,7 +164,11 @@ public:
     const string& SqlState()   const { return m_SqlState;  }
     int           BatchLine()  const { return m_BatchLine; }
 
+    virtual const char*    TypeString() const;
     virtual CDB_Exception* Clone() const;
+
+protected:
+    virtual void x_ComposeWhat(void) const;
 
 private:
     string m_SqlState;
@@ -160,10 +181,10 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_DeadlockEx : public CDB_Exception
 {
 public:
     CDB_DeadlockEx(const string& originated_from, const string& msg)
-        : CDB_Exception(eDeadlock, eDB_Error, 123456, originated_from, msg) {
-        return;
-    }
+        : CDB_Exception(eDeadlock, eDB_Error, 123456, originated_from, msg)
+    { return; }
 
+    virtual const char*    TypeString() const;
     virtual CDB_Exception* Clone() const;
 };
 
@@ -174,10 +195,10 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_TimeoutEx : public CDB_Exception
 public:
     CDB_TimeoutEx(int err_code,
                   const string& originated_from, const string& msg)
-        : CDB_Exception(eTimeout, eDB_Error, err_code, originated_from, msg) {
-        return;
-    }
+        : CDB_Exception(eTimeout, eDB_Error, err_code, originated_from, msg)
+    { return; }
 
+    virtual const char*    TypeString() const;
     virtual CDB_Exception* Clone() const;
 };
 
@@ -188,12 +209,11 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_ClientEx : public CDB_Exception
 public:
     CDB_ClientEx(EDB_Severity severity, int err_code,
                  const string& originated_from, const string& msg)
-        : CDB_Exception(eClient, severity, err_code, originated_from, msg) {
-        return;
-    }
+        : CDB_Exception(eClient, severity, err_code, originated_from, msg)
+    { return; }
 
+    virtual const char*    TypeString() const;
     virtual CDB_Exception* Clone() const;
-
 };
 
 
@@ -202,21 +222,33 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_MultiEx : public CDB_Exception
 {
 public:
     CDB_MultiEx(const string& originated_from = kEmptyStr,
-                unsigned int  capacity = 64);
+                unsigned int  capacity        = 64);
     CDB_MultiEx(const CDB_MultiEx& mex);
+    virtual ~CDB_MultiEx() throw();
 
-    bool           Push(const CDB_Exception& e)  { return m_Bag->Push(&e); }
-    CDB_Exception* Pop(void)                     { return m_Bag->Pop();    }
+    bool           Push(const CDB_Exception& ex)  { return m_Bag->Push(&ex); }
+    CDB_Exception* Pop(void)                      { return m_Bag->Pop();     }
 
     unsigned int NofExceptions() const { return m_Bag->NofExceptions(); }
     unsigned int Capacity()      const { return m_Bag->Capacity();      }
 
-    virtual ~CDB_MultiEx() throw();
+    virtual const char*    TypeString() const;
+    virtual CDB_Exception* Clone() const;
+
+    // Description of this multi-exception only.
+    // NOTE:  method "what()" will print out this multi-exception and then
+    //        all exceptions bagged inside of it.
+    string WhatThis(void) const;
+
+protected:
+    virtual void x_ComposeWhat(void) const;
 
 private:
     class NCBI_DBAPIDRIVER_EXPORT CDB_MultiExStorage
     {
     public:
+        string What();
+
         void AddRef() {
             ++m_RefCnt;
         }
@@ -224,15 +256,14 @@ private:
             if (--m_RefCnt <= 0)
                 delete this;
         }
-        bool Push(const CDB_Exception* ex);
-	
+
+        bool           Push(const CDB_Exception* ex);
         CDB_Exception* Pop(void);
 
         unsigned int NofExceptions() const { return m_NofExs;   }
         unsigned int Capacity()      const { return m_NofRooms; }
 	
         CDB_MultiExStorage(unsigned int capacity);
-	
         ~CDB_MultiExStorage();
 
     private:
@@ -247,10 +278,16 @@ private:
 
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
-// CDB_UserHandler::         base class for user-defined handlers
-// CDB_UserHandler_Stream::  specialized -- to print err.messages to a stream
+// CDB_UserHandler::   base class for user-defined handlers
+//
+//   Specializations of "CDB_UserHandler" -- to print error messages to:
+//
+// CDB_UserHandler_Default::   default destination (now:  CDB_UserHandler_Diag)
+// CDB_UserHandler_Diag::      C++ Toolkit diagnostics
+// CDB_UserHandler_Stream::    std::ostream specified by the user
 //
 
 
@@ -261,10 +298,11 @@ public:
     virtual bool HandleIt(CDB_Exception* ex) = 0;
 
     // Get current global "last-resort" error handler.
+    // If not set, then the default will be "CDB_UserHandler_Default".
     // This handler is guaranteed to be valid up to the program termination,
     // and it will call the user-defined handler last set by SetDefault().
     // NOTE:  never pass it to SetDefault, like:  "SetDefault(&GetDefault())"!
-    static CDB_UserHandler& GetDefault();
+    static CDB_UserHandler& GetDefault(void);
 
     // Alternate the default global "last-resort" error handler.
     // Passing NULL will mean to ignore all errors that reach it.
@@ -278,17 +316,31 @@ public:
 };
 
 
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Diag : public CDB_UserHandler
+{
+public:
+    CDB_UserHandler_Diag(const string& prefix = kEmptyStr);
+    virtual ~CDB_UserHandler_Diag();
+
+    // Print "*ex" to the standard C++ Toolkit diagnostics, with "prefix".
+    // Always return TRUE (i.e. always process the "ex").
+    virtual bool HandleIt(CDB_Exception* ex);
+
+private:
+    string m_Prefix;     // string to prefix each message with
+};
+
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Stream : public CDB_UserHandler
 {
 public:
-    CDB_UserHandler_Stream(ostream*      os,
+    CDB_UserHandler_Stream(ostream*      os     = 0 /*cerr*/,
                            const string& prefix = kEmptyStr,
                            bool          own_os = false);
     virtual ~CDB_UserHandler_Stream();
 
     // Print "*ex" to the output stream "os", with "prefix" (as set by  c-tor).
-    // Return TRUE (i.e. always process the "ex").
+    // Return TRUE (i.e. process the "ex") unless write to "os" failed.
     virtual bool HandleIt(CDB_Exception* ex);
 
 private:
@@ -296,6 +348,10 @@ private:
     string   m_Prefix;     // string to prefix each message with
     bool     m_OwnOutput;  // if TRUE, then delete "m_Output" in d-tor
 };
+
+
+
+typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 
 
 
@@ -308,6 +364,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/11/04 22:22:01  vakatov
+ * Factorize the code (especially the reporting one) through better inheritance.
+ * +CDB_Exception::TypeString()
+ * CDB_MultiEx to become more CDB_Exception-like.
+ * Improve the user-defined handlers' API, add CDB_UserHandler_Diag.
+ *
  * Revision 1.15  2003/08/01 20:33:03  vakatov
  * Explicitly qualify "exception" with "std::" to avoid a silly name conflict
  * with <math.h> for SUN Forte6u2 compiler
@@ -316,7 +378,8 @@ END_NCBI_SCOPE
  * Added doxygen support
  *
  * Revision 1.13  2003/02/12 22:07:44  coremake
- * Added export specifier NCBI_DBAPIDRIVER_EXPORT to the CDB_MultiExStorage class declaration
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT to the CDB_MultiExStorage
+ * class declaration
  *
  * Revision 1.12  2002/12/26 19:29:12  dicuccio
  * Added Win32 export specifier for base DBAPI library

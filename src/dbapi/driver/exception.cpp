@@ -23,14 +23,13 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Soussov, Denis Vakatov
+ * Author:  Denis Vakatov, Vladimir Soussov
  *   
  * File Description:  Exceptions
  *
  */
 
 #include <dbapi/driver/exception.hpp>
-#include <iostream>
 
 
 BEGIN_NCBI_SCOPE
@@ -59,26 +58,66 @@ CDB_Exception::~CDB_Exception() throw()
 
 const char* CDB_Exception::what() const throw()
 {
-    return Message().c_str();
+    if ( m_What.empty() ) {
+        try {
+            x_ComposeWhat();
+        } catch (exception& ex) {
+            static char s_StartOfWhat[] =
+                "CDB_Exception::what(): x_ComposeWhat() threw an exception: ";
+            static char s_What[sizeof(s_StartOfWhat) + 128];
+            strcpy(s_What, s_StartOfWhat);
+            const char* ex_what = ex.what() ? ex.what() : "NULL";
+            size_t len = strlen(s_StartOfWhat);
+            strncpy(s_What + len, ex_what,
+                    sizeof(s_What) - strlen(s_StartOfWhat) - 1);
+            s_What[sizeof(s_What) - 1] = '\0';
+            return s_What;
+        }
+    }
+    return m_What.c_str();
 }
 
 
-CDB_Exception* CDB_Exception::Clone() const
-{
-    return new CDB_Exception
-        (m_Type, m_Severity, m_ErrCode, m_OriginatedFrom, m_Message);
-}
-
-
-const char* CDB_Exception::SeverityString(EDB_Severity sev) const
+const char* CDB_Exception::SeverityString(EDB_Severity sev)
 {
     switch ( sev ) {
     case eDB_Info:     return "Info";
     case eDB_Warning:  return "Warning";
     case eDB_Error:    return "Error";
-    case eDB_Fatal:    return "Fatal Error";
-    default:           return "Unknown severity";
+    case eDB_Fatal:    return "Fatal";
+    default:           return "Unclear";
     }
+}
+
+
+void CDB_Exception::x_ComposeWhat(void) const
+{
+    x_StartOfWhat(&m_What);
+    x_EndOfWhat(&m_What);
+}
+
+
+string& CDB_Exception::x_StartOfWhat(string* str) const
+{
+    *str += "[";
+    *str += SeverityString();
+    *str += " #";
+    *str += NStr::IntToString(ErrCode());
+    *str += ", ";
+    *str += TypeString();
+    *str += " in ";
+    *str += OriginatedFrom();
+    *str += "]  ";
+    return *str;
+}
+
+
+string& CDB_Exception::x_EndOfWhat(string* str) const
+{
+    *str += "<<<";
+    *str += Message();
+    *str += ">>>";
+    return *str;
 }
 
 
@@ -86,6 +125,12 @@ const char* CDB_Exception::SeverityString(EDB_Severity sev) const
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_DSEx::
 //
+
+const char* CDB_DSEx::TypeString() const
+{
+    return "Data_Source";
+}
+
 
 CDB_Exception* CDB_DSEx::Clone() const
 {
@@ -109,10 +154,18 @@ CDB_RPCEx::CDB_RPCEx(EDB_Severity severity, int err_code,
     m_ProcLine = proc_line;
 }
 
+
 CDB_RPCEx::~CDB_RPCEx() throw()
 {
     return;
 }
+
+
+const char* CDB_RPCEx::TypeString() const
+{
+    return "Remote_Procedure_Call";
+}
+
 
 CDB_Exception* CDB_RPCEx::Clone() const
 {
@@ -120,6 +173,18 @@ CDB_Exception* CDB_RPCEx::Clone() const
         (m_Severity, m_ErrCode, m_OriginatedFrom, m_Message,
          m_ProcName, m_ProcLine);
 }
+
+
+void CDB_RPCEx::x_ComposeWhat(void) const
+{
+    x_StartOfWhat(&m_What);
+    m_What += "Procedure '";
+    m_What += ProcName();
+    m_What += "', Line ";
+    m_What += NStr::IntToString(ProcLine());
+    x_EndOfWhat(&m_What);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -136,10 +201,18 @@ CDB_SQLEx::CDB_SQLEx(EDB_Severity severity, int err_code,
     m_BatchLine = batch_line;
 }
 
+
 CDB_SQLEx::~CDB_SQLEx() throw()
 {
     return;
 }
+
+
+const char* CDB_SQLEx::TypeString() const
+{
+    return "SQL";
+}
+
 
 CDB_Exception* CDB_SQLEx::Clone() const
 {
@@ -149,14 +222,32 @@ CDB_Exception* CDB_SQLEx::Clone() const
 }
 
 
+void CDB_SQLEx::x_ComposeWhat(void) const
+{
+    x_StartOfWhat(&m_What);
+    m_What += "Procedure '";
+    m_What += SqlState();
+    m_What += "', Line ";
+    m_What += NStr::IntToString(BatchLine());
+    x_EndOfWhat(&m_What);
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_DeadlockEx::
 //
 
+const char* CDB_DeadlockEx::TypeString() const
+{
+    return "Deadlock";
+}
+
+
 CDB_Exception* CDB_DeadlockEx::Clone() const
 {
-    return new CDB_DeadlockEx(m_OriginatedFrom, m_Message);
+    return new CDB_DeadlockEx
+        (m_OriginatedFrom, m_Message);
 }
 
 
@@ -165,9 +256,16 @@ CDB_Exception* CDB_DeadlockEx::Clone() const
 //  CDB_TimeoutEx::
 //
 
+const char* CDB_TimeoutEx::TypeString() const
+{
+    return "Timeout";
+}
+
+
 CDB_Exception* CDB_TimeoutEx::Clone() const
 {
-    return new CDB_TimeoutEx(m_ErrCode, m_OriginatedFrom, m_Message);
+    return new CDB_TimeoutEx
+        (m_ErrCode, m_OriginatedFrom, m_Message);
 }
 
 
@@ -176,9 +274,17 @@ CDB_Exception* CDB_TimeoutEx::Clone() const
 //  CDB_ClientEx::
 //
 
+const char* CDB_ClientEx::TypeString() const
+{
+    return "Client";
+}
+
+
 CDB_Exception* CDB_ClientEx::Clone() const
 {
-    return new CDB_ClientEx(m_Severity, m_ErrCode, m_OriginatedFrom, m_Message);
+    return
+        new CDB_ClientEx
+        (m_Severity, m_ErrCode, m_OriginatedFrom, m_Message);
 }
 
 
@@ -193,6 +299,7 @@ CDB_MultiEx::CDB_MultiEx(const string& originated_from, unsigned int capacity)
     m_Bag = new CDB_MultiExStorage(capacity);
 }
 
+
 CDB_MultiEx::CDB_MultiEx(const CDB_MultiEx& mex) :
     CDB_Exception(eMulti, eDB_Unknown, 0, mex.m_OriginatedFrom, mex.m_Message)
 {
@@ -200,10 +307,53 @@ CDB_MultiEx::CDB_MultiEx(const CDB_MultiEx& mex) :
     m_Bag->AddRef();
 }
 
+
 CDB_MultiEx::~CDB_MultiEx() throw()
 {
     m_Bag->DelRef();
 }
+
+
+const char* CDB_MultiEx::TypeString() const
+{
+    return "MultiException";
+}
+
+
+CDB_Exception* CDB_MultiEx::Clone() const
+{
+    return new CDB_MultiEx(*this);
+}
+
+
+string CDB_MultiEx::WhatThis(void) const
+{
+    string str;
+    str += "---  [Multi-Exception in ";
+    str += OriginatedFrom();
+    str += "]   Contains a backtrace of ";
+    str += NStr::UIntToString( NofExceptions() );
+    str += " exceptions  ---";
+    return str;
+}
+
+
+void CDB_MultiEx::x_ComposeWhat(void) const
+{
+    m_What  = WhatThis();
+    m_What += Endl();
+    m_What += m_Bag->What();
+    m_What += Endl();
+    m_What += "---  [Multi-Exception]  End of backtrace  ---";
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_MultiEx::CDB_MultiExStorage::
+//
+
+
 
 CDB_MultiEx::CDB_MultiExStorage::CDB_MultiExStorage(unsigned int capacity)
 {
@@ -212,6 +362,31 @@ CDB_MultiEx::CDB_MultiExStorage::CDB_MultiExStorage(unsigned int capacity)
     m_RefCnt   = 0;
     m_Ex       = new CDB_Exception* [m_NofRooms];
 }
+
+
+string CDB_MultiEx::CDB_MultiExStorage::What()
+{
+    string str;
+
+    if (m_NofExs == 0)
+        return str;
+
+    if (m_NofExs > m_NofRooms) {
+        str += " *** Too many exceptions -- the last ";
+        str += NStr::UIntToString(m_NofExs - m_NofRooms);
+        str += " exceptions are not shown ***";
+    }
+
+    
+    for (size_t i = 0;  i < min(m_NofExs, m_NofRooms);  i++) {
+        str += Endl();
+        str += "  ";
+        str += m_Ex[i]->what();
+    }
+
+    return str;
+}
+
 
 bool CDB_MultiEx::CDB_MultiExStorage::Push(const CDB_Exception* ex)
 {
@@ -239,6 +414,7 @@ bool CDB_MultiEx::CDB_MultiExStorage::Push(const CDB_Exception* ex)
     return (m_NofExs <= m_NofRooms);
 }
 
+
 CDB_Exception* CDB_MultiEx::CDB_MultiExStorage::Pop(void)
 {
     if (m_NofExs == 0)
@@ -256,13 +432,14 @@ CDB_Exception* CDB_MultiEx::CDB_MultiExStorage::Pop(void)
     return m_Ex[--m_NofExs];
 }
 
+
 CDB_MultiEx::CDB_MultiExStorage::~CDB_MultiExStorage()
 {
-    if(m_NofExs > m_NofRooms) {
+    if (m_NofExs > m_NofRooms) {
         m_NofExs = m_NofRooms;
     }
 
-    while(m_NofExs != 0) {
+    while (m_NofExs != 0) {
         delete m_Ex[--m_NofExs];
     }
 
@@ -272,29 +449,33 @@ CDB_MultiEx::CDB_MultiExStorage::~CDB_MultiExStorage()
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CDB_UserHandler_Default::  wrapper for the actual current handler
+//  CDB_UserHandler_Wrapper::  wrapper for the actual current handler
 //
-// NOTE: It is actually a singleton, but as it is a local and very simple class,
-// so there is no singleton-specific sanity checks here...
+//    NOTE:  it is a singleton
 //
 
-class CDB_UserHandler_Default : public CDB_UserHandler
+
+class CDB_UserHandler_Wrapper : public CDB_UserHandler
 {
 public:
     CDB_UserHandler* Set(CDB_UserHandler* h);
 
     virtual bool HandleIt(CDB_Exception* ex);
-    virtual ~CDB_UserHandler_Default();
+    virtual ~CDB_UserHandler_Wrapper();
 
 private:
     CDB_UserHandler* m_Handler; 
 };
 
 
-CDB_UserHandler* CDB_UserHandler_Default::Set(CDB_UserHandler* h)
+static CDB_UserHandler_Wrapper s_CDB_DefUserHandler;  // (singleton)
+static bool                    s_CDB_DefUserHandler_IsSet = false;
+
+
+CDB_UserHandler* CDB_UserHandler_Wrapper::Set(CDB_UserHandler* h)
 {
     if (h == this) {
-        throw runtime_error("CDB_UserHandler_Default::Reset() -- attempt "
+        throw runtime_error("CDB_UserHandler_Wrapper::Reset() -- attempt "
                             "to set handle wrapper as a handler");
     }
 
@@ -304,14 +485,15 @@ CDB_UserHandler* CDB_UserHandler_Default::Set(CDB_UserHandler* h)
 }
 
 
-CDB_UserHandler_Default::~CDB_UserHandler_Default()
+CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
 {
     delete m_Handler;
     m_Handler = 0;
+    s_CDB_DefUserHandler_IsSet = false;
 }
 
 
-bool CDB_UserHandler_Default::HandleIt(CDB_Exception* ex)
+bool CDB_UserHandler_Wrapper::HandleIt(CDB_Exception* ex)
 {
     return m_Handler ? m_Handler->HandleIt(ex) : true;
 }
@@ -333,16 +515,11 @@ CDB_UserHandler::~CDB_UserHandler()
 //             to rebuild all DLLs which have this code statically linked in!
 //
 
-static CDB_UserHandler_Default s_CDB_DefUserHandler;  // (singleton)
-
-
-CDB_UserHandler& CDB_UserHandler::GetDefault()
+CDB_UserHandler& CDB_UserHandler::GetDefault(void)
 {
-    static bool s_CDB_DefUserHandler_IsSet = false;
-
     if ( !s_CDB_DefUserHandler_IsSet ) {
         s_CDB_DefUserHandler_IsSet = true;
-        delete s_CDB_DefUserHandler.Set(new CDB_UserHandler_Stream(&cerr));
+        s_CDB_DefUserHandler.Set(new CDB_UserHandler_Default);
     }
 
     return s_CDB_DefUserHandler;
@@ -351,7 +528,42 @@ CDB_UserHandler& CDB_UserHandler::GetDefault()
 
 CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 {
+    s_CDB_DefUserHandler_IsSet = true;
     return s_CDB_DefUserHandler.Set(h);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CDB_UserHandler_Diag::
+//
+
+
+CDB_UserHandler_Diag::CDB_UserHandler_Diag(const string& prefix)
+    : m_Prefix(prefix)
+{
+    return;
+}
+
+
+CDB_UserHandler_Diag::~CDB_UserHandler_Diag()
+{
+    m_Prefix.erase();
+}
+
+
+bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
+{
+    if ( !ex )
+        return true;
+        
+    if ( m_Prefix.empty() ) {
+        LOG_POST( ex->what() );
+    } else {
+        LOG_POST(m_Prefix << ' ' << ex->what());
+    } 
+
+    return true;
 }
 
 
@@ -364,89 +576,41 @@ CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 CDB_UserHandler_Stream::CDB_UserHandler_Stream(ostream*      os,
                                                const string& prefix,
                                                bool          own_os)
-    : m_Output(os),
+    : m_Output(os ? os : &cerr),
       m_Prefix(prefix),
       m_OwnOutput(own_os)
 {
-    return;
+    if (m_OwnOutput  &&  (m_Output == &cerr  ||  m_Output == &cout)) {
+        m_OwnOutput = false;
+    }
 }
 
 
 CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
 {
-    if ( m_OwnOutput )
+    if ( m_OwnOutput ) {
         delete m_Output;
+        m_OwnOutput = false;
+        m_Output = 0;
+    }
+    m_Prefix.erase();
 }
 
 
 bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
 {
-    if ( !ex ) {
+    if ( !ex )
+        return true;
+
+    if ( !m_Output )
         return false;
-    }
 
-    *m_Output << m_Prefix << ' ';
-
-    *m_Output << ex->SeverityString(ex->Severity()) << ' ';
-
-    switch ( ex->Type() ) {
-    case CDB_Exception::eDS : {
-        const CDB_DSEx& e = dynamic_cast<const CDB_DSEx&> (*ex);
-        *m_Output << "Message (Err.code:" << e.ErrCode() << ") Data source: '"
-             << e.OriginatedFrom() << "'\n<<<" << e.Message() << ">>>";
-        break;
+    if ( !m_Prefix.empty() ) {
+        *m_Output << m_Prefix << ' ';
     }
-    case CDB_Exception::eRPC : {
-        const CDB_RPCEx& e = dynamic_cast<const CDB_RPCEx&> (*ex);
-        *m_Output << "Message (Err code:" << e.ErrCode()
-             << ") SQL/Open server: '" << e.OriginatedFrom()
-             << "' Procedure: '" << e.ProcName()
-             << "' Line: " << e.ProcLine() << endl
-             << "<<<" << e.Message() << ">>>";
-        break;
-    }
-    case CDB_Exception::eSQL : {
-        const CDB_SQLEx& e = dynamic_cast<const CDB_SQLEx&> (*ex);
-        *m_Output << "Message (Err.code=" << e.ErrCode()
-             << ") SQL server: '" << e.OriginatedFrom()
-             << "' SQLstate '" << e.SqlState()
-             << "' Line: " << e.BatchLine() << endl
-             << " <<<" << e.Message() << ">>>";
-        break;
-    }
-    case CDB_Exception::eDeadlock : {
-        const CDB_DeadlockEx& e = dynamic_cast<const CDB_DeadlockEx&> (*ex);
-        *m_Output << "Message: SQL server: " << e.OriginatedFrom()
-             << " <" << e.Message() << ">";
-        break;
-    }
-    case CDB_Exception::eTimeout : {
-        const CDB_TimeoutEx& e = dynamic_cast<const CDB_TimeoutEx&> (*ex);
-        *m_Output << "Message: SQL server: " << e.OriginatedFrom()
-             << " <" << e.Message() << ">";
-        break;
-    }
-    case CDB_Exception::eClient : {
-        const CDB_ClientEx& e = dynamic_cast<const CDB_ClientEx&> (*ex);
-        *m_Output << "Message: Err code=" << e.ErrCode()
-             <<" Source: " << e.OriginatedFrom() << " <" << e.Message() << ">";
-        break;
-    }
-    case CDB_Exception::eMulti : {
-        CDB_MultiEx& e = dynamic_cast<CDB_MultiEx&> (*ex);
-        while ( HandleIt(e.Pop()) ) {
-            continue;
-        }
-        break;
-    }
-    default: {
-        *m_Output << "Message: Error code=" << ex->ErrCode()
-             << " <" << ex->what() << ">";
-    }
-    }
-
+    *m_Output << ex->what();
     *m_Output << endl;
-    return true;
+    return m_Output->good();
 }
 
 
@@ -457,12 +621,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.10  2003/02/25 17:03:58  vakatov
- * Quick-fix to avoid problems if double-destructed (when linked in both as
- * static and as DLL)
- *
- * Revision 1.9  2002/09/20 20:58:41  vakatov
- * CDB_MultiEx::CDB_MultiEx() -- fix passing zero to "string&"
+ * Revision 1.11  2003/11/04 22:22:01  vakatov
+ * Factorize the code (especially the reporting one) through better inheritance.
+ * +CDB_Exception::TypeString()
+ * CDB_MultiEx to become more CDB_Exception-like.
+ * Improve the user-defined handlers' API, add CDB_UserHandler_Diag.
  *
  * Revision 1.8  2002/09/04 21:46:12  vakatov
  * Added missing 'const' to CDB_Exception::SeverityString()
