@@ -34,6 +34,8 @@
          Localization for the system and third-party packages</a>
          <li> <a href="#ref_ProhibitPackage">
          Prohibiting the use of some of the system and third-party packages</a>
+         <li> <a href="#ref_Optional">
+         Optional projects</a>
          <li> <a href="#ref_Wrappers">
          Compiler-specific <b><i>configure</i></b> wrappers
          (<i>compilers/*.sh</i>) </a>
@@ -719,11 +721,39 @@ flags:
   <li> <i><b>--without-pubmed</b></i> (NCBI PubMed)
 </ul>
 
-Also, the build of all internal projects
-(located under the <i><b>internal/c++/{src|include}/internal/</b></i> directories)
-is disabled by default on almost all platforms. To enable it, one
-must pass flag <b><i>--with-internal</i></b> to the <b><i>configure</i></b>
-script.
+
+<p>
+<br>
+<a name="ref_Optional"></a>
+<h4>Optional projects</h4>
+
+<p>
+You can control whether to build the following core packages
+using the following <b><i>configure</i></b> flags:
+<ul>
+  <li> <i><b>--without-serial</b></i> --
+		  do not build C++ ASN.1 serialization library and
+		  <a href="tools/datatool/datatool.html">datatool</a>;
+		  <br> see in <i><b>internal/c++/{
+				<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/serial">src</a>
+				|
+				<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial">include</a>
+				}/serial</b></i> directories)
+  <li> <i><b>--with-objects</b></i> --
+		  generate and build libraries to serialize ASN.1 objects;
+		  <br> see in <i><b>internal/c++/{
+				<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects">src</a>
+				|
+				<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/objects">include</a>
+				}/objects</b></i> directories
+  <li> <i><b>--with-internal</b></i> --
+		  build of internal projects is by default disabled on most platforms;
+		  <br> see in <i><b>internal/c++/{
+				<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/internal">src</a>
+				|
+				<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/internal">include</a>
+				}/internal</b></i> directories
+</ul>
 
 
 <p>
