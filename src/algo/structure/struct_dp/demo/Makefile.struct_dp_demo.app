@@ -13,4 +13,4 @@ LIB = \
 	xstruct_dp \
 	xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/../..
