@@ -105,7 +105,7 @@
 #elif defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
    typedef LONG TNCBIAtomicValue;
-#  define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(const_cast<TNCBIAtomicValue*>(p), d) + d)
+#  define NCBI_COUNTER_ADD(p, d) (InterlockedExchangeAdd(p, d) + d)
 #else
    typedef unsigned int TNCBIAtomicValue;
 #  define NCBI_COUNTER_UNSIGNED 1
@@ -275,7 +275,7 @@ THROWS_NONE
 inline
 CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
 {
-    volatile TValue* nv_value_p = &m_Value;
+    TValue* nv_value_p = const_cast<TValue*>(&m_Value);
     return NCBI_COUNTER_ADD(nv_value_p, delta);
 }
 #endif
@@ -286,6 +286,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2002/09/20 13:51:04  vasilche
+* Fixed volatile argument to NCBI_COUNTER_ADD
+*
 * Revision 1.8  2002/09/19 20:05:41  vasilche
 * Safe initialization of static mutexes
 *
