@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/11/02 14:42:34  vasilche
+* MSVC doesn't understand namespaces in parent class specifier in subclass methods.
+*
 * Revision 1.26  2000/11/01 20:38:58  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -798,12 +801,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
     if ( generateDoNotDeleteThisObject ) {
         code.ClassPublic() <<
-            "virtual void DoNotDeleteThisObject(void);\n"
+            "    virtual void DoNotDeleteThisObject(void);\n"
             "\n";
         methods <<
             "void "<<methodPrefix<<"DoNotDeleteThisObject(void)\n"
             "{\n"
-            "    "<<code.GetParentClassNamespace()<<code.GetParentClassName()<<"::DoNotDeleteThisObject();\n";
+            "    "<<code.GetParentClassName()<<"::DoNotDeleteThisObject();\n";
         iterate ( TMembers, i, m_Members ) {
             if ( !i->ref && i->type->GetKind() == eKindObject ) {
                 methods <<
