@@ -48,10 +48,7 @@ CQuerySetUpOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth)
     if (!m_Ptr)
         return;
 
-    std::string tmp_str;
-    if (m_Ptr->filter_string)
-        tmp_str = m_Ptr->filter_string;
-    ddc.Log("filter_string", tmp_str);
+    ddc.Log("filter_string", m_Ptr->filter_string);
     ddc.Log("strand_option", (unsigned long)m_Ptr->strand_option);
     ddc.Log("genetic_code", (long)m_Ptr->genetic_code);
 }
@@ -226,13 +223,8 @@ CBlastScoringOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     if (!m_Ptr)
         return;
 
-    std::string tmp_str;
-    if (m_Ptr->matrix)
-        tmp_str = m_Ptr->matrix;
-    ddc.Log("matrix", tmp_str);
-    if (m_Ptr->matrix_path)
-        tmp_str = m_Ptr->matrix_path;
-    ddc.Log("matrix_path", tmp_str);
+    ddc.Log("matrix", m_Ptr->matrix);
+    ddc.Log("matrix_path", m_Ptr->matrix_path);
     ddc.Log("reward", (long)m_Ptr->reward);
     ddc.Log("penalty", (long)m_Ptr->penalty);
     ddc.Log("gapped_calculation", (bool)m_Ptr->gapped_calculation);
