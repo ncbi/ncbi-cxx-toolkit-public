@@ -127,7 +127,7 @@ bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
 {
     if ( !(*this) )
         return false;
-    CSeq_id_Handle h = x_GetDataSource().GetIdMapper().GetHandle(id);
+    CSeq_id_Handle h = CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
     return static_cast<CTSE_Info*>(m_TSE)->
         m_BioseqMap[m_Value]->m_Synonyms.find(h) !=
         static_cast<CTSE_Info*>(m_TSE)->
@@ -223,7 +223,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
         iterate (CHandleRange, rit, mode_rlist) {
             CRef<CSeq_loc> seg_loc(new CSeq_loc);
             CRef<CSeq_id> id(new CSeq_id);
-            id->Assign(x_GetDataSource().GetIdMapper().GetSeq_id(m_Value));
+            id->Assign(CSeq_id_Mapper::GetSeq_id_Mapper().GetSeq_id(m_Value));
             seg_loc->SetInt().SetId(*id);
             seg_loc->SetInt().SetFrom(rit->first.GetFrom());
             seg_loc->SetInt().SetTo(rit->first.GetTo());
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.29  2003/01/23 19:33:57  vasilche
 * Commented out obsolete methods.
 * Use strand argument of CSeqVector instead of creation reversed seqmap.

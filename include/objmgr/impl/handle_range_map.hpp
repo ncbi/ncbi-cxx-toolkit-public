@@ -49,7 +49,7 @@ class CHandleRangeMap
 public:
     typedef map<CSeq_id_Handle, CHandleRange> TLocMap;
 
-    CHandleRangeMap(CSeq_id_Mapper& id_mapper);
+    CHandleRangeMap(void);
     CHandleRangeMap(const CHandleRangeMap& rmap);
     ~CHandleRangeMap(void);
 
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.8  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

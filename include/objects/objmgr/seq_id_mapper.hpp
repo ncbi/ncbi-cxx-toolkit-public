@@ -40,6 +40,7 @@
 #include <corelib/ncbi_limits.hpp>
 #include <map>
 #include <set>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -129,6 +130,8 @@ const size_t kKeyUsageTableSize =
 class CSeq_id_Mapper : public CObject
 {
 public:
+    static  CSeq_id_Mapper& GetSeq_id_Mapper(void);
+
     virtual ~CSeq_id_Mapper(void);
 
     // Get seq-id handle. Create new handle if not found and
@@ -142,9 +145,8 @@ public:
     static const CSeq_id& GetSeq_id(const CSeq_id_Handle& handle);
 
 private:
-    // Constructor available for CObjectManager only
     CSeq_id_Mapper(void);
-    friend class CObjectManager;
+    friend class CSafeStaticRef<CSeq_id_Mapper>;
 
     // References to each handle must be tracked to re-use their values
     // Each CSeq_id_Handle locks itself in the constructor and
@@ -187,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/01/29 22:03:43  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.11  2002/10/03 01:58:27  ucko
 * Move the definition of TSeq_id_Info above the declaration of
 * CSeq_id_Which_Tree, which uses it.

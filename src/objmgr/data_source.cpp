@@ -205,7 +205,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
     // Loader may be called to load descriptions (not included in core)
     if ( m_Loader ) {
         // Send request to the loader
-        CHandleRangeMap hrm(GetIdMapper());
+        CHandleRangeMap hrm;
         hrm.AddRange(handle.m_Value, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
@@ -255,7 +255,7 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
         // Call loader first
         if ( m_Loader ) {
             // Send request to the loader
-            CHandleRangeMap hrm(GetIdMapper());
+            CHandleRangeMap hrm;
             hrm.AddRange(handle.m_Value, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
             m_Loader->GetRecords(hrm, CDataLoader::eBioseq); //### or eCore???
         }
@@ -779,7 +779,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
         CBioseq_Info* info = new CBioseq_Info(entry);
         iterate ( CBioseq::TId, id, seq->GetId() ) {
             // Find the bioseq index
-            CSeq_id_Handle key = GetIdMapper().GetHandle(**id);
+            CSeq_id_Handle key = GetSeq_id_Mapper().GetHandle(**id);
             TTSESet& seq_tse_set = m_TSE_seq[key];
             TTSESet::iterator tse_it = seq_tse_set.begin();
             for ( ; tse_it != seq_tse_set.end(); ++tse_it) {
@@ -1009,7 +1009,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
             CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
                 CSeqMap::eSeqRef, pos, 0, false);
             seg->m_RefPos = 0;
-            seg->m_RefSeq = GetIdMapper().GetHandle(loc.GetWhole());
+            seg->m_RefSeq = GetSeq_id_Mapper().GetHandle(loc.GetWhole());
             seqmap.Add(*seg);
             return;
         }
@@ -1021,7 +1021,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 CSeqMap::eSeqRef, pos, loc.GetInt().GetLength(),
                 minus_strand);
             seg->m_RefSeq =
-                GetIdMapper().GetHandle(loc.GetInt().GetId());
+                GetSeq_id_Mapper().GetHandle(loc.GetInt().GetId());
             seg->m_RefPos = min(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
             seg->m_Length = loc.GetInt().GetLength();
             seqmap.Add(*seg);
@@ -1035,7 +1035,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
             CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
                 CSeqMap::eSeqRef, pos, 1, minus_strand);
             seg->m_RefSeq =
-                GetIdMapper().GetHandle(loc.GetPnt().GetId());
+                GetSeq_id_Mapper().GetHandle(loc.GetPnt().GetId());
             seg->m_RefPos = loc.GetPnt().GetPoint();
             seg->m_Length = 1;
             seqmap.Add(*seg);
@@ -1050,7 +1050,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
                     CSeqMap::eSeqRef, pos, (*ii)->GetLength(), minus_strand);
                 seg->m_RefSeq =
-                    GetIdMapper().GetHandle((*ii)->GetId());
+                    GetSeq_id_Mapper().GetHandle((*ii)->GetId());
                 seg->m_RefPos = min((*ii)->GetFrom(), (*ii)->GetTo());
                 seg->m_Length = (*ii)->GetLength();
                 seqmap.Add(*seg);
@@ -1067,7 +1067,7 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
                 CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
                     CSeqMap::eSeqRef, pos, 1, minus_strand);
                 seg->m_RefSeq =
-                    GetIdMapper().GetHandle(loc.GetPacked_pnt().GetId());
+                    GetSeq_id_Mapper().GetHandle(loc.GetPacked_pnt().GetId());
                 seg->m_RefPos = *pi;
                 seg->m_Length = 1;
                 seqmap.Add(*seg);
@@ -1158,7 +1158,7 @@ inline
 void CDataSource::x_AppendRef(const CSeq_interval& interval,
                               vector<CSeqMap::CSegment>& segments)
 {
-    x_AppendRef(GetIdMapper().GetHandle(interval.GetId()), interval, segments);
+    x_AppendRef(GetSeq_id_Mapper().GetHandle(interval.GetId()), interval, segments);
 }
 
 
@@ -1177,7 +1177,7 @@ void CDataSource::x_AppendLoc(const CSeq_loc& loc,
         // Reference to the whole sequence - do not check its
         // length, use 0 instead.
         const CSeq_id& ref = loc.GetWhole();
-        segments.push_back(CSeqMap::CSegment(GetIdMapper().GetHandle(ref)));
+        segments.push_back(CSeqMap::CSegment(GetSeq_id_Mapper().GetHandle(ref)));
         break;
     }
     case CSeq_loc::e_Int:
@@ -1186,7 +1186,7 @@ void CDataSource::x_AppendLoc(const CSeq_loc& loc,
     case CSeq_loc::e_Pnt:
     {
         const CSeq_point& point = loc.GetPnt();
-        x_AppendRef(GetIdMapper().GetHandle(point.GetId()),
+        x_AppendRef(GetSeq_id_Mapper().GetHandle(point.GetId()),
                     point.GetPoint(),
                     1,
                     point.GetStrand(),
@@ -1204,7 +1204,7 @@ void CDataSource::x_AppendLoc(const CSeq_loc& loc,
     case CSeq_loc::e_Packed_pnt:
     {
         const CPacked_seqpnt& points = loc.GetPacked_pnt();
-        CSeq_id_Handle seqRef = GetIdMapper().GetHandle(points.GetId());
+        CSeq_id_Handle seqRef = GetSeq_id_Mapper().GetHandle(points.GetId());
         ENa_strand strand = points.GetStrand();
         const CPacked_seqpnt::TPoints& data = points.GetPoints();
         iterate ( CPacked_seqpnt::TPoints, it, data ) {
@@ -1500,16 +1500,16 @@ without the sequence but with references to the id and all dead TSEs
 void CDataSource::x_ResolveLocationHandles(CHandleRangeMap& loc,
                                            const CScope::TRequestHistory& history) const
 {
-    CHandleRangeMap tmp(GetIdMapper());
+    CHandleRangeMap tmp;
     iterate ( CHandleRangeMap::TLocMap, it, loc.GetMap() ) {
         CSeq_id_Handle idh = it->first;
         //### The TSE returns locked, unlock it
         CTSE_Info* tse_info = x_FindBestTSE(it->first, history);
         if ( !tse_info ) {
             // Try to find the best matching id (not exactly equal)
-            const CSeq_id& id = GetIdMapper().GetSeq_id(idh);
+            const CSeq_id& id = GetSeq_id_Mapper().GetSeq_id(idh);
             TSeq_id_HandleSet hset;
-            GetIdMapper().GetMatchingHandles(id, hset);
+            GetSeq_id_Mapper().GetMatchingHandles(id, hset);
             iterate(TSeq_id_HandleSet, hit, hset) {
                 if ( tse_info  &&  idh.IsBetter(*hit) )
                     continue;
@@ -1582,7 +1582,7 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
         CSeq_id_Handle key;
         iterate ( CBioseq::TId, id, seq.GetId() ) {
             // Find TSE and bioseq positions
-            key = GetIdMapper().GetHandle(**id);
+            key = GetSeq_id_Mapper().GetHandle(**id);
             TTSEMap::iterator tse_set = m_TSE_seq.find(key);
             _ASSERT(tse_set != m_TSE_seq.end());
             //### No need to lock the TSE since the whole DS is locked by DropTSE()
@@ -1954,13 +1954,13 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     if ( m_Loader ) {
         // Send request to the loader
         //### Need a better interface to request just a set of IDs
-        CSeq_id_Handle idh = GetIdMapper().GetHandle(id);
-        CHandleRangeMap hrm(GetIdMapper());
+        CSeq_id_Handle idh = GetSeq_id_Mapper().GetHandle(id);
+        CHandleRangeMap hrm;
         hrm.AddRange(idh, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
     CSeqMatch_Info match;
-    CSeq_id_Handle idh = GetIdMapper().GetHandle(id, true);
+    CSeq_id_Handle idh = GetSeq_id_Mapper().GetHandle(id, true);
     if ( !idh ) {
         return match; // The seq-id is not even mapped yet
     }
@@ -1968,7 +1968,7 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
     if ( !tse ) {
         // Try to find the best matching id (not exactly equal)
         TSeq_id_HandleSet hset;
-        GetIdMapper().GetMatchingHandles(id, hset);
+        GetSeq_id_Mapper().GetMatchingHandles(id, hset);
         iterate(TSeq_id_HandleSet, hit, hset) {
             if ( tse  &&  idh.IsBetter(*hit) )
                 continue;
@@ -2018,7 +2018,7 @@ void CDataSource::x_ResolveMapSegment(const CSeq_id_Handle& rh,
                                       CScope& scope)
 {
     CBioseq_Handle rbsh = scope.GetBioseqHandle(
-        GetIdMapper().GetSeq_id(rh));
+        GetSeq_id_Mapper().GetSeq_id(rh));
     if ( !rbsh ) {
         THROW1_TRACE(runtime_error,
             "CDataSource::x_ResolveMapSegment() -- "
@@ -2097,14 +2097,14 @@ void CDataSource::x_AppendResolved(const CSeq_id_Handle& seqid,
 {
     _TRACE("x_AppendResolved("<<seqid.AsString()<<','<<ref_pos<<','<<ref_len<<','<<minus_strand<<')');
     CBioseq_Handle rbsh =
-        scope.GetBioseqHandle(GetIdMapper().GetSeq_id(seqid));
+        scope.GetBioseqHandle(GetSeq_id_Mapper().GetSeq_id(seqid));
     if ( !rbsh ) {
         THROW1_TRACE(runtime_error,
                      "CDataSource::x_AppendResolved() -- "
                      "Can not resolve sequence reference.");
     }
     const CSeqMap& rmap = rbsh.GetSeqMap();
-    PrintSeqMap(GetIdMapper().GetHandle(*rbsh.GetSeqId()).AsString(), rmap);
+    PrintSeqMap(GetSeq_id_Mapper().GetHandle(*rbsh.GetSeqId()).AsString(), rmap);
     TSeqPos ref_end = ref_pos + ref_len;
     for ( CSeqMap::const_iterator it = rmap.find(minus_strand? ref_end-1: ref_pos);; ) {
         // intersection of current segment and referenced region
@@ -2204,8 +2204,8 @@ void CDataSource::x_AppendResolved(const CSeq_id_Handle& seqid,
 
 bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
 {
-    CSeq_id_Handle h1 = GetIdMapper().GetHandle(id1);
-    CSeq_id_Handle h2 = GetIdMapper().GetHandle(id2);
+    CSeq_id_Handle h1 = GetSeq_id_Mapper().GetHandle(id1);
+    CSeq_id_Handle h2 = GetSeq_id_Mapper().GetHandle(id2);
 
     CMutexGuard guard(m_DataSource_Mtx);    
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
@@ -2334,6 +2334,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.76  2003/01/29 17:45:02  vasilche
 * Annotaions index is split by annotation/feature type.
 *

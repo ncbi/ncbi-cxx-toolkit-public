@@ -173,7 +173,7 @@ const CSeq_data& CSeqMap_CI::GetRefData(void) const
 CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
 {
     _ASSERT(x_GetSeqMap().m_Source);
-    return x_GetSeqMap().m_Source->GetIdMapper().
+    return CSeq_id_Mapper::GetSeq_id_Mapper().
         GetHandle(x_GetSeqMap().x_GetRefSeqid(x_GetSegment()));
 }
 
@@ -372,6 +372,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.3  2003/01/24 20:14:08  vasilche
 * Fixed processing zero length references.
 *

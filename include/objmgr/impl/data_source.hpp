@@ -112,7 +112,7 @@ public:
     // Contains (or can load) any entries?
     bool IsEmpty(void) const;
 
-    CSeq_id_Mapper& GetIdMapper(void) const;
+    CSeq_id_Mapper& GetSeq_id_Mapper(void) const;
 
     /// Get the complete Bioseq (as loaded by now)
     const CBioseq& GetBioseq(const CBioseq_Handle& handle);
@@ -333,9 +333,9 @@ bool CDataSource::IsEmpty(void) const
 }
 
 inline
-CSeq_id_Mapper& CDataSource::GetIdMapper(void) const
+CSeq_id_Mapper& CDataSource::GetSeq_id_Mapper(void) const
 {
-    return *m_ObjMgr->m_IdMapper;
+    return CSeq_id_Mapper::GetSeq_id_Mapper();
 }
 
 
@@ -345,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.34  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

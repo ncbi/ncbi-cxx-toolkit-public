@@ -128,12 +128,12 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Object(dynamic_cast<const CObject*>(&feat)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper())),
+      m_RangeMap(new CHandleRangeMap()),
       m_ProductMap(0)
 {
     m_RangeMap->AddLocation(feat.GetLocation());
     if ( feat.IsSetProduct() ) {
-        m_ProductMap.reset(new CHandleRangeMap(data_source.GetIdMapper()));
+        m_ProductMap.reset(new CHandleRangeMap());
         m_ProductMap->AddLocation(feat.GetProduct());
     }
     return;
@@ -149,7 +149,7 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Object(dynamic_cast<const CObject*>(&align)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper())),
+      m_RangeMap(new CHandleRangeMap()),
       m_ProductMap(0)
 {
     x_ProcessAlign(align);
@@ -166,7 +166,7 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Object(dynamic_cast<const CObject*>(&graph)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper())),
+      m_RangeMap(new CHandleRangeMap()),
       m_ProductMap(0)
 {
     m_RangeMap->AddLocation(graph.GetLoc());
@@ -311,6 +311,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.11  2002/12/20 20:54:24  grichenk
 * Added optional location/product switch to CFeat_CI
 *

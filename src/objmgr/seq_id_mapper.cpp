@@ -1451,6 +1451,15 @@ void CSeq_id_PDB_Tree::x_DropHandle(const CSeq_id_Handle& handle)
 
 
 
+static CSafeStaticRef<CSeq_id_Mapper> s_Seq_id_Mapper;
+
+
+CSeq_id_Mapper& CSeq_id_Mapper::GetSeq_id_Mapper(void)
+{
+    return s_Seq_id_Mapper.Get();
+}
+
+
 CSeq_id_Mapper::~CSeq_id_Mapper(void)
 {
     while (m_IdMap.size() > 0) {
@@ -1696,6 +1705,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.26  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

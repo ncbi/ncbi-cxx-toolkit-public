@@ -49,8 +49,8 @@ BEGIN_SCOPE(objects)
 //
 
 
-CHandleRangeMap::CHandleRangeMap(CSeq_id_Mapper& id_mapper)
-    : m_IdMapper(&id_mapper)
+CHandleRangeMap::CHandleRangeMap(void)
+    : m_IdMapper(&CSeq_id_Mapper::GetSeq_id_Mapper())
 {
 }
 
@@ -68,7 +68,6 @@ CHandleRangeMap::~CHandleRangeMap(void)
 
 CHandleRangeMap& CHandleRangeMap::operator= (const CHandleRangeMap& rmap)
 {
-    m_IdMapper = rmap.m_IdMapper;
     m_LocMap = rmap.m_LocMap;
     return *this;
 }
@@ -191,7 +190,7 @@ void CHandleRangeMap::AddRanges(const CSeq_id_Handle& h,
 
 bool CHandleRangeMap::IntersectingWithLoc(const CSeq_loc& loc) const
 {
-    CHandleRangeMap rmap(*m_IdMapper);
+    CHandleRangeMap rmap;
     rmap.AddLocation(loc);
     return IntersectingWithMap(rmap);
 }
@@ -235,6 +234,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.9  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

@@ -214,7 +214,7 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 
     TSeq_id_HandleSet setSource, setResult;
     // find all
-    m_pObjMgr->m_IdMapper->GetMatchingHandlesStr(searchBy, setSource);
+    x_GetIdMapper().GetMatchingHandlesStr(searchBy, setSource);
     // filter those which "belong" to my data sources
     iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
         (*itSrc)->FilterSeqid(setResult, setSource);
@@ -222,7 +222,7 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
     // create result
     iterate(TSeq_id_HandleSet, itSet, setResult) {
         setId.insert(CRef<const CSeq_id>
-                     (&(m_pObjMgr->m_IdMapper->GetSeq_id(*itSet))));
+                     (&(x_GetIdMapper().GetSeq_id(*itSet))));
     }
 }
 
@@ -331,7 +331,7 @@ void CScope::SetFindMode(EFindMode mode)
 
 CSeq_id_Mapper& CScope::x_GetIdMapper(void) const
 {
-    return *m_pObjMgr->m_IdMapper;
+    return CSeq_id_Mapper::GetSeq_id_Mapper();
 }
 
 
@@ -453,6 +453,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.39  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

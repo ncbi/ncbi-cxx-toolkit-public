@@ -216,7 +216,7 @@ const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 
 void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc)
 {
-    CHandleRangeMap master_loc(m_Scope->x_GetIdMapper());
+    CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
     bool has_references = false;
     if (m_ResolveMethod != eResolve_None) {
@@ -268,7 +268,7 @@ void CAnnotTypes_CI::x_ResolveReferences(const CSeq_id_Handle& master_idh,
 {
     // Create a new entry in the convertions map
     CRef<SConvertionRec> rec(new SConvertionRec);
-    rec->m_Location.reset(new CHandleRangeMap(m_Scope->x_GetIdMapper()));
+    rec->m_Location.reset(new CHandleRangeMap());
     // Create the location on the referenced sequence
     rec->m_Location->AddRange(ref_idh, CHandleRange::TRange(rmin, rmax), strand);
     rec->m_RefShift = shift;
@@ -612,6 +612,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.34  2003/01/29 17:45:02  vasilche
 * Annotaions index is split by annotation/feature type.
 *

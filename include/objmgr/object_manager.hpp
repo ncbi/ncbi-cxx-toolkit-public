@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/01/29 22:03:43  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.9  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *
@@ -184,7 +187,6 @@ private:
     map< CSeq_entry* , CDataSource* > m_mapEntryToSource;
     set< CScope* > m_setScope;
 
-    CRef<CSeq_id_Mapper> m_IdMapper;
     friend class CScope;
     friend class CDataSource; // To get id-mapper
 };

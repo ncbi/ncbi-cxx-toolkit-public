@@ -46,7 +46,6 @@ BEGIN_SCOPE(objects)
 DEFINE_STATIC_MUTEX(s_OM_Mutex);
 
 CObjectManager::CObjectManager(void)
-    : m_IdMapper(new CSeq_id_Mapper)
 {
   //LOG_POST("CObjectManager - new :" << this );
 }
@@ -410,7 +409,6 @@ void CObjectManager::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
         DebugDumpRangePtr(ddc,"m_setScope",
             m_setScope.begin(), m_setScope.end(), depth);
     }
-    ddc.Log("m_IdMapper", m_IdMapper.GetPointer(), depth);
 }
 
 
@@ -420,6 +418,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/01/29 22:03:46  grichenk
+* Use single static CSeq_id_Mapper instead of per-OM model.
+*
 * Revision 1.17  2002/11/08 21:07:15  ucko
 * CConstRef<> now requires an explicit constructor.
 *
