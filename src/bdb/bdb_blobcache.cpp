@@ -44,6 +44,11 @@ BEGIN_NCBI_SCOPE
 // All requests are protected with one mutex
 static CFastMutex x_BDB_BLOB_CacheMutex;
 
+// Mutex to sync int cache requests coming from different threads
+// All requests are protected with one mutex
+static CFastMutex x_BDB_IntCacheMutex;
+
+
 
 static void s_MakeOverflowFileName(string& buf,
                                    const string& path, 
@@ -267,6 +272,7 @@ private:
 
 
 CBDB_BLOB_Cache::CBDB_BLOB_Cache()
+: m_IntCacheInstance(m_IntCacheDB)
 {
 }
 
@@ -283,12 +289,14 @@ void CBDB_BLOB_Cache::Open(const char* path)
     m_Env.OpenWithLocks(path);
     m_BlobDB.SetEnv(m_Env);
     m_AttrDB.SetEnv(m_Env);
+    m_IntCacheDB.SetEnv(m_Env);
 
     m_BlobDB.SetPageSize(32 * 1024);
     m_BlobDB.SetCacheSize(2 * s_WriterBufferSize);
 
-    m_BlobDB.Open("lc_blob.db",      CBDB_RawFile::eReadWriteCreate);
-    m_AttrDB.Open("lc_blob_attr.db", CBDB_RawFile::eReadWriteCreate);
+    m_BlobDB.Open("lc_blob.db",          CBDB_RawFile::eReadWriteCreate);
+    m_AttrDB.Open("lc_blob_attr.db",     CBDB_RawFile::eReadWriteCreate);
+    m_IntCacheDB.Open("lc_int_cache.db", CBDB_RawFile::eReadWriteCreate);
 }
 
 void CBDB_BLOB_Cache::Store(const string& key,
@@ -629,11 +637,151 @@ void CBDB_BLOB_Cache::x_DropBLOB(const char*    key,
 }
 
 
+CBDB_IntCache::CBDB_IntCache(SIntCacheDB& cache_db)
+ : m_IntCacheDB(cache_db),
+   m_ExpirationTime(15 * 60)
+{
+}
+
+CBDB_IntCache::~CBDB_IntCache()
+{
+}
+
+void CBDB_IntCache::Store(int key1, int key2, const vector<int>& value)
+{
+    Remove(key1, key2);
+
+    if (value.size() == 0) {
+        return;
+    }
+
+    {{
+    CFastMutexGuard guard(x_BDB_IntCacheMutex);
+
+    m_IntCacheDB.key1 = key1;
+    m_IntCacheDB.key2 = key2;
+
+    CTime time_stamp(CTime::eCurrent);
+    m_IntCacheDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+    
+    const int* data = &value[0];
+
+    m_IntCacheDB.Insert(data, value.size() * sizeof(vector<int>::value_type));
+
+    }}
+}
+
+
+size_t CBDB_IntCache::GetSize(int key1, int key2)
+{
+    CFastMutexGuard guard(x_BDB_IntCacheMutex);
+
+    m_IntCacheDB.key1 = key1;
+    m_IntCacheDB.key2 = key2;
+
+    EBDB_ErrCode ret = m_IntCacheDB.Fetch();
+    if (ret != eBDB_Ok) {
+        return 0;
+    }
+    return (m_IntCacheDB.LobSize() / sizeof(vector<int>::value_type));
+}
+
+
+bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
+{
+    CTime time_stamp(CTime::eCurrent);
+
+    CFastMutexGuard guard(x_BDB_IntCacheMutex);
+
+    m_IntCacheDB.key1 = key1;
+    m_IntCacheDB.key2 = key2;
+
+    EBDB_ErrCode ret = m_IntCacheDB.Fetch();
+    if (ret != eBDB_Ok) {
+        value.resize(0);
+        return false;
+    }
+    size_t data_size = (m_IntCacheDB.LobSize() / sizeof(vector<int>::value_type));
+
+    if (data_size == 0) {
+        value.resize(0);
+        return false;
+    }
+
+    // Expiration control
+
+    unsigned ts = (unsigned)m_IntCacheDB.time_stamp;
+    time_t curr = (unsigned)time_stamp.GetTimeT();
+
+    if (ts + m_ExpirationTime >  curr) {
+        value.resize(0);
+        return false;
+    }
+
+    value.resize(data_size);
+    int* data_ptr = &value[0];
+
+    m_IntCacheDB.key1 = key1;
+    m_IntCacheDB.key2 = key2;
+
+    ret = m_IntCacheDB.GetData(data_ptr, 
+                               data_size * sizeof(vector<int>::value_type));
+    if (ret != eBDB_Ok) {
+        value.resize(0);
+        return false;
+    }
+    return true;
+}
+
+void CBDB_IntCache::Remove(int key1, int key2)
+{
+    CFastMutexGuard guard(x_BDB_IntCacheMutex);
+
+    m_IntCacheDB.key1 = key1;
+    m_IntCacheDB.key2 = key2;
+    m_IntCacheDB.Delete(CBDB_RawFile::eIgnoreError);    
+}
+
+void CBDB_IntCache::SetExpirationTime(time_t expiration_timeout)
+{
+    m_ExpirationTime = expiration_timeout;
+}
+
+void CBDB_IntCache::Purge(time_t           time_point,
+                          EKeepVersions    keep_last_version)
+{
+    CFastMutexGuard guard(x_BDB_IntCacheMutex);
+
+    if (keep_last_version == eDropAll && time_point == 0) {
+        m_IntCacheDB.Truncate();
+        return;
+    }
+
+    if (time_point == 0)
+        return;
+
+    CBDB_FileCursor cur(m_IntCacheDB);
+    cur.SetCondition(CBDB_FileCursor::eFirst);
+
+    while (cur.Fetch() == eBDB_Ok) {
+        time_t t = m_IntCacheDB.time_stamp;
+
+        if (t < time_point) {
+            m_IntCacheDB.Delete(CBDB_RawFile::eIgnoreError);
+        }
+    }
+}
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/10/16 19:29:18  kuznets
+ * Added Int cache (AKA id resolution cache)
+ *
  * Revision 1.10  2003/10/16 12:08:16  ucko
  * Address GCC 2.95 errors about missing sprintf declaration, and avoid
  * possible buffer overflows, by rewriting s_MakeOverflowFileName to use
