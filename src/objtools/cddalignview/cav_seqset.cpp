@@ -199,7 +199,8 @@ static void StringFromStdaa(const vector < char >& vec, std::string *str)
 }
 
 Sequence::Sequence(const CBioseq& bioseq) :
-    gi(NOT_SET), pdbChain(' '), mmdbLink(NOT_SET), status(CAV_ERROR_SEQUENCES)
+    gi(NOT_SET), pdbChain(' '), mmdbLink(NOT_SET), status(CAV_ERROR_SEQUENCES),
+    bioseqASN(&bioseq)
 {
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
@@ -342,6 +343,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/08 10:56:20  thiessen
+* better handling of repeated sequences
+*
 * Revision 1.3  2004/03/15 18:51:27  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -39,6 +39,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <map>
 
@@ -184,6 +185,16 @@ AlignmentSet::~AlignmentSet(void)
 
 ///// MasterSlaveAlignment methods /////
 
+static bool SameSequence(const Sequence *s, const CBioseq& bioseq)
+{
+    CBioseq::TId::const_iterator i, ie = bioseq.GetId().end();
+    for (i=bioseq.GetId().begin(); i!=ie; ++i) {
+        if (IsAMatch(s, **i))
+            return true;
+    }
+    return false;
+}
+
 MasterSlaveAlignment::MasterSlaveAlignment(
     const SequenceSet *sequenceSet,
     const Sequence *masterSequence,
@@ -205,7 +216,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(
     bool masterFirst = true;
     for (; s!=se; ++s) {
 
-        if (*s == master) continue;
+        if (SameSequence(*s, master->bioseqASN.GetObject())) continue;
 
         if (IsAMatch(*s, sids.back().GetObject())) {
             break;
@@ -334,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/08 10:56:20  thiessen
+* better handling of repeated sequences
+*
 * Revision 1.3  2004/03/15 18:51:27  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

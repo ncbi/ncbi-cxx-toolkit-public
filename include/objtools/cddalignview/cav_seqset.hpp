@@ -90,6 +90,7 @@ public:
     static const int NOT_SET;
     int gi, pdbChain, mmdbLink;
     string pdbID, sequenceString, accession, description;
+    CConstRef < objects::CBioseq > bioseqASN;
 
     int Length(void) const { return sequenceString.size(); }
 
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/08 10:56:34  thiessen
+* better handling of repeated sequences
+*
 * Revision 1.1  2003/03/19 19:05:31  thiessen
 * move again
 *
