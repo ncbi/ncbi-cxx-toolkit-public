@@ -3465,7 +3465,6 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:WorkShop* )
-   CFLAGS="+w $CFLAGS"
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
