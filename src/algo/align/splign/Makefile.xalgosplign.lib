@@ -7,5 +7,5 @@ SRC = splign splign_util splign_hit splign_hitparser \
 
 LIB = xalgosplign
 
-CXXFLAGS = $(FAST_CXXFLAGS) -D GENOME_PIPELINE
+CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
