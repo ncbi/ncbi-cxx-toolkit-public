@@ -71,6 +71,11 @@ EOF
     exit 0
 fi
 
+# Check lock before potentially clobbering files.
+if [ -f "$top_srcdir/configure.lock" ]; then
+    cat $top_srcdir/configure.lock
+    exit 1
+fi
 
 ### Startup banner
 
