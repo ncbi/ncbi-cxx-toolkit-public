@@ -79,6 +79,12 @@ void CBDB_Env::SetCacheSize(unsigned int cache_size)
     BDB_CHECK(ret, 0);
 }
 
+void CBDB_Env::SetLogBSize(unsigned lg_bsize)
+{
+    int ret = m_Env->set_lg_bsize(m_Env, lg_bsize);
+    BDB_CHECK(ret, 0);
+}
+
 
 void CBDB_Env::Open(const char* db_home, int flags)
 {
@@ -365,6 +371,13 @@ void CBDB_Env::SetDirectLog(bool on_off)
     // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");   
 }
 
+void CBDB_Env::SetLogAutoRemove(bool on_off)
+{
+    int ret = m_Env->set_flags(m_Env, DB_LOG_AUTOREMOVE, (int)on_off);
+    BDB_CHECK(ret, "DB_ENV::set_flags(DB_LOG_AUTOREMOVE)");
+}
+
+
 void CBDB_Env::TransactionCheckpoint()
 {
     if (IsTransactional()) {
@@ -412,6 +425,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/03/28 12:58:51  kuznets
+ * + SetLogAutoRemove() SetLogBSize()
+ *
  * Revision 1.29  2004/10/18 15:37:10  kuznets
  * +SetLogFileMax
  *

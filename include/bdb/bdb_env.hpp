@@ -142,8 +142,15 @@ public:
     /// Turn off buffering of log files (DB_DIRECT_LOG)
     void SetDirectLog(bool on_off);
 
+    /// If set, Berkeley DB will automatically remove log files that are no 
+    /// longer needed. (Can make catastrofic recovery impossible).
+    void SetLogAutoRemove(bool on_off);
+
     /// Set maximum size of LOG files
     void SetLogFileMax(unsigned int lg_max);
+
+    /// Set the size of the in-memory log buffer, in bytes.
+    void SetLogBSize(unsigned lg_bsize);
 
     /// Remove all non-active log files
     void CleanLog();
@@ -193,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/03/28 12:58:41  kuznets
+ * + SetLogAutoRemove() SetLogBSize()
+ *
  * Revision 1.20  2005/02/02 19:49:53  grichenk
  * Fixed more warnings
  *
