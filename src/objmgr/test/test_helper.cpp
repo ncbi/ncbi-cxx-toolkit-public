@@ -1002,11 +1002,11 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.SetWhole(id);
     count = 0;
     set<const CSeq_annot*> annot_set;
+    if ( sm_DumpFeatures ) {
+        NcbiCout << "-------------------- CFeat_CI over "<<
+            id.AsFastaString()<<" --------------------\n";
+    }
     if ( !tse_feat_test ) {
-        if ( sm_DumpFeatures ) {
-            NcbiCout << "-------------------- CFeat_CI over "<<
-                id.AsFastaString()<<" --------------------\n";
-        }
         for ( CFeat_CI feat_it(scope, loc); feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
@@ -1033,24 +1033,47 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             }
             //### _ASSERT(feat_it->
         }
-        if ( sm_DumpFeatures ) {
-            NcbiCout << "-------------------- "
-                "end CFeat_CI --------------------\n";
-        }
     }
     else {
-        for ( CFeat_CI feat_it(handle, 0, 0); feat_it;  ++feat_it) {
-            count++;
-            annot_set.insert(&feat_it.GetSeq_annot());
-            //### _ASSERT(feat_it->
+        if ( sm_DumpFeatures ) {
+            NcbiCout << "-------------------- LimitTSE --------------------\n";
         }
-        // Get products
-        for ( CFeat_CI feat_it(handle, 0, 0, SAnnotSelector().SetByProduct());
+        for ( CFeat_CI feat_it(handle, 0, 0,
+                               SAnnotSelector()
+                               .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
               feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
             //### _ASSERT(feat_it->
         }
+        if ( sm_DumpFeatures ) {
+            NcbiCout << "-------------------- "
+                "product CFeat_CI --------------------\n";
+        }
+        // Get products
+        for ( CFeat_CI feat_it(handle, 0, 0,
+                               SAnnotSelector()
+                               .SetLimitTSE(&handle.GetTopLevelSeqEntry())
+                               .SetByProduct());
+              feat_it;  ++feat_it) {
+            count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
+            //### _ASSERT(feat_it->
+        }
+    }
+    if ( sm_DumpFeatures ) {
+        NcbiCout << "-------------------- "
+            "end CFeat_CI --------------------\n";
     }
     _ASSERT(count == seq_feat_cnt);
     _ASSERT(annot_set.size() == feat_annots_cnt);
@@ -1074,7 +1097,9 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for ( CFeat_CI feat_it(handle, 0, 10);
+        for ( CFeat_CI feat_it(handle, 0, 10,
+                               SAnnotSelector()
+                               .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
               feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
@@ -1100,7 +1125,9 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for (CAlign_CI align_it(handle, 0, 0);
+        for (CAlign_CI align_it(handle, 0, 0,
+                                SAnnotSelector()
+                                .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
              align_it;  ++align_it) {
             count++;
             annot_set.insert(&align_it.GetSeq_annot());
@@ -1129,7 +1156,9 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for (CAlign_CI align_it(handle, 10, 20);
+        for (CAlign_CI align_it(handle, 10, 20,
+                                SAnnotSelector()
+                                .SetLimitTSE(&handle.GetTopLevelSeqEntry()));
              align_it;  ++align_it) {
             count++;
             annot_set.insert(&align_it.GetSeq_annot());
@@ -1189,6 +1218,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/03/21 14:52:28  vasilche
+* Modified testobjmgr1 to reflect changes in CFeat_CI and CAlign_CI
+* constructors' behaviour.
+*
 * Revision 1.28  2003/03/05 20:56:44  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *
