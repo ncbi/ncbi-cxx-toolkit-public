@@ -236,7 +236,7 @@ public:
     const string& GetValue(void) const { return m_Value; }
 
 protected:
-    string  m_Value;
+    mutable string  m_Value;
     TStyle  m_Style;
 };
 
@@ -246,6 +246,28 @@ class CFlatNumberQVal : public CFlatStringQVal
 public:
     CFlatNumberQVal(const string& value) :
         CFlatStringQVal(value, CFormatQual::eUnquoted)
+    {}
+        
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
+};
+
+
+class CFlatBondQVal : public CFlatStringQVal
+{
+public:
+    CFlatBondQVal(const string& value) : CFlatStringQVal(value)
+    {}
+        
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
+};
+
+
+class CFlatGeneQVal : public CFlatStringQVal
+{
+public:
+    CFlatGeneQVal(const string& value) : CFlatStringQVal(value)
     {}
         
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
@@ -530,6 +552,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/10/18 18:44:58  shomrat
+* Added Gene and Bond qual classes
+*
 * Revision 1.15  2004/10/05 15:33:28  shomrat
 * changed const strings
 *

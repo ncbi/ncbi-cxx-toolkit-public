@@ -33,7 +33,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-
+#include <util/sgml_entity.hpp>
 #include <serial/enumvalues.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
@@ -293,6 +293,38 @@ void CFlatNumberQVal::Format
 }
 
 
+// === CFlatBondQVal ========================================================
+
+void CFlatBondQVal::Format
+(TFlatQuals& quals,
+ const string& name,
+ CBioseqContext& ctx,
+ TFlags flags) const
+{
+    string value = m_Value;
+    if (s_IsNote(flags)) {
+        value += " bond";
+    }
+    x_AddFQ(quals, (s_IsNote(flags) ? "note" : name), value, m_Style);
+}
+
+
+// === CFlatGeneQVal ========================================================
+
+
+void CFlatGeneQVal::Format
+(TFlatQuals& quals,
+ const string& name,
+ CBioseqContext& ctx,
+ TFlags flags) const
+{
+    if (ctx.IsJournalScan()) {
+        Sgml2Ascii(m_Value);
+    }
+    CFlatStringQVal::Format(quals, name, ctx, flags);
+}
+
+
 // === CFlatStringListQVal ==================================================
 
 
@@ -324,7 +356,7 @@ void CFlatGeneSynonymsQVal::Format
     size_t num_syns = GetValue().size();
     if (num_syns > 0) {
         string syns = (num_syns > 1) ? "synonyms: " : "synonym: ";
-        syns += JoinNoRedund(GetValue(), ", ");
+        syns += NStr::Join(GetValue(), ", ");
         x_AddFQ(q, 
             (s_IsNote(flags) ? "note" : name),
             syns,
@@ -332,7 +364,6 @@ void CFlatGeneSynonymsQVal::Format
 
         m_Suffix = &kSemicolon;
     }
-    
 }
 
 
@@ -601,22 +632,43 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
 {
     // XXX - add link in HTML mode?
     ITERATE (TXref, it, m_Value) {
-        if ( !m_Quals.Empty()  &&  x_XrefInGeneXref(**it) ) {
+        const CDbtag& dbt = **it;
+        if (!m_Quals.Empty()  &&  x_XrefInGeneXref(dbt)) {
             continue;
         }
-        string s((*it)->GetDb());
-        const CObject_id& id = (*it)->GetTag();
-        switch ( id.Which() ) {
+        if (ctx.Config().DropBadDbxref()) {
+            if (!dbt.IsApproved()) {
+                continue;
+            }
+        }
+
+        const string& db = dbt.GetDb();
+        const CObject_id& oid = (*it)->GetTag();
+
+        string db_xref = db + ':';
+        switch (oid.Which()) {
         case CObject_id::e_Id:
-            s += ':' + NStr::IntToString(id.GetId());
+        {{
+            db_xref += NStr::IntToString(oid.GetId());
             break;
+        }}
         case CObject_id::e_Str:
-            s += ':' + id.GetStr();
+        {{
+            string id = oid.GetStr();
+            if (NStr::EqualNocase(db, "MGI")  ||  NStr::EqualNocase(db, "MGD")) {
+                if (NStr::StartsWith(id, "MGI:", NStr::eNocase)  ||
+                    NStr::StartsWith(id, "MGD:", NStr::eNocase)) {
+                    db_xref = "MGI:";
+                    id.erase(0, 4);
+                }
+            }
+            db_xref += id;
             break;
+        }}
         default:
             break;
         }
-        x_AddFQ(q, name, s);
+        x_AddFQ(q, name, db_xref);
     }
 }
 
@@ -782,6 +834,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/10/18 18:46:22  shomrat
+* Added Gene and Bond qual classes
+*
 * Revision 1.20  2004/10/05 20:44:23  ucko
 * s_ComposeCodonRecognizedStr: tweak to avoid string::compare, whose
 * syntax has varied over time.
