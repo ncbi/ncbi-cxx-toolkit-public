@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/01/23 23:21:03  lavr
+ * Added proper logging
+ *
  * Revision 6.3  2001/01/13 00:01:26  lavr
  * Changes in REG_cxx2c() prototype -> appropriate changes in the test
  * Explicit registry at the end
@@ -47,6 +50,7 @@
 #  undef NDEBUG
 #endif 
 
+#include "../ncbi_priv.h"
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
@@ -80,14 +84,20 @@ int main(void)
 {
     USING_NCBI_SCOPE;
 
-    SetDiagTrace(eDT_Enable);
-    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_SetLOG(LOG_cxx2c());
     CORE_SetREG(REG_cxx2c(s_CreateRegistry(), true));
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_All);
+
+    LOG_POST(Info << "Checking error log setup"); // short expalanatory mesg
+    ERR_POST(Info << "Test log message using C++ Toolkit posting");
+    CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
     CConn_HttpStream ios(0, "User-Header: My header\r\n", fHCC_UrlEncodeArgs);
 
     char *buf1 = new char[kBufferSize + 1];
-    char *buf2 = new char[kBufferSize + 1];
+    char *buf2 = new char[kBufferSize + 2];
     
     for (size_t j = 0; j < kBufferSize/1024; j++) {
         for (size_t i = 0; i < 1024 - 1; i++)
@@ -97,19 +107,19 @@ int main(void)
     buf1[kBufferSize] = '\0';
 
     if (!(ios << buf1)) {
-        cerr << "Error sending data" << endl;
+        ERR_POST("Error sending data");
         return 1;
     }
 
-    ios.read(buf2, kBufferSize);
+    ios.read(buf2, kBufferSize + 1);
 
     if (!ios.good() && !ios.eof()) {
-        cerr << "Error receiving data" << endl;
+        ERR_POST("Error receiving data");
         return 2;
     }
 
     size_t buflen = ios.gcount();
-    cerr << buflen << " bytes obtained" << endl;
+    LOG_POST(Info << buflen << " bytes obtained");
 
     buf2[buflen] = '\0';
    
@@ -123,9 +133,11 @@ int main(void)
             break;
     }
     if (i < len)
-        cerr << "Not entirely bounced " << i+1 << endl;
+        ERR_POST("Not entirely bounced, mismatch position: " << i+1);
+    else if (buflen > len)
+        ERR_POST("Sent: " << len << ", bounced: " << buflen);
     else
-        cerr << "Reply received okay!" << endl;
+        LOG_POST(Info << "Reply received okay!");
 
     CORE_SetREG(0);
 
