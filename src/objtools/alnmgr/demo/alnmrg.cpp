@@ -154,6 +154,11 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
+        ("sortseqsbyscore", "bool",
+         "Sort sequences by score.",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
         ("noobjmgr", "bool",
         // ObjMgr is used to identify sequences and obtain a bioseqhandle.
         // Also used to calc scores and determine the type of molecule
@@ -304,6 +309,15 @@ void CAlnMrgApp::LoadInputAlignments(void)
         CRef<CDense_seg> ds(new CDense_seg);
         in->Read(Begin(*ds), CObjectIStream::eNoFileHeader);
         m_Mix->Add(*ds, m_AddFlags);
+        while (true) {
+            try {
+                CRef<CDense_seg> ds(new CDense_seg);
+                *in >> *ds;
+                m_Mix->Add(*ds, m_AddFlags);
+            } catch(...) {
+                break;
+            }
+        }
     } else {
         cerr << "Cannot read: " << asn_type;
         return;
@@ -360,6 +374,10 @@ void CAlnMrgApp::SetOptions(void)
 
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
+    }
+
+    if (args["sortseqsbyscore"]  &&  args["sortseqsbyscore"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::fSortSeqsByScore;
     }
 
     if ( !(args["noobjmgr"]  &&  args["noobjmgr"].AsBoolean()) ) {
@@ -460,6 +478,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/03/01 17:19:27  todorov
+* 1) Added a sortseqbyscore flag
+* 2) Extended to reading multiple dense-segs.
+*
 * Revision 1.30  2004/10/19 18:54:16  todorov
 * Default output now is Seq-align, Dense-seg can be chosen by the dsout param.
 *
