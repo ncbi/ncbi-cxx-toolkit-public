@@ -130,7 +130,7 @@ void Delay()
 #elif defined(NCBI_OS_UNIX)
     usleep(300000);
 #elif defined(NCBI_OS_MAC)
-    ?
+#error "Delay() undefined"
 #endif
 }
 
@@ -160,6 +160,7 @@ int CTest::Run(void)
     string str;
     vector<string> args;
 
+#if defined(NCBI_OS_UNIX)
     // Pipe for reading (direct from pipe)
     args.push_back("-l");
     CPipe pipe("ls", args, CPipe::eDoNotUse, CPipe::eText);
@@ -171,6 +172,23 @@ int CTest::Run(void)
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
     assert(pipe.Close() == 0);
+#elif defined (NCBI_OS_MSWIN)
+    // Pipe for reading (direct from pipe)
+    args.push_back("*.*");
+    CPipe pipe("dir", args, CPipe::eDoNotUse, CPipe::eText);
+    s_ReadPipe(pipe);
+    // return code 259 = no more items, returned by 'dir' when done...
+    assert(pipe.Close() == 259);
+
+    // Pipe for reading (iostream)
+    pipe.Open("dir", args, CPipe::eDoNotUse, CPipe::eText);
+    CPipeIOStream ios(pipe);
+    s_ReadStream(ios);
+    // return code 259 = no more items, returned by 'dir' when done...
+    assert(pipe.Close() == 259);
+#else
+#error "Pipe tests configured for Windows or Unix only."
+#endif
 
     // Pipe for writing (direct from pipe)
     args.clear();
@@ -239,6 +257,7 @@ int main(int argc, const char* argv[])
     if (argc == 2) {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
         command = s_ReadFile(stdin);
+        _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
         cout << "Ok. Test 1 running." << endl;
         exit(TEST_RESULT);
@@ -275,6 +294,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2003/03/03 14:47:21  dicuccio
+ * Remplemented CPipe using private platform specific classes.  Remplemented
+ * Win32 pipes using CreatePipe() / CreateProcess() - enabled CPipe in windows
+ * subsystem
+ *
  * Revision 6.8  2002/08/14 14:33:29  ivanov
  * Changed allcalls _exit() to exit() back -- non crossplatform function
  *

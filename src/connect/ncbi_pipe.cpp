@@ -31,28 +31,6 @@
 #include <corelib/ncbiexec.hpp>
 #include <memory>
 
-#if defined(NCBI_OS_MSWIN)
-#  include <io.h>
-#  include <fcntl.h>
-#  if !defined(popen)
-#    define popen _popen
-#  endif
-#  if !defined(pclose)
-#    define pclose _pclose
-#  endif
-#  if !defined(dup)
-#    define dup _dup
-#  endif
-#  if !defined(dup2)
-#    define dup2 _dup2
-#  endif
-#elif defined(NCBI_OS_UNIX)
-#  include <unistd.h>
-#  include <errno.h>
-#elif defined(NCBI_OS_MAC)
-#  error "Class CPipe defined only for MS Windows and UNIX platforms"
-#endif
-
 
 BEGIN_NCBI_SCOPE
 
@@ -64,175 +42,380 @@ BEGIN_NCBI_SCOPE
 //
 
 
-// Create pipe and bind original handle
-static int s_BindHandle(const int fd_orig, const bool is_input, 
-#if defined(NCBI_OS_MSWIN)
-                        const bool   is_binary,
-#else
-                        const bool /*is_binary*/,
-#endif
-                        int* fd_save)
+//
+// class CPipeHandle handles forwarded requests from CPipe
+// This class is reimplemented in a platform-specific fashion where needed
+//
+#ifdef NCBI_OS_MSWIN
+
+#include <windows.h>
+
+
+class CPipeHandle : public CObject
 {
-    // Index in "fd_pipe[]"
-    int i_orig = is_input ? 0 : 1;
-    int i_peer = is_input ? 1 : 0;
+public:
+    CPipeHandle();
+    ~CPipeHandle();
 
-    // Create a pipe
-    int fd_pipe[2];
+    void Open(const char* cmd_line, const vector<string>& args,
+              CPipe::EMode mode_stdin,
+              CPipe::EMode mode_stdout,
+              CPipe::EMode mode_stderr);
 
-#if defined(NCBI_OS_MSWIN)
-    int mode = is_binary ? O_BINARY : O_TEXT;
-    int result = _pipe(fd_pipe, 512, mode | O_NOINHERIT);
-#elif defined(NCBI_OS_UNIX)
-    int result = pipe(fd_pipe);
-#elif defined(NCBI_OS_MAC)
-    __NOT_IMPLEMENTED__;
-#endif   
+    int Close();
 
-    if (result == -1)  {
-        *fd_save = -1;
+    size_t Read(void *buffer, size_t size,
+                CPipe::EChildIOHandle from_handle) const;
+    size_t Write(const void* buffer, size_t size) const;
+
+
+private:
+    // Handles for our child process
+    HANDLE m_ChildStdout;
+    HANDLE m_ChildStdin;
+    HANDLE m_ChildStderr;
+
+    // process information, ofr our child process
+    HANDLE m_ProcHandle;
+};
+
+
+CPipeHandle::CPipeHandle()
+: m_ChildStdout(NULL)
+, m_ChildStdin(NULL)
+, m_ChildStderr(NULL)
+{
+    //ZeroMemory(&m_ProcInfo, sizeof(m_ProcInfo));
+}
+
+
+CPipeHandle::~CPipeHandle()
+{
+    Close();
+}
+
+
+int CPipeHandle::Close()
+{
+    // wait for the child process to exit
+    DWORD exit_code;
+    if ( !GetExitCodeProcess(m_ProcHandle, &exit_code) ) {
         return -1;
     }
 
-    // Duplicate one side of the pipe to the original handle;
-    // store the duplicated copy of original handle in "fd_save"
-    *fd_save = dup(fd_orig);
+    m_ProcHandle = NULL;
+    return exit_code;
+}
 
-#if defined(NCBI_OS_MSWIN)
-    if (*fd_save < 0  ||  dup2(fd_pipe[i_orig], fd_orig) != 0) {
-#elif defined(NCBI_OS_UNIX)
-    if (*fd_save < 0  ||  dup2(fd_pipe[i_orig], fd_orig) < 0) {
-#endif
-        if (*fd_save != -1)
-            close(*fd_save);
-        else
-            *fd_save = -1;
-        close(fd_pipe[i_peer]);
-        fd_pipe[i_peer] = -1;
+
+//
+// CPipeHandle::Open() -- Win32 version
+//
+void CPipeHandle::Open(const char* cmd_line, const vector<string>& args,
+                       CPipe::EMode mode_stdin,
+                       CPipe::EMode mode_stdout,
+                       CPipe::EMode mode_stderr)
+{
+    // set the base security attributes
+    SECURITY_ATTRIBUTES attr;
+    attr.nLength = sizeof(attr);
+    attr.bInheritHandle = TRUE;
+    attr.lpSecurityDescriptor = NULL;
+
+    // save the current stdout / stdin handles
+    HANDLE stdout_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE stdin_handle  = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE stderr_handle = GetStdHandle(STD_ERROR_HANDLE);
+
+    // create a pipe for the child's stdout
+    HANDLE child_stdout_read;
+    HANDLE child_stdout_write;
+    if (mode_stdout != CPipe::eDoNotUse) {
+        if ( !CreatePipe(&child_stdout_read, &child_stdout_write, &attr, 0) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot create pipe for child's stdout");
+        }
+        if ( !SetStdHandle(STD_OUTPUT_HANDLE, child_stdout_write) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot remap stdout for child process");
+        }
+
+        // duplicate the handle
+        if ( !DuplicateHandle(GetCurrentProcess(), child_stdout_read,
+                              GetCurrentProcess(), &m_ChildStdout,
+                              0, FALSE, DUPLICATE_SAME_ACCESS) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot duplicate child's stdout handle");
+        }
+        CloseHandle(child_stdout_read);
     }
-    close(fd_pipe[i_orig]);
 
-    //  The peer for the original file handle
-    return fd_pipe[i_peer];
+    // create a pipe for the child's stdin
+    HANDLE child_stdin_read;
+    HANDLE child_stdin_write;
+    if (mode_stdin != CPipe::eDoNotUse) {
+        if ( !CreatePipe(&child_stdin_read, &child_stdin_write, &attr, 0) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot create pipe for child's stdout");
+        }
+        if ( !SetStdHandle(STD_INPUT_HANDLE, child_stdin_read) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot remap stdout for child process");
+        }
+
+        // duplicate the handle
+        if ( !DuplicateHandle(GetCurrentProcess(), child_stdin_write,
+                              GetCurrentProcess(), &m_ChildStdin,
+                              0, FALSE, DUPLICATE_SAME_ACCESS) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot duplicate child's stdout handle");
+        }
+        CloseHandle(child_stdin_write);
+    }
+
+    // create a pipe for the child's stderr
+    HANDLE child_stderr_read;
+    HANDLE child_stderr_write;
+    if (mode_stderr != CPipe::eDoNotUse) {
+        if ( !CreatePipe(&child_stderr_read, &child_stderr_write, &attr, 0) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot create pipe for child's stdout");
+        }
+        if ( !SetStdHandle(STD_ERROR_HANDLE, child_stderr_write) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot remap stdout for child process");
+        }
+
+        // duplicate the handle
+        if ( !DuplicateHandle(GetCurrentProcess(), child_stderr_read,
+                              GetCurrentProcess(), &m_ChildStderr,
+                              0, FALSE, DUPLICATE_SAME_ACCESS) ) {
+            NCBI_THROW(CPipeException, eBind,
+                       "Cannot duplicate child's stdout handle");
+        }
+        CloseHandle(child_stderr_read);
+    }
+
+    // create a process to handle our command line
+    PROCESS_INFORMATION pinfo;
+    STARTUPINFO sinfo;
+    ZeroMemory(&pinfo, sizeof(PROCESS_INFORMATION));
+    ZeroMemory(&sinfo, sizeof(STARTUPINFO));
+    sinfo.cb = sizeof(sinfo);
+
+    string cmds(cmd_line);
+    iterate (vector<string>, iter, args) {
+        if ( !cmds.empty() ) {
+            cmds += " ";
+        }
+        cmds += *iter;
+    }
+
+    if ( !CreateProcess(NULL,
+                        const_cast<char*> (cmds.c_str()),
+                        NULL, NULL, TRUE, 0,
+                        NULL, NULL, &sinfo, &pinfo) ) {
+        string msg = "Cannot create child process for ";
+        msg += cmd_line;
+        msg += " ";
+        msg += cmds;
+        msg += ": Error = ";
+        msg += NStr::IntToString(GetLastError());
+        NCBI_THROW(CPipeException, eBind, msg);
+    }
+
+    m_ProcHandle = pinfo.hProcess;
+
+    // restore stdout/stdin
+    if ( !SetStdHandle(STD_OUTPUT_HANDLE, stdout_handle) ) {
+        NCBI_THROW(CPipeException, eBind,
+                   "Cannot remap stdout for parent process");
+    }
+    if ( !SetStdHandle(STD_INPUT_HANDLE,  stdin_handle) ) {
+        NCBI_THROW(CPipeException, eBind,
+                   "Cannot remap stdin for parent process");
+    }
+    if ( !SetStdHandle(STD_ERROR_HANDLE,  stderr_handle) ) {
+        NCBI_THROW(CPipeException, eBind,
+                   "Cannot remap stdin for parent process");
+    }
+    if (mode_stdout != CPipe::eDoNotUse) {
+        CloseHandle(child_stdout_write);
+    }
+    if (mode_stderr != CPipe::eDoNotUse) {
+        CloseHandle(child_stderr_write);
+    }
 }
 
 
-// Restore the original I/O handle
-static bool s_RestoreHandle(const int fd_orig, const int fd_save)
+//
+// CPipeHandle::Read() -- Win32 version
+//
+size_t CPipeHandle::Read(void* buf, size_t size,
+                         CPipe::EChildIOHandle from_handle) const
 {
-  if (fd_save < 0)
-    return true;
+    DWORD bytes_read = 0;
 
-#if defined(NCBI_OS_MSWIN)
-  if (dup2(fd_save, fd_orig) != 0)
-    return false;
-#elif defined(NCBI_OS_UNIX)
-  if (dup2(fd_save, fd_orig) < 0)
-    return false;
-#endif
+    switch (from_handle) {
+    case CPipe::eStdOut:
+        if ( !ReadFile(m_ChildStdout, buf, size, &bytes_read, NULL) ) {
+            return 0;
+        }
+        break;
 
-  close(fd_save);
-  return true;
+    case CPipe::eStdErr:
+        if ( !ReadFile(m_ChildStderr, buf, size, &bytes_read, NULL) ) {
+            return 0;
+        }
+        break;
+    }
+
+    return bytes_read;
 }
 
 
-CPipe::CPipe() 
+//
+// CPipeHandle::Write() -- Win32 version
+//
+size_t CPipeHandle::Write(const void* buf, size_t size) const
 {
-    Init();
+    DWORD bytes_written = 0;
+    if ( !WriteFile(m_ChildStdin, buf, size, &bytes_written, NULL) ) {
+        return 0;
+    }
+
+    return bytes_written;
 }
 
 
-CPipe::CPipe(const char* cmdname, const vector<string> args, 
-             const EMode mode_stdin, const EMode mode_stdout, 
-             const EMode mode_stderr)
+#elif defined NCBI_OS_UNIX
+
+//
+// Unix version of CPipeHandle
+//
+
+#include <unistd.h>
+#include <errno.h>
+
+class CPipeHandle : public CObject
 {
-    Init();
-    Open(cmdname, args, mode_stdin, mode_stdout, mode_stderr);
+public:
+    CPipeHandle();
+    ~CPipeHandle();
+
+    void Open(const char* cmd_line, const vector<string>& args,
+              CPipe::EMode mode_stdin,
+              CPipe::EMode mode_stdout,
+              CPipe::EMode mode_stderr);
+
+    int Close();
+
+    size_t Read(void *buffer, size_t size,
+                CPipe::EChildIOHandle from_handle) const;
+    size_t Write(const void* buffer, size_t size) const;
+
+private:
+    // I/O handles of the child process for:
+    int m_StdIn;    // write to the shild stdin
+    int m_StdOut;   // read from the child stdout
+    int m_StdErr;   // read from the child stderr
+
+    // Pid of running child process
+    int m_Pid;
+
+
+    // internal helper routine to bind a handle
+    int x_BindHandle(int fd_orig, bool is_input, int* fd_save);
+
+    // internal helper routine to restore a handle
+    bool x_RestoreHandle(int fd_orig, int fd_save);
+};
+
+
+CPipeHandle::CPipeHandle()
+    : m_StdIn(-1),
+      m_StdOut(-1),
+      m_StdErr(-1),
+      m_Pid(-1)
+{
 }
 
 
-CPipe::~CPipe()
+CPipeHandle::~CPipeHandle()
 {
-    Close();
 }
 
 
-void CPipe::Init()
+void CPipeHandle::Open(const char* cmdname, const vector<string>& args,
+                       CPipe::EMode mode_stdin,
+                       CPipe::EMode mode_stdout,
+                       CPipe::EMode mode_stderr)
 {
-    m_StdIn = m_StdOut = m_StdErr = -1;
-    m_Pid = -1;
-}
-
-
-void CPipe::Open(const char* cmdname, const vector<string> args,
-                 const EMode mode_stdin, const EMode mode_stdout, 
-                 const EMode mode_stderr)
-{
-    // Close pipe if it already was opened
-    Close();
-
     // Save original handles here
     int fd_stdin_save = -1, fd_stdout_save = -1, fd_stderr_save = -1;
 
     // Bind standard I/O file handlers to pipes
-    if ( mode_stdin != eDoNotUse ) {
-        m_StdIn  = s_BindHandle(fileno(stdin), true,
-                                mode_stdin == eBinary, &fd_stdin_save);
-        if ( m_StdIn == -1 )
+    if ( mode_stdin != CPipe::eDoNotUse ) {
+        m_StdIn  = x_BindHandle(fileno(stdin), true, &fd_stdin_save);
+        if ( m_StdIn == -1 ) {
             NCBI_THROW(CPipeException,eBind,
-                "Pipe binding to standard I/O file handle failed");
+                       "Pipe binding to standard I/O file handle failed");
+        }
     }
-    if ( mode_stdout != eDoNotUse ) {
-        m_StdOut = s_BindHandle(fileno(stdout), false,
-                                mode_stdout == eBinary, &fd_stdout_save);
-        if ( m_StdOut == -1 )
+    if ( mode_stdout != CPipe::eDoNotUse ) {
+        m_StdOut = x_BindHandle(fileno(stdout), false, &fd_stdout_save);
+        if ( m_StdOut == -1 ) {
             NCBI_THROW(CPipeException,eBind,
-                "Pipe binding to standard I/O file handle failed");
+                       "Pipe binding to standard I/O file handle failed");
+        }
     }
-    if ( mode_stderr != eDoNotUse ) {
-        m_StdErr = s_BindHandle(fileno(stderr), false,
-                                mode_stderr == eBinary, &fd_stderr_save);
-        if ( m_StdErr == -1 )
+    if ( mode_stderr != CPipe::eDoNotUse ) {
+        m_StdErr = x_BindHandle(fileno(stderr), false, &fd_stderr_save);
+        if ( m_StdErr == -1 ) {
             NCBI_THROW(CPipeException,eBind,
-                "Pipe binding to standard I/O file handle failed");
+                       "Pipe binding to standard I/O file handle failed");
+        }
     }
 
     // Spawn the child process
-
-    size_t cnt = args.size(), i = 0;
+    size_t cnt = args.size();
+    size_t i   = 0;
     const char** x_args = new const char*[cnt+2];
     typedef ArrayDeleter<const char*> TArgsDeleter;
     AutoPtr<const char*, TArgsDeleter> p_args = x_args;
-    
     iterate(vector<string>, arg, args) {
-         x_args[i+1] = arg->c_str();
-         i++;
+        x_args[i+1] = arg->c_str();
+        ++i;
     }
-    x_args[cnt+1] = 0;
+    x_args[cnt + 1] = 0;
     try {
         m_Pid = CExec::SpawnVP(CExec::eNoWait, cmdname, x_args);
-    } catch (CException& e) {
+    }
+    catch (CException& e) {
         m_Pid = -1;
-        NCBI_RETHROW_SAME(e,"Pipe has failed to spawn the child process");
+        NCBI_RETHROW_SAME(e, "Pipe has failed to spawn the child process");
     }
 
     // Restore the standard IO file handlers to their original state
-    if ( mode_stdin != eDoNotUse ) {
-        if ( !s_RestoreHandle(fileno(stdin ), fd_stdin_save) )
-            NCBI_THROW(CPipeException,eUnbind,"Pipe unbinding failed");
+    if ( mode_stdin != CPipe::eDoNotUse ) {
+        if ( !x_RestoreHandle(fileno(stdin ), fd_stdin_save) ) {
+            NCBI_THROW(CPipeException,eUnbind, "Pipe unbinding failed");
+        }
     }
-    if ( mode_stdout != eDoNotUse ) {
-        if ( !s_RestoreHandle(fileno(stdout), fd_stdout_save) )
-            NCBI_THROW(CPipeException,eUnbind,"Pipe unbinding failed");
+    if ( mode_stdout != CPipe::eDoNotUse ) {
+        if ( !x_RestoreHandle(fileno(stdout), fd_stdout_save) ) {
+            NCBI_THROW(CPipeException,eUnbind, "Pipe unbinding failed");
+        }
     }
-    if ( mode_stderr != eDoNotUse ) {
-        if ( !s_RestoreHandle(fileno(stderr), fd_stderr_save) )
-            NCBI_THROW(CPipeException,eUnbind,"Pipe unbinding failed");
+    if ( mode_stderr != CPipe::eDoNotUse ) {
+        if ( !x_RestoreHandle(fileno(stderr), fd_stderr_save) ) {
+            NCBI_THROW(CPipeException,eUnbind, "Pipe unbinding failed");
+        }
     }
 }
 
 
-int CPipe::Close()
+int CPipeHandle::Close()
 {
     int status = -1;
     if ( m_Pid != -1 ) {
@@ -252,23 +435,146 @@ int CPipe::Close()
 }
 
 
-size_t CPipe::Read(void* buffer, const size_t count,
-                   const EChildIOHandle from_handle) const
+size_t CPipeHandle::Read(void* buffer, size_t size,
+                         CPipe::EChildIOHandle from_handle) const
 {
-    int fd = (from_handle == eStdOut) ? m_StdOut : m_StdErr;
+    int fd = (from_handle == CPipe::eStdOut) ? m_StdOut : m_StdErr;
     if ( m_Pid == -1  ||  fd == -1 ) {
         NCBI_THROW(CPipeException,eNoInit, "Pipe is not initialized properly");
     } 
-    return read(fd, buffer, count);
+    return read(fd, buffer, size);
+}
+
+
+size_t CPipeHandle::Write(const void* buffer, size_t size) const
+{
+    if ( m_Pid == -1  ||  m_StdIn == -1 ) {
+        NCBI_THROW(CPipeException,eNoInit, "Pipe is not initialized properly");
+    }
+    return write(m_StdIn, buffer, size);
+}
+
+
+// Create pipe and bind original handle
+int CPipeHandle::x_BindHandle(int fd_orig, bool is_input, int* fd_save)
+{
+    // Index in "fd_pipe[]"
+    int i_orig = is_input ? 0 : 1;
+    int i_peer = is_input ? 1 : 0;
+
+    // Create a pipe
+    int fd_pipe[2];
+    int result = pipe(fd_pipe);
+
+    if (result == -1) {
+        *fd_save = -1;
+        return -1;
+    }
+
+    // Duplicate one side of the pipe to the original handle;
+    // store the duplicated copy of original handle in "fd_save"
+    *fd_save = dup(fd_orig);
+
+    if (*fd_save < 0  ||  dup2(fd_pipe[i_orig], fd_orig) < 0) {
+        if (*fd_save != -1) {
+            close(*fd_save);
+        } else {
+            *fd_save = -1;
+        }
+        close(fd_pipe[i_peer]);
+        fd_pipe[i_peer] = -1;
+    }
+    close(fd_pipe[i_orig]);
+
+    //  The peer for the original file handle
+    return fd_pipe[i_peer];
+}
+
+
+// Restore the original I/O handle
+bool CPipeHandle::x_RestoreHandle(int fd_orig, int fd_save)
+{
+    if (fd_save < 0) {
+        return true;
+    }
+
+    if (dup2(fd_save, fd_orig) < 0) {
+        return false;
+    }
+
+    close(fd_save);
+    return true;
+}
+
+
+#else
+
+#error "Class CPipe is supported only on Windows and Unix"
+
+#endif
+
+
+CPipe::CPipe() 
+{
+}
+
+
+CPipe::CPipe(const char* cmdname, const vector<string>& args, 
+             const EMode mode_stdin, const EMode mode_stdout, 
+             const EMode mode_stderr)
+{
+    Open(cmdname, args, mode_stdin, mode_stdout, mode_stderr);
+}
+
+
+CPipe::~CPipe()
+{
+    Close();
+}
+
+
+void CPipe::Open(const char* cmdname, const vector<string>& args,
+                 const EMode mode_stdin, const EMode mode_stdout, 
+                 const EMode mode_stderr)
+{
+    // Close pipe if it already was opened
+    Close();
+
+    // create a new handle to forward our request
+    m_PipeHandle.Reset(new CPipeHandle());
+    m_PipeHandle->Open(cmdname, args, mode_stdin, mode_stdout, mode_stderr);
+}
+
+
+int CPipe::Close()
+{
+    int status = -1;
+    if (m_PipeHandle) {
+        status = m_PipeHandle->Close();
+    }
+    m_PipeHandle.Reset();
+    return status;
+}
+
+
+size_t CPipe::Read(void* buffer, const size_t count,
+                   const EChildIOHandle from_handle) const
+{
+    if ( !m_PipeHandle ) {
+        return 0;
+    }
+
+    return m_PipeHandle->Read(buffer, count, from_handle);
 }
 
 
 size_t CPipe::Write(const void* buffer, const size_t count) const
 {
-    if ( m_Pid == -1  ||  m_StdIn == -1 ) {
-        NCBI_THROW(CPipeException,eNoInit, "Pipe is not initialized properly");
+    if ( !m_PipeHandle ) {
+        return 0;
     }
-    return write(m_StdIn, buffer, count);
+
+    return m_PipeHandle->Write(buffer, count);
 }
 
 
@@ -292,19 +598,19 @@ protected:
     virtual int         sync(void);
 
 private:
-    const CPipe*    m_Pipe;      // underlying connection pipe
-    CT_CHAR_TYPE*   m_Buf;       // of size  2 * m_BufSize
-    CT_CHAR_TYPE*   m_WriteBuf;  // m_Buf
-    CT_CHAR_TYPE*   m_ReadBuf;   // m_Buf + m_BufSize
-    streamsize      m_BufSize;   // of m_WriteBuf, m_ReadBuf
-    CPipe::EChildIOHandle
-                    m_ReadHandle;// handle for reading by default
+    const CPipe*          m_Pipe;      // underlying connection pipe
+    CT_CHAR_TYPE*         m_Buf;       // of size  2 * m_BufSize
+    CT_CHAR_TYPE*         m_WriteBuf;  // m_Buf
+    CT_CHAR_TYPE*         m_ReadBuf;   // m_Buf + m_BufSize
+    streamsize            m_BufSize;   // of m_WriteBuf, m_ReadBuf
+    CPipe::EChildIOHandle m_ReadHandle;// handle for reading by default
 };
 
 
 CPipeStreambuf::CPipeStreambuf(const CPipe& pipe, streamsize buf_size)
     : m_Pipe(&pipe),
-      m_Buf(0), m_BufSize(buf_size ? buf_size : 1), 
+      m_Buf(0),
+      m_BufSize(buf_size ? buf_size : 1),
       m_ReadHandle(CPipe::eStdOut)
 {
     auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
@@ -386,8 +692,9 @@ CT_INT_TYPE CPipeStreambuf::underflow(void)
 int CPipeStreambuf::sync(void)
 {
     do {
-        if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
+        if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF)) {
             return -1;
+        }
     } while (pbase()  &&  pptr() > pbase());
     return 0;
 }
@@ -401,7 +708,8 @@ int CPipeStreambuf::sync(void)
 
 
 CPipeIOStream::CPipeIOStream(const CPipe& pipe, streamsize buf_size)
-    : iostream(0), m_StreamBuf(0)
+    : iostream(0),
+      m_StreamBuf(0)
 {
     auto_ptr<CPipeStreambuf> sb(new CPipeStreambuf(pipe, buf_size));
     init(sb.get());
@@ -420,8 +728,9 @@ CPipeIOStream::~CPipeIOStream(void)
 
 void CPipeIOStream::SetReadHandle(const CPipe::EChildIOHandle handle) const
 {
-    if (m_StreamBuf)
+    if (m_StreamBuf) {
         m_StreamBuf->SetReadHandle(handle);
+    }
 }
 
 
@@ -431,6 +740,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/03/03 14:47:20  dicuccio
+ * Remplemented CPipe using private platform specific classes.  Remplemented
+ * Win32 pipes using CreatePipe() / CreateProcess() - enabled CPipe in windows
+ * subsystem
+ *
  * Revision 1.9  2002/09/05 18:38:07  vakatov
  * Formal code rearrangement to get rid of comp.warnings;  some nice-ification
  *
