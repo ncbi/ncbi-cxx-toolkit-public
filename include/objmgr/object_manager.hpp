@@ -38,6 +38,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.20  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.
@@ -141,6 +145,8 @@ class CScope_Impl;
 // CObjectManager
 
 
+class CSeq_id_Mapper;
+
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
@@ -242,6 +248,9 @@ private:
 
     mutable TRWLock     m_OM_Lock;
     mutable TRWLock     m_OM_ScopeLock;
+
+    // CSeq_id_Mapper lock to provide a single mapper while OM is running
+    CRef<CSeq_id_Mapper> m_Seq_id_Mapper;
 
     friend class CScope_Impl;
     friend class CDataSource; // To get id-mapper

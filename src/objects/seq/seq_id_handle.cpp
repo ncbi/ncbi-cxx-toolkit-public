@@ -125,13 +125,13 @@ CConstRef<CSeq_id> CSeq_id_Handle::GetSeqIdOrNull(void) const
 
 CSeq_id_Handle CSeq_id_Handle::GetGiHandle(int gi)
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper().GetGiHandle(gi);
+    return CSeq_id_Mapper::GetSeq_id_Mapper()->GetGiHandle(gi);
 }
 
 
 CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
+    return CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(id);
 }
 
 
@@ -251,7 +251,7 @@ bool CSeq_id_Handle::x_Match(const CSeq_id_Handle& handle) const
 
 bool CSeq_id_Handle::IsBetter(const CSeq_id_Handle& h) const
 {
-    return CSeq_id_Mapper::GetSeq_id_Mapper().x_IsBetter(*this, h);
+    return CSeq_id_Mapper::GetSeq_id_Mapper()->x_IsBetter(*this, h);
 }
 
 
@@ -260,7 +260,7 @@ bool CSeq_id_Handle::operator==(const CSeq_id& id) const
     if ( IsGi() ) {
         return id.IsGi() && id.GetGi() == GetGi();
     }
-    return *this == CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id);
+    return *this == CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(id);
 }
 
 
@@ -285,6 +285,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.21  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -67,9 +67,8 @@ typedef set<CSeq_id_Handle>                     TSeq_id_HandleSet;
 class NCBI_XOBJMGR_EXPORT CSeq_id_Mapper : public CObject
 {
 public:
-    static CSeq_id_Mapper& GetSeq_id_Mapper(void);
+    static CRef<CSeq_id_Mapper> GetSeq_id_Mapper(void);
     
-    CSeq_id_Mapper(void);
     virtual ~CSeq_id_Mapper(void);
     
     // Get seq-id handle. Create new handle if not found and
@@ -92,6 +91,7 @@ public:
     static CConstRef<CSeq_id> GetSeq_id(const CSeq_id_Handle& handle);
     
 private:
+    CSeq_id_Mapper(void);
     
     friend class CSeq_id_Handle;
     friend class CSeq_id_Info;
@@ -137,6 +137,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.24  2004/06/08 19:18:40  grichenk
 * Removed CSafeStaticRef from seq_id_mapper.hpp
 *

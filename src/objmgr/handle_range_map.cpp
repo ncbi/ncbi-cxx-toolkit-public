@@ -131,7 +131,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         // extract each point
         const CPacked_seqpnt& pp = loc.GetPacked_pnt();
         CSeq_id_Handle idh =
-            CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(pp.GetId());
+            CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(pp.GetId());
         CHandleRange& hr = m_LocMap[idh];
         ENa_strand strand = pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
         ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
@@ -193,7 +193,7 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
                                CHandleRange::TRange range,
                                ENa_strand strand)
 {
-    AddRange(CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id), range, strand);
+    AddRange(CSeq_id_Mapper::GetSeq_id_Mapper()->GetHandle(id), range, strand);
 }
 
 
@@ -255,6 +255,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.19  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *

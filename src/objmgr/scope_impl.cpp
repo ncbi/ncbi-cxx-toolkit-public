@@ -735,7 +735,7 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
             }
         }}
         
-        CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
         if ( mapper.HaveMatchingHandles(id) ) {
             // than try matching handles
             TSeq_id_HandleSet hset;
@@ -1076,7 +1076,7 @@ void CScope_Impl::x_ResolveSeq_id(TSeq_idMapValue& id_info, int get_flag)
     // Protected by m_Scope_Conf_RWLock in upper-level functions
     CSeqMatch_Info match_info;
     auto_ptr<TSeq_id_HandleSet> hset;
-    CSeq_id_Mapper& mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+    CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
     if ( mapper.HaveMatchingHandles(id_info.first) ) {
         hset.reset(new TSeq_id_HandleSet);
         mapper.GetMatchingHandles(id_info.first, *hset);
@@ -1171,7 +1171,7 @@ CScope_Impl::GetTSESetWithAnnotsRef(const CBioseq_ScopeInfo& binfo,
                                     TAnnotRefMap& tse_map)
 {
     TSeq_id_HandleSet idh_set;
-    CSeq_id_Mapper& id_mapper = CSeq_id_Mapper::GetSeq_id_Mapper();
+    CSeq_id_Mapper& id_mapper = *CSeq_id_Mapper::GetSeq_id_Mapper();
     if (id_mapper.HaveReverseMatch(idh)) {
         id_mapper.GetReverseMatchingHandles(idh, idh_set);
     }
@@ -1326,7 +1326,8 @@ CScope_Impl::x_GetSynonyms(CBioseq_ScopeInfo& info)
             //syn_set->AddSynonym(id);
             if ( info.HasBioseq() ) {
                 ITERATE(CBioseq_Info::TId, it, info.GetBioseq_Info().GetId()) {
-                    CSeq_id_Mapper& mapper=CSeq_id_Mapper::GetSeq_id_Mapper();
+                    CSeq_id_Mapper& mapper =
+                        *CSeq_id_Mapper::GetSeq_id_Mapper();
                     if ( mapper.HaveReverseMatch(*it) ) {
                         TSeq_id_HandleSet hset;
                         mapper.GetReverseMatchingHandles(*it, hset);
@@ -1394,6 +1395,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.16  2004/06/03 18:33:48  grichenk
 * Modified annot collector to better resolve synonyms
 * and matching IDs. Do not add id to scope history when

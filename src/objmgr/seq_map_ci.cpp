@@ -257,7 +257,7 @@ CSeq_id_Handle CSeqMap_CI::GetRefSeqid(void) const
         NCBI_THROW(CSeqMapException, eOutOfRange,
                    "Iterator out of range");
     }
-    return CSeq_id_Mapper::GetSeq_id_Mapper().
+    return CSeq_id_Mapper::GetSeq_id_Mapper()->
         GetHandle(x_GetSeqMap().x_GetRefSeqid(x_GetSegment()));
 }
 
@@ -307,7 +307,7 @@ bool CSeqMap_CI::x_RefTSEMatch(const CSeqMap::CSegment& seg) const
 {
     _ASSERT(m_Selector.m_TSE);
     _ASSERT(CSeqMap::ESegmentType(seg.m_SegType) == CSeqMap::eSeqRef);
-    CSeq_id_Handle id = CSeq_id_Mapper::GetSeq_id_Mapper().
+    CSeq_id_Handle id = CSeq_id_Mapper::GetSeq_id_Mapper()->
         GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
     CSeq_entry_Handle tse_info;
     CScope& scope = *m_Scope;
@@ -543,6 +543,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.24  2004/06/08 13:33:28  grichenk
 * Fixed segment type checking in CSeqMap_CI
 *

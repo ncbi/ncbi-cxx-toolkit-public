@@ -34,7 +34,6 @@
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/impl/seq_id_tree.hpp>
 #include <objmgr/objmgr_exception.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -45,11 +44,14 @@ BEGIN_SCOPE(objects)
 //
 
     
-static CSafeStaticRef<CSeq_id_Mapper> s_Seq_id_Mapper;
+static CSeq_id_Mapper* s_Seq_id_Mapper = 0;
 
-CSeq_id_Mapper& CSeq_id_Mapper::GetSeq_id_Mapper(void)
+CRef<CSeq_id_Mapper> CSeq_id_Mapper::GetSeq_id_Mapper(void)
 {
-    return s_Seq_id_Mapper.Get();
+    if (!s_Seq_id_Mapper) {
+        s_Seq_id_Mapper = new CSeq_id_Mapper;
+    }
+    return Ref(s_Seq_id_Mapper);
 }
 
 CSeq_id_Mapper::CSeq_id_Mapper(void)
@@ -67,6 +69,8 @@ CSeq_id_Mapper::~CSeq_id_Mapper(void)
     ITERATE ( TTrees, it, m_Trees ) {
         _ASSERT((*it)->Empty());
     }
+    _ASSERT(s_Seq_id_Mapper == this);
+    s_Seq_id_Mapper = 0;
 }
 
 
@@ -160,6 +164,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.45  2004/06/08 19:18:40  grichenk
 * Removed CSafeStaticRef from seq_id_mapper.hpp
 *

@@ -48,8 +48,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CObjectManager::CObjectManager(void)
+    : m_Seq_id_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
 {
-  //LOG_POST("CObjectManager - new :" << this );
+    //LOG_POST("CObjectManager - new :" << this );
 }
 
 
@@ -437,6 +438,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/06/10 16:21:27  grichenk
+* Changed CSeq_id_Mapper singleton type to pointer, GetSeq_id_Mapper
+* returns CRef<> which is locked by CObjectManager.
+*
 * Revision 1.33  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
