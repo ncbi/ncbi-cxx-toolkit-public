@@ -174,9 +174,16 @@ public:
     pair<const_iterator, const_iterator> GetQuals(const Key& key) const {
         return m_Quals.equal_range(key);
     }
+    iterator Erase(iterator it) {
+        iterator next = it;
+        if ( next != end() ) {
+            ++next;
+            m_Quals.erase(it);
+        }
+        return next;
+    }
     void RemoveQuals(const Key& key) {
-        pair<iterator, iterator> range = m_Quals.equal_range(key);
-        m_Quals.erase(range.first, range.second);
+        m_Quals.erase(key);
     }
     iterator Find(const Key& key) {
         return m_Quals.find(key);
@@ -408,7 +415,7 @@ private:
 class CFlatXrefQVal : public IFlatQVal
 {
 public:
-    typedef CSeq_feat::TDbxref                TXref;
+    typedef CSeq_feat::TDbxref                       TXref;
     typedef CQualContainer<EFeatureQualifier> TQuals;
 
     CFlatXrefQVal(const TXref& value, const TQuals* quals = 0) 
@@ -478,9 +485,9 @@ class CFlatProductQVal : public CFlatStringQVal
 {
 public:
     typedef CSeqFeatData::ESubtype  TSubtype;
-    CFlatProductQVal(const string& value, TSubtype subtype)
-        :   CFlatStringQVal(value), m_Subtype(CSeqFeatData::eSubtype_bad)
-    { }
+    CFlatProductQVal(const string& value, TSubtype subtype) :
+        CFlatStringQVal(value), m_Subtype(subtype)
+    {}
     void Format(TFlatQuals& q, const string& n, CBioseqContext& ctx,
                 TFlags) const;
 private:
@@ -496,6 +503,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/05/19 14:44:38  shomrat
+* + CQualContainer::Erase(..)
+*
 * Revision 1.11  2004/05/06 17:43:00  shomrat
 * CFlatQual -> CFormatQual to prevent name collisions in ncbi_seqext lib
 *
