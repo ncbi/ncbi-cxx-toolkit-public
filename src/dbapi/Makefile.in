@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = driver
+SUB_PROJ = driver cache
 
 LIB_PROJ = dbapi
 
