@@ -40,6 +40,7 @@ Contents: All code related to query sequence masking/filtering for BLAST
 #include <blast_filter.h>
 #include <blast_dust.h>
 #include <blast_seg.h>
+#include <urkpcc.h>
 
 static char const rcsid[] = "$Id$";
 
@@ -614,7 +615,7 @@ BlastSetUp_load_options_to_buffer(const Char *instructions, CharPtr buffer)
 
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
-   CharPtr instructions, BoolPtr mask_at_hash, 
+   Int4 offset, CharPtr instructions, BoolPtr mask_at_hash, 
    BlastSeqLocPtr *seqloc_retval)
 {
 /* TEMP_BLAST_OPTIONS is set to zero until these are implemented. */
@@ -633,13 +634,12 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	Int2 seqloc_num;
 	Int2 status=0;		/* return value. */
 	Int4 window_cc, linker_cc, window_dust, level_dust, minwin_dust, linker_dust;
-	SeqLocPtr cc_slp=NULL, dust_slp=NULL, seg_slp=NULL, seqloc_head=NULL,
-           repeat_slp=NULL, vs_slp=NULL;
-        BlastSeqLocPtr dust_loc = NULL;
+	SeqLocPtr cc_slp=NULL, seqloc_head=NULL, repeat_slp=NULL, vs_slp=NULL;
+   BlastSeqLocPtr dust_loc = NULL, seg_loc = NULL;
 	PccDatPtr pccp;
 	Nlm_FloatHiPtr scores;
 	Nlm_FloatHi cutoff_cc;
-	SegParamsPtr sparamsp=NULL;
+	SegParametersPtr sparamsp=NULL;
 #ifdef TEMP_BLAST_OPTIONS
 	SeqAlignPtr seqalign;
 	SeqLocPtr myslp, seqloc_var, seqloc_tmp;
@@ -681,7 +681,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 		{
 			if (*ptr == 'S')
 			{
-				sparamsp = SegParamsNewAa();
+				sparamsp = SegParametersNewAa();
 				sparamsp->overlaps = TRUE;	/* merge overlapping segments. */
 				ptr = BlastSetUp_load_options_to_buffer(ptr+1, buffer);
 				if (buffer[0] != NULLB)
@@ -765,10 +765,8 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	{
 		if (do_default || do_seg)
 		{
-#if 0
-			seg_slp = SeqlocSegAa(slp, sparamsp);
-#endif
-			SegParamsFree(sparamsp);
+			SeqBufferSegAa(sequence, length, offset, sparamsp, &seg_loc);
+			SegParametersFree(sparamsp);
 			sparamsp = NULL;
 			seqloc_num++;
 		}
@@ -791,8 +789,8 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	{
 		if (do_default || do_dust)
 		{
-                   SeqBufferDust(sequence, length, level_dust, window_dust,
-                                 minwin_dust, linker_dust, &dust_loc);
+         SeqBufferDust(sequence, length, offset, level_dust, window_dust,
+                       minwin_dust, linker_dust, &dust_loc);
 			seqloc_num++;
 		}
 #ifdef TEMP_BLAST_OPTIONS
@@ -878,8 +876,11 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 		if (vs_slp)
 			ValNodeAddPointer(&seqloc_list, SEQLOC_MIX, vs_slp);
 #endif
-                if (dust_loc)
-                   seqloc_list = dust_loc;
+      if (dust_loc)
+         seqloc_list = dust_loc;
+      if (seg_loc)
+         seqloc_list = seg_loc;
+
 		*seqloc_retval = seqloc_list;
 	}
 
