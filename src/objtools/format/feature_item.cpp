@@ -36,6 +36,7 @@
 #include <serial/iterator.hpp>
 
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Heterogen.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -57,6 +58,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/feature.hpp>
 
 #include <util/static_set.hpp>
 #include <util/sequtil/sequtil.hpp>
@@ -332,6 +334,55 @@ static bool s_SkipFeature(const CSeq_feat& feat, CFFContext& ctx)
 }
 
 
+static const string s_BondList[] = {
+    "",
+    "disulfide",
+    "thiolester",
+    "xlink",
+    "thioether",
+    "unclassified"
+};
+
+
+static const string s_SiteList[] = {
+    "",
+    "active",
+    "binding",
+    "cleavage",
+    "inhibit",
+    "modified",
+    "glycosylation",
+    "myristoylation",
+    "mutagenized",
+    "metal-binding",
+    "phosphorylation",
+    "acetylation",
+    "amidation",
+    "methylation",
+    "hydroxylation",
+    "sulfatation",
+    "oxidative-deamination",
+    "pyrrolidone-carboxylic-acid",
+    "gamma-carboxyglutamic-acid",
+    "blocked",
+    "lipid-binding",
+    "np-binding",
+    "DNA binding",
+    "signal-peptide",
+    "transit-peptide",
+    "transmembrane-region",
+    "unclassified"
+};
+
+
+static const string s_PsecStrText[] = {
+    "",
+    "helix",
+    "sheet",
+    "turn"
+};
+
+
 // -- FeatureHeader
 
 CFeatHeaderItem::CFeatHeaderItem(CFFContext& ctx) : CFlatItem(ctx)
@@ -514,6 +565,11 @@ static bool s_LocIsFuzz(const CSeq_feat& feat, const CSeq_loc& loc)
 
 void CFeatureItem::x_AddQuals(CFFContext& ctx) const
 {
+    if ( ctx.IsFormatFTable() ) {
+        x_AddFTableQuals(ctx);
+        return;
+    }
+
     CScope&             scope = ctx.GetScope();
     const CSeqFeatData& data  = m_Feat->GetData();
     const CSeq_loc&     loc   = GetLoc();
@@ -1579,6 +1635,10 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
 
 void CFeatureItem::x_FormatQuals(void) const
 {
+    if ( GetContext().IsFormatFTable() ) {
+        m_FF->SetQuals() = m_FTableQuals;
+        return;
+    }
     m_FF->SetQuals().reserve(m_Quals.Size());
     CFlatFeature::TQuals& qvec = m_FF->SetQuals();
 
@@ -1759,6 +1819,499 @@ void CFeatureItem::x_CleanQuals(void) const
         if ( strval != 0  &&  
              NStr::EqualNocase(strval->GetValue(), m_Feat->GetComment()) ) {
             x_RemoveQuals(eFQ_seqfeat_note);
+        }
+    }
+}
+
+
+
+
+
+void CFeatureItem::x_AddFTableQuals(CFFContext& ctx) const
+{
+    bool pseudo = m_Feat->CanGetPseudo()  &&  m_Feat->GetPseudo();
+
+    const CSeqFeatData& data = m_Feat->GetData();
+
+    switch ( m_Feat->GetData().Which() ) {
+    case CSeqFeatData::e_Gene:
+        pseudo |= x_AddFTableGeneQuals(data.GetGene());
+        break;
+    case CSeqFeatData::e_Rna:
+        x_AddFTableRnaQuals(*m_Feat, ctx);
+        break;
+    case CSeqFeatData::e_Cdregion:
+        x_AddFTableCdregionQuals(*m_Feat, ctx);
+        break;
+    case CSeqFeatData::e_Prot:
+        x_AddFTableProtQuals(*m_Feat);
+        break;
+    case CSeqFeatData::e_Region:
+        x_AddFTableRegionQuals(data.GetRegion());
+        break;
+    case CSeqFeatData::e_Bond:
+        x_AddFTableBondQuals(data.GetBond());
+        break;
+    case CSeqFeatData::e_Site:
+        x_AddFTableSiteQuals(data.GetSite());
+        break;
+    case CSeqFeatData::e_Psec_str:
+        x_AddFTablePsecStrQuals(data.GetPsec_str());
+        break;
+    case CSeqFeatData::e_Het:
+        x_AddFTablePsecStrQuals(data.GetHet());
+        break;
+    case CSeqFeatData::e_Biosrc:
+        x_AddFTableBiosrcQuals(data.GetBiosrc());
+        break;
+    default:
+        break;
+    }
+    if ( pseudo ) {
+        x_AddFTableQual("pseudo");
+    }
+    const CGene_ref* grp = m_Feat->GetGeneXref();
+    if ( grp != 0  &&  grp->IsSuppressed() ) {
+        x_AddFTableQual("gene", "-");
+    }
+    if ( m_Feat->CanGetComment()  &&  !m_Feat->GetComment().empty() ) {
+        x_AddFTableQual("note", m_Feat->GetComment());
+    }
+    if ( m_Feat->CanGetExp_ev() ) {
+        string ev;
+        switch ( m_Feat->GetExp_ev() ) {
+        case CSeq_feat::eExp_ev_experimental:
+            ev = "experimental";
+            break;
+        case CSeq_feat::eExp_ev_not_experimental:
+            ev = "not_experimental";
+            break;
+        }
+        x_AddFTableQual("evidence", ev);
+    }
+    if ( m_Feat->CanGetExcept_text()  &&  !m_Feat->GetExcept_text().empty() ) {
+        x_AddFTableQual("exception", m_Feat->GetExcept_text());
+    } else if ( m_Feat->CanGetExcept()  &&  m_Feat->GetExcept() ) {
+        x_AddFTableQual("exception");
+    }
+    ITERATE (CSeq_feat::TQual, it, m_Feat->GetQual()) {
+        const CGb_qual& qual = **it;
+        const string& key = qual.CanGetQual() ? qual.GetQual() : kEmptyStr;
+        const string& val = qual.CanGetVal() ? qual.GetVal() : kEmptyStr;
+        if ( !key.empty()  &&  !val.empty() ) {
+            x_AddFTableQual(key, val);
+        }
+    }
+    if ( m_Feat->IsSetExt() ) {
+        x_AddFTableExtQuals(m_Feat->GetExt());
+    }
+    if ( data.IsGene() ) {
+        x_AddFTableDbxref(data.GetGene().GetDb());
+    } else if ( data.IsProt() ) {
+        x_AddFTableDbxref(data.GetProt().GetDb());
+    }
+    x_AddFTableDbxref(m_Feat->GetDbxref());
+}
+
+
+void CFeatureItem::x_AddFTableExtQuals(const CSeq_feat::TExt& ext) const
+{
+    ITERATE (CUser_object::TData, it, ext.GetData()) {
+        const CUser_field& field = **it;
+        if ( !field.CanGetData() ) {
+            continue;
+        }
+        if ( field.GetData().IsObject() ) {
+            const CUser_object& obj = field.GetData().GetObject();
+            x_AddExtQuals(obj);
+            return;
+        } else if ( field.GetData().IsObjects() ) {
+            ITERATE (CUser_field::C_Data::TObjects, o, field.GetData().GetObjects()) {
+                x_AddExtQuals(**o);
+            }
+            return;
+        }
+    }
+    if ( ext.CanGetType()  &&  ext.GetType().IsStr() ) {
+        const string& oid = ext.GetType().GetStr();
+        if ( oid == "GeneOntology" ) {
+            ITERATE (CUser_object::TData, uf_it, ext.GetData()) {
+                const CUser_field& field = **uf_it;
+                if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
+                    const string& label = field.GetLabel().GetStr();
+                    string name;
+                    if ( label == "Process" ) {
+                        name = "go_process";
+                    } else if ( label == "Component" ) {               
+                        name = "go_component";
+                    } else if ( label == "Function" ) {
+                        name = "go_function";
+                    }
+                    if ( name.empty() ) {
+                        continue;
+                    }
+                    
+                    ITERATE (CUser_field::TData::TFields, it, field.GetData().GetFields()) {
+                        if ( (*it)->GetData().IsFields() ) {
+                            CFlatGoQVal(**it).Format(m_FTableQuals, name, GetContext(), 0);;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void CFeatureItem::x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref) const
+{
+    ITERATE (CSeq_feat::TDbxref, it, dbxref) {
+        const CDbtag& dbt = **it;
+        if ( dbt.CanGetDb()  &&  !dbt.GetDb().empty()  &&
+             dbt.CanGetTag() ) {
+            const CObject_id& oid = dbt.GetTag();
+            switch ( oid.Which() ) {
+            case CObject_id::e_Str:
+                if ( !oid.GetStr().empty() ) {
+                    x_AddFTableQual("db_xref", dbt.GetDb() + ":" + oid.GetStr());
+                }
+                break;
+            case CObject_id::e_Id:
+                x_AddFTableQual("db_xref", dbt.GetDb() + ":" + NStr::IntToString(oid.GetId()));
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+
+bool CFeatureItem::x_AddFTableGeneQuals(const CGene_ref& gene) const
+{
+    if ( gene.CanGetLocus()  &&  !gene.GetLocus().empty() ) {
+        x_AddFTableQual("gene", gene.GetLocus());
+    }
+    ITERATE (CGene_ref::TSyn, it, gene.GetSyn()) {
+        x_AddFTableQual("gene_syn", *it);
+    }
+    if ( gene.CanGetDesc()  &&  !gene.GetDesc().empty() ) {
+        x_AddFTableQual("gene_desc", gene.GetDesc());
+    }
+    if ( gene.CanGetMaploc()  &&  !gene.GetMaploc().empty() ) {
+        x_AddFTableQual("map", gene.GetMaploc());
+    }
+    if ( gene.CanGetLocus_tag()  &&  !gene.GetLocus_tag().empty() ) {
+        x_AddFTableQual("locus_tag", gene.GetLocus_tag());
+    }
+
+    return (gene.CanGetPseudo()  &&  gene.GetPseudo());
+}
+
+
+void CFeatureItem::x_AddFTableRnaQuals(const CSeq_feat& feat, CFFContext& ctx) const
+{
+    string label;
+
+    if ( !feat.GetData().IsRna() ) {
+        return;
+    }
+    const CSeqFeatData::TRna& rna = feat.GetData().GetRna();
+    if ( rna.CanGetExt() ) {
+        const CRNA_ref::TExt& ext = rna.GetExt();
+        switch ( ext.Which() ) {
+        case CRNA_ref::TExt::e_Name:
+            if ( !ext.GetName().empty() ) {
+                x_AddFTableQual("product", ext.GetName());
+            }
+            break;
+        case CRNA_ref::TExt::e_TRNA:
+            feature::GetLabel(feat, &label, feature::eContent, &ctx.GetScope());
+            x_AddFTableQual("product", label);
+            break;
+        }
+    }
+
+    if ( feat.CanGetProduct() ) {
+        CBioseq_Handle prod = 
+            ctx.GetScope().GetBioseqHandle(m_Feat->GetProduct());
+        if ( prod ) {
+            const CSeq_id& id = GetId(prod, eGetId_Best);
+            string id_str;
+            if ( id.IsGenbank()  ||  id.IsEmbl()  ||  id.IsDdbj()  ||
+                id.IsTpg()  ||  id.IsTpd()  ||  id.IsTpe()  ||
+                id.IsOther() ||  (id.IsLocal()  &&  !ctx.SuppressLocalId()) ) {
+                id_str = id.GetSeqIdString(true);
+            } else if ( id.IsGeneral() ) {
+                id_str = id.AsFastaString();
+            }
+            x_AddFTableQual("transcript_id", id_str);
+        }
+    }
+}
+
+
+void CFeatureItem::x_AddFTableCdregionQuals(const CSeq_feat& feat, CFFContext& ctx) const
+{
+    CBioseq_Handle prod;
+    if ( feat.CanGetProduct() ) {
+        prod = ctx.GetScope().GetBioseqHandle(feat.GetProduct());
+    }
+    if ( prod ) {
+        CConstRef<CSeq_feat> prot = GetBestOverlappingFeat(
+            feat.GetProduct(),
+            CSeqFeatData::e_Prot,
+            eOverlap_Simple,
+            ctx.GetScope());
+        if ( prot ) {
+            x_AddFTableProtQuals(*prot);
+        }
+    }
+    const CCdregion& cdr = feat.GetData().GetCdregion();
+    if ( cdr.CanGetFrame()  &&  cdr.GetFrame() > CCdregion::eFrame_one ) {
+        x_AddFTableQual("codon_start", NStr::IntToString(cdr.GetFrame()));
+    }
+    ITERATE (CCdregion::TCode_break, it, cdr.GetCode_break()) {
+        string pos = CFlatSeqLoc((*it)->GetLoc(), ctx).GetString();
+        string aa  = "OTHER";
+        switch ((*it)->GetAa().Which()) {
+        case CCode_break::C_Aa::e_Ncbieaa:
+            aa = GetAAName((*it)->GetAa().GetNcbieaa(), true);
+            break;
+        case CCode_break::C_Aa::e_Ncbi8aa:
+            aa = GetAAName((*it)->GetAa().GetNcbi8aa(), false);
+            break;
+        case CCode_break::C_Aa::e_Ncbistdaa:
+            aa = GetAAName((*it)->GetAa().GetNcbistdaa(), false);
+            break;
+        default:
+            break;
+        }
+        x_AddFTableQual("transl_except", "(pos:" + pos + ",aa:" + aa + ")");
+    }
+    const CSeq_id* id = 0;
+    string id_str;
+    if ( prod ) {
+        id = &GetId(prod, eGetId_Best);
+    } else if ( feat.CanGetProduct() ) {
+        try { 
+            id = &GetId(feat.GetProduct(), &ctx.GetScope());
+            if ( id->IsGi() ) {
+                // get "normal" id 
+            }
+        } catch (CNotUnique&) {
+            id = 0;
+        }
+    }
+    if ( id != 0 ) {
+        if ( id->IsGenbank()  ||  id->IsEmbl()  ||  id->IsDdbj()  ||
+            id->IsTpg()  ||  id->IsTpd()  ||  id->IsTpe()  ||
+            id->IsOther() ||  (id->IsLocal()  &&  !ctx.SuppressLocalId()) ) {
+            id_str = id->GetSeqIdString(true);
+        } else if ( id->IsGi() ) {
+            id_str = id->AsFastaString();
+        }
+        x_AddFTableQual("protein_id", id_str);
+    }
+}
+
+
+void CFeatureItem::x_AddFTableProtQuals(const CSeq_feat& prot) const
+{
+    if ( !prot.GetData().IsProt() ) {
+        return;
+    }
+    const CProt_ref& pref = prot.GetData().GetProt();
+    ITERATE (CProt_ref::TName, it, pref.GetName()) {
+        if ( !it->empty() ) {
+            x_AddFTableQual("product", *it);
+        }
+    }
+    if ( pref.CanGetDesc()  &&  !pref.GetDesc().empty() ) {
+        x_AddFTableQual("prot_desc", pref.GetDesc());
+    }
+    ITERATE (CProt_ref::TActivity, it, pref.GetActivity()) {
+        if ( !it->empty() ) {
+            x_AddFTableQual("function", *it);
+        }
+    }
+    ITERATE (CProt_ref::TEc, it, pref.GetEc()) {
+        if ( !it->empty() ) {
+            x_AddFTableQual("EC_number", *it);
+        }
+    }
+    if ( prot.CanGetComment()  &&  !prot.GetComment().empty() ) {
+        x_AddFTableQual("prot_note", prot.GetComment());
+    }
+}
+
+
+void CFeatureItem::x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region) const
+{
+    if ( !region.empty() ) {
+        x_AddFTableQual("region", region);
+    }
+}
+
+
+void CFeatureItem::x_AddFTableBondQuals(const CSeqFeatData::TBond& bond) const
+{
+    size_t bondidx = static_cast<size_t>(bond);
+    if ( bondidx == static_cast<size_t>(CSeqFeatData::eBond_other) ) {
+        bondidx = 5;
+    }
+    if ( bondidx > 0  &&  bondidx < 6 ) {
+        x_AddFTableQual("bond_type", s_BondList[bondidx]);
+    }
+}
+
+
+void CFeatureItem::x_AddFTableSiteQuals(const CSeqFeatData::TSite& site) const
+{
+    size_t siteidx = static_cast<size_t>(site);
+    if ( siteidx = static_cast<size_t>(CSeqFeatData::eSite_other) ) {
+        siteidx = 26;
+    }
+    if ( siteidx > 0  &&  siteidx < 27 ) {
+        x_AddFTableQual("site_type", s_SiteList[siteidx]);
+    }
+}
+
+
+void CFeatureItem::x_AddFTablePsecStrQuals(const CSeqFeatData::TPsec_str& psec_str) const
+{
+    size_t idx = static_cast<size_t>(psec_str);
+    if ( idx > 0  &&  idx < 3 ) {
+        x_AddFTableQual("sec_str_type", s_PsecStrText[idx]);
+    }
+}
+
+
+void CFeatureItem::x_AddFTablePsecStrQuals(const CSeqFeatData::THet& het) const
+{
+    if ( !het.Get().empty() ) {
+        x_AddFTableQual("heterogen", het.Get());
+    }
+}
+
+
+static const string s_GetSubtypeString(const COrgMod::TSubtype& subtype)
+{
+    switch ( subtype ) {
+        case COrgMod::eSubtype_strain:           return "strain";            break;
+        case COrgMod::eSubtype_substrain:        return "substrain";         break;
+        case COrgMod::eSubtype_type:             return "type";              break;
+        case COrgMod::eSubtype_subtype:          return "subtype";           break;
+        case COrgMod::eSubtype_variety:          return "variety";           break;
+        case COrgMod::eSubtype_serotype:         return "serotype";          break;
+        case COrgMod::eSubtype_serogroup:        return "serogroup";         break;
+        case COrgMod::eSubtype_serovar:          return "serovar";           break;
+        case COrgMod::eSubtype_cultivar:         return "cultivar";          break;
+        case COrgMod::eSubtype_pathovar:         return "pathovar";          break;
+        case COrgMod::eSubtype_chemovar:         return "chemovar";          break;
+        case COrgMod::eSubtype_biovar:           return "biovar";            break;
+        case COrgMod::eSubtype_biotype:          return "biotype";           break;
+        case COrgMod::eSubtype_group:            return "group";             break;
+        case COrgMod::eSubtype_subgroup:         return "subgroup";          break;
+        case COrgMod::eSubtype_isolate:          return "isolate";           break;
+        case COrgMod::eSubtype_common:           return "common";            break;
+        case COrgMod::eSubtype_acronym:          return "acronym";           break;
+        case COrgMod::eSubtype_dosage:           return "dosage";            break;
+        case COrgMod::eSubtype_nat_host:         return "nat_host";          break;
+        case COrgMod::eSubtype_sub_species:      return "sub_species";       break;
+        case COrgMod::eSubtype_specimen_voucher: return "specimen_voucher";  break;
+        case COrgMod::eSubtype_authority:        return "authority";         break;
+        case COrgMod::eSubtype_forma:            return "forma";             break;
+        case COrgMod::eSubtype_forma_specialis:  return "dosage";            break;
+        case COrgMod::eSubtype_ecotype:          return "ecotype";           break;
+        case COrgMod::eSubtype_synonym:          return "synonym";           break;
+        case COrgMod::eSubtype_anamorph:         return "anamorph";          break;
+        case COrgMod::eSubtype_teleomorph:       return "teleomorph";        break;
+        case COrgMod::eSubtype_breed:            return "breed";             break;
+        case COrgMod::eSubtype_gb_acronym:       return "gb_acronym";        break;
+        case COrgMod::eSubtype_gb_anamorph:      return "gb_anamorph";       break;
+        case COrgMod::eSubtype_gb_synonym:       return "gb_synonym";        break;
+        case COrgMod::eSubtype_old_lineage:      return "old_lineage";       break;
+        case COrgMod::eSubtype_old_name:         return "old_name";          break;
+        case COrgMod::eSubtype_other:            return "note";              break;
+        default:                                 return kEmptyStr;         break;
+    }
+    return kEmptyStr;
+}
+
+
+static const string s_GetSubsourceString(const CSubSource::TSubtype& subtype)
+{
+    switch ( subtype ) {
+        case CSubSource::eSubtype_chromosome: return "chromosome"; break;
+        case CSubSource::eSubtype_map: return "map"; break;
+        case CSubSource::eSubtype_clone: return "clone"; break;
+        case CSubSource::eSubtype_subclone: return "subclone"; break;
+        case CSubSource::eSubtype_haplotype: return "haplotype"; break;
+        case CSubSource::eSubtype_genotype: return "genotype"; break;
+        case CSubSource::eSubtype_sex: return "sex"; break;
+        case CSubSource::eSubtype_cell_line: return "cell_line"; break;
+        case CSubSource::eSubtype_cell_type: return "cell_type"; break;
+        case CSubSource::eSubtype_tissue_type: return "tissue_type"; break;
+        case CSubSource::eSubtype_clone_lib: return "clone_lib"; break;
+        case CSubSource::eSubtype_dev_stage: return "dev_stage"; break;
+        case CSubSource::eSubtype_frequency: return "frequency"; break;
+        case CSubSource::eSubtype_germline: return "germline"; break;
+        case CSubSource::eSubtype_rearranged: return "rearranged"; break;
+        case CSubSource::eSubtype_lab_host: return "lab_host"; break;
+        case CSubSource::eSubtype_pop_variant: return "pop_variant"; break;
+        case CSubSource::eSubtype_tissue_lib: return "tissue_lib"; break;
+        case CSubSource::eSubtype_plasmid_name: return "plasmid_name"; break;
+        case CSubSource::eSubtype_transposon_name: return "transposon_name"; break;
+        case CSubSource::eSubtype_insertion_seq_name: return "insertion_seq_name"; break;
+        case CSubSource::eSubtype_plastid_name: return "plastid_name"; break;
+        case CSubSource::eSubtype_country: return "country"; break;
+        case CSubSource::eSubtype_segment: return "segment"; break;
+        case CSubSource::eSubtype_endogenous_virus_name: return "endogenous_virus_name"; break;
+        case CSubSource::eSubtype_transgenic: return "transgenic"; break;
+        case CSubSource::eSubtype_environmental_sample: return "environmental_sample"; break;
+        case CSubSource::eSubtype_isolation_source: return "isolation_source"; break;
+        case CSubSource::eSubtype_other: return "note"; break;
+        default: return kEmptyStr; break;
+    }
+    return kEmptyStr;
+}
+
+void CFeatureItem::x_AddFTableBiosrcQuals(const CBioSource& src) const
+{
+    if ( src.CanGetOrg() ) {
+        const CBioSource::TOrg& org = src.GetOrg();
+
+        if ( org.CanGetTaxname()  &&  !org.GetTaxname().empty() ) {
+            x_AddFTableQual("organism", org.GetTaxname());
+        }
+
+        if ( org.CanGetOrgname() ) {
+            ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+                if ( (*it)->CanGetSubtype() ) {
+                    string str = s_GetSubtypeString((*it)->GetSubtype());
+                    if ( str.empty() ) {
+                        continue;
+                    }
+                    if ( (*it)->CanGetSubname()  &&  !(*it)->GetSubname().empty() ) {
+                        str += (*it)->GetSubname();
+                    }
+                    x_AddFTableQual(str);
+                }
+            }
+        }
+    }
+
+    ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
+        if ( (*it)->CanGetSubtype() ) {
+            string str = s_GetSubsourceString((*it)->GetSubtype());
+            if ( str.empty() ) {
+                continue;
+            }
+            if ( (*it)->CanGetName() ) {
+                str += (*it)->GetName();
+            }
+            x_AddFTableQual(str);
         }
     }
 }
@@ -2197,6 +2750,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/04/07 14:27:15  shomrat
+* Added methods forFTable format
+*
 * Revision 1.15  2004/03/31 16:00:12  ucko
 * C(Source)FeatureItem::x_FormatQual: make sure to call the const
 * version of GetQuals to fix WorkShop build errors.
