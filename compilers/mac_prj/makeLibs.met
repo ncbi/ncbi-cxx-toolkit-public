@@ -387,6 +387,11 @@ on SetProjectData()
 		
 		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
 		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
+		AddSimpleProject("ncbi_xloader_genbank", {}, "objtools:data_loaders:genbank")
+		AddSimpleProjectListFiles("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1.cpp"})
+		AddSimpleProjectListFiles("ncbi_xreader_id1c", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1_cache.cpp"})
+		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
+		
 		-- AddSimpleProject("ncbi_xloader_blastdb", {}, "objtools:data_loaders:blastdb") 	-- needs bsd? ctools?
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 	end if
@@ -456,7 +461,7 @@ on SetProjectData()
 		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil"}
 		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
-			{"dbapi_driver", "id1", "id2", "xobjmgr", "xobjutil"}
+			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1"}
 		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		set CompressLibs to {"z", "bz2", "xcompress"}
@@ -475,7 +480,7 @@ on SetProjectData()
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"xflat", "ncbi_xloader_lds", "gbseq"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds", "ncbi_xreader_id1c"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
