@@ -121,9 +121,29 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
 		                    new_vals.push_back(val); //not resolved - keep old val
                         else {
                             //was resolved
-		                    copy(resolved_def.begin(), 
-			                     resolved_def.end(), 
-			                     back_inserter(new_vals));
+                            ITERATE(list<string>, l, resolved_def) {
+                                const string& define = *l;
+                                if ( IsConfigurableDefine(define) ) {
+                                    string resolved_def_str = 
+                                        GetApp().GetSite().ResolveDefine
+                                                     (StripConfigurableDefine
+                                                                     (define));
+                                    if ( !resolved_def_str.empty() ) {
+                                        list<string> resolved_defs;
+                                        NStr::Split(resolved_def_str, 
+                                                    LIST_SEPARATOR, 
+                                                    resolved_defs);
+                                        copy(resolved_defs.begin(),
+                                             resolved_defs.end(),
+                                             back_inserter(new_vals));
+                                    } else {
+                                        new_vals.push_back(define);
+                                    }
+
+                                } else {
+                                    new_vals.push_back(define);
+                                }
+                            }
 		                    modified = true;
                         }
                     }
@@ -213,9 +233,8 @@ void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags,
     libs_list->clear();
     ITERATE(list<string>, p, libs_flags) {
         const string& flag = *p;
-        if ( NStr::StartsWith(flag, "@") &&
-             NStr::EndsWith(flag, "@") ) {
-            libs_list->push_back(string(flag, 1, flag.length() - 2));    
+        if ( IsConfigurableDefine(flag) ) {
+            libs_list->push_back(StripConfigurableDefine(flag));    
         }
     }
 }
@@ -287,6 +306,21 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends_libs,
 }
 
 
+bool SMakeProjectT::IsConfigurableDefine(const string& define)
+{
+    return  NStr::StartsWith(define, "@")  &&
+            NStr::EndsWith  (define, "@");
+
+}
+
+
+string SMakeProjectT::StripConfigurableDefine(const string& define)
+{
+    return IsConfigurableDefine(define) ? 
+                define.substr(1, define.length() - 2): "";
+}
+
+
 //-----------------------------------------------------------------------------
 void SAppProjectT::CreateNcbiCToolkitLibs(const CSimpleMakeFileContents& makefile,
                                           list<string>* libs_list)
@@ -303,19 +337,8 @@ void SAppProjectT::CreateNcbiCToolkitLibs(const CSimpleMakeFileContents& makefil
         if ( NStr::StartsWith(val, "-l") ) {
             string lib_id = val.substr(2);
             libs_list->push_back(lib_id);
-        }
-        if ( NStr::StartsWith(val, "@") &&
-             NStr::EndsWith  (val, "@") ) {
-            string lib_define = val.substr(1, val.length() - 2);
-            string lib_id_str = GetApp().GetSite().ResolveDefine(lib_define);
-            if ( !lib_id_str.empty() ) {
-                list<string> lib_ids;
-                NStr::Split(lib_id_str, LIST_SEPARATOR, lib_ids);
-                copy(lib_ids.begin(), lib_ids.end(), back_inserter(*libs_list));
-            } else {
-                LOG_POST(Error << "No define in local site : "
-                          + lib_define);
-            }
+        } else {
+            libs_list->push_back(val);
         }
     }
 
@@ -1055,6 +1078,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/04/06 17:15:47  gorelenk
+ * Implemented member-functions IsConfigurableDefine and
+ * StripConfigurableDefine of struct SMakeProjectT.
+ * Changed implementations of SMakeProjectT::DoResolveDefs
+ * SMakeProjectT::Create3PartyLibs and SAppProjectT::CreateNcbiCToolkitLibs.
+ *
  * Revision 1.4  2004/03/23 14:41:50  gorelenk
  * Changed implementations of CProjectTreeBuilder::AddDatatoolSourcesDepends
  * and CProjectTreeBuilder::BuildProjectTree.
