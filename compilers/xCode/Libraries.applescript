@@ -253,7 +253,7 @@ property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbenc
 (*****************************************************************************************)
 -- Organize everything into convinient packs --
 (*****************************************************************************************)
-property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, tables, sequtil, creaders, xutil, xregexp, xconnect, xser}}
+property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core"}
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core"}
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver"}
@@ -312,7 +312,7 @@ property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep
 
 
 -- All Libraries to build
-property allLibs : {ncbi_core, ncbi_bdb, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_image, ncbi_algo, ncbi_misc, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_seqext, ncbi_sqlite, ncbi_validator, ncbi_web, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
+property allLibs : {ncbi_core, ncbi_bdb, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_image, ncbi_misc, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_seqext, ncbi_algo, ncbi_sqlite, ncbi_validator, ncbi_web, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
@@ -339,6 +339,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/10 15:22:07  lebedev
+ * Simplify target dependencies for xCode 1.5
+ *
  * Revision 1.15  2004/08/04 18:49:28  lebedev
  * ID2 libs added
  *

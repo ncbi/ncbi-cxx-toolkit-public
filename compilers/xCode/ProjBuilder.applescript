@@ -56,7 +56,7 @@ property buildSettings10_2 : {|MACOSX_DEPLOYMENT_TARGET|:"10.2", |SDKROOT|:"/Dev
 
 (* Build settings for the project *)
 
-property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"G4", |LIBRARY_SEARCH_PATHS|:"", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD", |GCC_ALTIVEC_EXTENSIONS|:"YES", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO"}
+property buildSettingsCommon : {|WARNING_CFLAGS|:"-Wno-long-double", |GCC_MODEL_CPU|:"G4", |LIBRARY_SEARCH_PATHS|:"", |GCC_PREPROCESSOR_DEFINITIONS|:"NCBI_XCODE_BUILD", |GCC_ALTIVEC_EXTENSIONS|:"YES", |PREBINDING|:"NO", |HEADER_SEARCH_PATHS|:"", |ZERO_LINK|:"NO", |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |GCC_PREFIX_HEADER|:"", |DEAD_CODE_STRIPPING|:"YES"}
 property buildSettingsDevelopment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"NO", |DEBUGGING_SYMBOLS|:"YES", |GCC_DYNAMIC_NO_PIC|:"NO", |GCC_ENABLE_FIX_AND_CONTINUE|:"YES", |GCC_GENERATE_DEBUGGING_SYMBOLS|:"YES", |GCC_OPTIMIZATION_LEVEL|:"0", |OPTIMIZATION_CFLAGS|:"-O0"}
 property buildSettingsDeployment : buildSettingsCommon & {|COPY_PHASE_STRIP|:"YES", |GCC_ENABLE_FIX_AND_CONTINUE|:"NO", |DEPLOYMENT_POSTPROCESSING|:"YES"}
 property buildSettingsProfiling : buildSettingsDevelopment & {|GCC_GENERATE_PROFILING_CODE|:"YES"}
@@ -109,6 +109,11 @@ script ProjBuilder
 		set |LIBRARY_SEARCH_PATHS| of buildSettingsDeployment to libraryPath
 		set |LIBRARY_SEARCH_PATHS| of buildSettingsProfiling to libraryPath
 		
+		set PCH to x_Replace(TheNCBIPath, ":", "/") & "/include/ncbi_pch.hpp"
+		set |GCC_PREFIX_HEADER| of buildSettingsDevelopment to PCH
+		set |GCC_PREFIX_HEADER| of buildSettingsDeployment to PCH
+		set |GCC_PREFIX_HEADER| of buildSettingsProfiling to PCH
+		
 		set newProject to emptyProject
 		set objValues to {}
 		set objKeys to {}
@@ -130,7 +135,10 @@ script ProjBuilder
 	
 	on MakeNewTarget(target_info, src_files, aTarget, aProduct, aType)
 		set tgName to name of target_info
+		set fullTargetName to tgName
+		if aType is equal to 0 then set fullTargetName to "lib" & tgName -- Library
 		set targetName to "TARGET__" & tgName
+		set targetProxy to "PROXY__" & tgName
 		set buildPhaseName to "BUILDPHASE__" & tgName
 		set prodRefName to "PRODUCT__" & tgName
 		set depName to "DEPENDENCE__" & tgName
@@ -141,7 +149,7 @@ script ProjBuilder
 			set depList to x_Str2List(depString)
 			
 			repeat with d in depList
-				copy "DEPENDENCE__" & d to the end of targetDepList
+				if d is "datatool" then copy "DEPENDENCE__" & d to the end of targetDepList
 			end repeat
 		end try
 		
@@ -154,7 +162,8 @@ script ProjBuilder
 		copy targetName to the end of |targets| of rootObject
 		copy tgName to the end of children of sources
 		
-		set libDepend to {isa:"PBXTargetDependency", |target|:targetName}
+		set libDepend to {isa:"PBXTargetDependency", |target|:targetName} --, |targetProxy|:targetProxy}
+		--set aProxy to {isa:"PBXContainerItemProxy", |proxyType|:"1", |containerPortal|:"ROOT_OBJECT", |remoteInfo|:fullTargetName} --|remoteGlobalIDString|:targetName}
 		
 		set buildFileRefs to {}
 		set libFileRefs to {}
@@ -233,6 +242,7 @@ script ProjBuilder
 		
 		-- add to main object list
 		addPair(aTarget, targetName)
+		--addPair(aProxy, targetProxy)
 		addPair(libDepend, depName)
 		addPair(aProduct, prodRefName)
 		addPair(aBuildPhase, buildPhaseName)
@@ -277,8 +287,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		set linkerFlags to linkerFlags & x_CreateLinkerFlags(lib_info) -- additional liker flags (like -lxncbi)
 		
-		set PCH to x_Replace(TheNCBIPath, ":", "/") & "/include/ncbi_pch.hpp"
-		set buildSettings to {|LIB_COMPATIBILITY_VERSION|:"1", |DYLIB_CURRENT_VERSION|:"1", |INSTALL_PATH|:installPath, |LIBRARY_STYLE|:libraryStyle, |PRODUCT_NAME|:fullLibName, |OTHER_LDFLAGS|:linkerFlags, |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |GCC_PREFIX_HEADER|:PCH, |SYMROOT|:symRoot}
+		set buildSettings to {|LIB_COMPATIBILITY_VERSION|:"1", |DYLIB_CURRENT_VERSION|:"1", |INSTALL_PATH|:installPath, |LIBRARY_STYLE|:libraryStyle, |PRODUCT_NAME|:fullLibName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
 		set libTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullLibName, |productReference|:"", |productType|:libProdType, dependencies:{}}
 		
 		my MakeNewTarget(lib_info, src_files, libTarget, libProduct, 0) -- 0 is library
@@ -293,8 +302,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		set linkerFlags to x_CreateLinkerFlags(tool_info) -- additional liker flags (like -lxncbi)
 		
-		set PCH to x_Replace(TheNCBIPath, ":", "/") & "/include/ncbi_pch.hpp"
-		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |GCC_PREFIX_HEADER|:PCH}
+		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags}
 		set toolTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:fullToolName, |productReference|:"", |productType|:"com.apple.product-type.tool", dependencies:{}}
 		
 		my MakeNewTarget(tool_info, src_files, toolTarget, toolProduct, 2) -- is a tool
@@ -310,8 +318,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 		
 		set linkerFlags to x_CreateLinkerFlags(app_info) -- additional liker flags (like -lxncbi)
 		
-		set PCH to x_Replace(TheNCBIPath, ":", "/") & "/include/ncbi_pch.hpp"
-		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |GCC_PRECOMPILE_PREFIX_HEADER|:"YES", |GCC_PREFIX_HEADER|:PCH, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:""}
+		set buildSettings to {|PRODUCT_NAME|:appName, |OTHER_LDFLAGS|:linkerFlags, |REZ_EXECUTABLE|:"YES", |INFOPLIST_FILE|:""}
 		set appTarget to {isa:"PBXNativeTarget", |buildPhases|:{buildPhaseName}, |buildSettings|:buildSettings, |name|:appName, |productReference|:"", |productType|:"com.apple.product-type.application", dependencies:{}}
 		
 		my MakeNewTarget(app_info, src_files, appTarget, appProduct, 1) -- 1 is application
@@ -524,6 +531,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/08/10 15:22:07  lebedev
+ * Simplify target dependencies for xCode 1.5
+ *
  * Revision 1.9  2004/08/06 15:26:59  lebedev
  * Handle ncbicfg.c.in correctly
  *
