@@ -65,6 +65,9 @@ CTSE_Split_Info::CTSE_Split_Info(void)
 
 CTSE_Split_Info::~CTSE_Split_Info(void)
 {
+    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
+        it->second->x_DropAnnotObjects();
+    }
 }
 
 
@@ -253,7 +256,7 @@ void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
     if ( !chunk.m_AnnotIndexEnabled ) {
         ITERATE ( TTSE_Set, it, m_TSE_Set ) {
             CTSE_Info& tse_info = **it;
-            CDataSource::TAnnotLockWriteGuard guard(tse_info.GetDataSource());
+            CDataSource::TAnnotLockWriteGuard guard2(tse_info.GetDataSource());
             tse_info.UpdateAnnotIndex(chunk);
         }
         chunk.m_AnnotIndexEnabled = true;

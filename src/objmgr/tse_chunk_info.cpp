@@ -67,7 +67,7 @@ CTSE_Chunk_Info::~CTSE_Chunk_Info(void)
 
 bool CTSE_Chunk_Info::x_Attached(void) const
 {
-    return m_SplitInfo;
+    return m_SplitInfo != 0;
 }
 
 
@@ -341,11 +341,15 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
 }
 
 
-void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
+void CTSE_Chunk_Info::x_InitObjectIndexList(void)
 {
+    if ( !m_ObjectIndexList.empty() ) {
+        return;
+    }
+
     ITERATE ( TAnnotContents, it, m_AnnotContents ) {
-        m_ObjectInfosList.push_back(TObjectInfos(it->first));
-        TObjectInfos& infos = m_ObjectInfosList.back();
+        m_ObjectIndexList.push_back(TObjectIndex(it->first));
+        TObjectIndex& infos = m_ObjectIndexList.back();
         _ASSERT(infos.GetName() == it->first);
         
         // first count object infos to store
@@ -353,36 +357,67 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
         ITERATE ( TAnnotTypes, tit, it->second ) {
             count += tit->second.size();
         }
-        infos.Reserve(count);
+        infos.ReserveInfoSize(count);
         
         ITERATE ( TAnnotTypes, tit, it->second ) {
-            CAnnotObject_Info* info =
-                infos.AddInfo(CAnnotObject_Info(*this, tit->first));
+            infos.AddInfo(CAnnotObject_Info(*this, tit->first));
+        }
+    }
+
+    // fill keys
+    TObjectIndexList::iterator list_iter = m_ObjectIndexList.begin();
+    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
+        _ASSERT(list_iter != m_ObjectIndexList.end());
+        TObjectIndex& infos = *list_iter++;
+        _ASSERT(infos.GetName() == it->first);
+        
+        size_t info_index = 0;
+        ITERATE ( TAnnotTypes, tit, it->second ) {
+            CAnnotObject_Info& info = infos.GetInfo(info_index++);
+            _ASSERT(info.IsChunkStub() && &info.GetChunk_Info() == this);
+            _ASSERT(info.GetAnnotType() == tit->first.GetAnnotType());
+            _ASSERT(info.GetFeatType() == tit->first.GetFeatType());
+            _ASSERT(info.GetFeatSubtype() == tit->first.GetFeatSubtype());
+            SAnnotObject_Key key;
+            SAnnotObject_Index index;
+            key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
             ITERATE ( TLocationSet, lit, tit->second ) {
-                SAnnotObject_Key key;
-                SAnnotObject_Index annotRef;
-                key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
                 key.m_Handle = lit->first;
                 key.m_Range = lit->second;
-                tse.x_MapAnnotObject(key, annotRef, infos);
+                infos.AddMap(key, index);
             }
         }
+        infos.PackKeys();
+        infos.PackIndices();
+    }
+}
+
+
+void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
+{
+    x_InitObjectIndexList();
+    ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
+        tse.x_MapAnnotObjects(*it);
     }
 }
 
 
 void CTSE_Chunk_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
 {
-    NON_CONST_ITERATE ( TObjectInfosList, it, m_ObjectInfosList ) {
+    ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
         tse.x_UnmapAnnotObjects(*it);
     }
-    m_ObjectInfosList.clear();
 }
 
 
 void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
 {
-    m_ObjectInfosList.clear();
+}
+
+
+void CTSE_Chunk_Info::x_DropAnnotObjects(void)
+{
+    m_ObjectIndexList.clear();
 }
 
 
@@ -434,6 +469,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/12/22 15:56:27  vasilche
+* Use SAnnotObjectsIndex.
+*
 * Revision 1.19  2004/10/18 13:59:22  vasilche
 * Added support for split history assembly.
 * Added support for split non-gi sequences.

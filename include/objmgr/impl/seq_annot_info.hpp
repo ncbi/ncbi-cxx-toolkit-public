@@ -108,6 +108,9 @@ public:
     void x_DoUpdate(TNeedUpdateFlags flags);
     static CRef<TObject> sx_ShallowCopy(TObject& obj);
 
+    typedef SAnnotObjectsIndex::TObjectInfos TAnnotObjectInfos;
+    const TAnnotObjectInfos& GetAnnotObjectInfos(void) const;
+
 protected:
     friend class CDataSource;
     friend class CTSE_Info;
@@ -117,17 +120,15 @@ protected:
     void x_UpdateName(void);
 
     typedef vector< CConstRef<TObject> > TDSMappedObjects;
+
     virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    void x_MapAnnotObjects(CTSE_Info& tse,
-                           const CSeq_annot::C_Data::TFtable& objs);
-    void x_MapAnnotObjects(CTSE_Info& tse,
-                           const CSeq_annot::C_Data::TAlign& objs);
-    void x_MapAnnotObjects(CTSE_Info& tse,
-                           const CSeq_annot::C_Data::TGraph& objs);
-    void x_MapAnnotObjects(CTSE_Info& tse,
-                           const CSeq_annot& annot); // locs case
+    void x_InitFeats(const CSeq_annot::C_Data::TFtable& objs);
+    void x_InitAligns(const CSeq_annot::C_Data::TAlign& objs);
+    void x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs);
+    void x_InitLocs(const CSeq_annot& annot); // locs case
+
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 
@@ -140,8 +141,8 @@ protected:
     // name of Seq-annot
     CAnnotName              m_Name;
 
-    // Annotations indexes
-    SAnnotObjects_Info      m_ObjectInfos;
+    // annot object infos array
+    SAnnotObjectsIndex      m_ObjectIndex;
 
     // SNP annotation table
     CRef<CSeq_annot_SNP_Info> m_SNP_Info;
@@ -163,10 +164,18 @@ const CSeq_annot& CSeq_annot_Info::x_GetObject(void) const
 
 
 inline
+const CSeq_annot_Info::TAnnotObjectInfos&
+CSeq_annot_Info::GetAnnotObjectInfos(void) const
+{
+    return m_ObjectIndex.GetInfos();
+}
+
+
+inline
 const CAnnotObject_Info&
 CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 {
-    return m_ObjectInfos.GetInfo(index);
+    return m_ObjectIndex.GetInfo(index);
 }
 
 
@@ -190,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/12/22 15:56:27  vasilche
+* Use SAnnotObjectsIndex.
+*
 * Revision 1.17  2004/08/05 18:25:05  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *

@@ -92,8 +92,8 @@ public:
     typedef map<CAnnotName, TAnnotTypes> TAnnotContents;
 
     // annot contents indexing
-    typedef SAnnotObjects_Info TObjectInfos;
-    typedef list<TObjectInfos> TObjectInfosList;
+    typedef SAnnotObjectsIndex TObjectIndex;
+    typedef list<TObjectIndex> TObjectIndexList;
 
     // attached data types
     typedef list< CRef<CSeq_literal> > TSequence;
@@ -186,6 +186,9 @@ protected:
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
+    void x_DropAnnotObjects(void);
+
+    void x_InitObjectIndexList(void);
 
 private:
     friend class CTSE_Info;
@@ -207,8 +210,7 @@ private:
     TLocationSet    m_Seq_data;
 
     CInitMutex<CObject> m_LoadLock;
-
-    TObjectInfosList    m_ObjectInfosList;
+    TObjectIndexList m_ObjectIndexList;
 };
 
 
@@ -239,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/12/22 15:56:27  vasilche
+* Use SAnnotObjectsIndex.
+*
 * Revision 1.13  2004/10/18 13:59:22  vasilche
 * Added support for split history assembly.
 * Added support for split non-gi sequences.
