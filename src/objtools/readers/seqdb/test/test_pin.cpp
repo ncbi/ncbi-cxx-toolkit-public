@@ -94,7 +94,9 @@ s_TokenizeKeepDelims(const string   & input,
         
         for(Uint4 i = 0; i < numres; i++) {
             reconstr += results[i];
-            reconstr += taken[i];
+            if (i < taken.size()) {
+                reconstr += taken[i];
+            }
         }
     }
 }
