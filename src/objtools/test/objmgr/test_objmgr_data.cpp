@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/04/19 14:53:31  grichenk
+* Added prefetching test (-prefetch argument)
+*
 * Revision 1.3  2004/04/16 13:31:47  grichenk
 * Added data pre-fetching functions.
 *
@@ -242,7 +245,7 @@ bool CTestOM::Thread_Run(int idx)
         LOG_POST("Using prefetch");
         // Initialize prefetch token;
         CPrefetchToken::TIds ids;
-        for ( int i = from, end = to+delta; i != end; i += delta ) {
+        for ( int i = from, end = to+delta; i != min(from+10, end); i += delta ) {
             ids.push_back(CSeq_id_Handle::GetGiHandle(i));
         }
         token = CPrefetchToken(scope, ids);
@@ -267,6 +270,14 @@ bool CTestOM::Thread_Run(int idx)
                     continue;
                 }
                 handle = token.NextBioseqHandle(scope);
+                if ( !token ) {
+                    // Start next token
+                    CPrefetchToken::TIds ids;
+                    for ( int idx = i+1, end = to+delta; idx != min(i+10, end); idx += delta ) {
+                        ids.push_back(CSeq_id_Handle::GetGiHandle(idx));
+                    }
+                    token = CPrefetchToken(scope, ids);
+                }
             }
             else {
                 handle = scope.GetBioseqHandle(sid);
