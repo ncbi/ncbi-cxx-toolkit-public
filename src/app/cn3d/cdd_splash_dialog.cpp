@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/09/18 14:12:00  thiessen
+* add annotations summary to overview
+*
 * Revision 1.3  2002/08/15 22:13:13  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -48,6 +51,13 @@
 #include <objects/cdd/Cdd_descr.hpp>
 #include <objects/cdd/Align_annot_set.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/cdd/Align_annot.hpp>
+#include <objects/biblio/PubMedId.hpp>
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Mmdb_id.hpp>
+#include <objects/mmdb3/Biostruc_feature_set.hpp>
+#include <objects/mmdb3/Biostruc_feature_set_descr.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
 
 #include "cn3d/cdd_splash_dialog.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -134,6 +144,48 @@ CDDSplashDialog::CDDSplashDialog(Cn3DMainFrame *cn3dFrame,
                 j = 0;
             } else
                 *tDescr << cddDescr[i];
+        }
+        *tDescr << "\n\n";
+    }
+
+    // summarize annotations
+    const CAlign_annot_set *annots = structureSet->GetCDDAnnotSet();
+    if (annots) {
+        *tDescr << "Annotation summary:\n\n";
+        CAlign_annot_set::Tdata::const_iterator a, ae = annots->Get().end();
+        for (a=annots->Get().begin(); a!=ae; a++) {
+            *tDescr << ((*a)->IsSetDescription() ? (*a)->GetDescription() : std::string("")).c_str()
+                << "; evidence:\n";
+            if ((*a)->IsSetEvidence()) {
+                CAlign_annot::TEvidence::const_iterator e, ee = (*a)->GetEvidence().end();
+                for (e=(*a)->GetEvidence().begin(); e!=ee; e++) {
+                    if ((*e)->IsComment())
+                        *tDescr << "  comment: " << (*e)->GetComment().c_str() << '\n';
+                    else if ((*e)->IsReference() && (*e)->GetReference().IsPmid())
+                        *tDescr << "  PubMed " << (*e)->GetReference().GetPmid().Get() << '\n';
+                    else if ((*e)->IsBsannot()) {
+                        *tDescr << "  structure:";
+                        if ((*e)->GetBsannot().GetFeatures().size() > 0 &&
+                            (*e)->GetBsannot().GetFeatures().front()->IsSetDescr() &&
+                            (*e)->GetBsannot().GetFeatures().front()->IsSetDescr() &&
+                            (*e)->GetBsannot().GetFeatures().front()->GetDescr().front()->IsName())
+                            *tDescr << ' ' <<
+                                (*e)->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str();
+                        if ((*e)->GetBsannot().IsSetId() && (*e)->GetBsannot().GetId().front()->IsMmdb_id()) {
+                            int mmdbID = (*e)->GetBsannot().GetId().front()->GetMmdb_id().Get();
+                            StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
+                            for (o=structureSet->objects.begin(); o!=oe; o++) {
+                                if ((*o)->mmdbID == mmdbID) {
+                                    *tDescr << " (" << (*o)->pdbID.c_str() << ')';
+                                    break;
+                                }
+                            }
+                        }
+                        *tDescr << '\n';
+                    }
+                }
+            }
+            *tDescr << '\n';
         }
     }
 
