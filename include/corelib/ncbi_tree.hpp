@@ -504,6 +504,7 @@ CTreeNode<TValue>& CTreeNode<TValue>::operator=(const TTreeType& tree)
     }
     m_Nodes.clear();
     CopyFrom(tree);
+    return *this;
 }
 
 template<class TValue>
@@ -709,6 +710,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/01/15 20:05:53  yazhuk
+ * Added return falue to operator=
+ *
  * Revision 1.19  2004/01/14 17:38:05  kuznets
  * TreeDepthFirstTraverse improved to support more traversal options
  * (ETreeTraverseCode)
