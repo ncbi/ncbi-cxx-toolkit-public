@@ -156,6 +156,13 @@ x_CXX=
 
 #### Provide default environment setup for known platforms/compilers
 compiler_extra=
+
+if test "$GCC" = "yes" ; then
+   DEPFLAGS="-MM"
+else
+   DEPFLAGS="-M"
+fi
+
 case "$host:$compiler" in
  sparc-sun-solaris2\.6:GCC )
    echo "GCC compiler is not supported for:  $host"
@@ -185,6 +192,7 @@ case "$host:$compiler" in
    fi
    CFLAGS="$WS64_CFLAGS"
    CXXFLAGS="+w +w2 $WS64_CFLAGS"
+   DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
    AR="$CXX -xar -o"
    STRIP=":"
@@ -317,10 +325,20 @@ if test "$GCC" = "yes" ; then
 fi
 
 
-#### SUN "make" utility only
+#### Automatic generation of dependencies for/by the "make" utility
 case "$host_os" in
   solaris* )  KeepStateTarget=".KEEP_STATE:" ;;
 esac
+
+if test "$with_autodep" = "yes" ; then
+   Rules="rules_with_autodep"
+elif test "$with_autodep" = "no" ; then
+   Rules="rules"
+elif make -v 2>/dev/null | grep 'GNU Make' ; then
+   Rules="rules_with_autodep"
+else
+   Rules="rules"
+fi
 
 
 #### Tools
@@ -982,6 +1000,7 @@ AC_SUBST(STRIP)
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
 AC_SUBST(CPPFLAGS)
+AC_SUBST(DEPFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 
@@ -1027,6 +1046,7 @@ AC_SUBST(CC_FILTER)
 AC_SUBST(CXX_FILTER)
 
 AC_SUBST(KeepStateTarget)
+AC_SUBST(Rules)
 AC_SUBST(serial_ws50_rtti_kludge)
 
 
@@ -1114,7 +1134,7 @@ Optional configure flags:
  --without-sssdb/utils   do not use NCBI SSS library(es)
  --without-pubmed        do not use NCBI PubMed libraries
  --exec-prefix=          specify a non-default build directory name
- --without-suffix        do not add Release/Debug and MT to the build dir name
+ --with-autodep          automatic generation of dependencies (for GNU make)
 
 CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS

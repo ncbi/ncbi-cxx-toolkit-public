@@ -24,6 +24,8 @@
 			Building shared libraries (DLLs)</a>
 		   <li> <a href="#ref_MT">
 			Multi-Thread safe compilation, and linking with MT libraries</a>
+		   <li> <a href="#ref_GnuMakeAutodep">
+			Automatic generation of dependencies (for GNU <i>make</i> only)</a>
 		   <li> <a href="#ref_NamingBuildTree">
 			Naming the <i>build tree</i></a>
 		   <li> <a href="#ref_AfterConf">
@@ -355,6 +357,28 @@ the following platforms:
   <li> default: <i><b>--without-mt</b></i>
 </ul>
 
+
+
+<p>
+<br>
+<a name="ref_GnuMakeAutodep"></a>
+<h4>Automatic generation of dependencies (for GNU <i>make</i> only)</h4>
+
+<ul>
+  <li> <i><b>--with-autodep</b></i> --
+		  add build rules to automagically generate dependencies for the
+		  compiled C/C++ sources
+  <li> <i><b>--without-autodep</b></i> --
+		  do not add these rules
+  <li>  default:  detect if the <i>make</i> command actually calls
+		  GNU <i>make</i>;  if it does, then <i><b>--with-autodep</b></i>, else
+		  <i><b>--with-autodep</b></i>
+</ul>
+Also, you can always switch between these two variants "manually", after
+the configuration is done, by setting the value of variable
+<i><b>Rules</b></i> in
+<a href="new_proj.html#ref_MakeProjMk"><i>Makefile.mk</i></a>
+to either <i><b>rules</b></i> or <i><b>rules_with_autodep</b></i>. 
 
 
 <p>
