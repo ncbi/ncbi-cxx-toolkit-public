@@ -381,8 +381,15 @@ void CDbBlast::SetupSearch()
     if (!m_ibTracebackOnly) {
         // Initialize a new HSP stream, if necessary
         x_InitHSPStream();
-        // Initialize a new diagnostics structure
-        m_ipDiagnostics = Blast_DiagnosticsInit();
+        // Initialize a new diagnostics structure, with a mutex locking 
+        // mechanism for a multi-threaded search, and without for 
+        // single-threaded.
+        if (m_iNumThreads > 1) {
+           m_ipDiagnostics = 
+              Blast_DiagnosticsInitMT(Blast_CMT_LOCKInit());
+        } else {
+           m_ipDiagnostics = Blast_DiagnosticsInit();
+        }
     }
 
     if ( !m_ibQuerySetUpDone ) {
@@ -465,8 +472,8 @@ void CDbBlast::RunRPSSearch()
                  GetOptions().GetScoringOpts(), m_ipLookupTable, 
                  GetOptions().GetInitWordOpts(), GetOptions().GetExtnOpts(), 
                  GetOptions().GetHitSaveOpts(), GetOptions().GetEffLenOpts(),
-                 GetOptions().GetPSIBlastOpts(), GetOptions().GetDbOpts(),
-                 m_pHspStream, m_ipDiagnostics, results_ptr);
+                 GetOptions().GetPSIBlastOpts(), m_pHspStream, m_ipDiagnostics, 
+                 results_ptr);
 
     if (status) {
         NCBI_THROW(CBlastException, eInternal, 
@@ -500,10 +507,13 @@ CDbBlast::Run()
     return x_Results2SeqAlign();
 }
 
-/* Comparison function for sorting HSP lists in increasing order of the 
-   number of HSPs in a hit. Needed for TrimBlastHSPResults below. */
+/** Comparison function for sorting HSP lists in increasing order of the 
+ * number of HSPs in a hit. Needed for TrimBlastHSPResults below. 
+ * @param v1 Pointer to the first HSP list [in]
+ * @param v2 Pointer to the second HSP list [in]
+ */
 extern "C" int
-compare_hsplist_hspcnt(const void* v1, const void* v2)
+s_CompareHsplistHspcnt(const void* v1, const void* v2)
 {
    BlastHSPList* r1 = *((BlastHSPList**) v1);
    BlastHSPList* r2 = *((BlastHSPList**) v2);
@@ -552,7 +562,7 @@ CDbBlast::TrimBlastHSPResults()
                 hit_list->hsplist_array[subject_index];
         
         qsort((void*)hsplist_array, hsplist_count,
-              sizeof(BlastHSPList*), compare_hsplist_hspcnt);
+              sizeof(BlastHSPList*), s_CompareHsplistHspcnt);
         
         for (subject_index = 0; subject_index < hsplist_count; 
              ++subject_index) {
@@ -638,8 +648,10 @@ void CDbBlast::x_RunTracebackEngine()
     BlastGapAlignStruct* gap_align = NULL; ///< Gapped alignment structure
 
     // If results are handled outside of the BLAST engine, traceback stage 
-    // should be skipped, so just return.
-    if (!m_ibLocalResults)
+    // should be skipped, so just return. This condition is satisfied when 
+    // HSP stream was passed to the CDbBlast object from outside, but this
+    // is not a traceback only search.
+    if (!m_ibLocalResults && !m_ibTracebackOnly)
         return;
 
     /* Prohibit any subsequent writing to the HSP stream. */
@@ -714,6 +726,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2004/11/30 17:01:14  dondosha
+ * Use Blast_DiagnosticsInitMT for multi-threaded search; always perform traceback if m_ibTracebackOnly field is set
+ *
  * Revision 1.45  2004/10/26 16:05:20  dondosha
  * Removed unused variable
  *
