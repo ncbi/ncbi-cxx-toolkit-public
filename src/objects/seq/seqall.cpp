@@ -1,0 +1,6 @@
+#include "../seq/seq__.cpp"
+#include "../seqblock/seqblock__.cpp"
+#include "../seqres/seqres__.cpp"
+#include "../seqloc/seqloc__.cpp"
+#include "../seqalign/seqalign__.cpp"
+#include "../seqfeat/seqfeat__.cpp"
