@@ -326,6 +326,9 @@ public:
     /// True if the current location is a single point
     bool           IsPoint(void) const;
 
+    /// Reset the iterator to the initial state
+    void Rewind(void);
+
 private:
     // Check the iterator position
     bool x_IsValid(void) const;
@@ -574,6 +577,12 @@ bool CSeq_loc_CI::IsPoint(void) const
     return m_CurLoc->m_Range.GetLength() == 1;
 }
 
+inline
+void CSeq_loc_CI::Rewind(void)
+{
+    m_CurLoc = m_LocList.begin();
+}
+
 /////////////////// end of CSeq_loc_CI inline methods
 
 
@@ -586,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/12/07 18:50:37  grichenk
+ * +CSeq_loc_CI::Rewind()
+ *
  * Revision 1.44  2004/11/29 19:53:34  grichenk
  * +CSeq_loc_CI::GetSeq_id_Handle
  *
