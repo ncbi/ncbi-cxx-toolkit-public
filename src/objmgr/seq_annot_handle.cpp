@@ -44,8 +44,30 @@ BEGIN_SCOPE(objects)
 CSeq_annot_Handle::CSeq_annot_Handle(CScope& scope,
                                      const CSeq_annot_Info& info,
                                      const TTSE_Lock& tse_lock)
-    : m_Scope(&scope), m_Info(&info), m_TSE_Lock(tse_lock)
+    : m_Scope(&scope), m_TSE_Lock(tse_lock), m_Info(&info)
 {
+}
+
+
+void CSeq_annot_Handle::Reset(void)
+{
+    // order is significant
+    m_Info.Reset();
+    m_TSE_Lock.Reset();
+    m_Scope.Reset();
+}
+
+
+CSeq_annot_Handle& CSeq_annot_Handle::operator=(const CSeq_annot_Handle& sah)
+{
+    // order is significant
+    if ( this != &sah ) {
+        Reset();
+        m_Scope = sah.m_Scope;
+        m_TSE_Lock = sah.m_TSE_Lock;
+        m_Info = sah.m_Info;
+    }
+    return *this;
 }
 
 
@@ -129,6 +151,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.10  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

@@ -67,6 +67,7 @@ public:
     //
     operator bool(void) const;
     bool operator!(void) const;
+    CSeq_annot_Handle& operator=(const CSeq_annot_Handle& sah);
     void Reset(void);
 
     bool operator==(const CSeq_annot_Handle& annot) const;
@@ -101,8 +102,8 @@ protected:
     void x_Set(CScope& scope, const CSeq_annot_Info& annot);
 
     CHeapScope          m_Scope;
-    CConstRef<CObject>  m_Info;
     TTSE_Lock           m_TSE_Lock;
+    CConstRef<CObject>  m_Info;
 
 public: // non-public section
     const TTSE_Lock& GetTSE_Lock(void) const;
@@ -165,14 +166,6 @@ inline
 CScope& CSeq_annot_Handle::GetScope(void) const
 {
     return *m_Scope;
-}
-
-
-inline
-void CSeq_annot_Handle::Reset(void)
-{
-    m_Scope.Reset();
-    m_Info.Reset();
 }
 
 
@@ -242,6 +235,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.9  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

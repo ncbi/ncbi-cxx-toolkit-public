@@ -49,8 +49,30 @@ BEGIN_SCOPE(objects)
 CBioseq_set_Handle::CBioseq_set_Handle(CScope& scope,
                                        const CBioseq_set_Info& info,
                                        const TTSE_Lock& tse_lock)
-    : m_Scope(&scope), m_Info(&info), m_TSE_Lock(tse_lock)
+    : m_Scope(&scope), m_TSE_Lock(tse_lock), m_Info(&info)
 {
+}
+
+
+void CBioseq_set_Handle::Reset(void)
+{
+    // order is significant
+    m_Info.Reset();
+    m_TSE_Lock.Reset();
+    m_Scope.Reset();
+}
+
+
+CBioseq_set_Handle&
+CBioseq_set_Handle::operator=(const CBioseq_set_Handle& bsh)
+{
+    if ( this != &bsh ) {
+        Reset();
+        m_Scope = bsh.m_Scope;
+        m_TSE_Lock = bsh.m_TSE_Lock;
+        m_Info = bsh.m_Info;
+    }
+    return *this;
 }
 
 
@@ -481,6 +503,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.11  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

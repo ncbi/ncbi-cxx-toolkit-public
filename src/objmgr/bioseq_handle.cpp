@@ -75,6 +75,28 @@ CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
 }
 
 
+void CBioseq_Handle::Reset(void)
+{
+    // order is significant
+    m_Bioseq_Info.Reset();
+    m_Seq_id.Reset();
+    m_Scope.Reset();
+}
+
+
+CBioseq_Handle& CBioseq_Handle::operator=(const CBioseq_Handle& bh)
+{
+    // order is significant
+    if ( this != &bh ) {
+        Reset();
+        m_Scope = bh.m_Scope;
+        m_Seq_id = bh.m_Seq_id;
+        m_Bioseq_Info = bh.m_Bioseq_Info;
+    }
+    return *this;
+}
+
+
 bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
 {
     if ( m_Scope != m_Scope ) {
@@ -781,6 +803,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.68  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

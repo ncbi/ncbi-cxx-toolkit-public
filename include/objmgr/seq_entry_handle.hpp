@@ -117,6 +117,7 @@ public:
     // Utility methods/operators
     operator bool(void) const;
     bool operator!(void) const;
+    CSeq_entry_Handle& operator=(const CSeq_entry_Handle& seh);
     void Reset(void);
 
     bool operator ==(const CSeq_entry_Handle& handle) const;
@@ -135,8 +136,8 @@ protected:
                       const CSeq_entry_Info& info,
                       const TTSE_Lock& tse_lock);
     CHeapScope          m_Scope;
-    CConstRef<CObject>  m_Info;
     TTSE_Lock           m_TSE_Lock;
+    CConstRef<CObject>  m_Info;
 
 public: // non-public section
     const TTSE_Lock& GetTSE_Lock(void) const;
@@ -387,6 +388,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.12  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

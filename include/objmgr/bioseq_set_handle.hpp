@@ -126,6 +126,7 @@ public:
     // Utility methods/operators
     operator bool(void) const;
     bool operator!(void) const;
+    CBioseq_set_Handle& operator=(const CBioseq_set_Handle& bsh);
     void Reset(void);
 
     bool operator ==(const CBioseq_set_Handle& handle) const;
@@ -158,8 +159,8 @@ protected:
     static TComplexityTable sm_ComplexityTable;
 
     CHeapScope          m_Scope;
-    CConstRef<CObject>  m_Info;
     TTSE_Lock           m_TSE_Lock;
+    CConstRef<CObject>  m_Info;
 
 public: // non-public section
     const TTSE_Lock& GetTSE_Lock(void) const;
@@ -258,14 +259,6 @@ CScope& CBioseq_set_Handle::GetScope(void) const
 
 
 inline
-void CBioseq_set_Handle::Reset(void)
-{
-    m_Scope.Reset();
-    m_Info.Reset();
-}
-
-
-inline
 const TTSE_Lock& CBioseq_set_Handle::GetTSE_Lock(void) const
 {
     return m_TSE_Lock;
@@ -357,6 +350,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.9  2004/08/04 14:53:25  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

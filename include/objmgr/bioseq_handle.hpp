@@ -75,6 +75,12 @@ public:
     // Default constructor
     CBioseq_Handle(void);
 
+    // Assignment
+    CBioseq_Handle& operator=(const CBioseq_Handle& bh);
+
+    // Reset
+    void Reset(void);
+
     // Get scope this handle belongs to
     CScope& GetScope(void) const;
 
@@ -418,6 +424,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2004/08/05 18:28:17  vasilche
+* Fixed order of CRef<> release in destruction and assignment of handles.
+*
 * Revision 1.58  2004/08/04 14:53:25  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
