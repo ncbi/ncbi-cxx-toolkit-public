@@ -447,8 +447,11 @@ public:
     /// This sets an approximate upper limit on memory used by CSeqDB.
     /// This will not be exactly enforced, and the library will prefer
     /// to exceed the bound if necessary rather than return an error.
-    /// Setting this to a very low value will probably cause bad
-    /// performance.
+    /// Setting this to a very low value may degrade performance.
+    /// Setting it to too high a value may cause stability issues (in
+    /// the form of address space exhaustion) The appropriate range of
+    /// values depends in part on the memory footprint of other parts
+    /// of your application.
     void SetMemoryBound(Uint8 membound, Uint8 slice_size);
     
     /// Translate a PIG to an OID.
