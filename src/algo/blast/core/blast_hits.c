@@ -1807,10 +1807,12 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject
           GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
 {
    BlastHSP* new_hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+
+   *ret_hsp = NULL;
+
    if (new_hsp == NULL)
 	return -1;
 
-   *ret_hsp = NULL;
 
    new_hsp->query.offset = query_start;
    new_hsp->subject.offset = subject_start;
