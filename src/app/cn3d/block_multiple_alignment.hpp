@@ -152,7 +152,7 @@ public:
         const Sequence **sequence, int *index, bool *isAligned) const;
 
     // given row and sequence index, return alignment index; not the most efficient function - use sparingly
-    int GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification);
+    int GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification) const;
 
     // called when user selects some part of a row
     void SelectedRange(int row, int from, int to,
@@ -427,6 +427,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/09/27 01:00:44  thiessen
+* extend "complete contained" blocks ; merge adjacent blocks after extension"
+*
 * Revision 1.43  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *

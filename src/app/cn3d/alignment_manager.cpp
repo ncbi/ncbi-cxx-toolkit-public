@@ -1031,20 +1031,33 @@ static bool CreateNewPairwiseAlignmentsByBlockExtension(const BlockMultipleAlign
                 continue;
             }
 
-            // check to see if there are sufficient unaligned residues to extend from both sides
-            int available = u->first->MinResidues(), totalShifts = 0;
-            ExtendList::const_iterator e, ee = u->second.end();
-            for (e=u->second.begin(); e!=ee; ++e)
-                totalShifts += e->nResidues;
-            if (totalShifts > available) {
-                TRACEMSG("inadequate residues to the "
-                    << (u->second.front().extendPairBlockLeft ? "left" : "right")
-                    << " of block " << (u->second.front().pairBlock+1) << "; no extension performed");
-                continue;
+            ExtendList::const_iterator e, ee;
+
+            // extend from one side only if an unaligned block is contained entirely within a block in the multiple,
+            // and this unaligned block is "complete" - that is, MinResidues == width.
+            if (u->first->MinResidues() == u->first->width && u->second.size() == 2 &&
+                u->second.front().multBlock == u->second.back().multBlock)
+            {
+                ExtendList& modList = const_cast<ExtendList&>(u->second);
+                modList.front().nResidues = u->first->width;
+                modList.erase(++(modList.begin()));
+            }
+
+            else {
+                // check to see if there are sufficient unaligned residues to extend from both sides
+                int available = u->first->MinResidues(), totalShifts = 0;
+                for (e=u->second.begin(), ee=u->second.end(); e!=ee; ++e)
+                    totalShifts += e->nResidues;
+                if (totalShifts > available) {
+                    TRACEMSG("inadequate residues to the "
+                        << (u->second.front().extendPairBlockLeft ? "left" : "right")
+                        << " of block " << (u->second.front().pairBlock+1) << "; no extension performed");
+                    continue;
+                }
             }
 
             // perform any allowed extensions
-            for (e=u->second.begin(); e!=ee; ++e) {
+            for (e=u->second.begin(), ee=u->second.end(); e!=ee; ++e) {
                 int alnIdx = p->GetAlignmentIndex(0,
                     (e->extendPairBlockLeft ?
                         pairBlocks[e->pairBlock]->GetRangeOfRow(0)->from :
@@ -1057,6 +1070,33 @@ static bool CreateNewPairwiseAlignmentsByBlockExtension(const BlockMultipleAlign
                 else
                     ERRORMSG("MoveBlockBoundary() failed!");
             }
+        }
+
+        // now, merge any adjacent blocks that end within a block of the multiple
+        const Block::Range *prevRange = NULL;
+        vector < int > mergeIndexes;
+        for (unsigned int pb=0; pb<pairBlocks.size(); ++pb) {
+            const Block::Range *pairRange = pairBlocks[pb]->GetRangeOfRow(0);
+            if (prevRange && prevRange->to == pairRange->from - 1 && multiple.IsAligned(0, prevRange->to)) {
+                // justification is irrelevant since this is an aligned block
+                int mAlnIdx = multiple.GetAlignmentIndex(0, prevRange->to, BlockMultipleAlignment::eLeft),
+                    pAlnIdx1 = p->GetAlignmentIndex(0, prevRange->to, BlockMultipleAlignment::eLeft),
+                    pAlnIdx2 = p->GetAlignmentIndex(0, pairRange->from, BlockMultipleAlignment::eLeft);
+                if (pAlnIdx1 == pAlnIdx2 - 1 &&
+                    multiple.GetAlignedBlockNumber(mAlnIdx) == multiple.GetAlignedBlockNumber(mAlnIdx + 1))
+                {
+                    TRACEMSG("merging blocks " << pb << " and " << (pb+1));
+                    // just flag to merge later, since actually merging would mess up pb block indexes
+                    mergeIndexes.push_back(pAlnIdx1);
+                }
+            }
+            prevRange = pairRange;
+        }
+        for (unsigned int i=0; i<mergeIndexes.size(); ++i) {
+            if (p->MergeBlocks(mergeIndexes[i], mergeIndexes[i] + 1))
+                anyChanges = true;
+            else
+                ERRORMSG("MergeBlocks() failed!");
         }
     }
 
@@ -1120,6 +1160,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2004/09/27 01:00:43  thiessen
+* extend "complete contained" blocks ; merge adjacent blocks after extension"
+*
 * Revision 1.97  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *

@@ -1642,7 +1642,7 @@ bool BlockMultipleAlignment::HasNoAlignedBlocks(void) const
     return (blocks.size() == 0 || (blocks.size() == 1 && !blocks.front()->IsAligned()));
 }
 
-int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification)
+int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification) const
 {
     if (row < 0 || row >= NRows() || seqIndex < 0 || seqIndex >= GetSequenceOfRow(row)->Length()) {
         ERRORMSG("BlockMultipleAlignment::GetAlignmentIndex() - coordinate out of range");
@@ -1855,6 +1855,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2004/09/27 01:00:44  thiessen
+* extend "complete contained" blocks ; merge adjacent blocks after extension"
+*
 * Revision 1.60  2004/09/23 10:31:14  thiessen
 * add block extension algorithm
 *
