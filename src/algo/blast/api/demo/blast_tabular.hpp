@@ -83,12 +83,15 @@ private:
     BlastSeqSrc* m_ipSeqSrc; /**< Source of the subject sequences */
     BlastQueryInfo* m_ipQueryInfo; /**< Query information, including context
                                    offsets and effective lengths. */
-    BlastScoringParameters* m_ipScoreParams;
-    BlastExtensionParameters* m_ipExtParams;
-    BlastHitSavingParameters* m_ipHitParams;
-    BlastEffectiveLengthsParameters* m_ipEffLenParams;
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > m_iGenCodeString;
-    BlastGapAlignStruct* m_ipGapAlign;
+    BlastScoringParameters* m_ipScoreParams; /**< Scoring parameters */
+    BlastExtensionParameters* m_ipExtParams; /**< Gapped extension parameters */
+    BlastHitSavingParameters* m_ipHitParams; /**< Hit saving parameters */
+    BlastEffectiveLengthsParameters* m_ipEffLenParams; /**< Effective lengths 
+                                                          parameters. */
+    AutoPtr<Uint1, ArrayDeleter<Uint1> > m_iGenCodeString; /**< Genetic code
+                                              string for subject translation. */
+    BlastGapAlignStruct* m_ipGapAlign; /**< Structure containing gapped 
+                                          alignment information. */
     bool m_ibPerformTraceback; /**< Must gapped extension with traceback be
                                performed before formatting? */
     IBlastSeqInfoSrc* m_pSeqInfoSrc; /**< Instance of an interface for retrieving
@@ -104,6 +107,9 @@ private:
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/11/18 21:32:09  dondosha
+* Added some doxygen comments
+*
 * Revision 1.4  2004/10/06 14:58:49  dondosha
 * Use IBlastSeqInfoSrc interface for Seq-ids and lengths retrieval in tabular formatting thread
 *
