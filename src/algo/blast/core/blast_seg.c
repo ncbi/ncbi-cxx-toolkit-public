@@ -1295,33 +1295,46 @@ double lnfact[] =
    82108.927837 
   }; 
 
+
 #define AA20    2
 
-#define LN20    2.9957322735539909
 
-#define CHAR_SET 128
+
+/** Information about the alphabet used by seg.
+ *  For proteins this version of seg uses ncbistdaa,
+ *  This keeps track of those.
+ */
+typedef struct Alpha
+  {
+   Int4 alphabet;              /**< which alphabet, AA20 for proteins. */
+   Int4 alphasize;             /**< size of above alphabet. */
+   double lnalphasize;         /**< nat. log of size of above alphabet. */
+   Int4* alphaindex;           /**< value in ncbistdaa. */
+   unsigned char* alphaflag;   /**< array of bools to indicate that letter is (not) valid?? */
+  } Alpha;
+
 
 /** General sequence information */
 typedef struct SSequence
   {
    struct SSequence* parent;
-   char* seq;
-   Alpha* palpha;
-   Int4 start;
-   Int4 length;
-   Int4 bogus;
+   char* seq;                  /**< sequence in ncbistdaa. */
+   Alpha* palpha;              /**< alphabet information */
+   Int4 start;                 /**< starting offset to seg. */
+   Int4 length;                /**< Length of sequence to be segged. */
+   Int4 bogus;                 
    Boolean punctuation;
    Int4* composition;
    Int4* state;
    double entropy;
 } SSequence;
 
-/** List of sequence segments */
+/** List of sequence segments (hits) */
 typedef struct SSeg
   {
-   int begin;
-   int end;
-   struct SSeg *next;
+   int begin;          /**< beginning of segment (hit). */
+   int end;            /**< end of segment (hit). */
+   struct SSeg *next;  /**< next object in linked list */
   } SSeg;
 
 /*---------------------------------------------------------------(SeqNew)---*/
@@ -1350,7 +1363,9 @@ static SSequence* SeqNew(void)
 
 /*------------------------------------------------------------(AlphaFree)---*/
 
-/** Frees the Alpha structure */
+/** Frees the Alpha structure and underlying structures.
+ * @param palpha the object to be freed [in]
+ */
 static void AlphaFree (Alpha* palpha)
 
   {
@@ -1358,16 +1373,17 @@ static void AlphaFree (Alpha* palpha)
 
    sfree (palpha->alphaindex);
    sfree (palpha->alphaflag);
-   sfree (palpha->alphachar);
    sfree (palpha);
 
    return;
  }
 
-/*--------------------------------------------------------------(SeqFree)---*/
+/*--------------------------------------------------------------(SSequenceFree)---*/
 
-/** Frees the SSequence structure */
-static void SeqFree(SSequence* seq)
+/** Frees the SSequence structure and the underlying structure
+ * @param seq the object to be freed [in]
+ */
+static void SSequenceFree(SSequence* seq)
 {
    if (seq==NULL) return;
 
@@ -1381,7 +1397,9 @@ static void SeqFree(SSequence* seq)
 
 /*--------------------------------------------------------------(SSegFree)---*/
 
-/** Frees the SSeg structure */
+/** Frees the SSeg structure
+ * @param seg the object to be freed [in]
+ */
 static void SegFree(SSeg* seg)
 {
    SSeg* nextseg;
@@ -1404,7 +1422,7 @@ static void SegFree(SSeg* seg)
  */
 static Boolean hasdash(SSequence* win)
 {
-	register char	*seq, *seqmax;
+	char	*seq, *seqmax;
 
 	seq = win->seq;
 	seqmax = seq + win->length;
@@ -1431,7 +1449,9 @@ static int state_cmp(const void* s1, const void* s2)
 
 /*---------------------------------------------------------------(compon)---*/
 
-/** Calculates sequence composition array values. */
+/** Calculates sequence composition array values. 
+ * @param win the object to be analyzed [in]
+ */
 static void compon(SSequence* win)
 
 {
@@ -1455,7 +1475,8 @@ static void compon(SSequence* win)
 		letter = *seq++;
 		if (!alphaflag[letter])
 			comp[alphaindex[letter]]++;
-      else win->bogus++;
+                else 
+                        win->bogus++;
 	}
 
 	return;
@@ -1463,7 +1484,9 @@ static void compon(SSequence* win)
 
 /*--------------------------------------------------------------(stateon)---*/
 
-/** Calculates state array values */
+/** Calculates state array values 
+ * @param win the object to be analyzed [in]
+ */
 static void stateon(SSequence* win)
 
 {
@@ -1541,10 +1564,13 @@ static SSequence* openwin(SSequence* parent, Int4 start, Int4 length)
 
 /*--------------------------------------------------------------(entropy)---*/
 
-/** Calculates entropy of an integer array */
+/** Calculates entropy of an integer array 
+ * @param sv array to be analyzed [in]
+ * @return the entropy
+ */
 static double entropy(Int4* sv)
-
-  {double ent;
+{
+   double ent;
    Int4 i, total;
 
    total = 0;
@@ -1563,7 +1589,7 @@ static double entropy(Int4* sv)
    ent = fabs(ent/(double)total);
 
    return(ent);
-  }
+}
 
 /*----------------------------------------------------------(decrementsv)---*/
 
@@ -1631,7 +1657,10 @@ static Int4 shiftwin1(SSequence* win)
 
 /*-------------------------------------------------------------(closewin)---*/
 
-/** Frees the SSequence structure corresponding to a sequence window */
+/** Frees the SSequence structure corresponding to a sequence window 
+ * Does not free palpha like SSequenceFree (two functions needed?).
+ * @param win object to be freed
+ */
 static void closewin(SSequence* win)
 {
    if (win==NULL) return;
@@ -1645,7 +1674,9 @@ static void closewin(SSequence* win)
 
 /*----------------------------------------------------------------(enton)---*/
 
-/** Calculates entropy of a sequence window */
+/** Calculates entropy of a sequence window 
+ * @param win object to be analyzed [in]
+ */
 static void enton(SSequence* win)
 
   {
@@ -1706,31 +1737,40 @@ static double* seqent(SSequence* seq, Int4 window, Int4 maxbogus)
    return(H);
 }
 
-/*------------------------------------------------------------(appendseg)---*/
-
+/** Appends second arg to end of first one.
+ * @param segs structure to be appended to [in]
+ * @param seg structure to append [in]
+ */
 static void
 appendseg(SSeg* segs, SSeg* seg)
+{
+   SSeg* temp = segs;
 
-  {SSeg* temp;
-
-   temp = segs;
    while (TRUE)
-     {
+   {
       if (temp->next==NULL)
-        {
+      {
          temp->next = seg;
          break;
-        }
+      }
       else
-        {
+      {
          temp = temp->next;
-        }
-     }
+      }
+   }
 
    return;
-  }
+}
 
 /*---------------------------------------------------------------(findlo)---*/
+
+/** Finds the first element above hicut, looks from i to limit.
+ * @param i first element to check [in]
+ * @param limit last element to check [in]
+ * @param hicut value to check for [in]
+ * @param H the array to check.
+ * @return index of last element with value below hicut
+ */
 
 static Int4 findlo(Int4 i, Int4 limit, double hicut, double* H)
 
@@ -1739,7 +1779,7 @@ static Int4 findlo(Int4 i, Int4 limit, double hicut, double* H)
 
    for (j=i; j>=limit; j--)
      {
-      if (H[j]==-1) break;
+      if (H[j]==-1.0) break;
       if (H[j]>hicut) break;
      }
 
@@ -1748,6 +1788,13 @@ static Int4 findlo(Int4 i, Int4 limit, double hicut, double* H)
 
 /*---------------------------------------------------------------(findhi)---*/
 
+/** Finds the last element below hicut, looks from i to limit.
+ * @param i first element to check [in]
+ * @param limit last element to check [in]
+ * @param hicut value to check for [in]
+ * @param H the array to check.
+ * @return index of last element with value below hicut
+ */
 static Int4 findhi(Int4 i, Int4 limit, double hicut, double* H)
 
   {
@@ -1755,7 +1802,7 @@ static Int4 findhi(Int4 i, Int4 limit, double hicut, double* H)
 
    for (j=i; j<=limit; j++)
      {
-      if (H[j]==-1) break;
+      if (H[j]==-1.0) break;
       if (H[j]>hicut) break;
      }
 
@@ -1831,14 +1878,8 @@ static double getprob(Int4* sv, Int4 total, Alpha* palpha)
   {
    double ans, ans1, ans2 = 0, totseq;
 
-   /* #define LN20	2.9957322735539909 */
-   /* #define LN4	1.3862943611198906 */
-
    totseq = ((double) total) * palpha->lnalphasize;
 
-/*
-   ans = lnass(sv, palpha->alphasize) + lnperm(sv, total) - totseq;
-*/
    ans1 = lnass(sv, palpha->alphasize);
    if (ans1 > -100000.0 && sv[0] != INT4_MIN)
    {
@@ -1851,9 +1892,6 @@ static double getprob(Int4* sv, Int4 total, Alpha* palpha)
 #endif
    }
    ans = ans1 + ans2 - totseq;
-/*
-fprintf(stderr, "%lf %lf %lf\n", ans, ans1, ans2);
-*/
 
    return ans;
   }
@@ -1871,8 +1909,6 @@ static void trim(SSequence* seq, Int4* leftend, Int4* rightend,
    Int4 minlen;
    Int4 maxtrim;
 
-/* fprintf(stderr, "%d %d\n", *leftend, *rightend);  */
-
    lend = 0;
    rend = seq->length - 1;
    minlen = 1;
@@ -1880,19 +1916,15 @@ static void trim(SSequence* seq, Int4* leftend, Int4* rightend,
    if ((seq->length-maxtrim)>minlen) minlen = seq->length-maxtrim;
 
    minprob = 1.;
-/*   fprintf(stderr, "\n");                                           -*/
    for (len=seq->length; len>minlen; len--)
      {
-/*      fprintf(stderr, "%5d ", len);                                 -*/
       win = openwin(seq, 0, len);
       i = 0;
 
       shift = TRUE;
       while (shift)
         {
-         prob = getprob(win->state, len, sparamsp->palpha);
-/*         realprob = exp(prob);                 (for tracing the trim)-*/
-/*         fprintf(stderr, "%2e ", realprob);                          -*/
+         prob = getprob(win->state, len, win->palpha);
          if (prob<minprob)
            {
             minprob = prob;
@@ -1903,15 +1935,11 @@ static void trim(SSequence* seq, Int4* leftend, Int4* rightend,
          i++;
         }
       closewin(win);
-/*      fprintf(stderr, "\n");                                       -*/
      }
 
-/*   fprintf(stderr, "%d-%d ", *leftend, *rightend);                 -*/
 
    *leftend = *leftend + lend;
    *rightend = *rightend - (seq->length - rend - 1);
-
-/*   fprintf(stderr, "%d-%d\n", *leftend, *rightend);                -*/
 
    closewin(seq);
    return;
@@ -2006,11 +2034,12 @@ static void SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg* *segs,
 }
 
 /*------------------------------------------------------------(mergesegs)---*/
-/* merge together overlapping segments, 
-	hilenmin also does something, but we need to ask Scott Federhen what?
+/** merge together overlapping segments, 
+ * hilenmin also does something, but we need to ask Scott Federhen what?
+ * @param seq information about sequence [in]
+ * @param segs segment information [in]
 */
-
-static void mergesegs(SSequence* seq, SSeg* segs, Boolean overlaps)
+static void mergesegs(SSequence* seq, SSeg* segs)
 {
    SSeg* seg,* nextseg;
    Int4 hilenmin;		/* hilenmin yet unset */
@@ -2018,9 +2047,6 @@ static void mergesegs(SSequence* seq, SSeg* segs, Boolean overlaps)
 
    hilenmin = 0;               /* hilenmin - temporary default */
 
-   if (overlaps == FALSE) 
-	return;
-	
    if (segs==NULL) return;
 
    if (segs->begin<hilenmin) segs->begin = 0;
@@ -2064,6 +2090,13 @@ static void mergesegs(SSequence* seq, SSeg* segs, Boolean overlaps)
    return;
 }
 
+/** Converts the internal representation used by seg to that used by BLAST
+ *
+ * @param segs internal representation [in]
+ * @param offset fixed value to add to offsets [in]
+ * @param seg_locs the new BLAST specific representation [out]
+ * @param returns zero on success.
+ */
 static Int2 SegsToBlastSeqLoc(SSeg* segs, Int4 offset, BlastSeqLoc** seg_locs)
 {
    BlastSeqLoc* last_slp = NULL;
@@ -2082,32 +2115,32 @@ static Int2 SegsToBlastSeqLoc(SSeg* segs, Int4 offset, BlastSeqLoc** seg_locs)
    return 0;
 }
 
-/*------------------------------------------------------------(AA20alpha)---*/
-
+/** Creats the Alphabet structure for standard protein alphabet. 
+ * @return pointer to the alphabet structure.
+ */
 static Alpha* AA20alpha_std (void)
 {
    Alpha* palpha;
    Int4* alphaindex;
    unsigned char* alphaflag;
-   char* alphachar;
    Uint1 c, i;
+   const int K_Char_Set = 128;
+   const double K_ln20 = 2.9957322735539909;
 
    palpha = (Alpha*) calloc(1, sizeof(Alpha));
 
    palpha->alphabet = AA20;
    palpha->alphasize = 20;
-   palpha->lnalphasize = LN20;
+   palpha->lnalphasize = K_ln20;
 
-   alphaindex = (Int4*) calloc(CHAR_SET , sizeof(Int4));
-   alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
-   alphachar = (char*) calloc(palpha->alphasize , sizeof(char));
+   alphaindex = (Int4*) calloc(K_Char_Set , sizeof(Int4));
+   alphaflag = (unsigned char*) calloc(K_Char_Set , sizeof(char));
 
-   for (c=0, i=0; c<128; c++)
+   for (c=0, i=0; c<K_Char_Set; c++)
      {
         if (c == 1 || (c >= 3 && c <= 20) || c == 22) {
            alphaflag[c] = FALSE; 
            alphaindex[c] = i; 
-           alphachar[i] = c;
            ++i;
         } else {
            alphaflag[c] = TRUE; alphaindex[c] = 20;
@@ -2116,13 +2149,13 @@ static Alpha* AA20alpha_std (void)
 
    palpha->alphaindex = alphaindex;
    palpha->alphaflag = alphaflag;
-   palpha->alphachar = alphachar;
 
    return (palpha);
 }
 
-/*-------------------------------------------------------(SegParametersNewAa)---*/
-
+/** Allocated SeqParameter struct for proteins and fills with default values.
+ * @return pointer to SegParameters
+ */
 SegParameters* SegParametersNewAa (void)
 {
    SegParameters* sparamsp;
@@ -2137,13 +2170,13 @@ SegParameters* SegParametersNewAa (void)
    sparamsp->overlaps = FALSE;
    sparamsp->maxtrim = 50;
    sparamsp->maxbogus = 2;
-   sparamsp->palpha = AA20alpha_std();
 
    return (sparamsp);
 }
 
-/*-------------------------------------------------------(SegParametersCheck)---*/
-
+/** Checks SeqParameter struct for proteins, sets default values if not set. 
+ * @param sparamsp parameters to check [in]
+ */
 static void SegParametersCheck (SegParameters* sparamsp)
 {
    if (!sparamsp) return;
@@ -2151,12 +2184,8 @@ static void SegParametersCheck (SegParameters* sparamsp)
    if (sparamsp->window <= 0) sparamsp->window = 12;
 
    if (sparamsp->locut < 0.0) sparamsp->locut = 0.0;
-/* if (sparamsp->locut > sparamsp->palpha->lnalphasize)
-       sparamsp->locut = sparamsp->palpha->lnalphasize; */
 
    if (sparamsp->hicut < 0.0) sparamsp->hicut = 0.0;
-/* if (sparamsp->hicut > sparamsp->palpha->lnalphasize)
-       sparamsp->hicut = sparamsp->palpha->lnalphasize; */
 
    if (sparamsp->locut > sparamsp->hicut)
        sparamsp->hicut = sparamsp->locut;
@@ -2172,46 +2201,16 @@ static void SegParametersCheck (SegParameters* sparamsp)
    return;
 }
 
-/*--------------------------------------------------------(SegParametersFree)---*/
+/** Free SegParameters structure
+ * @param sparamsp object to be freed [in]
+ */
 
 void SegParametersFree(SegParameters* sparamsp)
 {
-   if (!sparamsp) return;
-   AlphaFree(sparamsp->palpha);
+   if (!sparamsp) 
+      return;
    sfree(sparamsp);
    return;
-}
-
-/*------------------------------------------------------------(AlphaCopy)---*/
-
-static Alpha* AlphaCopy (Alpha* palpha)
-{
-   Alpha* pbeta;
-   Int2 i;
-
-   if (!palpha) return((Alpha*) NULL);
-
-   pbeta = (Alpha*) calloc(1, sizeof(Alpha));
-   pbeta->alphabet = palpha->alphabet;
-   pbeta->alphasize = palpha->alphasize;
-   pbeta->lnalphasize = palpha->lnalphasize;
-
-   pbeta->alphaindex = (Int4*) calloc(CHAR_SET , sizeof(Int4));
-   pbeta->alphaflag = (unsigned char*) calloc(CHAR_SET , sizeof(char));
-   pbeta->alphachar = (char*) calloc(palpha->alphasize , sizeof(char));
-
-   for (i=0; i<CHAR_SET; i++)
-     {
-      pbeta->alphaindex[i] = palpha->alphaindex[i];
-      pbeta->alphaflag[i] = palpha->alphaflag[i];
-     }
-
-   for (i=0; i<palpha->alphasize; i++)
-     {
-      pbeta->alphachar[i] = palpha->alphachar[i];
-     }
-
-   return(pbeta);
 }
 
 Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
@@ -2243,7 +2242,7 @@ Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
    seqwin = SeqNew();
    seqwin->seq = (char*) sequence;
    seqwin->length = length;
-   seqwin->palpha = AlphaCopy(sparamsp->palpha);
+   seqwin->palpha = AA20alpha_std();
    
    /* seg the sequence */
    
@@ -2252,14 +2251,14 @@ Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
 
    /* merge the segment if desired. */
    if (sparamsp->overlaps)
-      mergesegs(seqwin, segs, sparamsp->overlaps);
+      mergesegs(seqwin, segs);
 
    /* convert segs to seqlocs */
    SegsToBlastSeqLoc(segs, offset, seg_locs);   
    
    /* clean up & return */
    seqwin->seq = NULL;
-   SeqFree (seqwin);
+   SSequenceFree (seqwin);
    SegFree (segs);
 
    if(params_allocated)
