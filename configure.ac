@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.147 2002/11/14 19:18:57 ucko Exp $
+#  $Id: configure.ac,v 1.148 2002/12/02 20:43:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -38,7 +38,7 @@
 #
 #############################################################################
 
-AC_PREREQ(2.54)
+AC_PREREQ(2.56)
 
 dnl Set up lock.  The diversion magic lets this occur before AC_INIT, which
 dnl already interferes with other configure processes.
@@ -54,7 +54,7 @@ cache_file=config.cache
 # command-line setting.
 AC_DIVERT_POP
 
-AC_INIT(ncbi-tools++, 0.0, cpp-core@ncbi.nlm.nih.gov)
+AC_INIT([ncbi-tools++],[0.0],[cpp-core@ncbi.nlm.nih.gov])
 AC_CONFIG_SRCDIR(src/Makefile.mk.in)
 
 
@@ -1330,29 +1330,29 @@ if test "$with_mt" = "yes" ; then
 
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
    [ncbi_cv_func_gethostbyname_r="no"
-    AC_TRY_COMPILE(
-       [#include <netdb.h>],
-       [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[
          void*           dummy = (void*) &gethostbyname_r;
          char            buf[1024];
          int             err;
          struct hostent* hp = 0;
          hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
-       ],
+       ]])],
        [
          ncbi_cv_func_gethostbyname_r="5"
        ]
     )
     if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
-    AC_TRY_COMPILE(
-       [#include <netdb.h>],
-       [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[
          void*           dummy = (void*) &gethostbyname_r;
          char            buf[1024];
          int             err;
          struct hostent* hp = 0;
          err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
-       ],
+       ]])],
        [
          ncbi_cv_func_gethostbyname_r="6"
        ]
@@ -1361,7 +1361,7 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
 
 if test "$ncbi_cv_func_gethostbyname_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $ncbi_cv_func_gethostbyname_r,
-    [If you have the \`gethostbyname_r\' function, define to the number of
+    [If you have the `gethostbyname_r' function, define to the number of
      arguments it takes (normally 5 or 6).])
 fi
 
@@ -1371,13 +1371,13 @@ fi
 
 AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
    [ncbi_cv_func_gethostbyaddr_r="no"
-    AC_TRY_COMPILE(
-       [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[
          #include <netdb.h>
          #include <sys/types.h>
          #include <sys/socket.h>
-       ],
-       [
+       ]],
+       [[
          void* dummy = (void*) &gethostbyaddr_r;
          char            buf[1024];
          int             err;
@@ -1385,19 +1385,19 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
          struct hostent* hp = 0;
          hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
                               hp, buf, sizeof(buf), &err);
-       ],
+       ]])],
        [
          ncbi_cv_func_gethostbyaddr_r="7"
        ]
     )
     if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
-    AC_TRY_COMPILE(
-       [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[
          #include <netdb.h>
          #include <sys/types.h>
          #include <sys/socket.h>
-       ],
-       [
+       ]],
+       [[
          void* dummy = (void*) &gethostbyaddr_r;
          char            buf[1024];
          int             err;
@@ -1405,7 +1405,7 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
          struct hostent* hp = 0;
          int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
                                    hp, buf, sizeof(buf), &hp, &err);
-       ],
+       ]])],
        [
          ncbi_cv_func_gethostbyaddr_r="8"
        ]
@@ -1414,7 +1414,7 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
 
 if test "$ncbi_cv_func_gethostbyaddr_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $ncbi_cv_func_gethostbyaddr_r,
-    [If you have the \`gethostbyaddr_r\' function, define to the number of
+    [If you have the `gethostbyaddr_r' function, define to the number of
      arguments it takes (normally 5 or 6).])
 fi
 
@@ -1423,7 +1423,7 @@ AC_CHECK_FUNCS(localtime_r pthread_setconcurrency pthread_atfork)
 
 AC_SEARCH_LIBS(sched_yield, rt,
     AC_DEFINE(HAVE_SCHED_YIELD, 1,
-              [Define to 1 if you have the \`sched_yield\' function.])
+              [Define to 1 if you have the `sched_yield' function.])
 )
 
 fi
@@ -1435,13 +1435,13 @@ fi
 AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm)
 
 AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,
-   [AC_TRY_COMPILE(
-       [#include <sys/sysinfo.h>],
-       [
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <sys/sysinfo.h>]],
+       [[
          void* dummy = (void*) &sysinfo;
          struct sysinfo* info = 0;
          int retval = sysinfo(info);
-       ], [ncbi_cv_func_sysinfo_1=yes], [ncbi_cv_func_sysinfo_1=no])])
+       ]])], [ncbi_cv_func_sysinfo_1=yes], [ncbi_cv_func_sysinfo_1=no])])
 
 if test "$ncbi_cv_func_sysinfo_1" = yes; then
    AC_DEFINE(HAVE_SYSINFO_1, 1,
@@ -1458,18 +1458,18 @@ AC_TYPE_SIZE_T
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
-      [Define to 1 if \`sin_len\' is a member of \`struct sockaddr_in\'.])],
+      [Define to 1 if `sin_len' is a member of `struct sockaddr_in'.])],
    [], [#include <sys/types.h>
         #include <netinet/in.h>])   
 
 
 AC_CACHE_CHECK([whether function prototypes can use throw(...)],
    ncbi_cv_cxx_throw_spec,
-   [AC_TRY_COMPILE(
-       [template <class T> inline int test_throw_spec(const T&) throw() {
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[template <class T> inline int test_throw_spec(const T&) throw() {
           return 0;
-       }],
-       [return test_throw_spec(123);],
+       }]],
+       [[return test_throw_spec(123);]])],
        [ncbi_cv_cxx_throw_spec=yes], [ncbi_cv_cxx_throw_spec=no])])
 if test "$ncbi_cv_cxx_throw_spec" = yes; then
    AC_DEFINE(NCBI_USE_THROW_SPEC, 1,
@@ -1479,95 +1479,86 @@ fi
 
 AC_CACHE_CHECK([for obsolete string::compare() syntax],
    ncbi_cv_func_string_compare_obsolete,
-   [AC_TRY_COMPILE(
-       [#include <string>],
-       [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <string>]],
+       [[std::string s;  int i = 0;  i = s.compare("aaa", 0, 2);]])],
        [ncbi_cv_func_string_compare_obsolete=yes],
        [ncbi_cv_func_string_compare_obsolete=no])])
 if test "$ncbi_cv_func_string_compare_obsolete" = yes; then
    AC_DEFINE(NCBI_OBSOLETE_STR_COMPARE, 1,
-             [Define to 1 if \`string::compare()\' is non-standard.])
+             [Define to 1 if `string::compare()' is non-standard.])
 fi
 
 
 AC_CACHE_CHECK([whether the auto_ptr template class works],
    ncbi_cv_type_auto_ptr_works,
-   [AC_TRY_COMPILE(
-       [#include <memory>],
-       [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <memory>]],
+       [[int *ip = 0; std::auto_ptr<int> ap(ip); *ip = *ap; ap.reset(ip);]])],
        [ncbi_cv_type_auto_ptr_works=yes], [ncbi_cv_type_auto_ptr_works=no])])
 if test "$ncbi_cv_cxx_auto_ptr_works" = no; then
    AC_DEFINE(HAVE_NO_AUTO_PTR, 1,
-             [Define to 1 if \`auto_ptr<T>\' is missing or broken.])
+             [Define to 1 if `auto_ptr<T>' is missing or broken.])
 fi
 
 
 AC_CACHE_CHECK([for min/max templates], ncbi_cv_func_min_max,
-   [AC_TRY_COMPILE(
-       [#include <algorithm>
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[
+        #include <algorithm>
         #ifdef min
         #undef min
         #endif
         #ifdef max
         #undef max
         #endif
-       ],
-       [int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b); ],
+       ]],
+       [[int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b);]])],
        [ncbi_cv_func_min_max=yes], [ncbi_cv_func_min_max=no])])
 if test "$ncbi_cv_func_min_max" = no; then
    AC_DEFINE(HAVE_NO_MINMAX_TEMPLATE, 1,
-             [Define to 1 if \`min\'/\`max\' templates are not implemented.])
+             [Define to 1 if `min'/`max' templates are not implemented.])
 fi
 
 
 AC_CACHE_CHECK([whether new C++ streams have ios_base::],
    ncbi_cv_type_ios_base,
-   [AC_TRY_COMPILE(
-       [#include <iostream>],
-       [(void)(std::ios_base::out != std::ios_base::beg); ],
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <iostream>]],
+       [[(void)(std::ios_base::out != std::ios_base::beg);]])],
        [ncbi_cv_type_ios_base=yes], [ncbi_cv_type_ios_base=no])])
 if test "$ncbi_cv_type_ios_base" = no; then
    AC_DEFINE(HAVE_NO_IOS_BASE, 1,
-             [Define to 1 if new C++ streams lack \`ios_base::\'.])
+             [Define to 1 if new C++ streams lack `ios_base::'.])
 fi
 
 
 AC_CACHE_CHECK([for std::char_traits::], ncbi_cv_type_char_traits,
-   [AC_TRY_COMPILE(
-       [#include <iostream>],
-       [using namespace std;
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <iostream>]],
+       [[using namespace std;
        char_traits<char>::int_type  i = char_traits<char>::eof();
        i = char_traits<char>::not_eof(i);
        char_traits<char>::char_type c = '\0';
        char_traits<char>::pos_type  p = 0;
        char_traits<char>::off_type  o = 1;
-       ],
+       ]])],
        [ncbi_cv_type_char_traits=yes], [ncbi_cv_type_char_traits=no])])
 if test "$ncbi_cv_type_char_traits" = no; then
    AC_DEFINE(HAVE_NO_CHAR_TRAITS, 1,
-             [Define to 1 if \`std::char_traits\' is missing.])
+             [Define to 1 if `std::char_traits' is missing.])
 fi
 
 
 AC_CHECK_TYPE([union semun],
-   AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if you have \`union semun\'.]),
+   AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if you have `union semun'.]),
    [], [#include <sys/sem.h>])
 
 
 AC_CACHE_CHECK([which way the stack grows], ncbi_cv_sys_stack_dir,
-   [AC_TRY_RUN(
-        [
-         int f(int* p)
-         {
-             int i;
-             return (&i < p) ? 1 : 0;
-         }
-         int main(void)
-         {
-             int p;
-             return f(&p);
-         }
-        ],
+   [AC_RUN_IFELSE([AC_LANG_PROGRAM(
+        [[ int f(int* p) { int i; return (&i < p) ? 1 : 0; } ]],
+        [[ int p; return f(&p); ]])],
         [ncbi_cv_sys_stack_dir=up], [ncbi_cv_sys_stack_dir=down],
         [ncbi_cv_sys_stack_dir="unknown (cross-compiling)"])])
 case "$ncbi_cv_sys_stack_dir" in
@@ -1738,9 +1729,9 @@ if test "$with_sybase" != "no" ; then
    AC_CACHE_CHECK([for Sybase in $SYBASE_PATH], ncbi_cv_lib_sybase,
       [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
        LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
-       AC_TRY_LINK(
-          [#include <ctpublic.h>],
-          [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <ctpublic.h>]],
+          [[CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ]])],
           [ncbi_cv_lib_sybase=yes], [ncbi_cv_lib_sybase=no])])
 
    if test "$ncbi_cv_lib_sybase" = yes; then
@@ -1766,15 +1757,15 @@ if test "$with_sybase" != "no" ; then
       AC_CACHE_CHECK([for Sybase DBLib], ncbi_cv_lib_sybdb,
          [CPPFLAGS="$SYBASE_INCLUDE $prig_CPPFLAGS"
           LIBS="$SYBASE_DBLIBS $SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"   
-          AC_TRY_LINK(
-             [
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[
               #include <sybfront.h>
               #include <sybdb.h>
-             ],
-             [
+             ]],
+             [[
               LOGINREC*  x_login     = 0;
               DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
-             ],
+             ]])],
              [ncbi_cv_lib_sybdb=yes], [ncbi_cv_lib_sybdb=no])])
       if test "$ncbi_cv_lib_sybdb" = yes; then
          WithPackages="$WithPackages DBLib"
@@ -1833,17 +1824,17 @@ if test "$with_ftds" != "no" ; then
       AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
          [CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
           LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
-          AC_TRY_LINK(
-            [
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+            [[
              #include <sybdb.h>
              #include <tds.h>
-            ],
-            [
+            ]],
+            [[
              LOGINREC*  x_login     = 0;
              DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
              TDSLOGIN*  x_tds_login = 0;
              TDSSOCKET* x_sock      = tds_connect(x_tds_login);
-            ],
+            ]])],
             [ncbi_cv_lib_freetds=yes], [ncbi_cv_lib_freetds=no])])
       if test "$ncbi_cv_lib_freetds" = "no"; then
          with_ftds=no
@@ -1889,10 +1880,10 @@ if test "$with_ncbi_c" != "no" ; then
    AC_CACHE_CHECK([for the NCBI C toolkit in $NCBI_C_PATH], ncbi_cv_lib_ctools,
       [CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
        LIBS="$NCBI_C_LIBPATH $NCBI_C_ncbi $NETWORK_LIBS $orig_LIBS"
-       AC_TRY_LINK(
-          [#include <ncbi.h>],
-          [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ],
-          [ncbi_cv_lib_ctools=yes], [ncbi_cv_lib_ctools=no])])   
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <ncbi.h>]],
+          [[ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ]])],
+          [ncbi_cv_lib_ctools=yes], [ncbi_cv_lib_ctools=no])])
    if test "$ncbi_cv_lib_ctools" = no; then
       with_ncbi_c=no
    fi
@@ -1945,13 +1936,15 @@ if test "$with_opengl" != "no"; then
    AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
       [CPPFLAGS="$orig_CPPFLAGS $OPENGL_INCLUDE"
        LIBS="$OPENGL_LIBS $orig_LIBS"
-       AC_TRY_LINK(
-          [#ifdef NCBI_OS_DARWIN
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[
+           #ifdef NCBI_OS_DARWIN
            #  include <OpenGL/gl.h>
            #else
            #  include <GL/gl.h>
-           #endif],
-          [glBegin(0);],
+           #endif
+          ]],
+          [[glBegin(0);]])],
           [ncbi_cv_lib_opengl=yes], [ncbi_cv_lib_opengl=no])])
 fi
 
@@ -1991,9 +1984,9 @@ if test "$with_fltk" != "no"; then
     
           CPPFLAGS="$FLTK_INCLUDE $orig_CPPFLAGS"
           LIBS="$FLTK_LIBS $orig_LIBS"
-          AC_TRY_LINK(
-             [#include <FL/Fl.H>],
-             [ Fl::run(); ],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[#include <FL/Fl.H>]],
+             [[ Fl::run(); ]])],
              [ncbi_cv_lib_fltk=yes], [ncbi_cv_lib_fltk=no])
        else
           ncbi_cv_lib_fltk=no
@@ -2056,9 +2049,9 @@ if test "$with_wxwin" != "no" ; then
     
           CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIN_LIBS $orig_LIBS"
-          AC_TRY_LINK(
-             [#include <wx/wx.h>],
-             [ wxExit(); ],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[#include <wx/wx.h>]],
+             [[ wxExit(); ]])],
              [ncbi_cv_lib_wxwindows=yes], [ncbi_cv_lib_wxwindows=no])
        else
           ncbi_cv_lib_wxwindows=no
@@ -2099,9 +2092,9 @@ if test "$with_fastcgi" != "no" ; then
    AC_CACHE_CHECK([for FastCGI libraries in $FASTCGI_PATH], ncbi_cv_lib_fcgi,
       [CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
        LIBS="$FASTCGI_LIBS $orig_LIBS"
-       AC_TRY_LINK(
-          [#include <fcgiapp.h>],
-          [ (void) FCGX_IsCGI(); ],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <fcgiapp.h>]],
+          [[ (void) FCGX_IsCGI(); ]])],
           [ncbi_cv_lib_fcgi=yes], [ncbi_cv_lib_fcgi=no])])
    if test "$ncbi_cv_lib_fcgi" = "no"; then
       with_fastcgi="no"
@@ -2173,9 +2166,9 @@ else
       AC_CACHE_CHECK([for the NCBI SSS UTILS library], ncbi_cv_lib_sssutils,
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$NCBI_SSS_LIBPATH $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-          AC_TRY_LINK(
-             [#include <hashtab.hpp>],
-             [ (new C_HashTab(123))->Clear(); ],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[#include <hashtab.hpp>]],
+             [[ (new C_HashTab(123))->Clear(); ]])],
              [ncbi_cv_lib_sssutils=yes], [ncbi_cv_lib_sssutils=no])])
       if test "$ncbi_cv_lib_sssutils" = yes; then
          AC_DEFINE(HAVE_LIBSSSUTILS, 1,
@@ -2199,9 +2192,9 @@ else
       AC_CACHE_CHECK([for the NCBI SSS DB library], ncbi_cv_lib_sssdb,
          [CPPFLAGS="$NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
           LIBS="$NCBI_SSS_LIBPATH $LIBSSSDB $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-          AC_TRY_LINK(
-             [#include <cslink.hpp>],
-             [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[#include <cslink.hpp>]],
+             [[ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ]])],
              [ncbi_cv_lib_sssdb=yes], [ncbi_cv_lib_sssdb=no])])
       if test "$ncbi_cv_lib_sssdb" = "yes"; then
          AC_DEFINE(HAVE_LIBSSSDB, 1,
@@ -2256,9 +2249,9 @@ else
 #
 #     CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
 #     LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-#     AC_TRY_LINK(
-#        [#include <geo_api.hpp>],
-#        [ (void) GEO_API::Submitter::contributors(); ],
+#     AC_LINK_IFELSE([AC_LANG_PROGRAM(
+#        [[#include <geo_api.hpp>]],
+#        [[ (void) GEO_API::Submitter::contributors(); ]])],
 #        [AC_DEFINE(HAVE_LIBGEODB, 1)],
 #        [with_geo="no" ; LIBGEODB="" ]
 #     )
@@ -2305,9 +2298,9 @@ if test "$with_sp" != "no" ; then
    AC_CACHE_CHECK([for the SP SGML library], ncbi_cv_lib_sp,
       [CPPFLAGS="$SP_INCLUDE $orig_CPPFLAGS"
        LIBS="$SP_LIBS $orig_LIBS"
-       AC_TRY_LINK(
-          [#include <SGMLApplication.h>],
-          [ SP_API::SGMLApplication app; ],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <SGMLApplication.h>]],
+          [[ SP_API::SGMLApplication app; ]])],
           [ncbi_cv_lib_sp=yes], [ncbi_cv_lib_sp=no])])
    if test "$ncbi_cv_lib_sp" = "no"; then
       with_sp="no"
@@ -2342,10 +2335,10 @@ if test "$with_pubmed" != "no" ; then
        else
           CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
           LIBS="-L$NCBI_PM_PATH/xmldb/out/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
-          AC_TRY_LINK(
-             [#include <ncbistr.hpp>
-              #include <hastring.h>],
-             [ CNcbiString("abc"); CAString("def"); ],
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[#include <ncbistr.hpp>
+               #include <hastring.h>]],
+             [[ CNcbiString("abc"); CAString("def"); ]])],
              [ncbi_cv_lib_pm=yes], [ncbi_cv_lib_pm=no])
        fi])
    if test "$ncbi_cv_lib_pm" = "no"; then
@@ -2388,14 +2381,14 @@ if test "$with_orbacus" != no; then
    AC_CACHE_CHECK([for ORBacus in $ORBACUS_PATH], ncbi_cv_lib_orbacus,
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
        LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
-       AC_TRY_LINK(
-          [#include <OB/CORBA.h>],
-          [
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[#include <OB/CORBA.h>]],
+          [[
             int c = 0;
             char* v[] = { NULL };
             CORBA::ORB_var orb = CORBA::ORB_init(c, v);
             if (!CORBA::is_nil(orb)) orb->destroy();
-          ],
+          ]])],
           [ncbi_cv_lib_orbacus=yes], [ncbi_cv_lib_orbacus=no])])
    if test "$ncbi_cv_lib_orbacus" = "no"; then
       with_orbacus="no"
@@ -2789,7 +2782,7 @@ configurables=`cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f
 rm $excl_file
 
 if test -z "$configurables" ; then
-  AC_MSG_ERROR([cannot find any configurables below \"${srcdir}\"!])
+  AC_MSG_ERROR([cannot find any configurables below "${srcdir}"!])
 else
   AC_MSG_NOTICE([...done])
 fi
