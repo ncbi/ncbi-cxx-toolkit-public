@@ -659,7 +659,7 @@ void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
     int iMZI = 0;  // starting point
 
     int TempLen(0);
-    CMZI *Temp(new CMZI [Num[MSORIGINAL]]); // temporary holder
+    CMZI *Temp = new CMZI [Num[MSORIGINAL]]; // temporary holder
 
     // prep the data
     CullBaseLine(Threshold, Temp, TempLen);

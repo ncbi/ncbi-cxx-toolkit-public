@@ -52,7 +52,7 @@ BEGIN_SCOPE(omssa)
 typedef int * THit;
 
 // max size of ladder
-static const int kMSLadderMax = 10000;
+const int kMSLadderMax = 10000;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -61,7 +61,7 @@ static const int kMSLadderMax = 10000;
 //  Contains a theoretical m/z ladder
 //
 
-class CLadder {
+class NCBI_XOMSSA_EXPORT CLadder {
 public:
 
     // 'tor's
@@ -186,6 +186,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.3  2003/10/24 21:28:41  lewisg
+  add omssa, xomssa, omssacl to win32 build, including dll
+
   Revision 1.2  2003/10/21 21:12:16  lewisg
   reorder headers
 

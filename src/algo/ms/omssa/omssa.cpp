@@ -42,12 +42,13 @@
 #include <string>
 #include <list>
 #include <deque>
-//#include <limits>
+#include <math.h>
 
 #include <SpectrumSet.hpp>
 #include <omssa.hpp>
 
 #include <nrutil.h>
+#include <ncbimath.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -656,7 +657,11 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
 
 double CSearch::CalcPoisson(double Mean, int i)
 {
+#ifdef NCBI_OS_MSWIN
+    return exp(-Mean) * pow(Mean, i) / exp(LnGamma(i+1));
+#else
     return exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
+#endif
 }
 
 double CSearch::CalcPvalue(double Mean, int Hits, int n)
@@ -718,6 +723,9 @@ CSearch::~CSearch()
 
 /*
   $Log$
+  Revision 1.4  2003/10/24 21:28:41  lewisg
+  add omssa, xomssa, omssacl to win32 build, including dll
+
   Revision 1.3  2003/10/22 15:03:32  lewisg
   limits and string compare changed for gcc 2.95 compatibility
 

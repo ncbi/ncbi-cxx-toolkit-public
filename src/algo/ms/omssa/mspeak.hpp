@@ -62,7 +62,7 @@ BEGIN_SCOPE(omssa)
 class CMSPeak;
 
 // class for recording ion peak type
-class CMSHitInfo {
+class NCBI_XOMSSA_EXPORT CMSHitInfo {
 public:
     char& SetCharge(void) { return Charge; }
     const char GetCharge(void) { return Charge; }
@@ -241,7 +241,7 @@ inline CMSHit& CMSHit::operator= (CMSHit& in)
 //
 
 // a class for holding an m/z value and intensity
-class CMZI {
+class NCBI_XOMSSA_EXPORT CMZI {
 public:
     int MZ;
     unsigned Intensity;
@@ -311,7 +311,7 @@ enum EChargeState {
     eCharge5 };
 
 
-class CMSPeak {
+class NCBI_XOMSSA_EXPORT CMSPeak {
 public:
     CMSPeak(void);
     CMSPeak(int HitListSize);
@@ -591,7 +591,7 @@ typedef struct _MassPeak {
 
 typedef multimap <int, TMassPeak> TMassPeakMap;
 
-class CMSPeakSet {
+class NCBI_XOMSSA_EXPORT CMSPeakSet {
 public:
     // tor's
     CMSPeakSet(void);
@@ -656,6 +656,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.4  2003/10/24 21:28:41  lewisg
+  add omssa, xomssa, omssacl to win32 build, including dll
+
   Revision 1.3  2003/10/21 21:12:17  lewisg
   reorder headers
 

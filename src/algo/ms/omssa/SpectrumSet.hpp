@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CSpectrumSet : public CMSSpectrumset {
+class NCBI_XOMSSA_EXPORT CSpectrumSet : public CMSSpectrumset {
     //    typedef CMSSpectrumset_Base Tparent;
     typedef CMSSpectrumset Tparent;
 
@@ -101,6 +101,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/10/24 21:28:41  lewisg
+ * add omssa, xomssa, omssacl to win32 build, including dll
+ *
  * Revision 1.1  2003/10/20 21:32:13  lewisg
  * ommsa toolkit version
  *

@@ -96,7 +96,7 @@ const int kIonDirection[] = { 1, 1, 1, -1, -1, -1 };
 //  Holds AA indexed mass array
 //
 
-class CMassArray {
+class NCBI_XOMSSA_EXPORT CMassArray {
 public:
     CMassArray(bool Average = false);
     const double* GetMass(void);
@@ -131,7 +131,7 @@ inline const int* CMassArray::GetIntMass(void)
 //
 
 // lookup table for reversing an AA character to AA number
-class CAA {
+class NCBI_XOMSSA_EXPORT CAA {
 public:
     CAA(void);
     char *GetMap(void);
@@ -159,7 +159,7 @@ inline char *CAA::GetMap(void)
 	
 typedef std::deque <int> TCleave;
 
-class CCleave {
+class NCBI_XOMSSA_EXPORT CCleave {
 public:
     CCleave();
     virtual ~CCleave() {};
@@ -238,7 +238,7 @@ void CCleave::EndMass( int *EndMasses,
 
 
 
-class CCNBr: public CCleave {
+class NCBI_XOMSSA_EXPORT CCNBr: public CCleave {
 public:
     CCNBr();
     ~CCNBr();
@@ -260,7 +260,7 @@ inline CCNBr::~CCNBr()
 
 
 
-class CFormicAcid: public CCleave {
+class NCBI_XOMSSA_EXPORT CFormicAcid: public CCleave {
 public:
     CFormicAcid();
     ~CFormicAcid();
@@ -281,7 +281,7 @@ inline CFormicAcid::~CFormicAcid()
 /////////////////// end of  CCNBr inline methods
 
 
-class CTrypsin: public CCleave {
+class NCBI_XOMSSA_EXPORT CTrypsin: public CCleave {
 public:
     CTrypsin();
     ~CTrypsin();
@@ -327,6 +327,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.3  2003/10/24 21:28:41  lewisg
+  add omssa, xomssa, omssacl to win32 build, including dll
+
   Revision 1.2  2003/10/21 21:12:17  lewisg
   reorder headers
 

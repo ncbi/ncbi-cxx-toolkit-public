@@ -63,7 +63,7 @@ typedef multimap <double, CMSHit *> TScoreList;
 //  Performs the ms/ms search
 //
 
-class CSearch {
+class NCBI_XOMSSA_EXPORT CSearch {
 public:
     CSearch(bool average); // is the search monoisotopic or average mass?
     ~CSearch();
@@ -170,6 +170,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.3  2003/10/24 21:28:41  lewisg
+  add omssa, xomssa, omssacl to win32 build, including dll
+
   Revision 1.2  2003/10/21 21:12:17  lewisg
   reorder headers
 

@@ -201,6 +201,15 @@
 #endif
 
 
+/*
+ * Definitions for NCBI_ALGO_MS.DLL
+ */
+#ifdef NCBI_ALGOMS_EXPORTS
+#  define NCBI_OMSSA_EXPORTS
+#  define NCBI_XOMSSA_EXPORTS
+#endif
+
+
 /* ------------------------------------------------- */
 
 /*
@@ -996,6 +1005,24 @@
 #  define NCBI_XLOADER_BLASTDB_EXPORT    __declspec(dllimport)
 #endif
 
+/*
+ * Export specifier for library xomssa
+ */
+#ifdef NCBI_XOMSSA_EXPORTS
+#  define NCBI_XOMSSA_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XOMSSA_EXPORT    __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library omssa
+ */
+#ifdef NCBI_OMSSA_EXPORTS
+#  define NCBI_OMSSA_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_OMSSA_EXPORT    __declspec(dllimport)
+#endif
+
 
 #else  /*  !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD)  */
 
@@ -1094,6 +1121,8 @@
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XSQLITE_EXPORT
 #  define NCBI_XUTIL_EXPORT
+#  define NCBI_OMSSA_EXPORT
+#  define NCBI_XOMSSA_EXPORT
 
 #endif
 
@@ -1103,6 +1132,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.44  2003/10/24 21:28:41  lewisg
+ * add omssa, xomssa, omssacl to win32 build, including dll
+ *
  * Revision 1.43  2003/10/24 15:23:26  dicuccio
  * Fixed gnomon export specifier
  *
