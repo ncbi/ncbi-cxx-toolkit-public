@@ -17,7 +17,9 @@ SRC = file_contents \
       msvc_sln_generator \
       proj_builder_app \
       proj_datatool_generated_src \
-      proj_item \
+      proj_item \ 
+      proj_tree \
+      proj_tree_builder \
       proj_src_resolver \
       proj_utils \
       resolver \
