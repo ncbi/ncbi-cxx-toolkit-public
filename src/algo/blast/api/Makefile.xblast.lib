@@ -1,10 +1,10 @@
 # $Id$
 
-include $(srcdir)/../Makefile.blast.lib
+include $(srcdir)/../core/Makefile.blast.lib
 
 SRC_CXX = bl2seq blast_aux blast_option blast_seqalign blast_setup_cxx
 
-SRC  = $(SRC_C:%=../%) $(SRC_CXX)
+SRC  = $(SRC_C:%=../core/%) $(SRC_CXX)
 
 LIB = xblast
 
