@@ -38,6 +38,7 @@
 #include <serial/serialbase.hpp>
 
 #include <objects/objmgr/bioseq_handle.hpp>
+#include <objects/objmgr/feat_ci.hpp>
 #include <objects/objmgr/seqdesc_ci.hpp>
 #include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/scope.hpp>
@@ -57,6 +58,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Textseq_id.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -65,6 +67,7 @@
 
 #include <algorithm>
 #include <string>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -97,6 +100,32 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     if ( feat.IsSetProduct() ) {
         bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
         m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");
+        
+        const CSeq_id* sid = bsh.GetSeqId();
+        if ( sid ) {
+            switch ( sid->Which() ) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                {
+                    const CTextseq_id* tsid = sid->GetTextseq_Id();
+                    if (tsid != NULL) {
+                        if ( (!tsid->IsSetAccession() || tsid->GetAccession().empty()) &&
+                            (!tsid->IsSetName() || tsid->GetName().empty()) ) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
+                                "Feature product should have accession", feat);
+                        }
+                    }
+                }
+                break;
+                
+            default:
+                break;
+            }
+        }
     }
     
     ValidateFeatPartialness(feat);
@@ -143,7 +172,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     ValidateExcept(feat);
     
     if ( feat.GetData ().Which () != CSeqFeatData::e_Gene ) {
-        // !!!
+        ValidateGeneXRef(feat);
     }
     
     if ( feat.IsSetComment() ) {
@@ -246,7 +275,25 @@ bool CValidError_feat::IsPlastid(int genome)
 
 bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
 {
-    // !!!
+    const CGene_ref* grp = feat.GetGeneXref();
+    if ( grp  ) {
+        return grp->GetPseudo();
+    }
+
+    // check overlapping gene
+    
+    CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
+        feat.GetLocation(),
+        CSeqFeatData::e_Gene,
+        eOverlap_Contained,
+        *m_Scope);
+    if ( overlap ) {
+        if ( overlap->GetPseudo()  ||
+             overlap->GetData().GetGene().GetPseudo() ) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -421,7 +468,8 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
             unsigned int errtype = eSeqlocPartial_Nostart;
             for ( int j = 0; j < 4; ++j ) {
                 if (partials[i] & errtype) {
-                    if (i == 1 && j < 2 ) { // !!! && PartialAtSpliceSite (sfp->location, errtype) ) {
+                    if ( i == 1  &&  j < 2  &&
+                         IsPartialAtSpliceSite(feat.GetLocation(), errtype) ) {
                         PostErr (eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
                             parterr[i] + ":" + parterrs[j] + "(but is at consensus splice site)", feat);
                     } else if (feat.GetData ().Which () == CSeqFeatData::e_Cdregion && j == 0) {
@@ -469,14 +517,15 @@ void CValidError_feat::ValidateCdregion (
 {
     iterate( list< CRef< CGb_qual > >, qual, feat.GetQual () ) {
         if ( (**qual).GetQual() == "codon" ) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
-                "Use the proper genetic code, if available, or set transl_excepts on specific codons", feat);
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnImpFeat,
+                "Use the proper genetic code, if available, "
+                "or set transl_excepts on specific codons", feat);
             break;
         }
     }
 
-    bool pseudo = IsOverlappingGenePseudo(feat);
-    if ( !pseudo && !cdregion.GetConflict () ) {
+    bool pseudo = feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat);
+    if ( !pseudo && !cdregion.GetConflict() ) {
         ValidateCdTrans(feat);
         ValidateSplice(feat, false);
     }
@@ -533,9 +582,9 @@ void CValidError_feat::ValidateCdregion (
     }
 
     ValidateBothStrands(feat);
-    ValidateBadGeneOverlap (feat);
-    ValidateBadMRNAOverlap (feat);
-    ValidateCommonCDSProduct (feat);
+    ValidateBadGeneOverlap(feat);
+    ValidateBadMRNAOverlap(feat);
+    ValidateCommonCDSProduct(feat);
 }
 
 
@@ -606,7 +655,6 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
             swap(acceptor, donor);
             // CSeqVector uses start and stop based on the strand.
         }
-
 
         // set severity level
         // genomic product set or NT_ contig always relaxes to SEV_WARNING
@@ -687,7 +735,15 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     const CRNA_ref::EType& rna_type = rna.GetType ();
 
     if ( rna_type == CRNA_ref::eType_mRNA ) {
-        // !!! 
+        bool pseudo = feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat);
+        
+        if ( !pseudo ) {
+            ValidateMrnaTrans(feat);      /* transcription check */
+            ValidateSplice(feat, false);
+        }
+        ValidateBothStrands(feat);
+        ValidateBadGeneOverlap(feat);
+        ValidateCommonMRNAProduct(feat);
     }
 
     if ( rna.GetExt ().Which() == CRNA_ref::C_Ext::e_TRNA ) {
@@ -806,7 +862,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidForType,
             "Peptide processing feature should be converted to the "
             "appropriate protein feature subtype", feat);
-        // !!! CheckPeptideOnCodonBoundary (???); requires overlapping CDS
+        ValidatePeptideOnCodonBoundry(feat, key);
         break;
         
     case CSeqFeatData::eSubtype_mRNA:
@@ -826,18 +882,17 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
     case CSeqFeatData::eSubtype_Imp_CDS:
         {
             // impfeat CDS must be pseudo; fail if not
-            bool pseudo = false;
-            // !!! check for pseudo requires overlapping gene - not yet implemented
-            
+            bool pseudo = feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat);
+            if ( !pseudo ) {
+                PostErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
+                    "ImpFeat CDS should be pseudo", feat);
+            }
+
             iterate( CSeq_feat::TQual, gbqual, feat.GetQual() ) {
                 if ( NStr::CompareNocase( (*gbqual)->GetQual(), "translation") == 0 ) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpCDShasTranslation,
                         "ImpFeat CDS with /translation found", feat);
                 }
-            }
-            if ( !pseudo ) {
-                PostErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
-                    "ImpFeat CDS should be pseudo", feat);
             }
         }
         break;
@@ -997,6 +1052,155 @@ void CValidError_feat::ValidateImpGbquals
 }
 
 
+void CValidError_feat::ValidatePeptideOnCodonBoundry
+(const CSeq_feat& feat, 
+ const string& key)
+{
+    const CSeq_loc& loc = feat.GetLocation();
+
+    CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::e_Cdregion,
+        eOverlap_Contained,
+        *m_Scope);
+    if ( !cds ) {
+        return;
+    }
+    const CCdregion& cdr = cds->GetData().GetCdregion();
+
+    CSeq_loc_CI first, last;
+    for ( CSeq_loc_CI sl_iter(loc); sl_iter; ++sl_iter ) {
+        if ( !first ) {
+            first = sl_iter;
+        }
+        last = sl_iter;
+    }
+        
+    if ( !first  ||  !last ) {
+        return;
+    }
+
+    TSeqPos pos1 = LocationOffset(loc, first.GetSeq_loc(), eOffset_FromStart);
+    TSeqPos pos2 = LocationOffset(loc, last.GetSeq_loc(), eOffset_FromEnd);
+    TSeqPos mod1 = (pos1 - cdr.GetFrame()) %3;
+    TSeqPos mod2 = (pos2 - cdr.GetFrame()) %3;
+
+    if ( loc.IsPartialLeft() ) {
+        mod1 = 0;
+    }
+    if ( loc.IsPartialRight() ) {
+        mod2 = 2;
+    }
+
+    if ( (mod1 != 0)  &&  (mod2 != 2) ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+            "Start and stop of " + key + " are out of frame with CDS codons",
+            feat);
+    } else if (mod1 != 0) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame, 
+            "Start of " + key + " is out of frame with CDS codons", feat);
+    } else if (mod2 != 2) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+            "Stop of " + key + " is out of frame with CDS codons", feat);
+    }
+}
+
+
+void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
+{
+    static string s_BypassMrnaTransCheck[] = {
+        "RNA editing",
+        "reasons given in citation",
+        "artificial frameshift",
+        "unclassified transcription discrepancy",
+    };
+
+    if ( feat.GetPseudo() ) {
+        return;
+    }
+    if ( !feat.IsSetProduct() ) {
+        return;
+    }
+
+    // biological exception
+    size_t except_num = sizeof(s_BypassMrnaTransCheck) / sizeof(string);
+    if ( feat.GetExcept()  &&  feat.IsSetExcept_text() ) {
+        for ( size_t i = 0; i < except_num; ++i ) {
+            if ( NStr::FindNoCase(feat.GetExcept_text(), 
+                s_BypassMrnaTransCheck[i]) != string::npos ) {
+                return; 
+            }
+        }
+    }
+
+    CBioseq_Handle mr = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if ( !mr ) {
+        return;
+    }
+
+    CBioseq_Handle pr = m_Scope->GetBioseqHandle(feat.GetProduct());
+
+    CSeqVector mrvec = mr.GetSeqVector();
+    CSeqVector prvec = pr.GetSeqVector();
+
+    if ( mrvec.size() != prvec.size() ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
+            "Transcript length [" + NStr::IntToString(mrvec.size()) + "] " +
+            "does not match product length [" + NStr::IntToString(mrvec.size()) +
+            "]", feat);
+    } else if ( mrvec.size() > 0 ) {
+        size_t mismatches = 0;
+        for ( size_t i = 0; i < mrvec.size(); ++i ) {
+            if ( mrvec[i] != prvec[i] ) {
+                ++mismatches;
+            }
+        }
+        if ( mismatches > 0 ) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
+                "There are " + NStr::IntToString(mismatches) + 
+                " mismatches out of " + NStr::IntToString(mrvec.size()) +
+                " bases between the transcript and product sequence", feat);
+        }
+    }
+}
+
+
+void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
+{
+    if ( feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat) ) {
+        return;
+    }
+
+    if ( !feat.IsSetProduct() ) {
+        return;
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if ( !bsh ) {
+        const CSeq_id& sid = GetId(feat.GetProduct(), m_Scope);
+        if ( sid.IsLocal() ) {
+            if ( m_Imp.IsGPS()  ||  m_Imp.IsRefSeq() ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
+                    "Product Bioseq of mRNA feature is not "
+                    "packaged in the record", feat);
+            }
+        }
+    } else {
+        CFeat_CI mrna(
+            bsh, 
+            0, 0,
+            CSeqFeatData::e_Rna,
+            CAnnot_CI::eOverlap_Intervals,
+            CFeat_CI::eResolve_TSE,
+            CFeat_CI::e_Product);
+        if ( mrna  &&  (&(*mrna) != &feat) ) {
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleMRNAproducts,
+                "Same product Bioseq from multiple mRNA features", feat);
+        }
+    }
+}
+
+
 void CValidError_feat::ValidateBothStrands(const CSeq_feat& feat)
 {
     const CSeq_loc& location = feat.GetLocation ();
@@ -1010,21 +1214,167 @@ void CValidError_feat::ValidateBothStrands(const CSeq_feat& feat)
 }
 
 
-void CValidError_feat::ValidateCommonCDSProduct(const CSeq_feat& feat)
+// Precondition: feat is a coding region
+void CValidError_feat::ValidateCommonCDSProduct
+(const CSeq_feat& feat)
 {
-    // !!!
+    if ( feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat) ) {
+        return;
+    }
+    
+    if ( !feat.IsSetProduct() ) {
+        return;
+    }
+    
+    const CCdregion& cdr = feat.GetData().GetCdregion();
+    if ( cdr.IsSetOrf() ) {
+        return;
+    }
+
+    CBioseq_Handle prod = m_Scope->GetBioseqHandle(feat.GetProduct());
+    CBioseq_Handle nuc  = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if ( !prod ) {
+        // okay to have far RefSeq product, but only if genomic product set
+        if ( m_Imp.IsRefSeq() && m_Imp.IsGPS() ) {
+            return;
+        }
+        // or just a bioseq
+        if ( nuc.GetTopLevelSeqEntry().IsSeq() ) {
+            return;
+        }
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCDSproducts,
+            "Unable to find product Bioseq from CDS feature", feat);
+    }
+    const CSeq_entry* prod_nps = 
+        m_Imp.GetAncestor(prod.GetBioseq(), CBioseq_set::eClass_nuc_prot);
+    const CSeq_entry* nuc_nps = 
+        m_Imp.GetAncestor(nuc.GetBioseq(), CBioseq_set::eClass_nuc_prot);
+
+    if ( (prod_nps != nuc_nps)  &&  (!m_Imp.IsNT())  &&  (!m_Imp.IsGPS()) ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
+            "Protein product not packaged in nuc-prot set with nucleotide", 
+            feat);
+    }
+
+    CSeq_loc::TRange range = feat.GetProduct().GetTotalRange();
+
+    const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(prod.GetBioseq());
+    if ( !sfp ) {
+        return;
+    }
+
+    if ( &feat != sfp ) {
+        // if genomic product set, with one cds on contig and one on cdna,
+        // do not report.
+        if ( m_Imp.IsGPS() ) {
+            if ( nuc != prod ) {
+                return;
+            }
+        }
+    }
+    
+    PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts, 
+        "Same product Bioseq from multiple CDS features", feat);
 }
 
 
 void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
 {
-    // !!!
+    const CSeq_loc& loc = feat.GetLocation();
+    
+    CConstRef<CSeq_feat> mrna = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::eSubtype_mRNA,
+        eOverlap_Simple,
+        *m_Scope);
+    if ( !mrna ) {
+        return;
+    }
+
+    mrna = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::eSubtype_mRNA,
+        eOverlap_CheckIntervals,
+        *m_Scope);
+    if ( mrna ) {
+        return;
+    }
+
+    mrna = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::eSubtype_mRNA,
+        eOverlap_Interval,
+        *m_Scope);
+    if ( !mrna ) {
+        return;
+    }
+
+    mrna = GetBestOverlappingFeat(
+        loc,
+        CSeqFeatData::eSubtype_mRNA,
+        eOverlap_Subset,
+        *m_Scope);
+    if ( !mrna ) {
+        return;
+    }
+
+    EDiagSev sev = eDiag_Error;
+    if ( m_Imp.IsNC()  ||  m_Imp.IsNT()  ||  feat.GetExcept() ) {
+        sev = eDiag_Warning;
+    }
+    if ( mrna ) {
+        PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
+            "mRNA contains CDS but internal intron-exon boundaries "
+            "do not match", feat);
+    } else {
+        PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
+            "mRNA overlaps or contains CDS but does not completely "
+            "contain intervals", feat);
+    }
 }
 
 
 void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
-    // !!!
+    const CGene_ref* grp = feat.GetGeneXref();
+    if ( grp != 0 ) {
+        return;
+    }
+
+    // look for overlapping gene
+    CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
+        feat.GetLocation(),
+        CSeqFeatData::e_Gene,
+        eOverlap_Contained,
+        *m_Scope);
+    if ( gene ) {
+        return;
+    }
+
+    // look for intersecting gene
+    gene = GetBestOverlappingFeat(
+        feat.GetLocation(),
+        CSeqFeatData::e_Gene,
+        eOverlap_Simple,
+        *m_Scope);
+    if ( !gene ) {
+        return;
+    }
+
+    // found an intersecting (but not overlapping) gene
+
+    EDiagSev sev = eDiag_Error;
+    if ( m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
+        sev = eDiag_Warning;
+    }
+
+    if ( feat.GetData().IsCdregion() ) {
+        PostErr(sev, eErr_SEQ_FEAT_CDSgeneRange, 
+            "gene overlaps CDS but does not completely contain it", feat);
+    } else if ( feat.GetData().IsRna() ) {
+        PostErr(sev, eErr_SEQ_FEAT_mRNAgeneRange,
+            "gene overlaps mRNA but does not completely contain it", feat);
+    }
 }
 
 
@@ -1151,7 +1501,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     }
     
     // pseuogene
-    if ( feat.GetPseudo() ) { // !!! need to check for overlapping too.
+    if ( feat.GetPseudo()  ||  IsOverlappingGenePseudo(feat) ) {
         return;
     }
 
@@ -1208,9 +1558,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         if ( !(part_loc & eSeqlocPartial_Start) ) {
             PostErr(sev, eErr_SEQ_FEAT_PartialProblem, 
                 "Suspicious CDS location - frame > 1 but not 5' partial", feat);
-        } else if ( part_loc & eSeqlocPartial_Nostart ) { 
-            //  && (!PartialAtSpliceSite (sfp->location, SLP_NOSTART)) !!!
-            PostErr (sev, eErr_SEQ_FEAT_PartialProblem, 
+        } else if ( (part_loc & eSeqlocPartial_Nostart)  && 
+            !IsPartialAtSpliceSite(location, eSeqlocPartial_Nostart) ) {
+            PostErr(sev, eErr_SEQ_FEAT_PartialProblem, 
                 "Suspicious CDS location - frame > 1 and not at consensus splice site",
                 feat);
         }
@@ -1443,6 +1793,104 @@ void CValidError_feat::ValidateCodeBreakNotOnCodon
 }
 
 
+// Check for redundant gene Xref
+void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
+{
+    const CGene_ref* grp = feat.GetGeneXref();
+    if ( !grp  ||  grp->IsSuppressed() ) {
+        return;
+    }
+
+    CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
+        feat.GetLocation(),
+        CSeqFeatData::e_Gene,
+        eOverlap_Contained,
+        *m_Scope);
+    if ( !overlap ) {
+        return;
+    }
+        
+    const CGene_ref* overlap_xref = overlap->GetGeneXref();
+    if ( !overlap_xref ) {
+        return;
+    }
+    
+    string label, overlap_label;
+    grp->GetLabel(&label);
+    overlap_xref->GetLabel(&overlap_label);
+    
+    if ( NStr::CompareNocase(label, overlap_label) == 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
+            "Unnecessary gene cross-reference " + label, feat);
+    }
+}
+
+
+bool CValidError_feat::IsPartialAtSpliceSite
+(const CSeq_loc& loc,
+ unsigned int tag)
+{
+    if ( tag != eSeqlocPartial_Nostart && tag != eSeqlocPartial_Nostop ) {
+        return false;
+    }
+
+    CSeq_loc_CI first, last;
+    for ( CSeq_loc_CI sl_iter(loc); sl_iter; ++sl_iter ) { // EQUIV_IS_ONE not supported
+        if ( !first ) {
+            first = sl_iter;
+        }
+        last = sl_iter;
+    }
+
+    if ( first.GetStrand() != last.GetStrand() ) {
+        return false;
+    }
+    CSeq_loc_CI temp = (tag == eSeqlocPartial_Nostart) ? first : last;
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(temp.GetSeq_id());
+    if ( !bsh ) {
+        return false;
+    }
+    
+    TSeqPos acceptor = temp.GetRange().GetFrom();
+    TSeqPos donor = temp.GetRange().GetTo();
+    TSeqPos start = acceptor;
+    TSeqPos stop = donor;
+    
+    if ( temp.GetStrand() == eNa_strand_minus ) {
+        swap(acceptor, donor);
+        // CSeqVector uses start and stop based on the strand.
+    }
+
+    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    TSeqPos len = vec.size();
+
+    bool result = false;
+
+    if ( (tag == eSeqlocPartial_Nostop)  &&  (stop < len - 2) ) {
+        CSeqVector::TResidue res1 = vec[stop + 1];    
+        CSeqVector::TResidue res2 = vec[stop + 2];
+
+        if ( IsResidue(res1)  &&  IsResidue(res2) ) {
+            if ( (res1 == 'G'  &&  res2 == 'T')  || 
+                 (res1 == 'G'  &&  res2 == 'C') ) {
+                result = true;
+            }
+        }
+    } else if ( (tag == eSeqlocPartial_Nostart)  &&  (start > 1) ) {
+        CSeqVector::TResidue res1 = vec[start - 2];    
+        CSeqVector::TResidue res2 = vec[start - 1];
+
+        if ( IsResidue(res1)  &&  IsResidue(res2) ) {
+            if ( (res1 == 'A')  &&  (res2 == 'G') ) { 
+                result = true;
+            }
+        }
+    }
+
+    return result;    
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -1453,6 +1901,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/01/02 22:13:04  shomrat
+* Implemented checks relying on overlapping features (IsOverlappingGenePseudo, PeptideOnCodonBoundry, CommonCDSProduct, BadMRNAOverlap, BadGeneOverlap, GeneXRef); Check for bad product seq id in ValidateSeqFeat
+*
 * Revision 1.2  2002/12/24 16:54:02  shomrat
 * Changes to include directives
 *
