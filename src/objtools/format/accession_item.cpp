@@ -45,6 +45,7 @@
 #include <objtools/format/items/accession_item.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -121,6 +122,7 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
                 m_ExtraAccessions.push_back(*it);
             }
         }
+        sort(m_ExtraAccessions.begin(), m_ExtraAccessions.end());
     }
 
     if ( !ctx.GetLocation().IsWhole() ) {
@@ -141,6 +143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/03/02 16:27:27  shomrat
+* Sort secondary accessions
+*
 * Revision 1.9  2005/02/18 15:07:42  shomrat
 * CSeq_loc interface changes
 *
