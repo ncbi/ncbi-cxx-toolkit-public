@@ -34,12 +34,12 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objmgr/scope.hpp>
+//#include <objects/seqset/Seq_entry.hpp>
+//#include <objmgr/scope.hpp>
 
 #include <objtools/format/flat_file_flags.hpp>
 #include <objtools/format/context.hpp>
-#include <util/range.hpp>
+//#include <util/range.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -49,6 +49,9 @@ BEGIN_SCOPE(objects)
 class IFlatTextOStream;
 class CFlatItemOStream;
 class CSeq_submit;
+class CSeq_entry;
+class CSeq_loc;
+class CSeq_entry_Handle;
 
 
 class NCBI_FORMAT_EXPORT CFlatFileGenerator : public CObject
@@ -69,15 +72,18 @@ public:
     // Supply an annotation selector to be used in feature gathering.
     SAnnotSelector& SetAnnotSelector(void);
 
-    void Generate(const CSeq_entry& entry, CNcbiOstream& os);
     void Generate(const CSeq_submit& submit, CNcbiOstream& os);
     void Generate(const CSeq_loc& loc, CNcbiOstream& os);
+    void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
 
-    // NB: both the item ostream and the text ostream factory objects should
-    //     be allocated on the heap!
-    void Generate(const CSeq_entry& entry, CFlatItemOStream& item_os);
+    // NB: the item ostream should be allocated on the heap!
+    void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
     void Generate(const CSeq_submit& submit, CFlatItemOStream& item_os);
     void Generate(const CSeq_loc& loc, CFlatItemOStream& item_os);
+
+    // deprecated!
+    void Generate(const CSeq_entry& entry, CNcbiOstream& os);
+    void Generate(const CSeq_entry& entry, CFlatItemOStream& item_os);
 
 private:
     CRef<CFFContext>    m_Ctx;
@@ -96,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/25 20:30:53  shomrat
+* Use Handles
+*
 * Revision 1.5  2004/02/11 22:46:01  shomrat
 * enumerations moved to flat_file_flags.hpp
 *
