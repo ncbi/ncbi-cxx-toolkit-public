@@ -3920,8 +3920,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.126  2003/08/25 14:51:13  lavr
+ * Change log:  typos fixed
+ *
  * Revision 6.125  2003/08/25 14:40:05  lavr
- * Sync listetning sockets with their SOCK conterparts and implement uniform
+ * Sync listening sockets with their SOCK counterparts and implement uniform
  * polling mechanism on sockets of different nature [listening vs connecting]
  *
  * Revision 6.124  2003/08/19 19:45:54  ivanov
