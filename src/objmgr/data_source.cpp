@@ -661,16 +661,31 @@ void CDataSource::UpdateAnnotIndex(const CSeq_annot_Info& annot_info)
 
 
 CDataSource::TTSE_LockSet
+CDataSource::x_GetRecords(const CSeq_id_Handle& idh, bool bioseq)
+{
+    TTSE_LockSet tse_set;
+    if ( m_Loader ) {
+        CDataLoader::EChoice choice =
+            bioseq? CDataLoader::eBioseqCore: CDataLoader::eExtAnnot;
+        TTSE_LockSet tse_set2 = m_Loader->GetRecords(idh, choice);
+        if ( !tse_set2.empty() ) {
+            tse_set.swap(tse_set2);
+            ITERATE ( TTSE_LockSet, it, tse_set ) {
+                const_cast<CTSE_Info&>(**it).x_GetRecords(idh, bioseq);
+            }
+        }
+    }
+    return tse_set;
+}
+
+
+CDataSource::TTSE_LockSet
 CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
                                  const TTSE_LockSet& history)
 {
     TTSE_LockSet annot_locks;
     // load all relevant TSEs
-    TTSE_LockSet load_locks;
-    if ( m_Loader ) {
-        load_locks = m_Loader->GetRecords(idh, CDataLoader::eExtAnnot);
-    }
-    load_locks.insert(history.begin(), history.end());
+    TTSE_LockSet load_locks = x_GetRecords(idh, false);
 
     UpdateAnnotIndex();
 
@@ -693,6 +708,12 @@ CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
             TTSE_Lock lock = x_LockTSE(**tse, load_locks, fLockNoThrow);
             if ( lock ) {
                 annot_locks.insert(lock);
+                continue;
+            }
+            lock = x_LockTSE(**tse, history, fLockNoThrow);
+            if ( lock ) {
+                annot_locks.insert(lock);
+                continue;
             }
         }
     }
@@ -799,22 +820,6 @@ void CDataSource::x_IndexAnnotTSE(const CSeq_id_Handle& id,
                                   CTSE_Info* tse_info)
 {
     TAnnotLock::TWriteLockGuard guard(m_DSAnnotLock);
-    if ( tse_info ) {
-        // Filter out TSEs which contain the sequence
-        CSeq_id_Mapper& mapper = *CSeq_id_Mapper::GetInstance();
-        TSeq_id_HandleSet hset;
-        if (mapper.HaveMatchingHandles(id)) {
-            mapper.GetMatchingHandles(id, hset);
-        }
-        else {
-            hset.insert(id);
-        }
-        ITERATE(TSeq_id_HandleSet, match_it, hset) {
-            if ( tse_info->ContainsSeqid(*match_it) ) {
-                return;
-            }
-        }
-    }
     x_IndexTSE(m_TSE_annot, id, tse_info);
 }
 
@@ -856,11 +861,7 @@ void CDataSource::x_CleanupUnusedEntries(void)
 CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
 {
     //### Lock all TSEs found, unlock all filtered out in the end.
-    TTSE_LockSet load_locks;
-    if ( m_Loader ) {
-        // Send request to the loader
-        load_locks = m_Loader->GetRecords(idh, CDataLoader::eBioseqCore);
-    }
+    TTSE_LockSet load_locks = x_GetRecords(idh, true);
     CSeqMatch_Info match;
     TTSE_Lock tse = x_FindBestTSE(idh, load_locks);
     if ( !tse ) {
