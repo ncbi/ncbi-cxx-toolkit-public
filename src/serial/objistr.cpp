@@ -139,6 +139,14 @@ CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
     return stream.release();
 }
 
+CObjectIStream* CObjectIStream::Create(ESerialDataFormat format,
+                                       CByteSourceReader& reader)
+{
+    AutoPtr<CObjectIStream> stream(Create(format));
+    stream->Open(reader);
+    return stream.release();
+}
+
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      CNcbiIstream& inStream,
                                      bool deleteInStream)
@@ -1273,6 +1281,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.115  2003/09/30 16:10:37  vasilche
+* Added one more variant of object streams creation.
+*
 * Revision 1.114  2003/09/16 14:48:36  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

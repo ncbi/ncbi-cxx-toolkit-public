@@ -540,6 +540,8 @@ public:
     static CObjectIStream* Create(ESerialDataFormat format);
     static CObjectIStream* Create(ESerialDataFormat format,
                                   CByteSource& source);
+    static CObjectIStream* Create(ESerialDataFormat format,
+                                  CByteSourceReader& reader);
 private:
     static CRef<CByteSource> GetSource(ESerialDataFormat format,
                                        const string& fileName,
@@ -633,6 +635,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2003/09/30 16:10:34  vasilche
+* Added one more variant of object streams creation.
+*
 * Revision 1.91  2003/09/25 12:39:08  kuznets
 * Added dllexport for CStreamDelayBufferGuard
 *
