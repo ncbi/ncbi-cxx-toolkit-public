@@ -151,7 +151,8 @@ void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
         if (aln.GetSegs().IsDenseg()) {
             Add(aln.GetSegs().GetDenseg(), flags);
         } else if (aln.GetSegs().IsStd()) {
-            CRef<CSeq_align> sa = aln.CreateDensegFromStdseg(this);
+            CRef<CSeq_align> sa = aln.CreateDensegFromStdseg
+                (m_Scope ? this : 0);
             Add(*sa, flags);
         } else if (aln.GetSegs().IsDisc()) {
             ITERATE (CSeq_align_set::Tdata,
@@ -176,18 +177,9 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     dsp->Validate(true);
 #endif    
 
-    // check if scope was given
-    if ( !(flags & fDontUseObjMgr  ||  m_Scope != 0) ) {
-        NCBI_THROW(CAlnException, eMergeFailure, 
-                   "CAlnMix::Add(): "
-                   "AlnMix will not create a scope for you. "
-                   "Either create one in advance and provide reference "
-                   "through CAlnMix constructor or use fDontUseObjMgr flag.");
-    }
-
     // translate (extend with widths) the dense-seg if necessary
     if (flags & fForceTranslation  &&  !dsp->IsSetWidths()) {
-        if (flags & fDontUseObjMgr) {
+        if ( !m_Scope ) {
             string errstr = string("CAlnMix::Add(): ") 
                 + "Cannot force translation for Dense_seg "
                 + NStr::IntToString(m_InputDSs.size() + 1) + ". "
@@ -202,9 +194,10 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
         m_InputDSs.push_back(CConstRef<CDense_seg>(dsp));
     }
 
-    if (flags & fDontUseObjMgr  &&  flags & fCalcScore) {
+    if ( !m_Scope  &&  flags & fCalcScore) {
         NCBI_THROW(CAlnException, eMergeFailure, "CAlnMix::Add(): "
-                   "fCalcScore cannot be used together with fDontUseObjMgr");
+                   "fCalcScore cannot be used without providing "
+                   "a scope in the CAlnMix constructor.");
     }
     m_AddFlags = flags;
 
@@ -232,7 +225,7 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 
         CRef<CAlnMixSeq> aln_seq;
 
-        if (m_AddFlags & fDontUseObjMgr) {
+        if ( !m_Scope ) {
             // identify sequences by their seq ids as provided by
             // the dense seg (not as reliable as with OM, but faster)
             CRef<CSeq_id> seq_id(new CSeq_id);
@@ -2071,6 +2064,13 @@ CRef<CDense_seg> CAlnMix::x_ExtendDSWithWidths(const CDense_seg& ds)
 
 void CAlnMix::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& seq_id)
 {
+    if ( !m_Scope ) {
+        string errstr = string("CAlnMix::x_IdentifyAlnMixSeq(): ") 
+            + "In order to use this functionality "
+            "scope should be provided in CAlnMix constructor.";
+        NCBI_THROW(CAlnException, eInvalidRequest, errstr);
+    }
+        
     CBioseq_Handle bioseq_handle = 
         GetScope().GetBioseqHandle(seq_id);
 
@@ -2175,6 +2175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.112  2004/10/18 15:10:45  todorov
+* Use of OM now only depends on whether scope was provided at construction time
+*
 * Revision 1.111  2004/10/13 17:51:33  todorov
 * rm conditional compilation logic
 *
