@@ -46,6 +46,9 @@
 #if defined(NCBI_OS_MSWIN)
 #   include <float.h>
 #endif
+#if !defined(NCBI_OS_MSWIN)
+#   include <ieeefp.h>
+#endif
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -62,12 +65,22 @@
 #endif
 
 
+#if defined(NCBI_OS_MSWIN)
+/// Define value of finite (Is Finite).
+///
+/// Checks whether given double-precision floating point value is finite
+#   define finite _finite
+#endif
+
 /* @} */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/04 17:05:58  gouriano
+ * Added definition of finite
+ *
  * Revision 1.5  2003/08/23 14:53:52  siyan
  * Documentation changes.
  *
