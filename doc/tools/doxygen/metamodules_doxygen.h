@@ -196,6 +196,10 @@
  *  @ingroup CONNECT
  */
 
+/** @defgroup NetCacheClient Client API to NCBI NetCache
+ *  @ingroup CONNECT
+ */
+
 
 /* ========================================================================= */
 
