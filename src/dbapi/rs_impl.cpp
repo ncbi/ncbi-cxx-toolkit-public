@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.24  2003/06/25 21:03:05  kholodov
+* Fixed: method name in error message
+*
 * Revision 1.23  2003/05/05 18:32:50  kholodov
 * Added: LONGCHAR and LONGBINARY support
 *
@@ -391,18 +394,18 @@ int CResultSet::GetColNum(const string& name) {
             return i;
     }
 
-    throw CDbapiException("CResultSet::GetVariant(): invalid column name");
+    throw CDbapiException("CResultSet::GetColNum(): invalid column name");
 }
 
 void CResultSet::CheckIdx(unsigned int idx) 
 {
     if( idx >= m_data.size() ) {
 #ifdef _DEBUG
-        NcbiCerr << "CResultSet::GetVariant(): Column index " 
+        NcbiCerr << "CResultSet::CheckIdx(): Column index " 
                  << idx << " out of range" << endl;
         _ASSERT(0);
 #else
-        throw CDbapiException("CResultSet::GetVariant(): Column index" 
+        throw CDbapiException("CResultSet::CheckIdx(): Column index" 
                               + NStr::IntToString(idx) + " out of range");
 #endif
     }
