@@ -213,6 +213,11 @@ public:
     /// middle of processing
     void StopPurge();
 
+    /// When factor is non zero every factor-even Purge will
+    /// remove old log files. 
+    /// (For factor == 1 every Purge will try to remove logs)
+    void CleanLogOnPurge(unsigned int factor) { m_CleanLogOnPurge = factor; }
+
 
     // ICache interface 
 
@@ -424,6 +429,10 @@ private:
     bool                    m_PurgeStop;
     /// Number of bytes stored in cache since last checkpoint
     unsigned                m_BytesWritten;
+    /// Clean log on Purge (factor)
+    unsigned                m_CleanLogOnPurge;
+    /// Number of times we run purge
+    unsigned                m_PurgeCount;
 };
 
 
@@ -485,6 +494,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/10/18 16:06:22  kuznets
+ * Implemented automatic (on Purge) log cleaning
+ *
  * Revision 1.35  2004/10/15 14:02:08  kuznets
  * Added counter of bytes written in cache
  *

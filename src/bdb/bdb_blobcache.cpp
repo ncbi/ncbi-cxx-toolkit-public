@@ -464,7 +464,9 @@ CBDB_Cache::CBDB_Cache()
   m_WSync(eWriteNoSync),
   m_PurgeBatchSize(50),
   m_BatchSleep(100),
-  m_PurgeStop(false)
+  m_PurgeStop(false),
+  m_CleanLogOnPurge(0),
+  m_PurgeCount(0)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -1409,6 +1411,15 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
         m_Env->TransactionCheckpoint();
     }
+
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+    ++m_PurgeCount;
+    if (m_CleanLogOnPurge) {
+        if ((m_PurgeCount % m_CleanLogOnPurge) == 0) {
+            m_Env->CleanLog();
+        }
+    }
+
 }
 
 
@@ -1876,6 +1887,7 @@ static const string kCFParam_use_transactions  = "use_transactions";
 
 static const string kCFParam_purge_batch_size  = "purge_batch_size";
 static const string kCFParam_purge_batch_sleep  = "purge_batch_sleep";
+static const string kCFParam_purge_clean_log    = "purge_clean_log";
 
 
 ICache* CBDB_CacheReaderCF::CreateInstance(
@@ -1953,6 +1965,10 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamInt(params, kCFParam_purge_batch_sleep, false, 0);
     drv->SetBatchSleep(batch_sleep);
 
+    unsigned purge_clean_factor = 
+        GetParamInt(params, kCFParam_purge_clean_log, false, 0);
+    drv->CleanLogOnPurge(purge_clean_factor);
+
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
@@ -2010,6 +2026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2004/10/18 16:06:26  kuznets
+ * Implemented automatic (on Purge) log cleaning
+ *
  * Revision 1.83  2004/10/18 15:37:52  kuznets
  * Set log file size 200M
  *
