@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  1999/08/09 16:20:07  golikov
+* Table output in plaintext fixed
+*
 * Revision 1.47  1999/07/08 18:05:15  vakatov
 * Fixed compilation warnings
 *
@@ -898,20 +901,22 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
     CTableInfo info;
     x_CheckTable(&info);
 
+    if( mode == ePlainText ) {
+        out << CHTMLHelper::GetNL();
+    }
     TIndex row = 0;
     for ( TChildList::iterator iRow = ChildBegin();
           iRow != ChildEnd(); ++iRow ) {
 
-        if( mode == ePlainText ) {
-            out << CHTMLHelper::GetNL();
-        }
-        
         CNCBINode* rowNode = *iRow;
         if ( !sx_IsRow(rowNode) )
             rowNode->Print(out,mode);
         else {
             rowNode->Print(out,mode); 
             ++row;
+        }
+        if( mode == ePlainText ) {
+            out << CHTMLHelper::GetNL();
         }
     }
 
