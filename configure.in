@@ -299,6 +299,30 @@ CXX_PATH="`dirname $x_CXX`"
 x_CXX=
 
 
+#### Multi-Thread safety
+with_mt=${with_mt:="no"}
+if test "$with_mt" = "yes" ; then
+   case "$host_os:$compiler" in
+    solaris*:WorkShop*      )  MT_FLAG=${MT_FLAG:="-mt"} ;;
+    *:KCC                   )  MT_FLAG=${MT_FLAG:="--thread_safe"} ;;
+    *:GCC | irix*:MIPSpro73 )  ;;
+    * )   AC_MSG_ERROR(["Do not know how to build MT-safe with compiler $CXX $compiler_ver"]) ;;
+   esac
+   CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"
+   case "$host_os" in
+     solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread"} ;;
+     *        )  THREAD_LIBS=${THREAD_LIBS:="-lpthread"} ;;
+   esac
+   LIBS="$LIBS $THREAD_LIBS"
+else
+   THREAD_LIBS=
+fi
+
+CFLAGS="$MT_FLAG $CFLAGS"
+CXXFLAGS="$MT_FLAG $CXXFLAGS"
+LDFLAGS="$MT_FLAG $LDFLAGS"
+
+
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
 case "$host_os:$compiler" in
@@ -307,11 +331,7 @@ case "$host_os:$compiler" in
    compiler=
    ;;
 
- linux* )
-   NETWORK_LIBS=${NETWORK_LIBS:=" "}
-   ;;
-
- osf*:GCC )
+ linux* | osf*:GCC )
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    ;;
 
@@ -326,9 +346,6 @@ case "$host_os:$compiler" in
    CXXFLAGS="+w +w2 $CXXFLAGS"
    DEPFLAGS="-xM1"
    LDFLAGS="-xildoff $LDFLAGS"
-   if test "$with_mt" = "yes" ; then
-      MT_FLAG="-mt"
-   fi
    AR=${AR:="$CXX $MT_FLAG -xar -o"}
    STRIP=":"
    if test "$with_debug" = "no" ; then
@@ -337,21 +354,16 @@ case "$host_os:$compiler" in
    RANLIB=":"
    CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    serial_ws50_rtti_kludge="rtti"
-   THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread"}
    ;;
 
  solaris*:KCC )
    with_bincopy=${with_bincopy:="no"}
-   if test "$with_mt" = "yes" ; then
-      MT_FLAG="-mt"
-   fi
-   THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread"}
    ;;
 
  irix*:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
-   CFLAGS="$COMMON_FLAGS"
-   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
+   CFLAGS="$COMMON_FLAGS $CFLAGS"
+   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
    CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
@@ -369,7 +381,7 @@ case "$host_os:$compiler" in
    CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CPPFLAGS="/nologo $CPPFLAGS"
-   LDFLAGS=${LDFLAGS:="/DEBUG"}
+   LDFLAGS="/DEBUG"
    AR="lib.exe"
    RANLIB=":"
    STRIP=":"
@@ -527,6 +539,7 @@ elif test "$with_dll" = "no" ; then
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
 fi
 
+
 # Linker command-line to build DLL
 case "$compiler" in
  GCC | MIPSpro73 )
@@ -546,29 +559,6 @@ case "$compiler" in
 esac
 
 
-#### Multi-Thread safety
-with_mt=${with_mt:="no"}
-if test "$with_mt" = "yes" ; then
-   THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
-   case "$host_os:$compiler" in
-    solaris*:WorkShop* | solaris*:KCC )
-      CFLAGS="$MT_FLAG $CFLAGS"
-      CXXFLAGS="$MT_FLAG $CXXFLAGS"
-      LDFLAGS="$MT_FLAG $LDFLAGS"
-      ;;
-    *:GCC | irix*:MIPSpro73 | *:KCC)
-      ;;
-    * )
-      AC_MSG_ERROR(["Dont know how to build MT-safe with compiler $CXX $compiler_ver"])
-      ;;
-   esac
-   CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"
-   LIBS="$LIBS $THREAD_LIBS"
-else
-   THREAD_LIBS=
-fi
-
-
 #### GNU compiler::  common flags and definitions
 if test "$compiler" = "GCC" ; then
    CFLAGS="-Wall $CFLAGS"
@@ -585,7 +575,7 @@ if test "$compiler" = "KCC" ; then
    CFLAGS="--display_error_number --c $CFLAGS"
    CXXFLAGS="--display_error_number --one_instantiation_per_object $CXXFLAGS"
    case "$host_os" in
-      solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
+      solaris* )  CPPFLAGS="-D__EXTENSIONS__ -D__STDC__=0 $CPPFLAGS" ;;
    esac
 fi
 
