@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.17 2001/10/25 05:41:15 vakatov Exp $
+#  $Id: configure.ac,v 1.18 2001/10/26 21:14:21 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1404,10 +1404,11 @@ AC_TRY_LINK(
 AC_MSG_RESULT([$RPCSVC_LIBS])
 
 
+
 ## SYBASE libraries
 AC_MSG_CHECKING(if SYBASE libraries are available)
 if test -z "$with_sybase_local" ; then
-   with_sybase_local=no
+   with_sybase_local="no"
 fi
 if test "$with_sybase" != "no" ; then
    # deduce the path to Sybase package
@@ -1450,7 +1451,7 @@ if test "$with_sybase" != "no" ; then
    fi
    changequote([, ])dnl
 
-   # deduce conf.macro:  SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
+   # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
    SYBASE_LIBPATH="$SYBASE_PATH/lib${bit64_sfx}"
    SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
    if test "$with_sybase_local" != "no" ; then
@@ -1474,6 +1475,7 @@ if test "$with_sybase" != "no" ; then
       [with_sybase="no"]
    )
 fi
+
 if test "$with_sybase" = "no" ; then
    SYBASE_PATH="No_Sybase"
    SYBASE_INCLUDE=
@@ -1484,11 +1486,21 @@ if test "$with_sybase" = "no" ; then
    AC_MSG_RESULT([no])
 else
    WithPackages="$WithPackages Sybase"
-   AC_MSG_RESULT([$SYBASE_PATH])
+   if test "$with_sybase_local" != "no" ; then
+      AC_MSG_RESULT([$SYBASE_PATH])
+   else
+      AC_MSG_RESULT([$SYBASE_LCL_PATH:$SYBASE_PATH])
+   fi
    if test "$with_mt" = "yes"  -a  "$sybase_r" = "no" ; then
        AC_MSG_WARN(["Using non-reentrant Sybase libraries"])
    fi
 fi
+
+SYBASE_LPATH=
+SYBASE_LCL_LIBPATH=
+SYBASE_LIBLIST=
+SYBASE_DLLLIST=
+SYBASE_LIBPATH=
 
 
 ## Free TDS libraries
