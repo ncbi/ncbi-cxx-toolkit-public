@@ -31,8 +31,11 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2001/12/04 15:57:05  lavr
+ * Change log correction
+ *
  * Revision 6.33  2001/10/01 19:53:39  lavr
- * -s_FreeData(), -s_ResetData() - do evrthng in s_Close() and s_Reset() instead
+ * -s_FreeData(), -s_ResetData() - do everything in s_Close()/s_Reset() instead
  *
  * Revision 6.32  2001/09/29 19:33:04  lavr
  * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
