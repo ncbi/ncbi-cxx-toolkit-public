@@ -493,8 +493,8 @@ void CSourceFeatureItem::x_AddQuals(void) const
     const CSeqFeatData& data = m_Feat->GetData();
     _ASSERT(data.IsOrg()  ||  data.IsBiosrc());
     // add various generic qualifiers...
-    //!!!x_AddQual(eSQ_mol_type,
-    //          new CFlatMolTypeQVal(m_Context->GetBiomol(), m_Context->GetMol()));
+    x_AddQual(eSQ_mol_type,
+              new CFlatMolTypeQVal(m_Context->GetBiomol(), m_Context->GetMol()));
     if (m_Feat->IsSetComment()) {
         x_AddQual(eSQ_seqfeat_note, new CFlatStringQVal(m_Feat->GetComment()));
     }
@@ -817,6 +817,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:12:20  shomrat
+* uncommenetd code
+*
 * Revision 1.2  2003/12/18 17:43:33  shomrat
 * context.hpp moved
 *
