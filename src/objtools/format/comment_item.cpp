@@ -33,12 +33,12 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Seq_literal.hpp>
+//#include <objects/seq/Bioseq.hpp>
+//#include <objects/seq/Seq_inst.hpp>
+//#include <objects/seq/Seq_ext.hpp>
+//#include <objects/seq/Delta_ext.hpp>
+//#include <objects/seq/Delta_seq.hpp>
+//#include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -153,8 +153,9 @@ string CCommentItem::GetStringForTPA
          uo.GetType().GetStr() != "TpaAssembly" ) {
         return kEmptyStr;
     }
-    const CSeq_inst& inst = ctx.GetHandle().GetInst();
-    if ( inst.CanGetHist()  &&  inst.GetHist().CanGetAssembly() ) {
+    
+    CBioseq_Handle& seq = ctx.GetHandle();
+    if (seq.IsSetInst_Hist()  &&  seq.GetInst_Hist().IsSetAssembly()) {
         return kEmptyStr;
     }
 
@@ -388,31 +389,6 @@ string CCommentItem::GetStringForRefTrack(const CUser_object& uo)
 }
 
 
-
-bool CCommentItem::NsAreGaps(const CBioseq_Handle& seq, CBioseqContext& ctx)
-{
-    if ( !seq.IsSetInst()  ||  !seq.IsSetInst_Ext() ) {
-        return false;
-    }
-
-    if ( ctx.GetRepr() == CSeq_inst::eRepr_delta  &&  ctx.IsWGS()  &&
-         seq.GetInst_Ext().IsDelta() ) {
-        ITERATE (CDelta_ext::Tdata, iter, seq.GetInst_Ext().GetDelta().Get()) {
-            const CDelta_seq& dseg = **iter;
-            if ( dseg.IsLiteral() ) {
-                const CSeq_literal& lit = dseg.GetLiteral();
-                if ( !lit.CanGetSeq_data()  &&  lit.CanGetLength()  &&
-                      lit.GetLength() > 0 ) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-
 string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
 {
     static const string default_str = "?";
@@ -521,7 +497,7 @@ string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx
 string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
 {
     SDeltaSeqSummary summary;
-    if ( ctx.GetRepr() == CSeq_inst::eRepr_delta ) {
+    if (ctx.IsDelta()) {
         GetDeltaSeqSummary(ctx.GetHandle(), summary);
     }
 
@@ -789,12 +765,14 @@ string s_CreateHistCommentString
  const string& suffix,
  const CSeq_hist_rec& hist)
 {
-    if (!hist.CanGetDate()  ||  !hist.CanGetIds()) {
-        return "???";
-    }
+    //if (!hist.CanGetDate()  ||  !hist.CanGetIds()) {
+    //    return "???";
+    //}
 
     string date;
-    hist.GetDate().GetDate(&date, "%3N %D, %4Y");
+    if (hist.IsSetDate()) {
+        hist.GetDate().GetDate(&date, "%{%3N%|???%} %{%D%|??%}, %{%4Y%|????%}");
+    }
 
     vector<int> gis;
     ITERATE (CSeq_hist_rec::TIds, id, hist.GetIds()) {
@@ -823,6 +801,7 @@ string s_CreateHistCommentString
 
     return CNcbiOstrstreamToString(text);
 }
+
 
 void CHistComment::x_GatherInfo(CBioseqContext&)
 {
@@ -904,6 +883,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/01/12 16:44:04  shomrat
+* Removed NsAreGaps; fixed history date
+*
 * Revision 1.13  2004/10/18 18:54:34  shomrat
 * cleanup desc comments
 *
