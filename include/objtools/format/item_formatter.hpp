@@ -144,7 +144,7 @@ protected:
         const string& to, const string& delim,
         CBioseqContext& ctx) const;
     void x_FormatRefJournal(const CReferenceItem& ref, string& journal,
-        const CFlatFileConfig& cfg) const;
+        CBioseqContext& ctx) const;
     string x_FormatAccession(const CAccessionItem& acc, char separator) const;
 
     void x_GetKeywords(const CKeywordsItem& kws, const string& prefix,
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/02/09 14:53:57  shomrat
+* x_FormatRefJournal take a context instead of config as parameter
+*
 * Revision 1.10  2005/02/07 14:56:51  shomrat
 * Added WrapFlags
 *

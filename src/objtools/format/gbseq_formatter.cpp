@@ -377,7 +377,7 @@ void CGBSeqFormatter::FormatReference
         }
     }
     string journal;
-    x_FormatRefJournal(ref, journal, ctx.Config());
+    x_FormatRefJournal(ref, journal, ctx);
     NON_CONST_ITERATE (string, it, journal) {
         if ( (*it == '\n')  ||  (*it == '\t')  ||  (*it == '\r') ) {
             *it = ' ';
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/02/09 14:56:41  shomrat
+* x_FormatRefJournal take a context instead of config as parameter
+*
 * Revision 1.8  2005/01/12 16:46:09  shomrat
 * Changes in reference formatting
 *
