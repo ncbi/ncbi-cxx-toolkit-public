@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/06/06 01:30:02  thiessen
+* fixes for linux/gcc
+*
 * Revision 1.37  2002/06/05 14:28:41  thiessen
 * reorganize handling of window titles
 *
@@ -788,9 +791,9 @@ void UpdateViewer::ImportStructure(void)
     pendingStructures.push_back(biostruc);
 
     // inform user of success
-    wxMessageBox("The structure has been successfully imported! However, it will not appear until you "
-        "save this data to a file and then re-load it in a new session. And depending on the type "
-        "of data, it still might not appear unless the corresponding new pairwise alignment has "
+    wxMessageBox("The structure has been successfully imported! However, it will not appear until you\n"
+        "save this data to a file and then re-load it in a new session. And depending on the type\n"
+        "of data, it still might not appear unless the corresponding new pairwise alignment has\n"
         "been merged into the multiple alignment.",
         "Structure Added", wxOK | wxICON_INFORMATION, *viewerWindow);
 }

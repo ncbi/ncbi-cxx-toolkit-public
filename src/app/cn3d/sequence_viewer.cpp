@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/06/06 01:30:02  thiessen
+* fixes for linux/gcc
+*
 * Revision 1.51  2002/06/05 14:28:40  thiessen
 * reorganize handling of window titles
 *
@@ -188,6 +191,8 @@
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
+
+#include <memory>
 
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/sequence_viewer_window.hpp"
