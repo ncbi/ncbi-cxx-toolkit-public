@@ -49,7 +49,6 @@ USING_NCBI_SCOPE;
 #define TEST_RESULT_P     0   // Test exit code for test from PATH
 
 
-
 ////////////////////////////////
 // Test application
 //
@@ -91,7 +90,7 @@ int CTest::Run(void)
         "PASSED=to new process by the",
         "EXEC=functions",
         "TEST_NCBI_EXEC=yes",
-        0
+        NULL
     };
 
     {{
@@ -105,11 +104,11 @@ int CTest::Run(void)
 
     const char* args_c[3];   // Arguments for SpawnV[E]
     args_c[1] = "SpawnV[E]";
-    args_c[2] = 0;
+    args_c[2] = NULL;
 
     const char* args_p[3];   // Arguments for SpawnVP[E]
     args_p[1] = app_pp;
-    args_p[2] = 0;
+    args_p[2] = NULL;
 
     // System
         
@@ -123,19 +122,21 @@ int CTest::Run(void)
 
     int code;
 
-    code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", 0); 
+    code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", NULL); 
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
-    code = CExec::SpawnLP (CExec::eWait, app_p, app_pp, 0);
+    code = CExec::SpawnLP (CExec::eWait, app_p, app_pp, NULL);
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_P );
 
-    code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait", 0, my_env); 
+    code = CExec::SpawnLE (CExec::eWait, app_c, "SpawnLE_eWait",
+                          NULL, my_env); 
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
-    code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait", 0, my_env);
+    code = CExec::SpawnLPE(CExec::eWait, app_c, "SpawnLPE_eWait",
+                          NULL, my_env);
     cout << "Exit code: " << code << endl;
     assert( code == TEST_RESULT_C );
 
@@ -159,28 +160,30 @@ int CTest::Run(void)
 
     int pid;
 
-    pid = CExec::SpawnL(CExec::eNoWait, app_c, "SpawnL_eNoWait", 0);
+    pid = CExec::SpawnL(CExec::eNoWait, app_c, "SpawnL_eNoWait",NULL);
     assert( pid != -1 );
     assert( CExec::Wait(pid) == TEST_RESULT_C );
 
-    pid = CExec::SpawnLP(CExec::eNoWait, app_p, app_pp, 0);
+    pid = CExec::SpawnLP(CExec::eNoWait, app_p, app_pp, NULL);
     assert( pid != -1 );
     assert( CExec::Wait(pid) == TEST_RESULT_P );
 
-    pid = CExec::SpawnLE(CExec::eNoWait, app_c, "SpawnLE_eNoWait", 0, my_env);
+    pid = CExec::SpawnLE(CExec::eNoWait, app_c, "SpawnLE_eNoWait",
+                         NULL, my_env);
     assert( pid != -1 );
     assert( CExec::Wait(pid) == TEST_RESULT_C );
 
-    pid = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait", 0,my_env);
+    pid = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait",
+                          NULL, my_env);
     assert( pid != -1 );
     assert( CExec::Wait(pid) == TEST_RESULT_C );
 
     // Spawn with eDetach
 
-    CExec::SpawnL  (CExec::eDetach, app_c, "SpawnL_eDetach", 0 );
-    CExec::SpawnLP (CExec::eDetach, app_p, app_pp, 0);
-    CExec::SpawnLE (CExec::eDetach, app_c, "SpawnLE_eDetach", 0, my_env);
-    CExec::SpawnLPE(CExec::eDetach, app_c, "SpawnLPE_eDetach", 0, my_env);
+    CExec::SpawnL  (CExec::eDetach, app_c, "SpawnL_eDetach", NULL);
+    CExec::SpawnLP (CExec::eDetach, app_p, app_pp, NULL);
+    CExec::SpawnLE (CExec::eDetach, app_c, "SpawnLE_eDetach", NULL, my_env);
+    CExec::SpawnLPE(CExec::eDetach, app_c, "SpawnLPE_eDetach",NULL, my_env);
     CExec::SpawnV  (CExec::eDetach, app_c, args_c);
     CExec::SpawnVP (CExec::eDetach, app_p, args_p);
     CExec::SpawnVE (CExec::eDetach, app_c, args_c, my_env);
@@ -188,7 +191,7 @@ int CTest::Run(void)
 
     // Spawn with eOverlay
 
-    assert( CExec::SpawnL  (CExec::eOverlay, app_c, "SpawnL_eOverlay", 0)
+    assert( CExec::SpawnL(CExec::eOverlay, app_c, "SpawnL_eOverlay",NULL)
             == TEST_RESULT_C );
 
     // At success code below never been executed
@@ -237,6 +240,9 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.19  2004/08/18 16:00:50  ivanov
+ * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
+ *
  * Revision 6.18  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *

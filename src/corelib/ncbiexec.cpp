@@ -71,7 +71,7 @@ enum ESpawnFunc {eV, eVE, eVP, eVPE};
 
 static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode, 
                        const char *cmdname, const char *const *argv, 
-                       const char *const *envp = 0)
+                       const char *const *envp = (const char *const*)0)
 {
     // Empty environment for Spawn*E
     const char* empty_env[] = { 0 };
@@ -152,7 +152,7 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
         xi++; \
         args[xi] = va_arg(vargs, const char*); \
     } \
-    args[xi] = 0
+    args[xi] = (const char*)0
 
 
 int CExec::System(const char *cmdline)
@@ -323,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/08/18 16:00:50  ivanov
+ * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
+ *
  * Revision 1.17  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *

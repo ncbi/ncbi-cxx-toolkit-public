@@ -55,7 +55,8 @@ static void Test_Process(void)
     TPid pid;
     {{
         LOG_POST("CMD = " << app << " -sleep 3");
-        pid = CExec::SpawnL(CExec::eNoWait, app.c_str(), "-sleep", "3", 0);
+        pid = CExec::SpawnL(CExec::eNoWait, app.c_str(),
+	                    "-sleep", "3", NULL);
         LOG_POST("PID = " << pid);
         CProcess process(pid, CProcess::eHandle);
         assert(process.IsAlive());
@@ -64,7 +65,8 @@ static void Test_Process(void)
     }}
     {{
         LOG_POST("CMD = " << app << " -sleep 10");
-        pid = CExec::SpawnL(CExec::eNoWait, app.c_str(), "-sleep", "10", 0);
+        pid = CExec::SpawnL(CExec::eNoWait, app.c_str(),
+	                    "-sleep", "10", NULL);
         LOG_POST("PID = " << pid);
         CProcess process(pid, CProcess::eHandle);
         assert(process.IsAlive());
@@ -86,13 +88,13 @@ static void Test_Process(void)
 
 static void Test_PIDGuardChild(int ppid, string lockfile)
 {
-	string s_app =
-        CNcbiApplication::Instance()->GetArguments().GetProgramName();
-	string s_pid = NStr::IntToString(ppid);
+    string s_app =
+    CNcbiApplication::Instance()->GetArguments().GetProgramName();
+    string s_pid = NStr::IntToString(ppid);
     int ret_code = CExec::SpawnL(CExec::eWait, s_app.c_str(),
                                  "-parent", s_pid.c_str() ,
-                                 "-lockfile", lockfile.c_str(), 0); 
-	assert( !ret_code );
+                                 "-lockfile", lockfile.c_str(), NULL); 
+    assert( !ret_code );
 }
 
 static void Test_PIDGuard(int ppid, string lockfile)
@@ -131,8 +133,8 @@ static void Test_PIDGuard(int ppid, string lockfile)
             int child_pid = 0;
             in >> child_pid;
             if ( child_pid > 0 ) {
-				CProcess child(child_pid, CProcess::ePid);
-				child.Wait();
+                CProcess child(child_pid, CProcess::ePid);
+                child.Wait();
             }
         }
         in.close();
@@ -250,6 +252,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/08/18 16:00:50  ivanov
+ * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
+ *
  * Revision 1.3  2004/05/18 17:05:31  ivanov
  * CPIDGuard tests:
  *     Use CExec::SpawnL() instead System() to run child process.
