@@ -90,6 +90,15 @@ void CSimpleDictionary::Read(CNcbiIstream& istr)
     }
 }
 
+void CSimpleDictionary::Write(CNcbiOstream& ostr) const
+{
+    ITERATE (TReverseDict, iter, m_ReverseDict) {
+        ITERATE (TStringSet, word_iter, iter->second) {
+            ostr << iter->first << "|" << *word_iter << endl;
+        }
+    }
+}
+
 
 void CSimpleDictionary::AddWord(const string& word)
 {
@@ -413,7 +422,8 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 break;
             }
 
-            if (remaining == 1  &&  *(iter + 1) == 'n') {
+            if (remaining == 1  &&
+                (*(iter + 1) == 'n'  ||  *(iter + 1) == 'm')) {
                 ++iter;
                 break;
             }
@@ -844,6 +854,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/28 18:41:47  dicuccio
+ * Implemented CSimpleDictionary::Write()
+ *
  * Revision 1.5  2004/08/17 17:14:56  ucko
  * Fix CDictionaryUtil::GetEditDistance to compile on 64-bit platforms.
  *
