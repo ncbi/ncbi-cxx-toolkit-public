@@ -625,7 +625,7 @@ const CFeatQualAssoc::GBQualTypeVec& CFeatQualAssoc::GetMandatoryQuals
 CFeatQualAssoc* CFeatQualAssoc::Instance(void)
 {
     if ( !sm_Instance.get() ) {
-        sm_Instance = auto_ptr<CFeatQualAssoc>(new CFeatQualAssoc);
+        sm_Instance.reset(new CFeatQualAssoc);
     }
     return sm_Instance.get();
 }
@@ -1759,7 +1759,7 @@ static bool s_isAa(const CBioseq& seq)
 inline 
 static bool s_IsMrna(const CBioseq_Handle& bsh) 
 {
-    CSeqdesc_CI sd( CDesc_CI(bsh), CSeqdesc::e_Molinfo );
+    CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
 
     if ( sd ) {
         const CMolInfo &mi = sd->GetMolinfo();
@@ -1775,7 +1775,7 @@ static bool s_IsMrna(const CBioseq_Handle& bsh)
 inline 
 static bool s_IsPrerna(const CBioseq_Handle& bsh) 
 {
-    CSeqdesc_CI sd( CDesc_CI(bsh), CSeqdesc::e_Molinfo );
+    CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
 
     if ( sd ) {
         const CMolInfo &mi = sd->GetMolinfo();
@@ -6101,7 +6101,7 @@ void CValidError_impl::ValidateCdregion (
     }
     
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation ());
-    CSeqdesc_CI diter (CDesc_CI(bsh), CSeqdesc::e_Source);
+    CSeqdesc_CI diter (bsh, CSeqdesc::e_Source);
     if ( diter ) {
         const CBioSource& src = diter->GetSource();
         
@@ -6408,7 +6408,7 @@ void CValidError_impl::CheckTrnaCodons(const CTrna_ext& trna, const CSeq_feat& f
     // Retrive the Genetic code id for the tRna
     int gcode = 0;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
-    for ( CSeqdesc_CI diter (CDesc_CI(bsh), CSeqdesc::e_Source); diter; ++diter) {
+    for ( CSeqdesc_CI diter (bsh, CSeqdesc::e_Source); diter; ++diter) {
         gcode = diter->GetSource().GetGenCode();
         break; // need only the closest biosoure.
     }
@@ -7830,6 +7830,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2002/12/13 22:35:38  ucko
+* Fix compilation on at least GCC 2.9x.
+*
 * Revision 1.34  2002/12/13 21:57:58  shomrat
 * Added: CGBQualType, CFeatQualAssoc, ValidateImp, ValidateSeqFeatContext; Changes in ValidateNucProt and ValidateSeqLoc
 *
