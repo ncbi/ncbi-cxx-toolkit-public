@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.124  2002/03/01 15:47:46  thiessen
+* try tool window style for sequence/log viewers
+*
 * Revision 1.123  2002/02/22 14:24:00  thiessen
 * sort sequences in reject dialog ; general identifier comparison
 *
@@ -595,7 +598,7 @@ public:
         wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
             wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT
 #if wxVERSION_NUMBER >= 2302
-                | wxFRAME_NO_TASKBAR
+                | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
 #endif
             ) { totalChars = 0; }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
@@ -659,7 +662,7 @@ void RaiseLogWindow(void)
         logFrame = new MsgFrame("Cn3D++ Message Log", wxPoint(500, 0), wxSize(500, 500));
         logFrame->SetSizeHints(150, 100);
         logFrame->logText = new wxTextCtrl(logFrame, -1, "",
-            wxPoint(0,0), wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
+            wxPoint(0,0), logFrame->GetClientSize(), wxTE_MULTILINE | wxTE_READONLY | wxHSCROLL);
         // display any messages received before window created
         while (backLog.size() > 0) {
             *(logFrame->logText) << backLog.front().c_str();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/03/01 15:47:46  thiessen
+* try tool window style for sequence/log viewers
+*
 * Revision 1.27  2002/02/21 12:26:30  thiessen
 * fix row delete bug ; remember threader options
 *
@@ -135,7 +138,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
         wxDEFAULT_FRAME_STYLE
 #if wxVERSION_NUMBER >= 2302
-            | wxFRAME_NO_TASKBAR
+            | wxFRAME_TOOL_WINDOW // wxFRAME_NO_TASKBAR
 #endif
         ),
     viewerWidget(NULL), viewer(parentViewer)
