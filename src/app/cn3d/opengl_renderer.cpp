@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/06/29 18:13:57  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.38  2001/05/31 18:47:08  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -223,7 +226,7 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
 // OpenGLRenderer methods - initialization and setup
 
 OpenGLRenderer::OpenGLRenderer(void) :
-    selectMode(false), currentDisplayList(NO_LIST)
+    selectMode(false), currentDisplayList(NO_LIST), structureSet(NULL)
 {
     // make sure a name will fit in a GLuint
     if (sizeof(GLuint) < sizeof(unsigned int))
@@ -1477,7 +1480,7 @@ bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *heigh
     *width = w;
     *height = ascent + descent;
     return (*width > 0 && *height > 0);
-    
+
 #else
     ERR_POST(Error << "OpenGLRenderer::MeasureText() undefined on this platform!");
     return false;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/06/29 18:13:57  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.15  2001/03/23 04:18:52  thiessen
 * parse and display disulfides
 *
@@ -179,8 +182,8 @@ bool Bond::Draw(const AtomSet *atomSet) const
     // get prev, next alphas if drawing worm virtual bond
     const Vector *site0 = NULL, *site3 = NULL;
     if (bondStyle.end1.style == StyleManager::eLineWormBond ||
-        bondStyle.end1.style == StyleManager::eLineWormBond ||
-        bondStyle.end2.style == StyleManager::eThickWormBond ||
+        bondStyle.end1.style == StyleManager::eThickWormBond ||
+        bondStyle.end2.style == StyleManager::eLineWormBond ||
         bondStyle.end2.style == StyleManager::eThickWormBond) {
 
         if (previousVirtual) {

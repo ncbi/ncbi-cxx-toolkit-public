@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2001/06/29 18:13:58  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.67  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -391,7 +394,7 @@ void StructureSet::Init(void)
 }
 
 StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
-    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc()), structureAlignments(NULL)
+    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc())
 {
     Init();
     mimeData = mime;
@@ -415,7 +418,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime->GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-        styleManager->SetToAlignment(StyleSettings::eAligned);
+		styleManager->SetGlobalRenderingStyle(StyleSettings::eWormDisplay);
+        styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
         if (mime->GetStrucseqs().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetStrucseqs().GetStyle_dictionary());
 
@@ -440,7 +444,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime->GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-        styleManager->SetToAlignment(StyleSettings::eAligned);
+		styleManager->SetGlobalRenderingStyle(StyleSettings::eWormDisplay);
+        styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
         structureAlignments = &(mime->GetAlignstruc().SetAlignments());
         if (mime->GetAlignstruc().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetAlignstruc().GetStyle_dictionary());
@@ -619,7 +624,8 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, cdd->GetPending());
     else
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-    styleManager->SetToAlignment(StyleSettings::eAligned);
+    styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
+    styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
     if (cdd->IsSetStyle_dictionary()) {

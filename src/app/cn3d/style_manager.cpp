@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/06/29 18:13:58  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.42  2001/06/21 02:02:34  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -166,6 +169,8 @@
 #include <objects/cn3d/Cn3d_backbone_style.hpp>
 #include <objects/cn3d/Cn3d_general_style.hpp>
 #include <objects/cn3d/Cn3d_color.hpp>
+#include <objects/cn3d/Cn3d_style_table_item.hpp>
+#include <objects/cn3d/Cn3d_style_table_id.hpp>
 
 #include <memory>
 #include <string.h> // for memcpy()
@@ -182,6 +187,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/style_dialog.hpp"
+#include "cn3d/annotate_dialog.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -316,159 +322,109 @@ bool StyleSettings::LoadSettingsFromASN(const CCn3d_style_settings& styleASN)
     );
 }
 
-void StyleSettings::SetToSecondaryStructure(void)
-{
-    proteinBackbone.type = nucleotideBackbone.type = eTrace;
-    proteinBackbone.style = nucleotideBackbone.style = eTubeWorm;
-    proteinBackbone.colorScheme = eSecondaryStructure;
-    nucleotideBackbone.colorScheme = eObject;
-
-    proteinSidechains.isOn = nucleotideSidechains.isOn = false;
-    proteinSidechains.style = nucleotideSidechains.style = eWire;
-    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eDomain;
-
-    heterogens.isOn = true;
-    heterogens.style = eBallAndStick;
-    heterogens.colorScheme = eElement;
-
-    solvents.isOn = true;
-    solvents.style = eBallAndStick;
-    solvents.colorScheme = eElement;
-
-    connections.isOn = true;
-    connections.style = eTubes;
-    connections.colorScheme = eUserSelect;
-    connections.userColor.Set(0.9,0.9,1);
-
-    virtualDisulfidesOn = true;
-    virtualDisulfideColor.Set(0.93,0.55,0.05);
-
-    helixObjects.isOn = strandObjects.isOn = true;
-    helixObjects.style = strandObjects.style = eWithArrows;
-    helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
-    helixRadius = 1.8;
-    strandWidth = 2.0;
-    strandThickness = 0.5;
-
-    proteinSidechains.userColor = nucleotideSidechains.userColor =
-    proteinBackbone.userColor = nucleotideBackbone.userColor =
-    heterogens.userColor = solvents.userColor =
-    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
-
-    hydrogensOn = true;
-
-    spaceFillProportion = 1.0;
-    ballRadius = 0.4;
-    stickRadius = 0.2;
-    tubeRadius = 0.3;
-    tubeWormRadius = 0.3;
-
-    backgroundColor.Set(0,0,0);
-}
-
-void StyleSettings::SetToWireframe(void)
-{
-    proteinBackbone.type = nucleotideBackbone.type = eComplete;
-    proteinBackbone.style = nucleotideBackbone.style = eWire;
-    proteinBackbone.colorScheme = nucleotideBackbone.colorScheme = eDomain;
-
-    proteinSidechains.isOn = nucleotideSidechains.isOn = true;
-    proteinSidechains.style = nucleotideSidechains.style = eWire;
-    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
-
-    heterogens.isOn = true;
-    heterogens.style = eTubes;
-    heterogens.colorScheme = eElement;
-
-    solvents.isOn = false;
-    solvents.style = eBallAndStick;
-    solvents.colorScheme = eElement;
-
-    connections.isOn = true;
-    connections.style = eWire;
-    connections.colorScheme = eUserSelect;
-    connections.userColor.Set(0.9,0.9,1);
-
-    virtualDisulfidesOn = false;
-    virtualDisulfideColor.Set(0.93,0.55,0.05);
-
-    helixObjects.isOn = strandObjects.isOn = false;
-    helixObjects.style = strandObjects.style = eWithArrows;
-    helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
-    helixRadius = 1.8;
-    strandWidth = 2.0;
-    strandThickness = 0.5;
-
-    proteinSidechains.userColor = nucleotideSidechains.userColor =
-    proteinBackbone.userColor = nucleotideBackbone.userColor =
-    heterogens.userColor = solvents.userColor =
-    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
-
-    hydrogensOn = true;
-
-    spaceFillProportion = 1.0;
-    ballRadius = 0.4;
-    stickRadius = 0.2;
-    tubeRadius = 0.3;
-    tubeWormRadius = 0.3;
-
-    backgroundColor.Set(0,0,0);
-}
-
-void StyleSettings::SetToAlignment(StyleSettings::eColorScheme protBBType)
-{
-    proteinBackbone.type = nucleotideBackbone.type = eTrace;
-    proteinBackbone.style = nucleotideBackbone.style = eTubes;
-    proteinBackbone.colorScheme = protBBType;
-    nucleotideBackbone.colorScheme = eObject;
-
-    proteinSidechains.isOn = nucleotideSidechains.isOn = (protBBType == eAligned);
-    proteinSidechains.style = nucleotideSidechains.style = eWire;
-    proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
-
-    heterogens.isOn = true;
-    heterogens.style = eWire;
-    heterogens.colorScheme = eElement;
-
-    solvents.isOn = false;
-    solvents.style = eBallAndStick;
-    solvents.colorScheme = eElement;
-
-    connections.isOn = true;
-    connections.style = eTubes;
-    connections.colorScheme = eUserSelect;
-    connections.userColor.Set(0.9,0.9,1);
-
-    virtualDisulfidesOn = true;
-    virtualDisulfideColor.Set(0.93,0.55,0.05);
-
-    helixObjects.isOn = strandObjects.isOn = false;
-    helixObjects.style = strandObjects.style = eWithArrows;
-    helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
-    helixRadius = 1.8;
-    strandWidth = 2.0;
-    strandThickness = 0.5;
-
-    proteinSidechains.userColor = nucleotideSidechains.userColor =
-    proteinBackbone.userColor = nucleotideBackbone.userColor =
-    heterogens.userColor = solvents.userColor =
-    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
-
-    hydrogensOn = true;
-
-    spaceFillProportion = 1.0;
-    ballRadius = 0.4;
-    stickRadius = 0.2;
-    tubeRadius = 0.3;
-    tubeWormRadius = 0.3;
-
-    backgroundColor.Set(0,0,0);
-}
-
 StyleSettings& StyleSettings::operator = (const StyleSettings& orig)
 {
     memcpy(this, &orig, sizeof(StyleSettings));
     return *this;
+}
+
+void StyleSettings::SetRenderingStyle(ePredefinedRenderingStyle style)
+{
+    // variable settings
+    switch (style) {
+        case eWormDisplay:
+            proteinBackbone.type = nucleotideBackbone.type = eTrace;
+            proteinBackbone.style = nucleotideBackbone.style = eTubeWorm;
+            proteinSidechains.isOn = nucleotideSidechains.isOn = false;
+            proteinSidechains.style = nucleotideSidechains.style = eWire;
+            heterogens.style = eBallAndStick;
+            solvents.isOn = true;
+            solvents.style = eBallAndStick;
+            connections.style = eTubes;
+            helixObjects.isOn = strandObjects.isOn = true;
+            helixObjects.style = strandObjects.style = eWithArrows;
+            break;
+
+        case eTubeDisplay:
+            proteinBackbone.type = nucleotideBackbone.type = eTrace;
+            proteinBackbone.style = nucleotideBackbone.style = eTubes;
+            proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+            proteinSidechains.style = nucleotideSidechains.style = eWire;
+            heterogens.style = eBallAndStick;
+            solvents.isOn = false;
+            solvents.style = eBallAndStick;
+            connections.style = eTubes;
+            helixObjects.isOn = strandObjects.isOn = false;
+            helixObjects.style = strandObjects.style = eWithArrows;
+            break;
+
+        case eWireframeDisplay:
+            proteinBackbone.type = nucleotideBackbone.type = eComplete;
+            proteinBackbone.style = nucleotideBackbone.style = eWire;
+            proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+            proteinSidechains.style = nucleotideSidechains.style = eWire;
+            heterogens.style = eWire;
+            solvents.isOn = true;
+            solvents.style = eWire;
+            connections.style = eWire;
+            helixObjects.isOn = strandObjects.isOn = false;
+            helixObjects.style = strandObjects.style = eWithArrows;
+            break;
+    }
+
+    // common settings
+    heterogens.isOn = true;
+    connections.isOn = true;
+    virtualDisulfidesOn = true;
+    hydrogensOn = true;
+    helixRadius = 1.8;
+    strandWidth = 2.0;
+    strandThickness = 0.5;
+    spaceFillProportion = 1.0;
+    ballRadius = 0.4;
+    stickRadius = 0.2;
+    tubeRadius = 0.3;
+    tubeWormRadius = 0.3;
+}
+
+void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
+{
+    // variable settings
+    switch (scheme) {
+        case eBySecondaryStructure:
+            proteinBackbone.colorScheme = eSecondaryStructure;
+            nucleotideBackbone.colorScheme = eMolecule;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+            break;
+
+        case eByAligned:
+            proteinBackbone.colorScheme = eAligned;
+            nucleotideBackbone.colorScheme = eMolecule;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+
+        case eByInformationContent:
+            proteinBackbone.colorScheme = eInformationContent;
+            nucleotideBackbone.colorScheme = eMolecule;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+    }
+
+    // common settings
+    heterogens.colorScheme = eElement;
+    solvents.colorScheme = eElement;
+    connections.colorScheme = eUserSelect;
+    connections.userColor.Set(0.9,0.9,1);
+    virtualDisulfideColor.Set(0.93,0.55,0.05);
+    backgroundColor.Set(0,0,0);
+
+    proteinSidechains.userColor = nucleotideSidechains.userColor =
+    proteinBackbone.userColor = nucleotideBackbone.userColor =
+    heterogens.userColor = solvents.userColor =
+    helixObjects.userColor = strandObjects.userColor = Vector(0.5,0.5,0.5);
 }
 
 
@@ -1068,8 +1024,24 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
 const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *object,
     int moleculeID, int residueID) const
 {
-    // eventually this will know about annotations...
-    return globalStyle;
+    const Molecule *molecule = object->graph->molecules.find(moleculeID)->second;
+
+    // find the highest priority (lowest index) annotation in the list of displayed annotations,
+    // that also covers this residue
+    const StyleSettings *style = &globalStyle;
+
+    for (int d=0; d<userAnnotationsDisplayed.size(); d++) {
+        // check to see if the annotation covers this residue
+        ResidueMap::const_iterator
+            residues = userAnnotationsDisplayed[d]->residues.find(molecule->identifier);
+        if (residues != userAnnotationsDisplayed[d]->residues.end() &&
+            residues->second[residueID - 1] == true) {
+            style = &(userStyles.find(userAnnotationsDisplayed[d]->styleID)->second);
+            break;
+        }
+    }
+
+    return *style;
 }
 
 const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
@@ -1090,13 +1062,178 @@ CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
 {
     auto_ptr<CCn3d_style_dictionary> dictionary(new CCn3d_style_dictionary());
     if (!globalStyle.SaveSettingsToASN(&(dictionary->SetGlobal_style()))) return NULL;
+
+    if (userStyles.size() > 0) {
+
+        // create an ordered list of style id's
+        typedef std::list < int > IntList;
+        IntList keys;
+        StyleMap::const_iterator s, se = userStyles.end();
+        for (s=userStyles.begin(); s!=se; s++) keys.push_back(s->first);
+        keys.sort();
+
+        // create a new style table entry for each user style
+        IntList::const_iterator i, ie = keys.end();
+        for (i=keys.begin(); i!=ie; i++) {
+            CRef < CCn3d_style_table_item > entry(new CCn3d_style_table_item());
+            entry->SetId().Set(*i);
+            if (!userStyles.find(*i)->second.SaveSettingsToASN(&(entry->SetStyle()))) return NULL;
+            dictionary->SetStyle_table().push_back(entry);
+        }
+    }
+
     return dictionary.release();
 }
 
 bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styleDictionary)
 {
-    bool okay = globalStyle.LoadSettingsFromASN(styleDictionary.GetGlobal_style());
-    return okay;
+    if (!globalStyle.LoadSettingsFromASN(styleDictionary.GetGlobal_style())) return false;;
+
+    userStyles.clear();
+    if (styleDictionary.IsSetStyle_table()) {
+        CCn3d_style_dictionary::TStyle_table::const_iterator t, te = styleDictionary.GetStyle_table().end();
+        for (t=styleDictionary.GetStyle_table().begin(); t!=te; t++) {
+            int id = t->GetObject().GetId().Get();
+            if (userStyles.find(id) != userStyles.end()) {
+                ERR_POST(Error << "repeated style table id in style dictionary");
+                return false;
+            } else
+                if (!userStyles[id].LoadSettingsFromASN(t->GetObject().GetStyle())) return false;
+        }
+    }
+    return true;
+}
+
+bool StyleManager::EditUserAnnotations(wxWindow *parent, const StructureSet *set)
+{
+    AnnotateDialog dialog(parent, this, set);
+    dialog.ShowModal();
+    return false;
+}
+
+void StyleManager::GetUserAnnotations(AnnotationPtrList *annotationList)
+{
+    annotationList->resize(userAnnotations.size());
+    AnnotationList::iterator a = userAnnotations.begin();
+    for (int i=0; i<userAnnotations.size(); i++)
+        (*annotationList)[i] = &(*(a++));
+}
+
+bool StyleManager::AddUserStyle(int *id, StyleSettings **newStyle)
+{
+    // create a style with the lowest integer id (above zero) available
+    static const int max = 10000;
+    for (int i=1; i<max; i++) {
+        if (userStyles.find(i) == userStyles.end()) {
+            *newStyle = &(userStyles[i]);
+            *id = i;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool StyleManager::RemoveUserStyle(int id)
+{
+    StyleMap::iterator u = userStyles.find(id);
+    if (u == userStyles.end()) return false;
+    userStyles.erase(u);
+    return true;
+}
+
+StyleManager::UserAnnotation * StyleManager::AddUserAnnotation(void)
+{
+    userAnnotations.resize(userAnnotations.size() + 1);
+    return &(userAnnotations.back());
+}
+
+bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
+{
+    // remove annotation from displayed list
+    AnnotationPtrList::iterator d, de = userAnnotationsDisplayed.end();
+    for (d=userAnnotationsDisplayed.begin(); d!=de; d++) {
+        if (annotation == *d) {
+            userAnnotationsDisplayed.erase(d);
+            GlobalMessenger()->PostRedrawAllStructures();
+            GlobalMessenger()->PostRedrawAllSequenceViewers();
+            break;
+        }
+    }
+
+    // remove annotation from available list
+    AnnotationList::iterator u, ue = userAnnotations.end();
+    int removedStyleID = -1;
+    for (u=userAnnotations.begin(); u!=ue; u++) {
+        if (annotation == &(*u)) {
+            removedStyleID = u->styleID;
+            userAnnotations.erase(u);
+            break;
+        }
+    }
+    if (u == ue) return false;
+
+    // also remove the style if it's not used by any other annotation
+    for (u=userAnnotations.begin(); u!=ue; u++)
+        if (u->styleID == removedStyleID) break;
+    if (u == ue) RemoveUserStyle(removedStyleID);
+
+    return true;
+}
+
+bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
+{
+    // first check to make sure this annotation is known
+    AnnotationList::const_iterator a, ae = userAnnotations.end();
+    for (a=userAnnotations.begin(); a!=ae; a++)
+        if (annotation == &(*a)) break;
+    if (a == ae) return false;
+
+    // then look for it in the list of displayed annotations
+    AnnotationPtrList::iterator d, de = userAnnotationsDisplayed.end();
+    for (d=userAnnotationsDisplayed.begin(); d!=de; d++)
+        if (annotation == *d) break;
+
+    // finally, add or remove it from the displayed annotations
+    bool changed = false;
+    if (display && d == de) {
+        userAnnotationsDisplayed.insert(userAnnotationsDisplayed.begin(), annotation);
+        changed = true;
+    } else if (!display && d != de) {
+        userAnnotationsDisplayed.erase(d);
+        changed = true;
+    }
+    if (changed) {  // need to redraw if displayed annotations list has changed
+        GlobalMessenger()->PostRedrawAllStructures();
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
+    }
+
+    return true;
+}
+
+bool StyleManager::ReprioritizeDisplayOrder(UserAnnotation *annotation, bool moveUp)
+{
+    // look for the annotation in the list of displayed annotations
+	int d;
+    for (d=0; d<userAnnotationsDisplayed.size(); d++)
+        if (annotation == userAnnotationsDisplayed[d]) break;
+    if (d == userAnnotationsDisplayed.size()) return false;
+
+    bool changed = false;
+    if (moveUp && d > 0) {
+        userAnnotationsDisplayed[d] = userAnnotationsDisplayed[d - 1];
+        userAnnotationsDisplayed[d - 1] = annotation;
+        changed = true;
+    } else if (!moveUp && d < userAnnotationsDisplayed.size() - 1) {
+        userAnnotationsDisplayed[d] = userAnnotationsDisplayed[d + 1];
+        userAnnotationsDisplayed[d + 1] = annotation;
+        changed = true;
+    }
+    if (changed) {  // need to redraw if displayed annotations list has changed
+        GlobalMessenger()->PostRedrawAllStructures();
+        GlobalMessenger()->PostRedrawAllSequenceViewers();
+    }
+
+    return true;
 }
 
 END_SCOPE(Cn3D)

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2001/06/29 18:13:57  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.54  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -462,7 +465,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE( MID_TRANSLATE,  MID_RESET,          Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE( MID_SHOW_HIDE,  MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
     EVT_MENU(       MID_REFIT_ALL,                      Cn3DMainFrame::OnAlignStructures)
-    EVT_MENU_RANGE( MID_EDIT_STYLE, MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE( MID_EDIT_STYLE, MID_ANNOTATE,       Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE( MID_QLOW,       MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
     EVT_MENU_RANGE( MID_SHOW_LOG,   MID_SHOW_SEQ_V,     Cn3DMainFrame::OnShowWindow)
 END_EVENT_TABLE()
@@ -513,18 +516,19 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     // Style menu
     menu = new wxMenu;
-    menu->Append(MID_EDIT_STYLE, "&Edit Style");
-    menu->AppendSeparator();
-    menu->Append(MID_SECSTRUC, "&Secondary Structure");
-    menu->Append(MID_WIREFRAME, "&Wireframe");
-    menu->Append(MID_ALIGN, "&Alignment");
+    menu->Append(MID_EDIT_STYLE, "Edit &Global Style");
     wxMenu *subMenu = new wxMenu;
-    subMenu->Append(MID_IDENT, "I&dentity");
-    subMenu->Append(MID_VARIETY, "&Variety");
-    subMenu->Append(MID_WGHT_VAR, "&Weighted Variety");
-    subMenu->Append(MID_INFORM, "&Information Content");
-    subMenu->Append(MID_FIT, "&Fit");
-    menu->Append(MID_CONS, "&Conservation", subMenu);
+    subMenu->Append(MID_WORM, "&Worms");
+    subMenu->Append(MID_TUBE, "&Tubes");
+    subMenu->Append(MID_WIRE, "Wir&e");
+    menu->Append(MID_RENDER, "&Rendering Shortcuts", subMenu);
+    subMenu = new wxMenu;
+    subMenu->Append(MID_SECSTRUC, "Sec&ondary Structure");
+    subMenu->Append(MID_ALIGNED, "&Aligned");
+    subMenu->Append(MID_INFO, "&Information Content");
+    menu->Append(MID_COLORS, "&Coloring Shortcuts", subMenu);
+    menu->AppendSeparator();
+    menu->Append(MID_ANNOTATE, "A&nnotate");
     menuBar->Append(menu, "&Style");
 
     // Quality menu
@@ -711,31 +715,30 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 if (!glCanvas->structureSet->styleManager->EditGlobalStyle(this, glCanvas->structureSet))
                     return;
                 break;
+            case MID_ANNOTATE:
+                if (!glCanvas->structureSet->styleManager->EditUserAnnotations(this, glCanvas->structureSet))
+                    return;
+                break;
+            case MID_WORM:
+                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormDisplay);
+                break;
+            case MID_TUBE:
+                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
+                break;
+            case MID_WIRE:
+                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWireframeDisplay);
+                break;
             case MID_SECSTRUC:
-                glCanvas->structureSet->styleManager->SetToSecondaryStructure();
+                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
                 break;
-            case MID_ALIGN:
-                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eAligned);
+            case MID_ALIGNED:
+                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
                 break;
-            case MID_IDENT:
-                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eIdentity);
+            case MID_INFO:
+                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eByInformationContent);
                 break;
-            case MID_VARIETY:
-                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eVariety);
-                break;
-            case MID_WGHT_VAR:
-                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eWeightedVariety);
-                break;
-            case MID_INFORM:
-                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eInformationContent);
-                break;
-            case MID_FIT:
-                glCanvas->structureSet->styleManager->SetToAlignment(StyleSettings::eFit);
-                break;
-            case MID_WIREFRAME:
-                glCanvas->structureSet->styleManager->SetToWireframe();
-                break;
-            default: ;
+            default:
+                return;
         }
         glCanvas->structureSet->styleManager->CheckGlobalStyleSettings(glCanvas->structureSet);
         GlobalMessenger()->PostRedrawAllStructures();

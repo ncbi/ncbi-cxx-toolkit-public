@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/06/29 18:12:53  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.1  2001/06/21 02:01:16  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -74,6 +77,15 @@ public:
 
     // clear identifier store (e.g. when a new file is loaded)
     static void ClearIdentifiers(void);
+
+    // does this molecule have structure?
+    bool HasStructure(void) const
+    {
+        return (
+            (mmdbID != VALUE_NOT_SET && moleculeID != VALUE_NOT_SET) ||
+            (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET)
+        );
+    }
 
 private:
     // can't create one of these directly - must use GetIdentifier()

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/06/29 18:13:57  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.17  2001/06/21 02:02:33  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -220,6 +223,8 @@ void Messenger::SequenceWindowsSave(void)
 
 bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, int index) const
 {
+    if (highlightingSuspended) return false;
+
     HighlightStore::const_iterator h = highlights.find(identifier);
     if (h == highlights.end()) return false;
 
@@ -345,6 +350,31 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
     highlights.clear();
 
     return anyRemoved;
+}
+
+void Messenger::SuspendHighlighting(bool suspend)
+{
+    if (highlightingSuspended != suspend) {
+        highlightingSuspended = suspend;
+        if (IsAnythingHighlighted()) {
+            PostRedrawAllStructures();
+            PostRedrawAllSequenceViewers();
+        }
+    }
+}
+
+bool Messenger::GetHighlightedResiduesWithStructure(ResidueMap *residues) const
+{
+    residues->clear();
+    if (!IsAnythingHighlighted()) return false;
+
+    HighlightStore::const_iterator h, he = highlights.end();
+    for (h=highlights.begin(); h!=he; h++) {
+        if (h->first->HasStructure())
+            (*residues)[h->first] = h->second;
+    }
+
+    return (residues->size() > 0);
 }
 
 END_SCOPE(Cn3D)

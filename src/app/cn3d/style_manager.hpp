@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/06/29 18:12:53  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.28  2001/06/15 14:06:20  thiessen
 * save/load asn styles now complete
 *
@@ -126,10 +129,14 @@
 #include <objects/cn3d/Cn3d_style_settings.hpp>
 
 #include <string>
+#include <list>
+#include <map>
+#include <vector>
 
 #include "cn3d/vector_math.hpp"
 
 class wxWindow;
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -214,13 +221,28 @@ public:
     double spaceFillProportion, ballRadius, stickRadius, tubeRadius, tubeWormRadius,
         helixRadius, strandWidth, strandThickness;
 
-    // methods to set to predetermined states
-    void SetToSecondaryStructure(void);
-    void SetToWireframe(void);
-    void SetToAlignment(StyleSettings::eColorScheme protBBType);
+    // to set to predetermined renderings
+    enum ePredefinedRenderingStyle {
+        eWormDisplay,
+        eTubeDisplay,
+        eWireframeDisplay
+    };
+    void SetRenderingStyle(ePredefinedRenderingStyle style);
+
+    // to set to predetermined colors
+    enum ePredefinedColorScheme {
+        eBySecondaryStructure,
+        eByAligned,
+        eByInformationContent
+    };
+    void SetColorScheme(ePredefinedColorScheme scheme);
 
     // default and copy constructors
-    StyleSettings(void) { SetToSecondaryStructure(); }
+    StyleSettings(void)
+    {
+        SetRenderingStyle(eWormDisplay);
+        SetColorScheme(eBySecondaryStructure);
+    }
     StyleSettings(const StyleSettings& orig) { *this = orig; }
 
     // copy settings
@@ -245,6 +267,8 @@ class HelixStyle;
 class Strand3D;
 class StrandStyle;
 class Molecule;
+class MoleculeIdentifier;
+class AnnotateDialog;
 
 class StyleManager
 {
@@ -281,6 +305,9 @@ public:
     // bring up dialog to edit global style; returns true if style changed
     bool EditGlobalStyle(wxWindow *parent, const StructureSet *set);
 
+    // edit user annotations; returns true if any style changed
+    bool EditUserAnnotations(wxWindow *parent, const StructureSet *set);
+
     // check style option consistency
     bool CheckStyleSettings(StyleSettings *settings, const StructureSet *set);
     bool CheckGlobalStyleSettings(const StructureSet *set);
@@ -289,8 +316,56 @@ public:
     ncbi::objects::CCn3d_style_dictionary * CreateASNStyleDictionary(void) const;
     bool LoadFromASNStyleDictionary(const ncbi::objects::CCn3d_style_dictionary& styleDictionary);
 
+    // add a new user style with default settings; returns true if successful,
+    // and sets style ID assigned to the new style and pointer to the new style structure
+    bool AddUserStyle(int *id, StyleSettings **newStyle);
+
+    // remove a style; returns false if a user style of the given ID is not found
+    bool RemoveUserStyle(int id);
+
+    // various typedefs
+    typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
+    typedef struct {
+        std::string name, description;
+        int styleID;
+        ResidueMap residues;
+    } UserAnnotation;
+    typedef std::vector < UserAnnotation * > AnnotationPtrList;
+
+    // add a new (empty) annotation; returns a pointer to the new UserAnnotation structure,
+    // or NULL on error; does *not* display the new annotation by default
+    UserAnnotation * AddUserAnnotation(void);
+
+    // remove an annotation; returns false if the given annotation isn't found
+    bool RemoveUserAnnotation(UserAnnotation *annotation);
+
+    // sets the displayed status of the given annotation; returns false if annotation not found
+    bool DisplayAnnotation(UserAnnotation *annotation, bool display);
+
+    // moves the priority of annotation up (moveUp==true) or down (moveUp==false);
+    // returns false if annotation not found
+    bool ReprioritizeDisplayOrder(UserAnnotation *annotation, bool moveUp);
+
 private:
     StyleSettings globalStyle;
+
+    // a set of user styles, each with its own unique integer id
+    typedef std::map < int , StyleSettings > StyleMap;
+    StyleMap userStyles;
+
+    // storage for user annotations
+    typedef std::list < UserAnnotation > AnnotationList;
+    AnnotationList userAnnotations;
+
+    // the priority-ordered list of annotations that are currently displayed;
+    // lowest-indexed annotation has highest priority (to reflect GUI list where the
+    // annotation on top of the stack has priority)
+    AnnotationPtrList userAnnotationsDisplayed;
+
+    // map from molecule -> user annotation(s); for fast lookup of which annotations cover
+    // a particular molecule
+    typedef std::map < const MoleculeIdentifier * , AnnotationPtrList > AnnotationMap;
+    AnnotationMap userAnnotationMap;
 
     bool GetObjectStyle(const StructureObject *object, const Object3D& object3D,
         const StyleSettings::GeneralStyle& generalStyle, ObjectStyle *objectStyle) const;
@@ -301,12 +376,27 @@ public:
     const StyleSettings& GetStyleForResidue(const StructureObject *object,
         int moleculeID, int residueID) const;
     const Vector& GetObjectColor(const Molecule *molecule) const;
+    const StyleSettings * GetUserStyle(int id) const
+    {
+        StyleMap::const_iterator style = userStyles.find(id);
+        return ((style != userStyles.end()) ? &(style->second) : NULL);
+    }
+    StyleSettings * GetUserStyle(int id)
+    {
+        StyleMap::iterator style = userStyles.find(id);
+        return ((style != userStyles.end()) ? &(style->second) : NULL);
+    }
+
+    // annotation list accessors
+    void GetUserAnnotations(AnnotationPtrList *annotationList);
+    const AnnotationPtrList& GetUserAnnotationsDisplayed(void) const
+        { return userAnnotationsDisplayed; }
 
     // predefined styles
-    void SetToSecondaryStructure(void) { globalStyle.SetToSecondaryStructure(); }
-    void SetToWireframe(void) { globalStyle.SetToWireframe(); }
-    void SetToAlignment(StyleSettings::eColorScheme protBBType)
-        { globalStyle.SetToAlignment(protBBType); }
+    void SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme)
+        { globalStyle.SetColorScheme(scheme); }
+    void SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style)
+        { globalStyle.SetRenderingStyle(style); }
 };
 
 // the following are convenience containers to tell the Draw functions how

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/06/29 18:12:53  thiessen
+* initial (incomplete) user annotation system
+*
 * Revision 1.28  2001/06/14 17:44:46  thiessen
 * progress in styles<->asn ; add structure limits
 *
@@ -230,16 +233,15 @@ public:
             MID_REFIT_ALL,
         // Style menu
             MID_EDIT_STYLE,
-            MID_SECSTRUC,
-            MID_ALIGN,
-                // conservation sub-menu
-                MID_CONS,
-                    MID_IDENT,
-                    MID_VARIETY,
-                    MID_WGHT_VAR,
-                    MID_INFORM,
-                    MID_FIT,
-            MID_WIREFRAME,
+            MID_RENDER, // rendering shortcuts
+                MID_WORM,
+                MID_TUBE,
+                MID_WIRE,
+            MID_COLORS, // color shortcuts
+                MID_SECSTRUC,
+                MID_ALIGNED,
+                MID_INFO,
+            MID_ANNOTATE,
         // Quality menu
             MID_QLOW,
             MID_QMED,
