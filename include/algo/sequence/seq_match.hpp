@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 /// but MSVC doesn't support them.
 ///
 
-class NCBI_XALGOSEQ_EXPORT CSeqMatch
+class CSeqMatch
 {
 public:
     enum EMatch {
@@ -143,13 +143,13 @@ public:
     /// doesn't really belong here, but oh well
 
     /// convert a single base from IUPAC to ncbi8na
-    static char IupacToNcbi8na(char in);
+    NCBI_XALGOSEQ_EXPORT static char IupacToNcbi8na(char in);
     /// convert a whole string from IUPAC to ncbi8na
-    static void IupacToNcbi8na(const string& in, string& out);
+    NCBI_XALGOSEQ_EXPORT static void IupacToNcbi8na(const string& in, string& out);
     /// complement an ncbi8na sequence in place
-    static void CompNcbi8na(string& seq8na);
+    NCBI_XALGOSEQ_EXPORT static void CompNcbi8na(string& seq8na);
     /// complement a single ncbi8na base
-    static char CompNcbi8na(char);
+    NCBI_XALGOSEQ_EXPORT static char CompNcbi8na(char);
 };
 
 
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/18 20:07:04  dicuccio
+ * Corrected export specifiers
+ *
  * Revision 1.4  2003/08/18 20:01:06  jcherry
  * Changed function argument name to avoid confusion with std::compare
  *

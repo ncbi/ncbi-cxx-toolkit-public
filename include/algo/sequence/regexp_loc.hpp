@@ -51,7 +51,7 @@ USING_SCOPE(objects);
 
 /// Class used to convert a PCRE match to a char* sequence into a CSeq_loc.
 
-class NCBI_XALGO_EXPORT CRegexp_loc
+class NCBI_XALGOSEQ_EXPORT CRegexp_loc
 {
 public:
     /// Constructor for CRegexp_loc
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.3  2003/08/18 20:07:04  dicuccio
+* Corrected export specifiers
+*
 * Revision 1.2  2003/07/17 12:27:56  ucko
 * +<memory> for auto_ptr<>
 *

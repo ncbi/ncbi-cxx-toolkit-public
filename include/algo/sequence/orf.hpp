@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 /// This class provides functions for finding all the ORFs
 /// of a specified minimum length in a DNA sequence.
 
-class NCBI_XALGOSEQ_EXPORT COrf
+class COrf
 {
 public:
     /// Find all ORFs in both orientations that
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/18 20:07:04  dicuccio
+ * Corrected export specifiers
+ *
  * Revision 1.6  2003/08/18 19:22:13  jcherry
  * Moved orf and seq_match to algo/sequence
  *
