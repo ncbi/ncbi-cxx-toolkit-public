@@ -1,0 +1,12 @@
+#################################
+# $Id$
+#################################
+
+APP = netscheduled
+SRC = netscheduled bdb_queue job_status
+
+REQUIRES = MT bdb
+
+
+LIB = ncbi_xcache_bdb$(STATIC) $(BDB_LIB) xthrserv xconnect xutil xncbi
+LIBS = $(BERKELEYDB_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

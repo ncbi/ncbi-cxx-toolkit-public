@@ -1,0 +1,233 @@
+#ifndef NETSCHEDULE_BDB_QUEUE__HPP
+#define NETSCHEDULE_BDB_QUEUE__HPP
+
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Anatoliy Kuznetsov
+ *
+ * File Description:
+ *   Net schedule job status database.
+ *
+ */
+
+
+/// @file bdb_queue.hpp
+/// NetSchedule job status database. 
+///
+/// @internal
+
+
+#include <corelib/ncbimtx.hpp>
+#include <bdb/bdb_file.hpp>
+#include <bdb/bdb_env.hpp>
+#include <map>
+
+#include "job_status.hpp"
+
+
+BEGIN_NCBI_SCOPE
+
+/// BDB table to store queue information
+///
+/// @internal
+///
+struct SQueueDB : public CBDB_File
+{
+    CBDB_FieldUint4        id;              ///< Job id
+
+    CBDB_FieldInt4         status;          ///< Current job status
+    CBDB_FieldInt4         failed;          ///< Number of job failures
+    CBDB_FieldUint4        time_submit;     ///< Job submit time
+    CBDB_FieldUint4        time_run;        ///<     run time
+    CBDB_FieldUint4        time_done;       ///<     complete time
+
+    CBDB_FieldUint4        worker_node1;    ///< IP address of worker node 1
+    CBDB_FieldUint4        worker_node2;    ///< reserved
+    CBDB_FieldUint4        worker_node3;
+    CBDB_FieldUint4        worker_node4;
+    CBDB_FieldUint4        worker_node5;
+
+    CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
+    CBDB_FieldInt4         ret_code;        ///< Return code
+
+    CBDB_FieldString       input;           ///< Input data
+    CBDB_FieldString       output;          ///< Result data
+
+    CBDB_FieldString       cout;            ///< Reserved
+    CBDB_FieldString       cerr;            ///< Reserved
+
+    SQueueDB()
+    {
+        DisableNull(); 
+
+        BindKey("id",      &id);
+
+        BindData("status", &status);
+        BindData("failed", &failed);
+        BindData("time_submit", &time_submit);
+        BindData("time_run",    &time_run);
+        BindData("time_done",   &time_done);
+
+        BindData("worker_node1", &worker_node1);
+        BindData("worker_node2", &worker_node2);
+        BindData("worker_node3", &worker_node3);
+        BindData("worker_node4", &worker_node4);
+        BindData("worker_node5", &worker_node5);
+
+        BindData("run_counter", &run_counter);
+        BindData("ret_code",    &ret_code);
+
+        BindData("input",  &input,  1024);
+        BindData("output", &output, 1024);
+
+        BindData("cout",  &cout, 128);
+        BindData("cerr",  &cerr, 128);
+    }
+};
+
+/// Mutex protected Queue database
+///
+/// @internal
+///
+struct SLockedQueue
+{
+    SQueueDB        db;
+    CFastMutex      lock;
+};
+
+/// Queue database manager
+///
+/// @internal
+///
+class CQueueCollection
+{
+public:
+    typedef map<string, SLockedQueue*> TQueueMap;
+
+public:
+    CQueueCollection();
+    ~CQueueCollection();
+
+    void Close();
+
+    SLockedQueue& GetLockedQueue(const string& name);
+    bool QueueExists(const string& name) const;
+
+    /// Collection takes ownership of queue
+    void AddQueue(const string& name, SLockedQueue* queue);
+
+private:
+    CQueueCollection(const CQueueCollection&);
+    CQueueCollection& operator=(const CQueueCollection&);
+private:
+    TQueueMap      m_QMap;
+};
+
+
+/// Top level queue database.
+/// (Thread-Safe, syncronized.)
+///
+/// @internal
+///
+class CQueueDataBase
+{
+public:
+    CQueueDataBase();
+    ~CQueueDataBase();
+
+    void Open(const string& path, unsigned cache_ram_size);
+    void MountQueue(const string& queue_name);
+    void Close();
+
+    /// Main queue entry point
+    ///
+    /// @internal
+    ///
+    class CQueue
+    {
+    public:
+        CQueue(CQueueDataBase& db, const string& queue_name);
+    private:
+        CQueue(const CQueue&);
+        CQueue& operator=(const CQueue&);
+
+        unsigned int Submit(const string& input);
+        void Cancel(unsigned int job_id);
+        void PutResult(unsigned int  job_id,
+                       int           ret_code,
+                       const string& output);
+        void GetJob(unsigned int   worker_node,
+                    unsigned int*  job_id, 
+                    string*        input);
+        void ReturnJob(unsigned int job_id);
+    private:
+        CQueueDataBase& m_Db;
+        SLockedQueue&   m_LQueue;
+    };
+
+
+    CNetScheduleClient::EJobStatus 
+    GetStatus(unsigned int job_id) const
+    {
+        return m_StatusTracker.GetStatus(job_id);
+    }
+
+protected:
+    /// get next job id (counter increment)
+    unsigned int GetNextId();
+
+    friend class CQueue;
+private:
+    CBDB_Env*                       m_Env;
+    string                          m_Path;
+    string                          m_Name;
+
+    CQueueCollection                m_QueueCollection;
+    CNetScheduler_JobStatusTracker  m_StatusTracker;
+
+    unsigned int                    m_MaxId;   ///< job id counter
+    CFastMutex                      m_IdLock;
+
+    bm::bvector<>                   m_UsedIds; /// id access locker
+};
+
+
+
+END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2005/02/08 16:42:55  kuznets
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
+
+#endif /* NETSCHEDULE_BDB_QUEUE__HPP */
+
