@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/01/12 16:48:32  lavr
+ * Ownership passage is set to 'false' by default
+ *
  * Revision 6.1  2001/01/11 23:08:14  lavr
  * Initial revision
  *
@@ -48,8 +51,7 @@
 BEGIN_NCBI_SCOPE
 
 
-extern REG REG_cxx2c(CNcbiRegistry* reg,
-                     bool pass_ownership = true);
+extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
 
 
 END_NCBI_SCOPE
