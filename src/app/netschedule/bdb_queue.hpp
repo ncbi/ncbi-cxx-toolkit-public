@@ -109,14 +109,15 @@ struct SQueueDB : public CBDB_File
     }
 };
 
-/// Mutex protected Queue database
+/// Mutex protected Queue database with job status FSM
 ///
 /// @internal
 ///
 struct SLockedQueue
 {
-    SQueueDB        db;
-    CFastMutex      lock;
+    SQueueDB                        db;
+    CFastMutex                      lock;
+    CNetScheduler_JobStatusTracker  status_tracker;
 };
 
 /// Queue database manager
@@ -185,10 +186,13 @@ public:
                     string*        input);
         void ReturnJob(unsigned int job_id);
 
-        // Get info for compeleted job
+        // Get output info for compeleted job
         bool GetOutput(unsigned int job_id,
                        int*         ret_code,
                        string*      output);
+
+        CNetScheduleClient::EJobStatus 
+        GetStatus(unsigned int job_id) const;
 
     private:
         CQueue(const CQueue&);
@@ -197,13 +201,6 @@ public:
         CQueueDataBase& m_Db;
         SLockedQueue&   m_LQueue;
     };
-
-
-    CNetScheduleClient::EJobStatus 
-    GetStatus(unsigned int job_id) const
-    {
-        return m_StatusTracker.GetStatus(job_id);
-    }
 
 protected:
     /// get next job id (counter increment)
@@ -216,7 +213,6 @@ private:
     string                          m_Name;
 
     CQueueCollection                m_QueueCollection;
-    CNetScheduler_JobStatusTracker  m_StatusTracker;
 
     unsigned int                    m_MaxId;   ///< job id counter
     CFastMutex                      m_IdLock;
@@ -231,6 +227,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/14 17:57:41  kuznets
+ * Fixed a bug in queue procesing
+ *
  * Revision 1.3  2005/02/10 19:58:45  kuznets
  * +GetOutput()
  *

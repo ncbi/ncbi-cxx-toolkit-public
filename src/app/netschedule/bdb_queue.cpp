@@ -262,7 +262,7 @@ void CQueueDataBase::MountQueue(const string& queue_name)
         if (job_id > m_MaxId) {
             m_MaxId = job_id;
         }
-        m_StatusTracker.SetExactStatusNoLock(job_id, 
+        queue.status_tracker.SetExactStatusNoLock(job_id, 
                       (CNetScheduleClient::EJobStatus) status, 
                       true);
     } // while
@@ -304,6 +304,14 @@ unsigned int CQueueDataBase::GetNextId()
         ++m_MaxId;
     }
     id = m_MaxId;
+
+    if ((id % 1000) == 0) {
+        m_Env->TransactionCheckpoint();
+    }
+    if ((id % 1000000) == 0) {
+        m_Env->CleanLog();
+    }
+
     return id;
 }
 
@@ -320,7 +328,7 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
 
     CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
-    CNetSchedule_JS_Guard js_guard(m_Db.m_StatusTracker, 
+    CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
     {{
@@ -367,7 +375,7 @@ void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 {
     CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
-    CNetSchedule_JS_Guard js_guard(m_Db.m_StatusTracker, 
+    CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::eCanceled);
 
@@ -403,7 +411,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
 {
     CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
 
-    CNetSchedule_JS_Guard js_guard(m_Db.m_StatusTracker, 
+    CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::eDone);
 
@@ -439,7 +447,7 @@ void CQueueDataBase::CQueue::ReturnJob(unsigned int job_id)
     _ASSERT(job_id);
 
     CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
-    CNetSchedule_JS_Guard js_guard(m_Db.m_StatusTracker, 
+    CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
                                    CNetScheduleClient::ePending);
     {{
@@ -470,7 +478,7 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
 {
     _ASSERT(worker_node && input);
 
-    *job_id = m_Db.m_StatusTracker.GetPendingJob();
+    *job_id = m_LQueue.status_tracker.GetPendingJob();
     if (!*job_id) {
         return;
     }
@@ -530,8 +538,8 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
     } 
     catch (exception&)
     {
-        m_Db.m_StatusTracker.ChangeStatus(*job_id, 
-                                          CNetScheduleClient::ePending);
+        m_LQueue.status_tracker.ChangeStatus(*job_id, 
+                                             CNetScheduleClient::ePending);
         *job_id = 0;
         throw;
     }
@@ -561,12 +569,23 @@ bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
 
 }
 
+CNetScheduleClient::EJobStatus 
+CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
+{
+    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
+    return m_LQueue.status_tracker.GetStatus(job_id);
+}
+
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/02/14 17:57:41  kuznets
+ * Fixed a bug in queue procesing
+ *
  * Revision 1.3  2005/02/10 19:58:51  kuznets
  * +GetOutput()
  *

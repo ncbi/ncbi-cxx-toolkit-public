@@ -419,8 +419,10 @@ void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
 {
     SJS_Request& req = tdata.req;
 
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    CNetScheduleClient::EJobStatus status = m_QueueDB->GetStatus(job_id);
+
+    CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
     char szBuf[kNetScheduleMaxDataSize * 2];
     int st = (int) status;
 
@@ -918,6 +920,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/14 17:57:41  kuznets
+ * Fixed a bug in queue procesing
+ *
  * Revision 1.4  2005/02/14 14:42:52  kuznets
  * Overloaded ProcessOverflow to better detect queue shortage
  *
