@@ -28,10 +28,13 @@
  * File Description:
  *   Read data from a file, and send these data line-by-line to a socket.
  *   Then, read data from the socket.
- *   Trace all I/O going through the socketin both directions.
+ *   Trace all I/O going through the socket in both directions.
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/09/10 21:28:11  lavr
+ * Typo fix
+ *
  * Revision 6.2  2001/03/02 20:03:48  lavr
  * Typos fixed
  *
