@@ -228,7 +228,7 @@ void CSeq_id_int_Tree::FindMatchStr(string sid,
         id_list.push_back(TSeq_id_Info(
             &x_GetSeq_id(it->second), x_GetKey(it->second)));
     }
-    catch (CExceptString) {
+    catch (CStringException) {
         // Not an integer value
         return;
     }
@@ -885,7 +885,7 @@ void CSeq_id_Local_Tree::FindMatchStr(string sid,
         id_list.push_back(TSeq_id_Info(
             &x_GetSeq_id(int_it->second), x_GetKey(int_it->second)));
     }
-    catch (CExceptString) {
+    catch (CStringException) {
         // Not an integer value
         return;
     }
@@ -1023,7 +1023,7 @@ void CSeq_id_General_Tree::FindMatchStr(string sid,
                 &x_GetSeq_id(int_it->second),
                 x_GetKey(int_it->second)));
         }
-        catch (CExceptString) {
+        catch (CStringException) {
             // Not an integer value
             return;
         }
@@ -1150,7 +1150,7 @@ void CSeq_id_Giim_Tree::FindMatchStr(string sid,
                 &x_GetSeq_id(*git), x_GetKey(*git)));
         }
     }
-    catch (CExceptString) {
+    catch (CStringException) {
         // Not an integer value
         return;
     }
@@ -1722,6 +1722,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/07/15 20:33:49  ucko
+* CExceptString is now CStringException.
+*
 * Revision 1.17  2002/07/12 19:32:10  grichenk
 * Fixed exception name
 *
