@@ -1102,6 +1102,9 @@ static void BlastHitListPurge(BlastHitList* hit_list)
 {
    Int4 index, hsplist_count;
    
+   if (!hit_list)
+      return;
+   
    hsplist_count = hit_list->hsplist_count;
    for (index = 0; index < hsplist_count && 
            hit_list->hsplist_array[index]->hspcnt > 0; ++index);
