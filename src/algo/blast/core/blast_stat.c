@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.70  2004/05/06 15:59:29  camacho
+ * Made Blast_KarlinBlkCalc non-static
+ *
  * Revision 1.69  2004/05/06 15:05:13  camacho
  * Fix to previous commit
  *
@@ -2287,8 +2290,8 @@ See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
     as the previous formula.
 
 *******************************************************************************/
-static Int2
-BlastKarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
+Int2
+Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
 {
 	
 
@@ -2350,7 +2353,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	sbp->sfp[context_number] = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
 	sbp->kbp_std[context_number] = Blast_KarlinBlkCreate();
-	retval = BlastKarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
+	retval = Blast_KarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
 	if (retval)
 	{
 		rfp = Blast_ResFreqDestruct(rfp);
@@ -2358,7 +2361,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 		return retval;
 	}
 	sbp->kbp_psi[context_number] = Blast_KarlinBlkCreate();
-	retval = BlastKarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
+	retval = Blast_KarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
 	rfp = Blast_ResFreqDestruct(rfp);
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
 
@@ -2384,7 +2387,7 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 	sfp = Blast_ScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
 	kbp_ideal = Blast_KarlinBlkCreate();
-	BlastKarlinBlkCalc(kbp_ideal, sfp);
+	Blast_KarlinBlkCalc(kbp_ideal, sfp);
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
 
 	sfp = Blast_ScoreFreqDestruct(sfp);

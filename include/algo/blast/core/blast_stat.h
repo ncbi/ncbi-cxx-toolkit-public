@@ -358,6 +358,11 @@ Blast_ScoreFreqDestruct(BLAST_ScoreFreq* sfp);
 Int2
 Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, 
                      Uint4 residues_size);
+
+/* Please see comment on blast_stat.c */
+Int2
+Blast_KarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp);
+
 #ifdef __cplusplus
 }
 #endif
