@@ -141,7 +141,9 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
+    arg_desc->AddFlag("skip_alignments", "do not search for alignments");
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
+    arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
     arg_desc->AddFlag("reverse", "reverse order of features");
     arg_desc->AddFlag("no_sort", "do not sort features");
     arg_desc->AddDefaultKey("max_feat", "MaxFeat",
@@ -250,6 +252,8 @@ int CDemoApp::Run(void)
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
     bool print_alignments = args["print_alignments"];
+    bool skip_alignments = args["skip_alignments"];
+    bool get_mapped_alignments = args["get_mapped_alignments"];
     SAnnotSelector::ESortOrder order =
         args["reverse"] ?
         SAnnotSelector::eSortOrder_Reverse : SAnnotSelector::eSortOrder_Normal;
@@ -726,10 +730,7 @@ int CDemoApp::Run(void)
         // No region restrictions -- the whole bioseq is used:
         loc.SetWhole(*id);
         count = 0;
-        for (CGraph_CI it(scope, loc,
-                          SAnnotSelector()
-                          .SetResolveMethod(resolve)
-                          .SetSortOrder(order)); it;  ++it) {
+        for (CGraph_CI it(scope, loc, base_sel); it;  ++it) {
             count++;
             // Get seq-annot containing the feature
             if ( get_mapped_location )
@@ -746,15 +747,20 @@ int CDemoApp::Run(void)
         }
         NcbiCout << "Graph count (whole, any):       " << count << NcbiEndl;
 
-        count = 0;
-        // Create CAlign_CI using the current scope and location.
-        for (CAlign_CI it(scope, loc); it;  ++it) {
-            count++;
-            if ( print_alignments ) {
-                NcbiCout << MSerial_AsnText << *it;
+        if ( !skip_alignments ) {
+            count = 0;
+            // Create CAlign_CI using the current scope and location.
+            for (CAlign_CI it(scope, loc, base_sel); it;  ++it) {
+                count++;
+                if ( get_mapped_alignments ) {
+                    *it;
+                }
+                if ( print_alignments ) {
+                    NcbiCout << MSerial_AsnText << *it;
+                }
             }
+            NcbiCout << "Align count (whole, any):       " << count << NcbiEndl;
         }
-        NcbiCout << "Align count (whole, any):       " << count << NcbiEndl;
     }
 
     NcbiCout << "Done" << NcbiEndl;
@@ -780,6 +786,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/05/13 19:50:48  vasilche
+* Added options to skip and get mapped alignments.
+*
 * Revision 1.66  2004/05/13 19:33:15  vasilche
 * Added option for printing descriptors.
 *
