@@ -1,0 +1,99 @@
+<!--#set var="TITLE" value="NCBI C++ CGI library" -->
+<!--#set var="DOCROOT" value="../.." -->
+<!--#include virtual="../../ssi/header.shtml" -->
+
+
+
+<div align="Center">
+<h1>Object Manager.</h1>
+</div>
+
+
+<h2>Common problems.</h2>
+<hr>
+
+<ol>
+  <li><a href="#seqid">
+  How to construct Seq_id by accession?
+  </a></li>
+  <li><a href="#seqmap">
+  How to use SeqMap?
+  </a></li>
+  <li><a href="#other">
+  Other suggestions.
+  </a></li>
+</ol>
+
+
+
+
+<hr>
+<a name="seqid"></a>
+<h4>How to construct Seq_id by accession?</h4>
+<p>
+The current toolkit lacks a function that creates a proper Seq_Id from
+an accession.
+<br>
+The accession number is actually formalized so it is possible, looking
+at an accession to determine the database this accession refers to.
+There is a 
+<a href="http://intranet.ncbi.nlm.nih.gov/ieb/DIRSUB/acc_num.html">page</a>,
+which describes the relationship, but even better, there is a function in
+C toolkit which does it:
+<pre>
+    NLM_EXTERN Uint4 LIBCALL WHICH_db_accession (CharPtr s)  // sequtil.c
+</pre>
+This function is called from SeqIdFromAccession (sequtil.c).
+</p>
+<p>
+</p>
+Currently, one has to specify an exact version number, otherwise
+GetBioseqHandle fails. A user might not know a version number for an accession
+s/he wants to retrieve, so, if version is not provided, the last version of the
+accession should be fetched.
+</p>
+
+
+
+<hr>
+<a name="seqmap"></a>
+<h4>How to use SeqMap?</h4>
+<p>
+There are two methods in Bioseq_Handle, which return SeqMap object:
+<pre>
+    const CSeqMap&amp; GetSeqMap(void) const;
+    const CSeqMap&amp GetResolvedSeqMap(void) const;
+</pre>
+What is the difference? The point is that a sequence can refer to other sequences,
+which in turn to others etc. etc. <var>Object Manager</var> does not resolve this
+references until a client needs it. So, the contents of SeqMap object returned by
+<tt>GetSeqMap</tt> depends on a history of previous calls. From the other side,
+<tt>GetResolvedSeqMap</tt> returns completely resolved map, that is map, which
+does not contain references to references, nor references to gaps - only either data,
+or references to data, or gaps.
+</p>
+Hi,
+
+
+
+
+<hr>
+<a name="other"></a>
+<h4>Other suggestions.</h4>
+<ol>
+  <li>
+    CSeq_loc needs an additional function - to make its complement.
+  </li>
+  <li>
+    CBioseq needs an additional function - one that has been called
+    <tt>GetBestId</tt> in the old toolkit (the best id is actually 'GI').
+	If there is no GI there are priorities defined in the old toolkit.
+    The construction <tt>GetId().begin()</tt>, one has to use instead,
+	is not quite proper.
+  </li>
+</ol>
+
+
+<hr>
+
+<!--#include virtual="../../ssi/footer.shtml" -->
