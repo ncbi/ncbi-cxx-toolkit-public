@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/15 20:04:05  vasilche
+* Fixed typo.
+*
 * Revision 1.17  2000/08/15 19:44:50  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -144,7 +147,7 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
             // in debug mode check for absence of other references
 #if _DEBUG
             pair<TObjectsByPtr::iterator, bool> ins =
-                m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, eObjectIndexNotWritten));
+                m_ObjectsByPtr.insert(TObjectsByPtr::value_type(object, CWriteObjectInfo::eObjectIndexNotWritten));
             if ( !ins.second ) {
                 // not inserted -> already have the same object pointer
                 // as reference counter is one -> error
@@ -174,7 +177,7 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
     if ( !ins.second ) {
         // not inserted -> already have the same object pointer
         TObjectIndex index = ins.first->second;
-        _ASSERT(index != eObjectIndexNotWritten);
+        _ASSERT(index != CWriteObjectInfo::eObjectIndexNotWritten);
         CWriteObjectInfo& objectInfo = m_Objects[index];
         _ASSERT(objectInfo.GetTypeInfo() == typeInfo);
         _ASSERT(objectInfo.IsWritten());
