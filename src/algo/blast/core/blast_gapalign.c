@@ -1707,7 +1707,7 @@ static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    Boolean found_start, found_end;
    Int4 q_length=0, s_length=0, score_right, score_left, 
       private_q_start, private_s_start;
-   Int4 offset_adjustment;
+   Uint1 offset_adjustment;
    Uint1* query,* subject;
    
    found_start = FALSE;
@@ -1719,9 +1719,10 @@ static Int2 BLAST_DynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk,
    /* If subject offset is not at the start of a full byte, 
       BLAST_AlignPackedNucl won't work, so shift the alignment start
       to the left */
-   offset_adjustment = init_hsp->s_off % COMPRESSION_RATIO;
-   q_length = init_hsp->q_off - offset_adjustment;
-   s_length = init_hsp->s_off - offset_adjustment;
+   offset_adjustment = 
+      COMPRESSION_RATIO - (init_hsp->s_off % COMPRESSION_RATIO);
+   q_length = init_hsp->q_off + offset_adjustment;
+   s_length = init_hsp->s_off + offset_adjustment;
    if (q_length != 0 && s_length != 0) {
       found_start = TRUE;
       score_left = BLAST_AlignPackedNucl(query, subject, q_length, s_length, 
