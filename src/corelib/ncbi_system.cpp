@@ -34,6 +34,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/11/16 16:39:58  ivanov
+* Typo, fixed NCBI_OS_WIN -> NCBI_OS_MSWIN
+*
 * Revision 1.14  2001/11/16 16:34:34  ivanov
 * Added including "windows.h" under MS Windows
 *
@@ -89,7 +92,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#ifdef NCBI_OS_WIN
+#ifdef NCBI_OS_MSWIN
 #  include <windows.h>
 #endif
 
