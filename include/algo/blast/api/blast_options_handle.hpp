@@ -137,8 +137,8 @@ public:
     void SetMaxNumHspPerSequence(int m) { m_Opts->SetMaxNumHspPerSequence(m); }
 
     // These 2 are never set in core... should they be removed?
-    //int GetTotalHspLimit() const { return m_Opts->GetTotalHspLimit(); }
-    //void SetTotalHspLimit(int l) { m_Opts->SetTotalHspLimit(l); }
+    int GetTotalHspLimit() const { return m_Opts->GetTotalHspLimit(); }
+    void SetTotalHspLimit(int l) { m_Opts->SetTotalHspLimit(l); }
 
     double GetEvalueThreshold() const { return m_Opts->GetEvalueThreshold(); }
     void SetEvalueThreshold(double eval) { m_Opts->SetEvalueThreshold(eval); } 
@@ -197,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/18 23:47:56  dondosha
+ * Uncommented [SG]etTotalHspLimit, as they will now be used
+ *
  * Revision 1.7  2004/02/17 23:52:08  dondosha
  * Added methods to get/set preliminary hitlist size
  *
