@@ -175,7 +175,7 @@ int SUApp::Run(void)
             ERROR_MESSAGE("LOO failed");
             return 8;
         }
-        INFO_MESSAGE("score of row " << args["r"].AsInteger() << " after realignment: "
+        INFO_MESSAGE("score of row " << args["r"].AsInteger() << " vs PSSM(N) after realignment: "
             << au.ScoreRowByPSSM(args["r"].AsInteger() - 1));
         INFO_MESSAGE("sum of row scores vs. PSSM(N) after realignment: " << SumAllRowScores(au));
     }
@@ -226,6 +226,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/07/29 18:44:24  thiessen
+* adjust info message
+*
 * Revision 1.6  2004/07/28 23:06:03  thiessen
 * show all scores before and after
 *
