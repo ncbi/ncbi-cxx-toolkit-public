@@ -562,6 +562,8 @@ void CBDB_Cache::Open(const char* cache_path,
         m_Env->SetLogFileMax(200 * 1024 * 1024);
     }
 
+    m_Env->SetLogBSize(1 * 1024 * 1024);
+
     // Check if bdb env. files are in place and try to join
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
@@ -641,6 +643,7 @@ void CBDB_Cache::Open(const char* cache_path,
 
     m_Env->SetDirectDB(true);
     m_Env->SetDirectLog(true);
+    m_Env->SetLogAutoRemove(true);
 
     m_Env->SetLockTimeout(30 * 1000000); // 30 sec
 
@@ -2306,6 +2309,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.108  2005/03/28 12:59:29  kuznets
+ * Set 1M log buffer size and turned on log auto remove
+ *
  * Revision 1.107  2005/03/23 17:23:48  kuznets
  * Added support of log_file_max ini setting
  *
