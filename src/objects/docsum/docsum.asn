@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.21 2001/08/03 14:29:11 sherry Exp $
+-- $Id: docsum.asn,v 1.22 2001/08/20 20:19:45 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.22  2001/08/20 20:19:45  sherry
+-- source-db (2) defined for GenBank STS division
+--
 -- Revision 1.21  2001/08/03 14:29:11  sherry
 -- added snp-class 'mnp' for variants with allele length > 1
 --
@@ -416,6 +419,7 @@ NSE-SeqLoc ::= SEQUENCE {
 	} OPTIONAL,
 	source-db ENUMERATED {
 		ref-mrna (1),			-- NCBI RefSeq mRNA
+		gb-sts (2),			-- GenBank STS division
 		gb-mrna (4),			-- Genbank mrna
 		gb-small (6),			-- Genbank genomic < 30kb in length
 		hgs-finish (10),		-- genome sequence, finished
