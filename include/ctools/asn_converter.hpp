@@ -34,10 +34,7 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
-
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_memory_connector.h>
 #include <ctools/asn_connection.h>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasnb.hpp>
@@ -125,6 +122,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/05/28 14:53:51  lavr
+* Reduce the number of included headers
+*
 * Revision 1.2  2003/04/11 17:46:30  siyan
 * Added doxygen support
 *
