@@ -1,5 +1,6 @@
 [Author]
 _class = CGBAuthor
+_file  = objects/gbseq/GBAuthor
 
 [GBInterval]
 from._type  = TSeqPos
