@@ -125,6 +125,8 @@ public:
     bool HasDataSource(void) const;
     CDataSource& GetDataSource(void) const;
 
+    bool IsLocked(void) const;
+
     CConstRef<CSeq_entry> GetCompleteTSE(void) const;
     CConstRef<CSeq_entry> GetTSECore(void) const;
 
@@ -187,6 +189,7 @@ public:
     virtual void x_ResetDirtyAnnotIndexNoParent(void);
 
     CTSE_Chunk_Info& GetChunk(TChunkId chunk_id);
+    CTSE_Chunk_Info& GetSkeletonChunk(void);
 
 private:
     friend class CTSE_Guard;
@@ -362,6 +365,13 @@ CDataSource& CTSE_Info::GetDataSource(void) const
 {
     _ASSERT(m_DataSource);
     return *m_DataSource;
+}
+
+
+inline
+bool CTSE_Info::IsLocked(void) const
+{
+    return m_LockCounter.Get() != 0;
 }
 
 
