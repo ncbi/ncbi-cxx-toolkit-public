@@ -11,7 +11,7 @@
 script="$0"
 builddir="${1:-//u/coremake/cxx}"
 target="${2:-//u/coremake/public/cxx.last}"
-compiler="${3:-msvc7}"
+compiler="${3:-msvc710}"
 compiler="${compiler}_prj"
 
 
