@@ -177,7 +177,7 @@ private:
     BlastSeqSrc*                        mi_pSeqSrc;            ///< internal: Subject sequences source
     BlastScoreBlk*                      mi_pScoreBlock;        ///< internal: score block
     CLookupTableWrap                    mi_pLookupTable;       ///< internal: one for all queries
-    ListNode*                           mi_pLookupSegments;    ///< internal: regions of queries to scan during lookup table creation
+    BlastSeqLoc*                        mi_pLookupSegments;    ///< internal: regions of queries to scan during lookup table creation
 
     CBlastInitialWordParameters         mi_clsInitWordParams;  ///< internal: raw scores computed from options
     CBlastHitSavingParameters           mi_clsHitSavingParams; ///< internal: raw scores computed from options
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/09/13 12:44:11  madden
+* Use BlastSeqLoc rather than ListNode
+*
 * Revision 1.36  2004/06/29 14:17:24  papadopo
 * add PartialRun and GetResults methods to CBl2Seq
 *

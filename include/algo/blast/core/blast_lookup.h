@@ -224,21 +224,21 @@ BlastLookupTable* LookupTableDestruct(BlastLookupTable* lookup);
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
- * @param unmasked_regions an array of ListNode*s, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
+ * @param unmasked_regions an array of BlastSeqLoc*s, each of which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
  * @param num_queries the number of queries [in]
  * @return Zero.
  */
 Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlk* query,
-			       ListNode* unmasked_regions);
+			       BlastSeqLoc* unmasked_regions);
 
 /** Index a single query.
  *
  * @param lookup the lookup table [in/modified]
  * @param matrix the substitution matrix [in]
  * @param query the array of queries to index
- * @param unmasked_regions a ListNode* which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
+ * @param unmasked_regions a BlastSeqLoc* which points to a (list of) integer pair(s) which specify the unmasked region(s) of the query [in]
  * @param query_bias number added to each offset put into lookup table (only used for RPS blast database creation, otherwise 0) [in]
  * @return Zero.
  */
@@ -246,7 +246,7 @@ Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlk* query,
-			      ListNode* unmasked_regions,
+			      BlastSeqLoc* unmasked_regions,
                               Int4 query_bias);
 
 /**
@@ -266,7 +266,7 @@ Int4 AddNeighboringWords(BlastLookupTable* lookup,
 			 Int4 ** matrix,
 			 BLAST_SequenceBlk* query,
                          Int4 query_bias,
-                         ListNode* locations);
+                         BlastSeqLoc* locations);
 
 /**
  * A position-specific version of AddNeighboringWords. Note that
@@ -284,7 +284,7 @@ Int4 AddNeighboringWords(BlastLookupTable* lookup,
 Int4 AddPSSMNeighboringWords(BlastLookupTable* lookup,
 			 Int4 ** matrix,
                          Int4 query_bias,
-                         ListNode* locations);
+                         BlastSeqLoc* locations);
 
 /* RPS blast structures and functions */
 
@@ -401,7 +401,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
  */
 Int4 BlastNaLookupIndexQuery(BlastLookupTable* lookup, 
                              BLAST_SequenceBlk* query,
-                             ListNode* location);
+                             BlastSeqLoc* location);
 
 #ifdef __cplusplus
 }

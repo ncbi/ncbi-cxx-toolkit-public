@@ -38,6 +38,7 @@ static char const rcsid[] =
     "$Id$";
 
 #include <algo/blast/core/blast_seg.h>
+#include <algo/blast/core/blast_filter.h>
 
 double lnfact[] = 
   {
@@ -2065,22 +2066,19 @@ static void mergesegs(SSequence* seq, SSeg* segs, Boolean overlaps)
 
 static Int2 SegsToBlastSeqLoc(SSeg* segs, Int4 offset, BlastSeqLoc** seg_locs)
 {
-   SSeqRange* dip;
-   BlastSeqLoc* last_slp = NULL,* head_slp = NULL;
+   BlastSeqLoc* last_slp = NULL;
 
    for ( ; segs; segs = segs->next) {
-      dip = (SSeqRange*) calloc(1, sizeof(SSeqRange));
-      dip->left = segs->begin + offset;
-      dip->right = segs->end + offset;
+      Int4 left = segs->begin + offset;
+      Int4 right = segs->end + offset;
 
       if (!last_slp) {
-         last_slp = ListNodeAddPointer(&head_slp, 0, dip);
+         last_slp = BlastSeqLocNew(seg_locs, left, right);
       } else {
-         last_slp = ListNodeAddPointer(&last_slp, 0, dip);
+         last_slp = BlastSeqLocNew(&last_slp, left, right);
       }
    }
 
-   *seg_locs = head_slp;
    return 0;
 }
 

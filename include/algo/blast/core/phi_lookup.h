@@ -80,7 +80,7 @@ BlastPHILookupTable* PHILookupTableDestruct(BlastPHILookupTable* lut);
  * PHILookupTable structure.
  */
 Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
-        BLAST_SequenceBlk* query, ListNode* location, Boolean is_dna);
+        BLAST_SequenceBlk* query, BlastSeqLoc* location, Boolean is_dna);
 
 
 /**

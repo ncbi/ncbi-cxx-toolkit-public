@@ -151,7 +151,7 @@ private:
 
     /************ Internal data structures (m_i = internal members)**********/
     LookupTableWrap*    m_ipLookupTable;   ///< Lookup table, one for all queries
-    ListNode*           m_ipLookupSegments; /**< Intervals for which lookup 
+    BlastSeqLoc*        m_ipLookupSegments; /**< Intervals for which lookup 
                                               table is created: complement of
                                               filtered regions */
     BlastMaskLoc*       m_ipFilteredRegions;///< Filtered regions
@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/09/13 12:44:11  madden
+* Use BlastSeqLoc rather than ListNode
+*
 * Revision 1.23  2004/09/07 17:59:12  dondosha
 * CDbBlast class changed to support multi-threaded search
 *

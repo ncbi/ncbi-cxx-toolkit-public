@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_dust.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_encoding.h>
+#include <algo/blast/core/blast_filter.h>
 
 /* local, file scope, structures and variables */
 
@@ -265,11 +266,8 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
 
 /** Look for dustable locations */
 static Int2 
-GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
+GetDustLocations (BlastSeqLoc** loc, DREGION* reg, Int4 nreg)
 {
-   Int4 i;
-   ListNode* last_loc = NULL;
-   SSeqRange* dintp;
         
    if (!loc)
       return -1;
@@ -278,17 +276,13 @@ GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
 
    /* point to dusted locations */
    if (nreg > 0) {
+      BlastSeqLoc* last_loc = NULL;
+      Int4 i;
       for (i = 0; reg && i < nreg; i++) {
-         dintp = (SSeqRange*) calloc(1, sizeof(SSeqRange));
-         if (!dintp) {
-            return -1;
-         }
-         dintp->left = reg->from;
-         dintp->right = reg->to;
          if (!last_loc)
-            last_loc = ListNodeAddPointer (loc, 0, dintp);
+            last_loc = BlastSeqLocNew (loc, reg->from, reg->to);
          else 
-            last_loc = ListNodeAddPointer (&last_loc, 0, dintp);
+            last_loc = BlastSeqLocNew (&last_loc, reg->from, reg->to);
          reg = reg->next;
       }
    }

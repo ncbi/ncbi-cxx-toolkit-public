@@ -717,9 +717,9 @@ static Int2 PHIBlastAddPatternHit(BlastPHILookupTable* lookup, Int4 offset,
  * @param is_dna Is this a nucleotide sequence? [in]
  */
 Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup, 
-        BLAST_SequenceBlk* query, ListNode* location, Boolean is_dna)
+        BLAST_SequenceBlk* query, BlastSeqLoc* location, Boolean is_dna)
 {
-   ListNode* loc;
+   BlastSeqLoc* loc;
    Int4 from, to;
    Int4 loc_length;
    Uint1* sequence;
@@ -730,8 +730,8 @@ Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
    hitArray = (Int4 *) calloc(2*query->length, sizeof(Int4));
 
    for(loc=location; loc; loc=loc->next) {
-      from = ((SSeqRange*) loc->ptr)->left;
-      to = ((SSeqRange*) loc->ptr)->right;
+      from = loc->ssr->left;
+      to = loc->ssr->right;
       loc_length = to - from + 1;
       sequence = query->sequence + from;
       

@@ -60,7 +60,7 @@ typedef struct LookupTableWrap {
  */
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
-        ListNode* lookup_segments, BlastScoreBlk* sbp, 
+        BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr, RPSInfo *rps_info);
 
 /** Deallocate memory for the lookup table */

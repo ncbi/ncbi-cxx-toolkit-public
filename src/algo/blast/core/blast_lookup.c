@@ -523,8 +523,9 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
 Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlk* query,
-			       ListNode* locations)
+			       BlastSeqLoc* locations)
 {
+
 return _BlastAaLookupIndexQuery(lookup,
                                matrix, 
                                (lookup->use_pssm == TRUE) ? NULL : query, 
@@ -534,7 +535,7 @@ return _BlastAaLookupIndexQuery(lookup,
 Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlk* query,
-			      ListNode* location,
+			      BlastSeqLoc* location,
                               Int4 query_bias)
 {
     if (lookup->use_pssm)
@@ -546,13 +547,13 @@ Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
   return 0;
 }
 
-Int4 AddNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 query_bias, ListNode *location)
+Int4 AddNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 query_bias, BlastSeqLoc* location)
 {
   Int4 offset;
   Int4 i, j;
   Int4 **exact_backbone;
   Int4 **old_backbone;
-  ListNode* loc;
+  BlastSeqLoc* loc;
   Int4 *row_max;
 
   /* Determine the maximum possible score for
@@ -581,8 +582,8 @@ Int4 AddNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, BLAST_Sequenc
 
   for(loc=location; loc; loc=loc->next)
   {
-      Int4 from = ((SSeqRange*) loc->ptr)->left;
-      Int4 to = ((SSeqRange*) loc->ptr)->right - lookup->wordsize + 1;
+      Int4 from = loc->ssr->left;
+      Int4 to = loc->ssr->right - lookup->wordsize + 1;
       for (offset = from; offset <= to; offset++) 
       {
           Uint1* w = query->sequence + offset;
@@ -746,11 +747,11 @@ static void _AddWordHits(NeighborInfo *info, Int4 score, Int4 current_pos)
     }
 }
 
-Int4 AddPSSMNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, Int4 query_bias, ListNode *location)
+Int4 AddPSSMNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, Int4 query_bias, BlastSeqLoc *location)
 {
   Int4 offset;
   Int4 i, j;
-  ListNode* loc;
+  BlastSeqLoc* loc;
   Int4 *row_max;
   Int4 wordsize = lookup->wordsize;
 
@@ -762,8 +763,8 @@ Int4 AddPSSMNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, Int4 quer
 
   for(loc=location; loc; loc=loc->next)
   {
-      Int4 from = ((SSeqRange*) loc->ptr)->left;
-      Int4 to = ((SSeqRange*) loc->ptr)->right - wordsize + 1;
+      Int4 from = loc->ssr->left;
+      Int4 to = loc->ssr->right - wordsize + 1;
       Int4 **row = matrix + from;
 
       /* prepare to start another run of adjacent query
@@ -1153,16 +1154,16 @@ static Int4 BlastNaLookupAddWordHit(BlastLookupTable* lookup, Uint1* w,
 
 /* See description in blast_lookup.h */
 Int4 BlastNaLookupIndexQuery(BlastLookupTable* lookup, BLAST_SequenceBlk* query,
-			ListNode* location)
+			BlastSeqLoc* location)
 {
-  ListNode* loc;
+  BlastSeqLoc* loc;
   Int4 from, to;
   Int4 offset;
   Uint1* sequence;
 
   for(loc=location; loc; loc=loc->next) {
-     from = ((SSeqRange*) loc->ptr)->left;
-     to = ((SSeqRange*) loc->ptr)->right + 1;
+     from = loc->ssr->left;
+     to = loc->ssr->right + 1;
      
      sequence = query->sequence + from;
      /* Last offset is such that full word fits in the sequence */

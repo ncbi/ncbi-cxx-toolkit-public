@@ -328,7 +328,7 @@ typedef struct BlastMBLookupTable {
  * @param mb_lt_ptr Pointer to the lookup table to be created [out]
  * @param lookup_options Options for lookup table creation [in]
  */
-Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
+Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                        BlastMBLookupTable** mb_lt_ptr,
                        const LookupTableOptions* lookup_options);
 

@@ -115,12 +115,12 @@ static DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
  */
 
 static Int2 
-MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
+MB_FillDiscTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         BlastMBLookupTable* mb_lt, Uint1 width,
         const LookupTableOptions* lookup_options)
 
 {
-   ListNode* loc;
+   BlastSeqLoc* loc;
    Int4 mask;
    Int2 word_length, extra_length;
    DiscTemplateType template_type;
@@ -185,8 +185,8 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
          Since sequence pointer points to the end of the word, subtract
          word length from the loop boundaries. 
       */
-      Int4 from = ((SSeqRange*) loc->ptr)->left;
-      Int4 to = ((SSeqRange*) loc->ptr)->right - word_length;
+      Int4 from = loc->ssr->left;
+      Int4 to = loc->ssr->right - word_length;
       Int4 ecode = 0;
       Int4 ecode1 = 0;
       Int4 ecode2 = 0;
@@ -371,12 +371,12 @@ MB_FillDiscTable(BLAST_SequenceBlk* query, ListNode* location,
  */
 
 static Int2 
-MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
+MB_FillContigTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         BlastMBLookupTable* mb_lt, Uint1 width,
         const LookupTableOptions* lookup_options)
 
 {
-   ListNode* loc;
+   BlastSeqLoc* loc;
    const Uint1 k_nuc_mask = 0xfc;
    Int2 word_length;
    Int4 mask;
@@ -412,8 +412,8 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
          Since sequence pointer points to the end of the word, subtract
          word length from the loop boundaries. 
       */
-      Int4 from = ((SSeqRange*) loc->ptr)->left;
-      Int4 to = ((SSeqRange*) loc->ptr)->right - word_length;
+      Int4 from = loc->ssr->left;
+      Int4 to = loc->ssr->right - word_length;
       Int4 ecode = 0;
       Int4 last_offset;
       Int4 index;
@@ -462,7 +462,7 @@ MB_FillContigTable(BLAST_SequenceBlk* query, ListNode* location,
 
 
 /* Documentation in mb_lookup.h */
-Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
+Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         BlastMBLookupTable** mb_lt_ptr,
         const LookupTableOptions* lookup_options)
 {
@@ -499,12 +499,12 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
    }
    else {
       Int4 from, to;
-      ListNode* loc;
+      BlastSeqLoc* loc;
       Int4 table_entries=0;
       /* determine the approximate number of hashtable entries */
       for (loc = location; loc; loc = loc->next) {
-         from = ((SSeqRange*) loc->ptr)->left;
-         to = ((SSeqRange*) loc->ptr)->right;
+         from = loc->ssr->left;
+         to = loc->ssr->right;
          table_entries += (to - from);
       }
 
