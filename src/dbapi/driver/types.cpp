@@ -228,7 +228,13 @@ void CDB_Char::AssignValue(CDB_Object& v)
         m_Val= new char[cv.m_Size+1];
     }
     m_Size= cv.m_Size;
-    memcpy(m_Val, cv.m_Val, m_Size+1);
+    if(cv.IsNULL()) {
+        m_Null= true;
+    }
+    else {
+        m_Null= false;
+        memcpy(m_Val, cv.m_Val, m_Size+1);
+    }
 }
 
 CDB_Char::~CDB_Char()
@@ -262,7 +268,13 @@ void CDB_LongChar::AssignValue(CDB_Object& v)
         m_Val= new char[cv.m_Size+1];
     }
     m_Size= cv.m_Size;
-    memcpy(m_Val, cv.m_Val, m_Size+1);
+    if(cv.IsNULL()) {
+        m_Null= true;
+    }
+    else {
+        m_Null= false;
+        memcpy(m_Val, cv.m_Val, m_Size+1);
+    }
 }
 
 CDB_LongChar::~CDB_LongChar()
@@ -320,7 +332,13 @@ void CDB_Binary::AssignValue(CDB_Object& v)
         m_Val= new unsigned char[cv.m_Size];
     }
     m_Size= cv.m_Size;
-    memcpy(m_Val, cv.m_Val, m_Size);
+    if(cv.IsNULL()) {
+        m_Null= true;
+    }
+    else {
+        m_Null= false;
+        memcpy(m_Val, cv.m_Val, m_Size);
+    }
 }
 
 CDB_Binary::~CDB_Binary()
@@ -349,8 +367,14 @@ void CDB_LongBinary::AssignValue(CDB_Object& v)
                            "wrong type of CDB_Object");
     }
     register CDB_LongBinary& cv= (CDB_LongBinary&)v;
-	m_DataSize= (m_Size < cv.m_DataSize)? m_Size : cv.m_DataSize;
-    memcpy(m_Val, cv.m_Val, m_DataSize);
+    if(cv.IsNULL()) {
+        m_Null= true;
+    }
+    else {
+        m_Null= false;
+        m_DataSize= (m_Size < cv.m_DataSize)? m_Size : cv.m_DataSize;
+        memcpy(m_Val, cv.m_Val, m_DataSize);
+    }
 }
 
 CDB_LongBinary::~CDB_LongBinary()
@@ -876,6 +900,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/12/10 18:50:22  soussov
+ * fixes bug with null value flag in AssignValue methods for CDB_Char, CDB_Binary, CDB_LongChar, CDB_LongBinary
+ *
  * Revision 1.14  2003/08/13 18:02:11  soussov
  * fixes bug in Clone() for [Small]DateTime
  *
