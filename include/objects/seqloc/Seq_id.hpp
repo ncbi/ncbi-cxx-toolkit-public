@@ -367,39 +367,47 @@ private:
 };
 
 
+/// Dummy convertion for container search functions
+template<class TId>
+CConstRef<CSeq_id> Get_ConstRef_Seq_id(TId& id)
+{
+    return CConstRef<CSeq_id>(id);
+}
+
+
 /// Search the container of CRef<CSeq_id> for the id of given type.
 /// Return the id of requested type, or null CRef.
 template<class container>
-CRef<CSeq_id> GetSeq_idByType(const container& ids,
-                                    CSeq_id::E_Choice choice)
+CConstRef<CSeq_id> GetSeq_idByType(const container& ids,
+                                   CSeq_id::E_Choice choice)
 {
     ITERATE (typename container, iter, ids) {
-        if ((*iter)->Which() == choice){
-            return *iter;
+        if ( *iter  &&  Get_ConstRef_Seq_id(*iter)->Which() == choice ) {
+            return Get_ConstRef_Seq_id(*iter);
         }
     }
-    return CRef<CSeq_id>(0);
+    return CConstRef<CSeq_id>(0);
 }
 
 /// Return gi from id list if exists, return 0 otherwise
 template<class container>
 int FindGi(const container& ids)
 {
-    CRef<CSeq_id> id = GetSeq_idByType(ids, CSeq_id::e_Gi);
+    CConstRef<CSeq_id> id = GetSeq_idByType(ids, CSeq_id::e_Gi);
     return id ? id->GetGi() : 0;
 }
 
 
 /// Return text seq-id from id list if exists, return 0 otherwise
 template<class container>
-CRef<CSeq_id> FindTextseq_id(const container& ids)
+CConstRef<CSeq_id> FindTextseq_id(const container& ids)
 {
     ITERATE (typename container, iter, ids) {
-        if ( (*iter)->GetTextseq_Id() ) {
-            return *iter;
+        if ( *iter  &&  Get_ConstRef_Seq_id(*iter)->GetTextseq_Id() ) {
+            return Get_ConstRef_Seq_id(*iter);
         }
     }
-    return CRef<CSeq_id>(0);
+    return CConstRef<CSeq_id>(0);
 }
 
 
@@ -500,6 +508,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2005/02/15 17:45:54  grichenk
+ * Added possibility to use GetSeq_idByType() with containers of CSeq_id_Handle.
+ *
  * Revision 1.50  2004/12/08 15:19:38  ucko
  * EAccessionInfo: +eAcc_ddbj_gss (DE)
  *

@@ -171,6 +171,15 @@ private:
 };
 
 
+/// Get CConstRef<CSeq_id> from a seq-id handle (for container
+/// searching template functions)
+template<>
+inline
+CConstRef<CSeq_id> Get_ConstRef_Seq_id(const CSeq_id_Handle& id)
+{
+    return id.GetSeqId();
+}
+
 
 /////////////////////////////////////////////////////////////////////
 //
@@ -359,6 +368,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/02/15 17:45:54  grichenk
+* Added possibility to use GetSeq_idByType() with containers of CSeq_id_Handle.
+*
 * Revision 1.33  2005/01/24 17:06:26  vasilche
 * Safe boolean operators.
 *
