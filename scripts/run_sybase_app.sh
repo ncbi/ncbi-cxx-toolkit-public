@@ -12,7 +12,7 @@
 ###########################################################################
 
 
-if test -z "$SYBASE"; ten
+if test -z "$SYBASE"; then
    SYBASE="C:\\Sybase"
    export SYBASE
 fi
