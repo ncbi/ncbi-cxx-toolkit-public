@@ -223,7 +223,7 @@ CFormatQual::CFormatQual
  const string& suffix,
  TStyle style) :
     m_Name(name), m_Value(value), m_Prefix(prefix), m_Suffix(suffix),
-    m_Style(style)
+    m_Style(style), m_AddPeriod(false)
 {
     NStr::TruncateSpaces(m_Value, NStr::eTrunc_End);
 }
@@ -231,7 +231,7 @@ CFormatQual::CFormatQual
 
 CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) :
     m_Name(name), m_Value(value), m_Prefix(" "), m_Suffix(kEmptyStr),
-    m_Style(style)
+    m_Style(style), m_AddPeriod(false)
 {
     NStr::TruncateSpaces(m_Value, NStr::eTrunc_End);
 }
@@ -241,7 +241,7 @@ CFormatQual::CFormatQual(const string& name, const string& value, TStyle style) 
 
 CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
     :  IFlatQVal(&kSpace, &kSemicolon),
-       m_Value(NStr::TruncateSpaces(value)), m_Style(style)
+       m_Value(NStr::TruncateSpaces(value)), m_Style(style), m_AddPeriod(0)
 {
 }
 
@@ -253,7 +253,7 @@ CFlatStringQVal::CFlatStringQVal
  TStyle style)
     :   IFlatQVal(&pfx, &sfx),
         m_Value(NStr::TruncateSpaces(value)),
-        m_Style(style)
+        m_Style(style), m_AddPeriod(0)
 {
 }
 
@@ -261,7 +261,15 @@ CFlatStringQVal::CFlatStringQVal
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
-    x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
+    flags |= m_AddPeriod;
+
+    ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_newline : eTilde_space);
+    m_Value = ExpandTildes(m_Value, tilde_style);
+
+    TFlatQual qual = x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
+    if ((flags & fAddPeriod)  &&  bool(qual)) {
+        qual->SetAddPeriod();
+    }
 }
 
 
@@ -334,6 +342,10 @@ void CFlatStringListQVal::Format
  CBioseqContext& ctx,
  IFlatQVal::TFlags flags) const
 {
+    if (m_Value.empty()) {
+        return;
+    }
+
     if ( s_IsNote(flags) ) {
         m_Suffix = &kSemicolon;
     }
@@ -496,6 +508,8 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
 void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
+    TFlatQual qual;
+
     string subname = m_Value->GetSubname();
     if ( s_StringIsJustQuotes(subname) ) {
         subname = kEmptyStr;
@@ -504,18 +518,24 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
         return;
     }
     ConvertQuotes(subname);
-
-    if ( s_IsNote(flags) ) {
-        bool is_orgmod_note = (name == "orgmod_note");
-        if (flags & IFlatQVal::fIsSource) {
-            m_Suffix = is_orgmod_note ? &kEOL : &kEmptyStr;
-        } else {
-            m_Suffix = (m_Value->GetSubtype() == COrgMod::eSubtype_other ? &kEOL : &kSemicolon);
-        }
-        if (!is_orgmod_note) {
-            x_AddFQ(q, "note", name + ": " + subname);
-        } else {
-            x_AddFQ(q, "note", subname);
+    
+    if (s_IsNote(flags)) {
+        bool add_period = RemovePeriodFromEnd(subname, true);
+        if (!subname.empty()) {
+            bool is_src_orgmod_note = 
+                (flags & IFlatQVal::fIsSource)  &&  (name == "orgmod_note");
+            if (is_src_orgmod_note) {
+                if (add_period) {
+                    AddPeriod(subname);
+                }
+                m_Suffix = &kEOL;
+                qual = x_AddFQ(q, "note", subname);
+            } else {
+                qual = x_AddFQ(q, "note", name + ": " + subname);
+            }
+            if (add_period  &&  bool(qual)) {
+                qual->SetAddPeriod();
+            }
         }
     } else {
         x_AddFQ(q, name, subname);
@@ -597,6 +617,7 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
+    TFlatQual qual;
     string subname = m_Value->CanGetName() ? m_Value->GetName() : kEmptyStr;
     if ( s_StringIsJustQuotes(subname) ) {
         subname = kEmptyStr;
@@ -604,15 +625,23 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
     ConvertQuotes(subname);
 
     if ( s_IsNote(flags) ) {
-        bool note = false;
-        if ( m_Value->GetSubtype() == CSubSource::eSubtype_other ) {
-            m_Suffix = &kEOL;
-            note = true;
-        } else {
-            m_Suffix = &kSemicolon;
+        bool add_period = RemovePeriodFromEnd(subname, true);
+        if (!subname.empty()) {
+            bool is_subsource_note =
+                m_Value->GetSubtype() == CSubSource::eSubtype_other;
+            if (is_subsource_note) {
+                if (add_period) {
+                    AddPeriod(subname);
+                }
+                m_Suffix = &kEOL;
+                qual = x_AddFQ(q, "note", subname);
+            } else {
+                qual = x_AddFQ(q, "note", name + ": " + subname);        
+            }
+            if (add_period  &&  bool(qual)) {
+                qual->SetAddPeriod();
+            }
         }
-
-        x_AddFQ(q, "note", note ? subname : name + ": " + subname);
     } else {
         CSubSource::TSubtype subtype = m_Value->GetSubtype();
         if ( subtype == CSubSource::eSubtype_germline            ||
@@ -620,7 +649,7 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
              subtype == CSubSource::eSubtype_transgenic          ||
              subtype == CSubSource::eSubtype_environmental_sample ) {
             x_AddFQ(q, name, kEmptyStr, CFormatQual::eEmpty);
-        } else {
+        } else if (!subname.empty()) {
             x_AddFQ(q, name, subname);
         }
     }
@@ -636,13 +665,18 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
         if (!m_Quals.Empty()  &&  x_XrefInGeneXref(dbt)) {
             continue;
         }
+
+        const string& db = dbt.GetDb();
+        if (db == "PID"  ||  db == "GI") {
+            continue;
+        }
+
         if (ctx.Config().DropBadDbxref()) {
             if (!dbt.IsApproved()) {
                 continue;
             }
         }
 
-        const string& db = dbt.GetDb();
         const CObject_id& oid = (*it)->GetTag();
 
         string db_xref = db + ':';
@@ -834,6 +868,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/11/15 20:10:49  shomrat
+* Fixed formatting of string, OrgMod and SubSource quals
+*
 * Revision 1.21  2004/10/18 18:46:22  shomrat
 * Added Gene and Bond qual classes
 *
