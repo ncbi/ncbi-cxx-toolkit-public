@@ -550,13 +550,6 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
         ThrowError(fOverflow, "buffer overflow");
     _ASSERT(strlen(buffer) == size_t(width));
-    if ( precision != 0 ) { // skip trailing zeroes
-        while ( width > 1  &&  buffer[width - 1] == '0' ) {
-            --width;
-        }
-        if ( buffer[width - 1] == '.' )
-            --width;
-    }
 
     WriteSysTag(eReal);
     WriteLength(width + 1);
@@ -1143,6 +1136,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2004/01/12 22:39:33  ucko
+* Drop trailing-zero removal code altogether; it could still mangle
+* other cases, and %g doesn't seem to generate any extra zeros.
+*
 * Revision 1.85  2004/01/12 22:35:37  ucko
 * WriteDouble2: represent 0 as "0", not ""!
 *
