@@ -949,8 +949,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/02 18:01:19  ivanov
+ * Fixed message for the previous commit
+ *
  * Revision 1.8  2003/12/02 17:59:13  ivanov
- * one2all.cpp
+ * Remove ,bak file only if new one is created
  *
  * Revision 1.7  2003/11/28 16:53:23  ivanov
  * Keep modification time for conveted file
