@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.122 2002/08/23 20:54:12 ucko Exp $
+#  $Id: configure.ac,v 1.123 2002/08/30 20:48:50 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1538,6 +1538,7 @@ if test -z "${NETWORK_LIBS+set}"; then
    AC_CHECK_LIB(nsl, gethostbyname, [libnsl=-lnsl], [libnsl=])
    AC_CHECK_LIB(socket, connect, [NETWORK_LIBS="-lsocket $libnsl"],
       [NETWORK_LIBS=$libnsl])
+   AC_CHECK_LIB(resolv, res_search, [NETWORK_LIBS="-lresolv $NETWORK_LIBS"])
 fi
 
 if test "$with_ncbi_public" = "yes"  -a  "$OSTYPE" = "solaris"; then
