@@ -132,7 +132,9 @@ typedef struct {
 ///
 /// Can be used to span time (to represent elapsed time). Can operate with
 /// local and UTC time. The time is kept in class in the format in which it
-/// was originally given.
+/// was originally given. 
+///
+/// Throw exception of type CTimeException on errors.
 ///
 /// NOTE: Do not use local time with time span and dates < "1/1/1900"
 /// (use GMT time only!!!).
@@ -142,14 +144,47 @@ class NCBI_XNCBI_EXPORT CTime
 public:
     /// Which initial value to use for time.
     enum EInitMode {
-        eCurrent,   ///< Use current time
-        eEmpty      ///< Use "empty" time
+        eCurrent,     ///< Use current time
+        eEmpty        ///< Use "empty" time
     };
     
     /// Which initial value to use for timezone.
     enum ETimeZone {
-        eLocal,     ///< Use local time
-        eGmt        ///< Use GMT (Greenwich Mean Time)
+        eLocal,       ///< Use local time
+        eGmt          ///< Use GMT (Greenwich Mean Time)
+    };
+
+    /// Which format use to get name of month or week of day.
+    enum ENameFormat {
+        eFull,        ///< Use full name.
+        eAbbr         ///< Use abbreviated name.
+    };
+
+    // Month names.
+    enum EMonth {
+        eJanuary = 1,
+        eFebruary,
+        eMarch,
+        eApril,
+        eMay,
+        eJune,
+        eJuly,
+        eAugust,
+        eSeptember,
+        eOctober,
+        eNovember,
+        eDecember
+    };
+
+    // Day of week names.
+    enum EDayOfWeek {
+        eSunday = 0,
+        eMonday,
+        eTuesday,
+        eWednesday,
+        eThursday,
+        eFriday,
+        eSaturday
     };
 
     /// What time zone precision to use for adjusting daylight saving time.
@@ -347,8 +382,8 @@ public:
     ///   - s = second as decimal number (00-59)
     ///   - S = nanosecond as decimal number (000000000-999999999)
     ///   - Z = timezone format (GMT or none) 
-    ///   - W = full weekday name
-    ///   - w = abbreviated weekday name
+    ///   - W = full day of week name
+    ///   - w = abbreviated day of week name
     /// @sa
     ///   GetFormat()
     static void SetFormat(const string& fmt);
@@ -370,12 +405,56 @@ public:
     ///   - s = second as decimal number (00-59)
     ///   - S = nanosecond as decimal number (000000000-999999999)
     ///   - Z = timezone format (GMT or none) 
-    ///   - W = full weekday name
-    ///   - w = abbreviated weekday name
+    ///   - W = full day of week name
+    ///   - w = abbreviated day of week name
     /// @sa
     ///   SetFormat()
     static string GetFormat(void);
 
+    /// Get numerical value of the month by name.
+    ///
+    /// @param month
+    ///   Full or abbreviated month name.
+    /// @return
+    ///   Numerical value of a given month (1..12).
+    /// @sa
+    ///   MonthNumToName(), Month()
+    static int MonthNameToNum(const string& month);
+
+    /// Get name of the month by numerical value.
+    ///
+    /// @param month
+    ///   Full or abbreviated month name.
+    /// @param format
+    ///   Format for returned value (full or abbreviated).
+    /// @return
+    ///   Name of the month.
+    /// @sa
+    ///   MonthNameToNum(), Month()
+    static string MonthNumToName(int month, ENameFormat format = eFull);
+
+    /// Get numerical value of the day of week by name.
+    ///
+    /// @param day
+    ///   Full or abbreviated day of week name.
+    /// @return
+    ///   Numerical value of a given day of week (0..6).
+    /// @sa
+    ///   DayOfWeekNumToName(), DayOfWeek()
+    static int DayOfWeekNameToNum(const string& day);
+
+    /// Get name of the day of week by numerical value.
+    ///
+    /// @param day
+    ///   Full or abbreviated day of week name.
+    /// @param format
+    ///   Format for returned value (full or abbreviated).
+    /// @return
+    ///   Name of the day of week.
+    /// @sa
+    ///   DayOfWeekNameToNum(), DayOfWeek()
+    static string DayOfWeekNumToName(int day, ENameFormat format = eFull);
+    
     /// Transform time to string.
     ///
     /// Use GetFormat() to obtain format, if "fmt" is not defined (=kEmptyStr).
@@ -998,6 +1077,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/10/03 18:26:48  ivanov
+ * Added month and day of week names conversion functions
+ *
  * Revision 1.24  2003/09/11 13:26:13  siyan
  * Documentation changes
  *

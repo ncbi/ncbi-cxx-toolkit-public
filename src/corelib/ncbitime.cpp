@@ -115,7 +115,7 @@ static const char* kMonthFull[12] = {
     "July", "August", "September", "October", "November", "December"
 };
 
-// Weekday names
+// Day of week names
 static const char* kWeekdayAbbr[7] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
@@ -268,9 +268,9 @@ void CTime::x_Init(const string& str, const string& fmt)
         if (*fff == 'b'  ||  *fff == 'B') {
             const char** name;
             if (*fff == 'b') {
-                name = &kMonthAbbr[0];
+                name = kMonthAbbr;
             } else {
-                name = &kMonthFull[0];
+                name = kMonthFull;
             }
             for (unsigned char i = 0;  i < 12;  i++) {
                 size_t namelen = strlen(*name);
@@ -284,10 +284,10 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
-        // Weekday
+        // Day of week
         if (*fff == 'w'  ||  *fff == 'W') {
             const char** day =
-                (*fff == 'w') ? &kWeekdayAbbr[0] : &kWeekdayFull[0];
+                (*fff == 'w') ? kWeekdayAbbr : kWeekdayFull;
 
             for (unsigned char i = 0;  i < 7;  i++) {
                 size_t len = strlen(*day);
@@ -360,7 +360,7 @@ void CTime::x_Init(const string& str, const string& fmt)
 
     // Check on errors
     if (weekday != -1  &&  weekday != DayOfWeek()) {
-        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid weekday");
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid day of week");
     }
 
     if (*fff != '\0'  ||  *sss != '\0') {
@@ -468,6 +468,60 @@ string CTime::GetFormat(void)
     }
     return *format;
 }
+
+
+int CTime::MonthNameToNum(const string& month)
+{
+    const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull; 
+    for (int i = 0; i <= 12; i++) {
+        if (month == name[i]) {
+            return i+1;
+        }
+    }
+    // Always throw exceptions here. 
+    // Next if statements avoid compilation warnings.
+    if ( name ) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid month name");
+    }
+    return -1;
+}
+
+
+string CTime::MonthNumToName(int month, ENameFormat format)
+{
+    if (month < 1  ||  month > 12) {
+        NCBI_THROW(CTimeException, eInvalid, "CTime:  invalid month number");
+    }
+    month--;
+    return format == eFull ? kMonthFull[month] : kMonthAbbr[month];
+}
+
+
+int CTime::DayOfWeekNameToNum(const string& day)
+{
+    const char** name = day.length() == 3 ? kWeekdayAbbr : kWeekdayFull; 
+    for (int i = 0; i <= 6; i++) {
+        if (day == name[i]) {
+            return i;
+        }
+    }
+    // Always throw exceptions here. 
+    // Next if statements avoid compilation warnings.
+    if ( name ) {
+        NCBI_THROW(CTimeException,eInvalid,"CTime:  invalid day of week name");
+    }
+    return -1;
+}
+
+
+string CTime::DayOfWeekNumToName(int day, ENameFormat format)
+{
+    if (day < 0  ||  day > 6) {
+        return kEmptyStr;
+    }
+    return format == eFull ? kWeekdayFull[day] : kWeekdayAbbr[day];
+}
+
 
 static void s_AddZeroPadInt(string& str, long value, SIZE_TYPE len = 2)
 {
@@ -1304,6 +1358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2003/10/03 18:27:06  ivanov
+ * Added month and day of week names conversion functions
+ *
  * Revision 1.39  2003/09/29 21:20:17  golikov
  * x_Init: create empty CTime obj if str.empty() true, ignore format
  *
