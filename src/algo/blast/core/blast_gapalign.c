@@ -419,7 +419,7 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    gamp = (SGreedyAlignMem*) calloc(1, sizeof(SGreedyAlignMem));
 
    if (score_params->gap_open==0 && score_params->gap_extend==0) {
-      d_diff = ICEIL(Xdrop+reward/2, penalty+reward);
+      d_diff = (Xdrop+reward/2)/(penalty+reward)+1;
    
       gamp->last_seq2_off = (Int4**) malloc((max_d + 2) * sizeof(Int4*));
       if (gamp->last_seq2_off == NULL) {
@@ -449,7 +449,7 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
       max_d *= GE_cost;
       max_cost = MAX(Mis_cost, gap_open+GE_cost);
       gd = BLAST_Gdb3(&Mis_cost, &gap_open, &GE_cost);
-      d_diff = ICEIL(Xdrop+reward/2, gd);
+      d_diff = (Xdrop+reward/2)/gd+1;
       gamp->diag_bounds = (Int4*) calloc(2*(max_d+1+max_cost), sizeof(Int4));
       gamp->last_seq2_off_affine = (SGreedyOffset**) 
 	 malloc((MAX(max_d, max_cost) + 2) * sizeof(SGreedyOffset*));

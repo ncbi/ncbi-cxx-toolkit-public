@@ -480,8 +480,8 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
        xdrop_offset gives the distance backwards in the score
        array to look */
 
-    xdrop_offset = ICEIL(xdrop_threshold + match_cost / 2, 
-                           match_cost + mismatch_cost);
+    xdrop_offset = (xdrop_threshold + match_cost / 2) / 
+                           (match_cost + mismatch_cost) + 1;
     
     /* find the offset of the first mismatch between seq1 and seq2 */
 
@@ -589,7 +589,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
 
         xdrop_score = max_score[d - xdrop_offset] + 
                       (match_cost + mismatch_cost) * d - xdrop_threshold;
-        xdrop_score = ICEIL(xdrop_score, match_cost / 2);        
+        xdrop_score = (Int4)ceil((double)xdrop_score / (match_cost / 2)); 
         curr_extent = 0;
         orig_diag_lower = diag_lower;
         orig_diag_upper = diag_upper;
@@ -952,8 +952,8 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
        xdrop_offset gives the distance backwards in the score
        array to look */
 
-    xdrop_offset = ICEIL(xdrop_threshold + match_score_half,
-                         score_common_factor);
+    xdrop_offset = (xdrop_threshold + match_score_half) / 
+                                      score_common_factor + 1;
 
     /* find the offset of the first mismatch between seq1 and seq2 */
 
@@ -1080,7 +1080,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
 
         xdrop_score = max_score[d - xdrop_offset] + 
                       score_common_factor * d - xdrop_threshold;
-        xdrop_score = ICEIL(xdrop_score, match_score_half);
+        xdrop_score = (Int4)ceil((double)xdrop_score / match_score_half);
         if (xdrop_score < 0) 
             xdrop_score = 0;
 
