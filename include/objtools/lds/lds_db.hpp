@@ -134,7 +134,7 @@ inline SLDS_FileDB::SLDS_FileDB()
 {
     BindKey("file_id", &file_id);
 
-    BindData("file_name", &file_name, _MAX_PATH * 2);
+    BindData("file_name", &file_name, 2048);
     BindData("format", &format);
     BindData("time_stamp", &time_stamp, 64);
     BindData("CRC", &CRC);
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2003/06/27 14:37:22  kuznets
+* Fixed comilation problem
+*
 * Revision 1.9  2003/06/13 15:59:05  kuznets
 * Added space separated list of all sequence ids (object attributes)
 *
