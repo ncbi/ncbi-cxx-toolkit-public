@@ -40,4 +40,5 @@
 *
 */
 
+
 #endif // CORELIB_CONFIG___NCBICONF_MSVC_SITE__RELEASE_MT__H
