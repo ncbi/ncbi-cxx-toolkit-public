@@ -48,12 +48,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Encapsulates the arguments needed to initialize multi-sequence source.
-struct SMultiSeqSrcNewArgs {
-    TSeqLocVector seq_vector;
-    EProgram program;
-};
-
 /// Contains information about all sequences in a set.
 class CMultiSeqInfo : public CObject 
 {
@@ -70,14 +64,12 @@ public:
     bool GetIsProtein();
     Uint4 GetNumSeqs();
     BLAST_SequenceBlk* GetSeqBlk(int index);
-    Blast_Message* GetErrorMessage();
 private:
     /// Internal fields
     bool m_ibIsProt; ///< Are these sequences protein or nucleotide? 
     vector<BLAST_SequenceBlk*> m_ivSeqBlkVec; ///< Vector of sequence blocks
     unsigned int m_iMaxLength; ///< Length of the longest sequence in this set
     unsigned int m_iAvgLength; ///< Average length of sequences in this set
-    Blast_Message* m_icErrMsg; ///< Error message in case of set up failure
 };
 
 inline Uint4 CMultiSeqInfo::GetMaxLength()
@@ -115,11 +107,6 @@ inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
     return m_ivSeqBlkVec[index];
 }
 
-inline Blast_Message* CMultiSeqInfo::GetErrorMessage()
-{
-    return m_icErrMsg;
-}
-
 /// The following 2 functions interact with the C API, and have to be 
 /// declared extern "C".
 extern "C" {
@@ -138,6 +125,8 @@ BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* seq_src, void* args);
  */
 BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src);
 
+/** @todo FIXME: what about the copy function? */
+
 } // extern "C"
 
 /** Initialize the sequence source structure.
@@ -148,7 +137,7 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src);
  * @sa FIXME usage of calloc
  */
 BlastSeqSrc* 
-MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
+MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -158,6 +147,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/17 20:20:13  camacho
+ * 1. Removed GetErrorMessage function as it is no longer needed
+ * 2. Moved SMultiSeqSrcNewArgs to implementation file
+ * 3. Made initialization function name consistent with other BlastSeqSrc
+ *    implementations.
+ *
  * Revision 1.9  2004/10/06 14:50:13  dondosha
  * Removed unnecessary member field from the data structure
  *
