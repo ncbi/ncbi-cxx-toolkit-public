@@ -484,7 +484,7 @@ void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
 }
 
 extern "C" {
-    NCBI_DBAPIDRIVER_DBLIB_EXPORT
+    NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
     void* DBAPI_E_msdblib()
     {
         return (void*)DBAPI_RegisterDriver_MSDBLIB;
@@ -500,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/04/08 12:18:35  ivanov
+ * Fixed name of export specifier for DBAPI_E_msdblib()
+ *
  * Revision 1.28  2004/04/07 13:41:47  gorelenk
  * Added export prefix to implementations of DBAPI_E_* functions.
  *
