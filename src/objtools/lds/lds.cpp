@@ -118,6 +118,7 @@ void CLDS_Database::Create()
     LOG_POST(Info << "Creating LDS table: " << "object");
 
     fname = m_LDS_DirName + "lds_object.db"; 
+    m_db.object_db.SetCacheSize(3 * (1024 * 1024));
     m_db.object_db.Open(fname.c_str(),
                     "object",
                     CBDB_RawFile::eCreate);
@@ -183,6 +184,7 @@ void CLDS_Database::Open()
     LoadTypeMap();
 
     fname = m_LDS_DirName + "lds_object.db"; 
+    m_db.object_db.SetCacheSize(3 * (1024 * 1024));
     m_db.object_db.Open(fname.c_str(),
                         "object",
                         CBDB_RawFile::eReadWrite);
@@ -265,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/06/21 15:21:13  kuznets
+ * Increased cache size for objects_db
+ *
  * Revision 1.17  2004/05/21 21:42:54  gorelenk
  * Added PCH ncbi_pch.hpp
  *
