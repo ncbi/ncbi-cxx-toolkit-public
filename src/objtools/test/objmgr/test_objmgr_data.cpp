@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/02/28 17:11:54  vasilche
+* Use correct AppMain() arguments.
+*
 * Revision 1.14  2004/12/22 15:56:43  vasilche
 * Add options -pass_count and -no_reset.
 *
@@ -578,5 +581,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CTestOM().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestOM().AppMain(argc, argv);
 }
