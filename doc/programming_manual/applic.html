@@ -187,6 +187,8 @@ int CTestApp::Run() {
 
 END_NCBI_SCOPE</font></pre>
 
+<pre><font color="#008080"></font></pre>
+
 <pre><font color="#008080">USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])&nbsp;
@@ -239,12 +241,13 @@ class's definition:</font>
 <pre><font color="#008080">class CNcbiApplication
 {
 public:
-&nbsp;&nbsp;&nbsp; int AppMain (int argc, char **argv, char **envp,
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EAppDiagStream diag, char* config, string&amp; name);
+&nbsp;&nbsp;&nbsp; int AppMain (int argc, const char **argv, const char **envp,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EAppDiagStream diag, const char* config, const string&amp; name);
 
-&nbsp;&nbsp;&nbsp; virtual void Init();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp; virtual int&nbsp; Run () = 0;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp; virtual void Exit();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; virtual void Init();
+&nbsp;&nbsp;&nbsp; virtual int&nbsp; Run () = 0;
+&nbsp;&nbsp;&nbsp; virtual void Exit();
+
 &nbsp;&nbsp;&nbsp; CNcbiArguments&amp;&nbsp;&nbsp; GetArguments();
 &nbsp;&nbsp;&nbsp; CNcbiEnvironment&amp; GetEnvironment();
 &nbsp;&nbsp;&nbsp; CNcbiRegistry&amp;&nbsp;&nbsp;&nbsp; GetConfig();
@@ -256,23 +259,25 @@ protected:
 };</font></pre>
 <font color="#000000">The protected virtual function <i>SetupDiag_AppSpecific()</i>
 can be redefined to setup error posting specific for your application.
-<i>SetupDiag_AppSpecific()</i> will be called inside <i>AppMain()</i> by
-default if the error posting has not been setup already. Also, if you pass
-<b>diag</b>=<i>eDS_AppSpecific</i> to <i>AppMain()</i>, then <i>SetupDiag_AppSpecific()</i>
-will be called for sure, regardless of the error posting setup that was
-active before the <i>AppMain()</i> call.</font><font color="#000000"></font>
+<i>SetupDiag_AppSpecific()</i>
+will be called inside <i>AppMain()</i> by default if the error posting
+has not been setup already. Also, if you pass
+<b>diag</b>=<i>eDS_AppSpecific</i>
+to <i>AppMain()</i>, then <i>SetupDiag_AppSpecific()</i> will be called
+for sure, regardless of the error posting setup that was active before
+the <i>AppMain()</i> call.</font>
 <p><font color="#000000">The protected virtual function <i>LoadConfig()
-</i>reads the program's <i>.ini </i>configuration file to load the application's
-parameters into the registry.&nbsp; The default implementation of&nbsp;
-<i>LoadConfig()&nbsp;</i> expects to find a configuration file named
-<i>progname.ini</i>,
-and will generate a warning to the user if no such file is found.</font>
+</i>reads
+the program's <i>.ini </i>configuration file to load the application's
+parameters into the registry.&nbsp; The default implementation of <i>LoadConfig()&nbsp;</i>
+expects to find a configuration file named
+<i>progname.ini</i>, and will
+generate a warning to the user if no such file is found.</font>
 <p><a NAME="appmain"></a>
 <br><font color="#000000">The <i>AppMain() </i>function is also inherited
 from the parent class. Although this function accepts up to six arguments,
 this example passes only the first two, with missing values supplied by
 defaults. The remaining four arguments specify:</font>
-<br><font color="#000000"></font>&nbsp;
 <ul>
 <li>
 <font color="#000000">(#3)&nbsp; a NULL-terminated array of '\0'-terminated
@@ -292,8 +297,8 @@ file (will use program name with suffix <i>.ini&nbsp;</i> by default)</font></li
 </ul>
 <font color="#000000">I</font><font color="#003300">n order to avoid the
 display of a warning message when no configuration file is present, the
-<i>.ini</i> file should be explicitly specified as <i>NULL (zero)</i>,
-as in:</font>
+<i>.ini</i>
+file should be explicitly specified as <i>NULL (zero)</i>, as in:</font>
 <center>
 <p><i><font color="#008080">AppMain (argc, argv, envp, diag_stream, 0,
 progname);</font></i></center>
