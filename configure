@@ -3894,37 +3894,37 @@ fi
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" ; then
       with_optimization=${with_optimization:="yes"}
-      CFLAGS=`  echo $CFLAGS    | sed 's/-g[0-9]*//g'`
-      CXXFLAGS=`echo $CXXFLAGS  | sed 's/-g[0-9]*//g'`
-      LDFLAGS=` echo $LDFLAGS   | sed 's/-g[0-9]*//g'`
+      CFLAGS=`  echo $CFLAGS    | sed 's/^-g[0-9]*//g; s/[ 	]-g[0-9]*//g'`
+      CXXFLAGS=`echo $CXXFLAGS  | sed 's/^-g[0-9]*//g; s/[ 	]-g[0-9]*//g'`
+      LDFLAGS=` echo $LDFLAGS   | sed 's/^-g[0-9]*//g; s/[ 	]-g[0-9]*//g'`
    else
       with_optimization=${with_optimization:="no"}
-      if echo "$CFLAGS"   |grep -v >/dev/null '\-g' ; then
+      if echo "$CFLAGS"   |grep -v >/dev/null '\<-g[0-9]*\>' ; then
          CFLAGS="$CFLAGS -g"     ; fi
-      if echo "$CXXFLAGS" |grep -v >/dev/null '\-g' ; then
+      if echo "$CXXFLAGS" |grep -v >/dev/null '\<-g[0-9]*\>' ; then
          CXXFLAGS="$CXXFLAGS -g" ; fi
       if test "$with_optimization" = "no" ; then
          CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
-      if echo "$LDFLAGS"  |grep -v >/dev/null '\-g' ;
+      if echo "$LDFLAGS"  |grep -v >/dev/null '\<-g[0-9]*\>' ;
          then LDFLAGS="$LDFLAGS -g" ; fi
       STRIP=":"
    fi
 
    if test "$with_optimization" = "no" ; then
-      CFLAGS=`  echo $CFLAGS    | sed 's/-O[0-9]*//g'`
-      CXXFLAGS=`echo $CXXFLAGS  | sed 's/-O[0-9]*//g'`
-      LDFLAGS=` echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
+      CFLAGS=`  echo $CFLAGS    | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'`
+      CXXFLAGS=`echo $CXXFLAGS  | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'`
+      LDFLAGS=` echo $LDFLAGS   | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'`
       FAST_CFLAGS="$CFLAGS"
       FAST_CXXFLAGS="$CXXFLAGS"
    else
-      FAST_CFLAGS="`  echo $CFLAGS   | sed 's/-O[0-9]*//g'` $FAST_CFLAGS"
-      FAST_CXXFLAGS="`echo $CXXFLAGS | sed 's/-O[0-9]*//g'` $FAST_CXXFLAGS"
-      if echo "$CFLAGS"   |grep -v >/dev/null '\-O' ; then
+      FAST_CFLAGS="`  echo $CFLAGS   | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'` $FAST_CFLAGS"
+      FAST_CXXFLAGS="`echo $CXXFLAGS | sed 's/^-O[0-9]*//g; s/[ 	]-O[0-9]*//g'` $FAST_CXXFLAGS"
+      if echo "$CFLAGS"   |grep -v >/dev/null '\<-O[0-9]*\>' ; then
          CFLAGS="$CFLAGS -O" ; fi
-      if echo "$CXXFLAGS" |grep -v >/dev/null '\-O' ; then
+      if echo "$CXXFLAGS" |grep -v >/dev/null '\<-O[0-9]*\>' ; then
          CXXFLAGS="$CXXFLAGS -O" ; fi
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
-      if echo "$LDFLAGS"  |grep -v >/dev/null '\-O' ; then
+      if echo "$LDFLAGS"  |grep -v >/dev/null '\<-O[0-9]*\>' ; then
          LDFLAGS="$LDFLAGS -O" ; fi
    fi
 
