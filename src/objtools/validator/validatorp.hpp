@@ -179,6 +179,7 @@ enum EErrType {
     eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
     eErr_SEQ_DESCR_UnwantedCompleteFlag,
     eErr_SEQ_DESCR_CollidingPublications,
+    eErr_SEQ_DESCR_TransgenicProblem,
     ERR_CODE_END(SEQ_DESCR),
 
     ERR_CODE_BEGIN(GENERIC),
@@ -472,6 +473,8 @@ public:
     bool CheckSeqVector(const CSeqVector& vec);
     bool IsSequenceAvaliable(const CSeqVector& vec);
 
+    bool IsTransgenic(const CBioSource& bsrc);
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidError_imp(const CValidError_imp&);
@@ -709,7 +712,7 @@ private:
     void x_ValidateMultiplePubs(const CBioseq_Handle& bsh);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
-    void CheckForBiosourceOnBioseq(const CBioseq& seq);
+    void CheckSoureDescriptor(const CBioseq_Handle& bsh);
     void CheckForMolinfoOnBioseq(const CBioseq& seq);
     void CheckTpaHistory(const CBioseq& seq);
 
@@ -813,7 +816,6 @@ private:
         TSeqPos pos);
 
     bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
-    bool IsTransgenic(const CBioSource& bsrc);
     bool IsSameAsCDS(const CSeq_feat& feat);
     bool IsCDDFeat(const CSeq_feat& feat) const;
 
@@ -958,6 +960,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2004/07/29 17:09:45  shomrat
+* + eErr_SEQ_DESCR_TransgenicProblem
+*
 * Revision 1.70  2004/07/29 16:08:51  shomrat
 * Separated error message from offending object's description; Added error group
 *
