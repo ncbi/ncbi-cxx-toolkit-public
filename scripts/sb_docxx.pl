@@ -41,15 +41,27 @@ sub genlists
   close(LISTIN);
   close(LISTOUT);
   
+  open(HEADER, ">header");
+  print HEADER "<html><body bgcolor=\"#ffffff\"><center>";
+  print HEADER "<a href=\"http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/index.html\">Manuals</a> | ";
+  print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/HIER.html\">Hierarchy</a> | ";
+  print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/index.html\">Index</a> | ";
+  print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/\">Identifier search</a> | ";
+  print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/\">Text search</a> | ";
+  print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/\">File search</a> | ";
+  print HEADER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/\">Source code</a>";
+  print HEADER "</center></body></html>";
+  close(HEADER);
+  
   open(FOOTER, ">footer");
   print FOOTER "<center>";
-  print FOOTER "<a href=\"http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/index.html\">Manuals</a> ";
-  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/HIER.html\">Hierarchy</a> ";
-  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/index.html\">Index</a> ";
-  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/\">Identifier search</a> ";
-  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/\">Text search</a> ";
-  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/\">File search</a> ";
-  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/\">Source code</a> ";
+  print FOOTER "<a href=\"http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/index.html\">Manuals</a> | ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/HIER.html\">Hierarchy</a> | ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/index.html\">Index</a> | ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/\">Identifier search</a> | ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/\">Text search</a> | ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/\">File search</a> | ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/\">Source code</a>";
   print FOOTER "</center></body></html>";
   close(FOOTER);
   
@@ -58,7 +70,7 @@ sub genlists
 
 sub docxx
 {
-  open(DOCXX, "doc++ -v -H -S -B footer -d doc -I sources.out|");
+  open(DOCXX, "doc++ -v -H -S -B footer -T header -d doc -I sources.out|");
   while(<DOCXX>)
   {
     print;
