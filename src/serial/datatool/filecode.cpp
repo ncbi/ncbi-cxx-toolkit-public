@@ -413,7 +413,23 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
         "\n"
         "#ifndef " << hppDefine << "\n"
         "#define " << hppDefine << "\n"
-        "\n"
+        "\n";
+    string extra = m_CodeGenerator->GetConfig().Get("-","_extra_headers");
+    if (!extra.empty()) {
+        list<string> extra_values;
+        NStr::Split(extra, " \t\n\r,;", extra_values);
+        header << "// extra headers\n";
+        list<string>::const_iterator i;
+        for (i = extra_values.begin(); i != extra_values.end(); ++i) {
+            if (i->at(0) == '\"') {
+                header << "#include "<< *i << "\n";
+            } else {
+                header << "#include <" << *i << ">\n";
+            }
+        }
+        header << "\n";
+    }
+    header <<
         "// standard includes\n"
         "#include <serial/serialbase.hpp>\n";
 
@@ -870,6 +886,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.46  2004/08/05 19:26:37  gouriano
+* Added optional extra headers, to be defined in DEF file
+*
 * Revision 1.45  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
