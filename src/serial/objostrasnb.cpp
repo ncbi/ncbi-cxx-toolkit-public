@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/12/04 19:02:41  beloslyu
+* changes for FreeBSD
+*
 * Revision 1.51  2000/10/20 15:51:43  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -253,7 +256,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
-#if HAVE_WINDOWS_H
+#if HAVE_WINDOWS_H || defined(__FreeBSD__)
+// FreeBSD needs this to find FLT_DIG and DBL_DIG
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
 #endif

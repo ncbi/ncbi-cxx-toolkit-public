@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/12/04 19:02:41  beloslyu
+* changes for FreeBSD
+*
 * Revision 1.20  2000/11/07 17:25:41  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -143,8 +146,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
-#if HAVE_WINDOWS_H
+#if HAVE_WINDOWS_H || defined(__FreeBSD__)
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
+// FreeBSD needs this to find FLT_DIG and DBL_DIG
 # include <float.h>
 #endif
 
