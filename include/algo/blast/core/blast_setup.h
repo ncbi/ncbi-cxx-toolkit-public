@@ -158,8 +158,10 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
     BlastInitialWordParameters* word_params,
     BlastEffectiveLengthsParameters* eff_len_params);
 
-/** BlastScoreBlkMatrixInit, fills score matrix parameters in the ScoreBlkPtr
- *      Should be moved to blast_stat.c in the future.
+/** Initializes the substitution matrix in the BlastScoreBlk according to the
+ * scoring options specified. Also calculates the ideal Karlin-Altschul
+ * parameters. 
+ * @todo Should be moved to blast_stat.c in the future.
  * @param program_number Used to set fields on sbp [in]
  * @param scoring_options Scoring_options [in]
  * @param sbp Contains fields to be set, should not be NULL. [out]
@@ -198,6 +200,9 @@ Int2 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.46  2004/11/23 21:46:05  camacho
+* kbp_ideal field of BlastScoreBlk is initialized unconditionally
+*
 * Revision 1.45  2004/11/02 18:18:20  madden
 * Remove BlastExtensionParameters from BLAST_OneSubjectUpdateParameters prototype
 *
