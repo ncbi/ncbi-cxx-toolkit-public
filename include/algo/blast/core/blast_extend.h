@@ -189,24 +189,6 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   BlastInitHitList* init_hitlist, 
          BlastUngappedStats* ungapped_stats);
 
-/** Perform ungapped extension of a word hit
- * @param query The query sequence [in]
- * @param subject The subject sequence [in]
- * @param matrix The scoring matrix [in]
- * @param q_off The offset of a word in query [in]
- * @param s_off The offset of a word in subject [in]
- * @param cutoff The minimal score the ungapped alignment must reach [in]
- * @param X The drop-off parameter for the ungapped extension [in]
- * @param ungapped_data The ungapped extension information [out]
- * @return TRUE if ungapped alignment score is below cutoff, indicating that 
- *         this HSP should be deleted.
- */
-Boolean
-BlastnWordUngappedExtend(BLAST_SequenceBlk* query, 
-   BLAST_SequenceBlk* subject, Int4** matrix, 
-   Int4 q_off, Int4 s_off, Int4 cutoff, Int4 X, 
-   BlastUngappedData** ungapped_data);
-
 /** Finds all initial hits for a given subject sequence, that satisfy the 
  *  wordsize condition, and pass the ungapped extension test.
  * @param subject The subject sequence [in]
