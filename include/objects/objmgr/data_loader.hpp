@@ -1,5 +1,5 @@
-#ifndef DATA_LOADER__HPP
-#define DATA_LOADER__HPP
+#ifndef OBJECTS_OBJMGR___DATA_LOADER__HPP
+#define OBJECTS_OBJMGR___DATA_LOADER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -31,43 +31,7 @@
 * File Description:
 *   Data loader base class for object manager
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.10  2002/06/04 17:18:32  kimelman
-* memory cleanup :  new/delete/Cref rearrangements
-*
-* Revision 1.9  2002/05/14 20:06:23  grichenk
-* Improved CTSE_Info locking by CDataSource and CDataLoader
-*
-* Revision 1.8  2002/05/06 03:30:35  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.7  2002/03/30 19:37:05  kimelman
-* gbloader MT test
-*
-* Revision 1.6  2002/03/20 04:50:34  kimelman
-* GB loader added
-*
-* Revision 1.5  2002/03/18 23:05:18  kimelman
-* comments
-*
-* Revision 1.4  2002/03/18 17:26:32  grichenk
-* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
-*
-* Revision 1.3  2002/03/11 21:10:11  grichenk
-* +CDataLoader::ResolveConflict()
-*
-* Revision 1.2  2002/02/21 19:27:00  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.1  2002/01/11 19:04:00  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
 */
-
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/objmgr/data_loader_factory.hpp>
@@ -137,12 +101,11 @@ public:
     // *select the best TSE from the set of dead TSEs.
     // *select the live TSE from the list of live TSEs
     //  and mark the others one as dead.
-    virtual CTSE_Info*
-      ResolveConflict(const CSeq_id_Handle&,
-                      const TTSESet&) { return 0; } //### = 0;
+    virtual CTSE_Info* ResolveConflict(const CSeq_id_Handle&, const TTSESet&)
+    { return 0; }
 
     virtual void GC(void) = 0;
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const {};
+    virtual void DebugDump(CDebugDumpContext, unsigned int) const { return; }
 
 protected:
     void SetName(const string& loader_name);
@@ -171,4 +134,46 @@ const CSeq_id* CDataLoader::x_GetSeq_id(const CSeq_id_Handle& handle) const
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  // DATA_LOADER__HPP
+
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.11  2002/06/30 03:27:38  vakatov
+* Get rid of warnings, ident the code, move CVS logs to the end of file
+*
+* Revision 1.10  2002/06/04 17:18:32  kimelman
+* memory cleanup :  new/delete/Cref rearrangements
+*
+* Revision 1.9  2002/05/14 20:06:23  grichenk
+* Improved CTSE_Info locking by CDataSource and CDataLoader
+*
+* Revision 1.8  2002/05/06 03:30:35  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.7  2002/03/30 19:37:05  kimelman
+* gbloader MT test
+*
+* Revision 1.6  2002/03/20 04:50:34  kimelman
+* GB loader added
+*
+* Revision 1.5  2002/03/18 23:05:18  kimelman
+* comments
+*
+* Revision 1.4  2002/03/18 17:26:32  grichenk
+* +CDataLoader::x_GetSeq_id(), x_GetSeq_id_Key(), x_GetSeq_id_Handle()
+*
+* Revision 1.3  2002/03/11 21:10:11  grichenk
+* +CDataLoader::ResolveConflict()
+*
+* Revision 1.2  2002/02/21 19:27:00  grichenk
+* Rearranged includes. Added scope history. Added searching for the
+* best seq-id match in data sources and scopes. Updated tests.
+*
+* Revision 1.1  2002/01/11 19:04:00  gouriano
+* restructured objmgr
+*
+* ===========================================================================
+*/
+
+#endif  // OBJECTS_OBJMGR___DATA_LOADER__HPP
