@@ -606,7 +606,7 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
         first_seg = 0;
     } else {        
         first_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetFrom()));
-        if ( !(flags & fDoNotTruncteSegs) ) {
+        if ( !(flags & fDoNotTruncateSegs) ) {
             vec->m_LeftDelta = range.GetFrom() - GetAlnStart(aln_seg);
         }
     }
@@ -614,7 +614,7 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
         last_seg = m_NumSegs-1;
     } else {
         last_seg = x_GetRawSegFromSeg(aln_seg = GetSeg(range.GetTo()));
-        if ( !(flags & fDoNotTruncteSegs) ) {
+        if ( !(flags & fDoNotTruncateSegs) ) {
             vec->m_RightDelta = GetAlnStop(aln_seg) - range.GetTo();
         }
     }
@@ -663,12 +663,12 @@ CAlnMap::GetSeqChunks(TNumrow row, const TSignedRange& range,
     } else {
         if (IsPositiveStrand(row)) {
             last_seg = GetRawSeg(row, range.GetTo());
-            if ( !(flags & fDoNotTruncteSegs) ) {
+            if ( !(flags & fDoNotTruncateSegs) ) {
                 vec->m_RightDelta = x_GetRawStop(row, last_seg) - range.GetTo();
             }
         } else {
             first_seg = GetRawSeg(row, range.GetTo());
-            if ( !(flags & fDoNotTruncteSegs) ) {
+            if ( !(flags & fDoNotTruncateSegs) ) {
                 vec->m_LeftDelta = x_GetRawStop(row, last_seg) - range.GetTo();
             }
         }
@@ -908,6 +908,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2004/01/21 21:15:59  ucko
+* Fix typos in last revision.
+*
 * Revision 1.45  2004/01/21 20:59:42  todorov
 * fDoNotTruncate -> fDoNotTruncateSegs; +comments
 *
