@@ -66,7 +66,7 @@ typedef struct alpha
    Int4 alphasize;
    FloatHi lnalphasize;
    Int4Ptr alphaindex;
-   BytePtr alphaflag;
+   unsigned char* alphaflag;
    CharPtr alphachar;
   } Alpha, PNTR AlphaPtr;
 
