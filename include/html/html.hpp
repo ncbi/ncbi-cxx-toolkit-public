@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  1999/10/29 18:28:53  vakatov
+* [MSVC]  bool vs. const string& arg confusion
+*
 * Revision 1.38  1999/10/28 13:40:29  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -798,6 +801,8 @@ public:
 
     // return 'this' to allow chained AppendOption
     CHTML_select* AppendOption(const string& value, bool selected = false);
+    CHTML_select* AppendOption(const string& value, const char* label,
+                               bool selected = false);
     CHTML_select* AppendOption(const string& value, const string& label,
                                bool selected = false);
 };
@@ -852,8 +857,10 @@ class CHTML_ol : public CHTML_ol_Base
     typedef CHTML_ol_Base CParent;
 public:
     CHTML_ol(bool compact = false);
+    CHTML_ol(const char*   type, bool compact = false);
     CHTML_ol(const string& type, bool compact = false);
     CHTML_ol(int start, bool compact = false);
+    CHTML_ol(int start, const char*   type, bool compact = false);
     CHTML_ol(int start, const string& type, bool compact = false);
 };
 

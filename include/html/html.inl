@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/10/29 18:28:53  vakatov
+* [MSVC]  bool vs. const string& arg confusion
+*
 * Revision 1.19  1999/10/28 13:40:30  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -307,6 +310,11 @@ inline CHTML_ol::CHTML_ol(bool compact)
 {
 }
 
+inline CHTML_ol::CHTML_ol(const char* type, bool compact)
+    : CParent(type, compact)
+{
+}
+
 inline CHTML_ol::CHTML_ol(const string& type, bool compact)
     : CParent(type, compact)
 {
@@ -314,6 +322,12 @@ inline CHTML_ol::CHTML_ol(const string& type, bool compact)
 
 inline CHTML_ol::CHTML_ol(int start, bool compact)
     : CParent(compact)
+{
+    SetAttribute(KHTMLAttributeName_start, start);
+}
+
+inline CHTML_ol::CHTML_ol(int start, const char* type, bool compact)
+    : CParent(type, compact)
 {
     SetAttribute(KHTMLAttributeName_start, start);
 }
@@ -368,12 +382,18 @@ inline CHTML_select* CHTML_select::AppendOption(const string& value, bool select
     return this;
 }
 
+inline CHTML_select* CHTML_select::AppendOption(const string& value, const char* label, bool selected)
+{
+    AppendChild(new CHTML_option(value, label, selected));
+    return this;
+}
 
 inline CHTML_select* CHTML_select::AppendOption(const string& value, const string& label, bool selected)
 {
     AppendChild(new CHTML_option(value, label, selected));
     return this;
 }
+
 
 inline CHTML_br::CHTML_br(void)
 {
