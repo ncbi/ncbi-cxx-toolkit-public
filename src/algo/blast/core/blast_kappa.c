@@ -48,7 +48,7 @@ static char const rcsid[] =
 #include <algo/blast/core/link_hsps.h>
 #include "blast_psi_priv.h"
 #include "matrix_freq_ratios.h"
-#include "blast_gapalign_pri.h"
+#include "blast_gapalign_priv.h"
 
 
 #define EVALUE_STRETCH 5 /*by what factor might initially reported E-value

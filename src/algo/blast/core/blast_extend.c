@@ -42,7 +42,7 @@ static char const rcsid[] =
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 #include "blast_inline.h"
-#include "blast_extend_pri.h"
+#include "blast_extend_priv.h"
 
 #define MIN_INIT_HITLIST_SIZE 100
 

@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_kappa.h>
+#include "blast_gapalign_priv.h"
 #include "blast_psi_priv.h"
 
 /** TRUE if c is between a and b; f between d and f.  Determines if the

@@ -42,7 +42,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/greedy_align.h>
-#include "blast_gapalign_pri.h"
+#include "blast_gapalign_priv.h"
 
 static Int2 s_BlastDynProgNtGappedAlignment(BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastGapAlignStruct* gap_align, 
