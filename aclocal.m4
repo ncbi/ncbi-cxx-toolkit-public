@@ -191,3 +191,33 @@ if test $ac_cv_c_const = no; then
 fi
 ])
 
+
+# Arguments:
+# 1. library name (turned into environment/make variable)
+# 2. values to check
+# 3. #include directives
+# 4. code to compile
+AC_DEFUN(NCBI_CHECK_LIBS,
+[AC_MSG_CHECKING(if $1 library and functions are available)
+ found=false
+ for libs in "[$]$1_LIBS" $2; do
+    [LIBS="$libs $orig_LIBS"]
+    AC_TRY_LINK([$3], [$4], [found=true])
+    if test $found = true -o -n "${$1_LIBS+set}"; then
+       break
+    fi
+ done
+
+case "$found" in
+ false) AC_MSG_RESULT(no) ;;
+ true)
+    if test -n "$libs"; then
+       AC_MSG_RESULT($libs)
+    else
+       AC_MSG_RESULT(in system libraries)
+    fi
+    $1_LIBS=$libs
+    AC_DEFINE(HAVE_LIB$1)
+    ;;
+esac
+])

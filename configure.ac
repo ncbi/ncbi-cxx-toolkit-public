@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.25 2002/01/15 21:46:04 ucko Exp $
+#  $Id: configure.ac,v 1.26 2002/01/16 17:04:53 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1400,51 +1400,22 @@ orig_CPPFLAGS="$CPPFLAGS"
 orig_LIBS="$LIBS"
 
 
-## KSTAT system library and kstat_XXX() functions
-KSTAT_LIBS=${KSTAT_LIBS:="-lkstat"}
-AC_MSG_CHECKING(if KSTAT library and functions are available)
-LIBS="$KSTAT_LIBS $orig_LIBS"
-AC_TRY_LINK(
+NCBI_CHECK_LIBS(KSTAT, -lkstat,
    [#include <kstat.h>],
-   [kstat_ctl_t* kc = kstat_open(); ],
-   [AC_DEFINE_UNQUOTED(HAVE_LIBKSTAT, 1)],
-   [KSTAT_LIBS=""]
-)
-AC_MSG_RESULT([${KSTAT_LIBS:-no}])
+   [kstat_ctl_t* kc = kstat_open(); ])
 
-
-## RPCSVC system library and rstat() function
-RPCSVC_LIBS=${RPCSVC_LIBS:="-lrpcsvc"}
-AC_MSG_CHECKING(if RPCSVC library and functions are available)
-LIBS="$RPCSVC_LIBS $orig_LIBS"
-AC_TRY_LINK(
+NCBI_CHECK_LIBS(RPCSVC, -lrpcsvc,
    [#include <rpc/rpc.h>
     #include <rpcsvc/rstat.h>],
-   [enum clnt_stat eee = rstat((char*) 0, (struct statstime*) 0); ],
-   [AC_DEFINE_UNQUOTED(HAVE_LIBRPCSVC, 1)],
-   [RPCSVC_LIBS=""]
-)
-AC_MSG_RESULT([${RPCSVC_LIBS:-no}])
+   [enum clnt_stat eee = rstat((char*) 0, (struct statstime*) 0); ])
 
-
-## CRYPT system library and setkey() function
-case "$host_os" in
-changequote(, )dnl
- solaris2\.[678] )  CRYPT_LIBS=${CRYPT_LIBS:="-lcrypt_i"} ;;
-changequote([, ])dnl
-esac
-
-CRYPT_LIBS=${CRYPT_LIBS:="-lcrypt"}
-AC_MSG_CHECKING(if CRYPT library and functions are available)
-LIBS="$CRYPT_LIBS $orig_LIBS"
-AC_TRY_LINK(
+NCBI_CHECK_LIBS(CRYPT, -lcrypt -lcrypt_i,
    [#include <stdlib.h>],
-   [setkey("my_key"); ],
-   [AC_DEFINE_UNQUOTED(HAVE_LIBCRYPT, 1)],
-   [CRYPT_LIBS=""]
-)
-AC_MSG_RESULT([${CRYPT_LIBS:-no}])
+   [setkey("my_key"); ])
 
+NCBI_CHECK_LIBS(DL, -ldl,
+   [#include <dlfcn.h>],
+   [dlopen("foo.so", 0); ])
 
 
 ## SYBASE libraries
@@ -2379,6 +2350,7 @@ AC_SUBST(MATH_LIBS)
 AC_SUBST(KSTAT_LIBS)
 AC_SUBST(RPCSVC_LIBS)
 AC_SUBST(CRYPT_LIBS)
+AC_SUBST(DL_LIBS)
 AC_SUBST(SYBASE_INCLUDE)
 AC_SUBST(SYBASE_LIBS)
 AC_SUBST(SYBASE_DLLS)

@@ -104,6 +104,9 @@
 /* CRYPT library is available */
 #undef HAVE_LIBCRYPT
 
+/* DL library is available */
+#undef HAVE_LIBDL
+
 /* NCBI C Toolkit libs are available */
 #undef HAVE_NCBI_C
 
