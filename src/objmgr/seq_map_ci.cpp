@@ -356,7 +356,7 @@ bool CSeqMap_CI::x_Prev(void)
 {
     if ( !x_TopPrev() )
         return x_Pop();
-    while ( x_Push(m_Position+m_Length-1, m_MaxResolveCount > 0) ) {
+    while ( x_Push(m_Length-1, m_MaxResolveCount > 0) ) {
     }
     return true;
 }
@@ -425,6 +425,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/05/23 16:32:21  vasilche
+* Fixed backward traversal of CSeqMap_CI.
+*
 * Revision 1.12  2003/05/20 20:36:14  vasilche
 * Added FindResolved() with strand argument.
 *
