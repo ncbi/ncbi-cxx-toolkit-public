@@ -26,10 +26,19 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   NCBI C++ CGI API
+*   NCBI C++ CGI API:
+*      CCgiCookie    -- one CGI cookie
+*      CCgiCookies   -- set of CGI cookies
+*      CCgiRequest   -- full CGI request
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/01/20 17:52:07  vakatov
+* Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
+* and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
+* + constructor flag CCgiRequest::fOwnEnvironment to take ownership over
+* the passed "CNcbiEnvironment" object.
+*
 * Revision 1.35  1999/12/30 22:11:17  vakatov
 * CCgiCookie::GetExpDate() -- use a more standard time string format.
 * CCgiCookie::CCgiCookie() -- check the validity of passed cookie attributes
@@ -188,6 +197,7 @@ CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
     m_Secure  = cookie.m_Secure;
 }
 
+
 CCgiCookie::CCgiCookie(const string& name,   const string& value,
                        const string& domain, const string& path)
 {
@@ -203,6 +213,7 @@ CCgiCookie::CCgiCookie(const string& name,   const string& value,
     m_Secure = false;
 }
 
+
 void CCgiCookie::Reset(void)
 {
     m_Value.erase();
@@ -211,6 +222,7 @@ void CCgiCookie::Reset(void)
     m_Expires = kZeroTime;
     m_Secure = false;
 }
+
 
 void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
 {
@@ -224,6 +236,7 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
     m_Secure  = cookie.m_Secure;
 }
 
+
 string CCgiCookie::GetExpDate(void) const
 {
     if ( s_ZeroTime(m_Expires) )
@@ -236,6 +249,7 @@ string CCgiCookie::GetExpDate(void) const
     return string(str);
 }
 
+
 bool CCgiCookie::GetExpDate(tm* exp_date) const
 {
     if ( !exp_date )
@@ -245,6 +259,7 @@ bool CCgiCookie::GetExpDate(tm* exp_date) const
     *exp_date = m_Expires;
     return true;
 }
+
 
 CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
 {
@@ -267,6 +282,7 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
     os << NcbiEndl;
     return os;
 }
+
 
 // Check if the cookie field is valid
 void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
@@ -661,6 +677,7 @@ static void s_ParseQuery(const string& str,
     }
 }
 
+
 static void s_ParseMultipartEntries(const string& boundary,
                                     const string& str,
                                     TCgiEntries& entries)
@@ -710,7 +727,6 @@ static void s_ParseMultipartEntries(const string& boundary,
                 entries.insert(TCgiEntries::value_type(name,
                     str.substr(partStart, partEnd - partStart)));
             }
-
             return;
         }
         else {
@@ -766,19 +782,57 @@ static void s_ParsePostQuery(const string& contentType, const string& str,
     }
 }
 
+
 CCgiRequest::~CCgiRequest(void)
 {
+    return;
 }
 
-CCgiRequest::CCgiRequest(int argc, char* argv[],
-                         const CNcbiEnvironment* env, CNcbiIstream* istr,
-                         TFlags flags)
-    : m_Env(env)
+
+CCgiRequest::CCgiRequest
+(const CNcbiArguments*   args,
+ const CNcbiEnvironment* env,
+ CNcbiIstream*           istr,
+ TFlags                  flags)
+    : m_Env(0)
 {
-    // create a dummy environment, if is not specified
+    x_Init(args, env, istr, flags);
+}
+
+
+CCgiRequest::CCgiRequest
+(int                argc,
+ const char* const* argv,
+ const char* const* envp,
+ CNcbiIstream*      istr,
+ TFlags             flags)
+    : m_Env(0)
+{
+    CNcbiArguments args(argc, argv);
+
+    CNcbiEnvironment* env = new CNcbiEnvironment(envp);
+    flags |= fOwnEnvironment;
+
+    x_Init(&args, env, istr, flags);
+}
+
+
+void CCgiRequest::x_Init
+(const CNcbiArguments*   args,
+ const CNcbiEnvironment* env,
+ CNcbiIstream*           istr,
+ TFlags                  flags)
+{
+    // environment...
+    _ASSERT( !m_Env );
+    m_Env = env;
     if ( !m_Env ) {
+        // create a dummy environment, if is not specified
         m_OwnEnv.reset(new CNcbiEnvironment);
         m_Env = m_OwnEnv.get();
+    } else if ((flags & fOwnEnvironment) != 0) {
+        // take ownership over the passed environment object
+        m_OwnEnv.reset(const_cast<CNcbiEnvironment*>(m_Env));
     }
 
     // cache "standard" properties
@@ -791,12 +845,10 @@ CCgiRequest::CCgiRequest(int argc, char* argv[],
 
     // parse entries or indexes, if any
     const string* query_string = 0;
-    string arg_string;
     if ( GetProperty(eCgi_RequestMethod).empty() ) {
         // special case("$REQUEST_METHOD" undefined, so use cmd.-line args)
-        if (argc > 1  &&  argv  &&  argv[1]  &&  *argv[1])
-            arg_string = argv[1];
-        query_string = &arg_string;
+        if (args  &&  args->Size() > 1)
+            query_string = &(*args)[1];
     }
     else if ( !(flags & fIgnoreQueryString) ) {
         // regular case -- read from "$QUERY_STRING"
@@ -829,7 +881,7 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
     else if ( query_string ) {
         // parse "$QUERY_STRING"(or cmd.-line arg)
         s_ParseQuery(*query_string, m_Entries, m_Indexes,
-                     (flags & fIndexesAsEntries) != 0);
+                     (flags & fIndexesNotEntries) == 0);
     }
 
     if ( m_Entries.find(NcbiEmptyString) != m_Entries.end() ) {
@@ -866,6 +918,7 @@ CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF");
     }
     m_Entries.insert(TCgiEntries::value_type(NcbiEmptyString, imageName));
 }
+
 
 const string& CCgiRequest::x_GetPropertyByName(const string& name) const
 {
@@ -926,7 +979,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     if (str.find_first_of("&=") == NPOS)
         return s_ParseIsIndex(str, 0, &entries);
 
-    // No spaces must present in the parsed string
+    // No spaces are allowed in the parsed string
     SIZE_TYPE err_pos = str.find_first_of(" \t\r\n");
     if (err_pos != NPOS)
         return err_pos + 1;
@@ -934,9 +987,8 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     // Parse into entries
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
         // parse and URL-decode name
-        SIZE_TYPE mid = str.find_first_of(" \t\r\n=&", beg);
-        if (mid == beg  ||  (str[mid] == '&'  &&  mid == len-1)  ||
-            (mid != NPOS  &&  str[mid] != '&'  &&  str[mid] != '='))
+        SIZE_TYPE mid = str.find_first_of("=&", beg);
+        if (mid == beg  ||  (str[mid] == '&'  &&  mid == len-1))
             return mid + 1;  // error
         if (mid == NPOS)
             mid = len;
@@ -976,6 +1028,12 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 {
     return s_ParseIsIndex(str, &indexes, 0);
 }
+
+
+CCgiRequest::CCgiRequest(const CCgiRequest&) {
+    _TROUBLE;
+}
+
 
 
 extern string URL_DecodeString(const string& str)

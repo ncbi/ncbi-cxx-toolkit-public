@@ -29,10 +29,19 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   NCBI C++ CGI API
+*   NCBI C++ CGI API:
+*      CCgiCookie    -- one CGI cookie
+*      CCgiCookies   -- set of CGI cookies
+*      CCgiRequest   -- full CGI request
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/01/20 17:52:05  vakatov
+* Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
+* and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
+* + constructor flag CCgiRequest::fOwnEnvironment to take ownership over
+* the passed "CNcbiEnvironment" object.
+*
 * Revision 1.40  1999/12/30 22:11:59  vakatov
 * Fixed and added comments.
 * CCgiCookie::GetExpDate() -- use a more standard time string format.
@@ -142,7 +151,6 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbienv.hpp>
 #include <list>
 #include <map>
 #include <set>
@@ -377,6 +385,11 @@ typedef TCgiEntries::const_iterator  TCgiEntriesCI;
 typedef list<string>                 TCgiIndexes;
 
 
+// Forward class declarations
+class CNcbiArguments;
+class CNcbiEnvironment;
+
+
 //
 class CCgiRequest {
 public:
@@ -389,15 +402,23 @@ public:
     // and "istr" at all
     typedef int TFlags;
     enum Flags {
-        // handle indexes as regular FORM entries(with empty value)
-        fIndexesAsEntries  = 0x1,
+        // dont handle indexes as regular FORM entries with empty value
+        fIndexesNotEntries  = 0x1,
         // do not parse $QUERY_STRING
-        fIgnoreQueryString = 0x2
+        fIgnoreQueryString  = 0x2,
+        // own the passed "env" (and destroy them it in destructor)
+        fOwnEnvironment     = 0x4
     };
-    CCgiRequest(int argc = 0, char* argv[] = 0,
-                const         CNcbiEnvironment* env = 0,
-                CNcbiIstream* istr = 0,  // use standard input if zero
-                TFlags        flags = fIndexesAsEntries);
+    CCgiRequest(const         CNcbiArguments*   args = 0,
+                const         CNcbiEnvironment* env  = 0,
+                CNcbiIstream* istr  = 0 /* NcbiCin */,
+                TFlags        flags = 0);
+    // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
+    CCgiRequest(int                argc,
+                const char* const* argv,
+                const char* const* envp  = 0,
+                CNcbiIstream*      istr  = 0,
+                TFlags             flags = 0);
 
     // Destructor
     ~CCgiRequest(void);
@@ -443,7 +464,7 @@ public:
 
 private:
     // set of environment variables
-    const CNcbiEnvironment* m_Env;
+    const CNcbiEnvironment*    m_Env;
     auto_ptr<CNcbiEnvironment> m_OwnEnv;
     // set of the request FORM-like entries(already retrieved; cached)
     TCgiEntries m_Entries;
@@ -453,14 +474,16 @@ private:
     CCgiCookies m_Cookies;
 
     // the real constructor code
-    void x_Init(const CNcbiEnvironment* env, CNcbiIstream* istr,
-                int argc, char** argv,
-                bool indexes_as_entries);
+    void x_Init(const CNcbiArguments*   args,
+                const CNcbiEnvironment* env,
+                CNcbiIstream*           istr,
+                TFlags                  flags);
+
     // retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name) const;
 
     // prohibit default initialization and assignment
-    CCgiRequest(const CCgiRequest&) { _TROUBLE; }
+    CCgiRequest(const CCgiRequest&);  // { _TROUBLE; }
     CCgiRequest& operator=(const CCgiRequest&) { _TROUBLE;  return *this; }
 };  // CCgiRequest
 
