@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/12/18 15:02:34  thiessen
+* fixes for linux/gcc
+*
 * Revision 1.32  2002/12/12 23:07:18  thiessen
 * improved handling of alignment annotation errors
 *
@@ -149,6 +152,8 @@
 #include <objects/mmdb3/Residue_interval_pntr.hpp>
 #include <objects/mmdb1/Molecule_id.hpp>
 #include <objects/mmdb1/Residue_id.hpp>
+
+#include <memory>
 
 #include "cn3d/cdd_annot_dialog.hpp"
 #include "cn3d/structure_set.hpp"
