@@ -93,12 +93,14 @@ static string s_ReadFile(FILE* fs)
     return str;
 }
 
+
 // Writing to file stream
 static void s_WriteFile(FILE* fs, string message) 
 {
     write(fileno(fs), message.c_str(), message.length());
     cerr << "Wrote to file stream: " << message << endl;
 }
+
 
 // Reading from iostream
 static string s_ReadStream(istream& ios)
@@ -295,6 +297,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2003/03/06 21:19:16  ivanov
+ * Added comment for R6.10:
+ * Run the "dir" command for MS Windows via default command interpreter.
+ *
  * Revision 6.10  2003/03/06 21:12:35  ivanov
  * *** empty log message ***
  *
