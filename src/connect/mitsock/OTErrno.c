@@ -14,6 +14,10 @@
  *
  * RCS Modification History:
  * $Log$
+ * Revision 1.2  2001/11/07 22:37:43  juran
+ * Phil Churchill's 2001-05-07 changes.
+ * Use errno instead of errno_long.
+ *
  * Revision 1.1  2001/04/03 20:35:25  juran
  * Phil Churchill's MIT-derived OT sockets library.  No changes prior to initial check-in.
  *
@@ -51,28 +55,25 @@
 #include <neterrno.h>			// UNIX error codes
 #include "SocketsInternal.h"
 
-long int errno_long;
-
-
 void ncbi_ClearErrno( void)
 {
-	errno_long = kOTNoError;
+	errno = kOTNoError;
 }
 
 OSErr ncbi_GetErrno( OSStatus err)
 {
-	return errno_long;
+	return errno;
 }
 
 void ncbi_SetErrno( OSStatus err)
 {
-	errno_long = err;
+	errno = err;
 	return;
 }
 
 void ncbi_SetOTErrno( OSStatus err)
 {
-	errno_long = ncbi_OTErrorToSocketError( err);
+	errno = ncbi_OTErrorToSocketError( err);
 	return;
 }
 
@@ -179,7 +180,7 @@ OSErr ncbi_OTErrorToSocketError( OSStatus err)
         	break;
 		
 		default:				// Everything else
-			DebugStr("\punknown error code");
+			DebugStr("\pmitsocklib: Unknown OpenTransport error code");
 			newErr = EINVAL;
 			break;	
     }
