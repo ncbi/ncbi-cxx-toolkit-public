@@ -46,6 +46,7 @@
 
 #if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
 #  ifdef HAVE_IOS_XALLOC
+#    undef  HAVE_BUGGY_IOS_CALLBACKS
 #    define HAVE_BUGGY_IOS_CALLBACKS 1
 #  endif
 #endif
@@ -141,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2003/09/22 20:26:56  lavr
+ * Undef HAVE_BUGGY_IOS_CALLBACKS before defining
+ *
  * Revision 1.11  2003/04/17 17:50:34  siyan
  * Added doxygen support
  *
