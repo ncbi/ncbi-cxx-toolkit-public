@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1998/12/15 15:43:24  vasilche
+* Added utilities to convert string <> int.
+*
 * Revision 1.27  1998/12/11 18:00:56  vasilche
 * Added cookies and output stream
 *
@@ -424,6 +427,47 @@ static void TestException(void)
     TestException_Hard();
 }
 
+/////////////////////////////////
+// Utilities
+//
+
+static const string s_Strings[] = {
+    "",
+    "1.",
+    "-2147483649",
+    "-2147483648",
+    "-1",
+    "0",
+    "2147483647",
+    "2147483648",
+    "4294967295",
+    "4294967296",
+};
+
+static void TestUtilities(void)
+{
+    NcbiCout << "TestUtilities:" << NcbiEndl;
+    const int count = sizeof(s_Strings) / sizeof(s_Strings[0]);
+    for ( int i = 0; i < count; ++i ) {
+        const string& str = s_Strings[i];
+        NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
+        try {
+            int value = StringToInt(str);
+            NcbiCout << "int value: " << value << ", toString: '" << IntToString(value) << "'" << NcbiEndl;
+        }
+        catch ( runtime_error& error ) {
+            NcbiCout << "Error: " << error.what() << NcbiEndl;
+        }
+        try {
+            unsigned int value = StringToInt(str);
+            NcbiCout << "unsigned int value: " << value << ", toString: '" << IntToString(value) << "'" << NcbiEndl;
+        }
+        catch ( runtime_error& error ) {
+            NcbiCout << "Error: " << error.what() << NcbiEndl;
+        }
+    }
+    NcbiCout << "TestUtilities finished" << NcbiEndl;
+}
 
 
 /////////////////////////////////
@@ -764,6 +808,8 @@ int CTestApplication::Run(void)
     TestException();
     TestIostream();
     TestRegistry();
+
+    TestUtilities();
 
     TestCgi(m_Argc, m_Argv);
 
