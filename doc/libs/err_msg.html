@@ -14,7 +14,13 @@
 		  C++ exceptions</a>
 		<li> <a href="#ref_Message">
 		  Standard NCBI C++ message posting</a>
-	 </ul>
+	 <ul>
+		<li> <a href="#ref_Manipulators">
+		  <i>Manipulators</i></a>
+		<li> <a href="#ref_ERR_POST">
+		  <i><b>ERR_POST(message)</i></b> macro</a>
+
+	 </ul></ul>
 
 
 	 <br></br>
@@ -66,7 +72,7 @@ int x = 100;
 _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 will output:
 <pre>
-{somefile.cpp:333}  x + 5 = 105
+"somefile.cpp", line 333: Trace:  x + 5 = 105
 </pre>
 
 
@@ -106,7 +112,7 @@ _TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 if the thrown exception is not "standard" then it posts the "message".
 
 	 <p>
-	 The "message" argument can of any form acceptable by the
+	 The "message" argument can be of any form acceptable by the
 	 <a href="#ref_Message">diagnostic class <i>CNcbiDiag</i></a>.
 	 
 
@@ -193,21 +199,23 @@ extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true); </pre>
 	 The implementation of the <b><i>SetDiagStream()</i></b> in <i>"ncbidiag.cpp"</i>
 	 is a good example of how to do this.
 	 <pre>
-typedef void (*FDiagHandler)(EDiagSev    sev,
-                             const char* message_buf,
-                             size_t      message_len,
-                             void*       data);
+typedef void (*FDiagHandler)(const SDiagMessage& mess);
+
 typedef void (*FDiagCleanup)(void* data);
+
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup); </pre>
 
+
+	 <a name="ref_Manipulators"></a>
+
 	 <p>
 	 To compose a diagnostic message with <b><i>CNcbiDiag</i></b> one must
-	 use formatting operator <b><<</b>. It works practically the same
-	 way as operator <b><<</b> for standard C++ output streams.
+	 use the formatting operator "<b><<</b>". It works practically the same
+	 way as operator "<b><<</b>" for standard C++ output streams.
 	 <b><i>CNcbiDiag</i></b> class also has some <b><i>CNcbiDiag</i></b>-specific
-	 manipulators to control the message severity level:
+	 <i>manipulators</i> to control the message severity level:
 	 <ul>
 		<li> <i>Info</i> -- set severity level to <i>eDiag_Info</i>
 		<li> <i>Warning</i> -- set severity level to <i>eDiag_Warning</i>
@@ -216,7 +224,7 @@ extern void SetDiagHandler(FDiagHandler func,
 		<li> <i>Trace</i> -- set severity level to <i>eDiag_Trace</i>
 	 </ul>
 	 NOTE: whenever the severity level is changed, <b><i>CNcbiDiag</i></b>
-	 also automatically executes two other manipulators:
+	 also automatically executes the following two <i>manipulators</i>:
 	 <ul>
 		<li> <i>Endm</i> -- means that the message is complete and to be
 		flushed(via the global callback as described above)
@@ -249,16 +257,32 @@ Error: Message1_1
 Warning: This is a warning 12345
 	 </pre>
 
-There is an <b><i>ERR_POST(message)</i></b> macro that can be used to shorten the
-error posting code. This macro implicitely creates a temporary
-<b><i>CNcbiDiag</i></b> object and put the passed "message" into it. For example:
+
+	 <a name="ref_ERR_POST"></a>
+
+	 There is an <b><i>ERR_POST(message)</i></b> macro that can be used to
+	 shorten the error posting code. This macro implicitely creates a temporary
+	 <b><i>CNcbiDiag</i></b> object and put the passed "message" into it.
+	 The default severity for the posted message is <i>eDiag_Trace</i> but it
+	 can be easily overwritten using the
+	 <a href="#ref_Manipulators"><i>manipulators</i></a>
+	 (see the 2nd example below).  For example:
+
 	 <pre>
 long lll = 345;
 ERR_POST("My ERR_POST message, print long: " << lll); </pre>
-	 will write to the diagnostic stream:
+	 would write to the diagnostic stream something like:
 	 <pre>
-My ERR_POST message, print long: 345
-	 </pre>
+"somefile.cpp", line 111: Error:  My ERR_POST message, print long: 345 </pre>
+
+	 and:
+
+	 <pre>
+double ddd = 123.345;
+ERR_POST(Warning << "...print double: " << ddd); </pre>
+	 would write to the diagnostic stream something like:
+	 <pre>
+"somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
