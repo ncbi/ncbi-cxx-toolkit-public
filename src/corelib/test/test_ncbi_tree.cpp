@@ -205,7 +205,7 @@ static void s_TEST_Tree()
     TreeDepthFirstTraverse(*str, TestFunctor1);
     cout << endl;
 
-    delete tr5;
+    delete tr;
 }
 
 struct IdValue
@@ -269,6 +269,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.20  2004/07/21 21:18:57  ucko
+ * s_TEST_Tree: delete tr rather than tr5 at the end, now that the call
+ * to TreeReRoot has been removed.
+ *
  * Revision 1.19  2004/07/21 18:19:09  kuznets
  * Removed util dependent test cases
  *
