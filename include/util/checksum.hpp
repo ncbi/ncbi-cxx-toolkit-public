@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/17 17:50:13  siyan
+* Added doxygen support
+*
 * Revision 1.4  2003/04/15 16:12:09  kuznets
 * GetChecksum() method implemented
 *
@@ -49,6 +52,13 @@
 */
 
 #include <corelib/ncbistd.hpp>
+
+
+/** @addtogroup Checksum
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -99,6 +109,10 @@ private:
 
 inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
+
+
+/* @} */
+
 
 #include <util/checksum.inl>
 

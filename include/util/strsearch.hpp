@@ -42,6 +42,12 @@
 #include <vector>
 
 
+/** @addtogroup StringSearch
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -418,10 +424,16 @@ CTextFsm<MatchType>::~CTextFsm(void)
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/04/17 17:50:36  siyan
+* Added doxygen support
+*
 * Revision 1.10  2003/03/10 17:56:34  kuznets
 * iterate->ITERATE
 *

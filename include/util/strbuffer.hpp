@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/04/17 17:50:32  siyan
+* Added doxygen support
+*
 * Revision 1.28  2003/02/26 21:34:06  gouriano
 * modify C++ exceptions thrown by this library
 *
@@ -150,6 +153,13 @@
 #include <string.h>
 
 #include <util/bytesrc.hpp>
+
+
+/** @addtogroup StreamSupport
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -369,6 +379,10 @@ private:
     size_t m_LineLength;
     size_t m_BackLimit;
 };
+
+
+/* @} */
+
 
 #include <util/strbuffer.inl>
 

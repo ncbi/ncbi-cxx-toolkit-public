@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/17 17:50:18  siyan
+* Added doxygen support
+*
 * Revision 1.4  2001/01/05 20:08:52  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -51,6 +54,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <string.h>
+
+
+/** @addtogroup LightStr
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -152,6 +162,10 @@ private:
     const char* m_String;
     size_t m_Length;
 };
+
+
+/* @} */
+
 
 //#include <util/lightstr.inl>
 

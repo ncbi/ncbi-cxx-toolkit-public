@@ -36,6 +36,12 @@
 #include <corelib/ncbiexpt.hpp>
 
 
+/** @addtogroup UtilExcep
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -117,9 +123,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/04/17 17:50:40  siyan
+ * Added doxygen support
+ *
  * Revision 1.1  2003/02/26 21:34:05  gouriano
  * modify C++ exceptions thrown by this library
  *

@@ -41,6 +41,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2003/04/17 17:50:23  siyan
+ * Added doxygen support
+ *
  * Revision 1.4  2002/12/19 14:51:00  dicuccio
  * Added export specifier for Win32 DLL builds.
  *
@@ -58,6 +61,13 @@
  */
 
 #include <corelib/ncbistd.hpp>
+
+
+/** @addtogroup RandomGen
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -103,6 +113,7 @@ private:
 };
 
 
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////

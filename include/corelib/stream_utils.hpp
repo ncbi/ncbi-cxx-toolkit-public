@@ -37,6 +37,13 @@
 
 #include <corelib/ncbistre.hpp>
 
+
+/** @addtogroup StreamSupport
+ *
+ * @{
+ */
+
+
 #if defined(NCBI_COMPILER_WORKSHOP) && defined(_MT)
 #  ifdef HAVE_IOS_XALLOC
 #    define HAVE_BUGGY_IOS_CALLBACKS 1
@@ -125,12 +132,18 @@ struct NCBI_XUTIL_EXPORT CStreamUtils {
 };
 
 
+/* @} */
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2003/04/17 17:50:34  siyan
+ * Added doxygen support
+ *
  * Revision 1.10  2003/04/14 21:09:07  lavr
  * Define HAVE_BUGGY_IOS_CALLBACKS for Sun Workshop compiler in MT mode
  *

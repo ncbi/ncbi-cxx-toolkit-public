@@ -49,6 +49,13 @@
 
 #include <deque>
 
+
+/** @addtogroup ThreadedPools
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -361,10 +368,17 @@ void CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req)
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/04/17 17:50:37  siyan
+* Added doxygen support
+*
 * Revision 1.10  2003/02/26 21:34:06  gouriano
 * modify C++ exceptions thrown by this library
 *

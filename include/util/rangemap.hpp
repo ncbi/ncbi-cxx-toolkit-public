@@ -40,6 +40,13 @@
 #include <util/util_exception.hpp>
 #include <map>
 
+
+/** @addtogroup RangeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // range map forward declaration
@@ -633,6 +640,10 @@ public:
         }
 };
 
+
+/* @} */
+
+
 //#include <util/rangemap.inl>
 
 END_NCBI_SCOPE
@@ -640,6 +651,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/04/17 17:50:26  siyan
+* Added doxygen support
+*
 * Revision 1.20  2003/02/26 21:34:06  gouriano
 * modify C++ exceptions thrown by this library
 *

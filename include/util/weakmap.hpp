@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/04/17 17:50:41  siyan
+* Added doxygen support
+*
 * Revision 1.4  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *
@@ -62,6 +65,13 @@
 #include <corelib/ncbistd.hpp>
 #include <map>
 #include <set>
+
+
+/** @addtogroup WeakMap
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -150,6 +160,10 @@ private:
 
     TMap m_Map;
 };
+
+
+/* @} */
+
 
 #include <util/weakmap.inl>
 

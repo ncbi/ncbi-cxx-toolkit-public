@@ -37,6 +37,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 
+
+/** @addtogroup RangeSupport
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // range
@@ -330,6 +337,10 @@ public:
         }
 };
 
+
+/* @} */
+
+
 //#include <util/range.inl>
 
 END_NCBI_SCOPE
@@ -337,6 +348,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/04/17 17:50:24  siyan
+* Added doxygen support
+*
 * Revision 1.13  2003/02/07 16:54:01  vasilche
 * Pass all structures with size > sizeof int by reference.
 * Move cvs log to the end of files.

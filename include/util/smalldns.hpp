@@ -35,6 +35,13 @@
 #include <corelib/ncbistd.hpp>
 #include <map>
 
+
+/** @addtogroup RegistryDNS
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CSmallDNS
@@ -73,5 +80,9 @@ protected:
 };
 
 END_NCBI_SCOPE
+
+
+/* @} */
+
 
 #endif  /* SMALLDNS__HPP */

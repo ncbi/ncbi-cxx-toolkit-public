@@ -35,6 +35,13 @@
 
 #include <corelib/ncbistd.hpp>
 
+
+/** @addtogroup RotatingLog
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CRotatingLogStream;
@@ -92,10 +99,17 @@ protected:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/04/17 17:50:21  siyan
+* Added doxygen support
+*
 * Revision 1.4  2003/02/12 16:41:04  ucko
 * Always supply CRotatingLogStreamBuf::sync, and avoid double-counting
 * via run-time rather than compile-time logic.

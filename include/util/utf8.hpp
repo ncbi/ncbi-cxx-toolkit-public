@@ -37,6 +37,12 @@
 #include <vector>
 
 
+/** @addtogroup utf8
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(utf8)
 
@@ -113,9 +119,16 @@ extern char CodeToChar(const long src, EConversionStatus* status = 0);
 END_SCOPE(utf8)
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/17 17:50:39  siyan
+ * Added doxygen support
+ *
  * Revision 1.3  2002/01/18 19:21:52  ivanov
  * Polish source code
  *

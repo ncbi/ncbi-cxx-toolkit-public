@@ -40,6 +40,13 @@
 #include <iterator>
 #include <limits.h>
 
+
+/** @addtogroup ResizingIterator
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -128,6 +135,9 @@ private:
     size_t       m_NewSize;
     size_t       m_BitOffset;    
 };
+
+
+/* @} */
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -335,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/17 17:50:28  siyan
+* Added doxygen support
+*
 * Revision 1.2  2002/12/30 20:38:14  ucko
 * Miscellaneous cleanups: CVS log moved to end, .inl folded in,
 * test for MSVC fixed, AtEnd made const, useless comments dropped,

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/04/17 17:50:11  siyan
+* Added doxygen support
+*
 * Revision 1.10  2002/12/19 14:51:00  dicuccio
 * Added export specifier for Win32 DLL builds.
 *
@@ -71,6 +74,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+
+
+/** @addtogroup StreamSupport
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -322,6 +332,10 @@ public:
 private:
     TFileOff m_Length;
 };
+
+
+/* @} */
+
 
 //#include <util/bytesrc.inl>
 

@@ -36,6 +36,13 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
 
+
+/** @addtogroup ConsoleDebug
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 //---------------------------------------------------------------------------
@@ -68,9 +75,16 @@ private:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/17 17:50:15  siyan
+ * Added doxygen support
+ *
  * Revision 1.3  2002/12/19 14:51:00  dicuccio
  * Added export specifier for Win32 DLL builds.
  *

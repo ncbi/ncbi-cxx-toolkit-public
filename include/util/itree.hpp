@@ -41,6 +41,13 @@
 #include <util/range.hpp>
 #include <util/linkedset.hpp>
 
+
+/** @addtogroup IntervalTree
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 // forward declarations
@@ -409,6 +416,10 @@ private:
     TNodeIntervalsAllocator m_NodeIntervalsAllocator;
 };
 
+
+/* @} */
+
+
 #include <util/itree.inl>
 
 END_NCBI_SCOPE
@@ -416,6 +427,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/17 17:50:16  siyan
+* Added doxygen support
+*
 * Revision 1.5  2003/02/07 16:54:01  vasilche
 * Pass all structures with size > sizeof int by reference.
 * Move cvs log to the end of files.
