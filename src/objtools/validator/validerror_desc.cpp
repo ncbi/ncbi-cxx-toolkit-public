@@ -35,6 +35,7 @@
 #include "validatorp.hpp"
 
 #include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 
 #include <objects/seq/Seqdesc.hpp>
@@ -149,14 +150,35 @@ void CValidError_desc::ValidateUser
 (const CUser_object& usr,
  const CSeqdesc& desc)
 {
+    if ( !usr.CanGetType() ) {
+        return;
+    }
     const CObject_id& oi = usr.GetType();
     if ( !oi.IsStr() ) {
         return;
     }
-    if ( !NStr::CompareNocase(oi.GetStr(), "TpaAssembly") ) {
+    if ( NStr::CompareNocase(oi.GetStr(), "TpaAssembly") == 0 ) {
         if ( !m_Imp.IsTPA() ) {
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                 "Non-TPA record should not have TpaAssembly object", desc);
+        }
+    } else if ( NStr::CompareNocase(oi.GetStr(), "RefGeneTracking") == 0 ) {
+        bool has_ref_track_status = false;
+        ITERATE(CUser_object::TData, field, usr.GetData()) {
+            if ( (*field)->CanGetLabel() ) {
+                const CObject_id& obj_id = (*field)->GetLabel();
+                if ( !obj_id.IsStr() ) {
+                    continue;
+                }
+                if ( NStr::CompareNocase(obj_id.GetStr(), "Status") == 0 ) {
+                    has_ref_track_status = true;
+                    break;
+                }
+            }
+        }
+        if ( !has_ref_track_status ) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
+                "RefGeneTracking object needs to have Status set", desc);
         }
     }
 }
@@ -200,6 +222,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/09/03 18:27:17  shomrat
+* Check that RefGenTrackking object has Status field
+*
 * Revision 1.6  2003/05/28 16:28:18  shomrat
 * Use the comment variable
 *
