@@ -76,10 +76,17 @@ typedef Int4 (*GetInt4FnPtr) (void*, void*);
  * passed to user-defined implementation */
 typedef Int8 (*GetInt8FnPtr) (void*, void*);
 
-/** Function pointer typedef to return a null terminated string containing a
- * sequence identifier. First argument is the BlastSeqSrc structure used, second
+/** Function pointer typedef to return a null terminated string. 
+ * First argument is the BlastSeqSrc structure used, second
  * argument is passed to user-defined implementation. */
-typedef char* (*GetSeqIdStrFnPtr) (void*, void*);
+typedef char* (*GetStrFnPtr) (void*, void*);
+
+
+/** Function pointer typedef to return a boolean value. 
+ * First argument is the BlastSeqSrc structure used, second
+ * argument is passed to user-defined implementation. */
+typedef Boolean (*GetBoolFnPtr) (void*, void*);
+
 
 /** Function pointer typedef to return a sequence identifier. The returned SeqId
  * is cast to a void pointer.
@@ -205,6 +212,14 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetMaxSeqLen(bssp))(GetDataStructure(bssp), NULL)
 #define BLASTSeqSrcGetTotLen(bssp) \
     (*GetGetTotLen(bssp))(GetDataStructure(bssp), NULL)
+#define BLASTSeqSrcGetName(bssp) \
+    (*GetGetName(bssp))(GetDataStructure(bssp), NULL)
+#define BLASTSeqSrcGetDefinition(bssp) \
+    (*GetGetDefinition(bssp))(GetDataStructure(bssp), NULL)
+#define BLASTSeqSrcGetDate(bssp) \
+    (*GetGetDate(bssp))(GetDataStructure(bssp), NULL)
+#define BLASTSeqSrcGetIsProt(bssp) \
+    (*GetGetIsProt(bssp))(GetDataStructure(bssp), NULL)
 #define BLASTSeqSrcGetSequence(bssp, arg) \
     (*GetGetSequence(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqIdStr(bssp, arg) \
@@ -233,8 +248,12 @@ DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDefinition, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDate, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
-DECLARE_MEMBER_FUNCTIONS(GetSeqIdStrFnPtr, GetSeqIdStr, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetSeqIdStr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqId, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
