@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/04/14 19:57:36  vakatov
+* Use limits from <ncbitype.h> rather than from <limits>.
+* [MSVC++]  fix for "snprintf()" in <ncbistd.hpp>.
+*
 * Revision 1.8  1999/04/09 19:51:37  sandomir
 * minor changes in NStr::StringToXXX - base added
 *
@@ -55,30 +59,23 @@
 *
 * Revision 1.1  1998/12/15 15:43:22  vasilche
 * Added utilities to convert string <> int.
-*
-*
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <limits>
 #include <errno.h>
 #include <stdio.h>
 
+
 BEGIN_NCBI_SCOPE
 
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
 
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* error = 0;
-    long value = strtol(str.c_str(), &error, base);
-    if ( errno || error && *error ||
-         value < numeric_limits<int>::min() ||
-         value > numeric_limits<int>::max() )
+    long value = ::strtol(str.c_str(), &error, base);
+    if (errno  ||  (error && *error)  || value < kMin_Int || value > kMax_Int)
         throw runtime_error("bad number");
     return value;
 }
@@ -87,10 +84,8 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* error = 0;
-    long value = strtol(str.c_str(), &error, base);
-    if ( errno || error && *error ||
-         value < numeric_limits<unsigned int>::min() ||
-         value > numeric_limits<unsigned int>::max() )
+    long value = ::strtol(str.c_str(), &error, base);
+    if (errno  ||  (error && *error)  ||  value < 0 || value > (long)kMax_UInt)
         throw runtime_error("bad number");
     return value;
 }
@@ -99,8 +94,8 @@ double NStr::StringToDouble(const string& str)
 {
     errno = 0;
     char* error = 0;
-    double value = strtod(str.c_str(), &error);
-    if ( errno || error && *error )
+    double value = ::strtod(str.c_str(), &error);
+    if (errno  ||  (error && *error))
         throw runtime_error("bad number");
     return value;
 }
@@ -108,28 +103,28 @@ double NStr::StringToDouble(const string& str)
 string NStr::IntToString(int value)
 {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%d", value);
+    ::snprintf(buffer, sizeof(buffer), "%d", value);
     return buffer;
 }
 
 string NStr::IntToString(int value, bool sign)
 {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), sign? "%+d": "%d", value);
+    ::snprintf(buffer, sizeof(buffer), sign? "%+d": "%d", value);
     return buffer;
 }
 
 string NStr::UIntToString(unsigned int value)
 {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%u", value);
+    ::snprintf(buffer, sizeof(buffer), "%u", value);
     return buffer;
 }
 
 string NStr::DoubleToString(double value)
 {
     char buffer[64];
-    snprintf(buffer, sizeof(buffer), "%g", value);
+    ::snprintf(buffer, sizeof(buffer), "%g", value);
     return buffer;
 }
 
@@ -142,7 +137,7 @@ bool PNocase::operator() ( const string& x, const string& y ) const
   string::const_iterator p = x.begin();
   string::const_iterator q = y.begin();
   
-  while( p!= x.end() && q != y.end() && toupper(*p) == toupper(*q) ) {
+  while ( p != x.end() && q != y.end() && toupper(*p) == toupper(*q) ) {
     ++p; ++q;
   }
   
@@ -154,5 +149,3 @@ bool PNocase::operator() ( const string& x, const string& y ) const
 }
 
 END_NCBI_SCOPE
-
-
