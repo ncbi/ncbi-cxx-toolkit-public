@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/04/12 16:59:13  kholodov
+* Added: CSerialNotImplemented exception
+*
 * Revision 1.6  2001/01/05 20:10:34  vasilche
 * CByteSource, CIStrBuffer, COStrBuffer, CLightString, CChecksum, CWeakMap
 * were moved to util.
@@ -84,6 +87,14 @@ class CSerialOverflowException : public CSerialException
 public:
     CSerialOverflowException(const string& msg) THROWS_NONE;
     ~CSerialOverflowException(void) THROWS_NONE;
+};
+
+// this exception is thrown when some functionality is not implemented
+class CSerialNotImplemented : public CSerialException
+{
+public:
+    CSerialNotImplemented(const string& msg) THROWS_NONE;
+    ~CSerialNotImplemented(void) THROWS_NONE;
 };
 
 // this exception is thrown when file format is bad
