@@ -61,7 +61,14 @@ public:
     const SeqEntryList& GetSeqEntries(void) const { return m_seqEntries; }
     const SeqAnnotList& GetSeqAnnots(void) const { return m_seqAnnots; }
 
+    // do the intersect-by-master (IBM) algorithm
     bool DoIBM(void);
+
+    // do the leave-one-out (LOO) algorithm (implies IBM) using the block aligner.
+    // Numbering in these arguments starts from zero.
+    bool DoLeaveOneOut(
+        unsigned int row, const std::vector < unsigned int >& blocksToRealign,  // what to realign
+        double percentile, unsigned int extension, unsigned int cutoff);        // to calculate max loop lengths
 
 private:
     SeqEntryList m_seqEntries;
@@ -73,6 +80,9 @@ private:
     bool m_okay;
 
     BlockMultipleAlignment *m_currentMultiple;
+
+    // re-create AlignmentSet and SeqAnnotList from m_currentMultiple
+    void UpdateAlignmentsFromMultiple(void);
 };
 
 END_SCOPE(struct_util)
@@ -82,6 +92,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/26 02:41:13  thiessen
+* progress towards LOO - all but PSSM and row ordering
+*
 * Revision 1.2  2004/05/25 15:50:46  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *

@@ -9,6 +9,7 @@ APP = struct_util_demo
 SRC = struct_util_demo
 
 LIB =   xstruct_util \
+        xstruct_dp \
         ncbimime \
         cdd \
         scoremat \

@@ -53,7 +53,7 @@ void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remo
 {
     if (v.size() != remove.size()) {
 #ifndef _DEBUG
-        // MSVC gets internal compiler error here on debug builds... ugh!
+        // MSVC 6 gets internal compiler error here on debug builds... ugh!
         ERROR_MESSAGE("VectorRemoveElements() - size mismatch");
 #endif
         return;
@@ -69,7 +69,7 @@ void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remo
     }
     if (nRemoved != nToRemove) {
 #ifndef _DEBUG
-        ERR_POST(ncbi::Error << "VectorRemoveElements() - bad nToRemove");
+        ERROR_MESSAGE("VectorRemoveElements() - bad nToRemove");
 #endif
         return;
     }
@@ -84,6 +84,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/26 02:40:24  thiessen
+* progress towards LOO - all but PSSM and row ordering
+*
 * Revision 1.6  2004/05/25 17:47:23  ucko
 * Proper fix: make sure to qualify Error (and a few other things for
 * good measure) with ncbi::.

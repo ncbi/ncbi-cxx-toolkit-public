@@ -120,6 +120,8 @@ public:
     // fill in a vector of UngappedAlignedBlocks
     typedef std::vector < const UngappedAlignedBlock * > UngappedAlignedBlockList;
     void GetUngappedAlignedBlocks(UngappedAlignedBlockList *blocks) const;
+    typedef std::vector < UngappedAlignedBlock * > ModifiableUngappedAlignedBlockList;
+    void GetModifiableUngappedAlignedBlocks(ModifiableUngappedAlignedBlockList *blocks);
 
     // PSSM for this alignment (cached)
 //    const BLAST_Matrix * GetPSSM(void) const;
@@ -191,11 +193,6 @@ public:
 
     // delete a row; returns true if successful
     bool DeleteRow(unsigned int row);
-
-    // flag an aligned block for realignment - block will be removed upon ExtractRows; returns true if
-    // column is in fact an aligned block
-    bool MarkBlock(unsigned int column);
-    bool ClearMarks(void);  // remove all block flags
 
     // this function does two things: it extracts from a multiple alignment all slave rows listed for
     // removal; and if pairwiseAlignments!=NULL, for each slave removed creates a new BlockMultipleAlignment
@@ -359,6 +356,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/26 02:40:24  thiessen
+* progress towards LOO - all but PSSM and row ordering
+*
 * Revision 1.2  2004/05/25 16:12:30  thiessen
 * fix GCC warnings
 *

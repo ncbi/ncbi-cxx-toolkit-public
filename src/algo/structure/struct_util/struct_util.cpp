@@ -34,6 +34,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <algo/structure/struct_dp/struct_dp.h>
+
 #include <algo/structure/struct_util/struct_util.hpp>
 #include "su_private.hpp"
 #include "su_sequence_set.hpp"
@@ -211,12 +213,135 @@ bool AlignmentUtility::DoIBM(void)
     }
 
     // update all internal data according to this new alignment
-    TRACE_MESSAGE("replacing alignment data with IBM'ed alignment");
+    TRACE_MESSAGE("replacing alignment data with IBM results");
     m_currentMultiple = multipleAlignment.Release();
+    UpdateAlignmentsFromMultiple();
+    return true;
+}
+
+int ScoreByPSSM(unsigned int block, unsigned int queryPos)
+{
+    return 1;
+}
+
+bool AlignmentUtility::DoLeaveOneOut(
+    unsigned int row, const std::vector < unsigned int >& blocksToRealign,  // what to realign
+    double percentile, unsigned int extension, unsigned int cutoff)         // to calculate max loop lengths
+{
+    // first we need to do IBM so that we have consistent blocks
+    if (!DoIBM())
+        return false;
+
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    m_currentMultiple->GetUngappedAlignedBlocks(&blocks);
+    if (blocks.size() == 0) {
+        ERROR_MESSAGE("need at least one aligned block for LOO");
+        return false;
+    }
+
+    bool status = false;
+    DP_BlockInfo *dpBlocks = NULL;
+    DP_AlignmentResult *dpResult = NULL;
+
+    try {
+        // fill out DP_BlockInfo structure
+        dpBlocks = DP_CreateBlockInfo(blocks.size());
+        unsigned int b, r;
+        const Block::Range *range, *nextRange;
+        unsigned int *loopLengths = new unsigned int[m_currentMultiple->NRows()];
+        for (b=0; b<blocks.size(); ++b) {
+            range = blocks[b]->GetRangeOfRow(0);
+            dpBlocks->blockPositions[b] = range->from;
+            dpBlocks->blockSizes[b] = range->to - range->from + 1;
+            // calculate max loop lengths for default square well scoring
+            if (b < blocks.size() - 1) {
+                for (r=0; r<m_currentMultiple->NRows(); ++r) {
+                    range = blocks[b]->GetRangeOfRow(r);
+                    nextRange = blocks[b + 1]->GetRangeOfRow(r);
+                    loopLengths[r] = nextRange->from - range->to - 1;
+                }
+                dpBlocks->maxLoops[b] = DP_CalculateMaxLoopLength(
+                    m_currentMultiple->NRows(), loopLengths, percentile, extension, cutoff);
+            }
+        }
+
+        // pull out row that we're realigning
+        if (row < 1 || row >= m_currentMultiple->NRows())
+            THROW_MESSAGE("invalid row number");
+        vector < unsigned int > rowsToRemove(1, row);
+        BlockMultipleAlignment::AlignmentList toRealign;
+        TRACE_MESSAGE("extracting for realignment: "
+            << m_currentMultiple->GetSequenceOfRow(row)->IdentifierString());
+        if (!m_currentMultiple->ExtractRows(rowsToRemove, &toRealign))
+            THROW_MESSAGE("ExtractRows() failed");
+
+        // if we're not realigning, freeze blocks to original slave position
+        if (blocksToRealign.size() == 0)
+            THROW_MESSAGE("need at least one block to realign");
+        vector < bool > realignBlock(blocks.size(), false);
+        for (r=0; r<blocksToRealign.size(); ++r) {
+            if (blocksToRealign[r] >= 0 && blocksToRealign[r] < blocks.size())
+                realignBlock[blocksToRealign[r]] = true;
+            else
+                THROW_MESSAGE("block to realign is out of range");
+        }
+        toRealign.front()->GetUngappedAlignedBlocks(&blocks);
+        for (b=0; b<blocks.size(); b++) {
+            if (!realignBlock[b])
+                dpBlocks->freezeBlocks[b] = blocks[b]->GetRangeOfRow(1)->from;
+            TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
+        }
+
+        // set up PSSM
+
+        // call the block aligner
+        if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM,
+                                0, toRealign.front()->GetSequenceOfRow(1)->Length() - 1,    // realign on whole query
+                                &dpResult)
+                    != STRUCT_DP_FOUND_ALIGNMENT ||
+                dpResult->nBlocks != blocks.size() ||
+                dpResult->firstBlock != 0)
+            THROW_MESSAGE("DP_GlobalBlockAlign() failed");
+        INFO_MESSAGE("score of new alignment of extracted row with PSSM: " << dpResult->score);
+
+        // adjust new alignment according to dp result
+        BlockMultipleAlignment::ModifiableUngappedAlignedBlockList modBlocks;
+        toRealign.front()->GetModifiableUngappedAlignedBlocks(&modBlocks);
+        for (b=0; b<modBlocks.size(); b++) {
+            if (realignBlock[b]) {
+                modBlocks[b]->SetRangeOfRow(1,
+                    dpResult->blockPositions[b], dpResult->blockPositions[b] + dpBlocks->blockSizes[b] - 1);
+            } else {
+                if (dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from)    // just to check...
+                    THROW_MESSAGE("dpResult block doesn't match frozen position on slave");
+            }
+        }
+
+        // merge realigned row back into the multiple alignment
+        if (!m_currentMultiple->MergeAlignment(toRealign.front()))
+            THROW_MESSAGE("MergeAlignment() failed");
+
+        // update all data according to new alignment
+        TRACE_MESSAGE("replacing alignment data with merged DP results");
+        UpdateAlignmentsFromMultiple();
+
+        status = true;
+
+    } catch (CException& e) {
+        ERROR_MESSAGE("DoLeaveOneOut(): exception: " << e.GetMsg());
+    }
+
+    DP_DestroyBlockInfo(dpBlocks);
+    DP_DestroyAlignmentResult(dpResult);
+
+    return status;
+}
+
+void AlignmentUtility::UpdateAlignmentsFromMultiple(void)
+{
     delete m_alignmentSet;
     m_seqAnnots.clear();
     m_alignmentSet = AlignmentSet::CreateFromMultiple(m_currentMultiple, &m_seqAnnots, *m_sequenceSet);
-    return true;
 }
 
 END_SCOPE(struct_util)
@@ -224,6 +349,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/26 02:40:24  thiessen
+* progress towards LOO - all but PSSM and row ordering
+*
 * Revision 1.2  2004/05/25 15:52:17  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *

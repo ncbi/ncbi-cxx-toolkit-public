@@ -1077,6 +1077,19 @@ void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *
     uabs->resize(uabs->size());
 }
 
+void BlockMultipleAlignment::GetModifiableUngappedAlignedBlocks(ModifiableUngappedAlignedBlockList *uabs)
+{
+    uabs->clear();
+    uabs->reserve(m_blocks.size());
+    BlockList::iterator b, be = m_blocks.end();
+    for (b=m_blocks.begin(); b!=be; ++b) {
+        UngappedAlignedBlock *uab = dynamic_cast<UngappedAlignedBlock*>(b->GetPointer());
+        if (uab)
+            uabs->push_back(uab);
+    }
+    uabs->resize(uabs->size());
+}
+
 bool BlockMultipleAlignment::ExtractRows(
     const vector < unsigned int >& slavesToRemove, AlignmentList *pairwiseAlignments)
 {
@@ -1509,6 +1522,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/26 02:40:24  thiessen
+* progress towards LOO - all but PSSM and row ordering
+*
 * Revision 1.3  2004/05/25 16:24:50  thiessen
 * remove WorkShop warnings
 *

@@ -69,6 +69,15 @@ void SUApp::Init(void)
     // do IBM
     argDescr->AddFlag("IBM", "do only IBM");
 
+    // leave-one-out args
+    argDescr->AddFlag("LOO", "do leave-one-out");
+    argDescr->AddOptionalKey("r", "integer", "row to realign (>=2, master=1)", argDescr->eInteger);
+    argDescr->SetConstraint("r", new CArgAllow_Integers(2, kMax_Int));
+    argDescr->AddOptionalKey("f", "integer", "first block to realign (post-IBM, from 1)", argDescr->eInteger);
+    argDescr->SetConstraint("f", new CArgAllow_Integers(1, kMax_Int));
+    argDescr->AddOptionalKey("l", "integer", "last block to realign (post-IBM, from 1)", argDescr->eInteger);
+    argDescr->SetConstraint("l", new CArgAllow_Integers(1, kMax_Int));
+
     SetupArgDescriptions(argDescr);
 }
 
@@ -100,6 +109,20 @@ int SUApp::Run(void)
     // process arguments
     CArgs args = GetArgs();
 
+    // arg interactions
+    if (args["LOO"].HasValue() && !args["IBM"].HasValue()) {
+        if (!args["r"].HasValue() || !args["f"].HasValue() || !args["l"].HasValue()) {
+            ERROR_MESSAGE("-LOO requires -r, -f, and -l");
+            return 5;
+        }
+    } else if (args["IBM"].HasValue() && !args["LOO"].HasValue()) {
+        if (args["r"].HasValue() || args["f"].HasValue() || args["l"].HasValue())
+            WARNING_MESSAGE("-IBM specified; ignoring -r, -f, and -l");
+    } else {
+        ERROR_MESSAGE("must specify either -IBM or -LOO");
+        return 7;
+    }
+
     // read input file
     CCdd cdd;
     if (!ReadCD(args["i"].AsString(), &cdd)) {
@@ -113,10 +136,28 @@ int SUApp::Run(void)
         return 2;
 
     // perform IBM on this alignment
-    if (!au.DoIBM())
-        return 3;
+    if (args["IBM"].HasValue()) {
+        if (!au.DoIBM()) {
+            ERROR_MESSAGE("IBM failed");
+            return 3;
+        }
+    }
 
-    // repace Seq-annots in cdd with new data
+    // perform leave-one-out
+    else if (args["LOO"].HasValue()) {
+        vector < unsigned int > blocksToRealign;
+        for (int i=args["f"].AsInteger(); i<=args["l"].AsInteger(); ++i)
+            blocksToRealign.push_back(i - 1);               // convert to zero-numbering
+        if (!au.DoLeaveOneOut(
+                args["r"].AsInteger() - 1, blocksToRealign, // what to realign
+                0.6, 10, 0))                                // max loop length calculation parameters
+        {
+            ERROR_MESSAGE("LOO failed");
+            return 8;
+        }
+    }
+
+    // replace Seq-annots in cdd with new data
     cdd.SetSeqannot() = au.GetSeqAnnots();
 
     // write out processed data
@@ -162,6 +203,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/05/26 02:40:24  thiessen
+* progress towards LOO - all but PSSM and row ordering
+*
 * Revision 1.2  2004/05/25 15:52:18  thiessen
 * add BlockMultipleAlignment, IBM algorithm
 *
