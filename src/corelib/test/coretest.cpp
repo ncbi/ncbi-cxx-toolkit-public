@@ -574,7 +574,7 @@ static void TestException_Aux(void)
     try {
         NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)",123);
     }
-    catch (CNcbiException& e) {
+    catch (CException& e) {
         NCBI_REPORT_EXCEPTION("TEST CParseException ---> ",e);
     }
     catch (...) {
@@ -621,7 +621,7 @@ static void TestException_AuxTrace(void)
     try {
         NCBI_THROW2(CParseException,eErr,"Failed parsing (at pos. 123)", 123);
     }
-    catch (CNcbiException& e) {
+    catch (CException& e) {
         NCBI_REPORT_EXCEPTION("throw CParseException ---> ",e);
     }
 }
@@ -736,6 +736,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2002/07/15 18:53:36  gouriano
+ * renamed CNcbiException to CException
+ *
  * Revision 1.82  2002/07/15 18:17:25  gouriano
  * renamed CNcbiException and its descendents
  *
