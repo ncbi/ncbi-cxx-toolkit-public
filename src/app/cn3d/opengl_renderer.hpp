@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/06/15 14:52:30  thiessen
+* fix minor syntax errors
+*
 * Revision 1.27  2001/05/22 19:09:09  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -165,7 +168,7 @@ public:
     void NewView(int selectX = -1, int selectY = -1) const;
 
     // get the name
-    bool OpenGLRenderer::GetSelected(int x, int y, unsigned int *name);
+    bool GetSelected(int x, int y, unsigned int *name);
 
     // reset camera to original state
     void ResetCamera(void);
@@ -261,7 +264,7 @@ private:
     bool selectMode;
     unsigned int currentFrame;
     std::vector < bool > displayListEmpty;
-    bool OpenGLRenderer::IsFrameEmpty(unsigned int frame) const;
+    bool IsFrameEmpty(unsigned int frame) const;
 
     // Quality settings - will eventually be stored in program registry
     int atomSlices, atomStacks;     // for atom spheres

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/06/15 14:52:30  thiessen
+* fix minor syntax errors
+*
 * Revision 1.14  2001/06/04 14:33:54  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -180,7 +183,7 @@ public:
     BlockMultipleAlignment * const alignment;
 
     DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5),
-        const std::string& t = "", bool hasBG = false, Vector bgColor = (1,1,1),
+        const std::string& t = "", bool hasBG = false, Vector bgColor = Vector(1,1,1),
         BlockMultipleAlignment *a = NULL) :
         theString(s), stringColor(color), title(t),
         hasBackgroundColor(hasBG), backgroundColor(bgColor), alignment(a) { }
@@ -264,7 +267,7 @@ private:
 
     // generic row manipulation functions
     void AddRow(DisplayRow *row);
-    BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(int row) const;
+    BlockMultipleAlignment * GetAlignmentForRow(int row) const;
     void UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundaryRow) const;
 
     ViewerWindowBase* const *viewerWindow;
