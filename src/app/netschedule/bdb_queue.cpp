@@ -940,8 +940,16 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
                                     char*          input)
 {
     _ASSERT(worker_node && input);
+    unsigned get_attempts = 0;
+    const unsigned kMaxGetAttempts = 1000;
 
 get_job_id:
+
+    ++get_attempts;
+    if (get_attempts > kMaxGetAttempts) {
+        *job_id = 0;
+        return;
+    }
 
     *job_id = m_LQueue.status_tracker.GetPendingJob();
     if (!*job_id) {
@@ -1060,6 +1068,11 @@ get_job_id:
                                              CNetScheduleClient::ePending);
         *job_id = 0;
         throw;
+    }
+
+    // if we picked up expired job and need to re-get another job id    
+    if (*job_id == 0) {
+        goto get_job_id;
     }
 
 
@@ -1461,6 +1474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/17 16:04:38  kuznets
+ * Get job algorithm improved to re-get if job expired
+ *
  * Revision 1.16  2005/03/15 20:14:30  kuznets
  * Implemented notification to client waiting for job
  *
