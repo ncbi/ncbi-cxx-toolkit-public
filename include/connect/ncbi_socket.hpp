@@ -58,21 +58,34 @@ enum ECopyTimeout {
 };
 
 
+class NCBI_XCONNECT_EXPORT CPollable
+{
+public:
+    virtual
+    EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const = 0;
+
+protected:
+    CPollable(void) { };
+    virtual ~CPollable(void) { };
+
+private:
+    // disable copy constructor and assignment
+    CPollable(const CPollable&);
+    CPollable& operator= (const CPollable&);
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSocket::
 //
-// NOTE:  for documentation see SOCK_***() functions in "ncbi_socket.h"
+// NOTE:  For documentation see SOCK_***() functions in "ncbi_socket.h".
+//        Initially, all timeouts are infinite.
 //
 
-class NCBI_XCONNECT_EXPORT CSocket
+class NCBI_XCONNECT_EXPORT CSocket : public CPollable
 {
 public:
-    // Special values for timeouts as accepted by member functions below:
-    static const STimeout *const kDefaultTimeout;  // use value last set
-    static const STimeout *const kInfiniteTimeout; // ad infinitum
-    // Initially, all timeouts are infinite.
-
     CSocket(void);
 
     // Create a client-side socket connected to "host:port".
@@ -84,7 +97,7 @@ public:
             ESwitch         log     = eDefault);
 
     // Call Close(), then self-destruct
-    ~CSocket(void);
+    virtual ~CSocket(void);
 
     // Direction is one of
     //     eIO_Open  - return eIO_Success if CSocket is okay and open,
@@ -145,8 +158,8 @@ public:
     EOwnership SetOwnership(EOwnership if_to_own);
 
     // Access to the underlying "SOCK" and the system-specific socket handle.
-    SOCK       GetSOCK    (void) const;
-    EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
+    SOCK               GetSOCK    (void) const;
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
     // NOTE:  use CSocketAPI::SetReadOnWrite() to set the default value
     void SetReadOnWrite(ESwitch read_on_write = eOn);
@@ -248,17 +261,15 @@ private:
 // NOTE:  for documentation see LSOCK_***() functions in "ncbi_socket.h"
 //
 
-class NCBI_XCONNECT_EXPORT CListeningSocket
+class NCBI_XCONNECT_EXPORT CListeningSocket : public CPollable
 {
 public:
-    static const STimeout *const kInfiniteTimeout; // ad infinitum
-
     CListeningSocket(void);
     // NOTE:  "port" ought to be in host byte order
     CListeningSocket(unsigned short port, unsigned short backlog = 5);
 
     // Call Close(), then self-destruct
-    ~CListeningSocket(void);
+    virtual ~CListeningSocket(void);
 
     // Return eIO_Success if CListeningSocket is opened and bound;
     // Return eIO_Closed if not yet bound or Close()'d.
@@ -281,8 +292,8 @@ public:
     EOwnership SetOwnership(EOwnership if_to_own);
 
     // Access to the underlying "LSOCK" and the system-specific socket handle
-    LSOCK      GetLSOCK    (void) const;
-    EIO_Status GetOSHandle (void* handle_buf, size_t handle_size) const;
+    LSOCK              GetLSOCK   (void) const;
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size) const;
 
 private:
     LSOCK      m_Socket;
@@ -319,11 +330,12 @@ public:
 
     // NOTE:  use CSocket::Wait() to wait for I/O event(s) on a single socket
     struct SPoll {
-        SPoll(CSocket& sock, EIO_Event event, EIO_Event revent)
-            : m_Socket(sock), m_Event(event), m_REvent(revent) {}
-        CSocket&  m_Socket;
-        EIO_Event m_Event;
-        EIO_Event m_REvent;
+        CPollable* m_Pollable;
+        EIO_Event  m_Event;
+        EIO_Event  m_REvent;
+
+        SPoll(CPollable* pollable = 0, EIO_Event event = eIO_Open)
+            : m_Pollable(pollable), m_Event(event) { m_REvent = eIO_Open; }
     };
     static EIO_Status Poll(vector<SPoll>&  polls,
                            const STimeout* timeout,
@@ -577,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2003/08/25 14:37:07  lavr
+ * Introduce CPollable and more generic SCocketAPI::Poll()
+ *
  * Revision 6.28  2003/07/15 16:49:16  lavr
  * +CSocket::GetPeerAddress(void)
  *
