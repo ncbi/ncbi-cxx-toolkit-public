@@ -195,7 +195,7 @@ string CException::ReportAll(TDiagPostFlags flags) const
     }
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
-        CExceptionReporter::ReportDefault(0,0,"(background reporting)",
+        CExceptionReporter::ReportDefault(0, 0, "(background reporting)",
                                           *this, eDPF_Trace);
         m_InReporter = false;
     }
@@ -442,8 +442,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/10/31 19:39:46  lavr
+ * Elaborate R1.34 change log to include ends removal
+ *
  * Revision 1.34  2003/10/24 13:24:55  vasilche
- * Moved body of virtual method to *.cpp file.
+ * Moved body of virtual method to *.cpp file; ends removed everywhere...
  *
  * Revision 1.33  2003/06/02 15:25:14  lavr
  * Replace some endl's with '\n's; and all '\0's with ends's
