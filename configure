@@ -929,8 +929,8 @@ Optional Packages:
  --with-orbacus=DIR      use ORBacus installation in DIR
  --with-odbc=DIR         use ODBC installation in DIR
  --without-odbc          do not use ODBC
- --with-python=DIR         use Python installation in DIR
- --without-python          do not use Python
+ --with-python=DIR       use Python installation in DIR
+ --without-python        do not use Python
  --with-sqlite=DIR       use SQLite installation in DIR
  --without-sqlite,       do not use SQLite
  --with-expat=DIR        use Expat installation in DIR
@@ -15119,16 +15119,13 @@ echo "${ECHO_T}$ncbi_cv_path_sybase_local" >&6
    fi
    if test "$with_sybase_local" = "no" ; then
       if test "$with_sybase_new" = "yes" ; then
-         case "$host_os:$bit64_sfx" in
-            linux*     ) new_version=12.5.0.1; net_suffix="" ;;
-            solaris*:64) new_version=12.5.64;  net_suffix="-EBF9728" ;;
-            solaris*   ) new_version=12.5;     net_suffix="-EBF9723" ;;
-            *          ) new_version="";
-                         { echo "$as_me:$LINENO: WARNING: --with-sybase-new is unsupported on this platform; ignoring it." >&5
-echo "$as_me: WARNING: --with-sybase-new is unsupported on this platform; ignoring it." >&2;} ;;
-         esac
+         if test -d "$net_sybase_root/new${bit64_sfx:-32}"; then
+             new_version=new${bit64_sfx:-32}
+         elif test -d "$net_sybase_root/new"; then
+             new_version=new
+         fi
          if test -n "$new_version"; then
-            new_sybase_path=$net_sybase_root/$new_version-$net_suffix
+            new_sybase_path=$net_sybase_root/$new_version
             new_sybase_local=$local_sybase_root/$new_version
             echo "$as_me:$LINENO: checking for new Sybase install in $new_sybase_local:$new_sybase_path" >&5
 echo $ECHO_N "checking for new Sybase install in $new_sybase_local:$new_sybase_path... $ECHO_C" >&6
@@ -15152,7 +15149,7 @@ echo "${ECHO_T}$ncbi_cv_path_sybase_new" >&6
             else
                SYBASE_PATH=$new_sybase_path
                sybase_lib=lib
-               if "$ncbi_cv_path_sybase_new" = yes; then
+               if test "$ncbi_cv_path_sybase_new" = yes; then
                   SYBASE_LCL_PATH=$new_sybase_local
                fi
             fi
@@ -15164,6 +15161,14 @@ echo "${ECHO_T}$ncbi_cv_path_sybase_new" >&6
       fi
    fi # No local Sybase (requested)?
 
+   # Lock in the version we found
+   SYBASE_PATH=`cd $SYBASE_PATH && /bin/pwd`
+   if test -d "$SYBASE_LCL_PATH"; then
+      SYBASE_LCL_PATH=`cd $SYBASE_LCL_PATH && /bin/pwd`
+   elif test -n "$SYBASE_LCL_PATH"; then # assume identity
+      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/`basename $SYBASE_PATH`
+   fi
+
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    syb_sfx=$bit64_sfx
    if test "$with_mt" = "yes" ; then
@@ -15172,7 +15177,7 @@ echo $ECHO_N "checking for reentrant Sybase libraries... $ECHO_C" >&6
 if test "${ncbi_cv_lib_sybase_r+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  if test -f "$SYBASE_LIBPATH/libct_r$bit64_sfx.a"; then
+  if test -f "$SYBASE_LIBPATH/libct_r$bit64_sfx.so"; then
              ncbi_cv_lib_sybase_r=yes
           else
              ncbi_cv_lib_sybase_r=no

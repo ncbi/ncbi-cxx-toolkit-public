@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.340 2005/01/24 17:52:38 grichenk Exp $
+#  $Id: configure.ac,v 1.341 2005/01/27 17:45:52 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -223,9 +223,9 @@ AC_ARG_WITH(odbc,
 AC_ARG_WITH(odbc2,
    [ --without-odbc          do not use ODBC])
 AC_ARG_WITH(python,
-   [ --with-python=DIR         use Python installation in DIR])
+   [ --with-python=DIR       use Python installation in DIR])
 AC_ARG_WITH(python2,
-   [ --without-python          do not use Python])
+   [ --without-python        do not use Python])
 AC_ARG_WITH(sqlite,
    [ --with-sqlite=DIR       use SQLite installation in DIR])
 AC_ARG_WITH(sqlite2,
@@ -2489,15 +2489,13 @@ if test "$with_sybase" != "no" ; then
    fi
    if test "$with_sybase_local" = "no" ; then
       if test "$with_sybase_new" = "yes" ; then
-         case "$host_os:$bit64_sfx" in
-            linux*     ) new_version=12.5.0.1; net_suffix="" ;;
-            solaris*:64) new_version=12.5.64;  net_suffix="-EBF9728" ;;
-            solaris*   ) new_version=12.5;     net_suffix="-EBF9723" ;;
-            *          ) new_version="";
-                         AC_MSG_WARN([--with-sybase-new is unsupported on this platform; ignoring it.]) ;;
-         esac
+         if test -d "$net_sybase_root/new${bit64_sfx:-32}"; then
+             new_version=new${bit64_sfx:-32}
+         elif test -d "$net_sybase_root/new"; then
+             new_version=new
+         fi
          if test -n "$new_version"; then
-            new_sybase_path=$net_sybase_root/$new_version-$net_suffix
+            new_sybase_path=$net_sybase_root/$new_version
             new_sybase_local=$local_sybase_root/$new_version
             AC_CACHE_CHECK([for new Sybase install in $new_sybase_local:$new_sybase_path],
                ncbi_cv_path_sybase_new,
@@ -2515,7 +2513,7 @@ if test "$with_sybase" != "no" ; then
             else
                SYBASE_PATH=$new_sybase_path
                sybase_lib=lib
-               if "$ncbi_cv_path_sybase_new" = yes; then
+               if test "$ncbi_cv_path_sybase_new" = yes; then
                   SYBASE_LCL_PATH=$new_sybase_local
                fi
             fi
@@ -2527,11 +2525,19 @@ if test "$with_sybase" != "no" ; then
       fi
    fi # No local Sybase (requested)?
 
+   # Lock in the version we found
+   SYBASE_PATH=`cd $SYBASE_PATH && /bin/pwd`
+   if test -d "$SYBASE_LCL_PATH"; then
+      SYBASE_LCL_PATH=`cd $SYBASE_LCL_PATH && /bin/pwd`
+   elif test -n "$SYBASE_LCL_PATH"; then # assume identity
+      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/`basename $SYBASE_PATH`
+   fi
+
    SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    syb_sfx=$bit64_sfx
    if test "$with_mt" = "yes" ; then
       AC_CACHE_CHECK([for reentrant Sybase libraries], ncbi_cv_lib_sybase_r,
-         [if test -f "$SYBASE_LIBPATH/libct_r$bit64_sfx.a"; then
+         [if test -f "$SYBASE_LIBPATH/libct_r$bit64_sfx.so"; then
              ncbi_cv_lib_sybase_r=yes
           else
              ncbi_cv_lib_sybase_r=no
