@@ -1229,10 +1229,6 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->is_eof    = 0/*false*/;
     sock->r_status  = eIO_Success;
     sock->w_status  = eIO_Success;
-    sock->n_in     += sock->n_read;
-    sock->n_read    = 0;
-    sock->n_out    += sock->n_written;
-    sock->n_written = 0;
     return eIO_Success;
 }
 
@@ -1313,6 +1309,10 @@ static EIO_Status s_Close(SOCK sock)
     }
 
     /* statistics & logging */
+    sock->n_in     += sock->n_read;
+    sock->n_read    = 0;
+    sock->n_out    += sock->n_written;
+    sock->n_written = 0;
     if (sock->log_data == eOn  ||
         (sock->log_data == eDefault  &&  s_LogData == eOn)) {
         s_DoLogData(sock, eIO_Close, 0, 0, 0);
@@ -2947,6 +2947,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.80  2003/01/17 15:11:36  lavr
+ * Update stat counters in s_Close() instead of s_Connect()
+ *
  * Revision 6.79  2003/01/17 01:23:31  lavr
  * Better tracing and message counting
  *
