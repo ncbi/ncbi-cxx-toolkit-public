@@ -397,8 +397,17 @@ fi
 
 dnl Check for some library functions.
 dnl ------------------------------------------------------
-AC_CHECK_LIB(nsl, gethostbyname_r, AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, 1))
-
+AC_MSG_CHECKING(for gethostbyname_r)
+AC_TRY_COMPILE(
+   [#include <netdb.h>],
+   [ struct hostent x_hp;
+     char   x_buf[1024];
+     int    x_err;
+     struct hostent *hp =
+         gethostbyname_r("localhost", &x_hp, x_buf, sizeof(x_buf), &x_err); ],
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, 1)
+)
+AC_MSG_RESULT()
 
 
 dnl Check for typedefs, structures, and compiler features.
