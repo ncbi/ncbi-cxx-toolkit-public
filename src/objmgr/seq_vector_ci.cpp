@@ -145,9 +145,7 @@ CSeqVector_CI::CSeqVector_CI(void)
 
 CSeqVector_CI::~CSeqVector_CI(void)
 {
-    delete[] m_CacheData;
-    delete[] m_BackupData;
-    return;
+    x_DestroyCache();
 }
 
 
@@ -192,6 +190,25 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
     m_Seg = m_Vector->x_GetSeqMap().FindResolved(
         pos, m_Vector->m_Scope, m_Vector->m_Strand);
     x_UpdateCache(pos);
+}
+
+
+void CSeqVector_CI::x_DestroyCache(void)
+{
+    delete[] m_CacheData;
+    delete[] m_BackupData;
+}
+
+
+void CSeqVector_CI::x_InitializeCache(void)
+{
+    m_CachePos = kInvalidSeqPos;
+    m_CacheData = new char[kCacheSize];
+    m_BackupPos = kInvalidSeqPos;
+    m_BackupData = new char[kCacheSize];
+    m_CacheEnd = m_CacheData;
+    m_BackupEnd = m_BackupData;
+    m_Cache = m_CacheEnd;
 }
 
 
@@ -488,6 +505,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/07/18 19:42:42  vasilche
+* Added x_DestroyCache() method.
+*
 * Revision 1.17  2003/07/01 18:00:41  vasilche
 * Fixed unsigned/signed comparison.
 *

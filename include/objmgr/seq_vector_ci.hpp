@@ -73,6 +73,7 @@ public:
 
 private:
     void x_InitializeCache(void);
+    void x_DestroyCache(void);
     void x_ClearCache(void);
     void x_ResizeCache(size_t size);
     void x_SwapCache(void);
@@ -168,18 +169,6 @@ TSeqPos CSeqVector_CI::x_BackupEnd(void) const
 }
 
 inline
-void CSeqVector_CI::x_InitializeCache(void)
-{
-    m_CachePos = kInvalidSeqPos;
-    m_CacheData = new char[kCacheSize];
-    m_BackupPos = kInvalidSeqPos;
-    m_BackupData = new char[kCacheSize];
-    m_CacheEnd = m_CacheData;
-    m_BackupEnd = m_BackupData;
-    m_Cache = m_CacheEnd;
-}
-
-inline
 void CSeqVector_CI::x_ClearCache(void)
 {
     m_CachePos = kInvalidSeqPos;
@@ -203,6 +192,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/07/18 19:42:42  vasilche
+* Added x_DestroyCache() method.
+*
 * Revision 1.9  2003/06/24 19:46:41  grichenk
 * Changed cache from vector<char> to char*. Made
 * CSeqVector::operator[] inline.
