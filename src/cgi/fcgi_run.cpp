@@ -49,26 +49,30 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 
 # include "fcgibuf.hpp"
 # include <corelib/ncbienv.hpp>
+# include <corelib/ncbifile.hpp>
 # include <corelib/ncbireg.hpp>
 # include <corelib/ncbitime.hpp>
 # include <cgi/cgictx.hpp>
 
 # include <fcgiapp.h>
-# include <sys/stat.h>
-# include <errno.h>
 # include <unistd.h>
+
+# ifdef NCBI_OS_UNIX
+#  include <signal.h>
+# endif
 
 BEGIN_NCBI_SCOPE
 
-static time_t s_GetModTime(const char* filename)
+static CTime s_GetModTime(const string& filename)
 {
-    struct stat st;
-    if (stat(filename, &st) != 0) {
-        ERR_POST("s_GetModTime(): " << strerror(errno));
-        NCBI_THROW(CCgiErrnoException,eModTime,
-                   "Cannot get modification time of the CGI executable");
+    CTime mtime;
+    if ( !CDirEntry(filename).GetTime(&mtime) ) {
+        // ERR_POST("s_GetModTime(): " << strerror(errno));
+        NCBI_THROW(CCgiErrnoException, eModTime,
+                   "Cannot get modification time of the CGI executable "
+                   + filename);
     }
-    return st.st_mtime;
+    return mtime;
 }
 
 
@@ -127,6 +131,39 @@ int CCgiWatchFile::x_Read(char* buf)
 }
 
 
+# ifdef NCBI_OS_UNIX
+extern "C" {
+    static volatile bool s_AcceptTimedOut = false;
+    static void s_AlarmHandler(int)
+    {
+        s_AcceptTimedOut = true;
+    }
+}
+# endif
+
+
+bool CCgiApplication::x_FCGI_ShouldRestart(CTime& mtime,
+                                           CCgiWatchFile* watcher)
+{
+    // Check if this CGI executable has been changed
+    CTime mtimeNew = s_GetModTime(GetArguments().GetProgramName());
+    if (mtimeNew != mtime) {
+        _TRACE("CCgiApplication::x_RunFastCGI: "
+               "the program modification date has changed");
+        return true;
+    }
+    
+    // Check if the file we're watching (if any) has changed
+    // (based on contents, not timestamp!)
+    if (watcher  &&  watcher->HasChanged()) {
+        _TRACE("CCgiApplication::x_RunFastCGI:  "
+               "the watch file has changed");
+        return true;
+    }
+    return false;
+}
+
+
 bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 {
     *result = -100;
@@ -140,8 +177,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Registry
     const CNcbiRegistry& reg = GetConfig();
 
-    bool is_stat_log =
-        GetConfig().GetBool("CGI", "StatLog", false, CNcbiRegistry::eReturn);
+    bool is_stat_log = reg.GetBool("CGI", "StatLog", false,
+                                   CNcbiRegistry::eReturn);
     auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
     // Max. number of the Fast-CGI loop iterations
@@ -171,10 +208,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Watcher file -- to allow for stopping the Fast-CGI "prematurely"
     auto_ptr<CCgiWatchFile> watcher(0);
     {{
-        const string& filename = GetConfig().Get("FastCGI", "WatchFile.Name");
+        const string& filename = reg.Get("FastCGI", "WatchFile.Name");
         if ( !filename.empty() ) {
-            int limit = NStr::StringToNumeric
-                (GetConfig().Get("FastCGI", "WatchFile.Limit"));
+            int limit = reg.GetInt("FastCGI", "WatchFile.Limit", -1, 0,
+                                   CNcbiRegistry::eErrPost);
             if (limit <= 0) {
                 limit = 1024; // set a reasonable default
             }
@@ -182,8 +219,21 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }
     }}
 
+# ifdef NCBI_OS_UNIX
+    int timeout = reg.GetInt("FastCGI", "WatchFile.Timeout", -1, 0,
+                             CNcbiRegistry::eErrPost);
+    struct sigaction old_sa;
+    if (timeout > 0) {
+        struct sigaction sa;
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = s_AlarmHandler;
+        sa.sa_flags   = SA_RESTART;
+        sigaction(SIGALRM, &sa, &old_sa);
+    }
+# endif
+
     // Main Fast-CGI loop
-    time_t mtime = s_GetModTime( GetArguments().GetProgramName().c_str() );
+    CTime mtime = s_GetModTime(GetArguments().GetProgramName());
     for (unsigned int iteration = 0;  iteration < iterations;  ++iteration) {
 
         CTime start_time(CTime::eCurrent);
@@ -191,13 +241,35 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
                << " iteration of " << iterations);
 
+# ifdef NCBI_OS_UNIX
+        if (timeout > 0) {
+            alarm(timeout);
+        }
+# endif
+
         // Accept the next request and obtain its data
         FCGX_Stream *pfin, *pfout, *pferr;
         FCGX_ParamArray penv;
         if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
+# ifdef NCBI_OS_UNIX
+            if (s_AcceptTimedOut) {
+                s_AcceptTimedOut = false;
+                if (x_FCGI_ShouldRestart(mtime, watcher.get())) {
+                    break;
+                }
+            } else if (timeout > 0) {
+                alarm(0); // cancel the alarm!
+            }
+# endif
             _TRACE("CCgiApplication::x_RunFastCGI: no more requests");
             break;
         }
+
+# ifdef NCBI_OS_UNIX
+        if (timeout > 0) {
+            alarm(0); // cancel the alarm!
+        }
+# endif
 
         // Default exit status (error)
         *result = -1;
@@ -303,26 +375,18 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             stat->Submit(msg);
         }
 
-        // Check if this CGI executable has been changed
-        time_t mtimeNew =
-            s_GetModTime( GetArguments().GetProgramName().c_str() );
-        if (mtimeNew != mtime) {
-            _TRACE("CCgiApplication::x_RunFastCGI: "
-                   "the program modification date has changed");
-            break;
-        }
-
-        // Check if the file we're watching (if any) has changed
-        // (based on contents, not timestamp!)
-        if (watcher.get()  &&  watcher->HasChanged()) {
-            _TRACE("CCgiApplication::x_RunFastCGI:  "
-                   "the watch file has changed");
+        if (x_FCGI_ShouldRestart(mtime, watcher.get())) {
             break;
         }
     } // Main Fast-CGI loop
 
     // done
     _TRACE("CCgiApplication::x_RunFastCGI:  return (FastCGI loop finished)");
+# ifdef NCBI_OS_UNIX
+    if (timeout > 0) {
+        sigaction(SIGALRM, &old_sa, 0);
+    }
+# endif
     return true;
 }
 
@@ -336,6 +400,13 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2003/02/27 17:59:14  ucko
+ * +x_FCGI_ShouldRestart (factored from the end of x_RunFastCGI)
+ * Honor new config variable [FastCGI]WatchFile.Timeout, to allow
+ * checking for changes between requests.
+ * Change s_GetModTime to use CDirEntry::GetTime() instead of stat().
+ * Clean up registry queries (taking advantage of reg and GetInt()).
+ *
  * Revision 1.25  2003/02/26 17:34:36  kuznets
  * CCgiStatistics::Reset changed to take exception as a parameter
  *
