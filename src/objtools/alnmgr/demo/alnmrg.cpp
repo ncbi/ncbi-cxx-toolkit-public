@@ -97,7 +97,7 @@ void CAlnMrgApp::Init(void)
     arg_desc->AddDefaultKey
         ("gen2est", "Gen2ESTMerge",
          "Perform Gen2EST Merge",
-         CArgDescriptions::eBoolean, "t");
+         CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
         ("gapjoin", "GapJoin",
@@ -112,6 +112,11 @@ void CAlnMrgApp::Init(void)
     arg_desc->AddDefaultKey
         ("minusstrand", "MinusStrand",
          "Minus strand on the refseq when merging.",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("fillunaln", "FillUnalignedRegions",
+         "Fill unaligned regions.",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
@@ -198,7 +203,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
                            m_AddFlags);
             } else if (CType<CSeq_entry>::Match(i)) {
                 if ( !(tse_cnt++) ) {
-                    m_Mix->GetScope().AddTopLevelSeqEntry
+                    //m_Mix->GetScope().AddTopLevelSeqEntry
                         (*(CType<CSeq_entry>::Get(i)));
                 }
             }
@@ -281,6 +286,10 @@ void CAlnMrgApp::SetOptions(void)
         m_MergeFlags |= CAlnMix::fQuerySeqMergeOnly;
     }
 
+    if (args["fillunaln"]  &&  args["fillunaln"].AsBoolean()) {
+        m_MergeFlags |= CAlnMix::fFillUnalignedRegions;
+    }
+
     if (args["calcscore"]  &&  args["calcscore"].AsBoolean()) {
         m_AddFlags |= CAlnMix::fCalcScore;
     }
@@ -325,6 +334,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/06/26 22:00:25  todorov
+* + fFillUnalignedRegions
+*
 * Revision 1.4  2003/06/24 19:23:37  todorov
 * objmgr usage optional
 *
