@@ -38,7 +38,7 @@
 #include "messages.hpp"
 
 #include <corelib/ncbi_system.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/align_exception.hpp>
 #include <algorithm>
 
 
@@ -1145,6 +1145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2004/12/16 22:42:22  kapustin
+ * Move to algo/align/nw
+ *
  * Revision 1.60  2004/12/06 22:13:36  kapustin
  * File header update
  *

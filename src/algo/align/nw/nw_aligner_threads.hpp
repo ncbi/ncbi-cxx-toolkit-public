@@ -32,7 +32,7 @@
 *
 */
 
-#include <algo/align/nw_aligner.hpp>
+#include <algo/align/nw/nw_aligner.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -69,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/16 22:42:22  kapustin
+ * Move to algo/align/nw
+ *
  * Revision 1.1  2004/06/29 20:28:48  kapustin
  * Initial revision
  *

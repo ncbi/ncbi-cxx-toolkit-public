@@ -35,7 +35,7 @@
 #include "mm_aligner_threads.hpp"
 
 #include <corelib/ncbimtx.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -938,6 +938,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/12/16 22:42:22  kapustin
+ * Move to algo/align/nw
+ *
  * Revision 1.21  2004/06/29 20:53:04  kapustin
  * Move EnableMultipleThread() and associated members to CNWAligner
  *

@@ -36,8 +36,8 @@
 
 #include "messages.hpp"
 
-#include <algo/align/align_exception.hpp>
-#include <algo/align/nw_band_aligner.hpp>
+#include <algo/align/nw/align_exception.hpp>
+#include <algo/align/nw/nw_band_aligner.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/16 22:42:22  kapustin
+ * Move to algo/align/nw
+ *
  * Revision 1.2  2004/11/29 14:37:15  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *

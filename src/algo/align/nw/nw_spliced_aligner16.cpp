@@ -34,8 +34,8 @@
 
 #include <ncbi_pch.hpp>
 #include "messages.hpp"
-#include <algo/align/nw_spliced_aligner16.hpp>
-#include <algo/align/align_exception.hpp>
+#include <algo/align/nw/nw_spliced_aligner16.hpp>
+#include <algo/align/nw/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/12/16 22:42:22  kapustin
+ * Move to algo/align/nw
+ *
  * Revision 1.17  2004/12/06 22:13:36  kapustin
  * File header update
  *

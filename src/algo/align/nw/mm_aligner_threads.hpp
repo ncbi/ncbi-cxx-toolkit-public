@@ -32,7 +32,7 @@
 *
 */
 
-#include <algo/align/mm_aligner.hpp>
+#include <algo/align/nw/mm_aligner.hpp>
 #include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/16 22:42:22  kapustin
+ * Move to algo/align/nw
+ *
  * Revision 1.3  2003/09/03 17:29:20  kapustin
  * Fix cvs id heading tag
  *
