@@ -1,10 +1,10 @@
 (* ================================================================================
-	maketests.met
+	C++ tests
 
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.11 2001/07/07 01:34:25 juran Exp $
+	$Id: C++Tests,v 1.1 2001/08/03 18:34:23 juran Exp $
 	
    ================================================================================ *)
 
@@ -12,13 +12,15 @@
 -- Properties
 --
 
+property pUsingCPlusPlus : true
 property pProjectFileExtension : ".µ"
 property pCPlusPlusExtension : ".cpp"
 
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
 
-property pBuildApps : true
+-- Whether to compile everything.
+property pShouldBuild : true
 
 -- Which targets to create.
 -- If these are changed you must recreate the project files.  There is no direct effect on building.
@@ -30,16 +32,16 @@ property pCreateOptimizedTargets : true
 -- Putting a project tree inside a tool tree is evil.
 property CPPROOT : "cxx:" (* head of C++ toolkit tree within CodeWarrior folder *)
 
+property pDirsToCreate : {{relPath:"compilers:mac_prj", name:"bin"}}
+
+property pDebugPrefix : "debug.pfx"
+property pReleasePrefix : "release.pfx"
+
+property pLinkExecutables : true
+
 --
 -- Global variables
 --
-
-global gStartupDisk
-global gMW6root
-global gMWCWfolder
-global gMacLibs
-global gStubLibs
-global gPPCLibs
 
 global NCBICPP
 
@@ -48,25 +50,11 @@ global INCLUDEFILES
 global LIBRARIES
 global BINARIES
 
-global gProjectData
-
 --
 -- Routines specific to this project
 --
 
--- Since we can't put comments even between the lines of multi-line statements,
--- and since we don't want to move recipes for disabled projects out of context,
--- instead of "--SimpleProgramData" (which is what we would have liked),
--- we use "__SimpleProgramData" and pretend it means the same thing.
--- This handler allows us to do that.
-
-on __SimpleProgramData(projName, section, features)
-	
-	return {}
-	
-end __SimpleProgramData
-
-on SimpleProgramData(projName, section, features)
+on SimpleProjectData(projName, section, features)
 	
 	-- By default, the project name is also the name a source file in the project.
 	set myFileList to {projName}
@@ -79,6 +67,9 @@ on SimpleProgramData(projName, section, features)
 			through (count characters of projName) Â
 			of projName as string
 		set projName to pre & post
+	end if
+	if (count characters of projName) > 18 then
+		set projName to characters 1 through 18 of projName as string
 	end if
 	
 	tell application "CodeWarrior IDE 4.1.0.3"
@@ -100,23 +91,13 @@ on SimpleProgramData(projName, section, features)
 			{{projPath:myPath, fileList:myFileList}}}
 		
 	end tell
-end SimpleProgramData
+end SimpleProjectData
 
-on DataPlusLibs(dataRec, newLibs)
+on AddSimpleProject(projName, section, features)
 	
-	repeat with i in newLibs
-		copy i to end of projLibs of dataRec
-	end repeat
-	return dataRec
+	AddProject(SimpleProjectData(projName, section, features))
 	
-end DataPlusLibs
-
-on DataPlusSources(dataRec, newSrcs)
-	
-	copy items of newSrcs to end of fileList of item 1 of fileData of dataRec
-	return dataRec
-	
-end DataPlusSources
+end AddSimpleProject
 
 on SetProjectData()
 	tell application "CodeWarrior IDE 4.1.0.3"
@@ -149,48 +130,97 @@ on SetProjectData()
 			"object_seqloc", "object_seqalign", "object_seqfeat", "object_seqblock", "object_pub", Â
 			"object_medline", "object_biblio", "object_general"}
 		
-		tell me to Â
-			set gProjectData to {Â
-				SimpleProgramData("coretest", corelib, {"C++"}), Â
-				datatoolData, Â
-				SimpleProgramData("test_ncbitime", corelib, {"C++"}), Â
-				SimpleProgramData("test_ncbi_limits", corelib, {"C++"}), Â
-				SimpleProgramData("test_ncbi_core", connect, {"C"}), Â
-				SimpleProgramData("test_ncbi_buffer", connect, {"C"}), Â
-				SimpleProgramData("test_ncbi_socket_", connect, {"C", "sockets"}), Â
-				SimpleProgramData("test_ncbi_heapmgr", connect, {"C"}), Â
-				SimpleProgramData("test_ncbi_connutil_hit", connect, {"C"}), Â
-				SimpleProgramData("test_ncbi_connutil_misc", connect, {"C"}), Â
-				SimpleProgramData("socket_io_bouncer", connect, {"C"}), Â
-				SimpleProgramData("test_ncbi_file_connector", connect, {"C"}), Â
-				__SimpleProgramData("test_sock_connutil_misc", connect, {"C++", "sockets"}), Â
-				__SimpleProgramData("test_http_connutil_misc", connect, {"C", "sockets"}), Â
-				__SimpleProgramData("test_srv_connutil_misc", connect, {"C", "sockets"}), Â
-				DataPlusLibs(SimpleProgramData("test_ncbi_conn_stream", connect, {"C++"}), Â
-					{"corelib"}), Â
-				DataPlusLibs(DataPlusSources(SimpleProgramData("testserial", serial, {"C++"}), Â
-					{"serialobject", "serialobject_Base", "cppwebenv"}), Â
-					{"corelib", "util"}), Â
-				DataPlusLibs(SimpleProgramData("asn2asn", "objects:asn2asn", {"C++"}), Â
-					commonObjLibs), Â
-				DataPlusLibs(DataPlusLibs(SimpleProgramData("testmedline", "objects:testmedline", Â
-					{"C++"}), commonObjLibs), Â
-					{"object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
-						"object_medlars"}), Â
-				DataPlusLibs(DataPlusLibs(SimpleProgramData("testobjmgr", "objects:objmgr:test", Â
-					{"C++"}), commonObjLibs), {"objmgr"}), Â
-				DataPlusLibs(SimpleProgramData("testrangemap", util, {"C++"}), Â
-					{"corelib"}), Â
-				DataPlusLibs(DataPlusLibs(SimpleProgramData("id1_fetch", "app:id1_fetch", Â
-					{"C++", "sockets"}), commonObjLibs), {"object_id1", "connect", "mitsock"}) Â
-					}
-		
 	end tell
+	
+	AddSimpleProject("coretest", corelib, {"C++"})
+	AddProject(datatoolData)
+	AddSimpleProject("test_ncbitime", corelib, {"C++"})
+	AddSimpleProject("test_ncbi_limits", corelib, {"C++"})
+	AddSimpleProject("test_ncbi_core", connect, {"C"})
+	AddSimpleProject("test_ncbi_buffer", connect, {"C"})
+	AddSimpleProject("test_ncbi_socket_", connect, {"C", "sockets"})
+	AddSimpleProject("test_ncbi_heapmgr", connect, {"C"})
+	AddSimpleProject("test_ncbi_connutil_hit", connect, {"C", "sockets"})
+	AddSimpleProject("test_ncbi_connutil_misc", connect, {"C"})
+	AddSimpleProject("socket_io_bouncer", connect, {"C", "sockets"})
+	AddSimpleProject("test_ncbi_file_connector", connect, {"C"})
+	--AddSimpleProject("test_sock_connutil_misc", connect, {"C++", "sockets"})
+	--AddSimpleProject("test_http_connutil_misc", connect, {"C", "sockets"})
+	--AddSimpleProject("test_srv_connutil_misc", connect, {"C", "sockets"})
+	AddProject(DataPlusLibs(SimpleProjectData("test_ncbi_conn_stream", connect, Â
+		{"C++", "sockets"}), {"corelib"}))
+	AddProject(DataPlusLibs(DataPlusSources(SimpleProjectData("testserial", serial, {"C++"}), Â
+		{"serialobject", "serialobject_Base", "cppwebenv"}), Â
+		{"corelib", "util"}))
+	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "objects:asn2asn", {"C++"}), Â
+		commonObjLibs))
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testmedline", "objects:testmedline", Â
+		{"C++"}), commonObjLibs), Â
+		{"object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", Â
+			"object_medlars"}))
+	(*
+		AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testobjmgr", "objects:objmgr:test", Â
+			{"C++"}), commonObjLibs), {"objmgr"}))
+		*)
+	AddProject(DataPlusLibs(SimpleProjectData("testrangemap", util, {"C++"}), Â
+		{"corelib"}))
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("id1_fetch", "app:id1_fetch", Â
+		{"C++", "sockets"}), commonObjLibs), {"object_id1", "connect"}))
+	
 end SetProjectData
 
+on CopyHeaders()
+end CopyHeaders
+
 --
--- Routines generic to all projects
+-- Global variables
 --
+
+global gStartupDisk
+global gMW6root
+global gMWCWfolder
+global gMacLibs
+global gStubLibs
+global gPPCLibs
+global gMSLPPCLibs
+
+global gDistribRoot
+
+global gProjectsDir
+global gSourceDir
+global gIncludeDir
+global gLibsDir
+global gRsrcsDir
+global gOutputDir
+
+global gProjectData
+
+global gOpenGLdir
+global gOpenGLpresent
+
+on DataPlusLibs(dataRec, newLibs)
+	
+	repeat with i in newLibs
+		copy i to end of projLibs of dataRec
+	end repeat
+	return dataRec
+	
+end DataPlusLibs
+
+on DataPlusSources(dataRec, newSrcs)
+	
+	repeat with i in newSrcs
+		copy i to end of fileList of item 1 of fileData of dataRec
+	end repeat
+	return dataRec
+	
+end DataPlusSources
+
+on AddProject(projData)
+	
+	copy projData to end of gProjectData
+	
+end AddProject
 
 on ResolveAlias(pathname)
 	tell application "Finder"
@@ -201,54 +231,129 @@ on ResolveAlias(pathname)
 	end tell
 end ResolveAlias
 
-(* ==== These subroutines set paths and other preferences during population ==== *)
+on SandboxDir()
+	
+	-- "<Boot>:Development:Trees:NCBI:vault.ncbi:"
+	
+	set Dev to ResolveAlias(gStartupDisk & "Development")
+	set Trees to ResolveAlias(Dev & "Trees")
+	set NCBIgroup to ResolveAlias(Trees & "NCBI")
+	set Vault to ResolveAlias(NCBIgroup & "vault.ncbi")
+	return Vault
+	
+end SandboxDir
 
-on DoSetGlobals()
+on DistribDir()
+	
+	-- "<Boot>:Development:NCBI:"
+	-- This is NOT the "distrib" directory!  This is where toolkit distributions go.
+	set Dev to ResolveAlias(gStartupDisk & "Development")
+	return ResolveAlias(Dev & "NCBI")
+	
+end DistribDir
+
+on CToolkitRoot()
+	
+	try
+		set modRoot to ResolveAlias(DistribDir() & "ncbi")
+	on error
+		try
+			set modRoot to ResolveAlias(SandboxDir() & "distrib")
+		on error
+			set modRoot to ResolveAlias(gMW6root & "ncbi")
+		end try
+	end try
+	
+	return modRoot
+	
+end CToolkitRoot
+
+on CPlusPlusToolkitRoot()
+	
+	try
+		set modRoot to ResolveAlias(DistribDir() & "c++")
+	on error
+		try
+			set modRoot to ResolveAlias(ResolveAlias(SandboxDir() & "internal") & "c++")
+		on error
+			set modRoot to ResolveAlias(gMW6root & "cxx")
+		end try
+	end try
+	
+	return modRoot
+	
+end CPlusPlusToolkitRoot
+
+on ModuleRoot()
+	
+	if pUsingCPlusPlus then
+		return CPlusPlusToolkitRoot()
+	else
+		return CToolkitRoot()
+	end if
+	
+end ModuleRoot
+
+on FindOpenGL()
 	tell application "Finder"
 		
+		set results to every folder of folder gMW6root whose name starts with "OpenGL SDK"
+		if (count results) > 0 then
+			set dir to item 1 of results as string
+		else
+			set dir to ""
+		end if
+		
+		return dir
+		
+	end tell
+end FindOpenGL
+
+on SetGlobals()
+	tell application "Finder"
+		
+		set gProjectData to {}
+		
 		set gStartupDisk to startup disk as string
-		set gMW6root to gStartupDisk & "Metrowerks CodeWarrior 6.0:" as string
-		set gMWCWfolder to gMW6root & "Metrowerks CodeWarrior:" as string
+		set gMW6root to gStartupDisk & "Metrowerks CodeWarrior 6.0:"
+		set gMWCWfolder to gMW6root & "Metrowerks CodeWarrior:"
 		set gMacLibs to gMWCWfolder & "MacOS Support:Universal:Libraries:"
 		set gStubLibs to gMacLibs & "StubLibraries:"
 		set gPPCLibs to gMacLibs & "PPCLibraries:"
+		set gMSLPPCLibs to gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:"
 		
-		set NCBICPP to gMW6root & CPPROOT
+		set gDistribRoot to my ModuleRoot()
 		
-		try
-			tell me to set Dev to ResolveAlias(gStartupDisk & "Development")
-			tell me to set Trees to ResolveAlias(Dev & "Trees")
-			tell me to set NCBIgroup to ResolveAlias(Trees & "NCBI")
-			tell me to set Vault to ResolveAlias(NCBIgroup & "ncbi.vault")
-			tell me to set Internal to ResolveAlias(Vault & "internal")
-			tell me to set IntCpp to ResolveAlias(Internal & "c++")
-			set NCBICPP to IntCpp
-		end try
+		set gIncludeDir to gDistribRoot & "include:"
+		if pUsingCPlusPlus then
+			set gSourceDir to gDistribRoot & "src:"
+			set gLibsDir to gDistribRoot & "compilers:mac_prj:lib:"
+			set gOutputDir to gDistribRoot & "compilers:mac_prj:bin:"
+			set gProjectsDir to gOutputDir
+		else
+			set gSourceDir to gDistribRoot
+			set gLibsDir to gDistribRoot & "lib:"
+			set gOutputDir to gDistribRoot & "build:"
+			set gCToolsDir to gDistribRoot & "ctools:"
+			set gRsrcsDir to gDistribRoot & "link:macmet:"
+		end if
 		
-		set SOURCEFILES to NCBICPP & "src:"
-		set INCLUDEFILES to NCBICPP & "include:"
-		set LIBRARIES to NCBICPP & "compilers:mac_prj:lib:"
-		set BINARIES to NCBICPP & "compilers:mac_prj:bin:"
+		set gOpenGLdir to my FindOpenGL()
+		set gOpenGLpresent to (gOpenGLdir is not "")
 		
-	end tell
-end DoSetGlobals
-
-on CreateFolders()
-	tell application "Finder"
-		
-		if not (exists (folder BINARIES)) then
-			make new folder at folder (NCBICPP & "compilers:mac_prj:") with properties {name:"bin"}
+		if pLinkExecutables then
+			set gProjectsDir to gOutputDir
+		else
+			set gProjectsDir to gLibsDir
 		end if
 		
 	end tell
-end CreateFolders
+end SetGlobals
 
-on DoSetDebugPreferences()
+on SetDebugSettings(shouldDebug)
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
-		(* ==== ONLY settings that are directly relevant to debugging and optimization should go here! ==== *)
-		
-		if DODEBUG = "TRUE" then
+		if shouldDebug then
 			(* ===== Panel PPC Global Optimizer =====  *)
 			Set Preferences of panel "PPC Global Optimizer" to Â
 				{Optimize For:code_Speed, Level:0}
@@ -259,8 +364,7 @@ on DoSetDebugPreferences()
 			(* ===== Panel C/C++ Language =====  *)
 			Set Preferences of panel "C/C++ Compiler" to Â
 				{Inlining:inline_none Â
-					, AutoInlining:false Â
-					, Prefix File:"debug.pfx"}
+					, AutoInlining:false}
 			
 		else
 			(* ==== optimized/release settings ==== *)
@@ -274,14 +378,13 @@ on DoSetDebugPreferences()
 			(* ===== Panel C/C++ Language =====  *)
 			Set Preferences of panel "C/C++ Compiler" to Â
 				{Inlining:inline_smart Â
-					, AutoInlining:true Â
-					, Prefix File:"release.pfx"}
+					, AutoInlining:true}
 		end if
 		
 	end tell
-end DoSetDebugPreferences
+end SetDebugSettings
 
-on DoSetPreferences()
+on SetPreferences()
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		(* ===== Section "Target" ===== *)
@@ -290,9 +393,12 @@ on DoSetPreferences()
 		Set Preferences of panel "Target Settings" to {Linker:"MacOS PPC Linker"}
 		
 		-- Panel "PPC Target"
-		Set Preferences of panel "PPC Project" to Â
-			{Project Type:standard application, SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL", Preferred Size:8000, Minimum Size:5000, Stack Size:64}
-		
+		if pLinkExecutables then
+			Set Preferences of panel "PPC Project" to Â
+				{Project Type:standard application, SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL", Preferred Size:8000, Minimum Size:5000, Stack Size:64}
+		else
+			Set Preferences of panel "PPC Project" to {Project Type:library}
+		end if
 		(* ===== Section "Language Settings" ===== *)
 		
 		-- Panel "C/C++ Language"
@@ -300,10 +406,8 @@ on DoSetPreferences()
 			{Activate CPlusPlus:false Â
 				, ARM Conformance:false Â
 				, Exception Handling:true Â
-				, Inlining:inline_none Â
 				, RTTI:true Â
-				, AutoInlining:false Â
-				, Pool Strings:false Â
+				, Pool Strings:true Â
 				, Dont Reuse Strings:false Â
 				, Require Function Prototypes:true Â
 				, ANSI Strict:false Â
@@ -311,8 +415,7 @@ on DoSetPreferences()
 				, Expand Trigraph Sequences:false Â
 				, MPW Newlines:false Â
 				, MPW Pointer Type Rules:false Â
-				, Enums Always Ints:false Â
-				, Prefix File:"debug.pfx"}
+				, Enums Always Ints:false}
 		
 		-- Panel "C/C++ Warnings"
 		Set Preferences of panel "C/C++ Warnings" to Â
@@ -349,7 +452,6 @@ on DoSetPreferences()
 			{Generate SYM File:true Â
 				, Full Path In Sym Files:true Â
 				, Generate Link Map:false Â
-				, Suppress Warnings:false Â
 				, Link Mode:fast Â
 				, Initialization Name:Â
 				"", Main Name:Â
@@ -372,12 +474,12 @@ on DoSetPreferences()
 		Set Preferences of panel "Debugger Target" to Â
 			{Log System Messages:false}
 		
-		my DoSetPaths1()
+		my SetPaths1()
 		
 	end tell
-end DoSetPreferences
+end SetPreferences
 
-on DoSetPaths1()
+on SetPaths1()
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		(* ===== Panel Access Paths ===== *)
@@ -386,52 +488,53 @@ on DoSetPaths1()
 		-- We want to find the NCBI "all.h" first.
 		Set Preferences of panel "Access Paths" to {System Paths:{}} -- This removes the compiler default folder
 		
-		Set Preferences of panel "Access Paths" to {Convert Paths:true}
-		Set Preferences of panel "Access Paths" to {User Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}}
-		Set Preferences of panel "Access Paths" to {System Paths:{{name:INCLUDEFILES, recursive:true, origin:absolute}}} -- Added for speed
-		Set Preferences of panel "Access Paths" to {User Paths:{{name:LIBRARIES, recursive:true, origin:absolute}}}
+		Set Preferences of panel "Access Paths" to {Always Full Search:true, Convert Paths:true}
 		
 	end tell
-end DoSetPaths1
+end SetPaths1
 
-on DoSetPaths2()
+on SetPaths2()
 	tell application "CodeWarrior IDE 4.1.0.3"
+		
+		-- Add recursive include dir AFTER source dirs to avoid major performance hit
+		set pathsToAdd to {}
+		-- gDistribRoot & "link:macmet:", 
+		repeat with i in {gDistribRoot, Â
+			gLibsDir, gIncludeDir}
+			copy {name:i, recursive:false, origin:absolute} to end of pathsToAdd
+		end repeat
+		if not pUsingCPlusPlus then
+			copy {name:gDistribRoot & "link:macmet:", recursive:true, origin:absolute} to end of pathsToAdd
+		end if
+		Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
+		
+		set pathsToAdd to {{name:gIncludeDir, recursive:true, origin:absolute}}
+		if not pUsingCPlusPlus then
+			copy {name:gDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
+		end if
 		
 		-- After we have added all paths, reinsert compiler default at end of list
 		set dirsToAdd to {Â
-			":MacOS Support:Headers:", Â
-			":MacOS Support:Libraries:", Â
-			":MacOS Support:Universal:", Â
-			":MacOS Support:Profiler:", Â
-			":MSL:MSL_C:", Â
-			":MSL:MSL_C++:"}
+			":MacOS Support:", Â
+			":MSL:"}
+		if gOpenGLpresent then
+			copy gOpenGLdir to end of dirsToAdd
+		end if
+		-- if gPNGpresent ...
 		
-		set pathsToAdd to {}
 		repeat with i in dirsToAdd
 			copy {name:i, recursive:true, origin:shell relative} to end of pathsToAdd
 		end repeat
 		Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		
 	end tell
-end DoSetPaths2
-
-on AddLibraries()
-	tell application "CodeWarrior IDE 4.1.0.3"
-		
-		Add Files {METROWERKSCW & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.PPC.Lib"} To Segment 1
-		Add Files {METROWERKSCW & "MSL:MSL_C++:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib"} To Segment 1
-		Add Files {METROWERKSCW & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL SIOUX.PPC.Lib"} To Segment 1
-		Add Files {METROWERKSCW & "MacOS Support:Universal:Libraries:StubLibraries:InterfaceLib"} To Segment 1
-		Add Files {METROWERKSCW & "MacOS Support:Universal:Libraries:StubLibraries:MathLib"} To Segment 1
-		Add Files {METROWERKSCW & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib"} To Segment 1
-		
-	end tell
-end AddLibraries
+end SetPaths2
 
 on SetWeakLink(libName)
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
-		set the weak link of every target file of target (count targets of project document 1) of project document 1 Â
+		set the weak link of Â
+			every target file of target (count targets of project document 1) of project document 1 Â
 			whose path ends with ":" & libName Â
 			to true
 		
@@ -442,9 +545,9 @@ on AddBlueLibs()
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		set libsToAdd to {Â
-			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.PPC.Lib", Â
-			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib", Â
-			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL SIOUX.PPC.Lib", Â
+			gMSLPPCLibs & "MSL C.PPC.Lib", Â
+			gMSLPPCLibs & "MSL C++.PPC.Lib", Â
+			gMSLPPCLibs & "MSL SIOUX.PPC.Lib", Â
 			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", Â
 			gStubLibs & "InterfaceLib", Â
 			gStubLibs & "AppearanceLib", Â
@@ -464,9 +567,9 @@ on AddCarbonLibs()
 	tell application "CodeWarrior IDE 4.1.0.3"
 		
 		set libsToAdd to {Â
-			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C.Carbon.Lib", Â
-			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL C++.PPC.Lib", Â
-			gMWCWfolder & "MSL:MSL_C:MSL_MacOS:Lib:PPC:MSL SIOUX.Carbon.Lib", Â
+			gMSLPPCLibs & "MSL C.Carbon.Lib", Â
+			gMSLPPCLibs & "MSL C++.PPC.Lib", Â
+			gMSLPPCLibs & "MSL SIOUX.Carbon.Lib", Â
 			gMWCWfolder & "MacOS Support:Libraries:Runtime:Runtime PPC:MSL RuntimePPC.Lib", Â
 			gStubLibs & "CarbonLib"}
 		
@@ -496,7 +599,7 @@ on AddFeatures(features, flags)
 		end if
 		
 		if features contains "OpenGL" then
-			set OpenGLLibs to OGLSDK & "Libraries:"
+			set OpenGLLibs to gOpenGLdir & "Libraries:"
 			Set Preferences of panel "Access Paths" to {System Paths:{{name:OpenGLLibs, recursive:true, origin:absolute}}}
 			Add Files {OpenGLLibs & "OpenGLLibraryStub", OpenGLLibs & "OpenGLUtilityStub"}
 		end if
@@ -510,12 +613,16 @@ on SetupTarget(proj, flags)
 		-- initialize variables
 		set projRsrcs to {}
 		set projFeatures to {}
+		set sysPaths to {}
 		
 		-- Grab the fields of our project record and store them in local variables.
 		set projName to proj's name
 		set projSettings to proj's settings
 		try
 			set projFeatures to proj's features
+		end try
+		try
+			set sysPaths to proj's sysPaths
 		end try
 		try
 			set projRsrcs to proj's rsrcs
@@ -535,19 +642,23 @@ on SetupTarget(proj, flags)
 			set targetDebug to ""
 		end if
 		set targetName to projName & " " & targetAPI
-		set fnSuffix to "-" & targetAPI
+		set libNameSuffix to "-" & targetAPI
 		if targetDebug is not "" then
 			set targetName to targetName & " " & targetDebug
-			set fnSuffix to fnSuffix & "-" & targetDebug
+			set libNameSuffix to libNameSuffix & "-" & targetDebug
 		end if
-		set targetFilename to targetName
+		if pLinkExecutables then
+			set targetFilename to targetName
+		else
+			set targetFilename to projName & libNameSuffix & ".lib"
+		end if
 		
 		-- Make the new target, and set the current target to be it.
 		make new target at project document 1 with properties {name:targetName}
 		set the current target of project document 1 to the result
 		
 		-- Set default settings.  do this BEFORE setting per-project settings!
-		my DoSetPreferences()
+		my SetPreferences()
 		
 		-- Set the name of the output file (the application)
 		Set Preferences of panel "PPC Project" to {File Name:targetFilename}
@@ -557,10 +668,25 @@ on SetupTarget(proj, flags)
 			Set Preferences of panel "PPC Project" to ppcProject of projSettings
 		end if
 		--Set Preferences of panel "Access Paths" to {User Paths:{{name:NCBISOURCE & projPath, origin:absolute}}}
-		my DoSetPaths2()
+		my SetPaths2()
+		
+		-- Add per-project system paths.
+		set pathsToAdd to {}
+		repeat with i in sysPaths
+			copy {name:i, recursive:true, origin:absolute} to end of pathsToAdd
+		end repeat
+		if (count pathsToAdd) > 0 then Â
+			Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
 		
 		-- Set the appropriate prefix file.
 		set prefixFile to Prefix File of projSettings
+		if prefixFile is "" then
+			if flags contains "debug" then
+				set prefixFile to pDebugPrefix
+			else
+				set prefixFile to pReleasePrefix
+			end if
+		end if
 		if flags contains "Carbon" then
 			if prefixFile is "" then
 				set prefixFile to "CarbonPrefix.h"
@@ -572,7 +698,7 @@ on SetupTarget(proj, flags)
 		
 		-- Are we assuming a .c or a .cpp extension?
 		if projFeatures contains "C++" then
-			set fileExtension to ".cpp"
+			set fileExtension to pCPlusPlusExtension
 		else
 			set fileExtension to ".c"
 		end if
@@ -581,56 +707,49 @@ on SetupTarget(proj, flags)
 		repeat with group in projFileData
 			set projPath to projPath of group
 			Set Preferences of panel "Access Paths" to Â
-				{User Paths:{{name:SOURCEFILES & projPath, origin:absolute}}}
+				{User Paths:{{name:gSourceDir & projPath, origin:absolute}}}
 			set fileList to group's fileList
 			set filesToAdd to {}
 			repeat with i in fileList
-				copy SOURCEFILES & projPath & i & fileExtension to end of filesToAdd
+				if i does not contain "." then set i to i & fileExtension
+				copy gSourceDir & projPath & i to end of filesToAdd
 			end repeat
 			Add Files filesToAdd
 		end repeat
 		
-		-- To debug, or not to debug
 		if flags contains "debug" then
 			set the debug of every target file of target (count targets of project document 1) Â
 				of project document 1 to true
-			Set Preferences of panel "PPC Global Optimizer" to Â
-				{Optimize For:code_Speed, Level:0}
-			Set Preferences of panel "PPC Linker" to Â
-				{Generate SYM File:true}
-			Set Preferences of panel "C/C++ Compiler" to Â
-				{Inlining:inline_none Â
-					, AutoInlining:false Â
-					, Prefix File:"debug.pfx"}
+			my SetDebugSettings(true)
 		else
-			Set Preferences of panel "PPC Global Optimizer" to Â
-				{Optimize For:code_Speed, Level:4}
-			Set Preferences of panel "PPC Linker" to Â
-				{Generate SYM File:false}
-			Set Preferences of panel "C/C++ Compiler" to Â
-				{Inlining:inline_smart Â
-					, AutoInlining:true Â
-					, Prefix File:"release.pfx"}
+			my SetDebugSettings(false)
 		end if
 		
 		-- Add appropriate system libraries.
-		if flags contains "Carbon" then
-			my AddCarbonLibs()
-		else
-			my AddBlueLibs()
+		if pLinkExecutables then
+			if flags contains "Carbon" then
+				my AddCarbonLibs()
+			else
+				my AddBlueLibs()
+			end if
 		end if
 		my AddFeatures(projFeatures, flags)
 		
 		set filesToAdd to {}
 		
 		-- Add user libraries.
+		if projFeatures contains "sockets" then
+			if projLibs does not contain "mitsock" then
+				copy "mitsock" to beginning of projLibs
+			end if
+		end if
 		repeat with i in projLibs
-			copy LIBRARIES & i & fnSuffix & ".lib" to end of filesToAdd
+			copy gLibsDir & i & libNameSuffix & ".lib" to end of filesToAdd
 		end repeat
 		
 		-- Add resources.
 		repeat with i in projRsrcs
-			copy gResources & i to end of filesToAdd
+			copy gRsrcsDir & i to end of filesToAdd
 		end repeat
 		
 		Add Files filesToAdd
@@ -639,6 +758,20 @@ on SetupTarget(proj, flags)
 		
 	end tell
 end SetupTarget
+
+on CreateFolders()
+	tell application "Finder"
+		
+		repeat with i in pDirsToCreate
+			set pth to relPath of i
+			if pth is not "" then set pth to pth & ":"
+			if not (exists folder (gDistribRoot & pth & i's name)) then
+				make new folder at folder (gDistribRoot & pth) with properties {name:i's name}
+			end if
+		end repeat
+		
+	end tell
+end CreateFolders
 
 on CreateProject(proj)
 	tell application "CodeWarrior IDE 4.1.0.3"
@@ -653,7 +786,7 @@ on CreateProject(proj)
 		end try
 		
 		set projFilename to proj's name & pProjectFileExtension
-		set projPathname to BINARIES & projFilename
+		set projPathname to gProjectsDir & projFilename
 		if pAlwaysCreateProjects or not (exists file projPathname of application "Finder") then
 			
 			try
@@ -695,9 +828,9 @@ on CreateAllProjects()
 	
 end CreateAllProjects
 
-on BuildProgram(projName)
+on BuildProject(projName)
 	tell application "CodeWarrior IDE 4.1.0.3"
-		open (BINARIES & projName & pProjectFileExtension)
+		open (gProjectsDir & projName & pProjectFileExtension)
 		repeat with i from 2 to (count targets of project document 1)
 			set the current target of project document 1 to target i of project document 1
 			Make Project
@@ -715,20 +848,25 @@ on BuildProgram(projName)
 		set the current target of project document 1 to target 1 of project document 1
 		Close Project
 	end tell
-end BuildProgram
+end BuildProject
 
-on BuildAllPrograms()
+on BuildAllProjects()
 	
 	repeat with proj in gProjectData
+		try
+			set projName to proj's name
+		on error
+			set projName to ""
+		end try
 		-- This statement doesn't work, because AppleScript is broken.
 		if proj is not {} then
-			try
-				BuildProgram(proj's name)
-			end try
+			if projName is not "" then
+				BuildProject(projName)
+			end if
 		end if
 	end repeat
 	
-end BuildAllPrograms
+end BuildAllProjects
 
 on SignalCompletion()
 	
@@ -740,22 +878,21 @@ on SignalCompletion()
 	
 end SignalCompletion
 
-(* ==== here's where actual work gets done ! ==== *)
-
 with timeout of 60000 seconds
 	
-	DoSetGlobals()
+	SetGlobals()
 	
 	SetProjectData()
 	
 	CreateFolders()
+	CopyHeaders()
 	
 	tell application "CodeWarrior IDE 4.1.0.3" to activate
 	
 	CreateAllProjects()
 	
-	if pBuildApps then
-		BuildAllPrograms()
+	if pShouldBuild then
+		BuildAllProjects()
 	end if
 	
 	SignalCompletion()
