@@ -517,28 +517,29 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     CAlnMap::TNumseg stop_seg  = m_StopSegs[i];
 
     CRef<CAlnChunk>  chunk(new CAlnChunk());
-
-    chunk->SetRange().SetFrom(m_AlnMap.m_DS->GetStarts()
-                              [start_seg * m_AlnMap.m_DS->GetDim()
-                              + m_Row]);
+    int from, to;
+    from = m_AlnMap.m_DS->GetStarts()[start_seg * m_AlnMap.m_DS->GetDim()
+                                     + m_Row];
     if ( !chunk->IsGap() ) {
-        chunk->SetRange().SetTo(chunk->GetRange().GetFrom()
-                                + m_AlnMap.m_DS->GetLens()[start_seg] - 1);
+        to = chunk->GetRange().GetFrom()
+            + m_AlnMap.m_DS->GetLens()[start_seg] - 1;
     } else {
-        chunk->SetRange().SetFrom(-1);
-        chunk->SetRange().SetTo(-1);
+        from = -1;
+        to = -1;
     }
-
+    chunk->SetRange().Set(from, to);
     chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, start_seg));
 
     for (CAlnMap::TNumseg seg = start_seg + 1;  seg <= stop_seg;  seg++) {
         if ( !chunk->IsGap() ) {
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
-                chunk->SetRange().SetTo(chunk->GetRange().GetTo()
-                                        + m_AlnMap.m_DS->GetLens()[seg]);
+                chunk->SetRange().Set(chunk->GetRange().GetFrom(),
+                                      chunk->GetRange().GetTo()
+                                      + m_AlnMap.m_DS->GetLens()[seg]);
             } else {
-                chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
-                                          - m_AlnMap.m_DS->GetLens()[seg]);
+                chunk->SetRange().Set(chunk->GetRange().GetFrom()
+                                      - m_AlnMap.m_DS->GetLens()[seg],
+                                      chunk->GetRange().GetTo());
             }
         }
         chunk->SetType(chunk->GetType()
@@ -550,36 +551,35 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         // from position
         CNumSegWithOffset seg = m_AlnMap.x_GetSegFromRawSeg(start_seg);
         if (seg.GetAlnSeg() < 0) {
-            chunk->SetAlnRange().SetFrom(-1); // before the aln start
+            // before the aln start
+            from = -1;
         } else {
             if (seg.GetOffset() > 0) {
                 // between aln segs
-                chunk->SetAlnRange().SetFrom
-                    (m_AlnMap.GetAlnStop(seg.GetAlnSeg()));
+                from = m_AlnMap.GetAlnStop(seg.GetAlnSeg());
             } else {
                 // at an aln seg
-                chunk->SetAlnRange().SetFrom
-                    (m_AlnMap.GetAlnStart(seg.GetAlnSeg()) +
-                     (i == 0  &&  m_LeftDelta ? m_LeftDelta : 0));
+                from = m_AlnMap.GetAlnStart(seg.GetAlnSeg()) +
+                    (i == 0  &&  m_LeftDelta ? m_LeftDelta : 0);
             }
         }
 
         // to position
         seg = m_AlnMap.x_GetSegFromRawSeg(stop_seg);
         if (seg.GetAlnSeg() < 0) {
-            chunk->SetAlnRange().SetTo(0); // before the aln start
+            // before the aln start
+            to = 0;
         } else {
             if (seg.GetOffset() > 0) {
                 // between aln segs
-                chunk->SetAlnRange().SetTo
-                    (m_AlnMap.GetAlnStop(seg.GetAlnSeg())+1);
+                to = m_AlnMap.GetAlnStop(seg.GetAlnSeg())+1;
             } else {
                 // at an aln seg
-                chunk->SetAlnRange().SetTo
-                    (m_AlnMap.GetAlnStop(seg.GetAlnSeg()) -
-                     (i == size() - 1  &&  m_RightDelta ? m_RightDelta : 0));
+                to = m_AlnMap.GetAlnStop(seg.GetAlnSeg()) -
+                    (i == size() - 1  &&  m_RightDelta ? m_RightDelta : 0);
             }
         }
+        chunk->SetAlnRange().Set(from, to);
     }}
 
 
@@ -587,11 +587,12 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     if (i == 0 && m_LeftDelta) {
         if (!chunk->IsGap()) {
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
-                chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
-                                          + m_LeftDelta);
+                chunk->SetRange().Set
+                    (chunk->GetRange().GetFrom() + m_LeftDelta,
+                     chunk->GetRange().GetTo());
             } else {
-                chunk->SetRange().SetTo(chunk->GetRange().GetTo()
-                                        - m_LeftDelta);
+                chunk->SetRange().Set(chunk->GetRange().GetFrom(),
+                                      chunk->GetRange().GetTo() - m_LeftDelta);
             }
             chunk->SetType(chunk->GetType() & ~fNoSeqOnLeft);
         }            
@@ -600,11 +601,13 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
     if (i == size() - 1 && m_RightDelta) {
         if (!chunk->IsGap()) {
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
-                chunk->SetRange().SetTo(chunk->GetRange().GetTo()
-                                        - m_RightDelta);
+                chunk->SetRange().Set
+                    (chunk->GetRange().GetFrom(),
+                     chunk->GetRange().GetTo() - m_RightDelta);
             } else {
-                chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
-                                          + m_RightDelta);
+                chunk->SetRange().Set
+                    (chunk->GetRange().GetFrom() + m_RightDelta,
+                     chunk->GetRange().GetTo());
             }
             chunk->SetType(chunk->GetType() & ~fNoSeqOnRight);
         }
@@ -678,6 +681,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2002/12/19 20:24:53  grichenk
+* Updated usage of CRange<>
+*
 * Revision 1.17  2002/11/13 16:40:56  todorov
 * out of range check for GetAlnPosFromSeqPos
 *

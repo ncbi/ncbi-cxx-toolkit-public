@@ -122,8 +122,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         {
             SLoc_Info info;
             info.m_Id = &loc.GetWhole();
-            info.m_Range.SetFrom(TRange::GetWholeFrom());
-            info.m_Range.SetTo(TRange::GetWholeTo());
+            info.m_Range.Set(TRange::GetWholeFrom(), TRange::GetWholeTo());
             m_LocList.push_back(info);
             return;
         }
@@ -131,8 +130,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         {
             SLoc_Info info;
             info.m_Id = &loc.GetInt().GetId();
-            info.m_Range.SetFrom(loc.GetInt().GetFrom());
-            info.m_Range.SetTo(loc.GetInt().GetTo());
+            info.m_Range.Set(loc.GetInt().GetFrom(), loc.GetInt().GetTo());
             if ( loc.GetInt().IsSetStrand() )
                 info.m_Strand = loc.GetInt().GetStrand();
             m_LocList.push_back(info);
@@ -142,8 +140,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         {
             SLoc_Info info;
             info.m_Id = &loc.GetPnt().GetId();
-            info.m_Range.SetFrom(loc.GetPnt().GetPoint());
-            info.m_Range.SetTo(loc.GetPnt().GetPoint());
+            info.m_Range.Set(loc.GetPnt().GetPoint(), loc.GetPnt().GetPoint());
             if ( loc.GetPnt().IsSetStrand() )
                 info.m_Strand = loc.GetPnt().GetStrand();
             m_LocList.push_back(info);
@@ -154,8 +151,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
                 SLoc_Info info;
                 info.m_Id = &(*ii)->GetId();
-                info.m_Range.SetFrom((*ii)->GetFrom());
-                info.m_Range.SetTo((*ii)->GetTo());
+                info.m_Range.Set((*ii)->GetFrom(), (*ii)->GetTo());
                 if ( (*ii)->IsSetStrand() )
                     info.m_Strand = (*ii)->GetStrand();
                 m_LocList.push_back(info);
@@ -167,8 +163,7 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
             iterate ( CPacked_seqpnt::TPoints, pi, loc.GetPacked_pnt().GetPoints() ) {
                 SLoc_Info info;
                 info.m_Id = &loc.GetPacked_pnt().GetId();
-                info.m_Range.SetFrom(*pi);
-                info.m_Range.SetTo(*pi);
+                info.m_Range.Set(*pi, *pi);
                 if ( loc.GetPacked_pnt().IsSetStrand() )
                     info.m_Strand = loc.GetPacked_pnt().GetStrand();
                 m_LocList.push_back(info);
@@ -193,16 +188,16 @@ void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
         {
             SLoc_Info infoA;
             infoA.m_Id = &loc.GetBond().GetA().GetId();
-            infoA.m_Range.SetFrom(loc.GetBond().GetA().GetPoint());
-            infoA.m_Range.SetTo(loc.GetBond().GetA().GetPoint());
+            infoA.m_Range.Set(loc.GetBond().GetA().GetPoint(),
+                              loc.GetBond().GetA().GetPoint());
             if ( loc.GetBond().GetA().IsSetStrand() )
                 infoA.m_Strand = loc.GetBond().GetA().GetStrand();
             m_LocList.push_back(infoA);
             if ( loc.GetBond().IsSetB() ) {
                 SLoc_Info infoB;
                 infoB.m_Id = &loc.GetBond().GetB().GetId();
-                infoB.m_Range.SetFrom(loc.GetBond().GetB().GetPoint());
-                infoB.m_Range.SetTo(loc.GetBond().GetB().GetPoint());
+                infoB.m_Range.Set(loc.GetBond().GetB().GetPoint(),
+                                  loc.GetBond().GetB().GetPoint());
                 if ( loc.GetBond().GetB().IsSetStrand() )
                     infoB.m_Strand = loc.GetBond().GetB().GetStrand();
                 m_LocList.push_back(infoB);
@@ -485,6 +480,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.19  2002/12/19 20:24:54  grichenk
+ * Updated usage of CRange<>
+ *
  * Revision 6.18  2002/12/06 15:36:04  grichenk
  * Added overlap type for annot-iterators
  *

@@ -249,7 +249,7 @@ void CTestRangeMap::TestRangeMap(void) const
         for ( int pos = 0; pos <= m_Length + 2*m_RangeLength;
               pos += m_ScanStep ) {
             TRange range;
-            range.SetFrom(pos).SetLength(m_ScanLength);
+            range.Set(pos, pos + m_ScanLength - 1);
             
             StartFrom(range);
             
@@ -354,6 +354,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/12/19 20:24:56  grichenk
+ * Updated usage of CRange<>
+ *
  * Revision 1.11  2002/11/08 19:43:39  grichenk
  * CConstRef<> constructor made explicit
  *

@@ -1512,10 +1512,10 @@ CRef<CSeq_loc> SourceToProduct(const CSeq_feat& feat,
             prot_length = numeric_limits<TSeqPos>::max();
         }
         non_const_iterate (SRelLoc::TRanges, it, rl.m_Ranges) {
-            it->SetFrom((it->GetFrom() - base_frame) / 3);
-            it->SetTo  ((it->GetTo()   - base_frame) / 3);
+            it->Set((it->GetFrom() - base_frame) / 3,
+                    (it->GetTo()   - base_frame) / 3);
             if ((flags & fS2P_AllowTer)  &&  it->GetTo() == prot_length) {
-                it->SetTo(it->GetTo() - 1);
+                it->Set(it->GetFrom(), it->GetTo() - 1);
             }
         }
     } else {
@@ -1554,16 +1554,18 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
             prot_length = numeric_limits<TSeqPos>::max();
         }
         non_const_iterate (SRelLoc::TRanges, it, rl.m_Ranges) {
+            TSeqPos from, to;
             if ((flags & fP2S_Extend)  &&  it->GetFrom() == 0) {
-                it->SetFrom(0);
+                from = 0;
             } else {
-                it->SetFrom(it->GetFrom() * 3 + base_frame);
+                from = it->GetFrom() * 3 + base_frame;
             }
             if ((flags & fP2S_Extend)  &&  it->GetTo() == prot_length - 1) {
-                it->SetTo(nuc_length - 1);
+                to = nuc_length - 1;
             } else {
-                it->SetTo(it->GetTo() * 3 + base_frame + 2);
+                to = it->GetTo() * 3 + base_frame + 2;
             }
+            it->Set(from, to);
         }
     }
 
@@ -2091,7 +2093,8 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
         TRange         crange  = cit.GetRange();
         if (crange.IsWholeTo()  &&  scope) {
             // determine actual end
-            crange.SetTo(sequence::GetLength(cit.GetSeq_id(), scope));
+            crange.Set(crange.GetFrom(),
+                       sequence::GetLength(cit.GetSeq_id(), scope));
         }
         ENa_strand     cstrand = cit.GetStrand();
         TSeqPos        pos     = 0;
@@ -2102,7 +2105,8 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
             TRange prange = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
-                prange.SetTo(sequence::GetLength(pit.GetSeq_id(), scope));
+                prange.Set(prange.GetFrom(),
+                           sequence::GetLength(pit.GetSeq_id(), scope));
             }
             TRange intersection(max(prange.GetFrom(), crange.GetFrom()),
                                 min(prange.GetTo(),   crange.GetTo()));
@@ -2115,19 +2119,20 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
                 if (IsReverse(cstrand)) { // both strands reverse
                     TSeqPos sigma = pos + prange.GetTo();
                     TSeqPos from0 = intersection.GetFrom();
-                    intersection.SetFrom(sigma - intersection.GetTo());
-                    intersection.SetTo  (sigma - from0);
+                    intersection.Set(sigma - intersection.GetTo(),
+                                     sigma - from0);
                 } else { // both strands forward
                     TSignedSeqPos delta = pos - prange.GetFrom();
-                    intersection.SetFrom(intersection.GetFrom() + delta);
-                    intersection.SetTo  (intersection.GetTo()   + delta);
+                    intersection.Set(intersection.GetFrom() + delta,
+                                     intersection.GetTo()   + delta);
                 }
                 // add to m_Ranges, combining with the previous
                 // interval if possible
                 if ( !(flags & fNoMerge)  &&  !m_Ranges.empty()
                     &&  m_Ranges.back().GetTo() >= m_Ranges.back().GetFrom()
                     &&  m_Ranges.back().GetTo() == intersection.GetFrom() - 1) {
-                    m_Ranges.back().SetTo(intersection.GetTo());
+                    m_Ranges.back().Set(m_Ranges.back().GetFrom(),
+                                        intersection.GetTo());
                 } else {
                     m_Ranges.push_back(intersection);
                 }
@@ -2152,7 +2157,8 @@ CRef<CSeq_loc> SRelLoc::Resolve(CScope* scope, SRelLoc::TFlags /* flags */)
             TRange  prange = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
-                prange.SetTo(sequence::GetLength(pit.GetSeq_id(), scope));
+                prange.Set(prange.GetFrom(),
+                           sequence::GetLength(pit.GetSeq_id(), scope));
             }
             TSeqPos length = prange.GetLength();
             if (start >= pos  &&  start < pos + length) {
@@ -2505,6 +2511,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2002/12/19 20:24:55  grichenk
+* Updated usage of CRange<>
+*
 * Revision 1.24  2002/12/10 16:56:41  ucko
 * CFastaOstream::WriteTitle: restore leading > accidentally dropped in R1.19.
 *
