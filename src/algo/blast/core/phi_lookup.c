@@ -648,11 +648,12 @@ init_pattern(Uint1 *pattern, Boolean is_dna, BlastScoreBlk* sbp,
     return j; /*return number of places for pattern representation*/
 }
 
-Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
+Int2 PHILookupTableNew(const LookupTableOptions* opt, 
+                       BlastPHILookupTable* * lut,
                        Boolean is_dna, BlastScoreBlk* sbp)
 {
-   PHILookupTable* lookup = *lut = 
-      (PHILookupTable*) malloc(sizeof(PHILookupTable));
+   BlastPHILookupTable* lookup = *lut = 
+      (BlastPHILookupTable*) malloc(sizeof(BlastPHILookupTable));
    Blast_Message* error_msg = NULL;
 
    if (!lookup)
@@ -674,7 +675,7 @@ Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
 }
 
 /** Frees the PHI BLAST pseudo lookup table. */
-PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut)
+BlastPHILookupTable* PHILookupTableDestruct(BlastPHILookupTable* lut)
 {
    sfree(lut->pattern_info);
    sfree(lut->start_offsets);
@@ -688,7 +689,7 @@ PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut)
  * @param offset Offset in query at which pattern was found. [in]
  * @param length Length of the pattern at this offset. [in] 
  */
-static Int2 PHIBlastAddPatternHit(PHILookupTable* lookup, Int4 offset, 
+static Int2 PHIBlastAddPatternHit(BlastPHILookupTable* lookup, Int4 offset, 
                                   Int4 length)
 {
    if (lookup->num_matches >= lookup->allocated_size) {
@@ -715,7 +716,7 @@ static Int2 PHIBlastAddPatternHit(PHILookupTable* lookup, Int4 offset,
  *                 pattern [in]
  * @param is_dna Is this a nucleotide sequence? [in]
  */
-Int4 PHIBlastIndexQuery(PHILookupTable* lookup, 
+Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup, 
         BLAST_SequenceBlk* query, ListNode* location, Boolean is_dna)
 {
    ListNode* loc;
@@ -773,7 +774,7 @@ Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         Int4 array_size)
 {
    Uint1* subject, *query;
-   PHILookupTable* lookup = (PHILookupTable*) lookup_wrap->lut;
+   BlastPHILookupTable* lookup = (BlastPHILookupTable*) lookup_wrap->lut;
    Int4 index, count = 0, twiceNumHits, i;
    Int4 *start_offsets = lookup->start_offsets;
    Int4 *pat_lengths = lookup->lengths;

@@ -88,8 +88,8 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
 			      BlastInitHitList* ungapped_hsps, 
                BlastUngappedStats* ungapped_stats)
 {
-   LookupTable* lookup=NULL;
-   RPSLookupTable* rps_lookup=NULL;
+   BlastLookupTable* lookup=NULL;
+   BlastRPSLookupTable* rps_lookup=NULL;
    Boolean use_pssm;
    Int4 wordsize;
    Int4 i;
@@ -115,11 +115,11 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    window = diag->window;
 
    if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
-      rps_lookup = (RPSLookupTable *)lookup_wrap->lut;
+      rps_lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
       wordsize = rps_lookup->wordsize;
    }
    else {
-      lookup = (LookupTable *)lookup_wrap->lut;
+      lookup = (BlastLookupTable *)lookup_wrap->lut;
       wordsize = lookup->wordsize;
    }
    last_offset  = subject->length - wordsize;
@@ -226,8 +226,8 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
                BlastInitHitList* ungapped_hsps, 
                BlastUngappedStats* ungapped_stats)
 {
-   LookupTable* lookup=NULL;
-   RPSLookupTable* rps_lookup=NULL;
+   BlastLookupTable* lookup=NULL;
+   BlastRPSLookupTable* rps_lookup=NULL;
    Boolean use_pssm;
    Int4 wordsize;
    Int4 hits=0;
@@ -250,11 +250,11 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    diag_mask = diag->diag_mask;
    
    if (lookup_wrap->lut_type == RPS_LOOKUP_TABLE) {
-      rps_lookup = (RPSLookupTable *)lookup_wrap->lut;
+      rps_lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
       wordsize = rps_lookup->wordsize;
    }
    else {
-      lookup = (LookupTable *)lookup_wrap->lut;
+      lookup = (BlastLookupTable *)lookup_wrap->lut;
       wordsize = lookup->wordsize;
    }
    last_offset  = subject->length - wordsize;

@@ -55,38 +55,38 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
 
    switch ( lookup_options->lut_type ) {
    case AA_LOOKUP_TABLE:
-      BlastAaLookupNew(lookup_options, (LookupTable* *)
+      BlastAaLookupNew(lookup_options, (BlastLookupTable* *)
                        &lookup_wrap->lut);
-      BlastAaLookupIndexQueries( (LookupTable*) lookup_wrap->lut,
+      BlastAaLookupIndexQueries( (BlastLookupTable*) lookup_wrap->lut,
                                  (lookup_options->use_pssm == TRUE) ? sbp->posMatrix : sbp->matrix, 
                                 query, lookup_segments, 1);
-      _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
+      _BlastAaLookupFinalize((BlastLookupTable*) lookup_wrap->lut);
       break;
    case MB_LOOKUP_TABLE:
       MB_LookupTableNew(query, lookup_segments, 
-         (MBLookupTable* *) &(lookup_wrap->lut), lookup_options);
+         (BlastMBLookupTable* *) &(lookup_wrap->lut), lookup_options);
       break;
    case NA_LOOKUP_TABLE:
       LookupTableNew(lookup_options, 
-         (LookupTable* *) &(lookup_wrap->lut), FALSE);
+         (BlastLookupTable* *) &(lookup_wrap->lut), FALSE);
 	    
-      BlastNaLookupIndexQuery((LookupTable*) lookup_wrap->lut, query,
+      BlastNaLookupIndexQuery((BlastLookupTable*) lookup_wrap->lut, query,
                               lookup_segments);
-      _BlastAaLookupFinalize((LookupTable*) lookup_wrap->lut);
+      _BlastAaLookupFinalize((BlastLookupTable*) lookup_wrap->lut);
       break;
    case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
       is_na = (lookup_options->lut_type == PHI_NA_LOOKUP);
       PHILookupTableNew(lookup_options, 
-                        (PHILookupTable* *) &(lookup_wrap->lut), is_na, sbp);
+                   (BlastPHILookupTable* *) &(lookup_wrap->lut), is_na, sbp);
       /* Initialize the "pattern space" by number of pattern occurrencies 
          in query, effectively setting number of patterns in database to 1
          at this time. */
       sbp->effective_search_sp = 
-         PHIBlastIndexQuery((PHILookupTable*) lookup_wrap->lut, query,
+         PHIBlastIndexQuery((BlastPHILookupTable*) lookup_wrap->lut, query,
                             lookup_segments, is_na);
       break;
    case RPS_LOOKUP_TABLE:
-      RPSLookupTableNew(rps_info, (RPSLookupTable* *)(&lookup_wrap->lut));
+      RPSLookupTableNew(rps_info, (BlastRPSLookupTable* *)(&lookup_wrap->lut));
       break;
       
    default:
@@ -105,17 +105,17 @@ LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup)
 
    if (lookup->lut_type == MB_LOOKUP_TABLE) {
       lookup->lut = (void*) 
-         MBLookupTableDestruct((MBLookupTable*)lookup->lut);
+         MBLookupTableDestruct((BlastMBLookupTable*)lookup->lut);
    } else if (lookup->lut_type == PHI_AA_LOOKUP || 
               lookup->lut_type == PHI_NA_LOOKUP) {
       lookup->lut = (void*)
-         PHILookupTableDestruct((PHILookupTable*)lookup->lut);
+         PHILookupTableDestruct((BlastPHILookupTable*)lookup->lut);
    } else if (lookup->lut_type == RPS_LOOKUP_TABLE) {
       lookup->lut = (void*) 
-         RPSLookupTableDestruct((RPSLookupTable*)lookup->lut);
+         RPSLookupTableDestruct((BlastRPSLookupTable*)lookup->lut);
    } else {
       lookup->lut = (void*) 
-         LookupTableDestruct((LookupTable*)lookup->lut);
+         LookupTableDestruct((BlastLookupTable*)lookup->lut);
    }
    sfree(lookup);
    return NULL;
@@ -128,18 +128,18 @@ Int4 GetOffsetArraySize(LookupTableWrap* lookup)
    switch (lookup->lut_type) {
    case MB_LOOKUP_TABLE:
       offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((MBLookupTable*)lookup->lut)->longest_chain;
+         ((BlastMBLookupTable*)lookup->lut)->longest_chain;
       break;
    case PHI_AA_LOOKUP: case PHI_NA_LOOKUP:
       offset_array_size = MIN_PHI_LOOKUP_SIZE;
       break;
    case AA_LOOKUP_TABLE: case NA_LOOKUP_TABLE:
       offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((LookupTable*)lookup->lut)->longest_chain;
+         ((BlastLookupTable*)lookup->lut)->longest_chain;
       break;
    case RPS_LOOKUP_TABLE:
       offset_array_size = OFFSET_ARRAY_SIZE + 
-         ((RPSLookupTable*)lookup->lut)->longest_chain;
+         ((BlastRPSLookupTable*)lookup->lut)->longest_chain;
       break;
    default:
       offset_array_size = OFFSET_ARRAY_SIZE;

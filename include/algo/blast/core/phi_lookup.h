@@ -59,26 +59,27 @@ extern "C" {
 /** Pseudo lookup table structure for PHI-BLAST. Contains starting and ending
  * offsets of pattern occurrences in the query sequence. 
  */
-typedef struct PHILookupTable {
+typedef struct BlastPHILookupTable {
    patternSearchItems* pattern_info;
    Boolean is_dna;
    Int4 num_matches;
    Int4 allocated_size;
    Int4* start_offsets;
    Int4* lengths;
-} PHILookupTable;
+} BlastPHILookupTable;
 
 /** Initialize the pseudo lookup table for PHI BLAST */
-Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
+Int2 PHILookupTableNew(const LookupTableOptions* opt, 
+                       BlastPHILookupTable* * lut,
                        Boolean is_dna, BlastScoreBlk* sbp);
 
 /** Deallocate memory for the PHI BLAST lookup table */
-PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut);
+BlastPHILookupTable* PHILookupTableDestruct(BlastPHILookupTable* lut);
 
 /** Find all occurrencies of a pattern in query, and save starts/stops in the
  * PHILookupTable structure.
  */
-Int4 PHIBlastIndexQuery(PHILookupTable* lookup,
+Int4 PHIBlastIndexQuery(BlastPHILookupTable* lookup,
         BLAST_SequenceBlk* query, ListNode* location, Boolean is_dna);
 
 

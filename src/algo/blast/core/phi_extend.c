@@ -46,7 +46,7 @@ Int2 PHIBlastWordFinder(BLAST_SequenceBlk* subject,
         Int4 max_hits, BlastInitHitList* init_hitlist, 
         BlastUngappedStats* ungapped_stats)
 {
-   PHILookupTable* lookup = (PHILookupTable*) lookup_wrap->lut;
+   BlastPHILookupTable* lookup = (BlastPHILookupTable*) lookup_wrap->lut;
    Int4 hits=0;
    Int4 totalhits=0;
    Int4 first_offset = 0;

@@ -92,7 +92,7 @@ typedef struct LookupBackboneCell {
 /** The basic lookup table structure for blastn
  *  and blastp searches
  */
-typedef struct LookupTable {
+typedef struct BlastLookupTable {
     Int4 threshold;        /**< the score threshold for neighboring words */
     Int4 neighbor_matches; /**< the number of neighboring words found while 
                                 indexing the queries, used for informational/
@@ -134,7 +134,7 @@ typedef struct LookupTable {
     Boolean use_pssm;      /**< if TRUE, lookup table construction will assume
                                 that the underlying score matrix is position-
                                 specific */
-  } LookupTable;
+  } BlastLookupTable;
   
   /** Create a mapping from word w to the supplied query offset
  *
@@ -144,7 +144,7 @@ typedef struct LookupTable {
  * @return Zero.
  */
 
-Int4 BlastAaLookupAddWordHit(LookupTable* lookup,
+Int4 BlastAaLookupAddWordHit(BlastLookupTable* lookup,
                              Uint1* w,
                              Int4 query_offset);
 
@@ -154,7 +154,7 @@ Int4 BlastAaLookupAddWordHit(LookupTable* lookup,
  * @return Zero.
  */
 
-Int4 _BlastAaLookupFinalize(LookupTable* lookup);
+Int4 _BlastAaLookupFinalize(BlastLookupTable* lookup);
 /**
  * Scans the subject sequence from "offset" to the end of the sequence.
  * Copies at most array_size hits.
@@ -205,7 +205,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
   * @return 0 if successful, nonzero on failure
   */
   
-Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
+Int4 BlastAaLookupNew(const LookupTableOptions* opt, BlastLookupTable* * lut);
 
 
 /** Create a new lookup table.
@@ -215,14 +215,14 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt, LookupTable* * lut);
   * @return 0 if successful, nonzero on failure
   */
   
-Int4 LookupTableNew(const LookupTableOptions* opt, LookupTable* * lut, 
+Int4 LookupTableNew(const LookupTableOptions* opt, BlastLookupTable* * lut, 
 		    Boolean is_protein);
 
 /** Free the lookup table.
  *  @param lookup The lookup table structure to be frees
  *  @return NULL
  */
-LookupTable* LookupTableDestruct(LookupTable* lookup);
+BlastLookupTable* LookupTableDestruct(BlastLookupTable* lookup);
 
 /** Index an array of queries.
  *
@@ -233,7 +233,7 @@ LookupTable* LookupTableDestruct(LookupTable* lookup);
  * @param num_queries the number of queries [in]
  * @return Zero.
  */
-Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
+Int4 BlastAaLookupIndexQueries(BlastLookupTable* lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlk* query,
 			       ListNode* unmasked_regions,
@@ -249,7 +249,7 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
  * @return Zero.
  */
 
-Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
+Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlk* query,
 			      ListNode* unmasked_regions,
@@ -261,7 +261,7 @@ Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
  * @return Zero.
  */
 
-Int4 MakeAllWordSequence(LookupTable* lookup);
+Int4 MakeAllWordSequence(BlastLookupTable* lookup);
 
 /**
  * Find the words in the neighborhood of w, that is, those whose
@@ -282,7 +282,7 @@ Int4 MakeAllWordSequence(LookupTable* lookup);
  * @return Zero.
  */
 
-Int4 AddNeighboringWords(LookupTable* lookup,
+Int4 AddNeighboringWords(BlastLookupTable* lookup,
 			 Int4 ** matrix,
 			 BLAST_SequenceBlk* query,
 			 Int4 offset,
@@ -312,7 +312,7 @@ typedef struct RPSBackboneCell {
 /** 
  * The basic lookup table structure for RPS blast searches
  */
-typedef struct RPSLookupTable {
+typedef struct BlastRPSLookupTable {
     Int4 wordsize;      /**< number of full bytes in a full word */
     Int4 longest_chain; /**< length of the longest chain on the backbone */
     Int4 mask;          /**< part of index to mask off, that is, 
@@ -331,7 +331,7 @@ typedef struct RPSLookupTable {
     PV_ARRAY_TYPE *pv;     /**< Presence vector bitfield; bit positions that
                                 are set indicate that the corresponding thick
                                 backbone cell contains hits */
-} RPSLookupTable;
+} BlastRPSLookupTable;
   
 /** Create a new RPS blast lookup table.
   * @param rps_info pointer to structure with RPS setup information [in]
@@ -339,7 +339,7 @@ typedef struct RPSLookupTable {
   * @return 0 if successful, nonzero on failure
   */
   
-Int4 RPSLookupTableNew(const RPSInfo *rps_info, RPSLookupTable* * lut);
+Int4 RPSLookupTableNew(const RPSInfo *rps_info, BlastRPSLookupTable* * lut);
 
 /** Free the lookup table. 
  *  @param lookup The lookup table structure to free; note that
@@ -347,7 +347,7 @@ Int4 RPSLookupTableNew(const RPSInfo *rps_info, RPSLookupTable* * lut);
  *          by this call, since they may refer to memory-mapped arrays
  *  @return NULL
  */
-RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup);
+BlastRPSLookupTable* RPSLookupTableDestruct(BlastRPSLookupTable* lookup);
 
 /********************* Nucleotide functions *******************/
 
@@ -401,7 +401,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
  * @param location What locations on the query sequence to index? [in]
  * @return Always 0
  */
-Int4 BlastNaLookupIndexQuery(LookupTable* lookup, 
+Int4 BlastNaLookupIndexQuery(BlastLookupTable* lookup, 
                              BLAST_SequenceBlk* query,
                              ListNode* location);
 

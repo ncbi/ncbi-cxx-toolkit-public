@@ -491,7 +491,7 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    Int8 dbsize;
    Int4 num_db_seqs;
    Uint4 avg_subj_length = 0;
-   RPSLookupTable *lookup = (RPSLookupTable *)lookup_wrap->lut;
+   BlastRPSLookupTable *lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
    BlastQueryInfo concat_db_info;
    BLAST_SequenceBlk concat_db;
    RPSAuxInfo *rps_info;

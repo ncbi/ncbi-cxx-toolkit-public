@@ -229,7 +229,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
    BlastInitHitList* init_hitlist) 
 {
    Int4 index, index1, step;
-   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
    MB_Stack* estack;
    Int4 diag, stack_top;
    Int4 window, word_extra_length, scan_step;
@@ -712,7 +712,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 		       BlastInitHitList* init_hitlist, 
              BlastUngappedStats* ungapped_stats)
 {
-   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   BlastLookupTable* lookup = (BlastLookupTable*) lookup_wrap->lut;
    Uint1* s_start = subject->sequence;
    Uint1* abs_start = s_start;
    Int4 i;
@@ -910,12 +910,12 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
    Int4 hits_extended = 0;
 
    if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
-      MBLookupTable* lut = (MBLookupTable*)lookup_wrap->lut;
+      BlastMBLookupTable* lut = (BlastMBLookupTable*)lookup_wrap->lut;
       word_length = lut->word_length;
       if(!do_ungapped_extension && !lut->discontiguous)
          min_step = lut->scan_step;
    } else {
-      LookupTable* lut = (LookupTable*)lookup_wrap->lut;
+      BlastLookupTable* lut = (BlastLookupTable*)lookup_wrap->lut;
       word_length = lut->word_length;
    }
 
@@ -965,7 +965,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 {
    const BlastInitialWordOptions* word_options = word_params->options;
    /* Pointer to the beginning of the first word of the subject sequence */
-   MBLookupTable* mb_lt = (MBLookupTable*) lookup_wrap->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Int4 hitsfound=0;
    Int4 total_hits=0, index;
    Int4 start_offset, next_start, last_start, last_end;
@@ -1046,7 +1046,7 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 {
    Int4 hitsfound, total_hits = 0;
    Int4 start_offset, end_offset, next_start;
-   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   BlastLookupTable* lookup = (BlastLookupTable*) lookup_wrap->lut;
    Int4 hits_extended = 0;
 
    start_offset = 0;

@@ -291,7 +291,7 @@ extern "C" {
 
 
 /** The lookup table structure used for Mega BLAST, generally with width 12 */
-typedef struct MBLookupTable {
+typedef struct BlastMBLookupTable {
    Int4 hashsize;       /**< = 2^(8*width) */ 
    Int4 mask;           /**< hashsize - 1 */
    Int2 compressed_wordsize;/**< Number of bytes in intersection between 
@@ -317,7 +317,7 @@ typedef struct MBLookupTable {
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
-} MBLookupTable;
+} BlastMBLookupTable;
 
 /**
  * Create the lookup table for Mega BLAST 
@@ -329,13 +329,13 @@ typedef struct MBLookupTable {
  * @param lookup_options Options for lookup table creation [in]
  */
 Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
-                       MBLookupTable** mb_lt_ptr,
+                       BlastMBLookupTable** mb_lt_ptr,
                        const LookupTableOptions* lookup_options);
 
 /** 
  * Deallocate memory used by the Mega BLAST lookup table
  */
-MBLookupTable* MBLookupTableDestruct(MBLookupTable* mb_lt);
+BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt);
 
 /** General types of discontiguous word templates */   
 typedef enum {

@@ -29,8 +29,9 @@
  * @todo FIXME needs file description
  */
 
-#include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_lookup.h>
+#include <algo/blast/core/mb_lookup.h>
 
 /** Given a word packed into an integer, compute a discontiguous word lookup 
  *  index.
@@ -294,7 +295,7 @@ static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1* s, Int4 index,
  * @param index The lookup index [out]
  */
 static NCBI_INLINE Int2
-Na_LookupComputeIndex(LookupTable* lookup, Uint1* word, Int4* index)
+Na_LookupComputeIndex(BlastLookupTable* lookup, Uint1* word, Int4* index)
 {
    Int4 i;
    Int4 wordsize = lookup->reduced_wordsize*COMPRESSION_RATIO; /* i.e. 8 or 4 */

@@ -39,31 +39,31 @@
 static char const rcsid[] = 
     "$Id$";
 
-static void AddWordHits( LookupTable *lookup,
+static void AddWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
 			 Uint1* word,
 			 Int4 offset,
                          Int4 query_bias);
 
-static void AddPSSMWordHits( LookupTable *lookup,
+static void AddPSSMWordHits( BlastLookupTable *lookup,
 			 Int4** matrix,
 			 Int4 offset,
                          Int4 query_bias);
 
 Int4 BlastAaLookupNew(const LookupTableOptions* opt,
-		      LookupTable* * lut)
+		      BlastLookupTable* * lut)
 {
   return LookupTableNew(opt, lut, TRUE);
 }
 
 Int4 RPSLookupTableNew(const RPSInfo *info,
-		      RPSLookupTable* * lut)
+		      BlastRPSLookupTable* * lut)
 {
    Int4 i;
    RPSLookupFileHeader *lookup_header;
    RPSProfileHeader *profile_header;
-   RPSLookupTable* lookup = *lut = 
-      (RPSLookupTable*) calloc(1, sizeof(RPSLookupTable));
+   BlastRPSLookupTable* lookup = *lut = 
+      (BlastRPSLookupTable*) calloc(1, sizeof(BlastRPSLookupTable));
    Int4* pssm_start;
    Int4 num_profiles;
    Int4 num_pssm_rows;
@@ -127,11 +127,11 @@ Int4 RPSLookupTableNew(const RPSInfo *info,
 }
 
 Int4 LookupTableNew(const LookupTableOptions* opt,
-		      LookupTable* * lut,
+		      BlastLookupTable* * lut,
 		      Boolean is_protein)
 {
-   LookupTable* lookup = *lut = 
-      (LookupTable*) calloc(1, sizeof(LookupTable));
+   BlastLookupTable* lookup = *lut = 
+      (BlastLookupTable*) calloc(1, sizeof(BlastLookupTable));
 
    ASSERT(lookup != NULL);
 
@@ -173,7 +173,7 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
   return 0;
 }
 
-Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
+Int4 BlastAaLookupAddWordHit(BlastLookupTable* lookup,
                              Uint1* w,
 			     Int4 query_offset)
 {
@@ -225,7 +225,7 @@ Int4 BlastAaLookupAddWordHit(LookupTable* lookup, /* in/out: the lookup table */
   return 0;
 }
 
-Int4 _BlastAaLookupFinalize(LookupTable* lookup)
+Int4 _BlastAaLookupFinalize(BlastLookupTable* lookup)
 {
   Int4 i;
   Int4 overflow_cells_needed=0;
@@ -342,7 +342,7 @@ Int4 BlastAaScanSubject(const LookupTableWrap* lookup_wrap,
   Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
-  LookupTable* lookup = lookup_wrap->lut;
+  BlastLookupTable* lookup = lookup_wrap->lut;
 
   s_first = subject->sequence + *offset;
   s_last  = subject->sequence + subject->length - lookup->wordsize; 
@@ -420,7 +420,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
   Uint1* s_last=NULL;
   Int4 numhits = 0; /* number of hits found for a given subject offset */
   Int4 totalhits = 0; /* cumulative number of hits found */
-  RPSLookupTable* lookup = (RPSLookupTable *)lookup_wrap->lut;
+  BlastRPSLookupTable* lookup = (BlastRPSLookupTable *)lookup_wrap->lut;
   RPSBackboneCell *cell;
 
   s_first = sequence->sequence + *offset;
@@ -498,7 +498,7 @@ Int4 BlastRPSScanSubject(const LookupTableWrap* lookup_wrap,
 }
 
 
-Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
+Int4 BlastAaLookupIndexQueries(BlastLookupTable* lookup,
 			       Int4 ** matrix,
 			       BLAST_SequenceBlk* query,
 			       ListNode* locations,
@@ -528,7 +528,7 @@ Int4 BlastAaLookupIndexQueries(LookupTable* lookup,
   return 0;
 }
 
-Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
+Int4 _BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			      Int4 ** matrix,
 			      BLAST_SequenceBlk* query,
 			      ListNode* location,
@@ -555,7 +555,7 @@ Int4 _BlastAaLookupIndexQuery(LookupTable* lookup,
   return 0;
 }
 
-Int4 MakeAllWordSequence(LookupTable* lookup)
+Int4 MakeAllWordSequence(BlastLookupTable* lookup)
 {
   Int4 k,n;
   Int4 i;
@@ -584,7 +584,7 @@ Int4 MakeAllWordSequence(LookupTable* lookup)
   return 0;
 }
 
-Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset, Int4 query_bias)
+Int4 AddNeighboringWords(BlastLookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk* query, Int4 offset, Int4 query_bias)
 {
   
   if (lookup->use_pssm)
@@ -610,7 +610,7 @@ Int4 AddNeighboringWords(LookupTable* lookup, Int4 ** matrix, BLAST_SequenceBlk*
   return 0;
 }
 
-static void AddWordHits(LookupTable* lookup, Int4** matrix, 
+static void AddWordHits(BlastLookupTable* lookup, Int4** matrix, 
 			Uint1* word, Int4 offset, Int4 query_bias)
 {
   Uint1* s = lookup->neighbors;
@@ -724,7 +724,7 @@ static void AddWordHits(LookupTable* lookup, Int4** matrix,
 }
 
 
-static void AddPSSMWordHits(LookupTable* lookup, Int4** matrix, 
+static void AddPSSMWordHits(BlastLookupTable* lookup, Int4** matrix, 
                             Int4 offset, Int4 query_bias)
 {
   Uint1* s = lookup->neighbors;
@@ -818,7 +818,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
 			   Int4 max_hits,  
        Int4* end_offset)
 {
-   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   BlastLookupTable* lookup = (BlastLookupTable*) lookup_wrap->lut;
    Uint1* s;
    Uint1* abs_start;
    Int4  index=0, s_off;
@@ -928,7 +928,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    Uint1* s;
    Uint1* abs_start,* s_end;
    Int4  index=0, s_off;
-   LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
+   BlastLookupTable* lookup = (BlastLookupTable*) lookup_wrap->lut;
    Int4* lookup_pos;
    Int4 num_hits;
    Int4 q_off;
@@ -986,7 +986,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    return total_hits;
 }
 
-LookupTable* LookupTableDestruct(LookupTable* lookup)
+BlastLookupTable* LookupTableDestruct(BlastLookupTable* lookup)
 {
    sfree(lookup->thick_backbone);
    sfree(lookup->overflow);
@@ -995,7 +995,7 @@ LookupTable* LookupTableDestruct(LookupTable* lookup)
    return NULL;
 }
 
-RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup)
+BlastRPSLookupTable* RPSLookupTableDestruct(BlastRPSLookupTable* lookup)
 {
    /* The following will only free memory that was 
       allocated by RPSLookupTableNew. */
@@ -1010,7 +1010,7 @@ RPSLookupTable* RPSLookupTableDestruct(RPSLookupTable* lookup)
  * @param w Pointer to the start of a word [in]
  * @param query_offset Offset into the query sequence where this word ends [in]
  */
-static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
+static Int4 BlastNaLookupAddWordHit(BlastLookupTable* lookup, Uint1* w,
                                     Int4 query_offset)
 {
   Int4 index=0;
@@ -1063,7 +1063,7 @@ static Int4 BlastNaLookupAddWordHit(LookupTable* lookup, Uint1* w,
 }
 
 /* See description in blast_lookup.h */
-Int4 BlastNaLookupIndexQuery(LookupTable* lookup, BLAST_SequenceBlk* query,
+Int4 BlastNaLookupIndexQuery(BlastLookupTable* lookup, BLAST_SequenceBlk* query,
 			ListNode* location)
 {
   ListNode* loc;

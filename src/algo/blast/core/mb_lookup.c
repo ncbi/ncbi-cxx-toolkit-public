@@ -41,7 +41,7 @@ static char const rcsid[] =
 #include "blast_inline.h"
 
 
-MBLookupTable* MBLookupTableDestruct(MBLookupTable* mb_lt)
+BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt)
 {
    if (!mb_lt)
       return NULL;
@@ -106,7 +106,7 @@ static DiscTemplateType GetDiscTemplateType(Int2 weight, Uint1 length,
 
 /* Documentation in mb_lookup.h */
 Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
-        MBLookupTable** mb_lt_ptr,
+        BlastMBLookupTable** mb_lt_ptr,
         const LookupTableOptions* lookup_options)
 {
    Int4 query_length;
@@ -116,7 +116,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
    Int4 mask;
    Int4 ecode1, ecode2;
    Uint1 val, nuc_mask = 0xfc;
-   MBLookupTable* mb_lt;
+   BlastMBLookupTable* mb_lt;
    Int4 masked_word_count = 0;
    PV_ARRAY_TYPE *pv_array=NULL;
    Int4 pv_shift, pv_array_bts, pv_size, pv_index;
@@ -148,7 +148,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, ListNode* location,
                       lookup_options->mb_template_length, 
                       (DiscWordType)lookup_options->mb_template_type);
    query_length = query->length;
-   mb_lt = (MBLookupTable*) calloc(1, sizeof(MBLookupTable));
+   mb_lt = (BlastMBLookupTable*) calloc(1, sizeof(BlastMBLookupTable));
     
    bytes_in_word = (lookup_options->word_size + 1)/ 4;
    if (bytes_in_word < 3) 
@@ -490,7 +490,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
        Uint4* q_offsets, Uint4* s_offsets, Int4 max_hits,  
        Int4* end_offset)
 {
-   MBLookupTable* mb_lt = (MBLookupTable*) lookup_wrap->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Uint1* s;
    Uint1* abs_start;
    Int4  index=0, s_off;
@@ -576,7 +576,7 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 index;
-   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
    Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
@@ -642,7 +642,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    Int4 hitsfound = 0;
    Uint4 query_offset, subject_offset;
    Int4 word, index, index2=0;
-   MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
+   BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
    Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
    Boolean full_byte_scan = mb_lt->full_byte_scan;
    Boolean two_templates = mb_lt->two_templates;
