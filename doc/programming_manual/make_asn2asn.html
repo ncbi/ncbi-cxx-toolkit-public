@@ -1,0 +1,21 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title> Makefile.asn2asn.app. </title>
+</head>
+<body BGCOLOR=white>
+<pre><font color = "green">
+#################################
+# $Id$
+# Author:  Eugen Vasilchenko (vasilche@ncbi.nlm.nih.gov)
+#################################
+
+# Build serialization test application "serialtest"
+#################################
+
+<font color = "black">
+APP = asn2asn
+OBJ = asn2asn
+LIB = seqset seq seqres seqloc seqalign seqfeat seqblock pub medline biblio general xser xncbi
+
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)

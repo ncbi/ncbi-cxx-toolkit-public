@@ -61,7 +61,7 @@ $NCBI/c++/src/objects/general/general.asn </i>.
 <h3> Reading and Writing ASN.1 Data </h3>
 
 As a first example, we consider what is involved in implementing a program to translate an
-ASN.1 data file of a given type from binary to text format. <a href="asntrans.html"> <i>
+ASN.1 data file of a given type from binary to text format. <a href="asntrans_cpp.html"> <i>
 asntrans.cpp </i> </a>, reads an ASN.1 Biostruc file in binary format and writes it out in
 text format.<p>
 
@@ -110,7 +110,7 @@ regenerate the ASN.1 data structure on the output stream.
 <h3>Determining Which Header Files to Include </h3>
 
 As always, you will need to include your own local header file defining the current
-application class. In this example, <a href="asnhpp.html"> asntrans.hpp</a> defines the
+application class. In this example, <a href="asntrans_hpp.html"> asntrans.hpp</a> defines the
 <i>CTestAsn</i> class, and in turn, includes the necessary <i>corelib</i> header files for
 <i> CNcbiApplication </i>.<p>
 
@@ -178,7 +178,7 @@ object libraries are entailed by using a <i>CBiostruc</i> object. Minimally, one
 expect to link to the <i>mmdb</i> libraries. This in itself is insufficient however,
 as the <i>Biostruc</i> class embeds other types of objects, including PubMed citations,
 features, and sequences, which in turn embed additional objects such as <i>dates</i>.
-The Makefile for asntrans.cpp, <a href="make.html"> Makefile.asntrans.app</a> lists 
+The Makefile for asntrans.cpp, <a href="make_asntrans.html"> Makefile.asntrans.app</a> lists 
 the required libraries for linking under the make variable <i>LIB</i>.
 <p>
 
@@ -186,10 +186,10 @@ the required libraries for linking under the make variable <i>LIB</i>.
 <h3> Generalizing the Input/Output Formats </h3>
 
 The previous application can easily be generalized to allow binary or text input as well
-as output. <a href="asn2asn.html"> <i> asn2asn.cpp</i></a> works on <i> Seq-entry</i> and
+as output. <a href="asn2asn_cpp.html"> <i> asn2asn.cpp</i></a> works on <i> Seq-entry</i> and
 <i> Bioseq-set</i> types.  Because we now support binary/text input and output, the number
 of <i>include</i> files has increased to support the additional stream types entailed.
-Comparing the two <a href="make2.html"> <i>Makefiles</i></a>, we see that the differences
+Comparing the two <a href="make_asn2asn.html"> <i>Makefiles</i></a>, we see that the differences
 between them is in the object libraries linked to, as each specializes for different ASN.1
 types.
 
@@ -197,9 +197,9 @@ types.
 <br>
 <p>
 </body>
-<a href="Subtree.html"> <i> previous</i> </a>
+<a href="sub_tree.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
-<a href="asntraverse.html"> <i> next </i> </a>
+<a href="traverse.html"> <i> next </i> </a>
 </html>
 
 

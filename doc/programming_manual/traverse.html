@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title> Traversing an ASN.1 Data Structure. </title>
+</head>
+<body BGCOLOR="white">
+
+<h1> Traversing an ASN.1 Data Structure </h1>
+<ul>
+  <li> <a href="#locateClass"> Locating the Class Definitions </a>
+  <li> <a href="#">  </a>
+  <li> <a href="#">  </a>
+  <li> <a href="#">  </a>
+</ul>
+
+<a name="locateClass"> <h3> Locating the Class Definitions </h3>
+In order to traverse an ASN data object, you must become familiar with 
+the class structures and access functions which implement the object. The
+example provided here involves an ASN.1 Biostruc type which is implemented
+by class <i>CBiostruc.</i> <p>
+
+The first question then, is: how do I locate the class definitions implementing the object
+to be traversed? As mentioned previously, the source browser is of little help in this case, as the
+compiled object classes are not registered in the C++ tree.  The <i>include</i> and
+<i>src</i> directories are available for browsing however, in <a
+href="/netopt/ncbi_tools/c++/include/objects"> <i> $NCBI/c++/include/objects </a> </i>and
+<A href = "/netopt/ncbi_tools/c++/src/objects"> <i>$NCBI/c++/src/objects</a></i>. <p>
+
+Because we are using a <i>Biostruc</i>, the first place to search is in the <i>mmdb </i>
+directories.  In the <i>mmdb1</i> directory, we find two classes: 
+<a href="/netopt/ncbi_tools/c++/include/objects/mmdb1/Biostruc.hpp"> <i> Biostruc.hpp</i> </a> and
+<a href="/netopt/ncbi_tools/c++/include/objects/mmdb1/Biostruc_Base.hpp"> <i> Biostruc_Base.hpp</i></a>.
+As implied by the class names, <i>CBiostruc</i> inherits from <i>CBiostruc_Base</i>.  The <i> base</i>
+class is where you must look for the definitions and access functions we will be using. However, it
+is the <i> inherited class (CBiostruc.hpp) </i> that
+
+
+<a name="">
+<h3> </h3> 
+
+<a name="">
+<h3> </h3> 
+
+<a name="">
+<h3> </h3> 
+
+
+
+<pre>
+
+
+
+
+
+
+
+</pre>
+</body>
+<a href="asn.html"> <i> previous</i> </a>
+
+</html>

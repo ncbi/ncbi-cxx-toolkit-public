@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+  <title> asntrans.cpp </title>
+</head>
+<body BGCOLOR="#FFFFFF">
+
+<pre><font color = "red">
+// File name: asntrans.cpp
+// Description: Reads a binary ASN.1 Biostruc file into memory
+//		and saves it in text format.
+<font color = "green">
+#include < corelib/ncbistre.hpp >
+#include < serial/serial.hpp >		
+#include < serial/objistrasnb.hpp >	
+#include < serial/objostrasn.hpp >
+#include < objects/mmdb1/Biostruc.hpp >
+#include <a href="asnhpp.html"> "asntrans.hpp" </a>
+
+<font color = "blue">
+BEGIN_NCBI_SCOPE
+<font color = "black">
+int CTestAsn::Run() {
+
+<font color = "red">  // initialize the diagnostic stream <font color = "black">
+
+  CNcbiOfstream diag("errs.asntrans");
+  SetDiagStream(&diag);
+
+<font color = "red">  // initialize the ASN binary input stream <font color = "black">
+
+  auto_ptr< CNcbiIstream > inFStream;
+  CNcbiIstream* inStream;
+  inFStream.reset(inStream = new CNcbiIfstream("1001.val", IOS_BASE::in | IOS_BASE::binary));
+  if ( !*inStream )
+    ERR_POST(Fatal << "Cannot open input file");
+
+<font color = "red">  // initialize the ASN text output stream <font color = "black">
+
+  auto_ptr< CNcbiOstream > outFStream;
+  CNcbiOstream* outStream;
+  outFStream.reset(outStream = new CNcbiOfstream("1001.txt"));
+  if ( !*outStream )
+    ERR_POST(Fatal << "Cannot open output file");
+
+<font color = "red">  // Associate an ASN input object with the input <font color = "black">
+
+  auto_ptr< CObjectIStream > inObject;
+  inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+
+<font color = "red">  // Associate an ASN output object with the output <font color = "black">
+
+  auto_ptr< CObjectOStream > outObject;
+  outObject.reset(new CObjectOStreamAsn(*outStream));
+
+  CBiostruc bs;
+  *inObject >> bs;
+  *outObject << bs;
+
+  inObject.reset(0);
+  outObject.reset(0);
+  return 0;
+}
+<font color = "blue">
+END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
+<font color = "black">
+int main(int argc, const char* argv[]) 
+{
+  CTestAsn theTestApp;
+  return theTestApp.AppMain(argc, argv);
+}
+</pre>
+</body>
+</html>
