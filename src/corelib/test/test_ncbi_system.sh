@@ -9,8 +9,14 @@ os=`uname -s`
 if test "$os" = "Linux" ; then
    test $test_cpu -eq 137  ||  exit 1
    test $test_mem -eq 0  -o  $test_mem -eq 255  ||  exit 1
+
+elif test "$os" = "Darwin" ; then
+   test $test_cpu -eq 255  ||  exit 1
+   test $test_mem -eq 0    ||  exit 1
+
 elif test -n "`echo $os | grep CYGWIN`" ; then
    test $test_cpu -eq 3  -a  $test_mem -eq 3  ||  exit 1
+
 else
    test $test_mem -eq 255  ||  exit 1
    # exit code 158 -- signal 30 (CPU time exceeded)
