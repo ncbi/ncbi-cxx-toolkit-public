@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/01/20 05:53:59  vakatov
+* Get rid of a GCC warning;  formally rearrange some code.
+*
 * Revision 1.34  2002/01/10 16:52:20  ivanov
 * Changed LoadConfig() -- new method to search the config file
 *
@@ -159,8 +162,8 @@ CNcbiApplication* CNcbiApplication::m_Instance;
 
 
 CNcbiApplication* CNcbiApplication::Instance(void)
-{ 
-    return m_Instance; 
+{
+    return m_Instance;
 }
 
 
@@ -513,7 +516,7 @@ static bool s_LoadConfig(CNcbiRegistry& reg, const string& conf)
 
 
 // for the exclusive use by CNcbiApplication::LoadConfig()
-static bool s_LoadConfigTryPath(CNcbiRegistry& reg, const string& path, 
+static bool s_LoadConfigTryPath(CNcbiRegistry& reg, const string& path,
                                 const string& conf, const string& basename)
 {
     if ( !conf.empty() ) {
@@ -526,12 +529,12 @@ static bool s_LoadConfigTryPath(CNcbiRegistry& reg, const string& path,
     for (;;) {
         // try the next variant -- with added ".ini" file extension
         fileName += ".ini";
-        
+
         // current directory
         if ( s_LoadConfig(reg, path + fileName) )
             return true;  // success!
 
-        // strip ".ini" file extension (the one added above) 
+        // strip ".ini" file extension (the one added above)
         _ASSERT( fileName.length() > 4 );
         fileName.resize(fileName.length() - 4);
 
@@ -564,7 +567,8 @@ bool CNcbiApplication::LoadConfig(CNcbiRegistry& reg, const string* conf)
             x_conf = cnf;
         } else {
             // path is relative to the program location
-            x_conf = CDirEntry::ConcatPath(m_Arguments->GetProgramDirname(), cnf);
+            x_conf = CDirEntry::ConcatPath(m_Arguments->GetProgramDirname(),
+                                           cnf);
         }
         // do load
         x_conf = NStr::TruncateSpaces(x_conf);
@@ -582,12 +586,11 @@ CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
         return true;
     }
     // path from environment variable "NCBI"
-    char *ptr = 0;
-    if ( ptr = getenv("NCBI") ) {
-        if ( s_LoadConfigTryPath(reg, CDirEntry::AddTrailingPathSeparator(ptr), 
-                                 cnf, basename) ) {
+    char* ptr = getenv("NCBI");
+    if (ptr  &&
+        s_LoadConfigTryPath(reg, CDirEntry::AddTrailingPathSeparator(ptr),
+                            cnf, basename) ) {
             return true;
-        }
     }
     // home directory
     if ( s_LoadConfigTryPath(reg, CDir::GetHome(), cnf, basename) ) {
@@ -600,7 +603,7 @@ CNcbiApplication::LoadConfig() -- cannot open registry file: " + x_conf);
         return true;
     }
 
-    ERR_POST(Warning << 
+    ERR_POST(Warning <<
              "CNcbiApplication::LoadConfig() -- cannot find registry "
              "file for application: " << m_Arguments->GetProgramBasename());
 
