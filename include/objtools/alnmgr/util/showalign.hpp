@@ -143,17 +143,20 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
 
 
     // Constructors
-    /* CSeq_align_set: seqalign to display. maskSeqloc: seqloc to be
-       displayed with different characters such as masked sequence.  Must be
-       seqloc-int externalFeature: Feature to display such as phiblast
-       pattern.  Must be seqloc-int matrix: customized matrix for computing
-       positive protein matchs.  Note the matrix must exactly consist of
-       "ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62 scope: scope to
-       fetch your sequence */
+    /* CSeq_align_set: seqalign to display. 
+       maskSeqloc: seqloc to be displayed with different characters such as
+         masked sequence.  Must be seqloc-int
+       externalFeature: Feature to display such as phiblast pattern.
+         Must be seqloc-int 
+       matrix: customized matrix for computing
+         positive protein matchs.  Note the matrix must exactly consist of
+        "ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62 
+      scope: scope to fetch your sequence */
     CDisplaySeqalign(const CSeq_align_set & seqalign,
                      list < SeqlocInfo * >&maskSeqloc,
                      list < FeatureInfo * >&externalFeature,
-                     const int matrix[][kPMatrixSize], CScope & scope);
+                     const int matrix[][kPMatrixSize],
+                     CScope & scope);
 
     // Destructor
     ~CDisplaySeqalign();
@@ -304,8 +307,7 @@ private:
     map < string, string > m_Segs;
     CRef < CObjectManager > m_FeatObj;      // used for fetching feature
     CRef < CScope > m_featScope;    // used for fetching feature
-    list < alnSeqlocInfo * >m_Alnloc;       // seqloc display info (i.e., mask)
-                                            // for current alnvec
+    
     MiddleLineStyle m_MidLineStyle;
       // helper functions
     void DisplayAlnvec(CNcbiOstream & out);
@@ -314,6 +316,7 @@ private:
     // display sequence, start is seqalign coodinate
     const void OutputSeq(string & sequence, const CSeq_id & id, int start, 
                          int len, int frame, bool colorMismatch, 
+                         list<alnSeqlocInfo*> loc_list,
                          CNcbiOstream & out) const;
 
     int getNumGaps();               // Count number of total gaps
@@ -341,13 +344,17 @@ private:
     void setFeatureInfo(alnFeatureInfo * featInfo, const CSeq_loc & seqloc,
                         int alnFrom, int alnTo, int alnStop, char patternChar,
                         string patternId, string & alternativeFeatStr) const;
-    void setDbGi();
+    void setDbGi(const CSeq_align_set& actual_aln_list);
     void GetInserts(list < insertInformation * >&insertList,
                     CAlnMap::TSeqPosList & insertAlnStart,
                     CAlnMap::TSeqPosList & insertSeqStart,
                     CAlnMap::TSeqPosList & insertLength, int lineAlnStop);
     void x_DisplayAlnvecList(CNcbiOstream & out, list < alnInfo * >&avList);
     void x_PrintDynamicFeatures(CNcbiOstream& out);
+    void x_FillLocList(list<alnSeqlocInfo*>& loc_list) const;
+    list<alnFeatureInfo*>* x_GetQueryFeatureList(int row_num, int aln_stop) const;
+    void x_FillSeqid(string& id, int row) const;
+
 };
 
 
@@ -359,6 +366,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.22  2004/09/20 18:12:01  jianye
+*Handles Disc alignment and some code clean up
+*
 *Revision 1.21  2004/08/05 16:58:54  jianye
 *Added dynamic features
 *
