@@ -349,11 +349,15 @@ int FetchFile(CDB_Connection* con, const string& table_name, bool readItems)
 
             if( readItems && rt == eDB_Text )
             {
-              bool isNull;
+              bool isNull=false;
               char txt_buf[10240];
-              while( j == r->CurrentItemNo() ) {
+              // while( j == r->CurrentItemNo() )
+              cout<< "j=" << j
+                  << " CurrentItemNo()=" << r->CurrentItemNo() << "\n";
+              for(;;) {
                 int len_txt = r->ReadItem(txt_buf, sizeof(txt_buf), &isNull);
-                if(isNull || len_txt<= 0) break;
+                cout << "len_txt=" << len_txt << " isNull=" << isNull << "\n";
+                if(isNull || len_txt<=0) break;
                 f.write(txt_buf, len_txt);
               }
               f.close();
