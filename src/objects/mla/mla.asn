@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --********************************************************************
 --
 --  Network MEDLINE Archive message formats
@@ -16,12 +16,12 @@
 NCBI-MedArchive DEFINITIONS ::=
 BEGIN
 
-IMPORTS Medline-entry, PubMedId FROM NCBI-Medline
+IMPORTS Medline-entry FROM NCBI-Medline
         Medlars-entry FROM NCBI-Medlars
         Pubmed-entry FROM NCBI-PubMed
         Medline-si FROM NCBI-Medline
         Pub FROM NCBI-Pub
-        Title FROM NCBI-Biblio;
+        Title, PubMedId FROM NCBI-Biblio;
 
         --**********************************
         -- requests
