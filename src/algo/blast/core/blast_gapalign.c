@@ -420,7 +420,7 @@ static GreedyAlignMem* BLAST_GreedyAlignsfree(GreedyAlignMem* gamp)
  */
 static GreedyAlignMem* 
 BLAST_GreedyAlignMemAlloc(const BlastScoringOptions* score_options,
-		       BlastExtensionParameters* ext_params,
+		       const BlastExtensionParameters* ext_params,
 		       Int4 max_dbseq_length)
 {
    GreedyAlignMem* gamp;
@@ -530,7 +530,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
 /** Documented in blast_gapalign.h */
 Int2
 BLAST_GapAlignStructNew(const BlastScoringOptions* score_options, 
-   BlastExtensionParameters* ext_params, 
+   const BlastExtensionParameters* ext_params, 
    Uint4 max_subject_length, Int4 query_length, 
    BlastScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr)
 {
@@ -2242,8 +2242,8 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
 			    BLAST_SequenceBlk* subject,
 			    BlastGapAlignStruct* gap_align,
 			    const BlastScoringOptions* score_options, 
-			    BlastExtensionParameters* ext_params,
-			    BlastHitSavingParameters* hit_params,
+			    const BlastExtensionParameters* ext_params,
+			    const BlastHitSavingParameters* hit_params,
 			    BlastInitHitList* init_hitlist,
 			    BlastHSPList** hsp_list_ptr)
 {
@@ -3046,8 +3046,8 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
-        BlastExtensionParameters* ext_params,
-        BlastHitSavingParameters* hit_params,
+        const BlastExtensionParameters* ext_params,
+        const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr)
 
@@ -3978,8 +3978,8 @@ Int2 PHIGetGappedScore (Uint1 program_number,
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
-        BlastExtensionParameters* ext_params,
-        BlastHitSavingParameters* hit_params,
+        const BlastExtensionParameters* ext_params,
+        const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr)
 

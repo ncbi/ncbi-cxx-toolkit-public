@@ -149,13 +149,13 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 typedef Int2 (*BlastGetGappedScoreType) 
      (Uint1, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
       BLAST_SequenceBlk*, BlastGapAlignStruct*, const BlastScoringOptions*,
-      BlastExtensionParameters*, BlastHitSavingParameters*,
+      const BlastExtensionParameters*, const BlastHitSavingParameters*,
       BlastInitHitList*, BlastHSPList**);
      
 /** Word finder function pointer type */
 typedef Int4 (*BlastWordFinderType) 
      (BLAST_SequenceBlk*, BLAST_SequenceBlk*,
-      LookupTableWrap*, Int4**, BlastInitialWordParameters*,
+      LookupTableWrap*, Int4**, const BlastInitialWordParameters*,
       BLAST_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*);
 
 /** Structure to be passed to BLAST_SearchEngineCore, containing pointers 

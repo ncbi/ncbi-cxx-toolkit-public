@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.31  2004/03/09 22:37:11  dondosha
+* Added const qualifiers to parameter arguments wherever relevant
+*
 * Revision 1.30  2004/03/09 18:39:35  dondosha
 * Pass around effective lengths parameters instead of options; added BLAST_OneSubjectUpdateParameters to recalculate cutoffs and eff. lengths when each subject is an individual sequence
 *
@@ -256,7 +259,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
 */
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
-   BlastEffectiveLengthsParameters* eff_len_params, 
+   const BlastEffectiveLengthsParameters* eff_len_params, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info);
 
 /** Set up the auxiliary structures for gapped alignment / traceback only 
@@ -305,13 +308,15 @@ BLAST_GapAlignSetUp(Uint1 program_number,
  *                   here [in] [out]
  * @param word_params Parameters for ungapped extension. Score cutoffs are
  *                    recalculated here [in] [out]
+ * @param eff_len_params Parameters for effective lengths calculation. Reset
+ *                       with the current sequence data [in] [out]
  */
 Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
                     Uint4 subject_length,
                     const BlastScoringOptions* scoring_options,
                     BlastQueryInfo* query_info, 
                     BlastScoreBlk* sbp, 
-                    BlastExtensionParameters* ext_params,
+                    const BlastExtensionParameters* ext_params,
                     BlastHitSavingParameters* hit_params,
                     BlastInitialWordParameters* word_params,
                     BlastEffectiveLengthsParameters* eff_len_params);

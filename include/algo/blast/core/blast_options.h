@@ -525,8 +525,8 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
 Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
    const BlastInitialWordOptions* word_options, 
-   BlastHitSavingParameters* hit_params, 
-   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   const BlastHitSavingParameters* hit_params, 
+   const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    Uint4 subject_length,
    BlastInitialWordParameters* *parameters);
@@ -543,8 +543,8 @@ BlastInitialWordParametersNew(Uint1 program_number,
 */
 Int2
 BlastInitialWordParametersUpdate(Uint1 program_number, 
-   BlastHitSavingParameters* hit_params, 
-   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   const BlastHitSavingParameters* hit_params, 
+   const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, Uint4 subject_length,
    BlastInitialWordParameters* parameters);
 

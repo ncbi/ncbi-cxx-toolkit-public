@@ -72,7 +72,7 @@ typedef struct LinkHelpStruct {
 Int2 
 BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation);
 
 #ifdef __cplusplus

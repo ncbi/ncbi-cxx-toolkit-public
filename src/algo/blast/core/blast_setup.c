@@ -693,7 +693,7 @@ Int8 ComputeEffectiveSearchSpace(BLAST_KarlinBlk* kbp, /* [in] */
 
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
-   BlastEffectiveLengthsParameters* eff_len_params, 
+   const BlastEffectiveLengthsParameters* eff_len_params, 
    const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
 {
    double alpha=0, beta=0; /*alpha and beta for new scoring system */
@@ -705,9 +705,9 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    Int4 query_length;   /* length of an individual query sequence */
    Int8 effective_search_space = 0; /* Effective search space for a given 
                                    sequence/strand/frame */
-   BlastEffectiveLengthsOptions* eff_len_options;
+   const BlastEffectiveLengthsOptions* eff_len_options = eff_len_params->options;
 
-   if (sbp == NULL || eff_len_params == NULL)
+   if (sbp == NULL)
       return 1;
 
    eff_len_options = eff_len_params->options; 
@@ -846,7 +846,7 @@ Int2 BLAST_OneSubjectUpdateParameters(Uint1 program_number,
                     const BlastScoringOptions* scoring_options,
                     BlastQueryInfo* query_info, 
                     BlastScoreBlk* sbp, 
-                    BlastExtensionParameters* ext_params,
+                    const BlastExtensionParameters* ext_params,
                     BlastHitSavingParameters* hit_params,
                     BlastInitialWordParameters* word_params,
                     BlastEffectiveLengthsParameters* eff_len_params)

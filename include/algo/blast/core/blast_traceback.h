@@ -55,9 +55,10 @@ extern "C" {
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options The scoring related options [in]
  * @param ext_params Gapped extension parameters [in]
- * @param hit_params Parameters for saving hits [in]
+ * @param hit_params Parameters for saving hits. Can change if not a 
+                     database search [in]
  * @param eff_len_params Parameters for recalculating effective search 
- *                       space, if needed [in]
+ *                       space. Can change if not a database search. [in]
  * @param db_options Options containing database genetic code string [in]
  * @param psi_options Options specific to PSI BLAST [in]
  */
@@ -65,7 +66,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
-        BlastExtensionParameters* ext_params,
+        const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         BlastEffectiveLengthsParameters* eff_len_params,
         const BlastDatabaseOptions* db_options,
@@ -91,7 +92,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
         BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringOptions* score_options,
-        BlastExtensionParameters* ext_params,
+        const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options);
 
@@ -101,7 +102,7 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
         BlastQueryInfo* query_info,
         BlastGapAlignStruct* gap_align, 
         const BlastScoringOptions* score_options,
-        BlastExtensionParameters* ext_params,
+        const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
         const BlastDatabaseOptions* db_options,
         const PSIBlastOptions* psi_options,

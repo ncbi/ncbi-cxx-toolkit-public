@@ -215,7 +215,7 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
 static Int2
 MB_ExtendInitialHit(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
-   BlastInitialWordParameters* word_params, 
+   const BlastInitialWordParameters* word_params, 
    Int4** matrix, BLAST_ExtendWord* ewp, Int4 q_off, Int4 s_off,
    BlastInitHitList* init_hitlist) 
 {
@@ -228,7 +228,7 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
    BLAST_DiagTable* diag_table = ewp->diag_table;
    MB_StackTable* stack_table = ewp->stack_table;
    BlastUngappedData* ungapped_data = NULL;
-   BlastInitialWordOptions* word_options = word_params->options;
+   const BlastInitialWordOptions* word_options = word_params->options;
    Int4 s_pos;
 
    window = word_options->window_size;
@@ -677,7 +677,7 @@ BlastnWordUngappedExtend(BLAST_SequenceBlk* query,
 static Int2
 BlastnExtendInitialHit(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, LookupTableWrap* lookup,
-   BlastInitialWordParameters* word_params, 
+   const BlastInitialWordParameters* word_params, 
    Int4** matrix, BLAST_ExtendWord* ewp, Int4 q_off, Int4 s_end,
    Int4 s_off, BlastInitHitList* init_hitlist)
 {
@@ -685,7 +685,7 @@ BlastnExtendInitialHit(BLAST_SequenceBlk* query,
    Int4 s_pos, last_hit;
    BLAST_DiagTable*     diag_table;
    BlastUngappedData* ungapped_data;
-   BlastInitialWordOptions* word_options = word_params->options;
+   const BlastInitialWordOptions* word_options = word_params->options;
    Int4 window_size = word_options->window_size;
    Boolean hit_ready;
    Boolean new_hit = FALSE, second_hit = FALSE;
@@ -771,7 +771,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 		       BLAST_SequenceBlk* query,
 		       LookupTableWrap* lookup_wrap,
 		       Int4** matrix,
-		       BlastInitialWordParameters* word_params,
+		       const BlastInitialWordParameters* word_params,
 		       BLAST_ExtendWord* ewp,
 		       Uint4* q_offsets,
 		       Uint4* s_offsets,
@@ -932,14 +932,14 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   BLAST_SequenceBlk* query,
 		   LookupTableWrap* lookup,
 		   Int4** matrix, 
-		   BlastInitialWordParameters* word_params,
+		   const BlastInitialWordParameters* word_params,
 		   BLAST_ExtendWord* ewp,
 		   Uint4* q_offsets,
 		   Uint4* s_offsets,
 		   Int4 max_hits,
 		   BlastInitHitList* init_hitlist)
 {
-   BlastInitialWordOptions* word_options = word_params->options;
+   const BlastInitialWordOptions* word_options = word_params->options;
    /* Pointer to the beginning of the first word of the subject sequence */
    MBLookupTable* mb_lt = (MBLookupTable*) lookup->lut;
    Uint1* s_start,* q_start,* q,* s;
@@ -1039,14 +1039,14 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 			  BLAST_SequenceBlk* query,
 			  LookupTableWrap* lookup_wrap, 
 			  Int4** matrix,
-			  BlastInitialWordParameters* word_params,
+			  const BlastInitialWordParameters* word_params,
 			  BLAST_ExtendWord* ewp,
 			  Uint4* q_offsets,
 			  Uint4* s_offsets,
 			  Int4 max_hits,
 			  BlastInitHitList* init_hitlist)
 {
-   BlastInitialWordOptions* word_options = word_params->options;
+   const BlastInitialWordOptions* word_options = word_params->options;
    LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
    Uint1* s_start = subject->sequence;
    Uint1* q_start = query->sequence;

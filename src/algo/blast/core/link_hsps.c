@@ -44,7 +44,7 @@ static char const rcsid[] = "$Id$";
 static double 
 SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   BlastHitSavingParameters* hit_params, 
+   const BlastHitSavingParameters* hit_params, 
    BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
 {
    double gap_prob, gap_decay_rate, sum_evalue, score_prime;
@@ -408,7 +408,7 @@ rev_compare_hsps_tbx(const void *v1, const void *v2)
 static Int2
 link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
-   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
 	BlastHSP* H,* H2,* best[2],* first_hsp,* last_hsp,** hp_frame_start;
@@ -1043,7 +1043,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 static Int2
 new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
-   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params)
+   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params)
 {
    BlastHSP** hsp_array;
    BlastHSP** score_hsp_array,** offset_hsp_array,** end_hsp_array;
@@ -1239,7 +1239,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 Int2 
 BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, const BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
 	if (hsp_list && hsp_list->hspcnt > 0)

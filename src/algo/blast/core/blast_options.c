@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.87  2004/03/09 22:37:26  dondosha
+ * Added const qualifiers to parameter arguments wherever relevant
+ *
  * Revision 1.86  2004/03/09 18:46:24  dondosha
  * Corrected how cutoffs are calculated
  *
@@ -539,8 +542,8 @@ static double GetUngappedCutoff(Uint1 program)
 Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
    const BlastInitialWordOptions* word_options, 
-   BlastHitSavingParameters* hit_params, 
-   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   const BlastHitSavingParameters* hit_params, 
+   const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    Uint4 subject_length,
    BlastInitialWordParameters* *parameters)
@@ -575,8 +578,8 @@ BlastInitialWordParametersNew(Uint1 program_number,
 
 Int2
 BlastInitialWordParametersUpdate(Uint1 program_number, 
-   BlastHitSavingParameters* hit_params, 
-   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
+   const BlastHitSavingParameters* hit_params, 
+   const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, Uint4 subj_length,
    BlastInitialWordParameters* parameters)
 {

@@ -43,7 +43,7 @@ static char const rcsid[] = "$Id$";
 
 Int4 PHIBlastWordFinder(BLAST_SequenceBlk* subject, 
         BLAST_SequenceBlk* query, LookupTableWrap* lookup_wrap,
-        Int4** matrix, BlastInitialWordParameters* word_params,
+        Int4** matrix, const BlastInitialWordParameters* word_params,
         BLAST_ExtendWord* ewp, Uint4* query_offsets, Uint4* subject_offsets,
         Int4 max_hits, BlastInitHitList* init_hitlist)
 {
