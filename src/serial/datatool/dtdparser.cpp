@@ -721,6 +721,7 @@ CDataType* DTDParser::x_Type(
     if (uniseq) {
         CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
         uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
+        uniType->SetNoPrefix(true);
         type = uniType;
     }
     return type;
@@ -1014,6 +1015,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.19  2004/05/19 17:24:18  gouriano
+ * Corrected generation of C++ code by DTD for containers
+ *
  * Revision 1.18  2004/05/17 21:03:14  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

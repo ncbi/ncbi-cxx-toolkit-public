@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/05/19 17:24:18  gouriano
+* Corrected generation of C++ code by DTD for containers
+*
 * Revision 1.30  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -156,6 +159,7 @@ CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
     SetElementType(element);
     m_NonEmpty = false;
+    m_NoPrefix = false;
     ForbidVar("_type", "short");
     ForbidVar("_type", "int");
     ForbidVar("_type", "long");

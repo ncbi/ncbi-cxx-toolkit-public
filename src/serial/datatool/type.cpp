@@ -540,13 +540,14 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
         AutoPtr<CClassTypeStrings> code(new CClassTypeStrings(GlobalName(),
                                                               ClassName()));
         AutoPtr<CTypeStrings> dType = GetFullCType();
-        bool nonempty = false;
+        bool nonempty = false, noprefix = false;
         const CUniSequenceDataType* uniseq =
             dynamic_cast<const CUniSequenceDataType*>(this);
         if (uniseq) {
             nonempty = uniseq->IsNonEmpty();
+            noprefix = uniseq->IsNoPrefix();
         }
-        code->AddMember(dType, GetTag(), nonempty);
+        code->AddMember(dType, GetTag(), nonempty, noprefix);
         SetParentClassTo(*code);
         return AutoPtr<CTypeStrings>(code.release());
     }
@@ -692,6 +693,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.80  2004/05/19 17:24:18  gouriano
+* Corrected generation of C++ code by DTD for containers
+*
 * Revision 1.79  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

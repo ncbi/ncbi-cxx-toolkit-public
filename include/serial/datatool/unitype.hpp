@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/05/19 17:23:25  gouriano
+* Corrected generation of C++ code by DTD for containers
+*
 * Revision 1.8  2003/06/24 20:53:39  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -118,10 +121,19 @@ public:
         {
             m_NonEmpty = nonEmpty;
         }
+    bool IsNoPrefix(void) const
+        {
+            return m_NoPrefix;
+        }
+    void SetNoPrefix(bool noprefix)
+        {
+            m_NoPrefix = noprefix;
+        }
 
 private:
     AutoPtr<CDataType> m_ElementType;
     bool m_NonEmpty;
+    bool m_NoPrefix;
 };
 
 class CUniSetDataType : public CUniSequenceDataType {

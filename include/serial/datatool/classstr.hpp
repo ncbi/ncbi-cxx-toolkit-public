@@ -100,11 +100,11 @@ public:
                    bool delayed, int tag,
                    bool noPrefix, bool attlist, bool noTag, bool simple,
                    const CDataType* dataType, bool nonEmpty);
-    void AddMember(const AutoPtr<CTypeStrings>& type, int tag, bool nonEmpty)
+    void AddMember(const AutoPtr<CTypeStrings>& type, int tag, bool nonEmpty, bool noPrefix)
         {
             AddMember(NcbiEmptyString, type, NcbiEmptyString,
                       false, NcbiEmptyString, false, tag,
-                      false,false,false,false,0,nonEmpty);
+                      noPrefix,false,false,false,0,nonEmpty);
         }
 
     string GetCType(const CNamespace& ns) const;
@@ -201,6 +201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/05/19 17:23:25  gouriano
+* Corrected generation of C++ code by DTD for containers
+*
 * Revision 1.22  2004/03/08 20:08:02  gouriano
 * Correct namespaces of generated classes
 *
