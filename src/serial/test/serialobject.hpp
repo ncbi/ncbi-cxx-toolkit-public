@@ -3,6 +3,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <serial/serialbase.hpp>
 #include <string>
 #include <list>
 #include <vector>
