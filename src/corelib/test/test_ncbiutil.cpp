@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2001/11/13 15:41:53  ucko
+* Tweak TestPEqualTo to compile on ICC.
+*
 * Revision 6.1  2001/11/09 20:05:05  ucko
 * Add (partial) test for ncbiutil
 *
@@ -46,8 +49,8 @@ BEGIN_NCBI_SCOPE
 
 static void TestPEqualTo(void)
 {
-    int       n1 = 17, n2 = 0, n3 = 17;
-    set<int*> s;
+    int             n1 = 17, n2 = 0, n3 = 17;
+    set<const int*> s;
 
     s.insert(&n1);
     _VERIFY(find_if(s.begin(), s.end(), bind2nd(p_equal_to<int>(), &n2))
