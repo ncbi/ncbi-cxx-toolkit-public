@@ -318,7 +318,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
     bool HasDataSource(const string& source) const
         {
-            return m_Sources &&
+            return bool(m_Sources) &&
                 m_Sources->m_Sources.find(source) !=
                 m_Sources->m_Sources.end();
         }
@@ -345,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/07/17 21:01:43  vasilche
+* Fixed ambiguity on Windows
+*
 * Revision 1.13  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
