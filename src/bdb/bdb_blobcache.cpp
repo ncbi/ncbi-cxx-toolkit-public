@@ -131,7 +131,7 @@ private:
 };
 
 
-static const s_WriterBufferSize = 2 * (1024 * 1024);
+static const int s_WriterBufferSize = 2 * (1024 * 1024);
 
 class CBDB_BLOB_CacheIWriter : public IWriter
 {
@@ -634,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/15 18:39:13  kuznets
+ * Fixed minor incompatibility with the C++ language.
+ *
  * Revision 1.7  2003/10/15 18:13:16  kuznets
  * Implemented new cache architecture based on combination of BDB tables
  * and plain files. Fixes the performance degradation in Berkeley DB
