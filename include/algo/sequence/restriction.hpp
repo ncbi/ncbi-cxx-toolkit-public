@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include "seq_match.hpp"
+#include <algo/sequence/seq_match.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -552,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/18 19:24:15  jcherry
+ * Moved orf and seq_match to algo/sequence
+ *
  * Revision 1.8  2003/08/18 13:52:22  jcherry
  * Added operator!= for CRSpec (possible fix for MIPS, which seems to
  * use != in computing vector ==)

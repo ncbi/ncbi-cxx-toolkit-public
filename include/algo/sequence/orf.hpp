@@ -35,14 +35,14 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <algorithm>
-#include "seq_match.hpp"
+#include <algo/sequence/seq_match.hpp>
 
 BEGIN_NCBI_SCOPE
 
 /// This class provides functions for finding all the ORFs
 /// of a specified minimum length in a DNA sequence.
 
-class COrf
+class NCBI_XALGOSEQ_EXPORT COrf
 {
 public:
     /// Find all ORFs in both orientations that
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/18 19:22:13  jcherry
+ * Moved orf and seq_match to algo/sequence
+ *
  * Revision 1.5  2003/08/18 18:01:58  jcherry
  * Changed COrf::FindOrfs to produce a vector of CRef<CSeq_loc>.
  * Added version of FindOrfs that takes a CSeqVector.

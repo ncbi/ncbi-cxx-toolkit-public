@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 /// but MSVC doesn't support them.
 ///
 
-class CSeqMatch
+class NCBI_XALGOSEQ_EXPORT CSeqMatch
 {
 public:
     enum EMatch {
@@ -182,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/18 19:22:13  jcherry
+ * Moved orf and seq_match to algo/sequence
+ *
  * Revision 1.2  2003/08/13 16:42:11  dicuccio
  * Compilation fixes for MSVC
  *
