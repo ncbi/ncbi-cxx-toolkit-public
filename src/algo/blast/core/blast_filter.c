@@ -43,8 +43,6 @@ Contents: All code related to query sequence masking/filtering for BLAST
 #include <blast_seg.h>
 #include <urkpcc.h>
 
-static char const rcsid[] = "$Id$";
-
 /* The following function will replace BlastSetUp_CreateDoubleInt */
 
 BlastSeqLocPtr BlastSeqLocNew(Int4 from, Int4 to)
