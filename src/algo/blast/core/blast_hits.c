@@ -1330,11 +1330,7 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
    if (hsp_list == NULL || hsp_list->hspcnt == 0)
       return 0;
    
-   if (gapped_calculation)
-      kbp = sbp->kbp_gap_std;
-   else
-      kbp = sbp->kbp_std;
-   
+   kbp = (gapped_calculation ? sbp->kbp_gap : sbp->kbp);
    hsp_cnt = hsp_list->hspcnt;
    hsp_array = hsp_list->hsp_array;
 
@@ -1388,10 +1384,7 @@ Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list,
    if (hsp_list == NULL)
       return 1;
    
-   if (gapped_calculation)
-      kbp = sbp->kbp_gap_std;
-   else
-      kbp = sbp->kbp_std;
+   kbp = (gapped_calculation ? sbp->kbp_gap : sbp->kbp);
    
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];

@@ -571,10 +571,7 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
       }
    }
    
-   if (scoring_options->gapped_calculation) 
-      kbp_ptr = sbp->kbp_gap_std;
-   else
-      kbp_ptr = sbp->kbp_std; 
+   kbp_ptr = (scoring_options->gapped_calculation ? sbp->kbp_gap : sbp->kbp);
    
    for (index = query_info->first_context;
         index <= query_info->last_context;
