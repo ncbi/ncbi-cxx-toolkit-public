@@ -1,5 +1,6 @@
-#ifndef TEXT_DUMP_CONTEXT__HPP
-#define TEXT_DUMP_CONTEXT__HPP
+#ifndef DDUMP_FORMATTER__HPP
+#define DDUMP_FORMATTER__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -28,51 +29,36 @@
  * Author:  Andrei Gourianov
  *
  * File Description:
- *   Formats object's dump as a text and sends it into any output stream
+ *   Defines debug dump formatter interface
  *
  */
-
-#include <corelib/debug_dump_context.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CTextDumpContext : public CDebugDumpContext
+
+class CDebugDumpFormatter
 {
 public:
-    // Only constructor is public (usually)
-    // DebugDump() function communicates then with
-    // CDebugDumpContext public methods only
-    CTextDumpContext(ostream& os, const string& bundle);
-    virtual ~CTextDumpContext(void);
+    virtual bool StartBundle(unsigned int level, const string& bundle) = 0;
+    virtual void EndBundle(  unsigned int level, const string& bundle) = 0;
 
-protected:
-    virtual bool StartBundle(unsigned int level, const string& bundle);
-    virtual void EndBundle(  unsigned int level, const string& bundle);
+    virtual bool StartFrame( unsigned int level, const string& frame) = 0;
+    virtual void EndFrame(   unsigned int level, const string& frame) = 0;
 
-    virtual bool StartFrame( unsigned int level, const string& frame);
-    virtual void EndFrame(   unsigned int level, const string& frame);
-
-    virtual void PutValue(  unsigned int level, const string& frame,
-                            const string& name, const string& value,
-                            const string& comment);
-
-private:
-    void x_IndentLine(unsigned int level, char c = ' ', int len = 2);
-    void x_InsertPageBreak(const string& title = "", char c = '=', int len = 78);
-
-    ostream&     m_Out;
+    virtual void PutValue(   unsigned int level, const string& name,
+                             const string& value, bool is_string,
+                             const string& comment) = 0;
 };
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
- *  Revision 1.2  2002/05/14 21:12:59  gouriano
- *  DebugDump moved into a separate class
+ *  Revision 1.1  2002/05/17 14:25:38  gouriano
+ *  added DebugDump base class and function to CObject
  *
- *  Revision 1.1  2002/05/14 14:43:15  gouriano
- *  added DebugDump function to CObject
  *
  * ===========================================================================
 */
-#endif // TEXT_DUMP_CONTEXT__HPP
+#endif // DDUMP_FORMATTER__HPP

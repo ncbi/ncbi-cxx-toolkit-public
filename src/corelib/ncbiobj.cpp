@@ -369,7 +369,8 @@ void CObject::DoDeleteThisObject(void)
 void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     ddc.SetFrame("CObject");
-    ddc.Log("OnHeap", CanBeDeleted());
+    ddc.Log("this", dynamic_cast<const void*>(this));
+    ddc.Log("onHeap", CanBeDeleted());
 }
 
 
@@ -379,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/05/17 14:27:12  gouriano
+ * added DebugDump base class and function to CObject
+ *
  * Revision 1.23  2002/05/14 21:12:11  gouriano
  * DebugDump() moved into a separate class
  *

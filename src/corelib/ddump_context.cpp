@@ -1,3 +1,4 @@
+
 /*  $Id$
  * ===========================================================================
  *
@@ -27,19 +28,19 @@
  *
  * File Description:
  *   Base class for debug dumping of objects -
- *   provides only the interface (in the form [name=value]) for a client.
- *   A subclass should provide dump formatting.
+ *   provides dump interface (in the form [name=value]) for a client.
  *   
  *
  */
 
-#include <corelib/dumpable.hpp>
+#include <corelib/ddumpable.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-CDebugDumpContext::CDebugDumpContext(const string& bundle)
-    : m_Formatter(*this), m_Title(bundle)
+CDebugDumpContext::CDebugDumpContext(
+    CDebugDumpFormatter& formatter, const string& bundle)
+    : m_Parent(*this), m_Formatter(formatter), m_Title(bundle)
 {
     m_Level = 0;
     m_Start_Bundle = true;
@@ -47,56 +48,57 @@ CDebugDumpContext::CDebugDumpContext(const string& bundle)
 }
 
 CDebugDumpContext::CDebugDumpContext(CDebugDumpContext& ddc)
-    : m_Formatter(ddc.m_Formatter)
+    : m_Parent(ddc), m_Formatter(ddc.m_Formatter)
 {
-    ddc.x_VerifyFrameStarted();
-    m_Level = ddc.m_Level+1;
+    m_Parent.x_VerifyFrameStarted();
+    m_Level = m_Parent.m_Level+1;
     m_Start_Bundle = false;
     m_Started = false;
 }
 
 CDebugDumpContext::CDebugDumpContext(CDebugDumpContext& ddc,
     const string& bundle)
-    : m_Formatter(ddc.m_Formatter), m_Title(bundle)
+    : m_Parent(ddc), m_Formatter(ddc.m_Formatter), m_Title(bundle)
 {
-    ddc.x_VerifyFrameStarted();
-    m_Level = ddc.m_Level+1;
+    m_Parent.x_VerifyFrameStarted();
+    m_Level = m_Parent.m_Level+1;
     m_Start_Bundle = true;
     m_Started = false;
 }
 
 CDebugDumpContext::~CDebugDumpContext(void)
 {
-    // never call its own virtual functions from dtor
-    if (&m_Formatter != this) {
-        x_VerifyFrameStarted();
-        x_VerifyFrameEnded();
-        if (m_Level == 1) {
-            m_Formatter.x_VerifyFrameEnded();
-        }
+    if (&m_Parent == this) {
+        return;
+    }
+    x_VerifyFrameStarted();
+    x_VerifyFrameEnded();
+    if (m_Level == 1) {
+        m_Parent.x_VerifyFrameEnded();
     }
 }
 
 
 void CDebugDumpContext::SetFrame(const string& frame)
 {
-    if (!m_Started) {
-        if (m_Start_Bundle) {
-            m_Started = m_Formatter.StartBundle( m_Level, m_Title);
-        } else {
-            m_Title = frame;
-            m_Started = m_Formatter.StartFrame( m_Level, m_Title);
-        }
+    if (m_Started) {
+        return;
+    }
+    if (m_Start_Bundle) {
+        m_Started = m_Formatter.StartBundle( m_Level, m_Title);
+    } else {
+        m_Title = frame;
+        m_Started = m_Formatter.StartFrame( m_Level, m_Title);
     }
 }
 
 
 void CDebugDumpContext::Log(const string& name, const string& value,
-    const string& comment)
+    bool is_string, const string& comment)
 {
     x_VerifyFrameStarted();
     if (m_Started) {
-        m_Formatter.PutValue(m_Level, m_Title, name, value, comment);
+        m_Formatter.PutValue(m_Level, name, value, is_string, comment);
     }
 }
 
@@ -104,44 +106,44 @@ void CDebugDumpContext::Log(const string& name, const string& value,
 void CDebugDumpContext::Log(const string& name, bool value,
     const string& comment)
 {
-    Log(name, NStr::BoolToString(value), comment);
+    Log(name, NStr::BoolToString(value), false, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, long value,
     const string& comment)
 {
-    Log(name, NStr::IntToString(value,true), comment);
+    Log(name, NStr::IntToString(value), false, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, unsigned long value,
     const string& comment)
 {
-    Log(name, NStr::UIntToString(value), comment);
+    Log(name, NStr::UIntToString(value), false, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, double value,
     const string& comment)
 {
-    Log(name, NStr::DoubleToString(value), comment);
+    Log(name, NStr::DoubleToString(value), false, comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, const void* value,
     const string& comment)
 {
-    Log(name, NStr::PtrToString(value), comment);
+    Log(name, NStr::PtrToString(value), false, comment);
 }
 
 
-void CDebugDumpContext::Log(const string& name, const CDumpable* value,
+void CDebugDumpContext::Log(const string& name, const CDebugDumpable* value,
     unsigned int depth)
 {
     if ((depth != 0) && value) {
         CDebugDumpContext ddc(*this,name);
-        CDumpable::DebugDump(*value, ddc, depth-1);
+        value->DebugDump(ddc, depth-1);
     } else {
         Log(name, dynamic_cast<const void*>(value));
     }
@@ -154,61 +156,25 @@ void CDebugDumpContext::x_VerifyFrameStarted(void)
 
 void CDebugDumpContext::x_VerifyFrameEnded(void)
 {
-    if (m_Started) {
-        if (m_Start_Bundle) {
-            m_Formatter.EndBundle(m_Level, m_Title);
-        } else {
-            m_Formatter.EndFrame(m_Level, m_Title);
-        }
+    if (!m_Started) {
+        return;
+    }
+    if (m_Start_Bundle) {
+        m_Formatter.EndBundle(m_Level, m_Title);
+    } else {
+        m_Formatter.EndFrame(m_Level, m_Title);
     }
     m_Started = false;
  }
 
 
-bool CDebugDumpContext::StartBundle(
-    unsigned int /*level*/, const string& /*title*/)
-{
-    return true;
-}
-
-void CDebugDumpContext::EndBundle(
-    unsigned int /*level*/, const string& /*title*/)
-{
-}
-
-bool CDebugDumpContext::StartFrame(
-    unsigned int /*level*/, const string& /*frame*/)
-{
-    return true;
-}
-
-void CDebugDumpContext::EndFrame(
-    unsigned int /*level*/, const string& /*frame*/)
-{
-}
-
-void CDebugDumpContext::PutValue(
-    unsigned int /*level*/, const string& /*frame*/,
-    const string& /*name*/, const string& /*value*/,
-    const string& /*comment*/)
-{
-}
-
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
- *  Revision 1.4  2002/05/14 21:12:11  gouriano
- *  DebugDump() moved into a separate class
+ *  Revision 1.1  2002/05/17 14:27:10  gouriano
+ *  added DebugDump base class and function to CObject
  *
- *  Revision 1.3  2002/05/14 16:24:55  gouriano
- *  *** empty log message ***
- *
- *  Revision 1.2  2002/05/14 16:10:22  gouriano
- *  *** empty log message ***
- *
- *  Revision 1.1  2002/05/14 14:44:24  gouriano
- *  added DebugDump function to CObject
  *
  * ===========================================================================
 */

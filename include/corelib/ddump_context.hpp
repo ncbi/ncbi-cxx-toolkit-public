@@ -1,5 +1,6 @@
-#ifndef DEBUG_DUMP_CONTEXT__HPP
-#define DEBUG_DUMP_CONTEXT__HPP
+#ifndef DDUMP_CONTEXT__HPP
+#define DDUMP_CONTEXT__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -29,26 +30,22 @@
  *
  * File Description:
  *   Base class for debug dumping of objects -
- *   provides only the interface (in the form [name=value]) for a client.
- *   A subclass should provide dump formatting.
+ *   provides dump interface (in the form [name=value]) for a client.
  *
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ddump_formatter.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-class CDumpable;
+class CDebugDumpable;
+
 class CDebugDumpContext
 {
-protected:
-    // Constructor is protected
-    // to prohibit creating the object directly -
-    // only subclassed object may be created - 
-    // the one, which provides dump formatting
-    CDebugDumpContext(const string& bundle);
 public:
+    CDebugDumpContext(CDebugDumpFormatter& formatter, const string& bundle);
     // This is not exactly a copy constructor -
     // this mechanism is used internally to find out
     // where are we on the Dump tree
@@ -57,12 +54,13 @@ public:
     virtual ~CDebugDumpContext(void);
 
 public:
-
     // First thing in DebugDump() function - call this function
     // providing class type as the frame name
     void SetFrame(const string& frame);
     // Log data in the form [name, data, comment]
-    void Log(const string& name, const string& value,
+    // All data is passed to a formatter as string, still sometimes
+    // it is probably worth to emphasize that the data is REALLY a string
+    void Log(const string& name, const string& value, bool is_string = true,
              const string& comment = kEmptyStr);
     void Log(const string& name, bool value,
              const string& comment = kEmptyStr);
@@ -74,44 +72,29 @@ public:
              const string& comment = kEmptyStr);
     void Log(const string& name, const void* value,
              const string& comment = kEmptyStr);
-    void Log(const string& name, const CDumpable* value,
+    void Log(const string& name, const CDebugDumpable* value,
              unsigned int depth);
 
-
-protected:
-    // These are to comminicate to a subclass
-    virtual bool StartBundle(unsigned int level, const string& bundle);
-    virtual void EndBundle(  unsigned int level, const string& bundle);
-
-    virtual bool StartFrame( unsigned int level, const string& frame);
-    virtual void EndFrame(   unsigned int level, const string& frame);
-
-    virtual void PutValue(   unsigned int level, const string& frame,
-                             const string& name, const string& value,
-                             const string& comment);
-
-protected:
-    bool IsStarted() const {return m_Started;}
 private:
     void x_VerifyFrameStarted(void);
     void x_VerifyFrameEnded(void);
-    CDebugDumpContext& m_Formatter;
-    unsigned int       m_Level;
-    bool               m_Start_Bundle;
-    string             m_Title; 
-    bool               m_Started;
+
+    CDebugDumpContext&   m_Parent;
+    CDebugDumpFormatter& m_Formatter;
+    unsigned int         m_Level;
+    bool                 m_Start_Bundle;
+    string               m_Title; 
+    bool                 m_Started;
 };
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
- *  Revision 1.2  2002/05/14 21:12:59  gouriano
- *  DebugDump moved into a separate class
+ *  Revision 1.1  2002/05/17 14:25:38  gouriano
+ *  added DebugDump base class and function to CObject
  *
- *  Revision 1.1  2002/05/14 14:43:15  gouriano
- *  added DebugDump function to CObject
  *
  * ===========================================================================
 */
-#endif // DEBUG_DUMP_CONTEXT__HPP
+#endif // DDUMP_CONTEXT__HPP

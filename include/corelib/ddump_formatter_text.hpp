@@ -1,3 +1,5 @@
+#ifndef DDUMP_FORMATTER_TEXT__HPP
+#define DDUMP_FORMATTER_TEXT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -27,41 +29,46 @@
  * Author:  Andrei Gourianov
  *
  * File Description:
- *   Abstract base class: defines DebugDump() functionality
+ *   Defines text debug dump formatter class
  *
  */
-
-#include <corelib/dumpable.hpp>
-
+#include <corelib/ddump_formatter.hpp>
 
 BEGIN_NCBI_SCOPE
 
-bool CDumpable::sm_DumpOn = true;
 
-
-void CDumpable::SetDebugDumpFlag( bool on)
+class CDebugDumpFormatterText : public CDebugDumpFormatter
 {
-    sm_DumpOn = on;
-}
+public:
+    CDebugDumpFormatterText(ostream& out);
+    virtual ~CDebugDumpFormatterText(void);
 
+public:
+    virtual bool StartBundle(unsigned int level, const string& bundle);
+    virtual void EndBundle(  unsigned int level, const string& bundle);
 
-void CDumpable::DebugDump(const CDumpable& obj,
-    CDebugDumpContext& ddc, unsigned int depth)
-{
-    if (sm_DumpOn) {
-        obj.DebugDump(ddc, depth);
-    }
-}
+    virtual bool StartFrame( unsigned int level, const string& frame);
+    virtual void EndFrame(   unsigned int level, const string& frame);
+
+    virtual void PutValue(   unsigned int level, const string& name,
+                             const string& value, bool is_string,
+                             const string& comment);
+
+private:
+    void x_IndentLine(unsigned int level, char c = ' ', int len = 2);
+    void x_InsertPageBreak(const string& title = "", char c = '=', int len = 78);
+
+    ostream& m_Out;
+};
 
 END_NCBI_SCOPE
-
-
 /*
  * ===========================================================================
- * $Log$
- * Revision 1.1  2002/05/14 21:12:11  gouriano
- * DebugDump() moved into a separate class
+ *  $Log$
+ *  Revision 1.1  2002/05/17 14:25:38  gouriano
+ *  added DebugDump base class and function to CObject
  *
  *
  * ===========================================================================
- */
+*/
+#endif // DDUMP_FORMATTER_TEXT__HPP

@@ -34,7 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/dumpable.hpp>
+#include <corelib/ddumpable.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -55,7 +55,7 @@ public:
 
 
 
-class CObject : virtual public CDumpable
+class CObject : virtual public CDebugDumpable
 {
 public:
     // constructors
@@ -91,7 +91,6 @@ public:
     void operator delete(void* ptr);
     void operator delete[](void* ptr);
 
-protected:
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
 private:
@@ -687,6 +686,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2002/05/17 14:25:40  gouriano
+ * added DebugDump base class and function to CObject
+ *
  * Revision 1.29  2002/05/14 21:12:59  gouriano
  * DebugDump moved into a separate class
  *

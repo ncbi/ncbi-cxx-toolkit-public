@@ -1,3 +1,4 @@
+
 /*  $Id$
  * ===========================================================================
  *
@@ -26,30 +27,25 @@
  * Author:  Andrei Gourianov
  *
  * File Description:
- *   Formats object's dump as a text and sends it into any output stream
+ *   Text debug dump formatter class
  *
  */
 
-#include <corelib/text_dump_context.hpp>
+#include <corelib/ddump_formatter_text.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTextDumpContext::CTextDumpContext(ostream& os, const string& bundle)
-    : m_Out(os), CDebugDumpContext(bundle)
+
+CDebugDumpFormatterText::CDebugDumpFormatterText(ostream& out)
+    : m_Out(out)
 {
 }
 
-CTextDumpContext::~CTextDumpContext(void)
+CDebugDumpFormatterText::~CDebugDumpFormatterText(void)
 {
-    if (IsStarted()) {
-        // EndBundle() actually, I just do not want to call
-        // a virtual function here
-        x_InsertPageBreak();
-    }
 }
 
-
-bool CTextDumpContext::StartBundle(unsigned int level, const string& bundle)
+bool CDebugDumpFormatterText::StartBundle(unsigned int level, const string& bundle)
 {
     if (level == 0) {
         x_InsertPageBreak(bundle);
@@ -61,7 +57,7 @@ bool CTextDumpContext::StartBundle(unsigned int level, const string& bundle)
 }
 
 
-void CTextDumpContext::EndBundle(  unsigned int level, const string& /*bundle*/)
+void CDebugDumpFormatterText::EndBundle(  unsigned int level, const string& /*bundle*/)
 {
     if (level == 0) {
         x_InsertPageBreak();
@@ -72,7 +68,7 @@ void CTextDumpContext::EndBundle(  unsigned int level, const string& /*bundle*/)
 }
 
 
-bool CTextDumpContext::StartFrame(unsigned int level, const string& frame)
+bool CDebugDumpFormatterText::StartFrame(unsigned int level, const string& frame)
 {
     x_IndentLine(level);
     m_Out << (frame.empty() ? "?" : frame.c_str()) << " {" << endl;
@@ -80,18 +76,20 @@ bool CTextDumpContext::StartFrame(unsigned int level, const string& frame)
 }
 
 
-void CTextDumpContext::EndFrame( unsigned int level, const string& /*frame*/)
+void CDebugDumpFormatterText::EndFrame( unsigned int level, const string& /*frame*/)
 {
     x_IndentLine(level);
     m_Out << "}" << endl;
 }
 
 
-void CTextDumpContext::PutValue(unsigned int level, const string& /*frame*/,
-    const string& name, const string& value, const string& comment)
+void CDebugDumpFormatterText::PutValue(unsigned int level, const string& name,
+    const string& value, bool is_string, const string& comment)
 {
     x_IndentLine(level+1);
-    m_Out << name << " = \'" << value << "\'";
+    m_Out << name << " = " <<
+        (is_string ? "\"" : "") << value <<
+        (is_string ? "\"" : "");
     if (!comment.empty()) {
         m_Out << " (" << comment << ")";
     }
@@ -100,7 +98,7 @@ void CTextDumpContext::PutValue(unsigned int level, const string& /*frame*/,
 
 
 
-void CTextDumpContext::x_IndentLine(unsigned int level, char c, int len)
+void CDebugDumpFormatterText::x_IndentLine(unsigned int level, char c, int len)
 {
     string tmp;
     for (int i=1; i<level; ++i) {
@@ -111,7 +109,7 @@ void CTextDumpContext::x_IndentLine(unsigned int level, char c, int len)
     m_Out << tmp;
 }
 
-void CTextDumpContext::x_InsertPageBreak(const string& title, char c, int len)
+void CDebugDumpFormatterText::x_InsertPageBreak(const string& title, char c, int len)
 {
     string tmp;
     if (!title.empty()) {
@@ -136,14 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
- *  Revision 1.3  2002/05/14 21:12:11  gouriano
- *  DebugDump() moved into a separate class
+ *  Revision 1.1  2002/05/17 14:27:10  gouriano
+ *  added DebugDump base class and function to CObject
  *
- *  Revision 1.2  2002/05/14 16:58:58  gouriano
- *  removed stringstream usage - replaced by plain string
- *
- *  Revision 1.1  2002/05/14 14:44:25  gouriano
- *  added DebugDump function to CObject
  *
  * ===========================================================================
 */

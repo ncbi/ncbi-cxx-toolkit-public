@@ -1,5 +1,5 @@
-#ifndef DUMPABLE__HPP
-#define DUMPABLE__HPP
+#ifndef DDUMPABLE__HPP
+#define DDUMPABLE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -34,26 +34,31 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/debug_dump_context.hpp>
+#include <corelib/ddump_context.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CDumpable
+class CDebugDumpable
 {
 public:
-    CDumpable(void) {}
-    virtual ~CDumpable(void) {}
+    CDebugDumpable(void) {}
+    virtual ~CDebugDumpable(void);
 
-    // Sets debug dump flag ON/OFF
-    static void SetDebugDumpFlag( bool on);
-    // Redirects the call to the similar protected function
-    // (if DebugDumpFlag is ON)
-    static void DebugDump(const CDumpable& obj,
-                          CDebugDumpContext& ddc, unsigned int depth);
-protected:
+    // Enable/disable debug dump
+    static void EnableDebugDump(bool on);
+
+    // Dump using text formatter
+    void DebugDumpText(ostream& out,
+                       const string& bundle, unsigned int depth) const;
+    // Dump using external dump formatter
+    void DebugDumpFormat(CDebugDumpFormatter& ddf, 
+                   const string& bundle, unsigned int depth) const;
+
+    // Function that does the dump - to be overloaded
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const = 0;
+
 private:
-    static bool sm_DumpOn;
+    static bool sm_DumpEnabled;
 };
 
 END_NCBI_SCOPE
@@ -62,11 +67,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2002/05/14 21:12:59  gouriano
- * DebugDump moved into a separate class
+ * Revision 1.1  2002/05/17 14:25:39  gouriano
+ * added DebugDump base class and function to CObject
+ *
  *
  *
  * ===========================================================================
  */
 
-#endif // DUMPABLE__HPP
+#endif // DDUMPABLE__HPP
