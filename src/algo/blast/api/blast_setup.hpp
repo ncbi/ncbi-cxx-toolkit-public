@@ -51,8 +51,8 @@ USING_SCOPE(objects);
  */
 Uint1*
 BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& buflen,
-        CScope* scope, ENa_strand strand = eNa_strand_plus, 
-        bool add_nucl_sentinel = true);
+                 CScope* scope, ENa_strand strand = eNa_strand_plus, 
+                 bool add_nucl_sentinel = true);
 
 #if 0
 // not used right now
@@ -66,7 +66,7 @@ BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& buflen,
  */
 void
 BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev, 
-        const int nucl_length, const short frame, Uint1* translation);
+                    const int nucl_length, const short frame, Uint1* translation);
 #endif
 
 /** Retrieves the requested genetic code in Ncbistdaa format. Caller is
@@ -84,6 +84,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/11 19:55:04  camacho
+* Early commit to support query concatenation and the use of multiple scopes.
+* Compiles, but still needs work.
+*
 * Revision 1.5  2003/08/11 13:58:51  dicuccio
 * Added export specifiers.  Fixed problem with unimplemented private copy ctor
 * (truly make unimplemented)

@@ -100,18 +100,18 @@ DECLARE_AUTO_CLASS_WRAPPER(LookupTableOptions, LookupTableOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(LookupTableWrap, BlastLookupTableDestruct);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordOptions,
-        BlastInitialWordOptionsFree);
+                           BlastInitialWordOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordParameters,
-        BlastInitialWordParametersFree);
+                           BlastInitialWordParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BLAST_ExtendWord, BlastExtendWordFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionOptions, BlastExtensionOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionParameters,
-        BlastExtensionParametersFree);
+                           BlastExtensionParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingOptions, BlastHitSavingOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParameters,
-        BlastHitSavingParametersFree);
+                           BlastHitSavingParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(PSIBlastOptions, sfree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastDatabaseOptions, sfree);
@@ -120,7 +120,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastScoreBlk, BlastScoreBlkFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastScoringOptions, BlastScoringOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
-        BlastEffectiveLengthsOptionsFree);
+                           BlastEffectiveLengthsOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastResults, BLAST_ResultsFree);
@@ -131,6 +131,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/11 19:55:04  camacho
+* Early commit to support query concatenation and the use of multiple scopes.
+* Compiles, but still needs work.
+*
 * Revision 1.9  2003/08/11 17:12:10  dondosha
 * Do not use CConstRef as argument to CSeqLoc2BlastMask
 *

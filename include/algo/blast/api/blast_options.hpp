@@ -56,9 +56,9 @@ public:
     enum EProgram {
         eBlastn = 0,        //< Nucl-Nucl (also includes megablast)
         eBlastp,            //< Protein-Protein
-        eBlastx,            //< Nucl-Protein
-        eTblastn,           //< Protein-Nucl
-        eTblastx,           //< Nucl-Nucl
+        eBlastx,            //< Translated nucl-Protein
+        eTblastn,           //< Protein-Translated nucl
+        eTblastx,           //< Translated nucl-Translated nucl
         eBlastUndef = 255   //< Undefined program
     };
 
@@ -181,7 +181,7 @@ public:
 
     double GetSingleHSPEvalueThreshold() const;
     void SetSingleHSPEvalueThreshold(double e);
-    
+
     int GetSingleHSPCutoffScore() const;
     void SetSingleHSPCutoffScore(int s);
 
@@ -998,6 +998,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/11 19:55:04  camacho
+* Early commit to support query concatenation and the use of multiple scopes.
+* Compiles, but still needs work.
+*
 * Revision 1.12  2003/08/11 15:23:23  dondosha
 * Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
 *

@@ -66,12 +66,12 @@ USING_SCOPE(objects);
  */
 CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
-        CBlastOption::EProgram prog,
-        vector< CConstRef<CSeq_id> >& query_seqids, 
-        const BlastSeqSrc* bssp, 
-        CConstRef<CSeq_id>& subject_seqid,
-        const BlastScoringOptions* score_options, 
-        const BlastScoreBlk* sbp);
+                          CBlastOption::EProgram prog,
+                          vector< CConstRef<CSeq_id> >& query_seqids, 
+                          const BlastSeqSrc* bssp, 
+                          CConstRef<CSeq_id>& subject_seqid,
+                          const BlastScoringOptions* score_options, 
+                          const BlastScoreBlk* sbp);
 
 
 END_NCBI_SCOPE
@@ -80,6 +80,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/11 19:55:04  camacho
+* Early commit to support query concatenation and the use of multiple scopes.
+* Compiles, but still needs work.
+*
 * Revision 1.8  2003/08/11 15:18:50  dondosha
 * Added algo/blast/core to all #included headers
 *

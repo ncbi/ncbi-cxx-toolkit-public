@@ -46,52 +46,45 @@ USING_SCOPE(objects);
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
-    typedef vector< CConstRef<CSeq_loc> >   TSeqLocVector;
+    typedef pair<const CSeq_loc*, CScope*>  TSeqLoc;
+    typedef vector<TSeqLoc>                 TSeqLocVector;
     typedef CBlastOption::EProgram          TProgram;
 
     /// Constructor to compare 2 sequences
-    CBl2Seq(CConstRef<CSeq_loc>& query, CConstRef<CSeq_loc>& subject, 
-            TProgram p, CScope* scope);
+    CBl2Seq(TSeqLoc& query, TSeqLoc& subject, TProgram p);
 
     /// Constructor to compare query against all subject sequences
-    CBl2Seq(CConstRef<CSeq_loc>& query, const TSeqLocVector& subjects, 
-            TProgram p, CScope* scope);
+    CBl2Seq(TSeqLoc& query, TSeqLocVector& subjects, TProgram p);
 
     /// Contructor to allow query concatenation
-    CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects,
-            TProgram p, CScope* scope);
+    CBl2Seq(TSeqLocVector& queries, TSeqLocVector& subjects, TProgram p);
 
     virtual ~CBl2Seq();
 
-    void SetQuery(CConstRef<CSeq_loc>& query);
-    const CConstRef<CSeq_loc>& GetQuery() const;
+    void SetQuery(TSeqLoc& query);
+    const TSeqLoc& GetQuery() const;
 
-    void SetSubject(const TSeqLocVector& subjects);
-    const TSeqLocVector& GetSubject() const;
+    void SetQueries(TSeqLocVector& queries);
+    const TSeqLocVector& GetQueries() const;
+
+    void SetSubject(TSeqLoc& subject);
+    const TSeqLoc& GetSubject() const;
+
+    void SetSubjects(TSeqLocVector& subjects);
+    const TSeqLocVector& GetSubjects() const;
 
     void SetProgram(TProgram p);
     TProgram GetProgram() const;
 
-    CRef<CBlastOption>& SetOptions();
-    void SetOptions(CRef<CBlastOption>& opts);
-    CRef<CBlastOption> GetOptions() const;
+    CBlastOption& SetOptions();
+    void SetOptions(const CBlastOption& opts);
+    const CBlastOption& GetOptions() const;
 
     virtual CRef<CSeq_align_set> Run();
 
-    /// Retrieves regions filtered on the query
-    CRef<CSeq_loc> GetFilteredQueryRegions() const;
-
-#if 0
-    // Temporary: Accessors for internal structures
-    const BlastScoreBlkPtr GetScoreBlkPtr() const { return mi_Sbp; }
-    const BlastQueryInfoPtr GetQueryInfoPtr() const { return &*mi_QueryInfo; }
-    BlastReturnStat GetReturnStats() const 
-    { 
-        if (mi_vReturnStats.size())
-            return mi_vReturnStats.front();
-    }
-#endif
-
+    /// Retrieves regions filtered on the query/queries
+    //const TSeqLocVector& GetFilteredQueryRegions() const;
+    const vector<CSeq_loc>& GetFilteredQueryRegions() const;
 
 protected:
     virtual void SetupSearch();
@@ -100,48 +93,51 @@ protected:
     virtual CRef<CSeq_align_set> x_Results2SeqAlign();
 
 private:
-    bool                 m_QuerySetUpDone;  //< done once for every query
-    CConstRef<CSeq_loc>  m_Query;           //< query sequence
-    TSeqLocVector        m_Subjects;        //< sequence(s) to BLAST against
-    CRef<CBlastOption>   m_Options;         //< Blast options
-    TProgram             m_Program;         //< Blast program
-    CScope*              m_Scope;           //< Needed to retrieve sequences
+    // Data members received from client code
+    TSeqLocVector        m_tQueries;         //< query sequence(s)
+    TSeqLocVector        m_tSubjects;        //< sequence(s) to BLAST against
+    CBlastOption*        m_pOptions;         //< Blast options
+    TProgram             m_eProgram;         //< Blast program FIXME ?needed?
 
-    void x_Init(void);
+    ///< Common initialization code for all c-tors
+    void x_Init(TSeqLocVector& queries, TSeqLocVector& subjects);      
 
-    // Prohibit copy constructor
-    CBl2Seq(const CBl2Seq&);
-    // Prohibit copying
-    CBl2Seq& operator=(const CBl2Seq&);
+    /// Prohibit copy constructor
+    CBl2Seq(const CBl2Seq& rhs);
+    /// Prohibit assignment operator
+    CBl2Seq& operator=(const CBl2Seq& rhs);
 
-    /********************* Internal data structures ***************************/
-    CBLAST_SequenceBlkPtr               mi_Query;
-    CBlastQueryInfoPtr                  mi_QueryInfo;
-    /// Vector of sequence blk structures, one per subject
-    vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures
-    unsigned int                        mi_MaxSubjLength;
+    /************ Internal data structures (m_i = internal members)***********/
+    //< done once for every query
+    bool                                mi_bQuerySetUpDone;
+    CBLAST_SequenceBlkPtr               mi_clsQueries;  // one for all queries
+    CBlastQueryInfoPtr                  mi_clsQueryInfo; // one for all queries
+    vector<BLAST_SequenceBlk*>          mi_vSubjects; // should use structures?
+    unsigned int                        mi_iMaxSubjLength; // should use int8?
 
-    BlastScoreBlk*                     mi_Sbp;
-    LookupTableWrap*                    mi_LookupTable;
-    ListNode*                           mi_LookupSegments;
+    BlastScoreBlk*                      mi_pScoreBlock;
+    LookupTableWrap*                    mi_pLookupTable; // one for all queries
+    ListNode*                           mi_pLookupSegments;
 
-    CBlastInitialWordParametersPtr      mi_InitWordParams;
-    CBlastHitSavingParametersPtr        mi_HitSavingParams;
-    CBLAST_ExtendWordPtr                mi_ExtnWord;
-    CBlastExtensionParametersPtr        mi_ExtnParams;
-    CBlastGapAlignStructPtr             mi_GapAlign;
-    CBlastDatabaseOptionsPtr            mi_DbOptions;
+    CBlastInitialWordParametersPtr      mi_clsInitWordParams;
+    CBlastHitSavingParametersPtr        mi_clsHitSavingParams;
+    CBLAST_ExtendWordPtr                mi_clsExtnWord;
+    CBlastExtensionParametersPtr        mi_clsExtnParams;
+    CBlastGapAlignStructPtr             mi_clsGapAlign;
+    CBlastDatabaseOptionsPtr            mi_clsDbOptions;
 
     /// Vector of result structures, one per subject
     vector<BlastResults*>               mi_vResults;//should use structs?
-    /// Vector of statistical return structures, one per subject
+    /// Vector of statistical return structures, should have one per query
     vector<BlastReturnStat>             mi_vReturnStats;
 
     /// Regions filtered out from the query sequence
-    CRef<CSeq_loc>                      mi_FilteredRegions;
+    //TSeqLocVector                       mi_vFilteredRegions;
+    vector<CSeq_loc>                    mi_vFilteredRegions;
 
-    void x_SetupQuery();
-    void x_SetupQueryInfo();
+    //void x_SetupQuery();    // FIXME: should be setup_queries
+    void x_SetupQueries();
+    void x_SetupQueryInfo();// FIXME: Allow query concatenation
     void x_SetupSubjects();
     void x_ResetQueryDs();
     void x_ResetSubjectDs();
@@ -150,67 +146,94 @@ private:
 inline void
 CBl2Seq::SetProgram(TProgram p)
 {
-    m_Program = p;
-    m_Options->SetProgram(p);
-    m_QuerySetUpDone = false;
+    m_eProgram = p;  // FIXME: we could just store the program in options obj
+    m_pOptions->SetProgram(p);
+    mi_bQuerySetUpDone = false;
 }
 
 inline CBl2Seq::TProgram
 CBl2Seq::GetProgram() const
 {
-    return m_Program;
+    return m_eProgram;   // FIXME: return m_pOptions->GetProgram();
 }
 
 inline void
-CBl2Seq::SetQuery(CConstRef<CSeq_loc>& query)
+CBl2Seq::SetQuery(CBl2Seq::TSeqLoc& query)
 {
-    m_Query.Reset(query);
-    m_QuerySetUpDone = false;
+    x_ResetQueryDs();
+    m_tQueries.push_back(query);
 }
 
-inline const CConstRef<CSeq_loc>&
+inline const CBl2Seq::TSeqLoc&
 CBl2Seq::GetQuery() const
 {
-    return m_Query;
+    return m_tQueries.front();
 }
 
 inline void
-CBl2Seq::SetSubject(const TSeqLocVector& subjects)
+CBl2Seq::SetQueries(CBl2Seq::TSeqLocVector& queries)
 {
-    m_Subjects = subjects;
+    x_ResetQueryDs();
+    m_tQueries = queries;
 }
 
 inline const CBl2Seq::TSeqLocVector&
-CBl2Seq::GetSubject() const
+CBl2Seq::GetQueries() const
 {
-    return m_Subjects;
-}
-
-inline CRef<CBlastOption>&
-CBl2Seq::SetOptions()
-{
-    m_QuerySetUpDone = false;
-    return m_Options;
+    return m_tQueries;
 }
 
 inline void
-CBl2Seq::SetOptions(CRef<CBlastOption>& opts)
+CBl2Seq::SetSubject(CBl2Seq::TSeqLoc& subject)
 {
-    m_Options.Reset(opts);
-    m_Program = m_Options->GetProgram();
-    m_QuerySetUpDone = false;
+    x_ResetSubjectDs();
+    m_tSubjects.push_back(subject);
 }
 
-inline CRef<CBlastOption>
+inline const CBl2Seq::TSeqLoc&
+CBl2Seq::GetSubject() const
+{
+    return m_tSubjects.front();
+}
+
+inline void
+CBl2Seq::SetSubjects(CBl2Seq::TSeqLocVector& subjects)
+{
+    x_ResetSubjectDs();
+    m_tSubjects = subjects;
+}
+
+inline const CBl2Seq::TSeqLocVector&
+CBl2Seq::GetSubjects() const
+{
+    return m_tSubjects;
+}
+
+inline CBlastOption&
+CBl2Seq::SetOptions()
+{
+    mi_bQuerySetUpDone = false;
+    return *m_pOptions;
+}
+
+inline void
+CBl2Seq::SetOptions(const CBlastOption& opts)
+{
+    m_pOptions = const_cast<CBlastOption*>(&opts);
+    m_eProgram = m_pOptions->GetProgram();
+    mi_bQuerySetUpDone = false;
+}
+
+inline const CBlastOption&
 CBl2Seq::GetOptions() const
 {
-    return m_Options;
+    return *m_pOptions;
 }
 
-inline CRef<CSeq_loc> 
+inline const vector<CSeq_loc>&
 CBl2Seq::GetFilteredQueryRegions() const
 {
-    return mi_FilteredRegions;
+    return mi_vFilteredRegions;
 }
 
 END_NCBI_SCOPE
@@ -219,6 +242,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/08/11 19:55:04  camacho
+* Early commit to support query concatenation and the use of multiple scopes.
+* Compiles, but still needs work.
+*
 * Revision 1.8  2003/08/11 13:58:51  dicuccio
 * Added export specifiers.  Fixed problem with unimplemented private copy ctor
 * (truly make unimplemented)
