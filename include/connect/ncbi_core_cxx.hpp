@@ -44,10 +44,17 @@
 BEGIN_NCBI_SCOPE
 
 
-extern REG         REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
-extern LOG         LOG_cxx2c(void);
-extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock = 0,  bool pass_ownership = false);
+NCBI_XCONNECT_EXPORT
+extern REG      REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
 
+NCBI_XCONNECT_EXPORT
+extern LOG      LOG_cxx2c(void);
+
+NCBI_XCONNECT_EXPORT
+extern MT_LOCK  MT_LOCK_cxx2c(CRWLock* lock = 0,  bool pass_ownership = false);
+
+
+NCBI_XCONNECT_EXPORT
 extern void     CONNECT_Init(CNcbiRegistry* reg = 0);
 
 
@@ -57,6 +64,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/12/19 14:51:48  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 6.8  2002/06/12 19:19:37  lavr
  * Guard macro name standardized
  *

@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 //   connection; .../src/connect/test_threaded_server.cpp illustrates
 //   how you might do this.
 
-class CThreadedServer
+class NCBI_XCONNECT_EXPORT CThreadedServer
 {
 public:
     CThreadedServer(unsigned int port) :
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/12/19 14:51:48  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 6.5  2002/09/19 18:06:04  lavr
  * Header file guard macro changed
  *

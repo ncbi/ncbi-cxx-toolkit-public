@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.3  2001/01/05 20:08:53  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -65,7 +68,7 @@ BEGIN_NCBI_SCOPE
 
 /*
 //   Generic example of usage of these templates:
-class CKey
+class NCBI_XUTIL_EXPORT CKey
 {
 public:
     CWeakMapKey<string> m_MapKey;

@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 class CRotatingLogStream;
 
-class CRotatingLogStreamBuf : public CNcbiFilebuf {
+class NCBI_XUTIL_EXPORT CRotatingLogStreamBuf : public CNcbiFilebuf {
 public:
     CRotatingLogStreamBuf(CRotatingLogStream* stream, const string& filename,
                           CT_POS_TYPE limit, IOS_BASE::openmode mode);
@@ -59,7 +59,7 @@ private:
 };
 
 
-class CRotatingLogStream : public CNcbiOstream {
+class NCBI_XUTIL_EXPORT CRotatingLogStream : public CNcbiOstream {
 public:
     // limit is approximate; the actual length may exceed it by a buffer's
     // worth of characters.
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.2  2002/11/25 19:19:13  ucko
 * Adjust CRotatingLogStream's constructor to compile under GCC 3, and
 * generally be slightly more efficient.

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.3  2001/05/17 15:01:19  lavr
 * Typos corrected
 *
@@ -66,7 +69,7 @@ template<class Traits> struct SIntervalTreeNodeIntervals;
 template<class Traits> class CIntervalTreeIterator;
 
 // parameter class for CIntervalTree
-class CIntervalTreeTraits
+class NCBI_XUTIL_EXPORT CIntervalTreeTraits
 {
 public:
     typedef CIntervalTreeTraits TTraits;
@@ -283,7 +286,7 @@ private:
 
 // deal with intervals with coordinates in range [0, max], where max is
 // CIntervalTree constructor argument.
-class CIntervalTree
+class NCBI_XUTIL_EXPORT CIntervalTree
 {
 public:
     typedef CIntervalTreeTraits TTraits;

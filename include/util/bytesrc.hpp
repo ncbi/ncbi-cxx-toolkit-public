@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.9  2001/05/17 15:01:19  lavr
 * Typos corrected
 *
@@ -77,7 +80,7 @@ class CSubSourceCollector;
 
 class CIStreamBuffer;
 
-class CByteSource : public CObject
+class NCBI_XUTIL_EXPORT CByteSource : public CObject
 {
 public:
     virtual ~CByteSource(void);
@@ -85,7 +88,7 @@ public:
     virtual CRef<CByteSourceReader> Open(void) = 0;
 };
 
-class CByteSourceReader : public CObject
+class NCBI_XUTIL_EXPORT CByteSourceReader : public CObject
 {
 public:
     virtual ~CByteSourceReader(void);
@@ -101,7 +104,7 @@ public:
     virtual CRef<CSubSourceCollector> SubSource(size_t prepend);
 };
 
-class CSubSourceCollector : public CObject
+class NCBI_XUTIL_EXPORT CSubSourceCollector : public CObject
 {
 public:
     virtual ~CSubSourceCollector(void);
@@ -110,7 +113,7 @@ public:
     virtual CRef<CByteSource> GetSource(void) = 0;
 };
 
-class CStreamByteSource : public CByteSource
+class NCBI_XUTIL_EXPORT CStreamByteSource : public CByteSource
 {
 public:
     CStreamByteSource(CNcbiIstream& in)
@@ -124,7 +127,7 @@ protected:
     CNcbiIstream* m_Stream;
 };
 
-class CFStreamByteSource : public CStreamByteSource
+class NCBI_XUTIL_EXPORT CFStreamByteSource : public CStreamByteSource
 {
 public:
     CFStreamByteSource(CNcbiIstream& in)
@@ -135,7 +138,7 @@ public:
     ~CFStreamByteSource(void);
 };
 
-class CFileByteSource : public CByteSource
+class NCBI_XUTIL_EXPORT CFileByteSource : public CByteSource
 {
 public:
     CFileByteSource(const string& name, bool binary);
@@ -157,7 +160,7 @@ private:
     bool m_Binary;
 };
 
-class CStreamByteSourceReader : public CByteSourceReader
+class NCBI_XUTIL_EXPORT CStreamByteSourceReader : public CByteSourceReader
 {
 public:
     CStreamByteSourceReader(const CByteSource* source, CNcbiIstream* stream)
@@ -173,7 +176,7 @@ protected:
     CNcbiIstream* m_Stream;
 };
 
-class CFileByteSourceReader : public CStreamByteSourceReader
+class NCBI_XUTIL_EXPORT CFileByteSourceReader : public CStreamByteSourceReader
 {
 public:
     CFileByteSourceReader(const CFileByteSource* source);
@@ -184,7 +187,7 @@ private:
     CNcbiIfstream m_FStream;
 };
 
-class CMemoryChunk : public CObject {
+class NCBI_XUTIL_EXPORT CMemoryChunk : public CObject {
 public:
     CMemoryChunk(const char* data, size_t dataSize,
                  CRef<CMemoryChunk>& prevChunk);
@@ -211,7 +214,7 @@ private:
     CRef<CMemoryChunk> m_NextChunk;
 };
 
-class CMemoryByteSource : public CByteSource
+class NCBI_XUTIL_EXPORT CMemoryByteSource : public CByteSource
 {
 public:
     CMemoryByteSource(const CConstRef<CMemoryChunk>& bytes)
@@ -226,7 +229,7 @@ private:
     CConstRef<CMemoryChunk> m_Bytes;
 };
 
-class CMemoryByteSourceReader : public CByteSourceReader
+class NCBI_XUTIL_EXPORT CMemoryByteSourceReader : public CByteSourceReader
 {
 public:
     CMemoryByteSourceReader(const CConstRef<CMemoryChunk>& bytes)
@@ -244,7 +247,7 @@ private:
     size_t m_CurrentChunkOffset;
 };
 
-class CMemorySourceCollector : public CSubSourceCollector
+class NCBI_XUTIL_EXPORT CMemorySourceCollector : public CSubSourceCollector
 {
 public:
     virtual void AddChunk(const char* buffer, size_t bufferLength);
@@ -255,7 +258,7 @@ private:
     CRef<CMemoryChunk> m_LastChunk;
 };
 
-class CFileSourceCollector : public CSubSourceCollector
+class NCBI_XUTIL_EXPORT CFileSourceCollector : public CSubSourceCollector
 {
 public:
 #ifdef HAVE_NO_IOS_BASE
@@ -278,7 +281,7 @@ private:
     TFileOff m_Length;
 };
 
-class CSubFileByteSource : public CFileByteSource
+class NCBI_XUTIL_EXPORT CSubFileByteSource : public CFileByteSource
 {
     typedef CFileByteSource CParent;
 public:
@@ -303,7 +306,7 @@ private:
     TFileOff m_Length;
 };
 
-class CSubFileByteSourceReader : public CFileByteSourceReader
+class NCBI_XUTIL_EXPORT CSubFileByteSourceReader : public CFileByteSourceReader
 {
     typedef CFileByteSourceReader CParent;
 public:

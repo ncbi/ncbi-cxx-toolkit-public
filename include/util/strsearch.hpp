@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 // pattern over varying texts.
 
 
-class CBoyerMooreMatcher 
+class NCBI_XUTIL_EXPORT CBoyerMooreMatcher 
 {
 public:
     // Initialize a matcher with the pattern to be matched.
@@ -196,7 +196,7 @@ private:
 
 
 // Convenience class when the MatchType is of string type (most cases)
-class CTextFsa : public CTextFsm<string>
+class NCBI_XUTIL_EXPORT CTextFsa : public CTextFsm<string>
 {
 public:
     CTextFsa(bool case_sensitive = false) :
@@ -422,6 +422,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.6  2002/11/13 19:12:23  shomrat
 * Add prime checking
 *

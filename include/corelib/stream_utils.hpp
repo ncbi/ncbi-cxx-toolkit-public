@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 
-struct CStreamUtils {
+struct NCBI_XUTIL_EXPORT CStreamUtils {
 
 // Push the block of data [buf, buf+buf_size) back to the input stream "is".
 // If "del_ptr" is not NULL, then `delete[] (CT_CHAR_TYPE*) del_ptr' is called
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2002/12/19 14:51:00  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 1.7  2002/11/28 03:27:19  lavr
  * File description updated
  *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.26  2002/11/04 21:29:00  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -142,6 +145,8 @@
 #include <corelib/ncbiobj.hpp>
 #include <string.h>
 
+#include <util/bytesrc.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CByteSource;
@@ -152,7 +157,7 @@ class CSubSourceCollector;
 #define THROWS1_NONE
 
 // this exception is thrown when IO error occurred in serialization
-class CIOException : public runtime_error
+class NCBI_XUTIL_EXPORT CIOException : public runtime_error
 {
 public:
     CIOException(const string& msg) THROWS_NONE;
@@ -160,14 +165,14 @@ public:
 };
 
 // this exception is thrown when unexpected end of file found
-class CEofException : public CIOException
+class NCBI_XUTIL_EXPORT CEofException : public CIOException
 {
 public:
     CEofException(void) THROWS_NONE;
     ~CEofException(void) THROWS_NONE;
 };
 
-class CIStreamBuffer
+class NCBI_XUTIL_EXPORT CIStreamBuffer
 {
 public:
     CIStreamBuffer(void)
@@ -268,7 +273,7 @@ private:
     CRef<CSubSourceCollector> m_Collector;
 };
 
-class COStreamBuffer
+class NCBI_XUTIL_EXPORT COStreamBuffer
 {
 public:
     COStreamBuffer(CNcbiOstream& out, bool deleteOut = false)

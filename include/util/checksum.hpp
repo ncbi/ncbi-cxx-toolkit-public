@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.2  2001/01/05 20:08:52  vasilche
 * Added util directory for various algorithms and utility classes.
 *
@@ -46,7 +49,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CChecksum
+class NCBI_XUTIL_EXPORT CChecksum
 {
 public:
     enum EMethod {

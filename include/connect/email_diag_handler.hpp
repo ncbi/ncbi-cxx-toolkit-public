@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CEmailDiagHandler : public CStreamDiagHandler
+class NCBI_XCONNECT_EXPORT CEmailDiagHandler : public CStreamDiagHandler
 {
 public:
     CEmailDiagHandler(const string& to,
@@ -56,7 +56,7 @@ private:
 };
 
 
-class CEmailDiagFactory : public CDiagFactory
+class NCBI_XCONNECT_EXPORT CEmailDiagFactory : public CDiagFactory
 {
 public:
     virtual CDiagHandler* New(const string& s)
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/12/19 14:51:48  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 6.2  2002/09/19 17:59:46  lavr
  * Header file guard macro changed; log moved to the end
  *

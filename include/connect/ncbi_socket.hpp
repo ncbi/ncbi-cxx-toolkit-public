@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 // NOTE:  for documentation see SOCK_***() functions in "ncbi_socket.h"
 //
 
-class CSocket
+class NCBI_XCONNECT_EXPORT CSocket
 {
 public:
     CSocket(void);
@@ -158,7 +158,7 @@ private:
 // NOTE:  for documentation see LSOCK_***() functions in "ncbi_socket.h"
 //
 
-class CListeningSocket
+class NCBI_XCONNECT_EXPORT CListeningSocket
 {
 public:
     CListeningSocket(void);
@@ -210,7 +210,7 @@ private:
 // NOTE:  for documentation see SOCK_***() functions in "ncbi_socket.h"
 //
 
-class CSocketAPI
+class NCBI_XCONNECT_EXPORT CSocketAPI
 {
 public:
     // Generic
@@ -434,6 +434,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/12/19 14:51:48  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 6.12  2002/12/04 16:54:08  lavr
  * Add extra parameter "log" to CSocket() constructor and CSocket::Connect()
  *

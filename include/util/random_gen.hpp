@@ -41,6 +41,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/12/19 14:51:00  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 1.3  2001/07/06 11:49:21  clausen
  * Added GetRand(min,max)
  *
@@ -63,7 +66,7 @@ BEGIN_NCBI_SCOPE
 //  CRandom::
 //
 
-class CRandom
+class NCBI_XUTIL_EXPORT CRandom
 {
 public:
     // Type of the generated integer value and/or the seed value

@@ -81,7 +81,7 @@ const streamsize kConn_DefBufSize = 4096;
  * further buffering, if needed).
  */
 
-class CConn_IOStream : public iostream
+class NCBI_XCONNECT_EXPORT CConn_IOStream : public iostream
 {
 public:
     CConn_IOStream
@@ -106,7 +106,7 @@ private:
  * More details on that: <connect/ncbi_socket_connector.h>.
  */
 
-class CConn_SocketStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_SocketStream : public CConn_IOStream
 {
 public:
     CConn_SocketStream
@@ -152,7 +152,7 @@ public:
  * (the latter value is kept in SConnNetInfo::timeout).
  */
 
-class CConn_HttpStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
 {
 public:
     CConn_HttpStream
@@ -191,7 +191,7 @@ public:
  * (the latter value is kept in SConnNetInfo::timeout).
  */
 
-class CConn_ServiceStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 {
 public:
     CConn_ServiceStream
@@ -211,7 +211,7 @@ class CRWLock; // Forward declaration
  * In-memory stream.
  */
 
-class CConn_MemoryStream : public CConn_IOStream
+class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 {
 public:
     CConn_MemoryStream(CRWLock*   lk = 0,
@@ -226,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2002/12/19 14:51:48  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 6.15  2002/08/12 15:05:15  lavr
  * Included header files reordered
  *

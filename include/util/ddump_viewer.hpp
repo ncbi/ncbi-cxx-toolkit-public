@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 //---------------------------------------------------------------------------
 //  CDebugDumpViewer interface
 
-class CDebugDumpViewer
+class NCBI_XUTIL_EXPORT CDebugDumpViewer
 {
 public:
     CDebugDumpViewer() {}
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/19 14:51:00  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 1.2  2002/06/04 16:35:27  gouriano
  * added possibility to enable/disable debug dump breakpoints from registry
  *

@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CConn_Exception : public runtime_error
+class NCBI_XCONNECT_EXPORT CConn_Exception : public runtime_error
 {
 public:
     CConn_Exception(const string& what) : runtime_error(what) { }
@@ -52,6 +52,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/12/19 14:51:48  dicuccio
+ * Added export specifier for Win32 DLL builds.
+ *
  * Revision 6.2  2002/06/12 19:19:12  lavr
  * Guard macro name standardized
  *

@@ -170,7 +170,8 @@ public:
 };
 
 
-class CStdThreadInPool : public CThreadInPool< CRef< CStdRequest > >
+class NCBI_XUTIL_EXPORT CStdThreadInPool
+    : public CThreadInPool< CRef< CStdRequest > >
 {
 public:
     typedef CThreadInPool< CRef< CStdRequest > > TParent;
@@ -186,7 +187,8 @@ protected:
 };
 
 
-class CStdPoolOfThreads : public CPoolOfThreads< CRef< CStdRequest > >
+class NCBI_XUTIL_EXPORT CStdPoolOfThreads
+    : public CPoolOfThreads< CRef< CStdRequest > >
 {
 public:
     typedef CPoolOfThreads< CRef< CStdRequest > > TParent;
@@ -207,7 +209,8 @@ protected:
 };
 
 
-class CBlockingQueueException : EXCEPTION_VIRTUAL_BASE public CException
+class NCBI_XUTIL_EXPORT CBlockingQueueException
+    : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     enum EErrCode {
@@ -381,6 +384,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
 * Revision 1.8  2002/11/04 21:29:00  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
