@@ -24,5 +24,3 @@ LIB = \
 	xser \
 	xutil \
 	xncbi
-
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..

@@ -7,5 +7,3 @@ SRC = \
 	cav_seqset
 
 LIB = xcddalignview
-
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
