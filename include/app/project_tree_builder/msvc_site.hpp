@@ -77,8 +77,6 @@ public:
 
     bool IsProvided(const string& thing) const;
 
-    bool IsImplicitExclude(const string& node) const;
-
     void GetLibInfo(const string& lib, 
                     const SConfigInfo& config, SLibInfo* libinfo) const;
 
@@ -86,7 +84,6 @@ private:
     const CNcbiRegistry& m_Registry;
     
     set<string> m_NotProvidedThing;
-    set<string> m_ImplicitExcludeNodes;
 
     /// Prohibited to:
     CMsvcSite(void);
@@ -99,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/03 17:06:44  gorelenk
+ * Removed members from class CMsvcSite.
+ *
  * Revision 1.2  2004/01/28 17:55:06  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
