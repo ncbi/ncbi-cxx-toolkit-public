@@ -419,7 +419,7 @@ void CId1Reader::ResolveSeq_id(TSeqrefs& srs, const CSeq_id& id, TConn conn)
             }
 
             if (sat != 0) {
-                srs.push_back(Ref(new CSeqref(0, sat_key, sat)));
+                srs.push_back(Ref(new CSeqref(0, sat, sat_key)));
                 return;
             }
         }
@@ -834,6 +834,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.75  2004/02/19 17:06:57  dicuccio
+ * Use sat, sat-key in seq-ref, not sat-key, sat
+ *
  * Revision 1.74  2004/02/18 14:01:25  dicuccio
  * Added new satellites for TRACE_ASSM, TR_ASSM_CH.  Added support for overloading
  * the ID1 named service
