@@ -93,6 +93,47 @@ class, described in <i><a href="argdescr.html">Parsing, validating, and
 accessing command line arguments</a></i>, supports the generation of
 <i>USAGE</i>
 messages and the imposition of constraints on the values of the input arguments.
+<br><br>
+When using C++ Toolkit on Mac OS you can specify command-line arguments in a separate 
+file with the name of your executable and ".args" extension. Each argument should be on a separate line.
+<br><br>
+Example:
+<br>
+<table border=1 CELLPADDING=5 CELLSPACING=1>
+<tr>
+<td>
+<b>Command-line parameters</b>
+</td>
+<td>
+<b>File Content</b>
+</td>
+<tr>
+<tr>
+<td>
+-gi "Integer" (GI id of the Seq-Entry to examine)<br><br>
+
+OPTIONAL ARGUMENTS<br><br>
+ -h (Print this USAGE message;  ignore other arguments)<br>
+ -reconstruct (Reconstruct title)<br>
+ -accession (Prepend accession)<br>
+ -organism (Append organism name)
+</td>
+<td>
+-gi<br>
+10200<br>
+-reconstruct<br>
+-accession<br>
+-organism<br><br>
+</td>
+<tr>
+</table>
+<br>
+Please note of the following:
+<li>File must contain Macintosh-style line breaks<br>
+<li>No extra spaces are allowed after argument ("-accession" and not "-accession ")<br>
+<li>Arguments must be followed by an empty terminating line.<br>
+
+
 <p><a NAME="CNcbiEnvironment"></a>The <i><a href="../docxx/CNcbiEnvironment.html">CNcbiEnvironment</a></i>
 class provides a data structure for storing, accessing, and modifying the
 environment variables accessed by the C library routine <i>getenv()</i>.
