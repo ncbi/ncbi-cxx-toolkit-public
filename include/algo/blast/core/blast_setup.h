@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.4  2003/04/18 22:28:15  dondosha
+* Separated ASN.1 generated structures from those used in the main BLAST engine and traceback
+*
 * Revision 1.3  2003/04/03 14:17:45  coulouri
 * fix warnings, remove unused parameter
 *
@@ -150,6 +153,15 @@ Int2 LIBCALL
 BlastSetUp_GetSequence(SeqLocPtr slp, Boolean use_blastna, Boolean concatenate,
    Uint1Ptr *buffer, Int4 *buffer_length, ValNodePtr *selcys_pos);
 
+/** Get the subject sequence from its SeqLoc for the two sequences case 
+ * @param subject_slp The subject SeqLoc [in]
+ * @param buffer Buffer containing sequence; compressed if nucleotide [out]
+ * @param buffer_length Length of the sequence buffer [out]
+ * @param compress_dna Should the DNA sequence be compressed (ignored for 
+ *                     proteins)? [in]
+ */
+Int2 BLAST_GetSubjectSequence(SeqLocPtr subject_slp, Uint1Ptr *buffer,
+                              Int4 *buffer_length, Boolean compress_dna);
 
 /** "Main" setup routine for BLAST.
  * @param query_slp query location (all queries should be represented here). [in]

@@ -49,26 +49,13 @@ extern "C" {
 
 #define OFFSET_ARRAY_SIZE 4096
 
-#ifdef GAPPED_LOG
-Int4 
-BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
-        LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr db, Int4 numseqs, 
-        BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
-        BlastScoringOptionsPtr score_options, 
-        BlastInitialWordParametersPtr word_params, 
-        BlastExtensionParametersPtr ext_params, 
-        BlastHitSavingParametersPtr hit_params, 
-        BlastResultsPtr PNTR results_ptr,
-	BlastReturnStatPtr return_stats,
-	CharPtr logname);
-#else
 /** The high level function performing the BLAST search after all the setup
  * has been done.
  * @param query The query sequence [in]
  * @param lookup The lookup table [in]
  * @param query_info Additional query information [in]
  * @param db Structure containing BLAST database [in]
+ * @param subject_blk Subject sequence in two sequences case [in]
  * @param numseqs Number of sequences in the database [in]
  * @param ewp Structure for tracking the initial hits [in]
  * @param gap_align Structure for gapped alignment [in]
@@ -81,7 +68,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
-        ReadDBFILEPtr db, Int4 numseqs, 
+        ReadDBFILEPtr db, BLAST_SequenceBlkPtr subject_blk, Int4 numseqs, 
         BLAST_ExtendWordPtr ewp, BlastGapAlignStructPtr gap_align, 
         BlastScoringOptionsPtr score_options, 
         BlastInitialWordParametersPtr word_params, 
@@ -89,7 +76,6 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastHitSavingParametersPtr hit_params, 
         BlastResultsPtr PNTR results_ptr,
 	BlastReturnStatPtr return_stats);
-#endif
 
 #ifdef __cplusplus
 }

@@ -63,9 +63,6 @@ typedef struct BLAST_SequenceBlk {
    Int2	context; /**< Context of the query, needed for multi-query searches */
    Int2	frame; /**< Frame of the query, needed for translated searches */
    Int4 oid; /**< The ordinal id of the current sequence */
-   SeqIdPtr seqid; /**< ID of the subject sequence if it does not come from a 
-                      BLAST database - used in BLAST 2 sequences, otherwise 
-                      NULL */
    Boolean sequence_allocated; /**< TRUE only when this block contains the 
                                   query sequence, or an uncompressed 
                                   nucleotide database sequence */
@@ -77,14 +74,13 @@ typedef struct BlastQueryInfo {
    int first_context; /**< Index of the first element of the context array */
    int last_context;  /**< Index of the last element of the context array */
    int num_queries;   /**< Number of query sequences */
-   SeqLocPtr query_slp; /**< Linked list of query SeqLocs */
-   SeqIdPtr PNTR qid_array; /**< Array of query ids */
+   Int4 total_length; /**< Total length of all query sequences/strands/frames */
    Int4Ptr context_offsets; /**< Offsets of the individual queries in the
                                      concatenated super-query */
    Int8Ptr eff_searchsp_array; /**< Array of effective search spaces for
                                   multiple queries. Dimension = number of 
                                   query sequences. */
-} BlastQueryInfo, *BlastQueryInfoPtr;
+} BlastQueryInfo, PNTR BlastQueryInfoPtr;
 
 /** Wrapper structure for different types of BLAST lookup tables */
 typedef struct LookupTableWrap {

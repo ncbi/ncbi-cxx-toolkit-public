@@ -44,10 +44,9 @@ extern "C" {
 
 #include <blast_hits.h>
 
-/** Given the preliminary alignment results, redo the gapped alignment,
- * compute traceback if it has not yet been done, and return results in the
- * form of a SeqAlign list.
- * @param results All results after the preliminary gapped alignment [in]
+/** Given the preliminary alignment results, redo the gapped alignment
+ * with traceback, if it has not yet been done.
+ * @param results Results of this BLAST search [in] [out]
  * @param query The query sequence [in]
  * @param query_info Information about the query [in]
  * @param rdfp BLAST database structure [in]
@@ -55,15 +54,13 @@ extern "C" {
  * @param gap_align The auxiliary structure for gapped alignment [in]
  * @param score_options The scoring related options [in]
  * @param hit_params Parameters for saving hits [in]
- * @param seqalign_ptr Resulting SeqAling [out]
  */
 Int2 BLAST_ComputeTraceback(BlastResultsPtr results, 
         BLAST_SequenceBlkPtr query, BlastQueryInfoPtr query_info, 
         ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, 
         BlastGapAlignStructPtr gap_align,
         BlastScoringOptionsPtr score_options,
-        BlastHitSavingParametersPtr hit_params,  
-        SeqAlignPtr PNTR seqalign_ptr);
+        BlastHitSavingParametersPtr hit_params);
 
 
 #ifdef __cplusplus
