@@ -35,9 +35,9 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <stdlib.h>
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
 #   include <sys/timeb.h>
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 #   include <sys/time.h>
 #endif
 
@@ -570,7 +570,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     CFastMutexGuard LOCK(s_TimeMutex);
 
     // Get time with nanoseconds
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
 
     if (value) {
         timer = *value;
@@ -581,7 +581,7 @@ CTime& CTime::x_SetTime(const time_t* value)
         ns = (long) timebuffer.millitm * 
             (long) (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
     }
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 
     if (value) {
         timer = *value;
@@ -1149,6 +1149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/06/18 16:08:01  ivanov
+ * Fixed all clauses "#if defined *" to "#if defined(*)"
+ *
  * Revision 1.17  2002/05/13 13:56:46  ivanov
  * Added MT-Safe support
  *
