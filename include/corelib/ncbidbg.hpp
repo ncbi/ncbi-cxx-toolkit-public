@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/23 23:15:09  vakatov
+* Specify the diagnostics severity in the class initialization parameter
+*
 * Revision 1.1  1998/10/23 22:35:51  vakatov
 * Initial revision
 *
@@ -47,18 +50,18 @@
 "{" << __FILE__ << ":" << __LINE__ << "} "
 
 #  define _TRACE(message)  { \
-    CNcbiDiag _trace_diag;  _trace_diag << Trace; \
+    CNcbiDiag _trace_diag(eDiag_Trace); \
     _trace_diag << _FILE_LINE << message; \
 }
 
 #  define _TROUBLE  { \
-    CNcbiDiag _trace_diag;  _trace_diag << Fatal; \
+    CNcbiDiag _trace_diag(eDiag_Fatal); \
     _trace_diag << _FILE_LINE << "Trouble!"; \
 }
 #  define _ASSERT(expr)  { \
     if ( expr ) \
         { \
-              CNcbiDiag _trace_diag;  _trace_diag << Fatal; \
+              CNcbiDiag _trace_diag(eDiag_Fatal); \
               _trace_diag << _FILE_LINE << "Assertion failed: " << #expr; \
         } \
 }
