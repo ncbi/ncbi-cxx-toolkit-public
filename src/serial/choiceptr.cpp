@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/10/25 19:07:15  vasilche
+* Fixed coredump on non initialized choices.
+* Fixed compilation warning.
+*
 * Revision 1.3  1999/09/22 20:11:54  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -64,6 +68,13 @@ CChoicePointerTypeInfo::CChoicePointerTypeInfo(const string& name,
     Init();
 }
 
+TTypeInfo CChoicePointerTypeInfo::GetTypeInfo(TConstObjectPtr object) const
+{
+    if ( !object )
+        return 0;
+    return m_VariantTypes[FindVariant(object)].Get();
+}
+    
 void CChoicePointerTypeInfo::Init(void)
 {
     const CClassInfoTmpl::TSubClasses* subclasses =
@@ -89,7 +100,8 @@ CChoicePointerTypeInfo::VariantsByType(void) const
             TTypeInfo type = m_VariantTypes[i].Get();
             const type_info* id =
                 &dynamic_cast<const CClassInfoTmpl&>(*type).GetId();
-            _TRACE(GetDataTypeInfo()->GetName() << ".AddSubClass: " << id->name());
+            _TRACE(GetDataTypeInfo()->GetName()
+                   << ".AddSubClass: " << id->name());
             if ( !variants->insert(TVariantsByType::
                                    value_type(id, i)).second ) {
                 THROW1_TRACE(runtime_error,
@@ -112,15 +124,9 @@ CChoicePointerTypeInfo::FindVariant(TConstObjectPtr object) const
         GetCPlusPlusTypeInfo(object);
     TVariantsByType::const_iterator p = variants.find(id);
     if ( p == variants.end() )
-        THROW1_TRACE(runtime_error, "incompatible type: " + string(id->name()));
+        THROW1_TRACE(runtime_error,
+                     "incompatible type: " + string(id->name()));
     return p->second;
-}
-
-void CChoicePointerTypeInfo::CollectExternalObjects(COObjectList& objectList,
-                                                    TConstObjectPtr object) const
-{
-    TConstObjectPtr data = GetObjectPointer(object);
-    m_VariantTypes[FindVariant(data)].Get()->CollectObjects(objectList, data);
 }
 
 void CChoicePointerTypeInfo::WriteData(CObjectOStream& out,

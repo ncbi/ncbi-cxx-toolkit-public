@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/10/25 19:07:15  vasilche
+* Fixed coredump on non initialized choices.
+* Fixed compilation warning.
+*
 * Revision 1.11  1999/09/14 18:54:20  vasilche
 * Fixed bugs detected by gcc & egcs.
 * Removed unneeded includes.
@@ -83,13 +87,19 @@ pair<TConstObjectPtr, TTypeInfo>
 CPointerTypeInfo::GetSource(TConstObjectPtr object) const
 {
     TConstObjectPtr source = GetObjectPointer(object);
-    TTypeInfo dataTypeInfo = GetDataTypeInfo();
-    if ( source )
-        dataTypeInfo = dataTypeInfo->GetRealTypeInfo(source);
-    return make_pair(source, dataTypeInfo);
+    return make_pair(source, GetTypeInfo(source));
 }
-    
-TConstObjectPtr CPointerTypeInfo::GetObjectPointer(TConstObjectPtr object) const
+
+TTypeInfo CPointerTypeInfo::GetTypeInfo(TConstObjectPtr object) const
+{
+    TTypeInfo dataTypeInfo = GetDataTypeInfo();
+    if ( object )
+        dataTypeInfo = dataTypeInfo->GetRealTypeInfo(object);
+    return dataTypeInfo;
+}
+
+TConstObjectPtr
+CPointerTypeInfo::GetObjectPointer(TConstObjectPtr object) const
 {
     return *static_cast<const TConstObjectPtr*>(object);
 }

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/10/25 19:07:12  vasilche
+* Fixed coredump on non initialized choices.
+* Fixed compilation warning.
+*
 * Revision 1.3  1999/09/22 20:11:48  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -69,9 +73,7 @@ public:
     void AddVariant(const CMemberId& id, const CTypeRef& type);
 
 protected:
-
-    virtual void CollectExternalObjects(COObjectList& list,
-                                        TConstObjectPtr object) const;
+    virtual TTypeInfo GetTypeInfo(TConstObjectPtr object) const;
 
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
 

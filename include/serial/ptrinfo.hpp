@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/10/25 19:07:12  vasilche
+* Fixed coredump on non initialized choices.
+* Fixed compilation warning.
+*
 * Revision 1.11  1999/09/22 20:11:50  vasilche
 * Modified for compilation on IRIX native c++ compiler.
 *
@@ -104,6 +108,7 @@ public:
     pair<TConstObjectPtr, TTypeInfo> GetSource(TConstObjectPtr object) const;
     
     virtual TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
+    virtual TTypeInfo GetTypeInfo(TConstObjectPtr object) const;
     virtual void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
 
     virtual size_t GetSize(void) const;
@@ -111,7 +116,8 @@ public:
     virtual TObjectPtr Create(void) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  1999/10/25 19:07:13  vasilche
+* Fixed coredump on non initialized choices.
+* Fixed compilation warning.
+*
 * Revision 1.36  1999/10/19 13:21:59  vasilche
 * Avoid macros names conflict.
 *
@@ -182,10 +186,10 @@ class CMemberInfo;
 #define SERIAL_REF(Name) SERIAL_NAME2(SERIAL_REF_,Name)
 
 #define SERIAL_TYPE_CLASS(Name) Name
-#define SERIAL_REF_CLASS(Name) Name::GetTypeInfo
+#define SERIAL_REF_CLASS(Name) &Name::GetTypeInfo
 
 #define SERIAL_TYPE_STD(Name) Name
-#define SERIAL_REF_STD(Name) NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
+#define SERIAL_REF_STD(Name) &NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
 
 #define SERIAL_TYPE_ENUM(Type, Name) Type
 #define SERIAL_REF_ENUM(Type, Name) \
@@ -193,7 +197,7 @@ class CMemberInfo;
 
 #define SERIAL_TYPE_POINTER(Type,Args) SERIAL_TYPE(Type)Args*
 #define SERIAL_REF_POINTER(Type,Args) \
-    NCBI_NS_NCBI::CTypeRef(NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
+    NCBI_NS_NCBI::CTypeRef(&NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo,SERIAL_REF(Type)Args)
 
 #define SERIAL_TYPE_STL_multiset(Type,Args) \
     NCBI_NS_STD::multiset<SERIAL_TYPE(Type)Args>
@@ -224,15 +228,15 @@ class CMemberInfo;
 
 #define SERIAL_TYPE_STL_CHAR_vector(Type) NCBI_NS_STD::vector<Type>
 #define SERIAL_REF_STL_CHAR_vector(Type) \
-    NCBI_NS_NCBI::CStlClassInfoCharVector<Type>::GetTypeInfo
+    &NCBI_NS_NCBI::CStlClassInfoCharVector<Type>::GetTypeInfo
 
 #define SERIAL_TYPE_STL_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_auto_ptr(Type,Args) \
-    NCBI_NS_NCBI::CStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+    &NCBI_NS_NCBI::CStlClassInfoAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
 
 #define SERIAL_TYPE_STL_CHOICE_auto_ptr(Type,Args) NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args>
 #define SERIAL_REF_STL_CHOICE_auto_ptr(Type,Args) \
-    NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
+    &NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<SERIAL_TYPE(Type)Args>::GetTypeInfo
 
 template<typename T>
 struct Check
@@ -308,7 +312,7 @@ inline
 CTypeRef GetPtrTypeRef(const T* const* object)
 {
     const T* p = 0;
-    return CTypeRef(CPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
+    return CTypeRef(&CPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
 }
 
 // define type info getter for standard classes
@@ -316,7 +320,7 @@ template<typename T>
 inline
 CTypeRef GetStdTypeRef(const T* )
 {
-    return CStdTypeInfo<T>::GetTypeInfo;
+    return &CStdTypeInfo<T>::GetTypeInfo;
 }
 
 // STL
@@ -324,53 +328,53 @@ template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const list<Data>* )
 {
-    return CStlClassInfoList<Data>::GetTypeInfo;
+    return &CStlClassInfoList<Data>::GetTypeInfo;
 }
 
 inline
 CTypeRef GetStlTypeRef(const vector<char>* )
 {
-    return CStlClassInfoCharVector<char>::GetTypeInfo;
+    return &CStlClassInfoCharVector<char>::GetTypeInfo;
 }
 
 inline
 CTypeRef GetStlTypeRef(const vector<unsigned char>* )
 {
-    return CStlClassInfoCharVector<unsigned char>::GetTypeInfo;
+    return &CStlClassInfoCharVector<unsigned char>::GetTypeInfo;
 }
 
 inline
 CTypeRef GetStlTypeRef(const vector<signed char>* )
 {
-    return CStlClassInfoCharVector<signed char>::GetTypeInfo;
+    return &CStlClassInfoCharVector<signed char>::GetTypeInfo;
 }
 
 template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const vector<Data>* )
 {
-    return CStlClassInfoVector<Data>::GetTypeInfo;
+    return &CStlClassInfoVector<Data>::GetTypeInfo;
 }
 
 template<typename Data>
 inline
 CTypeRef GetStlTypeRef(const set<Data>* )
 {
-    return CStlClassInfoSet<Data>::GetTypeInfo;
+    return &CStlClassInfoSet<Data>::GetTypeInfo;
 }
 
 template<typename Key, typename Value>
 inline
 CTypeRef GetStlTypeRef(const map<Key, Value>* )
 {
-    return CStlClassInfoMap<Key, Value>::GetTypeInfo;
+    return &CStlClassInfoMap<Key, Value>::GetTypeInfo;
 }
 
 template<typename Key, typename Value>
 inline
 CTypeRef GetStlTypeRef(const multimap<Key, Value>* )
 {
-    return CStlClassInfoMultiMap<Key, Value>::GetTypeInfo;
+    return &CStlClassInfoMultiMap<Key, Value>::GetTypeInfo;
 }
 
 #if HAVE_NCBI_C
@@ -378,7 +382,7 @@ CTypeRef GetStlTypeRef(const multimap<Key, Value>* )
 inline
 CTypeRef GetOctetStringTypeRef(const void* const* )
 {
-    return COctetStringTypeInfo::GetTypeInfo;
+    return &COctetStringTypeInfo::GetTypeInfo;
 }
 
 template<typename T>
@@ -386,7 +390,7 @@ inline
 CTypeRef GetSetTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(CAutoPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
+    return CTypeRef(&CAutoPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
 }
 
 template<typename T>
@@ -394,7 +398,7 @@ inline
 CTypeRef GetSequenceTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(CAutoPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
+    return CTypeRef(&CAutoPointerTypeInfo::GetTypeInfo, GetTypeRef(p));
 }
 
 template<typename T>
@@ -402,7 +406,7 @@ inline
 CTypeRef GetSetOfTypeRef(const T* const* p)
 {
     //    const T* p = 0;
-    return CTypeRef(CSetOfTypeInfo::GetTypeInfo, GetSetTypeRef(p));
+    return CTypeRef(&CSetOfTypeInfo::GetTypeInfo, GetSetTypeRef(p));
 }
 
 template<typename T>
@@ -410,13 +414,13 @@ inline
 CTypeRef GetSequenceOfTypeRef(const T* const* p)
 {
     //    const T* p = 0;
-    return CTypeRef(CSequenceOfTypeInfo::GetTypeInfo, GetSetTypeRef(p));
+    return CTypeRef(&CSequenceOfTypeInfo::GetTypeInfo, GetSetTypeRef(p));
 }
 
 inline
 CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
 {
-    return CTypeRef(CAutoPointerTypeInfo::GetTypeInfo, CTypeRef(func));
+    return CTypeRef(&CAutoPointerTypeInfo::GetTypeInfo, CTypeRef(func));
 }
 
 template<typename T>
@@ -572,7 +576,7 @@ template<class Class>
 inline
 CTypeRef GetTypeRef(const Class* )
 {
-    return Class::GetTypeInfo;
+    return &Class::GetTypeInfo;
 }
 
 
@@ -744,15 +748,6 @@ BEGIN_TYPE_INFO(valnode, SERIAL_NAME2(GetTypeInfo_struct_, Class), \
                 NCBI_NS_NCBI::CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
-
-#define CREATE_ENUM(Int, Enum, IsInteger) { \
-        NCBI_NS_NCBI::CEnumeratedTypeInfoTmpl<Int>* info; \
-        enumInfo = info = \
-            new NCBI_NS_NCBI::CEnumeratedTypeInfoTmpl<Int>(#Enum, IsInteger); \
-        enumValues = &info->Values(); \
-    }
-#define IF_ENUM_SIZE(Int, Enum, IsInteger) \
-    if ( sizeof(Enum) == sizeof(Int) ) CREATE_ENUM(Int, Enum, IsInteger)
 
 #define BEGIN_ENUM_INFO(Method, Enum, IsInteger) \
 const NCBI_NS_NCBI::CEnumeratedTypeValues* Method(void) \
