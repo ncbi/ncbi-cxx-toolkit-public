@@ -294,7 +294,8 @@ void CBlastApplication::SetOptions(const CArgs& args)
         m_pOptions->SetScanStep(args["stride"].AsInteger());
     
     BLAST_FillQuerySetUpOptions(m_pOptions->GetQueryOpts(), program, 
-        args["filter"].AsString().c_str(), args["stride"].AsInteger());
+        args["filter"].AsString().c_str(), args["strand"].AsInteger());
+
     if (args["gencode"].AsInteger() &&
        (program == eBlastx || 
         program == eTblastx))
@@ -531,34 +532,11 @@ int CBlastApplication::Run(void)
     status = BlastSearch();
 
     if (args["asnout"]) {
+        auto_ptr<CObjectOStream> asnout(
+            CObjectOStream::Open(args["asnout"].AsString(), eSerial_AsnText));
         int query_index;
-        // Convert CSeq_align_set to linked list of SeqAlign structs
-        DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
-        SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
-        
-        for (query_index = 0; query_index < m_seqalign.size();
-             ++query_index)
-        {
-            ITERATE(list< CRef<CSeq_align> >, itr, 
-                    m_seqalign[query_index]->Get())
-            {
-                tmp = converter.ToC(**itr);
-                
-                if (!salp)
-                    salp = tail = tmp;
-                else {
-                    tail->next = tmp;
-                    while (tail->next)
-                        tail = tail->next;
-                }
-            }
-        }
-
-        AsnIoPtr aip = 
-            AsnIoOpen((char*)args["asnout"].AsString().c_str(), (char*)"w");
-        GenericSeqAlignSetAsnWrite(salp, aip);
-        AsnIoReset(aip);
-        AsnIoClose(aip);
+        for (query_index = 0; query_index < m_seqalign.size(); ++query_index)
+            *asnout << *m_seqalign[query_index];
     }
 
     RegisterBlastDbLoader(readdb_args.dbname, !readdb_args.is_protein);
