@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/12/29 17:48:34  lavr
+ * Accepted server types included in SERVICE_CreateConnectorEx arguments.
+ *
  * Revision 6.1  2000/10/07 22:15:12  lavr
  * Initial revision
  *
@@ -44,6 +47,7 @@
 
 #include <connect/ncbi_connector.h>
 #include <connect/ncbi_connutil.h>
+#include <connect/ncbi_server_info.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,9 +57,8 @@ extern "C" {
 extern CONNECTOR SERVICE_CreateConnector(const char *service);
 
 extern CONNECTOR SERVICE_CreateConnectorEx(const char *service,
-                                           EClientMode mode,
+                                           TSERV_Type types,
                                            const SConnNetInfo *info);
-
 
 #ifdef __cplusplus
 }  /* extern "C" */
