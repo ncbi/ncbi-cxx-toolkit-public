@@ -46,13 +46,17 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/04/07 19:59:47  vakatov
+ * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
+ * to "ncbi_connector.h"
+ *
  * Revision 6.1  2000/03/24 22:52:20  vakatov
  * Initial revision
  *
  * ===========================================================================
  */
 
-#include <connect/ncbi_core.h>
+#include <connect/ncbi_connector.h>
 
 
 #ifdef __cplusplus
@@ -62,9 +66,6 @@ extern "C" {
 
 struct SConnectionTag;
 typedef struct SConnectionTag* CONN;      /* connection handle */
-
-struct SConnectorTag;
-typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
 
 
 /* Compose all data necessary to establish a new connection

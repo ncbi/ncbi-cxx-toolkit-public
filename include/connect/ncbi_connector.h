@@ -37,6 +37,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/04/07 19:59:49  vakatov
+ * Moved forward-declaration of CONNECTOR from "ncbi_connection.h"
+ * to "ncbi_connector.h"
+ *
  * Revision 6.1  2000/03/24 22:52:48  vakatov
  * Initial revision
  *
@@ -45,10 +49,13 @@
 
 #include <connect/ncbi_core.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+struct SConnectorTag;
+typedef struct SConnectorTag* CONNECTOR;  /* connector handle */
 
 
 /* Function type definitions for the connector method table.
@@ -79,12 +86,12 @@ typedef EIO_Status (*FConnectorConnect)
 /* Wait until either read or write(dep. on the "direction" value) becomes
  * available, or until "timeout" is expired, or until error occures.
  * NOTE 1: FConnectorWait is guaranteed to be called after FConnectorConnect,
- *         and only if FConnectorConnect returned "eCONN_Success".
- * NOTE 2: "direction" is guaranteed to be either "eCONN_Read" or "eCONN_Write"
+ *         and only if FConnectorConnect returned "eIO_Success".
+ * NOTE 2: "event" is guaranteed to be either "eIO_Read" or "eIO_Write"
  */
 typedef EIO_Status (*FConnectorWait)
 (void*           connector,
- EIO_Event       direction,
+ EIO_Event       event,
  const STimeout* timeout
  );
 
@@ -116,7 +123,7 @@ typedef EIO_Status (*FConnectorWaitAsync)
  * have been succefully written.
  * It returns the # of succesfully written data(in bytes) in "*n_written".
  * NOTE: FConnectorWrite is guaranteed to be called after FConnectorConnect,
- *       and only if FConnectorConnect returned "eCONN_Success".
+ *       and only if FConnectorConnect returned "eIO_Success".
  */
 typedef EIO_Status (*FConnectorWrite)
 (void*           connector,
@@ -129,7 +136,7 @@ typedef EIO_Status (*FConnectorWrite)
 
 /* Flush yet unwritten output data, if any.
  * NOTE: FConnectorFlush is guaranteed to be called after FConnectorConnect,
- *       and only if FConnectorConnect returned "eCONN_Success".
+ *       and only if FConnectorConnect returned "eIO_Success".
  */
 typedef EIO_Status (*FConnectorFlush)
 (void*           connector,
@@ -139,7 +146,7 @@ typedef EIO_Status (*FConnectorFlush)
 
 /* The passed "n_read" always non-NULL, and "*n_read" always zero.
  * NOTE: FConnectorRead is guaranteed to be called after FConnectorConnect,
- *       and only if FConnectorConnect returned "eCONN_Success".
+ *       and only if FConnectorConnect returned "eIO_Success".
  */
 typedef EIO_Status (*FConnectorRead)
 (void*           connector,
