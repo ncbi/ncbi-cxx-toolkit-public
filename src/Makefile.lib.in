@@ -69,6 +69,7 @@ clean:
 	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB) $(XLIBDEP)
 	-$(RM) $(SOURCES:=.d)
+	-$(RM) ir.out
 
 purge: clean
 	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP) \

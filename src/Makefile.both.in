@@ -108,6 +108,7 @@ clean:
 	-$(RM) $(XLIB) $(XDLL) $(XLIBDEP) $(XDLLDEP)
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	-$(RM) $(SOURCES:=.d)
+	-$(RM) ir.out
 
 purge: clean
 	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \

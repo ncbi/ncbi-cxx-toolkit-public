@@ -87,6 +87,7 @@ clean:
 	-$(RM) $(XAPP)
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) core
+	-$(RM) ir.out
 
 purge: clean
 	-$(RM) $(bindir)/$(XAPP)
