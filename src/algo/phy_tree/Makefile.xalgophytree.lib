@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = biotree
+
 SRC = bio_tree phy_node dist_methods phy_tree_serial lex.newick newick.tab
 LIB = xalgophytree
 
