@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/03/06 04:32:31  lavr
+ * Custom header test added
+ *
  * Revision 6.3  2001/03/02 20:01:53  lavr
  * "../ncbi_priv.h" explained
  *
@@ -178,6 +181,14 @@ int main(void)
         CORE_LOG(eLOG_Note, "Success: Check test_ncbi_sendmail.out");
     }       
     free(huge_body);
+
+    CORE_LOG(eLOG_Note, "Testing custom headers");
+    info.header = "Organization: NCBI/NLM/NIH\nReference: abcdefghijk";
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test",
+                             "Custom header test", &info);
+    if (retval)
+        CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
+    CORE_LOG(eLOG_Note, "Test passed");
 
     CORE_LOG(eLOG_Note, "Testing no recipients");
     retval = CORE_SendMailEx(0, "CORE_SendMailEx Test", "Test", &info);
