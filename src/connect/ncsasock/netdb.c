@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 4.0  1995/07/26 13:56:09  ostell
-* force revision to 4.0
+* Revision 4.1  1995/08/01 16:17:20  kans
+* New gethostbyname and gethostbyaddr contributed by Doug Corarito
 *
+ * Revision 4.0  1995/07/26  13:56:09  ostell
+ * force revision to 4.0
+ *
  * Revision 1.3  1995/05/17  17:56:47  epstein
  * add RCS log revision history
  *
@@ -146,6 +149,7 @@ static struct hostent  unixHost =
 	(char **) addrPtrs
 };
 
+#if 0
 struct hostent *
 gethostbyname(char *name)
 {
@@ -298,6 +302,172 @@ gethostbyaddr(ip_addr *addrP,int len,int type)
 	
 	return(&unixHost);
 }
+#endif 
+
+/* New gethostbyname and gethostbyaddr contributed by Doug Corarito */
+
+ struct hostent *
+ gethostbyname(char *name)
+ {
+  Boolean done;
+  int i;
+  OSErr rsult;
+#ifdef __MACTCP__
+  ResultUPP  proc = NewResultProc (DNRDone);
+#endif
+  
+#if NETDB_DEBUG >= 3
+  dprintf("gethostbyname: '%s'\n",name);
+#endif
+ 
+  sock_init();
+ 
+  for (i=0; i<NUM_ALT_ADDRS; i++)
+   macHost.addr[i] = 0;
+  done = false;
+#ifdef __MACTCP__
+   rsult = StrToAddr(name,&macHost,proc,(char *) &done);
+#else
+   rsult = StrToAddr(name,&macHost,(ResultProcPtr) DNRDone,(char *) &done);
+#endif
+  if (rsult == cacheFault)
+  {
+#if NETDB_DEBUG >= 5
+   dprintf("gethostbyname: spinning\n");
+#endif
+   SPINP(!done,SP_NAME,0L)
+ 
+#if NETDB_DEBUG >= 5
+   dprintf("gethostbyname: done spinning\n");
+#endif
+  }
+  
+#ifdef __MACTCP__
+   DisposeRoutineDescriptor (proc);
+#endif
+  
+  
+  switch (macHost.rtnCode)
+  {
+   case noErr: break;
+   
+   case nameSyntaxErr: h_errno = HOST_NOT_FOUND; return(NULL);
+   case cacheFault: h_errno = NO_RECOVERY;  return(NULL);
+   case noResultProc: h_errno = NO_RECOVERY;  return(NULL);
+   case noNameServer: h_errno = HOST_NOT_FOUND; return(NULL);
+   case authNameErr: h_errno = HOST_NOT_FOUND; return(NULL);
+   case noAnsErr:  h_errno = TRY_AGAIN;  return(NULL);
+   case dnrErr:  h_errno = NO_RECOVERY;  return(NULL);
+   case outOfMemory: h_errno = TRY_AGAIN;  return(NULL);
+   case notOpenErr: h_errno = NO_RECOVERY;  return(NULL);
+   default:   h_errno = NO_RECOVERY;  return(NULL);
+  }
+  
+#if NETDB_DEBUG >= 5
+  dprintf("gethostbyname: name '%s' addrs %08x %08x %08x %08x\n",
+    macHost.cname,
+    macHost.addr[0],macHost.addr[1],
+    macHost.addr[2],macHost.addr[3]);
+#endif
+ 
+  /* was the 'name' an IP address? */
+  if (macHost.cname[0] == 0)
+  {
+   h_errno = HOST_NOT_FOUND;
+   return(NULL);
+  }
+  
+  /* for some reason there is a dot at the end of the name */
+  i = strlen(macHost.cname) - 1;
+  if (macHost.cname[i] == '.')
+   macHost.cname[i] = 0;
+  
+  for (i=0; i<NUM_ALT_ADDRS && macHost.addr[i]!=0; i++)
+  {
+   addrPtrs[i] = &macHost.addr[i];
+  }
+  addrPtrs[i] = NULL;
+  
+  return(&unixHost);
+ }
+ 
+ struct hostent *
+ gethostbyaddr(ip_addr *addrP,int len,int type)
+ {
+#pragma unused(len)
+#pragma unused(type)
+  Boolean done;
+  int i;
+  OSErr rsult;
+#ifdef __MACTCP__
+  ResultUPP proc = NewResultProc (DNRDone);
+#endif
+  
+#if NETDB_DEBUG >= 3
+  dprintf("gethostbyaddr: %08x\n",*addrP);
+#endif
+ 
+  sock_init();
+  
+  for (i=0; i<NUM_ALT_ADDRS; i++)
+   macHost.addr[i] = 0;
+  done = false;
+#ifdef __MACTCP__
+   rsult = AddrToName(*addrP,&macHost,proc,(char *) &done);
+ #else
+   rsult = AddrToName(*addrP,&macHost,(ResultProcPtr) DNRDone,(char *)
+&done);
+#endif
+  if (rsult == cacheFault)
+  {
+#if NETDB_DEBUG >= 5
+   dprintf("gethostbyaddr: spinning\n");
+#endif
+ 
+   SPINP(!done,SP_ADDR,0L)
+#if NETDB_DEBUG >= 5
+   dprintf("gethostbyaddr: done spinning\n");
+#endif
+  }
+  
+#ifdef __MACTCP__
+  DisposeRoutineDescriptor (proc);
+#endif
+
+  switch (macHost.rtnCode)
+  {
+   case noErr: break;
+   
+   case cacheFault: h_errno = NO_RECOVERY;  return(NULL);
+   case noNameServer: h_errno = HOST_NOT_FOUND; return(NULL);
+   case authNameErr: h_errno = HOST_NOT_FOUND; return(NULL);
+   case noAnsErr:  h_errno = TRY_AGAIN;  return(NULL);
+   case dnrErr:  h_errno = NO_RECOVERY;  return(NULL);
+   case outOfMemory: h_errno = TRY_AGAIN;  return(NULL);
+   case notOpenErr: h_errno = NO_RECOVERY;  return(NULL);
+   default:   h_errno = NO_RECOVERY;  return(NULL);
+  }
+#if NETDB_DEBUG >= 5
+  dprintf("gethostbyaddr: name '%s' addrs %08x %08x %08x %08x\n",
+    macHost.cname,
+    macHost.addr[0],macHost.addr[1],
+    macHost.addr[2],macHost.addr[3]);
+#endif
+  /* for some reason there is a dot at the end of the name */
+  i = strlen(macHost.cname) - 1;
+  if (macHost.cname[i] == '.')
+   macHost.cname[i] = 0;
+  
+  for (i=0; i<NUM_ALT_ADDRS; i++)
+  {
+   addrPtrs[i] = &macHost.addr[i];
+  }
+  addrPtrs[NUM_ALT_ADDRS] = NULL;
+  
+  return(&unixHost);
+ }
+
+/* End of new gethostbyname and gethostbyaddr code */
 
 char *
 inet_ntoa(ip_addr inaddr)
