@@ -584,6 +584,15 @@ bool CValidError_imp::Validate
             return true;
         }
     }
+    if ( bioseq_validator.GetTpaWithHistory() > 0  &&
+         bioseq_validator.GetTpaWithoutHistory() > 0 ) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_TpaAssmeblyProblem,
+            "There are " +
+            NStr::IntToString(bioseq_validator.GetTpaWithHistory()) +
+            " TPAs with history and " + 
+            NStr::IntToString(bioseq_validator.GetTpaWithoutHistory()) +
+            " without history in this record.", se);
+    }
 
     // Bioseq sets:
 
@@ -2331,6 +2340,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/11/14 15:56:47  shomrat
+* report TPA assembly problem
+*
 * Revision 1.41  2003/10/27 17:02:01  shomrat
 * fixes to ValidatePubdesc and ValidatePubArticle
 *
