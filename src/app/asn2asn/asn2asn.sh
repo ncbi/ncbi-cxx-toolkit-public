@@ -2,7 +2,7 @@
 # $Id$
 #
 
-base="${TEST_DATA_DIR:-/net/sampson/m5/test_data/objects}"
+base="${TEST_DATA_DIR:-/net/sampson/a/coremake/test_data/objects}"
 d="$base/data"
 r="$base/res"
 
