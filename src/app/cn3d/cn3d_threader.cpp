@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/04/13 18:50:54  thiessen
+* fix for when threader returns fewer than requested results
+*
 * Revision 1.12  2001/04/12 18:54:39  thiessen
 * fix memory leak for PSSM-only threading
 *
@@ -300,7 +303,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     corDef->lll.llmx[0] = corDef->lll.llmx[alignedBlocks->size()] =
     corDef->lll.lrfs[0] = corDef->lll.lrfs[alignedBlocks->size()] = 0;
 
-    // loop constraints for unligned regions between aligned blocks
+    // loop constraints for unaligned regions between aligned blocks
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
         b = alignedBlocks->begin(), be = alignedBlocks->end();
     int n, max;
@@ -980,11 +983,6 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
 
     // create core definition
     if (!(corDef = CreateCorDef(masterMultiple, options.loopLengthMultiplier))) goto cleanup;
-#ifdef DEBUG_THREADER
-    pFile = fopen("Cor_Def.debug.txt", "w");
-    PrintCorDef(corDef, pFile);
-    fclose(pFile);
-#endif
     if (options.freezeIsolatedBlocks)   // make a copy to used as an original "master"
         if (!(masterCorDef = CreateCorDef(masterMultiple, options.loopLengthMultiplier))) goto cleanup;
 
@@ -1016,6 +1014,11 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
         // freeze block sizes if opted (changes corDef but not masterCorDef or qrySeq)
         if (options.freezeIsolatedBlocks)
             FreezeIsolatedBlocks(corDef, masterCorDef, qrySeq);
+#ifdef DEBUG_THREADER
+        pFile = fopen("Cor_Def.debug.txt", "w");
+        PrintCorDef(corDef, pFile);
+        fclose(pFile);
+#endif
 
         // create results storage structure
         thdTbl = NewThdTbl(options.nResultAlignments, corDef->sll.n);
@@ -1034,7 +1037,11 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
             fclose(pFile);
 #endif
             // create new alignment(s) from threading result; merge or add to list as appropriate
-            for (int i=0; i<options.nResultAlignments; i++) {
+            for (int i=0; i<thdTbl->n; i++) {
+
+                // skip if this entry is not a real result
+                if (thdTbl->tf[i] <= 0) continue;
+
                 BlockMultipleAlignment::SequenceList *sequences = new BlockMultipleAlignment::SequenceList(2);
                 sequences->front() = (*p)->GetMaster();
                 sequences->back() = (*p)->GetSequenceOfRow(1);
