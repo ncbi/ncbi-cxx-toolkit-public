@@ -67,6 +67,10 @@
 #define INET_SUCCESS 1
 #define INET_FAILURE 0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Structures to hold sockets */
 typedef struct Socket {
   EndpointRef ref;				/* The Open Transport reference number				*/
@@ -111,6 +115,10 @@ OSStatus	ot_DNRInit(void);
 OSStatus	ot_DNRClose( InetSvcRef theRef);
 void		herror(char *s);
 char		*herror_str(int theErr);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif _SOCKETS_INTERNAL_
