@@ -1,8 +1,4 @@
-The `configure' script configures ncbi-tools++ 0.0 to adapt to many 
-kinds of systems.  Below is usage and options list, obtainable from
-the command-line with 'configure --help'.
-
-
+`configure' configures ncbi-tools++ 0.0 to adapt to many kinds of systems.
 
 Usage: configure [OPTION]... [VAR=VALUE]...
 
@@ -60,6 +56,7 @@ Optional Packages:
 =============== NCBI C++ Toolkit specific configuration flags =================
  --without-debug         build non-debug versions of libs and apps
  --without-optimization  turn off optimization flags in non-debug mode
+ --with-profiling        build profiled versions of libs and apps
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
  --with-mt               compile in a MultiThread-safe manner
@@ -77,6 +74,7 @@ Optional Packages:
  --with-lib-rebuilds=ask ask whether to update each app's libraries
  --with-projects=FILE    build projects listed in FILE by default
  --with-check=           run test suite after the build
+ --with-ncbi-public      ensure compatibility for all in-house platforms
  --without-ncbi-c        do not use NCBI C Toolkit
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
@@ -87,6 +85,9 @@ Optional Packages:
  --with-sybase-local=DIR use local SYBASE install (DIR is optional)
  --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)
  --without-ftds          do not use FreeTDS libraries
+ --with-ftds=DIR         use FreeTDS installation in DIR
+ --without-fltk          do not use FLTK
+ --with-fltk=DIR         use FLTK installation in DIR
  --without-wxwin         do not use wxWindows
  --with-wxwin=DIR        use wxWindows installation in DIR
  --without-fastcgi       do not use Fast-CGI library
