@@ -34,6 +34,7 @@ BEGIN { status=0 }
 /^Error: /                           { status=1 }
 /:error:Error:/                      { status=1 }
 /^compiler\([^)]+\) error:/          { status=1 }
+/^Undefined/                         { status=1 }
 END { exit status } # This must be the last END block.
 
 
