@@ -451,6 +451,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         CProjItem dll;
         s_InitalizeDllProj(dll_id, dll_info, &dll, tree_dst);
 
+        bool complete = true;
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
             CProjectItemsTree::TProjects::const_iterator k = 
@@ -459,14 +460,17 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
             if (k == GetApp().GetWholeTree().m_Projects.end()) {
                 LOG_POST(Error << "No project " +
                                    lib_id + " hosted in dll : " + dll_id);
-                continue;
+                LOG_POST(Error << "DLL " + dll_id + " generation skipped");
+                //continue;
+                complete = false; // do not create incomplete DLLs
+                break;
             }
 
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
         }
-
-        tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
+        if ( complete )
+            tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
     }
 }
 
@@ -537,6 +541,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/06/23 14:15:59  gorelenk
+ * CreateDllBuildTree - DLL generation will be skipped of not all libraries
+ * are available in local build tree - for the sake of 'import_project.wsf' .
+ *
  * Revision 1.19  2004/06/07 13:46:21  gorelenk
  * Class CMsvcDllsInfo separated from application config.
  *
