@@ -52,6 +52,7 @@ class CCit_book;
 class CCit_jour;
 
 
+NCBI_BIBLIO_EXPORT
 void GetLabelContent(string*            label,
                      bool               unique,
                      const CAuth_list*  authors,
@@ -77,6 +78,9 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/02/25 14:35:36  dicuccio
+ * Added export specifier
+ *
  * Revision 1.1  2004/02/24 15:52:23  grichenk
  * Initial revision
  *
