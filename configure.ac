@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.155 2002/12/12 20:32:47 ucko Exp $
+#  $Id: configure.ac,v 1.156 2002/12/18 17:17:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -896,6 +896,19 @@ else
    pure_runpath=
 fi
 
+# DLLs and profiling don't mix on all platforms
+if test "$with_profiling" = "yes" ; then
+   case "$host_os" in
+      linux*) # any others?
+         case "$with_dll" in
+            yes) AC_MSG_ERROR([This platform does not support DLL profiling.])
+                 ;;
+	    no) ;;
+            *) with_dll=no ;;
+         esac
+      ;;
+   esac
+fi
 
 # Whether to build DLLs or static (and whether by default, or forcibly)
 LIB_OR_DLL="lib"
@@ -1097,7 +1110,7 @@ if test "$with_profiling" = "yes" ; then
    prof_sfx="Prof"
    case "$compiler" in
       Compaq)    PFFLAGS="-pg" ;;
-      GCC)       PFFLAGS="-pg -ax" ;;
+      GCC)       PFFLAGS="-pg -fprofile-arcs" ;;
       ICC)       PFFLAGS="-p" ;;
       KCC)       PFFLAGS="-pg" ;;
       MIPSpro73) PFFLAGS="" ;; # pixie(1) adds info at runtime
@@ -1109,6 +1122,7 @@ if test "$with_profiling" = "yes" ; then
    CFLAGS="$CFLAGS $PFFLAGS"
    CXXFLAGS="$CXXFLAGS $PFFLAGS"
    LDFLAGS="$LDFLAGS $PFFLAGS"
+   STRIP=: # Stripping may lose profiling info
 else
    prof_sfx=
 fi
