@@ -18,6 +18,8 @@
        Structure of the build directory tree(s) produced by <b><i>configure</i></b></a>
   <li> <a href="#ref_Running">
        Running the <b><i>configure</i></b> script</a>
+  <li> <a href="#ref_Reconf">
+       Quick reconfiguration</a>
   <li> <a href="#ref_Wrappers">
        Compiler-specific "wrappers" for the <b><i>configure</i></b> script</a>
   <li> <a href="#ref_Example">
@@ -115,7 +117,7 @@ The <b><i>configure</i></b> script will create so-called
 <i>build directory tree</i> -- a hierarchy of directories where
 object modules, libraries and executables are to be built.
 User can create as many such trees as he needs.  All these
-trees will reference to just the same (origin) NCBI C++ source tree,
+trees will reference to just the same (origin) NCBI C++ <i>source tree</i>,
 while each <i>build tree</i> can contain its own (compilator-specific)
 <i>"ncbiconf.h"</i> header, and/or different set of compilation/linking/etc.
 flags and tools ("frozen" in the makefiles). This is to allow one to build
@@ -206,6 +208,22 @@ For more info on these variables see in the
 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html">autoconf documentation</a>.
 The specified tools and flags will then be "frozen" inside the makefiles of
 produced <i>build tree</i>.
+
+<a name="ref_Reconf">
+<h2>Quick reconfiguration</h2>
+</a>
+
+<p>
+Sometimes, you do changes in your existing <i>"*.in"</i> files (e.g. makefiles)
+in the <i>source tree</i>, and you want to reflect these changes in your
+<i>build tree</i>. To do this, just go to the <i><b>"status/"</i></b> subdirectory
+of the relevant <i>build tree</i> and run <i><b>config.status</i></b> script
+in it.
+
+<p>
+This technique also helps if some <i>"*.in"</i> files have been modified
+in the result of CVS update in your <i>source tree</i>.
+
 
 
 <br></br>
