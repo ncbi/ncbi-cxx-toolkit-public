@@ -13,11 +13,11 @@ property pAlwaysCreateProjects : false
 
 -- Which targets to create.
 -- If these are changed you must recreate the project files.  There is no direct effect on building.
-property pCreateBlueTargets : false -- 'Blue' was codename for System 7, here it means pre-Carbon.
+property pCreateBlueTargets : true -- 'Blue' was codename for System 7, here it means pre-Carbon.
 property pCreateCarbonTargets : true
 property pCreateDebugTargets : true
 property pCreateProfiledTargets : false
-property pCreateOptimizedTargets : false
+property pCreateOptimizedTargets : true
 
 -- Whether to create projects in the specified category.
 property pCreateObjectLibs : true (* whether to create/compile object libraries *)
@@ -329,6 +329,7 @@ on CToolkitRoot()
 end CToolkitRoot
 
 on CPlusPlusToolkitRoot()
+	
 	try
 		set modRoot to ResolveAlias(gMWroot & "cxx")
 	on error
@@ -336,6 +337,7 @@ on CPlusPlusToolkitRoot()
 			set modRoot to ResolveAlias(gStartupDisk & gHomeDir & "cxx")
 		end try
 	end try
+	
 	return modRoot
 	
 end CPlusPlusToolkitRoot
@@ -406,10 +408,12 @@ on SetGlobals()
 			set gLibsDir to gDistribRoot & "compilers:mac_prj:lib:"
 			set gOutputDir to gDistribRoot & "compilers:mac_prj:bin:"
 			set gProjectsDir to gOutputDir
+			set gRsrcsDir to gDistribRoot & "compilers:mac_prj:"
 			set gSourcePath to gAccessRoot & "src:"
 			set gLibsPath to gAccessRoot & "compilers:mac_prj:lib:"
 			set gOutputPath to gAccessRoot & "compilers:mac_prj:bin:"
 			set gProjectsPath to gOutputDir
+			set gRsrcsPath to gAccessRoot & "compilers:mac_prj:"
 		else
 			set gSourceDir to gDistribRoot
 			set gLibsDir to gDistribRoot & "lib:"
@@ -545,7 +549,7 @@ on SetPreferences()
 		-- Panel "PPC Target"
 		if pLinkExecutables then
 			Set Preferences of panel "PPC Project" to ¬
-				{Project Type:standard application, SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL", Preferred Size:8000, Minimum Size:5000, Stack Size:64}
+				{Project Type:standard application, SIZE Flags:22720, File Creator:"NCBI", File Type:"APPL", Preferred Size:9000, Minimum Size:5000, Stack Size:64}
 		else
 			Set Preferences of panel "PPC Project" to {Project Type:library}
 		end if
@@ -666,7 +670,6 @@ on SetPaths2()
 		set dirsToAdd to {¬
 			":MacOS Support:", ¬
 			":MSL:"}
-		-- if gPNGpresent ...
 		
 		repeat with i in dirsToAdd
 			copy {name:i, recursive:true, origin:shell relative} to end of pathsToAdd

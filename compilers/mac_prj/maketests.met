@@ -1,5 +1,9 @@
 -- C++ Tests --
 
+--
+-- Properties
+--
+
 property pUsingCPlusPlus : true
 property pProjectFileExtension : ".mcp"
 property pCPlusPlusExtension : ".cpp"
@@ -9,10 +13,11 @@ property pAlwaysCreateProjects : false
 
 -- Which targets to create.
 -- If these are changed you must recreate the project files.  There is no direct effect on building.
-property pCreateBlueTargets : false -- 'Blue' was codename for System 7, here it means pre-Carbon.
+property pCreateBlueTargets : true -- 'Blue' was codename for System 7, here it means pre-Carbon.
 property pCreateCarbonTargets : true
 property pCreateDebugTargets : true
-property pCreateOptimizedTargets : false
+property pCreateProfiledTargets : false
+property pCreateOptimizedTargets : true
 
 -- Whether to compile everything.
 property pShouldBuild : true
@@ -236,6 +241,10 @@ on SetProjectData()
 
 end SetProjectData
 
+--
+-- Global variables
+--
+
 global gStartupDisk
 global gHomeDir
 global gDevDir
@@ -245,6 +254,7 @@ global gMacLibs
 global gStubLibs
 global gPPCLibs
 global gMSLPPCLibs
+global modRoot
 
 global gDistribRoot
 global gAccessRoot
@@ -261,9 +271,6 @@ global gLibsPath
 global gRsrcsPath
 
 global gProjectData
-
-global gOpenGLdir
-global gOpenGLpresent
 
 on DataPlusLibs(dataRec, newLibs)
 	
@@ -401,21 +408,6 @@ on MWRootDir()
 	
 end MWRootDir
 
-on FindOpenGL()
-	tell application "Finder"
-		
-		set results to every folder of folder gMWroot whose name starts with "OpenGL SDK"
-		if (count results) > 0 then
-			set dir to item 1 of results as string
-		else
-			set dir to ""
-		end if
-		
-		return dir
-		
-	end tell
-end FindOpenGL
-
 on SetGlobals()
 	tell application "Finder"
 		
@@ -435,14 +427,12 @@ on SetGlobals()
 		
 		set gIncludeDir to gDistribRoot & "include:"
 		set gIncludePath to gAccessRoot & "include:"
-		
 		if pUsingCPlusPlus then
 			set gSourceDir to gDistribRoot & "src:"
 			set gLibsDir to gDistribRoot & "compilers:mac_prj:lib:"
 			set gOutputDir to gDistribRoot & "compilers:mac_prj:bin:"
 			set gProjectsDir to gOutputDir
 			set gRsrcsDir to gDistribRoot & "compilers:mac_prj:"
-			
 			set gSourcePath to gAccessRoot & "src:"
 			set gLibsPath to gAccessRoot & "compilers:mac_prj:lib:"
 			set gOutputPath to gAccessRoot & "compilers:mac_prj:bin:"
@@ -453,15 +443,11 @@ on SetGlobals()
 			set gLibsDir to gDistribRoot & "lib:"
 			set gOutputDir to gDistribRoot & "build:"
 			set gRsrcsDir to gDistribRoot & "link:macmet:"
-			
 			set gSourcePath to gAccessRoot
 			set gLibsPath to gAccessRoot & "lib:"
 			set gOutputPath to gAccessRoot & "build:"
 			set gRsrcsPath to gAccessRoot & "link:macmet:"
 		end if
-		
-		set gOpenGLdir to my FindOpenGL()
-		set gOpenGLpresent to (gOpenGLdir is not "")
 		
 		set gCDistribRoot to my CToolkitRoot()
 		set gCDistribPresent to (gCDistribRoot is not "")
@@ -475,7 +461,7 @@ on SetGlobals()
 	end tell
 end SetGlobals
 
-on SetDebugSettings(shouldDebug)
+on SetDebugSettings(shouldDebug, shouldProfile)
 	tell application "CodeWarrior IDE"
 		
 		if shouldDebug then
@@ -490,7 +476,6 @@ on SetDebugSettings(shouldDebug)
 			Set Preferences of panel "C/C++ Compiler" to ¬
 				{Inlining:inline_none ¬
 					, AutoInlining:false}
-			
 		else
 			(* ==== optimized/release settings ==== *)
 			(* ===== Panel PPC Global Optimizer =====  *)
@@ -504,6 +489,16 @@ on SetDebugSettings(shouldDebug)
 			Set Preferences of panel "C/C++ Compiler" to ¬
 				{Inlining:inline_smart ¬
 					, AutoInlining:true}
+		end if
+		
+		if shouldProfile then
+			(* ===== Panel PPC Processor ===== *)
+			Set Preferences of panel "PPC CodeGen" to ¬
+				{Use Profiler:true}
+		else
+			(* ===== Panel PPC Processor ===== *)
+			Set Preferences of panel "PPC CodeGen" to ¬
+				{Use Profiler:false}
 		end if
 		
 	end tell
@@ -606,8 +601,15 @@ end SetPreferences
 
 on SetPaths1()
 	tell application "CodeWarrior IDE"
+		
+		(* ===== Panel Access Paths ===== *)
+		-- We need to be able to move the default system compiler folder to the end of the list
+		-- because certain files like "all.h" and "all" are defined by both Metrowerks and NCBI.
+		-- We want to find the NCBI "all.h" first.
 		Set Preferences of panel "Access Paths" to {System Paths:{}} -- This removes the compiler default folder
+		
 		Set Preferences of panel "Access Paths" to {Always Full Search:true, Convert Paths:true}
+		
 	end tell
 end SetPaths1
 
@@ -617,23 +619,24 @@ on SetPaths2()
 		-- Add recursive include dir AFTER source dirs to avoid major performance hit
 		set pathsToAdd to {}
 		-- gDistribRoot & "link:macmet:", 
-		----repeat with i in {gDistribRoot, gLibsDir, gIncludeDir}
 		repeat with i in {gAccessRoot, gLibsPath, gIncludePath}
 			copy {name:i, recursive:false, origin:absolute} to end of pathsToAdd
 		end repeat
+		if not pUsingCPlusPlus then
+			copy {name:gAccessRoot & "link:macmet:", recursive:true, origin:absolute} to end of pathsToAdd
+		end if
 		copy gRsrcsPath to end of pathsToAdd
-		
 		Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		
 		set pathsToAdd to {{name:gIncludePath, recursive:true, origin:absolute}}
+		if not pUsingCPlusPlus then
+			copy {name:gAccessRoot, recursive:true, origin:absolute} to end of pathsToAdd
+		end if
 		
 		-- After we have added all paths, reinsert compiler default at end of list
 		set dirsToAdd to {¬
 			":MacOS Support:", ¬
 			":MSL:"}
-		if gOpenGLpresent then
-			copy gOpenGLdir to end of dirsToAdd
-		end if
 		
 		--copy gRsrcsDir to end of dirsToAdd
 		repeat with i in dirsToAdd
@@ -655,7 +658,7 @@ on SetWeakLink(libName)
 	end tell
 end SetWeakLink
 
-on AddBlueLibs()
+on AddBlueLibs(shouldProfile)
 	tell application "CodeWarrior IDE"
 		
 		set libsToAdd to {¬
@@ -677,6 +680,10 @@ on AddBlueLibs()
 			gStubLibs & "UTCUtils", ¬
 			gPPCLibs & "CarbonAccessors.o"}
 		
+		if shouldProfile then
+			copy gMWCWfolder & "MacOS Support:Profiler:Profiler PPC:Profiler PPC.Lib" to end of libsToAdd
+		end if
+		
 		Add Files libsToAdd
 		
 		my SetWeakLink("AppearanceLib")
@@ -685,7 +692,7 @@ on AddBlueLibs()
 	end tell
 end AddBlueLibs
 
-on AddCarbonLibs()
+on AddCarbonLibs(shouldProfile)
 	tell application "CodeWarrior IDE"
 		
 		set libsToAdd to {¬
@@ -699,6 +706,10 @@ on AddCarbonLibs()
 			gMSLPPCLibs & "MSL_Extras_Carbon.Lib", ¬
 			gMWCWfolder & "MacOS Support:Libraries:Runtime:Libs:MSL_Runtime_PPC.Lib", ¬
 			gStubLibs & "CarbonLib"}
+		
+		if shouldProfile then
+			copy gMWCWfolder & "MacOS Support:Profiler:Profiler PPC:Profiler Carbon.Lib" to end of libsToAdd
+		end if
 		
 		Add Files libsToAdd
 		
@@ -723,12 +734,6 @@ on AddFeatures(features, flags)
 			
 			Add Files libsToAdd
 			
-		end if
-		
-		if features contains "OpenGL" then
-			set OpenGLLibs to gOpenGLdir & "Libraries:"
-			Set Preferences of panel "Access Paths" to {System Paths:{{name:OpenGLLibs, recursive:true, origin:absolute}}}
-			Add Files {OpenGLLibs & "OpenGLLibraryStub", OpenGLLibs & "OpenGLUtilityStub"}
 		end if
 		
 	end tell
@@ -766,7 +771,11 @@ on SetupTarget(proj, flags)
 		if flags contains "debug" then
 			set targetDebug to "dbg"
 		else
-			set targetDebug to ""
+			if flags contains "profile" then
+				set targetDebug to "prf"
+			else
+				set targetDebug to ""
+			end if
 		end if
 		set targetName to projName & " " & targetAPI
 		set libNameSuffix to "-" & targetAPI
@@ -851,20 +860,32 @@ on SetupTarget(proj, flags)
 			Add Files filesToAdd
 		end repeat
 		
-		if flags contains "debug" then
+		if flags contains "debug" or flags contains "profile" then
 			set the debug of every target file of target (count targets of project document 1) ¬
 				of project document 1 to true
-			my SetDebugSettings(true)
+			if flags contains "profile" then
+				my SetDebugSettings(true, true)
+			else
+				my SetDebugSettings(true, false)
+			end if
 		else
-			my SetDebugSettings(false)
+			my SetDebugSettings(false, false)
 		end if
 		
 		-- Add appropriate system libraries.
 		if pLinkExecutables then
 			if flags contains "Carbon" then
-				my AddCarbonLibs()
+				if flags contains "profile" then
+					my AddCarbonLibs(true)
+				else
+					my AddCarbonLibs(false)
+				end if
 			else
-				my AddBlueLibs()
+				if flags contains "profile" then
+					my AddBlueLibs(true)
+				else
+					my AddBlueLibs(false)
+				end if
 			end if
 		end if
 		my AddFeatures(projFeatures, flags)
@@ -894,6 +915,7 @@ on SetupTarget(proj, flags)
 		Add Files filesToAdd
 		
 		Reset File Paths
+		
 	end tell
 end SetupTarget
 
@@ -937,12 +959,20 @@ on CreateProject(proj)
 				my SetupTarget(proj, "Blue debug")
 			end if
 			
+			if pCreateBlueTargets and pCreateProfiledTargets then
+				my SetupTarget(proj, "Blue profile")
+			end if
+			
 			if pCreateBlueTargets and pCreateOptimizedTargets then
 				my SetupTarget(proj, "Blue")
 			end if
 			
 			if pCreateCarbonTargets and pCreateDebugTargets then
 				my SetupTarget(proj, "Carbon debug")
+			end if
+			
+			if pCreateCarbonTargets and pCreateProfiledTargets then
+				my SetupTarget(proj, "Carbon profile")
 			end if
 			
 			if pCreateCarbonTargets and pCreateOptimizedTargets then
@@ -952,7 +982,9 @@ on CreateProject(proj)
 			set the current target of project document 1 to target 1 of project document 1
 			
 			Close Project
+			
 		end if
+		
 	end tell
 end CreateProject
 
@@ -1005,7 +1037,9 @@ on BuildAllProjects()
 end BuildAllProjects
 
 on SignalCompletion()
+	
 	beep
+	
 end SignalCompletion
 
 with timeout of 60000 seconds
