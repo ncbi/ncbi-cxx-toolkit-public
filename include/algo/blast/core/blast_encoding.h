@@ -72,9 +72,6 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 #define BLASTAA_SEQ_CODE 11 /**< == Seq_code_ncbistdaa */
 #define NCBI4NA_SEQ_CODE 4  /**< == Seq_code_ncbi4na */	
 
-/** @bug FIXME: Should this be removed since it's the same as BLASTAA_SIZE ? */
-#define PSI_ALPHABET_SIZE  26
-
 #ifdef __cplusplus
 }
 #endif
@@ -85,6 +82,9 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/21 12:53:54  camacho
+ * Remove PSI_ALPHABET_SIZE as it is identical to BLASTAA_SIZE
+ *
  * Revision 1.3  2004/04/09 14:48:05  camacho
  * Added doxygen comments
  *
