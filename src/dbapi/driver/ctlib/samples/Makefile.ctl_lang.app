@@ -10,4 +10,4 @@ CPPFLAGS = $(SYBASE_INCLUDE) $(ORIG_CPPFLAGS)
 
 REQUIRES = Sybase
 
-CHECK_CMD =
+CHECK_CMD = ../../../run_sybase_app.sh ctl_lang
