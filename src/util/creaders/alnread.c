@@ -653,6 +653,34 @@ s_ReportRepeatedId
 }
 
 
+/* This function creates and sends an error message indicating that the file
+ * being read is an ASN.1 file.
+ */
+static void 
+s_ReportASN1Error 
+(FReportErrorFunction errfunc,
+ void *             errdata)
+{
+    TErrorInfoPtr eip;
+    const char * msg = "This is an ASN.1 file, "
+        "which cannot be read by this function.";
+
+    if (errfunc == NULL) {
+        return;
+    }
+
+    eip = ErrorInfoNew (NULL);
+    if (eip != NULL) {
+        eip->category = eAlnErr_BadData;
+        eip->message = (char *) malloc (strlen (msg) + 1);
+        if (eip->message != NULL) {
+            sprintf (eip->message, msg);
+        }
+        errfunc (eip, errdata);
+    }
+}
+
+
 /* This function allocates memory for a SSequenceInfo structure and
  * initializes the member variables.  It returns a pointer to the newly
  * allocated memory.
@@ -2150,6 +2178,19 @@ static EBool s_FoundStopLine (char * linestring)
 }
 
 
+/* This function identifies the beginning line of an ASN.1 file, which
+ * cannot be read by the alignment reader.
+ */
+static EBool s_IsASN1 (char * linestring)
+{
+    if (linestring != NULL  &&  strstr (linestring, "::=") != NULL) {
+        return eTrue;
+    } else {
+        return eFalse;
+    }
+}
+
+
 /* The following functions are used to locate and read comments enclosed
  * in brackets.  These comments sometimes include organism information.
  */
@@ -2987,6 +3028,12 @@ s_ReadAlignFileRaw
     found_stop = eFalse;
     in_taxa_comment = eFalse;
     linestring = readfunc (userdata);
+    if (s_IsASN1 (linestring)) {
+        s_ReportASN1Error (afrp->report_error, afrp->report_error_userdata);
+        s_AlignFileRawFree (afrp);
+        return NULL;
+    }
+
     while (linestring != NULL  &&  linestring [0] != EOF) {
         s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
         /* we want to remove the comment from the line for the purpose 
@@ -5175,6 +5222,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/16 16:25:38  bollin
+ * Added function to recognize a file as ASN.1 and reject immediately
+ *
  * Revision 1.7  2004/03/09 21:27:39  bollin
  * in s_InsertNewOffsets, if the list ends while searching for the next pattern, exit immediately (prevents NULL pointer access)
  *
