@@ -303,7 +303,7 @@ bool CDBL_LangCmd::x_AssignParams()
             return false;
         }
 
-        cmd += "declare" + name + ' ' + type + "\nselect " + name + " = ";
+        cmd += "declare " + name + ' ' + type + "\nselect " + name + " = ";
 
         if (!param.IsNULL()) {
             switch (param.GetType()) {
@@ -428,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/12/13 23:48:44  soussov
+ * inserts space after declare
+ *
  * Revision 1.2  2001/10/24 16:41:13  lavr
  * File description changed to be of the same style as in other files
  *
