@@ -35,8 +35,9 @@
 
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
-#include <connect/ncbi_core_cxx.hpp>
+#include "ncbi_core_cxxp.hpp"
 #include <connect/ncbi_util.h>
+#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 
@@ -232,13 +233,53 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
  *                                 Init                                *
  ***********************************************************************/
 
+DEFINE_STATIC_FAST_MUTEX(s_ConnectInitMutex);
+
+static enum EConnectInit {
+    eConnectInit_Weak = -1,
+    eConnectInit_Intact = 0,
+    eConnectInit_Explicit = 1
+} s_ConnectInit = eConnectInit_Intact;
+
+
+static void s_Init(CNcbiRegistry*    reg = 0,
+                   CRWLock*          lock = 0,
+                   FConnectInitFlags flags = 0,
+                   EConnectInit      how = eConnectInit_Weak)
+{
+    CORE_SetLOCK(MT_LOCK_cxx2c(lock, flags & eConnectInit_OwnLock));
+    CORE_SetLOG(LOG_cxx2c());
+    CORE_SetREG(REG_cxx2c(reg, flags & eConnectInit_OwnRegistry));
+    s_ConnectInit = how;
+}
+
+
+/* PUBLIC */
 extern void CONNECT_Init(CNcbiRegistry*    reg,
                          CRWLock*          lock,
-                         FConnectInitFlags flag)
+                         FConnectInitFlags flags)
 {
-    CORE_SetLOCK(MT_LOCK_cxx2c(lock, flag & eConnectInit_OwnLock));
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(reg, flag & eConnectInit_OwnRegistry));
+    s_ConnectInitMutex.Lock();
+    try {
+        s_Init(reg, lock, flags, eConnectInit_Explicit);
+    }
+    STD_CATCH_ALL("CONNECT_Init() failed");
+    s_ConnectInitMutex.Unlock();
+}
+
+
+/* PRIVATE */
+extern void CONNECT_InitInternal(void)
+{
+    s_ConnectInitMutex.Lock();
+    try {
+        if (s_ConnectInit == eConnectInit_Intact) {
+            CNcbiApplication* theApp = CNcbiApplication::Instance();
+            s_Init(theApp ? &theApp->GetConfig() : 0);
+        }
+    }
+    STD_CATCH_ALL("CONNECT_InitInternal() failed");
+    s_ConnectInitMutex.Unlock();
 }
 
 
@@ -248,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2004/09/09 16:45:30  lavr
+ * Introduce CONNECT_InitInternal() [and locking against concurrent init]
+ *
  * Revision 6.20  2004/07/14 15:46:08  lavr
  * +flags (=0) for CONNECT_Init()
  *
