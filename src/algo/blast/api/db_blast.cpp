@@ -47,7 +47,6 @@
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
-#include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_message.h>
 
 BEGIN_NCBI_SCOPE
@@ -56,7 +55,7 @@ BEGIN_SCOPE(blast)
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
                    EProgram p)
-    : m_pSeqSrc(bssp), mi_bQuerySetUpDone(false) 
+    : , mi_bQuerySetUpDone(false), m_pSeqSrc(bssp) 
 {
     m_tQueries = queries;
     mi_pScoreBlock = NULL;
@@ -73,7 +72,7 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, 
                    BlastSeqSrc* bssp, CBlastOptionsHandle& opts)
-    : m_pSeqSrc(bssp), mi_bQuerySetUpDone(false) 
+    : mi_bQuerySetUpDone(false), m_pSeqSrc(bssp) 
 {
     m_tQueries = queries;
     mi_pScoreBlock = NULL;
@@ -139,7 +138,6 @@ int CDbBlast::SetupSearch()
         status = BLAST_MainSetUp(x_eProgram, 
                                  m_OptsHandle->GetOptions().GetQueryOpts(),
                                  m_OptsHandle->GetOptions().GetScoringOpts(),
-                                 m_OptsHandle->GetOptions().GetLutOpts(),
                                  m_OptsHandle->GetOptions().GetHitSaveOpts(),
                                  mi_clsQueries, mi_clsQueryInfo,
                                  &mi_pLookupSegments, &mi_pFilteredRegions,
@@ -179,9 +177,8 @@ void CDbBlast::PartialRun()
 TSeqAlignVector
 CDbBlast::Run()
 {
-    SetupSearch();
-    //m_OptsHandle->GetOptions()->DebugDumpText(cerr, "m_pOptions", 1);
     m_OptsHandle->GetOptions().Validate();// throws an exception on failure
+    SetupSearch();
     RunSearchEngine();
     return x_Results2SeqAlign();
 }
@@ -317,6 +314,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/02/24 18:19:35  dondosha
+ * Removed lookup options argument from call to BLAST_MainSetUp
+ *
  * Revision 1.13  2004/02/23 15:45:09  camacho
  * Eliminate compiler warning about qsort
  *

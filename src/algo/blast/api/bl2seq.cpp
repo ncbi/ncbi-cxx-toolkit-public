@@ -196,7 +196,6 @@ CBl2Seq::SetupSearch()
         st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgram(), 
                              m_OptsHandle->GetOptions().GetQueryOpts(),
                              m_OptsHandle->GetOptions().GetScoringOpts(),
-                             m_OptsHandle->GetOptions().GetLutOpts(),
                              m_OptsHandle->GetOptions().GetHitSaveOpts(),
                              mi_clsQueries, 
                              mi_clsQueryInfo, &mi_pLookupSegments, 
@@ -315,6 +314,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2004/02/24 18:16:29  dondosha
+ * Removed lookup options argument from call to BLAST_MainSetUp
+ *
  * Revision 1.42  2004/02/13 21:21:30  camacho
  * Add throws clause to Run method
  *
