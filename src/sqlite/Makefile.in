@@ -6,6 +6,7 @@
 # Meta-makefile for the "SQLite" lib
 #################################
 
+REQUIRES = SQLITE
 LIB_PROJ = xsqlite
 
 srcdir = @srcdir@
