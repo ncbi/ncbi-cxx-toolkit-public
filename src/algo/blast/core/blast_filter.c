@@ -73,6 +73,14 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
    return NULL;
 }
 
+BlastMaskLoc* BlastMaskLocNew(Int4 index, BlastSeqLoc *loc_list)
+{
+      BlastMaskLoc* retval = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+      retval->index = index;
+      retval->loc_list = loc_list;
+      return retval;
+}
+
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 {
    BlastMaskLoc* next_loc;
@@ -183,9 +191,12 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
    DoubleInt* double_int = NULL,* di;
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
-   Boolean is_na, reverse = FALSE;
-   
-   is_na = (program_number == blast_type_blastn);
+   Boolean reverse = FALSE;
+   const Boolean k_is_na = (program_number == blast_type_blastn);
+
+   if (complement_mask == NULL)
+	return -1;
+
    *complement_mask = NULL;
 
    for (context = query_info->first_context; 
@@ -195,8 +206,8 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       /* For blastn: check if this strand is not searched at all */
       if (end_offset < start_offset)
           continue;
-      index = (is_na ? context / 2 : context);
-      reverse = (is_na && ((context & 1) != 0));
+      index = (k_is_na ? context / 2 : context);
+      reverse = (k_is_na && ((context & 1) != 0));
       first = TRUE;
 
       if (!reverse) {
@@ -544,7 +555,7 @@ BlastSetUp_load_options_to_buffer(const char *instructions, char* buffer)
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
    Int4 offset, char* instructions, Boolean *mask_at_hash, 
-   BlastSeqLoc* *seqloc_retval, Boolean no_lookup)
+   BlastSeqLoc* *seqloc_retval)
 {
 	Boolean do_default=FALSE, do_seg=FALSE, do_dust=FALSE; 
 	char* buffer=NULL;
@@ -696,18 +707,6 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
 	        sfree(buffer);
 	}
 
-   /* If lookup table is not created and masking is supposed to be done for 
-      lookup table only, then no filtering is needed */
-   if (*mask_at_hash && no_lookup) {
-      do_default = do_seg = do_dust = FALSE;
-#ifdef CC_FILTER_ALLOWED    
-      do_coil_coil = FALSE;
-#endif
-#ifdef TEMP_BLAST_OPTIONS     
-      do_vecscreen = do_repeats = FALSE;
-#endif
-   }
-
 	seqloc_num = 0;
 	if (program_number != blast_type_blastn)
 	{
@@ -833,4 +832,223 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 	}
 
 	return status;
+}
+
+static Int2
+GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Int2 context, Uint1 program_number, char* filter_string, BlastSeqLoc* *filter_out, Boolean* mask_at_hash)
+{
+        Int2 status = 0;
+        Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
+        Int4 context_offset;
+        BlastMaskLoc *mask_slp, *mask_slp_var; /* Auxiliary locations for lower-case masking  */
+        BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
+        BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
+        Uint1 *buffer;              /* holds sequence for plus strand or protein. */
+
+        Boolean is_na = (program_number == blast_type_blastn);
+        Int2 index = (is_na ? context / 2 : context);
+
+        context_offset = query_info->context_offsets[context];
+        buffer = &query_blk->sequence[context_offset];
+
+        if ((query_length = BLAST_GetQueryLength(query_info, context)) <= 0)
+           return 0;
+
+
+        if ((status = BlastSetUp_Filter(program_number, buffer,
+                       query_length, 0, filter_string,
+                             mask_at_hash, &filter_slp))) 
+             return status;
+
+        /* Extract the mask locations corresponding to this query 
+               (frame, strand), detach it from other masks.
+               NB: for translated search the mask locations are expected in 
+               protein coordinates. The nucleotide locations must be converted
+               to protein coordinates prior to the call to BLAST_MainSetUp.
+        */
+        mask_slp = NULL;
+        for (mask_slp_var=query_blk->lcase_mask; mask_slp_var; mask_slp_var=mask_slp_var->next)
+        {
+                if (mask_slp_var->index == index)
+                {
+                   mask_slp = mask_slp_var;
+                   break;
+                }
+        }
+
+        /* Attach the lower case mask locations to the filter locations and combine them */
+        if (mask_slp) {
+             if (filter_slp) {
+                  BlastSeqLoc *loc;           /* Iterator variable */
+                  for (loc = filter_slp; loc->next; loc = loc->next);
+                    loc->next = mask_slp->loc_list;
+             } else {
+                   filter_slp = mask_slp->loc_list;
+             }
+                /* Set location list to NULL, to allow safe memory deallocation */
+                mask_slp->loc_list = NULL;
+        }
+
+        filter_slp_combined = NULL;
+        CombineMaskLocations(filter_slp, &filter_slp_combined, 0);
+        *filter_out = filter_slp_combined;
+
+        filter_slp = BlastSeqLocFree(filter_slp);
+
+	return 0;
+}
+
+
+Int2
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, Uint1 program_number, char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash, Blast_Message * *blast_message)
+{
+
+    Int2 status = 0;
+    Int4 context = 0; /* loop variable. */
+    const Boolean k_is_na = (program_number == blast_type_blastn);
+    BlastMaskLoc *last_maskloc = NULL;
+    BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */
+    Boolean no_forward_strand = (query_info->first_context > 0);  /* filtering needed on reverse strand. */
+
+    for (context = query_info->first_context;
+         context <= query_info->last_context; ++context) {
+      
+        BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
+        Boolean reverse = (k_is_na && ((context & 1) != 0));
+        Int4 query_length;
+
+        /* For each query, check if forward strand is present */
+        if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
+        {
+            if ((context & 1) == 0)
+               no_forward_strand = TRUE;
+            continue;
+        }
+
+      if (!reverse || no_forward_strand)
+      {
+        if ((status=GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_string, &filter_per_context, mask_at_hash)))
+        {
+               Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                  "Failure at filtering");
+               return status;
+        }
+
+        /* NB: for translated searches filter locations are returned in 
+               protein coordinates, because the DNA lengths of sequences are 
+               not available here. The caller must take care of converting 
+               them back to nucleotide coordinates. */
+       if (filter_per_context)
+       {
+        if (!last_maskloc) {
+                last_maskloc = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+                filter_maskloc = last_maskloc;
+        } else {
+                last_maskloc->next =
+                        (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+                last_maskloc = last_maskloc->next;
+        }
+
+        last_maskloc->index = (k_is_na ? context / 2 : context);
+        last_maskloc->loc_list = filter_per_context;
+       }
+      }
+    }
+
+    if (filter_out && filter_maskloc)
+	*filter_out = filter_maskloc;
+
+    return 0;
+}
+
+/** Masks the letters in buffer.
+ * @param buffer the sequence to be masked (will be modified). [out]
+ * @param max_length the sequence to be masked (will be modified). [in]
+ * @param is_na nucleotide if TRUE [in]
+ * @param mask_loc the SeqLoc to use for masking [in] 
+ * @param reverse minus strand if TRUE [in]
+ * @param offset how far along sequence is 1st residuse in buffer [in]
+ *
+*/
+static Int2
+MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
+                           ListNode * mask_loc, Boolean reverse, Int4 offset)
+{
+    DoubleInt *loc = NULL;
+    Int2 status = 0;
+    Int4 index, start, stop;
+    Uint1 mask_letter;
+
+    if (is_na)
+        mask_letter = 14;
+    else
+        mask_letter = 21;
+
+    for (; mask_loc; mask_loc = mask_loc->next) {
+        loc = (DoubleInt *) mask_loc->ptr;
+        if (reverse) {
+            start = max_length - 1 - loc->i2;
+            stop = max_length - 1 - loc->i1;
+        } else {
+            start = loc->i1;
+            stop = loc->i2;
+        }
+
+        start -= offset;
+        stop -= offset;
+
+        for (index = start; index <= stop; index++)
+            buffer[index] = mask_letter;
+    }
+
+    return status;
+}
+
+Int2 
+BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, BlastMaskLoc *filter_maskloc, Uint1 program_number)
+{
+    const Boolean k_is_na = (program_number == blast_type_blastn);
+    Int4 context; /* loop variable. */
+    Int2 status=0;
+
+    for (context = query_info->first_context;
+         context <= query_info->last_context; ++context) {
+      
+        BlastMaskLoc* filter_maskloc_var = NULL;
+        BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
+        Boolean reverse = (k_is_na && ((context & 1) != 0));
+        Int4 query_length;
+        Int4 context_offset;
+        Uint1 *buffer;              /* holds sequence */
+
+        /* For each query, check if forward strand is present */
+        if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
+            continue;
+
+        context_offset = query_info->context_offsets[context];
+        buffer = &query_blk->sequence[context_offset];
+
+	filter_maskloc_var = filter_maskloc;
+        while (filter_maskloc_var)
+        {
+             if (filter_maskloc_var->index == (k_is_na ? context / 2 : context))
+             {
+		filter_per_context = filter_maskloc_var->loc_list;
+                break;
+             }
+             filter_maskloc_var = filter_maskloc_var->next;
+        }
+
+        if (buffer) {
+
+            if ((status =
+                     MaskTheResidues(buffer, query_length, k_is_na,
+                                                filter_per_context, reverse, 0)))
+            {
+                    return status;
+            }
+        }
+    }
+
+    return 0;
 }
