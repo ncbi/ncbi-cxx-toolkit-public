@@ -48,7 +48,7 @@ script_args="$*"
 summary_res="check.sh.log"
 error_res="check.sh.out"
 
-mailx="mailx -r `whoami | cut -f1 -d' '`"
+sendmail="sendmail -OIgnoreDots"
 
 
 ####  ERROR REPORT
@@ -176,12 +176,13 @@ if test -n "$mail_list_full" ; then
    for loc in $mail_list_full ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
+        echo "Subject:  [C++ CHECK RESULTS]  $subject"
+        echo
         echo "$subject"; echo
         cat $summary_res
         echo ; echo '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%' ; echo
         cat $error_res
-      } | $mailx -s "[C++ CHECK RESULTS]  $subject" $mailto \
-           ||  err_list="$err_list MAIL_ERR:\"$loc\""
+      } | $sendmail $mailto  ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
@@ -189,18 +190,25 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
    for loc in $mail_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
+        echo "Subject:  [C++ CHECK ERRORS]  $subject"
+        echo
         echo "$subject"; echo
         cat $error_res
-      } | $mailx -s "[C++ CHECK ERRORS]  $subject" $mailto \
-           || err_list="$err_list MAIL_ERR:\"$loc\""
+      } | $sendmail $mailto  ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
 # Post errors to watchers
 if test -n "$watch_list" ; then
    if test -n "$err_list"  -o  "$debug" = "yes" ; then
-      { echo "$err_list"; echo; echo "====================";  cat $err_log; } \
-       | $mailx -s "[C++ CHECK WATCH]  ${signature}" $watch_list
+      {
+        echo "Subject:  [C++ CHECK WATCH] $signature"
+        echo
+        echo "$err_list"
+        echo
+        echo "========================================"
+        cat $err_log
+      } | $sendmail $watch_list
    fi
 fi
 
