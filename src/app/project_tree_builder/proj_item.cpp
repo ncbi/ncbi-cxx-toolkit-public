@@ -202,7 +202,7 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
             //Iterate all project_name(s) from makefile.in 
             ITERATE(list<string>, n, info.m_ProjNames) {
 
-                //project id
+                //project id will be defined latter
                 const string proj_name = *n;
         
                 string applib_mfilepath = 
@@ -336,7 +336,8 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
                (base_dir, fname + ".app")).Exists() )
         return CProjItem::eApp;
 
-    LOG_POST(Error << "Inconsistent ASN project: " + projname);
+    LOG_POST(Error << "No .lib or .app projects for : " + projname +
+                      " in directory: " + base_dir);
     return CProjItem::eNoProj;
 }
 
@@ -1233,6 +1234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/02/11 16:46:29  gorelenk
+ * Cnanged LOG_POST message.
+ *
  * Revision 1.12  2004/02/10 21:20:44  gorelenk
  * Added support of DATATOOL_SRC tag.
  *
