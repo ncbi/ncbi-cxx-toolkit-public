@@ -237,7 +237,7 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
             tmout.usec = 0;
             auto_ptr<CConn_ServiceStream> stream
                 (new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout));
-            if ( stream->bad() ) {
+            if ( !stream->bad() ) {
                 return stream.release();
             }
             ERR_POST("CId1Reader::x_NewConnection: cannot connect.");
@@ -609,6 +609,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.55  2003/10/22 16:36:25  vasilche
+ * Fixed typo.
+ *
  * Revision 1.54  2003/10/22 16:32:42  vasilche
  * MSVC forces to use stream::bad() method.
  *
