@@ -25,13 +25,12 @@ SRC = blast2seq
 
 PRE_LIBS = -lblastxx
 
-LIB = xobjread xobjutil xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
-		dbapi_driver xser xutil xconnect xncbi
+LIB = xobjread xobjutil $(OBJMGR_LIBS)
 
 ## If you need the C toolkit...
 #LIBS     = $(NCBI_C_LIBPATH) -lblast -lncbiobj -lncbi $(ORIG_LIBS)
 #CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I../../include -I../
-LIBS     = -lblast $(ORIG_LIBS)
+LIBS     = -lblast $(NETWORK_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) -I../../include -I../
 LDFLAGS  = $(ORIG_LDFLAGS) $(BLAST_PROFILE) -L../ -L../../lib
 
