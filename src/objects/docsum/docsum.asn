@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.6 2000/12/05 17:06:35 sherry Exp $
+-- $Id: docsum.asn,v 1.7 2000/12/05 19:19:57 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.7  2000/12/05 19:19:57  kholodov
+-- Minor errors fixed
+--
 -- Revision 1.6  2000/12/05 17:06:35  sherry
 -- merged docsum.asn and export.asn in this version for a single data structure that can be populated as a brief-set (to emulate docsum.asn) or as a full-set for data exchange (to emulate exchange.asn)
 --
@@ -105,7 +108,7 @@ NSE-AssayList ::= SEQUENCE {			-- Table of batch characteristics for all batches
        		full-dump (1),			-- Complete set of records in dbSNP
         	from-query (2),			-- Set that satisfies query
         	single     (3) } ,		-- A single record
-	assay-list SET OF NSE-ASSAY 
+	assay-list SET OF NSE-Assay 
 }
 
 NSE-Assay ::= SEQUENCE {
