@@ -26,5 +26,5 @@ LIB = \
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD =
-CHECK_COPY = data
+# CHECK_CMD =
+# CHECK_COPY = data
