@@ -1207,7 +1207,6 @@ CObjectIStream* CId2Reader::x_OpenDataStream(const CID2_Reply_Data& data)
     else {
         in.reset(CObjectIStream::Create(format, *reader));
     }
-    SetSeqEntryReadHooks(*in);
     return in.release();
 }
 
@@ -1239,7 +1238,8 @@ void CId2Reader::x_ReadData(const CID2_Reply_Data& data,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "CId2Reader::x_ReadData(): unknown data type");
     }
-    in->ReadObject(object);
+    SetSeqEntryReadHooks(*in);
+    in->Read(object);
     if ( GetDebugLevel() >= eTraceBlob ) {
         CDebugPrinter s;
         s << "Data contents: " << MSerial_AsnText << object;
@@ -1254,11 +1254,14 @@ void CId2Reader::x_ReadSNPData(CTSE_Info& tse, const CID2_Reply_Data& data)
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "CId2Reader::x_ReadSNPData(): Seq-entry expected");
     }
-#if 0
-    CRef<CSeq_annot_SNP_Info> snp_info(new CSeq_annot_SNP_Info);
-    CSeq_annot_SNP_Info_Reader::Parse(in, *entry, *snp_info);
+#if 1
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    CSeq_annot_SNP_Info_Reader::TSNP_InfoMap snps;
+    CSeq_annot_SNP_Info_Reader::Parse(*in, *entry, snps);
+    tse.SetSeq_entry(*entry, snps);
 #else
     CRef<CSeq_entry> entry(new CSeq_entry);
+    SetSeqEntryReadHooks(*in);
     *in >> *entry;
     if ( GetDebugLevel() >= eTraceBlob ) {
         CDebugPrinter s;

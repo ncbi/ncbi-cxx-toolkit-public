@@ -629,23 +629,14 @@ void CId1Reader::GetTSEBlob(CTSE_Info& tse_info,
                             TConn conn)
 {
     CID1server_back id1_reply;
-    GetSeq_entry(id1_reply, blob_id, conn);
-    SetSeq_entry(tse_info, id1_reply);
-}
-
-
-CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CBlob_id& blob_id,
-                                                  TConn conn)
-{
-    CRef<CSeq_annot_SNP_Info> ret(new CSeq_annot_SNP_Info);
-
-    x_GetSNPAnnot(*ret, blob_id, conn);
-
-    return ret;
+    TSNP_InfoMap snps;
+    GetSeq_entry(id1_reply, snps, blob_id, conn);
+    SetSeq_entry(tse_info, id1_reply, snps);
 }
 
 
 void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
+                              TSNP_InfoMap& snps,
                               const CBlob_id& blob_id,
                               TConn conn)
 {
@@ -662,8 +653,16 @@ void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
         size_t size;
         {{
             CObjectIStreamAsnBinary obj_stream(*stream);
-            CReader::SetSeqEntryReadHooks(obj_stream);
+#ifdef GENBANK_USE_SNP_SATELLITE_15
             x_ReadBlobReply(id1_reply, obj_stream, blob_id);
+#else
+            if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+                x_ReadBlobReply(id1_reply, snps, obj_stream, blob_id);
+            }
+            else {
+                x_ReadBlobReply(id1_reply, obj_stream, blob_id);
+            }
+#endif
             size = obj_stream.GetStreamOffset();
         }}
 #ifdef ID1_COLLECT_STATS
@@ -682,7 +681,8 @@ void CId1Reader::GetSeq_entry(CID1server_back& id1_reply,
 
 
 void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
-                              CID1server_back& id1_reply)
+                              CID1server_back& id1_reply,
+                              const TSNP_InfoMap& snps)
 {
     CRef<CSeq_entry> seq_entry;
     CTSE_Info::ESuppression_Level suppression = CTSE_Info::eSuppression_none;
@@ -735,7 +735,7 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
         // no data
         NCBI_THROW(CLoaderException, eLoaderFailed, "bad ID1server-back type");
     }
-    tse_info.SetSeq_entry(*seq_entry);
+    tse_info.SetSeq_entry(*seq_entry, snps);
     TBlobVersion version = x_GetVersion(id1_reply);
     if ( version >= 0 ) {
         tse_info.SetBlobVersion(version);
@@ -770,7 +770,17 @@ void CId1Reader::x_ReadBlobReply(CID1server_back& reply,
                                  CObjectIStream& stream,
                                  const CBlob_id& /*blob_id*/)
 {
+    CReader::SetSeqEntryReadHooks(stream);
     stream >> reply;
+}
+
+
+void CId1Reader::x_ReadBlobReply(CID1server_back& reply,
+                                 TSNP_InfoMap& snps,
+                                 CObjectIStream& stream,
+                                 const CBlob_id& /*blob_id*/)
+{
+    CSeq_annot_SNP_Info_Reader::Parse(stream, Begin(reply), snps);
 }
 
 
@@ -790,10 +800,10 @@ static void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
 }
 
 
-void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
-                               const CBlob_id& blob_id,
-                               TConn conn)
+CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CBlob_id& blob_id,
+                                                  TConn conn)
 {
+    CRef<CSeq_annot_SNP_Info> snp_annot_info;
 #ifdef ID1_COLLECT_STATS
     CStopWatch sw(CollectStatistics());
     try {
@@ -816,13 +826,13 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
             {{
                 CObjectIStreamAsnBinary in(src2);
                 
-                CSeq_annot_SNP_Info_Reader::Parse(in, snp_info);
+                snp_annot_info = CSeq_annot_SNP_Info_Reader::ParseAnnot(in);
             }}
 
 #ifdef ID1_COLLECT_STATS
             size = src2.GetCompressedSize();
 #endif
-        
+            
             Id1ReaderSkipBytes(src, kSkipFooter);
         }}
 
@@ -838,6 +848,7 @@ void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
         throw;
     }
 #endif
+    return snp_annot_info;
 }
 
 

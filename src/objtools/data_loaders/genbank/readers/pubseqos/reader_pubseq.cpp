@@ -50,6 +50,7 @@
 #include <corelib/plugin_manager_impl.hpp>
 
 #include <serial/objostrasn.hpp>
+#include <serial/iterator.hpp>
 
 #include <util/compress/reader_zlib.hpp>
 
@@ -63,6 +64,7 @@ BEGIN_SCOPE(objects)
 static CAtomicCounter s_pubseq_readers;
 #endif
 
+#ifdef _DEBUG
 static int s_GetDebugLevel(void)
 {
     const char* env = getenv("GENBANK_PUBSEQOS_DEBUG");
@@ -77,7 +79,6 @@ static int s_GetDebugLevel(void)
     }
 }
 
-#ifdef _DEBUG
 static int GetDebugLevel(void)
 {
     static int ret = s_GetDebugLevel();
@@ -360,7 +361,7 @@ void CPubseqReader::GetTSEBlob(CTSE_Info& tse_info,
     CDB_Connection* db_conn = x_GetConnection(conn);
     auto_ptr<CDB_RPCCmd> cmd(x_SendRequest(blob_id, db_conn));
     auto_ptr<CDB_Result> result(x_ReceiveData(*cmd));
-    x_ReceiveMainBlob(tse_info, *result);
+    x_ReceiveMainBlob(tse_info, blob_id, *result);
 }
 
 
@@ -440,27 +441,40 @@ CDB_Result* CPubseqReader::x_ReceiveData(CDB_RPCCmd& cmd)
 }
 
 
-void CPubseqReader::x_ReceiveMainBlob(CTSE_Info& tse_info, CDB_Result& result)
+void CPubseqReader::x_ReceiveMainBlob(CTSE_Info& tse_info,
+                                      const CBlob_id& blob_id,
+                                      CDB_Result& result)
 {
+    CSeq_annot_SNP_Info_Reader::TSNP_InfoMap snps;
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
 
     CResultBtSrcRdr reader(&result);
     CObjectIStreamAsnBinary in(reader);
     
+#ifdef GENBANK_USE_SNP_SATELLITE_15
     CReader::SetSeqEntryReadHooks(in);
     in >> *seq_entry;
+#else
+    if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+        CSeq_annot_SNP_Info_Reader::Parse(in, Begin(*seq_entry), snps);
+    }
+    else {
+        CReader::SetSeqEntryReadHooks(in);
+        in >> *seq_entry;
+    }
+#endif
 
     if ( GetDebugLevel() >= 8 ) {
         NcbiCout << MSerial_AsnText << *seq_entry;
     }
 
-    tse_info.SetSeq_entry(*seq_entry);
+    tse_info.SetSeq_entry(*seq_entry, snps);
 }
 
 
 CRef<CSeq_annot_SNP_Info> CPubseqReader::x_ReceiveSNPAnnot(CDB_Result& result)
 {
-    CRef<CSeq_annot_SNP_Info> snp_annot_info(new CSeq_annot_SNP_Info);
+    CRef<CSeq_annot_SNP_Info> snp_annot_info;
     
     {{
         CResultBtSrcRdr src(&result);
@@ -468,7 +482,7 @@ CRef<CSeq_annot_SNP_Info> CPubseqReader::x_ReceiveSNPAnnot(CDB_Result& result)
         
         CObjectIStreamAsnBinary in(src2);
         
-        CSeq_annot_SNP_Info_Reader::Parse(in, *snp_annot_info);
+        snp_annot_info = CSeq_annot_SNP_Info_Reader::ParseAnnot(in);
     }}
     
     return snp_annot_info;

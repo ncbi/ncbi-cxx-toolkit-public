@@ -65,6 +65,7 @@
 #include <objects/id2/ID2_Reply_Data.hpp>
 
 #include <serial/serial.hpp>
+#include <serial/iterator.hpp>
 
 #include <stdio.h>
 
@@ -203,6 +204,12 @@ const char* CCachedId1Reader::GetBlobVersionSubkey(void) const
 const char* CCachedId1Reader::GetSeqEntrySubkey(void) const
 {
     return "Seq-entry";
+}
+
+
+const char* CCachedId1Reader::GetSeqEntryWithSNPSubkey(void) const
+{
+    return "Seq-entry+SNP";
 }
 
 
@@ -527,18 +534,33 @@ void CCachedId1Reader::GetTSEBlob(CTSE_Info& tse_info,
             version = TParent::GetVersion(blob_id, conn);
             StoreVersion(key, version);
         }
-        if ( LoadSplitBlob(tse_info, key, version) ||
-             LoadWholeBlob(tse_info, key, version) ) {
+        if ( LoadSplitBlob(tse_info, key, version) ) {
             return;
         }
+#if GENBANK_USE_SNP_SATELLITE_15
+        if ( LoadWholeBlob(tse_info, key, version) ) {
+            return;
+        }
+#else
+        if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+            if ( LoadSNPBlob(tse_info, key, version) ) {
+                return;
+            }
+        }
+        else {
+            if ( LoadWholeBlob(tse_info, key, version) ) {
+                return;
+            }
+        }
+#endif
     }
     TParent::GetTSEBlob(tse_info, blob_id, conn);
 }
 
 
-void CCachedId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
-                                     const CBlob_id& blob_id,
-                                     TConn conn)
+CRef<CSeq_annot_SNP_Info>
+CCachedId1Reader::GetSNPAnnot(const CBlob_id& blob_id,
+                              TConn conn)
 {
     if ( m_BlobCache ) {
         string key = GetBlobKey(blob_id);
@@ -547,20 +569,21 @@ void CCachedId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
             version = TParent::GetVersion(blob_id, conn);
             StoreVersion(key, version);
         }
-        if ( LoadSNPTable(snp_info, key, version) ) {
-            return;
+        CRef<CSeq_annot_SNP_Info> snp_annot_info = LoadSNPTable(key, version);
+        if ( snp_annot_info ) {
+            return snp_annot_info;
         }
 
-        snp_info.Reset();
         // load SNP table from GenBank
-        TParent::x_GetSNPAnnot(snp_info, blob_id, conn);
+        snp_annot_info = TParent::GetSNPAnnot(blob_id, conn);
         
         // and store SNP table in cache
-        StoreSNPTable(snp_info, key, version);
+        StoreSNPTable(*snp_annot_info, key, version);
 
-        return;
+        return snp_annot_info;
     }
-    TParent::x_GetSNPAnnot(snp_info, blob_id, conn);
+
+    return TParent::GetSNPAnnot(blob_id, conn);
 }
 
 
@@ -711,7 +734,7 @@ bool CCachedId1Reader::LoadWholeBlob(CTSE_Info& tse_info,
         }
 
         CIRByteSourceReader rd(reader.get());
-        
+
         {{
             CObjectIStreamAsnBinary in(rd);
             CReader::SetSeqEntryReadHooks(in);
@@ -739,7 +762,8 @@ bool CCachedId1Reader::LoadWholeBlob(CTSE_Info& tse_info,
         return false;
     }
 
-    TParent::SetSeq_entry(tse_info, id1_reply);
+    CSeq_annot_SNP_Info_Reader::TSNP_InfoMap snps;
+    TParent::SetSeq_entry(tse_info, id1_reply, snps);
 
     // everything is fine
     return true;
@@ -764,14 +788,38 @@ void CCachedId1Reader::x_ReadBlobReply(CID1server_back& reply,
 {
     if ( m_BlobCache ) {
         CStreamDelayBufferGuard guard(stream);
-        stream >> reply;
+        TParent::x_ReadBlobReply(reply, stream, blob_id);
         string key = GetBlobKey(blob_id);
         TBlobVersion version = x_GetVersion(reply);
         StoreVersion(key, version);
         StoreBlob(key, version, guard.EndDelayBuffer());
     }
     else {
-        stream >> reply;
+        TParent::x_ReadBlobReply(reply, stream, blob_id);
+    }
+}
+
+
+void CCachedId1Reader::x_ReadBlobReply(CID1server_back& reply,
+                                       TSNP_InfoMap& snps,
+                                       CObjectIStream& stream,
+                                       const CBlob_id& blob_id)
+{
+    if ( m_BlobCache ) {
+        CStreamDelayBufferGuard guard(stream);
+        TParent::x_ReadBlobReply(reply, snps, stream, blob_id);
+        string key = GetBlobKey(blob_id);
+        TBlobVersion version = x_GetVersion(reply);
+        StoreVersion(key, version);
+        if ( snps.empty() ) {
+            StoreBlob(key, version, guard.EndDelayBuffer());
+        }
+        else {
+            StoreSNPBlob(key, version, reply, snps);
+        }
+    }
+    else {
+        TParent::x_ReadBlobReply(reply, snps, stream, blob_id);
     }
 }
 
@@ -845,9 +893,115 @@ void CCachedId1Reader::StoreBlob(const string& key, TBlobVersion version,
 }
 
 
-bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
-                                    const string& key, TBlobVersion version)
+void CCachedId1Reader::StoreSNPBlob(const string& key, TBlobVersion version,
+                                    const CID1server_back& reply,
+                                    const TSNP_InfoMap& snps)
 {
+
+#ifdef ID1_COLLECT_STATS
+    CStopWatch sw(CollectStatistics());
+#endif
+
+    try {
+        auto_ptr<IWriter> writer(
+            m_BlobCache->GetWriteStream(key, version,
+                                        GetSeqEntryWithSNPSubkey()));
+        if ( !writer.get() ) {
+            return;
+        }
+
+        {{
+            CWStream stream(writer.get());
+            CSeq_annot_SNP_Info_Reader::Write(stream, Begin(reply), snps);
+        }}
+        writer->Flush();
+        writer.reset();
+        
+#ifdef ID1_COLLECT_STATS
+        size_t size = m_BlobCache->GetSize(key, version,
+                                           GetSeqEntryWithSNPSubkey());
+        if ( CollectStatistics() ) {
+            LogStat("CId1Cache: store SNP blob", key, snp_store, sw, size);
+        }
+#endif
+        // everything is fine
+        return;
+    }
+    catch ( ... ) {
+        // In case of an error we need to remove incomplete BLOB
+        // from the cache.
+        try {
+            m_BlobCache->Remove(key);
+        }
+        catch ( exception& /*exc*/ ) {
+            // ignored
+        }
+#ifdef ID1_COLLECT_STATS
+        if ( CollectStatistics() ) {
+            LogStat("CId1Cache: fail SNP blob", key, snp_store, sw, 0);
+        }
+#endif
+        // ignore cache write error - it doesn't affect application
+    }
+}
+
+
+bool CCachedId1Reader::LoadSNPBlob(CTSE_Info& tse_info,
+                                   const string& key, TBlobVersion version)
+{
+#ifdef ID1_COLLECT_STATS
+    CStopWatch sw(CollectStatistics());
+#endif
+
+    CID1server_back id1_reply;
+    CSeq_annot_SNP_Info_Reader::TSNP_InfoMap snps;
+
+    try {
+        auto_ptr<IReader> reader(
+            m_BlobCache->GetReadStream(key, version,
+                                       GetSeqEntryWithSNPSubkey()));
+        if ( !reader.get() ) {
+            return false;
+        }
+
+        {{
+            CRStream stream(reader.get());
+            CSeq_annot_SNP_Info_Reader::Read(stream, Begin(id1_reply), snps);
+        }}
+        
+#ifdef ID1_COLLECT_STATS
+        size_t size = m_BlobCache->GetSize(key, version,
+                                           GetSeqEntryWithSNPSubkey());
+        if ( CollectStatistics() ) {
+            LogStat("CId1Cache: load SNP blob", key, snp_load, sw, size);
+        }
+#endif
+
+    }
+    catch ( exception& exc ) {
+        ERR_POST("CId1Cache:LoadSNPBlob: "
+                 "Exception: " << key << ": " << exc.what());
+
+#ifdef ID1_COLLECT_STATS
+        if ( CollectStatistics() ) {
+            LogStat("CId1Cache: fail SNP blob", key, snp_load, sw, 0);
+        }
+#endif
+
+        return false;
+    }
+
+    TParent::SetSeq_entry(tse_info, id1_reply, snps);
+
+    // everything is fine
+    return true;
+}
+
+
+CRef<CSeq_annot_SNP_Info>
+CCachedId1Reader::LoadSNPTable(const string& key, TBlobVersion version)
+{
+    CRef<CSeq_annot_SNP_Info> snp_annot_info;
 #ifdef ID1_COLLECT_STATS
     CStopWatch sw(CollectStatistics());
 #endif
@@ -856,12 +1010,13 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
         auto_ptr<IReader> reader(
             m_BlobCache->GetReadStream(key, version, GetSNPTableSubkey()));
         if ( !reader.get() ) {
-            return false;
+            return snp_annot_info;
         }
         CRStream stream(reader.get());
 
+        snp_annot_info = new CSeq_annot_SNP_Info;
         // table
-        CSeq_annot_SNP_Info_Reader::Read(stream, snp_info);
+        CSeq_annot_SNP_Info_Reader::Read(stream, *snp_annot_info);
 
 #ifdef ID1_COLLECT_STATS
         if ( CollectStatistics() ) {
@@ -870,12 +1025,12 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
         }
 #endif
 
-        return true;
+        return snp_annot_info;
     }
     catch ( exception& exc ) {
         ERR_POST("CId1Cache:LoadSNPTable: "
                  "Exception: "<<key<<": "<< exc.what());
-        snp_info.Reset();
+        snp_annot_info.Reset();
 
 #ifdef ID1_COLLECT_STATS
         if ( CollectStatistics() ) {
@@ -883,7 +1038,7 @@ bool CCachedId1Reader::LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
         }
 #endif
 
-        return false;
+        return snp_annot_info;
     }
 }
 

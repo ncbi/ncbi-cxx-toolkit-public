@@ -81,7 +81,9 @@ private:
                               CDB_Connection* db_conn);
     CDB_Result* x_ReceiveData(CDB_RPCCmd& cmd);
 
-    void x_ReceiveMainBlob(CTSE_Info& tse_info, CDB_Result& result);
+    void x_ReceiveMainBlob(CTSE_Info& tse_info,
+                           const CBlob_id& blob_id,
+                           CDB_Result& result);
     CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CDB_Result& result);
     
     string                    m_Server;

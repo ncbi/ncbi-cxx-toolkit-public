@@ -74,6 +74,7 @@ public:
 
     /// BLOB cache subkeys:
     const char* GetSeqEntrySubkey(void) const;
+    const char* GetSeqEntryWithSNPSubkey(void) const;
     const char* GetSNPTableSubkey(void) const;
     const char* GetSkeletonSubkey(void) const;
     const char* GetSplitInfoSubkey(void) const;
@@ -131,10 +132,11 @@ public:
     bool LoadSplitBlob(CTSE_Info& tse_info,
                        const string& key, TBlobVersion version);
 
-    bool LoadSNPTable(CSeq_annot_SNP_Info& snp_info,
-                      const string& key, TBlobVersion version);
+    CRef<CSeq_annot_SNP_Info> LoadSNPTable(const string& key,
+                                           TBlobVersion version);
     void StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
-                       const string& key, TBlobVersion version);
+                       const string& key,
+                       TBlobVersion version);
 
     size_t LoadData(const string& key, TBlobVersion version,
                     const string& subkey,
@@ -168,9 +170,8 @@ protected:
                         const string& subkey,
                         const int& value);
     
-    void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
-                       const CBlob_id& blob_id,
-                       TConn conn);
+    CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
+                                          TConn conn);
 
     void x_ReadTSEBlob(CID1server_back& id1_reply,
                        const CBlob_id&  blob_id,
@@ -181,9 +182,19 @@ protected:
     void x_ReadBlobReply(CID1server_back& reply,
                          CObjectIStream& stream,
                          const CBlob_id& blob_id);
+    void x_ReadBlobReply(CID1server_back& reply,
+                         TSNP_InfoMap& snps,
+                         CObjectIStream& stream,
+                         const CBlob_id& blob_id);
 
     void StoreBlob(const string& key, TBlobVersion version,
                    CRef<CByteSource> bytes);
+
+    void StoreSNPBlob(const string& key, TBlobVersion version,
+                      const CID1server_back& reply,
+                      const TSNP_InfoMap& snps);
+    bool LoadSNPBlob(CTSE_Info& tse_info,
+                     const string& key, TBlobVersion version);
 
     CObjectIStream* OpenData(CID2_Reply_Data& data);
 

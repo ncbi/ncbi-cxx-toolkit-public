@@ -31,6 +31,7 @@
 */
 
 #include <objtools/data_loaders/genbank/reader.hpp>
+#include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -86,9 +87,14 @@ public:
     virtual CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CBlob_id& blob_id,
                                                   TConn conn);
 
-    void GetSeq_entry(CID1server_back& id1_reply, const CBlob_id& blob_id,
+    typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;
+    void GetSeq_entry(CID1server_back& id1_reply,
+                      TSNP_InfoMap& snps,
+                      const CBlob_id& blob_id,
                       TConn conn);
-    void SetSeq_entry(CTSE_Info& tse_info, CID1server_back& id1_reply);
+    void SetSeq_entry(CTSE_Info& tse_info,
+                      CID1server_back& id1_reply,
+                      const TSNP_InfoMap& snps);
 
 protected:
     CConn_ServiceStream* x_GetConnection(TConn conn);
@@ -119,10 +125,6 @@ protected:
                         CStopWatch& sw,
                         size_t size);
 
-    virtual void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
-                               const CBlob_id&      blob_id,
-                               TConn                conn);
-
     void x_ResolveId(CID1server_back& id1_reply,
                      const CID1server_request& id1_request,
                      TConn conn);
@@ -140,6 +142,10 @@ protected:
     virtual void x_SetBlobRequest(CID1server_request& request,
                                   const CBlob_id& blob_id);
     virtual void x_ReadBlobReply(CID1server_back& reply,
+                                 CObjectIStream& stream,
+                                 const CBlob_id& blob_id);
+    virtual void x_ReadBlobReply(CID1server_back& reply,
+                                 TSNP_InfoMap& snps,
                                  CObjectIStream& stream,
                                  const CBlob_id& blob_id);
     TBlobVersion x_GetVersion(const CID1server_back& reply);
