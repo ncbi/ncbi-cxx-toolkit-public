@@ -1,4 +1,4 @@
---$Revision: 6.6 $
+--$Revision: 6.7 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -477,6 +477,9 @@ SubSource ::= SEQUENCE {
         country (23) ,
         segment (24) ,
         endogenous-virus-name (25) ,
+        transgenic (26) ,
+        environmental-sample (27) ,
+        isolation-source (28) ,
         other (255) } ,
     name VisibleString ,
     attrib VisibleString OPTIONAL }    -- attribution/source of this name
