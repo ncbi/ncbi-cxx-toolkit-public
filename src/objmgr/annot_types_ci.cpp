@@ -819,20 +819,22 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
             }
         }
     }
-    if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-        if ( m_SortOrder == eSortOrder_Normal ) {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Less());
+    if (m_SortOrder != eSortOrder_None) {
+        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+            if ( m_SortOrder == eSortOrder_Normal ) {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Less());
+            }
+            else {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Reverse_Less());
+            }
         }
         else {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Reverse_Less());
-        }
-    }
-    else {
-        if ( m_SortOrder == eSortOrder_Normal ) {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Less());
-        }
-        else {
-            sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Reverse_Less());
+            if ( m_SortOrder == eSortOrder_Normal ) {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Less());
+            }
+            else {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Reverse_Less());
+            }
         }
     }
     Rewind();
@@ -1029,6 +1031,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/06/17 20:34:04  grichenk
+* Added flag to ignore sorting
+*
 * Revision 1.69  2003/06/13 17:22:54  grichenk
 * Protected against multi-ID seq-locs
 *

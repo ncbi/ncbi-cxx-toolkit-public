@@ -120,6 +120,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     };
     // Flag to indicate sorting method
     enum ESortOrder {
+        eSortOrder_None,    // do not sort annotations for faster retrieval
         eSortOrder_Normal,  // default - increasing start, decreasing length
         eSortOrder_Reverse  // decresing end, decreasing length
     };
@@ -306,6 +307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/06/17 20:34:02  grichenk
+* Added flag to ignore sorting
+*
 * Revision 1.10  2003/04/28 14:59:58  vasilche
 * Added missing initialization.
 *
