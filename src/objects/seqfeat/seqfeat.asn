@@ -1,4 +1,4 @@
---$Revision: 1.11 $
+--$Revision: 1.12 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -313,7 +313,7 @@ END
 --  Transcription Initiation Site Feature Data Block
 --  James Ostell, 1991
 --  Philip Bucher, David Ghosh
---  version 1.0
+--  version 1.1
 --
 --  
 --
@@ -366,6 +366,7 @@ Tx-evidence ::= SEQUENCE {
         pe-map (7) ,    -- primer extension mapping with homologous sequence ladder    
         pe-size (8) ,   -- primer extension product length measurement
         pseudo-seq (9) , -- full-length processed pseudogene sequencing
+		rev-pe-map (10) ,   -- see NOTE (1) below
         other (255) } ,
     expression-system ENUMERATED {
         unknown (0) ,
@@ -378,6 +379,11 @@ Tx-evidence ::= SEQUENCE {
     low-prec-data BOOLEAN DEFAULT FALSE ,
     from-homolog BOOLEAN DEFAULT FALSE }     -- experiment actually done on
                                              --  close homolog
+
+	-- NOTE (1) length measurement of a reverse direction primer-extension
+	--			product (blocked  by  RNA  5'end)  by  comparison with
+	--			homologous sequence ladder (J. Mol. Biol. 199, 587)
+
     
 END
 
