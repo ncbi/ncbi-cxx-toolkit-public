@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/10/28 22:43:17  vakatov
+* Catch the "strstrea.h" case(MSVC++ feature)
+*
 * Revision 1.2  1998/10/27 20:10:02  vakatov
 * Catch the case of missing iostream header(s)
 *
@@ -54,10 +57,16 @@
 #  include <fstream>
 #  include <strstream>
 #  define IO_PREFIX std
+
 #elif defined(HAVE_IOSTREAM_H)
 #  include <fstream.h>
-#  include <strstream.h>
+#  if defined(HAVE_STRSTREA_H)
+#    include <strstrea.h>
+#  else
+#    include <strstream.h>
+#  endif
 #  define IO_PREFIX
+
 #else
 #  error "Cannot find neither <iostream> nor <iostream.h>!"
 #endif
