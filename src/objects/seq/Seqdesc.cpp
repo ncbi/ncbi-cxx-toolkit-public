@@ -135,10 +135,10 @@ void CSeqdesc::GetLabel(string* const label, ELabelType label_type) const
     if (!label) {
         return;
     }
-    
+
     // Get type name for choice of this CSeqdesc object
     string name = SelectionName(Which());
-    
+
     // Append label based on label_type
     switch (label_type) {
     case eBoth:
@@ -150,7 +150,7 @@ void CSeqdesc::GetLabel(string* const label, ELabelType label_type) const
         (*label) += name;
         return;
     }
-} 
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -161,6 +161,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2002/10/03 19:09:42  clausen
+* Removed extra whitespace
+*
 * Revision 6.1  2002/10/03 16:50:56  clausen
 * Added GetLabel()
 *

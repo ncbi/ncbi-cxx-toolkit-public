@@ -66,7 +66,7 @@ public:
     CSeq_loc(void);
     // destructor
     virtual ~CSeq_loc(void);
-    
+
     // See related functions in util/sequence.hpp:
     //
     //   TSeqPos GetLength(const CSeq_loc&, CScope*)
@@ -77,7 +77,7 @@ public:
     //
 
     typedef CRange<TSeqPos> TRange;
-    
+
     TRange GetTotalRange(void) const;
 
     // Appends a label suitable for display (e.g., error messages)
@@ -85,15 +85,15 @@ public:
     // Method just returns if label is null. Note this label is NOT
     // GenBank-style.
     void GetLabel(string* label) const;
-    
+
     // check left (5') or right (3') end of location for e_Lim fuzz
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
-        
+
 private:
     // Prohibit copy constructor & assignment operator
     CSeq_loc(const CSeq_loc&);
-    CSeq_loc& operator= (const CSeq_loc&);    
+    CSeq_loc& operator= (const CSeq_loc&);
 };
 
 
@@ -130,7 +130,7 @@ public:
     bool           IsEmpty(void) const;
     // True if the current location is a single point
     bool           IsPoint(void) const;
-    
+
 private:
     // Check the iterator position
     bool x_IsValid(void) const;
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/10/03 18:49:05  clausen
+ * Removed extra whitespace
+ *
  * Revision 1.12  2002/10/03 16:37:39  clausen
  * Added GetLabel()
  *

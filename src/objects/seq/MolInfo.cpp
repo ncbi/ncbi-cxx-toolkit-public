@@ -57,7 +57,7 @@ void CMolInfo::GetLabel(string* label) const
     if (!label) {
         return;
     }
-    
+
     // build label
     const CEnumeratedTypeValues* tv;
     string sep = label->empty() ? "" : ",";
@@ -72,16 +72,16 @@ void CMolInfo::GetLabel(string* label) const
         tv = GetTypeInfo_enum_ETech();
         (*label) += sep + tv->FindName(tech, true);
         sep = ",";
-    }    
+    }
     if (IsSetTechexp()) {
         (*label) += sep + GetTechexp();
         sep = ",";
-    }    
+    }
     if (IsSetCompleteness()) {
         ECompleteness comp = static_cast<ECompleteness>(GetCompleteness());
         tv = GetTypeInfo_enum_ECompleteness();
         (*label) += sep + tv->FindName(comp, true);
-    }       
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -93,6 +93,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2002/10/03 19:08:36  clausen
+* Removed extra whitespace
+*
 * Revision 6.1  2002/10/03 16:56:19  clausen
 * Added GetLabel()
 *

@@ -55,7 +55,7 @@ public:
     CUser_object(void);
     // destructor
     ~CUser_object(void);
-    
+
     // Append a label to label base on content
     void GetLabel(string* label) const;
 
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/10/03 19:01:02  clausen
+* Removed extra whitespace
+*
 * Revision 1.1  2002/10/03 17:00:33  clausen
 * Added GetLabel()
 *

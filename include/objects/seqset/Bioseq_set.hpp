@@ -56,16 +56,16 @@ public:
     CBioseq_set(void);
     // destructor
     ~CBioseq_set(void);
-    
+
     enum ELabelType {
         eType,
         eContent,
         eBoth
     };
-    
+
     // Append a label to label based on type or content of CBioseq_set
     void GetLabel(string* label, ELabelType type) const;
-    
+
 private:
     // Prohibit copy constructor & assignment operator
     CBioseq_set(const CBioseq_set&);
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/10/03 18:58:33  clausen
+ * Removed extra whitespace
+ *
  * Revision 1.15  2002/10/03 17:19:23  clausen
  * Added GetLabel()
  *

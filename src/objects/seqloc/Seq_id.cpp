@@ -155,15 +155,15 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 
 
 static const char* const s_TextId[20] = {   // FASTA_LONG formats
-    "???" , // not-set = ??? 
-    "lcl",  // local = lcl|integer or string 
-    "bbs",  // gibbsq = bbs|integer 
-    "bbm",  // gibbmt = bbm|integer 
-    "gim",  // giim = gim|integer 
+    "???" , // not-set = ???
+    "lcl",  // local = lcl|integer or string
+    "bbs",  // gibbsq = bbs|integer
+    "bbm",  // gibbmt = bbm|integer
+    "gim",  // giim = gim|integer
     "gb", // genbank = gb|accession|locus
-    "emb",  // embl = emb|accession|locus 
+    "emb",  // embl = emb|accession|locus
     "pir",  // pir = pir|accession|name
-    "sp", // swissprot = sp|accession|name 
+    "sp", // swissprot = sp|accession|name
     "pat",  // patent = pat|country|patent number (string)|seq number (integer)
     "ref",  // other = ref|accession|name|release - changed from oth to ref
     "gnl",  // general = gnl|database(string)|id (string or number)
@@ -477,10 +477,10 @@ CSeq_id::CSeq_id( const string& the_id )
     getline(myin, the_type_in, '|');
     // Remove spaces from front and back of the_type_in
     string the_type_use = NStr::TruncateSpaces(the_type_in, NStr::eTrunc_Both);
-   
+
     // Determine the type from the string
     CSeq_id_Base::E_Choice the_type = WhichInverseSeqId(the_type_use.c_str());
-   
+
     // Construct according to type
     if ( the_type == CSeq_id::e_Local ) {
         getline( myin, acc_in ); // take rest
@@ -493,7 +493,7 @@ CSeq_id::CSeq_id( const string& the_id )
 
     if ( the_type == CSeq_id::e_General  ||  the_type == CSeq_id::e_Pdb ) {
         //Take the rest of the line
-        getline( myin, name_in ); 
+        getline( myin, name_in );
         x_Init( the_type, acc_in, name_in );
         return;
     }
@@ -503,13 +503,13 @@ CSeq_id::CSeq_id( const string& the_id )
             getline(myin, release_in, '|');
         }
     }
-  
+
     string version = NStr::TruncateSpaces( version_in, NStr::eTrunc_Both );
     int ver = 0;
 
     if ( ! version.empty() ) {
         if ( (ver = NStr::StringToNumeric(version) ) < 0) {
-            THROW1_TRACE(invalid_argument, 
+            THROW1_TRACE(invalid_argument,
                          "Unexpected non-numeric version: " +
                          version +
                          "\nthe_id: " + the_id);
@@ -533,13 +533,13 @@ CSeq_id::CSeq_id
 
     if ( !version.empty() ) {
         if ( (ver = NStr::StringToNumeric(version)) < 0 ) {
-            THROW1_TRACE(invalid_argument, 
+            THROW1_TRACE(invalid_argument,
                          "Unexpected non-numeric version. "
-                         "\nthe_type = " + string(s_TextId[the_type]) + 
+                         "\nthe_type = " + string(s_TextId[the_type]) +
                          "\nacc_in = " + acc_in +
                          "\nname_in = " + name_in +
                          "\version_in = " + version_in +
-                         "\nrelease_in = " + release_in);  
+                         "\nrelease_in = " + release_in);
         }
     }
 
@@ -557,7 +557,7 @@ static void s_InitThrow
 {
     THROW1_TRACE(invalid_argument,
                  "CSeq_id:: " + message +
-                 "\ntype      = " + type + 
+                 "\ntype      = " + type +
                  "\naccession = " + acc +
                  "\nname      = " + name +
                  "\nversion   = " + version +
@@ -636,10 +636,10 @@ CSeq_id::x_Init
         {
             CSeq_id::TLocal & loc = SetLocal();
             string::const_iterator it = acc.begin();
-  
+
             if ( (the_id = NStr::StringToNumeric(acc)) >= 0 && *it != '0' ) {
                 loc.SetId(the_id);
-            } else { // to cover case where embedded vertical bar in 
+            } else { // to cover case where embedded vertical bar in
                 // string, could add code here, to concat a
                 // '|' and name string, if not null/empty
                 loc.SetStr(acc);
@@ -665,7 +665,7 @@ CSeq_id::x_Init
         }
         break;
     case CSeq_id::e_Giim:
-        { 
+        {
             CGiimport_id &  giim = SetGiim();
             if ( (the_id =NStr::StringToNumeric (acc)) >= 0 ) {
                 giim.SetId(the_id);
@@ -796,7 +796,7 @@ CSeq_id::x_Init
                 pdb.SetChain(static_cast<unsigned char> (name.c_str()[0]));
             } else if ( name.compare("VB") == 0) {
                 pdb.SetChain('|');
-            } else if (name.size() == 2  && 
+            } else if (name.size() == 2  &&
                        name.c_str()[0] ==  name.c_str()[1]) {
                 pdb.SetChain( Locase(static_cast<unsigned char>
                                      (name.c_str()[0])) );
@@ -820,6 +820,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.37  2002/10/03 18:55:04  clausen
+ * Removed extra whitespace
+ *
  * Revision 6.36  2002/10/03 17:17:11  clausen
  * Added BestRank() and WorstRank()
  *

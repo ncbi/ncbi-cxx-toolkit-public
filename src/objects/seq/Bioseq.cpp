@@ -171,20 +171,20 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
         if (!worst) {
             id = GetId().begin()->GetPointer();
         } else {
-            const CSeq_id* wid = 
+            const CSeq_id* wid =
                 FindBestChoice(GetId(), CSeq_id::WorstRank).GetPointer();
             if (wid) {
                 CNcbiOstrstream wos;
                 wid->WriteAsFasta(wos);
                 string sid = CNcbiOstrstreamToString(wos);
                 CSeq_id worst_id(sid);
-                CTextseq_id* tid = 
+                CTextseq_id* tid =
                     const_cast<CTextseq_id*>(worst_id.GetTextseq_Id());
                 if (tid) {
                     tid->ResetAccession();
                 }
                 id = &worst_id;
-            }           
+            }
         }
         CNcbiOstrstream os;
         if (id) {
@@ -192,11 +192,11 @@ void CBioseq::GetLabel(string* label, ELabelType type, bool worst) const
             (*label) += CNcbiOstrstreamToString(os);
         }
     }
-    
+
     if (type == eContent) {
         return;
     }
-    
+
     (*label) += ": ";
     const CEnumeratedTypeValues* tv;
     tv = CSeq_inst::GetTypeInfo_enum_ERepr();
@@ -215,9 +215,9 @@ const CSeq_id* CBioseq::GetFirstId() const
     if (GetId().empty()) {
         return 0;
     }
-    
+
     return *GetId().begin();
-}    
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2002/10/03 19:07:31  clausen
+ * Removed extra whitespace
+ *
  * Revision 6.12  2002/10/03 16:57:50  clausen
  * Added GetLabel() and GetFirstId()
  *

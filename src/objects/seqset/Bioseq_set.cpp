@@ -106,23 +106,23 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
     if (!label) {
         return;
     }
-    
+
     // Get type label
     if (IsSetClass()  &&  type != eContent) {
         const CEnumeratedTypeValues* tv =
             CBioseq_set::GetTypeInfo_enum_EClass();
         const string& cn = tv->FindName(GetClass(), true);
         *label += cn;
-        
+
         if (type != eType) {
             *label += ": ";
         }
     }
-    
+
     if (type == eType) {
         return;
     }
-    
+
     // Loop through CBioseqs looking for the best one to use for a label
     bool best_is_na = false, best_has_gb = false, best_has_accession = false;
     const CBioseq* best = 0;
@@ -133,7 +133,7 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
             has_gb = has_gb ? true : s_has_gb(*ii);
             has_accession = has_accession ? true : s_has_accession(*ii);
         }
-        
+
         if (!best) {
             takeit = true;
         } else {
@@ -169,7 +169,7 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
                 takeit = true;
             }
         }
-        
+
         if (takeit) {
             best = &(*si);
             best_has_accession = has_accession;
@@ -177,7 +177,7 @@ void CBioseq_set::GetLabel(string* label, ELabelType type) const
             best_is_na = is_na;
         }
     }
-    
+
     // Add content to label.
     if (!best) {
         *label += "(No Bioseqs)";
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/10/03 18:57:12  clausen
+ * Removed extra whitespace
+ *
  * Revision 1.5  2002/10/03 17:18:19  clausen
  * Added GetLabel()
  *

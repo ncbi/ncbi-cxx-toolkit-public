@@ -76,16 +76,16 @@ public:
     // locations (intervals, points, whole-s etc.) and put into
     // ext::delta.
     CBioseq(const CSeq_loc& loc, string str_id = "");
-    
+
     enum ELabelType {
-        eType, 
+        eType,
         eContent,
         eBoth
     };
-    
+
     // Append a label to label for a CBioseq based on type, content or both
     void GetLabel(string* label, ELabelType type, bool worst = false) const;
-    
+
     const CSeq_id* GetFirstId() const;
 
 protected:
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/10/03 19:06:25  clausen
+ * Removed extra whitespace
+ *
  * Revision 1.13  2002/10/03 16:59:04  clausen
  * Added GetLabel() and GetFirstId()
  *

@@ -55,7 +55,7 @@ public:
     CMolInfo(void);
     // destructor
     ~CMolInfo(void);
-    
+
     // Append a label to label based on content
     void GetLabel(string* label) const;
 
@@ -89,6 +89,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/10/03 19:05:23  clausen
+* Removed extra whitespace
+*
 * Revision 1.1  2002/10/03 16:54:56  clausen
 * Added GetLabel()
 *

@@ -230,10 +230,10 @@ void s_GetLabel(const CSeq_id& id, string* label)
 
 
 // Append to label info for a CSeq_point
-inline 
+inline
 const CSeq_id* s_GetLabel
-(const CSeq_point& pnt, 
- const CSeq_id*    last_id, 
+(const CSeq_point& pnt,
+ const CSeq_id*    last_id,
  string*           label)
 {
     // If CSeq_id does not match last_id, then append id to label
@@ -241,11 +241,11 @@ const CSeq_id* s_GetLabel
         s_GetLabel(pnt.GetId(), label);
         *label += ":";
     }
-    
+
     // Add strand info to label
     *label += GetTypeInfo_enum_ENa_strand()
         ->FindName(pnt.GetStrand(), true);
-        
+
     if (pnt.IsSetFuzz()) {
         // Append Fuzz info to label
         pnt.GetFuzz().GetLabel(label, pnt.GetPoint());
@@ -253,9 +253,9 @@ const CSeq_id* s_GetLabel
         // Append 1 based point to label
         *label += NStr::IntToString(pnt.GetPoint()+1);
     }
-    
+
     // update last_id
-    last_id = &pnt.GetId();                
+    last_id = &pnt.GetId();
     return last_id;
 }
 
@@ -263,8 +263,8 @@ const CSeq_id* s_GetLabel
 // Append to label info for CSeq_interval
 inline
 const CSeq_id* s_GetLabel
-(const CSeq_interval& itval, 
- const CSeq_id*       last_id, 
+(const CSeq_interval& itval,
+ const CSeq_id*       last_id,
  string*              label)
 {
     if (!last_id || !last_id->Match(itval.GetId())) {
@@ -276,7 +276,7 @@ const CSeq_id* s_GetLabel
         *label += GetTypeInfo_enum_ENa_strand()
             ->FindName(itval.GetStrand(), true);
     }
-    if (itval.GetStrand() == eNa_strand_minus || 
+    if (itval.GetStrand() == eNa_strand_minus ||
         itval.GetStrand() == eNa_strand_both_rev) {
         if (itval.IsSetFuzz_to()) {
             itval.GetFuzz_to().GetLabel(label, itval.GetTo(), false);
@@ -311,7 +311,7 @@ const CSeq_id* s_GetLabel
 const CSeq_id* s_GetLabel
 (const CSeq_loc& loc,
  const CSeq_id*  last_id,
- string*         label, 
+ string*         label,
  bool            first = false);
 
 
@@ -324,12 +324,12 @@ const CSeq_id* s_GetLabel
 {
     bool first = true;
     iterate (list<CRef<CSeq_loc> >, it, loc_list) {
-        
+
         // Append to label for each CSeq_loc in list
         last_id = s_GetLabel(**it, last_id, label, first);
         first = false;
     }
-       
+
     return last_id;
 }
 
@@ -338,19 +338,19 @@ const CSeq_id* s_GetLabel
 const CSeq_id* s_GetLabel
 (const CSeq_loc& loc,
  const CSeq_id*  last_id,
- string*         label, 
+ string*         label,
  bool            first = false)
 {
     // Ensure label is not null
     if (!label) {
         return last_id;
     }
-    
+
     // Put a comma separator if necessary
     if (!first) {
         *label += ", ";
     }
-    
+
     // Loop through embedded CSeq_locs and create a label, depending on
     // type of CSeq_loc
     switch (loc.Which()) {
@@ -358,7 +358,7 @@ const CSeq_id* s_GetLabel
         *label += "~";
         break;
     case CSeq_loc::e_Empty:
-        *label += "{"; 
+        *label += "{";
         s_GetLabel(loc.GetEmpty(), label);
         last_id = &loc.GetEmpty();
         *label += "}";
@@ -476,7 +476,7 @@ bool CSeq_loc::IsPartialRight (void) const
 void CSeq_loc::GetLabel(string* label) const
 {
     s_GetLabel(*this, 0, label, true);
-}    
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.16  2002/10/03 18:53:03  clausen
+ * Removed extra whitespace
+ *
  * Revision 6.15  2002/10/03 16:36:09  clausen
  * Added GetLabel()
  *

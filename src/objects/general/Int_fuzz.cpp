@@ -93,20 +93,20 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
     default:
         break;
     }
-    
+
     if (lim  &&  lim != 'r') {
         (*label) += lim;
         lim = 0;
     }
-    
+
     if (right) {
         (*label) += NStr::IntToString(pos);
     }
-    
+
     if (lim == 'r') {
         (*label) += '^';
     }
-    
+
     if (!right) {
         (*label) += NStr::IntToString(pos);
     }
@@ -120,11 +120,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2002/10/03 19:11:02  clausen
+ * Removed extra whitespace
+ *
  * Revision 6.1  2002/10/03 16:47:26  clausen
  * Added GetLabel()
  *
  *
  * ===========================================================================
  */
- 
+
 /* Original file checksum: lines: 61, chars: 1885, CRC32: bf6aceba */

@@ -79,9 +79,9 @@ enum ECompare {
 TSeqPos GetLength(const CSeq_id& id, CScope* scope = 0);
 
 // Get length of sequence represented by CSeq_loc, if possible
-TSeqPos GetLength(const CSeq_loc& loc, CScope* scope = 0) 
+TSeqPos GetLength(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNoLength));
-    
+
 // Get length of CSeq_loc_mix == sum (length of embedded CSeq_locs)
 TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope = 0)
     THROWS((sequence::CNoLength));
@@ -115,19 +115,19 @@ const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope = 0)
 ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope = 0);
 
 // If only one CBioseq is represented by CSeq_loc, returns the lowest residue
-// position represented. If not null, scope is used to determine if two 
+// position represented. If not null, scope is used to determine if two
 // CSeq_ids represent the same CBioseq. Throws exception CNotUnique if
 // CSeq_loc does not represent one CBioseq.
 TSeqPos GetStart(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
 
 // If only one CBioseq is represented by CSeq_loc, returns the highest residue
-// position represented. If not null, scope is used to determine if two 
+// position represented. If not null, scope is used to determine if two
 // CSeq_ids represent the same CBioseq. Throws exception CNotUnique if
 // CSeq_loc does not represent one CBioseq.
 TSeqPos GetStop(const CSeq_loc& loc, CScope* scope = 0)
     THROWS((sequence::CNotUnique));
-    
+
 // Returns the sequence::ECompare containment relationship between CSeq_locs
 sequence::ECompare Compare(const CSeq_loc& loc1,
                            const CSeq_loc& loc2,
@@ -243,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/10/03 18:45:45  clausen
+* Removed extra whitespace
+*
 * Revision 1.6  2002/10/03 16:33:10  clausen
 * Added functions needed by validate
 *

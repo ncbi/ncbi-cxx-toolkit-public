@@ -55,15 +55,15 @@ public:
     CSeqdesc(void);
     // destructor
     ~CSeqdesc(void);
-    
+
     enum ELabelType {
         eType,
         eContent,
         eBoth
     };
-    
-    // Appends a label for a CSeqdesc to label. Label may be based on just the 
-    // type of CSeqdesc, just the content, or both. 
+
+    // Appends a label for a CSeqdesc to label. Label may be based on just the
+    // type of CSeqdesc, just the content, or both.
     void GetLabel(string* const label, ELabelType label_type) const;
 
 private:
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2002/10/03 19:04:17  clausen
+* Removed extra whitespace
+*
 * Revision 1.1  2002/10/03 16:52:55  clausen
 * Added GetLabel()
 *

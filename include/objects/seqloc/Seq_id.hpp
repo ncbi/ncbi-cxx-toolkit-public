@@ -61,7 +61,7 @@ public:
     //   TSeqPos GetLength(const CSeq_id&, CScope*);
     //   bool IsSameBioseq(const CSeq_id&, const CSeq_id&, CScope*);
     //
-     
+
     // Default constructor
     CSeq_id( void );
 
@@ -73,7 +73,7 @@ public:
     CSeq_id(CSeq_id_Base::E_Choice the_type,
             const string&          acc_in,  // see explanation in x_Init below
             const string&          name_in,
-            // force not optional; if not given, use the constructor below 
+            // force not optional; if not given, use the constructor below
             const string&          version_in,
             const string&          release_in = kEmptyStr);
 
@@ -87,7 +87,7 @@ public:
     CSeq_id(const string& the_type,
             const string& acc_in,     // see explanation in x_Init below
             const string& name_in,
-            // force not optional; if not given, use the constructor below 
+            // force not optional; if not given, use the constructor below
             const string& version_in,
             const string& release_in = kEmptyStr);
 
@@ -219,7 +219,7 @@ public:
     bool Match(const CSeq_id& sid2) const;
 
     // Compare return values
-    enum E_SIC { 
+    enum E_SIC {
         e_error = 0,  // some problem
         e_DIFF,       // different SeqId types-can't compare
         e_NO,         // SeqIds compared, but are different
@@ -235,14 +235,14 @@ public:
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
     const CSerializable& DumpAsFasta(void)  const { return Dump(eAsFasta); }
-    
+
     // For use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id);
     static int BestRank(const CRef<CSeq_id>& id);
     static int WorstRank(const CRef<CSeq_id>& id);
 
 private:
-    void x_Init 
+    void x_Init
     (CSeq_id_Base::E_Choice the_type,
      // Just first string, as in text seqid, for unusual
      // cases (patents, pdb) not really an acc
@@ -294,11 +294,11 @@ int CSeq_id::BestRank(const CRef<CSeq_id>& id)
     case e_Other:                                 return 65;
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
-    case e_Pir:  case e_Swissprot: 
+    case e_Pir:  case e_Swissprot:
     case e_Tpg:   case e_Genbank:                 return 60;
     case e_Gibbmt:                                return 56;
     case e_Gibbsq: case e_Patent:                 return 55;
-    case e_Gi:                                    return 51; 
+    case e_Gi:                                    return 51;
     default:                                      return 5;
     }
 }
@@ -309,13 +309,13 @@ int CSeq_id::WorstRank(const CRef<CSeq_id>& id)
 {
     switch (id->Which()) {
     case e_not_set:                               return 83;
-    case e_Gi: case e_Giim:                       return 20; 
-    case e_General: case e_Gibbsq: case e_Gibbmt: return 15; 
+    case e_Gi: case e_Giim:                       return 20;
+    case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
     case e_Local: case e_Patent:                  return 10;
     case e_Other:                                 return 8;
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
-    case e_Pir:  case e_Swissprot: 
+    case e_Pir:  case e_Swissprot:
     case e_Tpg:   case e_Genbank:                 return 5;
     default:                                      return 3;
     }
@@ -332,6 +332,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2002/10/03 18:51:11  clausen
+ * Removed extra whitespace
+ *
  * Revision 1.24  2002/10/03 17:06:13  clausen
  * Added BestRank() and WorstRank()
  *

@@ -59,7 +59,7 @@ public:
     CInt_fuzz(void);
     // destructor
     ~CInt_fuzz(void);
-    
+
     void GetLabel(string* label, TSeqPos pos, bool right = true) const;
 
 private:
@@ -90,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/10/03 19:02:27  clausen
+ * Removed extra whitespace
+ *
  * Revision 1.1  2002/10/03 16:42:36  clausen
  * First version
  *

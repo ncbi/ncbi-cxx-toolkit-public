@@ -76,11 +76,11 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
     CBioseq_Handle hnd = scope->GetBioseqHandle(id);
     CBioseq_Handle::TBioseqCore core = hnd.GetBioseqCore();
     return core->GetInst().IsSetLength() ? core->GetInst().GetLength() :
-        numeric_limits<TSeqPos>::max();    
+        numeric_limits<TSeqPos>::max();
 }
 
 
-TSeqPos GetLength(const CSeq_loc& loc, CScope* scope) 
+TSeqPos GetLength(const CSeq_loc& loc, CScope* scope)
     THROWS((CNoLength))
 {
     switch (loc.Which()) {
@@ -125,11 +125,11 @@ TSeqPos GetLength(const CSeq_loc_mix& mix, CScope* scope)
 bool IsValid(const CSeq_point& pt, CScope* scope)
 {
     if (static_cast<TSeqPos>(pt.GetPoint()) >=
-         GetLength(pt.GetId(), scope) ) 
+         GetLength(pt.GetId(), scope) )
     {
         return false;
     }
-    
+
     return true;
 }
 
@@ -137,7 +137,7 @@ bool IsValid(const CSeq_point& pt, CScope* scope)
 bool IsValid(const CPacked_seqpnt& pts, CScope* scope)
 {
     typedef CPacked_seqpnt::TPoints TPoints;
-    
+
     TSeqPos length = GetLength(pts.GetId(), scope);
     iterate (TPoints, it, pts.GetPoints()) {
         if (*it >= length) {
@@ -155,7 +155,7 @@ bool IsValid(const CSeq_interval& interval, CScope* scope)
     {
         return false;
     }
-    
+
     return true;
 }
 
@@ -166,7 +166,7 @@ bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
     if (id1.Compare(id2) == CSeq_id::e_YES) {
         return true;
     }
-    
+
     // Compare handles
     if ( scope ) {
         try {
@@ -174,12 +174,12 @@ bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
             CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2);
             return hnd1  &&  (hnd1 == hnd2);
         } catch (runtime_error& e) {
-            ERR_POST(e.what() << ": CSeq_id1: " << id1.DumpAsFasta() 
+            ERR_POST(e.what() << ": CSeq_id1: " << id1.DumpAsFasta()
                      << ": CSeq_id2: " << id2.DumpAsFasta());
             return false;
         }
     }
-    
+
     return false;
 }
 
@@ -200,17 +200,17 @@ const CSeq_id& GetId(const CSeq_loc& loc, CScope* scope)
 {
     CTypeConstIterator<CSeq_id> cur = ConstBegin(loc);
     CTypeConstIterator<CSeq_id> first = ConstBegin(loc);
-    
+
     if (!first) {
         THROW0_TRACE(CNotUnique());
     }
-    
+
     for (++cur; cur; ++cur) {
         if ( !IsSameBioseq(*cur, *first, scope) ) {
             THROW0_TRACE(CNotUnique());
         }
     }
-    return *first; 
+    return *first;
 }
 
 inline
@@ -260,7 +260,7 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
     if (!IsOneBioseq(loc, scope)) {
         return eNa_strand_unknown;
     }
-    
+
     CTypeConstIterator<CSeq_loc> i = ConstBegin(loc);
     ENa_strand strand = s_GetStrand(*i), cstrand;
     for (++i; i; ++i) {
@@ -278,30 +278,30 @@ ENa_strand GetStrand(const CSeq_loc& loc, CScope* scope)
             }
             if (cstrand != strand) {
                 return eNa_strand_other;
-            }            
+            }
         }
     }
     return strand;
 }
 
 
-TSeqPos GetStart(const CSeq_loc& loc, CScope* scope) 
+TSeqPos GetStart(const CSeq_loc& loc, CScope* scope)
     THROWS((CNotUnique))
 {
     // Throw CNotUnique if loc does not represent one CBioseq
     GetId(loc, scope);
-    
+
     CSeq_loc::TRange rg = loc.GetTotalRange();
     return rg.GetFrom();
 }
 
 
-TSeqPos GetStop(const CSeq_loc& loc, CScope* scope) 
+TSeqPos GetStop(const CSeq_loc& loc, CScope* scope)
     THROWS((CNotUnique))
 {
     // Throw CNotUnique if loc does not represent one CBioseq
     GetId(loc, scope);
-    
+
     CSeq_loc::TRange rg = loc.GetTotalRange();
     return rg.GetTo();
 }
@@ -1370,9 +1370,9 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
     if (!scope) {
         return;
     }
-    
+
     // Get CBioseq represented by *id
-    CBioseq_Handle::TBioseqCore seq = 
+    CBioseq_Handle::TBioseqCore seq =
         scope->GetBioseqHandle(*id).GetBioseqCore();
 
     // Get pointer to the best/worst id of *seq
@@ -1384,10 +1384,10 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
         // tmp_id = seq->GetWorstId();
         tmp_id = FindBestChoice(seq->GetId(), CSeq_id::WorstRank).GetPointer();
     }
-    
+
     // Change the contents of *id to that of *tmp_id
     id->Reset();
-    SerialAssign(*id, *tmp_id);    
+    SerialAssign(*id, *tmp_id);
 }
 
 void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
@@ -1395,7 +1395,7 @@ void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
     if (!scope) {
         return;
     }
-    
+
     for (CTypeIterator<CSeq_id> id(Begin(*loc)); id; ++id) {
         ChangeSeqId(&(*id), best, scope);
     }
@@ -1403,19 +1403,19 @@ void ChangeSeqLocId(CSeq_loc* loc, bool best, CScope* scope)
 
 
 bool BadSeqLocSortOrder
-(const CBioseq&  seq, 
- const CSeq_loc& loc, 
- CScope*         scope) 
+(const CBioseq&  seq,
+ const CSeq_loc& loc,
+ CScope*         scope)
 {
     ENa_strand strand = GetStrand(loc, scope);
     if (strand == eNa_strand_unknown  ||  strand == eNa_strand_other) {
         return false;
     }
-           
+
     if (SeqLocCheck(loc, scope) == eSeqLocCheck_warning) {
         return false;
     }
-    
+
     CSeq_loc::TRange last_range;
     bool first = true;
     for (CSeq_loc_CI lit(loc); lit; ++lit) {
@@ -1434,7 +1434,7 @@ bool BadSeqLocSortOrder
             }
         }
         last_range = lit.GetRange();
-    }    
+    }
     return false;
 }
 
@@ -1443,7 +1443,7 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
 {
     bool first = true;
     ESeqLocCheck rtn = eSeqLocCheck_ok;
-    
+
     ENa_strand last_strand, curr_strand;
     CTypeConstIterator<CSeq_loc> lit(ConstBegin(loc));
     for (;lit; ++lit) {
@@ -1456,7 +1456,7 @@ ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope)
             first = false;
         }
         last_strand = curr_strand;
-        
+
         switch (lit->Which()) {
         case CSeq_loc::e_Int:
             if (!IsValid(lit->GetInt(), scope)) {
@@ -1948,6 +1948,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2002/10/03 18:44:09  clausen
+* Removed extra whitespace
+*
 * Revision 1.8  2002/10/03 16:33:55  clausen
 * Added functions needed by validate
 *
