@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2001/12/03 22:06:31  juran
+* Use 'special environment' flag to indicate that a fatal error
+* must throw an exception rather than abort.  (Mac only.)
+*
 * Revision 1.39  2001/11/14 15:15:00  ucko
 * Revise diagnostic handling to be more object-oriented.
 *
@@ -167,6 +171,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#if defined(NCBI_OS_MAC)
+#include <corelib/ncbi_os_mac.hpp>
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -292,6 +300,11 @@ void CDiagBuffer::Flush(void)
 
     if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace) {
         m_Diag = 0;
+#if defined(NCBI_OS_MAC)
+        if ( g_Mac_SpecialEnvironment ) {
+            throw runtime_error("Application aborted.");
+        }
+#endif
 #if defined(_DEBUG)
         ::abort();
 #else
