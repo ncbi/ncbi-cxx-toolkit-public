@@ -39,7 +39,7 @@
 #include <objects/seq/Seq_inst.hpp> // for EMol
 
 #include <objects/seq/seq_id_handle.hpp>
-#include <objmgr/impl/heap_scope.hpp>
+#include <objmgr/tse_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -61,7 +61,6 @@ class CBioseq_Info;
 class CTSE_Info;
 class CSeq_entry;
 class CSeq_annot;
-class CSeqMatch_Info;
 class CSynonymsSet;
 class CBioseq_ScopeInfo;
 class CSeq_id_ScopeInfo;
@@ -300,6 +299,11 @@ public:
     ///    operator bool()
     bool operator!(void) const;
 
+
+    // Get CTSE_Handle of containing TSE
+    const CTSE_Handle& GetTSE_Handle(void) const;
+
+
     // these methods are for cross scope move only.
     /// Copy current bioseq into seq-entry
     /// 
@@ -331,23 +335,41 @@ public:
     /// Copy current bioseq into seq-entry and set seq-entry as bioseq
     /// 
     /// @param entry
-    ///  seq-entry pointed by entry handle will be set to bioseq
+    ///  Seq-entry pointed by entry handle will be set to bioseq
     ///
     /// @return
     ///  Edit handle to inserted bioseq
     CBioseq_EditHandle CopyToSeq(const CSeq_entry_EditHandle& entry) const;
 
+    /// Register argument bioseq as used by this bioseq, so it will be
+    /// released by scope only after this bioseq is released.
+    ///
+    /// @param bh
+    ///  Used bioseq handle
+    ///
+    /// @return
+    ///  True if argument bioseq was successfully registered as 'used'.
+    ///  False if argument bioseq was not registered as 'used'.
+    ///  Possible reasons:
+    ///   Circular reference in 'used' tree.
+    bool AddUsedBioseq(const CBioseq_Handle& bh) const;
+
 protected:
     friend class CScope_Impl;
     friend class CSynonymsSet;
 
-    CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
-    const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
-    const CTSE_Lock& GetTSE_Lock(void) const;
+    //CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
+    CBioseq_Handle(const CSeq_id_Handle& id,
+                   const CBioseq_ScopeInfo& binfo,
+                   const CTSE_Handle& tse);
 
-    CHeapScope          m_Scope;
+    CScope_Impl& x_GetScopeImpl(void) const;
+    const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
+
+    CTSE_Handle         m_TSE;
     CSeq_id_Handle      m_Seq_id;
-    CConstRef<CObject>  m_Bioseq_Info;
+    CConstRef<CObject>  m_ScopeInfo;
+    CConstRef<CObject>  m_Info;
 
 public: // non-public section
     const CBioseq_Info& x_GetInfo(void) const;
@@ -532,6 +554,9 @@ protected:
     friend class CScope_Impl;
 
     CBioseq_EditHandle(const CBioseq_Handle& h);
+    CBioseq_EditHandle(const CSeq_id_Handle& id,
+                       CBioseq_ScopeInfo& binfo,
+                       const CTSE_Handle& tse);
 
 public: // non-public section
     CBioseq_Info& x_GetInfo(void) const;
@@ -550,6 +575,13 @@ CBioseq_Handle::CBioseq_Handle(void)
 
 
 inline
+const CTSE_Handle& CBioseq_Handle::GetTSE_Handle(void) const
+{
+    return m_TSE;
+}
+
+
+inline
 const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 {
     return m_Seq_id;
@@ -559,35 +591,28 @@ const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 inline
 CBioseq_Handle::operator bool(void)  const
 {
-    return m_Bioseq_Info;
+    return m_Info;
 }
 
 
 inline
 bool CBioseq_Handle::operator!(void) const
 {
-    return !m_Bioseq_Info;
-}
-
-
-inline
-const CBioseq_ScopeInfo& CBioseq_Handle::x_GetScopeInfo(void) const
-{
-    return reinterpret_cast<const CBioseq_ScopeInfo&>(*m_Bioseq_Info);
-}
-
-
-inline
-CBioseq_Info& CBioseq_EditHandle::x_GetInfo(void) const
-{
-    return const_cast<CBioseq_Info&>(CBioseq_Handle::x_GetInfo());
+    return !m_Info;
 }
 
 
 inline
 CScope& CBioseq_Handle::GetScope(void) const 
 {
-    return m_Scope;
+    return m_TSE.GetScope();
+}
+
+
+inline
+CScope_Impl& CBioseq_Handle::x_GetScopeImpl(void) const 
+{
+    return m_TSE.x_GetScopeImpl();
 }
 
 
@@ -595,6 +620,13 @@ inline
 bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 {
     return !(*this == h);
+}
+
+
+inline
+CBioseq_Info& CBioseq_EditHandle::x_GetInfo(void) const
+{
+    return const_cast<CBioseq_Info&>(CBioseq_Handle::x_GetInfo());
 }
 
 
@@ -607,6 +639,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/12/22 15:56:05  vasilche
+* Introduced CTSE_Handle.
+* Added auto-release of unused TSEs in scope.
+*
 * Revision 1.66  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *
