@@ -37,6 +37,7 @@
 #include <objmgr/seq_vector_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 
@@ -1642,7 +1643,8 @@ bool TestForIntervals(CSeq_loc_CI it1, CSeq_loc_CI it2, bool minus_strand)
 {
     // Check intervals one by one
     while ( it1  &&  it2 ) {
-        if ( !TestForStrands(it1.GetStrand(), it2.GetStrand()) ) {
+        if ( !TestForStrands(it1.GetStrand(), it2.GetStrand())  ||
+             !it1.GetSeq_id().Equals(it2.GetSeq_id())) {
             return false;
         }
         if ( minus_strand ) {
@@ -1689,12 +1691,126 @@ bool TestForIntervals(CSeq_loc_CI it1, CSeq_loc_CI it2, bool minus_strand)
 }
 
 
+int x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
+                              const CSeq_loc& loc2,
+                              EOverlapType type)
+{
+    // Special case of TestForOverlap() - multi-sequences locations
+    switch (type) {
+    case eOverlap_Simple:
+        {
+            // Find all intersecting intervals
+            int diff = 0;
+            for (CSeq_loc_CI li1(loc1); li1; ++li1) {
+                for (CSeq_loc_CI li2(loc2); li2; ++li2) {
+                    if ( !li1.GetSeq_id().Equals(li2.GetSeq_id()) ) {
+                        continue;
+                    }
+                    CRange<TSeqPos> rg1 = li1.GetRange();
+                    CRange<TSeqPos> rg2 = li2.GetRange();
+                    if ( rg1.GetTo() >= rg2.GetFrom()  &&
+                         rg1.GetFrom() <= rg2.GetTo() ) {
+                        diff += abs(int(rg2.GetFrom() - rg1.GetFrom())) +
+                            abs(int(rg1.GetTo() - rg2.GetTo()));
+                    }
+                }
+            }
+            return diff ? diff : -1;
+        }
+    case eOverlap_Contained:
+        {
+            // loc2 is contained in loc1
+            CHandleRangeMap rm1, rm2;
+            rm1.AddLocation(loc1);
+            rm2.AddLocation(loc2);
+            int diff = 0;
+            CHandleRangeMap::const_iterator it2 = rm2.begin();
+            for ( ; it2 != rm2.end(); ++it2) {
+                CHandleRangeMap::const_iterator it1 =
+                    rm1.GetMap().find(it2->first);
+                if (it1 == rm1.end()) {
+                    // loc2 has region on a sequence not present in loc1
+                    diff = -1;
+                    break;
+                }
+                CRange<TSeqPos> rg1 = it1->second.GetOverlappingRange();
+                CRange<TSeqPos> rg2 = it2->second.GetOverlappingRange();
+                if ( rg1.GetFrom() <= rg2.GetFrom()  &&
+                    rg1.GetTo() >= rg2.GetTo() ) {
+                    diff += (rg2.GetFrom() - rg1.GetFrom()) +
+                        (rg1.GetTo() - rg2.GetTo());
+                }
+                else {
+                    // Found an interval on loc2 not contained in loc1
+                    diff = -1;
+                    break;
+                }
+            }
+            return diff;
+        }
+    case eOverlap_Contains:
+        {
+            // loc2 is contained in loc1
+            CHandleRangeMap rm1, rm2;
+            rm1.AddLocation(loc1);
+            rm2.AddLocation(loc2);
+            int diff = 0;
+            CHandleRangeMap::const_iterator it1 = rm1.begin();
+            for ( ; it1 != rm1.end(); ++it1) {
+                CHandleRangeMap::const_iterator it2 =
+                    rm2.GetMap().find(it1->first);
+                if (it2 == rm2.end()) {
+                    // loc1 has region on a sequence not present in loc2
+                    diff = -1;
+                    break;
+                }
+                CRange<TSeqPos> rg1 = it1->second.GetOverlappingRange();
+                CRange<TSeqPos> rg2 = it2->second.GetOverlappingRange();
+                if ( rg2.GetFrom() <= rg1.GetFrom()  &&
+                    rg2.GetTo() >= rg1.GetTo() ) {
+                    diff += (rg1.GetFrom() - rg2.GetFrom()) +
+                        (rg2.GetTo() - rg1.GetTo());
+                }
+                else {
+                    // Found an interval on loc1 not contained in loc2
+                    diff = -1;
+                    break;
+                }
+            }
+            return diff;
+        }
+    case eOverlap_Subset:
+    case eOverlap_CheckIntervals:
+    case eOverlap_Interval:
+        {
+            // For this types the function should not be called
+            throw runtime_error(
+                "TestForOverlap() -- error processing multi-ID seq-loc");
+        }
+    }
+    return -1;
+}
+
+
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
                    EOverlapType type)
 {
-    CRange<TSeqPos> rg1 = loc1.GetTotalRange();
-    CRange<TSeqPos> rg2 = loc2.GetTotalRange();
+    CRange<TSeqPos> rg1, rg2;
+    bool multi_seq = false;
+    try {
+        rg1 = loc1.GetTotalRange();
+        rg2 = loc2.GetTotalRange();
+    }
+    catch (runtime_error) {
+        // Can not use total range for multi-sequence locations
+        if (type == eOverlap_Simple  ||
+            type == eOverlap_Contained  ||
+            type == eOverlap_Contains) {
+            return x_TestForOverlap_MultiSeq(loc1, loc2, type);
+        }
+        multi_seq = true;
+    }
 
     ENa_strand strand1 = GetStrand(loc1);
     ENa_strand strand2 = GetStrand(loc2);
@@ -1738,8 +1854,8 @@ int TestForOverlap(const CSeq_loc& loc1,
         }
     case eOverlap_CheckIntervals:
         {
-            if ( rg1.GetFrom() > rg2.GetTo()  ||
-                rg1.GetTo() < rg2.GetTo() ) {
+            if ( !multi_seq  &&
+                (rg1.GetFrom() > rg2.GetTo()  || rg1.GetTo() < rg2.GetTo()) ) {
                 return -1;
             }
             // Check intervals' boundaries
@@ -1766,8 +1882,9 @@ int TestForOverlap(const CSeq_loc& loc1,
                 TSeqPos loc2start = it2.GetRange().GetFrom();
                 TSeqPos loc2end = it2.GetRange().GetTo();
                 // Find the first interval in loc1 intersecting with loc2
-                for ( ; it1  &&  it1.GetRange().GetFrom() <= loc2end; ++it1) {
-                    if (it1.GetRange().GetFrom() <= loc2start  &&
+                for ( ; it1  /*&&  it1.GetRange().GetFrom() <= loc2end*/; ++it1) {
+                    if (it1.GetSeq_id().Equals(it2.GetSeq_id())  &&
+                        it1.GetRange().GetFrom() <= loc2start  &&
                         TestForIntervals(it1, it2, false)) {
                         return GetLength(loc1) - GetLength(loc2);
                     }
@@ -2907,6 +3024,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.57  2003/06/13 17:23:32  grichenk
+* Added special processing of multi-ID seq-locs in TestForOverlap()
+*
 * Revision 1.56  2003/06/05 18:08:36  shomrat
 * Allow empty location when computing SeqLocPartial; Adjust GetSeqData in cdregion translation
 *
