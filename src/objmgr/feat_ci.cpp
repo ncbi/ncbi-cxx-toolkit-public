@@ -350,7 +350,7 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 {
     CSeq_feat& src = const_cast<CSeq_feat&>(GetOriginalFeature());
-    CSeq_loc& mapped_location = const_cast<CSeq_loc&>(GetMappedLocation());
+    CSeq_loc& mapped_location = const_cast<CSeq_loc&>(GetLocation());
     m_MappedSeq_feat = m_Collector->MakeMappedFeature(*m_FeatRef,
                                                       src,
                                                       mapped_location);
@@ -364,6 +364,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/10/12 17:07:39  grichenk
+* Fixed x_MakeMappedFeature
+*
 * Revision 1.34  2004/10/08 14:18:34  grichenk
 * Moved MakeMappedXXXX methods to CAnnotCollector,
 * fixed mapped feature initialization bug.
