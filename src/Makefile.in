@@ -20,6 +20,7 @@ X_OPTIONAL_PROJ =  serial bdb sqlite dbapi objects objmgr objtools ctools \
 EXPENDABLE_SUB_PROJ = @gui@ @check@
 
 SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
+srcdir = @srcdir@
 include ./Makefile.meta
 
 $(OPTIONAL_PROJ) util connect cgi html: corelib
