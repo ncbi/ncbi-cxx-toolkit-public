@@ -104,16 +104,7 @@ TSeqPos CDense_seg::GetSeqStart(TDim row) const
     }
 
     TSignedSeqPos start;
-    if (GetStrands().size()  &&  GetStrands()[row] != eNa_strand_minus) {
-        TNumseg seg = -1;
-        int pos = row;
-        while (++seg < numseg) {
-            if ((start = starts[pos]) >= 0) {
-                return start;
-            }
-            pos += dim;
-        }
-    } else {
+    if (CanGetStrands()  &&  GetStrands().size()  &&  GetStrands()[row] == eNa_strand_minus) {
         TNumseg seg = numseg;
         int pos = (seg - 1) * dim + row;
         while (seg--) {
@@ -121,6 +112,15 @@ TSeqPos CDense_seg::GetSeqStart(TDim row) const
                 return start;
             }
             pos -= dim;
+        }
+    } else {
+        TNumseg seg = -1;
+        int pos = row;
+        while (++seg < numseg) {
+            if ((start = starts[pos]) >= 0) {
+                return start;
+            }
+            pos += dim;
         }
     }
     NCBI_THROW(CSeqalignException, eInvalidAlignment,
@@ -141,16 +141,7 @@ TSeqPos CDense_seg::GetSeqStop(TDim row) const
     }
 
     TSignedSeqPos start;
-    if (GetStrands().size()  &&  GetStrands()[row] != eNa_strand_minus) {
-        TNumseg seg = numseg;
-        int pos = (seg - 1) * dim + row;
-        while (seg--) {
-            if ((start = starts[pos]) >= 0) {
-                return start + GetLens()[seg] - 1;
-            }
-            pos -= dim;
-        }
-    } else {
+    if (CanGetStrands()  &&  GetStrands().size()  &&  GetStrands()[row] == eNa_strand_minus) {
         TNumseg seg = -1;
         int pos = row;
         while (++seg < numseg) {
@@ -159,6 +150,15 @@ TSeqPos CDense_seg::GetSeqStop(TDim row) const
             }
             pos += dim;
         }
+    } else {
+        TNumseg seg = numseg;
+        int pos = (seg - 1) * dim + row;
+        while (seg--) {
+            if ((start = starts[pos]) >= 0) {
+                return start + GetLens()[seg] - 1;
+            }
+            pos -= dim;
+        }        
     }
     NCBI_THROW(CSeqalignException, eInvalidAlignment,
                "CDense_seg::GetSeqStop(): Row is empty");
@@ -477,6 +477,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/02/12 20:54:15  yazhuk
+* Fixed GetStartPos() GetStopPos() handling of empty m_Strands
+*
 * Revision 1.8  2003/12/19 20:15:21  todorov
 * RemapToLoc should do nothing in case of a whole Seq-loc
 *
