@@ -27,7 +27,7 @@
  *
  */
 
-/// @file blast_options_factory.cpp
+/// @file blast_nucl_options.cpp
 
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include <objects/seqloc/Na_strand.hpp>
@@ -242,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/11 17:27:12  camacho
+ * Fix incorrect doxygen file directive
+ *
  * Revision 1.4  2004/02/17 23:53:31  dondosha
  * Added setting of preliminary hitlist size
  *
