@@ -7,7 +7,7 @@
 
 cf=diff
 testdata=testdata
-pcre=test_regexp
+pcre=test_pcre
 
 # Select which tests to run; if no selection, run all
 
