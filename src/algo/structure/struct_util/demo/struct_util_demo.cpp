@@ -36,6 +36,7 @@
 #include <ctools/ctools.h>
 
 #include <algo/structure/struct_util/struct_util.hpp>
+#include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
 
 #include <objects/cdd/Cdd.hpp>
 
@@ -78,6 +79,10 @@ void SUApp::Init(void)
     argDescr->SetConstraint("f", new CArgAllow_Integers(1, kMax_Int));
     argDescr->AddOptionalKey("l", "integer", "last block to realign (post-IBM, from 1)", argDescr->eInteger);
     argDescr->SetConstraint("l", new CArgAllow_Integers(1, kMax_Int));
+    argDescr->AddOptionalKey("p", "double", "allowed loop length percentile", argDescr->eDouble);
+    argDescr->SetConstraint("p", new CArgAllow_Doubles(0.0, kMax_Double));
+    argDescr->AddOptionalKey("e", "integer", "allowed loop length extension", argDescr->eInteger);
+    argDescr->SetConstraint("e", new CArgAllow_Integers(0, kMax_Int));
 
     SetupArgDescriptions(argDescr);
 }
@@ -105,6 +110,15 @@ static bool ReadCD(const string& filename, CCdd *cdd)
     return readOK;
 }
 
+static inline int SumAllRowScores(AlignmentUtility& au)
+{
+    const BlockMultipleAlignment *aln = au.GetBlockMultipleAlignment();
+    int score = 0;
+    for (unsigned int row=0; row<aln->NRows(); ++row)
+        score += au.ScoreRowByPSSM(row);
+    return score;
+}
+
 int SUApp::Run(void)
 {
     // process arguments
@@ -112,8 +126,10 @@ int SUApp::Run(void)
 
     // arg interactions
     if (args["LOO"].HasValue() && !args["IBM"].HasValue()) {
-        if (!args["r"].HasValue() || !args["f"].HasValue() || !args["l"].HasValue()) {
-            ERROR_MESSAGE("-LOO requires -r, -f, and -l");
+        if (!args["r"].HasValue() || !args["f"].HasValue() || !args["l"].HasValue() ||
+            !args["e"].HasValue() || !args["p"].HasValue())
+        {
+            ERROR_MESSAGE("-LOO requires -r, -p, -e, -f, and -l");
             return 5;
         }
     } else if (args["IBM"].HasValue() && !args["LOO"].HasValue()) {
@@ -149,17 +165,19 @@ int SUApp::Run(void)
         vector < unsigned int > blocksToRealign;
         for (int i=args["f"].AsInteger(); i<=args["l"].AsInteger(); ++i)
             blocksToRealign.push_back(i - 1);               // convert to zero-numbering
-        INFO_MESSAGE("score of row " << args["r"].AsInteger() << " before realignment: "
+        INFO_MESSAGE("score of row " << args["r"].AsInteger() << " vs. PSSM(N) before realignment: "
             << au.ScoreRowByPSSM(args["r"].AsInteger() - 1));
+        INFO_MESSAGE("sum of row scores before realignment: " << SumAllRowScores(au));
         if (!au.DoLeaveOneOut(
-                args["r"].AsInteger() - 1, blocksToRealign, // what to realign
-                0.6, 10, 0))                                // max loop length calculation parameters
+                args["r"].AsInteger() - 1, blocksToRealign,         // what to realign
+                args["p"].AsDouble(), args["e"].AsInteger(), 0))    // max loop length calculation parameters
         {
             ERROR_MESSAGE("LOO failed");
             return 8;
         }
         INFO_MESSAGE("score of row " << args["r"].AsInteger() << " after realignment: "
             << au.ScoreRowByPSSM(args["r"].AsInteger() - 1));
+        INFO_MESSAGE("sum of row scores vs. PSSM(N) after realignment: " << SumAllRowScores(au));
     }
 
     // replace Seq-annots in cdd with new data
@@ -208,6 +226,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/28 23:06:03  thiessen
+* show all scores before and after
+*
 * Revision 1.5  2004/06/14 13:50:23  thiessen
 * make BlockMultipleAlignment and Sequence classes public; add GetBlockMultipleAlignment() and ScoreByPSSM()
 *

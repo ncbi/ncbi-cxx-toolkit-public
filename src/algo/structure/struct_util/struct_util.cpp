@@ -70,7 +70,7 @@ AlignmentUtility::AlignmentUtility(const CSeq_entry& seqEntry, const SeqAnnotLis
 AlignmentUtility::AlignmentUtility(const SeqEntryList& seqEntries, const SeqAnnotList& seqAnnots)
 {
     SeqEntryList::const_iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; s++) {
+    for (s=seqEntries.begin(); s!=se; ++s) {
         CRef < CSeq_entry > seqEntryCopy(new CSeq_entry());
         seqEntryCopy->Assign(**s);
         m_seqEntries.push_back(seqEntryCopy);
@@ -335,7 +335,7 @@ bool AlignmentUtility::DoLeaveOneOut(
                 THROW_MESSAGE("block to realign is out of range");
         }
         toRealign.front()->GetUngappedAlignedBlocks(&blocks);
-        for (b=0; b<blocks.size(); b++) {
+        for (b=0; b<blocks.size(); ++b) {
             if (!realignBlock[b])
                 dpBlocks->freezeBlocks[b] = blocks[b]->GetRangeOfRow(1)->from;
             TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
@@ -354,6 +354,21 @@ bool AlignmentUtility::DoLeaveOneOut(
         g_dpBlocks = dpBlocks;
         g_dpQuery = toRealign.front()->GetSequenceOfRow(1);
 
+        // show score before alignment
+        int originalScore = 0;
+        BlockMultipleAlignment::UngappedAlignedBlockList ob;
+        toRealign.front()->GetUngappedAlignedBlocks(&ob);
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator l, o, le = blocks.end();
+        for (l=blocks.begin(), o=ob.begin(); l!=le; ++l, ++o) {
+            const Block::Range
+                *masterRange = (*l)->GetRangeOfRow(0),
+                *range = (*o)->GetRangeOfRow(1);
+            for (unsigned int i=0; i<(*l)->m_width; ++i)
+                originalScore += m_currentMultiple->GetPSSM()->matrix[masterRange->from + i]
+                    [LookupBLASTResidueNumberFromCharacter(g_dpQuery->m_sequenceString[range->from + i])];
+        }
+        INFO_MESSAGE("score of extracted row with PSSM(N-1) before realignment: " << originalScore);
+
         // call the block aligner
         if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM, queryFrom, queryTo, &dpResult) != STRUCT_DP_FOUND_ALIGNMENT ||
                 dpResult->nBlocks != blocks.size() || dpResult->firstBlock != 0)
@@ -363,7 +378,7 @@ bool AlignmentUtility::DoLeaveOneOut(
         // adjust new alignment according to dp result
         BlockMultipleAlignment::ModifiableUngappedAlignedBlockList modBlocks;
         toRealign.front()->GetModifiableUngappedAlignedBlocks(&modBlocks);
-        for (b=0; b<modBlocks.size(); b++) {
+        for (b=0; b<modBlocks.size(); ++b) {
             if (realignBlock[b]) {
                 modBlocks[b]->SetRangeOfRow(1,
                     dpResult->blockPositions[b], dpResult->blockPositions[b] + dpBlocks->blockSizes[b] - 1);
@@ -380,7 +395,7 @@ bool AlignmentUtility::DoLeaveOneOut(
 
         // move extracted row back to where it was
         vector < unsigned int > rowOrder(m_currentMultiple->NRows());
-        for (r=0; r<m_currentMultiple->NRows(); r++) {
+        for (r=0; r<m_currentMultiple->NRows(); ++r) {
             if (r < rowToRealign)
                 rowOrder[r] = r;
             else if (r == rowToRealign)
@@ -480,7 +495,7 @@ int AlignmentUtility::ScoreRowByPSSM(unsigned int row)
 
     int score = 0;
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         const Block::Range
             *masterRange = (*b)->GetRangeOfRow(0),
             *range = (*b)->GetRangeOfRow(row);
@@ -497,6 +512,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/28 23:06:03  thiessen
+* show all scores before and after
+*
 * Revision 1.13  2004/07/28 19:32:34  thiessen
 * use average scores for B, Z
 *
