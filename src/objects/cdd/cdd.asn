@@ -1,4 +1,4 @@
---$Revision: 1.21 $
+--$Revision: 1.22 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -464,7 +464,7 @@ Cdd-Project ::= SEQUENCE {
   cdcolor       SEQUENCE OF INTEGER,      -- colors  
   viewers       SEQUENCE OF Cdd-Viewer,   -- Sequence viewers
   log           VisibleString,            -- log
-  scripts       SEQUENCE OF Cdd-Script    -- command scripts
+  scripts       SEQUENCE OF Cdd-Script OPTIONAL    -- command scripts
 }
 
 END
