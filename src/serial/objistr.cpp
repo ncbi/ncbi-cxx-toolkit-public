@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/05/03 14:38:14  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.47  2000/04/28 16:58:12  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -472,9 +476,9 @@ void CObjectIStream::Read(TObjectPtr object, const CTypeRef& type)
 
 CRef<CByteSource> CObjectIStream::DelayRead(TTypeInfo typeInfo)
 {
-    CByteSourceSkipper skip(m_Input);
+    m_Input.StartSubSource();
     SkipData(typeInfo);
-    return skip.GetSkippedSource();
+    return m_Input.EndSubSource();
 }
 
 void CObjectIStream::SetDefaultReadManager(CRef<CObjectReadManager> manager)

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/05/03 14:38:06  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.9  2000/04/28 16:58:03  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -85,7 +89,7 @@ BEGIN_NCBI_SCOPE
 
 class CByteSource;
 class CByteSourceReader;
-class CByteSourceSkipper;
+class CSubSourceCollector;
 
 class CIStreamBuffer
 {
@@ -97,12 +101,22 @@ public:
     void Open(const CRef<CByteSourceReader>& reader);
     void Close(void);
 
-    char PeekChar(size_t offset = 0) THROWS((CSerialIOException, bad_alloc))
+    char PeekChar(size_t offset = 0)
+        THROWS((CSerialIOException, bad_alloc))
         {
             _ASSERT(offset >= 0);
             char* pos = m_CurrentPos + offset;
             if ( pos >= m_DataEndPos )
                 pos = FillBuffer(pos);
+            return *pos;
+        }
+    char PeekCharNoEOF(size_t offset = 0)
+        THROWS((CSerialIOException, bad_alloc))
+        {
+            _ASSERT(offset >= 0);
+            char* pos = m_CurrentPos + offset;
+            if ( pos >= m_DataEndPos )
+                return FillBufferNoEOF(pos);
             return *pos;
         }
     char GetChar(void) THROWS((CSerialIOException, bad_alloc))
@@ -169,10 +183,15 @@ public:
     size_t ReadLine(char* buff, size_t size)
         THROWS((CSerialIOException));
 
+    void StartSubSource(void);
+    CRef<CByteSource> EndSubSource(void);
+
 protected:
     // action: fill buffer so *pos char is valid
     // return: new value of pos pointer if buffer content was shifted
-    char* FillBuffer(char* pos)
+    char* FillBuffer(char* pos, bool noEOF = false)
+        THROWS((CSerialIOException, bad_alloc));
+    char FillBufferNoEOF(char* pos)
         THROWS((CSerialIOException, bad_alloc));
 
 private:
@@ -185,7 +204,8 @@ private:
     char* m_DataEndPos;       // end of valid content in buffer
     size_t m_Line;            // current line counter
 
-    friend class CByteSourceSkipper;
+    char* m_CollectPos;
+    CRef<CSubSourceCollector> m_Collector;
 };
 
 class COStreamBuffer

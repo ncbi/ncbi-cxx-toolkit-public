@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/03 14:38:10  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.7  2000/04/17 19:11:04  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -106,8 +110,10 @@ public:
         string cName;
         EMemberType memberType;
         AutoPtr<CTypeStrings> type;
+        bool delayed;
 
-        SVariantInfo(const string& name, AutoPtr<CTypeStrings> type);
+        SVariantInfo(const string& name, const AutoPtr<CTypeStrings>& type,
+                     bool delayed);
     };
     typedef list<SVariantInfo> TVariants;
 
@@ -119,7 +125,8 @@ public:
             return m_HaveAssignment;
         }
 
-    void AddVariant(const string& name, AutoPtr<CTypeStrings> type);
+    void AddVariant(const string& name, const AutoPtr<CTypeStrings>& type,
+                    bool delayed);
 
 protected:
     void GenerateClassCode(CClassCode& code,

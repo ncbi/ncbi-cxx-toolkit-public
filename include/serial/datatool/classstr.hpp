@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/05/03 14:38:10  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.8  2000/04/17 19:11:04  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -115,10 +119,12 @@ public:
         bool ref;       // implement member via CRef
         bool haveFlag;  // need additional boolean flag 'isSet'
         bool canBeNull; // pointer type can be NULL pointer
+        bool delayed;
         string defaultValue; // DEFAULT value code
-        SMemberInfo(const string& name, AutoPtr<CTypeStrings> type,
+        SMemberInfo(const string& name, const AutoPtr<CTypeStrings>& type,
                     const string& pointerType,
-                    bool optional, const string& defaultValue);
+                    bool optional, const string& defaultValue,
+                    bool delayed);
     };
     typedef list<SMemberInfo> TMembers;
 
@@ -139,9 +145,15 @@ public:
     void SetParentClass(const string& className, const CNamespace& ns,
                         const string& fileName);
 
-    void AddMember(const string& name, AutoPtr<CTypeStrings> type,
+    void AddMember(const string& name, const AutoPtr<CTypeStrings>& type,
                    const string& pointerType,
-                   bool optional, const string& defaultValue);
+                   bool optional, const string& defaultValue,
+                   bool delayed);
+    void AddMember(const AutoPtr<CTypeStrings>& type)
+        {
+            AddMember(NcbiEmptyString, type, NcbiEmptyString,
+                      false, NcbiEmptyString, false);
+        }
 
     string GetCType(const CNamespace& ns) const;
     string GetRef(void) const;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/03 14:38:13  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.2  2000/04/28 19:14:37  vasilche
 * Fixed stream position and offset typedefs.
 *
@@ -56,10 +60,9 @@ CByteSourceReader::~CByteSourceReader(void)
 {
 }
 
-CRef<CSubSourceCollector> CByteSourceReader::SubSource(char* buffer,
-                                                       size_t bufferLength)
+CRef<CSubSourceCollector> CByteSourceReader::SubSource(size_t /*prevent*/)
 {
-    return new CMemorySourceCollector(eCanDelete, buffer, bufferLength);
+    return new CMemorySourceCollector(eCanDelete);
 }
 
 CSubSourceCollector::~CSubSourceCollector(void)
@@ -171,19 +174,18 @@ bool CSubFileByteSourceReader::EndOfData(void) const
     return m_Length == 0;
 }
 
-CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(char* /*buffer*/,
-                                                           size_t bufferLength)
+CRef<CSubSourceCollector> CFileByteSourceReader::SubSource(size_t prepend)
 {
     return new CFileSourceCollector(eCanDelete, m_FileSource,
-                                    m_Stream->tellg(), bufferLength);
+                                    m_Stream->tellg() - TFileOff(prepend));
 }
 
 CFileSourceCollector::CFileSourceCollector(ECanDelete canDelete,
                                            const CConstRef<CFileByteSource>& s,
-                                           TFilePos start, size_t addBytes)
+                                           TFilePos start)
     : CSubSourceCollector(canDelete),
       m_FileSource(s),
-      m_Start(start - TFileOff(addBytes)), m_Length(addBytes)
+      m_Start(start), m_Length(0)
 {
 }
 
@@ -191,11 +193,6 @@ void CFileSourceCollector::AddChunk(const char* /*buffer*/,
                                     size_t bufferLength)
 {
     m_Length += TFileOff(bufferLength);
-}
-
-void CFileSourceCollector::ReduceLastChunkBy(size_t unused)
-{
-    m_Length -= TFileOff(unused);
 }
 
 CRef<CByteSource> CFileSourceCollector::GetSource(void)
@@ -219,21 +216,6 @@ CMemoryChunk::CMemoryChunk(ECanDelete canDelete,
 CMemoryChunk::~CMemoryChunk(void)
 {
     delete m_Data;
-}
-
-void CMemoryChunk::ReduceBy(size_t unused)
-{
-    _ASSERT(GetDataSize() >= unused);
-    if ( unused != 0 ) {
-        size_t oldSize = m_DataSize;
-        char* oldData = m_Data;
-        size_t newSize = oldSize - unused;
-        char* newData = new char[newSize];
-        memcpy(newData, oldData, newSize);
-        m_Data = newData;
-        m_DataSize = newSize;
-        delete[] oldData;
-    }
 }
 
 CMemoryByteSource::~CMemoryByteSource(void)
@@ -275,12 +257,9 @@ bool CMemoryByteSourceReader::EndOfData(void) const
     return !m_CurrentChunk;
 }
 
-CMemorySourceCollector::CMemorySourceCollector(ECanDelete canDelete, 
-                                               const char* buffer,
-                                               size_t bufferLength)
+CMemorySourceCollector::CMemorySourceCollector(ECanDelete canDelete)
     : CSubSourceCollector(canDelete)
 {
-    AddChunk(buffer, bufferLength);
 }
 
 void CMemorySourceCollector::AddChunk(const char* buffer,
@@ -290,12 +269,6 @@ void CMemorySourceCollector::AddChunk(const char* buffer,
                                    m_LastChunk);
     if ( !m_FirstChunk )
         m_FirstChunk = m_LastChunk;
-}
-
-void CMemorySourceCollector::ReduceLastChunkBy(size_t unused)
-{
-    _ASSERT(m_LastChunk);
-    m_LastChunk->ReduceBy(unused);
 }
 
 CRef<CByteSource> CMemorySourceCollector::GetSource(void)

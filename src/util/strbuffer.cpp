@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/05/03 14:38:14  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.11  2000/04/28 16:58:14  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -105,7 +109,8 @@ CIStreamBuffer::CIStreamBuffer(void)
     : m_BufferOffset(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
-      m_Line(1)
+      m_Line(1),
+      m_CollectPos(0)
 {
 }
 
@@ -126,6 +131,32 @@ void CIStreamBuffer::Close(void)
     m_CurrentPos = m_Buffer;
     m_DataEndPos = m_Buffer;
     m_Line = 1;
+}
+
+void CIStreamBuffer::StartSubSource(void)
+{
+    _ASSERT(!m_Collector);
+    _ASSERT(!m_CollectPos);
+
+    m_CollectPos = m_CurrentPos;
+    m_Collector = m_Input->SubSource(m_DataEndPos - m_CurrentPos);
+}
+
+CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
+{
+    _ASSERT(m_Collector);
+    _ASSERT(m_CollectPos);
+
+    _ASSERT(m_CollectPos <= m_CurrentPos);
+    if ( m_CurrentPos != m_CollectPos )
+        m_Collector->AddChunk(m_CollectPos, m_CurrentPos - m_CollectPos);
+
+    CRef<CByteSource> source = m_Collector->GetSource();
+
+    m_CollectPos = 0;
+    m_Collector.Reset();
+
+    return source;
 }
 
 // this method is highly optimized
@@ -171,7 +202,7 @@ char CIStreamBuffer::SkipSpaces(void)
     }
 }
 
-char* CIStreamBuffer::FillBuffer(char* pos)
+char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
     THROWS((CSerialIOException, bad_alloc))
 {
     _ASSERT(pos >= m_DataEndPos);
@@ -180,6 +211,13 @@ char* CIStreamBuffer::FillBuffer(char* pos)
     size_t erase = m_CurrentPos - m_Buffer;
     if ( erase > 0 ) {
         char* newPos = m_CurrentPos - erase;
+        if ( m_Collector ) {
+            _ASSERT(m_CollectPos);
+            int count = m_CurrentPos - m_CollectPos;
+            if ( count > 0 )
+                m_Collector->AddChunk(m_CollectPos, count);
+            m_CollectPos = newPos;
+        }
         memmove(newPos, m_CurrentPos, m_DataEndPos - m_CurrentPos);
         m_CurrentPos = newPos;
         m_DataEndPos -= erase;
@@ -197,6 +235,8 @@ char* CIStreamBuffer::FillBuffer(char* pos)
         char* newBuffer = new char[newSize];
         memcpy(newBuffer, m_Buffer, dataSize);
         m_CurrentPos = newBuffer + (m_CurrentPos - m_Buffer);
+        if ( m_CollectPos )
+            m_CollectPos = newBuffer + (m_CollectPos - m_Buffer);
         pos = newBuffer + newPosOffset;
         m_DataEndPos = newBuffer + dataSize;
         delete[] m_Buffer;
@@ -209,10 +249,22 @@ char* CIStreamBuffer::FillBuffer(char* pos)
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
                 return pos;
-            if ( m_Input->EndOfData() )
+            if ( m_Input->EndOfData() ) {
+                if ( noEOF ) {
+                    // ignore EOF
+                    _ASSERT(m_Buffer <= m_CurrentPos);
+                    _ASSERT(m_CurrentPos <= pos);
+                    _ASSERT(m_DataEndPos <= m_Buffer + m_BufferSize);
+                    _ASSERT(!m_CollectPos ||
+                            (m_CollectPos>=m_Buffer &&
+                             m_CollectPos<=m_CurrentPos));
+                    return pos;
+                }
                 THROW0_TRACE(CSerialEofException());
-            else
+            }
+            else {
                 THROW1_TRACE(CSerialIOException, "read fault");
+            }
         }
         m_DataEndPos += count;
         load -= count;
@@ -221,7 +273,18 @@ char* CIStreamBuffer::FillBuffer(char* pos)
     _ASSERT(m_CurrentPos <= pos);
     _ASSERT(pos < m_DataEndPos);
     _ASSERT(m_DataEndPos <= m_Buffer + m_BufferSize);
+    _ASSERT(!m_CollectPos || (m_CollectPos>=m_Buffer && m_CollectPos<=m_CurrentPos));
     return pos;
+}
+
+char CIStreamBuffer::FillBufferNoEOF(char* pos)
+    THROWS((CSerialIOException, bad_alloc))
+{
+    pos = FillBuffer(pos, true);
+    if ( pos >= m_DataEndPos )
+        return 0;
+    else
+        return *pos;
 }
 
 void CIStreamBuffer::GetChars(char* buffer, size_t count)
@@ -560,32 +623,6 @@ void COStreamBuffer::Write(const CRef<CByteSourceReader>& reader)
         }
         m_CurrentPos += count;
     }
-}
-
-CByteSourceSkipper::CByteSourceSkipper(CIStreamBuffer& in)
-    : m_Input(in),
-      m_SourceReader(in.m_Input),
-      m_Collector(m_SourceReader->SubSource(in.m_CurrentPos,
-                                            in.m_DataEndPos-in.m_CurrentPos))
-{
-    in.m_Input = this;
-}
-
-size_t CByteSourceSkipper::Read(char* buffer, size_t bufferSize)
-{
-    size_t count = m_SourceReader->Read(buffer, bufferSize);
-    if ( count != 0 )
-        m_Collector->AddChunk(buffer, count);
-    return count;
-}
-
-void CByteSourceSkipper::Disconnect(void)
-{
-    if ( !m_SourceReader )
-        return; // already disconnected
-    m_Input.m_Input = m_SourceReader;
-    m_SourceReader.Reset();
-    m_Collector->ReduceLastChunkBy(m_Input.m_DataEndPos-m_Input.m_CurrentPos);
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/05/03 14:38:13  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.41  2000/04/10 21:01:48  vasilche
 * Fixed Erase for map/set.
 * Added iteratorbase.hpp header for basic internal classes.
@@ -199,6 +203,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/iteratorbase.hpp>
+#include <serial/delaybuf.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -234,6 +239,23 @@ void CheckMemberOptional(CObjectIStream& in,
     }
 }
 
+static inline
+TObjectPtr GetMember(const CMemberInfo* memberInfo, TObjectPtr object)
+{
+    if ( memberInfo->CanBeDelayed() )
+        memberInfo->GetDelayBuffer(object).Update();
+    return memberInfo->GetMember(object);
+}
+
+static inline
+TConstObjectPtr GetMember(const CMemberInfo* memberInfo,
+                          TConstObjectPtr object)
+{
+    if ( memberInfo->CanBeDelayed() )
+        const_cast<CDelayBuffer&>(memberInfo->GetDelayBuffer(object)).Update();
+    return memberInfo->GetMember(object);
+}
+
 static
 bool IsMemberDefault(TConstObjectPtr object,
                      const CMembersInfo& members, size_t index)
@@ -242,9 +264,13 @@ bool IsMemberDefault(TConstObjectPtr object,
     if ( info->HaveSetFlag() ) {
         return !info->GetSetFlag(object);
     }
+    else if ( info->CanBeDelayed() && info->GetDelayBuffer(object) ) {
+        return false;
+    }
     else if ( info->Optional() ) {
         TConstObjectPtr def = info->GetDefault();
         TTypeInfo typeInfo = info->GetTypeInfo();
+        // we already checke for delayed buffer so we'll not call ::GetMember()
         TConstObjectPtr member = info->GetMember(object);
         if ( !def ) {
             return typeInfo->IsDefault(member);
@@ -270,7 +296,7 @@ void AssignMemberDefault(CObjectIStream& in, TObjectPtr object,
     if ( haveSetFlag && !info->GetSetFlag(object) )
         return; // member not set
 
-    TObjectPtr member = info->GetMember(object);
+    TObjectPtr member = GetMember(info, object);
     // assign member dafault
     TTypeInfo memberType = info->GetTypeInfo();
     TConstObjectPtr def = info->GetDefault();
@@ -294,7 +320,7 @@ void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info)
     if ( haveSetFlag && !info->GetSetFlag(object) )
         return; // member not set
 
-    TObjectPtr member = info->GetMember(object);
+    TObjectPtr member = GetMember(info, object);
     // assign member dafault
     TTypeInfo memberType = info->GetTypeInfo();
     TConstObjectPtr def = info->GetDefault();
@@ -332,8 +358,16 @@ void ReadMember(CObjectIStream& in, TObjectPtr object,
 {
     const CMemberInfo* info = members.GetMemberInfo(index);
     TObjectPtr member = info->GetMember(object);
-    // read member data
-    info->GetTypeInfo()->ReadData(in, member);
+    if ( info->CanBeDelayed() &&
+         info->GetDelayBuffer(object).DelayRead(in,
+                                                object, -1,
+                                                info) ) {
+        // we've got delayed buffer
+    }
+    else {
+        // read member data
+        info->GetTypeInfo()->ReadData(in, member);
+    }
     // update 'set' flag
     if ( info->HaveSetFlag() )
         info->GetSetFlag(object) = true;
@@ -544,7 +578,7 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* info = GetImplicitMember(m_Members);
-        info->GetTypeInfo()->WriteData(out, info->GetMember(object));
+        info->GetTypeInfo()->WriteData(out, GetMember(info, object));
     }
     else {
         CObjectOStream::Block block(out, RandomOrder());
@@ -572,7 +606,7 @@ void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
         // special case: class contains only one implicit member
         // we'll behave as this one member
         const CMemberInfo* info = GetImplicitMember(m_Members);
-        info->GetTypeInfo()->ReadData(in, info->GetMember(object));
+        info->GetTypeInfo()->ReadData(in, GetMember(info, object));
     }
     else {
         CObjectIStream::Block block(in, RandomOrder());
@@ -592,7 +626,13 @@ void CClassInfoTmpl::WriteMembers(CObjectOStream& out,
             block.Next();
             CObjectOStream::Member m(out, m_Members, i);
             const CMemberInfo* info = m_Members.GetMemberInfo(i);
-            info->GetTypeInfo()->WriteData(out, info->GetMember(object));
+            if ( info->CanBeDelayed() &&
+                 info->GetDelayBuffer(object).Write(out) ) {
+                // copied original delayed read buffer, do nothing
+            }
+            else {
+                info->GetTypeInfo()->WriteData(out, GetMember(info, object));
+            }
         }
     }
 }
@@ -753,12 +793,12 @@ void CClassInfoTmpl::SetDefault(TObjectPtr dst) const
 bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
 {
     for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        const CMemberInfo& member = *m_Members.GetMemberInfo(i);
-        if ( !member.GetTypeInfo()->Equals(member.GetMember(object1),
-                                           member.GetMember(object2)) )
+        const CMemberInfo* info = m_Members.GetMemberInfo(i);
+        if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
+                                          GetMember(info, object2)) )
             return false;
-        if ( member.HaveSetFlag() ) {
-            if ( member.GetSetFlag(object1) != member.GetSetFlag(object2) )
+        if ( info->HaveSetFlag() ) {
+            if ( info->GetSetFlag(object1) != info->GetSetFlag(object2) )
                 return false;
         }
     }
@@ -768,11 +808,11 @@ bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) co
 void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
     for ( TMemberIndex i = 0, size = m_Members.GetSize(); i < size; ++i ) {
-        const CMemberInfo& member = *m_Members.GetMemberInfo(i);
-        member.GetTypeInfo()->Assign(member.GetMember(dst),
-                                     member.GetMember(src));
-        if ( member.HaveSetFlag() ) {
-            member.GetSetFlag(dst) = member.GetSetFlag(src);
+        const CMemberInfo* info = m_Members.GetMemberInfo(i);
+        info->GetTypeInfo()->Assign(GetMember(info, dst),
+                                    GetMember(info, src));
+        if ( info->HaveSetFlag() ) {
+            info->GetSetFlag(dst) = info->GetSetFlag(src);
         }
     }
 }

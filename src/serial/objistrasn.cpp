@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/05/03 14:38:14  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.42  2000/04/28 16:58:12  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -433,7 +437,7 @@ pair<const char*, size_t> CObjectIStreamAsn::ReadId(void)
         }
         else {
             for ( size_t i = 1; ; ++i ) {
-                c = m_Input.PeekChar(i);
+                c = m_Input.PeekCharNoEOF(i);
                 if ( !IdChar(c) &&
                      (c != '-' || !IdChar(m_Input.PeekChar(i + 1))) ) {
                     const char* ptr = m_Input.GetCurrentPos();
@@ -526,7 +530,11 @@ void ReadStdSigned(CObjectIStreamAsn& in, T& data)
         in.ThrowError(in.eFormatError, "bad number");
     }
     T n = c - '0';
-    while ( (c = in.PeekChar()) >= '0' && c <= '9' ) {
+    for ( ;; ) {
+        c = in.GetInput().PeekCharNoEOF();
+        if  ( c < '0' || c > '9' )
+            break;
+
         in.GetInput().SkipChar();
         // TODO: check overflow
         n = n * 10 + (c - '0');
@@ -547,7 +555,11 @@ void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
         in.ThrowError(in.eFormatError, "bad number");
     }
     T n = c - '0';
-    while ( (c = in.PeekChar()) >= '0' && c <= '9' ) {
+    for ( ;; ) {
+        c = in.GetInput().PeekCharNoEOF();
+        if  ( c < '0' || c > '9' )
+            break;
+
         in.GetInput().SkipChar();
         // TODO: check overflow
         n = n * 10 + (c - '0');
@@ -655,7 +667,7 @@ void CObjectIStreamAsn::ReadString(string& s)
             SkipEndOfLine(c);
             break;
         case '\"':
-            if ( m_Input.PeekChar(i + 1) == '\"' ) {
+            if ( m_Input.PeekCharNoEOF(i + 1) == '\"' ) {
                 // double quote -> one quote
                 s.append(m_Input.GetCurrentPos(), i + 1);
                 m_Input.SkipChars(i + 2);
@@ -691,20 +703,20 @@ void CObjectIStreamAsn::SkipBool(void)
 {
     switch ( SkipWhiteSpace() ) {
     case 'T':
-        if ( m_Input.PeekChar(1) == 'R' &&
-             m_Input.PeekChar(2) == 'U' &&
-             m_Input.PeekChar(3) == 'E' &&
-             !IdChar(m_Input.PeekChar(4)) ) {
+        if ( m_Input.PeekCharNoEOF(1) == 'R' &&
+             m_Input.PeekCharNoEOF(2) == 'U' &&
+             m_Input.PeekCharNoEOF(3) == 'E' &&
+             !IdChar(m_Input.PeekCharNoEOF(4)) ) {
             m_Input.SkipChars(4);
             return;
         }
         break;
     case 'F':
-        if ( m_Input.PeekChar(1) == 'A' &&
-             m_Input.PeekChar(2) == 'L' &&
-             m_Input.PeekChar(3) == 'S' &&
-             m_Input.PeekChar(4) == 'E' &&
-             !IdChar(m_Input.PeekChar(5)) ) {
+        if ( m_Input.PeekCharNoEOF(1) == 'A' &&
+             m_Input.PeekCharNoEOF(2) == 'L' &&
+             m_Input.PeekCharNoEOF(3) == 'S' &&
+             m_Input.PeekCharNoEOF(4) == 'E' &&
+             !IdChar(m_Input.PeekCharNoEOF(5)) ) {
             m_Input.SkipChars(5);
             return;
         }
@@ -762,7 +774,7 @@ void CObjectIStreamAsn::SkipUNumber(void)
     if ( c < '0' || c > '9' ) {
         ThrowError(eFormatError, "bad number");
     }
-    while ( (c = m_Input.PeekChar(i)) >= '0' && c <= '9' ) {
+    while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;
     }
     m_Input.SkipChars(i);
@@ -829,10 +841,10 @@ void CObjectIStreamAsn::SkipString(void)
 void CObjectIStreamAsn::SkipNull(void)
 {
     if ( SkipWhiteSpace() == 'N' &&
-         m_Input.PeekChar(1) == 'U' &&
-         m_Input.PeekChar(2) == 'L' &&
-         m_Input.PeekChar(3) == 'L' &&
-         !IdChar(m_Input.PeekChar(4)) ) {
+         m_Input.PeekCharNoEOF(1) == 'U' &&
+         m_Input.PeekCharNoEOF(2) == 'L' &&
+         m_Input.PeekCharNoEOF(3) == 'L' &&
+         !IdChar(m_Input.PeekCharNoEOF(4)) ) {
         m_Input.SkipChars(4);
         return;
     }

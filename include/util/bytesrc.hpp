@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/03 14:38:05  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.2  2000/04/28 19:14:30  vasilche
 * Fixed stream position and offset typedefs.
 *
@@ -98,8 +102,7 @@ public:
     // end of data reached or error occured
     virtual bool EndOfData(void) const;
 
-    virtual CRef<CSubSourceCollector> SubSource(char* buffer,
-                                                size_t bufferLength);
+    virtual CRef<CSubSourceCollector> SubSource(size_t prepend);
 
 private:
     // to prevent copy
@@ -117,7 +120,6 @@ public:
     virtual ~CSubSourceCollector(void);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength) = 0;
-    virtual void ReduceLastChunkBy(size_t unusedLength) = 0;
     virtual CRef<CByteSource> GetSource(void) = 0;
 
 private:
@@ -196,8 +198,7 @@ class CFileByteSourceReader : public CStreamByteSourceReader
 public:
     CFileByteSourceReader(ECanDelete canDelete, const CFileByteSource* source);
 
-    CRef<CSubSourceCollector> SubSource(char* buffer,
-                                        size_t bufferLength);
+    CRef<CSubSourceCollector> SubSource(size_t prepend);
 private:
     CConstRef<CFileByteSource> m_FileSource;
     CNcbiIfstream m_FStream;
@@ -217,8 +218,6 @@ public:
         {
             return m_DataSize;
         }
-    void ReduceBy(size_t unused);
-    
     const CRef<CMemoryChunk>& GetNextChunk(void) const
         {
             return m_NextChunk;
@@ -271,11 +270,9 @@ private:
 class CMemorySourceCollector : public CSubSourceCollector
 {
 public:
-    CMemorySourceCollector(ECanDelete canDelete,
-                           const char* buffer, size_t bufferLength);
+    CMemorySourceCollector(ECanDelete canDelete);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
-    virtual void ReduceLastChunkBy(size_t unusedLength);
     virtual CRef<CByteSource> GetSource(void);
 
 private:
@@ -296,10 +293,9 @@ public:
 
     CFileSourceCollector(ECanDelete canDelete,
                          const CConstRef<CFileByteSource>& source,
-                         TFilePos start, size_t addBytes);
+                         TFilePos start);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
-    virtual void ReduceLastChunkBy(size_t unusedLength);
     virtual CRef<CByteSource> GetSource(void);
 
 private:
@@ -349,31 +345,6 @@ public:
 
 private:
     TFileOff m_Length;
-};
-
-class CByteSourceSkipper : public CByteSourceReader
-{
-public:
-    CByteSourceSkipper(CIStreamBuffer& in);
-    ~CByteSourceSkipper(void)
-        {
-            Disconnect();
-        }
-
-    size_t Read(char* buffer, size_t bufferSize);
-
-    CRef<CByteSource> GetSkippedSource(void)
-        {
-            Disconnect();
-            return m_Collector->GetSource();
-        }
-
-private:
-    void Disconnect(void);
-
-    CIStreamBuffer& m_Input;
-    CRef<CByteSourceReader> m_SourceReader;
-    CRef<CSubSourceCollector> m_Collector;
 };
 
 //#include <serial/bytesrc.inl>

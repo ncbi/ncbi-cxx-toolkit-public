@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/05/03 14:38:17  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.15  2000/04/17 19:11:07  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -223,10 +227,11 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
             _ASSERT(!defaultCode.empty());
         }
 
+        bool delayed = !GetVar((*i)->GetName()+".Delay").empty();
         AutoPtr<CTypeStrings> memberType = (*i)->GetType()->GetFullCType();
         code->AddMember((*i)->GetName(), memberType,
                         (*i)->GetType()->GetVar("Pointer"),
-                        optional, defaultCode);
+                        optional, defaultCode, delayed);
     }
     SetParentClassTo(*code);
     return AutoPtr<CTypeStrings>(code.release());

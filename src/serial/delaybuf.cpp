@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/05/03 14:38:13  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.1  2000/04/28 16:58:12  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -84,7 +88,7 @@ void CDelayBuffer::DoUpdate(void)
     if ( info.m_MemberInfo->IsPointer() ) {
         // create object itself
         if ( info.m_MemberInfo->IsObjectPointer() ) {
-            ERR_POST("Should check for real pointer type (CRef...)");
+            _TRACE("Should check for real pointer type (CRef...)");
             member = CType<TObjectPtr>::Get(member) = typeInfo->Create();
             CType<CObject>::Get(member).AddReference();
         }

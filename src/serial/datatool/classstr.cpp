@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/05/03 14:38:18  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.17  2000/04/17 19:11:07  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -138,6 +142,9 @@
 
 BEGIN_NCBI_SCOPE
 
+#define SET_PREFIX "m_set_"
+#define DELAY_PREFIX "m_delay_"
+
 CClassTypeStrings::CClassTypeStrings(const string& externalName,
                                      const string& className)
     : m_IsObject(true), m_HaveUserClass(true),
@@ -150,25 +157,28 @@ CClassTypeStrings::~CClassTypeStrings(void)
 }
 
 void CClassTypeStrings::AddMember(const string& name,
-                                  AutoPtr<CTypeStrings> type,
+                                  const AutoPtr<CTypeStrings>& type,
                                   const string& pointerType,
                                   bool optional,
-                                  const string& defaultValue)
+                                  const string& defaultValue,
+                                  bool delayed)
 {
     m_Members.push_back(SMemberInfo(name, type,
                                     pointerType,
-                                    optional, defaultValue));
+                                    optional, defaultValue,
+                                    delayed));
 }
 
 CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
-                                            AutoPtr<CTypeStrings> t,
+                                            const AutoPtr<CTypeStrings>& t,
                                             const string& pType,
                                             bool opt,
-                                            const string& defValue)
+                                            const string& defValue,
+                                            bool del)
     : externalName(name), cName(Identifier(name)),
       mName("m_"+cName), tName('T'+cName),
       type(t), ptrType(pType),
-      optional(opt), defaultValue(defValue)
+      optional(opt), delayed(del), defaultValue(defValue)
 {
     if ( cName.empty() ) {
         mName = "m_data";
@@ -375,6 +385,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                           const string& methodPrefix,
                                           const string& codeClassName) const
 {
+    bool delayed = false;
     // generate member methods
     {
         iterate ( TMembers, i, m_Members ) {
@@ -384,8 +395,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             else {
                 i->type->GenerateTypeCode(code);
             }
+            if ( i->delayed )
+                delayed = true;
         }
     }
+    if ( delayed )
+        code.HPPIncludes().insert("serial/delaybuf");
 
     // generate member types
     {
@@ -422,17 +437,24 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( i->haveFlag ) {
                     // use special boolean flag
                     code.InlineMethods() <<
-                        "    return m_set_"<<i->cName<<";\n";
-                }
-                else if ( i->ref ) {
-                    // CRef
-                    code.InlineMethods() <<
-                        "    return "<<i->mName<<";\n";
+                        "    return "SET_PREFIX<<i->cName<<";\n";
                 }
                 else {
-                    // doesn't need set flag -> use special code
-                    code.InlineMethods() <<
-                        "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
+                    if ( i->delayed ) {
+                        code.InlineMethods() <<
+                            "    if ( "DELAY_PREFIX<<i->cName<<" )\n"
+                            "        return true;\n";
+                    }
+                    if ( i->ref ) {
+                        // CRef
+                        code.InlineMethods() <<
+                            "    return "<<i->mName<<";\n";
+                    }
+                    else {
+                        // doesn't need set flag -> use special code
+                        code.InlineMethods() <<
+                            "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
+                    }
                 }
                 code.InlineMethods() <<
                     "}\n"
@@ -464,6 +486,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             code.MethodStart(inl) <<
                 "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
                 "{\n";
+            if ( i->delayed ) {
+                code.Methods(inl) <<
+                    "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+            }
             WriteTabbed(code.Methods(inl), destructionCode);
             if ( i->ref ) {
                 if ( !i->optional ) {
@@ -503,7 +529,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->haveFlag ) {
                 code.Methods(inl) <<
-                    "    m_set_"<<i->cName<<" = false;\n";
+                    "    "SET_PREFIX<<i->cName<<" = false;\n";
             }
             code.Methods(inl) <<
                 "}\n"
@@ -513,9 +539,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             // generate getter
             code.ClassPublic() <<
                 "    const "<<cType<<"& Get"<<i->cName<<"(void) const;\n";
-            code.MethodStart(!i->ref) <<
+            inl = !i->ref;
+            code.MethodStart(inl) <<
                 "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                "{\n"
+                "{\n";
+            if ( i->delayed ) {
+                code.Methods(inl) <<
+                    "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+            }
+            code.Methods(inl) <<
                 "    return "<<i->valueName<<";\n"
                 "}\n"
                 "\n";
@@ -528,6 +560,10 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 code.Methods() <<
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
                     "{\n";
+                if ( i->delayed ) {
+                    code.Methods() <<
+                        "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                }
                 if ( !i->canBeNull ) {
                     code.Methods() <<
                         "    "<<i->mName<<".Reset(&*value); // assure non null value\n";
@@ -538,7 +574,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->haveFlag ) {
                     code.Methods() <<
-                        "    m_set_"<<i->cName<<" = true;\n";
+                        "    "SET_PREFIX<<i->cName<<" = true;\n";
                 }
                 code.Methods() <<
                     "}\n"
@@ -550,7 +586,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     _ASSERT(!i->haveFlag);
                     code.Methods() <<
                         methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
-                        "{\n"
+                        "{\n";
+                    if ( i->delayed ) {
+                        code.Methods() <<
+                            "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                    }
+                    code.Methods() <<
                         "    if ( !"<<i->mName<<" )\n"
                         "        "<<i->mName<<".Reset("<<i->type->NewInstance(NcbiEmptyString)<<");\n"
                         "    return "<<i->valueName<<";\n"
@@ -563,9 +604,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "inline\n"<<
                         methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                         "{\n";
+                    if ( i->delayed ) {
+                        code.InlineMethods() <<
+                            "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                    }
                     if ( i->haveFlag ) {
                         code.InlineMethods() <<
-                            "    m_set_"<<i->cName<<" = true;\n";
+                            "    "SET_PREFIX<<i->cName<<" = true;\n";
                     }
                     code.InlineMethods() <<
                         "    return "<<i->valueName<<";\n"
@@ -580,11 +625,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     code.InlineMethods() <<
                         "inline\n"
                         "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
-                        "{\n"
+                        "{\n";
+                    if ( i->delayed ) {
+                        code.InlineMethods() <<
+                            "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                    }
+                    code.InlineMethods() <<                        
                         "    "<<i->valueName<<" = value;\n";
                     if ( i->haveFlag ) {
                         code.InlineMethods() <<
-                            "    m_set_"<<i->cName<<" = true;\n";
+                            "    "SET_PREFIX<<i->cName<<" = true;\n";
                     }
                     code.InlineMethods() <<
                         "}\n"
@@ -596,9 +646,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "inline\n"<<
                     methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                     "{\n";
+                if ( i->delayed ) {
+                    code.InlineMethods() <<
+                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                }
                 if ( i->haveFlag ) {
                     code.InlineMethods() <<
-                        "    m_set_"<<i->cName<<" = true;\n";
+                        "    "SET_PREFIX<<i->cName<<" = true;\n";
                 }
                 code.InlineMethods() <<
                     "    return "<<i->valueName<<";\n"
@@ -618,13 +672,23 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 code.InlineMethods() <<
                     "inline\n"<<
                     methodPrefix<<"operator const "<<methodPrefix<<i->tName<<"& (void) const\n"
-                    "{\n"
+                    "{\n";
+                if ( i->delayed ) {
+                    code.InlineMethods() <<
+                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                }
+                code.InlineMethods() <<
                     "    return "<<i->mName<<";\n"
                     "}\n"
                     "\n"
                     "inline\n"<<
                     methodPrefix<<"operator "<<methodPrefix<<i->tName<<"& (void)\n"
-                    "{\n"
+                    "{\n";
+                if ( i->delayed ) {
+                    code.InlineMethods() <<
+                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                }
+                code.InlineMethods() <<
                     "    return "<<i->mName<<";\n"
                     "}\n"
                     "\n";
@@ -643,7 +707,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 	        iterate ( TMembers, i, m_Members ) {
 		        if ( i->haveFlag ) {
 			        code.ClassPrivate() <<
-				        "    bool m_set_"<<i->cName<<";\n";
+				        "    bool "SET_PREFIX<<i->cName<<";\n";
+				}
+			}
+        }
+		{
+	        iterate ( TMembers, i, m_Members ) {
+		        if ( i->delayed ) {
+			        code.ClassPrivate() <<
+				        "    mutable NCBI_NS_NCBI::CDelayBuffer "DELAY_PREFIX<<i->cName<<";\n";
 				}
 			}
         }
@@ -666,7 +738,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 		{
 	        iterate ( TMembers, i, m_Members ) {
                 if ( i->haveFlag ) {
-                    code.AddInitializer("m_set_"+i->cName, "false");
+                    code.AddInitializer(SET_PREFIX+i->cName, "false");
                 }
 			}
         }
@@ -770,7 +842,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->haveFlag ) {
                 code.Methods() <<
-                    "->SetSetFlag(MEMBER_PTR(m_set_"<<i->cName<<"))";
+                    "->SetSetFlag(MEMBER_PTR("SET_PREFIX<<i->cName<<"))";
+            }
+            if ( i->delayed ) {
+                code.Methods() <<
+                    "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<i->cName<<"))";
             }
             code.Methods() <<
                 ";\n";

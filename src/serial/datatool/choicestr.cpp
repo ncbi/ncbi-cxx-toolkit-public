@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/05/03 14:38:17  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
 * Revision 1.16  2000/04/17 19:11:07  vasilche
 * Fixed failed assertion.
 * Removed redundant namespace specifications.
@@ -145,6 +149,8 @@ BEGIN_NCBI_SCOPE
 #define OBJECT_MEMBER "m_object"
 #define STATE_PREFIX "e_"
 #define STATE_NOT_SET "e_not_set"
+#define DELAY_MEMBER "m_delayBuffer"
+#define DELAY_TYPE_FULL "NCBI_NS_NCBI::CDelayBuffer"
 
 CChoiceTypeStrings::CChoiceTypeStrings(const string& externalName,
                                        const string& className)
@@ -158,16 +164,17 @@ CChoiceTypeStrings::~CChoiceTypeStrings(void)
 }
 
 void CChoiceTypeStrings::AddVariant(const string& name,
-                                    AutoPtr<CTypeStrings> type)
+                                    const AutoPtr<CTypeStrings>& type,
+                                    bool delayed)
 {
-    //    _ASSERT(type->GetContextNamespace() == GetContextNamespace());
-    m_Variants.push_back(SVariantInfo(name, type));
+    m_Variants.push_back(SVariantInfo(name, type, delayed));
 }
 
 CChoiceTypeStrings::SVariantInfo::SVariantInfo(const string& name,
-                                               AutoPtr<CTypeStrings> t)
+                                               const AutoPtr<CTypeStrings>& t,
+                                               bool del)
     : externalName(name), cName(Identifier(name)),
-      type(t)
+      type(t), delayed(del)
 {
     if ( type->IsString() ) {
         memberType = eStringMember;
@@ -204,6 +211,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     bool havePointers = false;
     bool haveSimple = false;
     bool haveString = false;
+    bool delayed = false;
     // generate variants code
     {
         iterate ( TVariants, i, m_Variants ) {
@@ -225,8 +233,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 i->type->GenerateTypeCode(code);
                 break;
             }
+            if ( i->delayed )
+                delayed = true;
         }
     }
+    if ( delayed )
+        code.HPPIncludes().insert("serial/delaybuf");
+
     bool haveUnion = havePointers || haveSimple ||
         (haveString && haveObjectPointer);
     if ( haveString && haveUnion ) {
@@ -283,7 +296,13 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "\n";
     setters <<
         "    // select requested variant if needed\n"
-        "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n"
+        "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
+    if ( delayed ) {
+        setters <<
+            "    // select requested variant using delay buffer (for internal use)\n"
+            "    void SelectDelayBuffer("STATE_ENUM" index);\n";
+    }
+    setters <<
         "\n";
 
     code.InlineMethods() <<
@@ -310,6 +329,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "    }\n"
         "}\n"
         "\n";
+    if ( delayed ) {
+        code.InlineMethods() <<
+            "inline\n"
+            "void "<<methodPrefix<<"SelectDelayBuffer("STATE_ENUM" index)\n"
+            "{\n"
+            "    if ( "STATE_MEMBER" != "STATE_NOT_SET" || "DELAY_MEMBER".GetIndex() != (index - 1))\n"
+            "        THROW1_TRACE(NCBI_NS_STD::runtime_error, \"illegal call\");\n"
+            "    "STATE_MEMBER" = index;\n"
+            "}\n"
+            "\n";
+    }
 
     if ( HaveAssignment() ) {
         code.InlineMethods() <<
@@ -357,6 +387,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
         if ( haveObjectPointer || havePointers || haveString ) {
+            if ( delayed ) {
+                code.Methods() <<
+                    "    if ( "DELAY_MEMBER" )\n"
+                    "        "DELAY_MEMBER".Forget();\n"
+                    "    else\n";
+            }
             code.Methods() <<
                 "    switch ( "STATE_MEMBER" ) {\n";
             // generate destruction code for pointers
@@ -602,6 +638,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             setters <<
                 "    "<<cType<<"& Get"<<i->cName<<"(void);\n"
                 "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
+            if ( i->memberType == eSimpleMember ||
+                 i->memberType == eStringMember ) {
+                setters <<
+                    "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
+            }
             if ( i->memberType == eObjectPointerMember ) {
                 setters <<
                     "    void Set"<<i->cName<<"(const "<<ncbiNamespace<<"CRef<"<<cType<<">& ref);\n";
@@ -630,6 +671,8 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 inl = false;
                 break;
             }
+            if ( i->delayed )
+                inl = false;
             code.InlineMethods() <<
                 "inline\n"
                 "bool "<<methodPrefix<<"Is"<<i->cName<<"(void) const\n"
@@ -640,33 +683,51 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             code.MethodStart(inl) <<
                 "const "<<methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                 "{\n"
-                "    CheckSelected("STATE_PREFIX<<i->cName<<");\n"
+                "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
+            if ( i->delayed ) {
+                code.Methods(inl) <<
+                    "    "DELAY_MEMBER".Update();\n";
+            }
+            code.Methods(inl) <<
                 "    return "<<constMemberRef<<";\n"
                 "}\n"
                 "\n";
             code.MethodStart(inl) <<
                 methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void)\n"
                 "{\n"
-                "    CheckSelected("STATE_PREFIX<<i->cName<<");\n"
+                "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
+            if ( i->delayed ) {
+                code.Methods(inl) <<
+                    "    "DELAY_MEMBER".Update();\n";
+            }
+            code.Methods(inl) <<
                 "    return "<<memberRef<<";\n"
                 "}\n"
                 "\n";
             code.MethodStart(inl) <<
                 methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                 "{\n"
-                "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n"
+                "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+            if ( i->delayed ) {
+                code.Methods(inl) <<
+                    "    "DELAY_MEMBER".Update();\n";
+            }
+            code.Methods(inl) <<
                 "    return "<<memberRef<<";\n"
                 "}\n"
                 "\n";
             if ( i->memberType == eSimpleMember ||
                  i->memberType == eStringMember ) {
-                setters <<
-                    "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
                 code.InlineMethods() <<
                     "inline\n"
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const T"<<i->cName<<"& value)\n"
                     "{\n"
-                    "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n"
+                    "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                if ( i->delayed ) {
+                    code.InlineMethods() <<
+                        "    "DELAY_MEMBER".Forget();\n";
+                }
+                code.InlineMethods() <<
                     "    "<<memberRef<<" = value;\n"
                     "}\n"
                     "\n";
@@ -675,8 +736,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 code.Methods() <<
                     "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef<T"<<i->cName<<">& ref)\n"
                     "{\n"
-                    "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&*ref);\n"
-                    "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "OBJECT_MEMBER" != ptr ) {\n"
+                    "    T"<<i->cName<<"* ptr = const_cast<T"<<i->cName<<"*>(&*ref);\n";
+                if ( i->delayed ) {
+                    code.Methods() <<
+                        "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "DELAY_MEMBER" || "OBJECT_MEMBER" != ptr ) {\n";
+                }
+                else {
+                    code.Methods() <<
+                        "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "OBJECT_MEMBER" != ptr ) {\n";
+                }
+                code.Methods() <<
                     "        Reset();\n"
                     "        ("OBJECT_MEMBER" = ptr)->AddReference();\n"
                     "        "STATE_MEMBER" = "STATE_PREFIX<<i->cName<<";\n"
@@ -724,6 +793,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             code.ClassPrivate() <<
                 "    "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
         }
+        if ( delayed ) {
+            code.ClassPrivate() <<
+                "    mutable "DELAY_TYPE_FULL" "DELAY_MEMBER";\n";
+        }
     }
 
     // generate type info
@@ -738,33 +811,39 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         "        typedef "<<codeClassName<<" CClass_Base;\n"
         "        typedef "<<GetClassName()<<" CClass;\n"
         "        info = NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateChoiceInfo(\""<<GetExternalName()<<"\");\n";
+    if ( delayed ) {
+        code.Methods() <<
+            "        info->SetSelectDelay(&NCBI_NS_NCBI::CClassInfoHelper<CClass>::SelectDelayBuffer);\n";
+    }
     {
         iterate ( TVariants, i, m_Variants ) {
             switch ( i->memberType ) {
             case ePointerMember:
                 code.Methods() <<
-                    "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", MEMBER_PTR(m_"<<i->cName<<"), "<<i->type->GetRef()<<")->SetPointer()"
-                    ";\n";
+                    "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", MEMBER_PTR(m_"<<i->cName<<"), "<<i->type->GetRef()<<")->SetPointer()";
                 break;
             case eObjectPointerMember:
                 code.Methods() <<
-                    "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", MEMBER_PTR("OBJECT_MEMBER"), "<<i->type->GetRef()<<")->SetObjectPointer()"
-                    ";\n";
+                    "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", MEMBER_PTR("OBJECT_MEMBER"), "<<i->type->GetRef()<<")->SetObjectPointer()";
                 break;
             case eSimpleMember:
                 code.Methods() <<
                     "        "<<i->type->GetTypeInfoCode(i->externalName,
-                                                         "m_"+i->cName)<<";\n";
+                                                         "m_"+i->cName);
                 break;
             case eStringMember:
                 code.Methods() <<
                     "        NCBI_NS_NCBI::AddMember(info->GetMembers(), \""<<i->externalName<<"\", MEMBER_PTR("STRING_MEMBER"), "<<i->type->GetRef()<<')';
                 if ( haveUnion )
                     code.Methods() << "->SetPointer()";
-                code.Methods() <<
-                        ";\n";
                 break;
             }
+            if ( i->delayed ) {
+                code.Methods() <<
+                    "->SetDelayBuffer(MEMBER_PTR(m_delayBuffer))";
+            }
+            code.Methods() <<
+                ";\n";
         }
     }
     code.Methods() <<
