@@ -106,8 +106,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
 {
   GBLOG_POST( "CGBDataLoader");
   
-#if 0
-  //#if defined(HAVE_LIBSYBASE) && defined(HAVE_LIBDL) 
+#if defined(HAVE_LIBDL) && defined(HAVE_PUBSEQ_OS)
   if(!m_Driver)
     {
       try
@@ -801,6 +800,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/05/10 16:44:32  kimelman
+* tuning to allow pubseq enable build
+*
 * Revision 1.35  2002/05/08 22:23:48  kimelman
 * MT fixes
 *

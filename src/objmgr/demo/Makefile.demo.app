@@ -6,6 +6,8 @@
 # Build object manager demo application "objmgr_demo"
 #################################
 
+REQUIRES = dbapi
+
 APP = objmgr_demo
 SRC = objmgr_demo
 LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
