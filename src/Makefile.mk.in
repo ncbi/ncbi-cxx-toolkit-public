@@ -72,6 +72,7 @@ CONF_CXXCPP = @CXXCPP@
 CONF_AR     = @AR@
 CONF_RANLIB = @RANLIB@
 CONF_LINK   = @LINK@
+CONF_C_LINK = @C_LINK@
 CONF_STRIP  = @STRIP@
 
 CONF_CFLAGS   = @CFLAGS@
@@ -81,6 +82,7 @@ CONF_DEPFLAGS = @DEPFLAGS@
 CONF_DEPFLAGS_POST = @DEPFLAGS_POST@
 CONF_LDFLAGS  = @LDFLAGS@
 CONF_LIBS     = @LIBS@
+CONF_C_LIBS   = @C_LIBS@
 
 
 ### Configurable compiler/librarian/linker binaries and options
@@ -94,6 +96,7 @@ ORIG_CXXCPP = $(CONF_CXXCPP)
 ORIG_AR     = $(CONF_AR)
 ORIG_RANLIB = $(CONF_RANLIB)
 ORIG_LINK   = $(CONF_LINK)
+ORIG_C_LINK = $(CONF_C_LINK)
 ORIG_STRIP  = $(CONF_STRIP)
 
 ORIG_CFLAGS   = $(CONF_CFLAGS)
@@ -103,6 +106,7 @@ ORIG_DEPFLAGS = $(CONF_DEPFLAGS)
 ORIG_DEPFLAGS_POST = $(CONF_DEPFLAGS_POST)
 ORIG_LDFLAGS  = $(CONF_LDFLAGS)
 ORIG_LIBS     = $(CONF_LIBS)
+ORIG_C_LIBS   = $(CONF_C_LIBS)
 
 
 ### Configurable compiler/librarian/linker binaries and options
@@ -116,6 +120,7 @@ CXXCPP = $(CONF_CXXCPP)
 AR     = $(CONF_AR)
 RANLIB = $(CONF_RANLIB)
 LINK   = $(CONF_LINK)
+C_LINK = $(CONF_C_LINK) # Linker for pure-C programs
 STRIP  = $(CONF_STRIP)
 
 CFLAGS   = $(CONF_CFLAGS)
@@ -125,6 +130,7 @@ DEPFLAGS = $(CONF_DEPFLAGS)
 DEPFLAGS_POST = $(CONF_DEPFLAGS_POST)
 LDFLAGS  = $(CONF_LDFLAGS)
 LIBS     = $(CONF_LIBS)
+C_LIBS   = $(CONF_C_LIBS) # Libraries for pure-C programs
 PRE_LIBS =
 
 ### Debug/release suffixes
