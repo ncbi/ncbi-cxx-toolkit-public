@@ -102,7 +102,7 @@ void PromoteIfDifferent(const string& present_path,
     streampos file_length_new = ifs_new.tellg();
     ifs_new.seekg(0, ios::beg);
 
-    if (file_length_present != file_length_new) {
+    if (file_length_present.state() != file_length_new.state()) {
         ifs_present.close();
         ifs_new.close();
         CDirEntry(present_path).Remove();
@@ -112,17 +112,17 @@ void PromoteIfDifferent(const string& present_path,
 
     // Load both to memory
     typedef AutoPtr<char, ArrayDeleter<char> > TAutoArray;
-    TAutoArray buf_present = TAutoArray(new char [file_length_present]);
-    TAutoArray buf_new     = TAutoArray(new char [file_length_new]);
+    TAutoArray buf_present = TAutoArray(new char [file_length_present.state()]);
+    TAutoArray buf_new     = TAutoArray(new char [file_length_new.state()]);
 
-    ifs_present.read(buf_present.get(), file_length_present);
-    ifs_new.read    (buf_new.get(),     file_length_new);
+    ifs_present.read(buf_present.get(), file_length_present.state());
+    ifs_new.read    (buf_new.get(),     file_length_new.state());
 
     ifs_present.close();
     ifs_new.close();
 
     // If candidate file is not the same as present file it'll be a new file
-    if (memcmp(buf_present.get(), buf_new.get(), file_length_present) != 0) {
+    if (memcmp(buf_present.get(), buf_new.get(), file_length_present.state()) != 0) {
         CDirEntry(present_path).Remove();
         CDirEntry(candidate_path).Rename(present_path);
         return;
@@ -1027,6 +1027,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/06/14 20:41:20  gorelenk
+ * Changed PromoteIfDifferent : added conversion state to avoid compilation
+ * errors on GCC 3.3.3 .
+ *
  * Revision 1.28  2004/06/14 19:19:08  gorelenk
  * Changed definition of enum in CBuildType .
  *
