@@ -92,7 +92,7 @@ USING_SCOPE (sequence);
 
 static const int k_NumFrame = 6;
 static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
-#define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%ld&dopt=%s\" %s>"
+#define ENTREZ_URL "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>"
 #define TRACE_URL  "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">"
 
 /* url for linkout*/
@@ -211,16 +211,14 @@ static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids);
 
 static string MakeURLSafe(char* src);
 static void getAlnScores(const CSeq_align& aln, int& score, double& bits, double& evalue);
-template<class container>
-static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue);
-static bool s_canDoMultiAlign(const CSeq_align& aln, CScope scope);
+template<class container> static bool s_GetBlastScore(const container& scoreList,  int& score, double& bits, double& evalue);
+static bool s_canDoMultiAlign(const CSeq_align& aln, CScope& scope);
 static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_Choice choice);
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
 static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 
 
-template<class container>
-static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
+template<class container> static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
   bool hasScore = false;
   ITERATE (typename container, iter, scoreList) {
     const CObject_id& id=(*iter)->GetId();
@@ -485,7 +483,7 @@ static const string GetSeqIdStringByFastaOrder(const CSeq_id& id, CScope& sp, bo
   fasta_order[CSeq_id::e_Tpe]=10;
   fasta_order[CSeq_id::e_Tpd]=10;
  
-  const CSeq_id* sip;
+  const CSeq_id* sip = NULL;
   const CBioseq* bioseq=&sp.GetBioseqHandle(id).GetBioseq();
   if(bioseq){
     for (CBioseq::TId::const_iterator id_it = bioseq->GetId().begin(); id_it!=bioseq->GetId().end(); ++id_it){
@@ -713,7 +711,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
           //get sequence checkbox
           if(m_AlignOption&eSequenceRetrieval && m_IsDbGi){
             char checkBoxBuf[512];
-            sprintf(checkBoxBuf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%ld\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment', 'getSeqGi', this.checked)\">", gi);
+            sprintf(checkBoxBuf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment', 'getSeqGi', this.checked)\">", gi);
             out << checkBoxBuf;        
           }
           urlLink = getUrl(m_AV->GetBioseqHandle(row).GetBioseq().GetId(), row);         
@@ -731,7 +729,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
         startLen=NStr::IntToString(start).size();
         AddSpace(out, maxStartLen-startLen+m_StartSequenceMargin);
 	if (row>0 && m_AlignOption & eShowIdentity){
-	  for (int index = j; index < j + actualLineLen && index < sequence[row].size(); index ++){
+	  for (int index = j; index < j + actualLineLen && index < (int)sequence[row].size(); index ++){
 	    if (sequence[row][index] == sequence[0][index] && isalpha(sequence[row][index])) {
 	      sequence[row][index] = '.';           
 	    }         
@@ -867,13 +865,13 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       //make alnvector
       CRef<CAlnVec> avRef;
       if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
-	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*((*iter)->CreateDensegFromStdseg()));
+	const CTypeIterator<CDense_seg> ds = Begin(*((*iter)->CreateDensegFromStdseg()));
 	avRef = new CAlnVec(*ds, m_Scope);
       } else if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
 	const CTypeConstIterator<CDense_seg> ds = ConstBegin(**iter);
 	avRef = new CAlnVec(*ds, m_Scope);
       } else if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
-	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*(CreateDensegFromDendiag(**iter)));
+	const CTypeIterator<CDense_seg> ds = Begin(*(CreateDensegFromDendiag(**iter)));
 	avRef = new CAlnVec(*ds, m_Scope);
       } else {
 	NCBI_THROW(CException, eUnknown, "Seq-align should be Denseg, Stdseg or Dendiag!");
@@ -985,7 +983,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       }
     }
     
-    for(int i = 0; i < alnVector.size(); i ++){
+    for(int i = 0; i < (int)alnVector.size(); i ++){
       for(CTypeConstIterator<CSeq_align> alnRef = ConstBegin(*alnVector[i]); alnRef; ++alnRef){
 	CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
 	try{
@@ -1002,7 +1000,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     }
     
     int numDistinctFrames = 0;
-    for(int i = 0; i < alnVector.size(); i ++){
+    for(int i = 0; i < (int)alnVector.size(); i ++){
       if(!alnVector[i]->Get().empty()){
 	numDistinctFrames ++;
       }
@@ -1098,7 +1096,7 @@ const void CDisplaySeqalign::PrintDefLine(const CBioseq_Handle& bspHandle, CNcbi
 	}
 	if ((m_AlignOption&eSequenceRetrieval) && (m_AlignOption&eHtml) && m_IsDbGi && isFirst) {
 	  char buf[512];
-	  sprintf(buf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%ld\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment', 'getSeqGi', this.checked)\">", gi);
+	  sprintf(buf, "<input type=\"checkbox\" name=\"getSeqGi\" value=\"%d\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment', 'getSeqGi', this.checked)\">", gi);
 	  out << buf;
 	}
  
@@ -1183,7 +1181,7 @@ const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int 
   } else {//now deal with font tag for mask for html display    
     bool endTag = false;
     bool numFrontTag = 0;
-    for (int i=0; i<actualSeq.size(); i++){
+    for (int i = 0; i < (int)actualSeq.size(); i ++){
       for (list<CRange<int> >::iterator iter=actualSeqloc.begin();  iter!=actualSeqloc.end(); iter++){
         int from = (*iter).GetFrom() - start;
         int to = (*iter).GetTo() - start;
@@ -1193,7 +1191,7 @@ const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int 
           numFrontTag = 1;
         }
 	//need to close tag at the end of mask or end of sequence
-        if(to == i || i == actualSeq.size() - 1 ){
+        if(to == i || i == (int)actualSeq.size() - 1 ){
           endTag = true;
         }
       }
@@ -1444,7 +1442,7 @@ void CDisplaySeqalign::fillInserts(int row, CAlnMap::TSignedRange& alnRange, int
 
 void CDisplaySeqalign::GetInserts(list<insertInformation*>& insertList, CAlnMap::TSeqPosList& insertAlnStart, CAlnMap::TSeqPosList& insertSeqStart, CAlnMap::TSeqPosList& insertLength, int lineAlnStop){
 
-  while(!insertAlnStart.empty() && insertAlnStart.front() < lineAlnStop){
+  while(!insertAlnStart.empty() && (int)insertAlnStart.front() < lineAlnStop){
     CDisplaySeqalign::insertInformation* insert = new CDisplaySeqalign::insertInformation;
     insert->alnStart = insertAlnStart.front() - 1; //Need to minus one as we are inserting after this position
     insert->seqStart = insertSeqStart.front();
@@ -1579,7 +1577,7 @@ string CDisplaySeqalign::getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row
      dbtmp = dbname;
    }
   
-  const CSeq_id* bestid;
+  const CSeq_id* bestid = NULL;
   if (idGeneral.Empty()){
     bestid = idOther;
     if (idOther.Empty()){
@@ -1754,3 +1752,10 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/* $Log$
+ * Revision 1.13  2003/10/08 17:30:00  jianye
+ * get rid of some warnings under linux
+ *
+
+ */
