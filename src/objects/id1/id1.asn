@@ -1,4 +1,4 @@
---$Revision: 1.8 $
+--$Revision: 1.9 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -87,7 +87,8 @@ ID1blob-info ::= SEQUENCE {
 		withdrawn	INTEGER,
 		confidential	INTEGER,
 		blob-state	INTEGER,
-                comment         VisibleString OPTIONAL -- public comment for withdrawn record 
+                comment         VisibleString OPTIONAL, -- public comment for withdrawn record 
+		extfeatmask	INTEGER	      OPTIONAL  -- mask for external features (SNP,...)
 }
 
 ID1SeqEntry-info ::= SEQUENCE {
