@@ -130,6 +130,7 @@ res_journal="$x_out.journal"
 res_log="$x_out.log"
 res_list="$x_list"
 res_concat="$x_out.out"
+res_concat_err="$x_out.out_err"
 
 
 ##  Printout USAGE info and exit
@@ -145,7 +146,7 @@ USAGE:  $x_script_name {run | clean | concat | concat_err}
              itself.
  concat      Concatenate all files created during the last "run" into one big 
              file "\$res_log".
- concat_err  Like previous. But into the file "\$res_concat" 
+ concat_err  Like previous. But into the file "\$res_concat_err" 
              will be added outputs of failed tests only.
 
 ERROR:  \$1
@@ -177,7 +178,7 @@ case "\$method" in
          x_file=\`echo "\$x_file" | sed -e 's/%gj_s4%/ /g'\`
          rm -f \$x_file > /dev/null
       done
-      rm -f \$res_journal \$res_log \$res_list \$res_concat > /dev/null
+      rm -f \$res_journal \$res_log \$res_list \$res_concat \$res_concat_err > /dev/null
       rm -f $x_out > /dev/null
       exit 0
       ;;
@@ -198,7 +199,7 @@ case "\$method" in
       ;;
 #----------------------------------------------------------
    concat_err )
-      rm -f "\$res_concat"
+      rm -f "\$res_concat_err"
       ( 
       cat \$res_log | grep 'ERR \['
       x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
@@ -213,7 +214,7 @@ case "\$method" in
             cat \$x_file
          fi
       done
-      ) >> \$res_concat
+      ) >> \$res_concat_err
       exit 0
       ;;
 #----------------------------------------------------------
