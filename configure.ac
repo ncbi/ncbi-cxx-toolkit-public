@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.259 2004/01/28 13:11:37 ucko Exp $
+#  $Id: configure.ac,v 1.260 2004/01/28 18:35:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3067,6 +3067,8 @@ if test "$with_pubmed" != "no" ; then
       * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
    esac
    pmtag=${release_debug}${bit64_sfx:-32}
+   vpath="$NCBI_PM_PATH/${compiler_vpfx}build"
+   test -d "$vpath"  &&  NCBI_PM_PATH=$vpath
 
    AC_CACHE_CHECK([for NCBI PubMed libraries in $NCBI_PM_PATH], ncbi_cv_lib_pm,
       [if test ! -d "${NCBI_PM_PATH}" ; then

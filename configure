@@ -17592,6 +17592,8 @@ if test "$with_pubmed" != "no" ; then
       * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
    esac
    pmtag=${release_debug}${bit64_sfx:-32}
+   vpath="$NCBI_PM_PATH/${compiler_vpfx}build"
+   test -d "$vpath"  &&  NCBI_PM_PATH=$vpath
 
    echo "$as_me:$LINENO: checking for NCBI PubMed libraries in $NCBI_PM_PATH" >&5
 echo $ECHO_N "checking for NCBI PubMed libraries in $NCBI_PM_PATH... $ECHO_C" >&6
