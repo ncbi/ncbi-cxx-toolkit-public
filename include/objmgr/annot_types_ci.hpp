@@ -103,6 +103,9 @@ private:
 };
 
 
+class CSeq_annot_Handle;
+
+
 // Base class for specific annotation iterators
 class NCBI_XOBJMGR_EXPORT CAnnotTypes_CI : public SAnnotSelector
 {
@@ -115,6 +118,13 @@ public:
                    const SAnnotSelector& params);
     CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
+                   const SAnnotSelector& params);
+    // Iterate everything from the seq-annot
+    CAnnotTypes_CI(const CSeq_annot_Handle& annot,
+                   const SAnnotSelector& params);
+    // Iterate everything from the seq-entry
+    CAnnotTypes_CI(CScope& scope,
+                   const CSeq_entry& entry,
                    const SAnnotSelector& params);
 
     // Search all TSEs in all datasources, by default get annotations defined
@@ -168,6 +178,7 @@ private:
     void x_Initialize(const CBioseq_Handle& bioseq,
                       TSeqPos start, TSeqPos stop);
     void x_Initialize(const CHandleRangeMap& master_loc);
+    void x_Initialize(const CObject& limit_info);
     void x_SearchMapped(const CSeqMap_CI& seg,
                         const CSeq_id_Handle& master_id,
                         const CHandleRange& master_hr);
@@ -176,6 +187,7 @@ private:
     void x_Search(const CSeq_id_Handle& id,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
+    void x_Search(const CObject& limit_info);
     
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
@@ -345,6 +357,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/08/04 17:02:57  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.43  2003/07/18 19:39:44  vasilche
 * Workaround for GCC 3.0.4 bug.
 *

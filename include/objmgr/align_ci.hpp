@@ -58,6 +58,15 @@ public:
               EOverlapType overlap_type = eOverlap_Intervals,
               EResolveMethod resolve = eResolve_TSE,
               const CSeq_entry* entry = 0);
+
+    // Iterate all features from the object regardless of their location
+    CAlign_CI(const CSeq_annot_Handle& annot);
+    CAlign_CI(const CSeq_annot_Handle& annot,
+              SAnnotSelector sel);
+    CAlign_CI(CScope& scope, const CSeq_entry& entry);
+    CAlign_CI(CScope& scope, const CSeq_entry& entry,
+              SAnnotSelector sel);
+
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
 
@@ -107,6 +116,40 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
 
 
 inline
+CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(annot,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
+{
+}
+
+
+inline
+CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
+                     SAnnotSelector sel)
+    : CAnnotTypes_CI(annot,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+{
+}
+
+
+inline
+CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry)
+    : CAnnotTypes_CI(scope, entry,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
+{
+}
+
+
+inline
+CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry,
+                     SAnnotSelector sel)
+    : CAnnotTypes_CI(scope, entry,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+{
+}
+
+
+inline
 CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
 {
     CAnnotTypes_CI::operator=(iter);
@@ -140,6 +183,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/08/04 17:02:57  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.20  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

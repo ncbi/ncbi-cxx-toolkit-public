@@ -61,6 +61,7 @@ private:
     CConstRef<CSeq_annot_Info> m_Seq_annot;
 
     friend class CSeq_annot_CI;
+    friend class CAnnotTypes_CI;
 };
 
 
@@ -223,6 +224,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/08/04 17:02:57  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.2  2003/07/25 21:41:27  grichenk
 * Implemented non-recursive mode for CSeq_annot_CI,
 * fixed friend declaration in CSeq_entry_Info.

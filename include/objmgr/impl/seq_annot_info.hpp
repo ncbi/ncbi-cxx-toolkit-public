@@ -78,6 +78,7 @@ public:
 
 private:
     friend class CDataSource;
+    friend class CAnnotTypes_CI;
 
     void x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs);
     void x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs);
@@ -139,6 +140,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/08/04 17:02:59  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.2  2003/07/17 20:07:55  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.

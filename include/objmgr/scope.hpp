@@ -172,9 +172,7 @@ private:
     void UpdateAnnotIndex(const CHandleRangeMap& loc,
                           const SAnnotSelector& sel,
                           const CSeq_entry& limit_entry);
-    void UpdateAnnotIndex(const CHandleRangeMap& loc,
-                          const SAnnotSelector& sel,
-                          const CSeq_annot& limit_annot);
+    void UpdateAnnotIndex(const CSeq_annot& limit_annot);
     CConstRef<TAnnotRefSet> GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
     void x_AttachToOM(CObjectManager& objmgr);
@@ -282,6 +280,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2003/08/04 17:02:57  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.55  2003/07/25 15:25:22  grichenk
 * Added CSeq_annot_CI class
 *

@@ -112,7 +112,9 @@ void CScope::AddDefaults(CPriorityTree::TPriority priority)
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     NON_CONST_ITERATE( CObjectManager::TDataSourcesLock, it, ds_set ) {
-        m_setDataSrc.Insert(const_cast<CDataSource&>(**it), priority);
+        m_setDataSrc.Insert(const_cast<CDataSource&>(**it),
+            (priority == kPriority_NotSet) ?
+            (*it)->GetDefaultPriority() : priority);
     }
     x_ClearCacheOnNewData();
 }
@@ -124,7 +126,8 @@ void CScope::AddDataLoader (const string& loader_name,
     CRef<CDataSource> ds = m_pObjMgr->AcquireDataLoader(loader_name);
 
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    m_setDataSrc.Insert(*ds, priority);
+    m_setDataSrc.Insert(*ds, (priority == kPriority_NotSet) ?
+        ds->GetDefaultPriority() : priority);
     x_ClearCacheOnNewData();
 }
 
@@ -133,9 +136,9 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                  CPriorityTree::TPriority priority)
 {
     CRef<CDataSource> ds = m_pObjMgr->AcquireTopLevelSeqEntry(top_entry);
-
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    m_setDataSrc.Insert(*ds, priority);
+    m_setDataSrc.Insert(*ds, (priority == kPriority_NotSet) ?
+        ds->GetDefaultPriority() : priority);
     x_ClearCacheOnNewData();
 }
 
@@ -576,16 +579,14 @@ void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
 }
 
 
-void CScope::UpdateAnnotIndex(const CHandleRangeMap& loc,
-                              const SAnnotSelector& sel,
-                              const CSeq_annot& annot)
+void CScope::UpdateAnnotIndex(const CSeq_annot& annot)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         CConstRef<CSeq_annot_Info> annot_info =
             it->GetDataSource().GetSeq_annot_Info(annot);
         if ( annot_info ) {
-            it->GetDataSource().UpdateAnnotIndex(loc, sel, *annot_info);
+            it->GetDataSource().UpdateAnnotIndex(*annot_info);
             break;
         }
     }
@@ -799,6 +800,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/08/04 17:03:01  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.77  2003/07/25 15:25:25  grichenk
 * Added CSeq_annot_CI class
 *

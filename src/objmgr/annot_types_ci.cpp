@@ -39,6 +39,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -284,6 +285,31 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
       m_Scope(&bioseq.GetScope())
 {
     x_Initialize(bioseq, start, stop);
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(const CSeq_annot_Handle& annot,
+                               const SAnnotSelector& params)
+    : SAnnotSelector(params),
+      m_Scope(annot.m_Scope)
+{
+    SetResolveNone(); // nothing to resolve
+    SetLimitSeqAnnot(&annot.GetSeq_annot());
+    x_Initialize(*annot.m_Seq_annot);
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
+                               const CSeq_entry& entry,
+                               const SAnnotSelector& params)
+    : SAnnotSelector(params),
+      m_Scope(&scope)
+{
+    SetResolveNone(); // nothing to resolve
+    SetLimitSeqEntry(&entry);
+    CConstRef<CSeq_entry_Info> entry_info(
+        m_Scope->x_GetSeq_entry_Info(entry));
+    x_Initialize(*entry_info);
 }
 
 
@@ -827,6 +853,46 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
 }
 
 
+void CAnnotTypes_CI::x_Initialize(const CObject& limit_info)
+{
+    try {
+        // Limit must be set, resolving is obsolete
+        _ASSERT(m_LimitObjectType != eLimit_None);
+        _ASSERT(m_LimitObject);
+        _ASSERT(m_ResolveMethod == eResolve_None);
+
+        x_Search(limit_info);
+        switch ( m_SortOrder ) {
+        case eSortOrder_Normal:
+            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CFeat_Less());
+            }
+            else {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CAnnotObject_Less());
+            }
+            break;
+        case eSortOrder_Reverse:
+            if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CFeat_Reverse_Less());
+            }
+            else {
+                sort(m_AnnotSet.begin(), m_AnnotSet.end(),
+                     CAnnotObject_Reverse_Less());
+            }
+            break;
+        }
+        Rewind();
+    }
+    catch (...) {
+        x_Clear();
+        throw;
+    }
+}
+
+
 inline
 bool
 CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
@@ -1072,7 +1138,7 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
         // Eugene: I had to split expression to avoid segfault on ICC-Linux
         const CObject* obj = &*m_LimitObject;
         const CSeq_annot& annot = dynamic_cast<const CSeq_annot&>(*obj);
-        m_Scope->UpdateAnnotIndex(loc, *this, annot);
+        m_Scope->UpdateAnnotIndex(annot);
         break;
     }
     default:
@@ -1100,6 +1166,78 @@ void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
                 x_Search(*synit, idit->second, cvt);
             }
         }
+    }
+}
+
+
+void CAnnotTypes_CI::x_Search(const CObject& limit_info)
+{
+    switch ( m_LimitObjectType ) {
+    case eLimit_TSE:
+    {
+    }
+    case eLimit_Entry:
+    {
+        // Limit update to one seq-entry
+        const CObject* obj = &limit_info;
+        const CSeq_entry_Info& entry =
+            dynamic_cast<const CSeq_entry_Info&>(*obj);
+//### Right now there's no way to update annotations
+//### without having a particular ceq-id. The resulting
+//### set of annotations may be incomplete.
+        CHandleRangeMap hrm;
+        m_Scope->UpdateAnnotIndex(hrm, *this, entry.GetSeq_entry());
+        // Collect all annotations from the entry
+        ITERATE(CSeq_entry_Info::TAnnots, ait, entry.m_Annots) {
+            ITERATE(CSeq_annot_Info::TObjectInfos, aoit, (*ait)->m_ObjectInfos) {
+                if ( !x_MatchType(*aoit) ) {
+                    continue;
+                }
+                CAnnotObject_Ref annot_ref(*aoit);
+                /// annot_ref.m_TotalRange;
+                m_AnnotSet.push_back(annot_ref);
+                // Limit number of annotations to m_MaxSize
+                if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+                    return;
+            }
+        }
+        // Collect annotations from all children
+        ITERATE(CSeq_entry_Info::TChildren, cit, entry.m_Children) {
+            x_Search(**cit);
+            if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+                return;
+        }
+        break;
+    }
+    case eLimit_Annot:
+        // Do not update datasources: if we have seq-annot,
+        // it's already loaded and indexed (?)
+    {
+        // Limit update to one seq-entry
+        const CObject* obj = &*m_LimitObject;
+        const CSeq_annot& annot = dynamic_cast<const CSeq_annot&>(*obj);
+        m_Scope->UpdateAnnotIndex(annot);
+        const CSeq_annot_Info& info =
+            dynamic_cast<const CSeq_annot_Info&>(limit_info);
+        ITERATE(CSeq_annot_Info::TObjectInfos, aoit, info.m_ObjectInfos) {
+            if ( !x_MatchType(*aoit) ) {
+                continue;
+            }
+            CAnnotObject_Ref annot_ref(*aoit);
+            /// annot_ref.m_TotalRange;
+            m_AnnotSet.push_back(annot_ref);
+            // Limit number of annotations to m_MaxSize
+            if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+                return;
+        }
+        break;
+    }
+    default:
+        // eLimit_None
+        THROW1_TRACE(runtime_error,
+                     "CAnnotTypes_CI::x_Search: "
+                     "search must be limited to an object");
+        break;
     }
 }
 
@@ -1159,6 +1297,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2003/08/04 17:03:01  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.78  2003/07/29 15:55:16  vasilche
 * Catch exceptions when sorting features.
 *

@@ -198,6 +198,15 @@ public:
               EOverlapType overlap_type = eOverlap_Intervals,
               EResolveMethod resolve = eResolve_TSE,
               const CSeq_entry* entry = 0);
+    
+    // Iterate all graphs from the object regardless of their location
+    CGraph_CI(const CSeq_annot_Handle& annot);
+    CGraph_CI(const CSeq_annot_Handle& annot,
+              SAnnotSelector sel);
+    CGraph_CI(CScope& scope, const CSeq_entry& entry);
+    CGraph_CI(CScope& scope, const CSeq_entry& entry,
+              SAnnotSelector sel);
+
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);
@@ -248,6 +257,40 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
 
 
 inline
+CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(annot,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+{
+}
+
+
+inline
+CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
+                    SAnnotSelector sel)
+    : CAnnotTypes_CI(annot,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Graph))
+{
+}
+
+
+inline
+CGraph_CI::CGraph_CI(CScope& scope, const CSeq_entry& entry)
+    : CAnnotTypes_CI(scope, entry,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+{
+}
+
+
+inline
+CGraph_CI::CGraph_CI(CScope& scope, const CSeq_entry& entry,
+                    SAnnotSelector sel)
+    : CAnnotTypes_CI(scope, entry,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Graph))
+{
+}
+
+
+inline
 CGraph_CI& CGraph_CI::operator= (const CGraph_CI& iter)
 {
     CAnnotTypes_CI::operator=(iter);
@@ -281,6 +324,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/08/04 17:02:57  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.25  2003/06/02 16:01:36  dicuccio
 * Rearranged include/objects/ subtree.  This includes the following shifts:
 *     - include/objects/alnmgr --> include/objtools/alnmgr

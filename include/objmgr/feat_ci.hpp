@@ -170,6 +170,8 @@ private:
 };
 
 
+class CSeq_annot_Handle;
+
 
 class NCBI_XOBJMGR_EXPORT CFeat_CI : public CAnnotTypes_CI
 {
@@ -189,6 +191,14 @@ public:
              SAnnotSelector sel);
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
+             SAnnotSelector sel);
+
+    // Iterate all features from the object regardless of their location
+    CFeat_CI(const CSeq_annot_Handle& annot);
+    CFeat_CI(const CSeq_annot_Handle& annot,
+             SAnnotSelector sel);
+    CFeat_CI(CScope& scope, const CSeq_entry& entry);
+    CFeat_CI(CScope& scope, const CSeq_entry& entry,
              SAnnotSelector sel);
 
     // Search all TSEs in all datasources. By default search sequence segments
@@ -331,6 +341,40 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 
 
 inline
+CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot)
+    : CAnnotTypes_CI(annot,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
+CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot,
+                   SAnnotSelector sel)
+    : CAnnotTypes_CI(annot,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry)
+    : CAnnotTypes_CI(scope, entry,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,
+                   SAnnotSelector sel)
+    : CAnnotTypes_CI(scope, entry,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
 CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 {
     CAnnotTypes_CI::operator=(iter);
@@ -374,6 +418,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/08/04 17:02:57  grichenk
+* Added constructors to iterate all annotations from a
+* seq-entry or seq-annot.
+*
 * Revision 1.28  2003/07/22 21:48:02  vasilche
 * Use typedef for member access.
 *
