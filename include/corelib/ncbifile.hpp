@@ -66,6 +66,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CExceptFile,CExceptCorelib);
 };
 
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Base class to work with files and directories
@@ -420,6 +421,21 @@ public:
     // Return "-1" if unmapped already.
     Int8 GetSize(void) const;
 
+    // Advises the VM system that the a certain region of user mapped memory 
+    // will be accessed following a type of pattern. The VM system uses this 
+    // information to optimize work wih mapped memory.
+    // NOTE: Now work on UNIX platform only.
+    typedef enum {
+        eMMA_Normal,	  // No further special threatment
+        eMMA_Random,	  // Expect random page references
+        eMMA_Sequential,  // Expect sequential page references
+        eMMA_WillNeed,	  // Will need these pages
+        eMMA_DontNeed	  // Don't need these pages
+    } EMemMapAdvise;
+
+    bool MemMapAdvise(EMemMapAdvise advise);
+    static bool MemMapAdviseAddr(void* addr, size_t len, EMemMapAdvise advise);
+
 private:
     // Map file to memory
     void x_Map(const string& file_name);
@@ -544,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/07/11 19:21:58  ivanov
+ * Added CMemoryFile::MemMapAdvise[Addr]()
+ *
  * Revision 1.14  2002/07/11 14:17:54  gouriano
  * exceptions replaced by CNcbiException-type ones
  *

@@ -1335,6 +1335,48 @@ bool CMemoryFile::Unmap(void)
     return status;
 }
 
+#define HAVE_MADVISE 1
+
+bool CMemoryFile::MemMapAdviseAddr(void* addr, size_t len, EMemMapAdvise advise)
+{
+#if defined(HAVE_MADVISE)
+    int adv;
+    if (!addr || !len) {
+        return false;
+    }
+    switch (advise) {
+	case eMMA_Random:
+        adv = MADV_RANDOM;     break;
+	case eMMA_Sequential:
+        adv = MADV_SEQUENTIAL; break;
+	case eMMA_WillNeed:
+        adv = MADV_WILLNEED;   break;
+	case eMMA_DontNeed:
+        adv = MADV_DONTNEED;   break;
+	default:
+        adv = MADV_NORMAL;
+    }
+    // Conversion type of "addr" to char* -- Sun Solaris fix
+    return madvise((char*)addr, len, adv) == 0;
+#else
+    return true;
+#endif
+}
+
+
+bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise)
+{
+#if defined(HAVE_MADVISE)
+  if (m_DataPtr  &&   m_Size > 0) {
+      return MemMapAdviseAddr(m_DataPtr, m_Size, advise);
+  } else {
+      return false;
+  }
+#else
+  return true;
+#endif
+}
+
 
 END_NCBI_SCOPE
 
@@ -1342,6 +1384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2002/07/11 19:21:30  ivanov
+ * Added CMemoryFile::MemMapAdvise[Addr]()
+ *
  * Revision 1.25  2002/07/11 14:18:27  gouriano
  * exceptions replaced by CNcbiException-type ones
  *
