@@ -1,4 +1,4 @@
---$Id: scoremat.asn,v 1.4 2003/04/18 19:50:45 ucko Exp $
+--$Id: scoremat.asn,v 1.5 2003/06/16 12:19:56 madden Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -30,18 +30,14 @@
 --
 -- ===========================================================================
 -- $Log: scoremat.asn,v $
--- Revision 1.4  2003/04/18 19:50:45  ucko
--- The blast spec also has a versioned module name now.
+-- Revision 1.5  2003/06/16 12:19:56  madden
+-- Do not use Blast4-ka-block, other changes worked out with structure group
 --
--- Revision 1.3  2003/04/18 19:42:48  madden
--- Corrected naming of Karlin block
+-- Revision 1.2  2002/12/03 14:01:45  camacho
+-- Data type changes
 --
--- Revision 1.2  2003/04/18 19:29:30  madden
--- Correct (blast4) name of karlin block
---
--- Revision 1.1  2003/04/18 18:45:47  madden
--- Scoremat ASN.1 spec files
---
+-- Revision 1.1  2002/12/02 22:15:27  camacho
+-- Initial revision
 --
 -- ===========================================================================
 
@@ -49,8 +45,8 @@ NCBI-ScoreMat DEFINITIONS ::= BEGIN
 
 EXPORTS    Score-matrix, Score-matrix-parameters;
     
-IMPORTS    Blast4-ka-block FROM NCBI-Blast4
-           Object-id   FROM NCBI-General;
+IMPORTS    Object-id   FROM NCBI-General
+           Seq-entry   FROM NCBI-Seqset;
 
 -- a rudimentary block/core-model, to be used with block-based alignment routines 
 -- and threading
@@ -94,7 +90,7 @@ CoreDef ::= SEQUENCE {
 
 Score-matrix ::= SEQUENCE {
     is-protein   BOOLEAN,	-- Is the matrix for proteins
-    identifier   Object-id,	-- name of matrix (e.g., "BLOSUM62") or number
+    identifier   Object-id,	-- name of matrix (e.g., "blosum62") or number
     comments     SEQUENCE OF VisibleString OPTIONAL, -- comments on matrix.
     -- The dimensions of the matrix are returned so the client can
     -- verify that all data was received.  Both dimensions are returned for
@@ -109,15 +105,33 @@ Score-matrix ::= SEQUENCE {
     -- for proteins the values returned correspond to 
     -- (-,-), (-,A), (-,B), (-,C) ... (A,-), (A,A), (A,B), (A,C) ...
     scores       SEQUENCE OF INTEGER OPTIONAL, -- values of scoring matrix 
-    scale-factor INTEGER OPTIONAL,             -- scaling factor for the scores
-    posFreqs     SEQUENCE OF INTEGER OPTIONAL  -- residue frequencies
+    score-scale-factor INTEGER OPTIONAL,       -- scaling factor for the scores
+    posFreqs     SEQUENCE OF INTEGER OPTIONAL, -- residue frequencies
+    posFreqs-scale-factor INTEGER OPTIONAL,    -- scaling factor for the frequencies
+    pseudocounts INTEGER OPTIONAL,             -- pseudocount constant used for PSSM
+    freq-Ratios  INTEGER { unassigned  (0),
+                           blosum62    (1),
+			   blosum45    (2),
+			   blosum80    (3),
+			   blosum50    (4),
+			   blosum90    (5),
+			   pam30       (6),
+			   pam70       (7),
+			   pam250      (8),
+			   other     (255)
+                         } OPTIONAL,           -- frequencies used in pseudocount method
+    gapOpen      INTEGER OPTIONAL,             -- scaled by score-scale-factor (above)
+    gapExtend    INTEGER OPTIONAL,             -- scaled by score-scale-factor (above)
+    query        Seq-entry OPTIONAL            -- PSSM representative sequence 
 }
 
 -- Envelope containing matrix or pssm, Karlin-Altschul parameters, and block constraints.
 
 Score-matrix-parameters ::= SEQUENCE {
 	matrix		Score-matrix,	
-	kablk		Blast4-ka-block OPTIONAL,
+        lambda          REAL OPTIONAL,
+	kappa           REAL OPTIONAL,
+	h               REAL OPTIONAL,
 	constraints	CoreDef OPTIONAL
 }
 
