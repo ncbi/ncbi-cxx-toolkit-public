@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/10 17:36:54  sandomir
+* ncbires.cpp added
+*
 * Revision 1.3  1998/12/10 15:14:13  sandomir
 * minor updates
 *
@@ -46,7 +49,8 @@
 * ===========================================================================
 */
 
-#include <list>
+#include <ncbicgi.hpp>
+
 #include <functional>
 
 BEGIN_NCBI_SCOPE
@@ -74,8 +78,8 @@ public:
   CNcbiResource( void );
   virtual ~CNcbiResource( void );
 
-  virtual void Init( void ); // init presentation, databases, commands
-  virtual void Exit( void );
+  virtual void Init( void ) {} // init presentation, databases, commands
+  virtual void Exit( void ) {}
 
   virtual const CNcbiResPresentation* GetPresentation( void ) const
     { return 0; }
@@ -103,9 +107,6 @@ protected:
 class CNcbiResPresentation
 {
 public:
-
-  CNcbiResPresentation();
-  virtual ~CNcbiResPresentation( void );
 
   virtual CNcbiNode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
@@ -135,7 +136,7 @@ public:
 
   // inner class CFind to be used to find command(s) corresponding to the request
   // TCmdList l; 
-  // TCmdList::iterator it = l.find_if( l.begin(), l.end(), CNcbiCommand::CFind( request ) ); 
+  // TCmdList::iterator it = find_if( l.begin(), l.end(), CNcbiCommand::CFind( request ) ); 
   class CFind : public unary_function<CNcbiCommand,bool>
   {
     const CCgiRequest& m_request;
@@ -143,8 +144,8 @@ public:
   public:
 
     explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
-    bool operator() ( const CNcbiCommand& cmd ) const
-      { return cmd.IsRequested( m_request ); }
+    bool operator() ( const CNcbiCommand* cmd ) const
+      { return cmd->IsRequested( m_request ); }
   }; // class CFind 
     
 protected:
@@ -169,7 +170,7 @@ public:
 
   // inner class CFind to be used to find db(s) corresponding to the request
   // TDbInfoList l; 
-  // TDbInfoList::iterator it = l.find_if( l.begin(), l.end(), CNcbiDatabaseInfo::CFind( alias ) ); 
+  // TDbInfoList::iterator it = find_if( l.begin(), l.end(), CNcbiDatabaseInfo::CFind( alias ) ); 
   class CFind : public unary_function<CNcbiDatabaseInfo,bool>
   {
     const string& m_name;
@@ -177,8 +178,8 @@ public:
   public:
     
     explicit CFind( const string& name ) : m_name( name ) {}
-    bool operator() ( const CNcbiDatabaseInfo& dbinfo ) const
-      { return dbinfo.CheckName( m_name ); }
+    bool operator() ( const CNcbiDatabaseInfo* dbinfo ) const
+      { return dbinfo->CheckName( m_name ); }
   }; // class CFind
 };
                      
@@ -196,8 +197,8 @@ class CNcbiDatabase
   CNcbiDatabase( const CNcbiDatabaseInfo& dbinfo );
   virtual ~CNcbiDatabase( void );
 
-  virtual void Connect( void ); 
-  virtual void Disconnect( void );
+  virtual void Connect( void ) {} 
+  virtual void Disconnect( void ) {}
 
   const TFilterList& GetFilterList( void ) const
     { return m_filter; }
@@ -230,9 +231,6 @@ class CNcbiDbFilterReport
 class CNcbiDbPresentation
 {
 public:
-
-  CNcbiDbPresentation();
-  virtual ~CNcbiDbPresentation( void );
 
   virtual CNcbiNode* GetLogo( void ) const { return 0; }
   virtual string GetName( void ) const = 0;
@@ -274,7 +272,7 @@ class CNcbiDataObjectReport
 {
 public:
 
-  CNcbiDataObjectReport( const CNcbiDataObject& db );
+  CNcbiDataObjectReport( const CNcbiDataObject& obj );
   virtual ~CNcbiDataObjectReport( void );
 
   virtual CNcbiDataObjectReport* Clone( void ) const = 0;
@@ -294,8 +292,8 @@ public:
   public:
 
     explicit CFind( const CCgiRequest& request ) : m_request( request ) {}
-    bool operator() ( const CNcbiDataObjectReport& rpt ) const
-      { return rpt.IsRequested( m_request ); }
+    bool operator() ( const CNcbiDataObjectReport* rpt ) const
+      { return rpt->IsRequested( m_request ); }
   }; // class CFind
 
 protected:

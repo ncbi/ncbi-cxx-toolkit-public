@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1998/12/10 17:36:56  sandomir
+* ncbires.cpp added
+*
 * Revision 1.23  1998/12/09 19:38:53  vakatov
 * Started with TestRegistry().  Freeze in the "compilable" state.
 *
@@ -111,6 +114,8 @@
 
 #include <cgiapp.hpp>
 #include <ncbireg.hpp>
+#include <ncbires.hpp>
+
 #include <time.h>
 
 
@@ -655,11 +660,11 @@ static void TestCgi(int argc, char* argv[])
 // Test CGI application
 //
 
-class CTestApplication : public CNcbiApplication
+class CTestApplication : public CCgiApplication
 {
 public:
     CTestApplication(int argc = 0, char** argv = 0)
-        : CNcbiApplication(argc, argv) {}
+        : CCgiApplication(argc, argv) {}
     virtual ~CTestApplication(void);
     virtual int Run(void);
 };

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1998/12/10 17:36:54  sandomir
+* ncbires.cpp added
+*
 * Revision 1.7  1998/12/09 22:59:05  lewisg
 * use new cgiapp class
 *
@@ -97,7 +100,7 @@ public:
     CSimpleCgiApp(int argc=0, char** argv=0,
                   CNcbiIstream* istr=0, bool indexes_as_entries=true);
     virtual void Init(void);
-    virtual int Run(void);  // to be defined by user
+    virtual int Run(void) = 0;  // to be defined by user
     TCgiEntries m_CgiEntries;
 };
 
