@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/01/30 20:10:56  lavr
+ * Remove *n_read = 0 assignment in s_CONN_Read; replace it with assert()
+ *
  * Revision 6.18  2001/08/20 20:13:15  vakatov
  * CONN_ReInit() -- Check connection handle for NULL (it was missed in R6.17)
  *
@@ -470,19 +473,19 @@ extern EIO_Status CONN_Flush
 
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
-    
+
     /* do nothing, if not opened yet */
     if (conn->state != eCONN_Open)
         return eIO_Success;
-    
+
     /* call current connector's "FLUSH" method */
     status = conn->meta.flush ?
         (*conn->meta.flush)(conn->meta.c_flush, conn->w_timeout) :
         eIO_NotSupported;
-    
+
     if (status != eIO_Success)
         CONN_LOG(eLOG_Warning, "[CONN_Flush]  Cannot flush data");
-    
+
     return status;
 }
 
@@ -498,18 +501,17 @@ static EIO_Status s_CONN_Read
  int/*bool*/ peek)
 {
     EIO_Status status;
-    
+    assert(*n_read == 0);
+
     if (conn->state == eCONN_Unusable)
         return eIO_InvalidArg;
 
     /* perform open, if not yet */
     if (conn->state != eCONN_Open  &&  (status = s_Open(conn)) != eIO_Success)
         return status;
-    
+
     /* flush the unwritten output data, if any */
     CONN_Flush(conn);
-
-    *n_read = 0;
 
     /* check if the read method is specified at all */
     if ( !conn->meta.read ) {
