@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/06/04 21:23:04  gouriano
+* changed the value of ms_UnassignedStr
+*
 * Revision 1.9  2003/05/21 16:12:04  vasilche
 * Correct index argument to ThrowUnassigned() to match index of GetItemInfo().
 *
@@ -113,7 +116,7 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
 /////////////////////////////////////////////////////////////////////////////
 // data verification setup
 
-const char* CSerialObject::ms_UnassignedStr = "unassigned";
+const char* CSerialObject::ms_UnassignedStr = "<*unassigned*>";
 const char  CSerialObject::ms_UnassignedByte = char(0xcd);
 
 ESerialVerifyData CSerialObject::ms_VerifyDataDefault = eSerialVerifyData_Default;
