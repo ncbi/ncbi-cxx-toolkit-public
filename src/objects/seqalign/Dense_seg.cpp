@@ -41,6 +41,8 @@
 // generated includes
 #include <objects/seqalign/Dense_seg.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -125,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/26 21:10:49  ucko
+* #include Seq_id.hpp
+*
 * Revision 1.2  2003/08/26 20:28:38  johnson
 * added 'SwapRows' method
 *
