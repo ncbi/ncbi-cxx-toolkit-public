@@ -103,7 +103,7 @@ public:
         { return m_DisplayPage; }
     // Get total pages in result
     int GetPages(void)
-        { return ( m_ItemCount - m_PageSize - 1 ) / m_PageSize; }
+        { return ( (m_ItemCount - 1) / m_PageSize + 1 ); }
 
     // Name of hidden value holding selected page size
     static const string KParam_PageSize;
@@ -191,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/07/19 17:58:40  golikov
+ * GetPages fixed
+ *
  * Revision 1.15  2004/07/12 21:26:58  golikov
  * additions for tab view
  *
