@@ -138,6 +138,39 @@ CHTML_tc* CHTML_table::InsertNextRowCell(const string& text)
 }
 
 inline
+CHTML_table* CHTML_table::SetCellSpacing(int spacing)
+{
+    SetAttribute("cellspacing", spacing);
+    return this;
+}
+
+inline
+CHTML_table* CHTML_table::SetCellPadding(int padding)
+{
+    SetAttribute("cellpadding", padding);
+    return this;
+}
+
+inline
+void CHTML_table::ResetTableCache(void)
+{
+    m_Cache.reset(0);
+}
+
+inline
+CHTML_table* CHTML_table::SetColumnWidth(TIndex column, int width)
+{
+    return SetColumnWidth(column, NStr::IntToString(width));
+}
+
+inline
+CHTML_table* CHTML_table::SetColumnWidth(TIndex column, const string& width)
+{
+    m_ColWidths[column] = width;
+    return this;
+}
+
+inline
 CHTML_ol::CHTML_ol(bool compact)
     : CParent(sm_TagName, compact)
 {
@@ -593,6 +626,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/07/20 16:36:37  ivanov
+ * + CHTML_table::SetColumnWidth
+ *
  * Revision 1.35  2004/02/04 12:45:11  ivanov
  * Made CHTML[Plain]Text::SetText() inline.
  *

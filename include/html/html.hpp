@@ -755,10 +755,11 @@ public:
     CHTML_tc* InsertNextRowCell(CNCBINode* node);
     CHTML_tc* InsertNextRowCell(const string& text);
 
-    void ColumnWidth(CHTML_table*, TIndex column, const string & width);
-
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
+
+    CHTML_table* SetColumnWidth(TIndex column, int width) ;
+    CHTML_table* SetColumnWidth(TIndex column, const string& width);
 
     void ResetTableCache(void);
 
@@ -789,6 +790,9 @@ protected:
     string       m_ColSepL, m_ColSepM, m_ColSepR;
     char         m_RowSepChar;
     ERowPlainSep m_IsRowSep;
+
+    typedef map<size_t,string> TColWidths;
+    TColWidths m_ColWidths;
 };
 
 
@@ -1360,6 +1364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2004/07/20 16:36:37  ivanov
+ * + CHTML_table::SetColumnWidth
+ *
  * Revision 1.75  2004/04/05 15:50:49  ivanov
  * Cosmetic changes
  *

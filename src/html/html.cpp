@@ -1372,23 +1372,6 @@ CHTML_table::~CHTML_table(void)
     return;
 }
 
-CHTML_table* CHTML_table::SetCellSpacing(int spacing)
-{
-    SetAttribute("cellspacing", spacing);
-    return this;
-}
-
-CHTML_table* CHTML_table::SetCellPadding(int padding)
-{
-    SetAttribute("cellpadding", padding);
-    return this;
-}
-
-void CHTML_table::ResetTableCache(void)
-{
-    m_Cache.reset(0);
-}
-
 CHTML_table_Cache& CHTML_table::GetCache(void) const
 {
     CHTML_table_Cache* cache = m_Cache.get();
@@ -1475,6 +1458,28 @@ CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
             }
             out << string(seplen, m_RowSepChar) << CHTMLHelper::GetNL();
             CHECK_STREAM_WRITE(out);
+        }
+    } else {
+        // Set column widths.
+        if ( HaveChildren() ) {
+            ITERATE ( TColWidths, w, m_ColWidths ) {
+                // Scan all children (which should be <TR> tags)
+                // Beginning with row 0
+                TIndex row = 0;
+                for ( CNCBINode::TChildren::iterator iRow = ChildBegin(),
+                    iRowEnd = ChildEnd(); iRow != iRowEnd; ++iRow ) {
+                    try {
+                        CHTML_tc* cell = Cell(row, w->first);
+                        if ( cell ) {
+                        cell->SetWidth(w->second);
+                        }
+                    }
+                    catch (CHTMLException&) {
+                        // catch exception with messages about absent cells
+                    }
+                    ++row;
+                }
+            }
         }
     }
     return CParent::PrintBegin(out, mode);
@@ -2316,6 +2321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2004/07/20 16:36:55  ivanov
+ * + CHTML_table::SetColumnWidth
+ *
  * Revision 1.103  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
