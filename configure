@@ -9259,15 +9259,124 @@ else
   Xext=
 fi
 
-   X_ALL_LIBS="$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+   echo "$as_me:$LINENO: checking for XtMainLoop in -lXt" >&5
+echo $ECHO_N "checking for XtMainLoop in -lXt... $ECHO_C" >&6
+if test "${ac_cv_lib_Xt_XtMainLoop+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXt $X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char XtMainLoop ();
+int
+main ()
+{
+XtMainLoop ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_Xt_XtMainLoop=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_Xt_XtMainLoop=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_Xt_XtMainLoop" >&5
+echo "${ECHO_T}$ac_cv_lib_Xt_XtMainLoop" >&6
+if test $ac_cv_lib_Xt_XtMainLoop = yes; then
+  Xt="-lXt"
+else
+  Xt=
+fi
+
+   echo "$as_me:$LINENO: checking for XmuMakeAtom in -lXmu" >&5
+echo $ECHO_N "checking for XmuMakeAtom in -lXmu... $ECHO_C" >&6
+if test "${ac_cv_lib_Xmu_XmuMakeAtom+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lXmu $X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char XmuMakeAtom ();
+int
+main ()
+{
+XmuMakeAtom ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_Xmu_XmuMakeAtom=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_Xmu_XmuMakeAtom=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_Xmu_XmuMakeAtom" >&5
+echo "${ECHO_T}$ac_cv_lib_Xmu_XmuMakeAtom" >&6
+if test $ac_cv_lib_Xmu_XmuMakeAtom = yes; then
+  Xmu="-lXmu"
+else
+  Xmu=
+fi
+
+   X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
    echo "$as_me:$LINENO: checking for OpenGL" >&5
 echo $ECHO_N "checking for OpenGL... $ECHO_C" >&6
 if test "${ncbi_cv_lib_opengl+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$orig_CPPFLAGS $X_CFLAGS"
-       LDFLAGS="$orig_LDFLAGS $X_LIBS"
-       LIBS="-lGL $X_ALL_LIBS $orig_LIBS"
+       LIBS="$X_LIBS -lGL $X_ALL_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -10271,16 +10380,12 @@ if test "$with_gui" = "no" ; then
 fi
 
 if test ! -f ${srcdir}/src/gui/Makefile.in  -o  ! -d ${srcdir}/include/gui \
-    -o  "$with_fltk" = "no"  -o  "$with_opengl" = "no"
+    -o  "$with_fltk" = "no"
 then
    if test "$with_gui" = "yes" ; then
       if test "$with_fltk" = "no" ; then
          { { echo "$as_me:$LINENO: error: \"--with-gui:  FLTK package is missing\"" >&5
 echo "$as_me: error: \"--with-gui:  FLTK package is missing\"" >&2;}
-   { (exit 1); exit 1; }; }
-      elif test "$with_opengl" = "no" ; then
-         { { echo "$as_me:$LINENO: error: \"--with-gui:  OpenGL is missing\"" >&5
-echo "$as_me: error: \"--with-gui:  OpenGL is missing\"" >&2;}
    { (exit 1); exit 1; }; }
       else
          { { echo "$as_me:$LINENO: error: \"--with-gui:  GUI sources are missing\"" >&5

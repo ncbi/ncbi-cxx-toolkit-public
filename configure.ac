@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.130 2002/10/02 15:25:57 ucko Exp $
+#  $Id: configure.ac,v 1.131 2002/10/02 16:58:42 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1874,11 +1874,14 @@ if test "$with_opengl" != "no"; then
    AC_PATH_XTRA
    AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
      [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
-   X_ALL_LIBS="$Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+   AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
+     [$X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+   AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
+     [$X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+   X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
    AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
       [CPPFLAGS="$orig_CPPFLAGS $X_CFLAGS"
-       LDFLAGS="$orig_LDFLAGS $X_LIBS"
-       LIBS="-lGL $X_ALL_LIBS $orig_LIBS"
+       LIBS="$X_LIBS -lGL $X_ALL_LIBS $orig_LIBS"
        AC_TRY_LINK(
           [#include <GL/gl.h>],
           [glBegin(0);],
@@ -2521,13 +2524,11 @@ if test "$with_gui" = "no" ; then
 fi
 
 if test ! -f ${srcdir}/src/gui/Makefile.in  -o  ! -d ${srcdir}/include/gui \
-    -o  "$with_fltk" = "no"  -o  "$with_opengl" = "no"
+    -o  "$with_fltk" = "no"
 then
    if test "$with_gui" = "yes" ; then
       if test "$with_fltk" = "no" ; then
          AC_MSG_ERROR(["--with-gui:  FLTK package is missing"])
-      elif test "$with_opengl" = "no" ; then
-         AC_MSG_ERROR(["--with-gui:  OpenGL is missing"])
       else
          AC_MSG_ERROR(["--with-gui:  GUI sources are missing"])
       fi
