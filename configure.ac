@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.135 2002/10/08 15:07:51 ucko Exp $
+#  $Id: configure.ac,v 1.136 2002/10/09 22:11:30 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1902,12 +1902,18 @@ if test "$with_opengl" != "no"; then
    CPPFLAGS="$orig_CPPFLAGS"
    AC_PATH_XTRA
    AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
-     [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+      [$X_LIBS $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
    AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
-     [$X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+      [$X_LIBS $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
    AC_CHECK_LIB(Xmu, XmuMakeAtom, Xmu="-lXmu", Xmu=,
-     [$X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
+      [$X_LIBS $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
    X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+   # Kludge for in-house 64-bit Solaris installations; I don't know why I
+   # have to specify /sparcv9 expliclitly.
+   ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
+   if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
+      X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
+   fi
    AC_CACHE_CHECK([for OpenGL], ncbi_cv_lib_opengl,
       [CPPFLAGS="$orig_CPPFLAGS $X_CFLAGS"
        LIBS="$X_LIBS -lGL $X_ALL_LIBS $orig_LIBS"

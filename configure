@@ -9399,6 +9399,12 @@ else
 fi
 
    X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
+   # Kludge for in-house 64-bit Solaris installations; I don't know why I
+   # have to specify /sparcv9 expliclitly.
+   ncbi_ogl=/usr/ncbi/lib/OpenGL64/openwin
+   if test "$host_cpu:$bit64_sfx" = "sparc:64" -a -d $ncbi_ogl/lib; then
+      X_LIBS="-L$ncbi_ogl/lib/sparcv9 -R$ncbi_ogl/lib/sparcv9 $X_LIBS"
+   fi
    echo "$as_me:$LINENO: checking for OpenGL" >&5
 echo $ECHO_N "checking for OpenGL... $ECHO_C" >&6
 if test "${ncbi_cv_lib_opengl+set}" = set; then
