@@ -412,7 +412,7 @@ static EIO_Status s_CONN_Write
         if ( *n_written ) {
             CONN_LOG(eLOG_Trace, "[CONN_Write]  Write error");
             status = eIO_Success;
-        } else  if ( size )
+        } else if ( size )
             CONN_LOG(eLOG_Error, "[CONN_Write]  Cannot write data");
     }
     return status;
@@ -561,7 +561,7 @@ static EIO_Status s_CONN_Read
         if ( *n_read ) {
             CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
             status = eIO_Success;
-        } else  if ( size ) {
+        } else if ( size ) {
             CONN_LOG(status == eIO_Closed  ? eLOG_Trace   :
                      status == eIO_Timeout ? eLOG_Warning : eLOG_Error,
                      "[CONN_Read]  Cannot read data");
@@ -614,6 +614,7 @@ extern EIO_Status CONN_Read
     if (!n_read)
         return eIO_InvalidArg;
     *n_read = 0;
+
     CONN_NOT_NULL(Read);
 
     if (conn->state == eCONN_Unusable)
@@ -782,6 +783,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2004/03/23 02:27:37  lavr
+ * Code formatting
+ *
  * Revision 6.38  2004/02/23 15:23:39  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *
