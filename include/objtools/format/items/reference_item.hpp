@@ -145,29 +145,30 @@ private:
     void x_SetJournal(const CTitle& title, CFFContext& ctx);
     void x_SetJournal(const CCit_gen& gen, CFFContext& ctx);
     void x_AddImprint(const CImprint& imp, CFFContext& ctx);
+    
+    // Genbank format specific
+    void x_GatherRemark(CFFContext& ctx);
 
     void x_CleanData(void);
 
     // XXX - many of these should become pointers
-    CConstRef<CPubdesc>  m_Pubdesc;
-    CConstRef<CPub>      m_Pub; // main entry
-    CConstRef<CSeq_loc>  m_Loc; // null if from a descriptor
-    int                  m_PMID;
-    int                  m_MUID;
-    TCategory            m_Category;
-    int                  m_Serial;
-    //CConstRef<CDate_std> m_StdDate;
-    //list<string>         m_Authors; // GB-style: Last,F.M.
+    CConstRef<CPubdesc>   m_Pubdesc;
+    CConstRef<CPub>       m_Pub;         // main entry
+    CConstRef<CSeq_loc>   m_Loc;         // null if from a descriptor
+    int                   m_PMID;
+    int                   m_MUID;
+    TCategory             m_Category;    // (un)published / submitted
+    int                   m_Serial;
     CConstRef<CAuth_list> m_Authors;
-    string               m_Consortium;
-    string               m_Title;
-    string               m_Journal; // or contact info for submissions
-    string               m_Volume; // normally numeric
-    string               m_Issue;
-    string               m_Pages;
-    CConstRef<CDate>     m_Date;
-    string               m_Remark;
-    bool                 m_JustUids;
+    string                m_Consortium;
+    string                m_Title;
+    string                m_Journal;     // or contact info for submissions
+    string                m_Volume;      // normally numeric
+    string                m_Issue;
+    string                m_Pages;
+    CConstRef<CDate>      m_Date;
+    string                m_Remark;      // genbank specific
+    bool                  m_JustUids;
 
     //static string x_GetURL(int id);
 };
@@ -203,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/10 16:23:49  shomrat
+* + x_GatherRemark
+*
 * Revision 1.2  2004/02/11 16:35:50  shomrat
 * using typdef TReferences
 *
