@@ -229,7 +229,7 @@ void s_TEST_BDB_Transaction(void)
     dbf3.idata = 13;
     dbf3.Insert();
 
-    trans.Commit();
+    //trans.Commit();
 
     dbf3.ikey = 10;
     EBDB_ErrCode ret = dbf3.Fetch();
@@ -2051,6 +2051,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/03/15 14:47:28  kuznets
+ * Removed unnecessary transaction commit()
+ *
  * Revision 1.59  2005/03/08 17:43:27  vasilche
  * Put file-scope static names in anonymous namespace instead to please WorkShop.
  *
