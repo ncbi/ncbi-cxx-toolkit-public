@@ -828,6 +828,9 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
 
     switch (errcode) {
     case Z_OK:
+        if ( from_cache  &&  avail_adj == 0  &&  m_Stream.avail_in > 0 ) {
+            return eStatus_Overflow;
+        }
         return eStatus_Success;
     case Z_STREAM_END:
         return eStatus_EndOfData;
@@ -883,6 +886,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/11/12 17:37:16  ivanov
+ * Fixed bug in CZipDecompressor::Process() if fCheckFileHeader flag is set.
+ *
  * Revision 1.14  2004/06/02 16:14:12  ivanov
  * Fixed processed bytes counting in the CZipDecompressor::Process()
  *
