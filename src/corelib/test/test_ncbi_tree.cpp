@@ -75,9 +75,81 @@ ETreeTraverseCode TestFunctor1(CTreeNode<int>& tr, int delta)
     return eTreeTraverse;
 }
 
+ETreeTraverseCode TestFunctor2(CTreeNode<int>& tr)
+{
+  cout << tr.GetValue() << endl;
+  return eTreeTraverse;
+}
+
+bool TestFunctor3(int a, int b) 
+{
+  return (a == b);
+}
+
 static string s_IntToStr(int i)
 {
     return NStr::IntToString(i);
+}
+
+static void s_TEST_TreeOperations()
+{
+  
+  typedef CTreeNode<int> TTree;
+  
+  TTree* orig = new TTree(0);
+  TTree* orig10 = orig->AddNode(10);
+  TTree* orig11 = orig->AddNode(11);
+  orig10->AddNode(20);
+  orig10->AddNode(21);
+  orig11->AddNode(22);
+  orig11->AddNode(23);
+  
+  TTree* corr = new TTree(11);
+  corr->AddNode(22);
+  corr->AddNode(23);
+  TTree* corr0 = corr->AddNode(0);
+  TTree* corr10 = corr0->AddNode(10);
+  corr10->AddNode(20);
+  corr10->AddNode(21);
+
+  TreeReRoot(*orig11);
+
+  cout << "After rerooting original tree by node 11, " << endl;
+  cout << "the original tree and correct tree are now ";
+  if(TreeCompare(*orig11, *corr, TestFunctor3)) {
+    cout << "the same." << endl;
+  }
+  else {
+    cout << "different." << endl;
+  }
+  cout << endl;
+
+  TreePrint(cout, *orig11, s_IntToStr, false);
+  TreePrint(cout, *corr, s_IntToStr, false);
+  cout << endl;
+
+  TTree* corr2 = new TTree(11);
+  corr2->AddNode(22);
+  corr2->AddNode(23);
+  TTree* corr2_0 = corr2->AddNode(0);
+ 
+  TTree* t = orig->DetachNode(orig10);
+
+  cout << "After removing node 10 from this tree, " << endl;
+  cout << "the original tree and correct tree are now ";
+  if(TreeCompare(*orig11, *corr2, TestFunctor3)) {
+    cout << "the same." << endl;
+  }
+  else {
+    cout << "different." << endl;
+  }
+  cout << endl;
+   
+  TreePrint(cout, *orig11, s_IntToStr, false);
+  TreePrint(cout, *t, s_IntToStr, false);
+  TreePrint(cout, *corr2, s_IntToStr, false);
+  cout << endl;
+
 }
 
 static void s_TEST_Tree()
@@ -85,16 +157,50 @@ static void s_TEST_Tree()
     typedef CTreeNode<int>  TTree;
     
     TTree* tr = new TTree(0);
-    
     TTree* tr10 = tr->AddNode(10);
-    tr->AddNode(11);
+    TTree* tr11 = tr->AddNode(11);
+    TTree* tr20 = tr10->AddNode(20);
+    tr10->AddNode(21);
+   
+    TTree* sr = new TTree(0);
+    sr->AddNode(10);
+    sr->AddNode(11);
+
+    TTree* ur = new TTree(0);
+    ur->AddNode(10);
+    ur->AddNode(11);
+    ur->AddNode(20);
+    ur->AddNode(21);
+    
 
 //    TreePrint(cout, *tr, (IntConvType) NStr::IntToString);
 //    TreeReRoot(*tr10);
 //    TreePrint(cout, *tr10, (IntConvType) NStr::IntToString);
 
+    cout << "Testing Breadth First Traversal" << endl;
+    TreeBreadthFirstTraverse(*tr, TestFunctor2);
+    cout << endl;
 
+    cout << "Testing Depth First Traversal" << endl;
     TreeDepthFirstTraverse(*tr, TestFunctor1);
+    cout << endl;
+
+    cout << "Testing Tree Comparison" << endl;
+    cout << "tr and tr10 are ";
+    if(!TreeCompare(*tr, *tr10, TestFunctor3)) cout << "not ";
+    cout << "the same." << endl;
+    cout << "tr and tr are ";
+    if(!TreeCompare(*tr, *tr, TestFunctor3)) cout << "not ";
+    cout << "the same." << endl;
+    cout << "tr and sr are ";
+    if(!TreeCompare(*tr, *sr, TestFunctor3)) cout << "not ";
+    cout << "the same." << endl;
+    cout << "tr and ur are ";
+    if(!TreeCompare(*tr, *ur, TestFunctor3)) cout << "not ";
+    cout << "the same." << endl;
+    cout << "sr and ur are ";
+    if(!TreeCompare(*sr, *ur, TestFunctor3)) cout << "not ";
+    cout << "the same." << endl;
     cout << endl;
 
     {{
@@ -462,11 +568,13 @@ int CTestApplication::Run(void)
     "****** default reporter (diag) ******",e);
     */
     
-    s_TEST_Tree();
+    //s_TEST_Tree();
 
-    s_TEST_IdTree();
+    s_TEST_TreeOperations();
 
-    s_TEST_IdTreeOperations();
+    //s_TEST_IdTree();
+
+    //s_TEST_IdTreeOperations();
 
     return 0;
 }
@@ -486,6 +594,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.17  2004/06/15 13:02:59  ckenny
+ * + test case for tree operations
+ *
  * Revision 1.16  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
