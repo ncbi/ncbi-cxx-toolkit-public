@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.226 2003/10/16 17:55:30 ucko Exp $
+#  $Id: configure.ac,v 1.227 2003/10/20 20:56:25 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -283,9 +283,10 @@ for x_arg in "$@" ; do
       AC_MSG_ERROR(["  $x_arg:  requires value;  use --help to show usage"])
       ;;
 
-      --with-extra-action=* | --exec-prefix=* | --with-build-root=* \
+      --with-extra-action=* | --with-build-root=* \
       | --with-projects=* | --with-check=* \
-      | --cache-file=* | --build=* | --host=* \
+      | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
+      | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
@@ -321,6 +322,19 @@ AC_DEFINE_UNQUOTED(HOST,        "$host",        [Full GNU-style system type])
 AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu",    [CPU type only])
 AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor", [System vendor only])
 AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os",     [System OS only])
+
+
+#### Make some provisions for traditional operation
+AC_PROG_INSTALL
+if test -z "$with_runpath"; then
+   if test -n "$libdir" -a "x$libdir" != "xNONE"; then
+      with_runpath=$libdir
+   elif test -n "$exec_prefix" -a "x$exec_prefix" != "xNONE"; then
+      with_runpath=$exec_prefix/lib
+   elif test -n "$prefix" -a "x$prefix" != "xNONE"; then
+      with_runpath=$prefix/lib
+   fi
+fi
 
 
 #### C and C++ compilers
@@ -1146,8 +1160,6 @@ fi
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
    build_root=${with_build_root}
-elif test -n "${exec_prefix}"  &&  test "${exec_prefix}" != "NONE" ; then
-   build_root=${exec_prefix}
 fi
 
 if test -z "${build_root}" ; then
