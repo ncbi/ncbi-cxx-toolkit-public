@@ -138,7 +138,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     SConnNetInfo *net_info = ((SDISPD_Data*) iter->data)->net_info;
     CONNECTOR conn = 0;
     const char *argval;
-    char  node[128];
+    char  node[256];
     char* s;
     CONN c;
 
@@ -345,7 +345,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     if (!(data = (SDISPD_Data*) malloc(sizeof(*data))))
         return 0;
     if (!s_RandomSeed) {
-        s_RandomSeed = (int)time(0) + (int)SOCK_gethostbyname(0);
+        s_RandomSeed = (int) time(0) + (int) SOCK_gethostbyname(0);
         srand(s_RandomSeed);
     }
     data->net_info = ConnNetInfo_Clone(net_info); /*called with non-NULL*/
@@ -375,6 +375,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2002/11/01 20:14:07  lavr
+ * Expand hostname buffers to hold up to 256 chars
+ *
  * Revision 6.48  2002/10/28 20:12:56  lavr
  * Module renamed and host info API included
  *

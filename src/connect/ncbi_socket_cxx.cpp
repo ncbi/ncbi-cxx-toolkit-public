@@ -260,7 +260,7 @@ EIO_Status CListeningSocket::Close(void)
 
 string CSocketAPI::gethostname(void)
 {
-    char hostname[128];
+    char hostname[256];
     if (SOCK_gethostname(hostname, sizeof(hostname)) != 0)
         *hostname = 0;
     return string(hostname);
@@ -278,7 +278,7 @@ string CSocketAPI::ntoa(unsigned int host)
 
 string CSocketAPI::gethostbyaddr(unsigned int host)
 {
-    char hostname[128];
+    char hostname[256];
     if ( !SOCK_gethostbyaddr(host, hostname, sizeof(hostname)) )
         *hostname = 0;
     return string(hostname);
@@ -334,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/11/01 20:13:15  lavr
+ * Expand hostname buffers to hold up to 256 chars
+ *
  * Revision 6.6  2002/09/17 20:43:49  lavr
  * Style conforming tiny little change
  *

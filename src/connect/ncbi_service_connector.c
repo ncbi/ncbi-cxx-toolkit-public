@@ -94,7 +94,7 @@ static char* s_GetArgs(void)
     static const char address[]  = "address=";
     size_t nodelen, archlen, buflen;
     const char* arch;
-    char node[128];
+    char node[256];
     char* p;
 
     buflen = 0;
@@ -108,7 +108,7 @@ static char* s_GetArgs(void)
         buflen += sizeof(platform) - 1 + archlen;
     } else
         archlen = 0;
-    if (!buflen || !(p = malloc(buflen + 1)))
+    if (!buflen || !(p = (char*) malloc(buflen + 1)))
         return 0;
     buflen = 0;
     if (nodelen) {
@@ -792,6 +792,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2002/11/01 20:16:05  lavr
+ * Expand hostname buffers to hold up to 256 chars
+ *
  * Revision 6.47  2002/10/29 22:19:37  lavr
  * Fix proper use of non-transparent proxy if one is specified
  *
