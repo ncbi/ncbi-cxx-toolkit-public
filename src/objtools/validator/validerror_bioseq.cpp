@@ -2441,7 +2441,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 {
     ENa_strand              curr_strand, prev_strand;
     CCdregion::EFrame       curr_frame, prev_frame;
-    const CSeq_loc*         curr_location = 0, *prev_location = 0;
+    const CSeq_loc*         curr_loc = 0, *prev_loc = 0;
     EDiagSev                severity;
     CSeqFeatData::ESubtype  curr_subtype = CSeqFeatData::eSubtype_bad, 
                             prev_subtype = CSeqFeatData::eSubtype_bad;
@@ -2467,17 +2467,17 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
     CFeat_CI prev = curr;
     ++curr;
     while ( curr ) {
-        curr_location = &(curr->GetLocation());
-        prev_location = &(prev->GetLocation());
+        curr_loc = &(curr->GetLocation());
+        prev_loc = &(prev->GetLocation());
         curr_subtype = curr->GetData().GetSubtype();
         prev_subtype = prev->GetData().GetSubtype();
 
         // if same location, subtype and strand
         if ( curr_subtype == prev_subtype  &&
-             sequence::Compare(*curr_location, *prev_location, m_Scope) == eSame) {
+             sequence::Compare(*curr_loc, *prev_loc, m_Scope) == eSame) {
 
-            curr_strand = GetStrand(*curr_location, m_Scope);
-            prev_strand = GetStrand(*prev_location, m_Scope);
+            curr_strand = GetStrand(*curr_loc, m_Scope);
+            prev_strand = GetStrand(*prev_loc, m_Scope);
             if ( curr_strand == prev_strand         || 
                  curr_strand == eNa_strand_unknown  ||
                  prev_strand == eNa_strand_unknown  ) {
@@ -2488,21 +2488,20 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 
                     // compare labels and comments
                     same_label = true;
-                    const string &curr_comment = curr->GetComment();
-                    const string &prev_comment = prev->GetComment();
+                    const string &curr_comment = curr->IsSetComment() ? curr->GetComment() : kEmptyStr;
+                    const string &prev_comment = prev->IsSetComment() ? prev->GetComment() : kEmptyStr;
                     curr_label.erase();
                     prev_label.erase();
                     feature::GetLabel(curr->GetOriginalFeature(),
                                       &curr_label, feature::eContent, m_Scope);
                     feature::GetLabel(prev->GetOriginalFeature(),
                                       &prev_label, feature::eContent, m_Scope);
-                    if ( NStr::CompareNocase(curr_comment, prev_comment) != 0  ||
-                         NStr::CompareNocase(curr_label, prev_label) != 0 ) {
+                    if ( !NStr::EqualNocase(curr_comment, prev_comment) ||
+                         !NStr::EqualNocase(curr_label, prev_label) ) {
                         same_label = false;
                     }
 
-                    // lower sevrity for the following cases:
-
+                    // lower sevrity for some cases
                     if ( curr_subtype == CSeqFeatData::eSubtype_pub          ||
                          curr_subtype == CSeqFeatData::eSubtype_region       ||
                          curr_subtype == CSeqFeatData::eSubtype_misc_feature ||
@@ -2557,10 +2556,13 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                                 "Duplicate feature", 
                                 curr->GetOriginalFeature());
                         } else if ( curr_subtype != CSeqFeatData::eSubtype_pub ) {
-                            PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
-                                "Features have identical intervals, but labels "
-                                "differ", 
-                                curr->GetOriginalFeature());
+                            // do not report if partial flags are different
+                            if (curr_loc->IsPartialLeft() == prev_loc->IsPartialLeft()  &&
+                                curr_loc->IsPartialRight() == prev_loc->IsPartialRight()) {
+                                PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
+                                    "Features have identical intervals, but labels differ",
+                                    curr->GetOriginalFeature());
+                            }
                         }
                     } else {
                         if (same_label) {
@@ -2580,17 +2582,15 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
         
         
         if ( (curr_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
-            curr_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
-            curr_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
-            (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
-            prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
-            prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
-            if ( sequence::Compare(*curr_location,
-                *prev_location,
-                m_Scope) != eNoOverlap &&
-                NotPeptideException(curr, prev) ) {
+              curr_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+              curr_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
+             (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+              prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
+              prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
+            if (sequence::Compare(*curr_loc, *prev_loc, m_Scope) != eNoOverlap  &&
+                NotPeptideException(curr, prev)) {
                 EDiagSev overlapPepSev = 
-                    m_Imp.IsOvlPepErr()? eDiag_Error :eDiag_Warning;
+                    m_Imp.IsOvlPepErr() ? eDiag_Error :eDiag_Warning;
                 PostErr( overlapPepSev,
                     eErr_SEQ_FEAT_OverlappingPeptideFeat,
                     "Signal, Transit, or Mature peptide features overlap",
@@ -3720,6 +3720,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2004/07/12 13:20:15  shomrat
+* suppress DuplicateFeat warning if partialL or partialR are different and the labels are different
+*
 * Revision 1.81  2004/06/25 16:01:46  shomrat
 * Added test for missing gaps in delta sequences
 *
