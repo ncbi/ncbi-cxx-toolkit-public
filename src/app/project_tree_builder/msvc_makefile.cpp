@@ -155,7 +155,15 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
         m_MakeFile.GetString("UsePch", "DoNotUsePch", "");
     NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList);
 
+    m_PchInfo->m_PchUsageDefine = 
+        m_MakeFile.GetString("UsePch", "PchUsageDefine", "");
+
     return *m_PchInfo;
+}
+
+string CMsvcMetaMakefile::GetPchUsageDefine(void) const
+{
+    return GetPchInfo().m_PchUsageDefine;
 }
 //-----------------------------------------------------------------------------
 string CreateMsvcProjectMakefileName(const string&        project_name,
@@ -367,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/17 14:36:20  gorelenk
+ * Implemented CMsvcMetaMakefile::GetPchUsageDefine .
+ *
  * Revision 1.11  2004/05/10 19:52:52  gorelenk
  * Changed CreateMsvcProjectMakefileName.
  *
