@@ -34,6 +34,7 @@
 #include "../ncbi_priv.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_ftp_connector.h>
+#include <stdlib.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -138,6 +139,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/12/06 22:02:51  ucko
+ * +<stdlib.h> for getenv()
+ *
  * Revision 1.1  2004/12/06 17:49:00  lavr
  * Initial revision
  *
