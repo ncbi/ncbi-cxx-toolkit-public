@@ -318,30 +318,39 @@ void CGnomon::Run(void)
         }
 
         // stop-codon removal from cds
-        if (strand == Plus  &&  igene.RightComplete()) {
+        if (cds_vec.size()  &&
+            strand == Plus  &&  igene.RightComplete()) {
             cds_vec.back().second -= 3;
         }
-        if (strand == Minus  &&  igene.LeftComplete()) {
+        if (cds_vec.size()  &&
+            strand == Minus  &&  igene.LeftComplete()) {
             cds_vec.front().first += 3;
         }
 
         //
         // create our mRNA
-        CRef<CSeq_feat> feat_mrna(new CSeq_feat());
-        feat_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-
-        feat_mrna->SetLocation
-            (*s_ExonDataToLoc(mrna_vec,
-                              (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
+        CRef<CSeq_feat> feat_mrna;
+        if (mrna_vec.size()) {
+            feat_mrna = new CSeq_feat();
+            feat_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+            feat_mrna->SetLocation
+                (*s_ExonDataToLoc(mrna_vec,
+                 (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
+        } else {
+            continue;
+        }
 
         //
         // create the accompanying CDS
-        CRef<CSeq_feat> feat_cds(new CSeq_feat);
-        feat_cds->SetData().SetCdregion();
+        CRef<CSeq_feat> feat_cds;
+        if (cds_vec.size()) {
+            feat_cds = new CSeq_feat();
+            feat_cds->SetData().SetCdregion();
 
-        feat_cds->SetLocation
-            (*s_ExonDataToLoc(cds_vec,
-                              (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
+            feat_cds->SetLocation
+                (*s_ExonDataToLoc(cds_vec,
+                 (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
+        }
 
         //
         // create a dummy gene feature as well
@@ -358,11 +367,16 @@ void CGnomon::Run(void)
             .SetTo(feat_mrna->GetLocation().GetTotalRange().GetTo());
         feat_gene->SetLocation().SetInt().SetStrand
             (strand == Plus ? eNa_strand_plus : eNa_strand_minus);
+
+        const CSeq_id& loc_id = sequence::GetId(feat_mrna->GetLocation());
+
         feat_gene->SetLocation().SetId(sequence::GetId(feat_mrna->GetLocation()));
 
         ftable.push_back(feat_gene);
         ftable.push_back(feat_mrna);
-        ftable.push_back(feat_cds);
+        if (feat_cds) {
+            ftable.push_back(feat_cds);
+        }
     }
 }
 
@@ -378,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/11/12 17:39:36  dicuccio
+ * Temporary fix: don't segfault if no CDS features can be created
+ *
  * Revision 1.7  2004/07/28 12:33:19  dicuccio
  * Sync with Sasha's working tree
  *
