@@ -26,57 +26,43 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      dialogs for editing program preferences
+*      implements a basic cache for Biostrucs
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2001/10/30 02:54:13  thiessen
+* Revision 1.1  2001/10/30 02:54:12  thiessen
 * add Biostruc cache
-*
-* Revision 1.1  2001/08/06 20:22:48  thiessen
-* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_PREFERENCES_DIALOG__HPP
-#define CN3D_PREFERENCES_DIALOG__HPP
+#ifndef CN3D_CACHE__HPP
+#define CN3D_CACHE__HPP
 
-#include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
 
-#if defined(__WXMSW__)
-#include <wx/msw/winundef.h>
-#endif
-
-#include <wx/wx.h>
+#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb2/Model_type.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
 
-class IntegerSpinCtrl;
+// Retrieves a Biostruc from the cache, according to the cache configuration currently in the registry;
+// returns true on success or false if fetch fails for any reason. MMDB entries are cached according to
+// asn Model-type, so an ncbi-backbone and pdb-model for a given MMDB ID are cached independently.
+// If the cache is disabled, this will always attempt to load via network. (The contents of
+// the passed *biostruc are deleted and replaced by the fetched data.) modelType can be:
+//   eModel_type_ncbi_backbone (alpha only),
+//   eModel_type_ncbi_all_atom (one coordinate per atom),
+//   eModel_type_ncbi_pdb_model (all models from PDB, including alternate conformer ensembles)
 
-class PreferencesDialog : public wxDialog
-{
-public:
-    PreferencesDialog(wxWindow *parent);
+bool LoadBiostrucViaCache(int mmdbID, int modelType, ncbi::objects::CBiostruc *biostruc);
 
-private:
-    // event callbacks
-    void OnCloseWindow(wxCloseEvent& event);
-    void OnButton(wxCommandEvent& event);
-    void OnCheckbox(wxCommandEvent& event);
 
-    // utility functions
+// Remove older entries until the cache is <= the given size (in MB).
 
-    // GUI elements
-    IntegerSpinCtrl
-        *iWormSegments, *iWormSides, *iBondSides, *iHelixSides, *iAtomSlices, *iAtomStacks,
-        *iCacheSize;
-
-    DECLARE_EVENT_TABLE()
-};
+void TruncateCache(int maxSize);
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_PREFERENCES_DIALOG__HPP
+#endif // CN3D_CACHE__HPP

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2001/10/30 02:54:12  thiessen
+* add Biostruc cache
+*
 * Revision 1.102  2001/10/25 14:18:30  thiessen
 * fix MeasureText problem (different red)
 *
@@ -704,6 +707,11 @@ void Cn3DApp::InitRegistry(void)
     RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, wxNORMAL);
     RegistrySetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
     RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
+
+    // default cache settings
+    RegistrySetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, true);
+    RegistrySetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, GetProgramDir() + "cache");
+    RegistrySetInteger(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, 25);
 
     // load program registry - overriding defaults if present
     registryFile = dataDir + "cn3d.ini";

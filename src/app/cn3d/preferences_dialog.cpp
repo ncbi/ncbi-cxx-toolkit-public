@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/10/30 02:54:12  thiessen
+* add Biostruc cache
+*
 * Revision 1.5  2001/09/24 14:37:52  thiessen
 * more wxPanel stuff - fix for new heirarchy in wx 2.3.2+
 *
@@ -57,6 +60,7 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/cn3d_cache.hpp"
 
 #if defined(__WXMSW__)
 #include <wx/msw/winundef.h>
@@ -92,6 +96,15 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit = TRUE, bool s
 #define ID_B_Q_HIGH 10009
 wxSizer *SetupQualityPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
+#define ID_C_CACHE_ON 10010
+#define ID_LINE 10011
+#define ID_T_CACHE_1 10012
+#define ID_B_CACHE_BROWSE 10013
+#define ID_T_CACHE_FOLDER 10014
+#define ID_T_CACHE_2 10015
+#define ID_B_CACHE_CLEAR 10016
+wxSizer *SetupCachePage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 USING_NCBI_SCOPE;
@@ -100,7 +113,8 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 static IntegerSpinCtrl
-    *giWormSegments, *giWormSides, *giBondSides, *giHelixSides, *giAtomSlices, *giAtomStacks;
+    *giWormSegments, *giWormSides, *giBondSides, *giHelixSides, *giAtomSlices, *giAtomStacks,
+    *giCacheSize;
 
 #define DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(var, id, type) \
     type *var; \
@@ -113,20 +127,21 @@ static IntegerSpinCtrl
 BEGIN_EVENT_TABLE(PreferencesDialog, wxDialog)
     EVT_CLOSE       (       PreferencesDialog::OnCloseWindow)
     EVT_BUTTON      (-1,    PreferencesDialog::OnButton)
+    EVT_CHECKBOX    (-1,    PreferencesDialog::OnCheckbox)
 END_EVENT_TABLE()
 
-#define SET_SPINCRTL_FROM_REGISTRY_VALUE(name, iSpinCtrl) \
+#define SET_ISPINCRTL_FROM_REGISTRY_VALUE(section, name, iSpinCtrl) \
     do { \
         int value; \
-        if (!RegistryGetInteger(REG_QUALITY_SECTION, (name), &value) || !((iSpinCtrl)->SetInteger(value))) \
+        if (!RegistryGetInteger((section), (name), &value) || !((iSpinCtrl)->SetInteger(value))) \
             ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
     } while (0)
 
-#define SET_CHECKBOX_FROM_REGISTRY_VALUE(name, id) \
+#define SET_CHECKBOX_FROM_REGISTRY_VALUE(section, name, id) \
     do { \
         bool on; \
         wxCheckBox *box = wxDynamicCast(FindWindow(id), wxCheckBox); \
-        if (!box || !RegistryGetBoolean(REG_QUALITY_SECTION, (name), &on)) \
+        if (!box || !RegistryGetBoolean((section), (name), &on)) \
             ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
         else \
             box->SetValue(on); \
@@ -147,15 +162,25 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     iHelixSides = giHelixSides;
     iAtomSlices = giAtomSlices;
     iAtomStacks = giAtomStacks;
+    iCacheSize = giCacheSize;
 
     // set initial values
-    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, iAtomSlices);
-    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, iAtomStacks);
-    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, iBondSides);
-    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, iWormSides);
-    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, iWormSegments);
-    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, iHelixSides);
-    SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, iAtomSlices);
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, iAtomStacks);
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, iBondSides);
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, iWormSides);
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, iWormSegments);
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, iHelixSides);
+    SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
+
+    SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_ENABLED, ID_C_CACHE_ON);
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
+    std::string folder;
+    RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &folder);
+    tCache->SetValue(folder.c_str());
+    SET_ISPINCRTL_FROM_REGISTRY_VALUE(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize);
+    wxCommandEvent fakeCheck(wxEVT_COMMAND_CHECKBOX_CLICKED, ID_C_CACHE_ON);
+    OnCheckbox(fakeCheck);  // set initial GUI enabled state
 
     // call sizer stuff
     topSizer->Fit(this);
@@ -163,29 +188,40 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     topSizer->SetSizeHints(this);
 }
 
-#define SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(name, iSpinCtrl) \
+#define SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(section, name, iSpinCtrl, changedPtr) \
     do { \
         int oldValue, newValue; \
-        if (!RegistryGetInteger(REG_QUALITY_SECTION, (name), &oldValue)) throw "RegistryGetInteger() failed"; \
+        if (!RegistryGetInteger((section), (name), &oldValue)) throw "RegistryGetInteger() failed"; \
         if (!((iSpinCtrl)->GetInteger(&newValue))) throw "GetInteger() failed"; \
         if (newValue != oldValue) { \
-            if (!RegistrySetInteger(REG_QUALITY_SECTION, (name), newValue)) \
+            if (!RegistrySetInteger((section), (name), newValue)) \
                 throw "RegistrySetInteger() failed"; \
-            qualityChanged = true; \
+            if (changedPtr) *((bool*) changedPtr) = true; \
         } \
     } while (0)
 
-#define SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(name, id) \
+#define SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(section, name, id, changedPtr) \
     do { \
         bool oldValue, newValue; \
-        if (!RegistryGetBoolean(REG_QUALITY_SECTION, (name), &oldValue)) throw "RegistryGetBoolean() failed"; \
+        if (!RegistryGetBoolean((section), (name), &oldValue)) throw "RegistryGetBoolean() failed"; \
         wxCheckBox *box = wxDynamicCast(FindWindow(id), wxCheckBox); \
         if (!box) throw "Can't get wxCheckBox*"; \
         newValue = box->GetValue(); \
         if (newValue != oldValue) { \
-            if (!RegistrySetBoolean(REG_QUALITY_SECTION, (name), newValue, true)) \
+            if (!RegistrySetBoolean((section), (name), newValue, true)) \
                 throw "RegistrySetBoolean() failed"; \
-            qualityChanged = true; \
+            if (changedPtr) *((bool*) changedPtr) = true; \
+        } \
+    } while (0)
+
+#define SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(section, name, textCtrl) \
+    do { \
+        std::string oldValue, newValue; \
+        if (!RegistryGetString((section), (name), &oldValue)) throw "RegistryGetString() failed"; \
+        newValue = (textCtrl)->GetValue().c_str(); \
+        if (newValue != oldValue) { \
+            if (!RegistrySetString((section), (name), newValue)) \
+                throw "RegistrySetString() failed"; \
         } \
     } while (0)
 
@@ -196,13 +232,30 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
 
     // set values if changed
     try {
-        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_ATOM_SLICES, iAtomSlices);
-        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_ATOM_STACKS, iAtomStacks);
-        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_BOND_SIDES, iBondSides);
-        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_WORM_SIDES, iWormSides);
-        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_WORM_SEGMENTS, iWormSegments);
-        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_HELIX_SIDES, iHelixSides);
-        SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_QUALITY_ATOM_SLICES, iAtomSlices, &qualityChanged);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_QUALITY_ATOM_STACKS, iAtomStacks, &qualityChanged);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_QUALITY_BOND_SIDES, iBondSides, &qualityChanged);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_QUALITY_WORM_SIDES, iWormSides, &qualityChanged);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_QUALITY_WORM_SEGMENTS, iWormSegments, &qualityChanged);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_QUALITY_HELIX_SIDES, iHelixSides, &qualityChanged);
+        SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_SECTION,
+            REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT, &qualityChanged);
+
+        SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_ENABLED, ID_C_CACHE_ON, NULL);
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
+        SET_STRING_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_FOLDER, tCache);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_CACHE_SECTION, REG_CACHE_MAX_SIZE, iCacheSize, NULL);
+
+        // Limit cache size to current value now
+        int size;
+        if (iCacheSize->GetInteger(&size)) TruncateCache(size);
+
     } catch (const char *err) {
         ERR_POST(Error << "Error setting registry values - " << err);
         okay = false;
@@ -257,8 +310,40 @@ void PreferencesDialog::OnButton(wxCommandEvent& event)
             iAtomStacks->SetInteger(14);
             break;
 
+        // cache page stuff
+        case ID_B_CACHE_BROWSE: {
+            DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tCache, ID_T_CACHE_FOLDER, wxTextCtrl)
+            wxDirDialog dirDialog(this, "Select a cache folder:", tCache->GetValue());
+            int result = dirDialog.ShowModal();
+            if (result == wxID_OK && wxDirExists(dirDialog.GetPath().c_str()))
+                tCache->SetValue(dirDialog.GetPath());
+            break;
+        }
+        case ID_B_CACHE_CLEAR:
+            TruncateCache(0);
+            break;
+
         default:
             event.Skip();
+    }
+}
+
+void PreferencesDialog::OnCheckbox(wxCommandEvent& event)
+{
+    if (event.GetId() == ID_C_CACHE_ON) {
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(c, ID_C_CACHE_ON, wxCheckBox)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(st1, ID_T_CACHE_1, wxStaticText)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(b1, ID_B_CACHE_BROWSE, wxButton)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(t, ID_T_CACHE_FOLDER, wxTextCtrl)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(st2, ID_T_CACHE_2, wxStaticText)
+        DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(b2, ID_B_CACHE_CLEAR, wxButton)
+        st1->Enable(c->GetValue());
+        b1->Enable(c->GetValue());
+        t->Enable(c->GetValue());
+        st2->Enable(c->GetValue());
+        b2->Enable(c->GetValue());
+        iCacheSize->GetTextCtrl()->Enable(c->GetValue());
+        iCacheSize->GetSpinButton()->Enable(c->GetValue());
     }
 }
 
@@ -282,20 +367,24 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit, bool set_size
     SetupQualityPage( item3, FALSE );
     item2->AddPage( item3, "Quality" );
 
+    wxPanel *item4 = new wxPanel( item2, -1 );
+    SetupCachePage( item4, FALSE );
+    item2->AddPage( item4, "Cache" );
+
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxBoxSizer *item4 = new wxBoxSizer( wxHORIZONTAL );
+    wxBoxSizer *item5 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item5 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
-    item5->SetDefault();
-    item4->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item6 = new wxButton( parent, ID_B_DONE, "Done", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->SetDefault();
+    item5->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item4->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item5->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    wxButton *item6 = new wxButton( parent, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
-    item4->Add( item6, 0, wxALIGN_CENTRE|wxALL, 5 );
+    wxButton *item7 = new wxButton( parent, ID_B_CANCEL, "Cancel", wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item7, 0, wxALIGN_CENTRE|wxALL, 5 );
 
-    item0->Add( item4, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     if (set_sizer)
     {
@@ -310,7 +399,6 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit, bool set_size
 
     return item0;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // The following is modified from wxDesigner's C++ code from preferences_dialog.wdr
@@ -424,3 +512,73 @@ wxSizer *SetupQualityPage(wxPanel *parent, bool call_fit, bool set_sizer)
     return item0;
 }
 
+wxSizer *SetupCachePage( wxPanel *parent, bool call_fit, bool set_sizer )
+{
+    wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
+
+    wxStaticBox *item2 = new wxStaticBox( parent, -1, "Cache Settings" );
+    wxStaticBoxSizer *item1 = new wxStaticBoxSizer( item2, wxVERTICAL );
+
+    wxCheckBox *item3 = new wxCheckBox( parent, ID_C_CACHE_ON, "Enable Biostruc cache", wxDefaultPosition, wxDefaultSize, 0 );
+    item1->Add( item3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 10 );
+
+    wxStaticLine *item4 = new wxStaticLine( parent, ID_LINE, wxDefaultPosition, wxSize(20,-1), wxLI_HORIZONTAL );
+    item1->Add( item4, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    wxBoxSizer *item5 = new wxBoxSizer( wxVERTICAL );
+
+    wxFlexGridSizer *item6 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item6->AddGrowableCol( 1 );
+
+    wxStaticText *item7 = new wxStaticText( parent, ID_T_CACHE_1, "Cache folder:", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item7, 0, wxALIGN_CENTRE|wxLEFT|wxRIGHT|wxTOP, 5 );
+
+    item6->Add( 20, 20, 0, wxALIGN_CENTRE|wxLEFT|wxRIGHT|wxTOP, 5 );
+
+    wxButton *item8 = new wxButton( parent, ID_B_CACHE_BROWSE, "Browse", wxDefaultPosition, wxDefaultSize, 0 );
+    item6->Add( item8, 0, wxALIGN_CENTRE|wxLEFT|wxRIGHT|wxTOP, 5 );
+
+    item5->Add( item6, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+
+    wxTextCtrl *item9 = new wxTextCtrl( parent, ID_T_CACHE_FOLDER, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item9, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+
+    item5->Add( 20, 20, 0, wxALIGN_CENTRE, 5 );
+
+    wxFlexGridSizer *item10 = new wxFlexGridSizer( 1, 0, 0, 0 );
+    item10->AddGrowableCol( 2 );
+
+    wxStaticText *item11 = new wxStaticText( parent, ID_T_CACHE_2, "Maximum folder size (MB):", wxDefaultPosition, wxDefaultSize, 0 );
+    item10->Add( item11, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    giCacheSize = new IntegerSpinCtrl(parent,
+        1, 500, 1, 50,
+        wxDefaultPosition, wxSize(50,SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1,SPIN_CTRL_HEIGHT));
+    item10->Add(giCacheSize->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item10->Add(giCacheSize->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    item10->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxButton *item14 = new wxButton( parent, ID_B_CACHE_CLEAR, "Clear now", wxDefaultPosition, wxDefaultSize, 0 );
+    item10->Add( item14, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    item5->Add( item10, 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5 );
+
+    item1->Add( item5, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    item0->Add( item1, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+    if (set_sizer)
+    {
+        parent->SetAutoLayout( TRUE );
+        parent->SetSizer( item0 );
+        if (call_fit)
+        {
+            item0->Fit( parent );
+            item0->SetSizeHints( parent );
+        }
+    }
+
+    return item0;
+}

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2001/10/30 02:54:13  thiessen
+* add Biostruc cache
+*
 * Revision 1.84  2001/10/17 17:46:22  thiessen
 * save camera setup and rotation center in files
 *
@@ -331,6 +334,7 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/cn3d_cache.hpp"
 
 #include <objseq.h>
 
@@ -609,39 +613,9 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit, O
     if (masterMMDBID != VALUE_NOT_SET) {
         for (int m=0; m<mmdbIDs.size(); m++) {
 
-            // load Biostrucs from external files or network
+            // load Biostrucs from cache (use one-coord-per-atom model)
             CBiostruc biostruc;
-            bool gotBiostruc = false;
-
-            // try local file first...
-            std::string err;
-            CNcbiOstrstream biostrucFile;
-            biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
-            TESTMSG("trying to read model from Biostruc in '" << biostrucFile.str() << "'");
-            gotBiostruc = ReadASNFromFile(biostrucFile.str(), &biostruc, true, &err);
-            if (!gotBiostruc) {
-                ERR_POST(Warning << "Failed to read Biostruc from " << biostrucFile.str()
-                    << "\nreason: " << err);
-            }
-            delete biostrucFile.str();
-
-            // ... else try network
-            if (!gotBiostruc) {
-                CNcbiOstrstream args;
-                args << "uid=" << mmdbIDs[m]
-                    << "&form=6&db=t&save=Save&dopt=i"
-        //            << "&Complexity=Virtual%20Bond%20Model"
-                    << "&Complexity=Cn3D%20Subset"
-                    << '\0';
-                static const std::string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
-                TESTMSG("Trying to load ASN data from " << host << path << '?' << args.str());
-                gotBiostruc = GetAsnDataViaHTTP(host, path, args.str(), &biostruc, &err);
-                if (!gotBiostruc) {
-                    ERR_POST(Warning << "Failed to read Biostruc from network"
-                        << "\nreason: " << err);
-                }
-                delete args.str();
-            }
+            bool gotBiostruc = LoadBiostrucViaCache(mmdbIDs[m], eModel_type_ncbi_all_atom, &biostruc);
 
             if (gotBiostruc) {
                 // create new StructureObject; if the master MMDB entry is also used for slave

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/10/30 02:54:11  thiessen
+* add Biostruc cache
+*
 * Revision 1.13  2001/10/23 20:10:22  thiessen
 * fix scaling of fonts in high-res PNG output
 *
@@ -884,11 +887,11 @@ void CDDEvidenceDialog::SetupGUIControls(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tStructure, ID_T_STRUCTURE, wxTextCtrl)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bStructure, ID_B_RERANGE, wxButton)
 
-    stComment->Enable(rComment->GetValue());
+//    stComment->Enable(rComment->GetValue());
     tComment->Enable(rComment->GetValue());
-    stPMID->Enable(rPMID->GetValue());
+//    stPMID->Enable(rPMID->GetValue());
     tPMID->Enable(rPMID->GetValue());
-    stStructure->Enable(rStructure->GetValue());
+//    stStructure->Enable(rStructure->GetValue());
     tStructure->Enable(rStructure->GetValue());
     bStructure->Enable(rStructure->GetValue());
 }

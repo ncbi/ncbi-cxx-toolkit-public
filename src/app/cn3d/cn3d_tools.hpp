@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/10/30 02:54:12  thiessen
+* add Biostruc cache
+*
 * Revision 1.11  2001/09/06 21:38:33  thiessen
 * tweak message log / diagnostic system
 *
@@ -144,7 +147,12 @@ static const std::string
     REG_FONT_WEIGHT = "FontWeight",
     REG_FONT_UNDERLINED = "FontUnderlined",
     REG_FONT_FACENAME = "FontFaceName",
-    FONT_FACENAME_UNKNOWN = "unknown";
+    FONT_FACENAME_UNKNOWN = "unknown",
+    // cache settings
+    REG_CACHE_SECTION = "Cn3D-4-Cache",
+    REG_CACHE_ENABLED = "CacheEnabled",
+    REG_CACHE_FOLDER = "CacheFolder",
+    REG_CACHE_MAX_SIZE = "CacheSizeMax";
 
 END_SCOPE(Cn3D)
 
