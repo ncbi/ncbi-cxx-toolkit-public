@@ -2,8 +2,7 @@
 # $Id$
 
 # DBLIB does not work (on Linux at least) when this limit is > 1024
-limit  descriptors 1024 > /dev/null 2>&1
-ulimit -n          1024 > /dev/null 2>&1
+ulimit -n 1024 > /dev/null 2>&1
 
 
 driver_list="ctlib dblib ftds"
