@@ -80,6 +80,7 @@
 /// User can apply constraints on the number of mandatory and optional
 /// {arg_extra***} arguments.
 
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
@@ -204,7 +205,17 @@ public:
     /// line.  On attempt to retrieve the value from such "no-value" argument,
     /// exception will be thrown.
     virtual bool HasValue(void) const = 0;
+
+    /// Operator () form of HasValue() method.
+    ///
+    /// @sa
+    ///   HasValue()
     operator bool (void) const { return  HasValue(); }
+
+    /// Operator !() returns the value of !HasValue() method.
+    ///
+    /// @sa
+    ///   HasValue()
     bool operator!(void) const { return !HasValue(); }
 
     /// Get the argument's string value.
@@ -941,6 +952,7 @@ private:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CArgDesc --
@@ -1008,6 +1020,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/07/30 16:14:01  siyan
+ * Added explicit documentation for operators () and !()
+ *
  * Revision 1.32  2003/07/24 11:48:02  siyan
  * Made @sa text indentation consistent.
  *
