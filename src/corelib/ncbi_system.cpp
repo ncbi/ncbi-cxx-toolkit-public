@@ -34,6 +34,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/03/25 18:11:08  ucko
+* Include <sys/time.h> before <sys/resource.h> for FreeBSD build.
+*
 * Revision 1.16  2001/12/09 06:27:39  vakatov
 * GetCpuCount() -- get rid of warning (in 64-bit mode), change ret.val. type
 *
@@ -100,6 +103,7 @@
 #endif
 
 #ifdef NCBI_OS_UNIX
+#  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
 #  include <limits.h>
