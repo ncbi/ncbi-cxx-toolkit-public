@@ -212,12 +212,12 @@ typedef struct ListNode {
 
 ListNode* ListNodeNew (ListNode* vnp);
 ListNode* ListNodeAdd (ListNode** head);
-ListNode* ListNodeAddPointer (ListNode** head, Int2 choice, void *value);
+ListNode* ListNodeAddPointer (ListNode** head, Uint1 choice, void *value);
 ListNode* ListNodeFree (ListNode* vnp);
 ListNode* ListNodeFreeData (ListNode* vnp);
 ListNode* ListNodeSort (ListNode* list_to_sort, 
                int (*compar) (const void *, const void *));
-ListNode* ListNodeCopyStr (ListNode** head, Int2 choice, char* str);
+ListNode* ListNodeCopyStr (ListNode** head, Uint1 choice, char* str);
 Int4 ListNodeLen (ListNode* vnp);
 
 void* MemDup (const void *orig, size_t size);
