@@ -1013,7 +1013,7 @@ void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
         }
     }
 
-    if (len <= 350000) {
+    if ( (len <= 350000)  ||  m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
         return;
     }
 
@@ -3423,6 +3423,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/02/26 13:58:09  shomrat
+* Do not complain about length > 350000 if NT or NC
+*
 * Revision 1.61  2004/02/25 15:54:43  shomrat
 * Added checks for colliding gene locus_tag; Changed illegal GI severity to Critical
 *
