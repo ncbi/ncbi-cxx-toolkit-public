@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 
 class CScope;
 
-class IFlatFormatter : public IFlatItemOStream
+class NCBI_FLAT_EXPORT IFlatFormatter : public IFlatItemOStream
 {
 public:
     enum EDatabase {
@@ -209,6 +209,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/03/28 17:45:36  dicuccio
+* Added (very judicious) use of Win32 exports - only needed in external classes
+* CFlatTextFormatter and IFlatFormatter
+*
 * Revision 1.3  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.
