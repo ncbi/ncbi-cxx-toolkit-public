@@ -154,16 +154,22 @@ public:
     bool IsMappedFromProt   (void) const { return m_Mapped == eMapped_from_prot;    }
 
 private:
+    // typdef
+    typedef multimap<EFeatureQualifier, CConstRef<IFlatQVal> > TQuals;
+    typedef TQuals::iterator TQI;
+    typedef TQuals::const_iterator TQCI;
+
     void x_GatherInfo(CFFContext& ctx);
 
+    // qualifier collection
     void x_AddQuals(CFFContext& ctx)       const;
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
     void x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CFFContext& ctx,
         bool& pseudo) const;
-    //void x_AddCdregionQualsOnProt(const CSeq_feat& cds, CFFContext& ctx) const;
     void x_AddProteinQuals(CBioseq_Handle& prot) const;
+    void x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const;
     void x_AddRnaQuals(const CSeq_feat& feat, CFFContext& ctx,
         bool& pseudo) const;
     void x_AddProtQuals(const CSeq_feat& feat, CFFContext& ctx,
@@ -172,25 +178,32 @@ private:
     void x_AddQuals(const CGene_ref& gene) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
-
-    // XXX - massage slot as necessary and perhaps sanity-check value's type
+    void x_AddExceptionQuals(CFFContext& ctx) const;
+    void x_ImportQuals(const CSeq_feat::TQual& quals) const;
+    
+    // qualifiers container
     void x_AddQual(EFeatureQualifier slot, const IFlatQVal* value) const
         { m_Quals.insert(TQuals::value_type(slot,CConstRef<IFlatQVal>(value))); }
-    void x_ImportQuals(const CSeq_feat::TQual& quals) const;
     void x_RemoveQuals(EFeatureQualifier slot) const;
+    pair<TQI, TQI> x_GetQual(EFeatureQualifier slot) const {
+        return m_Quals.equal_range(slot);
+    }
+    bool x_HasQual(EFeatureQualifier slot) const { 
+        return m_Quals.lower_bound(slot) != m_Quals.end();
+    }
 
+    // format
     void x_FormatQuals(void) const;
     void x_FormatNoteQuals(void) const;
     void x_FormatQual(EFeatureQualifier slot, const string& name,
         CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
     void x_FormatNoteQual(EFeatureQualifier slot, const string& name, 
         CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const 
-        { x_FormatQual(slot, "note", qvec, flags | IFlatQVal::fIsNote); }
+        { x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote); }
 
-    typedef multimap<EFeatureQualifier, CConstRef<IFlatQVal> > TQuals;
+    // data
     mutable CSeqFeatData::ESubtype m_Type;
     mutable TQuals                 m_Quals;
-    //bool                           m_IsProduct;
     EMapped                        m_Mapped;
 };
 
@@ -246,6 +259,7 @@ private:
     }
 
     typedef multimap<ESourceQualifier, CConstRef<IFlatQVal> > TQuals;
+    typedef TQuals::const_iterator                            TQCI;
 
     bool           m_WasDesc;
     mutable TQuals m_Quals;
@@ -259,6 +273,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/08 21:00:48  shomrat
+* Exception qualifiers gathering
+*
 * Revision 1.5  2004/03/05 18:49:26  shomrat
 * enhancements to qualifier collection and formatting
 *
