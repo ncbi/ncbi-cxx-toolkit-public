@@ -35,6 +35,7 @@
  * sequence identifiers retrieval from a CSeqDB class.
  */
 
+#include <algo/blast/core/blast_export.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <objtools/readers/seqdb/seqdb.hpp>
 
@@ -73,6 +74,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/01/18 17:57:37  dicuccio
+ * include blast_export.h
+ *
  * Revision 1.4  2004/11/29 20:09:08  camacho
  * + missing export specifier for dll builds
  *
