@@ -180,7 +180,8 @@ public:
         fRunDetached = 0x01,    // run the thread detached (non-joinable)
 // these two may not be supported (and will be ignored) on some platforms
         fRunBound    = 0x10,    // run thread in a 1:1 thread:LPW mode
-        fRunUnbound  = 0x20     // run thread in a N:1 thread:LPW mode
+        fRunUnbound  = 0x20,    // run thread in a N:1 thread:LPW mode
+        fRunAllowST  = 0x100    // allow threads to run in single thread builds
     };
     typedef int TRunMode;  // binary OR of "ERunMode"
 
@@ -349,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/05/08 20:50:08  grichenk
+ * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
+ *
  * Revision 1.17  2003/03/31 13:30:13  siyan
  * Minor changes to doxygen support
  *

@@ -87,23 +87,31 @@ void CTestThread::OnExit(void)
         assert(s_Application->Thread_Exit(m_Idx));
 }
 
-CRef<CTestThread> thr[c_NumThreadsMax];
+CRef<CTestThread> thr[k_NumThreadsMax];
 
 void* CTestThread::Main(void)
 {
+#if defined(_MT)
+    LOG_POST("Running thread");
+#else
+    LOG_POST("Simulating thread in ST mode");
+#endif
+    int spawn_max;
+    int first_idx;
+    {{
+        CFastMutexGuard spawn_guard(s_GlobalLock);
+        spawn_max = s_NumThreads - s_NextIndex;
+        if (spawn_max > s_SpawnBy) {
+            spawn_max = s_SpawnBy;
+        }
+        first_idx = s_NextIndex;
+        s_NextIndex += s_SpawnBy;
+    }}
     // Spawn more threads
-    for (int i = 0; i<s_SpawnBy; i++) {
-        int idx;
-        {{
-            CFastMutexGuard spawn_guard(s_GlobalLock);
-            if (s_NextIndex >= s_NumThreads) {
-                break;
-            }
-            idx = s_NextIndex;
-            s_NextIndex++;
-        }}
-        thr[idx] = new CTestThread(idx);
-        thr[idx]->Run();
+    for (int i = first_idx; i < first_idx + spawn_max; i++) {
+        thr[i] = new CTestThread(i);
+        // Allow threads to run even in single thread environment
+        thr[i]->Run(CThread::fRunAllowST);
     }
 
     // Run the test
@@ -142,7 +150,7 @@ void CThreadedApp::Init(void)
          "Total number of threads to create and run",
          CArgDescriptions::eInteger, NStr::IntToString(s_NumThreads));
     arg_desc->SetConstraint
-        ("threads", new CArgAllow_Integers(c_NumThreadsMin, c_NumThreadsMax));
+        ("threads", new CArgAllow_Integers(k_NumThreadsMin, k_NumThreadsMax));
 
     // sSpawnBy
     arg_desc->AddDefaultKey
@@ -150,7 +158,7 @@ void CThreadedApp::Init(void)
          "Threads spawning factor",
          CArgDescriptions::eInteger, NStr::IntToString(s_SpawnBy));
     arg_desc->SetConstraint
-        ("spawnby", new CArgAllow_Integers(c_SpawnByMin, c_SpawnByMax));
+        ("spawnby", new CArgAllow_Integers(k_SpawnByMin, k_SpawnByMax));
 
     // Let test application add its own arguments
     TestApp_Args( *arg_desc);
@@ -174,20 +182,22 @@ int CThreadedApp::Run(void)
 
     assert(TestApp_Init());
 
+    int spawn_max;
+    int first_idx;
+    {{
+        CFastMutexGuard spawn_guard(s_GlobalLock);
+        spawn_max = s_NumThreads - s_NextIndex;
+        if (spawn_max > s_SpawnBy) {
+            spawn_max = s_SpawnBy;
+        }
+        first_idx = s_NextIndex;
+        s_NextIndex += s_SpawnBy;
+    }}
     // Create and run threads
-    for (int i=0; i<s_SpawnBy; i++) {
-        int idx;
-        {{
-            CFastMutexGuard spawn_guard(s_GlobalLock);
-            if (s_NextIndex >= s_NumThreads) {
-                break;
-            }
-            idx = s_NextIndex;
-            s_NextIndex++;
-        }}
-
-        thr[idx] = new CTestThread(idx);
-        thr[idx]->Run();
+    for (int i = first_idx; i < first_idx + spawn_max; i++) {
+        thr[i] = new CTestThread(i);
+        // Allow threads to run even in single thread environment
+        thr[i]->Run(CThread::fRunAllowST);
     }
 
     // Wait for all threads
@@ -253,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/08 20:50:10  grichenk
+ * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
+ *
  * Revision 1.4  2002/12/26 16:39:23  vasilche
  * Object manager class CSeqMap rewritten.
  *

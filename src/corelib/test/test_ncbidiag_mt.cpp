@@ -53,8 +53,8 @@ protected:
 };
 
 
-static char str[c_NumThreadsMax*200] = "";
-static ostrstream sout(str, c_NumThreadsMax*200, ios::out);
+static char s_Str[k_NumThreadsMax*200] = "";
+static ostrstream s_Sout(s_Str, k_NumThreadsMax*200, ios::out);
 
 
 bool CTestDiagApp::Thread_Init(int idx)
@@ -82,7 +82,7 @@ bool CTestDiagApp::TestApp_Init(void)
              << " threads..."
              << NcbiEndl;
     // Output to the string stream -- to verify the result
-    SetDiagStream(&sout);
+    SetDiagStream(&s_Sout);
 
     return true;
 }
@@ -90,14 +90,14 @@ bool CTestDiagApp::TestApp_Init(void)
 bool CTestDiagApp::TestApp_Exit(void)
 {
     // Verify the result
-    string test_res(str);
+    string test_res(s_Str);
     typedef list<string> string_list;
     string_list messages;
 
     // Get the list of messages and check the size
-    NStr::Split(test_res, "\xA\xD", messages);
+    NStr::Split(test_res, "\r\n", messages);
 
-    assert(messages.size() == s_NumThreads*3);
+    assert(messages.size() == s_NumThreads*4);
 
     // Verify "created" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -108,7 +108,7 @@ bool CTestDiagApp::TestApp_Exit(void)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads*2);
+    assert(messages.size() == s_NumThreads*3);
 
     // Verify "Error" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -119,7 +119,7 @@ bool CTestDiagApp::TestApp_Exit(void)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == s_NumThreads);
+    assert(messages.size() == s_NumThreads*2);
 
     // Verify "Log" messages
     for (unsigned int i=0; i<s_NumThreads; i++) {
@@ -130,7 +130,7 @@ bool CTestDiagApp::TestApp_Exit(void)
         assert(it != messages.end());
         messages.erase(it);
     }
-    assert(messages.size() == 0);
+    assert(messages.size() == s_NumThreads);
 
     // Cleaunp
     SetDiagStream(0);
@@ -155,6 +155,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2003/05/08 20:50:12  grichenk
+ * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
+ *
  * Revision 6.5  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *

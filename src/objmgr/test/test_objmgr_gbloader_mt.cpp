@@ -171,7 +171,7 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
   for (unsigned i=0; i<thread_count; ++i)
     {
       thr[i] = new CTestThread(test_mode, Om, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
-      thr[i]->Run();
+      thr[i]->Run(CThread::fRunAllowST);
     }
     
   for (unsigned i=0; i<thread_count; i++) {
@@ -262,6 +262,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/05/08 20:50:14  grichenk
+* Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
+*
 * Revision 1.22  2003/04/24 16:12:39  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

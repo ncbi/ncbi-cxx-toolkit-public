@@ -6,7 +6,7 @@
 # Build object manager test application "test_objmgr_mt"
 #################################
 
-REQUIRES = dbapi MT
+REQUIRES = dbapi
 
 APP = test_objmgr_mt
 SRC = test_objmgr_mt test_helper

@@ -52,10 +52,10 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 // Globals
 
-const unsigned int   c_NumThreadsMin = 1;
-const unsigned int   c_NumThreadsMax = 500;
-const int            c_SpawnByMin    = 1;
-const int            c_SpawnByMax    = 100;
+const unsigned int   k_NumThreadsMin = 1;
+const unsigned int   k_NumThreadsMax = 500;
+const int            k_SpawnByMin    = 1;
+const int            k_SpawnByMax    = 100;
 
 extern unsigned int  s_NumThreads;
 extern int           s_SpawnBy;
@@ -111,6 +111,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/08 20:50:08  grichenk
+ * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
+ *
  * Revision 1.4  2003/04/01 19:19:44  siyan
  * Added doxygen support
  *

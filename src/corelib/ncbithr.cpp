@@ -487,8 +487,13 @@ bool CThread::Run(TRunMode flags)
 
 
 #else
-    xncbi_Validate(0,
-                   "CThread::Run() -- system does not support threads");
+    if (flags & fRunAllowST) {
+        Wrapper(this);
+    }
+    else {
+        xncbi_Validate(0,
+                       "CThread::Run() -- system does not support threads");
+    }
 #endif
 
     // prevent deletion of CThread until thread is finished
@@ -648,6 +653,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/05/08 20:50:10  grichenk
+ * Allow MT tests to run in ST mode using CThread::fRunAllowST flag.
+ *
  * Revision 1.25  2003/04/08 18:41:08  shomrat
  * Setting the handle to NULL after closing it
  *
