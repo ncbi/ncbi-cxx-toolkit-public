@@ -488,6 +488,7 @@ CBDB_Cache::CBDB_Cache()
   m_BytesWritten(0),
   m_CleanLogOnPurge(0),
   m_PurgeCount(0),
+  m_LogSizeMax(0),
   m_PurgeNowRunning(false),
   m_RunPurgeThread(false),
   m_PurgeThreadDelay(10),
@@ -555,7 +556,11 @@ void CBDB_Cache::Open(const char* cache_path,
     string err_file = m_Path + "err" + string(cache_name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
-    m_Env->SetLogFileMax(200 * 1024 * 1024);
+    if (m_LogSizeMax >= (20 * 1024 * 1024)) {
+        m_Env->SetLogFileMax(m_LogSizeMax);
+    } else {
+        m_Env->SetLogFileMax(200 * 1024 * 1024);
+    }
 
     // Check if bdb env. files are in place and try to join
     CDir dir(m_Path);
@@ -2133,6 +2138,7 @@ static const string kCFParam_purge_clean_log    = "purge_clean_log";
 static const string kCFParam_purge_thread       = "purge_thread";
 static const string kCFParam_purge_thread_delay = "purge_thread_delay";
 static const string kCFParam_checkpoint_bytes   = "checkpoint_bytes";
+static const string kCFParam_log_file_max       = "log_file_max";
 
 
 
@@ -2183,6 +2189,12 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
         GetParamDataSize(params, kCFParam_checkpoint_bytes, 
                          false, 24 * 1024 * 1024);
     drv->SetCheckpoint(checkpoint_bytes);
+
+    unsigned log_file_max = 
+        GetParamDataSize(params, kCFParam_log_file_max, 
+                         false, 200 * 1024 * 1024);
+    drv->SetLogFileMax(log_file_max);
+
 
     bool ro =
         GetParamBool(params, kCFParam_read_only, false, false);
@@ -2294,6 +2306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2005/03/23 17:23:48  kuznets
+ * Added support of log_file_max ini setting
+ *
  * Revision 1.106  2005/03/02 14:40:25  kuznets
  * Eliminated warning (unused var)
  *
