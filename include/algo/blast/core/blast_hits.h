@@ -61,9 +61,6 @@ typedef struct BlastHSP {
    BlastSeg subject;     /**< Subject sequence info. */
    Int4     context;     /**< Context number of query */
    GapEditBlock* gap_info;/**< ALL gapped alignment is here */
-   Int2 splice_junction; /**< Splice junction count in a linked set of
-                            HSPs. Each present splice junction counts as +1, 
-                            absent as -1. */
    Int4 num;             /**< How many HSP's make up this (sum) segment? */
    Uint4 pattern_length; /**< Length of pattern occurrence in this HSP, in 
                             PHI BLAST */
