@@ -64,25 +64,22 @@ public:
 protected:
     CFlatGatherer(void) {}
 
-    // Gather the header part of the report (locus/defline/accession ...)
-    // This is done in a separate function for EMBL to override.
-    // The body of the report is the same for all formats.
-    virtual void x_GatherHeader(CFFContext& ctx, CFlatItemOStream& os) const;
-        
     CFlatItemOStream& ItemOS(void) const  { return *m_ItemOS;  }
     CFFContext&     Context(void) const { return *m_Context; }
 
     virtual void x_GatherSeqEntry(const CSeq_entry& entry) const;
     virtual void x_GatherBioseq(const CBioseq& seq) const;
     virtual void x_DoMultipleSections(const CBioseq& seq) const;
+    virtual bool x_DisplayBioseq(const CSeq_entry& entry, const CBioseq& seq) const;
     virtual void x_DoSingleSection(const CBioseq& seq) const = 0;
 
+    // references
     void x_GatherReferences(void) const;
 
     // features
     void x_GatherFeatures  (void) const;
     void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CFFContext& ctx) const;
-
+    bool x_SkipFeature(const CSeq_feat& feat, const CFFContext& ctx) const;
 
     // source features
     typedef CRef<CSourceFeatureItem>    TSFItem;
@@ -114,9 +111,9 @@ protected:
     void x_HTGSComments(CFFContext& ctx) const;
     void x_FeatComments(CFFContext& ctx) const;
 
-    // features 
+    // sequence 
     void x_GatherSequence  (void) const;
-    bool x_SkipFeature(const CSeq_feat& feat, const CFFContext& ctx) const;
+    
 
 private:
     CFlatGatherer(const CFlatGatherer&);
@@ -137,6 +134,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/12 16:54:32  shomrat
+* + x_DisplayBioseq
+*
 * Revision 1.4  2004/02/11 22:47:14  shomrat
 * using types in flag file
 *
