@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2002/09/26 17:32:13  thiessen
+* show distance between picked atoms; show RMS for structure alignments
+*
 * Revision 1.68  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -406,6 +409,10 @@ private:
     // holds C Bioseqs associated with Sequences
     typedef std::map < const Sequence *, Bioseq * > BioseqMap;
     BioseqMap bioseqs;
+
+    // for printing out distances between successively picked atoms
+    Vector prevPickedAtomCoord;
+    bool havePrevPickedAtomCoord;
 
 public:
     bool IsMultiStructure(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2002/09/26 17:32:13  thiessen
+* show distance between picked atoms; show RMS for structure alignments
+*
 * Revision 1.113  2002/09/19 12:51:08  thiessen
 * fix block aligner / update bug; add distance select for other molecules only
 *
@@ -845,6 +848,7 @@ void StructureSet::Load(int structureLimit)
     parentSet = this;
     showHideManager = new ShowHideManager();
     styleManager = new StyleManager(this);
+    havePrevPickedAtomCoord = false;
 
     // if this is a single structure, then there should be one sequence per biopolymer
     if (dataManager->IsSingleStructure()) {
@@ -1278,17 +1282,27 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
         << " residue " << residue->id << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
         << ") atom " << atomID << " (PDB: " << residue->GetAtomInfo(atomID)->name << ')');
 
+    // get coordinate of picked atom, in coordinates of master frame
+    const StructureObject *object;
+    if (!molecule->GetParentOfType(&object)) return;
+    object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);    // don't actually know which alternate...
+    Vector pickedAtomCoord = object->coordSets.front()->atomSet->
+        GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
+    if (object->IsSlave())
+        ApplyTransformation(&pickedAtomCoord, *(object->transformToMaster));
+
+    // print out distance to previous picked atom
+    if (havePrevPickedAtomCoord)
+        TESTMSG("distance to previously selected atom: " << setprecision(3) <<
+            (pickedAtomCoord - prevPickedAtomCoord).length() << setprecision(6) << " A");
+    prevPickedAtomCoord = pickedAtomCoord;
+    havePrevPickedAtomCoord = true;
+
     // if indicated, use atom site as rotation center; use coordinate from first CoordSet, default altConf
     if (setCenter) {
-        const StructureObject *object;
-        if (!molecule->GetParentOfType(&object)) return;
         TESTMSG("rotating about " << object->pdbID
             << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
-        object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);
-        rotationCenter = object->coordSets.front()->atomSet->
-            GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
-        if (object->IsSlave())
-            ApplyTransformation(&rotationCenter, *(object->transformToMaster));
+        rotationCenter = pickedAtomCoord;
     }
 }
 
@@ -1536,7 +1550,18 @@ void StructureObject::RealignStructure(int nCoords,
     SetTranslationMatrix(&single, masterCOM);
     ComposeInto(transformToMaster, single, combined);
 
-    const BlockMultipleAlignment *multiple = parentSet->alignmentManager->GetCurrentMultipleAlignment();
+    // print out RMS
+    Vector x;
+    double rms = 0.0, d;
+    for (int c=0; c<nCoords; c++) {
+        x = *(slaveCoords[c]);
+        ApplyTransformation(&x, *transformToMaster);
+        d = (*(masterCoords[c]) - x).length();
+        rms += d * d;
+    }
+    rms = sqrt(rms / nCoords);
+    TESTMSG("RMS of aligned alpha coordinates between master structure and " << pdbID << ": "
+        << setprecision(3) << rms << setprecision(6) << " A");
 
     // create a new Biostruc-feature that contains this alignment
     CBiostruc_feature *feature = new CBiostruc_feature();
@@ -1562,6 +1587,7 @@ void StructureObject::RealignStructure(int nCoords,
     graphAlignment->SetAlignment().resize(2);
 
     // fill out sequence alignment intervals, tracking domains in alignment
+    const BlockMultipleAlignment *multiple = parentSet->alignmentManager->GetCurrentMultipleAlignment();
     int masterDomain = NO_DOMAIN, slaveDomain = NO_DOMAIN;
     const Molecule
         *masterMolecule = multiple->GetSequenceOfRow(0)->molecule,
