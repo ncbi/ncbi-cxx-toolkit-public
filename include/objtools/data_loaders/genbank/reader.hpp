@@ -75,7 +75,7 @@ private:
 class CIStream : public istream
 {
 public:
-  CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(ios_base::skipws); }
+  CIStream(streambuf *sb) : istream(sb), m_sb(sb) { unsetf(IOS_BASE::skipws); }
   ~CIStream() { delete m_sb; }
 
   bool Eof();
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.13  2002/04/08 18:37:56  ucko
+* Use IOS_BASE instead of ios_base for compatibility with old compilers.
+*
 * Revision 1.12  2002/03/27 20:22:32  butanaev
 * Added connection pool.
 *
