@@ -231,6 +231,140 @@ struct CMassMaskCompare {
     }
 };
 
+// update sites and masses for new peptide
+void CSearch::UpdateWithNewPep(int Missed,
+			       const char *PepStart[],
+			       const char *PepEnd[], 
+			       int NumMod[], 
+			       const char *Site[][MAXMOD],
+			       int DeltaMass[][MAXMOD],
+			       int Masses[],
+			       int EndMasses[])
+{
+    // iterate over missed cleavages
+    int iMissed;
+    // maximum mods allowed
+    int ModMax; 
+    // iterate over mods
+    int iMod;
+    
+
+    // update the longer peptides to add the new peptide (Missed-1) on the end
+    for(iMissed = 0; iMissed < Missed - 1; iMissed++) {
+	// skip start
+	if(PepStart[iMissed] == (const char *)-1) continue;
+	// reset the end sequences
+	PepEnd[iMissed] = PepEnd[Missed - 1];
+				
+	// update new mod masses to add in any new mods from new peptide
+
+	// first determine the maximum value for updated mod list
+	if(NumMod[iMissed] + NumMod[Missed-1] >= MAXMOD)
+	    ModMax = MAXMOD - NumMod[iMissed];
+	else ModMax = NumMod[Missed-1];
+
+	// now interatu thru the new entries
+	for(iMod = NumMod[iMissed]; 
+	    iMod < NumMod[iMissed] + ModMax;
+	    iMod++) {
+	    Site[iMissed][iMod] = 
+		Site[Missed-1][iMod - NumMod[iMissed]];
+
+	    DeltaMass[iMissed][iMod] = 
+		DeltaMass[Missed-1][iMod - NumMod[iMissed]];
+
+	    //		    Masses[iMissed][iMod] = 
+	    //			Masses[Missed-1][iMod - NumMod[iMissed] + 1] +
+	    //			Masses[iMissed][NumMod[iMissed] - 1];
+	}
+				
+	// update old masses
+	Masses[iMissed] += Masses[Missed - 1];
+				
+	// update end masses
+	EndMasses[iMissed] = EndMasses[Missed - 1];
+			
+	// update number of Mods
+	NumMod[iMissed] += ModMax;
+    }	    
+}
+
+
+// create the various combinations of mods
+void CSearch::CreateModCombinations(int Missed,
+				    const char *PepStart[],
+				    TMassMask MassAndMask[][MAXMOD2],
+				    int Masses[],
+				    int EndMasses[],
+				    int NumMod[],
+				    int DeltaMass[][MAXMOD],
+				    unsigned NumMassAndMask[])
+{
+    // need to iterate thru combinations that have iMod.
+    // i.e. iMod = 3 and NumMod=5
+    // 00111, 01011, 10011, 10101, 11001, 11010, 11100, 01101,
+    // 01110
+    // i[0] = 0 --> 5-3, i[1] = i[0]+1 -> 5-2, i[3] = i[1]+1 -> 5-1
+    // then construct bool mask
+	    
+    // holders for calculated modification mask and modified peptide masses
+    unsigned Mask, MassOfMask;
+    // iterate thru active mods
+    int iiMod;
+    // keep track of the number of unique masks created.  each corresponds to a ladder
+    int iModCount;
+    // missed cleavage
+    int iMissed;
+    // number of mods to consider
+    int iMod;
+    // positions of mods
+    int ModIndex[MAXMOD];
+
+    // go thru missed cleaves
+    for(iMissed = 0; iMissed < Missed; iMissed++) {
+	// skip start
+	if(PepStart[iMissed] == (const char *)-1) continue;
+	iModCount = 0;
+
+	// set up non-modified mass
+	MassAndMask[iMissed][iModCount].Mass = 
+	    Masses[iMissed] + EndMasses[iMissed];
+	MassAndMask[iMissed][iModCount].Mask = 0;
+	iModCount++;
+		
+	// go thru number of mods allowed
+	for(iMod = 0; iMod < NumMod[iMissed] && iModCount < MAXMOD2; iMod++) {
+		    
+	    // initialize ModIndex that points to mod sites
+	    InitModIndex(ModIndex, iMod);
+	    do {
+			
+		// calculate mass
+		MassOfMask = Masses[iMissed] + EndMasses[iMissed];
+		for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
+		    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod]];
+		// make bool mask
+		Mask = MakeBoolMask(ModIndex, iMod);
+		// put mass and mask into storage
+		MassAndMask[iMissed][iModCount].Mass = MassOfMask;
+		MassAndMask[iMissed][iModCount].Mask = Mask;
+		// keep track of the  number of ladders
+		iModCount++;
+
+	    } while(iModCount < MAXMOD2 &&
+		    CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
+	} // iMod
+
+	// sort mask and mass by mass
+	sort(MassAndMask[iMissed], MassAndMask[iMissed] + iModCount,
+	     CMassMaskCompare());
+	// keep track of number of MassAndMask
+	NumMassAndMask[iMissed] = iModCount;
+
+    } // iMissed
+}
+
+
 int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 {
     int length;
@@ -238,7 +372,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
     unsigned header;
     char *blastdefline;
     SeqId *sip;
-    CLadder BLadder[MAXMOD2], YLadder[MAXMOD2], B2Ladder[MAXMOD2], Y2Ladder[MAXMOD2];
+    CLadder BLadder[MAXMOD2], YLadder[MAXMOD2], B2Ladder[MAXMOD2],
+	Y2Ladder[MAXMOD2];
     bool LadderCalc[MAXMOD2];  // have the ladders been calculated?
     CAA AA;
 		
@@ -275,10 +410,6 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 
 
     int iMod;   // used to iterate thru modifications
-    //    bool ModMask[MAXMOD]; // mask used to determine if mod should be added
-    int ModIndex[MAXMOD]; // ring changes for mod
-    int ModMax;
-    //    unsigned LadderVal;  // use to keep track of ladders
 	
     bool SequenceDone;  // are we done iterating through the sequences?
     int taxid;
@@ -368,105 +499,15 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				   IntMassArray);
 			
 
-	    // update the longer peptides to add the new peptide (Missed-1) on the end
-	    for(iMissed = 0; iMissed < Missed - 1; iMissed++) {
-		// skip start
-		if(PepStart[iMissed] == (const char *)-1) continue;
-		// reset the end sequences
-		PepEnd[iMissed] = PepEnd[Missed - 1];
-				
-		// update new mod masses to add in any new mods from new peptide
+	    UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, Site,
+			     DeltaMass, Masses, EndMasses);
+	
+	    CreateModCombinations(Missed, PepStart, MassAndMask, Masses,
+				  EndMasses, NumMod, DeltaMass, NumMassAndMask);
 
-		// first determine the maximum value for updated mod list
-		if(NumMod[iMissed] + NumMod[Missed-1] >= MAXMOD)
-		    ModMax = MAXMOD - NumMod[iMissed];
-		else ModMax = NumMod[Missed-1];
-
-		// now interatu thru the new entries
-		for(iMod = NumMod[iMissed]; 
-		    iMod < NumMod[iMissed] + ModMax;
-		    iMod++) {
-		    Site[iMissed][iMod] = 
-			Site[Missed-1][iMod - NumMod[iMissed]];
-
-		    DeltaMass[iMissed][iMod] = 
-			DeltaMass[Missed-1][iMod - NumMod[iMissed]];
-
-		    //		    Masses[iMissed][iMod] = 
-		    //			Masses[Missed-1][iMod - NumMod[iMissed] + 1] +
-		    //			Masses[iMissed][NumMod[iMissed] - 1];
-		}
-				
-		// update old masses
-		Masses[iMissed] += Masses[Missed - 1];
-				
-		// update end masses
-		EndMasses[iMissed] = EndMasses[Missed - 1];
-			
-		// update number of Mods
-		NumMod[iMissed] += ModMax;
-	    }	    
-			
-
-	    // need to iterate thru combinations that have iMod.
-	    // i.e. iMod = 3 and NumMod=5
-	    // 00111, 01011, 10011, 10101, 11001, 11010, 11100, 01101,
-	    // 01110
-	    // i[0] = 0 --> 5-3, i[1] = i[0]+1 -> 5-2, i[3] = i[1]+1 -> 5-1
-	    // then construct bool mask
-	    
-	    // holders for calculated modification mask and modified peptide masses
-	    unsigned Mask, MassOfMask;
-	    // iterate thru active mods
-	    int iiMod;
-	    // keep track of the number of unique masks created.  each corresponds to a ladder
-	    int iModCount;
-
-	    // go thru missed cleaves
-	    for(iMissed = 0; iMissed < Missed; iMissed++) {
-		// skip start
-		if(PepStart[iMissed] == (const char *)-1) continue;
-		iModCount = 0;
-
-		// set up non-modified mass
-		MassAndMask[iMissed][iModCount].Mass = 
-		    Masses[iMissed] + EndMasses[iMissed];
-		MassAndMask[iMissed][iModCount].Mask = 0;
-		iModCount++;
-		
-		// go thru number of mods allowed
-		for(iMod = 0; iMod < NumMod[iMissed] && iModCount < MAXMOD2; iMod++) {
-		    
-		    // initialize ModIndex that points to mod sites
-		    InitModIndex(ModIndex, iMod);
-		    do {
-			
-			// calculate mass
-			MassOfMask = Masses[iMissed] + EndMasses[iMissed];
-			for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
-			    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod]];
-			// make bool mask
-			Mask = MakeBoolMask(ModIndex, iMod);
-			// put mass and mask into storage
-			MassAndMask[iMissed][iModCount].Mass = MassOfMask;
-			MassAndMask[iMissed][iModCount].Mask = Mask;
-			// keep track of the  number of ladders
-			iModCount++;
-
-		    } while(iModCount < MAXMOD2 &&
-			    CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
-		} // iMod
-
-		// sort mask and mass by mass
-		sort(MassAndMask[iMissed], MassAndMask[iMissed] + iModCount,
-		     CMassMaskCompare());
-		// keep track of number of MassAndMask
-		NumMassAndMask[iMissed] = iModCount;
-
-	    } // iMissed
-	    
 
 	    int OldMass;  // keeps the old peptide mass for comparison
+	    bool NoMassMatch;  // was there a match to the old mass?
 
 	    for(iMissed = 0; iMissed < Missed; iMissed++) {	    
 		if(PepStart[iMissed] == (const char *)-1) continue;  // skip start
@@ -478,14 +519,16 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 		// init bool for "Has ladder been calculated?"
 		for(iMod = 0; iMod < MAXMOD2; iMod++) LadderCalc[iMod] = false;
 		
-		OldMass = 0;			
+		OldMass = 0;
+		NoMassMatch = true;
 				
 		// go thru total number of mods
 		for(iMod = 0; iMod < NumMassAndMask[iMissed]; iMod++) {
 		    
 		    // have we seen this mass before?
-		    if(MassAndMask[iMissed][iMod].Mass == OldMass) continue;
-
+		    if(MassAndMask[iMissed][iMod].Mass == OldMass &&
+		       NoMassMatch) continue;
+		    NoMassMatch = true;
 		    OldMass = MassAndMask[iMissed][iMod].Mass;
 		    // return peak where theoretical mass is < precursor mass + tol
 		    MassPeak = PeakSet.GetIndexLo(OldMass);
@@ -495,7 +538,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			MassPeak++) {
 			Peaks = MassPeak->Peak;
 			// make sure we look thru other mod masks with the same mass
-			OldMass = 0; 
+			NoMassMatch = false;
 						
 #ifdef CHECKGI
 			SeqId *bestid;
@@ -511,10 +554,6 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 #endif
 						
 						
-			//			MakeBoolMap(ModMask, ModIndex, iMod,
-			//    NumMod[iMissed]);
-			//LadderVal = MakeIntFromBoolMap(ModMask, 
-			//		       NumMod[iMissed]);
 			if(!LadderCalc[iMod]) {
 			    LadderCalc[iMod] = true;	
 			    if(CreateLadders(Sequence, iSearch, position,
@@ -960,6 +999,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.17  2004/04/05 20:49:16  lewisg
+fix missed mass bug and reorganize code
+
 Revision 1.16  2004/03/31 02:00:26  ucko
 +<algorithm> for sort()
 
