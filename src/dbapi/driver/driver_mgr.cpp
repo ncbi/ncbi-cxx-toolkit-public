@@ -217,14 +217,17 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
     typedef CPluginManagerStore::CPMMaker<I_DriverContext> TReaderManagerStore;
     bool created = false;
     I_DriverContext* drv = NULL;
+    const TPluginManagerParamTree* nd = NULL;
 
     CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get(&created));
     _ASSERT(ReaderManager);
 
     try {
-        TPluginManagerParamTree* pt = MakePluginManagerParamTree(driver_name, attr);
-        _ASSERT(pt);
-        const TPluginManagerParamTree* nd = pt->FindNode(driver_name);
+        if ( attr != NULL ) {
+            TPluginManagerParamTree* pt = MakePluginManagerParamTree(driver_name, attr);
+            _ASSERT(pt);
+            nd = pt->FindNode( driver_name );
+        }
         drv = ReaderManager->CreateInstance(
             driver_name,
             NCBI_INTERFACE_VERSION(I_DriverContext),
@@ -253,6 +256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/02 17:45:58  ssikorsk
+ * Handle attr == NULL in Get_I_DriverContext
+ *
  * Revision 1.18  2005/03/01 16:24:54  ssikorsk
  * Restored the "GetDriver" method
  *
