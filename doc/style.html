@@ -24,7 +24,9 @@
 		<li> <a href="#ref_NamingConst">Constants</a>
 		<li> <a href="#ref_NamingCVar">Class member variables</a>
 		<li> <a href="#ref_NamingCFunc">Class member functions</a>
-		<li> <a href="#ref_NamingStaticFunc">Module static functions</a>
+		<li> <a href="#ref_NamingStatic">Module static functions and data</a>
+		<li> <a href="#ref_NamingGlobal">
+				  Global (<i>"extern"</i>) functions and data</a>
 	 </ul>
 	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
 	 <li> <a href="#ref_Scope">Use of the NCBI name scope</a>
@@ -106,11 +108,20 @@
 				&nbsp;&nbsp;&nbsp;Class member functions</th></tr>
       <tr><td><i>Func</i></td><td>bool MyFunc(void);</td></tr>
 
-		<a name="ref_NamingStaticFunc">
+		<a name="ref_NamingStatic">
       <tr><th colspan=2 align=left>
-				&nbsp;&nbsp;&nbsp;Module static functions</th></tr>
+				&nbsp;&nbsp;&nbsp;Module static functions and data</th></tr>
       <tr><td><i><b>s_</b>StaticFunc</b></td><td>
 				static char s_MyStaticFunc(void);</td></tr>
+      <tr><td><i><b>s_</b>StaticVar</b></td><td>
+				static int s_MyStaticVar;</td></tr>
+
+		<a name="ref_NamingGlobal">
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Global (<i>"extern"</i>) functions and data
+			 </th></tr>
+      <tr><td><i>GlobalFunc</i></td><td>double MyGlobalFunc(void);</td></tr>
+      <tr><td><i><b>g_</b>GlobalVar</i></td><td>short g_MyGlobalVar;</td></tr>
 
 	 </table>
 
