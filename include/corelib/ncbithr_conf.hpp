@@ -1,5 +1,5 @@
-#ifndef NCBITHR_CONF__HPP
-#define NCBITHR_CONF__HPP
+#ifndef CORELIB___NCBITHR_CONF__HPP
+#define CORELIB___NCBITHR_CONF__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/08/18 16:03:33  siyan
+ * Added CORELIB___ prefix to the #ifndef/#define file inclusion check macros.
+ *
  * Revision 1.6  2003/08/04 12:41:19  siyan
  * Documentation changes.
  *
