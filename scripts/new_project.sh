@@ -82,7 +82,7 @@ SRC = $proj_name
 
 ###  LIBRARY BUILD RULES -- DON'T EDIT OR MOVE THESE 2 LINES !!!
 include \$(builddir)/Makefile.is_dll_support
-include \$(builddir)/Makefile.lib
+include \$(builddir)/Makefile.\$(LIB_OR_DLL)
 
 
 ###  PUT YOUR OWN ADDITIONAL TARGETS (MAKE COMMANDS/RULES) BELOW HERE
