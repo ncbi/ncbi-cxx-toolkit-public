@@ -429,9 +429,10 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
     Blast_Message* error_msg = NULL;
     if (error_wrap && error_wrap->choice == BLAST_SEQSRC_MESSAGE)
         error_msg = (Blast_Message*) error_wrap->ptr;
-    if (error_msg) {
-        ThrowBlastException((CBlastException::EErrCode) error_msg->code,
-                            error_msg->message);
+    if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
+        throw CBlastException(__FILE__, __LINE__, 0,
+                              (CBlastException::EErrCode) error_msg->code,
+                              error_msg->message);
     }
     return seq_src;
 }
