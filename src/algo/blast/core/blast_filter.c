@@ -961,17 +961,8 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* q
     return 0;
 }
 
-/** Masks the letters in buffer.
- * @param buffer the sequence to be masked (will be modified). [out]
- * @param max_length the sequence to be masked (will be modified). [in]
- * @param is_na nucleotide if TRUE [in]
- * @param mask_loc the SeqLoc to use for masking [in] 
- * @param reverse minus strand if TRUE [in]
- * @param offset how far along sequence is 1st residuse in buffer [in]
- *
-*/
-static Int2
-MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
+Int2
+Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
                            ListNode * mask_loc, Boolean reverse, Int4 offset)
 {
     SSeqRange *loc = NULL;
@@ -987,8 +978,8 @@ MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
     for (; mask_loc; mask_loc = mask_loc->next) {
         loc = (SSeqRange *) mask_loc->ptr;
         if (reverse) {
-            start = max_length - 1 - loc->right;
-            stop = max_length - 1 - loc->left;
+            start = length - 1 - loc->right;
+            stop = length - 1 - loc->left;
         } else {
             start = loc->left;
             stop = loc->right;
@@ -1042,7 +1033,7 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
         if (buffer) {
 
             if ((status =
-                     MaskTheResidues(buffer, query_length, k_is_na,
+                     Blast_MaskTheResidues(buffer, query_length, k_is_na,
                                                 filter_per_context, reverse, 0)))
             {
                     return status;
