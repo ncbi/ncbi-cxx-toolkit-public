@@ -4024,10 +4024,10 @@ extern int/*bool*/ SOCK_IsServerSide(SOCK sock)
 extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 {
 #ifdef NCBI_OS_UNIX
-    return 0/*false*/;
-#else
     return sock->sock != SOCK_INVALID  &&  sock->path[0];
-#endif
+#else
+    return 0/*false*/;
+#endif /*NCBI_OS_UNIX*/
 }
 
 
@@ -4306,6 +4306,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.156  2004/10/26 16:17:07  lavr
+ * Fix SOCK_IsUNIX() (preprocessor macro check reversed)
+ *
  * Revision 6.155  2004/10/26 14:48:13  lavr
  * Implement UNIX socket extensions to the socket API
  *
