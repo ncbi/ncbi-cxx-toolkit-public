@@ -29,10 +29,14 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Private API to define service iterator structure.
+ *   Private API to define server iterator structure.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/22 16:53:12  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
  * Revision 6.1  2000/05/12 18:38:16  lavr
  * First working revision
  *
@@ -58,10 +62,10 @@ typedef struct {
  */
 struct SSERV_IterTag {
     char*        service;        /* requested service name */
-    TSERV_Type   type;           /* requested service type(s) */
+    TSERV_Type   type;           /* requested server type(s) */
     unsigned int preferred_host; /* preferred host to select */
-    SSERV_Info** skip;           /* services to skip */
-    size_t       n_skip;         /* number of services in the array */
+    SSERV_Info** skip;           /* servers to skip */
+    size_t       n_skip;         /* number of servers in the array */
     size_t       n_max_skip;     /* number of allocated slots in the array */
 
     const SSERV_VTable* op;      /* table of virtual functions */

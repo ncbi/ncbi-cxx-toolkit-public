@@ -26,10 +26,14 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Top-level API to resolve NCBI service name to the service meta-address.
+ *   Top-level API to resolve NCBI service name to the server meta-address.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/22 16:53:11  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
  * Revision 6.2  2000/05/12 21:42:59  lavr
  * Cleaned up for the C++ compilation, etc.
  *

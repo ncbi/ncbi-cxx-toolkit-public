@@ -1,5 +1,5 @@
-#ifndef NCBI_SERVICE_INFO__H
-#define NCBI_SERVICE_INFO__H
+#ifndef NCBI_SERVER_INFO__H
+#define NCBI_SERVER_INFO__H
 
 /*  $Id$
  * ===========================================================================
@@ -29,14 +29,18 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   NCBI service meta-address info
- *   Note that all service meta-addresses are allocated as
+ *   NCBI server meta-address info
+ *   Note that all server meta-addresses are allocated as
  *   single contiguous pieces of memory, which can be copied in whole
  *   with the use of 'SERV_SizeOfInfo' call. Dynamically allocated
- *   service infos can be freed with a direct call to 'free'.
+ *   server infos can be freed with a direct call to 'free'.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/05/22 16:53:07  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
  * Revision 6.5  2000/05/15 19:06:05  lavr
  * Use home-made ANSI extentions (NCBI_***)
  *
@@ -63,7 +67,7 @@ extern "C" {
 #endif
 
 
-/* Bit-mask of service types
+/* Bit-mask of server types
  */
 typedef enum {
     fSERV_Ncbid      = 0x1,
@@ -72,11 +76,11 @@ typedef enum {
     fSERV_HttpPost   = 0x8,
     fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost
 } ESERV_Type;
-typedef int TSERV_Type;  /*  bit-wise OR of "ESERV_Type" flags */
+typedef int TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
 
 
 /* Flags to specify the algorithm for selecting the most preferred
- * service from the set of available services
+ * server from the set of available servers
  */
 typedef enum {
     fSERV_Regular = 0x0,
@@ -88,12 +92,12 @@ typedef int TSERV_Flags;
 #define SERV_DEFAULT_FLAG       fSERV_Regular
 
 
-/* Verbal representation of a service type (no internal spaces allowed)
+/* Verbal representation of a server type (no internal spaces allowed)
  */
 const char* SERV_TypeStr(ESERV_Type type);
 
 
-/* Read service info type.
+/* Read server info type.
  * If successful, assign "type" and return pointer to the position
  * in the "str" immediately following the type tag.
  * On error, return NULL.
@@ -101,7 +105,7 @@ const char* SERV_TypeStr(ESERV_Type type);
 const char* SERV_ReadType(const char* str, ESERV_Type* type);
 
 
-/* Meta-addresses for various types of NCBI services
+/* Meta-addresses for various types of NCBI servers
  */
 typedef struct {
     size_t         args;
@@ -120,7 +124,7 @@ typedef struct {
 } SSERV_HttpInfo;
 
 
-/* Generic NCBI service meta-address
+/* Generic NCBI server meta-address
  */
 typedef union {
     SSERV_NcbidInfo      ncbid;
@@ -133,12 +137,13 @@ typedef struct {
     unsigned int   host;
     unsigned short port;
     ESERV_Flags    flag;
+    double         rate;
     time_t         time;
     USERV_Info     u;
 } SSERV_Info;
 
 
-/* Constructors for the various types of NCBI services' meta-addresses
+/* Constructors for the various types of NCBI server meta-addresses
  */
 SSERV_Info* SERV_CreateNcbidInfo
 (unsigned int   host,
@@ -160,31 +165,31 @@ SSERV_Info* SERV_CreateHttpInfo
  );
 
 
-/* Dump service info to a string.
- * The service type goes first, and it is followed by a single space.
+/* Dump server info to a string.
+ * The server type goes first, and it is followed by a single space.
  * The returned string is '\0'-terminated, and must be deallocated by 'free()'.
  * If 'skip_host' is true, no host address is put to the string
- * (neither it will be if the service info has the address as 0).
+ * (neither it will be if the server info has the host address as 0).
  */
 char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
 
 
-/* Read full service info (including type) from string "str"
+/* Read full server info (including type) from string "str"
  * (e.g. composed by SERV_WriteInfo). Result can be later freed by 'free()'.
- * If 'default_host' is not 0, the service info will be assigned this
+ * If 'default_host' is not 0, the server info will be assigned this
  * value, and a host address should NOT be specified in the input textual
- * service representation.
+ * server representation.
  */
 SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host);
 
 
-/* Return an actual size (in bytes) the service info occupies
+/* Return an actual size (in bytes) the server info occupies
  * (to be used for copying info structures in whole).
  */
 size_t SERV_SizeOfInfo(const SSERV_Info* info);
 
 
-/* Return 'true' if two service infos are equal.
+/* Return 'true' if two server infos are equal.
  */
 int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
 
@@ -193,4 +198,4 @@ int/*bool*/ SERV_EqualInfo(const SSERV_Info* info1, const SSERV_Info* info2);
 }  /* extern "C" */
 #endif
 
-#endif /* NCBI_SERVICE_INFO__H */
+#endif /* NCBI_SERVER_INFO__H */

@@ -29,17 +29,21 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Top-level API to resolve NCBI service name to the service meta-address.
+ *   Top-level API to resolve NCBI service name to the server meta-address.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/22 16:53:07  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
  * Revision 6.2  2000/05/12 18:29:22  lavr
  * First working revision
  *
  * ==========================================================================
  */
 
-#include <connect/ncbi_service_info.h>
+#include <connect/ncbi_server_info.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -47,13 +51,13 @@ extern "C" {
 #endif
 
 
-/* Iterator through the services
+/* Iterator through the servers
  */
 struct SSERV_IterTag;
 typedef struct SSERV_IterTag* SERV_ITER;
 
 
-/* Create iterator for the iterative service lookup.
+/* Create iterator for the iterative server lookup.
  */
 SERV_ITER SERV_OpenSimple
 (const char*       service         /* service name */
@@ -61,21 +65,21 @@ SERV_ITER SERV_OpenSimple
 
 SERV_ITER SERV_Open
 (const char*       service,        /* service name */
- TSERV_Type        type,           /* mask of type of service requested */
+ TSERV_Type        type,           /* mask of type of servers requested */
  unsigned int      preferred_host  /* preferred host to use service on */
  );
 
 SERV_ITER SERV_OpenEx
 (const char*       service,        /* service name */
- TSERV_Type        type,           /* mask of type of service requested */
+ TSERV_Type        type,           /* mask of type of servers requested */
  unsigned int      preferred_host, /* preferred host to use service on */
- const SSERV_Info* skip[],         /* services NOT to select */
- size_t            n_skip          /* number of services in preceding array */
+ const SSERV_Info* skip[],         /* servers NOT to select */
+ size_t            n_skip          /* number of servers in preceding array */
  );
 
 
-/* Get the next service meta-address.
- * Note that the application program should NOT destroy returned service info:
+/* Get the next server meta-address.
+ * Note that the application program should NOT destroy returned server info:
  * it will be freed automatically upon iterator destruction.
  */
 const SSERV_Info* SERV_GetNextInfo

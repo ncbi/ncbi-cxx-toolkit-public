@@ -26,10 +26,14 @@
  * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   NCBI service meta-address info
+ *   NCBI server meta-address info
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2000/05/22 16:53:11  lavr
+ * Rename service_info -> server_info everywhere (including
+ * file names) as the latter name is more relevant
+ *
  * Revision 6.7  2000/05/18 14:12:43  lavr
  * Cosmetic change
  *
@@ -55,7 +59,7 @@
  */
 
 #include <connect/ncbi_ansi_ext.h>
-#include <connect/ncbi_service_info.h>
+#include <connect/ncbi_server_info.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -65,7 +69,7 @@
 
 
 /*****************************************************************************
- *  Attributes for the different service types::  Interface
+ *  Attributes for the different server types::  Interface
  */
 
 /* Table of virtual functions
@@ -151,14 +155,18 @@ static const char* s_Read_HostPort(const char* str, unsigned int default_host,
             return 0;
     } else if (s && s != str) {
         return 0;
-    } else /* default_host && (!s || s == str) */
+    } else { /* default_host && (!s || s == str) */
         h = default_host;
+    }
+
     if (!s) {
         p = 0;
         s = str;
         n = 0;
-    } else if (sscanf(++s, "%hu%n", &p, &n) < 1)
+    } else if (sscanf(++s, "%hu%n", &p, &n) < 1) {
         return 0;
+    }
+
     *host = h;
     *port = htons(p);
     return str + (int)(s - str) + n;
@@ -186,7 +194,7 @@ static const char *k_FlagTag[N_FLAG_TAGS] = {
 
 
 /*****************************************************************************
- *  Generic methods based on the service info's virtual functions
+ *  Generic methods based on the server info's virtual functions
  */
 
 char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
@@ -196,7 +204,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
         10+1/*time*/ + 10+1/*algorithm*/;
     char* str;
 
-    /* write service-specific info */
+    /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
         char* s = str;
         int n;
@@ -222,7 +230,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host)
 
 SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
 {
-    /* detect service type */
+    /* detect server type */
     ESERV_Type  type;
     const char* str = SERV_ReadType(info_str, &type);
     unsigned short port;
@@ -241,12 +249,12 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
     str = s;
     while (*str && isspace(*str))
         str++;
-    /* read service-specific info according to the detected type */
+    /* read server-specific info according to the detected type */
     if ((info = s_GetAttrByType(type)->vtable.Read(&str)) != 0) {
         info->host = host;
         if (!default_port)
             info->port = port;
-        /* continue reading service info: optional parts: ... */
+        /* continue reading server info: optional parts: ... */
         while (*str && isspace(*str))
             str++;
         if (*str) {
@@ -565,7 +573,7 @@ SSERV_Info* SERV_CreateHttpInfo
 
 
 /*****************************************************************************
- *  Attributes for the different service types::  Implementation
+ *  Attributes for the different server types::  Implementation
  */
 
 static const char kNCBID     [] = "NCBID";
