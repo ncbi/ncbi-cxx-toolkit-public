@@ -81,8 +81,8 @@ public:
 
     // control methods
     virtual void Start       (IFlatTextOStream&) {}
-    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream& text_os) {}
-    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream& text_os)   {}
+    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream&) {}
+    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream&)   {}
     virtual void End         (IFlatTextOStream&) {}
 
     // Format methods
@@ -108,6 +108,7 @@ public:
     virtual void FormatGenome    (const CGenomeItem&, IFlatTextOStream&)      {}
     virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
     virtual void FormatGap       (const CGapItem&, IFlatTextOStream&)         {}
+    virtual void FormatAlignment (const CAlignmentItem& , IFlatTextOStream&)  {}
 
     // Context
     void SetContext(CFlatFileContext& ctx) { m_Ctx.Reset(&ctx); }
@@ -140,7 +141,8 @@ protected:
     void x_FormatRefLocation(CNcbiOstrstream& os, const CSeq_loc& loc,
         const string& to, const string& delim,
         CBioseqContext& ctx) const;
-    void x_FormatRefJournal(string& journal, const CReferenceItem& ref) const;
+    void x_FormatRefJournal(const CReferenceItem& ref, string& journal,
+        const CFlatFileConfig& cfg) const;
     string x_FormatAccession(const CAccessionItem& acc, char separator) const;
 
     void x_GetKeywords(const CKeywordsItem& kws, const string& prefix,
@@ -168,6 +170,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/01/12 16:43:16  shomrat
+* Added FormatAlignment; Changed journal formatting
+*
 * Revision 1.8  2004/11/24 16:48:02  shomrat
 * Handle gap items
 *
