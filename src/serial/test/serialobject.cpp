@@ -74,18 +74,18 @@ void CSerialObject::Dump(ostream& out) const
     out << "}" << endl;
 
     out << "m_Offsets: {" << endl;
-    for ( vector<int>::const_iterator i = m_Offsets.begin();
-          i != m_Offsets.end();
-          ++i ) {
-        out << "    " << *i << endl;
+    for ( vector<int>::const_iterator i1 = m_Offsets.begin();
+          i1 != m_Offsets.end();
+          ++i1 ) {
+        out << "    " << *i1 << endl;
     }
     out << "}" << endl;
     
     out << "m_Names: {" << endl;
-    for ( map<int, string>::const_iterator i = m_Names.begin();
-          i != m_Names.end();
-          ++i ) {
-        out << "    " << i->first << ": \"" << i->second << '"' << endl;
+    for ( map<int, string>::const_iterator i2 = m_Names.begin();
+          i2 != m_Names.end();
+          ++i2 ) {
+        out << "    " << i2->first << ": \"" << i2->second << '"' << endl;
     }
     out << "}" << endl;
 
