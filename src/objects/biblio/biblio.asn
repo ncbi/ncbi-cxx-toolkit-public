@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -87,7 +87,8 @@ Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
     volume VisibleString OPTIONAL ,
     issue VisibleString OPTIONAL ,
     pages VisibleString OPTIONAL ,
-    date Date OPTIONAL }
+    date Date OPTIONAL ,
+    serial-number INTEGER OPTIONAL }   -- for GenBank style references
     
     
     -- Authorship Group
