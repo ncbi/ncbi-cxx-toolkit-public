@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.15  2003/05/06 21:27:31  dondosha
+* Moved auxiliary functions from blast_driver.c to relevant modules
+*
 * Revision 1.14  2003/05/01 17:08:45  dondosha
 * BLAST_SetUpAuxStructures moved from blast_setup to blast_engine module
 *
@@ -255,6 +258,7 @@ $Revision$
 
 extern Uint1 FrameToDefine PROTO((Int2 frame));
 extern void HackSeqLocId(SeqLocPtr slp, SeqIdPtr id);
+extern Int4 SeqLocTotalLen (CharPtr prog_name, SeqLocPtr slp);
 
 /* These should be defined elsewhere so other trans. units can use them. */
 #define SEQLOC_MASKING_NOTSET 0
@@ -409,6 +413,80 @@ BlastSetUp_TranslateDNASeqLoc(SeqLocPtr slp, Int2 frame, Int4 full_length,
 	ValNodeAddPointer(seqloc_translated, SEQLOC_PACKED_INT, seqloc_new);
     
     return 0;
+}
+
+Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp, 
+        SeqLocPtr PNTR protein_slp_head, Int4Ptr full_dna_length, 
+        Int4Ptr PNTR frame_info_ptr)
+{
+   BioseqPtr protein_bsp;
+   SeqLocPtr protein_slp = NULL, last_slp = NULL;
+   CharPtr genetic_code=NULL;
+   GeneticCodePtr gcp;
+   Int4 protein_length;
+   Int4 query_length;
+   Int4 buffer_length;
+   Int4 index=0, i;
+   Uint1Ptr buffer, buffer_var, sequence;
+   Int2 status;
+   ValNodePtr vnp;
+   Int4 frame_array[6] = { 1, 2, 3, -3, -2, -1 };
+   Int4Ptr frame_info;
+   SeqIdPtr seqid;
+   
+   if (!query_slp)
+      return -1;
+
+   *full_dna_length = SeqLocTotalLen("blastn", query_slp);
+   *protein_slp_head = NULL;
+   *frame_info_ptr = frame_info = 
+      (Int4Ptr) Malloc(6*ValNodeLen(query_slp)*sizeof(Int4));
+
+   gcp = GeneticCodeFind(1, NULL);
+   for (vnp = (ValNodePtr)gcp->data.ptrvalue; vnp != NULL; 
+        vnp = vnp->next) {
+      if (vnp->choice == 3) {  /* ncbieaa */
+         genetic_code = (CharPtr)vnp->data.ptrvalue;
+         break;
+      }
+   }
+   
+   for ( ; query_slp; query_slp = query_slp->next) {
+      query_length = SeqLocLen(query_slp);
+      status = BlastSetUp_GetSequence(query_slp, FALSE, TRUE, &buffer, 
+                                      &buffer_length, NULL);
+      buffer_var = buffer + 1;
+      
+      for (i = 0; i < 6; i++) {
+         if (i == 3) {
+            /* Advance the query pointer to the beginning of the reverse
+               strand */
+            buffer_var += query_length + 1;
+         }
+         sequence = BLAST_GetTranslation(buffer_var, NULL, query_length, 
+                       ABS(frame_array[i]), &protein_length, genetic_code);
+         protein_bsp = BLAST_MakeTempProteinBioseq(sequence+1, 
+                          protein_length, Seq_code_ncbistdaa);
+         protein_slp = SeqLocIntNew(0, protein_length-1, Seq_strand_plus, 
+                                    protein_bsp->id);
+         /* Attach the underlying query id to the unique id of this 
+            SeqLoc */
+         seqid = SeqLocId(protein_slp);
+         seqid->next = SeqLocId(query_slp);
+
+         if (*protein_slp_head == NULL)
+            *protein_slp_head = protein_slp;
+         else
+            ValNodeLink(&last_slp, protein_slp);
+         last_slp = protein_slp;
+         
+         frame_info[index] = frame_array[i];
+         index++;
+      }
+
+      buffer = MemFree(buffer);
+   }
+   return 0;
 }
 
 /** Masks the letters in buffer.
@@ -1972,3 +2050,4 @@ Int2 BLAST_SetUpSubject(CharPtr file_name, CharPtr blast_program,
 
    return 0;
 }
+
