@@ -324,8 +324,21 @@ int CNcbiApplication::AppMain
         // Init application
         try {
             Init();
+// If the app still has no arg description - provide default one
+            if (!m_ArgDesc.get()) {
+                auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+                arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                    "This program has no mandatory arguments");
+                SetupArgDescriptions(arg_desc.release());
+            }
         }
         catch (CArgHelpException&) {
+            m_ArgDesc->AddOptionalKey(&s_ArgLogFile[1], "File_Name",
+                "File to which the program log will be redirected",
+                CArgDescriptions::eOutputFile);
+            m_ArgDesc->AddOptionalKey(&s_ArgCfgFile[1], "File_Name",
+                "File with the program's configuration (registry) data",
+                CArgDescriptions::eInputFile);
             // Print USAGE
             string str;
             LOG_POST(string(72, '='));
@@ -596,6 +609,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2002/07/31 18:33:44  gouriano
+ * added default argument description,
+ * added info about logfile and conffile optional arguments
+ *
  * Revision 1.44  2002/07/22 19:33:28  ivanov
  * Fixed bug with internal processing parameters -conffile and -logfile
  *
