@@ -147,6 +147,14 @@ CVersionInfo::CVersionInfo(const CVersionInfo& version)
 {
 }
 
+CVersionInfo& CVersionInfo::operator=(const CVersionInfo& version)
+{
+    m_Major = version.m_Major;
+    m_Minor = version.m_Minor;
+    m_PatchLevel = version.m_PatchLevel;
+    return *this;
+}
+
 
 string CVersionInfo::Print(void) const
 {
@@ -298,10 +306,15 @@ void ParseVersionString(const string&  vstr,
         const char* ver_str = vstr_str + pos;
         s_ConvertVersionInfo(ver, ver_str);
         return;
+    } else {
+        *ver = CVersionInfo::kAny;
+        *program_name = vstr;
+        NStr::TruncateSpacesInPlace(*program_name);
+        if (program_name->empty()) {
+            NCBI_THROW2(CStringException, eFormat, "Version string is empty", 0);
+        }
     }
 
-
-    NCBI_THROW2(CStringException, eFormat, "Version string not found", 0);
 
 }
 
@@ -313,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/04/05 14:35:33  kuznets
+ * Version parsing changed to support version less names
+ *
  * Revision 1.10  2005/04/04 16:16:57  kuznets
  * Added functions to parse various version strings
  *
