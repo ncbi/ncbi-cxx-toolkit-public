@@ -418,7 +418,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 char c = line[i];
                 if (isalpha(c)) {
                     if (lowercase) {
-                        bool is_lc = islower(c);
+                        bool is_lc = bool(islower(c));
                         if (is_lc && !was_lc) {
                             lc_start = pos;
                         } else if (was_lc && !is_lc) {
@@ -552,6 +552,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.25  2003/05/31 15:55:48  lavr
+ * Explicit 'int'->'bool' casts to avoid compiler warnings
+ *
  * Revision 6.24  2003/05/23 20:27:50  ucko
  * Enhance ReadFasta: recognize various types of comment, and optionally
  * report lowercase characters' location.

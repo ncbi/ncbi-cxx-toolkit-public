@@ -216,10 +216,11 @@ public:
 
     COrgRefCache::SCacheEntry* GetEntry() { return m_cacheEntry; }
 
-    bool                  IsJoinTerminal() const { return m_flags&mJoinTerm; }
+    bool                  IsJoinTerminal() const
+    { return m_flags&mJoinTerm ? true : false; }
     void                  SetJoinTerminal() { m_flags |= mJoinTerm; }
     bool                  IsSubtreeLoaded() const
-    { return m_flags&mSubtreeLoaded; }
+    { return m_flags&mSubtreeLoaded ? true : false; }
     void                  SetSubtreeLoaded( bool b )
     { if( b ) m_flags |= mSubtreeLoaded; else m_flags &= ~mSubtreeLoaded; }
 
@@ -286,6 +287,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.10  2003/05/31 15:55:48  lavr
+ * Explicit 'int'->'bool' casts to avoid compiler warnings
+ *
  * Revision 6.9  2003/05/06 19:53:53  domrach
  * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
  *
