@@ -289,10 +289,17 @@ public:
 
     struct SFiltersItem
     {
+        SFiltersItem(void);
+        SFiltersItem(const string& project_dir);
+
         CRef<CFilter> m_SourceFiles;
         CRef<CFilter> m_HeaderFiles;
+        CRef<CFilter> m_HeaderFilesPrivate;
+        CRef<CFilter> m_HeaderFilesImpl;
         CRef<CFilter> m_InlineFiles;
         
+        string        m_ProjectDir;
+
         void Initilize(void);
 
         void AddSourceFile (CSrcToFilterInserterWithPch& inserter_w_pch,
@@ -449,6 +456,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/06/08 16:28:27  gorelenk
+ * Added members m_HeaderFilesPrivate and m_HeaderFilesImpl
+ * to struct SFiltersItem.
+ *
  * Revision 1.21  2004/06/07 13:51:38  gorelenk
  * Added m_DllInfo to class CMsvc7RegSettings.
  *
