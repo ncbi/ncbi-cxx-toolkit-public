@@ -59,7 +59,7 @@ BEGIN_NCBI_SCOPE
 // y coordinates.  The returned value is an unsigned char* that can be indexed
 // using the enumerated offsets eRed, eGreen, eBlue, and eAlpha.
 //
-class NCBI_XUTIL_EXPORT CImage : public CObject
+class NCBI_XIMAGE_EXPORT CImage : public CObject
 {
 public:
 
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/27 16:44:32  ivanov
+ * Changed class export specifier to NCBI_XIMAGE_EXPORT
+ *
  * Revision 1.4  2003/06/12 19:44:39  dicuccio
  * Added function to flip an image along the y-axis
  *

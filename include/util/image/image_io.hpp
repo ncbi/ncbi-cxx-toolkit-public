@@ -52,7 +52,7 @@ class CImageIOHandler;
 // exporting sub-regions of images.
 //
 
-class NCBI_XUTIL_EXPORT CImageIO
+class NCBI_XIMAGE_EXPORT CImageIO
 {
 public:
 
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/27 16:44:32  ivanov
+ * Changed class export specifier to NCBI_XIMAGE_EXPORT
+ *
  * Revision 1.2  2003/06/03 20:04:24  dicuccio
  * Added export specifiers
  *
