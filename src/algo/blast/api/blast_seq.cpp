@@ -78,7 +78,8 @@ BLAST_SetUpQueryInfo(TSeqLocVector &slp,
    query_info->num_queries = slp.size();
    query_info->last_context = query_info->num_queries*num_frames - 1;
 
-   if ((strand = sequence::GetStrand(*slp[0].first, slp[0].second))) {
+   if ((strand = sequence::GetStrand(*slp[0].first, slp[0].second))
+       == eNa_strand_minus) {
        if (translate)
            query_info->first_context = 3;
        else
