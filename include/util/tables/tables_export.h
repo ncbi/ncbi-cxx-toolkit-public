@@ -41,11 +41,6 @@
  */
 
 
-#ifdef _LIB
-#  undef NCBI_DLL_BUILD
-#endif
-
-
 #if defined(WIN32)  &&  defined(NCBI_DLL_BUILD)
 
 #ifndef _MSC_VER
@@ -91,6 +86,9 @@
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/03/15 17:17:39  gorelenk
+ * Removed #undef NCBI_DLL_BUILD when defined _LIB .
+ *
  * Revision 1.3  2004/03/12 19:37:20  gorelenk
  * Changed export prefixes defines for tables to be used as a dll
  * on MSVC 7.10 dll build.

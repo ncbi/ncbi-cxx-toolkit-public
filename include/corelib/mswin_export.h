@@ -34,10 +34,6 @@
  *    explicitly labeled as such.
  */
 
-#ifdef _LIB
-#  undef NCBI_DLL_BUILD
-#endif
-
 
 #if defined(NCBI_OS_MSWIN)  &&  defined(NCBI_DLL_BUILD)
 
@@ -1488,6 +1484,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.65  2004/03/15 17:16:47  gorelenk
+ * Removed #undef NCBI_DLL_BUILD when defined _LIB .
+ *
  * Revision 1.64  2004/03/12 13:56:46  dicuccio
  * Renamed NCBI_REGEXP_EXPORT -> NCBI_XREGEXP_EXPORT; restored to non-static.
  * Moved GUI modules to top

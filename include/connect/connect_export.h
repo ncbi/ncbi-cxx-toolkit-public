@@ -41,11 +41,6 @@
  */
 
 
-#ifdef _LIB
-#  undef NCBI_DLL_BUILD
-#endif
-
-
 #if defined(WIN32)  &&  defined(NCBI_DLL_BUILD)
 
 #ifndef _MSC_VER
@@ -89,6 +84,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.6  2004/03/15 17:16:10  gorelenk
+ * Removed #undef NCBI_DLL_BUILD when defined _LIB .
+ *
  * Revision 6.5  2003/08/28 19:36:58  lavr
  * Rollback to R6.3
  *
