@@ -49,7 +49,7 @@ GOTO EXIT
 :NEXTARG
 IF _%2% == _ GOTO DEFAULT
 IF NOT %TARGET% == ALL GOTO SETCFG
-ECHO ERROR: Target ALL. Configuration specification(s) ignored.
+ECHO ERROR: Target ALL. Configuration specification(s) ignored: %2% ...
 :DEFAULT
 SET CFG=ALL
 GOTO LOOP
