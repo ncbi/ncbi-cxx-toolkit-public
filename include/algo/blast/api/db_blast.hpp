@@ -62,17 +62,35 @@ class NCBI_XBLAST_EXPORT CDbBlast : public CObject
 public:
 
     /// Contructor, creating default options for a given program
+    /// @param queries Vector of query locations [in]
+    /// @param seq_src Source of subject sequences [in]
+    /// @param p Blast program (task) [in]
+    /// @param rps_info RPS BLAST database information [in]
+    /// @param hsp_stream Data structure for saving HSP lists. Passed in in case
+    ///                   of on-the-fly formatting; otherwise 0. [in]
+    /// @param num_threads How many threads to use in preliminary stage of the 
+    ///                    search.
     CDbBlast(const TSeqLocVector& queries, 
              BlastSeqSrc* seq_src, EProgram p, RPSInfo* rps_info=0,
              BlastHSPStream* hsp_stream=0, int num_threads=1);
     /// Constructor using a prebuilt options handle
+    /// @param queries Vector of query locations [in]
+    /// @param seq_src Source of subject sequences [in]
+    /// @param opts Options handle for the BLAST search. [in]
+    /// @param rps_info RPS BLAST database information [in]
+    /// @param hsp_stream Data structure for saving HSP lists. Passed in in case
+    ///                   of on-the-fly formatting; otherwise 0. [in]
+    /// @param num_threads How many threads to use in preliminary stage of the 
+    ///                    search.
     CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
              CBlastOptionsHandle& opts, RPSInfo* rps_info=0,
              BlastHSPStream* hsp_stream=0, int num_threads=1);
-
+    /// Destructor
     virtual ~CDbBlast();
-
+    /// Allocates and initializes internal data structures for the query 
+    /// sequences.
     void SetQueries(const TSeqLocVector& queries);
+    /// 
     const TSeqLocVector& GetQueries() const;
 
     CBlastOptions& SetOptions();
@@ -93,9 +111,10 @@ public:
     /// Run the preliminary stage of the search engine; assumes that main
     /// setup has already been performed.
     virtual void RunPreliminarySearch();
-    /// Run only the traceback stage of the BLAST search, filling the internal
-    /// results structure.
-    virtual void RunTraceback(); 
+    /// Run only the traceback stage of the BLAST search, returning results 
+    /// in the Seq-align form. Assumes that preliminary search has already been
+    /// done, and its results are available from the HSP stream.
+    virtual TSeqAlignVector RunTraceback(); 
     
     /// Remove extra results if a limit is provided on total number of HSPs
     void TrimBlastHSPResults();
@@ -104,24 +123,42 @@ public:
     // const TSeqLocVector& GetFilteredQueryRegions() const;
     const BlastMaskLoc* GetFilteredQueryRegions() const;
 
-    void SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src=false);
-    BlastSeqSrc* GetSeqSrc() const;
+    /// Retrieve the data structure for the source of subject sequences
+    const BlastSeqSrc* GetSeqSrc() const;
+    /// Retrieve the data structure for saving and extracting HSP lists
     BlastHSPStream* GetHSPStream() const;
+    /// Retrieve the results of the BLAST search in the internal form.
     BlastHSPResults* GetResults() const;
+    /// Retrieve the diagnostics structure
     BlastDiagnostics* GetDiagnostics() const;
+    /// Retrieve the scoring and statistical parameters structure
     BlastScoreBlk* GetScoreBlk() const;
+    /// Retrieve the lookup table structure
     LookupTableWrap* GetLookupTable() const;
+    /// Retrieve the query information structure
     const CBlastQueryInfo& GetQueryInfo() const;
+    /// Retrieve the internal query sequence structure
     const CBLAST_SequenceBlk& GetQueryBlk() const;
+    /// Get the error/warning message
     TBlastError& GetErrorMessage();
 
 protected:
+    /// Convert results in internal form to a Seq-align form
     virtual TSeqAlignVector x_Results2SeqAlign();
+    /// Perform traceback given preliminary results are already computed and 
+    /// saved in an HSP stream. Fills the BlastHSPResults internal structure 
+    /// with after-traceback results.
+    virtual void x_RunTracebackEngine();
+    /// Reset the query-related data structures for a new search
     virtual void x_ResetQueryDs();
+    /// Reset results-related data structures for a new search
     virtual void x_ResetResultDs();
+    /// Initialize the internal fields
     virtual void x_InitFields();
+    /// Initialize the data structure for saving HSP lists
     virtual void x_InitHSPStream();
-
+    /// Retrieve the data structure with RPS BLAST database specific 
+    /// information.
     RPSInfo * GetRPSInfo() const;    
 
     /// Internal data structures used in this and all derived classes 
@@ -135,6 +172,10 @@ protected:
     BlastHSPResults*    m_ipResults;      /**< Results structure - not private, 
                                              because derived class will need to
                                              set it. */
+    bool                m_ibTracebackOnly;/**< Should only traceback be 
+                                             performed? Allows setup to recognize
+                                             that lookup table need not be 
+                                             created. */
 private:
     /// Data members received from client code
     TSeqLocVector        m_tQueries;      ///< query sequence(s)
@@ -208,15 +249,7 @@ CDbBlast::GetFilteredQueryRegions() const
     return m_ipFilteredRegions;
 }
 
-inline void CDbBlast::SetSeqSrc(BlastSeqSrc* seq_src, bool free_old_src)
-{
-    x_ResetResultDs();
-    if (free_old_src)
-        BlastSeqSrcFree(m_pSeqSrc);
-    m_pSeqSrc = seq_src;
-}
-
-inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
+inline const BlastSeqSrc* CDbBlast::GetSeqSrc() const
 {
     return m_pSeqSrc;
 }
@@ -277,6 +310,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/10/06 14:49:40  dondosha
+* Added RunTraceback method to perform a traceback only search, given the precomputed preliminary results, and return Seq-align; removed unused SetSeqSrc method; added doxygen comments
+*
 * Revision 1.24  2004/09/13 12:44:11  madden
 * Use BlastSeqLoc rather than ListNode
 *
