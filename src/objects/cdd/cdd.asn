@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -161,7 +161,7 @@ Update-comment ::= CHOICE {
 
 Update-align ::= SEQUENCE {
   description   SEQUENCE OF Update-comment OPTIONAL,  
-  seqannot      SEQUENCE OF Seq-annot OPTIONAL       -- contains the SeqAlign
+  seqannot      Seq-annot OPTIONAL      -- contains the SeqAlign
 }
 
 Reject-id ::= SEQUENCE {
