@@ -42,8 +42,9 @@ USING_SCOPE(objects);
 CAlnMapPrinter::CAlnMapPrinter(const CAlnMap& aln_map,
                                CNcbiOstream&  out)
     : m_AlnMap(aln_map),
-      m_NumRows(m_NumRows),
       m_IdFieldLen(28),
+      m_RowFieldLen(0),
+      m_NumRows(m_NumRows),
       m_Out(&out)
 {
     m_Ids.resize(m_NumRows);
@@ -54,6 +55,7 @@ CAlnMapPrinter::CAlnMapPrinter(const CAlnMap& aln_map,
         }
     }
     m_IdFieldLen += 2;
+    m_RowFieldLen = NStr::IntToString(m_NumRows).length() + 2;
 }
 
 
@@ -63,6 +65,16 @@ CAlnMapPrinter::PrintId(CAlnMap::TNumrow row) const
     m_Out->width(m_IdFieldLen);
     m_Out->setf(ios_base::left, ios_base::adjustfield);
     *m_Out << GetId(row);
+}
+
+
+void
+CAlnMapPrinter::PrintRow(CAlnMap::TNumrow row) const
+{
+    _ASSERT(row <= m_NumRows);
+    m_Out->width(m_RowFieldLen);
+    m_Out->setf(ios_base::right, ios_base::adjustfield);
+    *m_Out << row;
 }
 
 
@@ -172,6 +184,9 @@ void CAlnMapPrinter::Chunks(CAlnMap::TGetChunkFlags flags)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/03/15 19:17:16  todorov
+ * + PrintRow
+ *
  * Revision 1.1  2005/03/15 17:43:36  todorov
  * Initial revision
  *
