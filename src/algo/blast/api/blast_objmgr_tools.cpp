@@ -183,7 +183,7 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     ITERATE(TSeqLocVector, itr, queries) {
         TSeqPos length = 0;
         try { length = sequence::GetLength(*itr->seqloc, itr->scope); }
-        catch (const CException& e) { 
+        catch (const CException&) { 
             // Ignore exceptions in this function as they will be caught in
             // SetupQueries
         }
@@ -952,6 +952,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2005/01/27 18:30:24  camacho
+* Remove unused variable
+*
 * Revision 1.33  2005/01/21 17:38:57  camacho
 * Handle zero-length sequences
 *
