@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2001/06/20 17:27:49  kans
+ * include <time.h> for Mac compiler
+ *
  * Revision 6.22  2001/06/19 19:12:01  lavr
  * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
  *
@@ -110,6 +113,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 
 SERV_ITER SERV_OpenSimple(const char* service)
