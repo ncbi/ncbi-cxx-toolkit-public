@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/04/12 22:55:09  vakatov
+* [HAVE_NCBI_C]  Handle #GetArgs to avoid name clash with the NCBI C Toolkit
+*
 * Revision 1.15  2000/11/24 23:33:10  vakatov
 * CNcbiApplication::  added SetupArgDescriptions() and GetArgs() to
 * setup cmd.-line argument description, and then to retrieve their
@@ -91,6 +94,15 @@
 
 #include <corelib/ncbistd.hpp>
 #include <memory>
+
+// Avoid name clash with the NCBI C Toolkit
+#if defined(HAVE_NCBI_C)
+#  if defined(GetArgs)
+#    undef GetArgs
+#  endif
+#  define GetArgs GetArgs
+#endif
+
 
 BEGIN_NCBI_SCOPE
 
