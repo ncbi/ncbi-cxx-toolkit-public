@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/16 20:03:06  thiessen
+* working block creation
+*
 * Revision 1.18  2000/10/16 14:25:47  thiessen
 * working alignment fit coloring
 *
@@ -351,17 +354,11 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
     const Block *alignedBlock = NULL, *prevAlignedBlock = NULL;
     Block *newUnalignedBlock;
 
-    totalWidth = 0;
-
     // unaligned blocks to the left of each aligned block
     for (a=blocks.begin(); a!=ae; a++) {
         alignedBlock = *a;
-        totalWidth += alignedBlock->width;
         newUnalignedBlock = CreateNewUnalignedBlockBetween(prevAlignedBlock, alignedBlock);
-        if (newUnalignedBlock) {
-            blocks.insert(a, newUnalignedBlock);
-            totalWidth += newUnalignedBlock->width;
-        }
+        if (newUnalignedBlock) blocks.insert(a, newUnalignedBlock);
         prevAlignedBlock = alignedBlock;
     }
 
@@ -369,27 +366,30 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
     newUnalignedBlock = CreateNewUnalignedBlockBetween(alignedBlock, NULL);
     if (newUnalignedBlock) {
         blocks.insert(a, newUnalignedBlock);
-        totalWidth += newUnalignedBlock->width;
     }
 
-    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
     return true;
 }
 
 bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
 {
     int i = 0, j;
-    BlockList::iterator a, ae = blocks.end();
+    BlockList::iterator b, be = blocks.end();
     conservationColorer->Clear();
+
+    // resize block map
+    totalWidth = 0;
+    for (b=blocks.begin(); b!=be; b++) totalWidth += (*b)->width;
+    TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
 
     // fill out the block map
     blockMap.resize(totalWidth);
-    for (a=blocks.begin(); a!=ae; a++) {
-        for (j=0; j<(*a)->width; j++, i++) {
-            blockMap[i].block = *a;
+    for (b=blocks.begin(); b!=be; b++) {
+        for (j=0; j<(*b)->width; j++, i++) {
+            blockMap[i].block = *b;
             blockMap[i].blockColumn = j;
         }
-        UngappedAlignedBlock *uaBlock = dynamic_cast<UngappedAlignedBlock*>(*a);
+        UngappedAlignedBlock *uaBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
         if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
 
@@ -882,6 +882,82 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
     return true;
 }
 
+bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignmentIndex)
+{
+    const BlockInfo& info = blockMap[fromAlignmentIndex];
+    UnalignedBlock *prevUABlock = dynamic_cast<UnalignedBlock*>(info.block);
+    if (!prevUABlock || info.block != blockMap[toAlignmentIndex].block) return false;
+    int row, seqIndexFrom, seqIndexTo, 
+        newBlockWidth = toAlignmentIndex - fromAlignmentIndex + 1,
+        origWidth = prevUABlock->width;
+    std::vector < int > seqIndexesFrom(NRows()), seqIndexesTo(NRows());
+    const Sequence *seq;
+	bool ignored;
+    for (row=0; row<NRows(); row++) {
+        if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, &seq, &seqIndexFrom, &ignored) ||
+            !GetSequenceAndIndexAt(toAlignmentIndex, row, &seq, &seqIndexTo, &ignored) ||
+            seqIndexFrom < 0 || seqIndexTo < 0 ||
+            seqIndexTo - seqIndexFrom + 1 != newBlockWidth) return false;
+        seqIndexesFrom[row] = seqIndexFrom;
+        seqIndexesTo[row] = seqIndexTo;
+    }
+
+    TESTMSG("creating new aligned and unaligned blocks");
+
+    UnalignedBlock *nextUABlock = new UnalignedBlock(sequences);
+    UngappedAlignedBlock *ABlock = new UngappedAlignedBlock(sequences);
+    prevUABlock->width = nextUABlock->width = 0;
+
+    bool deletePrevUABlock = true, deleteNextUABlock = true;
+    const Block::Range *prevRange;
+    int rangeWidth;
+    for (row=0; row<NRows(); row++) {
+        prevRange = prevUABlock->GetRangeOfRow(row);
+
+        nextUABlock->SetRangeOfRow(row, seqIndexesTo[row] + 1, prevRange->to);
+        rangeWidth = prevRange->to - seqIndexesTo[row];
+        if (rangeWidth < 0)
+            ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - negative nextRange width");
+        else if (rangeWidth > 0) {
+            if (rangeWidth > nextUABlock->width) nextUABlock->width = rangeWidth;
+            deleteNextUABlock = false;
+        }
+
+        prevUABlock->SetRangeOfRow(row, prevRange->from, seqIndexesFrom[row] - 1);
+        rangeWidth = seqIndexesFrom[row] - prevRange->from;
+        if (rangeWidth < 0)
+            ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - negative prevRange width");
+        else if (rangeWidth > 0) {
+            if (rangeWidth > prevUABlock->width) prevUABlock->width = rangeWidth;
+            deletePrevUABlock = false;
+        }
+
+        ABlock->SetRangeOfRow(row, seqIndexesFrom[row], seqIndexesTo[row]);
+    }
+
+    ABlock->width = newBlockWidth;
+    if (prevUABlock->width + ABlock->width + nextUABlock->width != origWidth)
+        ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - bad block widths sum");
+
+    InsertBlockAfter(prevUABlock, ABlock);
+    InsertBlockAfter(ABlock, nextUABlock);
+    if (deletePrevUABlock) {
+        TESTMSG("deleting zero-width unaligned block on left");
+        RemoveBlock(prevUABlock);
+    }
+    if (deleteNextUABlock) {
+        TESTMSG("deleting zero-width unaligned block on right");
+        RemoveBlock(nextUABlock);
+    }
+
+    if (!CheckAlignedBlock(ABlock))
+        ERR_POST(Error << "BlockMultipleAlignment::CreateBlock() - failed to create valid block");
+
+    UpdateBlockMapAndConservationColors();
+    messenger->PostRedrawSequenceViewers();
+    return true;
+}
+
 bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
 {
     Block *block = blockMap[alignmentIndex].block;
@@ -892,15 +968,18 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
         *prevBlock = GetBlockBefore(block),
         *nextBlock = GetBlockAfter(block);
 
-    // unaligned blocks on both sides
+    // unaligned blocks on both sides - note that total alignment width can change!
     if (prevBlock && !prevBlock->IsAligned() && nextBlock && !nextBlock->IsAligned()) {
         const Block::Range *prevRange, *nextRange;
+        int maxWidth = 0, width;
         for (int row=0; row<NRows(); row++) {
             prevRange = prevBlock->GetRangeOfRow(row);
             nextRange = nextBlock->GetRangeOfRow(row);
+            width = nextRange->to - prevRange->from + 1;
             prevBlock->SetRangeOfRow(row, prevRange->from, nextRange->to);
+            if (width > maxWidth) maxWidth = width;
         }
-        prevBlock->width += block->width + nextBlock->width;
+        prevBlock->width = maxWidth;
         TESTMSG("removing extra unaligned block");
         RemoveBlock(nextBlock);
     }

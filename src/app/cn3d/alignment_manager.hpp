@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/16 20:02:17  thiessen
+* working block creation
+*
 * Revision 1.15  2000/10/12 19:20:37  thiessen
 * working block deletion
 *
@@ -178,6 +181,10 @@ public:
     // in that range. Returns true if any merge(s) occurred, false otherwise.
     bool MergeBlocks(int fromAlignmentIndex, int toAlignmentIndex);
 
+    // creates a block, if given region of an unaligned block in which no gaps
+    // are present. Returns true if a block is created.
+    bool CreateBlock(int fromAlignmentIndex, int toAlignmentIndex);
+
     // deletes the block containing this index; returns true if deletion occurred.
     bool DeleteBlock(int alignmentIndex);
     
@@ -188,6 +195,7 @@ private:
 
     typedef std::list < Block * > BlockList;
     BlockList blocks;
+
     int totalWidth;
 
     typedef struct {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/10/16 20:03:07  thiessen
+* working block creation
+*
 * Revision 1.3  2000/10/16 14:25:48  thiessen
 * working alignment fit coloring
 *
@@ -116,6 +119,8 @@ typedef std::map < char, int > ColumnProfile;
 void ConservationColorer::CalculateConservationColors(void)
 {
     TESTMSG("calculating conservation colors");
+
+    if (blocks.size() == 0) return;
 
     ColumnProfile profile;
     ColumnProfile::iterator p, pe, p2;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/10/16 20:03:07  thiessen
+* working block creation
+*
 * Revision 1.19  2000/10/12 19:20:45  thiessen
 * working block deletion
 *
@@ -135,6 +138,12 @@ public:
 
     void NewAlignment(ViewableAlignment *newAlignment);
 
+    // scroll to specific column
+    void ScrollToColumn(int column) { viewerWidget->ScrollTo(column, -1); }
+
+    // updates alignment (e.g. if width or # rows has changed);
+    void UpdateAlignment(ViewableAlignment *alignment);
+
     void OnTitleView(wxCommandEvent& event);
     void OnEditMenu(wxCommandEvent& event);
     void OnMouseMode(wxCommandEvent& event);
@@ -150,6 +159,7 @@ public:
         MID_ENABLE_EDIT,
         MID_SPLIT_BLOCK,
         MID_MERGE_BLOCKS,
+        MID_CREATE_BLOCK,
         MID_DELETE_BLOCK,
         MID_SYNC_STRUCS,
         MID_SYNC_STRUCS_ON,
@@ -182,9 +192,6 @@ private:
     SequenceViewerWidget::eMouseMode prevMouseMode;
 
 public:
-    // scroll over to a given column
-    void ScrollToColumn(int column) { viewerWidget->ScrollToColumn(column); };
-
     void Refresh(void) { viewerWidget->Refresh(false); }
 
     bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
@@ -199,6 +206,14 @@ public:
     void MergeBlocksOff(void)
     {
         menuBar->Check(MID_MERGE_BLOCKS, false); 
+        viewerWidget->SetMouseMode(prevMouseMode);
+        SetCursor(wxNullCursor);
+    }
+
+    bool DoCreateBlock(void) const { return menuBar->IsChecked(MID_CREATE_BLOCK); }
+    void CreateBlockOff(void)
+    {
+        menuBar->Check(MID_CREATE_BLOCK, false); 
         viewerWidget->SetMouseMode(prevMouseMode);
         SetCursor(wxNullCursor);
     }
@@ -244,6 +259,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     menu->AppendSeparator();
     menu->Append(MID_SPLIT_BLOCK, "&Split Block", noHelp, true);
     menu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", noHelp, true);
+    menu->Append(MID_CREATE_BLOCK, "&Create Block", noHelp, true);
     menu->Append(MID_DELETE_BLOCK, "&Delete Block", noHelp, true);
     menu->Append(MID_SYNC_STRUCS, "Sync Structure &Colors");
     menu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", noHelp, true);
@@ -272,6 +288,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     viewerWidget->TitleAreaOff();
     menuBar->Check(MID_SPLIT_BLOCK, false);
     menuBar->Check(MID_MERGE_BLOCKS, false);
+    menuBar->Check(MID_CREATE_BLOCK, false);
     menuBar->Check(MID_DELETE_BLOCK, false);
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
@@ -297,6 +314,15 @@ void SequenceViewerWindow::NewAlignment(ViewableAlignment *newAlignment)
     else
         menuBar->Enable(MID_ENABLE_EDIT, false);
     Show(true);
+}
+
+void SequenceViewerWindow::UpdateAlignment(ViewableAlignment *alignment)
+{
+    int vsX, vsY;   // to preserve scroll position
+    viewerWidget->GetScroll(&vsX, &vsY);
+    viewerWidget->AttachAlignment(alignment);
+    viewerWidget->ScrollTo(vsX, vsY);
+    viewer->messenger->PostRedrawSequenceViewers();
 }
 
 void SequenceViewerWindow::OnTitleView(wxCommandEvent& event)
@@ -327,6 +353,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             EnableEditorMenuItems(!editorOn);
             break;
         case MID_SPLIT_BLOCK:
+            if (DoCreateBlock()) CreateBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
             if (DoDeleteBlock()) DeleteBlockOff();
             if (menuBar->IsChecked(MID_SPLIT_BLOCK))
@@ -336,6 +363,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             break;
         case MID_MERGE_BLOCKS:
             if (DoSplitBlock()) SplitBlockOff();
+            if (DoCreateBlock()) CreateBlockOff();
             if (DoDeleteBlock()) DeleteBlockOff();
             if (menuBar->IsChecked(MID_MERGE_BLOCKS)) {
                 SetCursor(*wxCROSS_CURSOR);
@@ -344,9 +372,21 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
             } else
                 MergeBlocksOff();
             break;
+        case MID_CREATE_BLOCK:
+            if (DoSplitBlock()) SplitBlockOff();
+            if (DoMergeBlocks()) MergeBlocksOff();
+            if (DoDeleteBlock()) DeleteBlockOff();
+            if (menuBar->IsChecked(MID_CREATE_BLOCK)) {
+                SetCursor(*wxCROSS_CURSOR);
+                prevMouseMode = viewerWidget->GetMouseMode();
+                viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns);
+            } else
+                CreateBlockOff();
+            break;
         case MID_DELETE_BLOCK:
             if (DoSplitBlock()) SplitBlockOff();
             if (DoMergeBlocks()) MergeBlocksOff();
+            if (DoCreateBlock()) CreateBlockOff();
             if (menuBar->IsChecked(MID_DELETE_BLOCK))
                 SetCursor(*wxCROSS_CURSOR);
             else
@@ -369,6 +409,7 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
     if (!enabled) {
         SplitBlockOff();
         MergeBlocksOff();
+        CreateBlockOff();
         DeleteBlockOff();
     }
 }
@@ -634,7 +675,10 @@ private:
     int startingColumn;
     typedef std::vector < DisplayRow * > RowVector;
     RowVector rows;
+
     int maxRowWidth;
+    void UpdateMaxRowWidth(void);
+
     BlockMultipleAlignment *alignment;
     SequenceViewerWindow * const *viewerWindow;
     bool controlDown;
@@ -677,13 +721,13 @@ SequenceDisplay::~SequenceDisplay(void)
 void SequenceDisplay::AddRow(DisplayRow *row)
 {
     rows.push_back(row);
-    if (row->Size() > maxRowWidth) maxRowWidth = row->Size();
+    UpdateMaxRowWidth();
 }
 
 void SequenceDisplay::PrependRow(DisplayRow *row)
 {
     rows.insert(rows.begin(), row);
-    if (row->Size() > maxRowWidth) maxRowWidth = row->Size();
+    UpdateMaxRowWidth();
 }
 
 void SequenceDisplay::RemoveRow(DisplayRow *row)
@@ -696,6 +740,16 @@ void SequenceDisplay::RemoveRow(DisplayRow *row)
             break;
         }
     }
+    UpdateMaxRowWidth();
+}
+
+void SequenceDisplay::UpdateMaxRowWidth(void)
+{
+    RowVector::iterator r, re = rows.end();
+    maxRowWidth = 0;
+    for (r=rows.begin(); r!=re; r++)
+        if ((*r)->Size() > maxRowWidth) maxRowWidth = (*r)->Size();
+    if (*viewerWindow) (*viewerWindow)->UpdateAlignment(this);
 }
 
 void SequenceDisplay::AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment)
@@ -832,6 +886,8 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (alignment->SplitBlock(column)) {
                 (*viewerWindow)->SplitBlockOff();
                 (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                if ((*viewerWindow)->AlwaysSyncStructures())
+                    (*viewerWindow)->SyncStructures();
             }
             return false;
         }
@@ -839,6 +895,11 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (alignment->DeleteBlock(column)) {
                 (*viewerWindow)->DeleteBlockOff();
                 (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                if ((*viewerWindow)->AlwaysSyncStructures())
+                    (*viewerWindow)->SyncStructures();
+
+                // in case alignment width has changed
+                UpdateMaxRowWidth();
             }
             return false;
         }
@@ -853,12 +914,25 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
     TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
         << columnRight << ',' << rowBottom);
 
-    if (alignment && (*viewerWindow)->DoMergeBlocks()) {
-        if (alignment->MergeBlocks(columnLeft, columnRight)) {
-            (*viewerWindow)->MergeBlocksOff();
-            (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+    if (alignment) {
+        if ((*viewerWindow)->DoMergeBlocks()) {
+            if (alignment->MergeBlocks(columnLeft, columnRight)) {
+                (*viewerWindow)->MergeBlocksOff();
+                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                if ((*viewerWindow)->AlwaysSyncStructures())
+                    (*viewerWindow)->SyncStructures();
+            }
+            return;
         }
-        return;
+        if ((*viewerWindow)->DoCreateBlock()) {
+            if (alignment->CreateBlock(columnLeft, columnRight)) {
+                (*viewerWindow)->CreateBlockOff();
+                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+                if ((*viewerWindow)->AlwaysSyncStructures())
+                    (*viewerWindow)->SyncStructures();
+            }
+            return;
+        }
     }
 
     if (!controlDown)
@@ -961,7 +1035,7 @@ void SequenceViewer::NewAlignment(SequenceDisplay *display)
     if (display) {
         if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
         viewerWindow->NewAlignment(display);
-        viewerWindow->ScrollToColumn(display->GetStartingColumn());
+		viewerWindow->ScrollToColumn(display->GetStartingColumn());
         viewerWindow->Show(true);
         messenger->PostRedrawSequenceViewers();
     }
@@ -1014,7 +1088,7 @@ void SequenceViewer::AddBlockBoundaryRow(void)
     display->PrependRow(blockBoundaryRow);
     UpdateBlockBoundaryRow();
 
-    NewAlignment(display);
+    viewerWindow->UpdateAlignment(display);
 }
 
 void SequenceViewer::UpdateBlockBoundaryRow(void)
@@ -1047,7 +1121,7 @@ void SequenceViewer::RemoveBlockBoundaryRow(void)
     if (blockBoundaryRow) {
         display->RemoveRow(blockBoundaryRow);
         blockBoundaryRow = NULL;
-        NewAlignment(display);
+        viewerWindow->UpdateAlignment(display);
     }
 }
 

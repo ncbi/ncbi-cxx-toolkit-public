@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/16 20:02:17  thiessen
+* working block creation
+*
 * Revision 1.11  2000/10/12 16:39:31  thiessen
 * fix MouseDown return value
 *
@@ -215,8 +218,12 @@ public:
     // set the rubber band color after refresh
     void SetRubberbandColor(const wxColor& rubberbandColor);
 
-    // scroll sequence area to specific column
-    void ScrollToColumn(int column);
+    // scroll sequence area to specific column or row; if either is -1, will
+    // not scroll in that direction
+    void ScrollTo(int column, int row);
+
+    // get current uppermost row & leftmost column
+    void GetScroll(int *vsX, int *vsY) const;
 
     // turn on/off the title area
     void TitleAreaOn(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/16 20:03:07  thiessen
+* working block creation
+*
 * Revision 1.14  2000/10/12 16:22:45  thiessen
 * working block split
 *
@@ -971,9 +974,13 @@ void SequenceViewerWidget::SetRubberbandColor(const wxColor& rubberbandColor)
     sequenceArea->SetRubberbandColor(rubberbandColor);
 }
 
-void SequenceViewerWidget::ScrollToColumn(int column)
+void SequenceViewerWidget::ScrollTo(int column, int row)
 {
-    sequenceArea->Scroll(column, 0);
+    sequenceArea->Scroll(column, row);
 }
-    
+   
+void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
+{
+    sequenceArea->GetViewStart(vsX, vsY);
+}
 
