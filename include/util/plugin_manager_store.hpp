@@ -66,8 +66,20 @@ public:
         static
         CPluginManager<TInterface>* Get(bool* created = 0)
         {
-            bool pm_created = false;
             string pm_name = CInterfaceVersion<TInterface>::GetName();
+            return Get(pm_name, created);
+        }
+        
+        /// @param pm_name
+        ///    Storage name for plugin manager
+        /// @param created
+        ///    assigned TRUE if new plugin manager was added to the store
+        ///    FALSE - if it existed before
+        static
+        CPluginManager<TInterface>* Get(const string& pm_name, 
+                                        bool*         created = 0)
+        {
+            bool pm_created = false;
             TPluginManager* pm = 
                 dynamic_cast<TPluginManager*>
                     (CPluginManagerStore::GetObject(pm_name));
@@ -82,9 +94,12 @@ public:
             return pm;
         }
     };
-    
 
 };
+    
+        
+
+
 
 
 END_NCBI_SCOPE
@@ -93,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2004/08/05 18:42:44  kuznets
+ * +CPMMake::Get() accepting interface name
+ *
  * Revision 1.2  2004/08/05 18:10:04  kuznets
  * Added plugin manager maker template
  *
