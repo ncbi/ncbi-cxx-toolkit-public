@@ -111,8 +111,8 @@ private:
 
     // Max. id in "object" and "annotation" table
     int                     m_MaxObjRecId;
-    CObjectManager*         m_TSE_Manager;  // OM for top level seq entry
-    CScope*                 m_Scope;        // OM Scope
+    CRef<CObjectManager>    m_TSE_Manager;  // OM for top level seq entry
+    CRef<CScope>            m_Scope;        // OM Scope
 };
 
 
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/29 19:50:30  kuznets
+ * Replaced bare pointers with CRef<>
+ *
  * Revision 1.8  2003/07/09 19:30:18  kuznets
  * Implemented collection of sequence ids from alignments.
  *
