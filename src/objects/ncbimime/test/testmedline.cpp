@@ -12,7 +12,7 @@
 #define Module1 medline
 #define File1 "medline"
 #endif
-#include <objects/seqseq/Seq_entry.hpp>
+#include <objects/medlars/Medlars_entry.hpp>
 #define Struct2 Medlars_entry
 #define Module2 medlars
 #define File2 "medlars"
