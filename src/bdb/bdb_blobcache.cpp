@@ -528,6 +528,8 @@ void CBDB_Cache::Open(const char* cache_path,
     string err_file = m_Path + "err" + string(cache_name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
 
+    m_Env->SetLogFileMax(200 * 1024 * 1024);
+
     // Check if bdb env. files are in place and try to join
     CDir dir(m_Path);
     CDir::TEntries fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
@@ -2008,6 +2010,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2004/10/18 15:37:52  kuznets
+ * Set log file size 200M
+ *
  * Revision 1.82  2004/10/15 14:03:16  kuznets
  * Fixed infinite loop in Purge. Implemented transaction checkpoints based in dataflow
  *
