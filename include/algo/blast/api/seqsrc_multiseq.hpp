@@ -127,6 +127,10 @@ inline Blast_Message* MultiSeqInfo::GetErrorMessage()
     return m_icErrMsg;
 }
 
+/// The following 2 functions interact with the C API, and have to be 
+/// declared extern "C".
+extern "C" {
+
 /** Multi-sequence source constructor 
  * @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
  * @param args Pointer to MultiSeqSrcNewArgs structure above [in]
@@ -134,19 +138,21 @@ inline Blast_Message* MultiSeqInfo::GetErrorMessage()
  */
 BlastSeqSrc* MultiSeqSrcNew(BlastSeqSrc* seq_src, void* args);
 
-/** Initialize the sequence source structure.
- * @param seq_vector Vector of sequence locations [in]
- * @param program Type of BLAST to be performed [in]
- */
-BlastSeqSrc* 
-MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
-
 /** Multi sequence source destructor: frees its internal data structure and the
  * BlastSeqSrc structure itself.
  * @param seq_src BlastSeqSrc structure to free [in]
  * @return NULL
  */
 BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src);
+
+} // extern "C"
+
+/** Initialize the sequence source structure.
+ * @param seq_vector Vector of sequence locations [in]
+ * @param program Type of BLAST to be performed [in]
+ */
+BlastSeqSrc* 
+MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -156,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/15 22:34:50  dondosha
+ * Added extern "C" for 2 functions to eliminate Sun compiler warnings
+ *
  * Revision 1.2  2004/03/15 18:34:19  dondosha
  * Made doxygen comments and top #ifndef adhere to toolkit standard
  *
