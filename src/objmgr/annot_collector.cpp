@@ -177,7 +177,8 @@ void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
         snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
     if ( !cvt ) {
         SetTotalRange(TRange(src_from, src_to));
-        SetMappedSeq_id(const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().                                             GetSeq_id()),
+        SetMappedSeq_id(const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().
+                                             GetSeq_id()),
                         true);
         SetMappedStrand(src_strand);
         return;
@@ -1734,6 +1735,9 @@ CAnnot_Collector::MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
         if ( feat_ref.IsPartial() ) {
             mapped_feat->SetPartial(true);
         }
+        else {
+            mapped_feat->ResetPartial();
+        }
 
         ret = mapped_feat;
         m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
@@ -1751,6 +1755,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/10/20 15:33:51  vasilche
+* Reset PARTIAL field if necessary.
+* Fixed source code formatting.
+*
 * Revision 1.29  2004/10/19 20:51:49  vasilche
 * Restored lost PARTIAL flag on mapped features.
 *
