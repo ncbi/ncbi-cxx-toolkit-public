@@ -647,86 +647,172 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
 }
 
 
-/*Return seqid string with optional version for text seqid type 
-(default no version).*/ 
-const string CSeq_id::GetSeqIdString(bool with_version) const {
-    const CTextseq_id* tsid = GetTextseq_Id();
+static inline
+void x_GetLabel_Type(const CSeq_id& id, string* label,
+                     CSeq_id::TLabelFlags flags)
+{
+    CSeq_id::E_Choice choice = id.Which();
+    _ASSERT(choice < CSeq_id::e_MaxChoice);
+    if (choice >= CSeq_id::e_MaxChoice) {
+        return;
+    }
+
+    switch (choice) {   
+    default:
+        *label += s_TextId[choice];
+        break;
+
+    case CSeq_id::e_General:
+        // for general IDs, use the db-name only
+        *label += id.GetGeneral().GetDb();
+        break;
+    }
+
+    // no extra flag interpretation currently
+}
+
+
+static inline
+void x_GetLabel_Content(const CSeq_id& id, string* label,
+                        CSeq_id::TLabelFlags flags)
+{
+    const CTextseq_id* tsid = id.GetTextseq_Id();
+
     //text id
     if (tsid) {
-        string acc;
+        string str;
         if (tsid->IsSetAccession()) {
-            acc = tsid->GetAccession();
+            str = tsid->GetAccession();
         } else if (tsid->IsSetName()) {
-            acc = tsid->GetName();
+            str = tsid->GetName();
         }
-        if ( !acc.empty() ) {
-            if (with_version) {
-                int ver = 0;
-                if (tsid->IsSetVersion()) {
-                    ver = tsid->GetVersion();
-                }
-                return acc + "." + NStr::IntToString(ver);
+
+        if ( !str.empty() ) {
+            if ( (flags & CSeq_id::fLabel_Version)  &&  tsid->IsSetVersion()) {
+                str += "." + NStr::IntToString(tsid->GetVersion());
             }
-            return acc;
         }
+        *label += str;
+
     } else { //non-text id
-        E_Choice the_type = Which();
-        switch (the_type) {   
-        case e_not_set:
-            return NcbiEmptyString;
-        case e_Local:
-            {
-                const CObject_id& oid = GetLocal();
+        switch (id.Which()) {   
+        case CSeq_id::e_not_set:
+            break;
+
+        case CSeq_id::e_Local:
+            {{
+                const CObject_id& oid = id.GetLocal();
                 if (oid.Which() == CObject_id::e_Id) {
-                    return NStr::IntToString(oid.GetId());
+                    *label += NStr::IntToString(oid.GetId());
                 } else if (oid.Which() == CObject_id::e_Str) {
-                    return oid.GetStr(); 
+                    *label += oid.GetStr(); 
                 }
-            }
-        case e_Gibbsq:
-            return NStr::IntToString(GetGibbsq());
-        case e_Gibbmt:
-            return NStr::IntToString(GetGibbmt());
-        case e_Giim:
-            return NStr::IntToString(GetGiim().GetId());
-        case e_General:
-            {
-                const CDbtag& dbt = GetGeneral();
-                string        s /*   = dbt.GetDb() + ':' */;
+            }}
+            break;
+
+        case CSeq_id::e_Gibbsq:
+            *label += NStr::IntToString(id.GetGibbsq());
+            break;
+
+        case CSeq_id::e_Gibbmt:
+            *label += NStr::IntToString(id.GetGibbmt());
+            break;
+
+        case CSeq_id::e_Giim:
+            *label += NStr::IntToString(id.GetGiim().GetId());
+            break;
+
+        case CSeq_id::e_General:
+            {{
+                const CDbtag& dbt = id.GetGeneral();
                 if (dbt.GetTag().Which() == CObject_id::e_Id) {
-                    return s + NStr::IntToString(dbt.GetTag().GetId());
+                    *label += NStr::IntToString(dbt.GetTag().GetId());
                 } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
-                    return s + dbt.GetTag().GetStr();
+                    *label += dbt.GetTag().GetStr();
                 }
-            }
-        case e_Patent:
-            {
-                const CId_pat& idp = GetPatent().GetCit();
-                return idp.GetCountry() + (idp.GetId().IsNumber() ?
-                       idp.GetId().GetNumber() : idp.GetId().GetApp_number())
-                       + NStr::IntToString(GetPatent().GetSeqid());
-            }  
-        case e_Gi:
-            return NStr::IntToString(GetGi());
-        case e_Pdb:
-            {
-                const CPDB_seq_id& pid = GetPdb();
+            }}
+            break;
+
+        case CSeq_id::e_Patent:
+            {{
+                const CId_pat& idp = id.GetPatent().GetCit();
+                *label += idp.GetCountry() +
+                    (idp.GetId().IsNumber() ?
+                        idp.GetId().GetNumber() :
+                        idp.GetId().GetApp_number()) +
+                    NStr::IntToString(id.GetPatent().GetSeqid());
+            }}
+            break;
+
+        case CSeq_id::e_Gi:
+            *label += NStr::IntToString(id.GetGi());
+            break;
+
+        case CSeq_id::e_Pdb:
+            {{
+                const CPDB_seq_id& pid = id.GetPdb();
                 char chain = (char)pid.GetChain();
                 if (chain == '|') {
-                    return pid.GetMol().Get() + "|VB";
+                    *label += pid.GetMol().Get() + "|VB";
                 } else if (islower(chain) != 0) {
-                    return pid.GetMol().Get() + "-" + (char) toupper(chain);
+                    *label += pid.GetMol().Get() + "-" + (char) toupper(chain);
                 } else if ( chain == '\0' ) {
-                    return pid.GetMol().Get() + "-";
+                    *label += pid.GetMol().Get() + "-";
                 } else {
-                    return pid.GetMol().Get() + "-" + chain; 
+                    *label += pid.GetMol().Get() + "-" + chain; 
                 }
-            }
+            }}
+            break;
+
         default:
-            return NcbiEmptyString;
+            break;
         }
     }
-    return NcbiEmptyString;
+}
+
+
+void CSeq_id::GetLabel(string* label, TLabelFlags flags) const
+{
+    if ( !label ) {
+        return;
+    }
+
+    int type = flags & fLabel_TypeMask;
+
+    switch (type) {
+    case eFasta:
+        *label = AsFastaString();
+        break;
+
+    case eBoth:
+        x_GetLabel_Type(*this, label, flags);
+        *label += "|";
+        x_GetLabel_Content(*this, label, flags);
+        break;
+
+    case eType:
+        x_GetLabel_Type(*this, label, flags);
+        break;
+
+    case eContent:
+        x_GetLabel_Content(*this, label, flags);
+        break;
+    }
+}
+
+
+
+/*Return seqid string with optional version for text seqid type 
+(default no version).*/ 
+string CSeq_id::GetSeqIdString(bool with_version) const
+{
+    string label;
+    TLabelFlags flags = eContent;
+    if (with_version) {
+        flags |= fLabel_Version;
+    }
+    GetLabel(&label, flags);
+    return label;
 }
 
 
@@ -874,7 +960,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
                                            : s_ScoreAAForFasta);
     switch (fmt) {
     case eFormat_FastA:
-        {
+        {{
             // FastA format
             // Here we have something like:
             //      gi|###|SOME_ACCESSION|title
@@ -896,10 +982,8 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
                 best_id->WriteAsFasta(out_str);
             }
 
-            const char* s = out_str.str();
-            out_str.freeze(false);
-            return string(s, out_str.pcount());
-        }
+            return CNcbiOstrstreamToString(out_str);
+        }}
         break;
 
     case eFormat_ForceGI:
@@ -911,35 +995,33 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
                 CNcbiOstrstream out_str;
                 (*iter)->WriteAsFasta(out_str);
 
-                const char* s = out_str.str();
-                out_str.freeze(false);
-                return string(s, out_str.pcount());
+                return CNcbiOstrstreamToString(out_str);
             }
         }
         break;
 
     case eFormat_BestWithVersion:
-        {
-            // eBestWithVersion produces only the 'best' accession name, with
-            // its version indicator
-            if (best_id.NotEmpty()) {
-                return best_id->GetSeqIdString(true);
-            }
+        // eBestWithVersion produces only the 'best' accession name, with
+        // its version indicator
+        if (best_id.NotEmpty()) {
+            string label;
+            best_id->GetLabel(&label, eBoth | fLabel_Version);
+            return label;
         }
         break;
         
     case eFormat_BestWithoutVersion:
-        {
-            // eBestWithoutVersion produces only the 'best' accession name,
-            // without its version indicator
-            if (best_id.NotEmpty()) {
-                return best_id->GetSeqIdString(false);
-            }
+        // eBestWithoutVersion produces only the 'best' accession name,
+        // without its version indicator
+        if (best_id.NotEmpty()) {
+            string label;
+            best_id->GetLabel(&label, eBoth);
+            return label;
         }
         break;
     }
 
-    // fall-through for unusual events
+    // catch-all for unusual events
     return "";
 }
 
@@ -1417,6 +1499,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.72  2004/01/22 18:45:46  dicuccio
+ * Added new API: CSeq_id::GetLabel().  Rewired GetSeqIdString() to feed into
+ * GetLabel().  Rewired GetStringDescr() to feed into GetLabel() directly instead
+ * of feeding through GetSeqIdString().
+ *
  * Revision 6.71  2004/01/21 22:55:47  ucko
  * GetSeqIdString: drop the database name from general IDs for
  * compatibility with code that can't handle its presence.

@@ -272,8 +272,28 @@ public:
     CProxy DumpAsFasta(void) const { return Dump(eAsFasta); }
     const string AsFastaString(void) const;
 
+    // return the label for a given string
+    enum ELabelType {
+        // types of output
+        eType,
+        eContent,
+        eBoth,
+        eFasta,
+
+        // flags controlling output
+        fLabel_Version = 0x10,
+
+        eDefault = eBoth | fLabel_Version,
+
+        // bit masks
+        fLabel_TypeMask = 0x0f,
+        fLabel_FlagMask = ~fLabel_TypeMask
+    };
+    typedef int TLabelFlags;
+    void GetLabel(string* label, TLabelFlags flags = eDefault) const;
+
     //Return seqid string with optional version for text seqid type
-    const string GetSeqIdString(bool with_version = false) const;
+    string GetSeqIdString(bool with_version = false) const;
 
     // Get a string representation of the sequence IDs of a given bioseq.  This
     // function produces strings in a number of possible formats.
@@ -385,6 +405,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2004/01/22 18:45:45  dicuccio
+ * Added new API: CSeq_id::GetLabel().  Rewired GetSeqIdString() to feed into
+ * GetLabel().  Rewired GetStringDescr() to feed into GetLabel() directly instead
+ * of feeding through GetSeqIdString().
+ *
  * Revision 1.38  2004/01/21 18:04:20  dicuccio
  * Added ctor to create a seq-id from a given dbtag, performing conversion to
  * specific seq-id types where possible
