@@ -1053,6 +1053,15 @@
 #endif
 
 /*
+ * Export specifier for library ncbi_xreader
+ */
+#ifdef NCBI_XREADER_EXPORTS
+#  define NCBI_XREADER_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XREADER_EXPORT     __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library ncbi_xreader_id1
  */
 #ifdef NCBI_XREADER_ID1_EXPORTS
@@ -1235,6 +1244,7 @@
 #  define NCBI_XUTIL_EXPORT
 #  define NCBI_OMSSA_EXPORT
 #  define NCBI_XOMSSA_EXPORT
+#  define NCBI_XREADER_EXPORT
 #  define NCBI_XREADER_ID1_EXPORT
 #  define NCBI_XREADER_ID2_EXPORT
 #  define NCBI_XREADER_PUBSEQOS_EXPORT
@@ -1247,6 +1257,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.55  2004/01/13 16:38:34  vasilche
+ * Added NCBI_XREADER_EXPORT
+ *
  * Revision 1.54  2003/12/22 19:09:13  dicuccio
  * Added taxonomy to ncbi_seq
  *
