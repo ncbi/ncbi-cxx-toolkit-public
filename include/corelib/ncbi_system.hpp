@@ -142,28 +142,19 @@ public:
     }
 
     /// Constructor.
-    CPIDGuardException(const char* file, int line, const CException* prev,
-                       EErrCode err_code, const string& message, TPid pid = 0)
-        throw()
-        : CException(file, line, prev, CException::eInvalid, message),
-          m_PID(pid)
-    {
-        x_Init(file, line,
-               message + " [pid " + NStr::IntToString(m_PID) + ']', prev);
-        x_InitErrCode((CException::EErrCode) err_code);
-    }
-
-#if 0 // redundant
-    virtual void ReportExtra(ostream& out) const
-        { out << "m_PID = " << m_PID; }
-#endif
-    TPid GetPID(void) const throw() { return m_PID; }
-
-    /// Unused dummy constructor so we can use N_E_D_I...
-    CPIDGuardException(double, const char* file, int line,
+    CPIDGuardException(const char* file, int line,
                        const CException* prev_exception, EErrCode err_code,
-                       const string& message)
+                       const string& message, TPid pid = 0)
+        throw()
+        : CException(file, line, prev_exception, CException::eInvalid,
+                     message),
+          m_PID(pid)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
+
+public: // lost by N_E_D_I
+    virtual void ReportExtra(ostream& out) const
+        { out << "pid " << m_PID; }
+    TPid GetPID(void) const throw() { return m_PID; }
 
 protected:
     void x_Assign(const CPIDGuardException& src)
@@ -201,6 +192,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/12 17:37:45  ucko
+ * Cleaned up CPIDGuardException a bit.
+ *
  * Revision 1.11  2003/08/12 17:24:51  ucko
  * Add support for PID files.
  *
