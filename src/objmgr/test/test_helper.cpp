@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/04/22 18:33:48  gouriano
+* corrected feature counts
+*
 * Revision 1.3  2002/03/28 21:22:38  grichenk
 * More tests for location-exclusive bioseq
 *
@@ -1010,7 +1013,7 @@ void CTestHelper::TestDataRetrieval( CScope& scope, int idx,
         40, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 1, 0, 0, 0, 1, 0, 0, 0, true);
+        2, 2+delta, 1+delta, 1, 0, 1+delta, 1+delta, 1, 0, true);
     // find seq. by GI
     id.SetGi(12+idx*1000);
     ProcessBioseq(scope, id,
