@@ -112,7 +112,8 @@ void Blast_UngappedStatsUpdate(BlastUngappedStats* ungapped_stats,
  * @param local Diagnostics from one of the preliminary search threads [in]
  */
 void 
-Blast_DiagnosticsUpdate(BlastDiagnostics* global, BlastDiagnostics* local);
+Blast_DiagnosticsUpdate(BlastDiagnostics* diag_global,
+                        BlastDiagnostics* diag_local);
 
 #ifdef __cplusplus
 }
