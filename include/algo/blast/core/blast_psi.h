@@ -35,7 +35,6 @@
  */
 
 #include <algo/blast/core/ncbi_std.h>
-#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_options.h>
 
 #ifdef __cplusplus
