@@ -311,7 +311,7 @@ private:
     inline Uint4 x_LookupFile(const string  & fname,
                               const string ** map_fname_ptr);
     
-    Uint4 CSeqDBAtlas::x_GetNewIdent();
+    Uint4 x_GetNewIdent();
     
     
     // Data
