@@ -334,9 +334,6 @@ _PSIValidateMSA(const _PSIMsa* msa);
  * @param msa multiple sequence alignment data structure [in]
  * @param aligned_block data structure describing the aligned blocks'
  * properties for each position of the multiple sequence alignment [out]
- * @param nsg_compatibility_mode set to true to emulate the structure group's
- * use of PSSM engine in the cddumper application. By default should be FALSE
- * [in]
  * @return PSIERR_BADPARAM if arguments are NULL
  *         PSI_SUCCESS otherwise
  */
@@ -582,6 +579,9 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/03/23 14:04:24  camacho
+ * doxygen fix
+ *
  * Revision 1.26  2005/03/22 15:35:10  camacho
  * Fix to enable backwards compatibility with old PSSM engine when the query is
  * the only sequence aligned for a given column of the multiple sequence
