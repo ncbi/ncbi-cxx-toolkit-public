@@ -280,7 +280,7 @@ inline SOCK CSocket::GetSOCK(void) const
 }
 
 
-EIO_Status CSocket::GetOSHandle(void* handle_buf, size_t handle_size) const
+inline EIO_Status CSocket::GetOSHandle(void* handle_buf, size_t handle_size) const
 {
     return m_Socket
         ? SOCK_GetOSHandle(m_Socket, handle_buf, handle_size) : eIO_Closed;
@@ -331,7 +331,7 @@ inline LSOCK CListeningSocket::GetLSOCK(void) const
 }
 
 
-EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
+inline EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
                                          size_t handle_size) const
 {
     return m_Socket
@@ -413,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/08/14 15:04:37  sadykov
+ * Prepend "inline" for GetOSHandle() method impl
+ *
  * Revision 6.4  2002/08/13 19:28:29  lavr
  * Move most methods out-of-line; fix inline methods to have "inline"
  *
