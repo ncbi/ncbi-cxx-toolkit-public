@@ -33,6 +33,7 @@
  *
  */
 
+#include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 
 
@@ -121,6 +122,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/01/21 20:02:54  lavr
+ * Added missing <connect/connect_export.h>
+ *
  * Revision 6.11  2003/01/17 19:44:20  lavr
  * Reduce dependencies
  *
