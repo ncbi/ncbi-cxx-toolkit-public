@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.32  2001/01/30 20:51:19  thiessen
 * minor fixes
 *
@@ -129,15 +132,16 @@
 * ===========================================================================
 */
 
-#if defined(WIN32)
+#include <corelib/ncbiobj.hpp>
+
+#if defined(__WXMSW__)
 #include <windows.h>
 
-#elif defined(macintosh)
-#include <agl.h>
-
-#elif defined(WIN_MOTIF)
+#elif defined(__WXGTK__)
 #include <GL/glx.h>
 
+#else
+#error unsupported platform!
 #endif
 
 #include <GL/gl.h>
@@ -907,7 +911,7 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 {
     int i, j, k, m, offset;
     Vector R1, R2, Qt, p, dQt, H, V;
-    double len, MG[4][3], T[4], t, prevlen, cosj, sinj;
+    double len, MG[4][3], T[4], t, prevlen=0.0, cosj, sinj;
     GLdouble *Nx = NULL, *Ny, *Nz, *Cx, *Cy, *Cz,
         *pNx, *pNy, *pNz, *pCx, *pCy, *pCz, *tmp;
 
@@ -1415,7 +1419,8 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     displayListEmpty[currentDisplayList] = false;
 }
 
-#ifdef __WXMSW__
+#if defined(__WXMSW__)
+
 bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
 {
     HDC hdc = wglGetCurrentDC();
@@ -1442,6 +1447,15 @@ bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *heigh
     *height = 0.6 * textSize.cy; // windows' text heights seem a little off..
     return (okay != 0);
 }
+
+#else
+
+bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *height)
+{
+    ERR_POST(Error << "OpenGLRenderer::MeasureText undefined on this platform!");
+    return false;
+}
+
 #endif
 
 void OpenGLRenderer::Label(const std::string& text, const Vector& center, const Vector& color)

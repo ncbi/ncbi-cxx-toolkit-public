@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2001/05/15 23:48:35  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.57  2001/05/11 02:10:41  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -463,7 +466,8 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
     }
 
     int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
-    GetAlignedResidueIndexes(blocks->begin(), blocks->end(), 0, masterSeqIndexes);
+    b = blocks->begin();
+    GetAlignedResidueIndexes(b, be, 0, masterSeqIndexes);
 
     double *weights = new double[nResidues];
 
@@ -483,7 +487,8 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
             slaveSeq = multiple->GetSequenceOfRow(i);
             if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
 
-            GetAlignedResidueIndexes(blocks->begin(), blocks->end(), i, slaveSeqIndexes);
+            b = blocks->begin();
+            GetAlignedResidueIndexes(b, be, i, slaveSeqIndexes);
             if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
 
             if (!slaveMol->GetParentOfType(&slaveObj)) continue;

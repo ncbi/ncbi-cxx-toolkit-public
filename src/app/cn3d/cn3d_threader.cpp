@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/05/15 23:48:36  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.16  2001/05/15 14:57:55  thiessen
 * add cn3d_tools; bring up log window when threading starts
 *
@@ -353,7 +356,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
             multiple->GetMaster()->Length() - corDef->sll.rfpt[alignedBlocks->size() - 1] - 1;
 
     // extensions into unaligned areas between blocks
-    const Block::Range *prevRange;
+    const Block::Range *prevRange = NULL;
     int nUnaligned, extN;
     for (n=0, b=alignedBlocks->begin(); b!=be; b++, n++) {
         range = (*b)->GetRangeOfRow(0);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/05/15 23:48:39  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.1  2001/04/04 00:27:16  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -344,6 +347,7 @@ bool GetFloatingPointDialog::Activate(void)
     Show(true);
     MakeModal(true);
 
+#ifdef __WXMSW__
     // enter the modal loop  (this code snippet borrowed from src/msw/dialog.cpp)
     while (dialogActive)
     {
@@ -354,6 +358,7 @@ bool GetFloatingPointDialog::Activate(void)
         // a message came or no more idle processing to do
         wxTheApp->DoMessage();
     }
+#endif
 
     MakeModal(false);
     return returnOK;

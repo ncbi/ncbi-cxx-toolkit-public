@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.24  2001/05/02 16:35:15  thiessen
 * launch entrez web page on sequence identifier
 *
@@ -106,7 +109,7 @@
 * ===========================================================================
 */
 
-#ifdef WIN32
+#ifdef __WXMSW__
 #include <windows.h>
 #include <shellapi.h>   // for ShellExecute, needed to launch browser
 #endif
@@ -414,7 +417,7 @@ int Sequence::GetOrSetMMDBLink(void) const
 }
 
 
-#ifdef WIN32
+#ifdef __WXMSW__
 // code borrowed (and modified) from Nlm_MSWin_OpenDocument() in vibutils.c
 static bool MSWin_OpenDocument(const char* doc_name)
 {
@@ -432,13 +435,13 @@ static void LaunchWebPage(const char *url)
 {
     if(!url) return;
 
-#ifdef WIN32
+#ifdef __WXMSW__
     if (!MSWin_OpenDocument(url)) {
         ERR_POST(Error << "Unable to launch browser");
     }
 #endif
 /*
-#ifdef WIN_MOTIF
+#ifdef __WXGTK__
     argv [0] = "netscape";
     CharPtr            argv [8];
     int child;
@@ -452,7 +455,7 @@ static void LaunchWebPage(const char *url)
         }
     }
 #endif
-#ifdef WIN_MAC
+#ifdef __WXMAC__
     Nlm_SendURLAppleEvent (url, "MOSS", NULL);
 #endif
 */

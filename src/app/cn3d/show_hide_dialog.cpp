@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/05/15 23:48:38  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.3  2001/03/09 15:49:05  thiessen
 * major changes to add initial update viewer
 *
@@ -149,6 +152,7 @@ void ShowHideDialog::Activate(void)
     Show(true);
     MakeModal(true);
 
+#ifdef __WXMSW__
     // enter the modal loop  (this code snippet borrowed from src/msw/dialog.cpp)
     while (dialogActive)
     {
@@ -159,6 +163,7 @@ void ShowHideDialog::Activate(void)
         // a message came or no more idle processing to do
         wxTheApp->DoMessage();
     }
+#endif
 
     MakeModal(false);
     return;

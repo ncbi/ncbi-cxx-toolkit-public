@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/05/15 23:49:21  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.19  2001/05/15 14:57:48  thiessen
 * add cn3d_tools; bring up log window when threading starts
 *
@@ -153,11 +156,11 @@ protected:
 public:
     // go up the hierarchy to find a parent of the desired type
     template < class T >
-    bool GetParentOfType(T* *ptr, bool warnIfNotFound = true) const
+    bool GetParentOfType(const T* *ptr, bool warnIfNotFound = true) const
     {
         *ptr = NULL;
         for (const StructureBase *parent=this->_parent; parent; parent=parent->_parent) {
-            if ((*ptr = dynamic_cast<T*>(parent)) != NULL) {
+            if ((*ptr = dynamic_cast<const T*>(parent)) != NULL) {
                 return true;
             }
         }

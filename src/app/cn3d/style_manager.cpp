@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/05/15 23:48:38  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.31  2001/03/29 15:49:21  thiessen
 * use disulfide color only for virtual disulfides
 *
@@ -125,6 +128,8 @@
 *
 * ===========================================================================
 */
+
+#include <corelib/ncbiobj.hpp>
 
 #include "cn3d/style_manager.hpp"
 #include "cn3d/structure_set.hpp"

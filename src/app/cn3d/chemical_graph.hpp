@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/15 23:49:19  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.15  2001/03/23 23:31:30  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -111,7 +114,7 @@ class AtomSet;
 class StructureObject;
 class Molecule;
 
-typedef list< ncbi::CRef< ncbi::objects::CBiostruc_feature_set > > FeatureList;
+typedef std::list< ncbi::CRef< ncbi::objects::CBiostruc_feature_set > > FeatureList;
 
 class ChemicalGraph : public StructureBase
 {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/05/15 23:49:20  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.23  2000/12/15 15:52:08  thiessen
 * show/hide system installed
 *
@@ -246,11 +249,13 @@ private:
 
     // stuff for storing transparent spheres (done during Construct())
     unsigned int currentDisplayList;
+public:
     typedef struct {
         Vector site, color;
         unsigned int name;
         double radius, alpha;
     } SphereInfo;
+private:
     typedef std::list < SphereInfo > SphereList;
     typedef std::map < unsigned int, SphereList > SphereMap;
     SphereMap transparentSphereMap;
@@ -269,7 +274,7 @@ private:
     public:
         Vector siteGL; // atom site in GL coordinates
         double distanceFromCamera;
-        const SphereInfo *ptr;
+        const OpenGLRenderer::SphereInfo *ptr;
         friend bool operator < (const SpherePtr& a, const SpherePtr& b)
             { return (a.distanceFromCamera < b.distanceFromCamera); }
     };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/15 23:48:38  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.10  2001/05/15 14:57:56  thiessen
 * add cn3d_tools; bring up log window when threading starts
 *
@@ -430,6 +433,7 @@ bool ThreaderOptionsDialog::Activate(void)
     Show(true);
     MakeModal(true);
 
+#ifdef __WXMSW__
     // enter the modal loop  (this code snippet borrowed from src/msw/dialog.cpp)
     while (dialogActive)
     {
@@ -440,6 +444,7 @@ bool ThreaderOptionsDialog::Activate(void)
         // a message came or no more idle processing to do
         wxTheApp->DoMessage();
     }
+#endif
 
     MakeModal(false);
     return returnOK;

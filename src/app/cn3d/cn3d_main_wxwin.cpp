@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2001/05/15 23:48:36  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.38  2001/05/15 17:33:53  thiessen
 * log window stays hidden when closed
 *
@@ -239,6 +242,10 @@ extern "C" {
 }
 
 
+// `Main program' equivalent, creating GUI framework
+IMPLEMENT_APP(Cn3D::Cn3DApp)
+
+
 BEGIN_SCOPE(Cn3D)
 
 // global strings for various directories - will include trailing path separator character
@@ -325,9 +332,6 @@ void RaiseLogWindow(void)
     logFrame->Raise();
 }
 
-
-// `Main program' equivalent, creating GUI framework
-IMPLEMENT_APP(Cn3DApp)
 
 BEGIN_EVENT_TABLE(Cn3DApp, wxApp)
     EVT_IDLE(Cn3DApp::OnIdle)

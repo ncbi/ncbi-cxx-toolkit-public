@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/15 23:49:20  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.21  2001/03/23 23:31:30  thiessen
 * keep atom info around even if coords not all present; mainly for disulfide parsing in virtual models
 *
@@ -119,7 +122,7 @@ BEGIN_SCOPE(Cn3D)
 // heterogen, etc. For proteins and nucleotides, it is divided into an ordered
 // sequence of Residues, along with inter-residue bonds.
 
-typedef list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
+typedef std::list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
 
 class ChemicalGraph;
 class Bond;

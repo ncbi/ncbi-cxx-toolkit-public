@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.21  2001/04/18 15:46:53  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -284,7 +287,8 @@ Residue::Residue(StructureBase *parent,
         if (atom.IsSetIupac_code())
             info->code = atom.GetIupac_code().front();
         // get atomic number, assuming it's the integer value of the enumerated type
-        info->atomicNumber = static_cast<int>(atom.GetElement());
+	CAtom_Base::EElement atomicNumber = atom.GetElement();
+        info->atomicNumber = static_cast<int>(atomicNumber);
         // get ionizable status
         if (atom.IsSetIonizable_proton() &&
             atom.GetIonizable_proton() == CAtom::eIonizable_proton_true)

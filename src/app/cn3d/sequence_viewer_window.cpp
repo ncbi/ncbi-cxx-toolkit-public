@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/15 23:48:37  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.14  2001/05/11 02:10:42  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -85,7 +88,7 @@
 #include <wx/wx.h>
 
 #include "cn3d/sequence_viewer_window.hpp"
-#include "cn3d/sequence_Viewer.hpp"
+#include "cn3d/sequence_viewer.hpp"
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/show_hide_dialog.hpp"

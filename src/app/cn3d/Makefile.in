@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("cn3d" program)
+#################################
+
+APP_PROJ = cn3d
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

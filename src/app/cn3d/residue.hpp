@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/15 23:49:20  thiessen
+* minor adjustments to compile under Solaris/wxGTK
+*
 * Revision 1.15  2001/04/18 15:46:32  thiessen
 * show description, length, and PDB numbering in status line
 *
@@ -93,7 +96,7 @@
 
 BEGIN_SCOPE(Cn3D)
 
-typedef list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
+typedef std::list< ncbi::CRef< ncbi::objects::CResidue_graph > > ResidueGraphList;
 
 // a Residue is a set of bonds that connect one residue of a larger Molecule.
 // Its constructor is where most of the work of decoding the ASN1 graph is done,
