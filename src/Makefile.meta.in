@@ -58,7 +58,7 @@ ASNP_BRA = \
 +if test ! -z "$(ASN_PROJ)" ; then \
    x_project="$(ASN_PROJ)" ; \
    for i in $$x_project ; do \
-      (cd $(srcdir)  &&  $(RWL) $(MAKE_ASN)
+      (cd $(srcdir)  &&  MAKE="$(MAKE) $(MFLAGS)" $(RWL) $(MAKE_ASN)
 ASNP_KET = ) || $(NOTK_BRA) exit 6 $(NOTK_KET) ; \
    done ; \
 fi
