@@ -160,7 +160,8 @@ public:
 
     // indexes types
     typedef map<int, CBioseq_set_Info*>                      TBioseq_sets;
-    typedef map<CSeq_id_Handle, CBioseq_Info*>               TBioseqs;
+    typedef pair<CBioseq_Info*, TChunkId>                    TBioseqInfo;
+    typedef map<CSeq_id_Handle, TBioseqInfo>                 TBioseqs;
 
     typedef SIdAnnotObjs::TRange                             TRange;
     typedef SIdAnnotObjs::TRangeMap                          TRangeMap;
@@ -172,6 +173,7 @@ public:
     typedef set<CAnnotName>                                  TNames;
     typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
+    typedef map<CSeq_id_Handle, TChunkId>                    TSeqIdToChunks;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
 
     bool ContainsSeqid(const CSeq_id_Handle& id) const;
@@ -205,14 +207,17 @@ private:
     friend class CSeq_annot_SNP_Info;
     friend class CSeqMatch_Info;
 
-    CBioseq_set_Info& GetBioseq_set(int id);
-    CBioseq_Info& GetBioseq(int gi);
+    CBioseq_set_Info& x_GetBioseq_set(int id);
+    CBioseq_Info& x_GetBioseq(int gi);
     
     void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    void x_SetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
-    void x_ResetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
+    void x_SetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
+    void x_SetBioseqChunk(const CSeq_id_Handle& id, TChunkId chunk_id);
+    void x_SetBioseqInfo(const CSeq_id_Handle& id, const TBioseqInfo& info);
+    void x_ResetBioseqId(const CSeq_id_Handle& id, CBioseq_Info* info);
+
     void x_SetBioseq_setId(int key, CBioseq_set_Info* info);
     void x_ResetBioseq_setId(int key, CBioseq_set_Info* info);
 
@@ -325,8 +330,10 @@ private:
     // ID to bioseq-info
     TBioseq_sets           m_Bioseq_sets;
     TBioseqs               m_Bioseqs;
+
     // Split chunks
     TChunks                m_Chunks;
+    TSeqIdToChunks         m_SeqIdToChunks;
 
     // SNP info set: temporarily used in SetSeq_entry()
     TSNP_InfoMap           m_SNP_InfoMap;

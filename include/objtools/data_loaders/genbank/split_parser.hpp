@@ -44,6 +44,7 @@ class CID2S_Chunk;
 class CID2S_Seq_descr_Info;
 class CID2S_Seq_annot_Info;
 class CID2S_Seq_annot_place_Info;
+class CID2S_Bioseq_place_Info;
 class CID2S_Seq_data_Info;
 class CID2_Seq_loc;
 
@@ -68,6 +69,8 @@ public:
                          const CID2S_Seq_annot_place_Info& place);
     static void x_Attach(CTSE_Chunk_Info& chunk,
                          const CID2S_Seq_data_Info& data);
+    static void x_Attach(CTSE_Chunk_Info& chunk,
+                         const CID2S_Bioseq_place_Info& data);
 
     typedef CSeq_id_Handle TLocationId;
     typedef CRange<TSeqPos> TLocationRange;
@@ -91,6 +94,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2004/08/19 14:18:36  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.5  2004/07/12 16:59:53  vasilche
 * Added parsing of information of where split data is to be inserted.
 *

@@ -50,7 +50,8 @@ SSplitterParams::SSplitterParams(void)
       m_DisableSplitDescriptions(DISABLE_SPLIT_DESCRIPTIONS),
       m_DisableSplitSequence(false),
       m_DisableSplitAnnotations(false),
-      m_JoinSmallChunks(true)
+      m_JoinSmallChunks(true),
+      m_SplitWholeBioseqs(true)
 {
     SetChunkSize(kDefaultChunkSize);
 }
@@ -172,6 +173,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.12  2004/08/04 14:48:21  vasilche
 * Added joining of very small chunks with skeleton.
 *

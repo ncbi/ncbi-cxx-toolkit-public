@@ -342,54 +342,77 @@ void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
 }
 
 
+bool CTSE_Info::ContainsSeqid(const CSeq_id_Handle& id) const
+{
+    return m_Bioseqs.find(id) != m_Bioseqs.end();
+}
+
+
 CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
 {
     CConstRef<CBioseq_Info> ret;
-    //CFastMutexGuard guard(m_BioseqsLock);
     TBioseqs::const_iterator it = m_Bioseqs.find(id);
     if ( it != m_Bioseqs.end() ) {
-        ret = it->second;
+        ret = it->second.first;
+        if ( !ret ) {
+            const_cast<CTSE_Info*>(this)->GetChunk(it->second.second).Load();
+            ret = it->second.first;
+        }
     }
     return ret;
 }
 
 
-bool CTSE_Info::ContainsSeqid(const CSeq_id_Handle& id) const
+void CTSE_Info::x_SetBioseqChunk(const CSeq_id_Handle& id, TChunkId chunk_id)
 {
-    //CFastMutexGuard guard(m_BioseqsLock);
-    return m_Bioseqs.find(id) != m_Bioseqs.end();
+    x_SetBioseqInfo(id, TBioseqInfo(0, chunk_id));
 }
 
 
-void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& key,
+void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
                               CBioseq_Info* info)
 {
-    //CFastMutexGuard guard(m_BioseqsLock);
+    x_SetBioseqInfo(id, TBioseqInfo(info, -1));
+}
+
+
+void CTSE_Info::x_SetBioseqInfo(const CSeq_id_Handle& id,
+                                const TBioseqInfo& info)
+{
+    _ASSERT(info.first || info.second >= 0);
     pair<TBioseqs::iterator, bool> ins =
-        m_Bioseqs.insert(TBioseqs::value_type(key, info));
+        m_Bioseqs.insert(TBioseqs::value_type(id, info));
     if ( ins.second ) {
         // register this TSE in data source as containing the sequence
-        x_IndexSeqTSE(key);
+        x_IndexSeqTSE(id);
     }
     else {
-        // No duplicate bioseqs in the same TSE
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   " duplicate Bioseq id '"+key.AsString()+"' present in"+
-                   "\n  seq1: " + ins.first->second->IdString() +
-                   "\n  seq2: " + info->IdString());
+        if ( info.first ) {
+            if ( ins.first->second.first ) {
+                // No duplicate bioseqs in the same TSE
+                NCBI_THROW(CObjMgrException, eAddDataError,
+                           "duplicate Bioseq id "+id.AsString()+" present in"+
+                           "\n  seq1: " + ins.first->second.first->IdString()+
+                           "\n  seq2: " + info.first->IdString());
+            }
+            ins.first->second.first = info.first;
+        }
+        if ( info.second >= 0 ) {
+            _ASSERT(!ins.first->first && ins.first->second.second < 0);
+            ins.first->second.second = info.second;
+        }
     }
 }
 
 
-void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& key,
+void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& id,
                                 CBioseq_Info* _DEBUG_ARG(info))
 {
-    //CFastMutexGuard guard(m_BioseqsLock);
-    TBioseqs::iterator iter = m_Bioseqs.lower_bound(key);
-    if ( iter != m_Bioseqs.end() && iter->first == key ) {
-        _ASSERT(iter->second == info);
+    TBioseqs::iterator iter = m_Bioseqs.lower_bound(id);
+    if ( iter != m_Bioseqs.end() && iter->first == id ) {
+        _ASSERT(iter->second.first == info);
         m_Bioseqs.erase(iter);
-        x_UnindexSeqTSE(key);
+        x_UnindexSeqTSE(id);
     }
 }
 
@@ -397,7 +420,6 @@ void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& key,
 void CTSE_Info::x_SetBioseq_setId(int key,
                                   CBioseq_set_Info* info)
 {
-    //CFastMutexGuard guard(m_BioseqsLock);
     pair<TBioseq_sets::iterator, bool> ins =
         m_Bioseq_sets.insert(TBioseq_sets::value_type(key, info));
     if ( ins.second ) {
@@ -414,7 +436,6 @@ void CTSE_Info::x_SetBioseq_setId(int key,
 void CTSE_Info::x_ResetBioseq_setId(int key,
                                     CBioseq_set_Info* _DEBUG_ARG(info))
 {
-    //CFastMutexGuard guard(m_BioseqsLock);
     TBioseq_sets::iterator iter = m_Bioseq_sets.lower_bound(key);
     if ( iter != m_Bioseq_sets.end() && iter->first == key ) {
         _ASSERT(iter->second == info);
@@ -745,7 +766,7 @@ void CTSE_Info::x_UnmapAnnotObjects(SAnnotObjects_Info& infos)
 }
 
 
-CBioseq_set_Info& CTSE_Info::GetBioseq_set(int id)
+CBioseq_set_Info& CTSE_Info::x_GetBioseq_set(int id)
 {
     TBioseq_sets::iterator iter = m_Bioseq_sets.find(id);
     if ( iter == m_Bioseq_sets.end() ) {
@@ -756,14 +777,18 @@ CBioseq_set_Info& CTSE_Info::GetBioseq_set(int id)
 }
 
 
-CBioseq_Info& CTSE_Info::GetBioseq(int gi)
+CBioseq_Info& CTSE_Info::x_GetBioseq(int gi)
 {
     TBioseqs::iterator iter = m_Bioseqs.find(CSeq_id_Handle::GetGiHandle(gi));
     if ( iter == m_Bioseqs.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot find Bioseq by gi");
     }
-    return *iter->second;
+    if ( !iter->second.first ) {
+        NCBI_THROW(CObjMgrException, eRegisterError,
+                   "cannot get split Bioseq by gi");
+    }
+    return *iter->second.first;
 }
 
 

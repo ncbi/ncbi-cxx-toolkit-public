@@ -94,7 +94,7 @@ void CBlobSplitterImpl::Reset(void)
     m_SplitBlob.Reset();
     m_Skeleton.Reset(new CSeq_entry);
     m_NextBioseq_set_Id = 1;
-    m_Bioseqs.clear();
+    m_Entries.clear();
     m_Pieces.clear();
     m_Chunks.clear();
 }
@@ -336,8 +336,8 @@ void AddLoc(CID2_Seq_loc& loc, const TWhole_set& whole_set)
 
 TSeqPos CBlobSplitterImpl::GetGiLength(int gi) const
 {
-    TBioseqs::const_iterator iter = m_Bioseqs.find(gi);
-    if ( iter != m_Bioseqs.end() ) {
+    TEntries::const_iterator iter = m_Entries.find(gi);
+    if ( iter != m_Entries.end() ) {
         const CSeq_inst& inst = iter->second.m_Bioseq->GetInst();
         if ( inst.IsSetLength() )
             return inst.GetLength();
@@ -438,23 +438,24 @@ CBlobSplitterImpl::MakeLoc(int gi, const TRange& range) const
 
 
 CID2S_Chunk_Data& CBlobSplitterImpl::GetChunkData(TChunkData& chunk_data,
-                                                  int id)
+                                                  TPlaceId place_id)
 {
-    CRef<CID2S_Chunk_Data>& data = chunk_data[id];
+    CRef<CID2S_Chunk_Data>& data = chunk_data[place_id];
     if ( !data ) {
         data.Reset(new CID2S_Chunk_Data);
-        if ( id > 0 ) {
-            data->SetId().SetGi(id);
+        if ( place_id > 0 ) {
+            data->SetId().SetGi(place_id);
         }
         else {
-            data->SetId().SetBioseq_set(-id);
+            data->SetId().SetBioseq_set(-place_id);
         }
     }
     return *data;
 }
 
 
-void CBlobSplitterImpl::AddIdRange(TIdRanges& info, int start, int end)
+void CBlobSplitterImpl::AddIdRange(CID2_Bioseq_Ids& ids,
+                                   int start, int end)
 {
     CRef<CID2_Id_Range> range(new CID2_Id_Range);
     range->SetStart(start);
@@ -463,7 +464,16 @@ void CBlobSplitterImpl::AddIdRange(TIdRanges& info, int start, int end)
     if ( count != 1 ) {
         range->SetCount(count);
     }
-    info.push_back(range);
+    ids.Set().push_back(range);
+}
+
+
+void CBlobSplitterImpl::AddIdRange(CID2_Bioseq_set_Ids& ids,
+                                   int start, int end)
+{
+    for ( int id = start; id <= end; ++id ) {
+        ids.Set().push_back(id);
+    }
 }
 
 
@@ -501,32 +511,37 @@ void CBlobSplitterImpl::AddIdRange(CID2S_Seq_annot_place_Info& info,
 }
 
 
-void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
+void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
 {
     TChunkData chunk_data;
     TChunkContent chunk_content;
 
-    typedef set<int> TPlaces;
+    typedef set<TPlaceId> TPlaces;
     TPlaces all_descrs;
     TPlaces all_annot_places;
     typedef map<CAnnotName, SAllAnnots> TAllAnnots;
     TAllAnnots all_annots;
     CHandleRangeMap all_data;
+    typedef set<CSeq_id_Handle> TBioseqIds;
+    typedef map<TPlaceId, TBioseqIds> TBioseqPlaces;
+    TBioseqPlaces all_bioseqs;
 
     ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
-        int place_id = it->first;
+        TPlaceId place_id = it->first;
         all_descrs.insert(place_id);
         CID2S_Chunk_Data::TDescrs& dst =
             GetChunkData(chunk_data, place_id).SetDescrs();
-        dst.push_back(Ref(const_cast<CSeq_descr*>(&*it->second->m_Descr)));
+        ITERATE ( SChunkInfo::TPlaceSeq_descr, dit, it->second ) {
+            dst.push_back(Ref(const_cast<CSeq_descr*>(&*dit->m_Descr)));
+        }
     }
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
-        int place_id = it->first;
+        TPlaceId place_id = it->first;
         all_annot_places.insert(place_id);
         CID2S_Chunk_Data::TAnnots& dst =
             GetChunkData(chunk_data, place_id).SetAnnots();
-        ITERATE ( SChunkInfo::TIdAnnots, ait, it->second ) {
+        ITERATE ( SChunkInfo::TPlaceAnnots, ait, it->second ) {
             CRef<CSeq_annot> annot = MakeSeq_annot(*ait->first, ait->second);
             dst.push_back(annot);
 
@@ -537,14 +552,14 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
     }
 
     ITERATE ( SChunkInfo::TChunkSeq_data, it, info.m_Seq_data ) {
-        int gi = it->first;
-        CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(gi);
+        TPlaceId place_id = it->first;
+        CSeq_id_Handle gih = CSeq_id_Handle::GetGiHandle(place_id);
         CID2S_Chunk_Data::TSeq_data& dst =
-            GetChunkData(chunk_data, gi).SetSeq_data();
+            GetChunkData(chunk_data, place_id).SetSeq_data();
         CRef<CID2S_Sequence_Piece> piece;
         TSeqPos p_start = kInvalidSeqPos;
         TSeqPos p_end = kInvalidSeqPos;
-        ITERATE ( SChunkInfo::TSeq_data, data_it, it->second ) {
+        ITERATE ( SChunkInfo::TPlaceSeq_data, data_it, it->second ) {
             const CSeq_data_SplitInfo& data = *data_it;
             const TRange& range = data.GetRange();
             TSeqPos start = range.GetFrom(), length = range.GetLength();
@@ -568,6 +583,20 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
             all_data.AddRange(gih, TRange(p_start, p_end-1),
                               eNa_strand_unknown);
             dst.push_back(piece);
+        }
+    }
+
+    ITERATE ( SChunkInfo::TChunkBioseq, it, info.m_Bioseq ) {
+        TPlaceId place_id = it->first;
+        TBioseqIds& ids = all_bioseqs[place_id];
+        CID2S_Chunk_Data::TBioseqs& dst =
+            GetChunkData(chunk_data, place_id).SetBioseqs();
+        ITERATE ( SChunkInfo::TPlaceBioseq, bit, it->second ) {
+            const CBioseq& seq = *bit->m_Bioseq;
+            dst.push_back(Ref(const_cast<CBioseq*>(&seq)));
+            ITERATE ( CBioseq::TId, idit, seq.GetId() ) {
+                ids.insert(CSeq_id_Handle::GetHandle(**idit));
+            }
         }
     }
 
@@ -672,6 +701,21 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
         chunk_content.push_back(content);
     }
 
+    if ( !all_bioseqs.empty() ) {
+        CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
+        CID2S_Chunk_Content::TBioseq_place& places =content->SetBioseq_place();
+        ITERATE ( TBioseqPlaces, it, all_bioseqs ) {
+            CRef<CID2S_Bioseq_place_Info> place(new CID2S_Bioseq_place_Info);
+            place->SetBioseq_set(-it->first);
+            CID2S_Bioseq_place_Info::TSeq_ids& ids = place->SetSeq_ids();
+            ITERATE ( TBioseqIds, idit, it->second ) {
+                ids.push_back(Ref(&NonConst(*idit->GetSeqId())));
+            }
+            places.push_back(place);
+        }
+        chunk_content.push_back(content);
+    }
+
     CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
     CID2S_Chunk::TData& dst_chunk_data = chunk->SetData();
     ITERATE ( TChunkData, it, chunk_data ) {
@@ -692,20 +736,26 @@ void CBlobSplitterImpl::MakeID2Chunk(int chunk_id, const SChunkInfo& info)
 void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
 {
     ITERATE ( SChunkInfo::TChunkSeq_descr, it, info.m_Seq_descr ) {
-        TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
-        _ASSERT(seq_it != m_Bioseqs.end());
-        _ASSERT(seq_it->second.m_Bioseq);
-        const CSeq_descr_SplitInfo& desc = *it->second;
-        seq_it->second.m_Bioseq->
-            SetDescr(const_cast<CSeq_descr&>(*desc.m_Descr));
+        TEntries::iterator seq_it = m_Entries.find(it->first);
+        _ASSERT(seq_it != m_Entries.end());
+        ITERATE ( SChunkInfo::TPlaceSeq_descr, dit, it->second ) {
+            const CSeq_descr& src = const_cast<CSeq_descr&>(*dit->m_Descr);
+            CSeq_descr* dst;
+            if ( seq_it->second.m_Bioseq ) {
+                dst = &seq_it->second.m_Bioseq->SetDescr();
+            }
+            else {
+                dst = &seq_it->second.m_Bioseq_set->SetDescr();
+            }
+            dst->Set().insert(dst->Set().end(),
+                              src.Get().begin(), src.Get().end());
+        }
     }
 
     ITERATE ( SChunkInfo::TChunkAnnots, it, info.m_Annots ) {
-        TBioseqs::iterator seq_it = m_Bioseqs.find(it->first);
-        _ASSERT(seq_it != m_Bioseqs.end());
-        _ASSERT(bool(seq_it->second.m_Bioseq) ||
-                bool(seq_it->second.m_Bioseq_set));
-        ITERATE ( SChunkInfo::TIdAnnots, annot_it, it->second ) {
+        TEntries::iterator seq_it = m_Entries.find(it->first);
+        _ASSERT(seq_it != m_Entries.end());
+        ITERATE ( SChunkInfo::TPlaceAnnots, annot_it, it->second ) {
             CRef<CSeq_annot> annot = MakeSeq_annot(*annot_it->first,
                                                    annot_it->second);
             if ( seq_it->second.m_Bioseq ) {
@@ -718,8 +768,8 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
     }
 
     ITERATE ( SChunkInfo::TChunkSeq_data, i, info.m_Seq_data ) {
-        TBioseqs::iterator seq_it = m_Bioseqs.find(i->first);
-        _ASSERT(seq_it != m_Bioseqs.end());
+        TEntries::iterator seq_it = m_Entries.find(i->first);
+        _ASSERT(seq_it != m_Entries.end());
         _ASSERT(seq_it->second.m_Bioseq);
         CSeq_inst& inst = seq_it->second.m_Bioseq->SetInst();
 
@@ -744,8 +794,7 @@ void CBlobSplitterImpl::AttachToSkeleton(const SChunkInfo& info)
             _ASSERT(!inst.IsSetSeq_data());
         }
 
-        ITERATE ( SChunkInfo::TSeq_data, j, i->second ) {
-            _ASSERT(j->GetGi() == i->first);
+        ITERATE ( SChunkInfo::TPlaceSeq_data, j, i->second ) {
             TRange range = j->GetRange();
             CSeq_data& data = const_cast<CSeq_data&>(*j->m_Data);
             if ( range.GetFrom() == 0 && range.GetLength() == seq_length ) {
@@ -839,6 +888,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.15  2004/08/05 18:26:37  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *

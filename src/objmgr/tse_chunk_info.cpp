@@ -76,6 +76,12 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
     ITERATE ( TPlaces, it, m_AnnotPlaces ) {
         x_GetBase(*it).x_AddAnnotChunkId(GetChunkId());
     }
+    ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
+        x_GetBioseq_set(it->first).x_AddBioseqChunkId(GetChunkId());
+        ITERATE ( TBioseqIds, idit, it->second ) {
+            tse_info.x_SetBioseqChunk(*idit, GetChunkId());
+        }
+    }
     tse_info.x_SetDirtyAnnotIndex();
     // attach seq-data
     x_TSEAttachSeq_data();
@@ -121,6 +127,13 @@ void CTSE_Chunk_Info::x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id)
 void CTSE_Chunk_Info::x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id)
 {
     m_AnnotPlaces.push_back(TPlace(place_type, place_id));
+}
+
+
+void CTSE_Chunk_Info::x_AddBioseqPlace(TPlaceId place_id,
+                                       const CSeq_id_Handle& id)
+{
+    m_BioseqPlaces[place_id].insert(id);
 }
 
 
@@ -194,13 +207,25 @@ void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
 }
 
 
+CBioseq_Info& CTSE_Chunk_Info::x_GetBioseq(TPlaceId place_id)
+{
+    return GetTSE_Info().x_GetBioseq(place_id);
+}
+
+
+CBioseq_set_Info& CTSE_Chunk_Info::x_GetBioseq_set(TPlaceId place_id)
+{
+    return GetTSE_Info().x_GetBioseq_set(place_id);
+}
+
+
 CBioseq_Base_Info& CTSE_Chunk_Info::x_GetBase(const TPlace& place)
 {
     if ( place.first == eBioseq ) {
-        return GetTSE_Info().GetBioseq(place.second);
+        return x_GetBioseq(place.second);
     }
     else {
-        return GetTSE_Info().GetBioseq_set(place.second);
+        return x_GetBioseq_set(place.second);
     }
 }
 
@@ -208,11 +233,23 @@ CBioseq_Base_Info& CTSE_Chunk_Info::x_GetBase(const TPlace& place)
 CBioseq_Info& CTSE_Chunk_Info::x_GetBioseq(const TPlace& place)
 {
     if ( place.first == eBioseq ) {
-        return GetTSE_Info().GetBioseq(place.second);
+        return x_GetBioseq(place.second);
     }
     else {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "Bioseq-set id where gi is expected");
+    }
+}
+
+
+CBioseq_set_Info& CTSE_Chunk_Info::x_GetBioseq_set(const TPlace& place)
+{
+    if ( place.first == eBioseq_set ) {
+        return x_GetBioseq_set(place.second);
+    }
+    else {
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "Gi where Bioseq-set id is expected");
     }
 }
 
@@ -237,6 +274,15 @@ void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
     CDataSource::TAnnotLock::TWriteLockGuard guard2
         (GetTSE_Info().GetDataSource().m_DSAnnotLock);
     GetTSE_Info().UpdateAnnotIndex(*annot);
+}
+
+
+void CTSE_Chunk_Info::x_LoadBioseq(const TPlace& place,
+                                   const CBioseq& bioseq)
+{
+    CRef<CSeq_entry_Info> entry(new CSeq_entry_Info(*new CSeq_entry));
+    entry->SelectSeq(const_cast<CBioseq&>(bioseq));
+    x_GetBioseq_set(place).AddEntry(entry);
 }
 
 
@@ -281,6 +327,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/19 14:20:58  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.13  2004/08/17 15:56:34  vasilche
 * Use load mutex and correctly lock CDataSource mutex while loading chunk.
 *

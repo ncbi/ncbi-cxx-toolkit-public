@@ -111,7 +111,7 @@ void CBlobSplitterImpl::CollectPieces(void)
     // to main chunk.
     m_Pieces.clear();
 
-    ITERATE ( TBioseqs, it, m_Bioseqs ) {
+    ITERATE ( TEntries, it, m_Entries ) {
         CollectPieces(it->second);
     }
 
@@ -140,23 +140,29 @@ void CBlobSplitterImpl::CollectPieces(void)
 }
 
 
-void CBlobSplitterImpl::CollectPieces(const CBioseq_SplitInfo& info)
+void CBlobSplitterImpl::CollectPieces(const CPlace_SplitInfo& info)
 {
+    TPlaceId place_id = info.m_PlaceId;
     if ( info.m_Descr ) {
-        Add(SAnnotPiece(*info.m_Descr));
+        Add(SAnnotPiece(place_id, *info.m_Descr));
     }
-    ITERATE ( CBioseq_SplitInfo::TSeq_annots, it, info.m_Annots ) {
-        CollectPieces(it->second);
+    ITERATE ( CPlace_SplitInfo::TSeq_annots, it, info.m_Annots ) {
+        CollectPieces(place_id, it->second);
     }
     if ( info.m_Inst ) {
-        ITERATE( CSeq_inst_SplitInfo::TSeq_data, it, info.m_Inst->m_Seq_data ){
-            Add(SAnnotPiece(*it));
+        const CSeq_inst_SplitInfo& inst_info = *info.m_Inst;
+        ITERATE( CSeq_inst_SplitInfo::TSeq_data, it, inst_info.m_Seq_data ){
+            Add(SAnnotPiece(place_id, *it));
         }
+    }
+    ITERATE ( CPlace_SplitInfo::TBioseqs, it, info.m_Bioseqs ) {
+        Add(SAnnotPiece(place_id, *it));
     }
 }
 
 
-void CBlobSplitterImpl::CollectPieces(const CSeq_annot_SplitInfo& info)
+void CBlobSplitterImpl::CollectPieces(TPlaceId place_id,
+                                      const CSeq_annot_SplitInfo& info)
 {
     size_t max_size = info.m_Name.IsNamed()? 100: 10;
     size_t size = 0;
@@ -168,7 +174,7 @@ void CBlobSplitterImpl::CollectPieces(const CSeq_annot_SplitInfo& info)
     bool add_as_whole = size <= max_size;
     if ( add_as_whole ) {
         // add whole Seq-annot as one piece because header overhead is too big
-        Add(SAnnotPiece(info));
+        Add(SAnnotPiece(place_id, info));
     }
     else {
         // add each annotation as separate piece
@@ -177,7 +183,7 @@ void CBlobSplitterImpl::CollectPieces(const CSeq_annot_SplitInfo& info)
                 continue;
             }
             ITERATE ( CLocObjects_SplitInfo, j, **i ) {
-                Add(SAnnotPiece(info, *j));
+                Add(SAnnotPiece(place_id, info, *j));
             }
         }
     }
@@ -431,6 +437,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.11  2004/08/04 14:48:21  vasilche
 * Added joining of very small chunks with skeleton.
 *

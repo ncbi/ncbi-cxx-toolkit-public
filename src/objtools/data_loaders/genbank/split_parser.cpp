@@ -71,6 +71,12 @@ CRef<CTSE_Chunk_Info> CSplitParser::Parse(const CID2S_Chunk_Info& info)
         case CID2S_Chunk_Content::e_Seq_data:
             x_Attach(*ret, content.GetSeq_data());
             break;
+        case CID2S_Chunk_Content::e_Bioseq_place:
+            ITERATE ( CID2S_Chunk_Content::TBioseq_place, it,
+                      content.GetBioseq_place() ) {
+                x_Attach(*ret, **it);
+            }
+            break;
         default:
             NCBI_THROW(CLoaderException, eOtherError,
                        "Unexpected split data");
@@ -92,17 +98,18 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Seq_descr_Info& place)
 {
-    ITERATE ( CID2S_Seq_descr_Info::TBioseqs, it, place.GetBioseqs() ) {
-        const CID2_Id_Range& range = **it;
-        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
-            chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq, id);
+    if ( place.IsSetBioseqs() ) {
+        ITERATE ( CID2_Bioseq_Ids::Tdata, it, place.GetBioseqs().Get() ) {
+            const CID2_Id_Range& range = **it;
+            for( int id = range.GetStart(), n = range.GetCount(); n--; ++id ) {
+                chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq, id);
+            }
         }
     }
-    ITERATE( CID2S_Seq_descr_Info::TBioseq_sets, it, place.GetBioseq_sets() ) {
-        const CID2_Id_Range& range = **it;
-        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
-            chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq_set, id);
-        }
+    if ( place.IsSetBioseq_sets() ) {
+        ITERATE(CID2_Bioseq_set_Ids::Tdata, it, place.GetBioseq_sets().Get()) {
+            chunk.x_AddDescrPlace(CTSE_Chunk_Info::eBioseq_set, *it);
+        }            
     }
 }
 
@@ -110,18 +117,28 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Seq_annot_place_Info& place)
 {
-    ITERATE ( CID2S_Seq_annot_place_Info::TBioseqs, it, place.GetBioseqs() ) {
-        const CID2_Id_Range& range = **it;
-        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
-            chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq, id);
+    if ( place.IsSetBioseqs() ) {
+        ITERATE ( CID2_Bioseq_Ids::Tdata, it, place.GetBioseqs().Get() ) {
+            const CID2_Id_Range& range = **it;
+            for( int id = range.GetStart(), n = range.GetCount(); n--; ++id ) {
+                chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq, id);
+            }
         }
     }
-    ITERATE ( CID2S_Seq_annot_place_Info::TBioseq_sets,
-              it, place.GetBioseq_sets() ) {
-        const CID2_Id_Range& range = **it;
-        for( int id = range.GetStart(), cnt = range.GetCount(); cnt--; ++id ) {
-            chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, id);
-        }
+    if ( place.IsSetBioseq_sets() ) {
+        ITERATE(CID2_Bioseq_set_Ids::Tdata, it, place.GetBioseq_sets().Get()) {
+            chunk.x_AddAnnotPlace(CTSE_Chunk_Info::eBioseq_set, *it);
+        }            
+    }
+}
+
+
+void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
+                            const CID2S_Bioseq_place_Info& place)
+{
+    ITERATE ( CID2S_Bioseq_place_Info::TSeq_ids, it, place.GetSeq_ids() ) {
+        chunk.x_AddBioseqPlace(place.GetBioseq_set(),
+                               CSeq_id_Handle::GetHandle(**it));
     }
 }
 
@@ -305,6 +322,11 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
             const CID2S_Sequence_Piece& piece = **it;
             chunk.x_LoadSequence(place, piece.GetStart(), piece.GetData());
         }
+
+        ITERATE ( CID2S_Chunk_Data::TBioseqs, it, data.GetBioseqs() ) {
+            const CBioseq& bioseq = **it;
+            chunk.x_LoadBioseq(place, bioseq);
+        }
     }
 }
 
@@ -314,6 +336,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.10  2004/08/19 14:18:36  vasilche
+ * Added splitting of whole Bioseqs.
+ *
  * Revision 1.9  2004/08/04 14:55:18  vasilche
  * Changed TSE locking scheme.
  * TSE cache is maintained by CDataSource.

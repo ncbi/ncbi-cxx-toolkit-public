@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Bioseq.hpp>
 
 #include <objmgr/annot_name.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -167,7 +168,7 @@ public:
     CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
                          EAnnotPriority priority);
     
-    void SetSeq_annot(int id, const CSeq_annot& annot,
+    void SetSeq_annot(const CSeq_annot& annot,
                       const SSplitterParams& params);
     void Add(const CAnnotObject_SplitInfo& obj);
 
@@ -179,7 +180,6 @@ public:
     EAnnotPriority GetPriority(void) const;
 
     CConstRef<CSeq_annot> m_Src_annot;
-    int             m_Id;
     CAnnotName      m_Name;
 
     EAnnotPriority  m_TopPriority;
@@ -206,8 +206,6 @@ public:
 
     EAnnotPriority GetPriority(void) const;
 
-    int GetGi(void) const;
-
     CConstRef<CSeq_descr> m_Descr;
 
     EAnnotPriority m_Priority;
@@ -227,7 +225,6 @@ public:
 
     EAnnotPriority GetPriority(void) const;
 
-    int GetGi(void) const;
     TRange GetRange(void) const;
 
     CConstRef<CSeq_data> m_Data;
@@ -252,21 +249,41 @@ public:
 };
 
 
-class CBioseq_SplitInfo
+class CBioseq_SplitInfo : public CObject
 {
 public:
-    typedef map<CConstRef<CSeq_annot>, CSeq_annot_SplitInfo> TSeq_annots;
+    CBioseq_SplitInfo(const CBioseq& bioseq, const SSplitterParams& params);
+    
+    bool CanSplit(void) const;
+    EAnnotPriority GetPriority(void) const;
 
-    CBioseq_SplitInfo(void);
-    ~CBioseq_SplitInfo(void);
+    CConstRef<CBioseq> m_Bioseq;
+
+    EAnnotPriority m_Priority;
+
+    CSize              m_Size;
+    CSeqsRange         m_Location;
+};
+
+
+class CPlace_SplitInfo
+{
+public:
+    typedef int TPlaceId;
+    typedef map<CConstRef<CSeq_annot>, CSeq_annot_SplitInfo> TSeq_annots;
+    typedef vector<CBioseq_SplitInfo> TBioseqs;
+
+    CPlace_SplitInfo(void);
+    ~CPlace_SplitInfo(void);
 
     CRef<CBioseq> m_Bioseq;
     CRef<CBioseq_set> m_Bioseq_set;
 
-    int                         m_Id;
+    TPlaceId                    m_PlaceId;
     CRef<CSeq_descr_SplitInfo>  m_Descr;
     TSeq_annots                 m_Annots;
     CRef<CSeq_inst_SplitInfo>   m_Inst;
+    TBioseqs                    m_Bioseqs;
 };
 
 
@@ -276,6 +293,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.9  2004/08/05 18:25:42  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *

@@ -82,8 +82,7 @@ CNcbiOstream& CLocObjects_SplitInfo::Print(CNcbiOstream& out) const
 
 
 CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(void)
-    : m_Id(0),
-      m_TopPriority(eAnnotPriority_max)
+    : m_TopPriority(eAnnotPriority_max)
 {
 }
 
@@ -91,7 +90,6 @@ CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(void)
 CSeq_annot_SplitInfo::CSeq_annot_SplitInfo(const CSeq_annot_SplitInfo& base,
                                            EAnnotPriority priority)
     : m_Src_annot(base.m_Src_annot),
-      m_Id(base.m_Id),
       m_Name(base.m_Name),
       m_TopPriority(priority),
       m_Objects(priority+1)
@@ -145,11 +143,9 @@ size_t CSeq_annot_SplitInfo::CountAnnotObjects(const CSeq_annot& annot)
 }
 
 
-void CSeq_annot_SplitInfo::SetSeq_annot(int id,
-                                        const CSeq_annot& annot,
+void CSeq_annot_SplitInfo::SetSeq_annot(const CSeq_annot& annot,
                                         const SSplitterParams& params)
 {
-    m_Id = id;
     s_Sizer.Set(annot, params);
     m_Size = CSize(s_Sizer);
 
@@ -274,13 +270,39 @@ EAnnotPriority CAnnotObject_SplitInfo::GetPriority(void) const
 /////////////////////////////////////////////////////////////////////////////
 
 
-CBioseq_SplitInfo::CBioseq_SplitInfo(void)
-    : m_Id(0)
+CBioseq_SplitInfo::CBioseq_SplitInfo(const CBioseq& seq,
+                                     const SSplitterParams& params)
+    : m_Bioseq(&seq)
+{
+    m_Location.clear();
+    ITERATE ( CBioseq::TId, it, seq.GetId() ) {
+        m_Location.Add(CSeq_id_Handle::GetHandle(**it),
+                       CSeqsRange::TRange::GetWhole());
+    }
+    s_Sizer.Set(seq, params);
+    m_Size = CSize(s_Sizer);
+    m_Priority = eAnnotPriority_regular;
+}
+
+
+EAnnotPriority CBioseq_SplitInfo::GetPriority(void) const
+{
+    return m_Priority;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSeq_entry_SplitInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
+CPlace_SplitInfo::CPlace_SplitInfo(void)
+    : m_PlaceId(0)
 {
 }
 
 
-CBioseq_SplitInfo::~CBioseq_SplitInfo(void)
+CPlace_SplitInfo::~CPlace_SplitInfo(void)
 {
 }
 
@@ -316,14 +338,14 @@ EAnnotPriority CSeq_descr_SplitInfo::GetPriority(void) const
     return eAnnotPriority_regular;
 }
 
-
+/*
 int CSeq_descr_SplitInfo::GetGi(void) const
 {
     _ASSERT(m_Location.size() == 1);
     _ASSERT(m_Location.begin()->first.IsGi());
     return m_Location.begin()->first.GetGi();
 }
-
+*/
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_data_SplitInfo
@@ -347,14 +369,14 @@ void CSeq_data_SplitInfo::SetSeq_data(int gi,
     }
 }
 
-
+/*
 int CSeq_data_SplitInfo::GetGi(void) const
 {
     _ASSERT(m_Location.size() == 1);
     _ASSERT(m_Location.begin()->first.IsGi());
     return m_Location.begin()->first.GetGi();
 }
-
+*/
 
 CSeq_data_SplitInfo::TRange CSeq_data_SplitInfo::GetRange(void) const
 {
@@ -386,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.10  2004/08/04 14:48:21  vasilche
 * Added joining of very small chunks with skeleton.
 *

@@ -176,6 +176,13 @@ void CBioseq_set_Info::x_ParentDetach(CSeq_entry_Info& parent)
 }
 
 
+void CBioseq_set_Info::x_AddBioseqChunkId(TChunkId id)
+{
+    m_BioseqChunks.push_back(id);
+    x_SetNeedUpdate(fNeedUpdate_core);
+}
+
+
 void CBioseq_set_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
     if ( flags & (fNeedUpdate_core|fNeedUpdate_children) ) {
@@ -428,6 +435,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/08/19 14:20:58  vasilche
+ * Added splitting of whole Bioseqs.
+ *
  * Revision 1.9  2004/08/17 15:55:50  vasilche
  * Removed obsolete commented code.
  *

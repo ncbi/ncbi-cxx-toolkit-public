@@ -44,25 +44,32 @@ BEGIN_SCOPE(objects)
 void SChunkInfo::Add(const SChunkInfo& chunk)
 {
     m_Size += chunk.m_Size;
-    m_Seq_descr.insert(chunk.m_Seq_descr.begin(), chunk.m_Seq_descr.end());
+    ITERATE ( TChunkSeq_descr, i, chunk.m_Seq_descr ) {
+        TPlaceSeq_descr& dst = m_Seq_descr[i->first];
+        dst.insert(dst.end(), i->second.begin(), i->second.end());
+    }
     ITERATE ( TChunkAnnots, i, chunk.m_Annots ) {
-        TIdAnnots& id_annots = m_Annots[i->first];
-        ITERATE ( TIdAnnots, j, i->second ) {
-            TAnnotObjects& objs = id_annots[j->first];
-            objs.insert(objs.end(), j->second.begin(), j->second.end());
+        TPlaceAnnots& dst_id_annots = m_Annots[i->first];
+        ITERATE ( TPlaceAnnots, j, i->second ) {
+            TAnnotObjects& dst = dst_id_annots[j->first];
+            dst.insert(dst.end(), j->second.begin(), j->second.end());
         }
     }
     ITERATE ( TChunkSeq_data, i, chunk.m_Seq_data ) {
-        TSeq_data& seq_data = m_Seq_data[i->first];
-        seq_data.insert(seq_data.end(), i->second.begin(), i->second.end());
+        TPlaceSeq_data& dst = m_Seq_data[i->first];
+        dst.insert(dst.end(), i->second.begin(), i->second.end());
+    }
+    ITERATE ( TChunkBioseq, i, chunk.m_Bioseq ) {
+        TPlaceBioseq& dst = m_Bioseq[i->first];
+        dst.insert(dst.end(), i->second.begin(), i->second.end());
     }
 }
 
 
-void SChunkInfo::Add(const CSeq_annot_SplitInfo& info)
+void SChunkInfo::Add(TPlaceId place_id, const CSeq_annot_SplitInfo& info)
 {
     _TRACE("SChunkInfo::Add(const CSeq_annot_SplitInfo&)");
-    TAnnotObjects& objs = m_Annots[info.m_Id][info.m_Src_annot];
+    TAnnotObjects& objs = m_Annots[place_id][info.m_Src_annot];
     ITERATE ( CSeq_annot_SplitInfo::TObjects, it, info.m_Objects ) {
         if ( !*it ) {
             continue;
@@ -87,21 +94,24 @@ void SChunkInfo::Add(const SAnnotPiece& piece)
     _TRACE("SChunkInfo::Add(const SAnnotPiece&)");
     switch ( piece.m_ObjectType ) {
     case SAnnotPiece::seq_descr:
-        Add(*piece.m_Seq_descr);
+        Add(piece.m_PlaceId, *piece.m_Seq_descr);
         break;
     case SAnnotPiece::annot_object:
     {{
-        const CSeq_annot_SplitInfo& info = *piece.m_Seq_annot;
-        TAnnotObjects& objs = m_Annots[info.m_Id][info.m_Src_annot];
+        TPlaceAnnots& place_annots = m_Annots[piece.m_PlaceId];
+        TAnnotObjects& objs = place_annots[piece.m_Seq_annot->m_Src_annot];
         objs.push_back(*piece.m_AnnotObject);
         m_Size += piece.m_Size;
         break;
     }}
     case SAnnotPiece::seq_annot:
-        Add(*piece.m_Seq_annot);
+        Add(piece.m_PlaceId, *piece.m_Seq_annot);
         break;
     case SAnnotPiece::seq_data:
-        Add(*piece.m_Seq_data);
+        Add(piece.m_PlaceId, *piece.m_Seq_data);
+        break;
+    case SAnnotPiece::bioseq:
+        Add(piece.m_PlaceId, *piece.m_Bioseq);
         break;
     default:
         _ASSERT(0 && "unknown annot type");
@@ -118,24 +128,31 @@ void SChunkInfo::Add(const SIdAnnotPieces& pieces)
 }
 
 
-void SChunkInfo::Add(const CSeq_inst_SplitInfo& info)
+void SChunkInfo::Add(TPlaceId place_id, const CSeq_inst_SplitInfo& info)
 {
     ITERATE ( CSeq_inst_SplitInfo::TSeq_data, it, info.m_Seq_data ) {
-        Add(*it);
+        Add(place_id, *it);
     }
 }
 
 
-void SChunkInfo::Add(const CSeq_data_SplitInfo& info)
+void SChunkInfo::Add(TPlaceId place_id, const CSeq_data_SplitInfo& info)
 {
-    m_Seq_data[info.GetGi()].push_back(info);
+    m_Seq_data[place_id].push_back(info);
     m_Size += info.m_Size;
 }
 
 
-void SChunkInfo::Add(const CSeq_descr_SplitInfo& info)
+void SChunkInfo::Add(TPlaceId place_id, const CSeq_descr_SplitInfo& info)
 {
-    m_Seq_descr[info.GetGi()].Reset(&info);
+    m_Seq_descr[place_id].push_back(info);
+    m_Size += info.m_Size;
+}
+
+
+void SChunkInfo::Add(TPlaceId place_id, const CBioseq_SplitInfo& info)
+{
+    m_Bioseq[place_id].push_back(info);
     m_Size += info.m_Size;
 }
 
@@ -144,7 +161,7 @@ size_t SChunkInfo::CountAnnotObjects(void) const
 {
     size_t count = 0;
     ITERATE ( TChunkAnnots, i, m_Annots ) {
-        ITERATE ( TIdAnnots, j, i->second ) {
+        ITERATE ( TPlaceAnnots, j, i->second ) {
             count += j->second.size();
         }
     }
@@ -158,6 +175,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.7  2004/08/04 14:48:21  vasilche
 * Added joining of very small chunks with skeleton.
 *

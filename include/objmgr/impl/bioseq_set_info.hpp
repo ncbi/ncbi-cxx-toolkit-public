@@ -136,6 +136,8 @@ public:
     virtual void x_DSAttachContents(CDataSource& ds);
     virtual void x_DSDetachContents(CDataSource& ds);
 
+    void x_AddBioseqChunkId(TChunkId chunk_id);
+
     // attaching/detaching to CTSE_Info
     virtual void x_TSEAttachContents(CTSE_Info& tse);
     virtual void x_TSEDetachContents(CTSE_Info& tse);
@@ -190,6 +192,9 @@ private:
 
     // members
     TSeq_set            m_Seq_set;
+
+    //
+    TChunkIds           m_BioseqChunks;
 
     // index information
     int                 m_Bioseq_set_Id;
@@ -465,6 +470,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/19 14:20:58  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.5  2004/07/12 16:57:32  vasilche
 * Fixed loading of split Seq-descr and Seq-data objects.
 * They are loaded correctly now when GetCompleteXxx() method is called.

@@ -70,6 +70,7 @@ struct NCBI_ID2_SPLIT_EXPORT SSplitterParams
     bool         m_DisableSplitSequence;
     bool         m_DisableSplitAnnotations;
     bool         m_JoinSmallChunks;
+    bool         m_SplitWholeBioseqs;
 };
 
 
@@ -79,6 +80,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.8  2004/08/04 14:48:49  vasilche
 * Added exports for MSVC. Added joining of very small chunks with skeleton.
 *

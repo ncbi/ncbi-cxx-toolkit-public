@@ -41,7 +41,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 SAnnotPiece::SAnnotPiece(void)
-    : m_ObjectType(empty),
+    : m_PlaceId(0),
+      m_ObjectType(empty),
       m_AnnotObject(0)
 {
     m_Object = 0;
@@ -50,7 +51,8 @@ SAnnotPiece::SAnnotPiece(void)
 
 SAnnotPiece::SAnnotPiece(const SAnnotPiece& piece,
                          const COneSeqRange& range)
-    : m_ObjectType(piece.m_ObjectType),
+    : m_PlaceId(piece.m_PlaceId),
+      m_ObjectType(piece.m_ObjectType),
       m_AnnotObject(piece.m_AnnotObject),
       m_Priority(piece.m_Priority),
       m_Size(piece.m_Size),
@@ -61,9 +63,11 @@ SAnnotPiece::SAnnotPiece(const SAnnotPiece& piece,
 }
 
 
-SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot,
+SAnnotPiece::SAnnotPiece(TPlaceId place_id,
+                         const CSeq_annot_SplitInfo& annot,
                          const CAnnotObject_SplitInfo& obj)
-    : m_ObjectType(annot_object),
+    : m_PlaceId(place_id),
+      m_ObjectType(annot_object),
       m_AnnotObject(&obj),
       m_Priority(obj.GetPriority()),
       m_Size(obj.m_Size),
@@ -74,8 +78,9 @@ SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot,
 }
 
 
-SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot)
-    : m_ObjectType(seq_annot),
+SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot)
+    : m_PlaceId(place_id),
+      m_ObjectType(seq_annot),
       m_AnnotObject(0),
       m_Priority(annot.GetPriority()),
       m_Size(annot.m_Size),
@@ -86,8 +91,9 @@ SAnnotPiece::SAnnotPiece(const CSeq_annot_SplitInfo& annot)
 }
 
 
-SAnnotPiece::SAnnotPiece(const CSeq_data_SplitInfo& data)
-    : m_ObjectType(seq_data),
+SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_data_SplitInfo& data)
+    : m_PlaceId(place_id),
+      m_ObjectType(seq_data),
       m_AnnotObject(0),
       m_Priority(data.GetPriority()),
       m_Size(data.m_Size),
@@ -98,8 +104,9 @@ SAnnotPiece::SAnnotPiece(const CSeq_data_SplitInfo& data)
 }
 
 
-SAnnotPiece::SAnnotPiece(const CSeq_descr_SplitInfo& descr)
-    : m_ObjectType(seq_descr),
+SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CSeq_descr_SplitInfo& descr)
+    : m_PlaceId(place_id),
+      m_ObjectType(seq_descr),
       m_AnnotObject(0),
       m_Priority(descr.GetPriority()),
       m_Size(descr.m_Size),
@@ -107,6 +114,19 @@ SAnnotPiece::SAnnotPiece(const CSeq_descr_SplitInfo& descr)
       m_IdRange(TRange::GetEmpty())
 {
     m_Seq_descr = &descr;
+}
+
+
+SAnnotPiece::SAnnotPiece(TPlaceId place_id, const CBioseq_SplitInfo& seq)
+    : m_PlaceId(place_id),
+      m_ObjectType(bioseq),
+      m_AnnotObject(0),
+      m_Priority(seq.GetPriority()),
+      m_Size(seq.m_Size),
+      m_Location(seq.m_Location),
+      m_IdRange(TRange::GetEmpty())
+{
+    m_Bioseq = &seq;
 }
 
 
@@ -238,6 +258,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.6  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

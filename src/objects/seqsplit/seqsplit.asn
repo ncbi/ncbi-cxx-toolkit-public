@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -18,9 +18,9 @@ BEGIN
 
 EXPORTS ID2S-Chunk-Id, ID2S-Seq-annot-Info;
 
-IMPORTS Seq-loc                                 FROM NCBI-Seqloc
-        Seq-annot, Seq-descr, Seq-literal       FROM NCBI-Sequence
-        Seq-align                               FROM NCBI-Seqalign;
+IMPORTS Seq-id, Seq-loc                             FROM NCBI-Seqloc
+        Bioseq, Seq-annot, Seq-descr, Seq-literal   FROM NCBI-Sequence
+        Seq-align                                   FROM NCBI-Seqalign;
 
 ----------------------------------------------------------------------------
 -- Blob split info types
@@ -59,20 +59,36 @@ ID2S-Chunk-Info ::= SEQUENCE {
 }
 
 
+-- Description of information in this chunk
+-- Place means id of Bioseq or Bioseq-set
 ID2S-Chunk-Content ::= CHOICE {
+        -- place of Seq-descrs
         seq-descr       ID2S-Seq-descr-Info,
+
+        -- locations and types of annotations
         seq-annot       ID2S-Seq-annot-Info,
+
+        -- place of assembly history
         seq-assembly    ID2S-Seq-assembly-Info,
+
+        -- place of sequence map
         seq-map         ID2S-Seq-map-Info,
+        
+        -- place of sequence data
         seq-data        ID2S-Seq-data-Info,
-        seq-annot-place ID2S-Seq-annot-place-Info
+
+        -- place of Seq-annots
+        seq-annot-place ID2S-Seq-annot-place-Info,
+
+        -- place of Bioseqs
+        bioseq-place    SET OF ID2S-Bioseq-place-Info
 }
 
 
 ID2S-Seq-descr-Info ::= SEQUENCE {
         type-mask       INTEGER, -- mask of Seq-descr types,
-        bioseqs         SET OF ID2-Id-Range OPTIONAL,
-        bioseq-sets     SET OF ID2-Id-Range OPTIONAL
+        bioseqs         ID2-Bioseq-Ids OPTIONAL,
+        bioseq-sets     ID2-Bioseq-set-Ids OPTIONAL
 }
 
 
@@ -89,8 +105,8 @@ ID2S-Seq-annot-Info ::= SEQUENCE {
 
 ID2S-Seq-annot-place-Info ::= SEQUENCE {
         name            VisibleString OPTIONAL,
-        bioseqs         SET OF ID2-Id-Range OPTIONAL,
-        bioseq-sets     SET OF ID2-Id-Range OPTIONAL
+        bioseqs         ID2-Bioseq-Ids OPTIONAL,
+        bioseq-sets     ID2-Bioseq-set-Ids OPTIONAL
 }
 
 
@@ -101,7 +117,7 @@ ID2S-Feat-type-Info ::=  SEQUENCE {
 
 
 ID2S-Seq-assembly-Info ::= SEQUENCE {
-        bioseqs         SET OF ID2-Id-Range
+        bioseqs         ID2-Bioseq-Ids
 }
 
 
@@ -111,21 +127,39 @@ ID2S-Seq-map-Info ::= ID2-Seq-loc
 ID2S-Seq-data-Info ::= ID2-Seq-loc
 
 
+ID2S-Bioseq-place-Info ::= SEQUENCE {
+        bioseq-set      INTEGER,
+        seq-ids         SET OF Seq-id
+}
+
+
 ID2S-Chunk ::= SEQUENCE {
         data            SET OF ID2S-Chunk-Data
 }
 
 
 ID2S-Chunk-Data ::= SEQUENCE {
+        -- place of data to insert
         id              CHOICE {
+                -- Bioseq-set id
                 bioseq-set      INTEGER,
-                gi              INTEGER
+                -- Bioseq id
+                gi              INTEGER,
+                -- Bioseq id
+                seq-id          Seq-id
         },
+        -- Seq-descr, for Bioseq and Bioseq-set
         descrs          SET OF Seq-descr OPTIONAL,
+        -- Seq-annot, for Bioseq and Bioseq-set
         annots          SET OF Seq-annot OPTIONAL,
+        -- assembly history Seq-align, for Bioseq
         assembly        SET OF Seq-align OPTIONAL,
+        -- sequence map, for Bioseq
         seq-map         SEQUENCE OF ID2S-Sequence-Piece OPTIONAL,
-        seq-data        SEQUENCE OF ID2S-Sequence-Piece OPTIONAL
+        -- sequence data, for Bioseq
+        seq-data        SEQUENCE OF ID2S-Sequence-Piece OPTIONAL,
+        -- Bioseq, for Bioseq-set
+        bioseqs         SET OF Bioseq OPTIONAL
 }
 
 
@@ -141,6 +175,12 @@ ID2S-Sequence-Piece ::= SEQUENCE {
 
 
 ID2S-Chunk-Id ::= INTEGER
+
+
+ID2-Bioseq-set-Ids ::= SET OF INTEGER
+
+
+ID2-Bioseq-Ids ::= SET OF ID2-Id-Range
 
 
 ID2-Id-Range ::= SEQUENCE {

@@ -55,6 +55,7 @@ BEGIN_SCOPE(objects)
 class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
+class CPlace_SplitInfo;
 class CBioseq_SplitInfo;
 class CSeq_data_SplitInfo;
 
@@ -63,14 +64,16 @@ struct SChunkInfo;
 
 struct SAnnotPiece
 {
+    typedef int TPlaceId;
     typedef CSeqsRange::TRange TRange;
 
     SAnnotPiece(void);
-    explicit SAnnotPiece(const CSeq_descr_SplitInfo& descr);
-    explicit SAnnotPiece(const CSeq_annot_SplitInfo& annot);
-    explicit SAnnotPiece(const CSeq_annot_SplitInfo& annot,
+    explicit SAnnotPiece(TPlaceId place_id, const CSeq_descr_SplitInfo& descr);
+    explicit SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot);
+    explicit SAnnotPiece(TPlaceId place_id, const CSeq_annot_SplitInfo& annot,
                          const CAnnotObject_SplitInfo& obj);
-    explicit SAnnotPiece(const CSeq_data_SplitInfo& data);
+    explicit SAnnotPiece(TPlaceId place_id, const CSeq_data_SplitInfo& data);
+    explicit SAnnotPiece(TPlaceId place_id, const CBioseq_SplitInfo& data);
     SAnnotPiece(const SAnnotPiece& base, const COneSeqRange& range);
 
     // sort by location first, than by Seq-annot ptr, than by object ptr.
@@ -83,15 +86,18 @@ struct SAnnotPiece
         seq_descr,
         seq_annot,
         annot_object,
-        seq_data
+        seq_data,
+        bioseq
     };
 
+    TPlaceId        m_PlaceId;
     EPieceType      m_ObjectType;
     union {
         const CObject*              m_Object;
         const CSeq_descr_SplitInfo* m_Seq_descr;
         const CSeq_annot_SplitInfo* m_Seq_annot;
         const CSeq_data_SplitInfo*  m_Seq_data;
+        const CBioseq_SplitInfo*    m_Bioseq;
     };
     const CAnnotObject_SplitInfo*   m_AnnotObject;
 
@@ -166,7 +172,7 @@ public:
     CAnnotPieces(void);
     ~CAnnotPieces(void);
 
-    void Add(const CBioseq_SplitInfo& bioseq_info);
+    void Add(const CPlace_SplitInfo& place);
     void Add(const CSeq_annot_SplitInfo& annot);
 
     void Add(const CLocObjects_SplitInfo& objs,
@@ -220,6 +226,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.5  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

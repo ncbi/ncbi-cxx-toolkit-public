@@ -44,6 +44,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,6 +57,7 @@ class CSeq_descr;
 class CSeq_annot;
 class CBioseq_Base_Info;
 class CBioseq_Info;
+class CBioseq_set_Info;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
@@ -71,6 +73,8 @@ public:
     typedef int TPlaceId;
     typedef pair<EPlaceType, TPlaceId> TPlace;
     typedef vector<TPlace> TPlaces;
+    typedef set<CSeq_id_Handle> TBioseqIds;
+    typedef map<TPlaceId, TBioseqIds> TBioseqPlaces;
 
     // annot contents identification
     typedef CSeq_id_Handle TLocationId;
@@ -100,8 +104,12 @@ public:
 
     void x_AddDescrPlace(EPlaceType place_type, TPlaceId place_id);
     void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
+    void x_AddBioseqPlace(TPlaceId place_id, const CSeq_id_Handle& id);
     CBioseq_Base_Info& x_GetBase(const TPlace& place);
     CBioseq_Info& x_GetBioseq(const TPlace& place);
+    CBioseq_set_Info& x_GetBioseq_set(const TPlace& place);
+    CBioseq_Info& x_GetBioseq(TPlaceId place_id);
+    CBioseq_set_Info& x_GetBioseq_set(TPlaceId place_id);
 
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
@@ -114,6 +122,7 @@ public:
 
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
     void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
+    void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
 
     typedef list< CRef<CSeq_literal> > TSequence;
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
@@ -146,6 +155,7 @@ private:
 
     TPlaces         m_DescrPlaces;
     TPlaces         m_AnnotPlaces;
+    TBioseqPlaces   m_BioseqPlaces;
     TAnnotContents  m_AnnotContents;
     TLocationSet    m_Seq_data;
 
@@ -190,6 +200,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/19 14:20:58  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.9  2004/08/05 18:25:18  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers.
 *

@@ -74,6 +74,8 @@ class CID2S_Chunk_Data;
 class CID2S_Chunk_Content;
 class CID2S_Seq_descr_Info;
 class CID2S_Seq_annot_place_Info;
+class CID2_Bioseq_set_Ids;
+class CID2_Bioseq_Ids;
 class CID2_Id_Range;
 class CID2_Seq_loc;
 class CBlobSplitter;
@@ -81,7 +83,7 @@ class CBlobSplitterImpl;
 class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
-class CBioseq_SplitInfo;
+class CPlace_SplitInfo;
 class CHandleRangeMap;
 
 struct SAnnotPiece;
@@ -95,8 +97,10 @@ public:
     CBlobSplitterImpl(const SSplitterParams& params);
     ~CBlobSplitterImpl(void);
 
-    typedef map<int, CBioseq_SplitInfo> TBioseqs;
-    typedef map<int, SChunkInfo> TChunks;
+    typedef int TPlaceId;
+    typedef map<TPlaceId, CPlace_SplitInfo> TEntries;
+    typedef int TChunkId;
+    typedef map<TChunkId, SChunkInfo> TChunks;
     typedef map<CID2S_Chunk_Id, CRef<CID2S_Chunk> > TID2Chunks;
     typedef vector< CRef<CAnnotPieces> > TPieces;
     typedef CSeqsRange::TRange TRange;
@@ -114,17 +118,20 @@ public:
     void CopySkeleton(CBioseq_set& dst, const CBioseq_set& src);
     void CopySkeleton(CBioseq& dst, const CBioseq& src);
 
-    bool CopyDescr(CBioseq_SplitInfo& bioseq_info,
-                   int gi, TSeqPos seq_length,
+    bool CopyDescr(CPlace_SplitInfo& place_info,
+                   TSeqPos seq_length,
                    const CSeq_descr& descr);
-    bool CopySequence(CBioseq_SplitInfo& bioseq_info,
-                      int gi, TSeqPos seq_length,
+    bool CopySequence(CPlace_SplitInfo& place_info,
+                      TSeqPos seq_length,
                       CSeq_inst& dst, const CSeq_inst& src);
-    bool CopyAnnot(CBioseq_SplitInfo& bioseq_info, const CSeq_annot& annot);
+    bool CopyAnnot(CPlace_SplitInfo& place_info, const CSeq_annot& annot);
+
+    bool CanSplitBioseq(const CBioseq& bioseq) const;
+    bool SplitBioseq(CPlace_SplitInfo& place_info, const CBioseq& bioseq);
 
     void CollectPieces(void);
-    void CollectPieces(const CBioseq_SplitInfo& info);
-    void CollectPieces(const CSeq_annot_SplitInfo& info);
+    void CollectPieces(const CPlace_SplitInfo& info);
+    void CollectPieces(TPlaceId place_id, const CSeq_annot_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
     void SplitPieces(void);
     void AddToSkeleton(CAnnotPieces& pieces);
@@ -152,8 +159,8 @@ public:
     CRef<CID2_Seq_loc> MakeLoc(const CSeqsRange& range) const;
     CRef<CID2_Seq_loc> MakeLoc(int gi, const TRange& range) const;
 
-    typedef list< CRef<CID2_Id_Range> > TIdRanges;
-    void AddIdRange(TIdRanges& info, int start, int end);
+    void AddIdRange(CID2_Bioseq_Ids& ids, int start, int end);
+    void AddIdRange(CID2_Bioseq_set_Ids& ids, int start, int end);
     void AddIdRange(CID2S_Seq_descr_Info& info, int start, int end);
     void AddIdRange(CID2S_Seq_annot_place_Info& info, int start, int end);
 
@@ -161,12 +168,12 @@ public:
     CRef<CSeq_annot> MakeSeq_annot(const CSeq_annot& src,
                                    const TAnnotObjects& objs);
     
-    typedef map<int, CRef<CID2S_Chunk_Data> > TChunkData;
+    typedef map<TPlaceId, CRef<CID2S_Chunk_Data> > TChunkData;
     typedef vector< CRef<CID2S_Chunk_Content> > TChunkContent;
     
-    CID2S_Chunk_Data& GetChunkData(TChunkData& chunk_data, int id);
+    CID2S_Chunk_Data& GetChunkData(TChunkData& chunk_data, TPlaceId place_id);
 
-    void MakeID2Chunk(int id, const SChunkInfo& info);
+    void MakeID2Chunk(TChunkId id, const SChunkInfo& info);
 
     SChunkInfo* NextChunk(void);
     SChunkInfo* NextChunk(SChunkInfo* chunk, const CSize& size);
@@ -185,7 +192,7 @@ private:
 
     int m_NextBioseq_set_Id;
 
-    TBioseqs m_Bioseqs;
+    TEntries m_Entries;
 
     TPieces m_Pieces;
 
@@ -199,6 +206,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.10  2004/08/04 14:48:49  vasilche
 * Added exports for MSVC. Added joining of very small chunks with skeleton.
 *

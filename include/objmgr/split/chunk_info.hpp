@@ -51,10 +51,10 @@ class CSeq_annot;
 class CAnnotObject_SplitInfo;
 class CLocObjects_SplitInfo;
 class CSeq_annot_SplitInfo;
-class CBioseq_SplitInfo;
 class CSeq_descr_SplitInfo;
 class CSeq_data_SplitInfo;
 class CSeq_inst_SplitInfo;
+class CBioseq_SplitInfo;
 
 struct SAnnotPiece;
 struct SIdAnnotPieces;
@@ -62,23 +62,28 @@ class CAnnotPieces;
 
 struct SChunkInfo
 {
-    typedef map<int, CConstRef<CSeq_descr_SplitInfo> > TChunkSeq_descr;
+    typedef int TPlaceId;
+    typedef vector<CSeq_descr_SplitInfo> TPlaceSeq_descr;
+    typedef map<TPlaceId, TPlaceSeq_descr> TChunkSeq_descr;
     typedef vector<CAnnotObject_SplitInfo> TAnnotObjects;
-    typedef map<CConstRef<CSeq_annot>, TAnnotObjects> TIdAnnots;
-    typedef map<int, TIdAnnots> TChunkAnnots;
-    typedef vector<CSeq_data_SplitInfo> TSeq_data;
-    typedef map<int, TSeq_data> TChunkSeq_data;
+    typedef map<CConstRef<CSeq_annot>, TAnnotObjects> TPlaceAnnots;
+    typedef map<TPlaceId, TPlaceAnnots> TChunkAnnots;
+    typedef vector<CSeq_data_SplitInfo> TPlaceSeq_data;
+    typedef map<TPlaceId, TPlaceSeq_data> TChunkSeq_data;
+    typedef vector<CBioseq_SplitInfo> TPlaceBioseq;
+    typedef map<TPlaceId, TPlaceBioseq> TChunkBioseq;
 
     void Add(const SChunkInfo& info);
 
-    void Add(const CSeq_descr_SplitInfo& info);
-    void Add(const CSeq_annot_SplitInfo& info);
+    void Add(TPlaceId place_id, const CSeq_descr_SplitInfo& info);
+    void Add(TPlaceId place_id, const CSeq_annot_SplitInfo& info);
     void Add(TAnnotObjects& objs,
              const CLocObjects_SplitInfo& info);
     void Add(const SAnnotPiece& piece);
     void Add(const SIdAnnotPieces& pieces);
-    void Add(const CSeq_inst_SplitInfo& info);
-    void Add(const CSeq_data_SplitInfo& info);
+    void Add(TPlaceId place_id, const CSeq_inst_SplitInfo& info);
+    void Add(TPlaceId place_id, const CSeq_data_SplitInfo& info);
+    void Add(TPlaceId place_id, const CBioseq_SplitInfo& info);
 
     size_t CountAnnotObjects(void) const;
 
@@ -86,6 +91,7 @@ struct SChunkInfo
     TChunkSeq_descr m_Seq_descr;
     TChunkAnnots    m_Annots;
     TChunkSeq_data  m_Seq_data;
+    TChunkBioseq    m_Bioseq;
 };
 
 
@@ -95,6 +101,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/19 14:18:54  vasilche
+* Added splitting of whole Bioseqs.
+*
 * Revision 1.6  2004/08/04 14:48:49  vasilche
 * Added exports for MSVC. Added joining of very small chunks with skeleton.
 *
