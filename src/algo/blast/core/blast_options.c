@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.101  2004/04/29 17:41:05  papadopo
+ * Scale down the search space when calculating the S2 cutoff score for a translated RPS search
+ *
  * Revision 1.100  2004/04/29 15:08:43  madden
  * Add BlastScoringOptionsDup
  *
@@ -1450,10 +1453,15 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
    } else if (!options->phi_align) {
+      Int4 context = query_info->first_context;
+      double searchsp = (double)query_info->eff_searchsp_array[context];
+
+      /* translated RPS searches must scale the search space down */
+      if (program_number == blast_type_rpstblastn)
+         searchsp = searchsp / NUM_FRAMES;
+
       params->cutoff_score = 0;
-      BLAST_Cutoffs(&params->cutoff_score, &evalue, kbp, 
-         (double)query_info->eff_searchsp_array[query_info->first_context], 
-         FALSE, 0);
+      BLAST_Cutoffs(&params->cutoff_score, &evalue, kbp, searchsp, FALSE, 0);
       /* When sum statistics is used, all HSPs above the gap trigger 
          cutoff are saved until the sum statistics is applied to potentially
          link them with other HSPs and improve their e-values. 
