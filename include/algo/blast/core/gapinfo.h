@@ -62,13 +62,17 @@ typedef struct GapEditScript {
 /** Editing block structure containing all information returned from a 
  * single gapped extension. */
 typedef struct GapEditBlock {
-   Int4 start1,  start2,       /**< starts of alignments. */
-      length1, length2,       /**< total lengths of the sequences. */
-      original_length1, original_length2; /**< Untranslated lengths of the 
-                                             sequences. */
-   Int2 frame1, frame2;	    /**< frames of the sequences. */
-   Boolean translate1,	translate2; /**< are either of these be translated. */
-   Boolean reverse;	/**< reverse sequence 1 and 2 when producing SeqALign? */
+   Int4 start1;  /**< Start of alignment in query. */
+   Int4 start2;  /**< Start of alignment in subject. */
+   Int4 length1; /**< Length of alignment in query. */
+   Int4 length2; /**< Length of alignment in subject. */
+   Int4 original_length1; /**< Untranslated query length. */
+   Int4 original_length2; /**< Untranslated subject length. */
+   Int2 frame1;  /**< Query frame. */
+   Int2 frame2;	 /**< Subject frame. */
+   Boolean translate1; /**< Is query translated? */
+   Boolean translate2; /**< Is subject translated? */
+   Boolean reverse; /**< reverse sequence 1 and 2 when producing SeqALign? */
    Boolean is_ooframe; /**< Is this out_of_frame edit block? */
    Boolean discontinuous; /**< Is this OK to produce discontinuous SeqAlign? */
    GapEditScript* esp; /**< Editing script for the traceback. */
