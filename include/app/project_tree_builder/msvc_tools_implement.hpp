@@ -298,6 +298,14 @@ public:
 
     virtual string ProgramDatabaseFile(void) const
     {
+        string pdb_file = 
+            GetLinkerOpt(m_MsvcMetaMakefile,
+                         m_MsvcProjectMakefile,
+                         "ProgramDatabaseFile", 
+                         m_Config );
+        if( !pdb_file.empty() )
+            return pdb_file;
+
 	    return string("$(OutDir)\\") + m_ProjectId + ".pdb";
 //	    return string("$(OutDir)\\$(ProjectName).pdb");
     }
@@ -736,6 +744,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/11/30 18:20:04  gouriano
+ * Use ProgramDatabaseFile name from the configuration file, if specified
+ *
  * Revision 1.19  2004/10/13 13:37:39  gouriano
  * a bit more parameterization in generated projects
  *
