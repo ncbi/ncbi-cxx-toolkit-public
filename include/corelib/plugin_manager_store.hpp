@@ -47,6 +47,7 @@ public:
     typedef CSingletonObjectStore<string, CPluginManagerBase> TParent;
 public:
     CPluginManagerStore();
+    ~CPluginManagerStore();
 
     /// Utility class to get plugin manager from the store
     /// If it is not there, class will create and add new instance 
@@ -116,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2004/12/27 16:10:41  vasilche
+ * Force linking in CSingletonObjectStore::s_obj_store on GCC.
+ *
  * Revision 1.5  2004/12/22 19:25:49  grichenk
  * +RegisterEntryPoint() template
  *
