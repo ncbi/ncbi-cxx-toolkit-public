@@ -63,7 +63,12 @@ void CFileObsolete::Remove(const string&  mask,
 
     CTime current(CTime::eCurrent);
     time_t cutoff_time = (unsigned)current.GetTimeT();
-    cutoff_time -= age;
+
+    if (cutoff_time < age) {
+        cutoff_time = 0;
+    } else {
+        cutoff_time -= age;
+    }
 
     CDir::TEntries  content(dir.GetEntries(mask));
     ITERATE(CDir::TEntries, it, content) {
@@ -112,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/05 18:50:23  kuznets
+ * Fixed potential overflow on unsigned int arithmetics
+ *
  * Revision 1.1  2003/12/01 15:46:48  kuznets
  * Initial revision
  *
