@@ -48,6 +48,12 @@
 #include <string>
 
 
+/** @addtogroup AlgoGlobal
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -181,9 +187,15 @@ protected:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/04/10 19:04:30  siyan
+ * Added doxygen support
+ *
  * Revision 1.16  2003/04/02 20:52:24  kapustin
  * Make FormatAsText virtual. Pass output string as a parameter.
  *

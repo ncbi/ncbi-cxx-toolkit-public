@@ -43,6 +43,13 @@
 #include <memory>
 #include <time.h>
 
+
+/** @addtogroup CGIReqRes
+ *
+ * @{
+ */
+
+
 #define HTTP_EOL "\r\n"
 
 
@@ -134,11 +141,19 @@ private:
 };  // CCgiCookie
 
 
+/* @} */
+
+
 inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookie& cookie)
 {
     return cookie.Write(os);
 }
 
+
+/** @addtogroup CGIReqRes
+ *
+ * @{
+ */
 
 
 ///////////////////////////////////////////////////////
@@ -224,11 +239,19 @@ private:
 };  // CCgiCookies
 
 
+/* @} */
+
+
 inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookies& cookies)
 {
     return cookies.Write(os);
 }
 
+
+/** @addtogroup CGIReqRes
+ *
+ * @{
+ */
 
 
 ///////////////////////////////////////////////////////
@@ -356,6 +379,10 @@ private:
     CRef<SData> m_Data;
 };
 
+
+/* @} */
+
+
 inline
 bool operator ==(const CCgiEntry& e1, const CCgiEntry& e2)
 {
@@ -399,6 +426,12 @@ CNcbiOstream& operator <<(CNcbiOstream& o, const CCgiEntry& e)
     return o << e.GetValue();
     // filename omitted in case anything depends on just getting the value
 }
+
+
+/** @addtogroup CGIReqRes
+ *
+ * @{
+ */
 
 
 // Typedefs
@@ -576,7 +609,7 @@ extern string URL_DecodeString(const string& str);
 extern string URL_EncodeString(const string& str);
 
 
-
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -708,6 +741,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.60  2003/04/10 19:01:42  siyan
+* Added doxygen support
+*
 * Revision 1.59  2003/03/11 19:17:10  kuznets
 * Improved error diagnostics in CCgiRequest
 *

@@ -36,6 +36,12 @@
 #include <corelib/ncbiexpt.hpp>
 
 
+/** @addtogroup CGIExcep
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CCgiException : EXCEPTION_VIRTUAL_BASE public CException
@@ -89,10 +95,17 @@ public:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/10 19:01:39  siyan
+* Added doxygen support
+*
 * Revision 1.1  2003/02/24 19:59:58  gouriano
 * use template-based exceptions instead of errno and parse exceptions
 *

@@ -38,6 +38,13 @@
 #include <cgi/ncbicgir.hpp>
 #include <connect/ncbi_types.h>
 
+
+/** @addtogroup CGIBase
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -67,12 +74,20 @@ public:
 };
 
 
+/* @} */
+
+
 inline
 CNcbiOstream& operator<< (CNcbiOstream& os, const CCtxMsg& ctx_msg)
 {
     return ctx_msg.Write(os);
 }
 
+
+/** @addtogroup CGIBase
+ *
+ * @{
+ */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -197,6 +212,7 @@ private:
 }; 
 
 
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -313,6 +329,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2003/04/10 19:01:41  siyan
+* Added doxygen support
+*
 * Revision 1.25  2003/03/11 19:17:10  kuznets
 * Improved error diagnostics in CCgiRequest
 *

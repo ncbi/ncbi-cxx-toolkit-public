@@ -37,6 +37,12 @@
 #include <map>
 
 
+/** @addtogroup CGIReqRes
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -109,6 +115,7 @@ protected:
 };
 
 
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -180,6 +187,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2003/04/10 19:01:44  siyan
+ * Added doxygen support
+ *
  * Revision 1.13  2002/03/19 00:34:54  vakatov
  * Added convenience method CCgiResponse::SetStatus().
  * Treat the status right in WriteHeader() for both plain and "raw CGI" cases.

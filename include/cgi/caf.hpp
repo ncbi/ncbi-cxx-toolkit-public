@@ -30,6 +30,13 @@
 *
 */
 
+
+/** @addtogroup CookieAfinity
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 ///////////////////////////////////////////////////////
@@ -55,9 +62,16 @@ public:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2003/04/10 19:01:34  siyan
+* Added doxygen support
+*
 * Revision 1.2  2003/02/25 14:10:56  kuznets
 * Added support of CCookieAffinity service interface, host IP address, cookie encoding
 *

@@ -36,6 +36,12 @@
 #include <corelib/ncbiexpt.hpp>
 
 
+/** @addtogroup AlgoExcep
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -80,9 +86,15 @@ public:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/04/10 19:04:27  siyan
+ * Added doxygen support
+ *
  * Revision 1.3  2003/03/25 22:07:09  kapustin
  * Add eInvalidSpliceTypeIndex exception type
  *

@@ -42,6 +42,12 @@
 #include <cgi/caf.hpp>
 
 
+/** @addtogroup CGIBase
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 class CCgiServerContext;
@@ -209,10 +215,17 @@ protected:
 
 END_NCBI_SCOPE
 
+
+/* @} */
+
+
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/04/10 19:01:40  siyan
+* Added doxygen support
+*
 * Revision 1.36  2003/03/24 16:14:11  ucko
 * New accessors GetFCgiIteration and IsFastCGI; new data member m_Iteration.
 *

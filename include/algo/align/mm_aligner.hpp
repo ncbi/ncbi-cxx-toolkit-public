@@ -46,6 +46,13 @@
 #include <list>
 #include <corelib/ncbithr.hpp>
 
+
+/** @addtogroup AlgoAlignMM
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 struct SCoordRect; // auxiliary structure, see below
@@ -132,9 +139,15 @@ struct NCBI_XALGO_EXPORT SCoordRect {
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/04/10 19:04:28  siyan
+ * Added doxygen support
+ *
  * Revision 1.6  2003/03/18 15:11:22  kapustin
  * Declare virtual memory limit checking function
  *

@@ -40,6 +40,13 @@
 
 #include "nw_aligner.hpp"
 
+
+/** @addtogroup AlgoGlobalmRna
+ *
+ * @{
+ */
+
+
 const unsigned char splice_type_count = 3;
 
 BEGIN_NCBI_SCOPE
@@ -88,9 +95,15 @@ protected:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/04/10 19:04:31  siyan
+ * Added doxygen support
+ *
  * Revision 1.6  2003/04/02 20:52:24  kapustin
  * Make FormatAsText virtual. Pass output string as a parameter.
  *

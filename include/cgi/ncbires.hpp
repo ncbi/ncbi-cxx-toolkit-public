@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/04/10 19:01:46  siyan
+* Added doxygen support
+*
 * Revision 1.29  1999/08/11 18:33:03  sandomir
 * class CNcbiResource more logical (some functionality from CNcbiDbResource moved in CNcbiResource; CNcbiCommand get CNcbiResource in ctor
 *
@@ -51,6 +54,13 @@
 #include <cgi/ncbicgir.hpp>
 
 #include <functional>
+
+
+/** @addtogroup CGICmd
+ *
+ * @{
+ */
+
 
 BEGIN_NCBI_SCOPE
 
@@ -202,3 +212,7 @@ public:
 END_NCBI_SCOPE
 
 #endif /* NCBI_RES__HPP */
+
+
+/* @} */
+
