@@ -30,8 +30,8 @@
  *
  */
 #include <objtools/readers/fasta.hpp>
-#include <algo/blast/blast_input.hpp>
-#include <algo/blast/blast_aux.hpp>
+#include <algo/blast/api/blast_input.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 USING_NCBI_SCOPE;
 BEGIN_NCBI_SCOPE
