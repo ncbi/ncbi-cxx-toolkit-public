@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/09 14:20:54  grichenk
+* Added checking of m_Current validity
+*
 * Revision 1.3  2002/05/06 03:28:48  vakatov
 * OM/OM1 renaming
 *
@@ -68,9 +71,12 @@ CSeqdesc_CI::CSeqdesc_CI(void)
 
 
 CSeqdesc_CI::CSeqdesc_CI(const CDesc_CI& desc_it, CSeqdesc::E_Choice choice)
-    : m_Outer(desc_it), m_Inner(desc_it->Get().begin()),
-      m_InnerEnd(desc_it->Get().end()), m_Current(NULL), m_Choice(choice)
+    : m_Outer(desc_it), m_Current(NULL), m_Choice(choice)
 {
+    if ( !m_Outer )
+        return;
+    m_Inner = desc_it->Get().begin();
+    m_InnerEnd = desc_it->Get().end();
     // Advance to the first relevant Seqdesc, if any.
     ++*this;
 }
@@ -134,18 +140,20 @@ CSeqdesc_CI CSeqdesc_CI::operator++(int) // postfix
 
 CSeqdesc_CI::operator bool(void) const
 {
-    return m_Inner != m_InnerEnd  ||  m_Outer;
+    return bool(m_Current)  &&  (m_Inner != m_InnerEnd  ||  m_Outer);
 }
 
 
 const CSeqdesc& CSeqdesc_CI::operator*(void) const
 {
+    _ASSERT(m_Current);
     return *m_Current;
 }
 
 
 const CSeqdesc* CSeqdesc_CI::operator->(void) const
 {
+    _ASSERT(m_Current);
     return m_Current;
 }
 
