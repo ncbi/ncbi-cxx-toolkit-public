@@ -27,7 +27,6 @@
  *
  * File Description:  DBLib language command
  *
- *
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
@@ -429,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/24 16:41:13  lavr
+ * File description changed to be of the same style as in other files
+ *
  * Revision 1.1  2001/10/22 15:19:55  lavr
  * This is a major revamp (by Anton Lavrentiev, with help from Vladimir
  * Soussov and Denis Vakatov) of the DBAPI "driver" libs originally

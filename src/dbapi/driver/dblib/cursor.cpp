@@ -27,7 +27,6 @@
  *
  * File Description:  DBLib cursor command
  *
- *
  */
 
 #include <dbapi/driver/dblib/interfaces.hpp>
@@ -427,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/24 16:41:13  lavr
+ * File description changed to be of the same style as in other files
+ *
  * Revision 1.2  2001/10/22 16:28:01  lavr
  * Default argument values removed
  * (mistakenly left while moving code from header files)
