@@ -65,8 +65,8 @@ private:
     CSeq_data& operator=(const CSeq_data& value);
 
     // Helper functions
-    void DoContrsuct(const string& value, E_Choice index);
-    void DoContrsuct(const vector< char >& value, E_Choice index);
+    void DoConstruct(const string& value, E_Choice index);
+    void DoConstruct(const vector< char >& value, E_Choice index);
 };
 
 
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/01/03 01:24:39  ucko
+* Fixed spelling of DoConstruct.
+*
 * Revision 1.1  2003/01/02 15:02:24  friedman
 * Added constructors; one that accepts a string and the other that accepts a
 * vecor<char> as an arguement.
