@@ -12,7 +12,8 @@ LIBOBJ = \
 	serial serialasn delaybuf \
 	exception objhook objlist objstack \
 	$(serial_ws50_rtti_kludge) \
-	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml
+	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml \
+	objectutil serializable
 
 LIB    = xser
 
