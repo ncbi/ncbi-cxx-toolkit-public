@@ -15,10 +15,13 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 src_tree=`pwd`
 bld_tree=`(cd "${script_dir}/.." ; pwd)`
 status_dir=$bld_tree/status
+extra_sed=
+copy_times=false
 
 for x_arg in "$@" ; do
   case "$x_arg" in
     --drop-suffix )  extra_sed='s%/c[+][+][^;/ '\''"]*%/c++%g' ;;
+    --copy-times  )  copy_times=true
     * )  Usage "Unknown argument \"$x_arg\""
   esac
 done
@@ -72,6 +75,7 @@ chmod +x "$script_dir"/*.sh.tmp
 for f in $files ; do
    fff="$script_dir/$f"
    echo "  $f"
+   test "$copy_times" = true  &&  touch -r "$fff.tmp" "$fff"
    rm -f "$fff"  &&  mv "$fff.tmp" "$fff"
    if test $? -ne 0 ; then
       echo "[$script_name]  Error in processing file \"$f\"!" 
