@@ -506,13 +506,15 @@ void CSeq_loc_Mapper::x_PushMappedRange(const CSeq_id_Handle& id,
             no_merge |= (int)it->second.size() <= strand_idx
                 ||  it->second.empty();
             // Ranges are not abutting
-            if ( reverse ) {
-                no_merge |= it->second[strand_idx].front().first.GetFrom() !=
-                    range.GetToOpen();
-            }
-            else {
-                no_merge |= it->second[strand_idx].back().first.GetToOpen() !=
-                    range.GetFrom();
+            if ( !no_merge ) {
+                if ( reverse ) {
+                    no_merge |= it->second[strand_idx].front().first.GetFrom() !=
+                        range.GetToOpen();
+                }
+                else {
+                    no_merge |= it->second[strand_idx].back().first.GetToOpen() !=
+                        range.GetFrom();
+                }
             }
             if ( no_merge ) {
                 x_PushRangesToDstMix();
@@ -2015,6 +2017,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/11/24 16:21:36  grichenk
+* Check iterator when merging abutting ranges
+*
 * Revision 1.30  2004/10/28 15:33:49  grichenk
 * Fixed fuzzes.
 *
