@@ -50,13 +50,11 @@ CPluginManager_DllResolver::CPluginManager_DllResolver(void)
 
 CPluginManager_DllResolver::CPluginManager_DllResolver(
                     const string& interface_name,
-                    const string& plugin_name,
                     const string& driver_name,
                     const CVersionInfo& version)
  : m_DllNamePrefix("ncbi_plugin"),
    m_EntryPointPrefix("NCBI_EntryPoint"),
    m_InterfaceName(interface_name),
-   m_PluginFamilyName(plugin_name),
    m_DriverName(driver_name),
    m_Version(version),
    m_DllResolver(0)
@@ -76,7 +74,7 @@ CDllResolver& CPluginManager_DllResolver::Resolve(const vector<string>& paths)
 
     // Generate DLL masks
 
-    string mask = GetDllNameMask(m_PluginFamilyName, m_DriverName, m_Version);
+    string mask = GetDllNameMask(m_InterfaceName, m_DriverName, m_Version);
     vector<string> masks;
     masks.push_back(mask);
 
@@ -94,16 +92,15 @@ CDllResolver& CPluginManager_DllResolver::Resolve(const string& path)
 
 
 string 
-CPluginManager_DllResolver::GetDllName(
-                                       const string&       plugin_name,
+CPluginManager_DllResolver::GetDllName(const string&       interface_name,
                                        const string&       driver_name,
                                        const CVersionInfo& version) const
 {
     string prefix = GetDllNamePrefix();
     string name = prefix;
-    if (!plugin_name.empty()) {
+    if (!interface_name.empty()) {
         name.append("_");
-        name.append(plugin_name);
+        name.append(interface_name);
     }
 
     if (!driver_name.empty()) {
@@ -136,7 +133,7 @@ CPluginManager_DllResolver::GetDllName(
 
 string 
 CPluginManager_DllResolver::GetDllNameMask(
-        const string&       plugin_name,
+        const string&       interface_name,
         const string&       driver_name,
         const CVersionInfo& version) const
 {
@@ -144,10 +141,10 @@ CPluginManager_DllResolver::GetDllNameMask(
     string name = prefix;
 
     name.append("_");
-    if (plugin_name.empty()) {
+    if (interface_name.empty()) {
         name.append("*");
     } else {
-        name.append(plugin_name);
+        name.append(interface_name);
     }
 
     name.append("_");
@@ -269,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/17 17:04:22  kuznets
+ * Cosmetic fixes
+ *
  * Revision 1.2  2003/11/12 18:57:21  kuznets
  * Implemented dll resolution.
  *
