@@ -487,7 +487,10 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
     // new row
     CDB_VarChar descrOut("-");
     CDB_Int classOut(0);
-    CDB_Int confidential(0),withdrawn(0);
+    CDB_Int confidential(0),withdrawn(0),state(0);
+    enum {
+        kState_dead = 125
+    };
     
     while( cmd.HasMoreResults() ) {
         _TRACE("next result");
@@ -511,6 +514,13 @@ CDB_Result* CPubseqReader::x_ReceiveData(CTSE_Info* tse_info, CDB_RPCCmd& cmd)
                 }
                 else if ( name == "confidential" ) {
                     result->GetItem(&confidential);
+                }
+                else if ( name == "state" ) {
+                    result->GetItem(&state);
+                    _TRACE("state="<<state.Value());
+                    if ( state.Value() == kState_dead ) {
+                        tse_info->SetSuppressionLevel(CTSE_Info::eSuppression_dead);
+                    }
                 }
                 else if ( name == "override" ) {
                     result->GetItem(&withdrawn);
