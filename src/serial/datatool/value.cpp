@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/10/02 19:40:14  gouriano
+* properly handle invalid enumeration values in ASN spec
+*
 * Revision 1.20  2003/06/17 18:50:48  gouriano
 * added missing EMPTY_TEMPLATE macro in few places
 *
@@ -100,7 +103,7 @@ CDataValue::~CDataValue(void)
 {
 }
 
-void CDataValue::SetModule(const CDataTypeModule* module)
+void CDataValue::SetModule(const CDataTypeModule* module) const
 {
     _ASSERT(module != 0);
     _ASSERT(m_Module == 0);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/10/02 19:40:14  gouriano
+* properly handle invalid enumeration values in ASN spec
+*
 * Revision 1.73  2003/06/24 20:55:42  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -396,6 +399,9 @@ void CDataType::SetParent(const CDataType* parent, const string& memberName)
     m_Module = parent->GetModule();
     m_MemberName = memberName;
     _ASSERT(m_Module != 0);
+    if (m_DataMember && m_DataMember->GetDefault()) {
+        m_DataMember->GetDefault()->SetModule(m_Module);
+    }
     FixTypeTree();
 }
 

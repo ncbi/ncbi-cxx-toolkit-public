@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/10/02 19:39:48  gouriano
+* properly handle invalid enumeration values in ASN spec
+*
 * Revision 1.4  2003/06/16 14:40:15  gouriano
 * added possibility to convert DTD to XML schema
 *
@@ -88,7 +91,7 @@ public:
 
     string LocationString(void) const;
     const string& GetSourceFileName(void) const;
-    void SetModule(const CDataTypeModule* module);
+    void SetModule(const CDataTypeModule* module) const;
     int GetSourceLine(void) const
         {
             return m_SourceLine;
@@ -98,7 +101,7 @@ public:
     virtual bool IsComplex(void) const;
 
 private:
-    const CDataTypeModule* m_Module;
+    mutable const CDataTypeModule* m_Module;
     int m_SourceLine;
 
 private:
