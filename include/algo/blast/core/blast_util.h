@@ -135,14 +135,6 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
                                       const Uint1* sequence);
                             
 
-/** Allocate and initialize the query information structure.
- * @param program_number Type of BLAST program [in]
- * @param num_queries Number of query sequences [in]
- * @param query_info_ptr The initialized structure [out]
- */
-Int2 BLAST_QueryInfoInit(EBlastProgramType program_number, 
-        Int4 num_queries, BlastQueryInfo* *query_info_ptr);
-
 /** GetTranslation to get the translation of the nucl. sequence in the
  * appropriate frame and with the appropriate GeneticCode.
  * The function return an allocated char*, the caller must delete this.

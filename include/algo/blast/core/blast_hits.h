@@ -473,29 +473,6 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
         BlastHSPList* hsp_list, Int4 hitlist_size);
 
-/** Convert a prelimiary list of HSPs, that are the result of
- * an RPS blast search, to a format compatible with the rest
- * of the blast engine. RPS blast takes a single query and the
- * concatenation of all DB sequences; the DB sequences are the
- * query input to the engine, and the single query is treated as
- * a single subject sequence. This function should be invoked 
- * after BLAST_SearchEngineCore() but before BLAST_RPSTraceback().
- *
- *   BEFORE THIS CALL      AFTER THIS CALL
- *  - many HitLists        - one HitList
- *  - each HitList has     - the HitList has
- *    one HSPList            many HSPLists
- *  - each HSPList has     - each HSPList has its
- *    subject OID zero       own subject OID
- *  - each HSPList has a   - all HSPlists have
- *    different context      context zero
- *
- * @param init_results The input result list [in]
- * @param results The modified results (in new format) [out]
- */
-void Blast_HSPResultsRPSUpdate(BlastHSPResults *results,
-                               BlastHSPResults *init_results);
-
 #ifdef __cplusplus
 }
 #endif
