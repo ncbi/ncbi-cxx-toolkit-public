@@ -64,9 +64,9 @@ public:
 
     // access functions
     EDiagSev                GetSeverity (void) const;
-    const string&             GetErrCode  (void) const;
-    const string&             GetMessage  (void) const;
-    const string&             GetVerbose  (void) const;
+    const string&           GetErrCode  (void) const;
+    const string&           GetMessage  (void) const;
+    const string&           GetVerbose  (void) const;
     const CConstObjectInfo& GetObject   (void) const;
 
 private:
@@ -78,7 +78,7 @@ private:
 
 };
 
-typedef list < CRef < CValidErrItem > > TErrs;
+typedef vector < CRef < CValidErrItem > > TErrs;
 
 class CValidError
 {
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2002/10/08 19:50:14  kans
+* changed TErrs from list to vector
+*
 * Revision 1.2  2002/10/03 18:31:03  clausen
 * Removed extra whitespace
 *
