@@ -41,7 +41,6 @@ Contents: Structures used for BLAST extension
 #include <blast_def.h>
 #include <mb_lookup.h>
 #include <na_lookup.h>
-#include <blastkar.h>
 
 #ifdef __cplusplus
 extern "C" {
