@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/01/22 20:44:25  gouriano
+* Corrected generation of XML schema for boolean types
+*
 * Revision 1.30  2003/12/04 20:56:59  gouriano
 * corrected DTD generation for Bool type
 *
@@ -291,9 +294,18 @@ const char* CBoolDataType::GetXMLContents(void) const
 void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const
 {
     type.erase();
+    const CBoolDataValue *val = GetDataMember() ?
+        dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
     contents =
         "  <xs:complexType>\n"
-        "    <xs:attribute name=\"value\" use=\"required\">\n"
+        "    <xs:attribute name=\"value\" use=";
+    if (val) {
+        contents += "\"optional\" default=";
+        contents += val->GetValue() ? "\"true\"" : "\"false\"";
+    } else {
+        contents += "\"required\"";
+    }
+    contents += ">\n"
         "      <xs:simpleType>\n"
         "        <xs:restriction base=\"xs:string\">\n"
         "          <xs:enumeration value=\"true\"/>\n"
