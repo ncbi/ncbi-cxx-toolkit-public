@@ -68,9 +68,13 @@ public:
 
     // get gene (if present) from Seq-feat.xref list
     const CGene_ref* GetGeneXref(void) const;
+    void SetGeneXref(CGene_ref& value);
+    CGene_ref& SetGeneXref(void);
 
     // get protein (if present) from Seq-feat.xref list
     const CProt_ref* GetProtXref(void) const;
+    void SetProtXref(CProt_ref& value);
+    CProt_ref& SetProtXref(void);
 
     // Optional locations are used for features with locations
     // re-mapped to a master sequence
@@ -165,6 +169,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2003/08/07 21:42:03  kans
+* added SetGeneXref and SetProtXref
+*
 * Revision 1.13  2003/04/24 16:15:31  vasilche
 * Fixed CSeq_feat::Compare().
 *
