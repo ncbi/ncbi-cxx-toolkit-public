@@ -1,7 +1,6 @@
 # $Id$
 
-REQUIRES = objects
-REQUIRES = dbapi
+REQUIRES = objects dbapi
 
 APP = id1_fetch
 SRC = id1_fetch

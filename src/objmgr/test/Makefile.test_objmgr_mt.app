@@ -6,7 +6,7 @@
 # Build object manager test application "testobjmgr_mt"
 #################################
 
-REQUIRES = dbapi
+REQUIRES = dbapi MT
 
 APP = testobjmgr1_mt
 SRC = testobjmgr1_mt test_helper
@@ -16,6 +16,4 @@ LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = testobjmgr1_mt
-
-REQUIRES = MT
 
