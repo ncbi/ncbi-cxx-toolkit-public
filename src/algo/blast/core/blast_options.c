@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.8  2003/04/17 21:14:41  dondosha
+ * Added cutoff score hit parameters that is calculated from e-value
+ *
  * Revision 1.7  2003/04/16 22:25:37  dondosha
  * Correction to previous change
  *
@@ -294,7 +297,7 @@ BlastInitialWordParametersFree(BlastInitialWordParametersPtr parameters)
 
 Int2
 BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options, 
-   BlastHitSavingOptionsPtr hit_options, 
+   BlastHitSavingParametersPtr hit_params, 
    BlastExtensionParametersPtr ext_params, BLAST_ScoreBlkPtr sbp, 
    BlastQueryInfoPtr query_info, FloatHi avglen, 
    BlastInitialWordParametersPtr *parameters)
@@ -304,12 +307,15 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    FloatHi e2 = UNGAPPED_CUTOFF_EVALUE;
    BLAST_KarlinBlkPtr kbp;
    FloatHi qlen;
+   BlastHitSavingOptionsPtr hit_options;
 
-   if (!word_options || !hit_options || !sbp || !sbp->kbp_std[context])
+   if (!word_options || !hit_params || !sbp || !sbp->kbp_std[context])
       return 8;
 
    *parameters = (BlastInitialWordParametersPtr) 
       MemNew(sizeof(BlastInitialWordParameters));
+
+   hit_options = hit_params->options;
 
    (*parameters)->options = word_options;
 
@@ -322,18 +328,13 @@ BlastInitialWordParametersNew(BlastInitialWordOptionsPtr word_options,
    else
       kbp = sbp->kbp_std[context];
 
-   /* Calculate score cutoff corresponding to the user-provided 
-      e-value cutoff */
-   BlastCutoffs_simple(&cutoff_score, &(hit_options->expect_value), 
-      kbp, query_info->eff_searchsp_array[context], FALSE);
-
    /* Calculate score cutoff corresponding to a fixed e-value (1e-5);
       If it is smaller, then use this one */
    qlen = query_info->context_offsets[query_info->last_context+1] - 1;
 
    BlastCutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
-   if (s2 < cutoff_score)
-      cutoff_score = s2;
+
+   cutoff_score = MIN(hit_params->cutoff_score, s2);
 
    /* For non-blastn programs, the cutoff score should not be larger than 
       gap trigger */
@@ -451,39 +452,36 @@ BlastExtensionOptionsValidate(BlastExtensionOptionsPtr options, Blast_MessagePtr
 }
 
 Int2 BlastExtensionParametersNew(CharPtr blast_program, 
-        BlastExtensionOptionsPtr options, BLAST_ScoreBlkPtr sbp, 
-        BlastExtensionParametersPtr *parameters)
+        BlastExtensionOptionsPtr options, BLAST_ScoreBlkPtr sbp,
+        BlastQueryInfoPtr query_info, BlastExtensionParametersPtr *parameters)
 {
    BLAST_KarlinBlkPtr kbp, kbp_gap;
-
+   BlastExtensionParametersPtr params;
 
    if (sbp->kbp) {
-      if (sbp->kbp[0])
-         kbp = sbp->kbp[0];
-      else
-         kbp = sbp->kbp[1];
+      kbp = sbp->kbp[query_info->first_context];
    } else {
       /* The Karlin block is not found, can't do any calculations */
       *parameters = NULL;
       return -1;
    }
 
-   if (StrCmp(blast_program, "blastn")) {
-      kbp_gap = sbp->kbp_gap[0];
+   if (StrCmp(blast_program, "blastn") && sbp->kbp_gap) {
+      kbp_gap = sbp->kbp_gap[query_info->first_context];
    } else {
       kbp_gap = kbp;
    }
    
-   *parameters = (BlastExtensionParametersPtr) 
+   *parameters = params = (BlastExtensionParametersPtr) 
       Malloc(sizeof(BlastExtensionParameters));
 
-   (*parameters)->options = options;
-   (*parameters)->gap_x_dropoff = 
+   params->options = options;
+   params->gap_x_dropoff = 
       (Int4) (options->gap_x_dropoff*NCBIMATH_LN2 / kbp_gap->Lambda);
-   (*parameters)->gap_x_dropoff_final = (Int4) 
+   params->gap_x_dropoff_final = (Int4) 
       (options->gap_x_dropoff_final*NCBIMATH_LN2 / kbp_gap->Lambda);
 
-   (*parameters)->gap_trigger = 
+   params->gap_trigger = 
       (options->gap_trigger*NCBIMATH_LN2 + kbp->logK) / kbp->Lambda;
 
    return 0;
@@ -982,20 +980,37 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 Int2
 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
    int handle_results(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
-           VoidPtr), BlastHitSavingParametersPtr *parameters)
+           VoidPtr), BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
+   BlastHitSavingParametersPtr *parameters)
 {
+   BlastHitSavingParametersPtr params;
+   BLAST_KarlinBlkPtr kbp;
+
    if (!options || !parameters)
       return 1;
 
-   *parameters = (BlastHitSavingParametersPtr) 
+   *parameters = params = (BlastHitSavingParametersPtr) 
       MemNew(sizeof(BlastHitSavingParameters));
 
-   if (*parameters == NULL)
+   if (params == NULL)
       return 1;
 
-   (*parameters)->options = options;
+   params->options = options;
 
-   (*parameters)->handle_results = handle_results;
+   params->handle_results = handle_results;
+
+   if (sbp->kbp_gap && sbp->kbp_gap[query_info->first_context])
+      kbp = sbp->kbp_gap[query_info->first_context];
+   else
+      kbp = sbp->kbp[query_info->first_context];
+
+   if (options->cutoff_score > 0) {
+      params->cutoff_score = options->cutoff_score;
+   } else {
+      BlastCutoffs_simple(&(params->cutoff_score), &(options->expect_value), 
+         kbp, query_info->eff_searchsp_array[query_info->first_context], 
+         FALSE);
+   }
 
    return 0;
 }

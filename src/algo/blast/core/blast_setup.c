@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.8  2003/04/17 21:14:41  dondosha
+* Added cutoff score hit parameters that is calculated from e-value
+*
 * Revision 1.7  2003/04/11 16:41:16  dondosha
 * Added an extern declaration to eliminate compiler warning
 *
@@ -1962,6 +1965,10 @@ Blast_MessagePtr *blast_message
                                 eff_len_options->dbseq_num, ewp)) != 0)
            return status;
 
+        /* Why are there so many Karlin block names?? */
+        sbp->kbp = sbp->kbp_std;
+        sbp->kbp_gap = sbp->kbp_gap_std;
+
         /* Fill the query information structure, including the context 
            offsets for multiple queries */
         if (query_info && 
@@ -1974,11 +1981,8 @@ Blast_MessagePtr *blast_message
            return status;
 
         if (hit_parameters)
-           BlastHitSavingParametersNew(hit_options, NULL, hit_parameters);
-
-        /* Why are there so many Karlin block names?? */
-        sbp->kbp = sbp->kbp_std;
-        sbp->kbp_gap = sbp->kbp_gap_std;
+           BlastHitSavingParametersNew(hit_options, NULL, sbp, *query_info,
+                                       hit_parameters);
 
 	return 0;
 }

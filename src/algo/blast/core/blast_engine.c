@@ -94,6 +94,8 @@ static Boolean WriteLogInfo(BlastHSPListPtr hsp_list, BlastQueryInfoPtr query_in
    return FALSE;
 }
 
+#define OFFSET_ARRAY_SIZE 4096
+
 Int4 
 BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query, 
         LookupTableWrapPtr lookup, BlastQueryInfoPtr query_info,
@@ -141,7 +143,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 			   BlastGapAlignStructPtr, /* gap_align */
 			   BlastScoringOptionsPtr, /* score_options */
 			   BlastExtensionParametersPtr, /* ext_params */
-			   BlastHitSavingOptionsPtr, /* hit_options */
+			   BlastHitSavingParametersPtr, /* hit_params */
 			   BlastInitHitListPtr, /* init_hitlist */
 			   BlastHSPListPtr PNTR); /* hsp_list_ptr */
 
@@ -178,7 +180,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    if (mb_lookup) {
       wordfinder = MB_WordFinder;
       offset_array_size = 
-         MAX(1024, ((MBLookupTablePtr)lookup->lut)->longest_chain);
+         MAX(OFFSET_ARRAY_SIZE, ((MBLookupTablePtr)lookup->lut)->longest_chain);
    } else {
       if (blastp) {
          wordfinder = BlastAaWordFinder;
@@ -188,7 +190,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          wordfinder = BlastNaWordFinder;
       }
       offset_array_size = 
-         MAX(1024, ((LookupTablePtr)lookup->lut)->longest_chain);
+         MAX(OFFSET_ARRAY_SIZE, ((LookupTablePtr)lookup->lut)->longest_chain);
    }
 
 
@@ -316,7 +318,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 			  gap_align,
 			  score_options,
 			  ext_params,
-			  hit_options,
+			  hit_params,
 			  init_hitlist,
 			  &hsp_list);
 
