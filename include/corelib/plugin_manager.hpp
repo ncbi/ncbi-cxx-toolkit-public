@@ -36,36 +36,36 @@
 /// Plugin manager (using class factory paradigm).
 ///
 /// Describe generic interface and provide basic functionality to advertise
-/// and export a class factory. 
+/// and export a class factory.
 /// The class and class factory implementation code can be linked to
 /// either statically (then, the class factory will need to be registered
 /// explicitly by the user code) or dynamically (then, the DLL will be
 /// searched for using plugin name, and the well-known DLL entry point
 /// will be used to register the class factory, automagically).
-/// 
+///
 /// - "class factory" -- An entity used to generate objects of the given class.
 ///                      One class factory can generate more than one version
 ///                      of the class.
-/// 
+///
 /// - "interface"  -- Defines the implementation-independent API and expected
 ///                   behaviour of a class.
 ///                   Interface's name is provided by its class's factory,
 ///                   see IClassFactory::GetInterfaceName().
 ///                   Interfaces are versioned to track the compatibility.
-/// 
+///
 /// - "driver"  -- A concrete implementation of the interface and its factory.
 ///                Each driver has its own name (do not confuse it with the
 ///                interface name!) and version.
-/// 
+///
 /// - "host"    -- An entity (DLL or the EXEcutable itself) that contains
 ///                one or more drivers (or versions of the same driver),
 ///                which can implement one or more interfaces.
-/// 
+///
 /// - "version" -- MAJOR (backward- and forward-incompatible changes in the
 ///                       interface and/or its expected behaviour);
 ///                MINOR (backward compatible changes in the driver code);
 ///                PATCH_LEVEL (100% compatible plugin or driver code changes).
-/// 
+///
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/version.hpp>
@@ -201,10 +201,10 @@ public:
     ///  Requested interface version (as understood by the caller).
     ///  By default it will be passed the version which is current from
     ///  the calling code's point of view.
-    /// @param 
+    /// @param
     /// @return
     ///  NULL on any error (not found entry point, version mismatch, etc.)
-    virtual TClass* CreateInstance
+    virtual TInterface* CreateInstance
       (const string&  driver  = kEmptyStr,
        CVersionInfo   version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
                                              TIfVer::ePatchLevel),
@@ -223,7 +223,7 @@ protected:
 
     const string& GetParam(const string&                  driver_name,
                            const TPluginManagerParamTree* params,
-                           const string&                  param_name, 
+                           const string&                  param_name,
                            bool                           mandatory,
                            const string&                  default_value) const;
 };
@@ -346,7 +346,7 @@ public:
     typedef list<SDriverInfo> TDriverInfoList;
 
     /// Register factory in the manager.
-    ///  
+    ///
     /// The registered factory will be owned by the manager.
     /// @sa UnregisterFactory()
     void RegisterFactory(TClassFactory& factory);
@@ -392,10 +392,10 @@ public:
     /// @sa RegisterFactory()
     void RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entry_point);
 
-    /// Attach DLL resolver to plugin manager 
-    /// 
+    /// Attach DLL resolver to plugin manager
+    ///
     /// Plugin mananger uses all attached resolvers to search for DLLs
-    /// exporting drivers of this interface. 
+    /// exporting drivers of this interface.
     ///
     /// @param resolver
     ///   DLL resolver. Plugin manager takes ownership of the resolver.
@@ -414,7 +414,7 @@ public:
     ///
     /// @return Pointer on the detached resolver (same as resolver parameter)
     /// or NULL if resolver not found
-    CPluginManager_DllResolver* 
+    CPluginManager_DllResolver*
     DetachResolver(CPluginManager_DllResolver* resolver);
 
     /// Add path for the DLL lookup (for all resolvers)
@@ -428,7 +428,7 @@ public:
     /// Disable/enable DLL resolution (search for class factories in DLLs)
     void FreezeResolution(bool value = true) { m_BlockResolution = value; }
 
-    
+
     /// Disable/enable DLL resolution (search for class factories in DLLs)
     /// for the specified driver
     void FreezeResolution(const string& driver, bool value = true);
@@ -478,8 +478,8 @@ private:
 
 
 /// Service class for DLLs resolution.
-/// 
-/// Class is used by CPluginManager to scan directories for DLLs, 
+///
+/// Class is used by CPluginManager to scan directories for DLLs,
 /// load and resolve entry points.
 ///
 class NCBI_XNCBI_EXPORT CPluginManager_DllResolver
@@ -547,7 +547,7 @@ public:
                       const CVersionInfo& version      = CVersionInfo::kAny)
         const;
 
-    /// Return DLL name mask 
+    /// Return DLL name mask
     ///
     /// DLL name mask is used for DLL file search.
     ///
@@ -658,7 +658,7 @@ TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromKey(
 
 
 template <class TClass, class TIfVer>
-typename CPluginManager<TClass, TIfVer>::TClassFactory* 
+typename CPluginManager<TClass, TIfVer>::TClassFactory*
 CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
                                            const CVersionInfo& version)
 {
@@ -674,7 +674,7 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
 
     if (!m_BlockResolution) {
 
-        typename TStringSet::const_iterator it = 
+        typename TStringSet::const_iterator it =
                  m_FreezeResolutionDrivers.find(driver);
 
         if (it == m_FreezeResolutionDrivers.end()) {
@@ -697,7 +697,7 @@ CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
 
 
 template <class TClass, class TIfVer>
-typename CPluginManager<TClass, TIfVer>::TClassFactory* 
+typename CPluginManager<TClass, TIfVer>::TClassFactory*
 CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
                                                  const CVersionInfo& version)
 {
@@ -724,14 +724,14 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
                 }
              }
              const CVersionInfo& vinfo = drv_info.version;
-             if (IsBetterVersion(version, vinfo, 
+             if (IsBetterVersion(version, vinfo,
                                  best_major, best_minor, best_patch_level))
              {
                 best_factory = cf;
              }
         }
     }
-    
+
     return best_factory;
 }
 
@@ -789,8 +789,8 @@ void CPluginManager<TClass, TIfVer>::AddResolver
 }
 
 template <class TClass, class TIfVer>
-CPluginManager_DllResolver* 
-CPluginManager<TClass, TIfVer>::DetachResolver(CPluginManager_DllResolver* 
+CPluginManager_DllResolver*
+CPluginManager<TClass, TIfVer>::DetachResolver(CPluginManager_DllResolver*
                                                                     resolver)
 {
     NON_CONST_ITERATE(TDllResolvers, it, m_Resolvers) {
@@ -809,7 +809,7 @@ void CPluginManager<TClass, TIfVer>::AddDllSearchPath(const string& path)
 }
 
 template <class TClass, class TIfVer>
-void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver, 
+void CPluginManager<TClass, TIfVer>::FreezeResolution(const string& driver,
                                                       bool          value)
 {
     if (value) {
@@ -858,7 +858,7 @@ void CPluginManager<TClass, TIfVer>::Resolve(const string&       driver,
             // check if entry point provides the required interface-driver-version
             // and do not register otherwise...
             if (epoint.entry_point.func) {
-                FNCBI_EntryPoint ep = 
+                FNCBI_EntryPoint ep =
                    (FNCBI_EntryPoint)epoint.entry_point.func;
                 RegisterWithEntryPoint(ep);
                 m_RegisteredEntries.push_back(entry);
@@ -885,7 +885,7 @@ CPluginManager<TClass, TIfVer>::~CPluginManager()
     {{
         typename vector<CPluginManager_DllResolver*>::iterator it =
             m_Resolvers.begin();
-        typename vector<CPluginManager_DllResolver*>::iterator it_end = 
+        typename vector<CPluginManager_DllResolver*>::iterator it_end =
             m_Resolvers.end();
         for (; it != it_end; ++it) {
             CPluginManager_DllResolver* r = *it;
@@ -902,19 +902,19 @@ CPluginManager<TClass, TIfVer>::~CPluginManager()
 
 
 template <class TClass, class TIfVer >
-const string& 
+const string&
 IClassFactory<TClass, TIfVer>::GetParam(
                         const string&                  driver_name,
                         const TPluginManagerParamTree* params,
-                        const string&                  param_name, 
+                        const string&                  param_name,
                         bool                           mandatory,
                         const string&                  default_value) const
 {
     CConfig conf(params);
-    return conf.GetString(driver_name, 
-                          param_name, 
-                          mandatory ? 
-                            CConfig::eErr_Throw : CConfig::eErr_NoThrow, 
+    return conf.GetString(driver_name,
+                          param_name,
+                          mandatory ?
+                            CConfig::eErr_Throw : CConfig::eErr_NoThrow,
                           default_value);
 }
 
@@ -926,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/03/02 16:03:33  ssikorsk
+ * Removed duplicated typedefs
+ *
  * Revision 1.39  2004/12/23 15:48:22  grichenk
  * Check if params is null
  *
