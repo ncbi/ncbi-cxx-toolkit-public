@@ -171,6 +171,48 @@ static void s_GetCdregionLabel
     if (gref) {
         gref->GetLabel(tlabel);
     }
+
+    // check to see if the CDregion is just an open reading frame
+    if (feat.GetData().GetCdregion().IsSetOrf()  &&
+        feat.GetData().GetCdregion().GetOrf()) {
+        string str("open reading frame: ");
+        switch (feat.GetData().GetCdregion().GetFrame()) {
+        case CCdregion::eFrame_not_set:
+            str += "frame not set; ";
+            break;
+        case CCdregion::eFrame_one:
+            str += "frame 1; ";
+            break;
+        case CCdregion::eFrame_two:
+            str += "frame 2; ";
+            break;
+        case CCdregion::eFrame_three:
+            str += "frame 3; ";
+            break;
+        }
+
+        switch (sequence::GetStrand(feat.GetLocation())) {
+        case eNa_strand_plus:
+            str += "positive strand";
+            break;
+        case eNa_strand_minus:
+            str += "negative strand";
+            break;
+        case eNa_strand_both:
+            str += "both strands";
+            break;
+        case eNa_strand_both_rev:
+            str += "both strands (reverse)";
+            break;
+        default:
+            str += "strand unknown";
+            break;
+        }
+
+        *tlabel += str;
+    }
+
+
 }
 
 
@@ -600,6 +642,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2003/08/21 12:09:08  dicuccio
+* Added processing of CDS in case the CDS is just an open reading frame
+*
 * Revision 1.11  2003/08/08 18:12:19  dicuccio
 * Fixed bug in s_GetRnaRefLabel(): inadverted '&' instead of '&&'
 *
