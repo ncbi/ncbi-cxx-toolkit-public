@@ -701,7 +701,7 @@ void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
 		Precursor = GetMass()/(double)(GetCharges()[iCharges]);
 		CullPrecursor(Temp, TempLen, Precursor);
 	}
-#define DEBUG_PEAKS1
+//#define DEBUG_PEAKS1
 #ifdef DEBUG_PEAKS1
     {
 	sort(Temp, Temp+TempLen , CMZICompare());
