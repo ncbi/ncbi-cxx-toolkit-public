@@ -30,8 +30,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.7  1999/05/11 03:11:50  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+* Revision 1.8  1999/05/14 19:21:54  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
 *
 * Revision 1.6  1999/05/06 20:33:43  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
@@ -70,18 +70,15 @@ BEGIN_NCBI_SCOPE
 // class CCgiContext
 //
 
-CCgiContext::CCgiContext(CCgiApplication& app, CNcbiEnvironment* env,
-                         CNcbiIstream* in, CNcbiOstream* out)
-    : m_app(app), m_request(0, 0, env, in), m_response(out)
-{
-}
-
-CCgiContext::CCgiContext(int argc, char** argv,
-                         CCgiApplication& app, CNcbiEnvironment* env,
-                         CNcbiIstream* in, CNcbiOstream* out)
+CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
+                          CNcbiIstream* in, CNcbiOstream* out,
+                          int argc, char** argv )
     : m_app(app), m_request(argc, argv, env, in), m_response(out)
 {
 }
+
+CCgiContext::~CCgiContext( void )
+{}
 
 CNcbiRegistry& CCgiContext::x_GetConfig(void) const
 {

@@ -34,8 +34,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.16  1999/05/11 03:11:44  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+* Revision 1.17  1999/05/14 19:21:48  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
 *
 * Revision 1.15  1999/05/06 20:32:47  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
@@ -126,6 +126,15 @@ public:
     virtual CNcbiRegistry* LoadConfig(void);
     virtual CNcbiResource* LoadResource(void);
     virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
+
+protected:
+
+    // factory method for Context object construction
+    virtual CCgiContext* CreateContext( CNcbiEnvironment* env = 0,
+                                        CNcbiIstream* in = 0, 
+                                        CNcbiOstream* out = 0,
+                                        int argc = 0, char** argv = 0
+                                        );
 
 private:
     CNcbiRegistry& x_GetConfig(void) const;

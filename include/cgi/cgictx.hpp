@@ -34,8 +34,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.5  1999/05/11 03:11:44  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+* Revision 1.6  1999/05/14 19:21:49  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
 *
 * Revision 1.4  1999/05/06 20:32:48  pubmed
 * CNcbiResource -> CNcbiDbResource; utils from query; few more context methods
@@ -119,12 +119,11 @@ class CCgiContext
 {
 public:
     typedef list<string> TMsgList;
-
-    CCgiContext(CCgiApplication& app, CNcbiEnvironment* env = 0,
-                CNcbiIstream* in = 0, CNcbiOstream* out = 0);
-    CCgiContext(int argc, char** argv,
-                CCgiApplication& app, CNcbiEnvironment* env = 0,
-                CNcbiIstream* in = 0, CNcbiOstream* out = 0);
+    
+    CCgiContext( CCgiApplication& app, CNcbiEnvironment* env = 0,
+                 CNcbiIstream* in = 0, CNcbiOstream* out = 0,
+                 int argc = 0, char** argv = 0 );
+    virtual ~CCgiContext( void );
 
     const CCgiApplication& GetApp(void) const;
 

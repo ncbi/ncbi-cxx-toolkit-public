@@ -30,8 +30,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  1999/05/11 03:11:50  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
+* Revision 1.10  1999/05/14 19:21:53  pubmed
+* myncbi - initial version; minor changes in CgiContext, history, query
 *
 * Revision 1.8  1999/05/06 23:16:45  vakatov
 * <fcgibuf.hpp> became a local header file.
@@ -133,25 +133,25 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                 CNcbiOstream ostr(&obuf);
                 CCgiIbuffer ibuf(pfin);
                 CNcbiIstream istr(&ibuf);
-                CCgiContext ctx(*this, &env, &istr, &ostr);
+                auto_ptr<CCgiContext> ctx( CreateContext(&env, &istr, &ostr) );
 
                 // checking for exit request
-                if ( ctx.GetRequest().GetEntries().find("exitfastcgi") !=
-                     ctx.GetRequest().GetEntries().end() ) {
+                if ( ctx->GetRequest().GetEntries().find("exitfastcgi") !=
+                     ctx->GetRequest().GetEntries().end() ) {
                     _TRACE("CCgiApplication::Run: aborting by request");
                     FCGX_Finish();
                     break;
                 }
 
                 if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
-                    ctx.PutMsg("FastCGI: " +
+                    ctx->PutMsg("FastCGI: " +
                                NStr::IntToString(iteration + 1) +
                                " iteration of " +
                                NStr::IntToString(iterations));
                 }
 
                 _TRACE("CCgiApplication::Run: calling ProcessRequest");
-                FCGX_SetExitStatus(ProcessRequest(ctx), pfout);
+                FCGX_SetExitStatus(ProcessRequest(*ctx), pfout);
             }
             catch (exception e) {
                 ERR_POST("CCgiApplication::ProcessCGIRequest() failed: "
@@ -168,10 +168,10 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
 #endif /* HAVE_LIBFASTCGI */
         {
             _TRACE("CCgiApplication::Run: calling ProcessRequest");
-            CCgiContext ctx(m_Argc, m_Argv, *this);
-            int result = ProcessRequest(ctx);
+            auto_ptr<CCgiContext> ctx( CreateContext(0, 0, 0, m_Argc, m_Argv) );
+            int result = ProcessRequest(*ctx);
             _TRACE("CCgiApplication::Run: flushing");
-            ctx.GetResponse().Flush();
+            ctx->GetResponse().Flush();
             _TRACE("CCgiApplication::Run: return");
             return result;
         }
@@ -226,6 +226,13 @@ CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext&)
 {
     return 0;
 }
-
+ 
+CCgiContext* CCgiApplication::CreateContext( CNcbiEnvironment* env,
+                                             CNcbiIstream* in, 
+                                             CNcbiOstream* out,
+                                             int argc, char** argv ) 
+{
+    return new CCgiContext( *this, env, in, out, argc, argv );
+}
 
 END_NCBI_SCOPE
