@@ -27,10 +27,14 @@
 *	Vsevolod Sandomirskiy
 *
 * File Description:
-*   Basic Application class
+*   CNcbiApplication -- a generic NCBI application class
+*   CCgiApplication  -- a NCBI CGI-application class
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/07 23:47:05  vakatov
+* minor fixes
+*
 * Revision 1.5  1998/12/07 22:31:14  vakatov
 * minor fixes
 *
@@ -51,64 +55,63 @@
 
 #include <ncbistd.hpp>
 #include <ncbiapp.hpp>
-#include <cgiapp.hpp>
-
-#include <string.h>
-
 
 BEGIN_NCBI_SCOPE
 
-CNcbiApplication* CNcbiApplication::m_instance;
 
+///////////////////////////////////////////////////////
+// CNcbiApplication
 //
-// class CNcbiApplication
-//
+
+CNcbiApplication* CNcbiApplication::m_Instance;
+
 
 CNcbiApplication* CNcbiApplication::Instance( void )
 { 
-  return m_instance; 
+    return m_Instance; 
 }
 
-CNcbiApplication::CNcbiApplication( int argc /* = 0 */, 
-                                    char** argv /* = 0 */ ) 
-  : m_argc( argc ), m_argv( argv )
+CNcbiApplication::CNcbiApplication(int    argc, 
+                                   char** argv) 
+    : m_Argc(argc), m_Argv(argv)
 {
-  if( m_instance ) {
-    throw logic_error( "CNcbiApplication::CNcbiApplication: "
-                       "cannot create second instance" );
-  }
+    if( m_Instance ) {
+        throw logic_error("CNcbiApplication::CNcbiApplication: "
+                          "cannot create second instance");
+    }
 }
 
-CNcbiApplication::~CNcbiApplication( void )
+CNcbiApplication::~CNcbiApplication(void)
 {
-  m_instance = 0;
+    m_Instance = 0;
 }
 
-void CNcbiApplication::Init( void )
+void CNcbiApplication::Init(void)
 {
-  // exceptions not used for now
-  // CNcbiOSException::SetDefHandler();
-  // set_unexpected( CNcbiOSException::UnexpectedHandler ); 
-  return;
+    // exceptions not used for now
+    // CNcbiOSException::SetDefHandler();
+    // set_unexpected( CNcbiOSException::UnexpectedHandler ); 
+    return;
 }
 
-void CNcbiApplication::Exit( void )
+void CNcbiApplication::Exit(void)
 {
-  return;
+    return;
 }
 
-int CNcbiApplication::Run( void )
+int CNcbiApplication::Run(void)
 {
-  return 0;
+    return 0;
 }
     
-//
+
+///////////////////////////////////////////////////////
 // CCgiApplication
 //
 
-CCgiApplication* CCgiApplication::Instance( void )
+CCgiApplication* CCgiApplication::Instance(void)
 { 
-  return static_cast< CCgiApplication* >( CNcbiApplication::Instance() ); 
+    return static_cast<CCgiApplication*>(CNcbiApplication::Instance()); 
 }
 
 CCgiApplication::CCgiApplication(int argc, char** argv,
@@ -116,25 +119,25 @@ CCgiApplication::CCgiApplication(int argc, char** argv,
     : CNcbiApplication(argc, argv)
 {
     m_CgiRequest = 0;
-    m_istr = istr;
-    m_iase = indexes_as_entries;
+    m_Istr = istr;
+    m_Iase = indexes_as_entries;
 }
 
-CCgiApplication::~CCgiApplication( void )
+CCgiApplication::~CCgiApplication(void)
 {
     Exit();
 }
 
-void CCgiApplication::Init( void )
+void CCgiApplication::Init(void)
 {
   CNcbiApplication::Init();
-  m_CgiRequest = new CCgiRequest( m_argc, m_argv );
+  m_CgiRequest = new CCgiRequest(m_Argc, m_Argv, m_Istr, m_Iase);
 }
 
-void CCgiApplication::Exit( void )
+void CCgiApplication::Exit(void)
 {
-  CNcbiApplication::Exit();
-  delete m_CgiRequest;
+    CNcbiApplication::Exit();
+    delete m_CgiRequest;
 }
 
 
