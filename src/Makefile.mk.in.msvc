@@ -106,7 +106,7 @@ objtools       = ncbi_pch.hpp
 serial         = ncbi_pch.hpp
 sqlite         = ncbi_pch.hpp
 util           = ncbi_pch.hpp
-internal/structure/CDTree2 = cdtree2_pch.hpp
+internal/structure/CDTree2 = main/cdtree2_pch.hpp
 internal/structure/PubChem/PCView = PCView_pch.hpp
 internal/structure/PubChem/assay = assay_pch.hpp
 
