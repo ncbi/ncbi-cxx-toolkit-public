@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
  * Revision 6.21  2002/02/05 22:04:12  lavr
  * Included header files rearranged
  *
@@ -104,6 +107,14 @@
  *
  * ==========================================================================
  */
+
+#include "ncbi_config.h"
+
+/* OS must be specified in the command-line ("-D....") or in the conf. header
+ */
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
+#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
+#endif
 
 #include "ncbi_priv.h"
 #include <connect/ncbi_ansi_ext.h>

@@ -28,8 +28,11 @@
  * File Description:
  *    Send mail
  *
- * --------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
  * Revision 6.10  2001/07/13 20:15:12  lavr
  * Write lock then unlock when using not MT-safe s_ComposeFrom()
  *
@@ -60,8 +63,16 @@
  * Revision 6.1  2001/02/28 00:52:26  lavr
  * Initial revision
  *
- * ==========================================================================
+ * ===========================================================================
  */
+
+#include "ncbi_config.h"
+
+/* OS must be specified in the command-line ("-D....") or in the conf. header
+ */
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
+#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
+#endif
 
 #include "ncbi_priv.h"
 #include <connect/ncbi_sendmail.h>
@@ -73,7 +84,11 @@
 #include <pwd.h>
 #include <unistd.h>
 #endif
-
+#ifdef NCBI_CXX_TOOLKIT
+#define NCBI_SENDMAIL_TOOLKIT "C++"
+#else
+#define NCBI_SENDMAIL_TOOLKIT "C"
+#endif
 
 #define MX_MAGIC_NUMBER 0xBABADEDA
 #define MX_CRLF         "\r\n"

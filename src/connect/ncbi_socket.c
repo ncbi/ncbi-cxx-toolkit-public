@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
  * Revision 6.39  2002/01/28 20:29:52  lavr
  * Distinguish between EOF and severe read error
  * Return eIO_Success if waiting for read in a stream with EOF already seen
@@ -189,6 +192,7 @@
  * ===========================================================================
  */
 
+#include "ncbi_config.h"
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/02/11 20:36:45  lavr
+ * Use "ncbi_config.h"
+ *
  * Revision 6.12  2002/01/16 21:23:15  vakatov
  * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
  *
@@ -77,14 +80,19 @@
 
 #include "test_assert.h"
 
+#include "../ncbi_config.h"
+
+/* OS must be specified in the command-line ("-D....") or in the conf. header
+ */
+#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN) && !defined(NCBI_OS_MAC)
+#  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN, NCBI_OS_MAC!"
+#endif
+
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_util.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  define X_SLEEP(x) ((void) sleep(x))

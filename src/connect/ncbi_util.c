@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/02/11 20:36:44  lavr
+ * Use "ncbi_config.h"
+ *
  * Revision 6.18  2002/02/05 22:02:17  lavr
  * Minor tweak
  *
@@ -90,9 +93,11 @@
  * ===========================================================================
  */
 
+#include "ncbi_config.h"
 #include "ncbi_priv.h"
 #ifndef NCBI_CXX_TOOLKIT
 #  include <ncbistd.h>
+#  include <ncbimisc.h>
 #  include <ncbitime.h>
 #else
 #  include <ctype.h>
@@ -235,7 +240,7 @@ extern char* LOG_ComposeMessage
 #  endif/*HAVE_LOCALTIME_R*/
 #else /*NCBI_CXX_TOOLKIT*/
         struct tm temp;
-        GetDayTime(&temp);
+        Nlm_GetDayTime(&temp);
         tm = &temp;
 #endif/*NCBI_CXX_TOOLKIT*/
         datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
@@ -522,4 +527,19 @@ extern void CORE_SetREG(REG rg)
 extern REG CORE_GetREG(void)
 {
     return g_CORE_Registry;
+}
+
+
+
+/******************************************************************************
+ *  MISCELLANEOUS
+ */
+
+extern const char* CORE_GetPlatform(void)
+{
+#ifndef NCBI_CXX_TOOLKIT
+    return Nlm_PlatformName();
+#else
+    return HOST;
+#endif /*NCBI_CXX_TOOLKIT*/
 }
