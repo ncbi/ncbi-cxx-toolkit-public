@@ -311,42 +311,51 @@ void CFlatSeqLoc::x_Add
     if ( fuzz != 0 ) {
         switch ( fuzz->Which() ) {
         case CInt_fuzz::e_P_m:
-            oss << '(' << pnt - fuzz->GetP_m() << '.' << pnt + fuzz->GetP_m() << ')';
-            break;
+            {
+                oss << '(' << pnt - fuzz->GetP_m() << '.' 
+                    << pnt + fuzz->GetP_m() << ')';
+                break;
+            }
         case CInt_fuzz::e_Range:
-            oss << '(' << fuzz->GetRange().GetMin() << '.' << fuzz->GetRange().GetMax() << ')';
-            break;
+            {
+                oss << '(' << fuzz->GetRange().GetMin() 
+                    << '.' << fuzz->GetRange().GetMax() << ')';
+            }
+                break;
         case CInt_fuzz::e_Pct: // actually per thousand...
-        {
-            // calculate in floating point to avoid overflow
-            TSeqPos delta = static_cast<TSeqPos>(0.001 * pnt * fuzz->GetPct());
-            oss << '(' << pnt - delta << '.' << pnt + delta << ')';
-            break;
-        }
+            {
+                // calculate in floating point to avoid overflow
+                TSeqPos delta = 
+                    static_cast<TSeqPos>(0.001 * pnt * fuzz->GetPct());
+                oss << '(' << pnt - delta << '.' << pnt + delta << ')';
+                break;
+            }
         case CInt_fuzz::e_Lim:
-        {
-            switch ( fuzz->GetLim() ) {
-            case CInt_fuzz::eLim_gt:
-                oss << (html ? "&gt" : ">") << pnt;
+            {
+                switch ( fuzz->GetLim() ) {
+                case CInt_fuzz::eLim_gt:
+                    oss << (html ? "&gt" : ">") << pnt;
+                    break;
+                case CInt_fuzz::eLim_lt:
+                    oss << (html ? "&lt" : "<") << pnt;
+                    break;
+                case CInt_fuzz::eLim_tr:
+                    oss << pnt << '^' << pnt + 1;
+                    break;
+                case CInt_fuzz::eLim_tl:
+                    oss << pnt - 1 << '^' << pnt;
+                    break;
+                default:
+                    oss << pnt;
+                    break;
+                }
                 break;
-            case CInt_fuzz::eLim_lt:
-                oss << (html ? "&lt" : "<") << pnt;
-            break;
-            case CInt_fuzz::eLim_tr:
-                oss << pnt << '^' << pnt + 1;
-                break;
-            case CInt_fuzz::eLim_tl:
-                oss << pnt - 1 << '^' << pnt;
-                break;
-            default:
+            }
+        default:
+            {
                 oss << pnt;
                 break;
             }
-
-        }
-        default:
-            oss << pnt;
-            break;
         } // end of switch statement
     } else {
         oss << pnt;
@@ -400,6 +409,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/02 17:50:14  shomrat
+* Bug fix (missing break)
+*
 * Revision 1.5  2004/02/19 18:10:34  shomrat
 * added genome assembly formmating and some fixes
 *
