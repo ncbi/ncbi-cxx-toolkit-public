@@ -173,7 +173,7 @@ CopyFiles()
     for x in $OPT_LIBS; do
         src_file=$src_dir/lib/lib$x.so
         if [ -f $src_file ]; then
-	    echo copying: lib$x.so
+            echo copying: lib$x.so
             rm -f $target_dir/lib/lib$x.so
             DoCopy $src_file $target_dir/lib/
         fi
@@ -282,8 +282,9 @@ COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 
 echo "Copying executable plugins:"
-# don't make links for *~ (emacs backup files) or #*# (autosave)
-for f in ${source_dir}/../plugins/algo/executables/*[^~#]; do
+for f in ${source_dir}/../plugins/algo/executables/*; do
+    # don't make links for *~ (emacs backup files) or #*# (autosave)
+    case $f in *~ | \#*\# ) continue ;; esac
     if [ ! -d $f ]; then
         echo copying executable: `basename $f`
         rm -f ${target_dir}/executables/`basename $f`
