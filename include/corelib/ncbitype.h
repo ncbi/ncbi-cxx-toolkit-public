@@ -44,6 +44,10 @@
 
 #include <ncbiconf.h>
 
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 
 /** @addtogroup Portability
  *
@@ -151,6 +155,19 @@ typedef unsigned INT8_TYPE Uint8;
 typedef BIG_TYPE Ncbi_BigScalar;
 
 
+#ifndef HAVE_INTPTR_T
+#  if SIZEOF_INT == SIZEOF_VOIDP
+typedef int intptr_t;
+#  elif SIZEOF_LONG == SIZEOF_VOIDP
+typedef long intptr_t;
+#  elif SIZEOF_LONG_LONG == SIZEOF_VOIDP
+typedef long long intptr_t;
+#  else
+#    error No integer type is the same size as a pointer!
+#  endif
+#endif
+
+
 /* Undef auxiliaries
  */
 
@@ -165,6 +182,9 @@ typedef BIG_TYPE Ncbi_BigScalar;
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/01/31 16:32:54  ucko
+ * Ensure that intptr_t is available.
+ *
  * Revision 1.13  2003/09/03 14:46:33  siyan
  * Minor doxygen related changes.
  *
