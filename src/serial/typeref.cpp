@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/02/12 15:06:29  vasilche
+* Added missing CTypeRef constructors for map/multimap.
+*
 * Revision 1.9  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -72,18 +75,53 @@ BEGIN_NCBI_SCOPE
 DEFINE_STATIC_MUTEX(s_TypeRefMutex);
 
 
-CTypeRef::CTypeRef(TGet1Proc getProc, const CTypeRef& arg)
+CTypeRef::CTypeRef(TGet1Proc getter, const CTypeRef& arg)
     : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
-    m_ResolveData = new CGet1TypeInfoSource(getProc, arg);
+    m_ResolveData = new CGet1TypeInfoSource(getter, arg);
 }
 
-CTypeRef::CTypeRef(TGet2Proc getProc,
+
+CTypeRef::CTypeRef(TGet2Proc getter,
                    const CTypeRef& arg1, const CTypeRef& arg2)
     : m_Getter(sx_GetResolve), m_ReturnData(0)
 {
-    m_ResolveData = new CGet2TypeInfoSource(getProc, arg1, arg2);
+    m_ResolveData = new CGet2TypeInfoSource(getter, arg1, arg2);
 }
+
+
+CTypeRef::CTypeRef(TGet2Proc getter,
+                  const CTypeRef& arg1,
+                  TGet1Proc getter2, TTypeInfo arg2)
+    : m_Getter(sx_GetResolve), m_ReturnData(0)
+{
+    m_ResolveData = new CGet2TypeInfoSource(getter,
+                                            arg1,
+                                            CTypeRef(getter2, arg2));
+}
+
+
+CTypeRef::CTypeRef(TGet2Proc getter,
+                   TGet1Proc getter1, TTypeInfo arg1,
+                   const CTypeRef& arg2)
+    : m_Getter(sx_GetResolve), m_ReturnData(0)
+{
+    m_ResolveData = new CGet2TypeInfoSource(getter,
+                                            CTypeRef(getter1, arg1),
+                                            arg2);
+}
+
+
+CTypeRef::CTypeRef(TGet2Proc getter,
+                   TGet1Proc getter1, TTypeInfo arg1,
+                   TGet1Proc getter2, TTypeInfo arg2)
+    : m_Getter(sx_GetResolve), m_ReturnData(0)
+{
+    m_ResolveData = new CGet2TypeInfoSource(getter,
+                                            CTypeRef(getter1, arg1),
+                                            CTypeRef(getter2, arg2));
+}
+
 
 CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
 {

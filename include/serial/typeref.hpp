@@ -71,6 +71,16 @@ public:
     typedef TTypeInfo (*TGet2Proc)(TTypeInfo arg1, TTypeInfo arg2);
     CTypeRef(TGet2Proc getter, const CTypeRef& arg1, const CTypeRef& arg2);
 
+    CTypeRef(TGet2Proc getter,
+             const CTypeRef& arg1,
+             TGet1Proc getter2, TTypeInfo arg2);
+    CTypeRef(TGet2Proc getter,
+             TGet1Proc getter1, TTypeInfo arg1,
+             const CTypeRef& arg2);
+    CTypeRef(TGet2Proc getter,
+             TGet1Proc getter1, TTypeInfo arg1,
+             TGet1Proc getter2, TTypeInfo arg2);
+
     CTypeRef(CTypeInfoSource* source);
     CTypeRef(const CTypeRef& typeRef);
     CTypeRef& operator=(const CTypeRef& typeRef);
@@ -136,6 +146,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/02/12 15:06:21  vasilche
+* Added missing CTypeRef constructors for map/multimap.
+*
 * Revision 1.12  2002/12/23 18:38:52  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
