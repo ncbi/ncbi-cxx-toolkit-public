@@ -91,6 +91,14 @@ public:
         eSeqRef_packed_point  // real sequence ref  (m_Object: null)
     };
 
+protected:
+    class CSegment;
+    class SPosLessSegment;
+
+    friend class CSegment;
+    friend class SPosLessSegment;
+    friend class CSeqMap_SeqPoss;
+
     class CSegment
     {
     public:
@@ -274,6 +282,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/12/27 19:32:46  ucko
+* Add forward declarations for nested classes so they can stay protected.
+*
 * Revision 1.26  2002/12/27 19:29:41  vasilche
 * Fixed access to protected class on WorkShop.
 *
