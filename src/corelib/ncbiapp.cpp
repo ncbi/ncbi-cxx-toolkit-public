@@ -466,9 +466,6 @@ int CNcbiApplication::AppMain
             ERR_POST("Application's initialization failed: " << e.what());
             exit_code = -2;
         }
-        catch (...) { // ... this catch guaranties objects destruction
-            throw;
-        }
 
         // Run application
         if (exit_code == 1) {
@@ -486,9 +483,6 @@ int CNcbiApplication::AppMain
                 ERR_POST("Application's execution failed: " << e.what());
                 exit_code = -3;
             }
-            catch (...) { // ... this catch guaranties objects destruction
-                throw;
-            }
         }
 
         // Close application
@@ -504,9 +498,6 @@ int CNcbiApplication::AppMain
         catch (exception& e) {
             ERR_POST("Application's cleanup failed: "<< e.what());
         }
-        catch (...) { // ... this catch guaranties objects destruction
-            throw;
-        }
 
     }
     catch (CArgException& e) {
@@ -518,6 +509,9 @@ int CNcbiApplication::AppMain
         }
         NCBI_REPORT_EXCEPTION("", e);
         exit_code = -1;
+    }
+    catch (...) { // ... this catch guaranties objects destruction
+        throw;
     }
 
     // Exit
@@ -902,6 +896,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2003/11/21 20:12:20  kuznets
+ * Minor clean-up
+ *
  * Revision 1.78  2003/11/21 19:53:58  kuznets
  * Added catch(...) to intercept all exceptions and give compiler
  * (MSVC) a chance to call destructors even if this exception
