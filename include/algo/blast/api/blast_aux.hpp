@@ -42,7 +42,7 @@
 // NewBlast includes
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blast_filter.h> // Needed for BlastMask & BlastSeqLoc
+#include <algo/blast/core/blast_filter.h> // Needed for BlastMaskLoc & BlastSeqLoc
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
@@ -180,22 +180,22 @@ struct CDeleter<BlastGapAlignStruct>
 };
 
 template<>
-struct CDeleter<BlastResults>
+struct CDeleter<BlastHSPResults>
 {
-    static void Delete(BlastResults* p)
+    static void Delete(BlastHSPResults* p)
     { BLAST_ResultsFree(p); }
 };
 
 BEGIN_SCOPE(blast)
 
-/** Converts a CSeq_loc into a BlastMask structure used in NewBlast
+/** Converts a CSeq_loc into a BlastMaskLoc structure used in NewBlast
  * @param sl CSeq_loc to convert [in]
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
- * @return Linked list of BlastMask structures
+ * @return Linked list of BlastMaskLoc structures
  */
 NCBI_XBLAST_EXPORT
-BlastMask*
-CSeqLoc2BlastMask(const objects::CSeq_loc &slp, int index);
+BlastMaskLoc*
+CSeqLoc2BlastMaskLoc(const objects::CSeq_loc &slp, int index);
 
 /** Convert coordinates in masking locations for one sequence from DNA to 
  * protein, creating mask locations for each of the 6 translation frames.
@@ -203,7 +203,7 @@ CSeqLoc2BlastMask(const objects::CSeq_loc &slp, int index);
  * @param seqloc DNA sequence data [in]
  * @param scope Which scope this sequence belongs to? [in]
  */
-void BlastMaskDNAToProtein(BlastMask** mask, 
+void BlastMaskLocDNAToProtein(BlastMaskLoc** mask, 
          const objects::CSeq_loc &seqloc, objects::CScope* scope);
 
 /** Convert coordinates in masking locations for a set of sequences from
@@ -212,7 +212,7 @@ void BlastMaskDNAToProtein(BlastMask** mask,
  *            of translated sequences [in] [out]
  * @param slp Vector of DNA sequence data [in]
  */
-void BlastMaskProteinToDNA(BlastMask** mask, TSeqLocVector &slp);
+void BlastMaskLocProteinToDNA(BlastMaskLoc** mask, TSeqLocVector &slp);
 
 
 /** Declares class to handle deallocating of the structure using the appropriate
@@ -269,7 +269,7 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastEffectiveLengthsOptions,
                            BlastEffectiveLengthsOptionsFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastGapAlignStruct, BLAST_GapAlignStructFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastResults, BLAST_ResultsFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastHSPResults, BLAST_ResultsFree);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/12/03 16:36:07  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+*
 * Revision 1.26  2003/11/26 18:22:13  camacho
 * +Blast Option Handle classes
 *
@@ -333,13 +336,13 @@ END_NCBI_SCOPE
 * Compiles, but still needs work.
 *
 * Revision 1.9  2003/08/11 17:12:10  dondosha
-* Do not use CConstRef as argument to CSeqLoc2BlastMask
+* Do not use CConstRef as argument to CSeqLoc2BlastMaskLoc
 *
 * Revision 1.8  2003/08/11 16:09:53  dondosha
-* Pass CConstRef by value in CSeqLoc2BlastMask
+* Pass CConstRef by value in CSeqLoc2BlastMaskLoc
 *
 * Revision 1.7  2003/08/11 15:23:23  dondosha
-* Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
+* Renamed conversion functions between BlastMaskLoc and CSeqLoc; added algo/blast/core to headers from core BLAST library
 *
 * Revision 1.6  2003/08/11 13:58:51  dicuccio
 * Added export specifiers.  Fixed problem with unimplemented private copy ctor
@@ -355,7 +358,7 @@ END_NCBI_SCOPE
 * Do not use Malloc/MemNew/MemFree
 *
 * Revision 1.2  2003/07/14 22:17:17  camacho
-* Convert CSeq_loc to BlastMaskPtr
+* Convert CSeq_loc to BlastMaskLocPtr
 *
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision

@@ -34,6 +34,7 @@
 #define ALGO_BLAST_API___DBBLAST__HPP
 
 #include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 
 BEGIN_NCBI_SCOPE
@@ -66,14 +67,21 @@ public:
     void SetOptions(const CBlastOptions& opts);
     const CBlastOptions& GetOptions() const;
 
+    CBlastOptionsHandle& SetOptionsHandle();
+    const CBlastOptionsHandle& GetOptionsHandle() const;
+
     // Perform BLAST search
     virtual TSeqAlignVector Run();
+    // Run BLAST search without traceback
+    virtual void PartialRun();
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
-    const BlastMask* GetFilteredQueryRegions() const;
+    const BlastMaskLoc* GetFilteredQueryRegions() const;
 
     BlastSeqSrc* GetSeqSrc() const;
+    
+    BlastHSPResults* GetResults() const;
 
 protected:
     virtual int SetupSearch();
@@ -84,7 +92,7 @@ private:
     // Data members received from client code
     TSeqLocVector        m_tQueries;         //< query sequence(s)
     BlastSeqSrc*         m_pSeqSrc;          //< Subject sequences sorce
-    CBlastOptions*       m_pOptions;         //< Blast options
+    CRef<CBlastOptionsHandle>  m_OptsHandle; //< Blast options
     EProgram             m_eProgram;         //< Blast program FIXME ?needed?
 
     /// Prohibit copy constructor
@@ -101,10 +109,10 @@ private:
     ListNode*           mi_pLookupSegments; /* Intervals for which lookup 
                                                table is created: complement of
                                                filtered regions */
-    BlastMask*          mi_pFilteredRegions; // Filtered regions
+    BlastMaskLoc*          mi_pFilteredRegions; // Filtered regions
 
     /// Results structure
-    BlastResults*                       mi_pResults;
+    BlastHSPResults*                       mi_pResults;
     /// Statistical return structures
     BlastReturnStat*                    mi_pReturnStats;
 
@@ -112,20 +120,6 @@ private:
    
     void x_ResetQueryDs();
 };
-
-inline void
-CDbBlast::SetProgram(EProgram p)
-{
-    m_eProgram = p;  // FIXME: we could just store the program in options obj
-    m_pOptions->SetProgram(p);
-    mi_bQuerySetUpDone = false;
-}
-
-inline EProgram
-CDbBlast::GetProgram() const
-{
-    return m_eProgram;   // FIXME: return m_pOptions->GetProgram();
-}
 
 inline void
 CDbBlast::SetQueries(const TSeqLocVector& queries)
@@ -145,19 +139,42 @@ inline CBlastOptions&
 CDbBlast::SetOptions()
 {
     mi_bQuerySetUpDone = false;
-    return *m_pOptions;
+    return m_OptsHandle->SetOptions();
 }
 
 inline const CBlastOptions&
 CDbBlast::GetOptions() const
 {
-    return *m_pOptions;
+    return m_OptsHandle->GetOptions();
 }
 
-inline const BlastMask*
+inline CBlastOptionsHandle&
+CDbBlast::SetOptionsHandle()
+{
+    mi_bQuerySetUpDone = false;
+    return *m_OptsHandle;
+}
+
+inline const CBlastOptionsHandle&
+CDbBlast::GetOptionsHandle() const
+{
+    return *m_OptsHandle;
+}
+
+inline const BlastMaskLoc*
 CDbBlast::GetFilteredQueryRegions() const
 {
     return mi_pFilteredRegions;
+}
+
+inline BlastSeqSrc* CDbBlast::GetSeqSrc() const
+{
+    return m_pSeqSrc;
+}
+
+inline BlastHSPResults* CDbBlast::GetResults() const
+{
+    return mi_pResults;
 }
 
 END_SCOPE(blast)
@@ -167,6 +184,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/12/03 16:36:07  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+*
 * Revision 1.2  2003/11/26 18:36:44  camacho
 * Renaming blast_option*pp -> blast_options*pp
 *
@@ -245,4 +265,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* ALGO_BLAST_API___BL2SEQ__HPP */
+#endif  /* ALGO_BLAST_API___DBBLAST__HPP */

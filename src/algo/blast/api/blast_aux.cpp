@@ -245,8 +245,8 @@ CBlastDatabaseOptions::DebugDump(CDebugDumpContext ddc, unsigned int depth) cons
 }
 
 
-BlastMask*
-CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
+BlastMaskLoc*
+CSeqLoc2BlastMaskLoc(const CSeq_loc &slp, int index)
 {
     if (slp.IsNull())
         return NULL;
@@ -254,7 +254,7 @@ CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
     _ASSERT(slp.IsInt() || slp.IsPacked_int() || slp.IsMix());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
-    BlastMask* mask = NULL;
+    BlastMaskLoc* mask = NULL;
 
     if (slp.IsInt()) {
         bsl = 
@@ -289,7 +289,7 @@ CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
         }
     }
 
-    mask = (BlastMask*) calloc(1, sizeof(BlastMask));
+    mask = (BlastMaskLoc*) calloc(1, sizeof(BlastMaskLoc));
     mask->index = index;
     mask->loc_list = (ListNode *) bsl;
 
@@ -297,10 +297,10 @@ CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
 }
 
 #define NUM_FRAMES 6
-void BlastMaskDNAToProtein(BlastMask** mask_ptr, const CSeq_loc &seqloc, 
+void BlastMaskLocDNAToProtein(BlastMaskLoc** mask_ptr, const CSeq_loc &seqloc, 
                            CScope* scope)
 {
-   BlastMask* last_mask = NULL,* head_mask = NULL,* mask_loc; 
+   BlastMaskLoc* last_mask = NULL,* head_mask = NULL,* mask_loc; 
    Int4 dna_length;
    BlastSeqLoc* dna_loc,* prot_loc_head,* prot_loc_last;
    DoubleInt* dip;
@@ -321,9 +321,9 @@ void BlastMaskDNAToProtein(BlastMask** mask_ptr, const CSeq_loc &seqloc,
       coordinates */
    for (context = 0; context < NUM_FRAMES; ++context) {
        if (!last_mask) {
-           head_mask = last_mask = (BlastMask *) calloc(1, sizeof(BlastMask));
+           head_mask = last_mask = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
        } else {
-           last_mask->next = (BlastMask *) calloc(1, sizeof(BlastMask));
+           last_mask->next = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
            last_mask = last_mask->next;
        }
          
@@ -353,14 +353,14 @@ void BlastMaskDNAToProtein(BlastMask** mask_ptr, const CSeq_loc &seqloc,
    }
 
    /* Free the mask with nucleotide coordinates */
-   BlastMaskFree(mask_loc);
+   BlastMaskLocFree(mask_loc);
    /* Return the new mask with protein coordinates */
    *mask_ptr = head_mask;
 }
 
-void BlastMaskProteinToDNA(BlastMask** mask_ptr, TSeqLocVector &slp)
+void BlastMaskLocProteinToDNA(BlastMaskLoc** mask_ptr, TSeqLocVector &slp)
 {
-   BlastMask* mask_loc;
+   BlastMaskLoc* mask_loc;
    BlastSeqLoc* loc;
    DoubleInt* dip;
    Int4 dna_length;

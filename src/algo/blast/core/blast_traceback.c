@@ -768,7 +768,7 @@ static Uint1 GetTracebackEncoding(Uint1 program_number)
    return encoding;
 }
 
-Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results, 
+Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         const BlastSeqSrc* bssp, BlastGapAlignStruct* gap_align,
         const BlastScoringOptions* score_options,
@@ -835,7 +835,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
 }
 
 Int2 BLAST_TwoSequencesTraceback(Uint1 program_number, 
-        BlastResults* results, 
+        BlastHSPResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,

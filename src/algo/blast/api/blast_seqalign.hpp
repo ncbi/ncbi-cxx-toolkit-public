@@ -50,7 +50,7 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 
-/** Converts BlastResults structure into objects::CSeq_align_set class (handles 
+/** Converts BlastHSPResults structure into objects::CSeq_align_set class (handles 
  * query concatenation).
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
@@ -62,7 +62,7 @@ BEGIN_SCOPE(blast)
  * @return Vector of seqalign sets (one set per query sequence).
  */
 TSeqAlignVector
-BLAST_Results2CSeqAlign(const BlastResults* results, 
+BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
                           EProgram prog,
                           TSeqLocVector &query, 
                           const BlastSeqSrc* bssp, 
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/12/03 16:43:47  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+*
 * Revision 1.17  2003/11/26 18:36:45  camacho
 * Renaming blast_option*pp -> blast_options*pp
 *

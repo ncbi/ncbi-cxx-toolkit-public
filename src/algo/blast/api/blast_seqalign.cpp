@@ -1253,7 +1253,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
 }
 
 TSeqAlignVector
-BLAST_Results2CSeqAlign(const BlastResults* results, 
+BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
         EProgram prog,
         TSeqLocVector &query,
         const BlastSeqSrc* bssp,
@@ -1292,6 +1292,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/12/03 16:43:47  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+*
 * Revision 1.27  2003/12/01 20:02:39  coulouri
 * fix msvc warning
 *

@@ -294,7 +294,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
 
-    BlastMask* mask = NULL, *head_mask = NULL, *last_mask = NULL;
+    BlastMaskLoc* mask = NULL, *head_mask = NULL, *last_mask = NULL;
 
     // Unless the strand option is set to single strand, the actual
     // CSeq_locs dictacte which strand to examine during the search
@@ -315,7 +315,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         }
 
         if (itr->mask)
-            mask = CSeqLoc2BlastMask(*itr->mask, index);
+            mask = CSeqLoc2BlastMaskLoc(*itr->mask, index);
 
         ++index;
 
@@ -351,7 +351,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
                    na_length, frame, &buf[offset], gc.get());
             }
             // Translate the lower case mask coordinates;
-            BlastMaskDNAToProtein(&mask, *itr->seqloc, itr->scope);
+            BlastMaskLocDNAToProtein(&mask, *itr->seqloc, itr->scope);
 
         } else if (is_na) {
 
@@ -444,7 +444,7 @@ SetupSubjects(const TSeqLocVector& subjects,
 
         /* Set the lower case mask, if it exists */
         if (itr->mask)
-            subj->lcase_mask = CSeqLoc2BlastMask(*itr->mask, index);
+            subj->lcase_mask = CSeqLoc2BlastMaskLoc(*itr->mask, index);
         ++index;
 
         if (subj_is_na) {
@@ -842,6 +842,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2003/12/03 16:43:47  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+*
 * Revision 1.51  2003/11/26 18:36:45  camacho
 * Renaming blast_option*pp -> blast_options*pp
 *

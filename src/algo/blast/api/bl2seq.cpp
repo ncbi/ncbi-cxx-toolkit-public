@@ -160,7 +160,7 @@ CBl2Seq::x_ResetSubjectDs()
         *itr = BlastSequenceBlkFree(*itr);
     }
     mi_vSubjects.clear();
-    NON_CONST_ITERATE(vector<BlastResults*>, itr, mi_vResults) {
+    NON_CONST_ITERATE(vector<BlastHSPResults*>, itr, mi_vResults) {
         *itr = BLAST_ResultsFree(*itr);
     }
     mi_vResults.clear();
@@ -193,7 +193,7 @@ CBl2Seq::SetupSearch()
                      &mi_clsQueries);
 
         // FIXME
-        BlastMask* filter_mask = NULL;
+        BlastMaskLoc* filter_mask = NULL;
         Blast_Message* blmsg = NULL;
         short st;
 
@@ -213,10 +213,10 @@ CBl2Seq::SetupSearch()
             NCBI_THROW(CBlastException, eInternal, msg.c_str());
         }
 
-        // Convert the BlastMask* into a CSeq_loc
+        // Convert the BlastMaskLoc* into a CSeq_loc
         // TODO: Implement this! 
-        //mi_vFilteredRegions = BLASTBlastMask2SeqLoc(filter_mask);
-        BlastMaskFree(filter_mask); // FIXME, return seqlocs for formatter
+        //mi_vFilteredRegions = BLASTBlastMaskLoc2SeqLoc(filter_mask);
+        BlastMaskLocFree(filter_mask); // FIXME, return seqlocs for formatter
 
         LookupTableWrapInit(mi_clsQueries, 
                             m_OptsHandle->GetOptions().m_LutOpts,
@@ -235,7 +235,7 @@ CBl2Seq::ScanDB()
 {
     ITERATE(vector<BLAST_SequenceBlk*>, itr, mi_vSubjects) {
 
-        BlastResults* result = NULL;
+        BlastHSPResults* result = NULL;
         BlastReturnStat return_stats;
         memset((void*) &return_stats, 0, sizeof(return_stats));
 
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2003/12/03 16:43:46  dondosha
+ * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+ *
  * Revision 1.37  2003/11/26 18:23:58  camacho
  * +Blast Option Handle classes
  *
@@ -394,7 +397,7 @@ END_NCBI_SCOPE
  * Compiles, but still needs work.
  *
  * Revision 1.13  2003/08/11 15:23:59  dondosha
- * Renamed conversion functions between BlastMask and CSeqLoc; added algo/blast/core to headers from core BLAST library
+ * Renamed conversion functions between BlastMaskLoc and CSeqLoc; added algo/blast/core to headers from core BLAST library
  *
  * Revision 1.12  2003/08/11 14:00:41  dicuccio
  * Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of

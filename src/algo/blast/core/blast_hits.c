@@ -950,7 +950,7 @@ static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
 
 /* Documentation in blast_hits.h */
 Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
-        BLAST_SequenceBlk* subject, BlastResults* results, 
+        BLAST_SequenceBlk* subject, BlastHSPResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
         BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
         const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
@@ -1069,12 +1069,12 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
    return 0; 
 }
 
-Int2 BLAST_ResultsInit(Int4 num_queries, BlastResults** results_ptr)
+Int2 BLAST_ResultsInit(Int4 num_queries, BlastHSPResults** results_ptr)
 {
-   BlastResults* results;
+   BlastHSPResults* results;
    Int2 status = 0;
 
-   results = (BlastResults*) malloc(sizeof(BlastResults));
+   results = (BlastHSPResults*) malloc(sizeof(BlastHSPResults));
 
    results->num_queries = num_queries;
    results->hitlist_array = (BlastHitList**) 
@@ -1084,7 +1084,7 @@ Int2 BLAST_ResultsInit(Int4 num_queries, BlastResults** results_ptr)
    return status;
 }
 
-BlastResults* BLAST_ResultsFree(BlastResults* results)
+BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results)
 {
    Int4 index;
 
@@ -1116,7 +1116,7 @@ static void BlastHitListPurge(BlastHitList* hit_list)
    }
 }
 
-Int2 BLAST_SortResults(BlastResults* results)
+Int2 BLAST_SortResults(BlastHSPResults* results)
 {
    Int4 index;
    BlastHitList* hit_list;

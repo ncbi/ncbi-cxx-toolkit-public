@@ -394,7 +394,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                      const BlastHitSavingOptions * hit_options,
                      BLAST_SequenceBlk * query_blk,
                      BlastQueryInfo * query_info,
-                     BlastSeqLoc ** lookup_segments, BlastMask * *filter_out,
+                     BlastSeqLoc ** lookup_segments, BlastMaskLoc * *filter_out,
                      BlastScoreBlk * *sbpp, Blast_Message * *blast_message)
 {
     BlastScoreBlk *sbp;
@@ -407,10 +407,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
     BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
     BlastSeqLoc *loc;           /* Iterator variable */
-    BlastMask *last_filter_out = NULL;
+    BlastMaskLoc *last_filter_out = NULL;
     Uint1 *buffer;              /* holds sequence for plus strand or protein. */
     Boolean reverse;            /* Indicates the strand when masking filtered locations */
-    BlastMask *mask_slp, *next_mask_slp; /* Auxiliary locations for lower 
+    BlastMaskLoc *mask_slp, *next_mask_slp; /* Auxiliary locations for lower 
                                             case masks */
     Int4 context_offset;
     Boolean no_forward_strand; 
@@ -520,10 +520,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
             if (filter_slp_combined) {
                 if (!last_filter_out) {
                     last_filter_out = *filter_out =
-                        (BlastMask *) calloc(1, sizeof(BlastMask));
+                        (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
                 } else {
                     last_filter_out->next =
-                        (BlastMask *) calloc(1, sizeof(BlastMask));
+                        (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
                     last_filter_out = last_filter_out->next;
                 }
                 last_filter_out->index = index;
@@ -561,7 +561,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
 
     /* Free the filtering locations if masking done for lookup table only */
     if (mask_at_hash) {
-        *filter_out = BlastMaskFree(*filter_out);
+        *filter_out = BlastMaskLocFree(*filter_out);
     }
 
     /* Get "ideal" values if the calculated Karlin-Altschul params bad. */

@@ -73,9 +73,9 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
    return NULL;
 }
 
-BlastMask* BlastMaskFree(BlastMask* mask_loc)
+BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 {
-   BlastMask* next_loc;
+   BlastMaskLoc* next_loc;
    while (mask_loc) {
       next_loc = mask_loc->next;
       BlastSeqLocFree(mask_loc->loc_list);
@@ -174,7 +174,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out)
 Int2 
 BLAST_ComplementMaskLocations(Uint1 program_number, 
    BlastQueryInfo* query_info, 
-   BlastMask* mask_loc, BlastSeqLoc* *complement_mask) 
+   BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
 {
    Int4 start_offset, end_offset, filter_start, filter_end;
    Int4 context, index;

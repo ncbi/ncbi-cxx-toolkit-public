@@ -703,7 +703,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastResults* results, BlastReturnStat* return_stats)
+   BlastHSPResults* results, BlastReturnStat* return_stats)
 {
    BlastCoreAuxStruct* aux_struct = NULL;
    BlastThrInfo* thr_info = NULL;
@@ -799,7 +799,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    /* Now sort the hit lists for all queries */
    BLAST_SortResults(results);
 
-   if (score_options->gapped_calculation) {
+   if (!ext_options->skip_traceback && score_options->gapped_calculation) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
             bssp, gap_align, score_options, ext_params, hit_params,
@@ -830,7 +830,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastResults* results, BlastReturnStat* return_stats)
+   BlastHSPResults* results, BlastReturnStat* return_stats)
 {
    BlastCoreAuxStruct* aux_struct = NULL;
    BlastHSPList* hsp_list; 

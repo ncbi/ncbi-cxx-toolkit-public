@@ -137,7 +137,7 @@ private:
     CBlastDatabaseOptions               mi_clsDbOptions;
 
     /// Vector of result structures, one per subject
-    vector<BlastResults*>               mi_vResults;//should use structs?
+    vector<BlastHSPResults*>               mi_vResults;//should use structs?
     /// Vector of statistical return structures, should have one per query
     vector<BlastReturnStat>             mi_vReturnStats;
 
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/12/03 16:36:07  dondosha
+* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+*
 * Revision 1.25  2003/11/27 04:24:39  camacho
 * Remove unneeded setters for options
 *
