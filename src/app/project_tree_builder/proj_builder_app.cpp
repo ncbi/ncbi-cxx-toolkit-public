@@ -792,6 +792,13 @@ string CProjBulderApp::GetDatatoolCommandLine(void) const
     return GetConfig().GetString("Datatool", "CommandLine", "");
 }
 
+string CProjBulderApp::GetProjectTreeRoot(void) const
+{
+    string path = CDirEntry::ConcatPath(
+        m_ProjectTreeInfo->m_Compilers,
+        m_MsvcRegSettings->m_CompilersSubdir);
+    return CDirEntry::AddTrailingPathSeparator(path);
+}
 
 
 CProjBulderApp& GetApp(void)
@@ -815,6 +822,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/07/16 16:33:08  gouriano
+ * change pre-build rule for projects with ASN dependencies
+ *
  * Revision 1.43  2004/06/15 19:01:40  gorelenk
  * Fixed compilation errors on GCC 2.95 .
  *

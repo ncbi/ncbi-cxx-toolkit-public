@@ -125,6 +125,8 @@ public:
     string GetDatatoolPathForApp  (void) const;
     string GetDatatoolPathForLib  (void) const;
     string GetDatatoolCommandLine (void) const;
+
+    string GetProjectTreeRoot(void) const;
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
@@ -185,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/07/16 16:32:34  gouriano
+ * change pre-build rule for projects with ASN dependencies
+ *
  * Revision 1.16  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

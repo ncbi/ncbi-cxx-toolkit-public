@@ -508,13 +508,20 @@ public:
 
     virtual string CommandLine(void) const
     {
-        string command_line;
+        string command_line, cmd;
         if ( !m_LibDepends.empty() ) {
+#if 0
             command_line += "@echo on\n";
+#else
+            cmd = GetApp().GetProjectTreeRoot();
+            cmd += "asn_prebuild.bat";
+            cmd += " $(OutDir) $(ConfigurationName) $(SolutionPath)";
+#endif
         }
         ITERATE(list<string>, p, m_LibDepends)
         {
             const string& lib = *p;
+#if 0
             
             command_line += "IF EXIST $(OutDir)\\" + lib;
             command_line += " GOTO HAVE_" + lib + "\n";
@@ -524,7 +531,14 @@ public:
             command_line += " \"$(SolutionPath)\"\n";
 
             command_line += ":HAVE_" + lib + "\n";
+#else
+            cmd += " ";
+            cmd += lib;
+#endif
         }
+#if 1
+        command_line  = "@echo " + cmd + "\n" + cmd;
+#endif
         return command_line;
     }
 
@@ -695,6 +709,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/07/16 16:32:34  gouriano
+ * change pre-build rule for projects with ASN dependencies
+ *
  * Revision 1.15  2004/07/13 15:58:00  gouriano
  * Add more parameterization
  *
