@@ -56,7 +56,7 @@ on SimpleProjectData(projName, features, section, fileList)
 		set projName to characters 1 through 18 of projName as string
 	end if
 	
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		if features does not contain "C" and features does not contain "C++" then
 			error "Project " & projName & "'s default language (a feature) must be C or C++."
