@@ -305,6 +305,11 @@ public:
                  CArgKey ("PhiQuery"),      
                  COptDesc("Pattern Hit Initiated search expression."));
         
+        op.Local(m_FilterString,
+                 CUserOpt("filter_string"),
+                 CArgKey ("FilterString"),
+                 COptDesc("Specifies the types of filtering to do."));
+        
         // Computations & Remote values
         
         if (op.NeedRemote()) {
@@ -325,6 +330,23 @@ public:
                 
                 op.Remote(cutoff_opt, CNetName("cutoff"));
             }
+            
+            // Three cases:
+            // 1. User argument has a meaningful value: filter is used.
+            // 2. User argument is present, but empty: no filter is used.
+            // 3. User argument is not present: default to "L;"
+            
+            TOptString filter_string;
+            
+            if (m_FilterString.Exists()) {
+                if (! m_FilterString.GetValue().empty()) {
+                    filter_string = m_FilterString;
+                }
+            } else {
+                filter_string = TOptString("L;");
+            }
+            
+            op.Remote(filter_string, CNetName("filter"));
         }
     }
     
@@ -359,6 +381,7 @@ private:
     TOptBool    m_BelieveDef;
     TOptDouble  m_Searchspc;
     TOptString  m_PhiQuery;
+    TOptString  m_FilterString;
     
     /// Internal method used by CreateInterface.
     void x_CreateInterface2(CArgDescriptions & ui);
@@ -368,6 +391,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/11/10 23:10:10  bealer
+ * - Add filter_string option w/ default to "L;"
+ *
  * Revision 1.1  2003/09/26 16:53:49  bealer
  * - Add blast_client project for netblast protocol, initial code commit.
  *
