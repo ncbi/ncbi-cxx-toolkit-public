@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeqVector_CI
+class NCBI_XOBJMGR_EXPORT CSeqVector_CI
 {
 public:
     CSeqVector_CI(void);
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/06/17 22:03:37  dicuccio
+* Added missing export specifier
+*
 * Revision 1.7  2003/06/05 20:20:21  grichenk
 * Fixed bugs in assignment functions,
 * fixed minor problems with coordinates.
