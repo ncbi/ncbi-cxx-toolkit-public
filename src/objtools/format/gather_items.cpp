@@ -78,7 +78,7 @@
 #include <objtools/format/genbank_gather.hpp>
 #include <objtools/format/embl_gather.hpp>
 #include <objtools/format/gff_gather.hpp>
-//#include <objtools/format/ftable_gather.hpp>
+#include <objtools/format/ftable_gather.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -108,7 +108,7 @@ CFlatGatherer* CFlatGatherer::New(TFormat format)
         return new CGFFGatherer;
     
     case eFormat_FTable:
-        //return new CFtbaleGatherer;
+        return new CFtbaleGatherer;
 
     case eFormat_DDBJ:
     case eFormat_GBSeq:
@@ -136,11 +136,6 @@ void CFlatGatherer::Gather(CFFContext& ctx, CFlatItemOStream& os) const
 CFlatGatherer::~CFlatGatherer(void)
 {
 }
-
-
-
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -218,7 +213,8 @@ bool s_IsSegmented(const CBioseq_Handle& h)
 void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
 {
     bool segmented = s_IsSegmented(seq);
-    if ( segmented  && 
+    // Always do master style for FTable format
+    if ( segmented  &&  !m_Context->IsFormatFTable()  &&
          (m_Context->IsStyleNormal()  ||  m_Context->IsStyleSegment()) ) {
         // display individual segments (multiple sections)
         x_DoMultipleSections(seq);
@@ -240,7 +236,11 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
     CSeqMap::TSegment_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
     while ( it ) {
         CSeq_id_Handle id = it.GetRefSeqid();
-        x_DoSingleSection(scope->GetBioseqHandleFromTSE(id, seq));
+        CBioseq_Handle part = scope->GetBioseqHandleFromTSE(id, seq);
+        if ( part ) {
+            m_Context->SetActiveBioseq(part);
+            x_DoSingleSection(part);
+        }
         ++it;
     }
 }
@@ -933,7 +933,7 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
 
     for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
         // if segment show only features ending on that segment
-        if ( ctx.IsPart()  &&  
+        if ( !ctx.IsFormatFTable()  &&  ctx.IsPart()  &&  
              !s_FeatEndsOnBioseq(it->GetOriginalFeature(), ctx.GetHandle()) ) {
             continue;
         }
@@ -1205,6 +1205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/04/07 14:27:47  shomrat
+* FTable format always on master bioseq
+*
 * Revision 1.14  2004/03/31 17:16:04  shomrat
 * Set current bioseq once in calling function
 *
