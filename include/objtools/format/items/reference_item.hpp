@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CSeq_loc;
 class CSeqdesc;
 class CSeq_feat;
 class CAuth_list;
@@ -62,6 +63,7 @@ class CPub;
 class CPub_equiv;
 class CPub_set;
 class CTitle;
+class CAffil;
 class CFFContext;
 class IFormatter;
 
@@ -122,10 +124,11 @@ public:
     const string&       GetVolume    (void) const { return m_Volume;     }
     const string&       GetPages     (void) const { return m_Pages;      }
     const string&       GetIssue     (void) const { return m_Issue;      }
-
+    const CCit_book*    GetBook      (void) const { return m_Book;       }
     bool                JustUids     (void) const { return m_JustUids;   }
 
     static string GetAuthString(const CAuth_list* alp);
+    static void FormatAffil(const CAffil& affil, string& result);
 
 private:
     
@@ -137,7 +140,8 @@ private:
     void x_Init(const CMedline_entry& mle,  CFFContext& ctx);
     void x_Init(const CCit_art&       art,  CFFContext& ctx);
     void x_Init(const CCit_jour&      jour, CFFContext& ctx);
-    void x_Init(const CCit_book&      book, CFFContext& ctx);
+    void x_Init(const CCit_book&      book, CFFContext& ctx, 
+        bool for_art = false);
     void x_Init(const CCit_pat&       pat,  CFFContext& ctx);
     void x_Init(const CCit_let&       man,  CFFContext& ctx);
 
@@ -169,6 +173,7 @@ private:
     CConstRef<CDate>      m_Date;
     string                m_Remark;      // genbank specific
     bool                  m_JustUids;
+    CConstRef<CCit_book>  m_Book;
 
     //static string x_GetURL(int id);
 };
@@ -204,6 +209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/03/18 15:28:01  shomrat
+* + GetBook
+*
 * Revision 1.3  2004/03/10 16:23:49  shomrat
 * + x_GatherRemark
 *
