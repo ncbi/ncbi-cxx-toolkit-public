@@ -59,10 +59,19 @@ typedef TObjectPtr (ASNCALL*TAsnFreeProc)(TObjectPtr);
 typedef TObjectPtr (ASNCALL*TAsnReadProc)(asnio*, asntype*);
 typedef unsigned char (ASNCALL*TAsnWriteProc)(TObjectPtr, asnio*, asntype*);
 
+NCBI_XSERIAL_EXPORT
 TTypeInfo COctetStringTypeInfoGetTypeInfo(void);
+
+NCBI_XSERIAL_EXPORT
 TTypeInfo CAutoPointerTypeInfoGetTypeInfo(TTypeInfo type);
+
+NCBI_XSERIAL_EXPORT
 TTypeInfo CSetOfTypeInfoGetTypeInfo(TTypeInfo type);
+
+NCBI_XSERIAL_EXPORT
 TTypeInfo CSequenceOfTypeInfoGetTypeInfo(TTypeInfo type);
+
+NCBI_XSERIAL_EXPORT
 TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
                                      TAsnNewProc newProc,
                                      TAsnFreeProc freeProc,
@@ -71,14 +80,15 @@ TTypeInfo COldAsnTypeInfoGetTypeInfo(const string& name,
 
 END_NCBI_SCOPE
 
-#endif  /* SERIALASNDEF__HPP */
-
 
 /* @} */
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/08/17 14:39:06  dicuccio
+* Added export specifiers
+*
 * Revision 1.3  2003/04/15 16:18:47  siyan
 * Added doxygen support
 *
@@ -94,3 +104,5 @@ END_NCBI_SCOPE
 *
 * ===========================================================================
 */
+
+#endif  /* SERIALASNDEF__HPP */

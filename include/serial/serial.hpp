@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 class CObjectOStream;
 class CObjectIStream;
 
+NCBI_XSERIAL_EXPORT
 TTypeInfo CPointerTypeInfoGetTypeInfo(TTypeInfo type);
 
 // define type info getter for classes
@@ -128,6 +129,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/08/17 14:39:06  dicuccio
+* Added export specifiers
+*
 * Revision 1.46  2003/04/15 16:18:44  siyan
 * Added doxygen support
 *

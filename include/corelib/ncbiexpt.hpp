@@ -80,6 +80,7 @@ BEGIN_NCBI_SCOPE
 /// By default, this feature is not activated unless
 /// -  environment variable $ABORT_ON_THROW is set (to any value), or
 /// -  registry value of ABORT_ON_THROW, section DEBUG is set (to any value)
+NCBI_XNCBI_EXPORT
 extern void SetThrowTraceAbort(bool abort_on_throw_trace);
 
 /// "abort()" the program if set by SetThrowTraceAbort() or $ABORT_ON_THROW.
@@ -1001,6 +1002,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2004/08/17 14:34:38  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.55  2004/07/04 19:11:23  vakatov
  * Do not use "throw()" specification after constructors and assignment
  * operators of exception classes inherited from "std::exception" -- as it

@@ -47,7 +47,8 @@ class CItemInfo;
 class CObjectStack;
 class CTypeInfo;
 
-class CPathHook : protected multimap<CObjectStack*, pair<string, CRef<CObject> > >
+class NCBI_XSERIAL_EXPORT CPathHook
+    : protected multimap<CObjectStack*, pair<string, CRef<CObject> > >
 {
 public:
     CPathHook(void);
@@ -68,7 +69,8 @@ private:
 };
 
 
-class CStreamPathHookBase : protected map<string,CRef<CObject> >
+class NCBI_XSERIAL_EXPORT CStreamPathHookBase
+    : protected map<string,CRef<CObject> >
 {
 public:
     CStreamPathHookBase(void);
@@ -133,6 +135,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/08/17 14:38:47  dicuccio
+* Added export specifiers
+*
 * Revision 1.1  2004/01/05 14:24:09  gouriano
 * Added possibility to set serialization hooks by stack path
 *

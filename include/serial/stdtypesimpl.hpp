@@ -49,8 +49,13 @@
 BEGIN_NCBI_SCOPE
 
 // throw various exceptions
+NCBI_XSERIAL_EXPORT
 void ThrowIntegerOverflow(void);
+
+NCBI_XSERIAL_EXPORT
 void ThrowIncompatibleValue(void);
+
+NCBI_XSERIAL_EXPORT
 void ThrowIllegalCall(void);
 
 #define SERIAL_ENUMERATE_STD_TYPE1(Type) SERIAL_ENUMERATE_STD_TYPE(Type, Type)
@@ -276,6 +281,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/17 14:39:23  dicuccio
+* Added export specifiers
+*
 * Revision 1.12  2003/08/13 15:47:02  gouriano
 * implemented serialization of AnyContent objects
 *
