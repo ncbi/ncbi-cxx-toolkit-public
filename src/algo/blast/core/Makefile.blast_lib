@@ -29,12 +29,12 @@ blast_dust \
 blast_engine \
 blast_extend \
 blast_filter \
-blast_format \
 blast_gapalign \
 blast_hits \
 blast_message \
+blast_options \
 blast_seg \
-blast_seqalign \
+blast_setup \
 blast_traceback \
 blast_util \
 mb_lookup \
