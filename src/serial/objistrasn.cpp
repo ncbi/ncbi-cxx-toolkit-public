@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/01/11 14:27:42  vasilche
+* Found absent DBL_* macros in float.h
+*
 * Revision 1.33  2000/01/11 14:16:45  vasilche
 * Fixed pow ambiguity.
 *
@@ -173,8 +176,7 @@
 #include <serial/enumerated.hpp>
 #include <serial/memberlist.hpp>
 #include <math.h>
-#if HAVE_WINDOWS_H
-// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
+#if !defined(DBL_MAX_10_EXP) || !defined(FLT_MAX)
 # include <float.h>
 #endif
 #if HAVE_NCBI_C
