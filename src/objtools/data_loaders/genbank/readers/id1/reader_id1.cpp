@@ -631,6 +631,12 @@ void CId1Reader::x_ResolveId(CID1server_back& reply,
                           resolve_gi, sw);
             }
         }
+        else if ( request.Which() == CID1server_request::e_Getseqidsfromgi ) {
+            CID1server_request::TGetseqidsfromgi req = request.GetGetseqidsfromgi();
+            LogIdStat("CId1Reader: get ids for",
+                      "gi", NStr::IntToString(req),
+                      resolve_gi, sw);
+        }
         else {
             LogIdStat("CId1Reader: resolved", "id", "?", resolve_id, sw);
         }
