@@ -171,6 +171,7 @@ public:
 
 private:
     friend class CGraph_CI;
+    friend class CAnnot_CI;
     CMappedGraph& Set(const CAnnotObject_Ref& annot);
 
     CConstRef<CSeq_graph>         m_Graph;
@@ -324,6 +325,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/08/15 15:22:41  grichenk
+* +CAnnot_CI
+*
 * Revision 1.26  2003/08/04 17:02:57  grichenk
 * Added constructors to iterate all annotations from a
 * seq-entry or seq-annot.

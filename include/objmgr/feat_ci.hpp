@@ -159,6 +159,7 @@ public:
 
 private:
     friend class CFeat_CI;
+    friend class CAnnot_CI;
     CMappedFeat& Set(const CAnnotObject_Ref& annot);
     void Reset(void);
     bool IsSet(void) const
@@ -443,6 +444,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/08/15 15:22:41  grichenk
+* +CAnnot_CI
+*
 * Revision 1.30  2003/08/14 20:05:18  vasilche
 * Simple SNP features are stored as table internally.
 * They are recreated when needed using CFeat_CI.
