@@ -73,12 +73,13 @@ public:
         fInsertSameAsSeq     = 0x02,
         fDeletionSameAsGap   = 0x04,
         fIgnoreAnchor        = fInsertSameAsSeq | fDeletionSameAsGap,
+        fIgnoreGaps          = 0x08,
         
-        fSkipUnalignedGaps   = 0x08,
-        fSkipDeletions       = 0x10,
+        fSkipUnalignedGaps   = 0x10,
+        fSkipDeletions       = 0x20,
         fSkipAllGaps         = fSkipUnalignedGaps | fSkipDeletions,
-        fSkipInserts         = 0x20,
-        fSkipAlnSeq          = 0x40,
+        fSkipInserts         = 0x40,
+        fSkipAlnSeq          = 0x80,
         fSeqOnly             = fSkipAllGaps | fSkipInserts,
         fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq,
         fAlnSegsOnly         = fSkipInserts | fSkipUnalignedGaps
@@ -577,6 +578,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/03/20 16:37:14  todorov
+* +fIgnoreGaps for GetXXXChunksalnmap.cpp
+*
 * Revision 1.18  2003/03/07 17:30:14  todorov
 * + ESearchDirection dir, bool try_reverse_dir for GetAlnPosFromSeqPos
 *
