@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/02/13 22:39:14  ucko
+* Support AIX.
+*
 * Revision 1.59  2001/10/17 20:41:19  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -393,9 +396,9 @@ public:
     // string
     void WriteStd(const string& data);
 
-    // C string
-    void WriteStd(const char* const& data);
-    void WriteStd(char* const& data);
+    // C string; VisualAge can't cope with refs here.
+    void WriteStd(const char* const data);
+    void WriteStd(char* const data);
 
     // primitive writers
     // bool

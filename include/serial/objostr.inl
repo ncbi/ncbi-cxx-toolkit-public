@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/02/13 22:39:15  ucko
+* Support AIX.
+*
 * Revision 1.12  2001/10/17 20:41:20  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -292,13 +295,13 @@ void CObjectOStream::WriteStd(const string& data)
 
 // C string
 inline
-void CObjectOStream::WriteStd(const char* const& data)
+void CObjectOStream::WriteStd(const char* const data)
 {
     WriteCString(data);
 }
 
 inline
-void CObjectOStream::WriteStd(char* const& data)
+void CObjectOStream::WriteStd(char* const data)
 {
     WriteCString(data);
 }

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/02/13 22:39:13  ucko
+* Support AIX.
+*
 * Revision 1.18  2001/11/16 18:21:15  thiessen
 * fix for Mac/CodeWarrior
 *
@@ -149,7 +152,7 @@ template <class T>
 struct p_equal_to : public binary_function
 <const T*, const T*, bool>
 {
-#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_OS_MAC)
+#if defined(NCBI_COMPILER_MIPSPRO) || defined(NCBI_OS_MAC) || defined(NCBI_COMPILER_VISUALAGE)
     // fails to define these
     typedef const T* first_argument_type;
     typedef const T* second_argument_type;

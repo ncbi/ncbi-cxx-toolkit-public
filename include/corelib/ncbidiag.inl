@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/02/13 22:39:13  ucko
+* Support AIX.
+*
 * Revision 1.26  2002/02/07 19:45:53  ucko
 * Optionally transfer ownership in GetDiagHandler.
 *
@@ -234,6 +237,7 @@ private:
     static bool          sm_CanDeleteHandler;
 };
 
+extern CDiagBuffer& GetDiagBuffer(void);
 
 
 ///////////////////////////////////////////////////////

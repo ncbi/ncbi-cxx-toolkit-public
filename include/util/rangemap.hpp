@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/02/13 22:39:15  ucko
+* Support AIX.
+*
 * Revision 1.15  2001/09/18 16:22:21  grichenk
 * Fixed problem with the default constructor for CRangeMapIterator
 * (Valid() returned unpredictable value)
@@ -608,7 +611,8 @@ public:
 
             // insert element
             pair<TSelectMapI, bool> selectInsert =
-                m_SelectMap.insert(select_value(selectKey, TLevelMap()));
+                m_SelectMap.insert(select_value(selectKey,
+                                                TParent::TLevelMap()));
             pair<TLevelMapI, bool> levelInsert =
                 selectInsert.first->second.insert(value);
             
@@ -666,7 +670,8 @@ public:
 
             // insert element
             pair<TSelectMapI, bool> selectInsert =
-                m_SelectMap.insert(select_value(selectKey, TLevelMap()));
+                m_SelectMap.insert(select_value(selectKey,
+                                                TParent::TLevelMap()));
 
             iterator ret;
             ret.m_Range = range_type::GetWhole();

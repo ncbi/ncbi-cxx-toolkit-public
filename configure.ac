@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.32 2002/02/08 00:13:59 vakatov Exp $
+#  $Id: configure.ac,v 1.33 2002/02/13 22:39:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -267,6 +267,15 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"; then
 fi
 
 
+#### Detect IBM VisualAge compiler
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
+   # Crude, but there doesn't seem to be a better alternative
+   vac_ver="`$CXX 2>&1 | grep 'AIX Compiler.*Version'`"
+   case "$vac_ver" in
+      *AIX* ) VAC="yes" ;;
+   esac
+fi
+
 #### Detect supported compilers
 changequote(, )dnl
 compiler=
@@ -292,6 +301,11 @@ elif test "$ICC" = "yes" ; then
    compiler="ICC"
    ncbi_compiler="ICC"
    ncbi_compiler_ver="`echo $icc_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+elif test "$VAC" = "yes" ; then
+   compiler_ver="$vac_ver"
+   compiler="VisualAge"
+   ncbi_compiler="VISUALAGE"
+   ncbi_compiler_ver="`echo $vac_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
 else
    case "$host_os" in
     solaris* )
@@ -334,7 +348,7 @@ else
    esac
 fi
 
-ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%' | sed 's%^\([0-9][0-9]\)$%\10%'`"
+ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9][0-9]*\).*%\1\2%; s%^\([0-9][0-9]\)$%\10%; s%^\([0-9]\)$%\100%'`"
 compiler_version=$ncbi_compiler_ver
 changequote([, ])dnl
 
@@ -429,6 +443,7 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
+DEPFLAGS_POST="" # Needed for VisualAge
 case "$host_os:$compiler" in
  solaris2\.6:GCC )
    echo "GCC compiler is not supported for:  $host"
@@ -507,6 +522,17 @@ case "$host_os:$compiler" in
    CONF_f_outexe="/OUT:"
    script_shell=""
    make_shell=""
+   ;;
+
+ aix*:VisualAge)
+   CXXFLAGS="-qrtti=all $CXXFLAGS"
+   DEPFLAGS="-E -M"
+   DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
+   NETWORK_LIBS="-lnsl"
+   ;;
+
+ aix*)
+   NETWORK_LIBS="-lnsl"
    ;;
 esac
 
@@ -2316,6 +2342,7 @@ AC_SUBST(CXXFLAGS)
 AC_SUBST(FAST_CXXFLAGS)
 AC_SUBST(CPPFLAGS)
 AC_SUBST(DEPFLAGS)
+AC_SUBST(DEPFLAGS_POST)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 

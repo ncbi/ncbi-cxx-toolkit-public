@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/02/13 22:39:17  ucko
+* Support AIX.
+*
 * Revision 1.29  2002/01/15 21:38:26  grichenk
 * Fixed NULL type initialization/reading/writing
 *
@@ -1210,7 +1213,7 @@ public:
         }
     static void Assign(TObjectPtr dst, TConstObjectPtr src)
         {
-            TObjectType value = Get(src);
+            CPrimitiveTypeFunctions<T>::TObjectType value = Get(src);
             _ASSERT(Get(dst) != value);
             free(const_cast<char*>(Get(dst)));
             if ( value )
