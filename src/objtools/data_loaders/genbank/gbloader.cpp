@@ -783,7 +783,7 @@ bool CGBDataLoader::x_GetData(STSEinfo *tse,
                 }
                 else {
                     tse_up->m_mode   = CTSEUpload::eDone;
-                    LOG_POST("GetBlob(" <<  ") " << "- "
+                    LOG_POST("GetBlob(" <<  srp.print() << ") " << "- "
                              "retrieval of the whole blob failed - "
                              "no data available");
                 }
@@ -828,6 +828,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/05/13 20:27:05  vasilche
+* Added lost SAT SATKEY info in error message.
+*
 * Revision 1.67  2003/05/13 20:21:10  vasilche
 * *** empty log message ***
 *
