@@ -400,7 +400,11 @@ CRef<CSeq_loc> CGFFReader::x_ResolveLoc(const SRecord::TLoc& loc)
                     si.SetStrand(it->strand);
                 }
             }
-            seqloc->SetMix().Set().push_back(segment);
+            if (IsReverse(it->strand)) {
+                seqloc->SetMix().Set().push_front(segment);
+            } else {
+                seqloc->SetMix().Set().push_back(segment);
+            }
         }
     }
 
@@ -642,6 +646,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/01/06 17:02:40  dicuccio
+* (From Aaron Ucko): Fixed ordering of intervals in a seq-loc-mix on the negative
+* strand
+*
 * Revision 1.3  2003/12/31 12:48:29  dicuccio
 * Fixed interpretation of positions - GFF/GTF is 1-based, ASN.1 is 0-based
 *
