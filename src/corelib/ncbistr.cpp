@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2001/04/11 20:15:29  vakatov
+* NStr::PrintableString() -- cast "char" to "unsigned char".
+*
 * Revision 1.40  2001/03/16 19:38:35  grichenk
 * Added NStr::Split()
 *
@@ -571,8 +574,8 @@ string NStr::PrintableString(const string& str)
         } else {
             static const char s_Hex[] = "0123456789ABCDEF";
             s += "\\x";
-            s += s_Hex[*it / 16];
-            s += s_Hex[*it % 16];
+            s += s_Hex[(unsigned char) *it / 16];
+            s += s_Hex[(unsigned char) *it % 16];
         }
     }
     return s;
