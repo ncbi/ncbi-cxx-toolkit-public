@@ -42,15 +42,31 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CLDS_Database::CLDS_Database(const string& db_dir_name, const string& db_name)
+CLDS_Database::CLDS_Database(const string& db_dir_name, 
+                             const string& db_name,
+                             const string& alias)
 : m_LDS_DirName(db_dir_name),
   m_LDS_DbName(db_name)
-{}
+{
+    if (alias.empty()) {
+        m_Alias = db_dir_name;
+    }
+    else {
+        m_Alias = alias;
+    }
+}
 
-CLDS_Database::CLDS_Database(const string& db_dir_name)
+CLDS_Database::CLDS_Database(const string& db_dir_name,
+                             const string& alias)
 : m_LDS_DirName(db_dir_name)
 {
     m_LDS_DbName = "lds.db";
+    if (alias.empty()) {
+        m_Alias = db_dir_name;
+    }
+    else {
+        m_Alias = alias;
+    }
 }
 
 
@@ -65,9 +81,16 @@ void CLDS_Database::Create()
     LOG_POST(Info << "Creating LDS database: " << m_LDS_DbName);
 
     {{
-        if (m_LDS_DirName.find("//LDS") == string::npos) {
-            m_LDS_DirName += "//LDS"; 
+        m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
+
+        // Conditionally add LDS subdirectory name 
+        // TODO: make name check more robust
+        if (m_LDS_DirName.find("LDS") == string::npos) {
+            m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
+            m_LDS_DirName += "LDS";
+            m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
         }
+
         CDir  lds_dir(m_LDS_DirName);
 
         if (!lds_dir.Exists()) {
@@ -81,14 +104,14 @@ void CLDS_Database::Create()
 
     LOG_POST(Info << "Creating LDS table: " << "file");
 
-    fname = m_LDS_DirName + "//lds_file.db"; 
+    fname = m_LDS_DirName + "lds_file.db"; 
     m_db.file_db.Open(fname.c_str(),
                       "file",
                       CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "objecttype");
 
-    fname = m_LDS_DirName + "//lds_objecttype.db"; 
+    fname = m_LDS_DirName + "lds_objecttype.db"; 
     m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eCreate);
@@ -127,31 +150,31 @@ void CLDS_Database::Create()
 
     LOG_POST(Info << "Creating LDS table: " << "object");
 
-    fname = m_LDS_DirName + "//lds_object.db"; 
+    fname = m_LDS_DirName + "lds_object.db"; 
     m_db.object_db.Open(fname.c_str(),
                     "object",
                     CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "objectattr");
-    fname = m_LDS_DirName + "//lds_objectattr.db"; 
+    fname = m_LDS_DirName + "lds_objectattr.db"; 
     m_db.object_attr_db.Open(fname.c_str(),
                              "objectattr",
                              CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "annotation");
-    fname = m_LDS_DirName + "//lds_annotation.db"; 
+    fname = m_LDS_DirName + "lds_annotation.db"; 
     m_db.annot_db.Open(fname.c_str(),
                        "annotation",
                        CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "annot2obj");
-    fname = m_LDS_DirName + "//lds_annot2obj.db"; 
+    fname = m_LDS_DirName + "lds_annot2obj.db"; 
     m_db.annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eCreate);
 
     LOG_POST(Info << "Creating LDS table: " << "seq_id_list");
-    fname = m_LDS_DirName + "//lds_seq_id_list.db"; 
+    fname = m_LDS_DirName + "lds_seq_id_list.db"; 
     m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                           CBDB_RawFile::eCreate);
@@ -162,42 +185,45 @@ void CLDS_Database::Open()
 {
     string fname;
 
-    if (m_LDS_DirName.find("//LDS") == string::npos) {
-        m_LDS_DirName += "//LDS"; 
+    m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
+
+    if (m_LDS_DirName.find("LDS") == string::npos) {
+        m_LDS_DirName += "LDS";
+        m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
     }
 
-    fname = m_LDS_DirName + "//lds_file.db"; 
+    fname = m_LDS_DirName + "lds_file.db"; 
     m_db.file_db.Open(fname.c_str(),
                       "file",
                       CBDB_RawFile::eReadWrite);
 
-    fname = m_LDS_DirName + "//lds_objecttype.db"; 
+    fname = m_LDS_DirName + "lds_objecttype.db"; 
     m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eReadWrite);
     x_LoadTypeMap();
 
-    fname = m_LDS_DirName + "//lds_object.db"; 
+    fname = m_LDS_DirName + "lds_object.db"; 
     m_db.object_db.Open(fname.c_str(),
                         "object",
                         CBDB_RawFile::eReadWrite);
 
-    fname = m_LDS_DirName + "//lds_objectattr.db"; 
+    fname = m_LDS_DirName + "lds_objectattr.db"; 
     m_db.object_attr_db.Open(fname.c_str(),
                             "objectattr",
                             CBDB_RawFile::eReadWrite);
 
-    fname = m_LDS_DirName + "//lds_annotation.db"; 
+    fname = m_LDS_DirName + "lds_annotation.db"; 
     m_db.annot_db.Open(fname.c_str(),
                        "annotation",
                        CBDB_RawFile::eReadWrite);
 
-    fname = m_LDS_DirName + "//lds_annot2obj.db"; 
+    fname = m_LDS_DirName + "lds_annot2obj.db"; 
     m_db.annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
                            CBDB_RawFile::eReadWrite);
 
-    fname = m_LDS_DirName + "//lds_seq_id_list.db"; 
+    fname = m_LDS_DirName + "lds_seq_id_list.db"; 
     m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                            CBDB_RawFile::eReadWrite);
@@ -214,12 +240,31 @@ void CLDS_Database::x_LoadTypeMap()
     }    
 }
 
+
+CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db) 
+{
+    m_DataBases.push_back(db);
+}
+
+
+CLDS_DatabaseHolder::~CLDS_DatabaseHolder() 
+{ 
+    ITERATE(vector<CLDS_Database*>, it, m_DataBases) {
+        CLDS_Database* db = *it;
+        delete db;
+    }   
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/10/08 18:19:52  kuznets
+ * Changes to support multi instance databases
+ *
  * Revision 1.9  2003/08/12 14:12:05  kuznets
  * All database files now created in separate LDS subdirectory.
  *
