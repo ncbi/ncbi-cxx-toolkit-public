@@ -433,6 +433,9 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTL_ParamResult::
+//  CTL_ComputeResult::
+//  CTL_StatusResult::
+//  CTL_CursorResult::
 //
 
 class CTL_ParamResult : public CTL_RowResult
@@ -441,18 +444,9 @@ class CTL_ParamResult : public CTL_RowResult
     friend class CTL_RPCCmd;
 protected:
     CTL_ParamResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-
-    virtual EDB_ResType ResultType() const {
-        return eDB_ParamResult;
-    }
+    virtual EDB_ResType ResultType() const;
 };
 
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CTL_ComputeResult::
-//
 
 class CTL_ComputeResult : public CTL_RowResult
 {
@@ -460,12 +454,8 @@ class CTL_ComputeResult : public CTL_RowResult
     friend class CTL_RPCCmd;
 protected:
     CTL_ComputeResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-
-    virtual EDB_ResType ResultType() const {
-        return eDB_ComputeResult;
-    }
+    virtual EDB_ResType ResultType() const;
 };
-
 
 
 class CTL_StatusResult :  public CTL_RowResult
@@ -474,29 +464,16 @@ class CTL_StatusResult :  public CTL_RowResult
     friend class CTL_RPCCmd;
 protected:
     CTL_StatusResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-
-    virtual EDB_ResType ResultType() const {
-        return eDB_StatusResult;
-    }
+    virtual EDB_ResType ResultType() const;
 };
 
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CTL_CursorResult::
-//
 
 class CTL_CursorResult :  public CTL_RowResult
 {
     friend class CTL_CursorCmd;
 protected:
     CTL_CursorResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-
-    virtual EDB_ResType ResultType() const {
-        return eDB_CursorResult;
-    }
-
+    virtual EDB_ResType ResultType() const;
     virtual ~CTL_CursorResult();
 };
 
@@ -550,9 +527,13 @@ END_NCBI_SCOPE
 #endif  /* DBAPI_DRIVER_CTLIB___INTERFACES__HPP */
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2001/09/27 23:01:06  vakatov
+ * CTL_***Result::  virtual methods' implementation moved away from the header
+ *
  * Revision 1.5  2001/09/27 20:08:30  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *

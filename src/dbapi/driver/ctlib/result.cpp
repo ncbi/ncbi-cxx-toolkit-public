@@ -843,9 +843,34 @@ CTL_RowResult::~CTL_RowResult()
 
 /////////////////////////////////////////////////////////////////////////////
 //
+//  CTL_ParamResult::
+//  CTL_ComputeResult::
+//  CTL_StatusResult::
 //  CTL_CursorResult::
 //
 
+EDB_ResType CTL_ParamResult::ResultType() const
+{
+    return eDB_ParamResult;
+}
+
+
+EDB_ResType CTL_ComputeResult::ResultType() const
+{
+    return eDB_ComputeResult;
+}
+
+
+EDB_ResType CTL_StatusResult::ResultType() const
+{
+    return eDB_StatusResult;
+}
+
+
+EDB_ResType CTL_CursorResult::ResultType() const
+{
+    return eDB_CursorResult;
+}
 
 CTL_CursorResult::~CTL_CursorResult()
 {
@@ -881,6 +906,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/09/27 23:01:07  vakatov
+ * CTL_***Result::  virtual methods' implementation moved away from the header
+ *
  * Revision 1.3  2001/09/27 20:08:33  vakatov
  * Added "DB_" (or "I_") prefix where it was missing
  *
