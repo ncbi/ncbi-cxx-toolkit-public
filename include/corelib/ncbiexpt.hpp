@@ -37,6 +37,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/01 01:19:47  vakatov
+* Moved <string> and <stdexcept> after the <ncbidiag.hpp> to avoid weird
+* conflicts under MSVC++ 6.0
+*
 * Revision 1.5  1998/11/24 17:51:26  vakatov
 * + CParseException
 * Removed "Ncbi" sub-prefix from the NCBI exception class names
@@ -57,9 +61,10 @@
 * ==========================================================================
 */
 
+#include <ncbidiag.hpp>
 #include <string>
 #include <stdexcept>
-#include <ncbidiag.hpp>
+
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
