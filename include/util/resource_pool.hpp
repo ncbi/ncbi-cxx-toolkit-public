@@ -54,7 +54,7 @@ class CResourcePool
 public: 
     typedef Value                       TValue;
     typedef Value*                      TValuePtr;
-    typedef typename vector<TValuePtr>  TPoolList;
+    typedef vector<Value*>              TPoolList;
 
 public:
     CResourcePool()
@@ -62,7 +62,7 @@ public:
 
     ~CResourcePool()
     {
-        ITERATE(TPoolList, it, m_FreeObjects) {
+        ITERATE(typename TPoolList, it, m_FreeObjects) {
             Value* v = *it;
             delete v;
         }
@@ -175,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/10 16:51:09  kuznets
+ * Fixed compilation problems (GCC)
+ *
  * Revision 1.4  2004/03/10 16:16:48  kuznets
  * Add accessors to internal list of free objects
  *
