@@ -45,10 +45,11 @@
 /* All internal data necessary to perform the (re)connect and i/o
  */
 typedef struct {
-    BUF        buf;
-    MT_LOCK    lock;
-    EIO_Status r_status;
-    EIO_Status w_status;
+    BUF         buf;
+    MT_LOCK     lock;
+    int/*bool*/ own_buf;
+    EIO_Status  r_status;
+    EIO_Status  w_status;
 } SMemoryConnector;
 
 
@@ -106,7 +107,6 @@ static EIO_Status s_VT_Open
  const STimeout* timeout)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-    xxx->buf = 0;
     xxx->r_status = eIO_Success;
     xxx->w_status = eIO_Success;
     return eIO_Success;
@@ -201,7 +201,7 @@ static EIO_Status s_VT_Close
  const STimeout* timeout)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-    BUF_Destroy(xxx->buf);
+    BUF_Erase(xxx->buf);
     return eIO_Success;
 }
 
@@ -230,7 +230,8 @@ static void s_Destroy
 (CONNECTOR connector)
 {
     SMemoryConnector* xxx = (SMemoryConnector*) connector->handle;
-
+    if (xxx->own_buf)
+        BUF_Destroy(xxx->buf);
     free(xxx);
     connector->handle = 0;
     free(connector);
@@ -247,7 +248,30 @@ extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock)
     SMemoryConnector* xxx = (SMemoryConnector*) malloc(sizeof(*xxx));
 
     /* initialize internal data structures */
+    xxx->buf     = 0;
     xxx->lock    = lock;
+    xxx->own_buf = 1/*true*/;
+
+    /* initialize connector data */
+    ccc->handle  = xxx;
+    ccc->next    = 0;
+    ccc->meta    = 0;
+    ccc->setup   = s_Setup;
+    ccc->destroy = s_Destroy;
+
+    return ccc;
+}
+
+
+extern CONNECTOR MEMORY_CreateConnectorEx(BUF buf, MT_LOCK lock)
+{
+    CONNECTOR         ccc = (SConnector*) malloc(sizeof(SConnector));
+    SMemoryConnector* xxx = (SMemoryConnector*) malloc(sizeof(*xxx));
+
+    /* initialize internal data structures */
+    xxx->buf     = buf;
+    xxx->lock    = lock;
+    xxx->own_buf = buf ? 0/*false*/ : 1/*true*/;
 
     /* initialize connector data */
     ccc->handle  = xxx;
@@ -263,6 +287,9 @@ extern CONNECTOR MEMORY_CreateConnector(MT_LOCK lock)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2004/10/27 18:44:56  lavr
+ * +MEMORY_CreateConnectorEx() and not-owned buffer management
+ *
  * Revision 6.5  2003/05/31 05:15:39  lavr
  * Add ARGSUSED where args are meant to be unused, remove Flush
  *
