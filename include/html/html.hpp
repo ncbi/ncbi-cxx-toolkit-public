@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/03/01 21:03:27  vasilche
+* Added CHTML_file input element.
+* Changed CHTML_form constructors.
+*
 * Revision 1.26  1999/02/26 21:03:30  vasilche
 * CAsnWriteNode made simple node. Use CHTML_pre explicitely.
 * Fixed bug in CHTML_table::Row.
@@ -602,8 +606,16 @@ class CHTML_form : public CHTML_form_Base
     typedef CHTML_form_Base CParent;
 
 public:
-    CHTML_form(const string& action = NcbiEmptyString, const string& method = NcbiEmptyString, const string& enctype = NcbiEmptyString);
-    CHTML_form(const string& action, CNCBINode* node, const string& method = NcbiEmptyString, const string& enctype = NcbiEmptyString);
+    enum EMethod {
+        eGet,
+        ePost,
+        ePostData
+    };
+
+    CHTML_form(const string& url = NcbiEmptyString, EMethod method = eGet);
+    CHTML_form(const string& url, CNCBINode* node, EMethod method = eGet);
+
+    void Init(const string& url, EMethod method = eGet);
 
     void AddHidden(const string& name, const string& value);
     void AddHidden(const string& name, int value);
@@ -712,6 +724,17 @@ public:
     CHTML_text(const string& name, const string& value = NcbiEmptyString);
     CHTML_text(const string& name, int size, const string& value = NcbiEmptyString);
     CHTML_text(const string& name, int size, int maxlength, const string& value = NcbiEmptyString);
+
+    static const string& s_GetInputType(void);
+};
+
+// input type=file tag
+class CHTML_file : public CHTML_input
+{
+    typedef CHTML_input CParent;
+
+public:
+    CHTML_file(const string& name, const string& value = NcbiEmptyString);
 
     static const string& s_GetInputType(void);
 };

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/03/01 21:03:09  vasilche
+* Added CHTML_file input element.
+* Changed CHTML_form constructors.
+*
 * Revision 1.30  1999/02/26 21:03:33  vasilche
 * CAsnWriteNode made simple node. Use CHTML_pre explicitely.
 * Fixed bug in CHTML_table::Row.
@@ -834,19 +838,35 @@ CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out)
 
 // form element
 
-CHTML_form::CHTML_form(const string& action, const string& method, const string& enctype)
+CHTML_form::CHTML_form(const string& url, EMethod method)
 {
-    SetOptionalAttribute(KHTMLAttributeName_action, action);
-    SetOptionalAttribute(KHTMLAttributeName_method, method);
-    SetOptionalAttribute(KHTMLAttributeName_enctype, enctype);
+    Init(url, method);
 }
 
-CHTML_form::CHTML_form(const string& action, CNCBINode* node, const string& method, const string& enctype)
+CHTML_form::CHTML_form(const string& url, CNCBINode* node, EMethod method)
 {
-    SetOptionalAttribute(KHTMLAttributeName_action, action);
-    SetOptionalAttribute(KHTMLAttributeName_method, method);
-    SetOptionalAttribute(KHTMLAttributeName_enctype, enctype);
+    Init(url, method);
     AppendChild(node);
+}
+
+void CHTML_form::Init(const string& url, EMethod method)
+{
+    SetOptionalAttribute(KHTMLAttributeName_action, url);
+    switch ( method ) {
+    case eGet:
+        SetAttribute(KHTMLAttributeName_method, "GET");
+        break;
+    case ePost:
+        SetAttribute(KHTMLAttributeName_enctype,
+                     "application/x-www-form-urlencoded");
+        SetAttribute(KHTMLAttributeName_method, "POST");
+        break;
+    case ePostData:
+        SetAttribute(KHTMLAttributeName_enctype,
+                     "multipart/form-data");
+        SetAttribute(KHTMLAttributeName_method, "POST");
+        break;
+    }
 }
 
 void CHTML_form::AddHidden(const string& name, const string& value)
@@ -888,6 +908,7 @@ CHTML_input::CHTML_input(const string& type, const string& name)
 
 // HTML input type names
 const string KHTMLInputTypeName_text = "TEXT";
+const string KHTMLInputTypeName_file = "FILE";
 const string KHTMLInputTypeName_radio = "RADIO";
 const string KHTMLInputTypeName_checkbox = "CHECKBOX";
 const string KHTMLInputTypeName_hidden = "HIDDEN";
@@ -898,6 +919,11 @@ const string KHTMLInputTypeName_reset = "RESET";
 const string& CHTML_text::s_GetInputType(void)
 {
     return KHTMLInputTypeName_text;
+}
+
+const string& CHTML_file::s_GetInputType(void)
+{
+    return KHTMLInputTypeName_file;
 }
 
 const string& CHTML_radio::s_GetInputType(void)
@@ -1042,6 +1068,14 @@ CHTML_text::CHTML_text(const string& name, int size, int maxlength, const string
 {
     SetSize(size);
     SetAttribute(KHTMLAttributeName_maxlength, maxlength);
+    SetOptionalAttribute(KHTMLAttributeName_value, value);
+}
+
+// text tag 
+
+CHTML_file::CHTML_file(const string& name, const string& value)
+    : CParent(s_GetInputType(), name)
+{
     SetOptionalAttribute(KHTMLAttributeName_value, value);
 }
 
