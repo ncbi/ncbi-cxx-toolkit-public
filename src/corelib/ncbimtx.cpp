@@ -137,8 +137,10 @@ void SSystemMutex::ThrowNotOwned(void)
 
 bool CAutoInitializeStaticBase::NeedInitialization(void)
 {
+    TNCBIAtomicValue* pCounter =
+        const_cast<TNCBIAtomicValue*>(&m_InitializeCounter);
 #if defined(NCBI_COUNTER_ADD)
-    TNCBIAtomicValue result = NCBI_COUNTER_ADD(&m_InitializeCounter, 1);
+    TNCBIAtomicValue result = NCBI_COUNTER_ADD(pCounter, 1);
 #else
 # error Recursive use of AtomicCounter and Mutex
 #endif
@@ -147,7 +149,7 @@ bool CAutoInitializeStaticBase::NeedInitialization(void)
     }
     else { // wait until initialization will finish in some other thread
         // restore counter value
-        (void)NCBI_COUNTER_ADD(&m_InitializeCounter, -1);
+        (void)NCBI_COUNTER_ADD(pCounter, -1);
         int wait_counter = 0, spin_counter = 0;
         while ( m_InitializeCounter <= kMaxUninitialized ) {
             if ( ++spin_counter >= kSpinCounter ) {
@@ -170,8 +172,10 @@ bool CAutoInitializeStaticBase::NeedInitialization(void)
 
 void CAutoInitializeStaticBase::DoneInitialization(void)
 {
+    TNCBIAtomicValue* pCounter =
+        const_cast<TNCBIAtomicValue*>(&m_InitializeCounter);
     _ASSERT(m_InitializeCounter > 0 && m_InitializeCounter <= kMaxWaitCounter);
-    (void)NCBI_COUNTER_ADD(&m_InitializeCounter, kMaxWaitCounter);
+    (void)NCBI_COUNTER_ADD(pCounter, kMaxWaitCounter);
 }
 
 #if defined(NEED_AUTO_INITIALIZE_MUTEX)
@@ -915,6 +919,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/09/20 18:46:24  vasilche
+ * Fixed volatile incompatibility on Win32
+ *
  * Revision 1.6  2002/09/19 20:24:08  vasilche
  * Replace missing std::count() by std::find()
  *
