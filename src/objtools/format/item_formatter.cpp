@@ -233,6 +233,8 @@ void CFlatItemFormatter::x_FormatRefJournal
 (string& journal,
  const CReferenceItem& ref) const
 {
+    journal.erase();
+
     if ( ref.GetBook() == 0 ) {  // not from a book
         
         switch ( ref.GetCategory() ) {
@@ -337,6 +339,8 @@ void CFlatItemFormatter::x_FormatRefJournal
             break;
         }
     }
+
+    StripSpaces(journal);
 }
 
 
@@ -367,6 +371,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/08/19 16:35:49  shomrat
+* strip spaces from journal
+*
 * Revision 1.12  2004/06/21 18:54:03  ucko
 * Add a GFF3 format.
 *
