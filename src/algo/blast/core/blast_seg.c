@@ -1627,7 +1627,7 @@ static void incrementsv(Int4* sv, Int4 class)
 
 /*------------------------------------------------------------(shiftwin1)---*/
 
-static Int4 shiftwin1(SSequence* win)
+static Boolean shiftwin1(SSequence* win)
 {
 	Int4 j, length;
 	Int4* comp;
