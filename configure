@@ -3221,7 +3221,7 @@ case "$host_os:$compiler" in
 
  *:Compaq)
    CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
-   CXXFLAGS="-nocompress $CXXFLAGS" # for compatibility with GNU nm
+   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
    ;;
 esac
 
@@ -3337,6 +3337,9 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         ;;
       MIPSpro* )
         DEF_FAST_FLAGS="-O3 -Ofast"
+        ;;
+      Compaq )
+        DEF_FAST_FLAGS="-fast"
         ;;
       * )
         DEF_FAST_FLAGS="-O"
