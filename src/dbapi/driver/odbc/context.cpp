@@ -32,7 +32,9 @@
 #include <corelib/ncbimtx.hpp>
 #include <dbapi/driver/odbc/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
-#include <Odbcss.h>
+#ifdef HAVE_ODBCSS_H
+#include <odbcss.h>
+#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -216,8 +218,8 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
 
     SQLHDBC con = x_ConnectToServer(srv_name, user_name, passwd, mode);
     if (con == 0) {
-        throw CDB_ClientEx(eDB_Error, 100011, "CTLibContext::Connect",
-                           "Can not connect to the server");
+        throw CDB_ClientEx(eDB_Error, 100011, "CODBCContext::Connect",
+                           "Cannot connect to the server");
     }
 
     CODBC_Connection* t_con = new CODBC_Connection(this, con, reusable, pool_name);
@@ -317,9 +319,11 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         SQLSetConnectAttr(con, SQL_ATTR_PACKET_SIZE, (void*)m_PacketSize, 0);
     }
     
+#ifdef SQL_COPT_SS_BCP
     if((mode & fBcpIn) != 0) {
         SQLSetConnectAttr(con, SQL_COPT_SS_BCP, (void*) SQL_BCP_ON, SQL_IS_INTEGER);
     }
+#endif
 
 
     if(!m_UseDSN) {
@@ -419,6 +423,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/05 20:48:29  ucko
+ * Check HAVE_ODBCSS_H; fix some typos in an error message.
+ *
  * Revision 1.4  2003/04/01 21:51:17  soussov
  * new attribute 'packet=XXX' (where XXX is a packet size) added to ODBC_CreateContext
  *
