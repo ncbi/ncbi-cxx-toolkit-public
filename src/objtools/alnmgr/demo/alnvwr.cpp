@@ -85,6 +85,7 @@ class CAlnMgrTestApp : public CNcbiApplication
     void             View5();
     void             View6();
     void             View7();
+    void             View8(int aln_pos);
     void             GetSeqPosFromAlnPosDemo();
 private:
     CRef<CAlnVec> m_AV;
@@ -127,13 +128,20 @@ void CAlnMgrTestApp::Init(void)
          "4. Popset style speed optimized\n"
          "5. Print segments\n"
          "6. Print chunks\n"
-         "7. Alternative ways to get sequence\n",
+         "7. Alternative ways to get sequence\n"
+         "8. Demonstrate obtaining column vector in two alternative ways.\n"
+         "   (Use numeric param n to choose alignment position)\n",
          CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
         ("w", "ScreenWidth",
          "Screen width for some of the viewers",
          CArgDescriptions::eInteger, "60");
+
+    arg_desc->AddDefaultKey
+        ("n", "Number",
+         "Generic Numeric Parameter, used by some viewers",
+         CArgDescriptions::eInteger, "0");
 
     arg_desc->AddDefaultKey
         ("cf", "GetChunkFlags",
@@ -493,7 +501,7 @@ void CAlnMgrTestApp::View7()
                 }
                 cout << NcbiEndl;
                 cout << m_AV->GetSeqString(buff, row,
-                                           m_AV->GetStop(row, seg),
+                                           m_AV->GetStart(row, seg),
                                            m_AV->GetStop(row, seg)) << NcbiEndl;
                 cout << m_AV->GetSegSeqString(buff, row, seg) 
                     << NcbiEndl;
@@ -503,6 +511,30 @@ void CAlnMgrTestApp::View7()
             cout << NcbiEndl;
         }
     }
+}
+
+
+void CAlnMgrTestApp::View8(int aln_pos)
+{
+    CAlnMap::TSignedRange rng;
+    rng.Set(aln_pos, aln_pos); // range covers only a single position
+    
+    string buffer;
+    
+    // obtain all individual residues
+    for (CAlnMap::TNumrow row=0; row<m_AV->GetNumRows(); row++) {
+        cout << m_AV->GetAlnSeqString(buffer, row, rng);
+    }
+    cout << NcbiEndl;
+    
+    // get the column at once
+    string column;
+    column.resize(m_AV->GetNumRows());
+    
+    cout << m_AV->GetColumnVector(column, aln_pos) << NcbiEndl;
+    
+    // %ID
+    cout << m_AV->CalculatePercentIdentity(aln_pos) << NcbiEndl;
 }
 
 
@@ -536,6 +568,7 @@ int CAlnMgrTestApp::Run(void)
     }
 
     int screen_width = args["w"].AsInteger();
+    int number       = args["n"].AsInteger();
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
     if (args["v"]) {
@@ -547,6 +580,7 @@ int CAlnMgrTestApp::Run(void)
         case 5: View5(); break;
         case 6: View6(); break;
         case 7: View7(); break;
+        case 8: View8(number); break;
         }
     }
     return 0;
@@ -567,6 +601,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2003/12/18 20:08:53  todorov
+* Demo GetColumnVector & CalculatePercentIdentity
+*
 * Revision 1.14  2003/12/11 00:43:47  ucko
 * Fix typo in previous revision: call Close on the CObjectIStream rather
 * than the auto_ptr.
