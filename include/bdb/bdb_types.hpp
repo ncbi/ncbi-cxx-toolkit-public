@@ -40,6 +40,7 @@
 #include <vector>
 #include <memory>
 
+
 extern "C" {
     //
     // Forward structure declarations, so we can declare pointers and
@@ -51,7 +52,11 @@ extern "C" {
     struct __db_env; typedef struct __db_env DB_ENV;
 
     typedef int (*BDB_CompareFunction)(DB*, const DBT*, const DBT*);
+}
 
+BEGIN_NCBI_SCOPE
+
+extern "C" {
 
 
 // Simple and fast comparison function for tables with 
@@ -116,8 +121,6 @@ int BDB_ByteSwap_DoubleCompare(DB*, const DBT* val1, const DBT* val2);
 
 
 }
-
-BEGIN_NCBI_SCOPE
 
 
 class CBDB_BufferManager;
@@ -1578,6 +1581,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/09/17 13:30:28  kuznets
+ * Put comparison functions into ncbi namespace.
+ *
  * Revision 1.19  2003/09/16 15:14:48  kuznets
  * Added Int2 (short int) field type
  *
