@@ -152,6 +152,11 @@ private:
                  EAutoUnload auto_unload, 
                  EBasename   treate_as);
 
+protected:
+    // Prohibit copy constructor and assignment operator
+    CDll(const CDll&);
+    CDll& operator= (const CDll&);
+
 private:
     string      m_Name;        // DLL name
     SDllHandle* m_Handle;      // DLL handle
@@ -165,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/10/29 15:59:06  ivanov
+ * Prohibited copy constructor and assignment operator
+ *
  * Revision 1.6  2002/07/15 18:17:51  gouriano
  * renamed CNcbiException and its descendents
  *
