@@ -806,7 +806,7 @@ void CAlnMix::x_CreateSegmentsVector()
             int index = 0;
             while (row->m_StartIt != start_its_i->second) {
                 // index the segment
-                CAlnMixSegment * seg(row->m_StartIt->second);
+                CAlnMixSegment * seg = row->m_StartIt->second;
                 seg->m_Index1 = index++;
                 seg->m_Index2 = row->m_RowIndex;
                 gapped_segs.push_back(seg);
@@ -899,6 +899,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2002/12/18 18:58:17  ucko
+* Tweak syntax to avoid confusing MSVC.
+*
 * Revision 1.4  2002/12/18 03:46:00  todorov
 * created an algorithm for mixing alignments that share a single sequence.
 *
