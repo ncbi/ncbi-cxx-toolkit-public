@@ -2403,7 +2403,9 @@ static EBool s_IsConsensusLine (char * str)
 {
     if (str == NULL 
         ||  strspn (str, "*:. \t\r\n") < strlen (str)
-        ||  strchr (str, '*') == NULL) {
+        ||  (strchr (str, '*') == NULL 
+             &&  strchr (str, ':') == NULL
+             &&  strchr (str, '.') == NULL)) {
         return eFalse;
     } else {
         return eTrue;
@@ -5744,6 +5746,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/12/01 14:14:35  bollin
+ * improved detection of consensus lines in Clustal files
+ *
  * Revision 1.12  2004/09/17 12:21:48  bollin
  * allow all-gap segments in segmented alignments
  *
