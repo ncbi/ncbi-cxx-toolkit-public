@@ -67,16 +67,16 @@ unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec, unsigned cha
             l_num *= (-1);
             cs_num[0] = 0x1;
         }
-	while (l_num != 0 && number >= 0) {
-        Int8 rem = l_num%256;
-	    *number = (unsigned char)rem;
-	    l_num = l_num/256;
-	    number--;
-	    if (number <= cs_num) {
-		if(needs_del) delete cs_num;
-		return 0;
-	    }
-	}
+        while (l_num != 0 && number >= 0) {
+            Int8 rem = l_num%256;
+            *number = (unsigned char)rem;
+            l_num = l_num/256;
+            number--;
+            if (number <= cs_num) {
+                if(needs_del) delete cs_num;
+                return 0;
+            }
+        }
     }
     return cs_num;
 
@@ -121,4 +121,16 @@ void swap_numeric_endian(unsigned int precision, unsigned char* num)
     }
 }
 
+
 END_NCBI_SCOPE
+
+
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.7  2003/03/20 19:54:09  vakatov
+ * Indented. Added CVS Log.
+ *
+ * ===========================================================================
+ */
