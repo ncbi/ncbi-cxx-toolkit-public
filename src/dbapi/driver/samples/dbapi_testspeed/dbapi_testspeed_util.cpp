@@ -132,16 +132,29 @@ bool HandleIt(const CDB_Exception* ex)
 // Read a command line argument
 char* getParam(char tag, int argc, char* argv[], bool* flag)
 {
+  static last_processed=0;
+  if(tag=='\0') {
+    // Return the next positional argument
+    if(last_processed>=argc-1) return 0;
+    return argv[++last_processed];
+  }
+
   for(int i= 1; i < argc; i++) {
-    if(((*argv[i] == '-') || (*argv[i] == '/')) &&
-      (*(argv[i]+1) == tag)) { // tag found
+    if( (argv[i][0] == '-' || argv[i][0] == '/') && argv[i][1] == tag ) {
+      // tag found
       if(flag) *flag= true;
-      if(*(argv[i]+2) == '\0')  { // tag is a separate arg
-        if(i == argc - 1) return 0;
-        if(*argv[i+1] != *argv[i]) return argv[i+1];
-        else return 0;
+
+      char* res=0;
+      if(*(argv[i]+2) == '\0')  {
+        // tag is a separate arg
+        if( i <= argc - 1 && argv[i+1][0] != argv[i][0] ) res=argv[++i];
       }
-      else return argv[i]+2;
+      else {
+        res=argv[i]+2;
+      }
+
+      if(last_processed<i) last_processed=i;
+      return res;
     }
   }
   if(flag) *flag= false;
@@ -307,6 +320,92 @@ int FetchResults (CDB_Connection* con, const string& table_name, bool readItems)
      HandleIt(&e);
     return 1;
   }
+  return 0;
+}
+
+int FetchFile(CDB_Connection* con, const string& table_name, bool readItems)
+{
+  CDB_VarChar str_val;
+  CDB_DateTime date_val;
+
+  try {
+    string query = "select date_val,str_val,txt_val from ";
+    query+=table_name;
+    CDB_LangCmd* lcmd = con->LangCmd(query);
+    lcmd->Send();
+
+    //CTime fileTime;
+    while (lcmd->HasMoreResults()) {
+      CDB_Result* r = lcmd->Result();
+      if (!r) continue;
+
+      if (r->ResultType() == eDB_RowResult) {
+        while (r->Fetch()) {
+          CNcbiOfstream f("testspeed.out", IOS_BASE::trunc|IOS_BASE::out|IOS_BASE::binary);
+
+          for (unsigned int j = 0;  j < r->NofItems(); j++) {
+            EDB_Type rt = r->ItemDataType(j);
+            const char* iname= r->ItemName(j);
+
+            if( readItems && rt == eDB_Text )
+            {
+              bool isNull;
+              char txt_buf[10240];
+              while( j == r->CurrentItemNo() ) {
+                int len_txt = r->ReadItem(txt_buf, sizeof(txt_buf), &isNull);
+                if(isNull || len_txt<= 0) break;
+                f.write(txt_buf, len_txt);
+              }
+              f.close();
+              continue;
+            }
+
+            // Type-specific GetItem()
+            if (rt == eDB_Char || rt == eDB_VarChar) {
+              r->GetItem(&str_val);
+
+            }
+            else if (rt == eDB_DateTime || rt == eDB_SmallDateTime) {
+              r->GetItem(&date_val);
+            }
+            else if(rt == eDB_Text) {
+              CDB_Text text_val;
+              r->GetItem(&text_val);
+
+              if(text_val.IsNULL()) {
+                // cout << "{NULL}";
+              }
+              else {
+                char txt_buf[10240];
+                cout << "text_val.Size()=" << text_val.Size() << "\n";
+                for(;;) {
+                  int len_txt = text_val.Read( txt_buf, sizeof(txt_buf) );
+                  if(len_txt<=0) break;
+                  f.write(txt_buf, len_txt);
+                }
+              }
+              f.close();
+            }
+            else {
+              r->SkipItem();
+              // cout << "{unprintable}";
+            }
+          }
+          // cout << "</ROW>" << endl << endl;
+        }
+        delete r;
+      }
+    }
+    delete lcmd;
+  }
+  catch (CDB_Exception& e) {
+     HandleIt(&e);
+    return 1;
+  }
+
+  cout<< "File " << str_val.Value() << " dated " << date_val.Value().AsString()
+      << " was written to testspeed.out using "
+      << (readItems?"ReadItem":"GetItem") << "\n";
   return 0;
 }
 

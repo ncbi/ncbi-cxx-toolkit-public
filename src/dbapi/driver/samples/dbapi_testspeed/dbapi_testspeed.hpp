@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.3  2003/12/09 15:10:47  sapojnik
+* option to upload/download a file
+*
 * Revision 1.2  2003/11/25 22:39:58  sapojnik
 * new option:  -i r  use CDB_Result->ReadItem() instead of GetItem()
 *
@@ -59,6 +62,7 @@ bool HandleIt(const CDB_Exception* ex) ;
 char* getParam(char tag, int argc, char* argv[], bool* flag= 0);
 int CreateTable(CDB_Connection* con, const string& table_name);
 int FetchResults(CDB_Connection* con, const string& table_name, bool readItems=false);
+int FetchFile(CDB_Connection* con, const string& table_name, bool readItems=false);
 int DeleteTable(CDB_Connection* con, const string& table_name);
 
 #endif

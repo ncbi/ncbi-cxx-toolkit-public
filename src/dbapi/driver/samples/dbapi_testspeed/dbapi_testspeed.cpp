@@ -32,25 +32,34 @@
 
 #include "dbapi_testspeed.hpp"
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbifile.hpp>
 
 USING_NCBI_SCOPE;
+
+#include "upload_files.cpp"
 
 const char usage[] =
   "Run a series of BCP/insert/select commands,\n"
   "measure the time required for their execution. \n"
   "\n"
-  "USAGE:   dbapi_testspeed -parameters\n"
+  "USAGE:   dbapi_testspeed -parameters [file]\n"
   "REQUIRED PARAMETERS:\n"
-  "  -d driver (e.g. ctlib dblib ftds odbc gateway)\n"
   "  -S server\n"
-  "  -r row_count\n"
+  "  -d driver (e.g. ctlib dblib ftds odbc gateway)\n"
+  "  -g sss_server:port for gateway database driver\n"
+  "     (any one of -d, -g is required to be present)\n"
   "OPTIONAL PARAMETERS:\n"
+  "  -r row_count (default is 1)\n"
   "  -b text_blob_size in kilobytes (default is 1 kb)\n"
   "  -c column_count  1..5 (int_val fl_val date_val str_val txt_val)\n"
   "  -t table_name (default is 'TestSpeed')\n"
-  "  -g sss_server:port for gateway database driver\n"
-  "     (when -g is present, -d becomes optional)\n"
   "  -i r  use CDB_Result->ReadItem() instead of GetItem() whenever possible\n"
+  "FILE (optional):\n"
+  "  Upload the specified file as a blob into the table,\n"
+  "  then download it to \"./testspeed.out\".\n"
+  "  \"diff\" can then be used to verify the data.\n"
+  "  -r -b -c parameterss are ignored.\n"
+  "\n"
   ;
 
 int Usage()
@@ -59,8 +68,8 @@ int Usage()
   return 1;
 }
 
-// Create a table with 5 columns, (*)fill it using BCP or insert commands,
-// (*)fetch results, delete the table. Execution time is measured for (*) steps.
+// Create a table with 5 columns, fill it using BCP or insert commands(1),
+// fetch results(2), delete the table. Execution time is measured for steps 1, 2.
 
 int main (int argc, char* argv[])
 {
@@ -85,6 +94,27 @@ int main (int argc, char* argv[])
   p= getParam('S', argc, argv);
   if(p) { server_name = p; } else return Usage();
 
+  p= getParam('d', argc, argv);
+  if(p) { driver_name = p; };
+
+  string sss_host, sss_port;
+  p= getParam('g', argc, argv);
+  if(p){
+    sss_host=p;
+    int i=NStr::Find(sss_host, ":");
+    if(i>0) {
+      sss_port = sss_host.substr(i+1);
+      sss_host.resize(i);
+    }
+    if( driver_name.size()==0 ) {
+      driver_name="gateway";
+    }
+  }
+
+  // one fo "-d" or "-g" must be present
+  if( driver_name.size()==0 ) return Usage();
+
+  // Read optional args
   p= getParam('r', argc, argv);
   if(p){
     row_count = atoi(p);
@@ -93,9 +123,9 @@ int main (int argc, char* argv[])
       return Usage();
     }
   }
-  else return Usage();
+  //else return Usage();
+  else row_count=1;
 
-  // Read optional args
   p= getParam('c', argc, argv);
   if(p){
     col_count = atoi(p);
@@ -124,25 +154,16 @@ int main (int argc, char* argv[])
   p= getParam('i', argc, argv);
   if(p && *p=='r') { readItems = true; };
 
-  p= getParam('d', argc, argv);
-  if(p) { driver_name = p; };
 
-  string sss_host, sss_port;
-  p= getParam('g', argc, argv);
-  if(p){
-    sss_host=p;
-    int i=NStr::Find(sss_host, ":");
-    if(i>0) {
-      sss_port = sss_host.substr(i+1);
-      sss_host.resize(i);
-    }
-    if( driver_name.size()==0 ) {
-      driver_name="gateway";
-    }
+  char *fileParam=getParam(0, argc, argv);
+
+  /*
+  char *param;
+  while( param=getParam(0, argc, argv) ) {
+    cout << ">" << param << "<\n";
   }
-
-  // -d is necessary unless -g is present
-  if( driver_name.size()==0 ) return Usage();
+  return 0;
+  */
 
 
   // Load the database driver
@@ -205,6 +226,7 @@ int main (int argc, char* argv[])
     }
     delete set_cmd;
 
+
     if(col_count>4) {
       // "Bulk copy in" command
       bcp = con->BCPIn(table_name, col_count);
@@ -234,7 +256,30 @@ int main (int argc, char* argv[])
     CDB_VarChar str_val;
     CDB_Text pTxt;
     int i;
-    if(col_count>4) {
+
+    if(fileParam) {
+      CNcbiIfstream f(fileParam, IOS_BASE::in|IOS_BASE::binary);
+      if(!f.is_open()) {
+        cerr << "Error -- cannot read '" << fileParam << "'\n";
+        return 1;
+      }
+      char buf[10240];
+      int sz;
+      while( f.good() && !f.eof() ) {
+        f.read( buf, sizeof(buf) );
+        sz = f.gcount();
+        cout << sz << "\n";
+        if( sz <= 0 ) break;
+        pTxt.Append(buf, sz);
+        if( sz != sizeof(buf) ) break;
+      }
+      f.close();
+      cout << "pTxt.Size()=" << pTxt.Size() << "\n";
+
+      col_count=5;
+      row_count=1;
+    }
+    else if(col_count>4) {
       for(i=0; i<blob_size; i++) {
         // Add 1024 chars
         for( int j=0; j<32; j++ ) {
@@ -273,8 +318,18 @@ int main (int argc, char* argv[])
     for(i= 0; i<row_count; i++) {
       int_val  = i;
       fl_val   = i + 0.999;
-      date_val = date_val.Value();
-      str_val  = string("Franz Joseph Haydn symphony # ")+NStr::IntToString(i);
+      if(fileParam) {
+        CDirEntry fileEntry(fileParam);
+        CTime fileTime;
+        fileEntry.GetTime(&fileTime);
+
+        date_val = fileTime;
+        str_val = fileParam;
+      }
+      else {
+        date_val = date_val.Value();
+        str_val  = string("Franz Joseph Haydn symphony # ")+NStr::IntToString(i);
+      }
       pTxt.MoveTo(0);
 
       if( bcp ) {
@@ -302,7 +357,12 @@ int main (int argc, char* argv[])
     cout << "inserting timeElapsed=" << timeElapsed << "\n";
 
     timer.Start();
-    FetchResults(con, table_name, readItems);
+    if(fileParam) {
+      FetchFile(con, table_name, readItems);
+    }
+    else {
+      FetchResults(con, table_name, readItems);
+    }
     timeElapsed = timer.Elapsed();
     cout << "fetching timeElapsed=" << timeElapsed << "\n";
     cout << "\n";
