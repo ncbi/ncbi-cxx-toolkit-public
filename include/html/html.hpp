@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/09/27 14:11:10  vasilche
+* Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
+* KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
+*
 * Revision 1.46  2000/08/15 19:40:16  vasilche
 * Added CHTML_label::SetFor() method for setting HTML attribute FOR.
 *
@@ -356,9 +360,44 @@ public:
 };
 
 // An html tag
-class CHTMLElement: public CHTMLOpenElement
+class CHTMLInlineElement: public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
+public:
+    CHTMLInlineElement(const char* tagname)
+        : CParent(tagname)
+        { }
+    CHTMLInlineElement(const char* tagname, const char* text)
+        : CParent(tagname, text)
+        { }
+    CHTMLInlineElement(const char* tagname, const string& text)
+        : CParent(tagname, text)
+        { }
+    CHTMLInlineElement(const char* tagname, CNCBINode* node)
+        : CParent(tagname, node)
+        { }
+    CHTMLInlineElement(const string& tagname)
+        : CParent(tagname)
+        { }
+    CHTMLInlineElement(const string& tagname, const char* text)
+        : CParent(tagname, text)
+        { }
+    CHTMLInlineElement(const string& tagname, const string& text)
+        : CParent(tagname, text)
+        { }
+    CHTMLInlineElement(const string& tagname, CNCBINode* node)
+        : CParent(tagname, node)
+        { }
+    ~CHTMLInlineElement(void);
+
+    // prints tag close    
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);   
+};
+
+// An html tag
+class CHTMLElement: public CHTMLInlineElement
+{
+    typedef CHTMLInlineElement CParent;
 public:
     CHTMLElement(const char* tagname)
         : CParent(tagname)
@@ -656,9 +695,9 @@ public:
 };
 
 // the label tag
-class CHTML_label : public CHTMLElement
+class CHTML_label : public CHTMLInlineElement
 {
-    typedef CHTMLElement CParent;
+    typedef CHTMLInlineElement CParent;
 public:
     CHTML_label(const string& text);
     CHTML_label(const string& text, const string& idRef);
@@ -845,9 +884,9 @@ public:
 };
 
 // the a tag
-class CHTML_a : public CHTMLElement
+class CHTML_a : public CHTMLInlineElement
 {
-    typedef CHTMLElement CParent;
+    typedef CHTMLInlineElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_a(const string& href);
@@ -950,9 +989,9 @@ public:
     ~CHTML_menu(void);
 };
 
-class CHTML_font : public CHTMLElement
+class CHTML_font : public CHTMLInlineElement
 {
-    typedef CHTMLElement CParent;
+    typedef CHTMLInlineElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_font(void);
@@ -975,9 +1014,9 @@ public:
     CHTML_font* SetRelativeSize(int size);
 };
 
-class CHTML_basefont : public CHTMLElement
+class CHTML_basefont : public CHTMLOpenElement
 {
-    typedef CHTMLElement CParent;
+    typedef CHTMLOpenElement CParent;
     static const char sm_TagName[];
 public:
     CHTML_basefont(int size);
@@ -1073,25 +1112,25 @@ DECLARE_HTML_ELEMENT(th, CHTML_tc);
 DECLARE_HTML_ELEMENT(td, CHTML_tc);
 DECLARE_HTML_ELEMENT(applet, CHTMLElement);
 DECLARE_HTML_ELEMENT(param, CHTMLElement);
-DECLARE_HTML_ELEMENT(cite, CHTMLElement);
-DECLARE_HTML_ELEMENT(code, CHTMLElement);
+DECLARE_HTML_ELEMENT(cite, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(code, CHTMLInlineElement);
 DECLARE_HTML_ELEMENT(dfn, CHTMLElement);
-DECLARE_HTML_ELEMENT(em, CHTMLElement);
-DECLARE_HTML_ELEMENT(kbd, CHTMLElement);
+DECLARE_HTML_ELEMENT(em, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(kbd, CHTMLInlineElement);
 DECLARE_HTML_ELEMENT(samp, CHTMLElement);
-DECLARE_HTML_ELEMENT(strike, CHTMLElement);
-DECLARE_HTML_ELEMENT(strong, CHTMLElement);
-DECLARE_HTML_ELEMENT(var, CHTMLElement);
-DECLARE_HTML_ELEMENT(b, CHTMLElement);
-DECLARE_HTML_ELEMENT(big, CHTMLElement);
-DECLARE_HTML_ELEMENT(i, CHTMLElement);
-DECLARE_HTML_ELEMENT(s, CHTMLElement);
-DECLARE_HTML_ELEMENT(small, CHTMLElement);
-DECLARE_HTML_ELEMENT(sub, CHTMLElement);
-DECLARE_HTML_ELEMENT(sup, CHTMLElement);
-DECLARE_HTML_ELEMENT(tt, CHTMLElement);
-DECLARE_HTML_ELEMENT(u, CHTMLElement);
-DECLARE_HTML_ELEMENT(blink, CHTMLElement);
+DECLARE_HTML_ELEMENT(strike, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(strong, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(var, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(b, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(big, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(i, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(s, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(small, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(sub, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(sup, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(tt, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(u, CHTMLInlineElement);
+DECLARE_HTML_ELEMENT(blink, CHTMLInlineElement);
 DECLARE_HTML_ELEMENT(map, CHTMLElement);
 DECLARE_HTML_ELEMENT(area, CHTMLElement);
 

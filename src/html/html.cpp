@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2000/09/27 14:11:17  vasilche
+* Newline '\n' will not be generated after tags LABEL, A, FONT, CITE, CODE, EM,
+* KBD, STRIKE STRONG, VAR, B, BIG, I, S, SMALL, SUB, SUP, TT, U and BLINK.
+*
 * Revision 1.60  2000/08/15 19:40:48  vasilche
 * Added CHTML_label::SetFor() method for setting HTML attribute FOR.
 *
@@ -515,14 +519,25 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
     }
 }
 
+CHTMLInlineElement::~CHTMLInlineElement(void)
+{
+}
+
+CNcbiOstream& CHTMLInlineElement::PrintEnd(CNcbiOstream& out, TMode mode)
+{
+    if ( mode != ePlainText )
+        out << "</" << m_Name << '>';
+    return out;
+}
+
 CHTMLElement::~CHTMLElement(void)
 {
 }
 
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
+    CParent::PrintEnd(out, mode);
     if ( mode != ePlainText ) {
-        out << "</" << m_Name << '>';
         const TMode* previous = mode.GetPreviousContext();
         if ( previous ) {
             CNCBINode* parent = previous->GetNode();
