@@ -40,8 +40,7 @@
 #include <connect/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_types.h>
-/* This header must go last */
-#include "test_assert.h"
+
 
 
 USING_NCBI_SCOPE;
@@ -72,13 +71,12 @@ void CTestNetScheduleNode::Init(void)
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "NetSchedule client");
+                              "NetSchedule node");
     
     arg_desc->AddPositional("hostname", 
                             "NetCache host name.", CArgDescriptions::eString);
 
-    arg_desc->AddPositional("port",
-                            "Port number.", 
+    arg_desc->AddPositional("port", "Port number.", 
                             CArgDescriptions::eInteger);
     
     // Setup arg.descriptions for this application
@@ -92,19 +90,57 @@ int CTestNetScheduleNode::Run(void)
     const string& host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
 
+    CNetScheduleClient cl(host, port, "client_test", "noname");
+
+    string    job_key;
+    string    input;
+    bool      job_exists;
+    int       no_jobs_counter = 0;
+    unsigned  jobs_done = 0;
+
+    while (1) {
+        job_exists = cl.GetJob(&job_key, &input);
+
+        if (job_exists) {
+            // do no job here, just delay for a while
+            SleepMilliSec(100);
+            cl.PutResult(job_key, 0, "DONE");
+
+            no_jobs_counter = 0;
+            ++jobs_done;
+
+            if (jobs_done % 1000 == 0) {
+                NcbiCout << "." << flush;
+            }
+
+        } else {
+            // when there are no more jobs just wait a bit
+            SleepMilliSec(200); 
+
+            if (++no_jobs_counter > 200) { // no new jobs coming
+                break;
+            }
+        }
+
+    }
+    NcbiCout << NcbiEndl << "Jobs done: " << jobs_done << NcbiEndl;
+
     return 0;
 }
 
 
 int main(int argc, const char* argv[])
 {
-    return CTestNetScheduleClient().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestNetScheduleNode().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/10 20:00:04  kuznets
+ * Work on test cases in progress
+ *
  * Revision 1.1  2005/02/09 18:54:21  kuznets
  * Initial revision
  *

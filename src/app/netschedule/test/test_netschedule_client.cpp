@@ -101,17 +101,16 @@ int CTestNetScheduleClient::Run(void)
     if (args["jcount"]) {
         jcount = args["jcount"].AsInteger();
     }
-
+    CNetScheduleClient::EJobStatus status;
+    CNetScheduleClient cl(host, port, "client_test", "noname");
 
     const string input = "Hello NetSchedule!";
 
-    CNetScheduleClient cl(host, port, "client_test", "noname");
     string job_key = cl.SubmitJob(input);
 
     NcbiCout << job_key << NcbiEndl;
-
-    CNetScheduleClient::EJobStatus status =
-        cl.GetStatus(job_key);
+/*
+    status = cl.GetStatus(job_key);
 
     if (status == CNetScheduleClient::ePending) {
         cl.CancelJob(job_key);
@@ -120,7 +119,7 @@ int CTestNetScheduleClient::Run(void)
         status = cl.GetStatus(job_key);
     }
     NcbiCout << "Job status:" << status << NcbiEndl;
-
+*/
     vector<string> jobs;
 
     {{
@@ -143,29 +142,38 @@ int CTestNetScheduleClient::Run(void)
     NcbiCout << "Avg time:" << avg << " sec." << NcbiEndl;
     }}
 
-    {{
-    CStopWatch sw(true);
-    NcbiCout << "Status request " << jcount << " jobs..." << NcbiEndl;
 
-    unsigned i = 0;
-    ITERATE(vector<string>, it, jobs) {
-        const string jk = *it;
-        status = cl.GetStatus(job_key);
-        if (i % 1000 == 0) {
-            NcbiCout << "." << flush;
+    // Waiting for jobs to be done
+
+    NcbiCout << "Waiting for jobs..." << jobs.size() << NcbiEndl;
+    unsigned cnt = 0;
+
+    while (jobs.size()) {
+        NON_CONST_ITERATE(vector<string>, it, jobs) {
+            const string& jk = *it;
+            string output;
+            int ret_code;
+            status = cl.GetStatus(jk, &ret_code, &output);
+
+            if (status == CNetScheduleClient::eDone) {
+                if (output != "DONE" || ret_code != 0) {
+                    _ASSERT(0);
+                }
+                jobs.erase(it);
+                ++cnt;
+                break;
+            }
+            ++cnt;
+            if (cnt % 1000 == 0) {
+                NcbiCout << "Waiting for " 
+                         << jobs.size() 
+                         << " jobs."
+                         << NcbiEndl;;
+            }
         }
-        ++i;
-    }
+    } // while
+
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
-    double elapsed = sw.Elapsed();
-    double avg = elapsed / jcount;
-
-    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
-    NcbiCout << "Avg time:" << avg << " sec." << NcbiEndl;
-
-    }}
-
-
     return 0;
 }
 
@@ -179,6 +187,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/10 20:00:04  kuznets
+ * Work on test cases in progress
+ *
  * Revision 1.1  2005/02/09 18:54:21  kuznets
  * Initial revision
  *
