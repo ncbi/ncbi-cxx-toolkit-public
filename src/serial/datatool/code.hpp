@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/11/18 17:13:06  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
 * Revision 1.12  1999/11/15 19:36:14  vasilche
 * Fixed warnings on GCC
 *
@@ -100,6 +104,7 @@ public:
     void AddHPPIncludes(const TIncludes& includes);
     void AddCPPIncludes(const TIncludes& includes);
     void AddForwardDeclarations(const TForwards& forwards);
+    void AddInitializer(const string& member, const string& init);
 
     CNcbiOstream& ClassPublic(void)
         {
@@ -134,6 +139,7 @@ private:
     CNcbiOstrstream m_ClassPublic;
     CNcbiOstrstream m_ClassPrivate;
     CNcbiOstrstream m_Methods;
+    CNcbiOstrstream m_Initializers;
     CNcbiOstrstream m_TypeInfoBody;
 
     EClassType m_ClassType;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/11/18 17:13:07  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
 * Revision 1.3  1999/11/16 15:41:17  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -49,6 +53,7 @@ string CTypeStrings::GetRef(void) const
 {
     switch ( GetType() ) {
     case eStdType:
+    case eStringType:
         return "STD, (" + GetCType() + ')';
     case eEnumType:
         return "ENUM, (" + GetCType() + ',' + GetMacro() + ')';
@@ -64,6 +69,7 @@ string CTypeStrings::GetInitializer(void) const
     switch ( GetType() ) {
     case eStdType:
     case ePointerType:
+    case ePointerTemplateType:
         return "0";
     case eEnumType:
         return GetCType() + "(0)";
@@ -206,7 +212,10 @@ void CTypeStrings::x_AddMember(CClassCode& code,
         break;
     default:
         code.TypeInfoBody() <<
-            "    ADD_N_M(" << name << ", " << member << ", " << GetMacro() << ')';
+            "    ADD_N_M("<< name << ", " << member << ", " << GetRef() <<')';
         break;
     }
+    string init = GetInitializer();
+    if ( !init.empty() )
+        code.AddInitializer(member, init);
 }

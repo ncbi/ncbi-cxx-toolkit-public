@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/11/18 17:13:07  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
 * Revision 1.2  1999/11/15 19:36:19  vasilche
 * Fixed warnings on GCC
 *
@@ -95,6 +99,7 @@ public:
     virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetTypeInfo(void);
+    void GetCType(CTypeStrings& tType, CClassCode& code) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 

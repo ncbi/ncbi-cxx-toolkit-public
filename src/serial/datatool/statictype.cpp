@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/11/18 17:13:06  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
 * Revision 1.3  1999/11/16 15:41:16  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -215,6 +219,17 @@ TTypeInfo CStringDataType::GetTypeInfo(void)
 {
     return CAutoPointerTypeInfo::GetTypeInfo(
         CStdTypeInfo<string>::GetTypeInfo());
+}
+
+void CStringDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
+{
+    string type = GetVar("_type");
+    if ( type.empty() ) {
+        tType.SetStd(GetDefaultCType(), true);
+    }
+    else {
+        tType.SetStd(type);
+    }
 }
 
 string CStringDataType::GetDefaultCType(void) const

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/11/18 17:13:05  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
 * Revision 1.4  1999/11/16 15:41:16  vasilche
 * Added plain pointer choice.
 * By default we use C pointer instead of auto_ptr.
@@ -384,7 +388,7 @@ void CChoiceDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
     tType.AddHPPInclude(FileName());
     tType.AddForwardDeclaration(className, Namespace());
     tType.AddHPPInclude(GetTemplateHeader("memory"));
-    tType.SetTemplate("*", "STL_CHOICE_POINTER", tType, true);
+    tType.SetTemplate("*", "CHOICE_POINTER", tType, true);
 }
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)

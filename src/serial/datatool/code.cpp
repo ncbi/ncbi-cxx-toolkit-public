@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/11/18 17:13:06  vasilche
+* Fixed generation of ENUMERATED CHOICE and VisibleString.
+* Added generation of initializers to zero for primitive types and pointers.
+*
 * Revision 1.21  1999/11/15 19:36:13  vasilche
 * Fixed warnings on GCC
 *
@@ -103,6 +107,13 @@ void CClassCode::AddCPPIncludes(const TIncludes& includes)
 void CClassCode::AddForwardDeclarations(const TForwards& forwards)
 {
     m_Code.AddForwardDeclarations(forwards);
+}
+
+void CClassCode::AddInitializer(const string& member, const string& init)
+{
+    if ( m_Initializers.pcount() != 0 )
+        m_Initializers << ", ";
+    m_Initializers << member << '(' << init << ')';
 }
 
 const CDataType* CClassCode::GetParentType(void) const
@@ -179,7 +190,13 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
     }
     code <<
         GetClassName() << "_Base::" <<
-        GetClassName() << "_Base(void)" << NcbiEndl <<
+        GetClassName() << "_Base(void)" << NcbiEndl;
+    if ( const_cast<CNcbiOstrstream&>(m_Initializers).pcount() != 0 ) {
+        code << "    : ";
+        Write(code, m_Initializers);
+        code << NcbiEndl;
+    }
+    code <<
         '{' << NcbiEndl <<
         '}' << NcbiEndl <<
         NcbiEndl <<
@@ -189,6 +206,7 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
         '}' << NcbiEndl <<
         NcbiEndl;
     Write(code, m_Methods);
+    code << NcbiEndl;
     if ( GetClassType() != eAlias ) {
         if ( GetClassType() == eAbstract )
             code << "BEGIN_ABSTRACT_CLASS_INFO3(\"";
@@ -205,7 +223,7 @@ CNcbiOstream& CClassCode::GenerateCPP(CNcbiOstream& code) const
         Write(code, m_TypeInfoBody);
         code <<
             '}' << NcbiEndl <<
-            "END_CLASS_INFO" << NcbiEndl;
+            "END_CLASS_INFO" << NcbiEndl << NcbiEndl;
     }
     return code;
 }
