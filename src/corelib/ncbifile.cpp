@@ -78,6 +78,7 @@ BEGIN_NCBI_SCOPE
 
 #undef  DIR_SEPARATOR
 #undef  DIR_SEPARATOR_ALT
+#undef  DIR_SEPARATORS
 #undef  DISK_SEPARATOR
 #undef  ALL_SEPARATORS
 #undef  ALL_OS_SEPARATORS
@@ -90,14 +91,17 @@ BEGIN_NCBI_SCOPE
 #  define DIR_SEPARATOR     '\\'
 #  define DIR_SEPARATOR_ALT '/'
 #  define DISK_SEPARATOR    ':'
+#  define DIR_SEPARATORS    "/\\"
 #  define ALL_SEPARATORS    ":/\\"
 
 #elif defined(NCBI_OS_UNIX)
 #  define DIR_SEPARATOR     '/'
+#  define DIR_SEPARATORS    "/"
 #  define ALL_SEPARATORS    "/"
 
 #elif defined(NCBI_OS_MAC)
 #  define DIR_SEPARATOR     ':'
+#  define DIR_SEPARATORS    ':'
 #  define ALL_SEPARATORS    ":"
 #  undef  DIR_PARENT
 #  undef  DIR_CURRENT
@@ -344,7 +348,7 @@ string CDirEntry::AddTrailingPathSeparator(const string& path)
 
 string CDirEntry::DeleteTrailingPathSeparator(const string& path)
 {
-    size_t pos = path.find_last_not_of(ALL_SEPARATORS);
+    size_t pos = path.find_last_not_of(DIR_SEPARATORS);
     if (pos + 1 < path.length()) {
         return path.substr(0, pos + 1);
     }
@@ -1600,7 +1604,12 @@ bool CDir::CreatePath(void) const
     if (dir_this.Exists()) {
         return true;
     }
-    CDir dir_up(dir_this.GetDir());
+    string path_up = dir_this.GetDir();
+    if (path_up == path) {
+        // special case: is this a disk name?
+        return true;
+    } 
+    CDir dir_up(path_up);
     if (dir_up.CreatePath()) {
         return dir_this.Create();
     }
@@ -1926,6 +1935,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2004/02/12 19:50:34  ivanov
+ * Fixed CDirEntry::DeleteTrailingPathSeparator and CDir::CreatePath()
+ * to avoid creating empty directories with disk name in the case if
+ * specified path contains it.
+ *
  * Revision 1.69  2004/02/11 20:49:57  gorelenk
  * Implemented case-insensitivity of CreateRelativePath on NCBI_OS_MSWIN.
  *
