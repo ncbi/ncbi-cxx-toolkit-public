@@ -76,6 +76,12 @@ HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list,
    }
 }
 
+BlastHSP* Blast_HSPNew(void)
+{
+     BlastHSP* new_hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+     return new_hsp;
+}
+
 BlastHSP* Blast_HSPFree(BlastHSP* hsp)
 {
    if (!hsp)
@@ -1806,7 +1812,7 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, Int4 subject
           Int4 query_context, Int2 subject_frame, Int4 score, 
           GapEditBlock* *gap_edit, BlastHSP* *ret_hsp)
 {
-   BlastHSP* new_hsp = (BlastHSP*) calloc(1, sizeof(BlastHSP));
+   BlastHSP* new_hsp = Blast_HSPNew();
 
    *ret_hsp = NULL;
 
