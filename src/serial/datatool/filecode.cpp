@@ -41,14 +41,19 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CFileCode::CFileCode(const string& baseName)
     : m_BaseName(baseName)
 {
+    return;
 }
+
 
 CFileCode::~CFileCode(void)
 {
+    return;
 }
+
 
 string CFileCode::GetBaseFileBaseName(void) const
 {
@@ -56,30 +61,36 @@ string CFileCode::GetBaseFileBaseName(void) const
     return GetFileBaseName() + "_";
 }
 
+
 string CFileCode::GetUserFileBaseName(void) const
 {
     return GetFileBaseName();
 }
+
 
 string CFileCode::GetBaseHPPName(void) const
 {
     return GetBaseFileBaseName() + ".hpp";
 }
 
+
 string CFileCode::GetUserHPPName(void) const
 {
     return GetUserFileBaseName() + ".hpp";
 }
+
 
 string CFileCode::GetBaseCPPName(void) const
 {
     return GetBaseFileBaseName() + ".cpp";
 }
 
+
 string CFileCode::GetUserCPPName(void) const
 {
     return GetUserFileBaseName() + ".cpp";
 }
+
 
 string CFileCode::GetDefineBase(void) const
 {
@@ -96,20 +107,24 @@ string CFileCode::GetDefineBase(void) const
     return s;
 }
 
+
 string CFileCode::GetBaseHPPDefine(void) const
 {
     return GetDefineBase() + "_BASE_HPP";
 }
+
 
 string CFileCode::GetUserHPPDefine(void) const
 {
     return GetDefineBase() + "_HPP";
 }
 
+
 string CFileCode::Include(const string& s) const
 {
     if ( s.empty() )
         THROW1_TRACE(runtime_error, "Empty file name");
+
     switch ( s[0] ) {
     case '<':
     case '"':
@@ -119,25 +134,30 @@ string CFileCode::Include(const string& s) const
     }
 }
 
+
 string CFileCode::GetMethodPrefix(void) const
 {
-    return string();
+    return kEmptyStr;
 }
+
 
 CFileCode::TIncludes& CFileCode::HPPIncludes(void)
 {
     return m_HPPIncludes;
 }
 
+
 CFileCode::TIncludes& CFileCode::CPPIncludes(void)
 {
     return m_CPPIncludes;
 }
 
+
 void CFileCode::AddForwardDeclaration(const string& cls, const CNamespace& ns)
 {
     m_ForwardDeclarations[cls] = ns;
 }
+
 
 const CNamespace& CFileCode::GetNamespace(void) const
 {
@@ -145,11 +165,13 @@ const CNamespace& CFileCode::GetNamespace(void) const
     return m_CurrentClass->ns;
 }
 
+
 void CFileCode::AddHPPCode(const CNcbiOstrstream& code)
 {
     m_CurrentClass->hppCode =
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
+
 
 void CFileCode::AddINLCode(const CNcbiOstrstream& code)
 {
@@ -157,11 +179,13 @@ void CFileCode::AddINLCode(const CNcbiOstrstream& code)
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
 
+
 void CFileCode::AddCPPCode(const CNcbiOstrstream& code)
 {
     m_CurrentClass->cppCode = 
         CNcbiOstrstreamToString(const_cast<CNcbiOstrstream&>(code));
 }
+
 
 void CFileCode::GenerateCode(void)
 {
@@ -172,9 +196,10 @@ void CFileCode::GenerateCode(void)
         }
         m_CurrentClass = 0;
     }
-    m_HPPIncludes.erase(NcbiEmptyString);
-    m_CPPIncludes.erase(NcbiEmptyString);
+    m_HPPIncludes.erase(kEmptyStr);
+    m_CPPIncludes.erase(kEmptyStr);
 }
+
 
 CNcbiOstream& CFileCode::WriteCopyrightHeader(CNcbiOstream& out) const
 {
@@ -206,6 +231,7 @@ CNcbiOstream& CFileCode::WriteCopyrightHeader(CNcbiOstream& out) const
         " *\n";
 }
 
+
 CNcbiOstream& CFileCode::WriteSourceFile(CNcbiOstream& out) const
 {
     iterate ( set<string>, i, m_SourceFiles ) {
@@ -215,6 +241,7 @@ CNcbiOstream& CFileCode::WriteSourceFile(CNcbiOstream& out) const
     }
     return out;
 }
+
 
 CNcbiOstream& CFileCode::WriteCopyright(CNcbiOstream& out) const
 {
@@ -233,6 +260,7 @@ CNcbiOstream& CFileCode::WriteCopyright(CNcbiOstream& out) const
     return out;
 }
 
+
 CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out) const
 {
     WriteCopyrightHeader(out) <<
@@ -250,16 +278,14 @@ CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out) const
     return out;
 }
 
+
 CNcbiOstream& CFileCode::WriteLogKeyword(CNcbiOstream& out) const
 {
     out << "\n"
         "/*\n"
         "* ===========================================================================\n"
         "*\n"
-        "* $Log$
-        "* Revision 1.30  2002/06/10 18:41:30  ucko
-        "* Move CVS logs (both internal and generated) to the end.
-        "*\n"
+        "* $""Log$"
         "*\n"
         "* ===========================================================================\n"
         "*/\n";
@@ -375,6 +401,7 @@ void CFileCode::GenerateHPP(const string& path) const
         ERR_POST(Fatal << "Error writing file " << fileName);
 }
 
+
 void CFileCode::GenerateCPP(const string& path) const
 {
     string fileName = Path(path, GetBaseCPPName());
@@ -425,11 +452,13 @@ void CFileCode::GenerateCPP(const string& path) const
         ERR_POST(Fatal << "Error writing file " << fileName);
 }
 
+
 bool CFileCode::GenerateUserHPP(const string& path) const
 {
     return WriteUserFile(path, GetUserHPPName(),
                          &CFileCode::GenerateUserHPPCode);
 }
+
 
 bool CFileCode::GenerateUserCPP(const string& path) const
 {
@@ -437,13 +466,14 @@ bool CFileCode::GenerateUserCPP(const string& path) const
                          &CFileCode::GenerateUserCPPCode);
 }
 
+
 bool CFileCode::ModifiedByUser(const string& fileName,
                                const list<string>& newLines) const
 {
     // first check if file exists
     CNcbiIfstream in(fileName.c_str());
     if ( !in ) {
-        // file doesn't exit -> was not modified by user
+        // file doesn't exist -> was not modified by user
         return false;
     }
 
@@ -523,8 +553,9 @@ bool CFileCode::ModifiedByUser(const string& fileName,
 
     // file doesn't have checksum
     // we assume it modified if its content different from newLines
-    return !equal || newLinesI != newLines.end();
+    return !equal  ||  newLinesI != newLines.end();
 }
+
 
 void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
 {
@@ -550,7 +581,7 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
             THROW1_TRACE(runtime_error, "unended line in generated code");
 
         // add next line to list
-        lines.push_back(NcbiEmptyString);
+        lines.push_back(kEmptyStr);
         lines.back().assign(codePtr, eolPtr);
 
         // skip EOL symbol ('\n')
@@ -562,6 +593,7 @@ void CFileCode::LoadLines(TGenerateMethod method, list<string>& lines) const
         codePtr = eolPtr;
     }
 }
+
 
 bool CFileCode::WriteUserFile(const string& path, const string& name,
                               TGenerateMethod method) const
@@ -598,6 +630,7 @@ bool CFileCode::WriteUserFile(const string& path, const string& name,
     return true;
 }
 
+
 void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
 {
     string hppDefine = GetUserHPPDefine();
@@ -631,6 +664,7 @@ void CFileCode::GenerateUserHPPCode(CNcbiOstream& header) const
         "#endif // " << hppDefine << "\n";
 }
 
+
 void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
 {
     WriteUserCopyright(code) <<
@@ -655,6 +689,7 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
     WriteLogKeyword(code);
 }
 
+
 bool CFileCode::AddType(const CDataType* type)
 {
     string idName = type->IdName();
@@ -669,11 +704,17 @@ bool CFileCode::AddType(const CDataType* type)
     return true;
 }
 
+
 END_NCBI_SCOPE
+
+
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2002/06/11 02:46:49  vakatov
+* Fixed a compilation bug introduced in R1.30;  plus some code beautification.
+*
 * Revision 1.30  2002/06/10 18:41:30  ucko
 * Move CVS logs (both internal and generated) to the end.
 *
@@ -701,7 +742,8 @@ END_NCBI_SCOPE
 * Renamed directory tool -> datatool.
 *
 * Revision 1.22  2000/06/16 16:31:39  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
+* Changed implementation of choices and classes info to allow use of the
+* same classes in generated and user written classes.
 *
 * Revision 1.21  2000/04/28 16:58:16  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
@@ -778,7 +820,9 @@ END_NCBI_SCOPE
 * Fixed CHOICE processing.
 *
 * Revision 1.3  1999/11/22 21:04:49  vasilche
-* Cleaned main interface headers. Now generated files should include serial/serialimpl.hpp and user code should include serial/serial.hpp which became might lighter.
+* Cleaned main interface headers. Now generated files should include
+* serial/serialimpl.hpp and user code should include serial/serial.hpp
+* which became might lighter.
 *
 * Revision 1.2  1999/11/15 19:36:14  vasilche
 * Fixed warnings on GCC
