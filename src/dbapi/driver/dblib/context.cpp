@@ -408,6 +408,8 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
+
+
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
 //
@@ -425,22 +427,20 @@ I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 	    version= DBVERSION_100;
 
     }
-#endif
 
-    return (I_DriverContext*)(new CDBLibContext(version));
+#endif
+    return new CDBLibContext(version);
 }
 
-void DBAPI_DBLIB_Register(I_DriverMgr* mgr)
+void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
 {
-    if(mgr) {
-	mgr->RegisterDriver("dblib", DBLIB_CreateContext);
-    }
+    mgr.RegisterDriver("dblib", DBLIB_CreateContext);
 }
 
 extern "C" {
     void* DBAPI_E_dblib()
     {
-	return (void*)DBAPI_DBLIB_Register;
+	return (void*)DBAPI_RegisterDriver_DBLIB;
     }
 } 
 
@@ -451,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/01/17 22:12:47  soussov
+ * changes driver registration
+ *
  * Revision 1.8  2002/01/15 15:45:50  sapojnik
  * Use DBVERSION_46/100 constants only ifndef NCBI_OS_MSWIN
  *

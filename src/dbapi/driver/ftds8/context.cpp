@@ -394,20 +394,18 @@ I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0)
 	    version= DBVERSION_100;
 
     }
-    return (I_DriverContext*)(new CTDSContext(version));
+    return new CTDSContext(version);
 }
 
-void DBAPI_FTDS_Register(I_DriverMgr* mgr)
+void DBAPI_RegisterDriver_FTDS(I_DriverMgr& mgr)
 {
-    if(mgr) {
-	mgr->RegisterDriver("ftds", FTDS_CreateContext);
-    }
+    mgr.RegisterDriver("ftds", FTDS_CreateContext);
 }
 
 extern "C" {
     void* DBAPI_E_ftds()
     {
-	return (void*)DBAPI_FTDS_Register;
+	return (void*)DBAPI_RegisterDriver_FTDS;
     }
 } 
 
@@ -419,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/01/17 22:14:40  soussov
+ * changes driver registration
+ *
  * Revision 1.5  2002/01/15 17:13:30  soussov
  * renaming 'tds' driver to 'ftds' driver
  *
