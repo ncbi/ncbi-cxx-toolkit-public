@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2002/11/18 19:49:36  grichenk
+* More details in error messages
+*
 * Revision 1.76  2002/11/05 17:45:54  grichenk
 * Throw runtime_error instead of CEofException when a stream is broken
 *
@@ -806,7 +809,7 @@ double CObjectIStreamAsn::ReadDouble(void)
     char* endptr;
     double mantissa = strtod(buffer, &endptr);
     if ( *endptr != 0 )
-        ThrowError(fFormatError, "bad number");
+        ThrowError(fFormatError, "bad double in line " + NStr::UIntToString(m_Input.GetLine()));
     Expect(',', true);
     unsigned base = ReadUint4();
     Expect(',', true);
@@ -961,7 +964,7 @@ void CObjectIStreamAsn::SkipSNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(fFormatError, "bad number");
+        ThrowError(fFormatError, "bad signed in line " + NStr::UIntToString(m_Input.GetLine()));
     }
     while ( (c = m_Input.PeekChar(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -985,7 +988,7 @@ void CObjectIStreamAsn::SkipUNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(fFormatError, "bad number");
+        ThrowError(fFormatError, "bad unsigned in line " + NStr::UIntToString(m_Input.GetLine()));
     }
     while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;

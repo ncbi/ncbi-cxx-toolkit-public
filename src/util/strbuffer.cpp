@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/11/18 19:49:37  grichenk
+* More details in error messages
+*
 * Revision 1.33  2002/11/04 21:29:22  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -513,7 +516,7 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
 void CIStreamBuffer::BadNumber(void)
 {
     m_Error = "bad number";
-    THROW1_TRACE(runtime_error, "bad number");
+    THROW1_TRACE(runtime_error, "bad number in line " + NStr::UIntToString(GetLine()));
 }
 
 Int4 CIStreamBuffer::GetInt4(void)
