@@ -60,7 +60,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-static void s_FormatAffil(const CAffil& affil, string& result)
+void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
 {
     if (affil.IsStr()) {
         result = affil.GetStr();
@@ -106,26 +106,6 @@ static void s_FormatAffil(const CAffil& affil, string& result)
             }
             result += std.GetCountry();
         }
-#if 0 // not in C version...
-        if (std.IsSetFax()) {
-            if (!result.empty()) {
-                result += "; ";
-            }
-            result += "Fax: " + std.GetFax();
-        }
-        if (std.IsSetPhone()) {
-            if (!result.empty()) {
-                result += "; ";
-            }
-            result += "Phone: " + std.GetPhone();
-        }
-        if (std.IsSetEmail()) {
-            if (!result.empty()) {
-                result += "; ";
-            }
-            result += "E-mail: " + std.GetEmail();
-        }
-#endif
     }
 }
 
@@ -180,6 +160,8 @@ CReferenceItem::CReferenceItem(const CSeq_feat& feat, CFFContext& ctx) :
 {
     _ASSERT(feat.GetData().IsPub());
 
+    x_SetObject(feat);
+
     m_Pubdesc.Reset(&(feat.GetData().GetPub()));
     m_Loc.Reset(&(feat.GetLocation()));
 }
@@ -199,10 +181,16 @@ CReferenceItem::CReferenceItem
 
 void CReferenceItem::x_GatherInfo(CFFContext& ctx)
 {
-    if ( m_Pubdesc->CanGetPub() ) {
-        ITERATE (CPub_equiv::Tdata, it, m_Pubdesc->GetPub().Get()) {
-            x_Init(**it, ctx);
-        }
+    if ( !m_Pubdesc->CanGetPub() ) {
+        Skip();
+    }
+
+    if ( ctx.GetSeqSubmit() != 0 ) {
+        m_Title = "Direct Submission";
+        m_Category = eSubmission;
+    }
+    ITERATE (CPub_equiv::Tdata, it, m_Pubdesc->GetPub().Get()) {
+        x_Init(**it, ctx);
     }
     x_CleanData();
 
@@ -210,14 +198,6 @@ void CReferenceItem::x_GatherInfo(CFFContext& ctx)
     if ( ctx.IsFormatGenBank() ) {
         x_GatherRemark(ctx);
     }
-    /*
-    if (m_Date.NotEmpty()  &&  m_Date->IsStd()) {
-        m_StdDate = &m_Date->GetStd();
-    } else {
-        // complain?
-        m_StdDate = new CDate_std(CTime::eEmpty);
-    }
-    */
 }
 
 
@@ -464,89 +444,81 @@ void CReferenceItem::x_Init(const CPub& pub, CFFContext& ctx)
 
 void CReferenceItem::x_Init(const CCit_gen& gen, CFFContext& ctx)
 {
+    // serial
     if ( gen.CanGetSerial_number()  &&  m_Serial == 0 ) {
         m_Serial = gen.GetSerial_number();
     }
 
-    if ( gen.CanGetCit() ) {
-        const CCit_gen::TCit& cit = gen.GetCit();
-        if ( NStr::StartsWith(cit, "BackBone id_pub", NStr::eNocase) ) {
-            return;
-        }
-        m_Category = eUnpublished;
-        if ( !NStr::StartsWith(cit, "unpublished", NStr::eNocase)  &&
-             !NStr::StartsWith(cit, "submitted", NStr::eNocase)  &&
-             !NStr::StartsWith(cit, "to be published", NStr::eNocase)  &&
-             !NStr::StartsWith(cit, "in press", NStr::eNocase)  &&
-             NStr::Find(cit, "Journal") == NPOS ) {
-            if ( m_Serial == 0 ) {
-                Skip();
-                return;
+    // title
+    if ( m_Title.empty() ) {
+        if ( gen.CanGetTitle()  &&  !gen.GetTitle().empty() ) {
+            m_Title = gen.GetTitle();
+        } else {
+            if ( gen.CanGetCit()  &&  !gen.GetCit().empty() ) {
+                const string& cit = gen.GetCit();
+                SIZE_TYPE pos = NStr::Find(cit, "Title=\"");
+                if ( pos != NPOS ) {
+                    pos += 7;
+                    SIZE_TYPE end = cit.find_first_of('"', pos);
+                    m_Title = cit.substr(pos, end - pos);
+                }
             }
         }
-    } else if ( !gen.CanGetJournal()  ||  !gen.CanGetDate() ) {
-        Skip();
-        return;
     }
-
+    
+    // Journal
+    x_SetJournal(gen, ctx);
+    
+    // Authors
     if ( gen.CanGetAuthors() ) {
         x_AddAuthors(gen.GetAuthors());
     }
 
+    // MUID
     if ( gen.CanGetMuid()  &&  m_MUID == 0 ) {
         m_MUID = gen.GetMuid();
     }
     
+    // PMID
+    if ( gen.CanGetPmid()  &&  m_PMID == 0 ) {
+        m_PMID = gen.GetPmid();
+    }
+
+    // Volume
     if ( gen.CanGetVolume()  &&  m_Volume.empty() ) {
         m_Volume = gen.GetVolume();
     }
 
+    // Issue
     if ( gen.CanGetIssue()  &&  m_Issue.empty() ) {
         m_Issue = gen.GetIssue();
     }
 
+    // Pages
     if ( gen.CanGetPages()  &&  m_Pages.empty() ) {
         m_Pages = gen.GetPages();
         s_FixPages(m_Pages);
     }
 
+    // Date
     if ( gen.CanGetDate()  &&  !m_Date ) {
         m_Date = &gen.GetDate();
     }
-
-    if ( m_Title.empty() ) {
-        if ( gen.CanGetTitle() ) {
-            m_Title = gen.GetTitle();
-        } else if ( gen.CanGetCit()  &&  !gen.GetCit().empty() ) {
-            static const string pattern = "Title=\"";
-            const CCit_gen::TCit& cit = gen.GetCit();
-            SIZE_TYPE pos = NStr::Find(cit, pattern);
-            if ( pos != NPOS ) {
-                pos += pattern.length();
-                SIZE_TYPE end = NStr::Find(cit, "\"", pos);
-                m_Title = cit.substr(pos, end - pos);
-            }
-        }
-        if ( !m_Title.empty()  &&  m_Category == eUnknown ) {
-            m_Category = ePublished;
-        }
-    }
-
-    if ( gen.CanGetPmid()  &&  m_PMID == 0 ) {
-        m_PMID = gen.GetPmid();
-    }
-
-    x_SetJournal(gen, ctx);
 }
 
 
 void CReferenceItem::x_Init(const CCit_sub& sub, CFFContext& ctx)
 {
-    m_Category = eSubmission;
+    // Title
+    m_Title = "Direct Submission";
+
+    // Authors
     x_AddAuthors(sub.GetAuthors());
     if ( sub.GetAuthors().CanGetAffil() ) {
-        s_FormatAffil(sub.GetAuthors().GetAffil(), m_Journal);
+        FormatAffil(sub.GetAuthors().GetAffil(), m_Journal);
     }
+
+    // Date
     if ( sub.CanGetDate() ) {
         m_Date = &sub.GetDate();
     } else {
@@ -555,6 +527,8 @@ void CReferenceItem::x_Init(const CCit_sub& sub, CFFContext& ctx)
             m_Date = &sub.GetImp().GetDate();
         }
     }
+
+    m_Category = eSubmission;
 }
 
 
@@ -582,23 +556,26 @@ void CReferenceItem::x_Init(const CMedline_entry& mle, CFFContext& ctx)
 
 void CReferenceItem::x_Init(const CCit_art& art, CFFContext& ctx)
 {
+    // Title
     if ( art.CanGetTitle()  &&  !art.GetTitle().Get().empty() ) {
         m_Title = art.GetTitle().GetTitle();
     }
 
+    // Authors
     if ( art.CanGetAuthors() ) {
         x_AddAuthors(art.GetAuthors());
     }
 
+    // Journal
     switch ( art.GetFrom().Which() ) {
     case CCit_art::C_From::e_Journal:
         x_Init(art.GetFrom().GetJournal(), ctx);
         break;
     case CCit_art::C_From::e_Book:
-        x_Init(art.GetFrom().GetBook(), ctx);
+        x_Init(art.GetFrom().GetBook(), ctx, true);
         break;
     case CCit_art::C_From::e_Proc:
-        x_Init(art.GetFrom().GetProc().GetBook(), ctx);
+        x_Init(art.GetFrom().GetProc().GetBook(), ctx, true);
         break;
     default:
         break;
@@ -632,17 +609,28 @@ void CReferenceItem::x_Init(const CCit_jour& jour, CFFContext& ctx)
 }
 
 
-void CReferenceItem::x_Init(const CCit_book& book, CFFContext& ctx)
+
+
+
+void CReferenceItem::x_Init
+(const CCit_book& book,
+ CFFContext& ctx,
+ bool for_art)
 {
-    // !!!XXX -- should add more stuff to m_Journal (exactly what depends on
-    // the format and whether this is for an article)
-    if ( !book.GetTitle().Get().empty() ) {
-        m_Journal = book.GetTitle().GetTitle();
+    if ( !for_art ) {
+        if ( book.CanGetImp() ) {
+            x_AddImprint(book.GetImp(), ctx);
+        }
+        if ( book.CanGetTitle()  &&  !book.GetTitle().Get().empty() ) {
+            m_Journal = book.GetTitle().GetTitle();
+        }
+        if ( m_Authors.Empty()  &&  book.CanGetAuthors() ) {
+            x_AddAuthors(book.GetAuthors());
+        }
+    }  else if ( book.CanGetTitle()  &&  book.CanGetImp() ) {
+        m_Book.Reset(&book);
+        x_AddImprint(book.GetImp(), ctx);
     }
-    if ( m_Authors.Empty() ) {
-        x_AddAuthors(book.GetAuthors());
-    }
-    x_AddImprint(book.GetImp(), ctx);
 }
 
 
@@ -685,7 +673,7 @@ void CReferenceItem::x_Init(const CCit_let& man, CFFContext& ctx)
         }
         if (imp.CanGetPub()) {
             string affil;
-            s_FormatAffil(imp.GetPub(), affil);
+            FormatAffil(imp.GetPub(), affil);
             replace(affil.begin(), affil.end(), '\"', '\'');
             m_Journal += ' ' + affil;
         }
@@ -798,39 +786,63 @@ void CReferenceItem::x_AddAuthors(const CAuth_list& auth_list)
 
 void CReferenceItem::x_SetJournal(const CTitle& title, CFFContext& ctx)
 {
-
+    // Only GenBank/EMBL/DDBJ require ISO JTA in ENTREZ/RELEASE modes.
+    bool require_iso_jta = ctx.CitArtIsoJta();
+    if ( !ctx.IsGED()  &&  !ctx.IsTPA() ) {
+        require_iso_jta = false;
+    }
+    // always use iso_jta title if present
+    const CTitle::C_E* ttl = 0;
     ITERATE (CTitle::Tdata, it, title.Get()) {
         if ( (*it)->IsIso_jta() ) {
-            m_Journal = (*it)->GetIso_jta();
-            return;
+            ttl = *it;
+            break;
         }
     }
-    if ( ctx.IsModeRelease() ) {
-        // !!! complain
-    } else if ( !title.Get().empty() ) {
+
+    bool electronic_journal = false;
+    if ( ttl == 0 ) {
+        ttl = title.Get().front();
+        if ( ttl != 0  &&  ttl->IsName() ) {
+            if ( NStr::StartsWith(ttl->GetName(), "(er)", NStr::eNocase) ) {
+                electronic_journal = true;
+            }
+        }
+        if ( require_iso_jta  &&  !electronic_journal ) {
+            return;
+        }
+
         m_Journal = title.GetTitle();
+    } else {
+        m_Journal = ttl->GetIso_jta();
     }
 }
 
 
 void CReferenceItem::x_SetJournal(const CCit_gen& gen, CFFContext& ctx)
 {
+    if ( !gen.CanGetCit()  &&  !gen.CanGetJournal()  &&  !gen.CanGetDate()  &&
+         gen.CanGetSerial_number()  &&  gen.GetSerial_number() != 0 ) {
+        return;
+    }
+
     if ( !gen.CanGetJournal()  &&
           gen.CanGetCit()  &&  
           NStr::StartsWith(gen.GetCit(), "unpublished", NStr::eNocase) ) {
         const string& cit = gen.GetCit();
 
         if ( ctx.NoAffilOnUnpub() ) {
-            if ( ctx.DropBadCitGens() ) {
-                // !!! temporary ???
-            }
             m_Journal = "Unpublished";
             return;
         }
 
         if ( gen.CanGetAuthors()  &&  gen.GetAuthors().CanGetAffil() ) {
-            s_FormatAffil(gen.GetAuthors().GetAffil(), m_Journal);
-            return;
+            string affil;
+            (gen.GetAuthors().GetAffil(), affil);
+            if ( !affil.empty() ) {
+                m_Journal = "Unpublished " + affil;
+                return;
+            }
         }
 
         m_Journal = cit;
@@ -884,19 +896,24 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CFFContext& ctx)
     if ( !m_Date ) {
         m_Date.Reset(&imp.GetDate());
     }
-    if (imp.IsSetVolume()) {
-        // add part-sup?
+    if ( imp.IsSetVolume()  &&  !imp.GetVolume().empty()  ) {
         m_Volume = imp.GetVolume();
+        if ( imp.IsSetPart_sup()  &&  !imp.GetPart_sup().empty() ) {
+            m_Volume += " (" + imp.GetPart_sup() + ")";
+        }
     }
-    if (imp.IsSetIssue()) {
-        // add part-supi?
+    
+    if ( imp.IsSetIssue()  &&  !imp.GetIssue().empty() ) {
         m_Issue = imp.GetIssue();
+        if ( imp.IsSetPart_supi()  &&  !imp.GetPart_supi().empty() ) {
+            m_Issue += " (" + imp.GetPart_supi() + ")";
+        }
     }
-    if (imp.IsSetPages()) {
+    if ( imp.IsSetPages()  &&  !imp.GetPages().empty() ) {
         m_Pages = imp.GetPages();
         s_FixPages(m_Pages);
     }
-    if (imp.IsSetPrepub()  &&  imp.GetPrepub() != CImprint::ePrepub_in_press) {
+    if ( imp.IsSetPrepub()  &&  imp.GetPrepub() != CImprint::ePrepub_in_press ) {
         m_Category = eUnpublished;
     } else {
         m_Category = ePublished;
@@ -1192,6 +1209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/18 15:44:21  shomrat
+* Fixes to REFERENCE formatting
+*
 * Revision 1.7  2004/03/10 16:21:17  shomrat
 * Fixed reference sorting, Added REMARK gathering
 *
