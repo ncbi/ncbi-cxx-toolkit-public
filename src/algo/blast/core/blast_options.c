@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.63  2003/10/07 17:26:11  dondosha
+ * Lower case mask moved from options to the sequence block
+ *
  * Revision 1.62  2003/10/02 22:08:34  dondosha
  * Corrections for one-strand translated searches
  *
@@ -320,7 +323,6 @@ QuerySetUpOptions*
 BlastQuerySetUpOptionsFree(QuerySetUpOptions* options)
 
 {
-   BlastMaskFree(options->lcase_mask);
    sfree(options->filter_string);
 
    sfree(options);

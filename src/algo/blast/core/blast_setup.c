@@ -453,7 +453,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         *sbpp = sbp;
     }
 
-    next_mask_slp = qsup_options->lcase_mask;
+    next_mask_slp = query_blk->lcase_mask;
     mask_slp = NULL;
     *filter_out = NULL;
 
@@ -542,6 +542,11 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     *lookup_segments = NULL;
     BLAST_ComplementMaskLocations(program_number, query_info, *filter_out,
                                   lookup_segments);
+
+    /* If there was a lower case mask, its contents have now been moved to 
+     * filter_out and are no longer needed in the query block.
+    */
+    query_blk->lcase_mask = NULL;
 
     /* Free the filtering locations if masking done for lookup table only */
     if (mask_at_hash) {

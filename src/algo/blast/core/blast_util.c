@@ -108,7 +108,7 @@ BLAST_SequenceBlk* BlastSequenceBlkFree(BLAST_SequenceBlk* seq_blk)
       return NULL;
 
    BlastSequenceBlkClean(seq_blk);
-
+   BlastMaskFree(seq_blk->lcase_mask);
    sfree(seq_blk);
    return NULL;
 }

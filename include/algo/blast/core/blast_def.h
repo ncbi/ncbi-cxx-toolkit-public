@@ -72,6 +72,13 @@ void __sfree(void** x); /* implemented in lib/util.c */
 #define GAP_CHAR 0
 #endif
 
+/** Structure for keeping the query masking information */
+typedef struct BlastMask {
+   Int4 index; /**< Index of the query sequence this mask is applied to */
+   ListNode* loc_list; /**< List of mask locations */
+   struct BlastMask* next; /**< Pointer to the next query mask */
+} BlastMask;
+
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
    Uint1* sequence; /**< Sequence used for search (could be translation). */
@@ -87,6 +94,9 @@ typedef struct BLAST_SequenceBlk {
                                         for sequence_start */
    Uint1* oof_sequence; /**< Mixed-frame protein representation of a
                              nucleotide sequence for out-of-frame alignment */
+   BlastMask* lcase_mask; /**< Locations to be masked from operations on this 
+                           sequence: lookup table for query; scanning for
+                           subject. */
 } BLAST_SequenceBlk;
 
 /** The query related information 
@@ -158,13 +168,6 @@ typedef struct BlastReturnStat {
                              extensions with traceback */
    double gap_trigger; /**< Minimal raw score for starting gapped extension */
 } BlastReturnStat;
-
-/** Structure for keeping the query masking information */
-typedef struct BlastMask {
-   Int4 index; /**< Index of the query sequence this mask is applied to */
-   ListNode* loc_list; /**< List of mask locations */
-   struct BlastMask* next; /**< Pointer to the next query mask */
-} BlastMask;
 
 #define COMPRESSION_RATIO 4
 

@@ -161,7 +161,6 @@ typedef struct LookupTableOptions {
 typedef struct QuerySetUpOptions {
    char* filter_string; /**< Parseable string that determines the filtering
                              options */
-   BlastMask* lcase_mask; /**< Lower case masked locations on the query */
    Uint1 strand_option; /**< In blastn: which strand to search: 1 = forward;
                            2 = reverse; 3 = both */
    Int4 genetic_code;     /**< Genetic code to use for translation, 
