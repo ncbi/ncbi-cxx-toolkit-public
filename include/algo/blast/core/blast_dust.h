@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #include <blast_def.h>
-#include <blastkar.h>  /* Needed for ncbi4na_to_blastna definition only */
+#include <blastkar.h>  /* Needed for NCBI4NA_TO_BLASTNA definition only */
 
 Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
                     Int2 level, Int2 window, Int2 minwin, Int2 linker,
