@@ -407,10 +407,12 @@ void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
  * @param rps_query_seq the query sequence [in]
  * @param db_seq_length Length of the database sequence [in]
  * @param posMatrix matrix (actual) values to be used [in]
+ * @param matrix_name Name of the score matrix underlying the RPS search [in]
  * @return new pssm 
  */
 Int4 ** RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
-                   const Uint1 * rps_query_seq, Int4 db_seq_length, Int4 **posMatrix);
+                   const Uint1 * rps_query_seq, Int4 db_seq_length, 
+                   Int4 **posMatrix, const char *matrix_name);
 
 
 /** 

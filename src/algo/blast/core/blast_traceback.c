@@ -1127,7 +1127,8 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
          sbp->posMatrix = 
             RPSCalculatePSSM(score_params->scale_factor,
                              query->length, query->sequence, one_db_seq.length,
-                             orig_pssm + db_seq_start[0]);
+                             orig_pssm + db_seq_start[0],
+                             sbp->name);
          if (sbp->posMatrix == NULL)
             return -1;
          
