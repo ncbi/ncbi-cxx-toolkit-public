@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/03/01 20:12:17  gouriano
+* *** empty log message ***
+*
 * Revision 1.1  2002/03/01 19:41:35  gouriano
 * *** empty log message ***
 *
@@ -99,7 +102,7 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
             // scope on the stack
             CScope scope2(*pOm);
             scope2.AddDefaults(); // loader 2 added
-            // scope on the stack
+            // scope on the heap
             CScope* pScope3 = new CScope(*pOm);
             pScope3->AddDefaults(); // loader 2 added
             delete pScope3; //  loader 2 alive
