@@ -256,6 +256,7 @@ BlastKarlinkGapBlkFill should return 2 before this is called. */
 char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
 double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, double  searchsp);
+double BLAST_GapDecayDivisor(double decayrate, unsigned nsegs );
 
 /** Calculate the cutoff score from the expected number of HSPs or vice versa.
  * @param S The calculated score [in] [out]
@@ -269,11 +270,11 @@ Int2 BLAST_Cutoffs (Int4 *S, double* E, Blast_KarlinBlk* kbp,
                     double searchsp, Boolean dodecay, double gap_decay_rate);
 
 /* Functions to calculate SumE (for large and small gaps). */
-double BLAST_SmallGapSumE (Blast_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_SmallGapSumE (Blast_KarlinBlk* kbp, Int4 gap, Int2 num,  double xsum, Int4 query_length, Int4 subject_length, double weight_divisor);
 
-double BLAST_UnevenGapSumE (Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_UnevenGapSumE (Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, Int2 num,  double xsum, Int4 query_length, Int4 subject_length, double weight_divisor);
 
-double BLAST_LargeGapSumE (Blast_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_LargeGapSumE (Blast_KarlinBlk* kbp, Int2 num,  double xsum, Int4 query_length, Int4 subject_length, double weight_divisor );
 
 /*
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for
