@@ -59,8 +59,10 @@ AC_PROG_CXX
 #### Detect supported compilers
 changequote(<<, >>)dnl
 compiler=
+compiler_ver=
 if test "$GCC" = "yes" ; then
-   case "`$CXX --version`" in
+   compiler_ver="`$CXX --version 2>&1`"
+   case "$compiler_ver" in
     2\.95* ) compiler="GCC" ;;
     egcs-2\.91\.* )
       case "$host" in
@@ -70,13 +72,15 @@ if test "$GCC" = "yes" ; then
 else
    case "$host" in
     sparc-sun-solaris2\.[67]  |  i*86-pc-solaris2\.[67] )
-      case "`$CXX -V 2>&1`" in
+      compiler_ver="`$CXX -V 2>&1`"
+      case "$compiler_ver" in
         *WorkShop*Compilers*5\.*)  compiler="WorkShop5" ;;
       esac ;;
 
     mips-sgi-irix6\.* )
-      case "`$CXX -version 2>&1`" in
-        MIPSpro*Compilers:*Version*7\.3 )  compiler="MIPSpro73" ;;
+      compiler_ver="`$CXX -version 2>&1`"
+      case "$compiler_ver" in
+        MIPSpro*Compilers:*Version*7\.3* )  compiler="MIPSpro73" ;;
       esac ;;
 
     i*86*-pc-cygwin32 )
@@ -94,7 +98,7 @@ x_CC="`which $1`"
 if test -x "$x_CC" ; then
   shift
   CC="$x_CC $*"
-  echo "Adjusted C   compiler: $CC"
+  echo "adjusted C   compiler: $CC"
 fi
 x_CC=
 
@@ -103,14 +107,14 @@ x_CXX="`which $1`"
 if test -x "$x_CXX" ; then
   shift
   CXX="$x_CXX $*"
-  echo "Adjusted C++ compiler: $CXX"
+  echo "adjusted C++ compiler: $CXX"
 fi
 x_CXX=
 
 
 #### Check if the compiler matches one of the supported compilers
 if test -z "$compiler" ; then
-  AC_MSG_ERROR(Compiler $CXX is not supported. Consult doc/config.html-ref_Compilers for the list of supported platforms/compilers.)
+  AC_MSG_ERROR(["Compiler $CXX $compiler_ver is not supported. Consult doc/config.html#ref_Compilers for the list of supported platforms/compilers"])
 fi
 
 
