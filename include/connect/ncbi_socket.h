@@ -413,7 +413,7 @@ extern EIO_Status SOCK_Read
 extern EIO_Status SOCK_PushBack
 (SOCK        sock,
  const void* buf,  /* [in] data to push back to the socket's local buffer */
- size_t      size  /* [in] # of bytes (starting at "buf") to pushback     */
+ size_t      size  /* [in] # of bytes (starting at "buf") to push back    */
  );
 
 
@@ -503,6 +503,45 @@ extern int/*bool*/ SOCK_IsServerSide(SOCK sock);
 
 
 /******************************************************************************
+ *  Connectionless (datagram) sockets
+ */
+
+
+extern EIO_Status DSOCK_Create
+(unsigned short port,                   /* [in]  may be 0 for unbound        */
+ SOCK*          sock                    /* [out] socket created              */
+ );
+
+
+extern EIO_Status DSOCK_CreateEx
+(unsigned short port,                   /* [in]  may be 0 for unbound        */
+ SOCK*          sock,                   /* [out] socket created              */
+ ESwitch        do_log                  /* [in]  whether to log data activity*/
+ );
+
+
+extern EIO_Status SOCK_SendMsg
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ const char*     host,                  /* [in]  hostname or dotted IP       */
+ unsigned short  port,                  /* [in]  port number, host byte order*/
+ const void*     data,                  /* [in]  additional data to send     */
+ size_t          datalen                /* [in]  size of addtl data (bytes)  */
+ );
+
+
+extern EIO_Status SOCK_RecvMsg
+(SOCK            sock,                  /* [in]  SOCK from DSOCK_Create[Ex]()*/
+ size_t          msgsize,               /* [in]  msg size expected, 0 for max*/
+ void*           buf,                   /* [in]  buf to store msg at,m.b.NULL*/
+ size_t          buflen,                /* [in]  buf length provided         */
+ size_t*         msglen,                /* [out] actual msg size, may be NULL*/
+ unsigned int*   sender_addr,           /* [out] net byte order, may be NULL */
+ unsigned short* sender_port            /* [out] host byte order, may be NULL*/
+);
+
+
+
+/******************************************************************************
  *  AUXILIARY network-specific functions (added for the portability reasons)
  */
 
@@ -520,9 +559,9 @@ extern int SOCK_gethostname
  * inet_ntoa(). On error "buf" returned emptied (buf[0] == '\0').
  */
 extern int SOCK_ntoa
-(unsigned int host,    /* [in]  must be in the network byte-order            */
- char*        buf,     /* [out] to be filled by smth. like "123.45.67.89\0"  */
- size_t       buflen   /* [in]  max # of bytes to put to "buf"               */
+(unsigned int addr,      /* [in]  must be in the network byte-order          */
+ char*        buf,       /* [out] to be filled by smth. like "123.45.67.89\0"*/
+ size_t       buflen     /* [in]  max # of bytes to put to "buf"             */
  );
 
 
@@ -561,7 +600,7 @@ extern unsigned int SOCK_gethostbyname
  * Note that on error the name returned emptied (name[0] == '\0').
  */
 extern char* SOCK_gethostbyaddr
-(unsigned int host,    /* [in]  host address in network byte order           */
+(unsigned int addr,    /* [in]  host address in network byte order           */
  char*        name,    /* [out] buffer to put the name to                    */
  size_t       namelen  /* [in]  size (bytes) of the buffer above             */
  );
@@ -575,6 +614,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/01/07 21:58:24  lavr
+ * Initial revision
+ *
  * Revision 6.25  2002/12/05 21:44:50  lavr
  * Retire SOCK_Create() as a macro; reinstate as a regular call
  *

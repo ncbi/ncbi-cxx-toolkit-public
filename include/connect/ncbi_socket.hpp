@@ -50,8 +50,6 @@ BEGIN_NCBI_SCOPE
 //
 //  CSocket::
 //
-//    Listening socket (to accept connections on the server side)
-//
 // NOTE:  for documentation see SOCK_***() functions in "ncbi_socket.h"
 //
 
@@ -434,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/01/07 21:58:24  lavr
+ * Initial revision
+ *
  * Revision 6.13  2002/12/19 14:51:48  dicuccio
  * Added export specifier for Win32 DLL builds.
  *
