@@ -59,6 +59,13 @@ unsigned CNetSchedule_GetJobId(const string&  key_str)
     unsigned job_id;
     const char* ch = key_str.c_str();
 
+    if (isdigit(*ch)) {
+        job_id = (unsigned) atoi(ch);
+        if (job_id) {
+            return job_id;
+        }        
+    }
+
     for (;*ch != 0 && *ch != '_'; ++ch) {
     }
     ++ch;
@@ -253,7 +260,24 @@ CNetScheduleClient::GetStatus(const string& job_key,
 
     CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
-
+/*
+    if (m_JobKey.id) {
+        char command[2048];
+        sprintf(command, "%s\r\n%s\r\nSTATUS %u",
+                m_ClientName.c_str(), 
+                m_Queue.c_str(),
+                m_JobKey.id);
+        WriteStr(command, strlen(command)+1);
+        
+        WaitForServer();
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                    "Communication error");
+        }
+    } else {
+        CommandInitiate("STATUS ", job_key, &m_Tmp);
+    }
+*/
     CommandInitiate("STATUS ", job_key, &m_Tmp);
 
     TrimPrefix(&m_Tmp);
@@ -415,6 +439,10 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
 
     CDatagramSocket  udp_socket;
     udp_socket.SetReuseAddress(eOn);
+    STimeout rto;
+    rto.sec = rto.usec = 0;
+    udp_socket.SetTimeout(eIO_Read, &rto);
+
     status = udp_socket.Bind(udp_port);
     if (eIO_Success != status) {
         return;
@@ -443,6 +471,7 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
 
         size_t msg_len;
         status = udp_socket.Recv(buf, sizeof(buf), &msg_len, &m_Tmp);
+        _ASSERT(status != eIO_Timeout); // because we Wait()-ed
         if (eIO_Success == status) {
 
             // Analyse the message content
@@ -459,12 +488,11 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
             const char* queue = chr_buf + 9;
 
             if (strncmp(m_Queue.c_str(), queue, m_Queue.length()) == 0) {
-
+                // Message from our queue 
                 return;
             }
 
-        } // if Recv
-
+        } 
 
     } // for
 
@@ -655,11 +683,13 @@ void CNetScheduleClient::MakeCommandPacket(string* out_str,
     }
 
     *out_str = m_ClientName;
+/*
     const string& client_name_comment = GetClientNameComment();
     if (!client_name_comment.empty()) {
         out_str->append(" ");
         out_str->append(client_name_comment);
     }
+*/
     out_str->append("\r\n");
     out_str->append(m_Queue);
     out_str->append("\r\n");
@@ -669,8 +699,13 @@ void CNetScheduleClient::MakeCommandPacket(string* out_str,
 
 void CNetScheduleClient::CheckConnect(const string& key)
 {
+    m_JobKey.id = 0;
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
         return; // we are connected, nothing to do
+    }
+
+    if (!key.empty()) {
+        CNetSchedule_ParseJobKey(&m_JobKey, key);
     }
 
     // not connected
@@ -687,9 +722,7 @@ void CNetScheduleClient::CheckConnect(const string& key)
            "Cannot establish connection with a server. Unknown host name.");
     }
 
-    CNetSchedule_Key job_key;
-    CNetSchedule_ParseJobKey(&job_key, key);
-    CreateSocket(job_key.hostname, job_key.port);
+    CreateSocket(m_JobKey.hostname, m_JobKey.port);
 }
 
 bool CNetScheduleClient::IsError(const char* str)
@@ -704,6 +737,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/07 17:30:49  kuznets
+ * Job key parsing changed
+ *
  * Revision 1.6  2005/03/04 12:05:46  kuznets
  * Implemented WaitJob() method
  *
