@@ -51,7 +51,9 @@ s/std::\([a-z_]*\)<\([^,<>]*<[^<>]*>\), std::allocator<\2>>/std::\1<\2>/g
 s/std::\([a-z_]*\)<\([^,<>]*\), \([^,<>]*<[^<>]*>\), std::less<\2>, std::allocator<std::pair<const \2, \3>>>/std::\1<\2, \3>/g
 ' | tee $tempfile
 
-grep '^".*", line [0-9][0-9]*: Error: ' $tempfile > /dev/null
+egrep -e '
+^".*", line [0-9][0-9]*: Error: 
+^Error: ' $tempfile > /dev/null
 
 if test $? -eq 0 ;  then
   rm $tempfile
