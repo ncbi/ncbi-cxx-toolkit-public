@@ -286,7 +286,11 @@ void CFlatItemFormatter::x_FormatRefJournal
                     journal += ref.GetPages();
                 }
                 if (ref.UseDate()  &&  ref.GetDate() != NULL) {
-                    ref.GetDate()->GetDate(&journal, " (%Y)");
+                    if (ref.GetDate()->IsStr()) {
+                        journal += " (" + ref.GetDate()->GetStr() + ")";
+                    } else {
+                        ref.GetDate()->GetDate(&journal, " (%Y)");
+                    }
                 }
             }
             break;
@@ -393,6 +397,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/10/18 18:49:44  shomrat
+* Handle str dates in journal format
+*
 * Revision 1.15  2004/10/05 15:45:03  shomrat
 * Fixed journal formatting
 *
