@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2002/03/22 19:52:19  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
  * Revision 6.40  2002/02/11 20:36:44  lavr
  * Use "ncbi_config.h"
  *
@@ -260,7 +263,6 @@ extern void bzero(char* target, long numbytes);
 /* Portable standard C headers
  */
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 

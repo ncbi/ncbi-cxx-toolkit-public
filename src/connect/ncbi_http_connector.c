@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2002/03/22 19:52:16  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
  * Revision 6.22  2002/02/11 20:36:44  lavr
  * Use "ncbi_config.h"
  *
@@ -123,7 +126,6 @@
 #include <connect/ncbi_buffer.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 

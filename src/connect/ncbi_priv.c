@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/03/22 19:52:17  lavr
+ * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
  * Revision 6.1  2000/03/24 22:53:35  vakatov
  * Initial revision
  *
@@ -37,8 +40,6 @@
  */
 
 #include "ncbi_priv.h"
-
-#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 
