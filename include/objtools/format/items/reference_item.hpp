@@ -146,6 +146,7 @@ private:
     void x_GatherRemark(CBioseqContext& ctx);
 
     void x_CleanData(void);
+    bool x_Matches(const CPub& pub) const;
 
     CConstRef<CPubdesc>   m_Pubdesc;
     CConstRef<CPub>       m_Pub;         // main entry
@@ -166,6 +167,7 @@ private:
     bool                  m_JustUids;
     CConstRef<CCit_book>  m_Book;
     CImprint::TPrepub     m_Prepub;
+    string        m_UniqueStr;
 };
 
 
@@ -188,6 +190,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/20 13:47:08  shomrat
+* Added m_UniqueStr to be used for citation matching
+*
 * Revision 1.8  2004/05/06 17:43:44  shomrat
 * moved non-public class to src file
 *
