@@ -54,6 +54,8 @@
 #include <objects/entrez2/Entrez2_eval_boolean.hpp>
 #include <objects/entrez2/Entrez2_boolean_reply.hpp>
 
+#include <algorithm>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -187,21 +189,41 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
                                const string& query_string,
                                vector<int>& result_uids)
 {
+    const unsigned int kMaxIdsInQueryString = 2500;
 
     if (query_uids.empty()) {
         return;
     }
 
-    string uids;
-    ITERATE (vector<int>, uid, query_uids) {
-        if ( !uids.empty() ) {
-            uids += " OR ";
+    if (query_uids.size() <= kMaxIdsInQueryString) {
+        // Query with a big query string that includes
+        // all the query_uids OR'd together
+        string uids;
+        ITERATE (vector<int>, uid, query_uids) {
+            if ( !uids.empty() ) {
+                uids += " OR ";
+            }
+            uids += NStr::IntToString(*uid) + "[UID]";
         }
-        uids += NStr::IntToString(*uid) + "[UID]";
-    }
 
-    string whole_query = "(" + query_string + ") AND (" + uids + ")";
-    Query(whole_query, db, result_uids);
+        string whole_query = "(" + query_string + ") AND (" + uids + ")";
+        Query(whole_query, db, result_uids);
+    } else {
+        // Query with the query_string passed in, and
+        // do the intersection with query_uids locally
+
+        vector<int> all_matching_uids;
+        Query(query_string, db, all_matching_uids);
+
+        // set_intersection needs sorted arrays
+        vector<int> sorted_query_uids(query_uids);
+        sort(sorted_query_uids.begin(), sorted_query_uids.end());
+        sort(all_matching_uids.begin(), all_matching_uids.end());
+
+        set_intersection(sorted_query_uids.begin(), sorted_query_uids.end(),
+                         all_matching_uids.begin(), all_matching_uids.end(),
+                         back_inserter(result_uids));
+    }
 }
 
 
@@ -214,6 +236,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/07/27 20:28:54  jcherry
+* Changed CEntre2Client::FilterIds to do intersection locally
+* if handed a large number of uids
+*
 * Revision 1.10  2004/06/16 12:02:43  dicuccio
 * Altered API for Query() - added default arguments for starting offset and
 * number of records to retrieve
