@@ -823,8 +823,8 @@ static string s_TitleFromSegment(const CBioseq_Handle& handle, CScope& scope)
 
     {
         CSeqdesc_CI it(handle, CSeqdesc::e_Source);
-        const CBioSource& src = it->GetSource();
         for (;  it;  ++it) {
+            const CBioSource& src = it->GetSource();
             const COrg_ref& org = src.GetOrg();
             if (org.IsSetTaxname()) {
                 organism = org.GetTaxname();
@@ -925,6 +925,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.38  2004/06/30 21:01:40  johnson
+* bugfix in s_TitleFromSegment
+*
 * Revision 1.37  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *
