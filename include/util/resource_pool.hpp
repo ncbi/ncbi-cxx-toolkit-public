@@ -1,0 +1,146 @@
+#ifndef UTIL___RESOURCEPOOL__HPP
+#define UTIL___RESOURCEPOOL__HPP
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Anatoliy Kuznetsov
+ *    General purpose resource pool.
+ */
+
+#include <corelib/ncbistd.hpp>
+#include <vector>
+
+BEGIN_NCBI_SCOPE
+
+/** @addtogroup ResourcePool
+ *
+ * @{
+ */
+
+
+/// General purpose resource pool.
+///
+/// Intended use is to store heavy reusable objects.
+/// Pool frees all vacant objects only upon pools destruction.
+/// Subsequent Get/Put calls does not result in objects reallocations and
+/// reinitializations. (So the prime target is performance optimization).
+/// Class is intentinally light weight and unsophisticated.
+template<class Value>
+class CResourcePool
+{
+public: 
+    typedef Value  TValue;
+    typedef Value  TValuePtr;
+
+public:
+    CResourcePool()
+    {}
+
+    ~CResourcePool()
+    {
+        ITERATE(vector<Value*>, it, m_FreeObjects) {
+            Value* v = *it;
+            delete v;
+        }
+    }
+
+    /// Get object from the pool. 
+    ///
+    /// Pool makes no reinitialization or constructor 
+    /// call and object is returned in the same state it was put.
+    /// If pool has no vacant objects, new is called to produce an object.
+    /// Caller is responsible for deletion or returning object back to the pool.
+    Value* Get()
+    {
+        Value* v;
+        if (m_FreeObjects.empty()) {
+            v = new Value;
+        } else {
+            typename vector<Value*>::iterator it = m_FreeObjects.end();
+            v = *(--it);
+            m_FreeObjects.pop_back();
+        }
+        return v;
+    }
+
+    /// Put object into the pool. 
+    ///
+    /// Pool does not check if object is actually
+    /// originated in the very same pool. It's ok to get an object from one pool
+    /// and return it to another pool.
+    /// Method does NOT immidiately destroy the object v. 
+    void Put(Value* v)
+    {
+        _ASSERT(v);
+        m_FreeObjects.push_back(v);
+    }
+
+    void Return(Value* v) { Put(v); }
+
+protected:
+    vector<Value*>  m_FreeObjects;
+};
+
+
+/// Guard object. Returns object pointer to the pool upon destruction.
+/// @sa CResourcePool
+template<class Pool>
+class CResourcePoolGuard
+{
+public:
+    CResourcePoolGuard(Pool& pool, typename Pool::TValue* v)
+    : m_Pool(pool),
+      m_Value(v)
+    {}
+
+    ~CResourcePoolGuard()
+    {
+        m_Pool.Return(m_Value);
+    }
+
+private:
+    Pool&                     m_Pool;
+    typename Pool::TValue*    m_Value;
+};
+
+
+/* @} */
+
+
+END_NCBI_SCOPE
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.1  2004/02/13 20:24:47  kuznets
+ * Initial revision. CResourcePool implements light weight solution for pooling
+ * of heavy weight objects (intended as optimization tool).
+ *
+ *
+ * ===========================================================================
+ */
+
+#endif  /* UTIL___RESOURCEPOOL__HPP */
