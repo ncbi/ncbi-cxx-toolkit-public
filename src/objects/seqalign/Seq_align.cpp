@@ -440,6 +440,59 @@ CSeq_align::CreateDensegFromStdseg() const
 }
 
 
+///----------------------------------------------------------------------------
+/// PRE : the Seq-align is a Dense-seg of aligned nucleotide sequences
+/// POST: Seq_align of type Dense-seg is created with each of the m_Widths 
+///       equal to 3 and m_Lengths devided by 3.
+CRef<CSeq_align> 
+CSeq_align::CreateTranslatedDensegFromNADenseg() const
+{
+    if ( !GetSegs().IsDenseg() ) {
+        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                   "CSeq_align::CreateTranslatedDensegFromNADenseg(): "
+                   "Input Seq-align should have segs of type Dense-seg!");
+    }
+    
+    CRef<CSeq_align> sa(new CSeq_align);
+
+    if (GetSegs().GetDenseg().IsSetWidths()) {
+        NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
+                   "CSeq_align::CreateTranslatedDensegFromNADenseg(): "
+                   "Widths already exist for the original alignment");
+    }
+
+    // copy from the original
+    sa->Assign(*this);
+
+    CDense_seg& ds = sa->SetSegs().SetDenseg();
+
+    // fix the lengths
+    const CDense_seg::TLens& orig_lens = GetSegs().GetDenseg().GetLens();
+    CDense_seg::TLens&       lens      = ds.SetLens();
+
+    for (CDense_seg::TNumseg numseg = 0; numseg < ds.GetNumseg(); numseg++) {
+        if (orig_lens[numseg] % 3) {
+            string errstr =
+                string("CSeq_align::CreateTranslatedDensegFromNADenseg(): ") +
+                "Length of segment " + NStr::IntToString(numseg) +
+                " is not divisible by 3.";
+            NCBI_THROW(CSeqalignException, eInvalidInputAlignment, errstr);
+        } else {
+            lens[numseg] = orig_lens[numseg] / 3;
+        }
+    }
+
+    // add the widths
+    ds.SetWidths().resize(ds.GetDim(), 3);
+
+#if _DEBUG
+    ds.Validate(true);
+#endif
+
+    return sa;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -449,6 +502,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/12/16 22:54:31  todorov
+* +CreateTranslatedDensegFromNADenseg
+*
 * Revision 1.5  2003/12/11 22:34:05  todorov
 * Implementation of GetSeq{Start,Stop}
 *

@@ -80,6 +80,12 @@ public:
     // Used by AlnMgr to handle nucl2prot alignments
     CRef<CSeq_align> CreateDensegFromStdseg(void) const;
 
+    // Create a Dense-seg with widths from Dense-seg of nucleotides
+    // Used by AlnMgr to handle translated nucl2nucl alignments
+    // IMPORTANT NOTE: Do *NOT* use for alignments containing proteins;
+    //                 the code will not check for this
+    CRef<CSeq_align> CreateTranslatedDensegFromNADenseg(void) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_align(const CSeq_align& value);
@@ -110,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/12/16 22:54:14  todorov
+* +CreateTranslatedDensegFromNADenseg
+*
 * Revision 1.4  2003/09/16 15:31:59  todorov
 * Added validation methods. Added seq range methods
 *
