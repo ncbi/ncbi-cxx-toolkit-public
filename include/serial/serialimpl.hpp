@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
