@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2002/02/22 20:46:57  thiessen
+* more rigorous fix for same
+*
 * Revision 1.61  2002/02/22 20:17:24  thiessen
 * fix feature range problems
 *
@@ -1680,14 +1683,17 @@ static bool ExtractObjectLocation(
                 ERR_POST(Warning << "structure MMDB ID " << mmdbID << " not loaded?");
                 continue;
             }
-            std::vector < bool >& residueFlags = (*residueMap)[identifier];
-            residueFlags.resize(identifier->nResidues, false);
 
             // set residue ranges
+            int i;
+            std::vector < bool >& residueFlags = (*residueMap)[identifier];
+            residueFlags.resize(identifier->nResidues);
             if ((*m)->IsSetResidues()) {
+                // parse individual ranges
+                for (i=0; i<residueFlags.size(); i++) residueFlags[i] = false;
                 CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
                 for (r=(*m)->GetResidues().begin(); r!=re; r++) {
-                    for (int i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
+                    for (i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
                         if (i > 0 && i <= residueFlags.size()) {
                             residueFlags[i - 1] = true;     // assume index = residue id - 1
                         } else {
@@ -1698,8 +1704,7 @@ static bool ExtractObjectLocation(
                 }
             } else {
                 // assume all residues are included if none specified
-                for (int i=0; i<residueFlags.size(); i++)
-                    residueFlags[i] = true;
+                for (i=0; i<residueFlags.size(); i++) residueFlags[i] = true;
             }
         }
     }
