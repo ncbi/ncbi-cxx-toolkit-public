@@ -2024,8 +2024,9 @@ Kappa_SearchParametersFree(Kappa_SearchParameters ** searchParams)
 
   if(sp->kbp_gap_orig) Blast_KarlinBlkDestruct(sp->kbp_gap_orig);
 
-  if(sp->startMatrix)     _PSIDeallocateMatrix((void**) sp->startMatrix, sp->mRows);
-  if(sp->origMatrix)      _PSIDeallocateMatrix((void**) sp->origMatrix, sp->mRows);
+  /* An extra row is added at end during allocation. */
+  if(sp->startMatrix)     _PSIDeallocateMatrix((void**) sp->startMatrix, 1+sp->mRows);
+  if(sp->origMatrix)      _PSIDeallocateMatrix((void**) sp->origMatrix, 1+sp->mRows);
   if(sp->sFreqRatios)     _PSIMatrixFrequencyRatiosFree(sp->sFreqRatios);
 /*
   if(sp->startFreqRatios) freeStartFreqs(sp->startFreqRatios, sp->mRows);
@@ -2073,8 +2074,8 @@ Kappa_SearchParametersNew(
   
   if(adjustParameters) {
     sp->kbp_gap_orig = Blast_KarlinBlkCreate();
-    sp->startMatrix  = allocateScaledMatrix(rows);
-    sp->origMatrix   = allocateScaledMatrix(rows);
+    sp->startMatrix  = allocateScaledMatrix(sp->mRows);
+    sp->origMatrix   = allocateScaledMatrix(sp->mRows);
     
     sp->resProb    =
       (double *) calloc(BLASTAA_SIZE, sizeof(double));
