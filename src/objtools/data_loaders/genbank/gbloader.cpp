@@ -203,6 +203,11 @@ const size_t kChoiceNameCount = sizeof(s_ChoiceName)/sizeof(s_ChoiceName[0]);
 void CGBDataLoader::GetRecords(const CSeq_id_Handle& idh,
                                const EChoice choice)
 {
+    if ( choice == eAnnot && !idh.IsGi() ) {
+        // no external annots available on non-gi ids
+        return;
+    }
+    CMutexGuard guard(m_Locks.m_Lookup);
     x_GetRecords(s_ChoiceName[min(size_t(choice), kChoiceNameCount-1)],
                  idh, x_Request2SeqrefMask(choice));
 }
@@ -210,6 +215,7 @@ void CGBDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 void CGBDataLoader::GetChunk(CTSE_Chunk_Info& chunk_info)
 {
+    CMutexGuard guard(m_Locks.m_Lookup);
     x_GetChunk(GetTSEinfo(chunk_info.GetTSE_Info()), chunk_info);
 }
 
@@ -1078,6 +1084,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2003/12/01 23:42:29  vasilche
+* Temporary fix for segfault in genbank data loader in multithreaded applications.
+*
 * Revision 1.91  2003/11/26 17:55:58  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

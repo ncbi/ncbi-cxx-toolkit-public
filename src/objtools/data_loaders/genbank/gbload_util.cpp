@@ -29,11 +29,11 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
-#include <objmgr/impl/handle_range.hpp>
-#include <objmgr/gbloader.hpp>
-#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/gbload_util.hpp>
+
+#include <objmgr/gbloader.hpp>
+#include <objmgr/impl/handle_range.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -320,6 +320,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/12/01 23:42:27  vasilche
+* Temporary fix for segfault in genbank data loader in multithreaded applications.
+*
 * Revision 1.21  2003/11/26 17:55:57  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.
