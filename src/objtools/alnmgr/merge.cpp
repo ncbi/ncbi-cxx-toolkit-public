@@ -110,7 +110,7 @@ void CAlnMix::x_Merge()
         }
         if (m_DS) {
             // the one and only ds has been found, no need to merge
-            //return;
+            return;
         }
     }
 
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/10/10 17:16:15  todorov
+* .
+*
 * Revision 1.3  2002/10/08 18:02:34  todorov
 * changed the aln lst input param
 *
