@@ -70,27 +70,20 @@ public:
 
     /// predict CC regions from sequence;
     /// return top score
-    template<class Seq>
-    static double PredictRegions(const Seq& seq,
+    static double PredictRegions(const vector<char>& seq,
                                  vector<CRef<objects::CSeq_loc> >& regions,
                                  vector<double>& max_scores,
-                                 TSeqPos win_len = 28)
-    {
-        vector<double> scores;
-        vector<unsigned int> frames;
-        ComputeScores(seq, scores, frames, win_len);
-        PredictRegions(scores, regions, max_scores);
-        return *max_element(scores.begin(), scores.end());
-    }
+                                 TSeqPos win_len = 28);
 
-    /// predict CC regions from scores
-    static void PredictRegions(const vector<double>& scores,
-                               vector<CRef<objects::CSeq_loc> >& regions,
-                               vector<double>& max_scores);
+    static double PredictRegions(const string& seq,
+                                 vector<CRef<objects::CSeq_loc> >& regions,
+                                 vector<double>& max_scores,
+                                 TSeqPos win_len = 28);
 
-
-    /// table of CC propensities of amino acids in each of seven frames
-    static const double sm_Propensities[26][7];
+    static double PredictRegions(const objects::CSeqVector& seq,
+                                 vector<CRef<objects::CSeq_loc> >& regions,
+                                 vector<double>& max_scores,
+                                 TSeqPos win_len = 28);
 };
 
 
@@ -102,6 +95,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/09 16:09:08  dicuccio
+ * Fixes for MSVC.  Moved member template into implementation file to avoid
+ * naming / export conflicts.  Moved lookup table to implementation file.
+ *
  * Revision 1.1  2003/09/08 16:15:13  jcherry
  * Initial version
  *
