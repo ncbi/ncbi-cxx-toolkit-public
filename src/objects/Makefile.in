@@ -8,8 +8,8 @@ USR_PROJ = sources
 SUB_PROJ = tinyseq general biblio medline pub pubmed \
 		   featdef seqcode seqset seq \
 		   id1 gbseq entrez2 submit medlars mla proj mmdb \
-		   cdd cn3d ncbimime access objprt docsum taxon1 mim \
-		   entrezgene scoremat blast
+		   cdd cn3d scoremat ncbimime access objprt docsum taxon1 mim \
+		   entrezgene blast
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
