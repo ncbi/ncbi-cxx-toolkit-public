@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/11/18 20:16:12  vakatov
+* Included <serial/typeref.hpp> to fix for the CodeWarrior(MAC) C++ compiler
+*
 * Revision 1.6  1999/11/16 15:40:13  vasilche
 * Added plain pointer choice.
 *
@@ -57,6 +60,7 @@
 * ===========================================================================
 */
 
+#include <serial/typeref.hpp>
 #include <serial/ptrinfo.hpp>
 #include <serial/memberlist.hpp>
 #include <vector>
