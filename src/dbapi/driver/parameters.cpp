@@ -112,22 +112,26 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
                  ++param_no);
         }
     }
-
+    
     if (param_no < m_NofParams) {
         // we do have a param number
         if ((m_Params[param_no].status & fSet) != 0) { 
+        // DELETE ME!!!!
+#if 0
             if (m_Params[param_no].param->GetType() == param->GetType()) {
                 // types are the same
                 *m_Params[param_no].param = *param;
             }
-            else { // we need to delete the old one
-                delete m_Params[param_no].param;
-                m_Params[param_no].param = param->Clone();
-            }
+            else 
+#endif
+                { // we need to delete the old one
+                    delete m_Params[param_no].param;
+                    m_Params[param_no].param = param->Clone();
+                }
         }
-	else {
-	    m_Params[param_no].param = param->Clone();
-	}
+        else {
+            m_Params[param_no].param = param->Clone();
+        }
         if ( !param_name.empty()) {
             if (m_Params[param_no].name.compare(param_name) != 0) {
                 m_Params[param_no].name = param_name;
@@ -193,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/05/15 22:29:40  soussov
+ * temporary fix for SetParam
+ *
  * Revision 1.6  2001/11/06 17:59:53  lavr
  * Formatted uniformly as the rest of the library
  *
