@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2005/02/22 17:44:15  gouriano
+* removed unused variable
+*
 * Revision 1.57  2005/02/22 15:07:34  gouriano
 * Corrected writing element's default value when generating XML schema
 *
@@ -307,7 +310,7 @@ void CDataMemberContainerType::PrintDTDElement(CNcbiOstream& out, bool contents_
 {
     string tag = XmlTagName();
     bool hasAttlist= false, isAttlist= false;
-    bool hasNotag= false, isOptional= false;
+    bool hasNotag= false;
     bool isSimple= false, isSeq= false;
     string indent("    ");
 
