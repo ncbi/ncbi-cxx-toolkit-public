@@ -1,16 +1,18 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <title>  Developing web-based applications </title>
+    <title>  An example web-based CGI application </title>
   </head>
   <body bgcolor = white>
-    <h1> Developing web-based applications </h1>
+    <h1>   An example  web-based CGI application </h1>
 
 <ul>
+  <li> <a href="#intro"> Introduction </a>
   <li> <a href="#descrip"> Program description </a>
-  <li> <a href="#t2"> TOPIC </a>
+  <li> <a href="#design">  Program design: Distributing the work </a>
 </ul>
 
+<a name="intro"> <h3>Introduction </h3>
 The previous two chapters described the NCBI C++ Toolkit's <a href="cgi.html"> CGI</a> and
 <a href="webpgs.html"> HTML</a> classes, with an emphasis on their independence from one 
 another. In practice however, a real application must employ both types of objects, with
@@ -29,29 +31,31 @@ flexibility. The <i>CHelloResource</i> class has different commands which will b
 on whether the query string invoked an <i>init</i> or a <i>reply</i> command.  For many applications
 however, this selection mechanism adds unnecessary complexity to the interface, as the application
 always performs the same function, albeit on different input. In these cases, there is no need to
-use a <i>CNcbiResource</i> object, or <i>CNcbiCommand</i> objects, as the application's
-functionality can be encoded directly in the application's <i>ProcessRequest()</i> method. The
-example program described in this section uses this simpler approach.<p>
+use a <i>CNcbiResource</i> object, or <i>CNcbiCommand</i> objects, as the necessary functionality
+can be encoded directly in the application's <i>ProcessRequest()</i> method. The example program
+described in this section uses this simpler approach.<p>
 
 <a name="descrip"> <h3> Program description </h3>
 
 The <a href="http://ray:6224/staff/zimmerman/car.cgi"><i>car.cgi</i></a> program presents an HTML
 form for ordering a custom color car with selected features. The form includes a group of checkboxes
 (listing individual features) and a set of radio buttons listing possible colors. Initially, no
-features are selected, and the default color is white. Following the form, a summary stating the
-currently selected features and color, along with a price quote, is displayed. <p>
+features are selected, and the default color is black. Following the form, a summary stating the
+currently selected features and color, along with a price quote, is displayed. When the <i>submit</i>
+button is clicked, the form generates a new query string (which includes the selected features
+and color), and the program is restarted. <p>
 
 The program uses a <a href="../docxx/CHTMLPage.html"><i>CHTMLPage</i></a> object with a template
-file (<a href="car.html"><i>car.html</i></a>) to create the display. The template file contains
+file (<a href="CAR/car.html"><i>car.html</i></a>) to create the display. The template file contains
 three &lt;@tag@&gt; locations, which the program uses to map <i>CNCBINode</i>s to the page, using
 the <i>AddTagMap()</i> method.  Here is an outline of the execution sequence:
 
 <ol>
 <li> Create an instance of class <i>CCar</i> named <i>car</i>.<p>
 
-<li> Create a <i>CHTMLPage</i> named <i>page</i>.<p>
-
 <li> Load <i>car</i> with the color and features specified in the query string. <p>
+
+<li> Create a <i>CHTMLPage</i> named <i>page</i>.<p>
 
 <li> Generate a <i>CHTML_form</i> object using the features and color currently selected
 for <i>car</i>, and map that HTML form to the &lt;@FORM@&gt; tag in <i>page</i>.<p>
@@ -64,22 +68,108 @@ to the &lt;@SUMMARY@&gt; tag.<p>
 <li> Output <i>page</i> and exit.
 </ol>
 <p>
-The <i>CCar</i> created in step 1 initially has the default color (white) and no features. Any features or colors
-specified in the query string with which the program was invoked are added to <i>car</i> in step 3, prior
-to generating the HTML display elements. In step 4, the form element is created using the lists of
-possible features and colors stored as static data members in class <i>CCar</i>. Each feature corresponds
-to a <i>CHTML_checkbox</i> element in the form, and each color corresponds to a <i>CHTML_radio</i> button.
-The selected color, along with all currently selected features will be displayed as selected in the form.<p>
 
-The summary statement uses a <i>CHTML_ol</i> list element to itemize the selected features in <i>car</i>.
-The price is calculated as <i>CCar::m_BasePrice</i> (a static data member) plus an additional $1000 per
-feature. The <i>submit</i> button generates a fresh page with the new query string, as the <i>action</i>
-attribute of the form is the URL of <i>car.cgi</i>.
+The <i>CCar</i> created in step 1 initially has the default color (black) and no features. Any
+features or colors specified in the query string with which the program was invoked are added to
+<i>car</i> in step 2, prior to generating the HTML display elements. In step 4, the form element is
+created using the set of possible features and the set of possible colors. These sets of attributes
+are stored as static data members in an external utility class, <i>CCarAttr</i>. Each feature
+corresponds to a <i>CHTML_checkbox</i> element in the form, and each color corresponds to a
+<i>CHTML_radio</i> button.  The selected color, along with all currently selected features, will be
+displayed as selected in the form.<p>
+
+The summary statement uses a <i>CHTML_ol</i> list element to itemize the selected features in
+<i>car</i>.  The price is calculated as <i>CCar::m_BasePrice</i> plus an additional $1000 per
+feature. The <i>submit</i> button generates a fresh page with the new query string, as the
+<i>action</i> attribute of the form is the URL of <i>car.cgi</i>.
 
 
-<a name="t2"> <h3> Program design: Distributing the work</h3>
+<a name="design"> <h3> Program design: Distributing the work</h3>
 <p>
+The program uses three classes: <i>CCar, CCarAttr</i>, and <i>CCarCgi</i>. The <i>CCar</i> class
+knows nothing about HTML nodes or CGI objects - its only functions are to store the currently 
+selected color and features, and compute the resulting price:
+<font color="#808080"><pre>
+class CCar
+{
+public:
+    CCar(unsigned base_price = 12000) { m_BasePrice = base_price; }
 
+    // Mutating member functions
+    void AddFeature(const string& feature_name);
+    void SetColor(const string& color_name);
+
+    // Access member functions
+    bool HasFeature(const string& feature_name) const;
+    string GetColor(void) const;
+    string GetPrice(void) const;
+    const set&lt;string>& GetFeatures() const;
+  
+private:
+    set&lt;string> m_Features;
+    string      m_Color;
+    unsigned    m_BasePrice;
+};
+</pre></font>
+Instead, the <i>CCar</i> class provides an interface to all of its data members, thus allowing the
+application to get/set features of the car as needed. The static utility class, <i>CCarAttr</i>,
+simply provides the sets of possible features and colors, which will be used by the application
+in generating the HTML form for submission:
+<font color="#808080"><pre>
+class CCarAttr {
+public:
+    CCarAttr(void);
+    static const set&lt;string>& GetFeatures(void) { return sm_Features; }
+    static const set&lt;string>& GetColors  (void) { return sm_Colors; }
+private:
+    static set&lt;string> sm_Features;
+    static set&lt;string> sm_Colors;
+};
+</pre></font>
+
+Both of these classes are defined in a header file which is <i>#include</i>'d in the <i>*.cpp</i> 
+files. Finally, the application class does most of the actual work, and this class must know
+about <i>CCar, CCarAttr, HTML,</i> and <i>CGI</i> objects. The <i>CCarCgi</i> class has the following 
+interface:
+
+<font color="#808080"><pre>
+class CCarCgi : public CCgiApplication
+{
+public:
+    virtual int ProcessRequest(CCgiContext& ctx);
+
+private:
+    CCar* CreateCarByRequest(const CCgiContext& ctx);
+
+    void PopulatePage(CHTMLPage& page, const CCar& car);
+
+    static CNCBINode* ComposeSummary(const CCar& car);
+    static CNCBINode* ComposeForm   (const CCar& car);
+    static CNCBINode* ComposePrice  (const CCar& car);
+
+    static const char sm_ColorTag[];
+    static const char sm_FeatureTag[];
+};
+</pre></font>
+
+The source code is distributed over three files:
+<ol>
+ <li> <a href="CARdemo/car.hpp"><i>car.hpp</i></a>
+ <li> <a href="CARdemo/car.cpp"><i>car.cpp</i></a>
+ <li> <a href="CARdemo/car_cgi.cpp"><i>car_cgi.cpp</i></a>
+</ol>
+The <i>CCar</i> and <i>CCarAttr</i> classes are defined in <i>car.hpp</i>, and 
+implemented in <i>car.cpp</i>. Both the class definition and implementation for the
+CGI application class are in <i>car_cgi.cpp</i>. With this design, only the application
+class will be affected by changes made to either the HTML or CGI class objects. 
+
+The additional files needed to compile and run the program are:
+<ol>
+ <li> <a href="CARdemo/car.html"><i>car.html</i></a>
+ <li> <a href="CARdemo/Makefile.car_app"><i>Makefile.car_app</i></a>
+</ol>
+
+<p>
    </body>
 <a href="webpgs.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
