@@ -253,8 +253,12 @@ CBlastDatabaseOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth) c
 
 }
 
+#if 0
 BlastMask*
 x_CSeqLoc2BlastMask(const CSeq_loc& sl, int index)
+#endif
+BlastMask*
+BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index)
 {
     _ASSERT(sl.IsInt() || sl.IsPacked_int());
 
