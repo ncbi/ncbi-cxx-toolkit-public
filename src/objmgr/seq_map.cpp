@@ -529,6 +529,27 @@ CSeqMap::ResolvedRangeIterator(CScope* scope,
 }
 
 
+bool CSeqMap::CanResolveRange(CScope* scope,
+                              TSeqPos from,
+                              TSeqPos length,
+                              ENa_strand strand) const
+{
+    try {
+        TSegment_CI seg(CConstRef<CSeqMap>(this), scope,
+                        SSeqMapSelector()
+                        .SetRange(from, length)
+                        .SetResolveCount(size_t(-1))
+                        .SetFlags(fDefaultFlags),
+                        strand);
+        for ( ; seg; ++seg);
+    }
+    catch (runtime_error) {
+        return false;
+    }
+    return true;
+}
+
+
 void CSeqMap::DebugDump(CDebugDumpContext /*ddc*/,
                         unsigned int /*depth*/) const
 {
@@ -838,6 +859,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/07/17 19:10:28  grichenk
+* Added methods for seq-map and seq-vector validation,
+* updated demo.
+*
 * Revision 1.44  2003/07/14 21:13:26  grichenk
 * Added possibility to resolve seq-map iterator withing a single TSE
 * and to skip intermediate references during this resolving.

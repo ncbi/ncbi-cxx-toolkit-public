@@ -700,14 +700,18 @@ int CDemoApp::Run(void)
             CSeqVector seq_vect = handle.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             // -- use the vector: print length and the first 10 symbols
             NcbiCout << "Sequence: length=" << seq_vect.size();
-            NcbiCout << " data=";
-            sout = "";
-            for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
-                // Convert sequence symbols to printable form
-                sout += seq_vect[i];
+            if (seq_vect.CanGetRange(0, seq_vect.size() - 1)) {
+                NcbiCout << " data=";
+                sout = "";
+                for (TSeqPos i = 0; (i < seq_vect.size()) && (i < 10); i++) {
+                    // Convert sequence symbols to printable form
+                    sout += seq_vect[i];
+                }
+                NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
             }
-            NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
-
+            else {
+                NcbiCout << " data unavailable" << NcbiEndl;
+            }
             // CSeq_descr iterator: iterates all descriptors starting
             // from the bioseq and going the seq-entries tree up to the
             // top-level seq-entry.
@@ -876,6 +880,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/07/17 19:10:30  grichenk
+* Added methods for seq-map and seq-vector validation,
+* updated demo.
+*
 * Revision 1.29  2003/07/08 15:09:44  vasilche
 * Added argument to test depth of segment resolution.
 *

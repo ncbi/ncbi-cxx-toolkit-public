@@ -106,6 +106,8 @@ public:
     // Return gap symbol corresponding to the selected coding
     TResidue GetGapChar(void) const;
 
+    bool CanGetRange(TSeqPos from, TSeqPos to) const;
+
 private:
     enum {
         kTypeUnknown = 1 << 7
@@ -186,6 +188,12 @@ CSeqVector_CI& CSeqVector::x_GetIterator(void) const
     return *m_Iterator;
 }
 
+inline
+bool CSeqVector::CanGetRange(TSeqPos from, TSeqPos to) const
+{
+    return m_SeqMap->CanResolveRange(m_Scope, from, to, m_Strand);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -193,6 +201,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/07/17 19:10:27  grichenk
+* Added methods for seq-map and seq-vector validation,
+* updated demo.
+*
 * Revision 1.39  2003/06/24 19:46:41  grichenk
 * Changed cache from vector<char> to char*. Made
 * CSeqVector::operator[] inline.

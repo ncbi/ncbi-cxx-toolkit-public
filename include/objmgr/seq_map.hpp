@@ -215,6 +215,11 @@ public:
                                       size_t maxResolve = size_t(-1),
                                       TFlags flags = fDefaultFlags) const;
     
+    bool CanResolveRange(CScope* scope,
+                         TSeqPos from,
+                         TSeqPos length,
+                         ENa_strand strand = eNa_strand_plus) const;
+
     // deprecated interface
     //size_t size(void) const;
     //CSeqMap_CI operator[] (size_t seg_idx) const;
@@ -349,6 +354,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/07/17 19:10:27  grichenk
+* Added methods for seq-map and seq-vector validation,
+* updated demo.
+*
 * Revision 1.39  2003/06/26 19:47:25  grichenk
 * Added sequence length cache
 *
