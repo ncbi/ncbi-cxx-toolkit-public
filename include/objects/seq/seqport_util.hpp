@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/01/10 19:20:45  clausen
+ * Added GetIupacaa3, GetCode, and GetIndex
+ *
  * Revision 1.2  2001/09/07 14:16:49  ucko
  * Cleaned up external interface.
  *
@@ -100,12 +103,13 @@ public:
     // out_seq returns the ambiguous bases. Note, there are
     // only ambiguous bases for iupacna->ncib2na and
     // ncib4na->ncbi2na coversions.
-    static unsigned int GetAmbigs(const CSeq_data&       in_seq,
-                                  CSeq_data*             out_seq,
-                                  vector<unsigned int>*  out_indices,
-                                  CSeq_data::E_Choice    to_code,
-                                  unsigned int           uBeginIdx = 0,
-                                  unsigned int           uLength   = 0);
+    static unsigned int GetAmbigs
+    (const CSeq_data&       in_seq,
+     CSeq_data*             out_seq,
+     vector<unsigned int>*  out_indices,
+     CSeq_data::E_Choice    to_code = CSeq_data::e_Ncbi2na,
+     unsigned int           uBeginIdx = 0,
+     unsigned int           uLength   = 0);
 
     // Get a copy of CSeq_data. No conversion is done. uBeginIdx of the
     // biological sequence in in_seq will be in position
@@ -195,6 +199,19 @@ public:
                                           CSeq_data*         out_seq,
                                           unsigned int       uBeginIdx = 0,
                                           unsigned int       uLength   = 0);
+                                          
+    // Given an Ncbistdaa input code index, returns the 3 letter Iupacaa3 code
+    static const string& GetIupacaa3(unsigned int ncbistdaa);
+    
+    // Given a code index for any of Iupacna, Iupacaa, Ncbistdaa, and Ncbieaa,
+    // returns the code corresponding to the index                        
+    static const string& GetCode(CSeq_data::E_Choice code_type, 
+                                 unsigned int        idx); 
+                        
+    // Given a code for any of Iupacna, Iupacaa, Ncbistdaa, and Ncbieaa,
+    // returns the index corresponding to the code. If no code
+    // exists, returns -1
+    static int GetIndex(CSeq_data::E_Choice code_type, const string& code);
 };
 
 

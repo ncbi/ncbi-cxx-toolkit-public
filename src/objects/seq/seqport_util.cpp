@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/01/10 19:21:34  clausen
+ * Added GetIupacaa3, GetCode, and GetIndex
+ *
  * Revision 6.5  2001/10/17 18:35:33  clausen
  * Fixed machine dependencies in InitFastNcbi4naIupacna and InitFastNcbi2naNcbi4na
  *
@@ -181,6 +184,14 @@ public:
      unsigned int       uBeginIdx,
      unsigned int       uLength)
         const;
+        
+    const string& GetIupacaa3(unsigned int ncbistdaa);
+    
+    const string& GetCode(CSeq_data::E_Choice code_type, 
+                          unsigned int        idx); 
+                 
+    int GetIndex(CSeq_data::E_Choice code_type,
+                  const string&       code);
 
 private:
 
@@ -342,16 +353,44 @@ private:
     // Table used for fast compression from Ncbi4na to Ncbi2na
     // (2 bytes to 1 byte). Similar to m_FastIupacnaNcbi4na
     CRef<CFast_2_1> m_FastNcbi4naNcbi2na;
+    
+    // Table used to return Iupacaa3 code given Ncbistdaa code index
+    vector<string> m_NcbistdaaIupacaa3;
+    
+    // Tables used to return an Iupacna code given an Iupacna code index
+    // and vice-versa
+    vector<string> m_IupacnaIndexCode;
+    map<string, int> m_IupacnaCodeIndex;
+    int m_iupacna_start_at;
+    
+    // Tables used to return an Iupacaa code given an Iupacaa code index
+    // and vice-versa
+    vector<string> m_IupacaaIndexCode;
+    map<string, int> m_IupacaaCodeIndex;
+    int m_iupacaa_start_at;
+    
+    // Tables used to return an Ncbistdaa code given an Ncbistdaa code index
+    // and vice-versa
+    vector<string> m_NcbistdaaIndexCode;
+    map<string, int> m_NcbistdaaCodeIndex;
+    
+    // Tables used to return an Ncbieaa code given an Ncbieaa code index
+    // and vice-versa
+    vector<string> m_NcbieaaIndexCode;
+    map<string, int> m_NcbieaaCodeIndex;
+    int m_ncbieaa_start_at; 
 
     // Helper function to initialize fast conversion tables
     CRef<CFast_table4> InitFastNcbi2naIupacna();
     CRef<CFast_table2> InitFastNcbi2naNcbi4na();
     CRef<CFast_table2> InitFastNcbi4naIupacna();
-
     CRef<CFast_4_1>    InitFastIupacnaNcbi2na();
     CRef<CFast_2_1>    InitFastIupacnaNcbi4na();
     CRef<CFast_2_1>    InitFastNcbi4naNcbi2na();
-
+    
+    // Helper functions to initialize Index to/from code conversion tables
+    void               InitIndexCode();
+    
     // Data members and functions used for random disambiguation
 
     // structure used for ncbi4na --> ncbi2na
@@ -960,6 +999,27 @@ unsigned int CSeqportUtil::ReverseComplement
 }
 
 
+const string& CSeqportUtil::GetIupacaa3(unsigned int ncbistdaa)
+{
+    return s_Implementation.GetIupacaa3(ncbistdaa);
+}
+
+
+const string& CSeqportUtil::GetCode
+(CSeq_data::E_Choice code_type, 
+ unsigned int        idx) 
+{
+    return s_Implementation.GetCode(code_type, idx);
+}
+
+int CSeqportUtil::GetIndex
+(CSeq_data::E_Choice code_type,
+ const string&       code)
+{
+    return s_Implementation.GetIndex(code_type, code);
+}
+
+
 
 CSeqportUtil_implementation::CSeqportUtil_implementation()
 {
@@ -1036,6 +1096,9 @@ CSeqportUtil_implementation::CSeqportUtil_implementation()
     m_FastIupacnaNcbi2na = InitFastIupacnaNcbi2na();
     m_FastIupacnaNcbi4na = InitFastIupacnaNcbi4na();
     m_FastNcbi4naNcbi2na = InitFastNcbi4naNcbi2na();
+    
+    // Initialize tables for conversion of index to codes
+    InitIndexCode();
 
     // Initialize m_Masks used for random ambiguity resolution
     m_Masks = CSeqportUtil_implementation::InitMasks();
@@ -1520,6 +1583,99 @@ CRef<CSeqportUtil_implementation::CFast_2_1> CSeqportUtil_implementation::InitFa
 }
 
 
+// Function to initialize m_NcbistdaaIupacaa3, m_IupacnaIndexCode, 
+// m_IupacaaIndexCode, m_NcbistdaaIndexCode, m_NcbieaaIndexCode, 
+// m_IupacnaCodeIndex, m_IupacaaCodeIndex, m_NcbieaaCodeIndex, and
+// m_NcbistdaaCodeIndex
+void CSeqportUtil_implementation::InitIndexCode()
+{
+    typedef list<CRef<CSeq_code_table> >      Ttables;
+    typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
+    
+    bool iupacaa3_found = false, iupacna_found = false, iupacaa_found = false,
+         ncbistdaa_found = false, ncbieaa_found = false;
+         
+    // Get table for eSeq_code_type_iupacaa3
+    iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
+        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa3 & !iupacaa3_found) {
+            iupacaa3_found = true;
+           iterate(Tcodes, i_td1, (*i_ct)->GetTable()) {
+                m_NcbistdaaIupacaa3.push_back((*i_td1)->GetSymbol());
+            }
+        }
+        if((*i_ct)->GetCode() == eSeq_code_type_iupacna & !iupacna_found) {
+            iupacna_found = true;
+            if (!(*i_ct)->IsSetStart_at()) {
+                throw runtime_error("Iupacna start_at not set");
+            }
+            m_iupacna_start_at = (*i_ct)->GetStart_at();
+            int i =  m_iupacna_start_at;       
+            iterate(Tcodes, i_td2, (*i_ct)->GetTable()) {
+                m_IupacnaIndexCode.push_back((*i_td2)->GetSymbol());
+                m_IupacnaCodeIndex.insert(make_pair((*i_td2)->GetSymbol(), i));
+                i++;
+            }
+        }
+        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa & !iupacaa_found) {
+            iupacaa_found = true;
+            if (!(*i_ct)->IsSetStart_at()) {
+                throw runtime_error("Iupacaa start_at not set");
+            }
+            m_iupacaa_start_at = (*i_ct)->GetStart_at();
+            int i =  m_iupacaa_start_at;       
+            iterate(Tcodes, i_td3, (*i_ct)->GetTable()) {
+                m_IupacaaIndexCode.push_back((*i_td3)->GetSymbol());
+                m_IupacaaCodeIndex.insert(make_pair((*i_td3)->GetSymbol(), i));
+                i++;
+            }
+        }
+        if((*i_ct)->GetCode() == eSeq_code_type_ncbieaa & !ncbieaa_found) {
+            ncbieaa_found = true;
+            if (!(*i_ct)->IsSetStart_at()) {
+                throw runtime_error("Ncbieaa start_at not set");
+            }
+            m_ncbieaa_start_at = (*i_ct)->GetStart_at();
+            int i =  m_ncbieaa_start_at;       
+            iterate(Tcodes, i_td4, (*i_ct)->GetTable()) {
+                m_NcbieaaIndexCode.push_back((*i_td4)->GetSymbol());
+                m_NcbieaaCodeIndex.insert(make_pair((*i_td4)->GetSymbol(), i));
+                i++;
+            }
+        }
+        if((*i_ct)->GetCode() == eSeq_code_type_ncbistdaa & !ncbistdaa_found) {
+            ncbistdaa_found = true;
+            int i = 0;
+            iterate(Tcodes, i_td5, (*i_ct)->GetTable()) {
+                m_NcbistdaaIndexCode.push_back((*i_td5)->GetSymbol());
+                m_NcbistdaaCodeIndex.insert(make_pair
+                    ((*i_td5)->GetSymbol(), i));
+                i++;
+            }
+        }
+
+    }
+    if (!iupacaa3_found) {    
+        throw runtime_error("Iupacaa3 code table not found");
+    }
+    
+    if (!iupacna_found) {    
+        throw runtime_error("Iupacna code table not found");
+    }
+    
+    if (!iupacaa_found) {    
+        throw runtime_error("Iupacaa code table not found");
+    }
+    
+    if (!ncbieaa_found) {    
+        throw runtime_error("Ncbieaa code table not found");
+    }
+    
+    if (!ncbistdaa_found) {    
+        throw runtime_error("Ncbistdaa code table not found");
+    }         
+}
+
+
 // Function to initialize m_Masks
 CRef<CSeqportUtil_implementation::SMasksArray> CSeqportUtil_implementation::InitMasks()
 {
@@ -1964,6 +2120,11 @@ unsigned int CSeqportUtil_implementation::Append
     // Check that in_seqs or of same type
     if(in_seq1.Which() != in_seq2.Which())
         throw runtime_error("Append in_seq types do not match.");
+        
+    // Check that out_seq is not null
+    if(!out_seq) {
+        return 0;
+    }
 
     // Call applicable append method base on in_seq types
     switch (in_seq1.Which()) {
@@ -2001,6 +2162,11 @@ unsigned int CSeqportUtil_implementation::Complement
  unsigned int      uLength)
     const
 {
+    //Check that in_seq is not null
+    if(!in_seq) {
+        return 0;
+    }
+    
     // Determine type of sequeence and which complement method to call
     switch (in_seq->Which()) {
     case CSeq_data::e_Iupacna:
@@ -2049,6 +2215,11 @@ unsigned int CSeqportUtil_implementation::Reverse
  unsigned int      uLength)
     const
 {
+    // Check that in_seq is not null
+    if (!in_seq) {
+        return 0;
+    }
+    
     // Determine type of sequeence and which reverse method to call
     switch (in_seq->Which()) {
     case CSeq_data::e_Iupacna:
@@ -2096,6 +2267,11 @@ unsigned int CSeqportUtil_implementation::ReverseComplement
  unsigned int  uLength)
     const
 {
+    //Check that in_seq is not null
+    if (!in_seq) {
+        return 0;
+    }
+    
     // Determine type of sequeence and which rev_comp method to call
     switch (in_seq->Which()) {
     case CSeq_data::e_Iupacna:
@@ -5137,7 +5313,99 @@ unsigned int CSeqportUtil_implementation::AppendIupacaa
     return uLength1 + uLength2;
 }
 
+// Returns the 3 letter Iupacaa3 code for the unsigned integer ncbistdaa code
+const string& CSeqportUtil_implementation::GetIupacaa3
+(unsigned int ncbistdaa)
+{
+    // Range check ncbistdaa
+    if (ncbistdaa >= m_NcbistdaaIupacaa3.size()) {
+        return kEmptyStr;
+    }
+        
+    // Return the 3 letter code for ncbistdaa
+    return m_NcbistdaaIupacaa3[ncbistdaa];    
+}
 
+// Returns the code of type code_type for index idx. Does not modify
+// *code if idx is out of range for the code
+const string& CSeqportUtil_implementation::GetCode
+(CSeq_data::E_Choice code_type, 
+ unsigned int        idx) 
+{
+    
+    // return the code
+    switch (code_type) {
+    case CSeq_data::e_Iupacna:
+        idx -= m_iupacna_start_at;
+        if (idx < 0 || idx >= m_IupacnaIndexCode.size()) {
+            return kEmptyStr;
+        }
+        return m_IupacnaIndexCode[idx];
+    case CSeq_data::e_Iupacaa:
+        idx -= m_iupacaa_start_at;
+        if (idx < 0 || idx >= m_IupacaaIndexCode.size()) {
+            return kEmptyStr;
+        }
+        return m_IupacaaIndexCode[idx];
+    case CSeq_data::e_Ncbieaa:
+        idx -= m_ncbieaa_start_at;
+        if (idx < 0 || idx >= m_NcbieaaIndexCode.size()) {
+            return kEmptyStr;
+        }
+        return m_NcbieaaIndexCode[idx];
+    case CSeq_data::e_Ncbistdaa:
+        if (idx < 0 || idx >= m_NcbistdaaIndexCode.size()) {
+            return kEmptyStr;
+        }
+        return m_NcbistdaaIndexCode[idx];
+    default:
+        return kEmptyStr;
+    }
+}
+
+// Get the index for code of type code_type. If not found, return -1
+int CSeqportUtil_implementation::GetIndex
+(CSeq_data::E_Choice code_type, 
+ const string&       code)
+{
+    // Iterator to a map mapping a string code to an integer code index
+    // An iterator for one of the member variables m_IupacaaCodeIndex, 
+    // m_IupacnaCodeIndex, m_NcbieaaCodeIndex,or m_NcbistdaaCodeIndex 
+    map<string, int>::const_iterator pos;
+    
+    switch (code_type) {
+    case CSeq_data::e_Iupacaa:
+        pos = m_IupacaaCodeIndex.find(code);
+        if (pos != m_IupacaaCodeIndex.end()) {
+            return pos->second;
+        } else {
+            return -1;
+        } 
+    case CSeq_data::e_Iupacna:
+        pos = m_IupacnaCodeIndex.find(code);
+        if (pos != m_IupacnaCodeIndex.end()) {
+            return pos->second;
+        } else {
+            return -1;
+        } 
+    case CSeq_data::e_Ncbieaa:
+        pos = m_NcbieaaCodeIndex.find(code);
+        if (pos != m_NcbieaaCodeIndex.end()) {
+            return pos->second;
+        } else {
+            return -1;
+        } 
+    case CSeq_data::e_Ncbistdaa:
+        pos = m_NcbistdaaCodeIndex.find(code);
+        if (pos != m_NcbistdaaCodeIndex.end()) {
+            return pos->second;
+        } else {
+            return -1;
+        } 
+    default:
+        return -1;
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
