@@ -873,9 +873,13 @@ void CAlnMix::x_Merge()
                         // truncate the first seg
                         prev_seg->m_Len = len1;
                         
-                        start_i--; // point to the newly created start
+                        if (start_i != starts.begin()) {
+                            start_i--; // point to the newly created start
+                        }
                     }
-                    lo_start_i++;
+                    if (lo_start_i != starts.end()) {
+                        lo_start_i++;
+                    }
                 }
             }
 
@@ -928,13 +932,17 @@ void CAlnMix::x_Merge()
                         // x-------)
                         start += prev_seg->m_Len * width1;
                         curr_len -= prev_seg->m_Len;
-                        start_i++;
+                        if (start_i != starts.end()) {
+                            start_i++;
+                        }
                     }
                 } else {
                     seg = new CAlnMixSegment;
                     starts[start] = seg;
                     tmp_start_i = start_i;
-                    tmp_start_i--;
+                    if (tmp_start_i != starts.begin()) {
+                        tmp_start_i--;
+                    }
                     seg->m_StartIts[seq1] = tmp_start_i;
                     if (start_i != starts.end()  &&
                         start + curr_len * width1 > start_i->first) {
@@ -948,12 +956,16 @@ void CAlnMix::x_Merge()
                         seg->m_Len = curr_len;
                         seg->m_DSIndex = match->m_DSIndex;
                         hi_start_i = start_i;
-                        hi_start_i--; // DONE!
+                        if (hi_start_i != starts.begin()) {
+                            hi_start_i--; // DONE!
+                        }
                     }
                     start += seg->m_Len * width1;
                     curr_len -= seg->m_Len;
                     if (lo_start_i == start_i) {
-                        lo_start_i--;
+                        if (lo_start_i != starts.begin()) {
+                            lo_start_i--;
+                        }
                     }
                 }
             }
@@ -1025,15 +1037,23 @@ void CAlnMix::x_Merge()
                         }
                     } else {
                         seq2->m_Starts[start] = start_i->second;
-                        start2_i--;
+                        if (start2_i != starts.begin()) {
+                            start2_i--;
+                        }
                         start_i->second->m_StartIts[seq2] = start2_i;
                     }
                     start += start_i->second->m_Len * width2;
-                    start2_i++;
+                    if (start2_i != starts2.end()) {
+                        start2_i++;
+                    }
                     if (match->m_StrandsDiffer) {
-                        start_i--;
+                        if (start_i != starts.begin()) {
+                            start_i--;
+                        }
                     } else {
-                        start_i++;
+                        if (start_i != starts.end()) {
+                            start_i++;
+                        }
                     }
                 }
                 // done with this match -- restore the original seq2; 
@@ -1119,7 +1139,9 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
             if (start_i->first + start_i->second->m_Len * width2 > start2) {
                 return false;
             }
-            start_i++;
+            if (start_i != starts2.end()) {
+                start_i++;
+            }
         }
 
         // check the overlap for consistency
@@ -1507,7 +1529,9 @@ void CAlnMix::x_ConsolidateGaps(TSegmentsContainer& gapped_segs)
     TSegmentsContainer::iterator seg1_i, seg2_i;
 
     seg2_i = seg1_i = gapped_segs.begin();
-    seg2_i++;
+    if (seg2_i != gapped_segs.end()) {
+        seg2_i++;
+    }
 
     bool         cache = false;
     string       s1;
@@ -1933,6 +1957,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.92  2004/04/13 18:02:10  todorov
+* Added some limit checks when inc/dec iterators
+*
 * Revision 1.91  2004/03/30 23:27:32  todorov
 * Switch from CAlnMix::x_RankSeqId() to CSeq_id::BestRank()
 *
