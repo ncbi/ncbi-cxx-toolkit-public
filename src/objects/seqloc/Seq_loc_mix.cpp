@@ -96,16 +96,18 @@ bool CSeq_loc_mix::IsReverseStrand(void) const
     while ( li != Get().end()  &&  (*li)->IsNull() ) {
         ++li;
     }
-    if ( li != Get().end() ) {
+    if ( li == Get().end() ) {
         return false;
     }
     bool res = (*li)->IsReverseStrand();
-    for ( ; li != Get().end(); ++li) {
-        if ( (*li)->IsNull() ) {
-            continue;
-        }
-        if (res != (*li)->IsReverseStrand()) {
-            return false;
+    if ( res ) {
+        for ( ++li; li != Get().end(); ++li) {
+            if ( (*li)->IsNull() ) {
+                continue;
+            }
+            if (res != (*li)->IsReverseStrand()) {
+                return false;
+            }
         }
     }
     return res;
@@ -204,6 +206,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.19  2005/01/05 18:29:59  shomrat
+ * Fixed IsReverseStrand
+ *
  * Revision 6.18  2004/12/15 16:26:56  grichenk
  * Ignore NULLs in IsReverseStrand()
  *

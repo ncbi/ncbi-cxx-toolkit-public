@@ -121,8 +121,8 @@ bool CPacked_seqint::IsReverseStrand(void) const
                 return false;
             }
         }
-        if ( rev ) {
-            return false; // at least one strand is not set (not reverse)
+        if ( !rev ) {
+            break; // at least one strand is not set (not reverse)
         }
     }
     return rev;
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.12  2005/01/05 18:29:59  shomrat
+ * Fixed IsReverseStrand
+ *
  * Revision 6.11  2004/11/19 15:42:21  shomrat
  * + SetStrand
  *
