@@ -33,6 +33,11 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2001/04/24 21:03:42  vakatov
+ * s_NCBI_Recv()   -- restore "r_status" to eIO_Success on success.
+ * SOCK_Wait(READ) -- return eIO_Success if data pending in the buffer.
+ * (w/A.Lavrentiev)
+ *
  * Revision 6.25  2001/04/23 22:22:08  vakatov
  * SOCK_Read() -- special treatment for "buf" == NULL
  *
@@ -481,12 +486,12 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
     return (fcntl(sock, F_SETFL,
                   nonblock ?
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK :
-                  fcntl(sock, F_GETFL, 0) & (int)~O_NONBLOCK) != -1);
+                  fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) != -1);
 #elif defined(NCBI_OS_MAC)
     return (fcntl(sock, F_SETFL,
                   nonblock ?
                   fcntl(sock, F_GETFL, 0) | O_NDELAY :
-                  fcntl(sock, F_GETFL, 0) & (int)~O_NDELAY) != -1);
+                  fcntl(sock, F_GETFL, 0) & (int) ~O_NDELAY) != -1);
 #else
     assert(0);
     return 0/*false*/;
@@ -526,8 +531,9 @@ static EIO_Status s_Select(TSOCK_Handle          sock,
                        timeout ? &tmout : 0);
         assert(-1 <= n_dfs  &&  n_dfs <= 2);
         if ((n_dfs < 0  &&  SOCK_ERRNO != SOCK_EINTR)  ||
-            FD_ISSET(sock, &e_fds))
+            FD_ISSET(sock, &e_fds)) {
             return eIO_Unknown;
+        }
     } while (n_dfs < 0);
 
     /* timeout has expired */
@@ -894,10 +900,10 @@ static EIO_Status s_Close(SOCK sock)
  * (MSG_PEEK is not implemented on Mac, and it is poorly implemented
  * on Win32, so we had to implement this feature by ourselves)
  */
-static int s_NCBI_Recv(SOCK          sock,
-                       void*         buffer,
-                       size_t        size,
-                       int  /*bool*/ peek)
+static int s_NCBI_Recv(SOCK        sock,
+                       void*       buffer,
+                       size_t      size,
+                       int/*bool*/ peek)
 {
     char   xx_buffer[4096];
     char*  x_buffer = (char*) buffer;
@@ -934,7 +940,7 @@ static int s_NCBI_Recv(SOCK          sock,
             (x_readsock < 0  &&  SOCK_ERRNO == SOCK_ENOTCONN)) {
             sock->r_status = eIO_Closed;
             sock->is_eof   = 1/*true*/;
-            return (int) (n_read ? n_read : 0);
+            return n_read ? (int) n_read : 0;
         }
         /* catch unknown ERROR */
         if (x_readsock < 0) {
@@ -946,6 +952,9 @@ static int s_NCBI_Recv(SOCK          sock,
             }
             return n_read ? (int) n_read : -1;
         }
+        /* successful read */
+        assert(x_readsock > 0);
+        sock->r_status = eIO_Success;
 
         /* if "peek" -- store the new read data in the internal buffer */
         if ( peek ) {
@@ -1198,7 +1207,8 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
     }
 
     if (SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
-        CORE_LOG(eLOG_Warning, "[SOCK_Shutdown]  shutdown() failed");
+        CORE_LOGF(eLOG_Warning, ("[SOCK_Shutdown]  shutdown(%s) failed",
+                                 x_how == eIO_Read ? "read" : "write"));
     }
     return eIO_Success;
 }
@@ -1220,9 +1230,13 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
     /* Check against already shutdown socket */
     switch ( event ) {
     case eIO_Read:
+        if (BUF_Size(sock->buf) != 0) {
+            return eIO_Success;
+        }
         if (sock->r_status == eIO_Closed) {
-            CORE_LOG(eLOG_Warning,
-                     "[SOCK_Wait(Read)]  Attempt to wait on shutdown socket");
+            CORE_LOGF(eLOG_Warning,
+                     ("[SOCK_Wait(Read)]  Attempt to wait on %s socket",
+                      sock->is_eof ? "closed" : "shutdown"));
             return eIO_Closed;
         }
         break;
@@ -1234,14 +1248,18 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         }
         break;
     case eIO_ReadWrite:
+        if (BUF_Size(sock->buf) != 0) {
+            return eIO_Success;
+        }
         if (sock->r_status == eIO_Closed  &&  sock->w_status == eIO_Closed) {
             CORE_LOG(eLOG_Warning,
                      "[SOCK_Wait(RW)]  Attempt to wait on shutdown socket");
             return eIO_Closed;
         }
         if (sock->r_status == eIO_Closed) {
-            CORE_LOG(eLOG_Note,
-                     "[SOCK_Wait(RW)]  Attempt to wait on R-shutdown socket");
+            CORE_LOGF(eLOG_Note,
+                     ("[SOCK_Wait(RW)]  Attempt to wait on %s socket",
+                      sock->is_eof ? "closed" : "R-shutdown"));
             event = eIO_Write;
             break;
         }
