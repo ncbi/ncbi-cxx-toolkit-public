@@ -41,12 +41,15 @@
 
 int main(int argc, char* argv[])
 {
+    static const STimeout s_ZeroTmo = {0, 0};
     CONNECTOR     connector;
     SConnNetInfo* net_info;
     THCC_Flags    flags;
     CONN          conn;
     char*         s;
 
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     if (argc != 2 || !*argv[1]) {
@@ -74,20 +77,22 @@ int main(int argc, char* argv[])
     CORE_LOG(eLOG_Note, "Creating HTTP connector");
     if (!(connector = HTTP_CreateConnector(net_info, 0, flags)))
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
+    ConnNetInfo_Destroy(net_info);
 
     CORE_LOG(eLOG_Note, "Creating connection");
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Cannot create connection");
+    CONN_SetTimeout(conn, eIO_Open, &s_ZeroTmo);
 
     for (;;) {
         size_t n;
-        char blob[512];
-        EIO_Status status = CONN_Read(conn,blob,sizeof(blob),&n,eIO_ReadPlain);
+        char blk[512];
+        EIO_Status status = CONN_Read(conn,blk,sizeof(blk),&n,eIO_ReadPlain);
 
         if (status != eIO_Success && status != eIO_Closed)
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
         if (n) {
-            fwrite(blob, 1, n, stdout);
+            fwrite(blk, 1, n, stdout);
             fflush(stdout);
         } else if (status == eIO_Closed) {
             break;
@@ -99,6 +104,7 @@ int main(int argc, char* argv[])
     CONN_Close(conn);
 
     CORE_LOG(eLOG_Note, "Completed");
+    CORE_SetLOG(0);
     return 0;
 }
 
@@ -106,6 +112,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.7  2002/10/28 15:47:06  lavr
  * Use "ncbi_ansi_ext.h" privately
  *

@@ -48,7 +48,10 @@ int main(int argc, const char* argv[])
     int n_found = 0;
     SERV_ITER iter;
 
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+
     CORE_LOGF(eLOG_Note, ("Looking for service `%s' (%s)", service,
                           local ? "locally" : "randomly"));
     CORE_LOG(eLOG_Trace, "Opening service mapper");
@@ -113,6 +116,7 @@ int main(int argc, const char* argv[])
     }
 #endif
 
+    CORE_SetLOG(0);
     return 0;
 }
 
@@ -120,6 +124,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.14  2002/10/29 22:15:52  lavr
  * Host info output slightly modified
  *

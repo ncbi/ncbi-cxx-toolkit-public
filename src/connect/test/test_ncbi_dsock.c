@@ -84,9 +84,15 @@ static int s_Server(int x_port)
     port = (unsigned short) x_port;
     CORE_LOGF(eLOG_Note, ("[Server]  Opening DSOCK on port %hu", port));
 
-    if ((status = DSOCK_Create(port, &server)) != eIO_Success) {
+    if ((status = DSOCK_Create(&server)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Server]  Error creating DSOCK: %s",
                                IO_StatusStr(status)));
+        return 1;
+    }
+
+    if ((status = DSOCK_Bind(server, port)) != eIO_Success) {
+        CORE_LOGF(eLOG_Error, ("[Server]  Error binding DSOCK to port %hu: %s",
+                               port, IO_StatusStr(status)));
         return 1;
     }
 
@@ -196,7 +202,7 @@ static int s_Client(int x_port)
     port = (unsigned short) x_port;
     CORE_LOGF(eLOG_Note, ("[Client]  Opening DSOCK on port %hu", port));
 
-    if ((status = DSOCK_Create(0, &client)) != eIO_Success) {
+    if ((status = DSOCK_Create(&client)) != eIO_Success) {
         CORE_LOGF(eLOG_Error, ("[Client]  Error creating DSOCK: %s",
                                IO_StatusStr(status)));
         return 1;
@@ -281,9 +287,9 @@ int main(int argc, const char* argv[])
     unsigned long seed;
     const char*   env = getenv("CONN_DEBUG_PRINTOUT");
 
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
-    CORE_SetLOGFormatFlags
-        (fLOG_None | fLOG_Level | fLOG_OmitNoteLevel | fLOG_DateTime );
 
     if (argc < 2 || argc > 4)
         return s_Usage(argv[0]);
@@ -320,6 +326,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.9  2003/04/30 17:04:01  lavr
  * Conformance to slightly modified datagram socket API
  *

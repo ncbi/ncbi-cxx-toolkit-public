@@ -73,6 +73,8 @@ int main(void)
     short mx_port;
     FILE *fp;
 
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     srand(time(0));
 
@@ -82,7 +84,7 @@ int main(void)
         (sizeof(subject)/sizeof(subject[0]))*
         (sizeof(body)/sizeof(body[0]));
     m = 0;
-    for (i = 0; i < sizeof(to)/sizeof(to[0]); i++)
+    for (i = 0; i < sizeof(to)/sizeof(to[0]); i++) {
         for (j = 0; j < sizeof(subject)/sizeof(subject[0]); j++)
             for (k = 0; k < sizeof(body)/sizeof(body[0]); k++) {
                 CORE_LOGF(eLOG_Note, ("Test %u of %u",
@@ -91,6 +93,7 @@ int main(void)
                 if (retval != 0)
                     CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
             }
+    }
 
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Testing CORE_SendMailEx");
 
@@ -206,6 +209,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.8  2002/09/12 16:53:50  lavr
  * Do not write '\0' into test file; log moved to end
  *

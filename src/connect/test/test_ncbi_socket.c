@@ -833,6 +833,8 @@ extern int main(int argc, char** argv)
 
     /* Setup log stream
      */
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     /* Printout local hostname
@@ -923,6 +925,9 @@ extern int main(int argc, char** argv)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.19  2002/12/04 16:58:13  lavr
  * No changes
  *

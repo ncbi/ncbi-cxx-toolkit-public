@@ -60,8 +60,7 @@ int main(int argc, char* argv[])
                                 false/*no rewind*/);
 
     CORE_SetREG(0);
-    CORE_SetLOG(0);
-    CORE_SetLOCK(0);
+    // Do not delete lock and log here 'cause destructors may need them
 
     return n;
 }
@@ -70,6 +69,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 1.9  2003/04/15 14:06:09  lavr
  * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
  *

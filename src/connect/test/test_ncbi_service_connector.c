@@ -43,8 +43,8 @@ int main(int argc, const char* argv[])
     static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
     const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
+    SConnNetInfo *net_info;
     CONNECTOR connector;
-    SConnNetInfo *info;
     EIO_Status status;
     STimeout  timeout;
     char ibuf[1024];
@@ -54,17 +54,17 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFormatFlags(fLOG_Full | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    info = ConnNetInfo_Create(service);
-    strcpy(info->host, host);
+    net_info = ConnNetInfo_Create(service);
+    strcpy(net_info->host, host);
     if (argc > 3) {
         strncpy0(obuf, argv[3], sizeof(obuf) - 2);
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = 0;
     }
-    strcpy(info->args, "testarg=testval&service=none");
+    strcpy(net_info->args, "testarg=testval&service=none");
 
-    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info, 0);
-    ConnNetInfo_Destroy(info);
+    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
+    ConnNetInfo_Destroy(net_info);
 
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Failed to create service connector");
@@ -91,8 +91,12 @@ int main(int argc, const char* argv[])
 
         status = CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPersist);
         if (n) {
-            CORE_DATAF(ibuf, n, ("%lu bytes read from service (%s):",
-                                 (unsigned long) n, CONN_GetType(conn)));
+            char* descr = CONN_Description(conn);
+            CORE_DATAF(ibuf, n, ("%lu bytes read from service (%s%s%s):",
+                                 (unsigned long) n, CONN_GetType(conn),
+                                 descr ? ", " : "", descr ? descr : ""));
+            if (descr)
+                free(descr);
         }
         if (status != eIO_Success) {
             if (status != eIO_Closed)
@@ -105,9 +109,9 @@ int main(int argc, const char* argv[])
 #if 0
     CORE_LOG(eLOG_Note, "Trying ID1 service");
 
-    info = ConnNetInfo_Create(service);
-    connector = SERVICE_CreateConnectorEx("ID1", fSERV_Any, info);
-    ConnNetInfo_Destroy(info);
+    net_info = ConnNetInfo_Create(service);
+    connector = SERVICE_CreateConnectorEx("ID1", fSERV_Any, net_info);
+    ConnNetInfo_Destroy(net_info);
 
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Service ID1 not available");
@@ -130,6 +134,7 @@ int main(int argc, const char* argv[])
     CONN_Close(conn);
 #endif
 
+    CORE_SetLOG(0);
     return 0/*okay*/;
 }
 
@@ -137,6 +142,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.24  2003/05/05 20:31:23  lavr
  * Add date/time stamp to each log message printed
  *

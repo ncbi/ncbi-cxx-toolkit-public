@@ -102,6 +102,7 @@ int main(void)
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
 
+#if 1
     {{
         // Test for timeouts and memory leaks in unused stream
         STimeout tmo = {8, 0};
@@ -109,6 +110,7 @@ int main(void)
             new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo);
         delete s;
     }}
+#endif
 
     LOG_POST("Test 1 of 3: Big buffer bounce");
     CConn_HttpStream ios(0, "User-Header: My header\r\n",
@@ -237,8 +239,7 @@ int main(void)
         LOG_POST(Info << "Test 3 passed");
 
     CORE_SetREG(0);
-    CORE_SetLOG(0);
-    CORE_SetLOCK(0);
+    // Do not delete lock and log here 'cause destructors may need them
 
     delete[] buf1;
     delete[] buf2;
@@ -250,6 +251,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.25  2003/04/15 14:06:09  lavr
  * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
  *

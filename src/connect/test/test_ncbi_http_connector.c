@@ -97,6 +97,8 @@ int main(void)
     THCC_Flags  flags;
 
     /* Log and data-log streams */
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     data_file = fopen("test_ncbi_http_connector.log", "ab");
     assert(data_file);
@@ -139,6 +141,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/05/14 03:58:43  lavr
+ * Match changes in respective APIs of the tests
+ *
  * Revision 6.12  2003/04/15 14:06:09  lavr
  * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
  *
