@@ -165,13 +165,11 @@ public:
 
     string            m_Version;
     list<SConfigInfo> m_ConfigInfo;
-    string            m_ProjectEngineName;
-    string            m_Encoding;
     string            m_CompilersSubdir;
     string            m_ProjectsSubdir;
     string            m_MakefilesExt;
     string            m_MetaMakefile;
-    list<string>      m_NotProvidedRequests;
+    string            m_DllInfo;
 
 private:
     CMsvc7RegSettings(const CMsvc7RegSettings&);
@@ -451,6 +449,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/06/07 13:51:38  gorelenk
+ * Added m_DllInfo to class CMsvc7RegSettings.
+ *
  * Revision 1.20  2004/05/26 17:56:59  gorelenk
  * Refactored source files inserter:
  * old inserter moved to class CSrcToFilterInserterWithPch,
