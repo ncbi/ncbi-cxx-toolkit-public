@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/01/18 15:53:29  gouriano
+* implemented RegisterTopLevelSeqEntry
+*
 * Revision 1.2  2002/01/16 16:25:58  gouriano
 * restructured objmgr
 *
@@ -58,11 +61,15 @@ static CMutex s_OM_Mutex;
 
 CObjectManager::CObjectManager(void)
 {
+    NcbiCout << "ObjectManager " << NStr::PtrToString(this)
+        << " created" << NcbiEndl;
 }
 
 
 CObjectManager::~CObjectManager(void)
 {
+    NcbiCout << "ObjectManager " << NStr::PtrToString(this)
+        << " deleted" << NcbiEndl;
     // delete scopes
     while (!m_setScope.empty()) {
         // this will cause calling RegisterScope and changing m_setScope
@@ -209,7 +216,10 @@ bool CObjectManager::RevokeDataLoader(const string& loader_name)
 
 void CObjectManager::RegisterTopLevelSeqEntry(CSeq_entry& top_entry)
 {
-    _ASSERT(0);
+    CMutexGuard guard(s_OM_Mutex);
+    if (m_mapEntryToSource.find(&top_entry) == m_mapEntryToSource.end()) {
+        m_mapEntryToSource[ &top_entry] = new CDataSource(top_entry);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -327,6 +337,7 @@ void CObjectManager::AddTopLevelSeqEntry(
     }
     x_AddDataSource(sources, m_mapEntryToSource[ &top_entry]);
 }
+
 
 void CObjectManager::RemoveTopLevelSeqEntry(
     set< CDataSource* >& sources, CSeq_entry& top_entry)
