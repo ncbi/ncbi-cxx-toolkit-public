@@ -28,85 +28,6 @@
 * File Description:
 *   Page Classes
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.28  2002/08/09 21:12:02  ivanov
-* Added stuff to read template from a stream and string
-*
-* Revision 1.27  2002/02/23 04:08:25  vakatov
-* Commented out "// template struct TagMapper<CHTMLPage>;" to see if it's
-* still needed for any compiler
-*
-* Revision 1.26  2002/02/13 20:16:45  ivanov
-* Added support of dynamic popup menus. Changed EnablePopupMenu().
-*
-* Revision 1.25  2001/08/14 16:56:42  ivanov
-* Added support for work HTML templates with JavaScript popup menu.
-* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
-*
-* Revision 1.24  2000/03/31 17:08:43  kans
-* cast ifstr.rdstate() to int
-*
-* Revision 1.23  1999/10/28 13:40:36  vasilche
-* Added reference counters to CNCBINode.
-*
-* Revision 1.22  1999/09/27 16:17:18  vasilche
-* Fixed several incompatibilities with Windows
-*
-* Revision 1.21  1999/09/23 15:51:42  vakatov
-* Added <unistd.h> for the getcwd() proto
-*
-* Revision 1.20  1999/09/17 14:16:09  sandomir
-* tmp diagnostics to find error
-*
-* Revision 1.19  1999/09/15 15:04:47  sandomir
-* minor memory leak in tag mapping
-*
-* Revision 1.18  1999/07/19 21:05:02  pubmed
-* minor change in CHTMLPage::CreateTemplate() - show file name
-*
-* Revision 1.17  1999/05/28 20:43:10  vakatov
-* ::~CHTMLBasicPage(): MSVC++ 6.0 SP3 cant compile:  DeleteElements(m_TagMap);
-*
-* Revision 1.16  1999/05/28 16:32:16  vasilche
-* Fixed memory leak in page tag mappers.
-*
-* Revision 1.15  1999/05/27 21:46:25  vakatov
-* CHTMLPage::CreateTemplate():  throw exception if cannot open or read
-* the page template file specified by user
-*
-* Revision 1.14  1999/04/28 16:52:45  vasilche
-* Restored optimized code for reading from file.
-*
-* Revision 1.13  1999/04/27 16:48:44  vakatov
-* Rollback of the buggy "optimization" in CHTMLPage::CreateTemplate()
-*
-* Revision 1.12  1999/04/26 21:59:31  vakatov
-* Cleaned and ported to build with MSVC++ 6.0 compiler
-*
-* Revision 1.11  1999/04/19 16:51:36  vasilche
-* Fixed error with member pointers detected by GCC.
-*
-* Revision 1.10  1999/04/15 22:10:43  vakatov
-* Fixed "class TagMapper<>" to "struct ..."
-*
-* Revision 1.9  1998/12/28 23:29:10  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.8  1998/12/28 21:48:17  vasilche
-* Made Lewis's 'tool' compilable
-*
-* Revision 1.7  1998/12/28 16:48:09  vasilche
-* Removed creation of QueryBox in CHTMLPage::CreateView()
-* CQueryBox extends from CHTML_form
-* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
-*
-* Revision 1.6  1998/12/22 16:39:15  vasilche
-* Added ReadyTagMapper to map tags to precreated nodes.
-*
-* Revision 1.3  1998/12/01 19:10:39  lewisg
-* uses CCgiApplication and new page factory
-* ===========================================================================
 */
 
 #include <html/components.hpp>
@@ -248,72 +169,85 @@ void CHTMLPage::CreateSubNodes(void)
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
-    istream* is = 0;
-    bool can_delete_stream = true;
-
     // Get template stream
     if ( !m_TemplateFile.empty() ) {
-        is = new CNcbiIfstream(m_TemplateFile.c_str());
+        CNcbiIfstream is(m_TemplateFile.c_str());
+        return x_CreateTemplate(is);
     } else if ( m_TemplateStream ) {
-        is = m_TemplateStream;
-        can_delete_stream = false;
+        return x_CreateTemplate(*m_TemplateStream);
     } else if ( m_TemplateBuffer ) {
-        is = new CNcbiIstrstream((char*)m_TemplateBuffer, m_TemplateBufferSize);
+        CNcbiIstrstream is((char*)m_TemplateBuffer, m_TemplateBufferSize);
+        return x_CreateTemplate(is);
     } else {
         return new CHTMLText(kEmptyStr);
     }
-    if ( !is )
-        THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  error create stream");
+}
 
+CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is)
+{
     string str;
     char   buf[1024];
 
-    if ( !is->good() ) {
-	  // tmp diagnostics to find error //
-	  if( errno > 0 ) { // #include <errno.h>
-		ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror( errno ) );
-	  }
-	  
-	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(is->rdstate()) );	  
-	  
-      THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
-failed to open template");
-    }
+    if ( !is.good() ) {
+        // tmp diagnostics to find error //
+        if( errno > 0 ) { // #include <errno.h>
+            ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror(errno) );
+        }
 
-    while ( *is ) {
-        is->read(buf, sizeof(buf));
-        str.append(buf, is->gcount());
-    }
-
-    if ( !is->eof() ) {
+        ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(is.rdstate()));
         THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
-error reading template");
+                     failed to open template");
+    }
+
+    while ( is ) {
+        is.read(buf, sizeof(buf));
+        str.append(buf, is.gcount());
+    }
+
+    if ( !is.eof() ) {
+        THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
+                     error reading template");
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
     if ( m_UsePopupMenu ) {
-        string strl = str;
-        NStr::ToLower(strl);
-        // Search </HEAD> tag
-        SIZE_TYPE pos = strl.find("/head");
-        if ( pos == NPOS) goto done;
-        pos = strl.rfind("<", pos);
-        if ( pos == NPOS) goto done;
-        // Insert code for load popup menu library
-        string script = CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl);
-        SIZE_TYPE length = script.length();
-        str.insert(pos, script);
-        
-        // Search </BODY> tag
-        pos = strl.rfind("/body");
-        if ( pos == NPOS) goto done;
-        pos = strl.rfind("<", pos);
-        if ( pos == NPOS) goto done;
-        // Insert code for init popup menus
-        script = CHTMLPopupMenu::GetCodeBody(m_UsePopupMenuDynamic);
-        str.insert(pos+length, script);
+        // a "do ... while (false)" lets us avoid a goto
+        do {
+            string strl = str;
+            NStr::ToLower(strl);
+
+            // Search </HEAD> tag
+            SIZE_TYPE pos = strl.find("/head");
+            if ( pos == NPOS) {
+                break;
+            }
+            pos = strl.rfind("<", pos);
+            if ( pos == NPOS) {
+                break;
+            }
+
+            // Insert code for load popup menu library
+            string script = CHTMLPopupMenu::GetCodeHead(m_PopupMenuLibUrl);
+            SIZE_TYPE length = script.length();
+            str.insert(pos, script);
+
+            // Search </BODY> tag
+            pos = strl.rfind("/body");
+            if ( pos == NPOS) {
+                break;
+            }
+            pos = strl.rfind("<", pos);
+            if ( pos == NPOS) {
+                break;
+            }
+
+            // Insert code for init popup menus
+            script = CHTMLPopupMenu::GetCodeBody(m_UsePopupMenuDynamic);
+            str.insert(pos+length, script);
+        }
+        while (false);
     }
-done:
+
     return new CHTMLText(str);
 }
 
@@ -381,3 +315,90 @@ void CHTMLPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.29  2002/09/11 16:09:27  dicuccio
+* fixed memory leak in CreateTemplate(): added x_CreateTemplate() to get
+* around heap allocation of stream.
+* moved cvs log to the bottom of the page.
+*
+* Revision 1.28  2002/08/09 21:12:02  ivanov
+* Added stuff to read template from a stream and string
+*
+* Revision 1.27  2002/02/23 04:08:25  vakatov
+* Commented out "// template struct TagMapper<CHTMLPage>;" to see if it's
+* still needed for any compiler
+*
+* Revision 1.26  2002/02/13 20:16:45  ivanov
+* Added support of dynamic popup menus. Changed EnablePopupMenu().
+*
+* Revision 1.25  2001/08/14 16:56:42  ivanov
+* Added support for work HTML templates with JavaScript popup menu.
+* Renamed type Flags -> ETypes. Moved all code from "page.inl" to header file.
+*
+* Revision 1.24  2000/03/31 17:08:43  kans
+* cast ifstr.rdstate() to int
+*
+* Revision 1.23  1999/10/28 13:40:36  vasilche
+* Added reference counters to CNCBINode.
+*
+* Revision 1.22  1999/09/27 16:17:18  vasilche
+* Fixed several incompatibilities with Windows
+*
+* Revision 1.21  1999/09/23 15:51:42  vakatov
+* Added <unistd.h> for the getcwd() proto
+*
+* Revision 1.20  1999/09/17 14:16:09  sandomir
+* tmp diagnostics to find error
+*
+* Revision 1.19  1999/09/15 15:04:47  sandomir
+* minor memory leak in tag mapping
+*
+* Revision 1.18  1999/07/19 21:05:02  pubmed
+* minor change in CHTMLPage::CreateTemplate() - show file name
+*
+* Revision 1.17  1999/05/28 20:43:10  vakatov
+* ::~CHTMLBasicPage(): MSVC++ 6.0 SP3 cant compile:  DeleteElements(m_TagMap);
+*
+* Revision 1.16  1999/05/28 16:32:16  vasilche
+* Fixed memory leak in page tag mappers.
+*
+* Revision 1.15  1999/05/27 21:46:25  vakatov
+* CHTMLPage::CreateTemplate():  throw exception if cannot open or read
+* the page template file specified by user
+*
+* Revision 1.14  1999/04/28 16:52:45  vasilche
+* Restored optimized code for reading from file.
+*
+* Revision 1.13  1999/04/27 16:48:44  vakatov
+* Rollback of the buggy "optimization" in CHTMLPage::CreateTemplate()
+*
+* Revision 1.12  1999/04/26 21:59:31  vakatov
+* Cleaned and ported to build with MSVC++ 6.0 compiler
+*
+* Revision 1.11  1999/04/19 16:51:36  vasilche
+* Fixed error with member pointers detected by GCC.
+*
+* Revision 1.10  1999/04/15 22:10:43  vakatov
+* Fixed "class TagMapper<>" to "struct ..."
+*
+* Revision 1.9  1998/12/28 23:29:10  vakatov
+* New CVS and development tree structure for the NCBI C++ projects
+*
+* Revision 1.8  1998/12/28 21:48:17  vasilche
+* Made Lewis's 'tool' compilable
+*
+* Revision 1.7  1998/12/28 16:48:09  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
+* Revision 1.6  1998/12/22 16:39:15  vasilche
+* Added ReadyTagMapper to map tags to precreated nodes.
+*
+* Revision 1.3  1998/12/01 19:10:39  lewisg
+* uses CCgiApplication and new page factory
+* ===========================================================================
+*/
