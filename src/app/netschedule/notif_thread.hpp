@@ -50,7 +50,9 @@ public:
                            unsigned stop_request_poll = 10)
     : CThreadNonStop(run_delay, stop_request_poll),
       m_QueueDB(qdb)
-    {}
+    {
+    }
+    ~CJobNotificationThread();
 
     virtual void DoJob(void);
 private:
@@ -66,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/30 16:04:41  kuznets
+ * Added destructor with diagnostic message
+ *
  * Revision 1.1  2005/03/09 17:37:17  kuznets
  * Added node notification thread and execution control timeline
  *

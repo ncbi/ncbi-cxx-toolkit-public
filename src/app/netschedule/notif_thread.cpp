@@ -53,12 +53,20 @@ void CJobNotificationThread::DoJob(void)
     }
 }
 
+CJobNotificationThread::~CJobNotificationThread()
+{
+    LOG_POST("Notification thread stopped.");
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/30 16:04:41  kuznets
+ * Added destructor with diagnostic message
+ *
  * Revision 1.1  2005/03/09 17:37:16  kuznets
  * Added node notification thread and execution control timeline
  *
