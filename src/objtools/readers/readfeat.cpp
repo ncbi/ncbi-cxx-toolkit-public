@@ -34,6 +34,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
 
+#include <util/static_map.hpp>
+
 #include <serial/iterator.hpp>
 #include <serial/objistrasn.hpp>
 
@@ -171,17 +173,6 @@ public:
         eOrgRef_mgcode
     };
 
-    typedef map< string, CSeqFeatData::ESubtype > TFeatReaderMap;
-    typedef map< string, EQual > TQualReaderMap;
-    typedef map< string, EOrgRef > TOrgRefReaderMap;
-    typedef map< string, CBioSource::EGenome > TGenomeReaderMap;
-    typedef map< string, CSubSource::ESubtype > TSubSrcReaderMap;
-    typedef map< string, COrgMod::ESubtype > TOrgModReaderMap;
-    typedef map< string, CSeqFeatData::EBond > TBondReaderMap;
-    typedef map< string, CSeqFeatData::ESite > TSiteReaderMap;
-    typedef map< string, int > TTrnaReaderMap;
-    typedef vector< string > TSingleQualList;
-
     // constructor
     CFeature_table_reader_imp(void);
     // destructor
@@ -236,17 +227,6 @@ private:
                                    COrgMod::ESubtype mtype, const string& val);
 
     int x_ParseTrnaString (const string& val);
-
-    TFeatReaderMap    m_FeatKeys;
-    TQualReaderMap    m_QualKeys;
-    TOrgRefReaderMap  m_OrgRefKeys;
-    TGenomeReaderMap  m_GenomeKeys;
-    TSubSrcReaderMap  m_SubSrcKeys;
-    TOrgModReaderMap  m_OrgModKeys;
-    TBondReaderMap    m_BondKeys;
-    TSiteReaderMap    m_SiteKeys;
-    TTrnaReaderMap    m_TrnaKeys;
-    TSingleQualList   m_SingleKeys;
 };
 
 auto_ptr<CFeature_table_reader_imp> CFeature_table_reader::sm_Implementation;
@@ -262,482 +242,442 @@ void CFeature_table_reader::x_InitImplementation()
 }
 
 
-typedef struct featinit {
-    const char *           key;
-    CSeqFeatData::ESubtype subtype;
-} FeatInit;
+typedef pair <const char *, const CSeqFeatData::ESubtype> TFeatKey;
 
-static FeatInit feat_key_to_subtype [] = {
-    { "-10_signal",         CSeqFeatData::eSubtype_10_signal          },
-    { "-35_signal",         CSeqFeatData::eSubtype_35_signal          },
-    { "3'clip",             CSeqFeatData::eSubtype_3clip              },
-    { "3'UTR",              CSeqFeatData::eSubtype_3UTR               },
-    { "5'clip",             CSeqFeatData::eSubtype_5clip              },
-    { "5'UTR",              CSeqFeatData::eSubtype_5UTR               },
-    { "attenuator",         CSeqFeatData::eSubtype_attenuator         },
-    { "Bond",               CSeqFeatData::eSubtype_bond               },
-    { "CAAT_signal",        CSeqFeatData::eSubtype_CAAT_signal        },
-    { "CDS",                CSeqFeatData::eSubtype_cdregion           },
-    { "Cit",                CSeqFeatData::eSubtype_pub                },
-    { "Comment",            CSeqFeatData::eSubtype_comment            },
-    { "conflict",           CSeqFeatData::eSubtype_conflict           },
-    { "C_region",           CSeqFeatData::eSubtype_C_region           },
-    { "D-loop",             CSeqFeatData::eSubtype_D_loop             },
-    { "D_segment",          CSeqFeatData::eSubtype_D_segment          },
-    { "enhancer",           CSeqFeatData::eSubtype_enhancer           },
-    { "exon",               CSeqFeatData::eSubtype_exon               },
-    { "GC_signal",          CSeqFeatData::eSubtype_GC_signal          },
-    { "gene",               CSeqFeatData::eSubtype_gene               },
-    { "Het",                CSeqFeatData::eSubtype_het                },
-    { "iDNA",               CSeqFeatData::eSubtype_iDNA               },
-    { "intron",             CSeqFeatData::eSubtype_intron             },
-    { "J_segment",          CSeqFeatData::eSubtype_J_segment          },
-    { "LTR",                CSeqFeatData::eSubtype_LTR                },
-    { "mat_peptide",        CSeqFeatData::eSubtype_mat_peptide_aa     },
-    { "mat_peptide_nt",     CSeqFeatData::eSubtype_mat_peptide        },
-    { "misc_binding",       CSeqFeatData::eSubtype_misc_binding       },
-    { "misc_difference",    CSeqFeatData::eSubtype_misc_difference    },
-    { "misc_feature",       CSeqFeatData::eSubtype_misc_feature       },
-    { "misc_recomb",        CSeqFeatData::eSubtype_misc_recomb        },
-    { "misc_RNA",           CSeqFeatData::eSubtype_otherRNA           },
-    { "misc_signal",        CSeqFeatData::eSubtype_misc_signal        },
-    { "misc_structure",     CSeqFeatData::eSubtype_misc_structure     },
-    { "modified_base",      CSeqFeatData::eSubtype_modified_base      },
-    { "mRNA",               CSeqFeatData::eSubtype_mRNA               },
-    { "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue    },
-    { "Num",                CSeqFeatData::eSubtype_num                },
-    { "N_region",           CSeqFeatData::eSubtype_N_region           },
-    { "old_sequence",       CSeqFeatData::eSubtype_old_sequence       },
-    { "operon",             CSeqFeatData::eSubtype_operon             },
-    { "oriT",               CSeqFeatData::eSubtype_oriT               },
-    { "polyA_signal",       CSeqFeatData::eSubtype_polyA_signal       },
-    { "polyA_site",         CSeqFeatData::eSubtype_polyA_site         },
-    { "precursor_RNA",      CSeqFeatData::eSubtype_preRNA             },
-    { "pre_RNA",            CSeqFeatData::eSubtype_preRNA             },
-    { "preprotein",         CSeqFeatData::eSubtype_preprotein         },
-    { "primer_bind",        CSeqFeatData::eSubtype_primer_bind        },
-    { "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript    },
-    { "promoter",           CSeqFeatData::eSubtype_promoter           },
-    { "Protein",            CSeqFeatData::eSubtype_prot               },
-    { "protein_bind",       CSeqFeatData::eSubtype_protein_bind       },
-    { "RBS",                CSeqFeatData::eSubtype_RBS                },
-    { "REFERENCE",          CSeqFeatData::eSubtype_pub                },
-    { "Region",             CSeqFeatData::eSubtype_region             },
-    { "repeat_region",      CSeqFeatData::eSubtype_repeat_region      },
-    { "repeat_unit",        CSeqFeatData::eSubtype_repeat_unit        },
-    { "rep_origin",         CSeqFeatData::eSubtype_rep_origin         },
-    { "rRNA",               CSeqFeatData::eSubtype_rRNA               },
-    { "Rsite",              CSeqFeatData::eSubtype_rsite              },
-    { "satellite",          CSeqFeatData::eSubtype_satellite          },
-    { "scRNA",              CSeqFeatData::eSubtype_scRNA              },
-    { "SecStr",             CSeqFeatData::eSubtype_psec_str           },
-    { "sig_peptide",        CSeqFeatData::eSubtype_sig_peptide_aa     },
-    { "sig_peptide_nt",     CSeqFeatData::eSubtype_sig_peptide        },
-    { "Site",               CSeqFeatData::eSubtype_site               },
-    { "Site-ref",           CSeqFeatData::eSubtype_site_ref           },
-    { "snoRNA",             CSeqFeatData::eSubtype_snoRNA             },
-    { "snRNA",              CSeqFeatData::eSubtype_snRNA              },
-    { "source",             CSeqFeatData::eSubtype_biosrc             },
-    { "Src",                CSeqFeatData::eSubtype_biosrc             },
-    { "stem_loop",          CSeqFeatData::eSubtype_stem_loop          },
-    { "STS",                CSeqFeatData::eSubtype_STS                },
-    { "S_region",           CSeqFeatData::eSubtype_S_region           },
-    { "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal        },
-    { "terminator",         CSeqFeatData::eSubtype_terminator         },
-    { "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa },
-    { "transit_peptide_nt", CSeqFeatData::eSubtype_transit_peptide    },
-    { "tRNA",               CSeqFeatData::eSubtype_tRNA               },
-    { "TxInit",             CSeqFeatData::eSubtype_txinit             },
-    { "unsure",             CSeqFeatData::eSubtype_unsure             },
-    { "User",               CSeqFeatData::eSubtype_user               },
-    { "variation",          CSeqFeatData::eSubtype_variation          },
-    { "virion",             CSeqFeatData::eSubtype_virion             },
-    { "V_region",           CSeqFeatData::eSubtype_V_region           },
-    { "V_segment",          CSeqFeatData::eSubtype_V_segment          },
-    { "Xref",               CSeqFeatData::eSubtype_seq                }
+static const TFeatKey feat_key_to_subtype [] = {
+    TFeatKey ( "-10_signal",         CSeqFeatData::eSubtype_10_signal          ),
+    TFeatKey ( "-35_signal",         CSeqFeatData::eSubtype_35_signal          ),
+    TFeatKey ( "3'clip",             CSeqFeatData::eSubtype_3clip              ),
+    TFeatKey ( "3'UTR",              CSeqFeatData::eSubtype_3UTR               ),
+    TFeatKey ( "5'clip",             CSeqFeatData::eSubtype_5clip              ),
+    TFeatKey ( "5'UTR",              CSeqFeatData::eSubtype_5UTR               ),
+    TFeatKey ( "attenuator",         CSeqFeatData::eSubtype_attenuator         ),
+    TFeatKey ( "Bond",               CSeqFeatData::eSubtype_bond               ),
+    TFeatKey ( "C_region",           CSeqFeatData::eSubtype_C_region           ),
+    TFeatKey ( "CAAT_signal",        CSeqFeatData::eSubtype_CAAT_signal        ),
+    TFeatKey ( "CDS",                CSeqFeatData::eSubtype_cdregion           ),
+    TFeatKey ( "Cit",                CSeqFeatData::eSubtype_pub                ),
+    TFeatKey ( "Comment",            CSeqFeatData::eSubtype_comment            ),
+    TFeatKey ( "conflict",           CSeqFeatData::eSubtype_conflict           ),
+    TFeatKey ( "D-loop",             CSeqFeatData::eSubtype_D_loop             ),
+    TFeatKey ( "D_segment",          CSeqFeatData::eSubtype_D_segment          ),
+    TFeatKey ( "enhancer",           CSeqFeatData::eSubtype_enhancer           ),
+    TFeatKey ( "exon",               CSeqFeatData::eSubtype_exon               ),
+    TFeatKey ( "GC_signal",          CSeqFeatData::eSubtype_GC_signal          ),
+    TFeatKey ( "gene",               CSeqFeatData::eSubtype_gene               ),
+    TFeatKey ( "Het",                CSeqFeatData::eSubtype_het                ),
+    TFeatKey ( "iDNA",               CSeqFeatData::eSubtype_iDNA               ),
+    TFeatKey ( "intron",             CSeqFeatData::eSubtype_intron             ),
+    TFeatKey ( "J_segment",          CSeqFeatData::eSubtype_J_segment          ),
+    TFeatKey ( "LTR",                CSeqFeatData::eSubtype_LTR                ),
+    TFeatKey ( "mat_peptide",        CSeqFeatData::eSubtype_mat_peptide_aa     ),
+    TFeatKey ( "mat_peptide_nt",     CSeqFeatData::eSubtype_mat_peptide        ),
+    TFeatKey ( "misc_binding",       CSeqFeatData::eSubtype_misc_binding       ),
+    TFeatKey ( "misc_difference",    CSeqFeatData::eSubtype_misc_difference    ),
+    TFeatKey ( "misc_feature",       CSeqFeatData::eSubtype_misc_feature       ),
+    TFeatKey ( "misc_recomb",        CSeqFeatData::eSubtype_misc_recomb        ),
+    TFeatKey ( "misc_RNA",           CSeqFeatData::eSubtype_otherRNA           ),
+    TFeatKey ( "misc_signal",        CSeqFeatData::eSubtype_misc_signal        ),
+    TFeatKey ( "misc_structure",     CSeqFeatData::eSubtype_misc_structure     ),
+    TFeatKey ( "modified_base",      CSeqFeatData::eSubtype_modified_base      ),
+    TFeatKey ( "mRNA",               CSeqFeatData::eSubtype_mRNA               ),
+    TFeatKey ( "N_region",           CSeqFeatData::eSubtype_N_region           ),
+    TFeatKey ( "NonStdRes",          CSeqFeatData::eSubtype_non_std_residue    ),
+    TFeatKey ( "Num",                CSeqFeatData::eSubtype_num                ),
+    TFeatKey ( "old_sequence",       CSeqFeatData::eSubtype_old_sequence       ),
+    TFeatKey ( "operon",             CSeqFeatData::eSubtype_operon             ),
+    TFeatKey ( "oriT",               CSeqFeatData::eSubtype_oriT               ),
+    TFeatKey ( "polyA_signal",       CSeqFeatData::eSubtype_polyA_signal       ),
+    TFeatKey ( "polyA_site",         CSeqFeatData::eSubtype_polyA_site         ),
+    TFeatKey ( "pre_RNA",            CSeqFeatData::eSubtype_preRNA             ),
+    TFeatKey ( "precursor_RNA",      CSeqFeatData::eSubtype_preRNA             ),
+    TFeatKey ( "preprotein",         CSeqFeatData::eSubtype_preprotein         ),
+    TFeatKey ( "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript    ),
+    TFeatKey ( "primer_bind",        CSeqFeatData::eSubtype_primer_bind        ),
+    TFeatKey ( "promoter",           CSeqFeatData::eSubtype_promoter           ),
+    TFeatKey ( "Protein",            CSeqFeatData::eSubtype_prot               ),
+    TFeatKey ( "protein_bind",       CSeqFeatData::eSubtype_protein_bind       ),
+    TFeatKey ( "RBS",                CSeqFeatData::eSubtype_RBS                ),
+    TFeatKey ( "REFERENCE",          CSeqFeatData::eSubtype_pub                ),
+    TFeatKey ( "Region",             CSeqFeatData::eSubtype_region             ),
+    TFeatKey ( "rep_origin",         CSeqFeatData::eSubtype_rep_origin         ),
+    TFeatKey ( "repeat_region",      CSeqFeatData::eSubtype_repeat_region      ),
+    TFeatKey ( "repeat_unit",        CSeqFeatData::eSubtype_repeat_unit        ),
+    TFeatKey ( "rRNA",               CSeqFeatData::eSubtype_rRNA               ),
+    TFeatKey ( "Rsite",              CSeqFeatData::eSubtype_rsite              ),
+    TFeatKey ( "S_region",           CSeqFeatData::eSubtype_S_region           ),
+    TFeatKey ( "satellite",          CSeqFeatData::eSubtype_satellite          ),
+    TFeatKey ( "scRNA",              CSeqFeatData::eSubtype_scRNA              ),
+    TFeatKey ( "SecStr",             CSeqFeatData::eSubtype_psec_str           ),
+    TFeatKey ( "sig_peptide",        CSeqFeatData::eSubtype_sig_peptide_aa     ),
+    TFeatKey ( "sig_peptide_nt",     CSeqFeatData::eSubtype_sig_peptide        ),
+    TFeatKey ( "Site",               CSeqFeatData::eSubtype_site               ),
+    TFeatKey ( "Site-ref",           CSeqFeatData::eSubtype_site_ref           ),
+    TFeatKey ( "snoRNA",             CSeqFeatData::eSubtype_snoRNA             ),
+    TFeatKey ( "snRNA",              CSeqFeatData::eSubtype_snRNA              ),
+    TFeatKey ( "source",             CSeqFeatData::eSubtype_biosrc             ),
+    TFeatKey ( "Src",                CSeqFeatData::eSubtype_biosrc             ),
+    TFeatKey ( "stem_loop",          CSeqFeatData::eSubtype_stem_loop          ),
+    TFeatKey ( "STS",                CSeqFeatData::eSubtype_STS                ),
+    TFeatKey ( "TATA_signal",        CSeqFeatData::eSubtype_TATA_signal        ),
+    TFeatKey ( "terminator",         CSeqFeatData::eSubtype_terminator         ),
+    TFeatKey ( "transit_peptide",    CSeqFeatData::eSubtype_transit_peptide_aa ),
+    TFeatKey ( "transit_peptide_nt", CSeqFeatData::eSubtype_transit_peptide    ),
+    TFeatKey ( "tRNA",               CSeqFeatData::eSubtype_tRNA               ),
+    TFeatKey ( "TxInit",             CSeqFeatData::eSubtype_txinit             ),
+    TFeatKey ( "unsure",             CSeqFeatData::eSubtype_unsure             ),
+    TFeatKey ( "User",               CSeqFeatData::eSubtype_user               ),
+    TFeatKey ( "V_region",           CSeqFeatData::eSubtype_V_region           ),
+    TFeatKey ( "V_segment",          CSeqFeatData::eSubtype_V_segment          ),
+    TFeatKey ( "variation",          CSeqFeatData::eSubtype_variation          ),
+    TFeatKey ( "virion",             CSeqFeatData::eSubtype_virion             ),
+    TFeatKey ( "Xref",               CSeqFeatData::eSubtype_seq                )
 };
 
-typedef struct qualinit {
-    const char *                         key;
-    CFeature_table_reader_imp::EQual subtype;
-} QualInit;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::ESubtype, PNocase> TFeatMap;
+static const TFeatMap sm_FeatKeys (feat_key_to_subtype, sizeof (feat_key_to_subtype));
 
-static QualInit qual_key_to_subtype [] = {
-    { "allele",               CFeature_table_reader_imp::eQual_allele               },
-    { "anticodon",            CFeature_table_reader_imp::eQual_anticodon            },
-    { "bac_ends",             CFeature_table_reader_imp::eQual_bac_ends             },
-    { "bond_type",            CFeature_table_reader_imp::eQual_bond_type            },
-    { "bound_moiety",         CFeature_table_reader_imp::eQual_bound_moiety         },
-    { "chrcnt",               CFeature_table_reader_imp::eQual_chrcnt               },
-    { "citation",             CFeature_table_reader_imp::eQual_citation             },
-    { "clone",                CFeature_table_reader_imp::eQual_clone                },
-    { "clone_id",             CFeature_table_reader_imp::eQual_clone_id             },
-    { "codon_recognized",     CFeature_table_reader_imp::eQual_codon_recognized     },
-    { "codons_recognized",    CFeature_table_reader_imp::eQual_codon_recognized     },
-    { "codon_start",          CFeature_table_reader_imp::eQual_codon_start          },
-    { "compare",              CFeature_table_reader_imp::eQual_compare              },
-    { "cons_splice",          CFeature_table_reader_imp::eQual_cons_splice          },
-    { "ctgcnt",               CFeature_table_reader_imp::eQual_ctgcnt               },
-    { "db_xref",              CFeature_table_reader_imp::eQual_db_xref              },
-    { "direction",            CFeature_table_reader_imp::eQual_direction            },
-    { "EC_number",            CFeature_table_reader_imp::eQual_EC_number            },
-    { "evidence",             CFeature_table_reader_imp::eQual_evidence             },
-    { "exception",            CFeature_table_reader_imp::eQual_exception            },
-    { "frequency",            CFeature_table_reader_imp::eQual_frequency            },
-    { "function",             CFeature_table_reader_imp::eQual_function             },
-    { "gene",                 CFeature_table_reader_imp::eQual_gene                 },
-    { "gene_desc",            CFeature_table_reader_imp::eQual_gene_desc            },
-    { "gene_syn",             CFeature_table_reader_imp::eQual_gene_syn             },
-    { "go_component",         CFeature_table_reader_imp::eQual_go_component         },
-    { "go_function",          CFeature_table_reader_imp::eQual_go_function          },
-    { "go_process",           CFeature_table_reader_imp::eQual_go_process           },
-    { "insertion_seq",        CFeature_table_reader_imp::eQual_insertion_seq        },
-    { "label",                CFeature_table_reader_imp::eQual_label                },
-    { "loccnt",               CFeature_table_reader_imp::eQual_loccnt               },
-    { "locus_tag",            CFeature_table_reader_imp::eQual_locus_tag            },
-    { "macronuclear",         CFeature_table_reader_imp::eQual_macronuclear         },
-    { "map",                  CFeature_table_reader_imp::eQual_map                  },
-    { "method",               CFeature_table_reader_imp::eQual_method               },
-    { "mod_base",             CFeature_table_reader_imp::eQual_mod_base             },
-    { "note",                 CFeature_table_reader_imp::eQual_note                 },
-    { "number",               CFeature_table_reader_imp::eQual_number               },
-    { "old_locus_tag",        CFeature_table_reader_imp::eQual_old_locus_tag        },
-    { "operon",               CFeature_table_reader_imp::eQual_operon               },
-    { "organism",             CFeature_table_reader_imp::eQual_organism             },
-    { "partial",              CFeature_table_reader_imp::eQual_partial              },
-    { "PCR_conditions",       CFeature_table_reader_imp::eQual_PCR_conditions       },
-    { "phenotype",            CFeature_table_reader_imp::eQual_phenotype            },
-    { "product",              CFeature_table_reader_imp::eQual_product              },
-    { "protein_id",           CFeature_table_reader_imp::eQual_protein_id           },
-    { "prot_desc",            CFeature_table_reader_imp::eQual_prot_desc            },
-    { "pseudo",               CFeature_table_reader_imp::eQual_pseudo               },
-    { "replace",              CFeature_table_reader_imp::eQual_replace              },
-    { "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family           },
-    { "rpt_type",             CFeature_table_reader_imp::eQual_rpt_type             },
-    { "rpt_unit",             CFeature_table_reader_imp::eQual_rpt_unit             },
-    { "secondary_accession",  CFeature_table_reader_imp::eQual_secondary_accession  },
-    { "secondary_accessions", CFeature_table_reader_imp::eQual_secondary_accession  },
-    { "sequence",             CFeature_table_reader_imp::eQual_sequence             },
-    { "snp_class",            CFeature_table_reader_imp::eQual_snp_class            },
-    { "snp_gtype",            CFeature_table_reader_imp::eQual_snp_gtype            },
-    { "snp_het",              CFeature_table_reader_imp::eQual_snp_het              },
-    { "snp_het_se",           CFeature_table_reader_imp::eQual_snp_het_se           },
-    { "snp_linkout",          CFeature_table_reader_imp::eQual_snp_linkout          },
-    { "snp_maxrate",          CFeature_table_reader_imp::eQual_snp_maxrate          },
-    { "snp_valid",            CFeature_table_reader_imp::eQual_snp_valid            },
-    { "standard_name",        CFeature_table_reader_imp::eQual_standard_name        },
-    { "STS",                  CFeature_table_reader_imp::eQual_STS                  },
-    { "sts_aliases",          CFeature_table_reader_imp::eQual_sts_aliases          },
-    { "sts_dsegs",            CFeature_table_reader_imp::eQual_sts_dsegs            },
-    { "transcript_id",        CFeature_table_reader_imp::eQual_transcript_id        },
-    { "transl_except",        CFeature_table_reader_imp::eQual_transl_except        },
-    { "transl_table",         CFeature_table_reader_imp::eQual_transl_table         },
-    { "translation",          CFeature_table_reader_imp::eQual_translation          },
-    { "transposon",           CFeature_table_reader_imp::eQual_transposon           },
-    { "usedin",               CFeature_table_reader_imp::eQual_usedin               },
-    { "weight",               CFeature_table_reader_imp::eQual_weight               }
+
+typedef pair <const char *, const CFeature_table_reader_imp::EQual> TQualKey;
+
+static const TQualKey qual_key_to_subtype [] = {
+    TQualKey ( "allele",               CFeature_table_reader_imp::eQual_allele               ),
+    TQualKey ( "anticodon",            CFeature_table_reader_imp::eQual_anticodon            ),
+    TQualKey ( "bac_ends",             CFeature_table_reader_imp::eQual_bac_ends             ),
+    TQualKey ( "bond_type",            CFeature_table_reader_imp::eQual_bond_type            ),
+    TQualKey ( "bound_moiety",         CFeature_table_reader_imp::eQual_bound_moiety         ),
+    TQualKey ( "chrcnt",               CFeature_table_reader_imp::eQual_chrcnt               ),
+    TQualKey ( "citation",             CFeature_table_reader_imp::eQual_citation             ),
+    TQualKey ( "clone",                CFeature_table_reader_imp::eQual_clone                ),
+    TQualKey ( "clone_id",             CFeature_table_reader_imp::eQual_clone_id             ),
+    TQualKey ( "codon_recognized",     CFeature_table_reader_imp::eQual_codon_recognized     ),
+    TQualKey ( "codon_start",          CFeature_table_reader_imp::eQual_codon_start          ),
+    TQualKey ( "codons_recognized",    CFeature_table_reader_imp::eQual_codon_recognized     ),
+    TQualKey ( "compare",              CFeature_table_reader_imp::eQual_compare              ),
+    TQualKey ( "cons_splice",          CFeature_table_reader_imp::eQual_cons_splice          ),
+    TQualKey ( "ctgcnt",               CFeature_table_reader_imp::eQual_ctgcnt               ),
+    TQualKey ( "db_xref",              CFeature_table_reader_imp::eQual_db_xref              ),
+    TQualKey ( "direction",            CFeature_table_reader_imp::eQual_direction            ),
+    TQualKey ( "EC_number",            CFeature_table_reader_imp::eQual_EC_number            ),
+    TQualKey ( "evidence",             CFeature_table_reader_imp::eQual_evidence             ),
+    TQualKey ( "exception",            CFeature_table_reader_imp::eQual_exception            ),
+    TQualKey ( "frequency",            CFeature_table_reader_imp::eQual_frequency            ),
+    TQualKey ( "function",             CFeature_table_reader_imp::eQual_function             ),
+    TQualKey ( "gene",                 CFeature_table_reader_imp::eQual_gene                 ),
+    TQualKey ( "gene_desc",            CFeature_table_reader_imp::eQual_gene_desc            ),
+    TQualKey ( "gene_syn",             CFeature_table_reader_imp::eQual_gene_syn             ),
+    TQualKey ( "go_component",         CFeature_table_reader_imp::eQual_go_component         ),
+    TQualKey ( "go_function",          CFeature_table_reader_imp::eQual_go_function          ),
+    TQualKey ( "go_process",           CFeature_table_reader_imp::eQual_go_process           ),
+    TQualKey ( "insertion_seq",        CFeature_table_reader_imp::eQual_insertion_seq        ),
+    TQualKey ( "label",                CFeature_table_reader_imp::eQual_label                ),
+    TQualKey ( "loccnt",               CFeature_table_reader_imp::eQual_loccnt               ),
+    TQualKey ( "locus_tag",            CFeature_table_reader_imp::eQual_locus_tag            ),
+    TQualKey ( "macronuclear",         CFeature_table_reader_imp::eQual_macronuclear         ),
+    TQualKey ( "map",                  CFeature_table_reader_imp::eQual_map                  ),
+    TQualKey ( "method",               CFeature_table_reader_imp::eQual_method               ),
+    TQualKey ( "mod_base",             CFeature_table_reader_imp::eQual_mod_base             ),
+    TQualKey ( "note",                 CFeature_table_reader_imp::eQual_note                 ),
+    TQualKey ( "number",               CFeature_table_reader_imp::eQual_number               ),
+    TQualKey ( "old_locus_tag",        CFeature_table_reader_imp::eQual_old_locus_tag        ),
+    TQualKey ( "operon",               CFeature_table_reader_imp::eQual_operon               ),
+    TQualKey ( "organism",             CFeature_table_reader_imp::eQual_organism             ),
+    TQualKey ( "partial",              CFeature_table_reader_imp::eQual_partial              ),
+    TQualKey ( "PCR_conditions",       CFeature_table_reader_imp::eQual_PCR_conditions       ),
+    TQualKey ( "phenotype",            CFeature_table_reader_imp::eQual_phenotype            ),
+    TQualKey ( "product",              CFeature_table_reader_imp::eQual_product              ),
+    TQualKey ( "prot_desc",            CFeature_table_reader_imp::eQual_prot_desc            ),
+    TQualKey ( "protein_id",           CFeature_table_reader_imp::eQual_protein_id           ),
+    TQualKey ( "pseudo",               CFeature_table_reader_imp::eQual_pseudo               ),
+    TQualKey ( "replace",              CFeature_table_reader_imp::eQual_replace              ),
+    TQualKey ( "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family           ),
+    TQualKey ( "rpt_type",             CFeature_table_reader_imp::eQual_rpt_type             ),
+    TQualKey ( "rpt_unit",             CFeature_table_reader_imp::eQual_rpt_unit             ),
+    TQualKey ( "secondary_accession",  CFeature_table_reader_imp::eQual_secondary_accession  ),
+    TQualKey ( "secondary_accessions", CFeature_table_reader_imp::eQual_secondary_accession  ),
+    TQualKey ( "sequence",             CFeature_table_reader_imp::eQual_sequence             ),
+    TQualKey ( "site_type",            CFeature_table_reader_imp::eQual_site_type            ),
+    TQualKey ( "snp_class",            CFeature_table_reader_imp::eQual_snp_class            ),
+    TQualKey ( "snp_gtype",            CFeature_table_reader_imp::eQual_snp_gtype            ),
+    TQualKey ( "snp_het",              CFeature_table_reader_imp::eQual_snp_het              ),
+    TQualKey ( "snp_het_se",           CFeature_table_reader_imp::eQual_snp_het_se           ),
+    TQualKey ( "snp_linkout",          CFeature_table_reader_imp::eQual_snp_linkout          ),
+    TQualKey ( "snp_maxrate",          CFeature_table_reader_imp::eQual_snp_maxrate          ),
+    TQualKey ( "snp_valid",            CFeature_table_reader_imp::eQual_snp_valid            ),
+    TQualKey ( "standard_name",        CFeature_table_reader_imp::eQual_standard_name        ),
+    TQualKey ( "STS",                  CFeature_table_reader_imp::eQual_STS                  ),
+    TQualKey ( "sts_aliases",          CFeature_table_reader_imp::eQual_sts_aliases          ),
+    TQualKey ( "sts_dsegs",            CFeature_table_reader_imp::eQual_sts_dsegs            ),
+    TQualKey ( "transcript_id",        CFeature_table_reader_imp::eQual_transcript_id        ),
+    TQualKey ( "transl_except",        CFeature_table_reader_imp::eQual_transl_except        ),
+    TQualKey ( "transl_table",         CFeature_table_reader_imp::eQual_transl_table         ),
+    TQualKey ( "translation",          CFeature_table_reader_imp::eQual_translation          ),
+    TQualKey ( "transposon",           CFeature_table_reader_imp::eQual_transposon           ),
+    TQualKey ( "usedin",               CFeature_table_reader_imp::eQual_usedin               ),
+    TQualKey ( "weight",               CFeature_table_reader_imp::eQual_weight               )
 };
 
-typedef struct orgrefinit {
-    const char *                       key;
-    CFeature_table_reader_imp::EOrgRef subtype;
-} OrgRefInit;
+typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EQual, PNocase> TQualMap;
+static const TQualMap sm_QualKeys (qual_key_to_subtype, sizeof (qual_key_to_subtype));
 
-static OrgRefInit orgref_key_to_subtype [] = {
-    { "div",        CFeature_table_reader_imp::eOrgRef_div       },
-    { "gcode",      CFeature_table_reader_imp::eOrgRef_gcode     },
-    { "lineage",    CFeature_table_reader_imp::eOrgRef_lineage   },
-    { "mgcode",     CFeature_table_reader_imp::eOrgRef_mgcode    },
-    { "organelle",  CFeature_table_reader_imp::eOrgRef_organelle },
-    { "organism",   CFeature_table_reader_imp::eOrgRef_organism  }
+
+typedef pair <const char *, const CFeature_table_reader_imp::EOrgRef> TOrgRefKey;
+
+static const TOrgRefKey orgref_key_to_subtype [] = {
+    TOrgRefKey ( "div",        CFeature_table_reader_imp::eOrgRef_div       ),
+    TOrgRefKey ( "gcode",      CFeature_table_reader_imp::eOrgRef_gcode     ),
+    TOrgRefKey ( "lineage",    CFeature_table_reader_imp::eOrgRef_lineage   ),
+    TOrgRefKey ( "mgcode",     CFeature_table_reader_imp::eOrgRef_mgcode    ),
+    TOrgRefKey ( "organelle",  CFeature_table_reader_imp::eOrgRef_organelle ),
+    TOrgRefKey ( "organism",   CFeature_table_reader_imp::eOrgRef_organism  )
 };
 
-typedef struct genomeinit {
-    const char *        key;
-    CBioSource::EGenome subtype;
-} GenomeInit;
+typedef CStaticArrayMap <const char*, const CFeature_table_reader_imp::EOrgRef, PNocase> TOrgRefMap;
+static const TOrgRefMap sm_OrgRefKeys (orgref_key_to_subtype, sizeof (orgref_key_to_subtype));
 
-static GenomeInit genome_key_to_subtype [] = {
-    { "unknown",                   CBioSource::eGenome_unknown          },
-    { "genomic",                   CBioSource::eGenome_genomic          },
-    { "chloroplast",               CBioSource::eGenome_chloroplast      },
-    { "plastid:chloroplast",       CBioSource::eGenome_chloroplast      },
-    { "chromoplast",               CBioSource::eGenome_chromoplast      },
-    { "plastid:chromoplast",       CBioSource::eGenome_chromoplast      },
-    { "kinetoplast",               CBioSource::eGenome_kinetoplast      },
-    { "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast      },
-    { "mitochondrion",             CBioSource::eGenome_mitochondrion    },
-    { "plastid",                   CBioSource::eGenome_plastid          },
-    { "macronuclear",              CBioSource::eGenome_macronuclear     },
-    { "extrachrom",                CBioSource::eGenome_extrachrom       },
-    { "plasmid",                   CBioSource::eGenome_plasmid          },
-    { "transposon",                CBioSource::eGenome_transposon       },
-    { "insertion_seq",             CBioSource::eGenome_insertion_seq    },
-    { "cyanelle",                  CBioSource::eGenome_cyanelle         },
-    { "plastid:cyanelle",          CBioSource::eGenome_cyanelle         },
-    { "proviral",                  CBioSource::eGenome_proviral         },
-    { "virion",                    CBioSource::eGenome_virion           },
-    { "nucleomorph",               CBioSource::eGenome_nucleomorph      },
-    { "apicoplast",                CBioSource::eGenome_apicoplast       },
-    { "plastid:apicoplast",        CBioSource::eGenome_apicoplast       },
-    { "plastid:leucoplast",        CBioSource::eGenome_leucoplast       },
-    { "plastid:proplastid",        CBioSource::eGenome_proplastid       },
-    { "endogenous_virus",          CBioSource::eGenome_endogenous_virus }
+
+typedef pair <const char *, const CBioSource::EGenome> TGenomeKey;
+
+static const TGenomeKey genome_key_to_subtype [] = {
+    TGenomeKey ( "apicoplast",                CBioSource::eGenome_apicoplast       ),
+    TGenomeKey ( "chloroplast",               CBioSource::eGenome_chloroplast      ),
+    TGenomeKey ( "chromoplast",               CBioSource::eGenome_chromoplast      ),
+    TGenomeKey ( "cyanelle",                  CBioSource::eGenome_cyanelle         ),
+    TGenomeKey ( "endogenous_virus",          CBioSource::eGenome_endogenous_virus ),
+    TGenomeKey ( "extrachrom",                CBioSource::eGenome_extrachrom       ),
+    TGenomeKey ( "genomic",                   CBioSource::eGenome_genomic          ),
+    TGenomeKey ( "insertion_seq",             CBioSource::eGenome_insertion_seq    ),
+    TGenomeKey ( "kinetoplast",               CBioSource::eGenome_kinetoplast      ),
+    TGenomeKey ( "macronuclear",              CBioSource::eGenome_macronuclear     ),
+    TGenomeKey ( "mitochondrion",             CBioSource::eGenome_mitochondrion    ),
+    TGenomeKey ( "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast      ),
+    TGenomeKey ( "nucleomorph",               CBioSource::eGenome_nucleomorph      ),
+    TGenomeKey ( "plasmid",                   CBioSource::eGenome_plasmid          ),
+    TGenomeKey ( "plastid",                   CBioSource::eGenome_plastid          ),
+    TGenomeKey ( "plastid:apicoplast",        CBioSource::eGenome_apicoplast       ),
+    TGenomeKey ( "plastid:chloroplast",       CBioSource::eGenome_chloroplast      ),
+    TGenomeKey ( "plastid:chromoplast",       CBioSource::eGenome_chromoplast      ),
+    TGenomeKey ( "plastid:cyanelle",          CBioSource::eGenome_cyanelle         ),
+    TGenomeKey ( "plastid:leucoplast",        CBioSource::eGenome_leucoplast       ),
+    TGenomeKey ( "plastid:proplastid",        CBioSource::eGenome_proplastid       ),
+    TGenomeKey ( "proviral",                  CBioSource::eGenome_proviral         ),
+    TGenomeKey ( "transposon",                CBioSource::eGenome_transposon       ),
+    TGenomeKey ( "unknown",                   CBioSource::eGenome_unknown          ),
+    TGenomeKey ( "virion",                    CBioSource::eGenome_virion           )
 };
 
-typedef struct subsrcinit {
-    const char *         key;
-    CSubSource::ESubtype subtype;
-} SubSrcInit;
+typedef CStaticArrayMap <const char*, const CBioSource::EGenome, PNocase> TGenomeMap;
+static const TGenomeMap sm_GenomeKeys (genome_key_to_subtype, sizeof (genome_key_to_subtype));
 
-static SubSrcInit subsrc_key_to_subtype [] = {
-    { "cell_line",            CSubSource::eSubtype_cell_line             },
-    { "cell_type",            CSubSource::eSubtype_cell_type             },
-    { "chromosome",           CSubSource::eSubtype_chromosome            },
-    { "clone",                CSubSource::eSubtype_clone                 },
-    { "clone_lib",            CSubSource::eSubtype_clone_lib             },
-    { "country",              CSubSource::eSubtype_country               },
-    { "dev_stage",            CSubSource::eSubtype_dev_stage             },
-    { "endogenous_virus",     CSubSource::eSubtype_endogenous_virus_name },
-    { "environmental_sample", CSubSource::eSubtype_environmental_sample  },
-    { "frequency",            CSubSource::eSubtype_frequency             },
-    { "genotype",             CSubSource::eSubtype_genotype              },
-    { "germline",             CSubSource::eSubtype_germline              },
-    { "haplotype",            CSubSource::eSubtype_haplotype             },
-    { "insertion_seq",        CSubSource::eSubtype_insertion_seq_name    },
-    { "isolation_source",     CSubSource::eSubtype_isolation_source      },
-    { "lab_host",             CSubSource::eSubtype_lab_host              },
-    { "map",                  CSubSource::eSubtype_map                   },
-    { "plasmid",              CSubSource::eSubtype_plasmid_name          },
-    { "plastid",              CSubSource::eSubtype_plastid_name          },
-    { "pop_variant",          CSubSource::eSubtype_pop_variant           },
-    { "rearranged",           CSubSource::eSubtype_rearranged            },
-    { "segment",              CSubSource::eSubtype_segment               },
-    { "sex",                  CSubSource::eSubtype_sex                   },
-    { "subclone",             CSubSource::eSubtype_subclone              },
-    { "tissue_lib ",          CSubSource::eSubtype_tissue_lib            },
-    { "tissue_type",          CSubSource::eSubtype_tissue_type           },
-    { "transgenic",           CSubSource::eSubtype_transgenic            },
-    { "transposon",           CSubSource::eSubtype_transposon_name       }
+
+typedef pair <const char *, const CSubSource::ESubtype> TSubSrcKey;
+
+static const TSubSrcKey subsrc_key_to_subtype [] = {
+    TSubSrcKey ( "cell_line",            CSubSource::eSubtype_cell_line             ),
+    TSubSrcKey ( "cell_type",            CSubSource::eSubtype_cell_type             ),
+    TSubSrcKey ( "chromosome",           CSubSource::eSubtype_chromosome            ),
+    TSubSrcKey ( "clone",                CSubSource::eSubtype_clone                 ),
+    TSubSrcKey ( "clone_lib",            CSubSource::eSubtype_clone_lib             ),
+    TSubSrcKey ( "country",              CSubSource::eSubtype_country               ),
+    TSubSrcKey ( "dev_stage",            CSubSource::eSubtype_dev_stage             ),
+    TSubSrcKey ( "endogenous_virus",     CSubSource::eSubtype_endogenous_virus_name ),
+    TSubSrcKey ( "environmental_sample", CSubSource::eSubtype_environmental_sample  ),
+    TSubSrcKey ( "frequency",            CSubSource::eSubtype_frequency             ),
+    TSubSrcKey ( "genotype",             CSubSource::eSubtype_genotype              ),
+    TSubSrcKey ( "germline",             CSubSource::eSubtype_germline              ),
+    TSubSrcKey ( "haplotype",            CSubSource::eSubtype_haplotype             ),
+    TSubSrcKey ( "insertion_seq",        CSubSource::eSubtype_insertion_seq_name    ),
+    TSubSrcKey ( "isolation_source",     CSubSource::eSubtype_isolation_source      ),
+    TSubSrcKey ( "lab_host",             CSubSource::eSubtype_lab_host              ),
+    TSubSrcKey ( "map",                  CSubSource::eSubtype_map                   ),
+    TSubSrcKey ( "plasmid",              CSubSource::eSubtype_plasmid_name          ),
+    TSubSrcKey ( "plastid",              CSubSource::eSubtype_plastid_name          ),
+    TSubSrcKey ( "pop_variant",          CSubSource::eSubtype_pop_variant           ),
+    TSubSrcKey ( "rearranged",           CSubSource::eSubtype_rearranged            ),
+    TSubSrcKey ( "segment",              CSubSource::eSubtype_segment               ),
+    TSubSrcKey ( "sex",                  CSubSource::eSubtype_sex                   ),
+    TSubSrcKey ( "subclone",             CSubSource::eSubtype_subclone              ),
+    TSubSrcKey ( "tissue_lib ",          CSubSource::eSubtype_tissue_lib            ),
+    TSubSrcKey ( "tissue_type",          CSubSource::eSubtype_tissue_type           ),
+    TSubSrcKey ( "transgenic",           CSubSource::eSubtype_transgenic            ),
+    TSubSrcKey ( "transposon",           CSubSource::eSubtype_transposon_name       )
 };
 
-typedef struct orgmodinit {
-    const char *      key;
-    COrgMod::ESubtype subtype;
-} OrgModInit;
+typedef CStaticArrayMap <const char*, const CSubSource::ESubtype, PNocase> TSubSrcMap;
+static const TSubSrcMap sm_SubSrcKeys (subsrc_key_to_subtype, sizeof (subsrc_key_to_subtype));
 
-static OrgModInit orgmod_key_to_subtype [] = {
-    { "acronym",          COrgMod::eSubtype_acronym          },
-    { "anamorph",         COrgMod::eSubtype_anamorph         },
-    { "authority",        COrgMod::eSubtype_authority        },
-    { "biotype",          COrgMod::eSubtype_biotype          },
-    { "biovar",           COrgMod::eSubtype_biovar           },
-    { "breed",            COrgMod::eSubtype_breed            },
-    { "chemovar",         COrgMod::eSubtype_chemovar         },
-    { "common",           COrgMod::eSubtype_common           },
-    { "cultivar",         COrgMod::eSubtype_cultivar         },
-    { "dosage",           COrgMod::eSubtype_dosage           },
-    { "ecotype",          COrgMod::eSubtype_ecotype          },
-    { "forma_specialis",  COrgMod::eSubtype_forma_specialis  },
-    { "forma",            COrgMod::eSubtype_forma            },
-    { "gb_acronym",       COrgMod::eSubtype_gb_acronym       },
-    { "gb_anamorph",      COrgMod::eSubtype_gb_anamorph      },
-    { "gb_synonym",       COrgMod::eSubtype_gb_synonym       },
-    { "group",            COrgMod::eSubtype_group            },
-    { "isolate",          COrgMod::eSubtype_isolate          },
-    { "nat_host",         COrgMod::eSubtype_nat_host         },
-    { "old_lineage",      COrgMod::eSubtype_old_lineage      },
-    { "old_name",         COrgMod::eSubtype_old_name         },
-    { "pathovar",         COrgMod::eSubtype_pathovar         },
-    { "serogroup",        COrgMod::eSubtype_serogroup        },
-    { "serotype",         COrgMod::eSubtype_serotype         },
-    { "serovar",          COrgMod::eSubtype_serovar          },
-    { "specimen_voucher", COrgMod::eSubtype_specimen_voucher },
-    { "strain",           COrgMod::eSubtype_strain           },
-    { "sub_species",      COrgMod::eSubtype_sub_species      },
-    { "subgroup",         COrgMod::eSubtype_subgroup         },
-    { "substrain",        COrgMod::eSubtype_substrain        },
-    { "subtype",          COrgMod::eSubtype_subtype          },
-    { "synonym",          COrgMod::eSubtype_synonym          },
-    { "teleomorph",       COrgMod::eSubtype_teleomorph       },
-    { "type",             COrgMod::eSubtype_type             },
-    { "variety",          COrgMod::eSubtype_variety          }
+
+typedef pair <const char *, const COrgMod::ESubtype> TOrgModKey;
+
+static const TOrgModKey orgmod_key_to_subtype [] = {
+    TOrgModKey ( "acronym",          COrgMod::eSubtype_acronym          ),
+    TOrgModKey ( "anamorph",         COrgMod::eSubtype_anamorph         ),
+    TOrgModKey ( "authority",        COrgMod::eSubtype_authority        ),
+    TOrgModKey ( "biotype",          COrgMod::eSubtype_biotype          ),
+    TOrgModKey ( "biovar",           COrgMod::eSubtype_biovar           ),
+    TOrgModKey ( "breed",            COrgMod::eSubtype_breed            ),
+    TOrgModKey ( "chemovar",         COrgMod::eSubtype_chemovar         ),
+    TOrgModKey ( "common",           COrgMod::eSubtype_common           ),
+    TOrgModKey ( "cultivar",         COrgMod::eSubtype_cultivar         ),
+    TOrgModKey ( "dosage",           COrgMod::eSubtype_dosage           ),
+    TOrgModKey ( "ecotype",          COrgMod::eSubtype_ecotype          ),
+    TOrgModKey ( "forma",            COrgMod::eSubtype_forma            ),
+    TOrgModKey ( "forma_specialis",  COrgMod::eSubtype_forma_specialis  ),
+    TOrgModKey ( "gb_acronym",       COrgMod::eSubtype_gb_acronym       ),
+    TOrgModKey ( "gb_anamorph",      COrgMod::eSubtype_gb_anamorph      ),
+    TOrgModKey ( "gb_synonym",       COrgMod::eSubtype_gb_synonym       ),
+    TOrgModKey ( "group",            COrgMod::eSubtype_group            ),
+    TOrgModKey ( "isolate",          COrgMod::eSubtype_isolate          ),
+    TOrgModKey ( "nat_host",         COrgMod::eSubtype_nat_host         ),
+    TOrgModKey ( "old_lineage",      COrgMod::eSubtype_old_lineage      ),
+    TOrgModKey ( "old_name",         COrgMod::eSubtype_old_name         ),
+    TOrgModKey ( "pathovar",         COrgMod::eSubtype_pathovar         ),
+    TOrgModKey ( "serogroup",        COrgMod::eSubtype_serogroup        ),
+    TOrgModKey ( "serotype",         COrgMod::eSubtype_serotype         ),
+    TOrgModKey ( "serovar",          COrgMod::eSubtype_serovar          ),
+    TOrgModKey ( "specimen_voucher", COrgMod::eSubtype_specimen_voucher ),
+    TOrgModKey ( "strain",           COrgMod::eSubtype_strain           ),
+    TOrgModKey ( "sub_species",      COrgMod::eSubtype_sub_species      ),
+    TOrgModKey ( "subgroup",         COrgMod::eSubtype_subgroup         ),
+    TOrgModKey ( "substrain",        COrgMod::eSubtype_substrain        ),
+    TOrgModKey ( "subtype",          COrgMod::eSubtype_subtype          ),
+    TOrgModKey ( "synonym",          COrgMod::eSubtype_synonym          ),
+    TOrgModKey ( "teleomorph",       COrgMod::eSubtype_teleomorph       ),
+    TOrgModKey ( "type",             COrgMod::eSubtype_type             ),
+    TOrgModKey ( "variety",          COrgMod::eSubtype_variety          )
 };
 
-typedef struct bondinit {
-    const char *        key;
-    CSeqFeatData::EBond subtype;
-} BondInit;
+typedef CStaticArrayMap <const char*, const COrgMod::ESubtype, PNocase> TOrgModMap;
+static const TOrgModMap sm_OrgModKeys (orgmod_key_to_subtype, sizeof (orgmod_key_to_subtype));
 
-static BondInit bond_key_to_subtype [] = {
-    { "disulfide",         CSeqFeatData::eBond_disulfide  },
-    { "thiolester",        CSeqFeatData::eBond_thiolester },
-    { "xlink",             CSeqFeatData::eBond_xlink      },
-    { "thioether",         CSeqFeatData::eBond_thioether  },
-    { "",                  CSeqFeatData::eBond_other      }
+
+typedef pair <const char *, const CSeqFeatData::EBond> TBondKey;
+
+static const TBondKey bond_key_to_subtype [] = {
+    TBondKey ( "disulfide",         CSeqFeatData::eBond_disulfide  ),
+    TBondKey ( "other",             CSeqFeatData::eBond_other      ),
+    TBondKey ( "thioether",         CSeqFeatData::eBond_thioether  ),
+    TBondKey ( "thiolester",        CSeqFeatData::eBond_thiolester ),
+    TBondKey ( "xlink",             CSeqFeatData::eBond_xlink      )
 };
 
-typedef struct siteinit {
-    const char *        key;
-    CSeqFeatData::ESite subtype;
-} SiteInit;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::EBond, PNocase> TBondMap;
+static const TBondMap sm_BondKeys (bond_key_to_subtype, sizeof (bond_key_to_subtype));
 
-static SiteInit site_key_to_subtype [] = {
-    { "active",                      CSeqFeatData::eSite_active                      },
-    { "binding",                     CSeqFeatData::eSite_binding                     },
-    { "cleavage",                    CSeqFeatData::eSite_cleavage                    },
-    { "inhibit",                     CSeqFeatData::eSite_inhibit                     },
-    { "modified",                    CSeqFeatData::eSite_modified                    },
-    { "glycosylation",               CSeqFeatData::eSite_glycosylation               },
-    { "myristoylation",              CSeqFeatData::eSite_myristoylation              },
-    { "mutagenized",                 CSeqFeatData::eSite_mutagenized                 },
-    { "metal binding",               CSeqFeatData::eSite_metal_binding               },
-    { "phosphorylation",             CSeqFeatData::eSite_phosphorylation             },
-    { "acetylation",                 CSeqFeatData::eSite_acetylation                 },
-    { "amidation",                   CSeqFeatData::eSite_amidation                   },
-    { "methylation",                 CSeqFeatData::eSite_methylation                 },
-    { "hydroxylation",               CSeqFeatData::eSite_hydroxylation               },
-    { "sulfatation",                 CSeqFeatData::eSite_sulfatation                 },
-    { "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       },
-    { "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid },
-    { "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  },
-    { "blocked",                     CSeqFeatData::eSite_blocked                     },
-    { "lipid binding",               CSeqFeatData::eSite_lipid_binding               },
-    { "np binding",                  CSeqFeatData::eSite_np_binding                  },
-    { "DNA binding",                 CSeqFeatData::eSite_dna_binding                 },
-    { "signal peptide",              CSeqFeatData::eSite_signal_peptide              },
-    { "transit peptide",             CSeqFeatData::eSite_transit_peptide             },
-    { "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        },
-    { "",                            CSeqFeatData::eSite_other                       }
+
+typedef pair <const char *, const CSeqFeatData::ESite> TSiteKey;
+
+static const TSiteKey site_key_to_subtype [] = {
+    TSiteKey ( "acetylation",                 CSeqFeatData::eSite_acetylation                 ),
+    TSiteKey ( "active",                      CSeqFeatData::eSite_active                      ),
+    TSiteKey ( "amidation",                   CSeqFeatData::eSite_amidation                   ),
+    TSiteKey ( "binding",                     CSeqFeatData::eSite_binding                     ),
+    TSiteKey ( "blocked",                     CSeqFeatData::eSite_blocked                     ),
+    TSiteKey ( "cleavage",                    CSeqFeatData::eSite_cleavage                    ),
+    TSiteKey ( "DNA binding",                 CSeqFeatData::eSite_dna_binding                 ),
+    TSiteKey ( "gamma carboxyglutamic acid",  CSeqFeatData::eSite_gamma_carboxyglutamic_acid  ),
+    TSiteKey ( "glycosylation",               CSeqFeatData::eSite_glycosylation               ),
+    TSiteKey ( "hydroxylation",               CSeqFeatData::eSite_hydroxylation               ),
+    TSiteKey ( "inhibit",                     CSeqFeatData::eSite_inhibit                     ),
+    TSiteKey ( "lipid binding",               CSeqFeatData::eSite_lipid_binding               ),
+    TSiteKey ( "metal binding",               CSeqFeatData::eSite_metal_binding               ),
+    TSiteKey ( "methylation",                 CSeqFeatData::eSite_methylation                 ),
+    TSiteKey ( "modified",                    CSeqFeatData::eSite_modified                    ),
+    TSiteKey ( "mutagenized",                 CSeqFeatData::eSite_mutagenized                 ),
+    TSiteKey ( "myristoylation",              CSeqFeatData::eSite_myristoylation              ),
+    TSiteKey ( "np binding",                  CSeqFeatData::eSite_np_binding                  ),
+    TSiteKey ( "other",                       CSeqFeatData::eSite_other                       ),
+    TSiteKey ( "oxidative deamination",       CSeqFeatData::eSite_oxidative_deamination       ),
+    TSiteKey ( "phosphorylation",             CSeqFeatData::eSite_phosphorylation             ),
+    TSiteKey ( "pyrrolidone carboxylic acid", CSeqFeatData::eSite_pyrrolidone_carboxylic_acid ),
+    TSiteKey ( "signal peptide",              CSeqFeatData::eSite_signal_peptide              ),
+    TSiteKey ( "sulfatation",                 CSeqFeatData::eSite_sulfatation                 ),
+    TSiteKey ( "transit peptide",             CSeqFeatData::eSite_transit_peptide             ),
+    TSiteKey ( "transmembrane region",        CSeqFeatData::eSite_transmembrane_region        )
 };
 
-typedef struct trnainit {
-    const char * key;
-    int          subtype;
-} TrnaInit;
+typedef CStaticArrayMap <const char*, const CSeqFeatData::ESite, PNocase> TSiteMap;
+static const TSiteMap sm_SiteKeys (site_key_to_subtype, sizeof (site_key_to_subtype));
 
-static TrnaInit trna_key_to_subtype [] = {
-    { "Ala",            'A' },
-    { "Alanine",        'A' },
-    { "Asp or Asn",     'B' },
-    { "Asx",            'B' },
-    { "Cys",            'C' },
-    { "Cysteine",       'C' },
-    { "Asp",            'D' },
-    { "Aspartate",      'D' },
-    { "Aspartic Acid",  'D' },
-    { "Glu",            'E' },
-    { "Glutamate",      'E' },
-    { "Glutamic Acid",  'E' },
-    { "Phe",            'F' },
-    { "Phenylalanine",  'F' },
-    { "Gly",            'G' },
-    { "Glycine",        'G' },
-    { "His",            'H' },
-    { "Histidine",      'H' },
-    { "Ile",            'I' },
-    { "Isoleucine",     'I' },
-    { "Lys",            'K' },
-    { "Lysine",         'K' },
-    { "Leu",            'L' },
-    { "Leucine",        'L' },
-    { "fMet",           'M' },
-    { "Met",            'M' },
-    { "Methionine",     'M' },
-    { "Asn",            'N' },
-    { "Asparagine",     'N' },
-    { "Pro",            'P' },
-    { "Proline",        'P' },
-    { "Gln",            'Q' },
-    { "Glutamine",      'Q' },
-    { "Arg",            'R' },
-    { "Arginine",       'R' },
-    { "Ser",            'S' },
-    { "Serine",         'S' },
-    { "Thr",            'T' },
-    { "Threonine",      'T' },
-    { "Sec",            'U' },
-    { "Selenocysteine", 'U' },
-    { "Val",            'V' },
-    { "Valine",         'V' },
-    { "Trp",            'W' },
-    { "Tryptophan",     'W' },
-    { "OTHER",          'X' },
-    { "Xxx",            'X' },
-    { "Tyr",            'Y' },
-    { "Tyrosine",       'Y' },
-    { "Glu or Gln",     'Z' },
-    { "Glx",            'Z' },
-    { "Ter",            '*' },
-    { "TERM",           '*' },
-    { "Termination",    '*' }
+
+typedef pair <const char *, const int> TTrnaKey;
+
+static const TTrnaKey trna_key_to_subtype [] = {
+    TTrnaKey ( "Ala",            'A' ),
+    TTrnaKey ( "Alanine",        'A' ),
+    TTrnaKey ( "Arg",            'R' ),
+    TTrnaKey ( "Arginine",       'R' ),
+    TTrnaKey ( "Asn",            'N' ),
+    TTrnaKey ( "Asp",            'D' ),
+    TTrnaKey ( "Asp or Asn",     'B' ),
+    TTrnaKey ( "Asparagine",     'N' ),
+    TTrnaKey ( "Aspartate",      'D' ),
+    TTrnaKey ( "Aspartic Acid",  'D' ),
+    TTrnaKey ( "Asx",            'B' ),
+    TTrnaKey ( "Cys",            'C' ),
+    TTrnaKey ( "Cysteine",       'C' ),
+    TTrnaKey ( "fMet",           'M' ),
+    TTrnaKey ( "Gln",            'Q' ),
+    TTrnaKey ( "Glu",            'E' ),
+    TTrnaKey ( "Glu or Gln",     'Z' ),
+    TTrnaKey ( "Glutamate",      'E' ),
+    TTrnaKey ( "Glutamic Acid",  'E' ),
+    TTrnaKey ( "Glutamine",      'Q' ),
+    TTrnaKey ( "Glx",            'Z' ),
+    TTrnaKey ( "Gly",            'G' ),
+    TTrnaKey ( "Glycine",        'G' ),
+    TTrnaKey ( "His",            'H' ),
+    TTrnaKey ( "Histidine",      'H' ),
+    TTrnaKey ( "Ile",            'I' ),
+    TTrnaKey ( "Isoleucine",     'I' ),
+    TTrnaKey ( "Leu",            'L' ),
+    TTrnaKey ( "Leucine",        'L' ),
+    TTrnaKey ( "Lys",            'K' ),
+    TTrnaKey ( "Lysine",         'K' ),
+    TTrnaKey ( "Met",            'M' ),
+    TTrnaKey ( "Methionine",     'M' ),
+    TTrnaKey ( "OTHER",          'X' ),
+    TTrnaKey ( "Phe",            'F' ),
+    TTrnaKey ( "Phenylalanine",  'F' ),
+    TTrnaKey ( "Pro",            'P' ),
+    TTrnaKey ( "Proline",        'P' ),
+    TTrnaKey ( "Sec",            'U' ),
+    TTrnaKey ( "Selenocysteine", 'U' ),
+    TTrnaKey ( "Ser",            'S' ),
+    TTrnaKey ( "Serine",         'S' ),
+    TTrnaKey ( "Ter",            '*' ),
+    TTrnaKey ( "TERM",           '*' ),
+    TTrnaKey ( "Termination",    '*' ),
+    TTrnaKey ( "Thr",            'T' ),
+    TTrnaKey ( "Threonine",      'T' ),
+    TTrnaKey ( "Trp",            'W' ),
+    TTrnaKey ( "Tryptophan",     'W' ),
+    TTrnaKey ( "Tyr",            'Y' ),
+    TTrnaKey ( "Tyrosine",       'Y' ),
+    TTrnaKey ( "Val",            'V' ),
+    TTrnaKey ( "Valine",         'V' ),
+    TTrnaKey ( "Xxx",            'X' )
 };
 
-typedef struct singleinit {
-    const char * key;
-} SingleInit;
+typedef CStaticArrayMap <const char*, const int, PNocase> TTrnaMap;
+static const TTrnaMap sm_TrnaKeys (trna_key_to_subtype, sizeof (trna_key_to_subtype));
 
-static SingleInit single_key_list [] = {
-    { "pseudo"               },
-    { "germline"             },
-    { "rearranged"           },
-    { "transgenic"           },
-    { "environmental_sample" }
+
+static const char * single_key_list [] = {
+    "environmental_sample",
+    "germline",
+    "pseudo",
+    "rearranged",
+    "transgenic"
 };
+
+typedef CStaticArraySet <const char*, PNocase> TSingleSet;
+static const TSingleSet sc_SingleKeys (single_key_list, sizeof (single_key_list));
+
 
 // constructor
 CFeature_table_reader_imp::CFeature_table_reader_imp(void)
 {
-    // initialize common CFeature_table_reader_imp tables
-    for (int i = 0; i < sizeof (feat_key_to_subtype) / sizeof (FeatInit); i++) {
-        string str = string (feat_key_to_subtype [i].key);
-        m_FeatKeys [string (feat_key_to_subtype [i].key)] = feat_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (qual_key_to_subtype) / sizeof (QualInit); i++) {
-        string str = string (qual_key_to_subtype [i].key);
-        m_QualKeys [string (qual_key_to_subtype [i].key)] = qual_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (orgref_key_to_subtype) / sizeof (OrgRefInit); i++) {
-        string str = string (orgref_key_to_subtype [i].key);
-        m_OrgRefKeys [string (orgref_key_to_subtype [i].key)] = orgref_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (genome_key_to_subtype) / sizeof (GenomeInit); i++) {
-        string str = string (genome_key_to_subtype [i].key);
-        m_GenomeKeys [string (genome_key_to_subtype [i].key)] = genome_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (subsrc_key_to_subtype) / sizeof (SubSrcInit); i++) {
-        string str = string (subsrc_key_to_subtype [i].key);
-        m_SubSrcKeys [string (subsrc_key_to_subtype [i].key)] = subsrc_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (orgmod_key_to_subtype) / sizeof (OrgModInit); i++) {
-        string str = string (orgmod_key_to_subtype [i].key);
-        m_OrgModKeys [string (orgmod_key_to_subtype [i].key)] = orgmod_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (bond_key_to_subtype) / sizeof (BondInit); i++) {
-        string str = string (bond_key_to_subtype [i].key);
-        m_BondKeys [string (bond_key_to_subtype [i].key)] = bond_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (site_key_to_subtype) / sizeof (SiteInit); i++) {
-        string str = string (site_key_to_subtype [i].key);
-        m_SiteKeys [string (site_key_to_subtype [i].key)] = site_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (trna_key_to_subtype) / sizeof (TrnaInit); i++) {
-        string str = string (trna_key_to_subtype [i].key);
-        m_TrnaKeys [string (trna_key_to_subtype [i].key)] = trna_key_to_subtype [i].subtype;
-    }
-
-    for (int i = 0; i < sizeof (single_key_list) / sizeof (SingleInit); i++) {
-        string str = string (single_key_list [i].key);
-        m_SingleKeys.push_back (str);
-    }
 }
 
 // destructor
@@ -956,8 +896,9 @@ int CFeature_table_reader_imp::x_ParseTrnaString (const string& val)
         NStr::SplitInTwo (val, "-", fst, scd);
     }
 
-    if (m_TrnaKeys.find (scd) != m_TrnaKeys.end ()) {
-        return m_TrnaKeys [scd];
+    TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (scd.c_str ());
+    if (t_iter != sm_TrnaKeys.end ()) {
+        return t_iter->second;
     }
 
     return 0;
@@ -1031,7 +972,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
         case eQual_allele:
         case eQual_bound_moiety:
         case eQual_clone:
-		case eQual_compare:
+        case eQual_compare:
         case eQual_cons_splice:
         case eQual_direction:
         case eQual_EC_number:
@@ -1041,7 +982,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
         case eQual_label:
         case eQual_map:
         case eQual_number:
-		case eQual_old_locus_tag:
+        case eQual_old_locus_tag:
         case eQual_operon:
         case eQual_organism:
         case eQual_PCR_conditions:
@@ -1159,8 +1100,9 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (CSeqFeatData& sfdata,
             }
         case eOrgRef_organelle:
             {
-                if (m_GenomeKeys.find (val) != m_GenomeKeys.end ()) {
-                    CBioSource::EGenome gtype = m_GenomeKeys [val];
+                TGenomeMap::const_iterator g_iter = sm_GenomeKeys.find (val.c_str ());
+                if (g_iter != sm_GenomeKeys.end ()) {
+                    CBioSource::EGenome gtype = g_iter->second;
                     bsp.SetGenome (gtype);
                     return true;
                 }
@@ -1241,197 +1183,211 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
 
     if (typ == CSeqFeatData::e_Biosrc) {
 
-        if (m_OrgRefKeys.find (qual) != m_OrgRefKeys.end ()) {
-
-            EOrgRef rtype = m_OrgRefKeys [qual];
+        TOrgRefMap::const_iterator o_iter = sm_OrgRefKeys.find (qual.c_str ());
+        if (o_iter != sm_OrgRefKeys.end ()) {
+            EOrgRef rtype = o_iter->second;
             if (x_AddQualifierToBioSrc (sfdata, rtype, val)) return true;
 
-        } else if (m_SubSrcKeys.find (qual) != m_SubSrcKeys.end ()) {
+        } else {
 
-            CSubSource::ESubtype stype = m_SubSrcKeys [qual];
-            if (x_AddQualifierToBioSrc (sfdata, stype, val)) return true;
+            TSubSrcMap::const_iterator s_iter = sm_SubSrcKeys.find (qual.c_str ());
+            if (s_iter != sm_SubSrcKeys.end ()) {
 
-        } else if (m_OrgModKeys.find (qual) != m_OrgModKeys.end ()) {
+                CSubSource::ESubtype stype = s_iter->second;
+                if (x_AddQualifierToBioSrc (sfdata, stype, val)) return true;
 
-            COrgMod::ESubtype  mtype = m_OrgModKeys [qual];
-            if (x_AddQualifierToBioSrc (sfdata, mtype, val)) return true;
+            } else {
+
+                TOrgModMap::const_iterator m_iter = sm_OrgModKeys.find (qual.c_str ());
+                if (m_iter != sm_OrgModKeys.end ()) {
+
+                    COrgMod::ESubtype  mtype = m_iter->second;
+                    if (x_AddQualifierToBioSrc (sfdata, mtype, val)) return true;
+
+                }
+            }
         }
 
-    } else if (m_QualKeys.find (qual) != m_QualKeys.end ()) {
+    } else {
 
-        EQual qtype = m_QualKeys [qual];
-        switch (typ) {
-            case CSeqFeatData::e_Gene:
-                if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
-                break;
-            case CSeqFeatData::e_Cdregion:
-                if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
-                break;
-            case CSeqFeatData::e_Rna:
-                if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
-                break;
-           case CSeqFeatData::e_Imp:
-                if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
-                break;
-            case CSeqFeatData::e_Region:
-                if (qtype == eQual_region_name) {
-                    sfdata.SetRegion (val);
-                    return true;
-                }
-                break;
-            case CSeqFeatData::e_Bond:
-                if (qtype == eQual_bond_type) {
-                    if (m_BondKeys.find (val) != m_BondKeys.end ()) {
-                        CSeqFeatData::EBond btyp = m_BondKeys [val];
-                        sfdata.SetBond (btyp);
+        TQualMap::const_iterator q_iter = sm_QualKeys.find (qual.c_str ());
+        if (q_iter != sm_QualKeys.end ()) {
+            EQual qtype = q_iter->second;
+            switch (typ) {
+                case CSeqFeatData::e_Gene:
+                    if (x_AddQualifierToGene (sfdata, qtype, val)) return true;
+                    break;
+                case CSeqFeatData::e_Cdregion:
+                    if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val)) return true;
+                    break;
+                case CSeqFeatData::e_Rna:
+                    if (x_AddQualifierToRna (sfdata, qtype, val)) return true;
+                    break;
+                case CSeqFeatData::e_Imp:
+                    if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
+                    break;
+                case CSeqFeatData::e_Region:
+                    if (qtype == eQual_region_name) {
+                        sfdata.SetRegion (val);
                         return true;
                     }
-                }
-                break;
-            case CSeqFeatData::e_Site:
-                if (qtype == eQual_site_type) {
-                    if (m_SiteKeys.find (val) != m_SiteKeys.end ()) {
-                        CSeqFeatData::ESite styp = m_SiteKeys [val];
-                        sfdata.SetSite (styp);
-                        return true;
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-        switch (qtype) {
-            case eQual_pseudo:
-                sfp->SetPseudo (true);
-                return true;
-            case eQual_partial:
-                sfp->SetPartial (true);
-                return true;
-            case eQual_exception:
-                sfp->SetExcept (true);
-                sfp->SetExcept_text (val);
-                return true;
-            case eQual_evidence:
-                if (val == "experimental") {
-                    sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
-                } else if (val == "not_experimental" || val == "non_experimental" ||
-                           val == "not-experimental" || val == "non-experimental") {
-                    sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
-                }
-                return true;
-            case eQual_note:
-                {
-                    if (sfp->CanGetComment ()) {
-                        const CSeq_feat::TComment& comment = sfp->GetComment ();
-                        CSeq_feat::TComment revised = comment + "; " + val;
-                        sfp->SetComment (revised);
-                    } else {
-                        sfp->SetComment (val);
-                    }
-                    return true;
-                }
-            case eQual_allele:
-            case eQual_bound_moiety:
-            case eQual_clone:
-			case eQual_compare:
-            case eQual_cons_splice:
-            case eQual_direction:
-            case eQual_EC_number:
-            case eQual_frequency:
-            case eQual_function:
-            case eQual_insertion_seq:
-            case eQual_label:
-            case eQual_map:
-            case eQual_number:
-			case eQual_old_locus_tag:
-            case eQual_operon:
-            case eQual_organism:
-            case eQual_PCR_conditions:
-            case eQual_phenotype:
-            case eQual_product:
-            case eQual_protein_id:
-            case eQual_replace:
-            case eQual_rpt_family:
-            case eQual_rpt_type:
-            case eQual_rpt_unit:
-            case eQual_standard_name:
-            case eQual_transcript_id:
-            case eQual_transposon:
-            case eQual_usedin:
-                {
-                    CSeq_feat::TQual& qlist = sfp->SetQual ();
-                    CRef<CGb_qual> gbq (new CGb_qual);
-                    gbq->SetQual (qual);
-                    gbq->SetVal (val);
-                    qlist.push_back (gbq);
-                    return true;
-                }
-            case eQual_gene:
-                {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    if (val == "-") {
-                        grp.SetLocus ("");
-                    } else {
-                        grp.SetLocus (val);
-                    }
-                    return true;
-                }
-            case eQual_gene_desc:
-                {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    grp.SetDesc (val);
-                    return true;
-                }
-            case eQual_gene_syn:
-                {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    CGene_ref::TSyn& syn = grp.SetSyn ();
-                    syn.push_back (val);
-                    return true;
-                }
-            case eQual_locus_tag:
-                {
-                    CGene_ref& grp = sfp->SetGeneXref ();
-                    grp.SetLocus_tag (val);
-                    return true;
-                }
-            case eQual_db_xref:
-                {
-                    string db, tag;
-                    int num;
-                    if (NStr::SplitInTwo (val, ":", db, tag)) {
-                        CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
-                        CRef<CDbtag> dbt (new CDbtag);
-                        dbt->SetDb (db);
-                        CRef<CObject_id> oid (new CObject_id);
-                        num = NStr::StringToNumeric (tag);
-                        if (num != -1) {
-                          oid->SetId (num);
-                        } else {
-                          oid->SetStr (tag);
+                    break;
+                case CSeqFeatData::e_Bond:
+                    if (qtype == eQual_bond_type) {
+                        TBondMap::const_iterator b_iter = sm_BondKeys.find (val.c_str ());
+                        if (b_iter != sm_BondKeys.end ()) {
+                            CSeqFeatData::EBond btyp = b_iter->second;
+                            sfdata.SetBond (btyp);
+                            return true;
                         }
-                        dbt->SetTag (*oid);
-                        dblist.push_back (dbt);
+                    }
+                    break;
+                case CSeqFeatData::e_Site:
+                    if (qtype == eQual_site_type) {
+                        TSiteMap::const_iterator s_iter = sm_SiteKeys.find (val.c_str ());
+                        if (s_iter != sm_SiteKeys.end ()) {
+                            CSeqFeatData::ESite styp = s_iter->second;
+                            sfdata.SetSite (styp);
+                            return true;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            switch (qtype) {
+                case eQual_pseudo:
+                    sfp->SetPseudo (true);
+                    return true;
+                case eQual_partial:
+                    sfp->SetPartial (true);
+                    return true;
+                case eQual_exception:
+                    sfp->SetExcept (true);
+                    sfp->SetExcept_text (val);
+                    return true;
+                case eQual_evidence:
+                    if (val == "experimental") {
+                        sfp->SetExp_ev (CSeq_feat::eExp_ev_experimental);
+                    } else if (val == "not_experimental" || val == "non_experimental" ||
+                               val == "not-experimental" || val == "non-experimental") {
+                        sfp->SetExp_ev (CSeq_feat::eExp_ev_not_experimental);
+                    }
+                    return true;
+                case eQual_note:
+                    {
+                        if (sfp->CanGetComment ()) {
+                            const CSeq_feat::TComment& comment = sfp->GetComment ();
+                            CSeq_feat::TComment revised = comment + "; " + val;
+                            sfp->SetComment (revised);
+                        } else {
+                            sfp->SetComment (val);
+                        }
                         return true;
                     }
-                    return true;
-                }
-            case eQual_go_component:
-            case eQual_go_function:
-            case eQual_go_process:
-                {
-                    /*
-                    CSeq_feat::TExt& ext = sfp->SetExt ();
-                    CObject_id& obj = ext.SetType ();
-                    if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
-                        obj.SetStr ("GeneOntology");
+                case eQual_allele:
+                case eQual_bound_moiety:
+                case eQual_clone:
+                case eQual_compare:
+                case eQual_cons_splice:
+                case eQual_direction:
+                case eQual_EC_number:
+                case eQual_frequency:
+                case eQual_function:
+                case eQual_insertion_seq:
+                case eQual_label:
+                case eQual_map:
+                case eQual_number:
+                case eQual_old_locus_tag:
+                case eQual_operon:
+                case eQual_organism:
+                case eQual_PCR_conditions:
+                case eQual_phenotype:
+                case eQual_product:
+                case eQual_protein_id:
+                case eQual_replace:
+                case eQual_rpt_family:
+                case eQual_rpt_type:
+                case eQual_rpt_unit:
+                case eQual_standard_name:
+                case eQual_transcript_id:
+                case eQual_transposon:
+                case eQual_usedin:
+                    {
+                        CSeq_feat::TQual& qlist = sfp->SetQual ();
+                        CRef<CGb_qual> gbq (new CGb_qual);
+                        gbq->SetQual (qual);
+                        gbq->SetVal (val);
+                        qlist.push_back (gbq);
+                        return true;
                     }
-                    (need more implementation here)
-                    return true;
-                    */
-                }
-            default:
-                break;
+                case eQual_gene:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        if (val == "-") {
+                            grp.SetLocus ("");
+                        } else {
+                            grp.SetLocus (val);
+                        }
+                        return true;
+                    }
+                case eQual_gene_desc:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        grp.SetDesc (val);
+                        return true;
+                    }
+                case eQual_gene_syn:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        CGene_ref::TSyn& syn = grp.SetSyn ();
+                        syn.push_back (val);
+                        return true;
+                    }
+                case eQual_locus_tag:
+                    {
+                        CGene_ref& grp = sfp->SetGeneXref ();
+                        grp.SetLocus_tag (val);
+                        return true;
+                    }
+                case eQual_db_xref:
+                    {
+                        string db, tag;
+                        int num;
+                        if (NStr::SplitInTwo (val, ":", db, tag)) {
+                            CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
+                            CRef<CDbtag> dbt (new CDbtag);
+                            dbt->SetDb (db);
+                            CRef<CObject_id> oid (new CObject_id);
+                            num = NStr::StringToNumeric (tag);
+                            if (num != -1) {
+                                oid->SetId (num);
+                            } else {
+                                oid->SetStr (tag);
+                            }
+                            dbt->SetTag (*oid);
+                            dblist.push_back (dbt);
+                            return true;
+                        }
+                        return true;
+                    }
+                case eQual_go_component:
+                case eQual_go_function:
+                case eQual_go_process:
+                    {
+                        /*
+                         CSeq_feat::TExt& ext = sfp->SetExt ();
+                         CObject_id& obj = ext.SetType ();
+                         if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
+                             obj.SetStr ("GeneOntology");
+                         }
+                         (need more implementation here)
+                         return true;
+                         */
+                    }
+                default:
+                    break;
+            }
         }
     }
     return false;
@@ -1535,8 +1491,9 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // process start - stop - feature line
 
-                    if (m_FeatKeys.find (feat) != m_FeatKeys.end ()) {
-                        sbtyp = m_FeatKeys [feat];
+                    TFeatMap::const_iterator f_iter = sm_FeatKeys.find (feat.c_str ());
+                    if (f_iter != sm_FeatKeys.end ()) {
+                        sbtyp = f_iter->second;
                         if (sbtyp != CSeqFeatData::eSubtype_bad) {
 
                             // populate *sfp here...
@@ -1583,6 +1540,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                             } else if (typ == CSeqFeatData::e_Imp) {
                                 CImp_feat_Base& imp = sfdata.SetImp ();
                                 imp.SetKey (feat);
+                                
+                            } else if (typ == CSeqFeatData::e_Bond) {
+                                sfdata.SetBond (CSeqFeatData::eBond_other);
+                                
+                            } else if (typ == CSeqFeatData::e_Site) {
+                                sfdata.SetSite (CSeqFeatData::eSite_other);
                             }
 
                             ftable.push_back (sfp);
@@ -1652,7 +1615,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                     // check for the few qualifiers that do not need a value
 
-                    if (find (m_SingleKeys.begin (), m_SingleKeys.end (), qual) != m_SingleKeys.end ()) {
+                    TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
+                    if (s_iter != sc_SingleKeys.end ()) {
 
                         x_AddQualifierToFeature (sfp, qual, val);
 
@@ -1684,8 +1648,9 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     CRef<CSeq_feat> sfp (new CSeq_feat);
 
     if (! feat.empty ()) {
-        if (m_FeatKeys.find (feat) != m_FeatKeys.end ()) {
-            CSeqFeatData::ESubtype sbtyp = m_FeatKeys [feat];
+        TFeatMap::const_iterator f_iter = sm_FeatKeys.find (feat.c_str ());
+        if (f_iter != sm_FeatKeys.end ()) {
+            CSeqFeatData::ESubtype sbtyp = f_iter->second;
             CSeqFeatData::E_Choice typ = CSeqFeatData::GetTypeFromSubtype (sbtyp);
             sfp->SetData ().Select (typ);
             CSeqFeatData& sfdata = sfp->SetData ();
@@ -1784,7 +1749,8 @@ void CFeature_table_reader_imp::AddFeatQual (
 
         // check for the few qualifiers that do not need a value
 
-        if (find (m_SingleKeys.begin (), m_SingleKeys.end (), qual) != m_SingleKeys.end ()) {
+        TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
+        if (s_iter != sc_SingleKeys.end ()) {
 
             x_AddQualifierToFeature (sfp, qual, val);
 
