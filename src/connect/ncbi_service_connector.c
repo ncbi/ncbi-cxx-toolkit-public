@@ -811,11 +811,8 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     xxx->status   = eIO_Success;
     xxx->types    = types;
     xxx->iter     = 0;
-    if (params)
-        memcpy(&xxx->params, params, sizeof(xxx->params));
-    else
-        memset(&xxx->params, 0, sizeof(xxx->params));
-    memset(&xxx->meta, 0, sizeof(xxx->meta));
+    memset(&xxx->params, 0, sizeof(xxx->params));
+    memset(&xxx->meta,   0, sizeof(xxx->meta));
 
     if (x_args) {
         strcpy(xxx->args, x_args);
@@ -830,7 +827,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc->setup   = s_Setup;
     ccc->destroy = s_Destroy;
 
-    /* Now make the first probe dispatching */
+    /* now make the first probe dispatching */
     if (!s_OpenDispatcher(xxx)) {
         s_CloseDispatcher(xxx);
         s_Destroy(ccc);
@@ -838,7 +835,11 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     }
     assert(xxx->iter != 0);
 
-    /* Done */
+    /* finally, store all callback parameters */
+    if (params)
+        memcpy(&xxx->params, params, sizeof(xxx->params));
+
+    /* done */
     return ccc;
 }
 
@@ -846,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2003/05/22 20:31:28  lavr
+ * Callbacks in the constructor had to be set after successful init only
+ *
  * Revision 6.56  2003/05/14 15:43:45  lavr
  * Modify format of host address in dispatcher's CGI query
  *
