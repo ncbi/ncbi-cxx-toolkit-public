@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/29 04:34:26  thiessen
+* working alignment manager, IBM
+*
 * Revision 1.2  2000/08/28 23:47:18  thiessen
 * functional denseg and dendiag alignment parsing
 *
@@ -170,7 +173,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
     StructureBase(parent), master(masterSequence), slave(NULL)
 {
     // resize alignment vector
-    masterToSlave.resize(master->sequenceString.size(), -1);
+    masterToSlave.resize(master->Length(), -1);
 
     SequenceSet::SequenceList::const_iterator
         s = parentSet->sequenceSet->sequences.begin(),
@@ -236,8 +239,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
                     masterRes = block.GetStarts().back() + i;
                     slaveRes = block.GetStarts().front() + i;
                 }
-                if (masterRes >= master->sequenceString.size() ||
-                    slaveRes >= slave->sequenceString.size()) {
+                if (masterRes >= master->Length() || slaveRes >= slave->Length()) {
                     ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                         "seqloc in dendiag block > length of sequence!");
                     return;
@@ -285,8 +287,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent,
                 masterRes = *(starts++);
             }
             if (masterRes != -1 && slaveRes != -1) { // skip gaps
-                if ((masterRes + *lens - 1) >= master->sequenceString.size() ||
-                    (slaveRes + *lens - 1) >= slave->sequenceString.size()) {
+                if ((masterRes + *lens - 1) >= master->Length() ||
+                    (slaveRes + *lens - 1) >= slave->Length()) {
                     ERR_POST(Critical << "MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                         "seqloc in denseg block > length of sequence!");
                     return;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/08/29 04:34:15  thiessen
+* working alignment manager, IBM
+*
 * Revision 1.20  2000/08/28 18:52:18  thiessen
 * start unpacking alignments
 *
@@ -119,6 +122,7 @@ class StyleManager;
 class Residue;
 class SequenceSet;
 class AlignmentSet;
+class AlignmentManager;
 
 class StructureSet : public StructureBase
 {
@@ -136,6 +140,7 @@ public:
     // sequence information
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
+    AlignmentManager *alignmentManager;
 
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;

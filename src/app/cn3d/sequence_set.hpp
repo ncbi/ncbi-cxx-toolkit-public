@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/29 04:34:15  thiessen
+* working alignment manager, IBM
+*
 * Revision 1.3  2000/08/28 23:46:46  thiessen
 * functional denseg and dendiag alignment parsing
 *
@@ -88,6 +91,8 @@ public:
 
     // corresponding alignment with master (if slave)
     const MasterSlaveAlignment *alignment;
+
+    int Length(void) const { return sequenceString.size(); }
 };
 
 END_SCOPE(Cn3D)

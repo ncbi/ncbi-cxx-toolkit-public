@@ -26,68 +26,73 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of alignments
+*      Classes to manipulate alignments
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  2000/08/29 04:34:15  thiessen
+* Revision 1.1  2000/08/29 04:34:14  thiessen
 * working alignment manager, IBM
-*
-* Revision 1.1  2000/08/28 18:52:16  thiessen
-* start unpacking alignments
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_ALIGNMENT_SET__HPP
-#define CN3D_ALIGNMENT_SET__HPP
+#ifndef CN3D_ALIGNMENT_MANAGER__HPP
+#define CN3D_ALIGNMENT_MANAGER__HPP
 
-#include <vector>
+#include <list>
 
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seqalign/Seq_align.hpp>
-
-#include "cn3d/structure_base.hpp"
+#include <corelib/ncbistl.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
 
-typedef list< ncbi::CRef< ncbi::objects::CSeq_annot > > SeqAnnotList;
-
-class MasterSlaveAlignment;
 class Sequence;
+class SequenceSet;
+class AlignmentSet;
+class MasterSlaveAlignment;
+class MultipleAlignment;
 
-class AlignmentSet : public StructureBase
+class AlignmentManager
 {
 public:
-    AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
 
-    typedef std::vector < const MasterSlaveAlignment * > AlignmentList;
-    AlignmentList alignments;
+    const SequenceSet *sequenceSet;
+    const AlignmentSet *alignmentSet;
 
-    // pointer to the master sequence for each pairwise master/slave alignment in this set
-    const Sequence *master;
+    // creates a multiple alignment from the given pairwise alignments (which are
+    // assumed to be members of the AlignmentSet).
+    typedef std::list < const MasterSlaveAlignment * > AlignmentList;
+    MultipleAlignment * CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments) const;
 
-    bool Draw(const AtomSet *atomSet = NULL) const { return false; } // not drawable
+private:
+    bool AlignedToAllSlaves(int masterResidue, const AlignmentList& alignments) const;
+    bool NoSlaveInsertionsBetween(int masterFrom, int masterTo, const AlignmentList& alignments) const;
 };
 
-class MasterSlaveAlignment : public StructureBase
+class MultipleAlignment
 {
 public:
-    MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence,
-        const ncbi::objects::CSeq_align& seqAlign);
+    typedef std::list < const Sequence * > SequenceList;
+    MultipleAlignment(const SequenceList *sequenceList);
 
-    // pointers to the sequences in this pairwise alignment
-    const Sequence *master, *slave;
+    typedef struct {
+        int from, to;
+    } Range;
 
-    // this vector maps slave residues onto the master - e.g., masterToSlave[10] = 5
-    // means that residue #10 in the master is aligned to residue #5 of the slave.
-    // Residues are numbered from zero. masterToSlave[n] = -1 means that master
-    // residue n is unaligned.
-    typedef std::vector < int > ResidueVector;
-    ResidueVector masterToSlave;
+    typedef std::list < Range > Block;
+    typedef std::list < Block > BlockList;
+    BlockList blocks;
+    const SequenceList *sequences;
+
+    bool AddBlockAtEnd(const Block& newBlock);
+
+    int NBlocks(void) const { return blocks.size(); }
+    int NSequences(void) const { return sequences->size(); }
+
+    ~MultipleAlignment(void) { if (sequences) delete sequences; }
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_ALIGNMENT_SET__HPP
+#endif // CN3D_ALIGNMENT_MANAGER__HPP

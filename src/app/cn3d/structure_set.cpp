@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/08/29 04:34:27  thiessen
+* working alignment manager, IBM
+*
 * Revision 1.24  2000/08/28 23:47:19  thiessen
 * functional denseg and dendiag alignment parsing
 *
@@ -131,6 +134,7 @@
 #include "cn3d/style_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
+#include "cn3d/alignment_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -140,7 +144,7 @@ BEGIN_SCOPE(Cn3D)
 
 static bool VerifyMatch(const Sequence *sequence, const StructureObject *object, const Molecule *molecule)
 {
-    if (molecule->residues.size() == sequence->sequenceString.size()) {
+    if (molecule->residues.size() == sequence->Length()) {
         if (molecule->sequence) {
             ERR_POST(Error << "VerifyMatch() - confused by multiple sequences matching object "
                 << object->pdbID << " moleculeID " << molecule->id);\
@@ -232,7 +236,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
     StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
-    sequenceSet(NULL), alignmentSet(NULL)
+    sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL)
 {
     StructureObject *object;
     parentSet = this;
@@ -256,6 +260,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -276,6 +281,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);
@@ -292,6 +298,7 @@ StructureSet::~StructureSet(void)
 {
     if (showHideManager) delete showHideManager;
     if (styleManager) delete styleManager;
+    if (alignmentManager) delete alignmentManager;
 }
 
 // because the frame map (for each frame, a list of diplay lists) is complicated
