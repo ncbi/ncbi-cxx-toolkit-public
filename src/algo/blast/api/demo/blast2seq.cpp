@@ -50,6 +50,7 @@
 #include <objtools/readers/fasta.hpp>
 
 #include <Bl2Seq.hpp>
+#if 0
 #include <ctools/asn_converter.hpp>
 
 // C includes for C formatter
@@ -57,6 +58,7 @@
 #include <sqnutils.h>
 #include <txalign.h>
 #include <accid1.h>
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -310,7 +312,9 @@ int CBlast2seqApplication::Run(void)
     if (seqalign->Get().empty()) {
         out << "No hits found" << endl;
     } else {
+	out << "Results found!\n";
 
+#if 0
         // Convert CSeq_align_set to linked list of SeqAlign structs
         DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
         SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
@@ -358,6 +362,7 @@ int CBlast2seqApplication::Run(void)
                 NULL, NULL, FormatScoreFunc);
         seqannot = SeqAnnotFree(seqannot);
 
+#endif
     }
 
     return 0;
@@ -378,6 +383,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/30 16:33:31  madden
+ * Remove C toolkit dependencies
+ *
  * Revision 1.4  2003/07/16 20:25:34  camacho
  * Added dummy features argument to C formatter
  *
