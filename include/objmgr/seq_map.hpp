@@ -151,6 +151,9 @@ public:
                                      size_t maxResolve = size_t(-1),
                                      TFlags flags = fDefaultFlags) const;
 
+    bool HasSegmentOfType(ESegmentType type) const;
+    size_t CountSegmentsOfType(ESegmentType type) const;
+
     bool CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const;
     bool CanResolveRange(CScope* scope,
                          TSeqPos from,

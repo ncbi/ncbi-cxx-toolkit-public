@@ -478,6 +478,29 @@ CSeqMap_CI CSeqMap::ResolvedRangeIterator(CScope* scope,
 }
 
 
+bool CSeqMap::HasSegmentOfType(ESegmentType type) const
+{
+    ITERATE ( TSegments, it, m_Segments ) {
+        if ( it->m_SegType == type ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+size_t CSeqMap::CountSegmentsOfType(ESegmentType type) const
+{
+    size_t count = 0;
+    ITERATE ( TSegments, it, m_Segments ) {
+        if ( it->m_SegType == type ) {
+            ++count;
+        }
+    }
+    return count;
+}
+
+
 bool CSeqMap::CanResolveRange(CScope* scope,
                               TSeqPos from,
                               TSeqPos length,
