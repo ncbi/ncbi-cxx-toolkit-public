@@ -39,6 +39,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
+#include <objects/seqloc/Na_strand.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -246,6 +247,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2002/11/04 22:03:34  ucko
+* Pull in <objects/seqloc/Na_strand.hpp> rather than relying on previous headers
+*
 * Revision 1.10  2002/10/23 19:22:52  ucko
 * Move the FASTA reader from objects/util/sequence.?pp to
 * objects/seqset/Seq_entry.?pp because it doesn't need the OM.
