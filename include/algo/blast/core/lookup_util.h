@@ -34,11 +34,6 @@
 extern "C" {
 #endif
 
-#define sfree(x) __sfree((void *)&x)
-
-  void __sfree(void **x);
-
-
 /** Integer exponentiation using right to left binary algorithm.
  *  See knuth TAOCP vol. 2, section 4.6.3.
  *

@@ -56,6 +56,12 @@ extern "C" {
 #   endif
 #endif
 
+/* Belongs to a higher level header */
+#ifndef sfree
+#define sfree(x) __sfree((void*)&(x))
+#endif
+void __sfree(void** x); /* implemented in lib/util.c */
+
 #define blast_type_blastn 0
 #define blast_type_blastp 1
 #define blast_type_blastx 2
