@@ -98,13 +98,71 @@ static bool s_StringIsJustQuotes(const string& str)
 }
 
 
+static string s_GetGOText(const CUser_field& field)
+{
+    string text_string, evidence, go_id;
+    int pmid = 0;
+
+    ITERATE (CUser_field::C_Data::TFields, it, field.GetData().GetFields()) {
+        if ( !(*it)->CanGetLabel()  ||  !(*it)->GetLabel().IsStr() ) {
+            continue;
+        }
+        
+        const string& label = (*it)->GetLabel().GetStr();
+        const CUser_field::C_Data& data = (*it)->GetData();
+        
+        if ( label == "text string"  &&  data.IsStr() ) {
+            text_string = data.GetStr();
+        }
+        
+        if ( label == "go id" ) {
+            if ( data.IsStr() ) {
+                go_id = data.GetStr();
+            } else if ( data.IsInt() ) {
+                go_id = NStr::IntToString(data.GetInt());
+            }
+        }
+        
+        if ( label == "evidence"  &&  data.IsStr() ) {
+            evidence = data.GetStr();
+        }
+        
+        if ( label == "pubmed id"  &&  data.IsInt() ) {
+            pmid = data.GetInt();
+        }
+    }
+
+    
+    CNcbiOstrstream text;
+
+    text << text_string;
+    if ( !go_id.empty() ) {
+        text << " [goid " << go_id << "]";
+    }
+    if ( !evidence.empty() ) {
+        text << " [evidence " << evidence << "]";
+    }
+
+    if ( pmid != 0 ) {
+        text << " [pmid " << pmid << "]";
+    }
+
+    return NStr::TruncateSpaces(CNcbiOstrstreamToString(text));
+}
+
+
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
+    string sfx = m_Suffix;
+    if ( sfx.empty()  &&  s_IsNote(ctx, flags) ) {
+        sfx = "\n";
+    }
+
     if ( s_IsNote(ctx, flags) ) {
-        x_AddFQ(q, "note", m_Value, "\n", m_Style);
+        x_AddFQ(q, "note", m_Value, sfx, m_Style);
     } else {
-        x_AddFQ(q, name, m_Value, m_Style);
+        x_AddFQ(q, name, m_Value, sfx, m_Style);
     }
 }
 
@@ -139,7 +197,8 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
         default:
             return;
         }
-        x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')');
+        x_AddFQ(q, name, "(pos:" + pos + ",aa:" + aa + ')', 
+            CFlatQual::eUnquoted);
     }
 }
 
@@ -227,6 +286,9 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
         case CSeq_inst::eMol_rna:
             s = "unassigned RNA";
             break;
+        case CSeq_inst::eMol_aa:
+            s = 0;
+            break;
         case CSeq_inst::eMol_dna:
         default:
             s = "unassigned DNA";
@@ -234,7 +296,9 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const string& name,
         }
     }
 
-    x_AddFQ(q, name, s);
+    if ( s != 0 ) {
+        x_AddFQ(q, name, s);
+    }
 }
 
 
@@ -322,8 +386,8 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
     */
 }
 
-
-void CFlatSeqDataQVal::Format(TFlatQuals& q, const string& name,
+/*
+void CFlatTranslationQVal::Format(TFlatQuals& q, const string& name,
                             CFFContext& ctx, IFlatQVal::TFlags) const
 {
     string s;
@@ -333,13 +397,20 @@ void CFlatSeqDataQVal::Format(TFlatQuals& q, const string& name,
     v.GetSeqData(0, v.size(), s);
     x_AddFQ(q, name, s);
 }
-
+*/
 
 void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
                           CFFContext& ctx, IFlatQVal::TFlags) const
 {
     // XXX - add link in HTML mode
-    x_AddFQ(q, name, ctx.GetPreferredSynonym(*m_Value).GetSeqIdString(true));
+    string id_str;
+    if ( m_Value->IsGi() ) {
+        id_str = "GI:";
+        m_Value->GetLabel(&id_str, CSeq_id::eContent);
+    } else {
+        id_str = m_Value->GetSeqIdString(true);
+    }
+    x_AddFQ(q, name, id_str);
 }
 
 
@@ -396,6 +467,92 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
     }
 }
 
+
+void CFlatModelEvQVal::Format
+(TFlatQuals& q,
+ const string& name,
+ CFFContext& ctx,
+ IFlatQVal::TFlags flags) const
+{
+    const string* method = 0;
+    if ( m_Value->HasField("Method") ) {
+        const CUser_field& uf = m_Value->GetField("Method");
+        if ( uf.GetData().IsStr() ) {
+            method = &uf.GetData().GetStr();
+        }
+    }
+
+    size_t nm = 0;
+    if ( m_Value->HasField("mRNA") ) {
+        const CUser_field& uf = m_Value->GetField("mRNA");
+        if ( uf.GetData().IsFields() ) {
+            ITERATE (CUser_field::C_Data::TFields, it, uf.GetData().GetFields()) {
+                if ( (*it)->CanGetLabel()  &&  (*it)->GetData().IsStr()  &&
+                     (*it)->GetData().GetStr() == "accession" ) {
+                    ++nm;
+                }
+            }
+        }
+    }
+
+    CNcbiOstrstream text;
+    text << "Derived by automated computational analysis";
+    if ( method != 0  &&  !method->empty() ) {
+         text << " using gene prediction method: " << method;
+    }
+    text << ".";
+
+    if ( nm > 0 ) {
+        text << " Supporting evidence includes similarity to: " << nm << " mRNA";
+        if ( nm > 1 ) {
+            text << "s";
+        }
+    }
+
+    x_AddFQ(q, name, CNcbiOstrstreamToString(text));
+}
+
+
+void CFlatGoQVal::Format
+(TFlatQuals& q,
+ const string& name,
+ CFFContext& ctx,
+ IFlatQVal::TFlags flags) const
+{
+    _ASSERT(m_Value->GetData().IsFields());
+    x_AddFQ(q, name, s_GetGOText(*m_Value));
+}
+
+
+void CFlatAnticodonQVal::Format
+(TFlatQuals& q,
+ const string& name,
+ CFFContext& ctx,
+ IFlatQVal::TFlags flags) const
+{
+    if ( !m_Anticodon->IsInt()  ||  !m_Aa.empty() ) {
+        return;
+    }
+
+    CSeq_loc::TRange range = m_Anticodon->GetTotalRange();
+    CNcbiOstrstream text;
+    text << "(pos:" << range.GetFrom() + 1 << ".." << range.GetTo() + 1
+         << ",aa:" << m_Aa << ")";
+
+    x_AddFQ(q, name, CNcbiOstrstreamToString(text), CFlatQual::eUnquoted);
+}
+
+
+void CFlatTrnaCodonsQVal::Format
+(TFlatQuals& q,
+ const string& name,
+ CFFContext& ctx,
+ IFlatQVal::TFlags flags) const
+{
+    // !!!
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -403,6 +560,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/05 18:47:32  shomrat
+* Added qualifier classes
+*
 * Revision 1.4  2004/02/11 16:55:38  shomrat
 * changes in formatting of OrgMod and SubSource quals
 *
