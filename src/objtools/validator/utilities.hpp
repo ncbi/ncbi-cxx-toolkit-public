@@ -120,8 +120,8 @@ private:
 class CFeatQualAssoc
 {
 public:
-    typedef vector<CGbqualType::EType> GBQualTypeVec;
-    typedef map<CSeqFeatData::ESubtype, GBQualTypeVec > TFeatQualMap;
+    typedef vector<CGbqualType::EType> TGBQualTypeVec;
+    typedef map<CSeqFeatData::ESubtype, TGBQualTypeVec > TFeatQualMap;
 
     // Check to see is a certain gbqual is legal within the context of 
     // the specified feature
@@ -129,15 +129,16 @@ public:
                               CGbqualType::EType gbqual);
 
     // Retrieve the mandatory gbquals for a specific feature type.
-    static const GBQualTypeVec& GetMandatoryGbquals(CSeqFeatData::ESubtype ftype);
+    static const TGBQualTypeVec& GetMandatoryGbquals(CSeqFeatData::ESubtype ftype);
 
 private:
 
     CFeatQualAssoc(void);
     void PoplulateLegalGbquals(void);
+    void Associate(CSeqFeatData::ESubtype, CGbqualType::EType);
     void PopulateMandatoryGbquals(void);
     bool IsLegal(CSeqFeatData::ESubtype ftype, CGbqualType::EType gbqual);
-    const GBQualTypeVec& GetMandatoryQuals(CSeqFeatData::ESubtype ftype);
+    const TGBQualTypeVec& GetMandatoryQuals(CSeqFeatData::ESubtype ftype);
     
     static CFeatQualAssoc* Instance(void);
 
@@ -208,6 +209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/06 16:37:24  shomrat
+* Add private function Associate to CFeatQualAssoc
+*
 * Revision 1.3  2003/01/02 21:52:43  shomrat
 * Coding style changes
 *
