@@ -30,8 +30,15 @@
  *
  */
 
+
 /// @file seqdbimpl.hpp
-/// Declares the CSeqDBImplFlush and CSeqDBImpl classes.
+/// The top level of the private implementation layer for SeqDB.
+/// 
+/// Defines classes:
+///     CSeqDBImplFlush
+///     CSeqDBImpl
+/// 
+/// Implemented for: UNIX, MS-Windows
 
 #include "seqdbvolset.hpp"
 #include "seqdbalias.hpp"
