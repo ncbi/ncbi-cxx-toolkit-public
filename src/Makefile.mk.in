@@ -38,40 +38,59 @@ COPY_IF = @builddir@/if_diff.sh "cp -p"
 
 
 ### Configurable compiler/librarian/linker binaries and options
-### (ORIG-Set:  not to be alternated!)
+### (CONF-Set:  not to be alternated or used anywhere in the user makefiles!)
 
-ORIG_CC     = @CC@
-ORIG_CXX    = @CXX@
-ORIG_CPP    = @CPP@
-ORIG_CXXCPP = @CXXCPP@
-ORIG_AR     = @AR@
-ORIG_RANLIB = @RANLIB@
-ORIG_LINK   = @CXX@
+CONF_CC     = @CC@
+CONF_CXX    = @CXX@
+CONF_CPP    = @CPP@
+CONF_CXXCPP = @CXXCPP@
+CONF_AR     = @AR@
+CONF_RANLIB = @RANLIB@
+CONF_LINK   = @CXX@
 
-ORIG_CFLAGS   = @CFLAGS@
-ORIG_CXXFLAGS = @CXXFLAGS@
-ORIG_CPPFLAGS = @CPPFLAGS@ $(STD_INCLUDE)
-ORIG_LDFLAGS  = @LDFLAGS@
-ORIG_LIBS     = @LIBS@ 
+CONF_CFLAGS   = @CFLAGS@
+CONF_CXXFLAGS = @CXXFLAGS@
+CONF_CPPFLAGS = @CPPFLAGS@ $(STD_INCLUDE)
+CONF_LDFLAGS  = @LDFLAGS@
+CONF_LIBS     = @LIBS@ 
+
+
+### Configurable compiler/librarian/linker binaries and options
+### (ORIG-Set:  not to be alternated, but can be used in the user makefiles
+### to alternate the value of relevant flags, e.g. CXX = $(ORIG_CXX) -DFOO_BAR)
+
+ORIG_CC     = $(CONF_CC)
+ORIG_CXX    = $(CONF_CXX)
+ORIG_CPP    = $(CONF_CPP)
+ORIG_CXXCPP = $(CONF_CXXCPP)
+ORIG_AR     = $(CONF_AR)
+ORIG_RANLIB = $(CONF_RANLIB)
+ORIG_LINK   = $(CONF_CXX)
+
+ORIG_CFLAGS   = $(CONF_CFLAGS)
+ORIG_CXXFLAGS = $(CONF_CXXFLAGS)
+ORIG_CPPFLAGS = $(CONF_CPPFLAGS) $(STD_INCLUDE)
+ORIG_LDFLAGS  = $(CONF_LDFLAGS)
+ORIG_LIBS     = $(CONF_LIBS) 
 
 
 ### Configurable compiler/librarian/linker binaries and options
 ### (WORK-Set:  to be used by standard build rules;
 ###             can be modified to meet a particular project requirements)
 
-CC     = @CC@
-CXX    = @CXX@
-CPP    = @CPP@
-CXXCPP = @CXXCPP@
-AR     = @AR@
-RANLIB = @RANLIB@
-LINK   = @CXX@
+CC     = $(CONF_CC)
+CXX    = $(CONF_CXX)
+CPP    = $(CONF_CPP)
+CXXCPP = $(CONF_CXXCPP)
+AR     = $(CONF_AR)
+RANLIB = $(CONF_RANLIB)
+LINK   = $(CONF_CXX)
 
-CFLAGS   = @CFLAGS@
-CXXFLAGS = @CXXFLAGS@
-CPPFLAGS = @CPPFLAGS@ $(STD_INCLUDE)
-LDFLAGS  = @LDFLAGS@
-LIBS     = @LIBS@ 
+CFLAGS   = $(CONF_CFLAGS)
+CXXFLAGS = $(CONF_CXXFLAGS)
+CPPFLAGS = $(CONF_CPPFLAGS) $(STD_INCLUDE)
+LDFLAGS  = $(CONF_LDFLAGS)
+LIBS     = $(CONF_LIBS) 
 
 
 ### Do not use any default suffix rules
