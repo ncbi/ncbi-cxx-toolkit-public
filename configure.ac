@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.219 2003/10/01 00:46:24 ucko Exp $
+#  $Id: configure.ac,v 1.220 2003/10/01 18:46:33 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -96,6 +96,8 @@ AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 AC_ARG_WITH(runpath,
    [ --with-runpath=         hard-code the runtime path to DLLs])
+AC_ARG_WITH(lfs,
+   [ --with-lfs              enable large file support to the extent possible])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -108,6 +110,8 @@ AC_ARG_WITH(suffix,
    [ --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name])
 AC_ARG_WITH(hostspec,
    [ --with-hostspec         add full host specs to the build dir name])
+AC_ARG_WITH(version,
+   [ --with-version          always include the compiler ver in the b.d. name])
 AC_ARG_WITH(execopy,
    [ --without-execopy       do not copy built executables to the BIN area])
 AC_ARG_WITH(bincopy,
@@ -246,7 +250,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip \
+check static-exe strip version lfs \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
 sybase-new ftds mysql orbacus fltk opengl mesa glut bdb odbc \
 gif jpeg tiff png xpm \
@@ -842,6 +846,13 @@ CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
 
+### large file support
+if test "$with_lfs" = "yes" ; then
+   LFSFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+   CPPFLAGS="$LFSFLAGS $CPPFLAGS"
+fi
+
+
 #### Flags to enable (potentially unsafe) extra optimization.
 if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
    case "$compiler" in
@@ -1213,6 +1224,10 @@ fi
 
 if test -z "${build_root}" ; then
    build_root="${srcdir}/${compiler}"
+   case "$compiler:$with_version" in
+      *$compiler_version:*) ;;
+      *:yes) build_root=${build_root}${compiler_version} ;;
+   esac
 else
    : ${with_suffix:="no"}
 fi
