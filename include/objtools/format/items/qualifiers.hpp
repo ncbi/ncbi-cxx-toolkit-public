@@ -37,6 +37,8 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/pub/Pub_set.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -45,11 +47,10 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objtools/format/items/flat_seqloc.hpp>
-
-//#include <objtools/flat/items/flat_qual.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -75,7 +76,7 @@ public:
         : m_Name(name), m_Value(value), m_Suffix(suffix), m_Style(style)
         { }
     CFlatQual(const string& name, const string& value, EStyle style = eQuoted)
-        : m_Name(name), m_Value(value), m_Suffix(kEmptyStr), m_Style(style)
+        : m_Name(name), m_Value(value), m_Suffix("; "), m_Style(style)
         { }
 
     const string& GetName (void) const  { return m_Name;  }
@@ -108,11 +109,13 @@ public:
 
 protected:
     static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-                        CFlatQual::EStyle st = CFlatQual::eQuoted)
-        { q.push_back(TFlatQual(new CFlatQual(n, v, st))); }
+        CFlatQual::EStyle st = CFlatQual::eQuoted) {
+        q.push_back(TFlatQual(new CFlatQual(n, v, st))); 
+    }
     static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-                        const string& s, CFlatQual::EStyle st = CFlatQual::eQuoted)
-        { q.push_back(TFlatQual(new CFlatQual(n, v, s, st))); }
+        const string& sfx, CFlatQual::EStyle st = CFlatQual::eQuoted) {
+        q.push_back(TFlatQual(new CFlatQual(n, v, sfx, st))); 
+    }
 };
 
 
@@ -148,14 +151,15 @@ private:
 class CFlatStringQVal : public IFlatQVal
 {
 public:
-    CFlatStringQVal(const string& value,
-                  CFlatQual::EStyle style = CFlatQual::eQuoted)
-        : m_Value(value), m_Style(style) { }
+    CFlatStringQVal(const string& value, const string& suffix = "; ",
+        CFlatQual::EStyle style = CFlatQual::eQuoted)
+        : m_Value(value), m_Suffix(suffix), m_Style(style) { }
     void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
                 TFlags flags) const;
 
 private:
     string            m_Value;
+    string            m_Suffix;
     CFlatQual::EStyle m_Style;
 };
 
@@ -229,7 +233,7 @@ class CFlatLabelQVal : public CFlatStringQVal
 {
 public:
     CFlatLabelQVal(const string& value)
-        : CFlatStringQVal(value, CFlatQual::eUnquoted) { }
+        : CFlatStringQVal(value, kEmptyStr, CFlatQual::eUnquoted) { }
     // XXX - should override Format to check syntax
 };
 
@@ -286,18 +290,6 @@ private:
 };
 
 
-class CFlatSeqDataQVal : public IFlatQVal
-{
-public:
-    CFlatSeqDataQVal(const CSeq_loc& value) : m_Value(&value) { }
-    void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
-                TFlags flags) const;
-
-private:
-    CConstRef<CSeq_loc> m_Value;
-};
-
-
 class CFlatSeqIdQVal : public IFlatQVal
 {
 public:
@@ -348,6 +340,56 @@ private:
 };
 
 
+class CFlatModelEvQVal : public IFlatQVal
+{
+public:
+    CFlatModelEvQVal(const CUser_object& value) : m_Value(&value) { }
+    void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
+                TFlags flags) const;
+
+private:
+    CConstRef<CUser_object> m_Value;
+};
+
+
+class CFlatGoQVal : public IFlatQVal
+{
+public:
+    CFlatGoQVal(const CUser_field& value) : m_Value(&value) { }
+    void Format(TFlatQuals& quals, const string& name, CFFContext& ctx,
+                TFlags flags) const;
+
+private:
+    CConstRef<CUser_field> m_Value;
+};
+
+
+class CFlatAnticodonQVal : public IFlatQVal
+{
+public:
+    CFlatAnticodonQVal(const CSeq_loc& ac, const string& aa) :
+        m_Anticodon(&ac), m_Aa(aa) { }
+    void Format(TFlatQuals& q, const string& n, CFFContext& ctx,
+                TFlags) const;
+
+private:
+    CConstRef<CSeq_loc> m_Anticodon;
+    string              m_Aa;
+};
+
+
+class CFlatTrnaCodonsQVal : public IFlatQVal
+{
+public:
+    CFlatTrnaCodonsQVal(const CTrna_ext& trna) : m_Value(&trna) { }
+    void Format(TFlatQuals& q, const string& n, CFFContext& ctx,
+                TFlags) const;
+
+private:
+    CConstRef<CTrna_ext> m_Value;
+};
+
+
 // ...
 
 END_SCOPE(objects)
@@ -357,6 +399,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/05 18:50:48  shomrat
+* Added new qualifier classes
+*
 * Revision 1.2  2004/02/11 16:37:20  shomrat
 * added CFlatStringListQVal class and an optional suffix to CFlatQual
 *
