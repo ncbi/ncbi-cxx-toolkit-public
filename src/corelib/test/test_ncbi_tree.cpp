@@ -209,6 +209,18 @@ static void s_TEST_IdTree()
     assert(node->GetValue() == 110);
     }}
 
+    {{
+    list<int> npath;
+    npath.push_back(2);
+    npath.push_back(22);
+    npath.push_back(222);
+
+    const TTree* node = PairTreeTraceNode(*tr, npath);
+    assert(node);
+    cout << node->GetId() << " " << node->GetValue() << endl;
+    assert(node->GetValue() == 222);
+    }}
+
     delete tr;
 }
 
@@ -257,6 +269,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2004/01/14 15:26:24  kuznets
+ * Added test case for PairTreeTraceNode
+ *
  * Revision 1.4  2004/01/14 14:20:08  kuznets
  * + test for for depth first traversal
  *
