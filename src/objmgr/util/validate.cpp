@@ -29,6 +29,8 @@
  *   Validates CSeq_entries and CSeq_submits
  *
  */
+#include <corelib/ncbiexpt.hpp>
+
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
@@ -649,17 +651,6 @@ CValidError_impl::~CValidError_impl()
 
 
 inline
-const CSeq_id& s_GetId(const CBioseq& seq)
-{
-    if (!seq.GetId().empty()) {
-        return **seq.GetId().begin();
-    } else {
-        THROW1_TRACE(runtime_error, "Bioseq has no Seq-id");
-    }
-}
-
-
-inline
 const CTextseq_id& s_GetTextseq_id(const CSeq_id& id)
 {
     switch (id.Which()) {
@@ -684,7 +675,7 @@ const CTextseq_id& s_GetTextseq_id(const CSeq_id& id)
     case CSeq_id::e_Tpd:
         return id.GetTpd();
     default:
-        THROW1_TRACE(runtime_error, "Type not handled");
+        NCBI_THROW(CValidException, eSeqId, "Seq-id type not handled");
     }
 }
 
@@ -692,11 +683,15 @@ const CTextseq_id& s_GetTextseq_id(const CSeq_id& id)
 inline
 const string& s_GetAccession(const CSeq_id& id)
 {
-    const CTextseq_id& tid = s_GetTextseq_id(id);
-    if (tid.IsSetAccession()) {
-        return tid.GetAccession();
-    } else {
-        THROW1_TRACE(runtime_error, "Accession not set");
+    try {
+        const CTextseq_id& tid = s_GetTextseq_id(id);
+        if (tid.IsSetAccession()) {
+            return tid.GetAccession();
+        } else {
+            NCBI_THROW(CValidException, eSeqId, "Accession not set");
+        }
+    } catch(CValidException& e) {
+        NCBI_RETHROW(e, CValidException, eSeqId, "Accession not set");        
     }
 }
 
@@ -704,12 +699,16 @@ const string& s_GetAccession(const CSeq_id& id)
 inline
 const string& s_GetName(const CSeq_id& id)
 {
-    const CTextseq_id& tid = s_GetTextseq_id(id);
-    if (tid.IsSetName()) {
-        return tid.GetName();
-    } else {
-        THROW1_TRACE(runtime_error, "Name not set");
-    }
+    try {
+        const CTextseq_id& tid = s_GetTextseq_id(id);
+        if (tid.IsSetName()) {
+            return tid.GetName();
+        } else {
+            NCBI_THROW(CValidException, eSeqId, "Name not set");
+        }
+    } catch (CValidException& e) {
+        NCBI_RETHROW(e, CValidException, eSeqId, "Name not set");        
+    }        
 }
 
 
@@ -1793,78 +1792,81 @@ void CValidError_impl::ValidateSeqIds
         case CSeq_id::e_Genbank:
         case CSeq_id::e_Embl:
         case CSeq_id::e_Ddbj:
-            try {
-                const string& acc = s_GetAccession(**k);
-                unsigned int numDigits = 0;
-                unsigned int numLetters = 0;
-                bool letterAfterDigit = false;
-                bool badIDchars = false;
-                iterate (string, s, acc) {
-                    if (isupper(*s)) {
-                        numLetters++;
-                        if (numDigits > 0) {
-                            letterAfterDigit = true;
-                        }
-                    } else if (isdigit(*s)) {
-                        numDigits++;
-                    } else {
-                        badIDchars = true;
+        try {
+            const string& acc = s_GetAccession(**k);
+            unsigned int numDigits = 0;
+            unsigned int numLetters = 0;
+            bool letterAfterDigit = false;
+            bool badIDchars = false;
+            iterate (string, s, acc) {
+                if (isupper(*s)) {
+                    numLetters++;
+                    if (numDigits > 0) {
+                        letterAfterDigit = true;
                     }
-                }
-                if (letterAfterDigit || badIDchars) {
-                    ValidErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                             "Bad accession: " + acc, seq);
-                } else if (numLetters == 1 && numDigits == 5 && s_isNa(seq)) {
-                } else if (numLetters == 2 && numDigits == 6 && s_isNa(seq)) {
-                } else if (numLetters == 3 && numDigits == 5 && s_isAa(seq)) {
-                } else if (numLetters == 2 && numDigits == 6 && s_isAa(seq) &&
-                    seq.GetInst().GetRepr() == CSeq_inst:: eRepr_seg) {
-                } else if (numLetters == 4  &&  numDigits == 8  &&
-                    ((**k).IsGenbank()  ||  (**k).IsEmbl()  ||
-                    (**k).IsDdbj())) {
+                } else if (isdigit(*s)) {
+                    numDigits++;
                 } else {
-                    ValidErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                             "Bad accession: " + acc, seq);
+                    badIDchars = true;
                 }
+            }
+            if (letterAfterDigit || badIDchars) {
+                ValidErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                         "Bad accession: " + acc, seq);
+            } else if (numLetters == 1 && numDigits == 5 && s_isNa(seq)) {
+            } else if (numLetters == 2 && numDigits == 6 && s_isNa(seq)) {
+            } else if (numLetters == 3 && numDigits == 5 && s_isAa(seq)) {
+            } else if (numLetters == 2 && numDigits == 6 && s_isAa(seq) &&
+                seq.GetInst().GetRepr() == CSeq_inst:: eRepr_seg) {
+            } else if (numLetters == 4  &&  numDigits == 8  &&
+                ((**k).IsGenbank()  ||  (**k).IsEmbl()  ||
+                (**k).IsDdbj())) {
+            } else {
+                ValidErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                         "Bad accession: " + acc, seq);
+            }
 
-                // Check for secondary conflicts
-                if (!acc.empty()  &&  seq.GetFirstId()) {
-                    CDesc_CI ds(m_Scope->GetBioseqHandle(*seq.GetFirstId()));
-                    CSeqdesc_CI sd(ds);
-                    for (; sd; ++sd) {
-                        if (sd->IsGenbank()) {
-                            const CGB_block& gb = sd->GetGenbank();
-                            if (gb.IsSetExtra_accessions()) {
-                                iterate(list<string>, a,
-                                    gb.GetExtra_accessions()) {
-                                    if (!NStr::CompareNocase(acc, *a)) {
-                                        // If the same post error
-                                        ValidErr(eDiag_Error,
-                                            eErr_SEQ_INST_BadSecondaryAccn,
-                                            acc + " used for both primary and"
-                                            " secondary accession", seq);
-                                    }
+            // Check for secondary conflicts
+            if (!acc.empty()  &&  seq.GetFirstId()) {
+                CDesc_CI ds(m_Scope->GetBioseqHandle(*seq.GetFirstId()));
+                CSeqdesc_CI sd(ds);
+                for (; sd; ++sd) {
+                    if (sd->IsGenbank()) {
+                        const CGB_block& gb = sd->GetGenbank();
+                        if (gb.IsSetExtra_accessions()) {
+                            iterate(list<string>, a,
+                                gb.GetExtra_accessions()) {
+                                if (!NStr::CompareNocase(acc, *a)) {
+                                    // If the same post error
+                                    ValidErr(eDiag_Error,
+                                        eErr_SEQ_INST_BadSecondaryAccn,
+                                        acc + " used for both primary and"
+                                        " secondary accession", seq);
                                 }
                             }
                         }
-                        if (sd->IsEmbl()) {
-                            const CEMBL_block& eb = sd->GetEmbl();
-                            if (eb.IsSetExtra_acc()) {
-                                iterate(list<string>, a, eb.GetExtra_acc()) {
-                                    if (!NStr::CompareNocase(acc, *a)) {
-                                        // If the same post error
-                                        ValidErr(eDiag_Error,
-                                            eErr_SEQ_INST_BadSecondaryAccn,
-                                            acc + " used for both primary and"
-                                            " secondary accession", seq);
-                                    }
+                    }
+                    if (sd->IsEmbl()) {
+                        const CEMBL_block& eb = sd->GetEmbl();
+                        if (eb.IsSetExtra_acc()) {
+                            iterate(list<string>, a, eb.GetExtra_acc()) {
+                                if (!NStr::CompareNocase(acc, *a)) {
+                                    // If the same post error
+                                    ValidErr(eDiag_Error,
+                                        eErr_SEQ_INST_BadSecondaryAccn,
+                                        acc + " used for both primary and"
+                                        " secondary accession", seq);
                                 }
                             }
                         }
                     }
                 }
-            } catch (const runtime_error&) {}
-            // Fall thru
+            }
+        } catch (CValidException& e) {
+            ValidErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, e.what(),
+                seq);
+        }
+        // Fall thru
         case CSeq_id::e_Other:
             try{
                 const string& name = s_GetName(**k);
@@ -1876,12 +1878,15 @@ void CValidError_impl::ValidateSeqIds
                         break;
                     }
                 }
-            } catch (const runtime_error&) {}
+            } catch (CValidException& e) {
+                ValidErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                    e.what(), seq);
+            }
             // Fall thru
         case CSeq_id::e_Pir:
         case CSeq_id::e_Swissprot:
         case CSeq_id::e_Prf:
-        {
+        try{
             const CTextseq_id& ti = s_GetTextseq_id(**k);
             if (s_isNa(seq)  &&  (!ti.IsSetAccession() ||
                 ti.GetAccession().empty())) {
@@ -1898,7 +1903,9 @@ void CValidError_impl::ValidateSeqIds
             }
             accn_count++;
             break;
-        }
+        } catch(CValidException& e) {
+            ValidErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, e.what(), seq);
+        }            
         case CSeq_id::e_Patent:
             break;
         case CSeq_id::e_Pdb:
@@ -5143,6 +5150,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2002/10/29 19:23:24  clausen
+* Added new NCBI_THROW & NCBI_RETHROW macros
+*
 * Revision 1.17  2002/10/29 18:56:43  kans
 * implemented most of ValidateSeqFeat (MS)
 *
