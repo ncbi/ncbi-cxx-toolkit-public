@@ -71,6 +71,10 @@
 #include <objtools/format/items/qualifiers.hpp>
 #include "utils.hpp"
 
+// On Mac OS X 10.3, FixMath.h defines ff as a one-argument macro(!)
+#ifdef ff
+#  undef ff
+#endif
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -2833,6 +2837,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/05/06 19:41:00  ucko
+* Kill unwanted definition of ff as a macro, if present (as on Mac OS 10.3)
+*
 * Revision 1.20  2004/05/06 17:49:59  shomrat
 * Fixed feature formatting
 *
