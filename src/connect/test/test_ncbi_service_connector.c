@@ -79,19 +79,23 @@ int main(int argc, const char* argv[])
         obuf[m++] = '\n';
         obuf[m]   = '\0';
 
-        if (CONN_Write(conn, obuf, strlen(obuf), &m) != eIO_Success) {
-            if (!n && m != strlen(obuf)) {
+        if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
+            != eIO_Success) {
+            if (!n) {
                 CONN_Close(conn);
                 CORE_LOG(eLOG_Fatal, "Error writing to connection");
             } else
                 break;
         }
+        assert(m == strlen(obuf));
     }
 #else
-    if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success || !n) {
+    if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
+        != eIO_Success) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error writing to connection");
     }
+    assert(n == strlen(obuf));
 #endif
 
     for (;;) {
@@ -134,11 +138,12 @@ int main(int argc, const char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
-    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00", 7, &n) !=
-        eIO_Success || n != 7) {
+    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00", 7, &n, eIO_WritePersist)
+        != eIO_Success) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error writing to service ID1");
     }
+    assert(n == 7);
 
     if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPlain) != eIO_Success){
         CONN_Close(conn);
@@ -157,6 +162,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2004/02/23 15:23:43  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.28  2003/10/21 11:37:47  lavr
  * Set write timeout from the environment/registry instead of explicitly
  *

@@ -92,7 +92,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         if ( n_write ) {
             size_t n_written;
             n_write *= sizeof(CT_CHAR_TYPE);
-            LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf, n_write, &n_written),
+            LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf, n_write,
+                                    &n_written, eIO_WritePlain),
                          "overflow(): CONN_Write() failed");
             if ( !n_written )
                 return CT_EOF;
@@ -115,7 +116,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // send char
         size_t n_written;
         CT_CHAR_TYPE b = CT_TO_CHAR_TYPE(c);
-        LOG_IF_ERROR(CONN_Write(m_Conn, &b, sizeof(b), &n_written),
+        LOG_IF_ERROR(CONN_Write(m_Conn, &b, sizeof(b),
+                                &n_written, eIO_WritePlain),
                      "overflow(): CONN_Write(1) failed");
         return n_written == sizeof(b) ? c : CT_EOF;
     } else if (CONN_Flush(m_Conn) != eIO_Success)
@@ -291,6 +293,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2004/02/23 15:23:39  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.44  2004/01/14 22:21:39  vasilche
  * Removed duplicate default arguments.
  *

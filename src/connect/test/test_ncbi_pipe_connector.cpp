@@ -142,7 +142,7 @@ int CTest::Run(void)
     assert(CONN_Create(connector, &conn) == eIO_Success);
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
-    status = CONN_Write(conn, buf, kBufferSize, &n_written);
+    status = CONN_Write(conn, buf, kBufferSize, &n_written, eIO_WritePersist);
     assert(status == eIO_Unknown);
     assert(n_written == 0);
     size_t n_read_total = 0;
@@ -169,7 +169,8 @@ int CTest::Run(void)
     assert(status == eIO_Unknown);
     assert(n_read == 0);
     message = "Child, are you ready?";
-    status = CONN_Write(conn, message.c_str(), message.length(), &n_written);
+    status = CONN_Write(conn, message.c_str(), message.length(),
+                        &n_written, eIO_WritePersist);
     assert(status == eIO_Success);
     assert(n_written == message.length());
     assert(CONN_Close(conn) == eIO_Success);
@@ -187,7 +188,8 @@ int CTest::Run(void)
     assert(status == eIO_Timeout);
     assert(n_read == 0);
     message = "Child, are you ready again?";
-    status = CONN_Write(conn, message.c_str(), message.length(), &n_written);
+    status = CONN_Write(conn, message.c_str(), message.length(),
+                        &n_written, eIO_WritePersist);
     assert(status == eIO_Success);
     assert(n_written == message.length());
     message = "Ok. Test 2 running.";
@@ -245,6 +247,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/23 15:23:43  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 1.7  2003/12/04 16:35:54  ivanov
  * Removed unused function Delay()
  *

@@ -159,12 +159,14 @@ int main(int argc, const char* argv[])
                 break; /* EOF */
             }
 
-            status = CONN_Write(conn, buffer, n_read, &n_written);
+            status = CONN_Write(conn, buffer, n_read,
+                                &n_written, eIO_WritePersist);
             if (status != eIO_Success) {
                 fprintf(stderr, "Error writing to URL (%s)",
                         IO_StatusStr(status));
                 assert(0);
             }
+            assert(n_written == n_read);
         }
         fclose(inp_fp);
     }
@@ -197,6 +199,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2004/02/23 15:23:42  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.11  2003/04/15 14:06:09  lavr
  * Changed ray.nlm.nih.gov -> ray.ncbi.nlm.nih.gov
  *

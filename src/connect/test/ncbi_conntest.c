@@ -68,7 +68,8 @@ static void s_SingleBouncePrint
     TEST_LOG(eIO_Success, "[s_SingleBouncePrint]  Starting...");
 
     /* WRITE */
-    status = CONN_Write(conn, write_str, strlen(write_str), &n_written);
+    status = CONN_Write(conn, write_str, strlen(write_str),
+                        &n_written, eIO_WritePersist);
     if (status != eIO_Success  ||  n_written != strlen(write_str)) {
         TEST_LOG(status, "[s_SingleBouncePrint] Write failed!");
     }
@@ -160,7 +161,8 @@ static void s_SingleBounceCheck
                 }
 
                 /* WRITE */
-                status = CONN_Write(conn, buf, n_write, &n_written);
+                status = CONN_Write(conn, buf, n_write,
+                                    &n_written, eIO_WritePersist);
                 if (status != eIO_Success) {
                     TEST_LOG(status, "Write failed. Retrying...");
                     assert(n_written < n_write);
@@ -350,6 +352,9 @@ extern void CONN_TestConnector
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2004/02/23 15:23:42  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.8  2003/02/10 15:57:35  lavr
  * Announce successful test completion
  *

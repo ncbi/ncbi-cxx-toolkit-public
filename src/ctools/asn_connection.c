@@ -55,7 +55,7 @@ static Int2 LIBCALLBACK s_AsnRead(Pointer p, CharPtr buff, Uint2 len)
 static Int2 LIBCALLBACK s_AsnWrite(Pointer p, CharPtr buff, Uint2 len)
 {
     size_t n_written = 0;
-    CONN_Write((CONN) p, buff, len, &n_written);
+    CONN_Write((CONN) p, buff, len, &n_written, eIO_WritePersist);
     return (Int2) n_written;
 }
 
@@ -73,7 +73,7 @@ static void s_CloseAsnConn(CONN conn, ECONN_Callback type, void* data)
     assert(type == eCONN_OnClose && cbdata && cbdata->ptr);
     CONN_SetCallback(conn, type, &cbdata->cb, 0); 
     AsnIoFree(cbdata->ptr, 0/*not a file - don't close*/);
-    if (cbdata->cb.func)
+    if ( cbdata->cb.func )
         (*cbdata->cb.func)(conn, type, cbdata->cb.data);
     free(cbdata);
 }
@@ -84,8 +84,8 @@ static void s_SetAsnConn_CloseCb(CONN conn, AsnIoPtr ptr)
     struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*)
         malloc(sizeof(*cbdata));
 
-    assert(ptr);
-    if (cbdata) {
+    assert( ptr );
+    if ( cbdata ) {
         SCONN_Callback cb;
         cbdata->ptr = ptr;
         cb.func = s_CloseAsnConn;
@@ -171,6 +171,9 @@ CONN CreateAsnConn_Service(const char*     service,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/02/23 15:23:50  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 1.5  2003/11/13 16:01:31  lavr
  * Included headers revised
  *

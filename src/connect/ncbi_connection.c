@@ -241,6 +241,24 @@ static EIO_Status s_Open
 }
 
 
+extern const char* CONN_GetType(CONN conn)
+{
+    CONN_NOT_NULL_EX(GetType, 0);
+
+    return conn->state == eCONN_Unusable  ||  !conn->meta.list  ||
+        !conn->meta.get_type ? 0 : conn->meta.get_type(conn->meta.c_get_type);
+}
+
+
+extern char* CONN_Description(CONN conn)
+{
+    CONN_NOT_NULL_EX(Description, 0);
+
+    return conn->state == eCONN_Unusable  ||  !conn->meta.list  ||
+        !conn->meta.descr ? 0 : conn->meta.descr(conn->meta.c_descr);
+}
+
+
 extern EIO_Status CONN_SetTimeout
 (CONN            conn,
  EIO_Event       event,
@@ -318,12 +336,13 @@ extern const STimeout* CONN_GetTimeout
         return conn->w_timeout;
     case eIO_Close:
         return conn->c_timeout;
+    default:
+        CONN_LOG_EX(eLOG_Error,
+                    "[CONN_GetTimeout]  Unknown event to get timeout for",
+                    eIO_InvalidArg);
+        assert(0);
+        break;
     }
-
-    CONN_LOG_EX(eLOG_Error,
-                "[CONN_GetTimeout]  Unknown event to get timeout for",
-                eIO_InvalidArg);
-    assert(0);
     return 0;
 }
 
@@ -367,11 +386,68 @@ extern EIO_Status CONN_Wait
 }
 
 
-extern EIO_Status CONN_Write
+static EIO_Status s_CONN_Write
 (CONN        conn,
  const void* buf,
  size_t      size,
  size_t*     n_written)
+{
+    EIO_Status status;
+
+    assert(*n_written == 0);
+
+    /* check if the write method is specified at all */
+    if ( !conn->meta.write ) {
+        status = eIO_NotSupported;
+        CONN_LOG(eLOG_Error, "[CONN_Write]  Unable to write data");
+        return status;
+    }
+
+    /* call current connector's "WRITE" method */
+    status = conn->meta.write(conn->meta.c_write, buf, size, n_written,
+                              conn->w_timeout==kDefaultTimeout ?
+                              conn->meta.default_timeout :conn->w_timeout);
+
+    if (status != eIO_Success) {
+        if ( *n_written ) {
+            CONN_LOG(eLOG_Trace, "[CONN_Write]  Write error");
+            status = eIO_Success;
+        } else  if ( size )
+            CONN_LOG(eLOG_Error, "[CONN_Write]  Cannot write data");
+    }
+    return status;
+}
+
+
+static EIO_Status s_CONN_WritePersist
+(CONN        conn,
+ const void* buf,
+ size_t      size,
+ size_t*     n_written)
+{
+    EIO_Status status;
+
+    assert(*n_written == 0);
+
+    for (;;) {
+        size_t x_written = 0;
+        status = s_CONN_Write(conn, (char*) buf + *n_written,
+                              size - *n_written, &x_written);
+        *n_written += x_written;
+        if (*n_written == size  ||  status != eIO_Success)
+            break;
+    }
+
+    return status;
+}
+
+
+extern EIO_Status CONN_Write
+(CONN            conn,
+ const void*     buf,
+ size_t          size,
+ size_t*         n_written,
+ EIO_WriteMethod how)
 {
     EIO_Status status;
 
@@ -389,21 +465,15 @@ extern EIO_Status CONN_Write
         return status;
     assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
 
-    /* call current connector's "WRITE" method */
-    status = conn->meta.write
-        ? conn->meta.write(conn->meta.c_write, buf, size, n_written,
-                           conn->w_timeout == kDefaultTimeout ?
-                           conn->meta.default_timeout : conn->w_timeout)
-        : eIO_NotSupported;
-
-    if (status != eIO_Success) {
-        if ( *n_written ) {
-            CONN_LOG(eLOG_Trace, "[CONN_Write]  Write error");
-            status = eIO_Success;
-        } else  if ( size )
-            CONN_LOG(eLOG_Error, "[CONN_Write]  Cannot write data");
+    switch (how) {
+    case eIO_WritePlain:
+        return s_CONN_Write(conn, buf, size, n_written);
+    case eIO_WritePersist:
+        return s_CONN_WritePersist(conn, buf, size, n_written);
+    default:
+        break;
     }
-    return status;
+    return eIO_Unknown;
 }
 
 
@@ -468,23 +538,22 @@ static EIO_Status s_CONN_Read
         return status;
     }
 
-    /* read data from the internal "peek-buffer", if any */
+    /* read data from the internal peek buffer, if any */
     *n_read = peek
         ? BUF_Peek(conn->buf, buf, size) : BUF_Read(conn->buf, buf, size);
     if (*n_read == size)
         return eIO_Success;
-    buf   = (char*) buf + *n_read;
-    size -= *n_read;
+    buf = (char*) buf + *n_read;
 
     /* read data from the connection */
     {{
         size_t x_read = 0;
         /* call current connector's "READ" method */
-        status = conn->meta.read(conn->meta.c_read, buf, size, &x_read,
+        status = conn->meta.read(conn->meta.c_read, buf, size- *n_read,&x_read,
                                  conn->r_timeout == kDefaultTimeout ?
                                  conn->meta.default_timeout : conn->r_timeout);
         *n_read += x_read;
-        if (peek  &&  x_read)  /* save the read data in the "peek-buffer" */
+        if (peek  &&  x_read)  /* save data in the internal peek buffer */
             verify(BUF_Write(&conn->buf, buf, x_read));
     }}
 
@@ -493,12 +562,11 @@ static EIO_Status s_CONN_Read
             CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
             status = eIO_Success;
         } else  if ( size ) {
-            CONN_LOG(status == eIO_Closed ? eLOG_Trace :
-                     (status == eIO_Timeout ? eLOG_Warning : eLOG_Error),
+            CONN_LOG(status == eIO_Closed  ? eLOG_Trace   :
+                     status == eIO_Timeout ? eLOG_Warning : eLOG_Error,
                      "[CONN_Read]  Cannot read data");
         }
     }
-
     return status;
 }
 
@@ -571,6 +639,8 @@ extern EIO_Status CONN_Read
         return s_CONN_Read(conn, buf, size, n_read, 1/*peek*/);
     case eIO_ReadPersist:
         return s_CONN_ReadPersist(conn, buf, size, n_read);
+    default:
+        break;
     }
     return eIO_Unknown;
 }
@@ -619,24 +689,6 @@ extern EIO_Status CONN_Close(CONN conn)
     conn->buf = 0;
     free(conn);
     return eIO_Success;
-}
-
-
-extern const char* CONN_GetType(CONN conn)
-{
-    CONN_NOT_NULL_EX(GetType, 0);
-
-    return conn->state == eCONN_Unusable  ||  !conn->meta.list  ||
-        !conn->meta.get_type ? 0 : conn->meta.get_type(conn->meta.c_get_type);
-}
-
-
-extern char* CONN_Description(CONN conn)
-{
-    CONN_NOT_NULL_EX(Description, 0);
-
-    return conn->state == eCONN_Unusable  ||  !conn->meta.list  ||
-        !conn->meta.descr ? 0 : conn->meta.descr(conn->meta.c_descr);
 }
 
 
@@ -730,6 +782,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2004/02/23 15:23:39  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.37  2003/08/25 14:40:53  lavr
  * Employ new k..Timeout constants
  *

@@ -94,6 +94,30 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_ReInit
  );
 
 
+/* Get verbal representation of connection type as a character string.
+ * Note that the returned value is only valid until the next
+ * I/O operation in the connection. Return value NULL denotes
+ * unknown connection type.
+ */
+extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
+(CONN conn  /* [in]  connection handle */ 
+ );
+
+
+/* Return human-readable description of the connection as a character
+ * 0-terminated string. The string is not guaranteed to have any
+ * particular format and is intended solely for something like
+ * logging and debugging. Return NULL if the connection cannot
+ * provide any description information (or if it is in a bad state).
+ * Application program is responsible to deallocate the space occupied
+ * by the returned string calling free() when the description is no longer
+ * needed.
+ */
+extern NCBI_XCONNECT_EXPORT char* CONN_Description
+(CONN conn  /* [in]  connection handle */
+ );
+
+
 /* Specify timeout for the connection I/O (including "Connect" (aka "Open")
  * and "Close"). May be called at any time during the connection lifetime.
  * NOTE1:  if "new_timeout" is NULL then set the timeout to be infinite.
@@ -132,14 +156,19 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Wait
 
 /* Write "size" bytes from the mem.buffer "buf" to the connection.
  * In "*n_written", return the number of successfully written bytes.
- * If cannot write all data and the timeout (see CONN_SetTimeout()) is expired
- * then return eIO_Timeout.
+ * Parameter "how" modifies behavior of CONN_Write():
+ * eIO_WritePlain   -- return eIO_Success if some data were written and
+ *                     yet write timeout had not occurred, error otherwise;
+ * eIO_WritePersist -- return eIO_Success only if all data were written and
+ *                     yet write timeout had not occurred, error otherwise.
+ * NOTE:  See CONN_SetTimeout() hoe to set write timeout.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Write
-(CONN        conn,      /* [in]  connection handle                     */ 
- const void* buf,       /* [in]  pointer to the data buffer to write   */ 
- size_t      size,      /* [in]  # of bytes to write                   */ 
- size_t*     n_written  /* [out, non-NULL] # of actually written bytes */
+(CONN            conn,      /* [in]  connection handle                     */ 
+ const void*     buf,       /* [in]  pointer to the data buffer to write   */ 
+ size_t          size,      /* [in]  # of bytes to write                   */ 
+ size_t*         n_written, /* [out, non-NULL] # of actually written bytes */
+ EIO_WriteMethod how        /* [in]  eIO_WritePlain or eIO_WritePersist    */
  );
 
 
@@ -205,30 +234,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Status
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
 (CONN conn  /* [in] connection handle */
- );
-
-
-/* Get a verbal representation of connection type as a character string.
- * Note that the returned value is only valid until the next
- * I/O operation in the connection. Return value NULL denotes
- * unknown connection type.
- */
-extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
-(CONN conn  /* [in]  connection handle */ 
- );
-
-
-/* Return a human-readable description of the connection as a character
- * 0-terminated string. The string is not guaranteed to have any
- * particular format and is intended solely for something like
- * logging and debugging. Return NULL if the connection cannot
- * provide any description information (or if it is in a bad state).
- * Application program is responsible to deallocate the space occupied
- * by the returned string calling free() when the description is no longer
- * needed.
- */
-extern NCBI_XCONNECT_EXPORT char* CONN_Description
-(CONN conn  /* [in]  connection handle */
  );
 
 
@@ -300,6 +305,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2004/02/23 15:23:36  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.16  2003/05/14 03:47:12  lavr
  * +CONN_Description()
  *

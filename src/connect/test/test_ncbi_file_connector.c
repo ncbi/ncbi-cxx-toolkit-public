@@ -99,7 +99,7 @@ int main(int argc, const char* argv[])
         fprintf(stderr, "READ: %ld  bytes\n", (long) n_read);
 
         /* write */
-        status = CONN_Write(conn, buf, n_read, &n_written);
+        status = CONN_Write(conn, buf, n_read, &n_written, eIO_WritePersist);
         if (status != eIO_Success) {
             fprintf(stderr, "CONN_Write() failed (status: %s)\n",
                     IO_StatusStr(status));
@@ -120,6 +120,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2004/02/23 15:23:43  lavr
+ * New (last) parameter "how" added in CONN_Write() API call
+ *
  * Revision 6.4  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *
