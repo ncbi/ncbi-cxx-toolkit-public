@@ -73,7 +73,7 @@ typedef struct {
     unsigned int usec; /* microseconds (always truncated by mod. 1,000,000) */
 } STimeout;
 
-#if defined(__cplusplus)  &&  !defined(NCBI_COMPILER_WORKSHOP)
+#if defined(__cplusplus)  &&  !defined(NCBI_COMPILER_WORKSHOP)  &&  0
 static const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
 static const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
 #else
@@ -108,6 +108,10 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2003/08/28 19:28:47  ucko
+ * Use macros for kXxxTimeout on all platforms (safer, inasmuch as the C
+ * include directory may be first).
+ *
  * Revision 6.8  2003/08/28 18:47:25  ucko
  * Go back to previous WorkShop hack, but include connect_export.h (for
  * ncbiconf.h) so that it actually works reliably this time around.
