@@ -45,9 +45,6 @@ extern "C" {
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_diagnostics.h>   
 
-/** How many subject sequences to process in one database chunk. */
-#define BLAST_DB_CHUNK_SIZE 1024
-
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.
  * @param program_number Type of BLAST program [in]
@@ -150,70 +147,6 @@ typedef struct BlastCoreAuxStruct {
    Uint1* translation_table_rc; /**< Translation table for reverse 
                                      strand */
 } BlastCoreAuxStruct;
-
-/** Deallocates all memory in BlastCoreAuxStruct */
-BlastCoreAuxStruct* 
-BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct);
-
-/** Setup of the auxiliary BLAST structures; 
- * also calculates internally used parameters from options. 
- * @param program_number blastn, blastp, blastx, etc. [in]
- * @param seq_src Sequence source information, with callbacks to get 
- *             sequences, their lengths, etc. [in]
- * @param scoring_options options for scoring. [in]
- * @param eff_len_options  used to calculate effective lengths. [in]
- * @param lookup_wrap Lookup table, already constructed. [in]
- * @param word_options options for initial word finding. [in]
- * @param ext_options options for gapped extension. [in]
- * @param hit_options options for saving hits. [in]
- * @param query The query sequence block [in]
- * @param query_info The query information block [in]
- * @param sbp Contains scoring information. [in]
- * @param gap_align Gapped alignment information and allocated memory [out]
- * @param score_params Parameters for scoring [out]
- * @param word_params Parameters for initial word processing [out]
- * @param ext_params Parameters for gapped extension [out]
- * @param hit_params Parameters for saving hits [out]
- * @param eff_len_params Parameters for calculating effective lengths [out]
- * @param aux_struct_ptr Placeholder joining various auxiliary memory 
- *                       structures [out]
- */
-Int2 
-BLAST_SetUpAuxStructures(Uint1 program_number,
-   const BlastSeqSrc* seq_src,
-   const BlastScoringOptions* scoring_options,
-   const BlastEffectiveLengthsOptions* eff_len_options,
-   LookupTableWrap* lookup_wrap,	
-   const BlastInitialWordOptions* word_options,
-   const BlastExtensionOptions* ext_options,
-   const BlastHitSavingOptions* hit_options,
-   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, 
-   BlastGapAlignStruct** gap_align, 
-   BlastScoringParameters** score_params,
-   BlastInitialWordParameters** word_params,
-   BlastExtensionParameters** ext_params,
-   BlastHitSavingParameters** hit_params,
-   BlastEffectiveLengthsParameters** eff_len_params,                         
-   BlastCoreAuxStruct** aux_struct_ptr);
-
-/** The core of the BLAST search: comparison between the (concatenated)
- * query against one subject sequence. Translation of the subject sequence
- * into 6 frames is done inside, if necessary. If subject sequence is 
- * too long, it can be split into several chunks. 
- */
-Int2
-BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query, 
-   BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   LookupTableWrap* lookup, BlastGapAlignStruct* gap_align, 
-   BlastScoringParameters* score_params, 
-   BlastInitialWordParameters* word_params, 
-   BlastExtensionParameters* ext_params, 
-   BlastHitSavingParameters* hit_params, 
-   const BlastDatabaseOptions* db_options,
-   BlastDiagnostics* diagnostics,
-   BlastCoreAuxStruct* aux_struct,
-   BlastHSPList** hsp_list_out);
 
 #ifdef __cplusplus
 }

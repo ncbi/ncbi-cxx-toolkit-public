@@ -173,6 +173,12 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	Int8	effective_search_sp;	/* product of above two */
 } BlastScoreBlk;
 
+typedef struct Blast_ResComp {
+    Uint1	alphabet_code;
+    Int4*	comp; 	/* composition of alphabet, array starts at beginning of alphabet. */
+    Int4*   comp0;	/* Same array as above, starts at zero. */
+} Blast_ResComp;
+
 typedef struct Blast_ResFreq {
     Uint1		alphabet_code;
     double* prob;	/* probs, (possible) non-zero offset. */
