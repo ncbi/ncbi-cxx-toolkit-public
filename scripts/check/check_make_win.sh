@@ -380,7 +380,7 @@ for build_tree in \$build_trees; do
    # For each configuration
    for x_conf in \$configurations; do
 
-   if test \$build_tree = "dll" -a ! \$x_conf = "DebugDLL" -a ! \$x_conf = "ReleaseDLL" ; then
+   if test \$build_tree = "dll/" -a ! \$x_conf = "DebugDLL" -a ! \$x_conf = "ReleaseDLL" ; then
       continue
    fi
 
