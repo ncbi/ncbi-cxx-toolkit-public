@@ -117,7 +117,7 @@ For this reason, SCORE_MIN is not simply defined to be LONG_MIN/2.
 #define BLAST_SCORE_1MAX ( 100)
 #else
 #define BLAST_SCORE_1MIN (-10000)
-#define BLAST_SCORE_1MAX ( 1000)
+#define BLAST_SCORE_1MAX ( 10000)
 #endif
 #define BLAST_SCORE_RANGE_MAX	(BLAST_SCORE_1MAX - BLAST_SCORE_1MIN)
 
