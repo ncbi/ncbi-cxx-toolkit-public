@@ -35,6 +35,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2001/09/24 20:22:59  lavr
+ * +SERV_Reset()
+ *
  * Revision 6.21  2001/09/10 21:18:35  lavr
  * SERV_GetNextInfoEx(): Description of IP address subst in host environment
  *
@@ -189,6 +192,13 @@ const SSERV_Info* SERV_GetNextInfoEx
 int/*bool*/ SERV_Penalize
 (SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
  double              fine           /* fine in a range [0=min..100=max] (%%) */
+ );
+
+
+/* Reset iterator to the state as if it'd just been opened.
+ */
+void SERV_Reset
+(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
  );
 
 
