@@ -106,7 +106,7 @@ by the load-balancing algorithm, except for that <tt>name</tt> must be a valid i
 The <tt>value</tt> may be practically anything, even empty.
 It is left solely on the client to parse the environment and to look for the information in interest.
 <br>
-<u>Note</u> that white characters surrounding <tt>name</tt> are not preserved, but they are
+<u>Note</u>: White characters surrounding <tt>name</tt> are not preserved, but they are
 preserved in <tt>value</tt>, i.e. when appear after the equal sign.
 <p>
 Address substitution environment, on the contrary, is parsed by the daemon. The syntax of
@@ -223,7 +223,7 @@ recognized:
      and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Such a server can only be
      accessed by creating a stream connection to it, and the entire data transfer is to happen
      while the connection is alive. Default is <tt>no</tt>.<br>
-     <u>Note</u> that due to mutual incompatibility, Web-browsers <i>cannot</i> directly
+     <u>Note</u>: Due to mutual incompatibility, Web-browsers <i>cannot</i> directly
      connect to <i>stateful</i> servers.
   </ul>
   <li><a name="ref_ContentType">content type specifier</a>:
@@ -295,7 +295,7 @@ logging due to file size restriction.
 <h2><a name="ref_Example">Example of Configuration File</a></h2>
 
 Below is an excerpt from sample configuration file, which declares some of the host environment,
-advertizes one standalone stateful server, and one NCBID service, both implementing the same
+advertizes one standalone stateful server, and one <tt>NCBID</tt> service, both implementing the same
 service, and one HTTP service, which is a local service only.
 
 <pre>
@@ -384,7 +384,7 @@ Technically, the penalty is maintained by a daemon, which has the server configu
 That is, received by a certain host, which may be different from the one, where the
 server was put into configuration file, the penalty first migrates to that host,
 and then the daemon on that host announces that the server was penalized.</br>
-<u>Note</u> that once the daemon is restarted, the penalty information is lost.
+<u>Note</u>: Once the daemon is restarted, the penalty information is lost.
 
 <p>
 <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> has a call
