@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/11/05 00:31:02  lewisg
+* added Modena string lib defines and ms vc warning disable
+*
 * Revision 1.3  1998/11/03 20:46:30  vakatov
 * HAVE_NAMESPACES(not just HAVE_NAMESPACE)
 * Removed extra semicolumn from NCBI_USING_STL
@@ -66,7 +69,14 @@
 #    define NCBI_NO_NAMESPACES
 #  endif
 #else
+// these macros are used in STLport's Modena string library
+#  define SIZE_TYPE string::size_type
+#  define NPOS string::npos
+#endif
 
+// get rid of long identifier warning in visual c++ 5 and 6
+#if _MSC_VER <= 1200
+#pragma warning(disable: 4786)  
 #endif
 
 // Check if this compiler supports namespaces at all... (see in <ncbiconf.h>)
