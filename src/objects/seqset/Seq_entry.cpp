@@ -111,7 +111,9 @@ static CBioseq::ELabelType s_GetBioseqLabelType(CSeq_entry::ELabelType lt)
     switch (lt) {
         case CSeq_entry::eType:    return CBioseq::eType;
         case CSeq_entry::eContent: return CBioseq::eContent;
-        case CSeq_entry::eBoth:    return CBioseq::eBoth;
+        default:
+            _ASSERT(lt==CSeq_entry::eBoth);
+            return CBioseq::eBoth;
     }
 }
 
@@ -121,7 +123,9 @@ static CBioseq_set::ELabelType s_GetBioseqSetLabelType(CSeq_entry::ELabelType lt
     switch (lt) {
         case CSeq_entry::eType:    return CBioseq_set::eType;
         case CSeq_entry::eContent: return CBioseq_set::eContent;
-        case CSeq_entry::eBoth:    return CBioseq_set::eBoth;
+        default:
+            _ASSERT(lt==CSeq_entry::eBoth);
+            return CBioseq_set::eBoth;
     }
 }
 
@@ -150,6 +154,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.29  2004/09/09 19:49:44  vasilche
+ * Fixed compiler warning.
+ *
  * Revision 6.28  2004/07/22 16:26:04  shomrat
  * + GetLabel()
  *
