@@ -290,36 +290,43 @@ CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
     }
 
     ASSERT(pssm->nrows == diagnostics->alphabet_size);
-    ASSERT(pssm->ncols == diagnostics->dimensions->query_length);
+    ASSERT(pssm->ncols == diagnostics->query_length);
 
     if (diagnostics->information_content) {
         NCBI_THROW(CBlastException, eNotSupported, "Information content "
                    "cannot be stored in Score-matrix-parameters ASN.1");
     }
 
-    if (diagnostics->residue_frequencies) {
+    if (diagnostics->residue_freqs) {
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {
+                // FIXME: this needs to be updated after the scoremat.asn is
+                // updated, field: resFreqsPerPos
                 score_mat.SetPosFreqs().push_back(
-                    diagnostics->residue_frequencies[i][j]);
+                    diagnostics->residue_freqs[i][j]);
             }
         }
     }
  
-    if (diagnostics->raw_residue_counts) {
+    if (diagnostics->weighted_residue_freqs) {
         for (unsigned int i = 0; i < pssm->ncols; i++) {
             for (unsigned int j = 0; j < pssm->nrows; j++) {
+                // FIXME: this needs to be updated after the scoremat.asn is
+                // updated, field weightedResFreqsPerPos
                 score_mat.SetRawFreqs().push_back(
-                    diagnostics->raw_residue_counts[i][j]);
+                    diagnostics->weighted_residue_freqs[i][j]);
             }
         }
     }
 
-    if (diagnostics->sequence_weights) {
-        for (unsigned int i = 0; 
-             i < diagnostics->dimensions->num_seqs + 1; 
-             i++) {
-            score_mat.SetWeights().push_back(diagnostics->sequence_weights[i]);
+    if (diagnostics->frequency_ratios) {
+        for (unsigned int i = 0; i < pssm->ncols; i++) {
+            for (unsigned int j = 0; j < pssm->nrows; j++) {
+                // FIXME: this needs to be updated after the scoremat.asn is
+                // updated, field freqRatios
+                score_mat.SetWeights().push_back(
+                    diagnostics->frequency_ratios[i][j]);
+            }
         }
     }
 
@@ -340,6 +347,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/09/17 02:06:53  camacho
+ * Renaming of diagnostics structure fields
+ *
  * Revision 1.10  2004/08/05 18:55:09  camacho
  * Changes to use the most recent scoremat.asn specification
  *

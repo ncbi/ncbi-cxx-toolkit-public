@@ -1873,6 +1873,7 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
         sbp->kbp_psi[0]->Lambda = Blast_KarlinLambdaNR(score_freqs, 
                                                        *initial_lambda_guess);
 
+        /* what about K? */
     } else {
         /* Calculate lambda and K */
         Blast_KarlinBlkCalc(sbp->kbp_psi[0], score_freqs);
@@ -1886,6 +1887,8 @@ _PSIUpdateLambdaK(const int** pssm,              /* [in] */
         sbp->kbp_gap_psi[0]->K = 
             sbp->kbp_psi[0]->K * sbp->kbp_gap_std[0]->K / sbp->kbp_ideal->K;
         sbp->kbp_gap_psi[0]->logK = log(sbp->kbp_gap_psi[0]->K);
+
+        /* what about Lambda? */
     }
 
     score_freqs = Blast_ScoreFreqDestruct(score_freqs);
@@ -1994,60 +1997,56 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 {
     Uint4 p = 0;                  /* index on positions */
     Uint4 r = 0;                  /* index on residues */
-    Uint4 s = 0;                  /* index on sequences */
 
     if ( !diagnostics || !msa || !aligned_block || !seq_weights ||
          !internal_pssm ) {
         return PSIERR_BADPARAM;
     }
 
-    ASSERT(msa->dimensions->query_length ==
-           diagnostics->dimensions->query_length);
-    ASSERT(msa->dimensions->num_seqs == 
-           diagnostics->dimensions->num_seqs);
+    ASSERT(msa->dimensions->query_length == diagnostics->query_length);
 
     if (diagnostics->information_content) {
         double* info = _PSICalculateInformationContentFromResidueFreqs(
                 internal_pssm->res_freqs, seq_weights->std_prob,
-                diagnostics->dimensions->query_length, 
+                diagnostics->query_length, 
                 diagnostics->alphabet_size);
         if ( !info ) {
             return PSIERR_OUTOFMEM;
         }
-        for (p = 0; p < diagnostics->dimensions->query_length; p++) {
+        for (p = 0; p < diagnostics->query_length; p++) {
             diagnostics->information_content[p] = info[p];
         }
         sfree(info);
     }
 
-    if (diagnostics->residue_frequencies) {
-        for (p = 0; p < diagnostics->dimensions->query_length; p++) {
+    if (diagnostics->residue_freqs) {
+        for (p = 0; p < diagnostics->query_length; p++) {
             for (r = 0; r < diagnostics->alphabet_size; r++) {
-                diagnostics->residue_frequencies[p][r] =
+                diagnostics->residue_freqs[p][r] = msa->residue_counts[p][r];
+            }
+        }
+    }
+
+    if (diagnostics->weighted_residue_freqs) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            for (r = 0; r < diagnostics->alphabet_size; r++) {
+                diagnostics->weighted_residue_freqs[p][r] =
+                    seq_weights->match_weights[p][r];
+            }
+        }
+    }
+    
+    if (diagnostics->frequency_ratios) {
+        for (p = 0; p < diagnostics->query_length; p++) {
+            for (r = 0; r < diagnostics->alphabet_size; r++) {
+                diagnostics->frequency_ratios[p][r] =
                     internal_pssm->res_freqs[p][r];
             }
         }
     }
 
-    /* FIXME: should save seq_weights->match_weights instead? */
-    if (diagnostics->raw_residue_counts) {
-        for (p = 0; p < diagnostics->dimensions->query_length; p++) {
-            for (r = 0; r < diagnostics->alphabet_size; r++) {
-                diagnostics->raw_residue_counts[p][r] =
-                    msa->residue_counts[p][r];
-            }
-        }
-    }
-    
-    if (diagnostics->sequence_weights) {
-        for (s = 0; s < msa->dimensions->num_seqs + 1; s++) {
-            diagnostics->sequence_weights[s] =
-                seq_weights->norm_seq_weights[s];
-        }
-    }
-
     if (diagnostics->gapless_column_weights) {
-        for (p = 0; p < msa->dimensions->query_length; p++) {
+        for (p = 0; p < diagnostics->query_length; p++) {
             diagnostics->gapless_column_weights[p] =
                 seq_weights->gapless_column_weights[p];
         }
@@ -2059,6 +2058,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/09/17 02:06:34  camacho
+ * Renaming of diagnostics structure fields
+ *
  * Revision 1.24  2004/09/14 21:17:02  camacho
  * Add structure group customization to ignore query
  *
