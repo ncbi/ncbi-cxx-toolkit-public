@@ -34,21 +34,12 @@
 *   "vector<char>" might actually hold 2-bit nucleotides or 32-bit integers.
 *   Assumes a big-endian representation: the MSBs of the first elements of
 *   the input and output sequences line up.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.1  2001/09/04 14:06:30  ucko
-* Add resizing iterators for sequences whose representation uses an
-* unnatural unit size -- for instance, ASN.1 octet strings corresponding
-* to sequences of 32-bit integers or of packed nucleotides.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
 #include <iterator>
+#include <limits.h>
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
@@ -81,7 +72,7 @@ public:
     CConstResizingIterator<TSeq, TOut> operator++(int); // postfix
     TOut operator*();
     // No operator->; see above.
-    bool AtEnd() { return m_RawIterator == m_End; }
+    bool AtEnd() const { return m_RawIterator == m_End; }
 
 private:
     TRawIterator m_RawIterator;
@@ -129,7 +120,7 @@ public:
     void operator=(TVal value);
     operator TVal();
 
-    bool AtEnd() { return m_RawIterator == m_End; }
+    bool AtEnd() const { return m_RawIterator == m_End; }
 
 private:
     TRawIterator m_RawIterator;
@@ -139,13 +130,222 @@ private:
 };
 
 
-///////////////////////////////////////////////////////
-// All inline function implementations and internal data
-// types, etc. are in this file
-#include <util/resize_iter.inl>
+///////////////////////////////////////////////////////////////////////////
+//
+// INLINE FUNCTIONS
+//
+// This code contains some heavy bit-fiddling; take care when modifying it.
+
+#ifndef CHAR_BIT
+#define CHAR_BIT 8
+#endif
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+template <class T>
+size_t x_BitsPerElement(T*) {
+    return CHAR_BIT * sizeof(T);
+}
+
+
+template <class TIterator, class TOut>
+TOut ExtractBits(TIterator& start, size_t& bit_offset, size_t bit_count)
+{
+#ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC // Why does Workshop set this?
+    static const size_t kBitsPerElement
+        = x_BitsPerElement(__value_type(TIterator()));
+#elif defined(NCBI_COMPILER_MSVC)
+    // iterator_traits seems to be broken under MSVC. :-/
+    static const size_t kBitsPerElement
+        = x_BitsPerElement(_Val_type(TIterator()));    
+#else
+    static const size_t kBitsPerElement
+        = CHAR_BIT * sizeof(iterator_traits<TIterator>::value_type);
+#endif
+
+    const TOut kMask = (1 << bit_count) - 1;
+    static const TOut kMask2 = (1 << kBitsPerElement) - 1;
+    TOut value;
+
+    if (bit_offset + bit_count <= kBitsPerElement) {
+        // the current element contains it all
+        bit_offset += bit_count;
+        value = (*start >> (kBitsPerElement - bit_offset)) & kMask;
+        if (bit_offset == kBitsPerElement) {
+            bit_offset = 0;
+            ++start;
+        }
+    } else {
+        // We have to deal with multiple elements.
+        value = *start & ((1 << (kBitsPerElement - bit_offset)) - 1);
+        for (bit_offset += bit_count - kBitsPerElement;
+             bit_offset >= kBitsPerElement;
+             bit_offset -= kBitsPerElement) {
+            value = (value << kBitsPerElement) | (*++start & kMask2);
+        }        
+        ++start;
+        if (bit_offset)
+            value = ((value << bit_offset)
+                       | ((*start >> (kBitsPerElement - bit_offset))
+                          & ((1 << bit_offset) - 1)));
+    }
+    return value;
+}
+
+
+template <class TIterator, class TVal, class TElement>
+TElement StoreBits(TIterator& start, size_t& bit_offset, size_t bit_count,
+                   TElement partial, TVal data) // returns new partial
+{
+    static const size_t kBitsPerElement = CHAR_BIT * sizeof(TElement);
+
+    if (bit_offset) {
+        partial &= (~(TElement)0) << (kBitsPerElement - bit_offset);
+    } else {
+        partial = 0;
+    }
+
+    if (bit_offset + bit_count <= kBitsPerElement) {
+        // Everything fits in one element.
+        bit_offset += bit_count;
+        partial |= data << (kBitsPerElement - bit_offset);
+        if (bit_count == kBitsPerElement) {
+            *(start++) = partial;
+            bit_count = 0;
+            partial = 0;
+        }
+    } else {
+        // We need to split it up.
+        *(start++) = partial | ((data >> (bit_count + bit_offset
+                                          - kBitsPerElement))
+                                & ((1 << (kBitsPerElement - bit_offset)) - 1));
+        for (bit_offset += bit_count - kBitsPerElement;
+             bit_offset >= kBitsPerElement;
+             bit_offset -= kBitsPerElement) {
+            *(start++) = data >> (bit_offset - kBitsPerElement);
+        }
+        if (bit_offset) {
+            partial = data << (kBitsPerElement - bit_offset);
+        } else {
+            partial = 0;
+        }
+    }
+    return partial;
+}
+
+
+// CConstResizingIterator members.
+
+
+template <class TSeq, class TOut>
+CConstResizingIterator<TSeq, TOut> &
+CConstResizingIterator<TSeq, TOut>::operator++() // prefix
+{
+    static const size_t kBitsPerElement = CHAR_BIT * sizeof(TRawValue);
+
+    // We advance the raw iterator past things we read, so only advance
+    // it now if we haven't read the current value.
+    if (!m_ValueKnown) {
+        for (m_BitOffset += m_NewSize;  m_BitOffset >= kBitsPerElement;
+             m_BitOffset -= kBitsPerElement) {
+            ++m_RawIterator;
+        }
+    }
+    m_ValueKnown = false;
+    return *this;
+}
+
+
+template <class TSeq, class TOut>
+CConstResizingIterator<TSeq, TOut>
+CConstResizingIterator<TSeq, TOut>::operator++(int) // postfix
+{
+    CConstResizingIterator<TSeq, TOut> copy(*this);
+    ++(*this);
+    return copy;
+}
+
+
+template <class TSeq, class TOut>
+TOut CConstResizingIterator<TSeq, TOut>::operator*()
+{
+    if (m_ValueKnown)
+        return m_Value;
+
+    m_ValueKnown = true;
+    return m_Value = ExtractBits<TRawIterator, TOut>
+        (m_RawIterator, m_BitOffset, m_NewSize);
+}
+
+
+// CResizingIterator members.
+
+
+template <class TSeq, class TVal>
+CResizingIterator<TSeq, TVal>& CResizingIterator<TSeq, TVal>::operator++()
+    // prefix
+{
+    static const size_t kBitsPerElement = CHAR_BIT * sizeof(TRawValue);
+
+    for (m_BitOffset += m_NewSize;  m_BitOffset >= kBitsPerElement;
+         m_BitOffset -= kBitsPerElement) {
+        ++m_RawIterator;
+    }
+    return *this;
+}
+
+
+template <class TSeq, class TVal>
+CResizingIterator<TSeq, TVal> CResizingIterator<TSeq, TVal>::operator++(int)
+    // postfix
+{
+    CResizingIterator<TSeq, TVal> copy(*this);
+    ++(*this);
+    return copy;
+}
+
+
+template <class TSeq, class TVal>
+void CResizingIterator<TSeq, TVal>::operator=(TVal value)
+{
+    // don't advance iterator in object.
+    TRawIterator it = m_RawIterator;
+    size_t offset = m_BitOffset;
+    TRawValue tmp;
+
+    tmp = StoreBits<TRawIterator, TVal, TRawValue>(it, offset, m_NewSize, *it,
+                                                   value);
+    *it = tmp;
+}
+
+
+template <class TSeq, class TVal>
+CResizingIterator<TSeq, TVal>::operator TVal()
+{
+    // don't advance iterator in object.
+    TRawIterator it = m_RawIterator;
+    size_t offset = m_BitOffset;
+
+    return ExtractBits<TRawIterator, TVal>(it, offset, m_NewSize);
+}
+
+
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.2  2002/12/30 20:38:14  ucko
+* Miscellaneous cleanups: CVS log moved to end, .inl folded in,
+* test for MSVC fixed, AtEnd made const, useless comments dropped,
+* kBitsPerByte changed to CHAR_BIT (using 8 as a fallback).
+*
+* Revision 1.1  2001/09/04 14:06:30  ucko
+* Add resizing iterators for sequences whose representation uses an
+* unnatural unit size -- for instance, ASN.1 octet strings corresponding
+* to sequences of 32-bit integers or of packed nucleotides.
+*
+* ===========================================================================
+*/
 
 #endif  /* RESIZE_ITER__HPP */
