@@ -1768,7 +1768,7 @@ static void s_TEST_ICache(void)
     CBDB_Cache  bdb_cache;
     int top = bdb_cache.GetTimeStampPolicy();
     bdb_cache.SetTimeStampPolicy(top, 30);
-    bdb_cache.Open(".", "bcache", CBDB_Cache::eNoLock);
+    bdb_cache.Open(".", "bcache", CBDB_Cache::eNoLock, 1024*1024 * 100);
 
     bdb_cache.Store("test_key1", 1, "", dp, data.size() * sizeof(int));
 
@@ -1823,7 +1823,6 @@ int CBDB_Test::Run(void)
 
     try
     {
-
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1886,6 +1885,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/05/25 18:48:51  kuznets
+ * Added cache RAM size parameter to CBDB_Cache::Open.
+ *
  * Revision 1.45  2004/05/17 20:55:27  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
