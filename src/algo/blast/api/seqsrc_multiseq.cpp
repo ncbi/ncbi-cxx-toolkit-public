@@ -109,7 +109,7 @@ inline Uint4 CMultiSeqInfo::GetNumSeqs()
 }
 
 /// Returns sequence block structure for one of the sequences
-/// @param Which sequence to retrieve sequence block for? [in]
+/// @param index Which sequence to retrieve sequence block for? [in]
 /// @return The sequence block.
 inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 {
@@ -265,7 +265,6 @@ s_MultiSeqGetSequence(void* multiseq_handle, void* args)
 }
 
 /// Deallocates the uncompressed sequence buffer if necessary.
-/// @param multiseq_handle Pointer to the structure containing sequences [in]
 /// @param args Pointer to GetSeqArg structure [in]
 /// @return return codes defined in blast_seqsrc.h
 static Int2 
@@ -372,7 +371,7 @@ s_MultiSeqSrcFree(BlastSeqSrc* seq_src)
 }
 
 /// Multi-sequence source constructor 
-/// @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
+/// @param retval BlastSeqSrc structure (already allocated) to populate [in]
 /// @param args Pointer to MultiSeqSrcNewArgs structure above [in]
 /// @return Updated bssp structure (with all function pointers initialized
 static BlastSeqSrc* 
@@ -449,6 +448,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2005/02/09 21:03:36  dondosha
+ * Minor doxygen fixes
+ *
  * Revision 1.27  2005/02/08 18:50:28  bealer
  * - Fix type truncation warnings.
  *

@@ -37,14 +37,14 @@
 #include <objtools/readers/seqdb/seqdb.hpp>
 #include "blast_setup.hpp"
 
+USING_NCBI_SCOPE;
+USING_SCOPE(objects);
+USING_SCOPE(blast);
+
 /** @addtogroup AlgoBlast
  *
  * @{
  */
-
-USING_NCBI_SCOPE;
-USING_SCOPE(objects);
-USING_SCOPE(blast);
 
 extern "C" {
 
@@ -306,12 +306,14 @@ BEGIN_SCOPE(blast)
 /// Encapsulates the arguments needed to initialize CSeqDB.
 class CSeqDbSrcNewArgs {
 public:
+    /// Constructor
     CSeqDbSrcNewArgs(const string& db, bool is_prot,
                      Uint4 first_oid = 0, Uint4 final_oid = 0)
         : m_DbName(db), m_IsProtein(is_prot), 
           m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid)
     {}
 
+    /// Getter functions for the private fields
     const string GetDbName() const { return m_DbName; }
     char GetDbType() const { return m_IsProtein ? 'p' : 'n'; }
     Uint4 GetFirstOid() const { return m_FirstDbSeq; }
@@ -408,7 +410,7 @@ s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 }
 
 /// SeqDb sequence source constructor 
-/// @param seq_src BlastSeqSrc structure (already allocated) to populate [in]
+/// @param retval BlastSeqSrc structure (already allocated) to populate [in]
 /// @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
 /// CSeqDbSrcNewArgs) [in]
 /// @return Updated seq_src structure (with all function pointers initialized
@@ -487,6 +489,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/02/09 21:03:36  dondosha
+ * Minor doxygen fixes
+ *
  * Revision 1.28  2005/02/08 18:50:29  bealer
  * - Fix type truncation warnings.
  *
