@@ -63,6 +63,7 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 
 #include <objtools/readers/readfeat.hpp>
@@ -812,6 +813,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
         case eQual_label:
         case eQual_map:
         case eQual_number:
+        case eQual_operon:
         case eQual_organism:
         case eQual_PCR_conditions:
         case eQual_phenotype:
@@ -1031,6 +1033,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
 			case eQual_label:
 			case eQual_map:
 			case eQual_number:
+            case eQual_operon:
 			case eQual_organism:
 			case eQual_PCR_conditions:
 			case eQual_phenotype:
@@ -1239,7 +1242,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (CNcbiIstream
                                         break;
                                 }
                                 rrp.SetType (rnatyp);
-                                /* sfp->SetData ().SetRna (*rrp); */
+
+                            } else if (typ == CSeqFeatData::e_Imp) {
+                                CImp_feat_Base& imp = sfdata.SetImp ();
+                                imp.SetKey (feat);
                             }
 
                             ftable.push_back(sfp);
