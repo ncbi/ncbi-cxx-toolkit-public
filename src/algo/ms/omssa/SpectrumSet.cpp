@@ -35,12 +35,12 @@
  */
 
 // standard includes
-#include <corelib/ncbi_limits.h>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
+#include <corelib/ncbistre.hpp>
 #include <util/regexp.hpp>
 #include <objects/omssa/MSSpectrum.hpp>
 
-#include <sstream>
 
 // generated includes
 #include <SpectrumSet.hpp>
@@ -102,7 +102,7 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA)
 
 	    while(Line.compare(0, 5, "</dta") != 0) {
 		dummy = 0;
-		istringstream istr(Line);
+		CNcbiIstrstream istr(Line.c_str());
 		istr >> dummy;
 		if(dummy == 0) break;
 		MySpectrum->SetMz().push_back(static_cast <int> 
@@ -166,6 +166,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2003/10/21 21:20:57  lewisg
+ * use strstream instead of sstream for gcc 2.95
+ *
  * Revision 1.2  2003/10/21 21:12:16  lewisg
  * reorder headers
  *
