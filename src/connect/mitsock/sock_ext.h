@@ -39,7 +39,12 @@ extern "C" {
 #endif
 
 /* Socket.c */
- 
+
+#define fcntl MIT_fcntl
+#define read MIT_read
+#define write MIT_write
+#define close MIT_close
+
 /* External Sockets API calls */
 int socket(int family, int type, int protocol);
 int bind(int sockFD, const struct sockaddr *myAddr, int addrLength);
