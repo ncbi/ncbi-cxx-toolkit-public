@@ -31,48 +31,6 @@
 * File Description:
 *   CRange<> class represents interval
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2003/01/23 21:24:22  vasilche
-* Fixed reference to operator=() on IRIX.
-*
-* Revision 1.11  2003/01/22 21:14:52  vasilche
-* Added missing typename.
-*
-* Revision 1.10  2003/01/22 20:05:24  vasilche
-* Simplified CRange<> implementation.
-* Removed special handling of Empty & Whole bounds.
-* Added simplier COpenRange<> template.
-*
-* Revision 1.9  2002/12/20 20:53:28  grichenk
-* Removed range normalization
-*
-* Revision 1.8  2002/12/19 20:24:06  grichenk
-* Added normalization of intervals (from <= to).
-* Removed SetFrom() and SetTo(), added Set().
-*
-* Revision 1.7  2002/06/04 19:36:33  ucko
-* More fixes for empty ranges; CSeq_loc::GetTotalRange() now works again.
-*
-* Revision 1.6  2002/05/24 14:56:14  grichenk
-* Fixed Empty() for unsigned intervals
-*
-* Revision 1.5  2002/04/22 20:02:33  grichenk
-* Fixed CombineFrom(), CombineTo(), operator+=()
-*
-* Revision 1.4  2001/09/05 14:50:28  grichenk
-* Fixed comparison of "whole" ranges
-*
-* Revision 1.3  2001/01/05 20:08:53  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.2  2001/01/03 17:24:52  vasilche
-* Fixed typo.
-*
-* Revision 1.1  2001/01/03 16:39:18  vasilche
-* Added CAbstractObjectManager - stub for object manager.
-* CRange extracted to separate file.
-*
 * ===========================================================================
 */
 
@@ -180,30 +138,30 @@ public:
         }
 
     // comparison
-    bool operator==(TThisType r) const
+    bool operator==(const TThisType& r) const
         {
             return GetFrom() == r.GetFrom() && GetToOpen() == r.GetToOpen();
         }
-    bool operator!=(TThisType r) const
+    bool operator!=(const TThisType& r) const
         {
             return !(*this == r);
         }
-    bool operator<(TThisType r) const
+    bool operator<(const TThisType& r) const
         {
             return GetFrom() < r.GetFrom() ||
                 GetFrom() == r.GetFrom() && GetToOpen() < r.GetToOpen();
         }
-    bool operator<=(TThisType r) const
+    bool operator<=(const TThisType& r) const
         {
             return GetFrom() < r.GetFrom() ||
                 GetFrom() == r.GetFrom() && GetToOpen() <= r.GetToOpen();
         }
-    bool operator>(TThisType r) const
+    bool operator>(const TThisType& r) const
         {
             return GetFrom() > r.GetFrom() ||
                 GetFrom() == r.GetFrom() && GetToOpen() > r.GetToOpen();
         }
-    bool operator>=(TThisType r) const
+    bool operator>=(const TThisType& r) const
         {
             return GetFrom() > r.GetFrom() ||
                 GetFrom() == r.GetFrom() && GetToOpen() >= r.GetToOpen();
@@ -277,32 +235,32 @@ public:
         }
 
     // intersecting ranges
-    TThisType IntersectionWith(TThisType r) const
+    TThisType IntersectionWith(const TThisType& r) const
         {
             return TThisType(max(GetFrom(), r.GetFrom()),
                              min(GetToOpen(), r.GetToOpen()));
         }
-    TThisType IntersectWith(TThisType r)
+    TThisType IntersectWith(const TThisType& r)
         {
             m_From = max(GetFrom(), r.GetFrom());
             m_ToOpen = min(GetToOpen(), r.GetToOpen());
             return *this;
         }
-    TThisType operator&(TThisType r) const
+    TThisType operator&(const TThisType& r) const
         {
             return IntersectionWith(r);
         }
-    TThisType& operator&=(TThisType r)
+    TThisType& operator&=(const TThisType& r)
         {
             return IntersectWith(r);
         }
-    bool IntersectingWith(TThisType r) const
+    bool IntersectingWith(const TThisType& r) const
         {
             return IntersectionWith(r).NotEmpty();
         }
 
     // combine ranges
-    TThisType& CombineWith(TThisType r)
+    TThisType& CombineWith(const TThisType& r)
         {
             if ( !r.Empty() ) {
                 if ( !Empty() ) {
@@ -315,7 +273,7 @@ public:
             }
             return *this;
         }
-    TThisType CombinationWith(TThisType r) const
+    TThisType CombinationWith(const TThisType& r) const
         {
             if ( !r.Empty() ) {
                 if ( !Empty() ) {
@@ -328,11 +286,11 @@ public:
             }
             return *this;
         }
-    TThisType& operator+=(TThisType r)
+    TThisType& operator+=(const TThisType& r)
         {
             return CombineWith(r);
         }
-    TThisType operator+(TThisType r) const
+    TThisType operator+(const TThisType& r) const
         {
             return CombinationWith(r);
         }
@@ -359,15 +317,15 @@ public:
         : TParent(from, to+1)
         {
         }
-    CRange(TParent range)
+    CRange(const TParent& range)
         : TParent(range)
         {
         }
     
     // modifiers
-    TThisType& operator=(TParent range)
+    TThisType& operator=(const TParent& range)
         {
-	    static_cast<TParent&>(*this) = range;
+            static_cast<TParent&>(*this) = range;
             return *this;
         }
 };
@@ -375,5 +333,55 @@ public:
 //#include <util/range.inl>
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.13  2003/02/07 16:54:01  vasilche
+* Pass all structures with size > sizeof int by reference.
+* Move cvs log to the end of files.
+*
+* Revision 1.12  2003/01/23 21:24:22  vasilche
+* Fixed reference to operator=() on IRIX.
+*
+* Revision 1.11  2003/01/22 21:14:52  vasilche
+* Added missing typename.
+*
+* Revision 1.10  2003/01/22 20:05:24  vasilche
+* Simplified CRange<> implementation.
+* Removed special handling of Empty & Whole bounds.
+* Added simplier COpenRange<> template.
+*
+* Revision 1.9  2002/12/20 20:53:28  grichenk
+* Removed range normalization
+*
+* Revision 1.8  2002/12/19 20:24:06  grichenk
+* Added normalization of intervals (from <= to).
+* Removed SetFrom() and SetTo(), added Set().
+*
+* Revision 1.7  2002/06/04 19:36:33  ucko
+* More fixes for empty ranges; CSeq_loc::GetTotalRange() now works again.
+*
+* Revision 1.6  2002/05/24 14:56:14  grichenk
+* Fixed Empty() for unsigned intervals
+*
+* Revision 1.5  2002/04/22 20:02:33  grichenk
+* Fixed CombineFrom(), CombineTo(), operator+=()
+*
+* Revision 1.4  2001/09/05 14:50:28  grichenk
+* Fixed comparison of "whole" ranges
+*
+* Revision 1.3  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
+* Revision 1.2  2001/01/03 17:24:52  vasilche
+* Fixed typo.
+*
+* Revision 1.1  2001/01/03 16:39:18  vasilche
+* Added CAbstractObjectManager - stub for object manager.
+* CRange extracted to separate file.
+*
+* ===========================================================================
+*/
 
 #endif  /* RANGE__HPP */

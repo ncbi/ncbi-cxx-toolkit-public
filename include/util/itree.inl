@@ -31,20 +31,6 @@
 * File Description:
 *   Inline methods of interval search tree.
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2002/04/29 17:33:59  ucko
-* Add explicit "typename" in three places.
-*
-* Revision 1.3  2001/05/17 15:01:19  lavr
-* Typos corrected
-*
-* Revision 1.2  2001/01/29 15:18:39  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.1  2001/01/11 15:00:38  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
 * ===========================================================================
 */
 
@@ -63,7 +49,7 @@ CIntervalTreeTraits::GetMaxCoordinate(void)
 }
 
 inline
-bool CIntervalTreeTraits::IsNormal(interval_type interval)
+bool CIntervalTreeTraits::IsNormal(const interval_type& interval)
 {
     return interval.GetFrom() >= 0 &&
         interval.GetFrom() <= interval.GetTo() &&
@@ -72,7 +58,14 @@ bool CIntervalTreeTraits::IsNormal(interval_type interval)
 
 template<typename Traits>
 inline
-CIntervalTreeIterator<Traits>::CIntervalTreeIterator(void)
+CIntervalTreeIterator<Traits>::CIntervalTreeIterator(coordinate_type search_x = 0,
+                                                     coordinate_type searchLimit = 0,
+                                                     TMapValueP currentMapValue = 0,
+                                                     TTreeNodeP nextNode = 0)
+    : m_SearchX(search_x),
+      m_SearchLimit(searchLimit),
+      m_CurrentMapValue(currentMapValue),
+      m_NextNode(nextNode)
 {
 }
 
@@ -229,7 +222,7 @@ void SIntervalTreeNodeIntervals<Traits>::Delete(TNodeMap& m,
 
 template<class Traits>
 inline
-void SIntervalTreeNodeIntervals<Traits>::Insert(interval_type interval,
+void SIntervalTreeNodeIntervals<Traits>::Insert(const interval_type& interval,
                                                 TTreeMapI value)
 {
     // insert interval
@@ -239,7 +232,7 @@ void SIntervalTreeNodeIntervals<Traits>::Insert(interval_type interval,
 
 template<class Traits>
 inline
-bool SIntervalTreeNodeIntervals<Traits>::Delete(interval_type interval,
+bool SIntervalTreeNodeIntervals<Traits>::Delete(const interval_type& interval,
                                                 TTreeMapI value)
 {
     // erase interval
@@ -382,9 +375,7 @@ inline
 CIntervalTree::const_iterator
 CIntervalTree::End(void) const
 {
-    const_iterator it;
-    it.m_CurrentMapValue = 0;
-    return it;
+    return const_iterator();
 }
 
 inline
@@ -394,20 +385,14 @@ CIntervalTree::AllIntervals(void) const
     if ( Empty() )
         return End();
 
-    const_iterator it;
-    it.m_SearchLimit = TTraits::GetMaxCoordinate();
-    it.m_CurrentMapValue = m_ByX.GetStart();
-    it.m_NextNode = 0;
-    return it;
+    return const_iterator(0, TTraits::GetMaxCoordinate(), m_ByX.GetStart());
 }
 
 inline
 CIntervalTree::const_iterator
 CIntervalTree::IntervalsContaining(coordinate_type x) const
 {
-    const_iterator it;
-    it.m_SearchX = x;
-    it.m_NextNode = &m_Root;
+    const_iterator it(x, TTraits::GetMaxCoordinate(), 0, &m_Root);
     it.NextLevel();
     return it;
 }
@@ -416,9 +401,7 @@ inline
 CIntervalTree::iterator
 CIntervalTree::End(void)
 {
-    iterator it;
-    it.m_CurrentMapValue = 0;
-    return it;
+    return iterator();
 }
 
 inline
@@ -428,20 +411,14 @@ CIntervalTree::AllIntervals(void)
     if ( Empty() )
         return End();
 
-    iterator it;
-    it.m_SearchLimit = TTraits::GetMaxCoordinate();
-    it.m_CurrentMapValue = m_ByX.GetStart();
-    it.m_NextNode = 0;
-    return it;
+    return iterator(0, TTraits::GetMaxCoordinate(), m_ByX.GetStart());
 }
 
 inline
 CIntervalTree::iterator
 CIntervalTree::IntervalsContaining(coordinate_type x)
 {
-    iterator it;
-    it.m_SearchX = x;
-    it.m_NextNode = &m_Root;
+    iterator it(x, TTraits::GetMaxCoordinate(), 0, &m_Root);
     it.NextLevel();
     return it;
 }
@@ -513,5 +490,28 @@ void CIntervalTree::Assign(iterator& dst, const iterator& src)
     dst.m_CurrentMapValue = src.m_CurrentMapValue;
     dst.m_NextNode = src.m_NextNode;
 }
+
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2003/02/07 16:54:01  vasilche
+* Pass all structures with size > sizeof int by reference.
+* Move cvs log to the end of files.
+*
+* Revision 1.4  2002/04/29 17:33:59  ucko
+* Add explicit "typename" in three places.
+*
+* Revision 1.3  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
+* Revision 1.2  2001/01/29 15:18:39  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
+* Revision 1.1  2001/01/11 15:00:38  vasilche
+* Added CIntervalTree for seraching on set of intervals.
+*
+* ===========================================================================
+*/
 
 #endif /* def ITREE__HPP  &&  ndef ITREE__INL */

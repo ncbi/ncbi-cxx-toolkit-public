@@ -28,24 +28,6 @@
 * File Description:
 *   Implementation of interval search tree.
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2001/05/30 15:59:28  vakatov
-* CIntervalTree::AllocNode[Intervals]() -- explicit cast of "0" to
-* make the ICC compiler understand what's going on
-*
-* Revision 1.4  2001/01/29 15:18:46  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.3  2001/01/11 15:16:28  vasilche
-* On MSVC second argument of allocator::allocate() is not optional.
-*
-* Revision 1.2  2001/01/11 15:08:20  vasilche
-* Removed missing header.
-*
-* Revision 1.1  2001/01/11 15:00:44  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
 * ===========================================================================
 */
 
@@ -71,7 +53,7 @@ CIntervalTree::coordinate_type CIntervalTree::GetNextRootKey(void) const
     return nextKey;
 }
 
-void CIntervalTree::DoInsert(interval_type interval, TTreeMapI value)
+void CIntervalTree::DoInsert(const interval_type& interval, TTreeMapI value)
 {
     _ASSERT(TTraits::IsNormal(interval));
 
@@ -134,7 +116,7 @@ void CIntervalTree::DoInsert(interval_type interval, TTreeMapI value)
     }
 }
 
-bool CIntervalTree::DoDelete(TTreeNode* node, interval_type interval,
+bool CIntervalTree::DoDelete(TTreeNode* node, const interval_type& interval,
                              TTreeMapI value)
 {
     _ASSERT(node);
@@ -172,7 +154,7 @@ void CIntervalTree::Destroy(void)
     m_ByX.clear();
 }
 
-CIntervalTree::iterator CIntervalTree::Insert(interval_type interval,
+CIntervalTree::iterator CIntervalTree::Insert(const interval_type& interval,
                                               const mapped_type& value)
 {
     TTreeMapI iter = m_ByX.insert(TTreeMapValue(interval.GetFrom(),
@@ -180,22 +162,16 @@ CIntervalTree::iterator CIntervalTree::Insert(interval_type interval,
                                                 value));
     DoInsert(interval, iter);
 
-    iterator it;
-    it.m_SearchLimit = TTraits::GetMaxCoordinate();
-    it.m_CurrentMapValue = &TTreeMap::get(iter);
-    it.m_NextNode = 0;
-    return it;
+    return iterator(0, TTraits::GetMaxCoordinate(), &TTreeMap::get(iter));
 }
 
 CIntervalTree::const_iterator
-CIntervalTree::IntervalsOverlapping(interval_type interval) const
+CIntervalTree::IntervalsOverlapping(const interval_type& interval) const
 {
     coordinate_type x = interval.GetFrom();
     coordinate_type y = interval.GetTo();
 
-    const_iterator it;
-    it.m_SearchX = x;
-    it.m_NextNode = &m_Root;
+    const_iterator it(x, TTraits::GetMaxCoordinate(), 0, &m_Root);
 
     TTreeMapCI iter =
         m_ByX.lower_bound(TTreeMapValue(x + 1, 0, mapped_type()));
@@ -210,14 +186,12 @@ CIntervalTree::IntervalsOverlapping(interval_type interval) const
 }
 
 CIntervalTree::iterator
-CIntervalTree::IntervalsOverlapping(interval_type interval)
+CIntervalTree::IntervalsOverlapping(const interval_type& interval)
 {
     coordinate_type x = interval.GetFrom();
     coordinate_type y = interval.GetTo();
 
-    iterator it;
-    it.m_SearchX = x;
-    it.m_NextNode = &m_Root;
+    iterator it(x, TTraits::GetMaxCoordinate(), 0, &m_Root);
 
     TTreeMapI iter =
         m_ByX.lower_bound(TTreeMapValue(x + 1, 0, mapped_type()));
@@ -301,5 +275,32 @@ void CIntervalTree::Stat(const TTreeNode* node, SStat& stat) const
     Stat(node->m_Right, stat);
     Stat(node->m_Left, stat);
 }
+
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.6  2003/02/07 16:54:02  vasilche
+* Pass all structures with size > sizeof int by reference.
+* Move cvs log to the end of files.
+*
+* Revision 1.5  2001/05/30 15:59:28  vakatov
+* CIntervalTree::AllocNode[Intervals]() -- explicit cast of "0" to
+* make the ICC compiler understand what's going on
+*
+* Revision 1.4  2001/01/29 15:18:46  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
+* Revision 1.3  2001/01/11 15:16:28  vasilche
+* On MSVC second argument of allocator::allocate() is not optional.
+*
+* Revision 1.2  2001/01/11 15:08:20  vasilche
+* Removed missing header.
+*
+* Revision 1.1  2001/01/11 15:00:44  vasilche
+* Added CIntervalTree for seraching on set of intervals.
+*
+* ===========================================================================
+*/
 
 END_NCBI_SCOPE

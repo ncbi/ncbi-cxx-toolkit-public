@@ -31,67 +31,6 @@
 * File Description:
 *   Generic map with range as key
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2003/01/22 20:05:25  vasilche
-* Simplified CRange<> implementation.
-* Removed special handling of Empty & Whole bounds.
-* Added simplier COpenRange<> template.
-*
-* Revision 1.17  2002/05/06 20:38:56  grichenk
-* Fixed unsigned values handling
-*
-* Revision 1.16  2002/02/13 22:39:15  ucko
-* Support AIX.
-*
-* Revision 1.15  2001/09/18 16:22:21  grichenk
-* Fixed problem with the default constructor for CRangeMapIterator
-* (Valid() returned unpredictable value)
-*
-* Revision 1.14  2001/09/17 18:26:32  grichenk
-* Fixed processing of "Whole" ranges in the range map iterator.
-*
-* Revision 1.13  2001/06/28 12:44:56  grichenk
-* Added some comments
-*
-* Revision 1.12  2001/01/29 15:18:39  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.11  2001/01/16 21:37:22  vasilche
-* Fixed warning.
-*
-* Revision 1.10  2001/01/16 20:52:24  vasilche
-* Simplified some CRangeMap code.
-*
-* Revision 1.9  2001/01/11 15:00:39  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
-* Revision 1.8  2001/01/05 20:08:53  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.7  2001/01/05 16:29:02  vasilche
-* Fixed incompatibility with MIPS C++ compiler.
-*
-* Revision 1.6  2001/01/05 13:59:04  vasilche
-* Reduced CRangeMap* templates size.
-* Added CRangeMultimap template.
-*
-* Revision 1.5  2001/01/03 21:29:41  vasilche
-* Fixed wrong typedef.
-*
-* Revision 1.4  2001/01/03 18:58:39  vasilche
-* Some typedefs are missing on MSVC.
-*
-* Revision 1.3  2001/01/03 16:39:18  vasilche
-* Added CAbstractObjectManager - stub for object manager.
-* CRange extracted to separate file.
-*
-* Revision 1.2  2000/12/26 17:27:42  vasilche
-* Implemented CRangeMap<> template for sorting Seq-loc objects.
-*
-* Revision 1.1  2000/12/21 21:52:41  vasilche
-* Added CRangeMap<> template for sorting integral ranges (Seq-loc).
-*
 * ===========================================================================
 */
 
@@ -125,7 +64,7 @@ public:
     //             4...7             7
     // 2^n...(2^(n+1)-1)   (2^(n+1)-1)
     // minimum is     32    ->      63
-    static position_type get_max_length(range_type key)
+    static position_type get_max_length(const range_type& key)
         {
             position_type len = position_type(key.GetLength() | 32);
             len |= (len >> 1);
@@ -365,7 +304,7 @@ private:
             }
         }
     // Set range, find the first element possibly intersecting the range
-    void SetBegin(range_type range, TSelectMapRef selectMap)
+    void SetBegin(const range_type& range, TSelectMapRef selectMap)
         {
             m_Range = range;
             TSelectIter selectIter = m_SelectIter = selectMap.begin();
@@ -378,7 +317,7 @@ private:
             }
         }
     // Find an entry specified by the key in the 2-level map
-    void Find(range_type key, TSelectMapRef selectMap);
+    void Find(const range_type& key, TSelectMapRef selectMap);
 
 public:
     // move
@@ -403,7 +342,7 @@ private:
 };
 
 template<class Traits>
-void CRangeMapIterator<Traits>::Find(range_type key, TSelectMapRef selectMap)
+void CRangeMapIterator<Traits>::Find(const range_type& key, TSelectMapRef selectMap)
 {
     TSelectIter selectIterEnd = selectMap.end();
     if ( !key.Empty() ) {
@@ -495,7 +434,7 @@ public:
             iter.SetBegin(m_SelectMap);
             return iter;
         }
-    const_iterator begin(range_type range) const
+    const_iterator begin(const range_type& range) const
         {
             const_iterator iter;
             iter.SetBegin(range, m_SelectMap);
@@ -514,7 +453,7 @@ public:
             iter.SetBegin(m_SelectMap);
             return iter;
         }
-    iterator begin(range_type range)
+    iterator begin(const range_type& range)
         {
             iterator iter;
             iter.SetBegin(range, m_SelectMap);
@@ -522,13 +461,13 @@ public:
         }
 
     // element search
-    const_iterator find(key_type key) const
+    const_iterator find(const key_type& key) const
         {
             const_iterator iter;
             iter.Find(key, m_SelectMap);
             return iter;
         }
-    iterator find(key_type key)
+    iterator find(const key_type& key)
         {
             iterator iter;
             iter.Find(key, m_SelectMap);
@@ -549,7 +488,7 @@ public:
             if ( level.empty() ) // end of level
                 m_SelectMap.erase(iter.GetSelectIter()); // remove level
         }
-    size_type erase(key_type key)
+    size_type erase(const key_type& key)
         {
             size_type count = 0;
             iterator iter = find(key);
@@ -632,7 +571,7 @@ public:
         }
 
     // element access
-    mapped_type& operator[](key_type key)
+    mapped_type& operator[](const key_type& key)
         {
             return insert(value_type(key, mapped_type())).first->second;
         }
@@ -692,5 +631,74 @@ public:
 //#include <util/rangemap.inl>
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.19  2003/02/07 16:54:01  vasilche
+* Pass all structures with size > sizeof int by reference.
+* Move cvs log to the end of files.
+*
+* Revision 1.18  2003/01/22 20:05:25  vasilche
+* Simplified CRange<> implementation.
+* Removed special handling of Empty & Whole bounds.
+* Added simplier COpenRange<> template.
+*
+* Revision 1.17  2002/05/06 20:38:56  grichenk
+* Fixed unsigned values handling
+*
+* Revision 1.16  2002/02/13 22:39:15  ucko
+* Support AIX.
+*
+* Revision 1.15  2001/09/18 16:22:21  grichenk
+* Fixed problem with the default constructor for CRangeMapIterator
+* (Valid() returned unpredictable value)
+*
+* Revision 1.14  2001/09/17 18:26:32  grichenk
+* Fixed processing of "Whole" ranges in the range map iterator.
+*
+* Revision 1.13  2001/06/28 12:44:56  grichenk
+* Added some comments
+*
+* Revision 1.12  2001/01/29 15:18:39  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
+* Revision 1.11  2001/01/16 21:37:22  vasilche
+* Fixed warning.
+*
+* Revision 1.10  2001/01/16 20:52:24  vasilche
+* Simplified some CRangeMap code.
+*
+* Revision 1.9  2001/01/11 15:00:39  vasilche
+* Added CIntervalTree for seraching on set of intervals.
+*
+* Revision 1.8  2001/01/05 20:08:53  vasilche
+* Added util directory for various algorithms and utility classes.
+*
+* Revision 1.7  2001/01/05 16:29:02  vasilche
+* Fixed incompatibility with MIPS C++ compiler.
+*
+* Revision 1.6  2001/01/05 13:59:04  vasilche
+* Reduced CRangeMap* templates size.
+* Added CRangeMultimap template.
+*
+* Revision 1.5  2001/01/03 21:29:41  vasilche
+* Fixed wrong typedef.
+*
+* Revision 1.4  2001/01/03 18:58:39  vasilche
+* Some typedefs are missing on MSVC.
+*
+* Revision 1.3  2001/01/03 16:39:18  vasilche
+* Added CAbstractObjectManager - stub for object manager.
+* CRange extracted to separate file.
+*
+* Revision 1.2  2000/12/26 17:27:42  vasilche
+* Implemented CRangeMap<> template for sorting Seq-loc objects.
+*
+* Revision 1.1  2000/12/21 21:52:41  vasilche
+* Added CRangeMap<> template for sorting integral ranges (Seq-loc).
+*
+* ===========================================================================
+*/
 
 #endif  /* RANGEMAP__HPP */

@@ -31,20 +31,6 @@
 * File Description:
 *   Implementation of interval search tree based on McCreight's algorithm.
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.4  2002/12/19 14:51:00  dicuccio
-* Added export specifier for Win32 DLL builds.
-*
-* Revision 1.3  2001/05/17 15:01:19  lavr
-* Typos corrected
-*
-* Revision 1.2  2001/01/29 15:18:38  vasilche
-* Cleaned CRangeMap and CIntervalTree classes.
-*
-* Revision 1.1  2001/01/11 15:00:37  vasilche
-* Added CIntervalTree for seraching on set of intervals.
-*
 * ===========================================================================
 */
 
@@ -124,7 +110,7 @@ public:
 
     static coordinate_type GetMax(void);
     static coordinate_type GetMaxCoordinate(void);
-    static bool IsNormal(interval_type interval);
+    static bool IsNormal(const interval_type& interval);
 };
 
 // parameter class for CIntervalTree
@@ -198,8 +184,8 @@ struct SIntervalTreeNodeIntervals
 
     bool Empty(void) const;
     
-    void Insert(interval_type interval, TTreeMapI value);
-    bool Delete(interval_type interval, TTreeMapI value);
+    void Insert(const interval_type& interval, TTreeMapI value);
+    bool Delete(const interval_type& interval, TTreeMapI value);
 
     static void Delete(TNodeMap& m, const TNodeMapValue& v);
     
@@ -228,7 +214,10 @@ public:
     typedef typename TTraits::TMap TMap;
     typedef typename TTraits::TNCIterator TNCIterator;
 
-    CIntervalTreeIterator(void);
+    CIntervalTreeIterator(coordinate_type search_x = 0,
+                          coordinate_type searchLimit = 0,
+                          TMapValueP currentMapValue = 0,
+                          TTreeNodeP nextNode = 0);
     CIntervalTreeIterator(const TNCIterator& iter);
 
     bool Valid(void) const;
@@ -321,31 +310,31 @@ public:
     void Clear(void);
 
     // insert
-    iterator Insert(interval_type interval, const mapped_type& value);
+    iterator Insert(const interval_type& interval, const mapped_type& value);
 
     // set value in tree independently of old value in slot
     // return true if element was added to tree
-    bool Set(interval_type interval, const mapped_type& value);
+    bool Set(const interval_type& interval, const mapped_type& value);
     // remove value from tree independently of old value in slot
     // return true if id element was removed from tree
-    bool Reset(interval_type interval);
+    bool Reset(const interval_type& interval);
 
     // add new value to tree, throw runtime_error if this slot is not empty
-    void Add(interval_type interval, const mapped_type& value);
+    void Add(const interval_type& interval, const mapped_type& value);
     // replace old value in tree, throw runtime_error if this slot is empty
-    void Replace(interval_type interval, const mapped_type& value);
+    void Replace(const interval_type& interval, const mapped_type& value);
     // delete existing value from tree, throw runtime_error if slot is empty
-    void Delete(interval_type interval);
+    void Delete(const interval_type& interval);
 
     // versions of methods without throwing runtime_error
     // add new value to tree, return false if this slot is not empty
-    bool Add(interval_type interval, const mapped_type& value,
+    bool Add(const interval_type& interval, const mapped_type& value,
              const nothrow_t&);
     // replace old value in tree, return false if this slot is empty
-    bool Replace(interval_type interval, const mapped_type& value,
+    bool Replace(const interval_type& interval, const mapped_type& value,
                  const nothrow_t&);
     // delete existing value from tree, return false if slot is empty
-    bool Delete(interval_type interval,
+    bool Delete(const interval_type& interval,
                 const nothrow_t&);
 
     // end
@@ -363,8 +352,8 @@ public:
     const_iterator IntervalsContaining(coordinate_type point) const;
     iterator IntervalsContaining(coordinate_type point);
     // list intervals overlapping with specified interval
-    const_iterator IntervalsOverlapping(interval_type interval) const;
-    iterator IntervalsOverlapping(interval_type interval);
+    const_iterator IntervalsOverlapping(const interval_type& interval) const;
+    iterator IntervalsOverlapping(const interval_type& interval);
 
     static void Assign(const_iterator& dst, const iterator& src);
     static void Assign(iterator& dst, const iterator& src);
@@ -380,8 +369,8 @@ private:
     };
     void Stat(const TTreeNode* node, SStat& stat) const;
 
-    void DoInsert(interval_type interval, TTreeMapI value);
-    bool DoDelete(TTreeNode* node, interval_type interval, TTreeMapI value);
+    void DoInsert(const interval_type& interval, TTreeMapI value);
+    bool DoDelete(TTreeNode* node, const interval_type& interval, TTreeMapI value);
 
     // root managing
     coordinate_type GetMaxRootCoordinate(void) const;
@@ -423,5 +412,27 @@ private:
 #include <util/itree.inl>
 
 END_NCBI_SCOPE
+
+/*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.5  2003/02/07 16:54:01  vasilche
+* Pass all structures with size > sizeof int by reference.
+* Move cvs log to the end of files.
+*
+* Revision 1.4  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
+* Revision 1.3  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
+* Revision 1.2  2001/01/29 15:18:38  vasilche
+* Cleaned CRangeMap and CIntervalTree classes.
+*
+* Revision 1.1  2001/01/11 15:00:37  vasilche
+* Added CIntervalTree for seraching on set of intervals.
+*
+* ===========================================================================
+*/
 
 #endif  /* ITREE__HPP */
