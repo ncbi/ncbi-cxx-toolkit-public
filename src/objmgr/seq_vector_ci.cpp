@@ -559,10 +559,13 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         break;
     }
     case CSeqMap::eSeqGap:
-        // x_GetCoding(m_Coding, CSeq_data::e_not_set);
-        fill(m_Cache, m_Cache + count, CSeqVector::x_GetGapChar(m_Coding));
         if (m_Coding == CSeq_data::e_Ncbi2na  &&  bool(m_Randomizer)) {
+            fill(m_Cache, m_Cache + count,
+                CSeqVector::x_GetGapChar(CSeq_data::e_Ncbi4na));
             m_Randomizer->RandomizeData(m_Cache, count, start);
+        }
+        else {
+            fill(m_Cache, m_Cache + count, CSeqVector::x_GetGapChar(m_Coding));
         }
         break;
     default:
@@ -800,6 +803,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/06/08 13:33:49  grichenk
+* Fixed randomization of gaps in ncbi2na coding
+*
 * Revision 1.34  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *
