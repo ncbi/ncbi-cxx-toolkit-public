@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/02/28 20:53:32  grichenk
+* Implemented attaching segmented sequence data. Fixed minor bugs.
+*
 * Revision 1.12  2002/02/25 21:05:29  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -81,6 +84,8 @@
 #include "data_source.hpp"
 #include "tse_info.hpp"
 #include <objects/objmgr1/object_manager.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -283,8 +288,11 @@ bool CScope::x_AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
                              TSeqPosition start, TSeqLength length)
 {
     CMutexGuard guard(sm_Scope_Mutex);
+    CRef<CDelta_seq> dseq = new CDelta_seq;
+    dseq->SetLiteral().SetSeq_data(seq);
+    dseq->SetLiteral().SetLength(length);
     iterate (set<CDataSource*>, it, m_setDataSrc) {
-        if ( (*it)->AttachSeqData(bioseq, seq, start, length) ) {
+        if ( (*it)->AttachSeqData(bioseq, *dseq, start, length) ) {
             return true;
         }
     }

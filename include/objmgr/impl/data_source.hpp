@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/02/28 20:53:32  grichenk
+* Implemented attaching segmented sequence data. Fixed minor bugs.
+*
 * Revision 1.9  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -81,6 +84,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CDelta_seq;
+
+
 class CDataSource : public CObject
 {
 public:
@@ -105,7 +111,14 @@ public:
     /// Add seq-data to a Bioseq.
     /// Return FALSE and do nothing if "bioseq" is not a node in an
     /// existing TSE tree of this data-source, or if "bioseq" is not a Bioseq.
-    bool AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
+    /// If "start" is 0, "length" is equal to the sequence length (from
+    /// the bioseq's seq-inst), and the segment is of type "literal", the data
+    /// is added as a regular seq-data. Otherwise the bioseq is treated as a
+    /// segmented sequence and the segment is added as a delta-ext segment.
+    /// "seq_seg" must be allocated on the heap, since it will be referenced
+    /// by the bioseq (except the case of a non-segmented bioseq, when only
+    /// seq-data part of the seq_seg will be locked).
+    bool AttachSeqData(const CSeq_entry& bioseq, CDelta_seq& seq_seg,
                        TSeqPosition start, TSeqLength length);
 
     /// Add annotations to a Seq-entry.

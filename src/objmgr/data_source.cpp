@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/02/28 20:53:31  grichenk
+* Implemented attaching segmented sequence data. Fixed minor bugs.
+*
 * Revision 1.15  2002/02/25 21:05:29  grichenk
 * Removed seq-data references caching. Increased MT-safety. Fixed typos.
 *
@@ -496,12 +499,16 @@ bool CDataSource::AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 
 
 bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
-                                CSeq_data& seq,
+                                CDelta_seq& seq_seg,
                                 TSeqPosition start,
                                 TSeqLength length)
 {
-    //### Incomplete -- need to implement adding segmented data:
-    //### find the position to insert data to, create delta-ext.
+/*
+    The function should be used mostly by data loaders. If a segment of a
+    bioseq is a reference to a whole sequence, the positioning mechanism may
+    not work correctly, since the length of such reference is unknown. In most
+    cases "whole" reference should be the only segment of a delta-ext.
+*/
     // Get non-const reference to the entry
     CMutexGuard guard(s_DataSource_Mutex);
     CSeq_entry* found = x_FindEntry(bioseq);
@@ -509,7 +516,106 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
         return false;
     }
     CSeq_entry& entry = *found;
-    entry.SetSeq().SetInst().SetSeq_data(seq);
+    _ASSERT( entry.IsSeq() );
+    CSeq_inst& inst = entry.SetSeq().SetInst();
+    if (start == 0  &&
+        inst.IsSetLength()  &&
+        inst.GetLength() == length  &&
+        seq_seg.IsLiteral()  &&
+        seq_seg.GetLiteral().IsSetSeq_data()) {
+        // Non-segmented sequence, non-reference segment -- just add seq-data
+        entry.SetSeq().SetInst().SetSeq_data(
+            seq_seg.SetLiteral().SetSeq_data());
+        return true;
+    }
+    // Possibly segmented sequence. Use delta-ext.
+    _ASSERT( !inst.IsSetSeq_data() );
+    CDelta_ext::Tdata& delta = inst.SetExt().SetDelta().Set();
+    TSeqPosition ex_lower = 0; // the last of the existing points before start
+    TSeqPosition ex_upper = 0; // the first of the existing points after start
+    TSeqPosition ex_cur = 0; // current position while processing the sequence
+    CDelta_ext::Tdata::iterator gap = delta.end();
+    non_const_iterate(CDelta_ext::Tdata, dit, delta) {
+        ex_lower = ex_cur;
+        if ( (*dit)->IsLiteral() ) {
+            if ( (*dit)->GetLiteral().IsSetSeq_data() ) {
+                ex_cur += (*dit)->GetLiteral().GetLength();
+                if (ex_cur <= start)
+                    continue;
+                // ex_cur > start
+                // This is not good - we could not find the correct
+                // match for the new segment start. The start should be
+                // in a gap, not in a real literal.
+                throw runtime_error(
+                    "CDataSource::AttachSeqData(): segment position conflict");
+            }
+            else {
+                // No data exist - treat it like a gap
+                if ((*dit)->GetLiteral().GetLength() > 0) {
+                    // Known length -- check if the starting point
+                    // is whithin this gap.
+                    ex_cur += (*dit)->GetLiteral().GetLength();
+                    if (ex_cur < start)
+                        continue;
+                    // The new segment must be whithin this gap.
+                    ex_upper = ex_cur;
+                    gap = dit;
+                    break;
+                }
+                // Gap of 0 or unknown length
+                if (ex_cur == start) {
+                    ex_upper = ex_cur;
+                    gap = dit;
+                    break;
+                }
+            }
+        }
+        else if ( (*dit)->IsLoc() ) {
+            CSeqMap dummyseqmap; // Just to calculate the seq-loc length
+            x_LocToSeqMap((*dit)->GetLoc(), ex_cur, dummyseqmap);
+            if (ex_cur <= start) {
+                continue;
+            }
+            // ex_cur > start
+            throw runtime_error(
+                "CDataSource::AttachSeqData(): segment position conflict");
+        }
+        else
+            throw runtime_error("CDataSource::AttachSeqData(): Invalid delta-seq type");
+    }
+    if ( gap != delta.end() ) {
+        // Found the correct gap
+        //### Insert the new segment before, after, or into the gap.
+        if ( ex_upper > start ) {
+            // Insert the new segment before the gap
+            delta.insert(gap, CRef<CDelta_seq>(&seq_seg));
+        }
+        else if ( ex_lower < start ) {
+            // Insert the new segment after the gap
+            ++gap;
+            delta.insert(gap, CRef<CDelta_seq>(&seq_seg));
+        }
+        else {
+            // Split the gap, insert the new segment between the two gaps
+            CRef<CDelta_seq> gap_dup = new CDelta_seq;
+            SerialAssign<CDelta_seq>(*gap_dup, **gap);
+            if ((*gap)->GetLiteral().GetLength() > 0) {
+                // Adjust gap lengths
+                _ASSERT((*gap)->GetLiteral().GetLength() >= length);
+                gap_dup->SetLiteral().SetLength(start - ex_lower);
+                (*gap)->SetLiteral().SetLength(ex_upper - start - length);
+            }
+            // Insert new_seg before gap, and gap_dup before new_seg
+            delta.insert(delta.insert(gap, CRef<CDelta_seq>(&seq_seg)), gap_dup);
+        }
+    }
+    else {
+        // No gap found -- The sequence must be empty
+        _ASSERT(delta.size() == 0);
+        delta.push_back(CRef<CDelta_seq>(&seq_seg));
+    }
+    // Replace seq-map for the updated bioseq if it was already created
+    x_CreateSeqMap( entry.SetSeq() );
     return true;
 }
 
@@ -695,7 +801,8 @@ void CDataSource::x_CreateSeqMap(const CBioseq& seq)
     if ( seq.GetInst().IsSetSeq_data() ) {
         _ASSERT( !seq.GetInst().IsSetExt() );
         x_DataToSeqMap(seq.GetInst().GetSeq_data(), pos,
-            seq.GetInst().GetLength(), *seqmap);
+            (seq.GetInst().IsSetLength() ? seq.GetInst().GetLength() : 0),
+            *seqmap);
     }
     else if ( seq.GetInst().IsSetExt() ) {
         const CSeq_loc* loc;
@@ -879,7 +986,8 @@ void CDataSource::x_DataToSeqMap(const CSeq_data& data,
     CSeqMap::CSegmentInfo* seg = new CSeqMap::CSegmentInfo(
         CSeqMap::eSeqData, pos, len, false);
     //###seg->m_RefData.Reset(&data);
-    seg->m_RefPos = pos;
+    // Assume starting position on the referenced sequence is 0
+    seg->m_RefPos = 0;
     seg->m_RefLen = len;
     seqmap.Add(*seg);
     pos += len;
