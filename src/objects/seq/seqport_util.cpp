@@ -396,10 +396,10 @@ private:
     
     // Tables used to convert an index for a code type to a symbol or name
     // for the same code type
-    vector<string> m_IndexString[2][kNumCodes];
-    vector<TIndex> m_IndexComplement[kNumCodes];
-    map<string, TIndex> m_StringIndex[kNumCodes];
-    TIndex m_StartAt[kNumCodes];
+    vector<vector<string> > m_IndexString[2];
+    vector<vector<TIndex> > m_IndexComplement;
+    vector<map<string, TIndex> > m_StringIndex;
+    vector<TIndex> m_StartAt;
         
     // Helper function to initialize fast conversion tables
     CRef<CFast_table4> InitFastNcbi2naIupacna();
@@ -1684,6 +1684,12 @@ void CSeqportUtil_implementation::InitIndexCodeName()
     typedef list<CRef<CSeq_code_table> >      Ttables;
     typedef list<CRef<CSeq_code_table::C_E> > Tcodes;
     
+    m_IndexString[kName].resize(kNumCodes);
+    m_IndexString[kSymbol].resize(kNumCodes);
+    m_IndexComplement.resize(kNumCodes);
+    m_StringIndex.resize(kNumCodes);
+    m_StartAt.resize(kNumCodes);
+
     bool found[kNumCodes];
     for (unsigned int ii = 0; ii < kNumCodes; ii++) {
         found[ii] = false;
@@ -5606,6 +5612,10 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/05/15 17:57:03  ucko
+ * Make the recently introduced tables STL vectors rather than primitive
+ * arrays to work around a GCC 3.0.4 optimizer bug.
+ *
  * Revision 6.11  2002/05/14 15:15:16  clausen
  * Added IsCodeAvailable, GetCodeIndexFromTo, GetName, GetIndexComplement, GetMapToIndex
  *
