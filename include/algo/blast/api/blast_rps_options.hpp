@@ -50,8 +50,7 @@ BEGIN_SCOPE(blast)
 /// Exposes an interface to allow manipulation the options that are relevant to
 /// this type of search.
 
-class NCBI_XBLAST_EXPORT CBlastRPSOptionsHandle : 
-                                            public CBlastProteinOptionsHandle
+class NCBI_XBLAST_EXPORT CBlastRPSOptionsHandle : public CBlastOptionsHandle
 {
 public:
     
@@ -60,6 +59,10 @@ public:
     ~CBlastRPSOptionsHandle() {}
     CBlastRPSOptionsHandle(const CBlastRPSOptionsHandle& rhs);
     CBlastRPSOptionsHandle& operator=(const CBlastRPSOptionsHandle& rhs);
+
+    /******************* Lookup table options ***********************/
+    int GetWordThreshold() const { return m_Opts->GetWordThreshold(); }
+    short GetWordSize() const { return m_Opts->GetWordSize(); }
 
     /******************* Initial word options ***********************/
     int GetWindowSize() const { return m_Opts->GetWindowSize(); }
@@ -74,7 +77,9 @@ public:
     }
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
-    /****************** Effective Length options ********************/
+    /************************ Scoring options ************************/
+    int GetGapOpeningCost() const { return m_Opts->GetGapOpeningCost(); }
+    int GetGapExtensionCost() const { return m_Opts->GetGapExtensionCost(); }
 
     Int8 GetEffectiveSearchSpace() const { 
         return m_Opts->GetEffectiveSearchSpace(); 
@@ -87,8 +92,14 @@ public:
     void SetUseRealDbSize(bool u = true) { m_Opts->SetUseRealDbSize(u); }
 
 protected:
-    void SetLookupTableDefaults();
-    void SetQueryOptionDefaults();
+    virtual void SetLookupTableDefaults();
+    virtual void SetQueryOptionDefaults();
+    virtual void SetInitialWordOptionsDefaults();
+    virtual void SetGappedExtensionDefaults();
+    virtual void SetScoringOptionsDefaults();
+    virtual void SetHitSavingOptionsDefaults();
+    virtual void SetEffectiveLengthsOptionsDefaults();
+    virtual void SetSubjectSequenceOptionsDefaults(); 
 };
 
 END_SCOPE(blast)
@@ -101,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/04/23 13:55:29  papadopo
+ * derived BlastRPSOptionsHandle from BlastOptions (again)
+ *
  * Revision 1.3  2004/04/16 14:31:49  papadopo
  * make this class a derived class of CBlastProteinOptionsHandle, that corresponds to the eRPSBlast program
  *
