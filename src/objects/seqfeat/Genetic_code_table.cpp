@@ -240,8 +240,11 @@ public:
     const CTrans_table & GetTransTable (int  gc);
     const CTrans_table & GetTransTable (const CGenetic_code & gc);
 
+    // return single copy loaded genetic code table for iteration
+    const CGenetic_code_table & GetCodeTable (void);
+
 private:
-    // Genetic code table data
+    // genetic code table data
     CRef <CGenetic_code_table> m_GcTable;
 
     // typedefs
@@ -250,11 +253,8 @@ private:
     // translation tables
     TTransTablesById  m_TransTablesById;
 
-    // Initialize genetic-code table
-    void InitGcTable (void);
-
-    // Initialize translation table
-    void InitTransTables (void);
+    // local copy of genetic code table ASN.1
+    static const char * sm_GenCodeTblMemStr;
 };
 
 // single instance of implementation class is initialized before Main
@@ -273,11 +273,25 @@ const CTrans_table & CGen_code_table::GetTransTable (const CGenetic_code & gc)
     return s_cgencodeimp.GetTransTable (gc);
 }
 
+const CGenetic_code_table & CGen_code_table::GetCodeTable (void)
+{
+    return s_cgencodeimp.GetCodeTable ();
+}
+
 // constructor
 CGen_code_table_imp::CGen_code_table_imp(void)
 {
-    InitGcTable ();
+    // initialize common CTrans_table tables
     CTrans_table::x_InitFsaTable ();
+
+    // create an in memory stream on sm_GenCodeTblMemStr
+    CNcbiIstrstream is (sm_GenCodeTblMemStr);
+    auto_ptr<CObjectIStream>
+        asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));
+
+    // read single copy of genetic-code table
+    m_GcTable = new CGenetic_code_table;
+    *asn_codes_in >> *m_GcTable;
 }
 
 // destructor
@@ -291,6 +305,7 @@ CTrans_table::CTrans_table(const CGenetic_code & gc)
     const string * ncbieaa  = 0;
     const string * sncbieaa = 0;
 
+    // find amino acid and orf start strings given genetic code instance
     iterate (CGenetic_code::Tdata, gcd, gc.Get ()) {
         switch ((*gcd)->Which ()) {
             case CGenetic_code::C_E::e_Ncbieaa :
@@ -306,9 +321,11 @@ CTrans_table::CTrans_table(const CGenetic_code & gc)
 
     // throw exception if unable to find ncbieaa and sncbieaa strings
     if (ncbieaa == 0 || sncbieaa == 0) {
-        NCBI_THROW (CException, eUnknown, "Could not find ncbieaa and sncbieaa");
+        NCBI_THROW (CException, eUnknown,
+                    "Could not find ncbieaa and sncbieaa");
     }
 
+    // initialize translation table for this genetic code instance
     x_InitFsaTransl (ncbieaa, sncbieaa);
 }
 
@@ -316,6 +333,7 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
 {
     _ASSERT(id >= 0);
 
+    // look for already created translation table
     if (id < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
@@ -324,13 +342,11 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
         }
     }
 
-
     // this mutex is automatically freed when the function exits
     static CFastMutex mtx;
     CFastMutexGuard   LOCK (mtx);
 
     // test again within mutex lock to see if another thread was just adding it
-
     if (id < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
@@ -340,7 +356,6 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
     }
 
     // now look for the genetic code and initialize the translation table
-
     iterate (CGenetic_code_table::Tdata, gcl, m_GcTable->Get ()) {
         iterate (CGenetic_code::Tdata, gcd, (*gcl)->Get ()) {
             if ((*gcd)->IsId ()  &&  (*gcd)->GetId () == id) {
@@ -362,7 +377,8 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (int id)
     }
 
     // throw exception if failure
-    NCBI_THROW (CException, eUnknown, "Unable to find genetic code number " +
+    NCBI_THROW (CException, eUnknown,
+                "Unable to find genetic code number " +
                 NStr::IntToString (id));
 }
 
@@ -393,14 +409,22 @@ const CTrans_table & CGen_code_table_imp::GetTransTable (const CGenetic_code & g
     if (ncbieaa != 0  &&  sncbieaa != 0) {
       // return * new CTrans_table (gc);
 
-      NCBI_THROW (CException, eUnknown, "GetTransTable without ID not yet supported");
+      NCBI_THROW (CException, eUnknown,
+                  "GetTransTable without ID not yet supported");
     }
 
-    NCBI_THROW (CException, eUnknown, "GetTransTable does not have sufficient information");
+    NCBI_THROW (CException, eUnknown,
+                "GetTransTable does not have sufficient information");
 }
 
-// local copy of gc.prt
-static const char * kGenCodeTblMemStr = "Genetic-code-table ::= {\n" \
+const CGenetic_code_table & CGen_code_table_imp::GetCodeTable (void)
+{
+    return *m_GcTable;
+}
+
+// local copy of gc.prt genetic code table ASN.1
+const char * CGen_code_table_imp::sm_GenCodeTblMemStr =
+"Genetic-code-table ::= {\n" \
 "{ name \"Standard\" , name \"SGC0\" , id 1 ,\n" \
 "ncbieaa  \"FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n" \
 "sncbieaa \"---M---------------M---------------M----------------------------\" } ,\n" \
@@ -456,19 +480,6 @@ static const char * kGenCodeTblMemStr = "Genetic-code-table ::= {\n" \
 "ncbieaa  \"FF*LSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n" \
 "sncbieaa \"--------------------------------M--M---------------M------------\" } };\n";
 
-// initialize genetic code specific translation tables
-void CGen_code_table_imp::InitGcTable (void)
-{
-    // Create an in memory stream on kGenCodeTblMemStr
-    CNcbiIstrstream is (kGenCodeTblMemStr);
-    auto_ptr<CObjectIStream>
-        asn_codes_in(CObjectIStream::Open(eSerial_AsnText, is));
-
-    // Create m_GcTable and initialize from asn_codes_in
-    m_GcTable = new CGenetic_code_table;
-    *asn_codes_in >> *m_GcTable;
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -478,6 +489,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2002/09/10 15:19:55  kans
+* added GetCodeTable method, moved sm_GenCodeTblMemStr into implementation class
+*
 * Revision 6.2  2002/09/09 21:12:05  ucko
 * Add braces around e_Id case to avoid scoping error.
 * Add default cases to make GCC happy.
