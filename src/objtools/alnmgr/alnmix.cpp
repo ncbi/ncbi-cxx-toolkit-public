@@ -1894,36 +1894,44 @@ void CAlnMix::x_CreateDenseg()
     strands.resize(num, eNa_strand_minus);
 
     // ids
-    for (numrow = 0;  numrow < numrows;  numrow++) {
-        ids[numrow] = m_Rows[numrow]->m_SeqId;
+    numrow = 0;
+    ITERATE(TSeqs, row_i, m_Rows) {
+        ids[numrow++] = (*row_i)->m_SeqId;
     }
 
     int offset = 0;
-    for (numseg = 0;  numseg < numsegs;  numseg++, offset += numrows) {
+    numseg = 0;
+    ITERATE(TSegments, seg_i, m_Segments) {
         // lens
-        lens[numseg] = m_Segments[numseg]->m_Len;
+        lens[numseg] = (*seg_i)->m_Len;
 
         // starts
         ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
-                m_Segments[numseg]->m_StartIts) {
+                (*seg_i)->m_StartIts) {
             starts[offset + start_its_i->first->m_RowIndex] =
                 start_its_i->second->first;
         }
 
         // strands
-        for (numrow = 0;  numrow < numrows;  numrow++) {
-            if (m_Rows[numrow]->m_PositiveStrand) {
+        numrow = 0;
+        ITERATE(TSeqs, row_i, m_Rows) {
+            if ((*row_i)->m_PositiveStrand) {
                 strands[offset + numrow] = eNa_strand_plus;
             }
+            numrow++;
         }
+
+        // next segment
+        numseg++; offset += numrows;
     }
 
     // widths
     if (m_ContainsNA  &&  m_ContainsAA  ||  m_AddFlags & fForceTranslation) {
         CDense_seg::TWidths&  widths  = m_DS->SetWidths();
         widths.resize(numrows);
-        for (numrow = 0;  numrow < numrows;  numrow++) {
-            widths[numrow] = m_Rows[numrow]->m_Width;
+        numrow = 0;
+        ITERATE (TSeqs, row_i, m_Rows) {
+            widths[numrow++] = (*row_i)->m_Width;
         }
     }
 #if _DEBUG
@@ -2064,6 +2072,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.105  2004/09/22 14:26:35  todorov
+* changed TSegments & TSegmentsContainer from vectors to lists
+*
 * Revision 1.104  2004/09/09 23:10:41  todorov
 * Fixed the multi-framed ref sequence case
 *

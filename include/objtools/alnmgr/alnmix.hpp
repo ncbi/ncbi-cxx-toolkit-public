@@ -126,8 +126,8 @@ private:
     typedef map<CBioseq_Handle, CRef<CAlnMixSeq> >        TBioseqHandleMap;
     typedef map<CRef<CSeq_id>, CRef<CAlnMixSeq>, SSeqIds> TSeqIdMap;
     typedef vector<CRef<CAlnMixMatch> >                   TMatches;
-    typedef vector<CAlnMixSegment*>                       TSegments;
-    typedef vector<CRef<CAlnMixSegment> >                 TSegmentsContainer;
+    typedef list<CAlnMixSegment*>                         TSegments;
+    typedef list<CRef<CAlnMixSegment> >                   TSegmentsContainer;
 
     enum ESecondRowFits {
         eSecondRowFitsOk,
@@ -168,8 +168,6 @@ private:
                                         const CAlnMixSeq* aln_seq2);
     static bool x_CompareAlnMatchScores(const CRef<CAlnMixMatch>& aln_match1,
                                         const CRef<CAlnMixMatch>& aln_match2);
-    static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
-                                        const CAlnMixSegment* aln_seg2);
         
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
@@ -338,6 +336,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2004/09/22 14:26:43  todorov
+* changed TSegments & TSegmentsContainer from vectors to lists
+*
 * Revision 1.39  2004/06/23 18:31:20  todorov
 * Calculate the prevailing strand per row (using scores)
 *
