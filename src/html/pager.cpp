@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/01/11 20:10:23  golikov
+* Text modified on graybar
+*
 * Revision 1.20  1999/09/15 21:09:03  vasilche
 * Fixed bug with lost const_iterator
 *
@@ -281,8 +284,8 @@ CNCBINode* CPager::GetPageInfo(void) const
         return 0;
     int lastPage = (m_ItemCount - 1) / m_PageSize;
     return new CHTMLText(
-        NStr::IntToString(m_DisplayPage + 1) +
-        " page of " + NStr::IntToString(lastPage + 1));
+        "Page " + NStr::IntToString(m_DisplayPage + 1) +
+        " of " + NStr::IntToString(lastPage + 1));
 }
 
 CNCBINode* CPager::GetItemInfo(void) const
@@ -292,8 +295,8 @@ CNCBINode* CPager::GetItemInfo(void) const
     int firstItem = m_DisplayPage * m_PageSize + 1;
     int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
     return new CHTMLText(
-        NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
-        " items of " + NStr::IntToString(m_ItemCount));
+        "Items " + NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
+        " of " + NStr::IntToString(m_ItemCount));
 }
 
 CNCBINode* CPager::GetPagerView(const string& imgDir,
