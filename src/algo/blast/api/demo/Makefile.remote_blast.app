@@ -1,5 +1,5 @@
 APP = remote_blast
-SRC = remote_blast search_opts queue_poll align_parms
+SRC = remote_blast_demo search_opts queue_poll align_parms
 LIB = xblast xnetblastcli xnetblast seqdb scoremat xobjutil xobjread tables \
       xalnutil xalnmgr blastdb $(OBJMGR_LIBS)
 

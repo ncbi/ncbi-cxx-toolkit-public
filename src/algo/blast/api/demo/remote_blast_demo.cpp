@@ -27,7 +27,7 @@
  *
  */
 
-/// @file demo/remote_blast.cpp
+/// @file demo/remote_blast_demo.cpp
 /// Example program for remote_blast C++ interface
 
 #include "queue_poll.hpp"
@@ -230,6 +230,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2004/04/20 15:42:23  bealer
+ * - Change name of remote_blast.cpp to avoid doxygen and gdb issues.
+ *
  * Revision 1.8  2004/04/19 14:37:52  bealer
  * - Fix compiler warnings.
  *
