@@ -1,11 +1,10 @@
 # $Id$
 
-SRC_C = ncbi_buffer ncbi_priv ncbi_core ncbi_util ncbi_socket \
-      ncbi_connutil ncbi_connection ncbi_connector \
-      ncbi_socket_connector ncbi_file_connector ncbi_http_connector \
-      ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service \
-      ncbi_service_dispd ncbi_ansi_ext ncbi_service_connector \
-      ncbi_sendmail
+SRC_C = ncbi_ansi_ext ncbi_buffer ncbi_priv ncbi_core ncbi_util          \
+        ncbi_socket ncbi_connutil ncbi_connection ncbi_connector         \
+        ncbi_socket_connector ncbi_file_connector ncbi_http_connector    \
+        ncbi_memory_connector ncbi_heapmgr ncbi_server_info ncbi_service \
+        ncbi_service_dispd ncbi_service_connector ncbi_sendmail
 
 SRC   = $(SRC_C)
 UNIX_SRC = $(LOCAL_LBSM)

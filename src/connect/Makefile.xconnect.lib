@@ -7,9 +7,9 @@
 
 include $(srcdir)/Makefile.connect.lib
 
-SRC = $(SRC_C) \
-      ncbi_conn_streambuf ncbi_conn_stream ncbi_core_cxx email_diag_handler \
-      threaded_server
+SRC = $(SRC_C) ncbi_core_cxx               \
+      ncbi_conn_streambuf ncbi_conn_stream \
+      email_diag_handler threaded_server
 
 LIB    = xconnect
 
