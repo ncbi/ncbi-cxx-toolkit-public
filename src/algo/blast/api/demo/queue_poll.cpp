@@ -241,7 +241,7 @@ enum EDefaultsFlag {
 };
 
 template<class T>
-void SetAdditionalDefaults(T & obj, EDefaultsFlag flag)
+void SetAdditionalDefaults(T &, EDefaultsFlag)
 {
 }
 
@@ -580,6 +580,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/08/25 17:13:49  bealer
+ * - Fix solaris warnings.
+ *
  * Revision 1.11  2004/08/24 21:58:58  bealer
  * - Special casing for megablast vs. blastn.
  *
