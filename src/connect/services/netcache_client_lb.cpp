@@ -101,17 +101,23 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
 
 
 
-void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
-                              const string&    service_name,
-                              bool             use_fall_back_server)
+void 
+NetCache_ConfigureWithLB(
+                    CNetCacheClient* nc_client, 
+                    const string&    service_name,
+                    int              backup_mode_mask)
 {
     SERV_ITER srv_it = SERV_OpenSimple(service_name.c_str());
     STimeout& to = nc_client->SetCommunicationTimeout();
     string err_msg = "Cannot connect to netcache service (";
 
+    CNetCacheClient_LB::TServiceBackupMode failure_diag = 
+                                CNetCacheClient_LB::ENoBackup;
+
     if (srv_it == 0) {
         err_msg += "Load balancer cannot find service name ";
         err_msg += service_name;
+        failure_diag = CNetCacheClient_LB::ENameNotFound;
     } else {
         const SSERV_Info* sinfo;
         while ((sinfo = SERV_GetNextInfoEx(srv_it, 0)) != 0) {
@@ -119,6 +125,7 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
             try {
 
                 if ( !s_ConnectClient(nc_client, sinfo->host, sinfo->port, to)){
+                    failure_diag = CNetCacheClient_LB::ENoConnection;
                     continue;
                 }
                 SERV_Close(srv_it);
@@ -141,7 +148,7 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
     // LB failed to provide any alive services
     // lets try to call "emergency numbers"
 
-    if (use_fall_back_server) {
+    if (backup_mode_mask & failure_diag) {
         const unsigned short rport = 9009;
         if (s_ConnectClient_Reserve(nc_client, 
                                     "netcache", 
@@ -193,7 +200,7 @@ CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
   m_Requests(0),
   m_RWBytes(0),
   m_StickToHost(false),
-  m_ServiceBackup(true)
+  m_ServiceBackup(EFullBackup)
 {
     if (lb_service_name.empty()) {
         NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -206,9 +213,9 @@ CNetCacheClient_LB::~CNetCacheClient_LB()
 {
 }
 
-void CNetCacheClient_LB::EnableServiceBackup(bool on_off)
+void CNetCacheClient_LB::EnableServiceBackup(TServiceBackupMode backup_mode)
 {
-    m_ServiceBackup = on_off;
+    m_ServiceBackup = backup_mode;
 }
 
 string CNetCacheClient_LB::PutData(const void*   buf,
@@ -412,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/04/04 18:13:00  kuznets
+ * Detailed parametrization of service backup
+ *
  * Revision 1.13  2005/04/04 16:45:08  kuznets
  * Minor bug fix
  *

@@ -231,11 +231,15 @@ protected:
 /// BLOB to the netcache storage. When retriving you should directly connect
 /// to the service without any load balancing 
 /// (service infomation encoded in the BLOB key)
-
+///
+/// @internal
+///
 extern NCBI_XCONNECT_EXPORT
-void NetCache_ConfigureWithLB(CNetCacheClient* nc_client, 
-                              const string&    service_name,
-                              bool             use_fall_back_server = true);
+void NetCache_ConfigureWithLB(
+            CNetCacheClient* nc_client, 
+            const string&    service_name,
+            int              backup_mode_mask); 
+                                         
 
 
 /// Client API for NetCache server.
@@ -283,11 +287,23 @@ public:
 
     virtual ~CNetCacheClient_LB();
 
+    /// Specifies when client use backup servers instead of LB provided
+    /// services
+    ///
+    enum EServiceBackupMode {
+        ENoBackup     = (0 << 0), ///< Do not use backup servers
+        ENameNotFound = (1 << 0), ///< backup if LB does not find service name
+        ENoConnection = (1 << 1), ///< backup if no TCP connection
+        EFullBackup   = (ENameNotFound | ENoConnection),
+    };
+
+    typedef int TServiceBackupMode;
+
     /// Enable client to connect to predefined backup servers if service
     /// name is not available (load balancer is not available)
     /// (enabled by default)
     ///
-    void EnableServiceBackup(bool on_off = true);
+    void EnableServiceBackup(TServiceBackupMode backup_mode = EFullBackup);
 
 
     virtual 
@@ -328,11 +344,11 @@ private:
     unsigned int  m_RebalanceRequests;
     unsigned int  m_RebalanceBytes;
 
-    time_t        m_LastRebalanceTime;
-    unsigned int  m_Requests;
-    unsigned int  m_RWBytes;
-    bool          m_StickToHost;
-    bool          m_ServiceBackup;
+    time_t               m_LastRebalanceTime;
+    unsigned int         m_Requests;
+    unsigned int         m_RWBytes;
+    bool                 m_StickToHost;
+    TServiceBackupMode   m_ServiceBackup;
 };
 
 NCBI_DECLARE_INTERFACE_VERSION(CNetCacheClient,  "xnetcache", 1, 1, 0);
@@ -430,6 +446,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/04/04 18:12:36  kuznets
+ * Detailed parametrization of service backup
+ *
  * Revision 1.29  2005/04/04 16:41:51  kuznets
  * Backup service (when LB unavailable) location made optional
  *
