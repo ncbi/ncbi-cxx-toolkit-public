@@ -87,8 +87,28 @@ struct TestDBF1 : public CBDB_IdFile
     }
 };
 
+struct TestDBF1L : public CBDB_IdFile
+{
+    CBDB_FieldInt4      idata;
+    CBDB_FieldLString   str;
+    CBDB_FieldInt4      i2;
+    CBDB_FieldInt2      ishort;
+    
+    TestDBF1L()
+    {
+        BindData("idata", &idata);
+        BindData("str", &str, 256);
+        BindData("i2", &i2);
+        BindData("ishort", &ishort);
+
+        SetLegacyStringsCheck(true);        
+    }
+};
+
+
 // Utility function to check record consistency 
-void ValidateRecord(const TestDBF1& dbf1, unsigned int id)
+template<class T>
+void ValidateRecord(const T& dbf1, unsigned int id)
 {
     char buf[256];
     sprintf(buf, s_TestStrTempl, id);
@@ -349,10 +369,26 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     } // for
 
+    }}
+
+
+    {{
+    TestDBF1L  dbf11;
+    dbf11.Open(s_TestFileName, CBDB_File::eReadWrite);
+
+    for (i = 1; i < s_RecsInTable; ++i) {
+        dbf11.IdKey = i;
+        EBDB_ErrCode ret = dbf11.Fetch();
+        assert (ret == eBDB_Ok);
+
+        ValidateRecord(dbf11, i);
+
+    } // for
+
     // Dumping the database to screen
 
     CBDB_FileDumper dump;
-    dump.Dump(cout, dbf1);
+    dump.Dump(cout, dbf11);
 
     }}
 
@@ -361,6 +397,121 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
 
 }
+
+
+static void s_TEST_BDB_IdTable_Fill(void)
+{
+    cout << "======== Id table filling test 2." << endl;
+
+    CBDB_Env env;
+    env.OpenWithLocks(0);
+
+    TestDBF1L  dbf1;
+
+    dbf1.SetEnv(env);
+
+    dbf1.SetPageSize(32 * 1024);
+    dbf1.SetCacheSize(5 * (1024 * 1024));
+
+    dbf1.Open(s_TestFileName, CBDB_File::eCreate);
+    assert(dbf1.idata.IsNull());
+
+    // Fill the table
+
+    unsigned i;
+    
+    for (i = 1; i < s_RecsInTable; ++i) {
+        char buf[256];
+        sprintf(buf, s_TestStrTempl, i);
+        dbf1.IdKey = i;
+        dbf1.idata = 400+i;
+        dbf1.str = buf;
+        dbf1.i2.Set(i+3);
+        int i2 = dbf1.i2;
+        assert (i2 == (int)(i+3));
+
+        assert(!dbf1.idata.IsNull());
+
+        EBDB_ErrCode err = dbf1.Insert();
+        assert(err == eBDB_Ok);
+        assert(dbf1.idata.IsNull());
+    }
+
+    // Trying to put duplicate record
+
+    dbf1.IdKey = 1;
+    dbf1.idata = 400 + 1;
+    dbf1.str = "test";
+    EBDB_ErrCode err = dbf1.Insert();
+    assert(err == eBDB_KeyDup);
+
+    cout << "Table " << s_TestFileName 
+         << " loaded ok. Checking consistency." 
+         << endl;
+
+    // Read the table check if all records are in place
+
+    dbf1.Reopen(CBDB_File::eReadOnly);
+
+    for (i = 1; i < s_RecsInTable; ++i) {
+        dbf1.IdKey = i;
+        EBDB_ErrCode ret = dbf1.Fetch();
+        assert (ret == eBDB_Ok);
+
+        ValidateRecord(dbf1, i);
+
+    } // for
+
+    {{
+    TestDBF1  dbf11;
+    dbf11.Attach(dbf1);
+
+    for (i = 1; i < s_RecsInTable; ++i) {
+        dbf11.IdKey = i;
+        EBDB_ErrCode ret = dbf11.Fetch();
+        assert (ret == eBDB_Ok);
+
+        ValidateRecord(dbf11, i);
+
+        // Checking that attached buffer doesn't change status of the main one
+        dbf1.IdKey = 1;
+        ret = dbf1.Fetch();
+        assert (ret == eBDB_Ok);
+        ValidateRecord(dbf1, 1);
+
+        ValidateRecord(dbf11, i);
+
+    } // for
+
+    }}
+
+
+    {{
+    TestDBF1L  dbf11;
+    dbf11.Open(s_TestFileName, CBDB_File::eReadWrite);
+
+    for (i = 1; i < s_RecsInTable; ++i) {
+        dbf11.IdKey = i;
+        EBDB_ErrCode ret = dbf11.Fetch();
+        assert (ret == eBDB_Ok);
+
+        ValidateRecord(dbf11, i);
+
+    } // for
+
+    // Dumping the database to screen
+
+    CBDB_FileDumper dump;
+    dump.Dump(cout, dbf11);
+
+    }}
+
+
+    cout << "======== Id table filling test 2 ok." << endl;
+
+
+}
+
 
 
 //////////////////////////////////////////////////////////////////
@@ -1355,6 +1506,7 @@ int CBDB_Test::Run(void)
 
         s_TEST_IntCache(); 
 
+
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -1387,6 +1539,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/12/22 18:58:02  kuznets
+ * Added l-string test
+ *
  * Revision 1.31  2003/12/12 19:13:31  kuznets
  * Transaction test: minor change file opening option.
  *
