@@ -278,26 +278,97 @@ NCBI_XBLAST_EXPORT member_type Get##member(const data_structure_type var)
 #define DECLARE_MUTATOR(member_type, member, data_structure_type) \
 NCBI_XBLAST_EXPORT void Set##member(data_structure_type var, member_type arg) \
 
+
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr, BlastSeqSrc*);
 
 DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetMaxSeqLen(bssp)
+   \brief Get the length of the longest sequence in the sequence source.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetAvgSeqLen(bssp)
+   \brief Get the average length of all sequences in the sequence source.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetTotLen(bssp)
+   \brief Get the total length of all sequences in the sequence source.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetName(bssp)
+   \brief Get the database name.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetDefinition(bssp)
+   \brief Get the database definition.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDefinition, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetDate(bssp)
+   \brief Get the database timestamp.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDate, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetIsProt(bssp)
+   \brief Find if the database is protein or nucleotide.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetSequence(bssp,arg)
+   \brief Retrieve an individual sequence.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetSeqIdStr(bssp,arg)
+   \brief Retrieve sequence identifier string.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetSeqIdStr, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetSeqId(bssp,arg)
+   \brief Retrieve sequence identifier.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqId, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetSeqLen(bssp,arg)
+   \brief Retrieve sequence length.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetNextChunk(bssp,iterator)
+   \brief Get next chunk of sequence indices.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcGetError(bssp)
+   \brief Gets a saved error message, if supported.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetError, BlastSeqSrc*);
+
+/*!\fn BLASTSeqSrcRetSequence(bssp,arg)
+   \brief Deallocate individual sequence buffer if necessary.
+*/
+
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, RetSequence, BlastSeqSrc*);
 
 #ifdef __cplusplus
