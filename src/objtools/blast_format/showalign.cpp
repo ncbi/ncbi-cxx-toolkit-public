@@ -218,6 +218,7 @@ static CRef<CSeq_id> GetSeqIdByType(const list<CRef<CSeq_id> >& ids, CSeq_id::E_
 static int s_getFrame (int start, ENa_strand strand, const CSeq_id& id, CScope& sp);
 static CRef<CSeq_align> CreateDensegFromDendiag(const CSeq_align& aln);
 
+
 template<class container>
 static bool s_GetBlastScore(const container&  scoreList,  int& score, double& bits, double& evalue){
   bool hasScore = false;
@@ -526,7 +527,6 @@ static int GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids){
 //To display the seqalign represented by internal alnvec
 void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){ 
 
-  CRange<TSignedSeqPos> alnRange;
   int maxIdLen=0;
   int maxStartLen=0;
   int startLen=0;
@@ -541,8 +541,12 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   m_AV->SetEndChar(' ');
   vector<string> sequence(rowNum);
 
-  CAlnMap::TSeqPosList*  seqStarts = new CAlnMap::TSeqPosList[rowNum];
-  CAlnMap::TSeqPosList*  seqStops = new CAlnMap::TSeqPosList[rowNum];
+  CAlnMap::TSeqPosList* seqStarts = new CAlnMap::TSeqPosList[rowNum];
+  CAlnMap::TSeqPosList* seqStops = new CAlnMap::TSeqPosList[rowNum];
+  CAlnMap::TSeqPosList* insertStart = new CAlnMap::TSeqPosList[rowNum];
+  CAlnMap::TSeqPosList* insertAlnStart = new CAlnMap::TSeqPosList[rowNum];
+  CAlnMap::TSeqPosList* insertLength = new CAlnMap::TSeqPosList[rowNum];
+
   string* seqidArray=new string[rowNum];
   string middleLine;
   list<alnFeatureInfo*>* bioseqFeature= new list<alnFeatureInfo*>[rowNum];
@@ -590,9 +594,9 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     if(m_AlignOption & eShowGeneFeature){
       getFeatureInfo(bioseqFeature[row], *m_featScope, CSeqFeatData::e_Gene, row);
     }
-   
+
     //make sequence
-    m_AV->GetWholeAlnSeqString(row, sequence[row],  NULL, NULL, NULL, m_LineLen, &seqStarts[row], &seqStops[row]);
+    m_AV->GetWholeAlnSeqString(row, sequence[row],  &insertAlnStart[row], &insertStart[row], &insertLength[row], m_LineLen, &seqStarts[row], &seqStops[row]);
 
     //make id
     if(m_AlignOption & eShowBlastStyleId) {
@@ -684,7 +688,12 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 	list<string> inserts;
 	string insertPosString;  //the one with "\" to indicate insert
 	if(m_AlignOption & eMasterAnchored){
-	  fillInserts(row, curRange, j, inserts, insertPosString);
+	  list<insertInformation*> insertList;
+	  GetInserts(insertList, insertAlnStart[row], insertStart[row], insertLength[row],  j + m_LineLen);
+	  fillInserts(row, curRange, j, inserts, insertPosString, insertList);
+	  ITERATE(list<insertInformation*>, iterINsert, insertList){
+	    delete *iterINsert;
+	  }
 	}
         if(row == 0&&(m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign) && (m_AlignOption&eSequenceRetrieval && m_IsDbGi)){
           char checkboxBuf[200];
@@ -803,13 +812,16 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
   for (list<alnSeqlocInfo*>::const_iterator iter = alnLocList.begin();  iter != alnLocList.end(); iter++){
     delete (*iter);
   }
-  
+
   delete [] bioseqFeature;
   delete [] seqidArray;
   delete [] rowRng;
   delete [] seqStarts;
   delete [] seqStops;
   delete [] frame;
+  delete [] insertStart;
+  delete [] insertAlnStart;
+  delete [] insertLength;
 }
 
 //To display the seqalign
@@ -963,7 +975,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	NCBI_THROW(CException, eUnknown, "Input Seq-align should be Denseg, Stdseg or Dendiag!");
       }
     }
-   
+    
     for(int i = 0; i < alnVector.size(); i ++){
       for(CTypeConstIterator<CSeq_align> alnRef = ConstBegin(*alnVector[i]); alnRef; ++alnRef){
 	CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
@@ -1369,61 +1381,73 @@ static int adjustInsert(string& curInsert, string& newInsert, int insertAlnPos, 
 }
 
 //recusively fill the insert
-void CDisplaySeqalign::doFills(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<CConstRef<CAlnMap::CAlnChunk> >& chunks, list<string>& inserts) const{
-  if(!chunks.empty()){
+void CDisplaySeqalign::doFills(int row, CAlnMap::TSignedRange& alnRange, int  alnStart, list<insertInformation*>& insertList, list<string>& inserts) const {
+  if(!insertList.empty()){
     string bar(alnRange.GetLength(), ' ');
-   
+    
     string seq;
-    list<CConstRef<CAlnMap::CAlnChunk> > leftoverChunk;
-    bool isFirstChunk = true;
+    list<insertInformation*> leftOverInsertList;
+    bool isFirstInsert = true;
     int curInsertAlnStart = 0;
     int prvsInsertAlnEnd = 0;
-
-    //go through each chunk at fills the seq if it can  be filled on the same line.  If not, go to the next line
-    for(list<CConstRef<CAlnMap::CAlnChunk> >::iterator iter = chunks.begin(); iter != chunks.end(); iter ++){
-      curInsertAlnStart = (*iter)->GetAlnRange().GetFrom();
+    
+    //go through each insert and fills the seq if it can  be filled on the same line.  If not, go to the next line
+    for(list<insertInformation*>::iterator iter = insertList.begin(); iter != insertList.end(); iter ++){
+      curInsertAlnStart = (*iter)->alnStart;
       //always fill the first insert.  Also fill if there is enough space
-      if(isFirstChunk || curInsertAlnStart - prvsInsertAlnEnd >= 1){
+      if(isFirstInsert || curInsertAlnStart - prvsInsertAlnEnd >= 1){
 	bar[curInsertAlnStart-alnStart+1] = '|';  
-	int seqStart = (*iter)->GetRange().GetFrom();
-	int seqEnd = (*iter)->GetRange().GetTo();
+	int seqStart = (*iter)->seqStart;
+	int seqEnd = seqStart + (*iter)->insertLen - 1;
 	string newInsert;
 	newInsert = m_AV->GetSeqString(newInsert, row, seqStart, seqEnd);
 	prvsInsertAlnEnd = adjustInsert(seq, newInsert, curInsertAlnStart, alnStart);
-	isFirstChunk = false;
+	isFirstInsert = false;
       } else { //if no space, save the chunk and go to next line 
 	bar[curInsertAlnStart-alnStart+1] = '|';  //indicate insert goes to the next line
 	prvsInsertAlnEnd += addBar(seq, curInsertAlnStart, alnStart);   //May need to add a bar after the current insert sequence to indicate insert goes to the next line.
-	leftoverChunk.push_back(*iter);    
+	leftOverInsertList.push_back(*iter);    
       }
     }
     //save current insert.  Note that each insert has a bar and sequence below it
     inserts.push_back(bar);
     inserts.push_back(seq);
     //here recursively fill the chunk that don't have enough space
-    doFills(row, alnRange, alnStart, leftoverChunk, inserts);
+    doFills(row, alnRange, alnStart, leftOverInsertList, inserts);
   }
+ 
 }
 
 /*fill a list of inserts for a particular row*/
-void CDisplaySeqalign::fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString) const {
-  CAlnMap::TSignedRange actualRange (alnRange.GetFrom() - 1, alnRange.GetTo()); //-1 to get the insert at the end of the previous line
-  /*get insert for this row*/
-  CRef<CAlnMap::CAlnChunkVec> chunk_vec = m_AV->GetAlnChunks(row, actualRange, CAlnMap::fInsertsOnly);
-  if(chunk_vec->size() > 0){
-    string line(alnRange.GetLength(), ' ');
-    list<CConstRef<CAlnMap::CAlnChunk> > chunks;
+void CDisplaySeqalign::fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString, list<insertInformation*>& insertList) const{
 
-    for (int i=0; i<chunk_vec->size(); i++) {
-      CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
-      chunks.push_back(chunk);
-      line[chunk->GetAlnRange().GetFrom()-alnStart+1] = '\\';
-    }
-    insertPosString = line; //this is the line with "\" right after each insert position
-    //here fills the insert sequence
-    doFills(row, alnRange, alnStart, chunks, inserts);
+  string line(alnRange.GetLength(), ' ');
+ 
+  ITERATE(list<insertInformation*>, iter, insertList){
+    int from = (*iter)->alnStart;
+    line[from - alnStart + 1] = '\\';
   }
+  insertPosString = line; //this is the line with "\" right after each insert position
+    
+  //here fills the insert sequence
+  doFills(row, alnRange, alnStart, insertList, inserts);
 }
+
+void CDisplaySeqalign::GetInserts(list<insertInformation*>& insertList, CAlnMap::TSeqPosList& insertAlnStart, CAlnMap::TSeqPosList& insertSeqStart, CAlnMap::TSeqPosList& insertLength, int lineAlnStop){
+
+  while(!insertAlnStart.empty() && insertAlnStart.front() < lineAlnStop){
+    CDisplaySeqalign::insertInformation* insert = new CDisplaySeqalign::insertInformation;
+    insert->alnStart = insertAlnStart.front() - 1; //Need to minus one as we are inserting after this position
+    insert->seqStart = insertSeqStart.front();
+    insert->insertLen = insertLength.front();
+    insertList.push_back(insert);
+    insertAlnStart.pop_front();
+    insertSeqStart.pop_front();
+    insertLength.pop_front();
+  }
+ 
+}
+
 
 //segments starts and stops used for map viewer 
 string CDisplaySeqalign::getSegs(int row) const {
