@@ -56,7 +56,7 @@ class CTSE_Info;
 //
 
 
-class CDataLoader : virtual public CDebugDumpable
+class CDataLoader : public CDebugDumpable
 {
 protected:
     CDataLoader(void);
@@ -139,6 +139,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/08/28 17:05:13  vasilche
+* Remove virtual inheritance
+*
 * Revision 1.11  2002/06/30 03:27:38  vakatov
 * Get rid of warnings, ident the code, move CVS logs to the end of file
 *

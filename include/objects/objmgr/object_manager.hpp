@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/08/28 17:05:13  vasilche
+* Remove virtual inheritance
+*
 * Revision 1.7  2002/06/04 17:18:32  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *
@@ -85,7 +88,6 @@ class CSeq_id_Mapper;
 // CObjectManager
 
 class CObjectManager : public CObject
-//class CObjectManager : virtual public CDebugDumpable
 {
 public:
     CObjectManager(void);
