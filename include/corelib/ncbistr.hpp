@@ -119,7 +119,7 @@ public:
         eCheck_Skip    ///< Skip this check
     };
 
-    /// Converrt string to int.
+    /// Convert string to int.
     ///
     /// @param str
     ///   String to be converted.
@@ -1813,6 +1813,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.45  2003/11/03 14:51:55  siyan
+ * Fixed a typo in StringToInt header
+ *
  * Revision 1.44  2003/08/19 15:17:20  rsmith
  * Add NStr::SplitInTwo() function.
  *
