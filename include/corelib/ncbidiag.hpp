@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/29 16:58:23  vakatov
+* Added LOG_POST() macro -- to print the posted message only
+*
 * Revision 1.22  2000/10/24 19:54:44  vakatov
 * Diagnostics to go to CERR by default (was -- disabled by default)
 *
@@ -120,7 +123,13 @@
 BEGIN_NCBI_SCOPE
 
 
-class CDiagBuffer;  // (fwd-declaration of internal class)
+// Auxiliary macros for a "standard" error posting
+#define ERR_POST(message) \
+    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
+
+#define LOG_POST(message) \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) << message << NCBI_NS_NCBI::Endm )
+
 
 // Severity level for the posted diagnostics
 enum EDiagSev {
@@ -131,10 +140,6 @@ enum EDiagSev {
     eDiag_Fatal,   // guarantees to exit(or abort)
     eDiag_Trace
 };
-
-// Auxiliary macros for a "standard" error posting
-#define ERR_POST(message) \
-    ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__) << message << NCBI_NS_NCBI::Endm )
 
 
 // Which parts of the diagnostic context should be posted, and which are not...
@@ -155,9 +160,15 @@ enum EDiagPostFlag {
     eDPF_All          = 0x7FFF,
     // set all flags for using with __FILE__ and __LINE__
     eDPF_Trace        = 0x1f,
+    // print the posted message only;  without severity, location, prefix, etc.
+    eDPF_Log          = 0x0,
     // ignore all other flags, use global flags
     eDPF_Default      = 0x8000
 };
+
+
+// Forward declaration of internal class
+class CDiagBuffer;
 
 
 
