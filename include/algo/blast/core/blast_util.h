@@ -113,8 +113,9 @@ Int2 BLAST_QueryInfoInit(Uint1 program_number,
  * @param frame What frame to translate into? [in]
  * @param buffer Preallocated buffer for the translated sequence [in][out]
  * @param genetic_code Genetic code to use for translation [in]
+ * @return Length of the traslated protein sequence.
 */
-Int2 LIBCALL
+Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1Ptr buffer, CharPtr genetic_code);
 
@@ -237,6 +238,31 @@ Int2 BLAST_PackDNA(Uint1Ptr buffer, Int4 length, Uint1 encoding,
  */
 Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk, 
                        BlastQueryInfoPtr query_info);
+
+/** Translate nucleotide into 6 frames. All frames are put into a 
+ * translation buffer, with sentinel NULLB bytes in between.
+ * Array of offsets into the translation buffer is also returned.
+ * For out-of-frame gapping option, a mixed frame sequence is created.
+ * @param nucl_seq The nucleotide sequence [in] 
+ * @param encoding Sequence encoding: ncbi2na or ncbi4na [in]
+ * @param nucl_length Length of the nucleotide sequence [in]
+ * @param genetic_code The genetic code to be used for translations [in]
+ * @param translation_buffer_ptr Buffer to hold all translated frames [out]
+ * @param frame_offsets_ptr Offsets into the translation buffer for each 
+ *                          frame [out]
+ * @param mixed_seq_ptr If not NULL, will hold a mixed frame sequence for 
+ *                      out-of-frame gapping [out]
+ */
+Int2 BLAST_GetAllTranslations(const Uint1Ptr nucl_seq, Uint1 encoding,
+        Int4 nucl_length, CharPtr genetic_code, 
+        Uint1Ptr PNTR translation_buffer_ptr, Int4Ptr PNTR frame_offsets_ptr,
+        Uint1Ptr PNTR mixed_seq_ptr);
+
+/** Convert translation frame into a context for the concatenated translation
+ * buffer.
+ */
+Int2 FrameToContext(Int2 frame);
+
 
 #ifdef __cplusplus
 }
