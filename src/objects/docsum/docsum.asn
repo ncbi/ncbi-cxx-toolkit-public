@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.7 2000/12/05 19:19:57 kholodov Exp $
+-- $Id: docsum.asn,v 1.8 2000/12/19 22:19:48 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.8  2000/12/19 22:19:48  sherry
+-- added subsnp frequency data and refsnp function via contig annotation
+--
 -- Revision 1.7  2000/12/05 19:19:57  kholodov
 -- Minor errors fixed
 --
@@ -53,7 +56,7 @@
 NSE DEFINITIONS ::=
 BEGIN
 
-EXPORTS NSE-BaseURLSet, NSE-SubmitterList, NSE-AssayList, NSE-ExchangeSet;
+EXPORTS NSE-BaseURLSet, NSE-SubmitterList, NSE-AssayList, NSE-PopList, NSE-ExchangeSet;
 
 
 NSE-BaseURLSet ::= SEQUENCE {
@@ -99,7 +102,7 @@ NSE-Submitter ::= SEQUENCE {
 	addr SEQUENCE OF VisibleString OPTIONAL	-- Address strings
 }
 
-NSE-AssayList ::= SEQUENCE {			-- Table of batch characteristics for all batches in dbSNP
+NSE-AssayList ::= SEQUENCE {			-- Table of batch characteristics for all SNP batches in dbSNP
 	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
 	dbSNP-build-number INTEGER,		-- build number of database for this export
 	generated NSE-Date OPTIONAL ,		-- Date set-list generated
@@ -131,7 +134,27 @@ NSE-Assay ::= SEQUENCE {
 	comment SEQUENCE OF VisibleString OPTIONAL
 }
 
+NSE-PopList ::= SEQUENCE {			-- Table of batch characteristics for all allele frequency batches in dbSNP
+	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
+	dbSNP-build-number INTEGER,		-- build number of database for this export
+	generated NSE-Date OPTIONAL ,		-- Date set-list generated
+	query VisibleString OPTIONAL ,		-- Query terms or search constraints
+	set-type INTEGER {
+       		full-dump (1),			-- Complete set of records in dbSNP
+        	from-query (2),			-- Set that satisfies query
+        	single     (3) } ,		-- A single record
+	pop-list SET OF NSE-Pop
+}
 
+NSE-Pop ::= SEQUENCE {
+	handle VisibleString,
+	batch VisibleString,				-- Submitter (local) batch id
+	batch-id INTEGER,				-- dbSNP batch_id. Use to join population allele data to subsnp data
+	method VisibleString,				-- local method id
+	method-ex SEQUENCE OF VisibleString OPTIONAL,	-- description of deviation from/addition to given method
+	citation SEQUENCE OF VisibleString OPTIONAL,
+	comment SEQUENCE OF VisibleString OPTIONAL
+}
 
 NSE-ExchangeSet ::= SEQUENCE {
 	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
@@ -250,7 +273,9 @@ NSE-ss ::= SEQUENCE {
 	assay-5 SEQUENCE OF VisibleString OPTIONAL,
 	observed VisibleString OPTIONAL,
 	assay-3 SEQUENCE OF VisibleString OPTIONAL,
-	flank-3 SEQUENCE OF VisibleString OPTIONAL
+	flank-3 SEQUENCE OF VisibleString OPTIONAL,
+	pop-info SET OF NSE-ss-popinfo OPTIONAL, 
+	allele-info SET OF NSE-ss-alleinfo OPTIONAL
 }
 
 
@@ -274,9 +299,27 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 		exact (2),			-- asn-from = asn-to write as "asn-from"
 		between (3) },			-- asn-to = asn-from+1 write as "asn-from^asn-to"		
 	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
-	physmap-int INTEGER OPTIONAL		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
+	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
+	fxn-set SET OF NSE-FxnSet		-- functional relationship of SNP (and possibly alleles) to genes at contig location
 }
 
+NSE-FxnSet ::= SEQUENCE {
+	locusid INTEGER,			-- locus-id of gene as aligned to contig			SNPContigLocusId.locus_id
+	symbol VisibleString OPTIONAL,		-- symbol (official if present in LocusLink) of gene		SNPContigLocusId.locus_symbol
+	mrna-acc VisibleString OPTIONAL,	-- mRNA accession if variation in transcript			SNPContigLocusId.mrna_acc
+	prot-acc VisibleString OPTIONAL,	-- protein accession if variation in coding region interval	SNPContigLocusId.protein_acc
+	fxn-class ENUMERATED {
+		locus-region (1),		-- variation in region of gene, but not in transcript		SNPContigLocusId.fxn_class
+		coding-synon (3),		-- no change in peptide for allele with respect to contig seq
+		coding-nonysynon (4),		-- change in peptide with respect to contig sequence
+		mrna-utr (5),			-- variation in transcript, but not in coding region interval
+		intron (6),			-- variation in intron, but not in first 2 or last 2 bases of intron
+		splice-site (7) 		-- variation in first 2 or last to bases of intron
+	} ,
+	reading-frame INTEGER OPTIONAL,		-- position of variation in reading frame of transcript		SNPContigLocusId.reading_Frame
+	allele VisibleString OPTIONAL,		-- allele, * denotes allele observed in contig sequence		SNPContigLocusId.allele
+	residue VisibleString OPTIONAL		-- translated amino acid residue for allele			SNPContigLocusId.residue
+}
 
 
 NSE-rsSeqHit ::= SEQUENCE {			-- Properties of individual mapping result from finished & draft sequences
@@ -312,6 +355,35 @@ NSE-rsLocusID ::= SEQUENCE {
 		splice		(7) 
 	} OPTIONAL
 }
+
+
+
+NSE-ss-popinfo ::= SEQUENCE {
+ 	type VisibleString, 			-- batch type (HET, ALLE, GTY)		SubPop.type
+	batch-id INTEGER,
+	pop-name VisibleString,			-- submitter population ID		SubPop.loc_pop_id
+	pop-id INTEGER,				-- dbSNP population ID			SubPop.pop_id
+	samplesize INTEGER OPTIONAL,		-- sample size				SubPop.samplesize                    
+ 	sub-het REAL OPTIONAL,			-- submitted heterozygosity		SubPop.sub_heterozygosity
+	est-het REAL OPTIONAL,			-- estimated heterogygosity		SubPop.est_heterozygosity
+ 	est-het-se-sq REAL OPTIONAL,		-- est het std. error
+	sub-het-se-sq REAL OPTIONAL		-- submitted het std. error
+}
+
+
+
+NSE-ss-alleinfo ::= SEQUENCE {
+	type VisibleString,			-- allele data for popinfo		SubPopAllele.type
+	batch-id INTEGER,
+	pop-id INTEGER,				-- dbSNP pop ID				SubPopAllele.pop_id                       
+ 	snp-allele  VisibleString OPTIONAL,	-- allele if ACTG			SubPopAllele.allele                       
+	other-allele VisibleString OPTIONAL,	-- all other cases			SubPopAllele.other
+ 	freq REAL OPTIONAL,			-- frequency as percentage		
+	count REAL OPTIONAL,			-- frequency as count
+ 	freq-min REAL OPTIONAL,			-- min frequency if binned
+	freq-max REAL OPTIONAL			-- max frequency if binned
+}
+
 
 NSE-Date ::= CHOICE {
     str VisibleString ,        			-- for those unparsed dates
