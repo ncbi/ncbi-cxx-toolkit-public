@@ -1,5 +1,5 @@
-#if defined(NCBIMTX__HPP)  &&  !defined(NCBIMTX__INL)
-#define NCBIMTX__INL
+#if defined(CORELIB___NCBIMTX__HPP)  &&  !defined(CORELIB___NCBIMTX__INL)
+#define CORELIB___NCBIMTX__INL
 
 /*  $Id$
  * ===========================================================================
@@ -476,6 +476,9 @@ void CMutexGuard::Guard(SSystemMutex& mtx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/02 15:41:05  ucko
+ * Re-sync preprocessor guards with ncbimtx.hpp.
+ *
  * Revision 1.3  2003/06/19 19:16:37  vasilche
  * Added CMutexGuard and CFastMutexGuard constructors.
  *
