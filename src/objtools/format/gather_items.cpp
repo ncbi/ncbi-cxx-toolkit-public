@@ -37,6 +37,7 @@
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
@@ -51,7 +52,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <set>
+#include <algorithm>
 
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/item_ostream.hpp>
@@ -79,6 +80,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+USING_SCOPE(sequence);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -254,8 +256,7 @@ bool s_FilterPubdesc(const CPubdesc& pubdesc, CFFContext& ctx)
 
 void CFlatGatherer::x_GatherReferences(void) const
 {
-    typedef CRef<CReferenceItem> TRef;
-    vector<TRef> references;
+    CFFContext::TReferences refs = m_Context->SetReferences();
 
     // gather references from descriptors
     for (CSeqdesc_CI it(m_Context->GetHandle(), CSeqdesc::e_Pub); it; ++it) {
@@ -264,17 +265,17 @@ void CFlatGatherer::x_GatherReferences(void) const
             continue;
         }
         
-        references.push_back(TRef(new CReferenceItem(*it, *m_Context)));
+        refs.push_back(CFFContext::TRef(new CReferenceItem(*it, *m_Context)));
     }
 
     // gather references from features
     CFeat_CI it(m_Context->GetHandle(), 0, 0, CSeqFeatData::e_Pub);
     for ( ; it; ++it) {
-        references.push_back(TRef(new CReferenceItem(it->GetData().GetPub(),
+        refs.push_back(CFFContext::TRef(new CReferenceItem(it->GetData().GetPub(),
                                         *m_Context, &it->GetLocation())));
     }
-    CReferenceItem::Rearrange(references, *m_Context);
-    ITERATE (vector<TRef>, it, references) {
+    CReferenceItem::Rearrange(refs, *m_Context);
+    ITERATE (CFFContext::TReferences, it, refs) {
         *m_ItemOS << *it;
     }
 }
@@ -534,7 +535,7 @@ void CFlatGatherer::x_HistoryComments(CFFContext& ctx) const
 
     if ( hist.IsSetReplaces()  &&
          ctx.GetMode() == CFlatFileGenerator::eMode_GBench) {
-        const CSeq_hist::TReplaces& r = hist.GetReplaced_by();
+        const CSeq_hist::TReplaces& r = hist.GetReplaces();
         if ( r.CanGetDate()  &&  !r.GetIds().empty() ) {
             x_AddComment(new CHistComment(CHistComment::eReplaces,
                 hist, ctx));
@@ -659,210 +660,371 @@ void CFlatGatherer::x_GatherSequence(void) const
 
 // source
 
-static void s_CollectBioSources
-(set< CRef<CSourceFeatureItem> >,
- CFFContext& ctx)
+void CFlatGatherer::x_CollectSourceDescriptors
+(CBioseq_Handle& bh,
+ const CRange<TSeqPos>& range,
+ CFFContext& ctx,
+ TSourceFeatSet& srcs) const
 {
-    /*
-    CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_Source);  it;  ++it) {
-        CRef<CSourceFeatureItem> bsrc(new CSourceFeatureItem(it->GetSource(), ctx));
-        srcs.insert(bsrc);
+    CRef<CSourceFeatureItem> sf;
+    CScope* scope = &ctx.GetScope();
+
+    for ( CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
+        sf.Reset(new CSourceFeatureItem(dit->GetSource(), range, ctx));
+        srcs.push_back(sf);
     }
-    */
+    
+    // if segmented collect descriptors from segments
+    if ( ctx.IsSegmented() ) {
+        const CSeqMap& seq_map = bh.GetSeqMap();
+        
+        // iterate over segments
+        CSeqMap_CI smit(seq_map.begin_resolved(scope, 1, CSeqMap::fFindRef));
+        for ( ; smit; ++smit ) {
+            CBioseq_Handle segh = scope->GetBioseqHandle(smit.GetRefSeqid());
+            if ( !segh ) {
+                continue;
+            }
+            CRange<TSeqPos> seg_range(smit.GetPosition(), smit.GetEndPosition());
+            // collect descriptors only from the segment 
+            const CBioseq& seq = segh.GetBioseq();
+            if ( seq.CanGetDescr() ) {
+                ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+                    if ( (*it)->IsSource() ) {
+                        sf.Reset(new CSourceFeatureItem((*it)->GetSource(), seg_range, ctx));
+                        srcs.push_back(sf);
+                    }
+                }
+            }
+        }
+    }
 }
+
+
+void CFlatGatherer::x_CollectSourceFeatures
+(CBioseq_Handle& bh,
+ const CRange<TSeqPos>& range,
+ CFFContext& ctx,
+ TSourceFeatSet& srcs) const
+{
+    SAnnotSelector as;
+    as.SetFeatType(CSeqFeatData::e_Biosrc);
+    as.SetOverlapIntervals();
+    as.SetCombineMethod(SAnnotSelector::eCombine_All);
+    as.SetResolveDepth(1);  // in case segmented
+    as.SetNoMapping(false);
+
+    for ( CFeat_CI fi(bh, range.GetFrom(), range.GetTo(), as); fi; ++fi ) {
+        TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
+        if ( stop >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
+            CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx));
+            srcs.push_back(sf);
+        }
+    }
+}
+
+
+void CFlatGatherer::x_CollectBioSourcesOnBioseq
+(CBioseq_Handle bh,
+ CRange<TSeqPos> range,
+ CFFContext& ctx,
+ TSourceFeatSet& srcs) const
+{
+    // collect biosources descriptors on bioseq
+    if ( !ctx.IsFormatFTable()  ||  ctx.IsModeDump() ) {
+        x_CollectSourceDescriptors(bh, range, ctx, srcs);
+    }
+
+    // collect biosources features on bioseq
+    if ( !ctx.DoContigStyle()  ||  ctx.ShowContigSources() ) {
+        x_CollectSourceFeatures(bh, range, ctx, srcs);
+    }
+}
+
+
+void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
+{
+    CFFContext& ctx = *m_Context;
+    CScope* scope = &ctx.GetScope();
+
+    x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
+                                CRange<TSeqPos>::GetWhole(),
+                                ctx,
+                                srcs);
+    
+    // if protein with no sources, get sources applicable to DNA location of CDS
+    if ( srcs.empty()  &&  ctx.IsProt() ) {
+        const CSeq_feat* cds = GetCDSForProduct(ctx.GetActiveBioseq(), scope);
+        if ( cds != 0 ) {
+            const CSeq_loc& cds_loc = cds->GetLocation();
+            x_CollectBioSourcesOnBioseq(
+                scope->GetBioseqHandle(cds_loc),
+                cds_loc.GetTotalRange(),
+                ctx,
+                srcs);
+        }
+    }
+
+    // if no source found create one (only in FTable format or Dump mode)
+    if ( !ctx.IsFormatFTable()  ||  ctx.IsModeDump() ) {
+        // !!!  
+    }
+}
+
+
+
+void CFlatGatherer::x_MergeEqualBioSources(TSourceFeatSet& srcs) const
+{
+    if ( srcs.size() < 2 ) {
+        return;
+    }
+    // !!! To Do:
+    // !!! * sort based on biosource
+    // !!! * merge equal biosources (merge locations)
+}
+
+
+void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs) const
+{
+    if ( srcs.size() < 2 ) {
+        return;
+    }
+    // !!! To Do:
+    // !!! * implement SeqLocSubtract
+}
+
+
+struct SSortByLoc
+{
+    bool operator()(const CRef<CSourceFeatureItem>& sfp1,
+                    const CRef<CSourceFeatureItem>& sfp2) 
+    {
+        // descriptor always goes first
+        if ( sfp1->WasDesc()  &&  !sfp2->WasDesc() ) {
+            return true;
+        }
+
+        
+        CSeq_loc::TRange range1 = sfp1->GetLoc().GetTotalRange();
+        CSeq_loc::TRange range2 = sfp2->GetLoc().GetTotalRange();
+        // feature with smallest left extreme is first
+        if ( range1.GetFrom() != range2.GetFrom() ) {
+            return range1.GetFrom() < range2.GetFrom();
+        }
+        
+        // shortest first (just for flatfile)
+        if ( range1.GetToOpen() != range2.GetToOpen() ) {
+            return range1.GetToOpen() < range2.GetToOpen();
+        }
+        
+        return false;
+    }
+};
 
 
 void CFlatGatherer::x_GatherSourceFeatures(void) const
 {
-    set< CRef<CSourceFeatureItem> > srcs;
+    TSourceFeatSet srcs;
+    
+    x_CollectBioSources(srcs);
+    x_MergeEqualBioSources(srcs);
+    
+    // sort by type (descriptor / feature) and location
+    sort(srcs.begin(), srcs.end(), SSortByLoc());
+    
+    // if the descriptor has a focus, subtract out all other source locations.
+    if ( srcs.front()->GetSource().IsSetIs_focus() ) {
+        x_SubtractFromFocus(srcs);
 
-    // collect biosources on bioseq
-
-    for ( CSeqdesc_CI it(m_Context->GetHandle(), CSeqdesc::e_Source);  it;  ++it) {
-        CRef<CSourceFeatureItem> bsrc(new CSourceFeatureItem(it->GetSource(), *m_Context));
-        srcs.insert(bsrc);
-        if ( !m_Context->IsSP() ) {
-            break;  // do not loop unless SwissProt
+        // if features completely subtracted descriptor intervals,
+        // suppress in release, entrez modes.
+        if ( srcs.front()->GetLoc().GetTotalRange().GetLength() == 0  &&
+             m_Context->HideEmptySource()  &&  srcs.size() > 1 ) {
+            srcs.pop_front();
         }
     }
-
-    if ( m_Context->IsSegmented() ) {
-        // collect biosource descriptors on local parts
-
-    }
-
-    // if protein with no sources, get sources applicable to DNA location of CDS
-
-    if ( !m_Context->IsFormatFTable()  ||  m_Context->IsModeDump() ) {
-        // if no source found create one
-    }
-
-    // sort by hash values
-
-    // unique sources, excise duplicates from list
-
-    // sort again, by location this time
-
-    // if the descriptor has a focus, subtract out all the other source locations.
-
-    // if features completely subtracted descriptor intervals, suppress in release, entrez modes.
-
   
-    
+    ITERATE( TSourceFeatSet, it, srcs ) {
+        *m_ItemOS << *it;
+    }
 
 }
 
 
-void CFlatGatherer::x_GatherFeatures(bool source) const
+void s_SetSelection(SAnnotSelector& sel, CFFContext& ctx)
+{
+    sel.SetFeatType(CSeqFeatData::e_not_set);  // get all feature
+    sel.SetOverlapType(SAnnotSelector::eOverlap_Intervals);
+    sel.SetResolveMethod(SAnnotSelector::eResolve_TSE);     // !!! should be set according to user flags
+    if ( GetStrand(*ctx.GetLocation(), &ctx.GetScope()) == eNa_strand_minus ) {
+        sel.SetSortOrder(SAnnotSelector::eSortOrder_Reverse);  // sort in reverse biological order
+    } else {
+        sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+    }
+}
+
+
+void CFlatGatherer::x_GatherFeatures(void) const
 {
     CFFContext& ctx = *m_Context;
     CScope& scope = ctx.GetScope();
     typedef CConstRef<CFeatureItemBase> TFFRef;
     list<TFFRef> l, l2;
     CFlatItemOStream& out = *m_ItemOS;
-    
-    // XXX -- should select according to flags; may require merging/re-sorting.
-    // (Generally needs lots of additional logic, basically...)
-    if (source) {
-        for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
-            switch (it->Which()) {
-            case CSeqdesc::e_Org:
-                out << new CSourceFeatureItem(it->GetOrg(), ctx);
-                break;
-            case CSeqdesc::e_Source:
-                out << new CSourceFeatureItem(it->GetSource(), ctx);
-                break;
-            default:
-                break;
+
+    SAnnotSelector sel;
+    s_SetSelection(sel, ctx);
+
+    // optionally map gene from genomic onto cDNA
+    if ( ctx.IsGPS()  &&  ctx.CopyGeneToCDNA()  &&
+         ctx.GetBiomol() == CMolInfo::eBiomol_mRNA ) {
+        const CSeq_feat* mrna = GetmRNAForProduct(ctx.GetActiveBioseq(), &scope);
+        if ( mrna != 0 ) {
+            CConstRef<CSeq_feat> gene = 
+                GetOverlappingGene(mrna->GetLocation(), scope);
+            if ( gene != 0 ) {
+                CRef<CSeq_loc> loc = 
+                    SourceToProduct(*mrna, gene->GetLocation(), 0, &scope);
+                out << new CFeatureItem(*gene, ctx, loc);
             }
         }
-    } else if (ctx.IsProt()) { // broaden condition?
-        for (CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
+    }
+
+    // collect features
+    for ( CFeat_CI it(scope, *ctx.GetLocation(), sel); it; ++it ) {
+        out << new CFeatureItem(*it, ctx);
+
+        // Add more features depending on user preferences
+        switch ( it->GetData().GetSubtype() ) {
+        case CSeqFeatData::eSubtype_mRNA:
+            {{
+                // optionally map CDS from cDNA onto genomic
+                if ( ctx.IsGPS()  &&  ctx.IsNa()  &&  ctx.CopyCDSFromCDNA() ) {
+                    if ( it->IsSetProduct() ) {
+                        CBioseq_Handle cdna = scope.GetBioseqHandle(it->GetProduct());
+                        if ( cdna ) {
+                            // There is only one CDS on an mRNA
+                            CFeat_CI cds(cdna, 0, 0, CSeqFeatData::e_Cdregion);
+                            if ( cds ) {
+                                CRef<CSeq_loc> loc = 
+                                    ProductToSource(cds->GetOriginalFeature(),
+                                                    it->GetLocation(),
+                                                    0, &scope);
+                                out << new CFeatureItem(cds->GetOriginalFeature(), ctx, loc);
+                            }
+                        }
+                    }
+                }
+                break;
+            }}
+        case CSeqFeatData::eSubtype_cdregion:
+            {{  
+                if ( !ctx.IsFormatFTable() ) {
+                    x_GetFeatsOnCdsProduct(it->GetOriginalFeature(), ctx);
+                }
+                break;
+            }}
+        default:
+            break;
+        }
+    }
+
+    if ( ctx.IsProt() ) {
+        for ( CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
                          SAnnotSelector::eOverlap_Intervals,
                          CFeat_CI::eResolve_All, CFeat_CI::e_Product);
              it;  ++it) {
             out << new CFeatureItem(*it, ctx, &it->GetProduct(), true);
         }
     }
-    if (source) {
-        for (CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
-                         SAnnotSelector::eOverlap_Intervals,
-                         CFeat_CI::eResolve_All);
-             it;  ++it) {
-            switch (it->GetData().Which()) {
-            case CSeqFeatData::e_Org:
-            case CSeqFeatData::e_Biosrc:
-                out << new CSourceFeatureItem(*it, ctx);
-                break;
-            default:
-                break;
-            }
-        }
-    } else {
-        for (CFeat_CI it(scope, *ctx.GetLocation(), CSeqFeatData::e_not_set,
-            SAnnotSelector::eOverlap_Intervals,
-            CFeat_CI::eResolve_All);
-        it;  ++it) {
-            switch (it->GetData().Which()) {
-            case CSeqFeatData::e_Pub:  // done as REFERENCEs
-                break;
-            case CSeqFeatData::e_Org:
-            case CSeqFeatData::e_Biosrc: // sone as source
-                break;
-            default:
-                out << new CFeatureItem(*it, ctx);
-                break;
-            }
-        }
-    }
-    /*
-    !!!
-    CFFContext& ctx = *m_Context;
-    
-    *m_ItemOS << new CFeatHeaderItem(ctx);
-
-    CFeat_CI feat_it(ctx.GetScope(),
-                     *ctx.GetLocation(),
-                     CSeqFeatData::e_not_set,
-                     SAnnotSelector::eOverlap_Intervals,
-                     CFeat_CI::eResolve_All);
-    for ( ; feat_it; ++feat_it ) {
-        if ( x_SkipFeature(feat_it->GetOriginalFeature(), ctx) ) {
-            continue;
-        }
-    }
-    */
 }
 
 
-bool CFlatGatherer::x_SkipFeature
-(const CSeq_feat& feat,
- const CFFContext& ctx) const
+static bool s_IsCDD(const CSeq_feat& feat)
 {
-    CSeqFeatData::E_Choice type = feat.GetData().Which();
-    CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();        
-   
-    if ( subtype == CSeqFeatData::eSubtype_pub              ||
-        subtype == CSeqFeatData::eSubtype_non_std_residue  ||
-        subtype == CSeqFeatData::eSubtype_biosrc           ||
-        subtype == CSeqFeatData::eSubtype_rsite            ||
-        subtype == CSeqFeatData::eSubtype_seq ) {
-        return true;
-    }
-    
-    // check feature customization flags
-    if ( ctx.ValidateFeats()  &&
-        (subtype == CSeqFeatData::eSubtype_bad  ||
-         subtype == CSeqFeatData::eSubtype_virion) ) {
-        return true;
-    }
-    
-    if ( ctx.IsNa()  &&  subtype == CSeqFeatData::eSubtype_het ) {
-        return true;
-    }
-    
-    if ( ctx.HideImpFeat()  &&  type == CSeqFeatData::e_Imp ) {
-        return true;
-    }
-    
-    if ( ctx.HideSnpFeat()  &&  subtype == CSeqFeatData::eSubtype_variation ) {
-        return true;
-    }
-
-    if ( ctx.HideExonFeat()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
-        return true;
-    }
-
-    if ( ctx.HideIntronFeat()  &&  subtype == CSeqFeatData::eSubtype_intron ) {
-        return true;
-    }
-
-    if ( ctx.HideRemImpFeat()  &&  subtype == CSeqFeatData::eSubtype_imp ) {
-        if ( subtype == CSeqFeatData::eSubtype_variation  ||
-             subtype == CSeqFeatData::eSubtype_exon  ||
-             subtype == CSeqFeatData::eSubtype_intron  ||
-             subtype == CSeqFeatData::eSubtype_misc_feature ) {
+    ITERATE(CSeq_feat::TDbxref, it, feat.GetDbxref()) {
+        if ( (*it)->GetType() == CDbtag::eDbtagType_CDD ) {
             return true;
         }
     }
-
-    // skip genes in DDBJ format
-    if ( ctx.GetFormat() == CFlatFileGenerator::eFormat_DDBJ  &&  
-         type == CSeqFeatData::e_Gene ) {
-        return true;
-    }
-
-    // supress full length comment features
-    /*
-    if ( type == CSeqFeatData::e_Comment ) {
-        CSeq_loc::TRange range = feat.GetLocation().GetTotalRange();
-        if ( range.IsWhole()  ||  
-            (range.GetFrom() == ctx.Start()  &&  range.GetTo() == ctx.End()) ) {
-            return true;
-        }
-    }
-    */
     return false;
+}
+
+
+void CFlatGatherer::x_GetFeatsOnCdsProduct
+(const CSeq_feat& feat,
+ CFFContext& ctx) const
+{
+    _ASSERT(feat.GetData().IsCdregion());
+
+    if ( ctx.HideCDSProdFeats() ) {
+        return;
+    }
+    
+    if ( !feat.CanGetProduct() ) {
+        return;
+    }
+
+    CBioseq_Handle  prot = ctx.GetScope().GetBioseqHandle(feat.GetProduct());
+    
+    CFeat_CI prev;
+    bool first = true;
+    // explore mat_peptides, sites, etc.
+    for ( CFeat_CI it(prot, 0, 0); it; ++it ) {
+        CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
+        if ( !(subtype == CSeqFeatData::eSubtype_region)              &&
+             !(subtype == CSeqFeatData::eSubtype_site)                &&
+             !(subtype == CSeqFeatData::eSubtype_bond)                &&
+             !(subtype == CSeqFeatData::eSubtype_mat_peptide_aa)      &&
+             !(subtype == CSeqFeatData::eSubtype_sig_peptide_aa)      &&
+             !(subtype == CSeqFeatData::eSubtype_transit_peptide_aa)  &&
+             !(subtype == CSeqFeatData::eSubtype_preprotein) ) {
+            continue;
+        }
+
+        if ( ctx.HideCDDFeats()  &&
+             subtype == CSeqFeatData::eSubtype_region  &&
+             s_IsCDD(it->GetOriginalFeature()) ) {
+            // passing this test prevents mapping of COG CDD region features
+            continue;
+        }
+
+        // suppress duplicate features (on protein)
+        if ( !first ) {
+            const CSeq_loc& loc_curr = it->GetLocation();
+            const CSeq_loc& loc_prev = prev->GetLocation();
+            const CSeq_feat& feat_curr = it->GetOriginalFeature();
+            const CSeq_feat& feat_prev = prev->GetOriginalFeature();
+
+            if ( feat_prev.CompareNonLocation(feat_curr, loc_curr, loc_prev) == 0 ) {
+                continue;
+            }
+        }
+
+        // make sure feature is within sublocation
+        CRef<CSeq_loc> loc;
+        if ( ctx.GetLocation() != 0 ) {
+            loc = ProductToSource(feat, it->GetLocation(),
+                0, &ctx.GetScope());
+            if ( !loc ) {
+                continue;
+            }
+            if ( ctx.IsStyleMaster()  &&  ctx.IsPart() ) {
+                loc = ctx.Master()->GetHandle().MapLocation(*loc);
+                if ( !loc ) {
+                    continue;
+                }
+                if ( Compare(*ctx.GetLocation(), *loc) != eContains ) {
+                    continue;
+                }
+            }
+        }
+
+        *m_ItemOS << new CFeatureItem(it->GetOriginalFeature(), ctx, loc);
+
+        prev = it;
+        first = false;
+    }    
 }
 
 
@@ -874,6 +1036,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:52:12  shomrat
+* completed implementation of featture gathering
+*
 * Revision 1.3  2004/01/14 16:15:03  shomrat
 * minor changes to accomodate for GFF format
 *
