@@ -326,6 +326,8 @@ void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSe
     while (tkz.HasMoreTokens()) {
         wxString id = tkz.GetNextToken();
         CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
+        if (bioseq.Empty())
+            return;
         const Sequence *sequence = sSet->CreateNewSequence(*bioseq);
         if (sequence) {
             if (sequence->isProtein)
@@ -352,7 +354,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
                 // convert C to C++ SeqEntry
                 CSeq_entry se;
                 if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
-                    ERRORMSG("UpdateViewer::ImportSequence() - error converting to C++ object: "
+                    ERRORMSG("UpdateViewer::ReadSequencesFromFile() - error converting to C++ object: "
                         << err);
                 } else {
                     // create Sequence - just one from each Seq-entry for now
@@ -1163,6 +1165,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/10/04 17:48:56  thiessen
+* fix bug after trying to fetch w/ invalid seq id
+*
 * Revision 1.76  2004/06/25 14:12:22  thiessen
 * allow structures to be imported into non-structured alignment
 *
