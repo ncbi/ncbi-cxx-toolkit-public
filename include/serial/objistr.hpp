@@ -584,6 +584,42 @@ inline
 void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line = 0);
 
 
+/// Guard class for CObjectIStream::StartDelayBuffer/EndDelayBuffer
+///
+/// CObjectIStream::StartDelayBuffer() should be follwed by 
+/// CObjectIStream::EndDelayBuffer() call. If it's not called we have a delay 
+/// buffer leak. This class works as an guard (or auto pointer) to avoid call
+/// leaks.
+class CStreamDelayBufferGuard 
+{
+public:
+    /// Construct instance on a given CObjectIStream object.
+    /// Call istr.StartDelayBuffer()
+    ///
+    /// @param istr  guard protected instance
+    CStreamDelayBufferGuard(CObjectIStream& istr);
+
+    ~CStreamDelayBufferGuard();
+
+    /// Redirect call to protected CObjectIStream
+    /// After this call guarding is finished.
+    CRef<CByteSource> EndDelayBuffer(void);
+
+    /// Redirect call to protected CObjectIStream
+    /// After this call guarding is finished.
+    void EndDelayBuffer(CDelayBuffer&    buffer,
+                        const CItemInfo* itemInfo, 
+                        TObjectPtr       objectPtr);
+    
+private:
+    CStreamDelayBufferGuard(const CStreamDelayBufferGuard&);
+    CStreamDelayBufferGuard& operator=(const CStreamDelayBufferGuard& );
+private:
+    CObjectIStream*  m_ObjectIStream;
+};
+
+
+
 /* @} */
 
 
@@ -597,6 +633,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2003/09/24 20:55:13  kuznets
+* Implemented CStreamDelayBufferGuard
+*
 * Revision 1.89  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

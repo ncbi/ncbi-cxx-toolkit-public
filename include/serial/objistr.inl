@@ -443,12 +443,48 @@ bool CObjectIStream::GetVerifyData(void) const
 }
 
 
+inline
+CStreamDelayBufferGuard::CStreamDelayBufferGuard(CObjectIStream& istr) 
+    : m_ObjectIStream(&istr) 
+{
+    istr.StartDelayBuffer();
+}
+
+inline
+CStreamDelayBufferGuard::~CStreamDelayBufferGuard()
+{
+    if (m_ObjectIStream)
+        m_ObjectIStream->EndDelayBuffer();
+}
+
+inline
+CRef<CByteSource> CStreamDelayBufferGuard::EndDelayBuffer(void)
+{
+    CObjectIStream* tmp = m_ObjectIStream;
+    m_ObjectIStream = 0;
+    return tmp->EndDelayBuffer();
+
+}
+
+inline
+void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
+                                             const CItemInfo* itemInfo, 
+                                             TObjectPtr objectPtr)
+{
+    m_ObjectIStream->EndDelayBuffer(buffer, itemInfo, objectPtr);
+    m_ObjectIStream = 0;
+}
+
+
 #endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/09/24 20:55:13  kuznets
+* Implemented CStreamDelayBufferGuard
+*
 * Revision 1.23  2003/09/10 20:57:23  gouriano
 * added possibility to ignore missing mandatory members on reading
 *
