@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.6 2001/10/04 18:16:17 ucko Exp $
+#  $Id: configure.ac,v 1.7 2001/10/04 23:13:31 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -33,7 +33,7 @@
 #    1) Process this file with "autoconf" to produce a "configure" script.
 #    2) Run the resultant "configure" script to produce
 #      a) "<builddir>/inc/ncbiconf.h"
-#      b) <builddir>/build/Makefile.mk"
+#      b) "<builddir>/build/Makefile.mk"
 #      c) other "Makefile"s and scripts in "<builddir>/build"
 #
 #############################################################################
@@ -1399,18 +1399,19 @@ if test -z "$with_sybase_local" ; then
    with_sybase_local=no
 fi
 if test "$with_sybase" != "no" ; then
+   # deduce the path to Sybase package
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
          SYBASE_PATH=${SYBASE_PATH:="/export/home/sybase/clients/current"}
       else
          SYBASE_PATH=$with_sybase_local
       fi
-      SYBASE_INCLUDE="-I$SYBASE_PATH/include"
    else
       SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
       SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
-      SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include -I$SYBASE_PATH/include"
    fi
+
+   # compose a list of commonly used Sybase libraries
    case "$host_os" in
      linux* )
        SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl -ldl"
@@ -1423,26 +1424,36 @@ if test "$with_sybase" != "no" ; then
        ;;
    esac
    SYBASE_DBLIBS="-lsybdb"
+
+   # multi-threading and 64-bit specific adjustments
    changequote(<<, >>)dnl
    if test "$with_mt" = "yes"  -a  "$sybase_r" != "no" ; then
       SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
       SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
    fi
    if test -n "$bit64_sfx" ; then
-      SYBASE_INCLUDE="$SYBASE_INCLUDE -DSYB_LP64"
+      SYBASE_INCLUDE="-DSYB_LP64"
       SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1'${bit64_sfx}'/g'`
       SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1'${bit64_sfx}'/g'`
       SYBASE_DBLIBS="${SYBASE_DBLIBS}${bit64_sfx}"
    fi
    changequote([, ])dnl
-   if test "$with_sybase_local" != no ; then
-      SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_PATH}/lib${bit64_sfx} $SYBASE_LIBLIST"
-      SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_PATH}/lib${bit64_sfx} $SYBASE_DBLIBS"
+
+   # deduce conf.macro:  SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
+   SYBASE_LIBPATH="$SYBASE_PATH/lib${bit64_sfx}"
+   SYBASE_INCLUDE="-I$SYBASE_PATH/include $SYBASE_INCLUDE"
+   if test "$with_sybase_local" != "no" ; then
+      SYBASE_LPATH="-L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LIBPATH"
    else
-      SYBASE_LIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} $SYBASE_LIBLIST"
-      SYBASE_DBLIBS="-L$SYBASE_PATH/lib${bit64_sfx} ${CONF_f_runpath}${SYBASE_LCL_PATH}/lib${bit64_sfx}:$SYBASE_PATH/lib${bit64_sfx} ${SYBASE_DBLIBS}"
+      SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH/lib${bit64_sfx}"
+      SYBASE_LPATH="-L$SYBASE_LCL_LIBPATH -L$SYBASE_LIBPATH ${CONF_f_runpath}$SYBASE_LCL_LIBPATH:$SYBASE_LIBPATH"
+      SYBASE_INCLUDE="-I$SYBASE_LCL_PATH/include $SYBASE_INCLUDE"
    fi
+   SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
+   SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
+
+   # test it
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $orig_LIBS"
    AC_TRY_LINK(
