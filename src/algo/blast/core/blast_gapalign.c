@@ -3090,7 +3090,6 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
 {
    SSeqRange* helper = NULL;
-   Boolean hsp_start_is_contained, hsp_end_is_contained;
    Int4 index, index1, next_offset;
    BlastInitHSP* init_hsp = NULL;
    BlastHSP* hsp1 = NULL;
@@ -3138,8 +3137,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    for (index=0; index<init_hitlist->total; index++)
    {
-      hsp_start_is_contained = FALSE;
-      hsp_end_is_contained = FALSE;
+      Boolean delete_hsp = FALSE;  /* Set if HSP is contained within another. */
       init_hsp = init_hsp_array[index];
 
       /* Now adjust the initial HSP's coordinates. */
@@ -3166,9 +3164,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       hsp1 = NULL;
       for (index1=0; index1<hsp_list->hspcnt; index1++)
       {
-         hsp_start_is_contained = FALSE;
-         hsp_end_is_contained = FALSE;
-         
+         delete_hsp = FALSE;
          hsp1 = hsp_list->hsp_array[index1];
 
          if (hsp1->context != context)
@@ -3179,31 +3175,49 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
          if (helper[index1].left <= next_offset &&
              helper[index1].right >= next_offset)
          {
-            if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_start,
-                hsp1->subject.offset, hsp1->subject.end, s_start) &&
-                (!init_hsp->ungapped_data || (SIGN(hsp1->query.frame) == 
-                    SIGN(init_hsp->ungapped_data->frame))))
+            if (hit_options->min_diag_separation > 0)
             {
-                  hsp_start_is_contained = TRUE;
-            }
-
-            if (hsp_start_is_contained && (CONTAINED_IN_HSP(hsp1->query.offset,
-                hsp1->query.end, q_end, hsp1->subject.offset, 
-                hsp1->subject.end, s_end)))
+               if (MB_HSP_CONTAINED(q_start, hsp1->query.offset, hsp1->query.end,
+                   s_start, hsp1->subject.offset, hsp1->subject.end, hit_options->min_diag_separation) &&
+                   (!init_hsp->ungapped_data ||
+                    init_hsp->ungapped_data->score <= hsp1->score))
+               {
+                     delete_hsp = TRUE;
+                     break;
+               }
+            } 
+            else 
             {
-               hsp_end_is_contained = TRUE;
-            }
+               Boolean hsp_start_is_contained=FALSE, hsp_end_is_contained=FALSE;
+               
+               if (CONTAINED_IN_HSP(hsp1->query.offset, hsp1->query.end, q_start,
+                   hsp1->subject.offset, hsp1->subject.end, s_start) &&
+                   (!init_hsp->ungapped_data || (SIGN(hsp1->query.frame) ==
+                       SIGN(init_hsp->ungapped_data->frame))))
+               {
+                     hsp_start_is_contained = TRUE;
+               }
 
-            if (hsp_start_is_contained && hsp_end_is_contained && 
-                (!init_hsp->ungapped_data || 
-                 init_hsp->ungapped_data->score <= hsp1->score))
-               break;
+               if (hsp_start_is_contained && (CONTAINED_IN_HSP(hsp1->query.offset,
+                   hsp1->query.end, q_end, hsp1->subject.offset,
+                   hsp1->subject.end, s_end)))
+               {
+                  hsp_end_is_contained = TRUE;
+               }
+
+               if (hsp_start_is_contained && hsp_end_is_contained &&
+                   (!init_hsp->ungapped_data ||
+                    init_hsp->ungapped_data->score <= hsp1->score))
+               {
+                  delete_hsp = TRUE;
+                  break;
+               }
+            }
          }
       }
       
-      if (!hsp_start_is_contained || !hsp_end_is_contained || 
-          (hsp1 && init_hsp->ungapped_data && 
-           init_hsp->ungapped_data->score > hsp1->score)) {
+      if (!delete_hsp)
+      {
          BlastHSP* new_hsp;
 
          if (gapped_stats) {
