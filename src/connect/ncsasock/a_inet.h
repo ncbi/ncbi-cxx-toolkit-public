@@ -21,6 +21,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.2  2001/07/07 01:16:25  juran
+* Remove cruft.
+*
 * Revision 6.1  1999/11/17 20:52:50  kans
 * changes to allow compilation under c++
 *
@@ -37,8 +40,8 @@
 
 /* External definitions for functions in inet(3) */
 
-extern unsigned long inet_addr(const char *);
-extern char *inet_ntoa(struct in_addr);
+//extern unsigned long inet_addr(const char *);
+//extern char *inet_ntoa(struct in_addr);
 extern struct in_addr inet_makeaddr(int , int);
 extern unsigned long inet_network(const char *);
 extern unsigned long inet_lnaof(struct in_addr);
