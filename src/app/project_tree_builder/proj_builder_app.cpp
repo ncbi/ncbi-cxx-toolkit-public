@@ -574,6 +574,9 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
         m_MsvcRegSettings->m_CompilersSubdir  = 
             GetConfig().GetString("msvc7", "compilers", "msvc7_prj");
     
+        m_MsvcRegSettings->m_ProjectsSubdir  = 
+            GetConfig().GetString("msvc7", "Projects", "build");
+
         m_MsvcRegSettings->m_MakefilesExt = 
             GetConfig().GetString("msvc7", "MakefilesExt", "msvc");
 
@@ -791,6 +794,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/04/13 17:09:39  gorelenk
+ * Changed implementation of CProjBulderApp::Run .
+ *
  * Revision 1.35  2004/04/08 18:45:56  gorelenk
  * Conditionaly enabled exclude projects by msvc makefiles .
  *
