@@ -299,7 +299,7 @@ public:
     // empties all rows' infos
     void ClearRowInfo(void) const
     {
-        for (int r=0; r<NRows(); r++) {
+        for (int r=0; r<NRows(); ++r) {
             rowDoubles[r] = 0.0;
             rowStrings[r].erase();
         }
@@ -420,6 +420,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/03/15 17:17:56  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.39  2004/02/19 17:04:44  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -69,7 +69,7 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const Sequence *masterSequence
     // assume the data manager has collapsed all valid seqaligns into a single seqannot
     CSeq_annot::C_Data::TAlign::const_iterator
         a, ae = seqAnnots.front()->GetData().GetAlign().end();
-    for (a=seqAnnots.front()->GetData().GetAlign().begin(); a!=ae; a++)
+    for (a=seqAnnots.front()->GetData().GetAlign().begin(); a!=ae; ++a)
         alignments.push_back(new MasterSlaveAlignment(this, master, **a));
     TRACEMSG("number of alignments: " << alignments.size());
 }
@@ -84,7 +84,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
 {
     // sanity check on the row order map
     map < int, int > rowCheck;
-    for (int i=0; i<rowOrder.size(); i++) rowCheck[rowOrder[i]] = i;
+    for (int i=0; i<rowOrder.size(); ++i) rowCheck[rowOrder[i]] = i;
     if (rowOrder.size() != multiple->NRows() || rowCheck.size() != multiple->NRows() || rowOrder[0] != 0) {
         ERRORMSG("AlignmentSet::CreateFromMultiple() - bad row order vector");
         return NULL;
@@ -106,7 +106,7 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     // of the master with itself, because asn data doesn't take well to single-row "alignment"
     if (multiple->NRows() > 1) {
         int newRow;
-        for (int row=1; row<multiple->NRows(); row++, sa++) {
+        for (int row=1; row<multiple->NRows(); ++row, ++sa) {
           newRow = rowOrder[row];
           CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, newRow);
           sa->Reset(seqAlign);
@@ -150,7 +150,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
     bool masterFirst = true;
     SequenceSet::SequenceList::const_iterator
         s, se = master->parentSet->sequenceSet->sequences.end();
-    for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
+    for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; ++s) {
         if (master->identifier->MatchesSeqId(frontSeqId) &&
             (*s)->identifier->MatchesSeqId(backSeqId)) {
             break;
@@ -175,7 +175,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
     if (seqAlign.GetSegs().IsDendiag()) {
 
         CSeq_align::C_Segs::TDendiag::const_iterator d , de = seqAlign.GetSegs().GetDendiag().end();
-        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; d++, blockNum++) {
+        for (d=seqAlign.GetSegs().GetDendiag().begin(); d!=de; ++d, ++blockNum) {
             const CDense_diag& block = d->GetObject();
 
             if (block.GetDim() != 2 || block.GetIds().size() != 2 || block.GetStarts().size() != 2) {
@@ -197,7 +197,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
             }
 
             // finally, actually unpack the data into the alignment vector
-            for (i=0; i<block.GetLen(); i++) {
+            for (i=0; i<block.GetLen(); ++i) {
                 if (masterFirst) {
                     masterRes = block.GetStarts().front() + i;
                     slaveRes = block.GetStarts().back() + i;
@@ -245,7 +245,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         // finally, actually unpack the data into the alignment vector
         CDense_seg::TStarts::const_iterator starts = block.GetStarts().begin();
         CDense_seg::TLens::const_iterator lens, le = block.GetLens().end();
-        for (lens=block.GetLens().begin(); lens!=le; lens++) {
+        for (lens=block.GetLens().begin(); lens!=le; ++lens) {
             if (masterFirst) {
                 masterRes = *(starts++);
                 slaveRes = *(starts++);
@@ -260,11 +260,11 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
                         "seqloc in denseg block > length of sequence!");
                     return;
                 }
-                for (i=0; i<*lens; i++) {
+                for (i=0; i<*lens; ++i) {
                     masterToSlave[masterRes + i] = slaveRes + i;
                     blockStructure[masterRes + i] = blockNum;
                 }
-                blockNum++; // a "block" of a denseg is an aligned (non-gap) segment
+                ++blockNum; // a "block" of a denseg is an aligned (non-gap) segment
             }
         }
     }
@@ -278,6 +278,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/03/15 17:17:56  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.30  2004/02/19 17:04:40  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

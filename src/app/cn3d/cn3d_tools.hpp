@@ -187,9 +187,9 @@ static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool 
 
     std::vector < T > copy(v.size() - nToRemove);
     int i, nRemoved = 0;
-    for (i=0; i<v.size(); i++) {
+    for (i=0; i<v.size(); ++i) {
         if (remove[i])
-            nRemoved++;
+            ++nRemoved;
         else
             copy[i - nRemoved] = v[i];
     }
@@ -207,7 +207,7 @@ static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool 
 #define DELETE_ALL_AND_CLEAR(container, ContainerType) \
 do { \
     ContainerType::iterator i, ie = (container).end(); \
-    for (i=(container).begin(); i!=ie; i++) \
+    for (i=(container).begin(); i!=ie; ++i) \
         delete *i; \
     (container).clear(); \
 } while (0)
@@ -219,6 +219,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/03/15 17:17:56  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.33  2004/03/10 23:15:51  thiessen
 * add ability to turn off/on error dialogs; group block aligner errors in message log
 *

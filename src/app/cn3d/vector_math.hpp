@@ -174,7 +174,7 @@ public:
         m[12]=m12; m[13]=m13; m[14]=m14; m[15]=m15;
     }
     Matrix(const Matrix& o) {
-        for (int i=0; i<16; i++) m[i]=o.m[i];
+        for (int i=0; i<16; ++i) m[i]=o.m[i];
     }
     void SetToIdentity(void) {
         m[0] = m[5] = m[10] = m[15] = 1;
@@ -182,7 +182,7 @@ public:
         m[8] = m[9] = m[11] = m[12] = m[13] = m[14] = 0;
     }
     Matrix& operator = (const Matrix& o) {
-        for (int i=0; i<16; i++) m[i]=o.m[i];
+        for (int i=0; i<16; ++i) m[i]=o.m[i];
         return *this;
     }
     double& operator [] (size_t i)
@@ -223,6 +223,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/03/15 17:17:56  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.14  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
