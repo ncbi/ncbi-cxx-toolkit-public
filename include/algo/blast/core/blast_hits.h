@@ -144,7 +144,7 @@ NCBI_XBLAST_EXPORT
 BlastHSP* Blast_HSPNew(void);
 
 /** Allocates BlastHSP and inits with information from input.
- * structure
+ * structure.
  * @param query_start Start of query alignment [in]
  * @param query_end End of query alignment [in]
  * @param subject_start Start of subject alignment [in]
@@ -152,6 +152,8 @@ BlastHSP* Blast_HSPNew(void);
  * @param query_gapped_start Where gapped alignment started on query [in]
  * @param subject_gapped_start Where gapped alignment started on subject [in]
  * @param query_context The index of the query containing this HSP [in]
+ * @param query_frame Query frame: -3..3 for translated sequence, 
+ *        1 or -1 for blastn, 0 for blastp [in]
  * @param subject_frame Subject frame: -3..3 for translated sequence, 
  *        1 for blastn, 0 for blastp [in]
  * @param score score of alignment [in]
@@ -161,12 +163,11 @@ BlastHSP* Blast_HSPNew(void);
  */
 NCBI_XBLAST_EXPORT
 Int2
-Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start, 
-              Int4 subject_end,
-              Int4 query_gapped_start, Int4 subject_gapped_start,
-              Int4 query_context, Int2 subject_frame, Int4 score,
-              GapEditBlock* *gap_edit, BlastHSP** ret_hsp);
-
+Blast_HSPInit(Int4 query_start, Int4 query_end, 
+              Int4 subject_start, Int4 subject_end, 
+              Int4 query_gapped_start, Int4 subject_gapped_start, 
+              Int4 query_context, Int2 query_frame, Int2 subject_frame,
+              Int4 score, GapEditBlock* *gap_edit, BlastHSP** ret_hsp);
 
 /** Calculate e-value for an HSP found by PHI BLAST.
  * @param hsp An HSP found by PHI BLAST [in]
@@ -327,16 +328,6 @@ BlastHSPList* Blast_HSPListNew(Int4 hsp_max);
 NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
-
-/** Assign frames in all HSPs in the HSP list.
- * @param program_number Type of BLAST program [in]
- * @param hsp_list List of HSPs for one subject sequence [in] [out]
- * @param is_ooframe Is out-of-frame gapping used? [in]
-*/
-NCBI_XBLAST_EXPORT
-void 
-Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list, 
-                 Boolean is_ooframe);
 
 /** Calculate the expected values for all HSPs in a hit list, without using 
  * the sum statistics. In case of multiple queries, the offsets are assumed 
