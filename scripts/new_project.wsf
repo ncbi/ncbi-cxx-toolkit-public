@@ -204,6 +204,7 @@
 			    prompt = "Use verbose output?"
                 SetVerboseFlag( InputFlagYNC(prompt+footer));
 			}
+			this.ProjectFolder = this.ProjectName;
 
 			this.TemplatesDict = new ActiveXObject("Scripting.Dictionary");
 			this.TemplatesDict.Add("app",         "app/sample/basic");
@@ -239,6 +240,7 @@
 		function DumpTask(oTask)
 		{
 			VerboseEcho("ProjectName     = " + oTask.ProjectName);
+			VerboseEcho("ProjectFolder   = " + oTask.ProjectFolder);
 			VerboseEcho("ProjectType     = " + oTask.ProjectType);
 			VerboseEcho("ProjectTemplate = " + oTask.ProjectTemplate);
 			VerboseEcho("ToolkitPath     = " + oTask.ToolkitPath);
@@ -346,7 +348,7 @@
 			if ( oTask.DllBuild ) {
 				ptb_command_line += " -dll";
 			}
-			ptb_command_line += " -logfile " + oTree.TreeRoot + "\\out.log";
+			ptb_command_line += " -logfile " + oTree.TreeRoot + "\\" + oTask.ProjectName + "_log.txt";
 			ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
 			ptb_command_line += " " + oTree.TreeRoot;
 			ptb_command_line += " src\\";
