@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/04/15 19:12:11  kholodov
+* Added simple type conversions
+*
 * Revision 1.7  2002/03/13 16:52:10  kholodov
 * Added: Full destructor definition in CVariantException with throw()
 * to conform with the parent's virtual destructor.
@@ -352,50 +355,98 @@ string CVariant::GetString(void) const
 
 Int8 CVariant::GetInt8() const
 {
-    crash( GetType() == eDB_BigInt );
-    return ((CDB_BigInt*)GetData())->Value();
+    switch( GetType() ) {
+    case eDB_BigInt:
+        return ((CDB_BigInt*)GetData())->Value();
+    case eDB_Int:
+        return ((CDB_Int*)GetData())->Value();
+    case eDB_SmallInt:
+        return ((CDB_SmallInt*)GetData())->Value();
+    case eDB_TinyInt:
+        return ((CDB_TinyInt*)GetData())->Value();
+    default:
+        VerifyType(false);
+    }
+    return 0;
 }
 
 
 Int4 CVariant::GetInt4() const
 {
-    crash( GetType() == eDB_Int );
-    return ((CDB_Int*)GetData())->Value();
+    switch( GetType() ) {
+    case eDB_Int:
+        return ((CDB_Int*)GetData())->Value();
+    case eDB_SmallInt:
+        return ((CDB_SmallInt*)GetData())->Value();
+    case eDB_TinyInt:
+        return ((CDB_TinyInt*)GetData())->Value();
+    default:
+        VerifyType(false);
+    }
+    return 0;
 }
 
 Int2 CVariant::GetInt2() const
 {
-    crash( GetType() == eDB_SmallInt );
-
-    return ((CDB_SmallInt*)GetData())->Value();
+    switch( GetType() ) {
+    case eDB_SmallInt:
+        return ((CDB_SmallInt*)GetData())->Value();
+    case eDB_TinyInt:
+        return ((CDB_TinyInt*)GetData())->Value();
+    default:
+        VerifyType(false);
+    }
+    return 0;
 }
 
 Uint1 CVariant::GetByte() const
 {
-    crash( GetType() == eDB_TinyInt );
-
-    return ((CDB_TinyInt*)GetData())->Value();
+    switch( GetType() ) {
+    case eDB_TinyInt:
+        return ((CDB_TinyInt*)GetData())->Value();
+    default:
+        VerifyType(false);
+    }
+    return 0;
 }
 
 float CVariant::GetFloat() const
 {
-  
-    crash( GetType() == eDB_Float );
-
-    return ((CDB_Float*)GetData())->Value();
+    switch( GetType() ) {
+    case eDB_Float:
+        return ((CDB_Float*)GetData())->Value();
+    case eDB_Int:
+        return ((CDB_Int*)GetData())->Value();
+    case eDB_SmallInt:
+        return ((CDB_SmallInt*)GetData())->Value();
+    case eDB_TinyInt:
+        return ((CDB_TinyInt*)GetData())->Value();
+    default:
+        VerifyType(false);
+    }
+    return 0;
 }
 
 double CVariant::GetDouble() const
 {
-    crash( GetType() == eDB_Double );
-
-    return ((CDB_Double*)GetData())->Value();
+    switch( GetType() ) {
+    case eDB_Double:
+        return ((CDB_Double*)GetData())->Value();
+    case eDB_Int:
+        return ((CDB_Int*)GetData())->Value();
+    case eDB_SmallInt:
+        return ((CDB_SmallInt*)GetData())->Value();
+    case eDB_TinyInt:
+        return ((CDB_TinyInt*)GetData())->Value();
+    default:
+        VerifyType(false);
+    }
+    return 0;
 }
 
 bool CVariant::GetBit() const
 {
-    crash( GetType() == eDB_Bit );
-
+    VerifyType( GetType() == eDB_Bit );
     return ((CDB_Bit*)GetData())->Value() != 0;
 }
 
