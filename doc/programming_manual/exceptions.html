@@ -17,8 +17,13 @@
 
 <a name="macro"> <h3> Macros for standard C++ exception handling</h3>
 
-The following preprocessor macros have been defined in the NCBI C++ Toolkit to support 
-standard C++ exception handling:<p>
+The C++ <i>throw()</i> statement provides a mechanism for specifying the types of exceptions that
+may be thrown by a function. Functions that do <i>not</i> include a <i>throw()</i> statement in
+their declaration can throw any type of exception, but where the <i>throw()</i> statement <i>is</i>
+used, undeclared exception types that are thrown will cause <i>std::unexpected()</i> to be raised.
+Various compilers handle these events differently, and the first two macros listed below,
+(<i>THROWS(()), THROWS_NONE</i>), are provided to support platform-independent exception
+specifications.<p>
 
 <table border=1 cellspacing=1>
   <caption></caption>
@@ -57,16 +62,10 @@ standard C++ exception handling:<p>
 </table>
 <p>
 
-C++ requires that all object types which may be thrown by an exception occurring inside a function
-must be declared in that function's definition using the <i>throw</i> statement. Failure to do so
-will cause <i>std::unexpected()</i> to be raised when an undeclared exception type is
-thrown. Various compilers handle these events differently however, and the first two macros,
-(<i>THROWS(()), THROWS_NONE</i>), support platform-independent exception specifications.<p>
-
-The <i> catch</i> macros provide uniform, routine exception handling with minimal effort from
-the programmer.  The <i>STD_CATCH()</i> macro prints formatted messages to the application's <a
-href="diag.html"> <i> diagnostic stream</i></a>. For example, if <i> F() </i> throws an
-exception of the form: 
+The <i> catch</i> macros provide uniform, routine exception handling with minimal effort from the
+programmer.  We provide a convenient <i>STD_CATCH()</i> macro to print formatted messages to the
+application's <a href="diag.html"> <i> diagnostic stream</i></a>. For example, if <i> F() </i>
+throws an exception of the form:
 
 <center> <tt> throw std::runtime_error(</tt><i>throw-msg</i>)</center> <br>
 
@@ -118,16 +117,29 @@ to be caught. Thus the call to instantiate a <i>CParseException</i> object is:
 <i>CParseException(msg, position)</i>.
 
 <a name="tracex"> <h3> Exception Tracing </h3>
-Knowing exactly where an exception first occurs can often provide critical information
-during develpment. Standard C++ exception handling mechanisms do not have access to this
-information, but a set of <i>THROW*_TRACE()</i> macros defined in the NCBI C++ Toolkit combine
-exception handling with <a href="diag.html#trace"> <i>trace</i></a> mechanisms to provide such
-information.<p>
 
-The most commonly used of these macros, <i>THROW1_TRACE(class_name, init_arg) </i>, instantiates
-an object of type <i>class_name</i> using <i>init_arg</i> to initialize it. When this newly
-created object is thrown, detailed trace information specifying the file and line number where
-the exception was raised is then generated on the diagnostic stream. <p>
+Knowing exactly where an exception first occurs can be very useful for debugging purposes. Standard
+C++ exception handling mechanisms do not have access to this information, but a set of
+<i>THROW*_TRACE()</i> macros defined in the NCBI C++ Toolkit combine exception handling with <a
+href="diag.html#trace"> <i>trace</i></a> mechanisms to provide such information.<p>
+
+The most commonly used of these macros, <i>THROW1_TRACE(class_name, init_arg)</i>, instantiates
+an exception object of type <i>class_name</i> using <i>init_arg</i> to initialize it. The definition of this
+macro is:
+
+<pre>
+#define THROW1_TRACE(class_name, init_arg) \
+    throw NCBI_NS_NCBI::DbgPrint(__FILE__, __LINE__, \
+        class_name(init_arg), #class_name)
+</pre>
+
+From the <i>throw()</i> statement here, we see that the object actually being thrown by this macro
+is the value returned by <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=DbgPrint">DbgPrint</a>().
+<i>DbgPrint()</i> in turn calls 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=DbgPrint"><i>DoDbgPrint</i></a>().
+The latter is an overloaded function that simply creates a diagnostic stream and writes the file name,
+line number, and the exception's <i>what()</i> message to that stream. The exception object
+(which is of type <i>class_name</i>) is then the value returned by <i>DbgPrint</i>.<p>
 
 More generally, three sets of <i>THROW*_TRACE</i> macros are defined:
 
@@ -158,7 +170,7 @@ thrown. The <i>THROW0p_TRACE</i> macro generalizes this functionality by accepti
 <i>printable</i> object, such as <i>complex(1,3)</i>, as its single argument.  Any object with a
 defined output operator is, of course, printable.  The third macro generalizes this one step
 further, and accepts aggregate arguments such as <i>vector&lt;T&gt;</i>, where <i>T</i> is a printable
-object.  Note that in cases where the object to be thrown is not a <i>std::exception</i> however,
+object.  Note that in cases where the object to be thrown is not a <i>std::exception</i>,
 you will need to use <i>STD_CATCH_ALL</i> or a custom catch to catch the thrown object. <p>
 
 The remaining six macros accept two arguments: an "exception" class name and an initialization
