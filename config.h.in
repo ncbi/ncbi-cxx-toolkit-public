@@ -8,9 +8,6 @@
 /* Define to empty if the keyword does not work.  */
 #undef const
 
-/* Define if the `long double' type works.  */
-#undef HAVE_LONG_DOUBLE
-
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 #undef size_t
 
@@ -30,14 +27,23 @@
 /* Define if C++ namespaces are supported */
 #undef HAVE_NAMESPACE
 
+/* The number of bytes in a __int64.  */
+#undef SIZEOF___INT64
+
 /* The number of bytes in a char.  */
 #undef SIZEOF_CHAR
+
+/* The number of bytes in a double.  */
+#undef SIZEOF_DOUBLE
 
 /* The number of bytes in a int.  */
 #undef SIZEOF_INT
 
 /* The number of bytes in a long.  */
 #undef SIZEOF_LONG
+
+/* The number of bytes in a long double.  */
+#undef SIZEOF_LONG_DOUBLE
 
 /* The number of bytes in a long long.  */
 #undef SIZEOF_LONG_LONG
@@ -47,3 +53,9 @@
 
 /* The number of bytes in a void*.  */
 #undef SIZEOF_VOIDP
+
+/* Define if you have the <sstream> header file.  */
+#undef HAVE_SSTREAM
+
+/* Define if you have the <string> header file.  */
+#undef HAVE_STRING
