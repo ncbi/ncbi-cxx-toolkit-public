@@ -969,7 +969,7 @@ int GetPartialTranslation(const Uint1* nucl_seq,
       for (index = 1; index <= 3; ++index) {
          length = 
             BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
-               nucl_length, frame_sign*index, translation_buffer+offset, 
+               nucl_length, (short)(frame_sign*index), translation_buffer+offset, 
                genetic_code);
          frame_offsets[index-1] = offset;
          offset += length + 1;
