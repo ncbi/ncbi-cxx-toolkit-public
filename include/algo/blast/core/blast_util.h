@@ -64,6 +64,8 @@ void
 MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_ptr,
                      Int4 oid, Uint1 encoding);
 
+/** Deallocate memory for a sequence block */
+   BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk);
 
 /** Set number for a given program type.  Return is zero on success.
  * @param program string name of program [in]

@@ -83,6 +83,20 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
   (*seq_blk)->oid = oid;
 }
 
+BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
+{
+   if (!seq_blk)
+      return NULL;
+
+   if (seq_blk->sequence_allocated) {
+      if (seq_blk->sequence_start)
+         MemFree(seq_blk->sequence_start);
+      else
+         MemFree(seq_blk->sequence);
+   }
+   SeqIdFree(seq_blk->seqid);
+   return (BLAST_SequenceBlkPtr) MemFree(seq_blk);
+}
 
 Int2 BlastProgram2Number(const Char *program, Uint1 *number)
 {
