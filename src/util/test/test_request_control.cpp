@@ -62,18 +62,29 @@ void CTest::Init(void)
 // Sleep little more than 'x' seconds to avoid race conditions,
 // because SleepSec can sleep on some platforms a some microseconds
 // less than 'x' seconds even.
-
 #define SLEEP(x) SleepMilliSec(x*1000+100)
+
+#define ELAPSED \
+    e = sw.Elapsed(); \
+    cout << "elapsed: " << setiosflags(ios::fixed) << e << endl
+
+#define START(x) \
+    cout << "Start test " << x << endl
+#define DONE \
+    cout << "DONE" << endl
 
 
 int CTest::Run(void)
 {
+    START(1);
     {{
         // Forbid zero requests per any time
         CRequestRateControl mgr(0, CTimeSpan(0,0), CTimeSpan(1,0),
                                 CRequestRateControl::eErrCode);
         assert( !mgr.Approve() );
     }}
+    DONE;
+    START(2);
     {{
         // Allow only 1 request per any period of time
         CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(0,0),
@@ -82,6 +93,8 @@ int CTest::Run(void)
         assert( !mgr.Approve() );
 
     }}
+    DONE;
+    START(3);
     {{
         // Allow any number of requests with frequency 1 request per second
         CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
@@ -91,6 +104,8 @@ int CTest::Run(void)
         SLEEP(1);
         assert( mgr.Approve() );
     }}
+    DONE;
+    START(4);
     {{
         // Allow 2 request per second with any frequency
         CRequestRateControl mgr(2, CTimeSpan(1,0), CTimeSpan(0,0),
@@ -103,6 +118,8 @@ int CTest::Run(void)
         assert( mgr.Approve() );
         assert( !mgr.Approve() );
     }}
+    DONE;
+    START(5);
     {{
         // Allow 2 request per 3 seconds with frequency 1 request per second
         CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
@@ -117,9 +134,12 @@ int CTest::Run(void)
         SLEEP(1);
         assert( mgr.Approve() );
     }}
+    DONE;
 
     // eSleep
 
+    double e;
+    START(6);
     {{
         // Allow any number of requests with frequency 1 request per second
         // with auto sleep beetween requests.
@@ -129,9 +149,12 @@ int CTest::Run(void)
         assert( mgr.Approve() );
         assert( mgr.Approve() );
         assert( mgr.Approve() );
+        ELAPSED;
         // The StopWatch is more accurate then Sleep methods.
-        assert( sw.Elapsed() >= 1.9); 
+        assert( e >= 1.9); 
     }}
+    DONE;
+    START(7);
     {{
         // Allow 2 request per 3 seconds with frequency 1 request per second
         // with auto sleep beetween requests.
@@ -140,25 +163,26 @@ int CTest::Run(void)
         CStopWatch sw(true);
         // sleep 0
         assert( mgr.Approve() );
-        double e = sw.Elapsed();
+        ELAPSED;
         assert (e < 0.5);
         // sleep 1
         assert( mgr.Approve() );
-        e = sw.Elapsed();
+        ELAPSED;
         assert (e >= 0.9  &&  e <= 1.1);
         // sleep 2
         assert( mgr.Approve() );
-        e = sw.Elapsed();
+        ELAPSED;
         assert (e >= 2.9  &&  e <= 3.1);
         // sleep 1
         assert( mgr.Approve() );
-        e = sw.Elapsed();
+        ELAPSED;
         assert (e >= 3.9  &&  e <= 4.1);
         // sleep 2
         assert( mgr.Approve() );
-        e = sw.Elapsed();
+        ELAPSED;
         assert (e >= 5.9  &&  e <= 6.1);
     }}
+    DONE;
 
     return 0;
 }
@@ -178,6 +202,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/03 12:16:45  ivanov
+ * Added diagnostic messages
+ *
  * Revision 1.2  2005/03/02 18:58:38  ivanov
  * Renaming:
  *    file test_request_throttler.cpp -> test_request_control.cpp
