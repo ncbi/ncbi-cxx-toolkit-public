@@ -1,7 +1,7 @@
 # $Id$
 
 APP = test_ncbi_socket
-SRC = test_ncbi_socket_
+SRC = test_ncbi_socket
 LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
