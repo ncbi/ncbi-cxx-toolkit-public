@@ -232,15 +232,17 @@ function CopyDatatool(oShell, oTree, oTask)
 function CollectFileNames(dir_path, ext)
 {
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
-    var dir_folder = oFso.GetFolder(dir_path);
-    var dir_folder_contents = new Enumerator(dir_folder.files);
     var file_names = new Array;
-    var names_i = 0;
-    for( ; !dir_folder_contents.atEnd(); dir_folder_contents.moveNext()) {
-        var file_path = dir_folder_contents.item();
-        if (oFso.GetExtensionName(file_path) == ext) {
-            file_names[names_i] = oFso.GetBaseName(file_path);
-            names_i++;
+    if ( oFso.FolderExists(dir_path) ) {
+        var dir_folder = oFso.GetFolder(dir_path);
+        var dir_folder_contents = new Enumerator(dir_folder.files);
+        var names_i = 0;
+        for( ; !dir_folder_contents.atEnd(); dir_folder_contents.moveNext()) {
+            var file_path = dir_folder_contents.item();
+            if (oFso.GetExtensionName(file_path) == ext) {
+                file_names[names_i] = oFso.GetBaseName(file_path);
+                names_i++;
+            }
         }
     }
     return file_names;
@@ -493,11 +495,14 @@ function GetFileFromTree(oShell, oTree, oTask, cvs_rel_path, target_abs_dir)
 
     // Try to get the file from the pre-built toolkit
     var toolkit_file_path = BackSlashes(oTask.ToolkitSrcPath + cvs_rel_path);
-    var dir = oFso.GetFolder(oFso.GetParentFolderName(toolkit_file_path));
-    var dir_files = new Enumerator(dir.files);
-    if (!dir_files.atEnd()) {
-        execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
-        return;
+    var folder = oFso.GetParentFolderName(toolkit_file_path);
+    if ( oFso.FolderExists(folder) ) {
+        var dir = oFso.GetFolder(folder);
+        var dir_files = new Enumerator(dir.files);
+        if (!dir_files.atEnd()) {
+            execute(oShell, "copy /Y \"" + toolkit_file_path + "\" \"" + target_abs_dir + "\"");
+            return;
+        }
     }
 
     // Get it from CVS
