@@ -172,20 +172,21 @@ int CTest::Run(void)
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
     assert(pipe.Close() == 0);
+
 #elif defined (NCBI_OS_MSWIN)
+    string cmd = GetEnvironment().Get("COMSPEC");
     // Pipe for reading (direct from pipe)
-    args.push_back("*.*");
-    CPipe pipe("dir", args, CPipe::eDoNotUse, CPipe::eText);
+    args.push_back("/c");
+    args.push_back("dir *.*");
+    CPipe pipe(cmd.c_str(), args, CPipe::eDoNotUse, CPipe::eText);
     s_ReadPipe(pipe);
-    // return code 259 = no more items, returned by 'dir' when done...
-    assert(pipe.Close() == 259);
+    assert(pipe.Close() == 0);
 
     // Pipe for reading (iostream)
-    pipe.Open("dir", args, CPipe::eDoNotUse, CPipe::eText);
+    pipe.Open(cmd.c_str(), args, CPipe::eDoNotUse, CPipe::eText);
     CPipeIOStream ios(pipe);
     s_ReadStream(ios);
-    // return code 259 = no more items, returned by 'dir' when done...
-    assert(pipe.Close() == 259);
+    assert(pipe.Close() == 0);
 #else
 #error "Pipe tests configured for Windows or Unix only."
 #endif
@@ -294,6 +295,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2003/03/06 21:12:35  ivanov
+ * *** empty log message ***
+ *
  * Revision 6.9  2003/03/03 14:47:21  dicuccio
  * Remplemented CPipe using private platform specific classes.  Remplemented
  * Win32 pipes using CreatePipe() / CreateProcess() - enabled CPipe in windows

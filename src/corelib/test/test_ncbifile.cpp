@@ -578,6 +578,17 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[])
 {
+     string filename;
+     fstream* temp_file = CFile::CreateTmpFile( filename, CFile::eText, 
+                                    	 
+     CFile::eAllowRead );
+     if(!*temp_file) {
+         cerr << "Cannot open file: " << filename << endl;
+     }
+
+     return 0;
+
+
      // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
@@ -586,6 +597,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/03/06 21:12:35  ivanov
+ * *** empty log message ***
+ *
  * Revision 1.19  2003/02/14 19:26:51  ivanov
  * Added more checks for CreateTmpFile()
  *
