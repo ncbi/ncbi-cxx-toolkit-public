@@ -1,4 +1,4 @@
---$Revision: 1.17 $
+--$Revision: 1.18 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -71,6 +71,23 @@ Cdd-repeat ::= SEQUENCE {               -- record whether the CD contains
   avglen        INTEGER OPTIONAL        -- average repeat length
 }
 
+
+Cdd-book-ref ::= SEQUENCE {             -- record a link to Entrez Books
+  bookname      VisibleString,          -- abbreviated book title
+  textelement   ENUMERATED { unassigned(0),   -- type of element 
+                             section(1),      -- a section or paragraph
+                             figgrp(2),       -- a figure or set of figures
+                             table(3),        -- a table
+                             chapter(4),      -- a whole chapter
+                             biblist(5),      -- a lisf of references
+                             box(6),          -- an inserted box
+                             glossary(7),     -- glossary
+                             appendix(8),     -- appendix
+                             other(255) },
+  elementid    INTEGER,                 -- address of the text-element
+  subelementid INTEGER OPTIONAL         -- exact address, used with section
+}
+
 -- The description of CDD's refers to the specific set of aligned sequences,
 -- the region that is being aligned and the information contained in the
 -- alignment. It may contain a lengthy comment
@@ -78,7 +95,6 @@ Cdd-repeat ::= SEQUENCE {               -- record whether the CD contains
 -- other anecdotal information that can't be pressed into a rigid scheme.
 -- Crosslinks to reference papers available in PubMed are possible as well.
 -- There can be as many of these as you want in the CDD.
-
 
 Cdd-descr ::= CHOICE {
   othername     VisibleString,          -- alternative names for the CDD
@@ -115,18 +131,19 @@ Cdd-descr ::= CHOICE {
   old-root      Cdd-id-set,                   -- to record short-term history
   curation-status INTEGER { unassigned(0),    -- to record curation status
                             prein (1),        -- when CD is checked out from
-			    ofc (2),          -- the tracking database, for 
-			    iac (3),          -- use within curation software
-			    ofv1 (4),
-			    iav1 (5),
-			    ofv2 (6),
-			    iav2 (7),
-			    postin (8),
+                            ofc (2),          -- the tracking database, for 
+                            iac (3),          -- use within curation software
+                            ofv1 (4),
+                            iav1 (5),
+                            ofv2 (6),
+                            iav2 (7),
+                            postin (8),
                             other (255) },
   readonly-status INTEGER { unassigned(0),    -- to record read-only status
                             readonly (1),     -- when CD is checked out from
-			    readwrite (2),    -- the tracking database, for
-			    other (255) }     -- use within curation software
+                            readwrite (2),    -- the tracking database, for
+                            other (255) },     -- use within curation software
+  book-ref      Cdd-book-ref
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
@@ -219,8 +236,10 @@ Feature-evidence ::= CHOICE {
   reference     Pub,                    -- evidence via a literature reference
   bsannot       Biostruc-annot-set,     -- evidence via Biostruc-features, such
                                         -- as structure superpositions 
-  seqfeat       Seq-feat                -- evidence is a Sequence feature found
-}                                       -- elsewhere
+  seqfeat       Seq-feat,               -- evidence is a Sequence feature found
+                                        -- elsewhere
+  book-ref      Cdd-book-ref            -- evidence is a book chapter or figure
+}
 
 Align-annot ::= SEQUENCE {
   location      Seq-loc,                -- points to a location in one of the
@@ -256,7 +275,7 @@ Domain-parent ::= SEQUENCE {
   parentid       Cdd-id,                -- identify the section parent by accession
   seqannot       Seq-annot OPTIONAL     -- contains the sequence alignment linking
                                         -- CD alignment models, should align the 
-					-- masters/representatives of each CD
+                                        -- masters/representatives of each CD
 }
 
 Lineage-info ::= CHOICE {
@@ -292,27 +311,27 @@ SeqTree-node ::= SEQUENCE {
 
 Algorithm-type ::= SEQUENCE {
   scoring-Scheme    INTEGER { unassigned           (0),
-		              percent-id           (1),
-		              kimura-corrected     (2),
-		              aligned-score        (3),
-			      aligned-score-ext    (4),
-			      aligned-score-filled (5),
-		              blast-footprint      (6),
-		              blast-full           (7),
-		              other           (255) },
+                              percent-id           (1),
+                              kimura-corrected     (2),
+                              aligned-score        (3),
+                              aligned-score-ext    (4),
+                              aligned-score-filled (5),
+                              blast-footprint      (6),
+                              blast-full           (7),
+                              other           (255) },
   clustering-Method INTEGER { unassigned             (0),
-		              single-linkage         (1),
-		              neighbor-joining       (2),
-		              fast-minimum-evolution (3),
-		              other                (255) },
+                              single-linkage         (1),
+                              neighbor-joining       (2),
+                              fast-minimum-evolution (3),
+                              other                (255) },
   score-Matrix      INTEGER { unassigned (0),
-		              blosum45   (1),
-		              blosum62   (2),
-		              blosum80   (3),
-		              pam30      (4),
-		              pam70      (5),
-		              pam250     (6),
-		              other    (255) } OPTIONAL,
+                              blosum45   (1),
+                              blosum62   (2),
+                              blosum80   (3),
+                              pam30      (4),
+                              pam70      (5),
+                              pam250     (6),
+                              other    (255) } OPTIONAL,
   gapOpen           INTEGER OPTIONAL,
   gapExtend         INTEGER OPTIONAL,
   gapScaleFactor    INTEGER OPTIONAL,
