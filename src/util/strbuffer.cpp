@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/09/25 12:49:14  kuznets
+* Change to allowed more than one subsource collector
+*
 * Revision 1.36  2003/03/21 17:15:36  vasilche
 * Avoid unnecessary buffer growth in GetChars().
 *
@@ -222,11 +225,10 @@ void CIStreamBuffer::Close(void)
 
 void CIStreamBuffer::StartSubSource(void)
 {
-    _ASSERT(!m_Collector);
     _ASSERT(!m_CollectPos);
 
     m_CollectPos = m_CurrentPos;
-    m_Collector = m_Input->SubSource(m_DataEndPos - m_CurrentPos);
+    m_Collector = m_Input->SubSource(m_DataEndPos - m_CurrentPos, m_Collector);
 }
 
 CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
