@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/02 20:43:15  grichenk
+* Improved strand processing, throw -> THROW1_TRACE
+*
 * Revision 1.17  2002/04/30 14:30:44  grichenk
 * Added eResolve_TSE flag in CAnnot_Types_CI, made it default
 *
@@ -91,8 +94,8 @@
 * ===========================================================================
 */
 
-#include "annot_object.hpp"
 #include <objects/objmgr1/annot_types_ci.hpp>
+#include "annot_object.hpp"
 #include "data_source.hpp"
 #include "tse_info.hpp"
 #include "handle_range_map.hpp"
@@ -150,25 +153,6 @@ CAnnotTypes_CI::CAnnotTypes_CI(CBioseq_Handle& bioseq,
         loc->SetInt().SetTo(stop);
     }
     x_Initialize(*loc, resolve);
-}
-
-void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc, EResolveMethod resolve)
-{
-    CHandleRangeMap master_loc(m_Scope->x_GetIdMapper());
-    master_loc.AddLocation(loc);
-    iterate(CHandleRangeMap::TLocMap, id_it, master_loc.GetMap()) {
-        // Iterate intervals for the current id, resolve each interval
-        iterate(CHandleRange::TRanges, rit, id_it->second.GetRanges()) {
-            // Resolve the master location
-            x_ResolveReferences(id_it->first,             // master id
-                id_it->first,                             // id to resolve
-                rit->first.GetFrom(), rit->first.GetTo(), // ref. interval
-                rit->second,                              // strand
-                0,                                        // no shift
-                resolve);
-        }
-    }
-    m_CurAnnot = m_AnnotSet.begin();
 }
 
 
@@ -252,22 +236,23 @@ const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
 }
 
 
-void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
+void CAnnotTypes_CI::x_Initialize(const CSeq_loc& loc, EResolveMethod resolve)
 {
-    // Search all possible TSEs
-    TTSESet entries;
-    m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
-    non_const_iterate(TTSESet, tse_it, entries) {
-        if (bool(m_NativeTSE)  &&  *tse_it != m_NativeTSE)
-            continue;
-        if ( m_TSESet.insert(*tse_it).second ) {
-            (*tse_it)->Lock();
-        }
-        CAnnot_CI annot_it(**tse_it, loc, m_Selector);
-        for ( ; annot_it; annot_it++ ) {
-            m_AnnotSet.insert(&(*annot_it));
+    CHandleRangeMap master_loc(m_Scope->x_GetIdMapper());
+    master_loc.AddLocation(loc);
+    iterate(CHandleRangeMap::TLocMap, id_it, master_loc.GetMap()) {
+        // Iterate intervals for the current id, resolve each interval
+        iterate(CHandleRange::TRanges, rit, id_it->second.GetRanges()) {
+            // Resolve the master location
+            x_ResolveReferences(id_it->first,             // master id
+                id_it->first,                             // id to resolve
+                rit->first.GetFrom(), rit->first.GetTo(), // ref. interval
+                rit->second,                              // strand
+                0,                                        // no shift
+                resolve);
         }
     }
+    m_CurAnnot = m_AnnotSet.begin();
 }
 
 
@@ -283,8 +268,7 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
     rec->m_Location.reset
         (new CHandleRangeMap(m_Scope->x_GetIdMapper()));
     CHandleRange hrg(ref_idh);
-    //### Strand not implemented
-    hrg.AddRange(CHandleRange::TRange(rmin, rmax), eNa_strand_unknown);
+    hrg.AddRange(CHandleRange::TRange(rmin, rmax), strand);
     // Create the location on the referenced sequence
     rec->m_Location->AddRanges(ref_idh, hrg);
     rec->m_RefShift = shift;
@@ -318,7 +302,8 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
                 // The referenced sequence must be in the same TSE as the master one
                 CBioseq_Handle master_seq = m_Scope->GetBioseqHandle(
                         m_Scope->x_GetIdMapper().GetSeq_id(master_idh));
-                if (&master_seq.GetTopLevelSeqEntry() != &check_seq.GetTopLevelSeqEntry()) {
+                if (/*!check_seq  ||  !master_seq  ||*/
+                    (&master_seq.GetTopLevelSeqEntry() != &check_seq.GetTopLevelSeqEntry())) {
                     continue;
                 }
             }
@@ -331,11 +316,38 @@ void CAnnotTypes_CI::x_ResolveReferences(CSeq_id_Handle master_idh,
             if (rmax < seg_max)
                 seg_max = rmax;
             int rshift = shift + seg.GetPosition() - seg.m_RefPos;
+            // Adjust strand
+            ENa_strand adj_strand = eNa_strand_unknown;
+            if ( seg.m_MinusStrand ) {
+                if (strand == eNa_strand_minus)
+                    adj_strand = eNa_strand_plus;
+                else
+                    adj_strand = eNa_strand_minus;
+            }
             x_ResolveReferences(master_idh, seg.m_RefSeq,
                                 seg_min - rshift, seg_max - rshift,
-                                strand, //### THIS IS INCORRECT!!!
+                                adj_strand,
                                 rshift,
                                 resolve);
+        }
+    }
+}
+
+
+void CAnnotTypes_CI::x_SearchLocation(CHandleRangeMap& loc)
+{
+    // Search all possible TSEs
+    TTSESet entries;
+    m_Scope->x_PopulateTSESet(loc, m_Selector.m_AnnotChoice, entries);
+    non_const_iterate(TTSESet, tse_it, entries) {
+        if (bool(m_NativeTSE)  &&  *tse_it != m_NativeTSE)
+            continue;
+        if ( m_TSESet.insert(*tse_it).second ) {
+            (*tse_it)->Lock();
+        }
+        CAnnot_CI annot_it(**tse_it, loc, m_Selector);
+        for ( ; annot_it; annot_it++ ) {
+            m_AnnotSet.insert(&(*annot_it));
         }
     }
 }
@@ -421,7 +433,6 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                         ((*conv_it)->m_RefMin + (*conv_it)->m_RefShift);
                     loc.SetInt().SetTo
                         ((*conv_it)->m_RefMax + (*conv_it)->m_RefShift);
-                    //### What about "+1"?
                     if (loc.GetInt().GetTo() - loc.GetInt().GetFrom() + 1 <
                         m_Scope->GetBioseqHandle(loc.GetInt().
                         GetId()).GetSeqVector().size())
@@ -575,8 +586,9 @@ bool CAnnotTypes_CI::x_ConvertLocToMaster(CSeq_loc& loc) const
                 }
             default:
                 {
-                    throw runtime_error
-                        ("CAnnotTypes_CI -- unsupported location type");
+                    THROW1_TRACE(runtime_error,
+                        "CAnnotTypes_CI::x_ConvertLocToMaster() -- "
+                        "Unsupported location type");
                 }
             }
         }
