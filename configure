@@ -9583,10 +9583,10 @@ if test "$with_wxwin" != "no" ; then
    wxconf=$WXWIN_BINPATH/wx-config
    if test -x "$WXWIN_BINPATH/gtk-config"; then
       gtkconf=$WXWIN_BINPATH/gtk-config
-   elif `gtk-config --version >/dev/null 2>&1`; then
+   elif gtk-config --version >/dev/null 2>&1; then
       gtkconf=gtk-config
    else
-      # May work without gtk-config (e.g., on MacOS X)
+      # May work without gtk-config (e.g., on Mac OS X)
       gtkconf=:
    fi
    echo "$as_me:$LINENO: checking for wxWindows in $WXWIN_ARCH_PATH" >&5

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.137 2002/10/10 15:56:31 ucko Exp $
+#  $Id: configure.ac,v 1.138 2002/10/10 16:33:29 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2016,7 +2016,7 @@ if test "$with_wxwin" != "no" ; then
    wxconf=$WXWIN_BINPATH/wx-config
    if test -x "$WXWIN_BINPATH/gtk-config"; then
       gtkconf=$WXWIN_BINPATH/gtk-config
-   elif `gtk-config --version >/dev/null 2>&1`; then
+   elif gtk-config --version >/dev/null 2>&1; then
       gtkconf=gtk-config
    else
       # May work without gtk-config (e.g., on Mac OS X)
