@@ -149,6 +149,13 @@ Optional
 =========================================================================
 
 
+checkpoint_bytes : Integer
+Checkpoint the database at least as often as every bytes of log file 
+are written. 
+
+Optional
+=========================================================================
+
 
 Ini file example:
 
