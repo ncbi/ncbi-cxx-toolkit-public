@@ -38,7 +38,6 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
-#include <objmgr/impl/tse_info.hpp>
 
 #include <set>
 
@@ -92,6 +91,8 @@ class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CObject
 public:
     CBioseq_ScopeInfo(CScope* scope); // no sequence
     CBioseq_ScopeInfo(CScope* scope, const CConstRef<CBioseq_Info>& bioseq);
+
+    ~CBioseq_ScopeInfo(void);
 
     CScope& GetScope(void) const;
 
@@ -240,6 +241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/06/19 19:31:00  vasilche
+* Added missing CBioseq_ScopeInfo destructor for MSVC.
+*
 * Revision 1.2  2003/06/19 19:08:31  vasilche
 * Added include to make MSVC happy.
 *
