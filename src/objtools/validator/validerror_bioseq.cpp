@@ -1840,7 +1840,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 
         // if same location, subtype and strand
         if ( curr_subtype == prev_subtype  &&
-             Compare(*curr_location, *prev_location, m_Scope) == eSame) {
+             sequence::Compare(*curr_location, *prev_location, m_Scope) == eSame) {
 
             curr_strand = GetStrand(*curr_location, m_Scope);
             prev_strand = GetStrand(*prev_location, m_Scope);
@@ -1934,9 +1934,11 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                      (prev_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
                       prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
                       prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
-                    if ( Compare(*curr_location, *prev_location, m_Scope) == eOverlap &&
-                        NotPeptideException(curr, prev) ) {
-                        EDiagSev overlapPepSev = 
+                    if ( sequence::Compare(*curr_location,
+					   *prev_location,
+					   m_Scope) == eOverlap &&
+			 NotPeptideException(curr, prev) ) {
+		        EDiagSev overlapPepSev = 
                             m_Imp.IsOvlPepErr()? eDiag_Error :eDiag_Warning;
                         PostErr( overlapPepSev,
                             eErr_SEQ_FEAT_OverlappingPeptideFeat,
@@ -1997,7 +1999,7 @@ class CNoCaseCompare
 public:
     bool operator ()(const string& s1, const string& s2) const
     {
-        return NStr::CompareNocase(s1, s2) == 0 ? true : false;
+        return NStr::CompareNocase(s1, s2) < 0;
     }
 };
 
@@ -2065,6 +2067,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/01/30 20:26:01  shomrat
+* Explicitly call sequence::Compare
+*
 * Revision 1.10  2003/01/29 21:56:31  shomrat
 * Added check for id on multiple bioseqs; Bug fixes
 *

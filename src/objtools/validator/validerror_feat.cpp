@@ -544,7 +544,8 @@ void CValidError_feat::ValidateCdregion (
     }
 
     iterate( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
-        ECompare comp = Compare ((**codebreak).GetLoc (), feat.GetLocation (), m_Scope );
+        ECompare comp = sequence::Compare((**codebreak).GetLoc (),
+					  feat.GetLocation (), m_Scope );
         if ( (comp != eContained) && (comp != eSame))
             PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                 "Code-break location not in coding region", feat);
@@ -763,7 +764,8 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 	 rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.IsSetAnticodon () ) {
-            ECompare comp = Compare(trna.GetAnticodon(), feat.GetLocation());
+            ECompare comp = sequence::Compare(trna.GetAnticodon(),
+					      feat.GetLocation());
             if ( comp != eContained  &&  comp != eSame ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_Range,
                     "Anticodon location not in tRNA", feat);
@@ -2075,6 +2077,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/01/30 20:26:17  shomrat
+* Explicitly call sequence::Compare
+*
 * Revision 1.9  2003/01/29 21:58:26  shomrat
 * Commented check for multiple CDS due to feature indexing implementation issues
 *
