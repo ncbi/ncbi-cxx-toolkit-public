@@ -56,7 +56,7 @@ BEGIN_SCOPE(objects)
 
 
 
-class CShowBlastDefline 
+class NCBI_XBLASTFORMAT_EXPORT CShowBlastDefline 
 {
 
 public:
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.2  2005/01/25 17:34:13  jianye
+add NCBI_XBLASTFORMAT_EXPORT label
+
 Revision 1.1  2005/01/25 15:37:25  jianye
 Initial check in
 
