@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/22 14:24:00  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
 * Revision 1.6  2002/01/24 20:08:16  thiessen
 * fix local id problem
 *
@@ -287,6 +290,41 @@ bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
         return (sid.GetSwissprot().GetAccession() == accession);
 
     ERR_POST(Error << "MoleculeIdentifier::MatchesSeqId() - can't match this type of Seq-id");
+    return false;
+}
+
+bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const MoleculeIdentifier *b)
+{
+    // identifier sort - float sequences with PDB id's to the top, then gi's, then accessions
+    if (a->pdbID.size() > 0) {
+        if (b->pdbID.size() > 0) {
+            if (a->pdbID < b->pdbID)
+                return true;
+            else if (a->pdbID > b->pdbID)
+                return false;
+            else
+                return (a->pdbChain < b->pdbChain);
+        } else
+            return true;
+    }
+
+    else if (a->gi != VALUE_NOT_SET) {
+        if (b->pdbID.size() > 0)
+            return false;
+        else if (b->gi != VALUE_NOT_SET)
+            return (a->gi < b->gi);
+        else
+            return true;
+    }
+
+    else if (a->accession.size() > 0) {
+        if (b->pdbID.size() > 0 || b->gi != VALUE_NOT_SET)
+            return false;
+        else if (b->accession.size() > 0)
+            return (a->accession < b->accession);
+    }
+
+    ERR_POST(Error << "MoleculeIdentifier::CompareIdentifiers() - confused by identifier type");
     return false;
 }
 

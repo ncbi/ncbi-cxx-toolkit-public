@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.123  2002/02/22 14:24:00  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
 * Revision 1.122  2002/02/19 14:59:38  thiessen
 * add CDD reject and purge sequence
 *
@@ -480,6 +483,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <ctools/ctools.h>
+
+#include <algorithm>
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
@@ -1627,10 +1632,20 @@ bool Cn3DMainFrame::SaveDialog(bool canCancel)
     return true;
 }
 
+// for sorting sequence list in reject dialog
+typedef std::pair < const Sequence * , wxString > SeqAndDescr;
+typedef std::vector < SeqAndDescr > SeqAndDescrList;
+static bool CompareSequencesByIdentifier(const SeqAndDescr& a, const SeqAndDescr& b)
+{
+    return MoleculeIdentifier::CompareIdentifiers(
+        a.first->identifier, b.first->identifier);
+}
+
 void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet || !glCanvas->structureSet->IsCDD()) return;
     switch (event.GetId()) {
+
         case MID_EDIT_CDD_NAME: {
             wxString newName = wxGetTextFromUser("Enter or edit the CDD name:",
                 "CDD Name", glCanvas->structureSet->GetCDDName().c_str(), this, -1, -1, false);
@@ -1638,6 +1653,7 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 ERR_POST(Error << "Error saving CDD name");
             break;
         }
+
         case MID_EDIT_CDD_DESCR:
             if (!cddDescriptionDialog) {
                 StructureSet::TextLines line(1);
@@ -1647,6 +1663,7 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             }
             cddDescriptionDialog->Show(true);
             break;
+
         case MID_EDIT_CDD_NOTES:
             if (!cddNotesDialog) {
                 StructureSet::TextLines lines;
@@ -1656,47 +1673,47 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             }
             cddNotesDialog->Show(true);
             break;
+
         case MID_EDIT_CDD_REFERENCES: {
             CDDRefDialog dialog(glCanvas->structureSet, this, -1, "CDD References");
             dialog.ShowModal();
             break;
         }
+
         case MID_ANNOT_CDD: {
             if (!cddAnnotateDialog)
                 cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
             cddAnnotateDialog->Show(true);
             break;
         }
+
         case MID_CDD_REJECT_SEQ: {
             // make a list of slave sequences
-            std::vector < const Sequence * > sequences;
-            std::vector < wxString > descriptions;
+            SeqAndDescrList seqsDescrs;
             const MoleculeIdentifier *master =
                 glCanvas->structureSet->alignmentManager->
                     GetCurrentMultipleAlignment()->GetSequenceOfRow(0)->identifier;
             SequenceSet::SequenceList::const_iterator
                 s, se = glCanvas->structureSet->sequenceSet->sequences.end();
             for (s=glCanvas->structureSet->sequenceSet->sequences.begin(); s!=se; s++) {
-                if ((*s)->identifier != master && (*s)->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                    wxString description;
-                    description.Printf("gi %i     ", (*s)->identifier->gi);
-                    if ((*s)->identifier->pdbID.size() > 0) {
-                        description += wxString('(') + (*s)->identifier->pdbID.c_str();
-                        if ((*s)->identifier->pdbChain != ' ')
-                            description += wxString('_') + (char) (*s)->identifier->pdbChain;
-                        description += ")     ";
-                    }
+                if ((*s)->identifier != master) {
+                    wxString description((*s)->identifier->ToString().c_str());
                     if ((*s)->description.size() > 0)
-                        description += wxString(' ') + (*s)->description.c_str();
-                    descriptions.push_back(description);
-                    sequences.push_back(*s);
+                        description += wxString("     ") + (*s)->description.c_str();
+                    seqsDescrs.resize(seqsDescrs.size() + 1);
+                    seqsDescrs.back().first = *s;
+                    seqsDescrs.back().second = description;
                 }
             }
-            wxString *choices = new wxString[descriptions.size()];
+            // sort by identifier
+            stable_sort(seqsDescrs.begin(), seqsDescrs.end(), CompareSequencesByIdentifier);
+
+            // user dialogs for selection and reason
+            wxString *choices = new wxString[seqsDescrs.size()];
             int choice;
-            for (choice=0; choice<descriptions.size(); choice++) choices[choice] = descriptions[choice];
+            for (choice=0; choice<seqsDescrs.size(); choice++) choices[choice] = seqsDescrs[choice].second;
             choice = wxGetSingleChoiceIndex("Reject which sequence?", "Reject Sequence",
-                descriptions.size(), choices, this);
+                seqsDescrs.size(), choices, this);
             if (choice >= 0) {
                 wxString message = "Are you sure you want to reject this sequence?\n\n";
                 message += choices[choice];
@@ -1708,8 +1725,9 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                     int purge = wxMessageBox("Do you want to purge all instances of this sequence "
                         " from the multiple alignment and update list?",
                         "", wxYES_NO | wxICON_QUESTION, this);
+                    // finally, actually perform the rejection+purge
                     glCanvas->structureSet->
-                        RejectAndPurgeSequence(sequences[choice], reason.c_str(), purge == wxYES);
+                        RejectAndPurgeSequence(seqsDescrs[choice].first, reason.c_str(), purge == wxYES);
                 }
             }
             break;

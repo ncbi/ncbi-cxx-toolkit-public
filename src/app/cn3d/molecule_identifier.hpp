@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/02/22 14:24:01  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
 * Revision 1.4  2001/11/27 16:26:08  thiessen
 * major update to data management system
 *
@@ -100,6 +103,9 @@ public:
             (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET)
         );
     }
+
+    // comparison of identifiers (e.g. for sorting) - floats PDB's to top, then gi's in numerical order
+    static bool CompareIdentifiers(const MoleculeIdentifier *a, const MoleculeIdentifier *b);
 
 private:
     // can't create one of these directly - must use GetIdentifier()

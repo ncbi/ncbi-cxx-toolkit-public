@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/02/22 14:24:01  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
 * Revision 1.27  2002/02/13 14:53:30  thiessen
 * add update sort
 *
@@ -827,41 +830,9 @@ typedef bool (*CompareUpdates)(BlockMultipleAlignment *a, BlockMultipleAlignment
 
 static bool CompareUpdatesByIdentifier(BlockMultipleAlignment *a, BlockMultipleAlignment *b)
 {
-    const Sequence
-        *seqA = a->GetSequenceOfRow(1), // sort by first slave row
-        *seqB = b->GetSequenceOfRow(1);
-
-    // identifier sort - float sequences with PDB id's to the top, then gi's, then accessions
-    if (seqA->identifier->pdbID.size() > 0) {
-        if (seqB->identifier->pdbID.size() > 0) {
-            if (seqA->identifier->pdbID < seqB->identifier->pdbID)
-                return true;
-            else if (seqA->identifier->pdbID > seqB->identifier->pdbID)
-                return false;
-            else
-                return (seqA->identifier->pdbChain < seqB->identifier->pdbChain);
-        } else
-            return true;
-    }
-
-    else if (seqA->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        if (seqB->identifier->pdbID.size() > 0)
-            return false;
-        else if (seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
-            return (seqA->identifier->gi < seqB->identifier->gi);
-        else
-            return true;
-    }
-
-    else if (seqA->identifier->accession.size() > 0) {
-        if (seqB->identifier->pdbID.size() > 0 || seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
-            return false;
-        else if (seqB->identifier->accession.size() > 0)
-            return (seqA->identifier->accession < seqB->identifier->accession);
-    }
-
-    ERR_POST(Error << "CompareUpdatesByIdentifier() - unrecognized identifier");
-    return false;
+    return MoleculeIdentifier::CompareIdentifiers(
+        a->GetSequenceOfRow(1)->identifier, // sort by first slave row
+        b->GetSequenceOfRow(1)->identifier);
 }
 
 static CompareUpdates updateComparisonFunction = NULL;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/02/22 14:24:01  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
 * Revision 1.31  2002/02/21 12:26:30  thiessen
 * fix row delete bug ; remember threader options
 *
@@ -1030,7 +1033,7 @@ SequenceViewerWidget::SequenceViewerWidget(
         wxWindowID id,
         const wxPoint& pos,
         const wxSize& size) :
-    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_NOBORDER | wxNO_3D)
+    wxSplitterWindow(parent, -1, wxPoint(0,0), parent->GetClientSize(), wxSP_3DBORDER | wxNO_3D)
 {
     sequenceArea = new SequenceViewerWidget_SequenceArea(this);
     titleArea = new SequenceViewerWidget_TitleArea(this);

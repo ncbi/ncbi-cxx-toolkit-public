@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/02/22 14:24:01  thiessen
+* sort sequences in reject dialog ; general identifier comparison
+*
 * Revision 1.42  2002/02/21 12:26:30  thiessen
 * fix row delete bug ; remember threader options
 *
@@ -971,41 +974,9 @@ typedef bool (*CompareRows)(const DisplayRowFromAlignment *a, const DisplayRowFr
 
 static bool CompareRowsByIdentifier(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
 {
-    const Sequence
-        *seqA = a->alignment->GetSequenceOfRow(a->row),
-        *seqB = b->alignment->GetSequenceOfRow(b->row);
-
-    // identifier sort - float sequences with PDB id's to the top, then gi's, then accessions
-    if (seqA->identifier->pdbID.size() > 0) {
-        if (seqB->identifier->pdbID.size() > 0) {
-            if (seqA->identifier->pdbID < seqB->identifier->pdbID)
-                return true;
-            else if (seqA->identifier->pdbID > seqB->identifier->pdbID)
-                return false;
-            else
-                return (seqA->identifier->pdbChain < seqB->identifier->pdbChain);
-        } else
-            return true;
-    }
-
-    else if (seqA->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        if (seqB->identifier->pdbID.size() > 0)
-            return false;
-        else if (seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
-            return (seqA->identifier->gi < seqB->identifier->gi);
-        else
-            return true;
-    }
-
-    else if (seqA->identifier->accession.size() > 0) {
-        if (seqB->identifier->pdbID.size() > 0 || seqB->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
-            return false;
-        else if (seqB->identifier->accession.size() > 0)
-            return (seqA->identifier->accession < seqB->identifier->accession);
-    }
-
-    ERR_POST(Error << "CompareRowsByIdentifier() - unrecognized identifier");
-    return false;
+    return MoleculeIdentifier::CompareIdentifiers(
+        a->alignment->GetSequenceOfRow(a->row)->identifier,
+        b->alignment->GetSequenceOfRow(b->row)->identifier);
 }
 
 static bool CompareRowsByScore(const DisplayRowFromAlignment *a, const DisplayRowFromAlignment *b)
