@@ -350,6 +350,7 @@ int CDemoApp::Run(void)
                     blob_cache->SetTimeStampPolicy(flags, cache_age*24*60*60);
                     blob_cache->SetReadUpdateLimit(1000);
                     blob_cache->SetVersionRetention(ICache::eKeepAll);
+                    blob_cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
                     
                     blob_cache->Open(cache_path.c_str(), "blobs");
                 }}
@@ -368,6 +369,8 @@ int CDemoApp::Run(void)
                         ICache::fCheckExpirationAlways;
                     id_cache->SetTimeStampPolicy(flags, id_days*24*60*60+1);
                     id_cache->SetVersionRetention(ICache::eKeepAll);
+                    id_cache->SetWriteSync(CBDB_Cache::eWriteNoSync);
+                    id_cache->SetPageSize(id_cache->eSmall);
                     
                     id_cache->Open(cache_path.c_str(), "ids");
                 }}
@@ -859,6 +862,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2004/09/08 16:43:31  vasilche
+* More tuning of BDB cache.
+*
 * Revision 1.82  2004/08/31 14:15:46  vasilche
 * Added options -count_types and -reset_scope
 *
