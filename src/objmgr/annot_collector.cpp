@@ -673,12 +673,8 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                         NCBI_THROW(CAnnotException, eFindFailed,
                                    "Cannot resolve master id");
                     }
-                    if (m_Selector.m_UnresolvedFlag ==
-                        SAnnotSelector::eIgnoreUnresolved) {
-                        // skip unresolvable IDs
-                        continue;
-                    }
-                    // Still try to find annotations on the ID
+                    // skip unresolvable IDs
+                    continue;
                 }
 
                 CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
@@ -1798,6 +1794,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/02/01 19:15:15  vasilche
+* Skip SeqMap lookup for unresolved Seq-ids.
+*
 * Revision 1.46  2005/01/21 20:19:09  vasilche
 * Fixed non-point non-mapped SNPs.
 *
