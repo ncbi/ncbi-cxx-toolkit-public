@@ -1089,7 +1089,7 @@ bool CSeqDBIsam::x_SparseStringToOid(const string   & acc,
                                      CSeqDBLockHold & locked)
 {
     cerr << " this should be derived from readdb_acc2fastaEx().." << endl;
-    assert(0);
+    _TROUBLE;
     return false;
 }
 
