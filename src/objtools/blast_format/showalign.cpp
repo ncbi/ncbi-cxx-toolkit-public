@@ -86,6 +86,7 @@
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/blastdb/defline_extra.hpp>
 
+#include <stdio.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
@@ -1938,6 +1939,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.21  2003/12/09 19:40:24  ucko
+*+<stdio.h> for sprintf
+*
 *Revision 1.20  2003/12/04 22:27:34  jianye
 *Fixed accession problem for redundat hits
 *
