@@ -70,6 +70,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
       m_Dst_id_Handle(dst_id),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
+      m_PartialFlag(0),
       m_LastType(eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
@@ -94,6 +95,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
       m_Dst_id_Handle(dst_id),
       m_Dst_loc_Empty(&master_loc_empty),
       m_Partial(false),
+      m_PartialFlag(0),
       m_LastType(eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
@@ -120,6 +122,7 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
       m_Dst_id_Handle(master_id),
       m_Dst_loc_Empty(0),
       m_Partial(false),
+      m_PartialFlag(0),
       m_LastType(eMappedObjType_not_set),
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
@@ -196,10 +199,41 @@ void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg)
 }
 
 
+bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
+{
+    ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
+    bool ret = GoodSrcId(src.GetId()) && ConvertPoint(src.GetPoint(), strand);
+    if ( ret  &&  src.IsSetFuzz() ) {
+        m_SrcFuzz_from = &src.GetFuzz();
+    }
+    return ret;
+}
+
+
+bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
+{
+    ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
+    bool ret = GoodSrcId(src.GetId()) &&
+        ConvertInterval(src.GetFrom(), src.GetTo(), strand);
+    if ( ret ) {
+        if ( src.IsSetFuzz_from() ) {
+            m_SrcFuzz_from = &src.GetFuzz_from();
+        }
+        if ( src.IsSetFuzz_to() ) {
+            m_SrcFuzz_to = &src.GetFuzz_to();
+        }
+    }
+    return ret;
+}
+
+
 bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos,
                                        ENa_strand src_strand)
 {
     _ASSERT(!IsSpecialLoc());
+    m_PartialFlag = 0;
+    m_SrcFuzz_from.Reset();
+    m_SrcFuzz_to.Reset();
     if ( src_pos < m_Src_from || src_pos > m_Src_to ) {
         m_Partial = true;
         return false;
@@ -223,12 +257,17 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
                                           ENa_strand src_strand)
 {
     _ASSERT(!IsSpecialLoc());
+    m_PartialFlag = 0;
+    m_SrcFuzz_from.Reset();
+    m_SrcFuzz_to.Reset();
     if ( src_from < m_Src_from ) {
         m_Partial = true;
+        m_PartialFlag |= ePartialLeft;
         src_from = m_Src_from;
     }
     if ( src_to > m_Src_to ) {
         m_Partial = true;
+        m_PartialFlag |= ePartialRight;
         src_to = m_Src_to;
     }
     if ( src_from > src_to ) {
@@ -284,6 +323,20 @@ CRef<CSeq_interval> CSeq_loc_Conversion::GetDstInterval(void)
     if ( m_LastStrand != eNa_strand_unknown ) {
         interval.SetStrand(m_LastStrand);
     }
+    if ( m_PartialFlag ) {
+        if ( m_PartialFlag & ePartialLeft ) {
+            interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        }
+        if ( m_PartialFlag & ePartialRight ) {
+            interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        }
+    }
+    if (!interval.IsSetFuzz_from()  &&  bool(m_SrcFuzz_from)) {
+        interval.SetFuzz_from(const_cast<CInt_fuzz&>(*m_SrcFuzz_from));
+    }
+    if (!interval.IsSetFuzz_to()  &&  bool(m_SrcFuzz_to)) {
+        interval.SetFuzz_to(const_cast<CInt_fuzz&>(*m_SrcFuzz_to));
+    }
     return ret;
 }
 
@@ -296,8 +349,13 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
     CSeq_point& point = *ret;
     point.SetId(GetDstId());
     point.SetPoint(m_LastRange.GetFrom());
+    // Points can not be partial
     if ( m_LastStrand != eNa_strand_unknown ) {
         point.SetStrand(m_LastStrand);
+    }
+    _ASSERT( !m_PartialFlag );
+    if ( m_SrcFuzz_from ) {
+        point.SetFuzz(const_cast<CInt_fuzz&>(*m_SrcFuzz_from));
     }
     return ret;
 }
@@ -1351,6 +1409,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/10/25 19:29:24  grichenk
+* Preserve fuzz from the original location or use it to
+* indicate truncated intervals.
+*
 * Revision 1.39  2004/10/21 17:13:06  grichenk
 * Added mapping of anticodons.
 *

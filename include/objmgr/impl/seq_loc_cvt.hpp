@@ -211,6 +211,17 @@ private:
     //   Cumulative results on destination:
     TRange         m_TotalRange;
     bool           m_Partial;
+
+    // Separate flags for left and right truncations of each interval
+    enum EPartialFlag {
+        ePartialLeft  = 1,
+        ePartialRight = 2
+    };
+    typedef int TPartialFlag;
+
+    TPartialFlag m_PartialFlag;
+    CConstRef<CInt_fuzz> m_SrcFuzz_from;
+    CConstRef<CInt_fuzz> m_SrcFuzz_to;
     
     //   Last Point, Interval or other simple location's conversion result:
     enum EMappedObjectType {
@@ -354,28 +365,16 @@ ENa_strand CSeq_loc_Conversion::ConvertStrand(ENa_strand strand) const
 }
 
 
-inline
-bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
-{
-    ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
-    return GoodSrcId(src.GetId()) && ConvertPoint(src.GetPoint(), strand);
-}
-
-
-inline
-bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
-{
-    ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
-    return GoodSrcId(src.GetId()) && ConvertInterval(src.GetFrom(), src.GetTo(), strand);
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/10/25 19:29:24  grichenk
+* Preserve fuzz from the original location or use it to
+* indicate truncated intervals.
+*
 * Revision 1.23  2004/10/21 17:13:06  grichenk
 * Added mapping of anticodons.
 *
