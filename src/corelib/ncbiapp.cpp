@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/09 19:24:36  vakatov
+* typo fixed
+*
 * Revision 1.8  1998/12/09 17:45:37  sandomir
 * *** empty log message ***
 *
@@ -60,7 +63,6 @@
 */
 
 #include <ncbistd.hpp>
-#include <ncbiapp.hpp>
 #include <cgiapp.hpp>
 
 BEGIN_NCBI_SCOPE
