@@ -29,6 +29,7 @@
 
 #include <app/project_tree_builder/proj_item.hpp>
 #include <app/project_tree_builder/proj_builder_app.hpp>
+#include <app/project_tree_builder/proj_src_resolver.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -264,6 +265,7 @@ static void s_CreateIncludeDirs(const list<string>& cpp_flags,
         const string& flag = *p;
         const string token("-I$(includedir)");
 
+        // process -I$(includedir)
         string token_val;
         token_val = s_GetOneIncludeDir(flag, "-I$(includedir)");
         if ( !token_val.empty() ) {
@@ -276,6 +278,7 @@ static void s_CreateIncludeDirs(const list<string>& cpp_flags,
             include_dirs->push_back(dir);
         }
 
+        // process -I$(srcdir)
         token_val = s_GetOneIncludeDir(flag, "-I$(srcdir)");
         if ( !token_val.empty() )  {
             string dir = 
@@ -285,6 +288,15 @@ static void s_CreateIncludeDirs(const list<string>& cpp_flags,
             dir = CDirEntry::AddTrailingPathSeparator(dir);
 
             include_dirs->push_back(dir);
+        }
+        
+        // process defines like NCBI_C_INCLUDE
+        if(CSymResolver::IsDefine(flag)) {
+            string dir = GetApp().GetSite().ResolveDefine
+                                             (CSymResolver::StripDefine(flag));
+            if ( !dir.empty() && CDirEntry(dir).IsDir() ) {
+                include_dirs->push_back(dir);    
+            }
         }
     }
 }
@@ -311,7 +323,7 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
     TFiles::const_iterator m = makeapp.find(applib_mfilepath);
     if (m == makeapp.end()) {
 
-        LOG_POST("**** No Makefile.*.app for Makefile.in :"
+        LOG_POST(Info << "No Makefile.*.app for Makefile.in :"
                   + applib_mfilepath);
         return "";
     }
@@ -320,14 +332,17 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
         m->second.m_Contents.find("SRC");
     if (k == m->second.m_Contents.end()) {
 
-        LOG_POST("**** No SRC key in Makefile.*.app :"
+        LOG_POST(Warning << "No SRC key in Makefile.*.app :"
                   + applib_mfilepath);
         return "";
     }
 
     //sources - relative  pathes from source_base_dir
     //We'll create relative pathes from them
-    const list<string>& sources = k->second;
+    CProjSRCResolver src_resolver(applib_mfilepath, 
+                                  source_base_dir, k->second);
+    list<string> sources;
+    src_resolver.ResolveTo(&sources);
 
     //depends
     list<string> depends;
@@ -346,7 +361,7 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
 
-        LOG_POST("**** No APP key or empty in Makefile.*.app :"
+        LOG_POST(Error << "No APP key or empty in Makefile.*.app :"
                   + applib_mfilepath);
         return "";
     }
@@ -392,7 +407,7 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
     TFiles::const_iterator m = makelib.find(applib_mfilepath);
     if (m == makelib.end()) {
 
-        LOG_POST("**** No Makefile.*.lib for Makefile.in :"
+        LOG_POST(Info << "No Makefile.*.lib for Makefile.in :"
                   + applib_mfilepath);
         return "";
     }
@@ -401,14 +416,17 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
         m->second.m_Contents.find("SRC");
     if (k == m->second.m_Contents.end()) {
 
-        LOG_POST("**** No SRC key in Makefile.*.lib :"
+        LOG_POST(Warning << "No SRC key in Makefile.*.lib :"
                   + applib_mfilepath);
         return "";
     }
 
     // sources - relative pathes from source_base_dir
     // We'll create relative pathes from them)
-    const list<string>& sources = k->second;
+    CProjSRCResolver src_resolver(applib_mfilepath, 
+                                  source_base_dir, k->second);
+    list<string> sources;
+    src_resolver.ResolveTo(&sources);
 
     // depends - TODO
     list<string> depends;
@@ -424,7 +442,7 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
     if (k == m->second.m_Contents.end()  ||  
                                            k->second.empty()) {
 
-        LOG_POST("**** No LIB key or empty in Makefile.*.lib :"
+        LOG_POST(Error << "No LIB key or empty in Makefile.*.lib :"
                   + applib_mfilepath);
         return "";
     }
@@ -481,7 +499,7 @@ string CProjectItemsTree::DoCreateAsnProject(const string& source_base_dir,
     
     CProjectItemsTree::TProjects::iterator p = tree->m_Projects.find(proj_id);
     if (p == tree->m_Projects.end()) {
-        LOG_POST("^^^^^^^^^ Can not find ASN project with id : " + proj_id);
+        LOG_POST(Error << "Can not find ASN project with id : " + proj_id);
         return "";
     }
     CProjItem& project = p->second;
@@ -547,7 +565,7 @@ static CProjItem::TProjType s_GetAsnProjectType(const string& base_dir,
                (base_dir, fname + ".app")).Exists() )
         return CProjItem::eApp;
 
-    LOG_POST("Inconsistent ASN project: " + projname);
+    LOG_POST(Error << "Inconsistent ASN project: " + projname);
     return CProjItem::eNoProj;
 }
 
@@ -659,10 +677,11 @@ CProjectTreeBuilder::BuildOneProjectTree(const string&       start_node_path,
     // Resolve macrodefines
     list<string> metadata_files;
     GetApp().GetMetaDataFiles(&metadata_files);
+    CSymResolver resolver;
     ITERATE(list<string>, p, metadata_files) {
-	    CSymResolver resolver(CDirEntry::ConcatPath(root_src_path, *p));
-	    ResolveDefs(resolver, subtree_makefiles);
-    }
+	    resolver += CSymResolver(CDirEntry::ConcatPath(root_src_path, *p));
+	}
+    ResolveDefs(resolver, subtree_makefiles);
 
     // Build projects tree
     CProjectItemsTree::CreateFrom(root_src_path,
@@ -706,7 +725,7 @@ CProjectTreeBuilder::BuildProjectTree(const string&       start_node_path,
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
                 } else {
-                    LOG_POST ("========= No project with id :" + prj_id);
+                    LOG_POST (Error << "No project with id :" + prj_id);
                 }
             }
 
@@ -758,7 +777,7 @@ void CProjectTreeBuilder::ProcessDir(const string& dir_name,
 void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name, 
                                             SMakeFiles*   makefiles)
 {
-    LOG_POST("Processing MakeIn: " + file_name);
+    LOG_POST(Info << "Processing MakeIn: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -769,7 +788,7 @@ void CProjectTreeBuilder::ProcessMakeInFile(const string& file_name,
 void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name, 
                                              SMakeFiles*   makefiles)
 {
-    LOG_POST("Processing MakeLib: " + file_name);
+    LOG_POST(Info << "Processing MakeLib: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -780,7 +799,7 @@ void CProjectTreeBuilder::ProcessMakeLibFile(const string& file_name,
 void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name, 
                                              SMakeFiles*   makefiles)
 {
-    LOG_POST("Processing MakeApp: " + file_name);
+    LOG_POST(Info << "Processing MakeApp: " + file_name);
 
     CSimpleMakeFileContents fc(file_name);
     if ( !fc.m_Contents.empty() )
@@ -805,16 +824,21 @@ static void s_DoResolveDefs(CSymResolver& resolver,
                 NON_CONST_ITERATE(list<string>, k, values) {
                     //iterate all values and try to resolve 
                     const string& val = *k;
-	                list<string> resolved_def;
-	                resolver.Resolve(val, &resolved_def);
-	                if ( resolved_def.empty() )
-		                new_vals.push_back(val); //not resolved - keep old val
-                    else {
-                        //was resolved
-		                copy(resolved_def.begin(), 
-			                 resolved_def.end(), 
-			                 back_inserter(new_vals));
-		                modified = true;
+                    if( !CSymResolver::IsDefine(val) ) {
+                        new_vals.push_back(val);
+                    } else {
+                        list<string> resolved_def;
+                        string val_define = FilterDefine(val);
+	                    resolver.Resolve(val_define, &resolved_def);
+	                    if ( resolved_def.empty() )
+		                    new_vals.push_back(val); //not resolved - keep old val
+                        else {
+                            //was resolved
+		                    copy(resolved_def.begin(), 
+			                     resolved_def.end(), 
+			                     back_inserter(new_vals));
+		                    modified = true;
+                        }
                     }
                 }
                 if (modified)
@@ -929,6 +953,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/04 23:58:29  gorelenk
+ * Added support of include dirs and 3-rd party libs.
+ *
  * Revision 1.8  2004/02/03 17:12:55  gorelenk
  * Changed implementation of classes CProjItem and CProjectItemsTree.
  *
