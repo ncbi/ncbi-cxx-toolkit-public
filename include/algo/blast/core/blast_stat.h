@@ -90,14 +90,38 @@ typedef struct Blast_ScoreFreq {
     double*      sprob;     /**< arrays for frequency of given score, shifted down by score_min. */
 } Blast_ScoreFreq;
 
-/** Nearest power of 2 greater than the protein BLAST matrix size. */
-#define BLAST_MATRIX_SIZE 32
+/** Scoring matrix used in BLAST */
+typedef struct SBlastScoreMatrix {
+    int** data;         /**< actual scoring matrix data, stored in row-major
+                          form */
+    size_t ncols;       /**< number of columns */
+    size_t nrows;       /**< number of rows */
+} SBlastScoreMatrix;
 
-/** @todo FIXME: Remove me */
-typedef struct SBLASTMatrixStructure {
-    Int4 *matrix[BLAST_MATRIX_SIZE];
-    Int4 long_matrix[BLAST_MATRIX_SIZE*BLAST_MATRIX_SIZE]; /* not used */
-} SBLASTMatrixStructure;
+/** Scoring matrix data used in PSI-BLAST */
+typedef struct SPsiBlastScoreMatrix {
+    SBlastScoreMatrix* pssm;    /**< position-specific score matrix */
+    double** freq_ratios;       /**< PSSM's frequency ratios, dimensions are
+                                  specified in pssm data above */
+    Blast_KarlinBlk* kbp;       /**< Karlin-Altschul block associated with this
+                                  PSSM */
+} SPsiBlastScoreMatrix;
+
+/** Allocates a new SPsiBlastScoreMatrix structure of dimensions ncols by
+ * BLASTAA_SIZE.
+ * @param ncols number of columns (i.e.: query length) [in]
+ * @return NULL in case of memory allocation failure, else new
+ * SPsiBlastScoreMatrix structure
+ */
+SPsiBlastScoreMatrix*
+SPsiBlastScoreMatrixNew(size_t ncols);
+
+/** Deallocates a SPsiBlastScoreMatrix structure.
+ * @param matrix structure to deallocate [in]
+ * @return NULL
+ */
+SPsiBlastScoreMatrix*
+SPsiBlastScoreMatrixFree(SPsiBlastScoreMatrix* matrix);
 
 /** Structure used for scoring calculations.
 */
@@ -107,20 +131,21 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
    Uint1    alphabet_code; /**< NCBI alphabet code. */
    Int2     alphabet_size;  /**< size of alphabet. */
    Int2     alphabet_start;  /**< numerical value of 1st letter. */
-   SBLASTMatrixStructure* matrix_struct;  /**< Holds info about matrix. */
-   Int4 **matrix;  /**< Substitution matrix */
-   Int4 **posMatrix;  /**< Sub matrix for position depend BLAST. */
-   Int2  mat_dim1;   /**< dimensions of matrix. */
-   Int2  mat_dim2;   /**< dimensions of matrix. */
+   char*    name;           /**< name of scoring matrix. */
+   ListNode*   comments;    /**< Comments about scoring matrix. */
+   SBlastScoreMatrix* matrix;   /**< scoring matrix data */
+   SPsiBlastScoreMatrix* psi_matrix;    /**< PSSM and associated data. If this
+                                         is not NULL, then the BLAST search is
+                                         position specific (i.e.: PSI-BLAST) */
    Int4  loscore;   /**< Min.  substitution scores */
    Int4  hiscore;   /**< Max. substitution scores */
    Int4  penalty;   /**< penalty for mismatch in blastn. */
    Int4  reward;    /**< reward for match in blastn. */
         double  scale_factor; /**< multiplier for all cutoff and dropoff scores */
    Boolean     read_in_matrix; /**< If TRUE, matrix is read in, otherwise
-               produce one from penalty and reward above. */
-   Blast_ScoreFreq** sfp;  /**< score frequencies. */
-   double **posFreqs; /**<matrix of position specific frequencies*/
+               produce one from penalty and reward above. @todo should this be
+                an allowed way of specifying the matrix to use? */
+   Blast_ScoreFreq** sfp;  /**< score frequencies for scoring matrix. */
    /* kbp & kbp_gap are ptrs that should be set to kbp_std, kbp_psi, etc. */
    Blast_KarlinBlk** kbp;  /**< Karlin-Altschul parameters. Actually just a placeholder. */
    Blast_KarlinBlk** kbp_gap; /**< K-A parameters for gapped alignments.  Actually just a placeholder. */
@@ -132,13 +157,11 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
                     **kbp_gap_psi;  /**< K-A parameters for psi alignments. */
    Blast_KarlinBlk*  kbp_ideal;  /**< Ideal values (for query with average database composition). */
    Int4 number_of_contexts;   /**< Used by sfp and kbp, how large are these*/
-   char*    name;    /**< name of matrix. */
    Uint1*   ambiguous_res; /**< Array of ambiguous res. (e.g, 'X', 'N')*/
    Int2     ambig_size, /**< size of array above. FIXME: not needed here? */
          ambig_occupy;  /**< How many occupied? */
-   ListNode*   comments;   /**< Comments about matrix. */
-   Int4     query_length;   /**< the length of the query. */
-   Int8  effective_search_sp; /**< product of above two */
+   Int8  effective_search_sp; /**< used in PHI-BLAST @todo fix this to use the
+                                BlastQueryInfo structure */
 } BlastScoreBlk;
 
 /** 
@@ -163,13 +186,6 @@ BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
  * @return NULL pointer.
  */
 BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
-
-/**  Sets sbp->matrix field using sbp->name field using
- * the matrices in the toolkit (util/tables/raw_scoremat.h).
- * @param sbp the object containing matrix and name [in|out]
- * @return 0 on success, 1 if matrix could not be loaded 
- */
-Int2 BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp);
 
 /** Set the ambiguous residue (e.g, 'N', 'X') in the BlastScoreBlk*.
  *  Convert from ncbieaa to sbp->alphabet_code (i.e., ncbistdaa) first.
@@ -398,22 +414,23 @@ void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
                     double *beta, Boolean gapped, Int4 gap_open, Int4 gap_extend);
 
 
-/** Calculate a new PSSM, using composition-based statistics, for use
+/** Rescale the PSSM, using composition-based statistics, for use
  *  with RPS BLAST. This function produces a PSSM for a single RPS DB
  *  sequence (of size db_seq_length) and incorporates information from 
  *  the RPS blast query. Each individual database sequence must call this
  *  function to retrieve its own PSSM. The matrix is returned (and must
  *  be freed elsewhere). posMatrix is the portion of the complete 
  *  concatenated PSSM that is specific to this DB sequence 
+ * @todo revise to use existing code
  * @param scalingFactor used to rescale Lambda [in]
  * @param rps_query_length length of query sequence [in]
  * @param rps_query_seq the query sequence [in]
  * @param db_seq_length Length of the database sequence [in]
  * @param posMatrix matrix (actual) values to be used [in]
  * @param matrix_name Name of the score matrix underlying the RPS search [in]
- * @return new pssm 
+ * @return rescaled pssm 
  */
-Int4 ** RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
+Int4 ** RPSRescalePssm(double scalingFactor, Int4 rps_query_length, 
                    const Uint1 * rps_query_seq, Int4 db_seq_length, 
                    Int4 **posMatrix, const char *matrix_name);
 
