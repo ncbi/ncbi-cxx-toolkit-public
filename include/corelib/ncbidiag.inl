@@ -1,5 +1,5 @@
-#if defined(NCBIDIAG__HPP)  &&  !defined(NCBIDIAG__INL)
-#define NCBIDIAG__INL
+#if defined(CORELIB___NCBIDIAG__HPP)  &&  !defined(CORELIB___NCBIDIAG__INL)
+#define CORELIB___NCBIDIAG__INL
 
 /*  $Id$
  * ===========================================================================
@@ -62,10 +62,9 @@ class CDiagBuffer
     friend void PushDiagPostPrefix(const char* prefix);
     friend void PopDiagPostPrefix();
 
-#if !defined(NO_INCLASS_TMPL)
     friend class CNcbiDiag;
-    friend CNcbiDiag& Reset(CNcbiDiag& diag);
-    friend CNcbiDiag& Endm(CNcbiDiag& diag);
+    friend const CNcbiDiag& Reset(const CNcbiDiag& diag);
+    friend const CNcbiDiag& Endm(const CNcbiDiag& diag);
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
     friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
@@ -74,9 +73,6 @@ class CDiagBuffer
     friend bool IsDiagStream(const CNcbiOstream* os);
     friend bool IsSetDiagHandler(void);
 private:
-#else
-public:
-#endif
     friend class CDiagRestorer;
 
     const CNcbiDiag* m_Diag;    // present user
@@ -97,19 +93,14 @@ public:
     //### static instance of "CDiagBuffer" defined in GetDiagBuffer()
 public:
     ~CDiagBuffer(void);
-
-#if !defined(NO_INCLASS_TMPL)
 private:
-#endif
     //###
 
-#if !defined(NO_INCLASS_TMPL)
     // formatted output
     template<class X> void Put(const CNcbiDiag& diag, const X& x) {
         if ( SetDiag(diag) )
             (*m_Stream) << x;
     }
-#endif  /* !NO_INCLASS_TMPL */
 
     void Flush  (void);
     void Reset  (const CNcbiDiag& diag);  // reset content of the diag. message
@@ -157,12 +148,12 @@ inline CNcbiDiag::~CNcbiDiag(void) {
     m_Buffer.Detach(this);
 }
 
-inline CNcbiDiag& CNcbiDiag::SetLine(size_t line) {
+inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
     m_Line = line;
     return *this;
 }
 
-inline CNcbiDiag& CNcbiDiag::SetErrorCode(int code, int subcode) {
+inline const CNcbiDiag& CNcbiDiag::SetErrorCode(int code, int subcode) const {
     m_ErrCode = code;
     m_ErrSubCode = subcode;
     return *this;
@@ -193,22 +184,6 @@ inline TDiagPostFlags CNcbiDiag::GetPostFlags(void) const {
 }
 
 
-#if defined(NO_INCLASS_TMPL)
-template<class X>
-inline
-void Put(CNcbiDiag& diag, CDiagBuffer& dbuff, const X& x) {
-    if ( dbuff.SetDiag(diag) )
-        (*dbuff.m_Stream) << x;
-}
-
-template<class X>
-inline
-CNcbiDiag& operator<< (CNcbiDiag& diag, const X& x) {
-    Put(diag, diag.m_Buffer, x);
-    return diag;
-}
-#endif /* NO_INCLASS_TMPL */
-
 inline
 const char* CNcbiDiag::SeverityName(EDiagSev sev) {
     return CDiagBuffer::sm_SeverityName[sev];
@@ -229,7 +204,7 @@ public:
 };
 
 inline
-CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code)
+const CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code) const
 {
     return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
 }
@@ -239,49 +214,49 @@ CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code)
 //  Other CNcbiDiag:: manipulators
 
 inline
-CNcbiDiag& Reset(CNcbiDiag& diag)  {
+const CNcbiDiag& Reset(const CNcbiDiag& diag)  {
     diag.m_Buffer.Reset(diag);
     return diag;
 }
 
 inline
-CNcbiDiag& Endm(CNcbiDiag& diag)  {
+const CNcbiDiag& Endm(const CNcbiDiag& diag)  {
     diag.m_Buffer.EndMess(diag);
     return diag;
 }
 
 inline
-CNcbiDiag& Info(CNcbiDiag& diag)  {
+const CNcbiDiag& Info(const CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Info;
     return diag;
 }
 inline
-CNcbiDiag& Warning(CNcbiDiag& diag)  {
+const CNcbiDiag& Warning(const CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Warning;
     return diag;
 }
 inline
-CNcbiDiag& Error(CNcbiDiag& diag)  {
+const CNcbiDiag& Error(const CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Error;
     return diag;
 }
 inline
-CNcbiDiag& Critical(CNcbiDiag& diag)  {
+const CNcbiDiag& Critical(const CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Critical;
     return diag;
 }
 inline
-CNcbiDiag& Fatal(CNcbiDiag& diag)  {
+const CNcbiDiag& Fatal(const CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Fatal;
     return diag;
 }
 inline
-CNcbiDiag& Trace(CNcbiDiag& diag)  {
+const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
     diag << Endm;
     diag.m_Severity = eDiag_Trace;
     return diag;
@@ -355,6 +330,12 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2002/04/23 19:57:26  vakatov
+ * Made the whole CNcbiDiag class "mutable" -- it helps eliminate
+ * numerous warnings issued by SUN Forte6U2 compiler.
+ * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
+ * compilers seem to be supporting in-class template methods.
+ *
  * Revision 1.28  2002/04/11 20:39:17  ivanov
  * CVS log moved to end of the file
  *
@@ -448,4 +429,4 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
  * ==========================================================================
  */
 
-#endif /* def NCBIDIAG__HPP  &&  ndef NCBIDIAG__INL */
+#endif /* def CORELIB___NCBIDIAG__HPP  &&  ndef CORELIB___NCBIDIAG__INL */

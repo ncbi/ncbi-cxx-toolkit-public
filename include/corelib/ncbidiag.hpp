@@ -1,5 +1,5 @@
-#ifndef NCBIDIAG__HPP
-#define NCBIDIAG__HPP
+#ifndef CORELIB___NCBIDIAG__HPP
+#define CORELIB___NCBIDIAG__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -118,32 +118,36 @@ public:
               TDiagPostFlags post_flags = eDPF_Default);
     ~CNcbiDiag(void);
 
-#if !defined(NO_INCLASS_TMPL)
     // formatted output
-    template<class X> CNcbiDiag& operator<< (const X& x) {
+    template<class X> const CNcbiDiag& operator<< (const X& x) const {
         m_Buffer.Put(*this, x);
         return *this;
     }
-#endif
 
     // manipulator to set error code(s), like:  CNcbiDiag() << ErrCode(5,3);
-    CNcbiDiag& operator<< (const ErrCode& err_code);
+    const CNcbiDiag& operator<< (const ErrCode& err_code) const;
 
     // other (function-based) manipulators
-    CNcbiDiag& operator<< (CNcbiDiag& (*f)(CNcbiDiag&)) {
+    const CNcbiDiag& operator<< (const CNcbiDiag& (*f)(const CNcbiDiag&))
+        const
+    {
         return f(*this);
     }
 
-    // output manipulators for CNcbiDiag
-    friend CNcbiDiag& Reset  (CNcbiDiag& diag); // reset content of curr.mess.
-    friend CNcbiDiag& Endm   (CNcbiDiag& diag); // flush curr.mess., start new
+    // Output manipulators for CNcbiDiag
 
-    friend CNcbiDiag& Info    (CNcbiDiag& diag); /// these 5 manipulators:
-    friend CNcbiDiag& Warning (CNcbiDiag& diag); /// first do a flush;
-    friend CNcbiDiag& Error   (CNcbiDiag& diag); /// then
-    friend CNcbiDiag& Critical(CNcbiDiag& diag); /// set a
-    friend CNcbiDiag& Fatal   (CNcbiDiag& diag); /// severity for the next
-    friend CNcbiDiag& Trace   (CNcbiDiag& diag); /// diagnostic message
+    // reset the content of current message
+    friend const CNcbiDiag& Reset  (const CNcbiDiag& diag);
+    // flush currend message, start new one
+    friend const CNcbiDiag& Endm   (const CNcbiDiag& diag);
+    // flush currend message, then
+    // set a severity for the next diagnostic message
+    friend const CNcbiDiag& Info    (const CNcbiDiag& diag);
+    friend const CNcbiDiag& Warning (const CNcbiDiag& diag);
+    friend const CNcbiDiag& Error   (const CNcbiDiag& diag);
+    friend const CNcbiDiag& Critical(const CNcbiDiag& diag);
+    friend const CNcbiDiag& Fatal   (const CNcbiDiag& diag);
+    friend const CNcbiDiag& Trace   (const CNcbiDiag& diag);
 
     // get a common symbolic name for the severity levels
     static const char* SeverityName(EDiagSev sev);
@@ -151,10 +155,10 @@ public:
     // specify file name and line number to post
     // they are active for this message only, and they will be reset to
     // zero after this message is posted
-    CNcbiDiag& SetFile(const char* file);
-    CNcbiDiag& SetLine(size_t line);
+    const CNcbiDiag& SetFile(const char* file) const;
+    const CNcbiDiag& SetLine(size_t line) const;
 
-    CNcbiDiag& SetErrorCode(int code = 0, int subcode = 0);
+    const CNcbiDiag& SetErrorCode(int code = 0, int subcode = 0) const;
 
     // get severity, file , line and error code of the current message
     EDiagSev       GetSeverity    (void) const;
@@ -164,29 +168,20 @@ public:
     int            GetErrorSubCode(void) const;
     TDiagPostFlags GetPostFlags   (void) const;
 
-#if !defined(NO_INCLASS_TMPL)
 private:
-#endif
+    mutable EDiagSev       m_Severity;   // severity level of current message
+    mutable char           m_File[256];  // file name
+    mutable size_t         m_Line;       // line #
+    mutable int            m_ErrCode;    // error code
+    mutable int            m_ErrSubCode; // error subcode
+    mutable CDiagBuffer&   m_Buffer;     // this thread's error message buffer
+    mutable TDiagPostFlags m_PostFlags;  // bitwise OR of "EDiagPostFlag"
 
-    EDiagSev       m_Severity;   // severity level of the current message
-    char           m_File[256];  // file name
-    size_t         m_Line;       // line #
-    int            m_ErrCode;    // error code
-    int            m_ErrSubCode; // error subcode
-    CDiagBuffer&   m_Buffer;     // this thread's error message buffer
-    TDiagPostFlags m_PostFlags;  // bitwise OR of "EDiagPostFlag"
-
-    // prohibit assignment
+    // prohibit copy-constructor and assignment
     CNcbiDiag(const CNcbiDiag&);
     CNcbiDiag& operator= (const CNcbiDiag&);
 };
 
-#if defined(NO_INCLASS_TMPL)
-// formatted output
-template<class X>
-inline
-CNcbiDiag& operator<< (CNcbiDiag& diag, const X& x);
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -282,6 +277,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const SDiagMessage& mess) {
 }
 
 
+// Base diag.handler class
 class CDiagHandler
 {
 public:
@@ -290,7 +286,6 @@ public:
 };
 
 typedef void (*FDiagHandler)(const SDiagMessage& mess);
-
 typedef void (*FDiagCleanup)(void* data);
 
 extern void          SetDiagHandler(CDiagHandler* handler,
@@ -305,6 +300,7 @@ extern void SetDiagHandler(FDiagHandler func,
 extern bool IsSetDiagHandler(void);
 
 
+// Specialization of "CDiagHandler" for the stream-based diagnostics
 class CStreamDiagHandler : public CDiagHandler
 {
 public:
@@ -316,13 +312,13 @@ public:
 
     friend bool IsDiagStream(const CNcbiOstream* os);
 
-
 protected:
     CNcbiOstream* m_Stream;
 
 private:
     bool          m_QuickFlush;
 };
+
 
 // Write the error diagnostics to output stream "os"
 // (this uses the SetDiagHandler() functionality)
@@ -352,11 +348,11 @@ public:
     ~CDiagRestorer(void); // restores captured settings
 private:
     // Prohibit dynamic allocation; there's no good reason to allow it,
-    // and out-of-order destruction is problematic,
-    void* operator new(size_t)    { throw runtime_error("forbidden"); }
-    void* operator new[](size_t)  { throw runtime_error("forbidden"); }
-    void operator delete(void*)   { throw runtime_error("forbidden"); }
-    void operator delete[](void*) { throw runtime_error("forbidden"); }
+    // and out-of-order destruction is problematic
+    void* operator new      (size_t)  { throw runtime_error("forbidden"); }
+    void* operator new[]    (size_t)  { throw runtime_error("forbidden"); }
+    void  operator delete   (void*)   { throw runtime_error("forbidden"); }
+    void  operator delete[] (void*)   { throw runtime_error("forbidden"); }
 
     string         m_PostPrefix;
     list<string>   m_PrefixList;
@@ -368,6 +364,7 @@ private:
     CDiagHandler*  m_Handler;
     bool           m_CanDeleteHandler;
 };
+
 
 
 ///////////////////////////////////////////////////////
@@ -383,6 +380,12 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.42  2002/04/23 19:57:25  vakatov
+ * Made the whole CNcbiDiag class "mutable" -- it helps eliminate
+ * numerous warnings issued by SUN Forte6U2 compiler.
+ * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
+ * compilers seem to be supporting in-class template methods.
+ *
  * Revision 1.41  2002/04/16 18:38:02  ivanov
  * SuppressDiagPopupMessages() moved to "test/test_assert.h"
  *
@@ -524,4 +527,4 @@ END_NCBI_SCOPE
  * ==========================================================================
  */
 
-#endif  /* NCBIDIAG__HPP */
+#endif  /* CORELIB___NCBIDIAG__HPP */

@@ -56,6 +56,9 @@ BEGIN_NCBI_SCOPE
 static CMutex s_DiagMutex;
 
 
+///////////////////////////////////////////////////////
+//  CDiagRecycler::
+
 class CDiagRecycler {
 public:
     CDiagRecycler(void) {};
@@ -496,7 +499,7 @@ CNcbiDiag::CNcbiDiag(const char* file, size_t line,
 }
 
 
-CNcbiDiag& CNcbiDiag::SetFile(const char* file)
+const CNcbiDiag& CNcbiDiag::SetFile(const char* file) const
 {
     if (file  &&  *file) {
         strncpy(m_File, file, sizeof(m_File));
@@ -642,9 +645,17 @@ extern void Abort(void)
 
 END_NCBI_SCOPE
 
+
+
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.49  2002/04/23 19:57:29  vakatov
+ * Made the whole CNcbiDiag class "mutable" -- it helps eliminate
+ * numerous warnings issued by SUN Forte6U2 compiler.
+ * Do not use #NO_INCLASS_TMPL anymore -- apparently all modern
+ * compilers seem to be supporting in-class template methods.
+ *
  * Revision 1.48  2002/04/16 18:48:42  ivanov
  * SuppressDiagPopupMessages() moved to "test/test_assert.h"
  *
