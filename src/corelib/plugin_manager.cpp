@@ -148,7 +148,9 @@ CPluginManager_DllResolver::GetDllNameMask(
     string prefix = GetDllNamePrefix();
     string name = prefix;
 
-    name.append("_");
+    if ( !name.empty() ) {
+        name.append("_");
+    }
     if (interface_name.empty()) {
         name.append("*");
     } else {
@@ -310,6 +312,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/22 19:23:36  grichenk
+ * Do not add extra leading _ in the mask
+ *
  * Revision 1.15  2004/10/13 14:49:24  ivanov
  * Get rid of compile warning in CPluginManager_DllResolver::Resolve()
  *
