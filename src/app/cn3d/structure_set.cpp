@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2001/01/12 01:34:18  thiessen
+* network Biostruc load
+*
 * Revision 1.42  2000/12/29 19:23:40  thiessen
 * save row order
 *
@@ -178,6 +181,11 @@
 #include <objects/mmdb3/Rot_matrix.hpp>
 
 #include <corelib/ncbistre.hpp>
+#include <connect/ncbi_util.h>
+#include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistrasnb.hpp>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
@@ -368,6 +376,49 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
     showHideManager->ConstructShowHideArray(this);
 }
 
+static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
+{
+    err.erase();
+    try {
+
+        // set up registry field to set GET method
+        CNcbiRegistry* reg = new CNcbiRegistry;
+//        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
+        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
+        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
+        CORE_SetREG(REG_cxx2c(reg));
+
+        // create HHTP stream from mmdbsrv URL
+        CNcbiOstrstream args;
+        args << "uid=" << mmdbID
+            << "&form=6&db=t&save=Save&dopt=i"
+            << "&Complexity=Virtual%20Bond%20Model"
+            << '\0';
+        std::string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
+        TESTMSG("Trying to load Biostruc via " << host << path << '?' << args.str());
+        CConn_HttpStream httpStream(host, path, args.str());
+
+        // load Biostruc from this stream
+        CObjectIStreamAsnBinary asnStream(httpStream);
+        asnStream >> biostruc;
+
+        // for debugging only - save stream to file
+//        CNcbiOfstream ofstr("test-http-connector.val", IOS_BASE::out | IOS_BASE::binary);
+//        while (!(httpStream.eof() || httpStream.fail() || httpStream.bad())) {
+//            unsigned char ch;
+//            httpStream >> ch;
+//            ofstr << ch;
+//        }
+//        return false;
+
+    } catch (exception& e) {
+        err = e.what();
+        return false;
+    }
+
+    return true;
+}
+
 StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     StructureBase(NULL), isMultipleStructure(true)
 {
@@ -413,14 +464,31 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     if (masterMMDBID != NOT_SET) {
         for (int m=0; m<mmdbIDs.size(); m++) {
 
-            // load Biostrucs from external files
-            std::string err;
+            // load Biostrucs from external files or network
             CBiostruc biostruc;
+            bool gotBiostruc = false;
+
+            // try local file first...
+            std::string err;
             CNcbiOstrstream biostrucFile;
             biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
             TESTMSG("trying to read ncbi-backbone model from Biostruc in '" << biostrucFile.str() << "'");
-            if (ReadASNFromFile(biostrucFile.str(), biostruc, true, err)) {
+            gotBiostruc = ReadASNFromFile(biostrucFile.str(), biostruc, true, err);
+            if (!gotBiostruc) {
+                ERR_POST(Warning << "Failed to read Biostruc from " << biostrucFile.str()
+                    << "\nreason: " << err);
+            }
 
+            // ... else try network
+            if (!gotBiostruc) {
+                gotBiostruc = GetBiostrucByHTTP(mmdbIDs[m], biostruc, err);
+                if (!gotBiostruc) {
+                    ERR_POST(Warning << "Failed to read Biostruc from network"
+                        << "\nreason: " << err);
+                }
+            }
+
+            if (gotBiostruc) {
                 // create new StructureObject
                 bool isMaster = (mmdbIDs[m] == masterMMDBID);
                 StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
@@ -430,10 +498,6 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
                             << " with master " << objects.front()->pdbID);
                 }
                 objects.push_back(object);
-
-            } else {
-                ERR_POST(Error << "Failed to read Biostruc from " << biostrucFile.str()
-                    << "\nreason: " << err);
             }
         }
     }
