@@ -7822,6 +7822,102 @@ _ACEOF
 ;;
 esac
 
+
+echo "$as_me:$LINENO: checking whether the preprocessor supports C99-style variadic macros" >&5
+echo $ECHO_N "checking whether the preprocessor supports C99-style variadic macros... $ECHO_C" >&6
+if test "${ncbi_cv_cpp_std_varargs+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#define foo(...) 1
+         #if foo(x,y,z) != 1
+         #error failed
+         #endif
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ncbi_cv_cpp_std_varargs=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ncbi_cv_cpp_std_varargs=no
+fi
+rm -f conftest.err conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_cpp_std_varargs" >&5
+echo "${ECHO_T}$ncbi_cv_cpp_std_varargs" >&6
+if test "$ncbi_cv_cpp_std_varargs" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CPP_STD_VARARGS 1
+_ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking whether the preprocessor supports GNU-style variadic macros" >&5
+echo $ECHO_N "checking whether the preprocessor supports GNU-style variadic macros... $ECHO_C" >&6
+if test "${ncbi_cv_cpp_gnu_varargs+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#define foo(args...) 1
+         #if foo(x,y,z) != 1
+         #error failed
+         #endif
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ncbi_cv_cpp_gnu_varargs=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ncbi_cv_cpp_gnu_varargs=no
+fi
+rm -f conftest.err conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_cpp_gnu_varargs" >&5
+echo "${ECHO_T}$ncbi_cv_cpp_gnu_varargs" >&6
+if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CPP_GNU_VARARGS 1
+_ACEOF
+
+fi
+
+
 # for FreeTDS
 echo "$as_me:$LINENO: checking whether FIONBIO requires BSD_COMP to be defined" >&5
 echo $ECHO_N "checking whether FIONBIO requires BSD_COMP to be defined... $ECHO_C" >&6

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.159 2003/01/14 18:21:35 ucko Exp $
+#  $Id: configure.ac,v 1.160 2003/01/23 21:37:59 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1689,6 +1689,34 @@ case "$ncbi_cv_sys_stack_dir" in
  up)   AC_DEFINE(STACK_GROWS_UP,   1, [Define to 1 if the stack grows up.])  ;;
  down) AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.]);;
 esac
+
+
+AC_CACHE_CHECK([whether the preprocessor supports C99-style variadic macros],
+   ncbi_cv_cpp_std_varargs,
+   [AC_PREPROC_IFELSE(
+       [[#define foo(...) 1
+         #if foo(x,y,z) != 1
+         #error failed
+         #endif]],
+       [ncbi_cv_cpp_std_varargs=yes], [ncbi_cv_cpp_std_varargs=no])])
+if test "$ncbi_cv_cpp_std_varargs" = yes; then
+   AC_DEFINE(HAVE_CPP_STD_VARARGS, 1,
+      [Define to 1 if the preprocessor supports C99-style variadic macros.])
+fi
+
+AC_CACHE_CHECK([whether the preprocessor supports GNU-style variadic macros],
+   ncbi_cv_cpp_gnu_varargs,
+   [AC_PREPROC_IFELSE(
+       [[#define foo(args...) 1
+         #if foo(x,y,z) != 1
+         #error failed
+         #endif]],
+       [ncbi_cv_cpp_gnu_varargs=yes], [ncbi_cv_cpp_gnu_varargs=no])])
+if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
+   AC_DEFINE(HAVE_CPP_GNU_VARARGS, 1,
+      [Define to 1 if the preprocessor supports GNU-style variadic macros.])
+fi
+
 
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],

@@ -9,6 +9,12 @@
 /* Define to 1 if you have the `atoll' function. */
 #undef HAVE_ATOLL
 
+/* Define to 1 if the preprocessor supports GNU-style variadic macros. */
+#undef HAVE_CPP_GNU_VARARGS
+
+/* Define to 1 if the preprocessor supports C99-style variadic macros. */
+#undef HAVE_CPP_STD_VARARGS
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
