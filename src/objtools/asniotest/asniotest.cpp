@@ -31,15 +31,15 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbitime.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
+#include <util/random_gen.hpp>
 
 #include <memory>
 
@@ -55,6 +55,9 @@
 #include <objects/mmdb3/Region_coordinates.hpp>
 #include <objects/cn3d/Cn3d_color.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/id1/ID1server_maxcomplex.hpp>
+#include <objects/id1/id1_client.hpp>
 
 #include "asniotest.hpp"
 
@@ -120,10 +123,9 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
 
     // construct a temp file name
     CNcbiOstrstream oss;
-    oss << "test_" << (filesCreated.size() + 1) << (isBinary ? ".bin" : ".txt") << '\0';
-    auto_ptr<char> filename;
-    filename.reset(oss.str());
-    string fullPath = pathToFiles + CDirEntry::GetPathSeparator() + filename.get();
+    oss << "test_" << (filesCreated.size() + 1) << (isBinary ? ".bin" : ".txt");
+    string filename = CNcbiOstrstreamToString(oss);
+    string fullPath = CDirEntry::MakePath(pathToFiles, filename);
     if (CFile(fullPath).Exists()) {
         *err = "Can't overwrite file ";
         *err += fullPath;
@@ -155,7 +157,7 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
     try {
         *outObject << ASNobject;
         outStream->flush();
-        INFOMSG("wrote file " << filename.get());
+        INFOMSG("wrote file " << filename);
     } catch (exception& e) {
         *err = e.what();
         okay = false;
@@ -424,6 +426,66 @@ BEGIN_TEST_FUNCTION(ZeroReal)
 END_TEST_FUNCTION
 
 
+BEGIN_TEST_FUNCTION(FullBlobs)
+    CNcbiIfstream gilist
+        (CDirEntry::MakePath(pathToFiles, "representativeGIs.txt").c_str());
+    string        line;
+    CID1Client    id1;
+    CRandom       rng(CurrentTime().GetTimeT());
+    id1.SetAllowDeadEntries(true);
+    while (NcbiGetlineEOL(gilist, line)) {
+        if (line.empty()  ||  !isdigit(line[0]) ) {
+            continue;
+        }
+        int gi = NStr::StringToInt(line, 10, NStr::eCheck_Skip);
+        if (gi <= 0) {
+            continue;
+        }
+        INFOMSG("Trying GI " << gi);
+        CRef<CSeq_entry> se;
+        try {
+            CID1server_maxcomplex req;
+            req.SetGi(gi);
+            req.SetMaxplex(eEntry_complexities_entry);
+            se = id1.AskGetsefromgi(req);
+        } catch (exception& e) {
+            ADD_ERR("failed to retrieve blob for GI " << gi << ": "
+                    << e.what());
+            continue;
+        }
+        ESerialDataFormat sdf = eSerial_None;
+        string            sdf_name;
+        switch (rng.GetRand(0, 2)) {
+        case 0:  sdf = eSerial_AsnText;    sdf_name = "text ASN.1";    break;
+        case 1:  sdf = eSerial_AsnBinary;  sdf_name = "binary ASN.1";  break;
+        case 2:  sdf = eSerial_Xml;        sdf_name = "XML";           break;
+        }
+        CConn_MemoryStream stream;
+        try {
+            auto_ptr<CObjectOStream> out(CObjectOStream::Open(sdf, stream));
+            *out << *se;
+        } catch (exception& e) {
+            ADD_ERR("failed to generate " << sdf_name << " for GI " << gi
+                    << ": " << e.what());
+            continue;
+        }
+        CSeq_entry se2;
+        try {
+            auto_ptr<CObjectIStream> in(CObjectIStream::Open(sdf, stream));
+            *in >> se2;
+        } catch (exception& e) {
+            ADD_ERR("failed to parse " << sdf_name << " for GI " << gi << ": "
+                    << e.what());
+            continue;
+        }
+        if (!SerialEquals(*se, se2)) {
+            ADD_ERR("failed equality after " << sdf_name
+                    << " round trip for GI " << gi);
+        }
+    }
+END_TEST_FUNCTION
+
+
 // to call test functions, counting errors
 #define RUN_TEST(func) \
     do { \
@@ -454,6 +516,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(OptionalField);
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
+        RUN_TEST(FullBlobs);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -503,6 +566,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/02/02 22:12:31  ucko
+* Test retrieval and round-trip conversion of a variety of representative blobs.
+*
 * Revision 1.9  2004/01/23 16:29:52  ucko
 * Try to find test files in data/.
 *
