@@ -781,7 +781,8 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
                                                  |CObjectIStream::eReadError
                                                  |CObjectIStream::eOverflow
                                                  |CObjectIStream::eFail
-                                                 |CObjectIStream::eNotOpen ));
+                                                 |CObjectIStream::eNotOpen )
+                                  ? true : false);
             } else {
                 m_pOut->ThrowError1((CObjectOStream::EFailFlags)
                                     m_pOut->GetFailFlags(),
@@ -794,8 +795,9 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
                                              |CObjectOStream::eWriteError
                                              |CObjectOStream::eOverflow
                                              |CObjectOStream::eFail
-                                             |CObjectOStream::eNotOpen ));
-        }	    
+                                             |CObjectOStream::eNotOpen )
+                              ? true : false);
+        }
 	
         if( !bNeedReconnect )
             break;
@@ -950,6 +952,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.12  2003/01/31 03:46:46  lavr
+ * Heed int->bool performance warnings
+ *
  * Revision 6.11  2003/01/21 19:38:59  domrach
  * GetPopsetJoin() member function optimized to copy partial tree from cached tree
  *

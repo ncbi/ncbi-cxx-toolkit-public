@@ -7,7 +7,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 
-
 //////////////////////////////////
 //  CTaxon1Node implementation
 //
@@ -49,16 +48,15 @@ CTaxon1Node::GetMGC() const
 bool
 CTaxon1Node::IsUncultured() const
 {
-    return (m_ref->GetCde() & TXC_UNCULTURED);
+    return m_ref->GetCde() & TXC_UNCULTURED ? true : false;
 }
 
 bool
 CTaxon1Node::IsGBHidden() const
 {
-    return (m_ref->GetCde() & TXC_GBHIDE);
+    return m_ref->GetCde() & TXC_GBHIDE ? true : false;
 }
 
 
 END_objects_SCOPE
 END_NCBI_SCOPE
-
