@@ -354,10 +354,9 @@ bool IsValidAccession(const string& acc)
                      second_letter == 'P' ) {
                     return true;
                 }
-            } else if ( first_letter == 'Z' ) {
-                if ( second_letter == 'P' ) {
-                    return true;
-                }
+            } else if ( first_letter == 'Z'  ||  first_letter == 'A'  ||
+                        first_letter == 'Y' ) {
+                return (second_letter == 'P');
             }
         }}
         break;
@@ -645,6 +644,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/01/12 22:38:51  shomrat
+* Added AP and YP as valid RefSeq accessions
+*
 * Revision 1.17  2005/01/11 20:45:38  shomrat
 * Fixed date format for cit_sub
 *
