@@ -85,7 +85,6 @@ public:
     typedef ERefTrackStatus TRefTrackStatus;
 
     // constructors
-    CCommentItem(CBioseqContext& ctx);
     CCommentItem(const string& comment, CBioseqContext& ctx,
         const CSerialObject* obj = 0);
     CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx);
@@ -113,6 +112,7 @@ public:
     static void ResetFirst(void) { sm_FirstComment = true; }
 
 protected:
+    CCommentItem(CBioseqContext& ctx);
 
     void x_GatherInfo(CBioseqContext& ctx);
     void x_GatherDescInfo(const CSeqdesc& desc);
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/08/30 13:31:43  shomrat
+* made constructor protected
+*
 * Revision 1.7  2004/08/19 16:19:16  shomrat
 * Added constructor from CSeq_feat
 *
