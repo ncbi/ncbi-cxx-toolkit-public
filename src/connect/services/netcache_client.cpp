@@ -498,11 +498,10 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
     _ASSERT(str);
 
     str->erase();
-    str->erase();
     char ch;
     EIO_Status io_st;
 
-    char szBuf[1024] = {0,};
+    char szBuf[257] = {0};
     unsigned str_len = 0;
     size_t n_read = 0;
 
@@ -553,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/11/10 13:37:21  kuznets
+ * Code cleanup
+ *
  * Revision 1.21  2004/11/10 12:40:30  kuznets
  * Bug fix: missing return
  *
