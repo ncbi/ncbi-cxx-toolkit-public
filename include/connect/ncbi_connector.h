@@ -37,6 +37,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/02 20:07:18  lavr
+ * Typos fixed
+ *
  * Revision 6.5  2001/01/11 16:39:33  lavr
  * FDestroy function is now clearly documented not to destroy
  * the connector itself, only its handle (private internal data).
@@ -95,7 +98,7 @@ typedef EIO_Status (*FConnectorOpen)
 
 
 /* Wait until either read or write (dep. on the "direction" value) becomes
- * available, or until "timeout" is expired, or until error occures.
+ * available, or until "timeout" is expired, or until error occurs.
  * NOTE 1: FConnectorWait is guaranteed to be called after FConnectorOpen,
  *         and only if FConnectorOpen returned "eIO_Success".
  * NOTE 2: "event" is guaranteed to be either "eIO_Read" or "eIO_Write".
@@ -109,8 +112,8 @@ typedef EIO_Status (*FConnectorWait)
 
 /* The passed "n_written" always non-NULL, and "*n_written" always zero.
  * It must return "eIO_Success" when (and only when) all requested data
- * have been succefully written.
- * It returns the # of succesfully written data (in bytes) in "*n_written".
+ * have been successfully written.
+ * It returns the # of successfully written data (in bytes) in "*n_written".
  * NOTE: FConnectorWrite is guaranteed to be called after FConnectorOpen,
  *       and only if FConnectorOpen returned "eIO_Success".
  */

@@ -78,6 +78,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/03/02 20:05:15  lavr
+ * Typos fixed
+ *
  * Revision 6.8  2000/12/26 21:40:01  lavr
  * SOCK_Read modified to handle properly the case of 0 byte reading
  *
@@ -147,7 +150,7 @@ typedef struct SOCK_tag*  SOCK;  /* socket:  handle */
  *
  * If you are using this API in a multi-thread application, and there is
  * more than one thread using this API, it is safe to call SOCK_InitializeAPI()
- * explicitely in the beginning of your main thread, before you run any other
+ * explicitly in the beginning of your main thread, before you run any other
  * threads, and to call SOCK_ShutdownAPI() after all threads are exited.
  *
  * As soon as the API is initialized it becomes relatively MT-safe, however
@@ -337,7 +340,7 @@ extern const STimeout* SOCK_GetTimeout
 
 
 /* Read up to "size" bytes from "sock" to the mem.buffer pointed by "buf".
- * In "*n_read", return the number of succesfully read bytes.
+ * In "*n_read", return the number of successfully read bytes.
  * If there is no data available to read (also, if eIO_Persist and cannot
  * read exactly "size" bytes) and the timeout(see SOCK_SetTimeout) is expired
  * then return eIO_Timeout.
@@ -378,7 +381,7 @@ extern EIO_Status SOCK_PushBack
  *        as long as there is any unread (buffered) data left.
  *        Thus, when you are "peeking" data instead of actually reading it,
  *        then this is the only "non-destructive" way to check whether EOF
- *        or an error has occured on read.
+ *        or an error has occurred on read.
  */
 extern EIO_Status SOCK_Status
 (SOCK      sock,

@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/03/02 20:07:07  lavr
+ * Typos fixed
+ *
  * Revision 6.10  2001/02/26 16:56:41  vakatov
  * Comment SConnNetInfo.
  *
@@ -310,7 +313,7 @@ extern SOCK URL_Connect
  );
 
 
-/* Discard all input data before(and including) the first occurence of
+/* Discard all input data before(and including) the first occurrence of
  * "pattern". If "buf" is not NULL then add the discarded data(including
  * the "pattern") to it. If "n_discarded" is not NULL then "*n_discarded"
  * will return # of discarded bytes.
@@ -343,11 +346,11 @@ extern EIO_Status BUF_StripToPattern
 /* URL-decode up to "src_size" symbols(bytes) from buffer "src_buf".
  * Write the decoded data to buffer "dst_buf", but no more than "dst_size"
  * bytes.
- * Assign "*src_read" to the # of bytes succesfully decoded from "src_buf".
+ * Assign "*src_read" to the # of bytes successfully decoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  * Return FALSE only if cannot decode nothing, and an unrecoverable
  * URL-encoding error (such as an invalid symbol or a bad "%.." sequence)
- * has occured.
+ * has occurred.
  * NOTE:  the unfinished "%.." sequence is fine -- return TRUE, but dont
  *        "read" it.
  */
@@ -381,7 +384,7 @@ extern int/*bool*/ URL_DecodeEx
 /* URL-encode up to "src_size" symbols(bytes) from buffer "src_buf".
  * Write the encoded data to buffer "dst_buf", but no more than "dst_size"
  * bytes.
- * Assign "*src_read" to the # of bytes succesfully encoded from "src_buf".
+ * Assign "*src_read" to the # of bytes successfully encoded from "src_buf".
  * Assign "*dst_written" to the # of bytes written to buffer "dst_buf".
  */
 extern void URL_Encode

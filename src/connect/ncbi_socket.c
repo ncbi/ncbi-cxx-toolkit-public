@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2001/03/02 20:10:29  lavr
+ * Typos fixed
+ *
  * Revision 6.17  2001/02/28 00:55:38  lavr
  * SOCK_gethostaddr: InitAPI added, SOCK_gethostname used instead of gethostname
  *
@@ -44,7 +47,7 @@
  * n_read and n_written returned to indicate actual number of passed
  * bytes, regardless of error status. eIO_Success means that the
  * operation went through smoothly, while any other status has to
- * be analysed. Anyway, the number of passed bytes prior the error
+ * be analyzed. Anyway, the number of passed bytes prior the error
  * occurred is returned in n_read and n_written respectively.
  *
  * Revision 6.14  2001/01/23 23:19:34  lavr
@@ -314,7 +317,7 @@ static unsigned int s_ID_Counter = 0;
 static ESwitch s_LogData = eDefault;
 
 
-/* Put socket description to the message, then log the transfered data
+/* Put socket description to the message, then log the transferred data
  */
 static void s_DoLogData
 (SOCK sock, EIO_Event event, const void* data, size_t size)
@@ -757,7 +760,7 @@ static EIO_Status s_Connect(SOCK            sock,
         /* The connect could be interrupted by a signal or just cannot be
          * established immediately;  yet, the connect must have been in
          * progress (asynchronous), so wait here for it to succeed
-         * (become writeable).
+         * (become writable).
          */
         {{
             struct timeval tv;

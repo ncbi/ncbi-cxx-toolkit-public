@@ -52,7 +52,7 @@
  *    enum:       ELOG_Level,  verbal: LOG_LevelStr()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    callbacks:  (*FLOG_Handler)(),  (*FLOG_Cleanup)()
- *    methods:    LOG_Greate(),  LOG_Reset(),  LOG_AddRef(),  LOG_Delete(),
+ *    methods:    LOG_Create(),  LOG_Reset(),  LOG_AddRef(),  LOG_Delete(),
  *                LOG_Write(), LOG_Data(),
  *    macro:      LOG_WRITE(), LOG_DATA(),  THIS_FILE, THIS_MODULE
  *
@@ -60,12 +60,15 @@
  *    handle:     REG
  *    enum:       EREG_Storage
  *    callbacks:  (*FREG_Get)(),  (*FREG_Set)(),  (*FREG_Cleanup)()
- *    methods:    REG_Greate(),  REG_Reset(),  REG_AddRef(),  REG_Delete(),
+ *    methods:    REG_Create(),  REG_Reset(),  REG_AddRef(),  REG_Delete(),
  *                REG_Get(),  REG_Set()
  *
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/03/02 20:06:54  lavr
+ * Typos fixed
+ *
  * Revision 6.7  2001/01/23 23:07:30  lavr
  * A make-up change
  *
@@ -79,7 +82,7 @@
  * Added means to log binary data
  *
  * Revision 6.3  2000/04/07 19:55:14  vakatov
- * Standard identation
+ * Standard indentation
  *
  * Revision 6.2  2000/03/24 23:12:03  vakatov
  * Starting the development quasi-branch to implement CONN API.
@@ -153,7 +156,7 @@ typedef enum {
 /* I/O status
  */
 typedef enum {
-    eIO_Success = 0,  /* everything is fine, no errors occured          */
+    eIO_Success = 0,  /* everything is fine, no errors occurred         */
     eIO_Timeout,      /* timeout expired before the data could be i/o'd */
     eIO_Closed,       /* peer has closed the connection                 */
     eIO_InvalidArg,   /* bad argument value(s)                          */
@@ -486,7 +489,7 @@ extern char* REG_Get
 (REG         rg,         /* created by REG_Create() */
  const char* section,    /* registry section name */
  const char* name,       /* registry entry name  */
- char*       value,      /* buffer to put the value of the requsted entry to */
+ char*       value,      /* buffer to put the value of the requested entry to*/
  size_t      value_size, /* max. size of buffer "value" */
  const char* def_value   /* default value (none if passed NULL) */
  );

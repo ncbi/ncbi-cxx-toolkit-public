@@ -39,6 +39,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/03/02 20:06:26  lavr
+ * Typos fixed
+ *
  * Revision 6.14  2001/03/01 18:47:45  lavr
  * Verbal representation of server info is wordly documented
  *
@@ -69,7 +72,7 @@
  * file names) as the latter name is more relevant
  *
  * Revision 6.5  2000/05/15 19:06:05  lavr
- * Use home-made ANSI extentions (NCBI_***)
+ * Use home-made ANSI extensions (NCBI_***)
  *
  * Revision 6.4  2000/05/12 21:42:11  lavr
  * SSERV_Info::  use ESERV_Type, ESERV_Flags instead of TSERV_Type, TSERV_Flags
@@ -219,9 +222,9 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
  *                   Note that arguments must not contain space characters.
  *
  *    HTTP* servers: Path (required) and args in the form path[?args].
- *                   Note that no spaces allowed withing this parameter.
+ *                   Note that no spaces allowed within this parameter.
  *
- * Tags may follow in no specifis order but no more than one instance
+ * Tags may follow in no specific order but no more than one instance
  * of each flag is allowed:
  *
  *    Load average calculation for the server:
@@ -247,7 +250,7 @@ char* SERV_WriteInfo(const SSERV_Info* info, int/*bool*/ skip_host);
  *           if the server is running and to 0, if not.)
  *
  * Note that optional arguments can be omitted along with all preceding
- * optional arguments, that is the following 2 server specicifations are
+ * optional arguments, that is the following 2 server specifications are
  * both valid:
  *
  * NCBID ''

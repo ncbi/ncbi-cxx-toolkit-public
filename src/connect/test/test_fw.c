@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/03/02 20:03:48  lavr
+ * Typos fixed
+ *
  * Revision 6.1  2000/11/17 22:36:22  vakatov
  * Initial revision
  *
@@ -111,7 +114,7 @@ extern int main(int argc, char** argv)
     {{
         FILE* log_fp = fopen("test_fw.log", "w");
         if ( !fp ) {
-            perror("Failedc to open \"test_fw.log\" for writing");
+            perror("Failed to open \"test_fw.log\" for writing");
             return 2;
         }
         CORE_SetLOGFILE(log_fp, 1/*true*/);

@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/03/02 20:03:34  lavr
+ * Typos fixed
+ *
  * Revision 6.3  2000/12/29 18:25:06  lavr
  * CONN Reconnect replaced with ReInit.
  *
@@ -319,7 +322,7 @@ extern void CONN_TestConnector
 
 
     /* CREATE new connection on the base of the connector, set
-     * TIMEOUTs, try to RECONNECT, WAIT for the connection is writeable
+     * TIMEOUTs, try to RECONNECT, WAIT for the connection is writable
      */
     assert(CONN_Create(connector, &conn) == eIO_Success);
 

@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/03/02 20:03:57  lavr
+ * Typos fixed
+ *
  * Revision 6.6  2001/01/23 23:21:21  lavr
  * Added new argument to URL_Connect
  *
@@ -170,7 +173,7 @@ int main(int argc, char** argv)
 
         if ( status != eIO_Closed ) {
             fprintf(stderr,
-                    "Error occured after reading %ld bytes from socket(%s)\n",
+                    "Error occurred after reading %ld bytes from socket(%s)\n",
                     (long) content_length, IO_StatusStr(status));
         }
         fprintf(stdout, "\n");

@@ -56,7 +56,7 @@
  *
  * While traversing, if the block found is no longer needed, it can be freed
  * with 'HEAP_Free' call, supplying the address of the block header
- * as an agrument.
+ * as an argument.
  *
  * Prior the heap use, the initialization is required, which comprises
  * call to either 'HEAP_Create' or 'HEAP_Attach' with the information about
@@ -82,7 +82,7 @@
  *
  * For automatic traverse purposes there is a 'HEAP_Walk' call, which returns
  * the next block (either free, or used) from the heap.  Given a NULL-pointer,
- * this function returns the very first block, whareas all subsequent calls
+ * this function returns the very first block, whereas all subsequent calls
  * with the argument being the last observed block results in the next block 
  * returned. NULL comes back when no more blocks exist in the heap.
  *
@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/03/02 20:08:26  lavr
+ * Typos fixed
+ *
  * Revision 6.6  2001/02/14 22:03:09  lavr
  * 0x... constants explicitly made unsigned
  *

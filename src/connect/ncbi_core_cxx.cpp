@@ -25,7 +25,7 @@
  *
  * Author:  Anton Lavrentiev
  *
- * File dscription:
+ * File description:
  *   C++->C conversion functions for basic corelib stuff:
  *     Registry
  *     Logging
@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/03/02 20:08:17  lavr
+ * Typos fixed
+ *
  * Revision 6.5  2001/01/25 17:03:46  lavr
  * s_LOG_Handler: user_data commented out as unused
  *
@@ -40,7 +43,7 @@
  * LOG_cxx2c introduced
  *
  * Revision 6.3  2001/01/12 05:48:50  vakatov
- * Use reintrepret_cast<> rather than static_cast<> to cast functions.
+ * Use reinterpret_cast<> rather than static_cast<> to cast functions.
  * Added more paranoia to catch ALL possible exceptions in the s_*** functions.
  *
  * Revision 6.2  2001/01/11 23:51:47  lavr
