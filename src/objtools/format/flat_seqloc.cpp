@@ -39,11 +39,13 @@
 #include <objects/seqloc/seqloc__.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/impl/synonyms.hpp>
 
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/format/context.hpp>
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -51,40 +53,54 @@ BEGIN_SCOPE(objects)
 USING_SCOPE(sequence);
 
 
-static bool s_IsVirtualId(const CSeq_id& id, CScope* scope)
+static bool s_IsVirtualId(const CSeq_id_Handle& id, const CBioseq_Handle& seq)
 {
-    CBioseq_Handle bh = scope->GetBioseqHandle(id);
-    if ( bh ) {
-        return bh.GetBioseqCore()->GetInst().GetRepr() == CSeq_inst::eRepr_virtual;
+    if (!id  ||  !seq) {
+        return true;
+    }
+    CBioseq_Handle::TId ids = seq.GetId();
+    if (find(ids.begin(), ids.end(), id) == ids.end()) {
+        CBioseq_Handle bsh = seq.GetScope().GetBioseqHandleFromTSE(id, seq);
+        return bsh ? bsh.GetInst_Repr() == CSeq_inst::eRepr_virtual : true;
     }
     return false;
 }
 
 
-static bool s_IsVirtualSeqInt(const CSeq_interval& seqint, CScope* scope)
+static bool s_IsVirtualSeqInt
+(const CSeq_interval& seqint,
+ const CBioseq_Handle& seq)
 {
-    return seqint.CanGetId() ? s_IsVirtualId(seqint.GetId(), scope) : false;
+    return seqint.CanGetId() ?
+        s_IsVirtualId(CSeq_id_Handle::GetHandle(seqint.GetId()), seq) :
+        false;
 }
 
 
-static bool s_IsVirtualLocation(const CSeq_loc& loc, CScope* scope)
+static bool s_IsVirtualLocation(const CSeq_loc& loc, const CBioseq_Handle& seq)
 {
     const CSeq_id* id = 0;
-    switch ( loc.Which() ) {
-    case CSeq_loc::e_Whole:
-        id = &loc.GetWhole();
-        break;
-    case CSeq_loc::e_Int:
-        id = &loc.GetInt().GetId();
-        break;
-    case CSeq_loc::e_Pnt:
-        id = &loc.GetPnt().GetId();
-        break;
-    default:
-        return false;
+    try {
+        switch (loc.Which()) {
+        case CSeq_loc::e_Whole:
+            id = &loc.GetWhole();
+            break;
+        case CSeq_loc::e_Int:
+            id = &loc.GetInt().GetId();
+            break;
+        case CSeq_loc::e_Pnt:
+            id = &loc.GetPnt().GetId();
+            break;
+        default:
+            break;
+        }
+    } catch (CException&) {
+        id = 0;
     }
 
-    return (id != 0) ? s_IsVirtualId(*id, scope) : false;
+    return (id != 0) ?
+        s_IsVirtualId(CSeq_id_Handle::GetHandle(*id), seq) :
+        false;
 }
 
 
@@ -99,38 +115,38 @@ CFlatSeqLoc::CFlatSeqLoc
 }
 
 
-void CFlatSeqLoc::x_Add
+bool CFlatSeqLoc::x_Add
 (const CSeq_loc& loc,
  CNcbiOstrstream& oss,
  CBioseqContext& ctx,
  TType type,
  bool show_comp)
 {
-    CScope* scope = &ctx.GetScope();
+    CScope& scope = ctx.GetScope();
+    const CBioseq_Handle& seq = ctx.GetHandle();
 
     string prefix = "join(";
 
     // deal with complement of entire location
     if ( type == eType_location ) {
-        if ( show_comp  &&  GetStrand(loc, scope) == eNa_strand_minus ) {
-            CRef<CSeq_loc> rev_loc(SeqLocRevCmp(loc, scope));
+        if ( show_comp  &&  GetStrand(loc, &scope) == eNa_strand_minus ) {
+            CRef<CSeq_loc> rev_loc(SeqLocRevCmp(loc, &scope));
             oss << "complement(";
             x_Add(*rev_loc, oss, ctx, type, false);
             oss << ")";
-            return;
+            return true;
         }
-    
-    
+
         if ( loc.IsMix() ) {
             ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
-                if ( (*it)->IsNull()  ||  s_IsVirtualLocation(**it, scope) ) {
+                if ( (*it)->IsNull()  ||  s_IsVirtualLocation(**it, seq) ) {
                     prefix = "order(";
                     break;
                 }
             }
         } else if ( loc.IsPacked_int() ) {
             ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
-                if ( s_IsVirtualSeqInt(**it, scope) ) {
+                if ( s_IsVirtualSeqInt(**it, seq) ) {
                     prefix = "order(";
                     break;
                 }
@@ -141,98 +157,109 @@ void CFlatSeqLoc::x_Add
     // handle each location component
     switch ( loc.Which() ) {
     case CSeq_loc::e_Null:
-    {
+    {{
         const CFlatGapLoc* gap = dynamic_cast<const CFlatGapLoc*>(&loc);
-        if ( gap == 0 ) {
+        if (gap == 0) {
             oss << "gap()";
         } else {
             oss << "gap(" << gap->GetLength() << ")";
         }
         break;
-    }
+    }}
     case CSeq_loc::e_Empty:
-    {
+    {{
         oss << "gap()";
         break;
-    }
+    }}
     case CSeq_loc::e_Whole:
-    {
+    {{
         x_AddID(loc.GetWhole(), oss, ctx, type);
-        oss << "1.." << sequence::GetLength(loc, &ctx.GetScope());
+        oss << "1.." << sequence::GetLength(loc, &scope);
         break;
-    }
+    }}
     case CSeq_loc::e_Int:
-    {
-        x_Add(loc.GetInt(), oss, ctx, type, show_comp);
-        break;
-    }
+    {{
+        return x_Add(loc.GetInt(), oss, ctx, type, show_comp);
+    }}
     case CSeq_loc::e_Packed_int:
-    {
+    {{
         oss << prefix;
         string delim;
         ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             oss << delim;
-            x_Add(**it, oss, ctx, type, show_comp);
-            delim = ", \b";
+            if (!x_Add(**it, oss, ctx, type, show_comp)) {
+                delim = kEmptyStr;
+            } else {
+                delim = ", \b";
+            }
         }
         oss << ')';
         break;
-    }
+    }}
     case CSeq_loc::e_Pnt:
-    {
-        x_Add(loc.GetPnt(), oss, ctx, type, show_comp);
-        break;
-    }
+    {{
+        return x_Add(loc.GetPnt(), oss, ctx, type, show_comp);
+    }}
     case CSeq_loc::e_Packed_pnt:
-    {
+    {{
         const CPacked_seqpnt& ppnt  = loc.GetPacked_pnt();
         x_AddID(ppnt.GetId(), oss, ctx, type);
-        if ( ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())  &&  show_comp ) {
+        if (ppnt.IsSetStrand() && ppnt.GetStrand() == eNa_strand_minus  &&  show_comp) {
             oss << "complement(";
         }
         oss << "join(";
         string delim;
         ITERATE (CPacked_seqpnt::TPoints, it, ppnt.GetPoints()) {
             oss << delim;
-            x_Add(*it, ppnt.IsSetFuzz() ? &ppnt.GetFuzz() : 0, oss, ctx.Config().DoHTML());
-            delim = ", \b";
+            const CInt_fuzz* fuzz = ppnt.CanGetFuzz() ? &ppnt.GetFuzz() : 0;
+            if (!x_Add(*it, fuzz, oss, ctx.Config().DoHTML())) {
+                delim = kEmptyStr;
+            } else {
+                delim = ", \b";
+            }
         }
-        if ( ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())  &&  show_comp ) {
+        if (ppnt.IsSetStrand() && IsReverse(ppnt.GetStrand())  &&  show_comp) {
             oss << ")";
         }
         break;
-    }
+    }}
     case CSeq_loc::e_Mix:
-    {
+    {{
         string delim;
         oss << prefix;
         CSeq_loc_CI::EEmptyFlag empty = ((type == eType_location) ?
             CSeq_loc_CI::eEmpty_Skip : CSeq_loc_CI::eEmpty_Allow);
         for ( CSeq_loc_CI it(loc, empty); it; ++it ) {
             oss << delim;
-            x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp);
-            delim = ", \b";
+            if (!x_Add(it.GetSeq_loc(), oss, ctx, type, show_comp)) {
+                delim = kEmptyStr;
+            } else {
+                delim = ", \b";
+            }
         }
         oss << ')';
         break;
-    }
+    }}
     case CSeq_loc::e_Equiv:
-    {
+    {{
         string delim;
         oss << "one-of(";
         ITERATE (CSeq_loc_equiv::Tdata, it, loc.GetEquiv().Get()) {
             oss << delim;
-            x_Add(**it, oss, ctx, type, show_comp);
-            delim = ", \b";
+            if (!x_Add(**it, oss, ctx, type, show_comp)) {
+                delim = kEmptyStr;
+            } else {
+                delim = ", \b";
+            }
         }
         oss << ')';
         break;
-    }
+    }}
     case CSeq_loc::e_Bond:
-    {
+    {{
         const CSeq_bond& bond = loc.GetBond();
         if ( !bond.CanGetA() ) {
-            return;
+            return false;
         }
         oss << "bond(";
         x_Add(bond.GetA(), oss, ctx, type, show_comp);
@@ -241,17 +268,20 @@ void CFlatSeqLoc::x_Add
             x_Add(bond.GetB(), oss, ctx, type, show_comp);
         }
         oss << ")";
-    }
+    }}
     case CSeq_loc::e_Feat:
     default:
-        NCBI_THROW(CException, eUnknown,
+        return false;
+        /*NCBI_THROW(CException, eUnknown,
                    "CFlatSeqLoc::CFlatSeqLoc: unsupported (sub)location type "
-                   + NStr::IntToString(loc.Which()));
-    }
+                   + NStr::IntToString(loc.Which()));*/
+    } // end of switch statement
+
+    return true;
 }
 
 
-void CFlatSeqLoc::x_Add
+bool CFlatSeqLoc::x_Add
 (const CSeq_interval& si,
  CNcbiOstrstream& oss,
  CBioseqContext& ctx,
@@ -262,26 +292,31 @@ void CFlatSeqLoc::x_Add
 
     TSeqPos from = si.GetFrom(), to = si.GetTo();
     ENa_strand strand = si.CanGetStrand() ? si.GetStrand() : eNa_strand_unknown;
-    bool comp = show_comp  &&  IsReverse(strand);
+    bool comp = show_comp  &&  (strand == eNa_strand_minus);
 
     if ( type == eType_location ) {
-        if ( s_IsVirtualId(si.GetId(), &ctx.GetScope()) ) {
-            return;
+        if ( s_IsVirtualId(CSeq_id_Handle::GetHandle(si.GetId()), ctx.GetHandle()) ) {
+            return false;
         }
-        x_AddID(si.GetId(), oss, ctx, type);
         oss << (comp ? "complement(" : kEmptyStr);
+        x_AddID(si.GetId(), oss, ctx, type);
     } else {
         oss << (comp ? "complement(" : kEmptyStr);
         x_AddID(si.GetId(), oss, ctx, type);
     }
     x_Add(from, si.IsSetFuzz_from() ? &si.GetFuzz_from() : 0, oss, do_html);
-    oss << "..";
-    x_Add(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, do_html);
+    if (to > 0  &&
+        (from != to  ||  si.IsSetFuzz_from()  ||  si.IsSetFuzz_to())) {
+        oss << "..";
+        x_Add(to, si.IsSetFuzz_to() ? &si.GetFuzz_to() : 0, oss, do_html);
+    }
     oss << (comp ? ")" : kEmptyStr);
+
+    return true;
 }
 
 
-void CFlatSeqLoc::x_Add
+bool CFlatSeqLoc::x_Add
 (const CSeq_point& pnt,
  CNcbiOstrstream& oss,
  CBioseqContext& ctx,
@@ -289,7 +324,7 @@ void CFlatSeqLoc::x_Add
  bool show_comp)
 {
     if ( !pnt.CanGetPoint() ) {
-        return;
+        return false;
     }
 
     bool do_html = ctx.Config().DoHTML();
@@ -303,10 +338,12 @@ void CFlatSeqLoc::x_Add
     } else {
         x_Add(pos, pnt.IsSetFuzz() ? &pnt.GetFuzz() : 0, oss, do_html);
     }
+
+    return true;
 }
 
 
-void CFlatSeqLoc::x_Add
+bool CFlatSeqLoc::x_Add
 (TSeqPos pnt,
  const CInt_fuzz* fuzz,
  CNcbiOstrstream& oss,
@@ -367,6 +404,8 @@ void CFlatSeqLoc::x_Add
     } else {
         oss << pnt;
     }
+
+    return true;
 }
 
 
@@ -416,6 +455,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/08/19 16:30:24  shomrat
+* Fixed formatting
+*
 * Revision 1.10  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
