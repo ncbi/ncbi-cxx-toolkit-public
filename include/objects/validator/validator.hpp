@@ -189,16 +189,16 @@ public:
     // Validate Seq-entry. 
     // If provding a scope the Seq-entry must be a 
     // top-level Seq-entry in that scope.
-    auto_ptr<CValidError> Validate(const CSeq_entry& se, CScope* scope = 0,
+    CConstRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = 0,
         Uint4 options = 0);
     // Validate Seq-submit.
     // Validates each of the Seq-entry contained in the submission.
-    auto_ptr<CValidError> Validate(const CSeq_submit& ss, CScope* scope = 0,
+    CConstRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = 0,
         Uint4 options = 0);
     // Validate Seq-annot
     // Validates stand alone Seq-annot objects. This will supress any
     // check on the context of the annotaions.
-    auto_ptr<CValidError> Validate(const CSeq_annot& sa, CScope* scope = 0,
+    CConstRef<CValidError> Validate(const CSeq_annot& sa, CScope* scope = 0,
         Uint4 options = 0);
 
     // progress reporting
@@ -315,6 +315,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/05/15 00:23:01  ucko
+* auto_ptr<> -> CConstRef<> in return type of CValidator::Validate, per
+* the actual current definitions in validator.cpp...
+*
 * Revision 1.12  2003/04/18 19:06:52  shomrat
 * redundant comma
 *
