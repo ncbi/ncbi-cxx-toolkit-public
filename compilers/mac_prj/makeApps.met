@@ -282,7 +282,7 @@ on SetProjectData()
 	set saveCppExt to pCPlusPlusExt
 	set pCPlusPlusExt to ".cxx"
 	set fluidFileData to mkFileData(gFLTKRootFolder & "fluid")
-	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib", "images"}, {fluidFileData}), {"fltk", "z"}, {}))
+	AddProject(DataPlusLibs(ProjectData("fluid", {"fltklib", "cmdline", "images"}, {fluidFileData}), {"fltk", "z"}, {}))
 	set pCPlusPlusExt to saveCppExt
 	
 	---------- GENOME WORK BENCH ----------
@@ -305,15 +305,18 @@ on SetProjectData()
 	if pBuildDemos then
 		---- DEMO ---
 		
+		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
+		
+		
+		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
+		
 		AddAppProjectList("demo_win_manager", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_win_manager.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
 		AddAppProjectList("demo_workspace", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_workspace.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
-		AddAppProject("demo_config_dlg", {"fltk"}, "gui:dialogs:config:demo", {"w_seq_graphic", "gui_dlg_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils"} & objMgrLibs, {})
-		
-		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
+		AddAppProject("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
 		
 		(*
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
@@ -325,7 +328,7 @@ on SetProjectData()
 		
 		(* -- experimental
 		AddAppProject("featgroup_config_dlg", {"fltk"}, "gui:config:featgroup", Â
-			{"gui_config", "gui_dlg_config", "gui_utils", "w_flu", "w_fltk", "fltk", "gui_opengl", "xncbi", "xser", "xutil", "seq", "xobjmgr", "general", "pub", "medline", "biblio", "id1"}, {})
+			{"gui_config", "w_config", "gui_utils", "w_flu", "w_fltk", "fltk", "gui_opengl", "xncbi", "xser", "xutil", "seq", "xobjmgr", "general", "pub", "medline", "biblio", "id1"}, {})
 		*)
 	end if
 	
