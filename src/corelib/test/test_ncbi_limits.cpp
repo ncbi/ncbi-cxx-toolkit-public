@@ -68,9 +68,11 @@ void s_TestType(const char* type_name, T value)
 
 	T v_max = get_limits(value).max();
 	T v_min = get_limits(value).min();
-
-	assert(abs(minval - v_min) < 0.01);
-	assert(abs(maxval - v_max) < 0.01);
+	
+    assert(v_min <= min_minus_1);
+    assert(v_max >= min_minus_1);
+    assert(v_min <= max_plus_1);
+    assert(v_max >= max_plus_1);
 }
 
 
@@ -134,6 +136,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2004/06/01 14:12:33  kuznets
+ * Fixed compilation (GCC)
+ *
  * Revision 6.6  2004/06/01 12:10:35  kuznets
  * + test for get_limits
  *
