@@ -117,7 +117,7 @@ public:
         eDbtagType_niaEST,
         eDbtagType_taxon,
 
-        // unapproved
+        // only approved for RefSeq
         eDbtagType_GenBank,
         eDbtagType_EMBL,
         eDbtagType_DDBJ,
@@ -139,6 +139,9 @@ public:
     // 'GenBank', 'EMBL' and 'DDBJ' are approved only in the
     // context of a RefSeq record.
     bool IsApproved(bool refseq = false) const;
+    // Test if DB is approved (case insensitive).
+    // Returns the case sensetive DB name if approved, NULL otherwise.
+    const char* IsApprovedNoCase(bool refseq = false) const;
 
     // Retrieve the enumerated type for the dbtag
     EDbtagType GetType(void) const;
@@ -178,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/23 16:55:29  shomrat
+ * + IsApprovedNoCase
+ *
  * Revision 1.6  2004/01/20 16:04:36  dicuccio
  * Implemented enumerated type interpretation of string-based database name
  *

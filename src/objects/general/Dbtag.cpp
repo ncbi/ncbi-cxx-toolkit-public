@@ -98,9 +98,9 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("RZPD", CDbtag::eDbtagType_RZPD),
     TDbxrefPair("RiceGenes", CDbtag::eDbtagType_RiceGenes),
     TDbxrefPair("SGD", CDbtag::eDbtagType_SGD),
-    TDbxrefPair("SPTREMBL", CDbtag::eDbtagType_SPTREMBL),
-    TDbxrefPair("SWISS-PROT", CDbtag::eDbtagType_SWISS_PROT),
     TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
+    TDbxrefPair("Swiss-Prot", CDbtag::eDbtagType_SWISS_PROT),
+    TDbxrefPair("TrEMBL", CDbtag::eDbtagType_SPTREMBL),
     TDbxrefPair("UniGene", CDbtag::eDbtagType_UniGene),
     TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
@@ -113,10 +113,19 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("taxon", CDbtag::eDbtagType_taxon)
 };
 
+static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
+    TDbxrefPair("DDBJ", CDbtag::eDbtagType_DDBJ),
+    TDbxrefPair("EMBL", CDbtag::eDbtagType_EMBL),
+    TDbxrefPair("GenBank", CDbtag::eDbtagType_GenBank),
+    TDbxrefPair("REBASE", CDbtag::eDbtagType_REBASE)
+};
 
+// case sensetive
 typedef CStaticArrayMap<const char*, CDbtag::EDbtagType, PCase> TDbxrefTypeMap;
-static const TDbxrefTypeMap sc_DbxrefTypeMap(kApprovedDbXrefs,
-                                             sizeof(kApprovedDbXrefs));
+static const TDbxrefTypeMap sc_ApprovedDb(kApprovedDbXrefs,
+                                          sizeof(kApprovedDbXrefs));
+static const TDbxrefTypeMap sc_ApprovedRefSeqDb(kApprovedRefSeqDbXrefs,
+                                                sizeof(kApprovedRefSeqDbXrefs));
 
 
 // destructor
@@ -148,8 +157,8 @@ void CDbtag::GetLabel(string* label) const
     }
 }
 
-// Test if CDbtag.dbis in the approved databases list.
-// NOTE: 'GenBank', 'EMBL' and 'DDBJ' are approved only in 
+// Test if CDbtag.db is in the approved databases list.
+// NOTE: 'GenBank', 'EMBL', 'DDBJ' and 'REBASE' are approved only in 
 //        the context of a RefSeq record.
 bool CDbtag::IsApproved(bool refseq) const
 {
@@ -158,18 +167,35 @@ bool CDbtag::IsApproved(bool refseq) const
     }
     const string& db = GetDb();
 
-    // if refseq, first test if GenBank, EMBL, DDBJ or REBASE
-    if ( refseq ) {
-        if ( db == "GenBank"  ||
-             db == "EMBL"     ||  
-             db == "DDBJ"     ||  
-             db == "REBASE" ) {
-            return true;
+    return sc_ApprovedDb.find(db.c_str()) != sc_ApprovedDb.end()  ||
+        (refseq  &&  sc_ApprovedRefSeqDb.find(db.c_str()) != sc_ApprovedRefSeqDb.end());
+}
+
+
+const char* CDbtag::IsApprovedNoCase(bool refseq) const
+{
+    if ( !CanGetDb() ) {
+        return false;
+    }
+    const string& db = GetDb();
+    
+    const char* retval = 0;
+    ITERATE (TDbxrefTypeMap, it, sc_ApprovedDb) {
+        if ( NStr::EqualNocase(db, it->first) ) {
+            retval = it->first;
+            break;
+        }
+    }
+    if ( retval == 0  &&  refseq ) {
+        ITERATE (TDbxrefTypeMap, it, sc_ApprovedRefSeqDb) {
+            if ( NStr::EqualNocase(db, it->first) ) {
+                retval = it->first;
+                break;
+            }
         }
     }
 
-    // Check the rest of approved databases
-    return sc_DbxrefTypeMap.find(db.c_str()) != sc_DbxrefTypeMap.end();
+    return retval;
 }
 
 
@@ -184,18 +210,13 @@ CDbtag::EDbtagType CDbtag::GetType(void) const
         const string& db = GetDb();
 
         TDbxrefTypeMap::const_iterator iter =
-            sc_DbxrefTypeMap.find(db.c_str());
-        if ( iter != sc_DbxrefTypeMap.end() ) {
+            sc_ApprovedDb.find(db.c_str());
+        if ( iter != sc_ApprovedDb.end() ) {
             m_Type = iter->second;
         } else {
-            if (db == "GenBank") {
-                m_Type = eDbtagType_GenBank;
-            } else if (db == "EMBL") {
-                m_Type = eDbtagType_EMBL;
-            } else if (db == "DDBJ") {
-                m_Type = eDbtagType_DDBJ;
-            } else if (db == "REBASE") {
-                m_Type = eDbtagType_REBASE;
+            iter = sc_ApprovedRefSeqDb.find(db.c_str());
+            if ( iter != sc_ApprovedRefSeqDb.end() ) {
+                m_Type = iter->second;
             }
         }
     }
@@ -217,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2004/04/23 16:56:00  shomrat
+ * + IsApprovedNoCase
+ *
  * Revision 6.13  2004/01/29 20:35:22  vasilche
  * Use CStaticArrayMap<>.
  *
