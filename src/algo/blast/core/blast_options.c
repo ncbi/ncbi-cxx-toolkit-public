@@ -146,18 +146,23 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
       }
       
       if (options->extension_method == eUpdateDiag &&
+          lookup_options->mb_template_length == 0 &&
           (lookup_options->lut_type != MB_LOOKUP_TABLE ||
-           lookup_options->scan_step != COMPRESSION_RATIO ||
-           (!options->variable_wordsize && 
-            lookup_options->mb_template_length == 0))) {
+           lookup_options->scan_step != COMPRESSION_RATIO)) {
 
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "Classical megablast word finder requires "
-                            "megablast lookup table, scanning stride 4 "
-                            "and either discontiguous words, or word size "
-                            "divisible by 4");
+                            "eUpdateDiag extension method works only with "
+                            "megablast lookup table and scanning stride 4");
          status = (Int2) code;
       }
+      if (lookup_options->mb_template_length != 0 &&
+          options->extension_method != eUpdateDiag) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "Discontiguous megablast requires eUpdateDiag "
+                            "extension method ");
+         status = (Int2) code;
+      }         
+
    } else {
       if (options->extension_method != eRight) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
@@ -1508,6 +1513,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.126  2004/08/05 19:54:12  dondosha
+ * Allow stride 1 for discontiguous megablast in options validation
+ *
  * Revision 1.125  2004/08/03 20:19:11  dondosha
  * Added initial word options validation; set seed container type and extension method appropriately
  *
