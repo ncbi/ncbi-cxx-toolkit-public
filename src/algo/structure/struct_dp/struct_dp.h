@@ -125,7 +125,7 @@ DP_LocalBlockAlign(
 
 /* returned alignment container for multiple tracebacks */
 typedef struct {
-    int nAlignments;                    /* number of alignments returned */
+    unsigned int nAlignments;           /* number of alignments returned */
     DP_AlignmentResult *alignments;     /* individual alignments, highest-scoring first */
 } DP_MultipleAlignmentResults;
 
@@ -166,6 +166,9 @@ DP_GlobalBlockAlignGeneric(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/12/08 16:33:59  thiessen
+* fix signed/unsigned mix
+*
 * Revision 1.10  2003/12/08 16:21:36  thiessen
 * add generic loop scoring function interface
 *

@@ -234,7 +234,8 @@ int CalculateGlobalMatrixGeneric(Matrix& matrix,
     unsigned int queryFrom, unsigned int queryTo)
 {
     unsigned int block, residue, prevResidue, lastBlock = blocks->nBlocks - 1;
-    int blockScore = 0, loopPenalty, sum;
+    int blockScore = 0, sum;
+    unsigned int loopPenalty;
 
     // find possible block positions, based purely on block lengths
     vector < unsigned int > firstPos(blocks->nBlocks), lastPos(blocks->nBlocks);
@@ -773,6 +774,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/12/08 16:33:58  thiessen
+* fix signed/unsigned mix
+*
 * Revision 1.15  2003/12/08 16:21:35  thiessen
 * add generic loop scoring function interface
 *
