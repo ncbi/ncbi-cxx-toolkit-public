@@ -107,7 +107,7 @@ public:
     /******************* GI List ***********************/
     void SetGIList(list<Int4> & gi_list)
     {
-        x_SetParam("GiList", gi_list);
+        x_SetOneParam("GiList", &gi_list);
     }
     
     /******************* DB/subject *******************/
@@ -121,7 +121,7 @@ public:
     /******************* Entrez Query *******************/
     void SetEntrezQuery(const char * x)
     {
-        x_SetParam("EntrezQuery", x);
+        x_SetOneParam("EntrezQuery", &x);
     }
     
     /******************* Queries *******************/
@@ -133,7 +133,7 @@ public:
     /******************* Queries *******************/
     void SetMatrixTable(CRef<objects::CScore_matrix_parameters> matrix)
     {
-        x_SetParam("MatrixTable", *matrix);
+        x_SetOneParam("MatrixTable", matrix);
     }
     
     /******************* Getting Results *******************/
@@ -169,12 +169,14 @@ private:
     void x_QueueSearch(string & RID, string & err);
     
     void x_PollResults(string & RID, string & err);
-    
+
+#if 0 // seems to confuse GCC 2.95 :-/    
     template<class T>
     void x_SetParam(const char * name, T & value)
     {
         x_SetOneParam(name, & value);
     }
+#endif
     
     void x_SetOneParam(const char * name, const int * x);
     void x_SetOneParam(const char * name, const list<int> * x);
@@ -190,6 +192,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/17 04:28:25  ucko
+ * Call x_SetOneParam directly rather than via x_SetParam, which was
+ * giving GCC 2.95 trouble.
+ *
  * Revision 1.1  2004/01/16 20:40:21  bealer
  * - Add CBlast4Options class (Blast 4 API)
  *
