@@ -81,15 +81,15 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
 }
 
 
-void CSimpleMakeFileContents::LoadFrom(const string&            path, 
+void CSimpleMakeFileContents::LoadFrom(const string&            file_path,
                                        CSimpleMakeFileContents* fc)
 {
     CSimpleMakeFileContents::SParser parser(fc);
     fc->Clear();
 
-    CNcbiIfstream ifs(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
     if ( !ifs )
-        NCBI_THROW(CProjBulderAppException, eFileOpen, path);
+        NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
 
     parser.StartParse();
 
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/01/30 20:45:03  gorelenk
+ * Second revision.
+ *
  * Revision 1.6  2004/01/28 17:55:48  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
