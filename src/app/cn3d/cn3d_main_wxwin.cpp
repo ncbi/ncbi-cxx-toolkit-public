@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.120  2002/02/01 13:58:01  thiessen
+* add hourglass cursor on file load
+*
 * Revision 1.119  2002/01/19 15:25:04  thiessen
 * tweaks for DebugMT build to work
 *
@@ -1776,6 +1779,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
 
 void Cn3DMainFrame::LoadFile(const char *filename)
 {
+    SetCursor(*wxHOURGLASS_CURSOR);
     glCanvas->SetCurrent();
 
     // clear old data
@@ -1800,6 +1804,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     CNcbiIstream *inStream = new CNcbiIfstream(filename, IOS_BASE::in | IOS_BASE::binary);
     if (!inStream) {
         ERR_POST(Error << "Cannot open file '" << filename << "' for reading");
+        SetCursor(wxNullCursor);
         return;
     }
     currentFile = wxFileNameFromPath(filename);
@@ -1855,6 +1860,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     }
     if (!readOK) {
         ERR_POST(Error << "File is not a recognized data type (Ncbi-mime-asn1 or Cdd)");
+        SetCursor(wxNullCursor);
         return;
     }
 
@@ -1863,6 +1869,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     glCanvas->structureSet->SetCenter();
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
     glCanvas->Refresh(false);
+    SetCursor(wxNullCursor);
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
