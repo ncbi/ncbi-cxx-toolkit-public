@@ -536,8 +536,10 @@ void CId2Reader::LoadBlobs(CReaderRequestResult& result,
 
 
 void CId2Reader::LoadBlob(CReaderRequestResult& result,
-                          const CBlob_id& blob_id)
+                          CLoadLockBlob_ids& /*blobs*/,
+                          CLoadInfoBlob_ids::const_iterator blob_iter)
 {
+    const CBlob_id& blob_id = blob_iter->first;
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsLoaded() ) {
         CID2_Request req;

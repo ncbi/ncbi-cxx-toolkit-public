@@ -61,7 +61,7 @@ int main()
                 " SatKey=" << blob_id.GetSatKey() << endl;
       
             CLoadLockBlob blob(request, blob_id);
-            reader.LoadBlob(request, blob_id);
+            reader.LoadBlob(request, ids, i);
             if ( !blob.IsLoaded() ) {
                 cout << "blob is not available\n";
                 continue;
@@ -74,6 +74,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.6  2004/08/17 16:02:46  vasilche
+* Added delayed loading of external annotations from satellite 26.
+*
 * Revision 1.5  2004/08/04 14:55:18  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.

@@ -164,6 +164,11 @@ public:
     CLoadInfoBlob_ids(const TSeq_id& id);
     ~CLoadInfoBlob_ids(void);
 
+    const TSeq_id& GetSeq_id(void) const
+        {
+            return m_Seq_id;
+        }
+
     const_iterator begin(void) const
         {
             _ASSERT(IsLoaded());
@@ -174,13 +179,6 @@ public:
             _ASSERT(IsLoaded());
             return m_Blob_ids.end();
         }
-    /*
-    size_t size(void) const
-        {
-            _ASSERT(IsLoaded());
-            return m_Blob_ids.size();
-        }
-    */
     bool empty(void) const
         {
             _ASSERT(IsLoaded());

@@ -34,6 +34,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
+#include <objtools/data_loaders/genbank/request_result.hpp>
 #include <vector>
 
 //#define GENBANK_USE_SNP_SATELLITE_15 1
@@ -86,7 +87,8 @@ public:
                            CLoadLockBlob_ids blobs,
                            TContentsMask mask);
     virtual void LoadBlob(CReaderRequestResult& result,
-                          const TBlob_id& blob_id) = 0;
+                          CLoadLockBlob_ids& blobs,
+                          CLoadInfoBlob_ids::const_iterator blob_iter) = 0;
     virtual TBlobVersion GetBlobVersion(CReaderRequestResult& result,
                                         const TBlob_id& blob_id) = 0;
     virtual void LoadChunk(CReaderRequestResult& result,
@@ -124,7 +126,8 @@ public:
     void ResolveSeq_id(CReaderRequestResult& result,
                        const CSeq_id_Handle& seq_id);
     void LoadBlob(CReaderRequestResult& result,
-                  const TBlob_id& blob_id);
+                  CLoadLockBlob_ids& blobs,
+                  CLoadInfoBlob_ids::const_iterator blob_iter);
     TBlobVersion GetBlobVersion(CReaderRequestResult& result,
                                 const TBlob_id& blob_id);
     void LoadChunk(CReaderRequestResult& result,
@@ -163,11 +166,14 @@ public:
     
     enum {
         kSNP_EntryId = 0,
-        kSNP_ChunkId = 0
+        kSNP_ChunkId = 0,
+        kSkeleton_ChunkId = 0
     };
 
     static bool IsSNPBlob_id(const CBlob_id& blob_id);
     static void AddSNPBlob_id(CLoadLockBlob_ids& ids, int gi);
+
+    static bool IsAnnotBlob_id(const CBlob_id& blob_id);
 
     static bool TrySNPSplit(void);
     static bool TrySNPTable(void);

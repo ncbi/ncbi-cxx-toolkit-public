@@ -191,7 +191,7 @@ void CReader::LoadBlobs(CReaderRequestResult& result,
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( (info.GetContentsMask() & mask) != 0 ) {
-            LoadBlob(result, it->first);
+            LoadBlob(result, blobs, it);
         }
     }
 }
@@ -253,10 +253,36 @@ void CId1ReaderBase::ResolveSeq_id(CReaderRequestResult& result,
 
 
 void CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
-                              const TBlob_id& blob_id)
+                              CLoadLockBlob_ids& blobs,
+                              CLoadInfoBlob_ids::const_iterator blob_iter)
 {
+    const TBlob_id& blob_id = blob_iter->first;
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsLoaded() ) {
+        if ( blob_iter->second.GetContentsMask() == fBlobHasExternal &&
+             IsAnnotBlob_id(blob_id) ) {
+            // create special external annotations blob
+            CAnnotName name;
+            SAnnotTypeSelector type;
+            if ( blob_id.GetSubSat() == CSeqref::eSubSat_SNP ) {
+                blob->SetName("SNP");
+                name.SetNamed("SNP");
+                type.SetFeatSubtype(CSeqFeatData::eSubtype_variation);
+            }
+            else if ( blob_id.GetSubSat() == CSeqref::eSubSat_CDD ) {
+                name.SetNamed("CDDSearch");
+                type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
+            }
+            CTSE_Chunk_Info& chunk = blob->GetSkeletonChunk();
+            _ASSERT(chunk.GetChunkId() == kSkeleton_ChunkId);
+            chunk.x_AddAnnotType(name, type,
+                                 blobs->GetSeq_id(),
+                                 CTSE_Chunk_Info::TLocationRange::GetWhole());
+            blob.SetLoaded();
+            result.AddTSE_Lock(blob);
+            result.UpdateLoadedSet();
+            return;
+        }
         try {
             {{
                 CReaderRequestConn conn(result);
@@ -319,10 +345,30 @@ void CId1ReaderBase::LoadChunk(CReaderRequestResult& result,
     if ( chunk_info.NotLoaded() ) {
         CInitGuard init(chunk_info, result);
         if ( init ) {
-            {{
+            if ( chunk_info.GetChunkId() == kSkeleton_ChunkId && 
+                 IsAnnotBlob_id(blob_id) ) {
+                try {
+                    CReaderRequestConn conn(result);
+                    GetBlob(*blob, blob_id, conn);
+                }
+                catch ( CLoaderException& exc ) {
+                    if ( exc.GetErrCode() == exc.ePrivateData ) {
+                        blob->SetSuppressionLevel(blob->eSuppression_private);
+                        blob.SetLoaded();
+                    }
+                    else if ( exc.GetErrCode() == exc.eNoData ) {
+                        blob->SetSuppressionLevel(blob->eSuppression_withdrawn);
+                        blob.SetLoaded();
+                    }
+                    else {
+                        throw;
+                    }
+                }
+            }
+            else {
                 CReaderRequestConn conn(result);
                 GetChunk(chunk_info, blob_id, conn);
-            }}
+            }
             chunk_info.SetLoaded();
         }
     }
@@ -333,6 +379,12 @@ bool CId1ReaderBase::IsSNPBlob_id(const CBlob_id& blob_id)
 {
     return blob_id.GetSat() == CSeqref::eSat_SNP &&
         blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_snp;
+}
+
+
+bool CId1ReaderBase::IsAnnotBlob_id(const CBlob_id& blob_id)
+{
+    return blob_id.GetSat() == CSeqref::eSat_ANNOT;
 }
 
 
@@ -364,7 +416,7 @@ void CId1ReaderBase::GetChunk(CTSE_Chunk_Info& chunk_info,
                               const CBlob_id& blob_id,
                               TConn conn)
 {
-    if ( IsSNPBlob_id(blob_id) && chunk_info.GetChunkId()==kSNP_ChunkId ) {
+    if ( chunk_info.GetChunkId() == kSNP_ChunkId && IsSNPBlob_id(blob_id) ) {
         GetSNPChunk(chunk_info, blob_id, conn);
     }
     else {

@@ -724,7 +724,7 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
             }
             CLoadLockBlob blob(result, it->first);
             if ( !blob.IsLoaded() ) {
-                m_Driver->LoadBlob(result, it->first);
+                m_Driver->LoadBlob(result, blobs, it);
                 if ( !blob.IsLoaded() ) {
                     done = false;
                 }
