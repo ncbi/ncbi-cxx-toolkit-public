@@ -1,4 +1,4 @@
---$Revision: 5.2 $
+--$Revision: 5.3 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -179,7 +179,7 @@ EXPORTS Biostruc-graph, Biomol-descr, Residue-graph,
 	Molecule-id, Residue-id, Atom-id;
 
 IMPORTS Pub FROM NCBI-Pub
-	BioSource FROM NCBI-Organism
+	BioSource FROM NCBI-BioSource
 	Seq-id FROM NCBI-Seqloc
 	Biostruc-id FROM MMDB;
 
