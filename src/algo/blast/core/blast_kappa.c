@@ -1528,7 +1528,7 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
 
    freqRatios = _PSIMatrixFrequencyRatiosFree(freqRatios);
 
-   standardProb = _PSIGetStandardProbabilities(sbp);
+   standardProb = BLAST_GetStandardAaProbabilities();
 
    /*reverse multiplication done in posit.c*/
    for(i = 0; i < numPositions; i++)

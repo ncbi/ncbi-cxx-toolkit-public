@@ -440,19 +440,6 @@ _PSIUpdatePositionCounts(_PSIMsa* msa);
 void
 _PSIDiscardIfUnused(_PSIMsa* msa, unsigned int seq_index);
 
-/** Get the standard residue frequencies for a scoring system specified in the
- * BlastScoreBlk structure. This is basically a wrapper for 
- * Blast_ResFreqStdComp() from blast_stat.c with a more intention-revealing 
- * name :)
- * Caller is responsible for deallocating return value via sfree().
- * @param sbp score block structure initialized for the scoring system used
- * with the query sequence [in]
- * @return NULL if there is not enough memory otherwise an array of length
- * sbp->alphabet_size with the standard background residue probabilities.
- */
-double*
-_PSIGetStandardProbabilities(const BlastScoreBlk* sbp);
-
 /** Calculates the length of the sequence without including any 'X' residues.
  * used in kappa.c
  * @param seq sequence to examine [in]
@@ -544,6 +531,9 @@ _PSICalculateInformationContentFromFreqRatios(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/11/18 16:25:32  camacho
+ * Rename _PSIGetStandardProbabilities to BLAST_GetStandardAaProbabilities
+ *
  * Revision 1.15  2004/11/02 20:37:30  camacho
  * Doxygen fixes
  *

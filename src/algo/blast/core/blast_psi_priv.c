@@ -36,8 +36,7 @@ static char const rcsid[] =
  */
 
 #include "blast_psi_priv.h"
-#include "matrix_freq_ratios.h"
-#include <algo/blast/core/blast_util.h>     /* needed for IS_residue */
+#include <algo/blast/core/blast_util.h>
 
 /****************************************************************************/
 /* Use the following #define's to enable/disable functionality */
@@ -393,7 +392,7 @@ _PSISequenceWeightsNew(const PSIMsaDimensions* dimensions,
         return _PSISequenceWeightsFree(retval);
     }
 
-    retval->std_prob = _PSIGetStandardProbabilities(sbp);
+    retval->std_prob = BLAST_GetStandardAaProbabilities();
     if ( !retval->std_prob ) {
         return _PSISequenceWeightsFree(retval);
     }
@@ -2290,29 +2289,6 @@ _PSIDiscardIfUnused(_PSIMsa* msa, unsigned int seq_index)
 }
 
 /****************************************************************************/
-double*
-_PSIGetStandardProbabilities(const BlastScoreBlk* sbp)
-{
-    Blast_ResFreq* standard_probabilities = NULL;
-    Uint4 i = 0;
-    double* retval = NULL;
-
-    retval = (double*) malloc(sbp->alphabet_size * sizeof(double));
-    if ( !retval ) {
-        return NULL;
-    }
-
-    standard_probabilities = Blast_ResFreqNew(sbp);
-    Blast_ResFreqStdComp(sbp, standard_probabilities);
-
-    for (i = 0; i < (Uint4) sbp->alphabet_size; i++) {
-        retval[i] = standard_probabilities->prob[i];
-    }
-
-    Blast_ResFreqDestruct(standard_probabilities);
-    return retval;
-}
-
 int
 _PSISaveDiagnostics(const _PSIMsa* msa,
                     const _PSIAlignedBlock* aligned_block,
@@ -2383,6 +2359,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/11/18 16:25:32  camacho
+ * Rename _PSIGetStandardProbabilities to BLAST_GetStandardAaProbabilities
+ *
  * Revision 1.34  2004/11/15 16:54:36  camacho
  * break long lines
  *

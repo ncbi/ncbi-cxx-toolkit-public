@@ -37,11 +37,10 @@ static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
-#include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_encoding.h>
 #include <algo/blast/core/blast_filter.h>
-
+#include <algo/blast/core/blast_stat.h>
 
 Int2
 BlastSetUp_SeqBlkNew (const Uint1* buffer, Int4 length, Int4 context,
@@ -1126,5 +1125,32 @@ Blast_GetOneQueryStructs(BlastQueryInfo** one_query_info_ptr,
     one_query->oid = query_index;
 
     return 0;
+}
+
+double* 
+BLAST_GetStandardAaProbabilities()
+{
+    Blast_ResFreq* standard_probabilities = NULL;
+    Uint4 i = 0;
+    double* retval = NULL;
+    BlastScoreBlk* sbp = NULL;
+
+    retval = (double*) malloc(sbp->alphabet_size * sizeof(double));
+    if ( !retval ) {
+        return NULL;
+    }
+
+    sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+
+    standard_probabilities = Blast_ResFreqNew(sbp);
+    Blast_ResFreqStdComp(sbp, standard_probabilities);
+
+    for (i = 0; i < (Uint4) sbp->alphabet_size; i++) {
+        retval[i] = standard_probabilities->prob[i];
+    }
+
+    Blast_ResFreqDestruct(standard_probabilities);
+    sbp = BlastScoreBlkFree(sbp);
+    return retval;
 }
 
