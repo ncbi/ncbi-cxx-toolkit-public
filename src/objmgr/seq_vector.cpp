@@ -552,10 +552,12 @@ void CSeqVector::SetCoding(EVectorCoding coding)
 CSeqVector::ESequenceType CSeqVector::GetSequenceType(void) const
 {
     if ( m_SequenceType == eType_not_set ) {
-        for ( CSeqMap::const_iterator i = m_SeqMap->BeginResolved(m_Scope);
-              i != m_SeqMap->EndResolved(m_Scope); ++i ) {
-            if ( i.GetType() == CSeqMap::eSeqData &&
-                 x_UpdateSequenceType(i.GetRefData().Which()) ) {
+        for ( CSeqMap::const_iterator i = m_SeqMap->BeginResolved(m_Scope,
+                                                                  size_t(-1),
+                                                                  CSeqMap::fFindData);
+              i; ++i ) {
+            _ASSERT(i.GetType() == CSeqMap::eSeqData);
+            if ( x_UpdateSequenceType(i.GetRefData().Which()) ) {
                 return m_SequenceType;
             }
         }
@@ -592,13 +594,16 @@ void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer) const
 {
     stop = min(stop, size());
     buffer.erase();
-    while ( start < stop ) {
-        (*this)[start];
-        TSeqPos cachePos = start - m_CachePos;
-        _ASSERT(cachePos < m_CacheLen);
-        TSeqPos cacheEnd = min(m_CacheLen, stop - m_CachePos);
-        buffer.append(m_Cache+cachePos, m_Cache+cacheEnd);
-        start += (cacheEnd - cachePos);
+    if ( start < stop ) {
+        buffer.reserve(stop-start);
+        do {
+            (*this)[start];
+            TSeqPos cachePos = start - m_CachePos;
+            _ASSERT(cachePos < m_CacheLen);
+            TSeqPos cacheEnd = min(m_CacheLen, stop - m_CachePos);
+            buffer.append(m_Cache+cachePos, m_Cache+cacheEnd);
+            start += (cacheEnd - cachePos);
+        } while ( start < stop );
     }
 }
 
@@ -609,6 +614,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/02/05 15:05:28  vasilche
+* Added string::reserve()
+*
 * Revision 1.41  2003/01/28 17:17:06  vasilche
 * Fixed bug processing minus strands.
 * Used CSeqMap::ResolvedRangeIterator with strand coordinate translation.
