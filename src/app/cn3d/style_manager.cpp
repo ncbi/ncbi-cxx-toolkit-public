@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2002/02/22 20:17:24  thiessen
+* fix feature range problems
+*
 * Revision 1.60  2002/01/19 02:34:50  thiessen
 * fixes for changes in asn serialization API
 *
@@ -1681,16 +1684,22 @@ static bool ExtractObjectLocation(
             residueFlags.resize(identifier->nResidues, false);
 
             // set residue ranges
-            CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
-            for (r=(*m)->GetResidues().begin(); r!=re; r++) {
-                for (int i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
-                    if (i > 0 && i < residueFlags.size()) {
-                        residueFlags[i - 1] = true;     // assume index = residue id - 1
-                    } else {
-                        ERR_POST(Error << "ExtractObjectLocation() - residue from/to out of range");
-                        return false;
+            if ((*m)->IsSetResidues()) {
+                CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
+                for (r=(*m)->GetResidues().begin(); r!=re; r++) {
+                    for (int i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
+                        if (i > 0 && i <= residueFlags.size()) {
+                            residueFlags[i - 1] = true;     // assume index = residue id - 1
+                        } else {
+                            ERR_POST(Error << "ExtractObjectLocation() - residue from/to out of range");
+                            return false;
+                        }
                     }
                 }
+            } else {
+                // assume all residues are included if none specified
+                for (int i=0; i<residueFlags.size(); i++)
+                    residueFlags[i] = true;
             }
         }
     }
