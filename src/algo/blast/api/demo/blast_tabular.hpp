@@ -67,12 +67,19 @@ USING_SCOPE(blast);
 class CBlastTabularFormatThread : public CThread 
 {
 public:
+    /// Constructor
+    /// @param blaster Database BLAST search object [in]
+    /// @param ostream Stream to write output to [in]
+    /// @param seqinfo_src Source of database sequences information [in]
     CBlastTabularFormatThread(const CDbBlast* blaster,
                               CNcbiOstream& ostream, 
                               IBlastSeqInfoSrc* seqinfo_src);
+    /// Destructor
     ~CBlastTabularFormatThread();
 protected:
+    /// Main driver for the thread
     virtual void* Main(void);
+    /// Clean up 
     virtual void OnExit(void);
 private:
     EBlastProgramType m_Program; /**< Type of BLAST program */
@@ -107,6 +114,9 @@ private:
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/03/31 16:15:59  dondosha
+* Added some doxygen comments
+*
 * Revision 1.6  2004/12/28 16:47:43  camacho
 * 1. Use typedefs to AutoPtr consistently
 * 2. Remove exception specification from blast::SetupQueries
