@@ -448,7 +448,7 @@ private:
     bool IsMixedStrands(const CSeq_loc& loc);
 
     void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
-    void ValidatePubArticle(const CCit_art& art, const CSerialObject& obj);
+    void ValidatePubArticle(const CCit_art& art, int uid, const CSerialObject& obj);
     void ValidateEtAl(const CPubdesc& pubdesc, const CSerialObject& obj);
     
     bool HasName(const list< CRef< CAuthor > >& authors);
@@ -897,6 +897,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/10/27 17:00:37  shomrat
+* changed signature of ValidatePubArticle
+*
 * Revision 1.47  2003/10/27 14:53:57  shomrat
 * added eErr_SEQ_FEAT_UTRdoesNotAbutCDS
 *
