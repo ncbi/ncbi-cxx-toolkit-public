@@ -171,10 +171,20 @@ CMsvcSolutionGenerator::CPrjContext::CPrjContext(const CProjItem& project)
     m_GUID = GenerateSlnGUID();
 
     CMsvcPrjProjectContext project_context(project);
-    m_ProjectName = project_context.ProjectName();
-    m_ProjectPath = CDirEntry::ConcatPath(project_context.ProjectDir(),
-                                          project_context.ProjectName());
-    m_ProjectPath += MSVC_PROJECT_FILE_EXT;
+    if (project.m_ProjType == CProjKey::eMsvc) {
+        m_ProjectName = project_context.ProjectName();
+
+        string project_rel_path = project.m_Sources.front();
+        m_ProjectPath = CDirEntry::ConcatPath(project.m_SourcesBaseDir, 
+                                             project_rel_path);
+        m_ProjectPath = CDirEntry::NormalizePath(m_ProjectPath);
+
+    } else {
+        m_ProjectName = project_context.ProjectName();
+        m_ProjectPath = CDirEntry::ConcatPath(project_context.ProjectDir(),
+                                              project_context.ProjectName());
+        m_ProjectPath += MSVC_PROJECT_FILE_EXT;
+    }
 }
 
 
@@ -402,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/10 19:51:16  gorelenk
+ * Changed CMsvcSolutionGenerator::WriteProjectAndSection .
+ *
  * Revision 1.16  2004/04/19 15:42:56  gorelenk
  * Changed implementation of CMsvcSolutionGenerator::WriteProjectAndSection :
  * added test for lib choice.
