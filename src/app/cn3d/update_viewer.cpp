@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/07/26 13:07:01  thiessen
+* fix const object problem
+*
 * Revision 1.39  2002/07/01 23:17:04  thiessen
 * skip warning if master choice canceled
 *
@@ -450,9 +453,9 @@ void UpdateViewer::FetchSequenceViaHTTP(int gi, SequenceList *newSequences, Stru
         if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
             CRef < CBioseq > bioseq;
             if (seqEntry.IsSeq())
-                bioseq.Reset(&(seqEntry.GetSeq()));
+                bioseq.Reset(&(seqEntry.SetSeq()));
             else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
-                bioseq.Reset(&(seqEntry.GetSet().GetSeq_set().front()->GetSeq()));
+                bioseq.Reset(&(seqEntry.SetSet().SetSeq_set().front()->SetSeq()));
             else
                 ERR_POST(Error << "UpdateViewer::FetchSequenceViaHTTP() - confused by SeqEntry format");
             if (!bioseq.Empty()) {
@@ -506,7 +509,7 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences,
                         }
 
                         if (makeSequence)
-                            newSequences->push_back(sSet->CreateNewSequence(se.GetSeq()));
+                            newSequences->push_back(sSet->CreateNewSequence(se.SetSeq()));
                     } else
                         ERR_POST(Error << "FastaToSeqEntry() returned Bioseq-set in Seq-entry");
                 }
