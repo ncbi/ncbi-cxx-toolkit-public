@@ -39,11 +39,24 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(objects)
+
+
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
+
 
 class CScope;
 class CSeq_annot_Handle;
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_graph_Handle --
+///
+///  Proxy to access seq-graph objects data
+///
 
 class CSeq_graph_Handle
 {
@@ -54,11 +67,22 @@ public:
                       size_t index);
     ~CSeq_graph_Handle(void);
 
+    /// Check if handle points to a seq-graph
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void) const;
+
+    // Check if handle does not point to a seq-graph
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator !(void) const;
 
+    /// Get an annotation handle for the current seq-graph
     CSeq_annot_Handle GetAnnot(void) const;
 
+    /// Get constant reference to the current seq-graph
     CConstRef<CSeq_graph> GetSeq_graph(void) const;
 
     // Mappings for CSeq_graph methods
@@ -222,12 +246,18 @@ const CSeq_graph::TGraph& CSeq_graph_Handle::GetGraph(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/09/29 19:49:37  kononenk
+* Added doxygen formatting
+*
 * Revision 1.2  2004/08/25 20:44:52  grichenk
 * Added operator bool() and operator !()
 *
