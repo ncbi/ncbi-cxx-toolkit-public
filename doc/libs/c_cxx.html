@@ -111,27 +111,31 @@ with helper objects coded entirely in C (as tables of function pointers and data
 
 <p>
 On the other hand, throughout the code <tt>CONNECT</tt> library refers to
-predefined objects <tt>CORE_LOG</tt> (so called <i>CORE C logger</i>)and <tt>CORE_REG</tt>
-(<i>CORE C registry</i>), which in reality are never initialized by the library, i.e.
-they are empty objects, which do nothing. It is an application's
+predefined objects <tt>g_CORE_Log</tt> (so called <i>CORE C logger</i>)
+<tt>g_CORE_Registry</tt> (<i>CORE C registry</i>), and <tt>g_CORE_Lock</tt>
+(<i>CORE C MT-lock</i>), which actually are never initialized by the library,
+i.e. they are empty objects, which do nothing. It is an application's
 resposibility to replace these dummies with real working
-logger and registry. There are two approaches, one for C and another one for C++ application.
+logger, registry, and MT-lock. There are two approaches,
+one for C and another one for C++ application.
 
 <p>
 In a C program <a href="../lxr/source/include/connect/ncbi_util.h"><b><i>connect/ncbi_util.h</i></b></a>
 module can be used with calls to <a href="../lxr/ident?i=CORE_SetREG"><b><i>CORE_SetREG()</i></b></a>,
-<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a> can be used to set up the
-logger and the registry, correspondingly. There are even more convenience routines concerning
+<a href="../lxr/ident?i=CORE_SetLOG"><b><i>CORE_SetLOG()</i></b></a>, and
+<a href="../lxr/ident?i=CORE_SetLOCK"><b><i>CORE_SetLOCK()</i></b></a>
+can be used to set up the registry, the logger, and
+the MT-lock, correspondingly. There are even more convenience routines concerning
 <tt>CORE_LOG</tt>, like <a href="../lxr/ident?i=CORE_SetLOGFILE"><b><i>CORE_SetLOGFILE()</i></b></a>,
 <a href="../lxr/ident?i=CORE_SetLOGFILE_NAME"><b><i>CORE_SetLOGFILE_NAME()</i></b></a>,
 which facilitate redirecting logging messages to either a C stream (<tt>FILE*</tt>) or a named file.
 
 <p>
 In a C++ program, yet another additional step is necessary of converting <i>native</i> C++ objects
-so that they could be used for both <tt>CORE_LOG</tt> and
-<tt>CORE_REG</tt> by calls declared in
+by calls declared in
 <a href="../lxr/source/include/connect/ncbi_core_cxx.hpp"><b><i>connect/ncbi_core_cxx.hpp</i></b></a>
-as described later in this section.
+as described later in this section, so that the C++ objects could be used
+where types <tt>LOG</tt>, <tt>REG</tt> or <tt>MT_LOCK</tt> are expected.
 
 <a name="ref_LOG"></a><h3><tt>LOG</tt> and <tt>CNcbiDiag</tt></h3>
 
