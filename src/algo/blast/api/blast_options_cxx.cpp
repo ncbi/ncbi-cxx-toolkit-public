@@ -415,6 +415,11 @@ CBlastOptionsLocal::Validate() const
         msg = blmsg ? blmsg->message : "Lookup table options validation failed";
     }
 
+    if (BlastInitialWordOptionsValidate(program, m_InitWordOpts, m_LutOpts, 
+                                        &blmsg)) {
+        msg = blmsg ? blmsg->message : "Word finder options validation failed";
+    }
+
     if (BlastHitSavingOptionsValidate(program, m_HitSaveOpts, &blmsg)) {
         msg = blmsg ? blmsg->message : "Hit saving options validation failed";
     }
@@ -613,6 +618,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2004/08/03 20:22:08  dondosha
+* Added initial word options validation
+*
 * Revision 1.46  2004/07/06 15:48:40  dondosha
 * Use EBlastProgramType enumeration type instead of EProgram when calling C code
 *
