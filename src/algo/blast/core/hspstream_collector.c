@@ -225,7 +225,7 @@ Blast_HSPListCollectorInitMT(EBlastProgramType program, BlastHitSavingOptions* h
     stream_data->program = program;
     stream_data->hit_options = hit_options;
 
-    Blast_HSPResultsInit(num_queries, &stream_data->results);
+    stream_data->results = Blast_HSPResultsNew(num_queries);
 
     stream_data->results_sorted = FALSE;
     stream_data->sort_on_read = sort_on_read;

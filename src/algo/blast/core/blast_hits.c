@@ -2011,19 +2011,24 @@ static Int2 Blast_HitListPurgeNullHSPLists(BlastHitList* hit_list)
           Functions manipulating BlastHSPResults
 ********************************************************************************/
 
-Int2 Blast_HSPResultsInit(Int4 num_queries, BlastHSPResults** results_ptr)
+BlastHSPResults* Blast_HSPResultsNew(Int4 num_queries)
 {
-   BlastHSPResults* results;
-   Int2 status = 0;
+   BlastHSPResults* retval = NULL;
 
-   results = (BlastHSPResults*) malloc(sizeof(BlastHSPResults));
+   retval = (BlastHSPResults*) malloc(sizeof(BlastHSPResults));
+   if ( !retval ) {
+       return NULL;
+   }
 
-   results->num_queries = num_queries;
-   results->hitlist_array = (BlastHitList**) 
+   retval->num_queries = num_queries;
+   retval->hitlist_array = (BlastHitList**) 
       calloc(num_queries, sizeof(BlastHitList*));
+
+   if ( !retval->hitlist_array ) {
+       return Blast_HSPResultsFree(retval);
+   }
    
-   *results_ptr = results;
-   return status;
+   return retval;
 }
 
 BlastHSPResults* Blast_HSPResultsFree(BlastHSPResults* results)

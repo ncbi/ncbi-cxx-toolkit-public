@@ -917,7 +917,7 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
-   Blast_HSPResultsInit(query_info->num_queries, &results);
+   results = Blast_HSPResultsNew(query_info->num_queries);
 
    if (program_number == eBlastTypeBlastp && 
          (ext_params->options->compositionBasedStats == TRUE || 
@@ -1089,7 +1089,7 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
-   Blast_HSPResultsInit(query_info->num_queries, &results);
+   results = Blast_HSPResultsNew(query_info->num_queries);
 
    while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
           != kBlastHSPStream_Eof) {

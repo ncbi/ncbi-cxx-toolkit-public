@@ -477,10 +477,9 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list, BlastHSPList* hsp_list);
 /** Initialize the results structure.
  * @param num_queries Number of query sequences to allocate results structure
  *                    for [in]
- * @param results_ptr The allocated structure [out]
  */
 NCBI_XBLAST_EXPORT
-Int2 Blast_HSPResultsInit(Int4 num_queries, BlastHSPResults** results_ptr);
+BlastHSPResults* Blast_HSPResultsNew(Int4 num_queries);
 
 /** Deallocate memory for BLAST results */
 NCBI_XBLAST_EXPORT
