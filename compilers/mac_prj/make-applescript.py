@@ -45,6 +45,7 @@ def proj(dir, name, macpath):
 proj("corelib", "corelib", "corelib")
 proj("serial", "serial", "serial")
 proj("html", "html", "html")
+proj("connect", "connect", "connect")
 for i in objects:
 	proj("objects/" + i, "object_" + i, "objects:" + i)
 for i in objects:
