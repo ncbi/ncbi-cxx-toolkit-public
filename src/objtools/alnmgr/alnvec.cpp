@@ -206,6 +206,7 @@ string& CAlnVec::GetAlnSeqString(string& buffer,
 
 string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                                       string&       buffer,
+                                      TSeqPosList * insert_aln_starts,
                                       TSeqPosList * insert_starts,
                                       TSeqPosList * insert_lens,
                                       unsigned int  scrn_width,
@@ -249,6 +250,7 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
                 // record the insert if requested
                 if (record_inserts) {
                     insert_starts->push_back(start);
+                    insert_aln_starts->push_back(aln_pos);
                     insert_lens->push_back(start + len - 1);
                 }
             }
@@ -797,6 +799,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2003/07/23 20:24:39  todorov
+* +aln_starts for the inserts in GetWhole...
+*
 * Revision 1.36  2003/07/22 19:18:37  todorov
 * fixed a 1st seg check in GetWhole...
 *
