@@ -161,17 +161,7 @@ case "$host:$compiler" in
    CFLAGS="-mt $WS64_CFLAGS"
    CXXFLAGS="-mt +w +w2 $WS64_CFLAGS"
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
-   if test "$with_dll" != "no" ; then
-      CFLAGS="$CFLAGS -KPIC"
-      CXXFLAGS="$CXXFLAGS -KPIC"
-   fi
-   if test "$with_dll" = "yes" ; then
-      lib_dll="dll"
-      CONF_lib_ext=".so"
-      AR="$CXX -G -h \$@ -o"
-   else
-      AR="$CXX -xar -o"
-   fi
+   AR="$CXX -xar -o"
    STRIP=":"
    if test "$with_debug" = "no" ; then
       LDFLAGS="-s $LDFLAGS"
@@ -191,11 +181,13 @@ case "$host:$compiler" in
    ;;
 
  i*86*-pc-cygwin32:GCC )
+   with_dll="no"
    NETWORK_LIBS=${NETWORK_LIBS:=" "}
    CONF_exe_ext=".exe"
    ;;
 
  i*86*-pc-cygwin32:MSVC )
+   with_dll="no"
    CFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CXXFLAGS="/W4 /Od /Zi /DEBUG /D_DEBUG"
    CPPFLAGS="/nologo $CPPFLAGS"
@@ -225,6 +217,38 @@ if test -z "$compiler" ; then
   AC_MSG_ERROR(["Compiler $CXX $compiler_ver is not supported. Consult doc/config.html#ref_Compilers for the list of supported platforms/compilers"])
 fi
 
+
+#### DLLs
+if test "$with_dll" != "no" ; then
+   case "$compiler" in
+    GCC )
+      CFLAGS="$CFLAGS -fPIC"
+      CXXFLAGS="$CXXFLAGS -fPIC"
+      ;;
+    WorkShop5 )
+      CFLAGS="$CFLAGS -KPIC"
+      CXXFLAGS="$CXXFLAGS -KPIC"
+      ;;
+   esac
+fi
+
+if test "$with_dll" = "yes" ; then
+   lib_dll="dll"
+   CONF_lib_ext="${CONF_dll_ext:=.so}"
+
+   case "$compiler" in
+    GCC )
+      LINKDLL="$CXX -shared -o"
+      ;;
+    WorkShop5 )
+      LINKDLL="$CXX -G -h \$@ -o"
+      ;;
+    * )
+      if test -z "$LINKDLL" ; then
+         AC_MSG_ERROR(["Dont know how to build DLLs with compiler $CXX $compiler_ver"])
+      fi
+   esac
+fi
 
 
 #### GNU compiler::  common flags and definitions
@@ -755,6 +779,7 @@ AC_SUBST(CC)
 AC_SUBST(CPP)
 AC_SUBST(CXX)
 AC_SUBST(AR)
+AC_SUBST(LINKDLL)
 AC_SUBST(RANLIB)
 AC_SUBST(STRIP)
 
