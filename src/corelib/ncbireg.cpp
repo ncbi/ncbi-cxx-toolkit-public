@@ -522,8 +522,18 @@ const int CNcbiRegistry::GetInt
     try {
         return NStr::StringToInt(value);
     } catch (CStringException& ex) {
+        if (err_action == eReturn) 
+            return default_value;
+        
+        string msg = "CNcbiRegistry::GetInt()";
+        msg += " Reg entry:";
+        msg += section; msg += ":"; msg += name;
+          
         if (err_action == eThrow)
-            NCBI_RETHROW_SAME(ex, "CNcbiRegistry::GetInt()");
+            NCBI_RETHROW_SAME(ex, msg);
+        if (err_action == eErrPost)
+            ERR_POST(ex.what() << msg);
+            
         return default_value;
     }
 }
@@ -544,8 +554,18 @@ const bool CNcbiRegistry::GetBool
     try {
         return NStr::StringToBool(value);
     } catch (CStringException& ex) {
+        if (err_action == eReturn) 
+            return default_value;
+        
+        string msg = "CNcbiRegistry::GetBool()";
+        msg += " Reg entry:";
+        msg += section;  msg+=":"; msg += name;
+          
         if (err_action == eThrow)
-            NCBI_RETHROW_SAME(ex, "CNcbiRegistry::GetBool()");
+            NCBI_RETHROW_SAME(ex, msg);
+        if (err_action == eErrPost)
+            ERR_POST(ex.what() << msg);
+            
         return default_value;
     }
 }
@@ -566,8 +586,18 @@ const double CNcbiRegistry::GetDouble
     try {
         return NStr::StringToDouble(value);
     } catch (CStringException& ex) {
+        if (err_action == eReturn) 
+            return default_value;
+        
+        string msg = "CNcbiRegistry::GetDouble()";
+        msg += " Reg entry:";
+        msg += section;  msg+=":"; msg += name;
+          
         if (err_action == eThrow)
-            NCBI_RETHROW_SAME(ex, "CNcbiRegistry::GetDouble()");
+            NCBI_RETHROW_SAME(ex, msg);
+        if (err_action == eErrPost)
+            ERR_POST(ex.what() << msg);
+
         return default_value;
     }
 }
@@ -847,6 +877,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/01/17 20:27:30  kuznets
+ * CNcbiRegistry added ErrPost error action
+ *
  * Revision 1.27  2003/01/17 17:31:07  vakatov
  * CNcbiRegistry::GetString() to return "string", not "string&" -- for safety
  *

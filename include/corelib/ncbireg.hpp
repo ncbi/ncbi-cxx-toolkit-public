@@ -147,6 +147,7 @@ public:
     // converted into the requested type.
     enum EErrAction {
         eThrow,  // throw an exception   if conversion error occurs
+        eErrPost,// log the error message if conversion error occurs
         eReturn  // return default value if conversion error occurs
     };
 
@@ -231,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/01/17 20:26:59  kuznets
+ * CNcbiRegistry added ErrPost error action
+ *
  * Revision 1.19  2003/01/17 17:31:20  vakatov
  * CNcbiRegistry::GetString() to return "string", not "string&" -- for safety
  *
