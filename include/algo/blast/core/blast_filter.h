@@ -88,7 +88,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
  * @param complement_mask Linked list of SSeqRange*s with offsets. [out]
 */
 Int2 
-BLAST_ComplementMaskLocations(Uint1 program_number, 
+BLAST_ComplementMaskLocations(EBlastProgramType program_number, 
    BlastQueryInfo* query_info, BlastMaskLoc* mask_loc, 
    BlastSeqLoc* *complement_mask);
 
@@ -104,7 +104,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param seqloc_retval Resulting locations for filtered region. [out]
 */
 Int2
-BlastSetUp_Filter(Uint1 program_number, 
+BlastSetUp_Filter(EBlastProgramType program_number, 
     Uint1* sequence, 
     Int4 length, 
     Int4 offset, 
@@ -125,7 +125,7 @@ BlastSetUp_Filter(Uint1 program_number,
 */
 Int2
 BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
-    Uint1 program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
+    EBlastProgramType program_number, const char* filter_string, BlastMaskLoc* *filter_out, Boolean* mask_at_hash,
     Blast_Message* *blast_message);
 
 /** Masks the letters in buffer.
@@ -151,7 +151,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 */
 Int2
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
-    BlastMaskLoc *filter_maskloc, Uint1 program_number);
+    BlastMaskLoc *filter_maskloc, EBlastProgramType program_number);
 
 
 #ifdef __cplusplus

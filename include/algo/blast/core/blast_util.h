@@ -50,11 +50,13 @@ extern "C" {
 /** Different types of sequence encodings for sequence retrieval from the 
  * BLAST database 
  */
-#define BLASTP_ENCODING 0
-#define BLASTNA_ENCODING 1
-#define NCBI4NA_ENCODING 2
-#define NCBI2NA_ENCODING 3
-#define ERROR_ENCODING 255
+#define BLASTP_ENCODING 0  /**< NCBIstdaa */
+#define BLASTNA_ENCODING 1 /**< Special encoding for preliminary stage of 
+                              BLAST: permutation of NCBI8na */
+#define NCBI4NA_ENCODING 2 /**< NCBI8na */
+#define NCBI2NA_ENCODING 3 /**< NCBI2na */
+#define ERROR_ENCODING 255 /**< Error value for encoding */
+/**< Does character encode a residue? */
 #ifndef IS_residue
 #define IS_residue(x) (x <= 250)
 #endif
@@ -83,19 +85,16 @@ void BlastSequenceBlkCopy(BLAST_SequenceBlk** copy,
 
 /** Set number for a given program type.  Return is zero on success.
  * @param program string name of program [in]
- * @param number number of program [out]
+ * @param number Enumerated value of program [out]
 */
-
-
-
 NCBI_XBLAST_EXPORT
-Int2 BlastProgram2Number(const char *program, Uint1 *number);
+Int2 BlastProgram2Number(const char *program, EBlastProgramType *number);
 
 /** Return string name for program given a number.  Return is zero on success.
- * @param number number of program [in]
+ * @param number Enumerated value of program [in]
  * @param program string name of program (memory should be deallocated by called) [out]
 */
-Int2 BlastNumber2Program(Uint1 number, char* *program);
+Int2 BlastNumber2Program(EBlastProgramType number, char* *program);
 
 /** Allocates memory for *sequence_blk and then populates it.
  * @param buffer start of sequence [in]
@@ -141,7 +140,7 @@ Int2 BlastSeqBlkSetCompressedSequence(BLAST_SequenceBlk* seq_blk,
  * @param num_queries Number of query sequences [in]
  * @param query_info_ptr The initialized structure [out]
  */
-Int2 BLAST_QueryInfoInit(Uint1 program_number, 
+Int2 BLAST_QueryInfoInit(EBlastProgramType program_number, 
         Int4 num_queries, BlastQueryInfo* *query_info_ptr);
 
 /** GetTranslation to get the translation of the nucl. sequence in the
@@ -208,14 +207,14 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
  * @param context_number Context number 
  * @return Sequence frame (+-1 for nucleotides, -3..3 for translations)
 */
-Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number);
+Int2 BLAST_ContextToFrame(EBlastProgramType prog_number, Int4 context_number);
 
 /** Given a context from BLAST engine core, return the query index.
  * @param context Context saved in a BlastHSP structure [in]
  * @param program Type of BLAST program [in]
  * @return Query index in a set of queries.
  */
-Int4 Blast_GetQueryIndexFromContext(Int4 context, Uint1 program);
+Int4 Blast_GetQueryIndexFromContext(Int4 context, EBlastProgramType program);
 
 /** Find the length of an individual query within a concatenated set of 
  * queries.

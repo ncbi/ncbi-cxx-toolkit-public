@@ -114,7 +114,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
  * @param hsp_list_ptr List of HSPs with full extension information [out]
  * @param gapped_stats Return statistics (not filled if NULL) [out]
 */
-Int2 BLAST_MbGetGappedScore(Uint1 program_number, 
+Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number, 
              BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 			    BLAST_SequenceBlk* subject,
 			    BlastGapAlignStruct* gap_align,
@@ -138,7 +138,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  *                   the concatenated sequence [in]
  * @param subject The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_params Options related to scoring [in]
+ * @param score_params Options and parameters related to scoring [in]
  * @param ext_params Options and parameters related to extensions [in]
  * @param hit_params Options related to saving hits [in]
  * @param init_hitlist List of initial HSPs (offset pairs with additional 
@@ -146,11 +146,11 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  * @param gapped_stats Return statistics (not filled if NULL) [out]
  */
-Int2 BLAST_GetGappedScore (Uint1 program_number, 
+Int2 BLAST_GetGappedScore (EBlastProgramType program_number, 
             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 		      BLAST_SequenceBlk* subject,
 		      BlastGapAlignStruct* gap_align,
-		      const BlastScoringParameters* score_parameters, 
+		      const BlastScoringParameters* score_params, 
 		      const BlastExtensionParameters* ext_params,
 		      const BlastHitSavingParameters* hit_params,
 		      BlastInitHitList* init_hitlist,
@@ -167,7 +167,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
  * @param query_length Maximal allowed extension in query [in]
  * @param subject_length Maximal allowed extension in subject [in]
  */
-Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, 
+Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, 
         Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
         const BlastScoringParameters* score_params,
@@ -241,7 +241,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
  * @param gapped_stats Return statistics (not filled if NULL) [out]
  */
-Int2 PHIGetGappedScore (Uint1 program_number, 
+Int2 PHIGetGappedScore (EBlastProgramType program_number, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
@@ -251,6 +251,16 @@ Int2 PHIGetGappedScore (Uint1 program_number,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
 
+/** Adjusts range of subject sequence to be passed for gapped extension,
+ * taking into account the length and starting position of the alignment in
+ * query.
+ * @param subject_offset_ptr Start of the subject range [out]
+ * @param subject_length_ptr Length of the subject range [out]
+ * @param query_offset Offset in query from which alignment starts [in]
+ * @param query_length Length of the query sequence [in]
+ * @param start_shift The offset by which the output range is shifted with
+ *                    respect to the full subject sequence [out]
+ */
 void 
 AdjustSubjectRange(Int4* subject_offset_ptr, Int4* subject_length_ptr, 
                    Int4 query_offset, Int4 query_length, Int4* start_shift);

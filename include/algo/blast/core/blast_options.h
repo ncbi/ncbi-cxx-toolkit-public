@@ -146,8 +146,8 @@ extern "C" {
 #define RPS_LOOKUP_TABLE 6 /**< RPS lookup table (rpsblast and rpstblastn) */
 
 /** Defaults for PSI-BLAST options */
-#define PSI_INCLUSION_ETHRESH 0.002
-#define PSI_PSEUDO_COUNT_CONST 9
+#define PSI_INCLUSION_ETHRESH 0.002 /**< Inclusion threshold for PSI BLAST */
+#define PSI_PSEUDO_COUNT_CONST 9 /**< Pseudo-count constant for PSI-BLAST */
 
 /** Default genetic code for query and/or database */
 #define BLAST_GENETIC_CODE 1  /**< Use the standard genetic code for converting
@@ -155,11 +155,11 @@ extern "C" {
                                    letters */
 
 /** Default parameters for linking HSPs */
-#define BLAST_GAP_PROB 0.5
-#define BLAST_GAP_PROB_GAPPED 1.0
-#define BLAST_GAP_DECAY_RATE 0.5 
-#define BLAST_GAP_DECAY_RATE_GAPPED 0.1
-#define BLAST_GAP_SIZE 50
+#define BLAST_GAP_PROB 0.5         /**< Gap probability for ungapped search */
+#define BLAST_GAP_PROB_GAPPED 1.0  /**< Gap probability for gapped search */
+#define BLAST_GAP_DECAY_RATE 0.5   /**< Gap decay rate for ungapped search */
+#define BLAST_GAP_DECAY_RATE_GAPPED 0.1/**< Gap decay rate for gapped search */
+#define BLAST_GAP_SIZE 50          /**< Default gap size */ 
 
 /** Options needed to construct a lookup table 
  * Also needed: query sequence and query length.
@@ -502,7 +502,7 @@ Int2 BlastQuerySetUpOptionsNew(QuerySetUpOptions* *options);
  * @param strand_option which strand to search [in]
 */
 Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
-        Uint1 program, const char *filter_string, Uint1 strand_option);
+        EBlastProgramType program, const char *filter_string, Uint1 strand_option);
 
 
 /** Deallocate memory for BlastInitialWordOptions.
@@ -516,7 +516,7 @@ BlastInitialWordOptionsFree(BlastInitialWordOptions* options);
  * @param options The options that have are being returned [out] 
 */
 Int2
-BlastInitialWordOptionsNew(Uint1 program, 
+BlastInitialWordOptionsNew(EBlastProgramType program, 
    BlastInitialWordOptions* *options);
 
 /** Fill non-default values in the BlastInitialWordOptions structure.
@@ -534,7 +534,7 @@ BlastInitialWordOptionsNew(Uint1 program,
 */
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
-   Uint1 program, Boolean greedy, Int4 window_size, 
+   EBlastProgramType program, Boolean greedy, Int4 window_size, 
    Boolean variable_wordsize, Boolean ag_blast, Boolean mb_lookup,
    double xdrop_ungapped);
 
@@ -561,7 +561,7 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * @param parameters Resulting parameters [out]
 */
 Int2
-BlastInitialWordParametersNew(Uint1 program_number, 
+BlastInitialWordParametersNew(EBlastProgramType program_number, 
    const BlastInitialWordOptions* word_options, 
    const BlastHitSavingParameters* hit_params, 
    const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
@@ -582,7 +582,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
  * @param parameters Preallocated parameters [in] [out]
 */
 Int2
-BlastInitialWordParametersUpdate(Uint1 program_number, 
+BlastInitialWordParametersUpdate(EBlastProgramType program_number, 
    const BlastHitSavingParameters* hit_params, 
    const BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, Uint4 subject_length,
@@ -599,7 +599,7 @@ BlastExtensionOptionsFree(BlastExtensionOptions* options);
  * @param options The options that are being returned [out]
 */
 Int2
-BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options);
+BlastExtensionOptionsNew(EBlastProgramType program, BlastExtensionOptions* *options);
 
 /** Fill non-default values in the BlastExtensionOptions structure.
  * @param options The options structure [in] [out]
@@ -613,7 +613,7 @@ BlastExtensionOptionsNew(Uint1 program, BlastExtensionOptions* *options);
 */
 Int2
 BLAST_FillExtensionOptions(BlastExtensionOptions* options, 
-   Uint1 program, Int4 greedy, double x_dropoff, 
+   EBlastProgramType program, Int4 greedy, double x_dropoff, 
    double x_dropoff_final);
 
 
@@ -622,7 +622,7 @@ BLAST_FillExtensionOptions(BlastExtensionOptions* options,
  * @param options Options to be validated [in]
  * @param blast_msg Describes any validation problems found [out]
 */
-Int2 BlastExtensionOptionsValidate(Uint1 program_number, 
+Int2 BlastExtensionOptionsValidate(EBlastProgramType program_number, 
         const BlastExtensionOptions* options, Blast_Message* *blast_msg);
 
 /** Calculate the raw values for the X-dropoff parameters 
@@ -633,7 +633,7 @@ Int2 BlastExtensionOptionsValidate(Uint1 program_number,
  *                   context [in]
  * @param parameters Extension parameters [out]
  */
-Int2 BlastExtensionParametersNew(Uint1 blast_program, 
+Int2 BlastExtensionParametersNew(EBlastProgramType blast_program, 
         const BlastExtensionOptions* options, 
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastExtensionParameters* *parameters);
@@ -654,7 +654,7 @@ BlastScoringOptions* BlastScoringOptionsFree(BlastScoringOptions* options);
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
-Int2 BlastScoringOptionsNew(Uint1 program, BlastScoringOptions* *options);
+Int2 BlastScoringOptionsNew(EBlastProgramType program, BlastScoringOptions* *options);
 
 /** Fill non-default values in the BlastScoringOptions structure. 
  * @param options The options structure [in] [out]
@@ -667,7 +667,7 @@ Int2 BlastScoringOptionsNew(Uint1 program, BlastScoringOptions* *options);
  * @param gap_extend Cost of a gap [in]
 */
 Int2 
-BLAST_FillScoringOptions(BlastScoringOptions* options, Uint1 program, 
+BLAST_FillScoringOptions(BlastScoringOptions* options, EBlastProgramType program, 
    Boolean greedy_extension, Int4 penalty, Int4 reward, const char *matrix, 
    Int4 gap_open, Int4 gap_extend);
 
@@ -677,7 +677,7 @@ BLAST_FillScoringOptions(BlastScoringOptions* options, Uint1 program,
  * @param blast_msg Describes any validation problems found [out]
 */
 Int2
-BlastScoringOptionsValidate(Uint1 program_number, 
+BlastScoringOptionsValidate(EBlastProgramType program_number, 
    const BlastScoringOptions* options, Blast_Message* *blast_msg);
 
 /** Produces copy of "old" options, with new memory allocated.
@@ -745,7 +745,7 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptions* options,
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
  */
-Int2 LookupTableOptionsNew(Uint1 program, LookupTableOptions* *options);
+Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *options);
 
 /** Auxiliary function that calculates best database scanning stride for the
  * given parameters.
@@ -775,7 +775,7 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
  */
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
-   Uint1 program, Boolean is_megablast, Int4 threshold,
+   EBlastProgramType program, Boolean is_megablast, Int4 threshold,
    Int2 word_size, Boolean ag_blast, Boolean variable_wordsize,
    Boolean use_pssm);
 
@@ -792,7 +792,7 @@ LookupTableOptionsFree(LookupTableOptions* options);
  * @param blast_msg The options that have are being returned [out]
 */
 Int2
-LookupTableOptionsValidate(Uint1 program_number, 
+LookupTableOptionsValidate(EBlastProgramType program_number, 
    const LookupTableOptions* options,  Blast_Message* *blast_msg);
 
 /** Deallocate memory for BlastHitSavingOptions. 
@@ -808,14 +808,14 @@ BlastHitSavingOptionsFree(BlastHitSavingOptions* options);
 */
 
 Int2
-BlastHitSavingOptionsValidate(Uint1 program_number,
+BlastHitSavingOptionsValidate(EBlastProgramType program_number,
    const BlastHitSavingOptions* options, Blast_Message* *blast_msg);
 
 /** Allocate memory for BlastHitSavingOptions.
  * @param program Program number (blastn, blastp, etc.) [in]
  * @param options The options that are being returned [out]
 */
-Int2 BlastHitSavingOptionsNew(Uint1 program, 
+Int2 BlastHitSavingOptionsNew(EBlastProgramType program, 
         BlastHitSavingOptions* *options);
 
 /** Allocate memory for BlastHitSavingOptions.
@@ -835,10 +835,10 @@ BlastLinkHSPParametersFree(BlastLinkHSPParameters* parameters);
 
 /** Initialize the linking HSPs parameters with default values.
  * @param program_number Type of BLAST program [in]
- * @Param gapped_calculation Is this a gapped search? [in]
+ * @param gapped_calculation Is this a gapped search? [in]
  * @param link_hsp_params Initialized parameters structure [out]
  */
-Int2 BlastLinkHSPParametersNew(Uint1 program_number, 
+Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number, 
                                Boolean gapped_calculation,
                                BlastLinkHSPParameters** link_hsp_params);
 
@@ -874,7 +874,7 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  *                   from e-value [in]
  * @param parameters Resulting parameters [out]
  */
-Int2 BlastHitSavingParametersNew(Uint1 program_number, 
+Int2 BlastHitSavingParametersNew(EBlastProgramType program_number, 
         const BlastHitSavingOptions* options, 
         const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
@@ -890,7 +890,7 @@ Int2 BlastHitSavingParametersNew(Uint1 program_number,
  *                   from e-value [in]
  * @param parameters Preallocated parameters [in] [out]
  */
-Int2 BlastHitSavingParametersUpdate(Uint1 program_number, 
+Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
         const BlastExtensionParameters* ext_params,
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastHitSavingParameters* parameters);
@@ -924,7 +924,7 @@ BlastDatabaseOptionsFree(BlastDatabaseOptions* db_options);
  * @param protein_options Protein BLAST options [out]
  * @param db_options BLAST database options [out]
  */
-Int2 BLAST_InitDefaultOptions(Uint1 blast_program,
+Int2 BLAST_InitDefaultOptions(EBlastProgramType blast_program,
    LookupTableOptions** lookup_options,
    QuerySetUpOptions** query_setup_options, 
    BlastInitialWordOptions** word_options,
@@ -936,7 +936,7 @@ Int2 BLAST_InitDefaultOptions(Uint1 blast_program,
    BlastDatabaseOptions** db_options);
 
 /** Validate all options */
-Int2 BLAST_ValidateOptions(Uint1 program_number,
+Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastExtensionOptions* ext_options,
                            const BlastScoringOptions* score_options, 
                            const LookupTableOptions* lookup_options, 
@@ -955,7 +955,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
  * 
 */
 void
-CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
+CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
    BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length);

@@ -103,8 +103,8 @@ typedef struct BlastHSPResults {
 } BlastHSPResults;
 
 
-/* By how much should the chunks of a subject sequence overlap if it is 
-   too long and has to be split */
+/** By how much should the chunks of a subject sequence overlap if it is 
+    too long and has to be split */
 #define DBSEQ_CHUNK_OVERLAP 100
 
 /********************************************************************************
@@ -167,7 +167,7 @@ Blast_HSPInit(Int4 query_start, Int4 query_end, Int4 subject_start,
  * @param query_end end of alignment on query [in]
  * @param subject_start start of alignment on subject [in]
  * @param subject_end end of alignment on subject [in]
- * @param program_number Which BLAST program is this done for? [in]
+ * @param score New score for this HSP [in]
  * @param gap_edit traceback from final gapped alignment [in] [out]
  * @param hsp Original HSP from the preliminary stage [in] [out]
  */
@@ -224,7 +224,7 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp,
  */
 Int2
 Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp, 
-                             Uint1 program, Int4* num_ident_ptr, 
+                             EBlastProgramType program, Int4* num_ident_ptr, 
                              Int4* align_length_ptr);
 
 /** Calculate length of an HSP as length in query plus length of gaps in 
@@ -235,8 +235,8 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp,
  * @param gaps Total number of gaps in this HSP [out]
  * @param gap_opens Number of gap openings in this HSP [out] 
  */
-void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
-                                Int4* gaps_out, Int4* gap_opens_out);
+void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length,
+                                Int4* gaps, Int4* gap_opens);
 
 /** Adjust HSP endpoint offsets according to strand/frame; return values in
  * 1-offset coordinates instead of internal 0-offset.
@@ -244,7 +244,7 @@ void Blast_HSPCalcLengthAndGaps(BlastHSP* hsp, Int4* length_out,
  * @param q_start Start of alignment in query [out]
  * @param q_end End of alignment in query [out]
  * @param s_start Start of alignment in subject [out]
- * @param q_end End of alignment in subject [out]
+ * @param s_end End of alignment in subject [out]
  */
 void 
 Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
@@ -269,7 +269,7 @@ BlastHSPList* Blast_HSPListNew(Int4 hsp_max);
 /** Saves HSP information into a BlastHSPList structure
  * @param hsp_list Structure holding all HSPs with full gapped alignment 
  *        information [in] [out]
- * @param new_hsp The new HSP to be inserted into the HSPList [in]
+ * @param hsp The new HSP to be inserted into the HSPList [in]
 */
 Int2
 Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
@@ -280,7 +280,7 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* hsp);
  * @param is_ooframe Is out-of-frame gapping used? [in]
 */
 void 
-Blast_HSPListSetFrames(Uint1 program_number, BlastHSPList* hsp_list, 
+Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list, 
                  Boolean is_ooframe);
 
 /** Calculate the expected values for all HSPs in a hit list, without using 
@@ -445,7 +445,7 @@ Int2 Blast_HSPResultsReverseSort(BlastHSPResults* results);
  *                 sequence coordinates [in]
  * @param hit_options The options related to saving hits [in]
  */
-Int2 Blast_HSPResultsSaveRPSHSPList(Uint1 program, BlastHSPResults* results, 
+Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
 
 /** Blast_HSPResultsSaveHSPList
@@ -459,7 +459,7 @@ Int2 Blast_HSPResultsSaveRPSHSPList(Uint1 program, BlastHSPResults* results,
  *                 sequence coordinates [in]
  * @param hit_options The options related to saving hits [in]
  */
-Int2 Blast_HSPResultsSaveHSPList(Uint1 program, BlastHSPResults* results, 
+Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const BlastHitSavingOptions* hit_options);
 
 /** Blast_HSPResultsSaveHSPList

@@ -46,7 +46,7 @@ extern "C" {
 
 /** Default implementation of BlastHSPStream */
 typedef struct BlastHSPListCollectorData {
-   Uint1 program;           /**< BLAST program type */
+   EBlastProgramType program;           /**< BLAST program type */
    BlastHitSavingOptions* hit_options; /**< Hit saving options */
    BlastHSPResults* results;/**< Structure for saving HSP lists */
    Boolean results_sorted;  /**< Have the results already been sorted? 
@@ -70,7 +70,7 @@ typedef struct BlastHSPListCollectorData {
  *                    threads. Locking will not be performed if NULL. [in]
  */
 BlastHSPStream* 
-Blast_HSPListCollectorInitMT(Uint1 program, 
+Blast_HSPListCollectorInitMT(EBlastProgramType program, 
    BlastHitSavingOptions* hit_options, Int4 num_queries, 
    Boolean sort_on_read, MT_LOCK lock);
 
@@ -83,7 +83,7 @@ Blast_HSPListCollectorInitMT(Uint1 program,
  * @param sort_on_read Should results be sorted on the first read call? [in]
  */
 BlastHSPStream* 
-Blast_HSPListCollectorInit(Uint1 program, BlastHitSavingOptions* hit_options, 
+Blast_HSPListCollectorInit(EBlastProgramType program, BlastHitSavingOptions* hit_options, 
                            Int4 num_queries, Boolean sort_on_read);
 
 #ifdef __cplusplus

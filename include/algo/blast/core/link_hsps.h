@@ -50,7 +50,7 @@ extern "C" {
  * @param gapped_calculation Is this a gapped search? [in]
  */
 Int2 
-BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
+BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    BlastScoreBlk* sbp, const BlastLinkHSPParameters* link_hsp_params,
    Boolean gapped_calculation);
