@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/05/16 00:07:23  thiessen
+* one more minor fix
+*
 * Revision 1.24  2001/05/15 23:49:20  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -274,7 +277,7 @@ private:
     public:
         Vector siteGL; // atom site in GL coordinates
         double distanceFromCamera;
-        const OpenGLRenderer::SphereInfo *ptr;
+        const SphereInfo *ptr;
         friend bool operator < (const SpherePtr& a, const SpherePtr& b)
             { return (a.distanceFromCamera < b.distanceFromCamera); }
     };
