@@ -964,7 +964,7 @@ void CCgiRequest::x_Init
 
         if ( GetProperty(eCgi_RequestMethod).empty() ) {
             // special case: "$REQUEST_METHOD" undefined, so use cmd.-line args
-            if (args  &&  args->Size() > 1)
+            if (args  &&  args->Size() == 2)
                 query_string = &(*args)[1];
         }
         else {
@@ -1378,6 +1378,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.86  2005/03/10 18:03:18  vakatov
+* Fix to correctly discriminate between the CGI and regular-style cmd-line args
+*
 * Revision 1.85  2005/03/02 05:00:09  lavr
 * NcbiGetClientIP() API noted
 *
