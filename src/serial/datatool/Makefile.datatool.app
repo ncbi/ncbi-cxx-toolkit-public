@@ -18,3 +18,4 @@ LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)
 
 CHECK_CMD = datatool.sh
 CHECK_CMD = datatool.sh /net/sampson/a/coremake/test_data/objects
+CHECK_REQUIRES = unix
