@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/05/16 15:06:05  lavr
+ * Minor changes for format <-> argument correspondence in warnings
+ *
  * Revision 6.1  2000/05/12 18:33:44  lavr
  * First working revision
  *
@@ -156,13 +159,15 @@ HEAP HEAP_Create(char *base, size_t size, size_t chunk, FHEAP_Expand expand)
     if (!base) {
         size = HEAP_ALIGN(sizeof(*b) + 1, chunk);
         if (!(base = (*expand)(base, size))) {
-            Warning(1, "Heap Create: Cannot create (size = %u)", size);
+            Warning(1, "Heap Create: Cannot create (size = %u)",
+                    (unsigned)size);
             free(heap);
             return 0;
         }
     }
     if (size <= sizeof(*b))
-        Warning(1, "Heap Create: Heap too small (%u <= %u)", size, sizeof(*b));
+        Warning(1, "Heap Create: Heap too small (%u <= %u)",
+                (unsigned)size, (unsigned)sizeof(*b));
     heap->base = base;
     heap->size = size;
     heap->chunk = chunk;
@@ -186,8 +191,8 @@ HEAP HEAP_Attach(char *base)
     heap->size = 0;
     for (b = (SHEAP_Block *)base; ; b = (SHEAP_Block *)((char *)b + b->size)) {
         if (!HEAP_ISUSED(b) && !HEAP_ISFREE(b)) {
-            Warning(0, "Heap Attach: Heap corrupted (0x%08X, %d)",
-                    b->flag, b->size);
+            Warning(0, "Heap Attach: Heap corrupted (0x%08X, %u)",
+                    b->flag, (unsigned)b->size);
             free(heap);
             return 0;
         }
@@ -292,8 +297,8 @@ SHEAP_Block *HEAP_Alloc(HEAP heap, size_t size)
                 return s_HEAP_Take(b, size);
             free += b->size;
         } else if (!HEAP_ISUSED(b)) {
-            Warning(0, "Heap Alloc: Heap corrupted (0x%08X, %d)",
-                    b->flag, b->size);
+            Warning(0, "Heap Alloc: Heap corrupted (0x%08X, %u)",
+                    b->flag, (unsigned)b->size);
             return 0;
         }
         p = b;
@@ -359,8 +364,8 @@ void HEAP_Free(HEAP heap, SHEAP_Block *ptr)
                 return;
             }
         } else {
-            Warning(0, "Heap Free: Heap corrupted (0x%08X, %d)",
-                    b->flag, b->size);
+            Warning(0, "Heap Free: Heap corrupted (0x%08X, %u)",
+                    b->flag, (unsigned)b->size);
             return;
         }
         p = b;
@@ -392,8 +397,8 @@ SHEAP_Block *HEAP_Walk(HEAP heap, const SHEAP_Block *p)
                 else
                     return b;
             } else
-                Warning(0, "Heap Walk: Heap corrupted (0x%08X, %d)",
-                        b->flag, b->size);
+                Warning(0, "Heap Walk: Heap corrupted (0x%08X, %u)",
+                        b->flag, (unsigned)b->size);
         } else if ((char *)b > heap->base + heap->size)
             Warning(0, "Heap Walk: Heap corrupted");
         else if (!HEAP_ISLAST(p))
