@@ -14,6 +14,7 @@ script_dir=`(cd "${script_dir}" ; pwd)`
 
 src_tree=`pwd`
 bld_tree=`(cd "${script_dir}/.." ; pwd)`
+status_dir=$bld_tree/status
 
 if test -x "$src_tree/scripts/hello.sh"  &&  test -f "$bld_tree/inc/ncbiconf.h" ; then
    cat <<EOF
@@ -40,7 +41,7 @@ Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl"
 
 for f in $files ; do
    fff="$script_dir/$f"
-   sed 's%^\(builddir *= *\).*%\1'$script_dir'%; s%^\(build_root *= *\).*%\1'$bld_tree'%; s%^\(top_srcdir *= *\).*%\1'$src_tree'%' "$fff" |
+   sed 's%^\(builddir *= *\).*%\1'$script_dir'%; s%^\(build_root *= *\).*%\1'$bld_tree'%; s%^\(top_srcdir *= *\).*%\1'$src_tree'%; s%\(status_dir *= *\).*%\1'$status_dir'%' "$fff" |
    sed 's%/netopt/ncbi_tools\.[^/ ]*%/netopt/ncbi_tools%g' |
    sed 's/^ *BINCOPY *=.*/BINCOPY = @:/; s/^ *BINTOUCH *=.*/BINTOUCH = @:/' > "$fff.tmp"
    if test $? -ne 0 ; then
