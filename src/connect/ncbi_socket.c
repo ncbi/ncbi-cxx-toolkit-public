@@ -1457,8 +1457,8 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     }
 #if defined(NCBI_OS_UNIX) || defined(NCBI_OS_MSWIN)
     if (status == eIO_Success  &&
-        (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, x_errno, &x_len) != 0  ||
-         *x_errno != 0)) {
+        (getsockopt(sock->sock, SOL_SOCKET, SO_ERROR, (void*) x_errno, &x_len)
+         ||  *x_errno != 0)) {
         status = eIO_Unknown;
     }
 #endif /*NCBI_OS_UNIX || NCBI_OS_MSWIN*/
@@ -3923,6 +3923,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.132  2003/10/02 16:30:40  lavr
+ * s_IsConnected(): Cast buf arg to (void*) in getsockopt()
+ *
  * Revision 6.131  2003/10/02 16:04:42  lavr
  * Fix conditional compilation of s_IsConnected() on MS-Windows
  *
