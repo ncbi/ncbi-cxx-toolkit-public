@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2002/06/07 12:09:21  clausen
+ * Modified GetTitle comment
+ *
  * Revision 1.11  2002/05/22 14:03:33  grichenk
  * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
  *
@@ -104,8 +107,8 @@ public:
     // Manage Seq-entry tree structure
     CSeq_entry* GetParentEntry(void) const;
 
-    // see CScope::GetTitle in object manager.
-    // string GetTitle(void) const;
+    // see GetTitle in util/sequence.hpp
+    //   string GetTitle(const CBioseq_Handle&, TGetTitleFlags);
 
     // Construct bioseq from seq-loc. The constructed bioseq
     // has id = "local|"+str_id or "local|constructed###", where
