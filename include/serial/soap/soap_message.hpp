@@ -105,7 +105,7 @@ CObjectIStream& operator>> (CObjectIStream& in, CSoapMessage& object)
 }
 
 template <typename TObj>
-CConstRef<TObj> SOAP_GetKnownObject(CSoapMessage& msg,
+CConstRef<TObj> SOAP_GetKnownObject(const CSoapMessage& msg,
     CSoapMessage::EMessagePart source = CSoapMessage::eMsgBody)
 {
     CConstRef<CSerialObject> oo = msg.GetSerialObject(
@@ -121,6 +121,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/06/30 13:49:34  gouriano
+* Corrected GetKnownObject function
+*
 * Revision 1.5  2004/06/28 19:22:53  gouriano
 * Added GetKnownObject function template
 *
