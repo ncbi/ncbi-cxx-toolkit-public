@@ -1140,7 +1140,7 @@ static EIO_Status s_Select(size_t                n,
                 polls[i].revent = (EIO_Event)(polls[i].revent | eIO_Write);
             if (!polls[i].revent  &&  FD_ISSET(polls[i].sock->sock, &e_fds))
                 polls[i].revent = eIO_Close;
-            if (polls[i].revent == eIO_Open)
+            if (polls[i].revent != eIO_Open)
                 n_fds++;
         }
     }
@@ -3953,6 +3953,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.136  2003/10/24 17:39:43  lavr
+ * Fix '==' => '!=' bug in s_Select() introduced by previous commit
+ *
  * Revision 6.135  2003/10/24 16:52:08  lavr
  * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
  * s_Select(): first check RW bits then E (otherwise, problems on Solaris)
