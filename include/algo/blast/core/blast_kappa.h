@@ -55,13 +55,13 @@ extern "C" {
  * @param seqSrc used to fetch database/match sequences [in]
  * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
  * @param extendParams parameters used for extension [in]
- * @param hitsavingParameters parameters used for saving hits [in]
+ * @param hitsavingParams parameters used for saving hits [in]
  * @param psiOptions options related to psi-blast [in]
  * @return 0 on success, otherwise failure.
 */
 
 Int2
-Kappa_RedoAlignmentCore(BLAST_SequenceBlk * query_blk,
+Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
                   BlastHitList* hitList,
@@ -80,6 +80,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * query_blk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/05/24 17:27:37  madden
+ * Doxygen fix
+ *
  * Revision 1.4  2004/05/20 15:20:57  madden
  * Doxygen compliance fixes
  *
