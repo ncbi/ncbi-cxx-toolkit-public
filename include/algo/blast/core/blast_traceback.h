@@ -56,6 +56,8 @@ extern "C" {
  * @param score_options The scoring related options [in]
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
+ * @param eff_len_params Parameters for recalculating effective search 
+ *                       space, if needed [in]
  * @param db_options Options containing database genetic code string [in]
  * @param psi_options Options specific to PSI BLAST [in]
  */
@@ -65,6 +67,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
         const BlastScoringOptions* score_options,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
+        BlastEffectiveLengthsParameters* eff_len_params,
         const BlastDatabaseOptions* db_options,
         const PSIBlastOptions* psi_options);
 
