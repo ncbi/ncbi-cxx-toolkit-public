@@ -33,6 +33,8 @@
 #include <objects/taxon1/taxon1.hpp>
 #include "cache.hpp"
 
+#include <vector>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -1110,6 +1112,255 @@ COrgRefCache::SetIndexEntry( int id, CTaxon1Node* pNode )
     m_ppEntries[id] = pNode;
 }
 
+//=======================================================
+//
+//   Iterators implementation
+//
+bool
+CTaxTreeConstIterator::IsLastChild() const
+{
+    const CTreeContNodeBase* pOldNode = m_it->GetNode();
+    bool bResult = true;
+
+    while( m_it->GoParent() ) {
+	if( IsVisible( m_it->GetNode() ) ) {
+	    const CTreeContNodeBase* pParent = m_it->GetNode();
+	    m_it->GoNode( pOldNode );
+	    while( m_it->GetNode() != pParent ) {
+		if( m_it->GoSibling() ) {
+		    bResult = !NextVisible( pParent );
+		    break;
+		}
+		if( !m_it->GoParent() ) {
+		    break;
+		}
+	    }
+	    break;
+	}
+    }
+    m_it->GoNode( pOldNode );
+    return bResult;
+}
+
+bool
+CTaxTreeConstIterator::IsFirstChild() const
+{
+    const CTreeContNodeBase* pOldNode = m_it->GetNode();
+    bool bResult = false;
+
+    while( m_it->GoParent() ) {
+	if( IsVisible( m_it->GetNode() ) ) {
+	    const CTreeContNodeBase* pParent = m_it->GetNode();
+	    if( m_it->GoChild() ) {
+		bResult = NextVisible(pParent) && m_it->GetNode() == pOldNode;
+	    }
+	    break;
+	}
+    }
+    m_it->GoNode( pOldNode );
+    return bResult;
+}
+
+bool
+CTaxTreeConstIterator::IsTerminal() const
+{
+    const CTreeContNodeBase* pOldNode = m_it->GetNode();
+
+    if( m_it->GoChild() ) {
+	bool bResult = NextVisible( pOldNode );
+	m_it->GoNode( pOldNode );
+	return !bResult;
+    }
+    return true;
+}
+
+bool
+CTaxTreeConstIterator::NextVisible( const CTreeContNodeBase* pParent ) const
+{
+    if( m_it->GetNode() == pParent ) {
+	return false;
+    }
+ next:
+    if( IsVisible( m_it->GetNode() ) ) {
+	return true;
+    }
+    if( m_it->GoChild() ) {
+	goto next;
+    } else if( m_it->GoSibling() ) {
+	goto next;
+    } else {
+	while( m_it->GoParent() && m_it->GetNode() != pParent ) {
+	    if( m_it->GoSibling() ) {
+		goto next;
+	    }
+	}
+    }
+    return false;
+}
+
+bool
+CTaxTreeConstIterator::GoParent()
+{
+    const CTreeContNodeBase* pOldNode = m_it->GetNode();
+    bool bResult = false;
+    while( m_it->GoParent() ) {
+	if( IsVisible( m_it->GetNode() ) ) {
+	    bResult = true;
+	    break;
+	}
+    }
+    if( !bResult ) {
+	m_it->GoNode( pOldNode );
+    }
+    return bResult;
+}
+
+bool
+CTaxTreeConstIterator::GoChild()
+{
+    const CTreeContNodeBase* pOldNode = m_it->GetNode();
+    bool bResult = false;
+    
+    if( m_it->GoChild() ) {
+	bResult = NextVisible( pOldNode );
+    }
+    if( !bResult ) {
+	m_it->GoNode( pOldNode );
+    }
+    return bResult;
+}
+
+bool
+CTaxTreeConstIterator::GoSibling()
+{
+    const CTreeContNodeBase* pOldNode = m_it->GetNode();
+    bool bResult = false;
+
+    if( GoParent() ) {
+	const CTreeContNodeBase* pParent = m_it->GetNode();
+	m_it->GoNode( pOldNode );
+	while( m_it->GetNode() != pParent ) {
+	    if( m_it->GoSibling() ) {
+		bResult = NextVisible( pParent );
+		break;
+	    }
+	    if( !m_it->GoParent() ) {
+		break;
+	    }
+	}
+	if( !bResult ) {
+	    m_it->GoNode( pOldNode );
+	}
+    }
+    return bResult;
+}
+
+bool
+CTaxTreeConstIterator::GoNode( const ITaxon1Node* pNode )
+{
+    const CTreeContNodeBase* pTaxNode = CastIC( pNode );
+
+    if( pNode && IsVisible( pTaxNode ) ) {
+	return m_it->GoNode( pTaxNode );
+    }
+    return false;
+}
+
+bool
+CTaxTreeConstIterator::GoAncestor(const ITaxon1Node* pINode)
+{
+    const CTreeContNodeBase* pNode = CastIC( pINode );
+    if( pNode && IsVisible( pNode ) ) {
+	const CTreeContNodeBase* pOldNode = m_it->GetNode();
+    
+	vector< const CTreeContNodeBase* > v;
+	do {
+	    v.push_back( m_it->GetNode() );
+	} while( GoParent() );
+
+	m_it->GoNode( pNode );
+	vector< const CTreeContNodeBase* >::const_iterator vi;
+	do {
+	    vi = find( v.begin(), v.end(), m_it->GetNode() );
+	    if( vi != v.end() ) {
+		return true;
+	    }
+	} while( GoParent() );
+	// Restore old position
+	m_it->GoNode( pOldNode );
+    }
+    return false;
+}
+
+bool
+CTaxTreeConstIterator::BelongSubtree(const ITaxon1Node* pIRoot) const
+{
+    const CTreeContNodeBase* pRoot = CastIC( pIRoot );
+    if( pRoot && IsVisible( pRoot ) ) {
+	const CTreeContNodeBase* pOldNode = m_it->GetNode();
+	do {
+	    if( IsVisible( m_it->GetNode() ) ) {
+		if( m_it->GetNode() == pRoot ) {
+		    m_it->GoNode( pOldNode );
+		    return true;
+		}
+	    }
+	} while( m_it->GoParent() );
+	m_it->GoNode( pOldNode );
+    }
+    return false;
+}
+
+// check if given node belongs to subtree pointed by cursor
+bool
+CTaxTreeConstIterator::AboveNode(const ITaxon1Node* pINode) const
+{
+    const CTreeContNodeBase* pNode = CastIC( pINode );
+    if( pNode == m_it->GetNode() ) { // Node is not above itself
+	return false;
+    }
+
+    if( pNode && IsVisible( pNode ) ) {
+	const CTreeContNodeBase* pOldNode = m_it->GetNode();
+	m_it->GoNode( pNode );
+	do {
+	    if( IsVisible( m_it->GetNode() ) ) {
+		if( m_it->GetNode() == pOldNode ) {
+		    m_it->GoNode( pOldNode );
+		    return true;
+		}
+	    }
+	} while( m_it->GoParent() );
+	m_it->GoNode( pOldNode );
+    }
+    return false;
+}
+
+bool
+CTreeLeavesBranchesIterator::IsVisible( const CTreeContNodeBase* pNode ) const
+{
+    return pNode &&
+	( pNode->IsRoot() || pNode->IsTerminal() ||
+	  !pNode->Child()->IsLastChild() );
+}
+
+bool
+CTreeBestIterator::IsVisible( const CTreeContNodeBase* pNode ) const
+{
+    return pNode &&
+	( pNode->IsRoot() || pNode->IsTerminal() ||
+	  !pNode->Child()->IsLastChild() ||
+	  !(pNode->IsLastChild() && pNode->IsFirstChild()) );
+
+}
+
+bool
+CTreeBlastIterator::IsVisible( const CTreeContNodeBase* pNode ) const
+{
+    return pNode && ( pNode->IsRoot() ||
+		      !CastCI(pNode)->GetBlastName().empty() );
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE
@@ -1118,6 +1369,13 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.20  2004/02/04 16:14:44  domrach
+ * New iterator types (modes of operation) are introduced. They include:
+ * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
+ * IsTerminal(), IsFirstChild(), and IsLastChild() has been moved from
+ * ITreeNode to ITreeIterator. Node loading f-ns() now return the ITreeNode
+ * for tax id.
+ *
  * Revision 6.19  2003/11/20 15:42:19  ucko
  * Update for new (saner) treatment of ASN.1 NULLs.
  *

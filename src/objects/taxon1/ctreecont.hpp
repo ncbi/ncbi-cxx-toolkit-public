@@ -78,10 +78,11 @@ public:
     }
 
     void Merge( CTreeContNodeBase* ) {}
-protected:
+
     const CTreeContNodeBase* Parent() const  { return m_parent;  }
     const CTreeContNodeBase* Sibling() const { return m_sibling; }
     const CTreeContNodeBase* Child() const   { return m_child;   }
+protected:
     CTreeContNodeBase*       Parent()        { return m_parent;  }
     CTreeContNodeBase*       Sibling()       { return m_sibling; }
     CTreeContNodeBase*       Child()         { return m_child;   }
@@ -344,6 +345,13 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.6  2004/02/04 16:14:44  domrach
+ * New iterator types (modes of operation) are introduced. They include:
+ * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
+ * IsTerminal(), IsFirstChild(), and IsLastChild() has been moved from
+ * ITreeNode to ITreeIterator. Node loading f-ns() now return the ITreeNode
+ * for tax id.
+ *
  * Revision 6.5  2003/05/09 22:08:15  domrach
  * Destructor of CTreeContNodeBase made virtual
  *

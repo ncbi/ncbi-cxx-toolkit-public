@@ -208,12 +208,6 @@ public:
 
     virtual bool          IsRoot() const
     { return CTreeContNodeBase::IsRoot(); }
-    virtual bool          IsLastChild() const
-    { return CTreeContNodeBase::IsLastChild(); }
-    virtual bool          IsFirstChild() const
-    { return CTreeContNodeBase::IsFirstChild(); }
-    virtual bool          IsTerminal() const
-    { return CTreeContNodeBase::IsTerminal(); }
 
     COrgRefCache::SCacheEntry* GetEntry() { return m_cacheEntry; }
 
@@ -242,16 +236,64 @@ private:
 
 class CTaxTreeConstIterator : public ITreeIterator {
 public:
-    CTaxTreeConstIterator( CTreeConstIterator* pIt ) : m_it( pIt ) {}
+    CTaxTreeConstIterator( CTreeConstIterator* pIt, CTaxon1::EIteratorMode m )
+	: m_it( pIt ), m_itMode( m )  {}
     virtual ~CTaxTreeConstIterator() {
 	delete m_it;
     }
 
+    virtual CTaxon1::EIteratorMode GetMode() const { return m_itMode; }
     virtual const ITaxon1Node* GetNode() const
     { return CastCI(m_it->GetNode()); }
     const ITaxon1Node* operator->() const { return GetNode(); }
+    virtual bool IsLastChild() const;
+    virtual bool IsFirstChild() const;
+    virtual bool IsTerminal() const;
     // Navigation
     virtual void GoRoot() { m_it->GoRoot(); }
+    virtual bool GoParent();
+    virtual bool GoChild();
+    virtual bool GoSibling();
+    virtual bool GoNode(const ITaxon1Node* pNode);
+    // move cursor to the nearest common ancestor
+    // between node pointed by cursor and the node
+    // with given node_id
+    virtual bool GoAncestor(const ITaxon1Node* pNode);
+    // check if node pointed by cursor
+    // is belong to subtree wich root node
+    // has given node_id
+    virtual bool BelongSubtree(const ITaxon1Node* subtree_root) const;
+    // check if node with given node_id belongs
+    // to subtree pointed by cursor
+    virtual bool AboveNode(const ITaxon1Node* node) const;
+protected:
+    virtual bool IsVisible( const CTreeContNodeBase* p ) const = 0;
+    // Moves m_it to the next visible for this parent
+    bool NextVisible( const CTreeContNodeBase* pParent ) const;
+
+    const ITaxon1Node* CastCI( const CTreeContNodeBase* p ) const
+    { return static_cast<const ITaxon1Node*>
+	  (static_cast<const CTaxon1Node*>(p)); }
+    const CTreeContNodeBase* CastIC( const ITaxon1Node* p ) const
+    { return static_cast<const CTreeContNodeBase*>
+	  (static_cast<const CTaxon1Node*>(p)); }
+    mutable CTreeConstIterator* m_it;
+    CTaxon1::EIteratorMode      m_itMode;
+};
+
+class CFullTreeConstIterator : public CTaxTreeConstIterator {
+public:
+    CFullTreeConstIterator( CTreeConstIterator* pIt )
+	: CTaxTreeConstIterator( pIt, CTaxon1::eIteratorMode_FullTree ) {}
+    virtual ~CFullTreeConstIterator() {}
+
+    virtual bool IsLastChild() const
+    { return m_it->GetNode() && m_it->GetNode()->IsLastChild(); }
+    virtual bool IsFirstChild() const
+    { return m_it->GetNode() && m_it->GetNode()->IsFirstChild(); }
+    virtual bool IsTerminal() const
+    { return m_it->GetNode() && m_it->GetNode()->IsTerminal(); }
+    // Navigation
     virtual bool GoParent() { return m_it->GoParent(); }
     virtual bool GoChild() { return m_it->GoChild(); }
     virtual bool GoSibling() { return m_it->GoSibling(); }
@@ -271,14 +313,42 @@ public:
     // to subtree pointed by cursor
     virtual bool AboveNode(const ITaxon1Node* node) const
     { return m_it->AboveNode(CastIC(node)); }
-private:
-    const ITaxon1Node* CastCI( const CTreeContNodeBase* p ) const
-    { return static_cast<const ITaxon1Node*>
-	  (static_cast<const CTaxon1Node*>(p)); }
-    const CTreeContNodeBase* CastIC( const ITaxon1Node* p ) const
-    { return static_cast<const CTreeContNodeBase*>
-	  (static_cast<const CTaxon1Node*>(p)); }
-    CTreeConstIterator* m_it;
+protected:
+    virtual bool IsVisible( const CTreeContNodeBase* ) const { return true; }
+};
+
+class CTreeLeavesBranchesIterator : public CTaxTreeConstIterator {
+public:
+    CTreeLeavesBranchesIterator( CTreeConstIterator* pIt ) :
+	CTaxTreeConstIterator( pIt, CTaxon1::eIteratorMode_LeavesBranches ) {}
+    virtual ~CTreeLeavesBranchesIterator() {}
+
+    virtual bool IsTerminal() const
+    { return m_it->GetNode() && m_it->GetNode()->IsTerminal(); }
+protected:
+    virtual bool IsVisible( const CTreeContNodeBase* p ) const;
+};
+
+class CTreeBestIterator : public CTaxTreeConstIterator {
+public:
+    CTreeBestIterator( CTreeConstIterator* pIt ) :
+	CTaxTreeConstIterator( pIt, CTaxon1::eIteratorMode_Best ) {}
+    virtual ~CTreeBestIterator() {}
+
+    virtual bool IsTerminal() const
+    { return m_it->GetNode() && m_it->GetNode()->IsTerminal(); }
+protected:
+    virtual bool IsVisible( const CTreeContNodeBase* p ) const;
+};
+
+class CTreeBlastIterator : public CTaxTreeConstIterator {
+public:
+    CTreeBlastIterator( CTreeConstIterator* pIt ) :
+	CTaxTreeConstIterator( pIt, CTaxon1::eIteratorMode_Blast ) {}
+    virtual ~CTreeBlastIterator() {}
+
+protected:
+    virtual bool IsVisible( const CTreeContNodeBase* p ) const;
 };
 
 END_objects_SCOPE
@@ -288,6 +358,13 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.13  2004/02/04 16:14:44  domrach
+ * New iterator types (modes of operation) are introduced. They include:
+ * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
+ * IsTerminal(), IsFirstChild(), and IsLastChild() has been moved from
+ * ITreeNode to ITreeIterator. Node loading f-ns() now return the ITreeNode
+ * for tax id.
+ *
  * Revision 6.12  2003/06/23 20:42:08  domrach
  * New treatment of subspecies names introduced
  *

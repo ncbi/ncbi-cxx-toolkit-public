@@ -1396,12 +1396,19 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 //-----------------------------------
 //  Tree-related functions
 bool
-CTaxon1::LoadSubtreeEx( int tax_id, int levels )
+CTaxon1::LoadSubtreeEx( int tax_id, int levels, const ITaxon1Node** ppNode )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( ppNode ) {
+	*ppNode = pNode;
+    }
     if( m_plCache->LookupAndAdd( tax_id, &pNode )
         && pNode ) {
+
+	if( ppNode ) {
+	    *ppNode = pNode;
+	}
 
 	if( pNode->IsSubtreeLoaded() ) {
 	    return true;
@@ -1460,24 +1467,43 @@ CTaxon1::LoadSubtreeEx( int tax_id, int levels )
 }
 
 CRef< ITreeIterator >
-CTaxon1::GetTreeIterator()
+CTaxon1::GetTreeIterator( CTaxon1::EIteratorMode mode )
 {
-    CRef< ITreeIterator > pIt( new CTaxTreeConstIterator
-			       (m_plCache->GetTree().GetConstIterator()) );
+    CRef< ITreeIterator > pIt;
+    CTreeConstIterator* pIter = m_plCache->GetTree().GetConstIterator();
+
+    switch( mode ) {
+    default:
+    case eIteratorMode_FullTree:
+	pIt.Reset( new CFullTreeConstIterator( pIter ) );
+	break;
+    case eIteratorMode_LeavesBranches:
+	pIt.Reset( new CTreeLeavesBranchesIterator( pIter ) );
+	break;
+    case eIteratorMode_Best:
+	pIt.Reset( new CTreeBestIterator( pIter ) );
+	break;
+    case eIteratorMode_Blast:
+	pIt.Reset( new CTreeBlastIterator( pIter ) );
+	break;
+    }
     SetLastError(NULL);
     return pIt;
 }
 
 CRef< ITreeIterator >
-CTaxon1::GetTreeIterator( int tax_id )
+CTaxon1::GetTreeIterator( int tax_id, CTaxon1::EIteratorMode mode )
 {
     CRef< ITreeIterator > pIt;
     CTaxon1Node* pData = 0;
     SetLastError(NULL);
     if( m_plCache->LookupAndAdd( tax_id, &pData ) ) {
-	pIt.Reset( new CTaxTreeConstIterator
-		   ( m_plCache->GetTree().GetConstIterator() ) );
-	pIt->GoNode( pData );
+	pIt = GetTreeIterator( mode );
+	if( !pIt->GoNode( pData ) ) {
+	    SetLastError( "Iterator in this mode cannot point to the node with"
+			  " this tax id" );
+	    pIt.Reset( NULL );
+	}
     }
     return pIt;
 }
@@ -1634,7 +1660,7 @@ ITreeIterator::TraverseDownward(I4Each& cb, unsigned levels)
         switch( cb.Execute(GetNode()) ) {
         default:
         case eOk:
-            if(!GetNode()->IsTerminal()) {
+            if(!IsTerminal()) {
                 switch( cb.LevelBegin(GetNode()) ) {
                 case eStop: return eStop;
                 default:
@@ -1664,7 +1690,7 @@ ITreeIterator::EAction
 ITreeIterator::TraverseUpward(I4Each& cb, unsigned levels)
 {
     if( levels > 0 ) {
-        if(!GetNode()->IsTerminal()) {
+        if(!IsTerminal()) {
             switch( cb.LevelBegin(GetNode()) ) {
             case eStop: return eStop;
             default:
@@ -1700,7 +1726,7 @@ ITreeIterator::TraverseLevelByLevel(I4Each& cb, unsigned levels)
     default:
 	break;
     }
-    if(!GetNode()->IsTerminal()) {
+    if(!IsTerminal()) {
 	vector< const ITaxon1Node* > skippedNodes;
 	return TraverseLevelByLevelInternal(cb, levels, skippedNodes);
     }
@@ -1713,7 +1739,7 @@ ITreeIterator::TraverseLevelByLevelInternal(I4Each& cb, unsigned levels,
 {
     size_t skp_start = skp.size();
     if( levels > 1 ) {
-	if(!GetNode()->IsTerminal()) {
+	if(!IsTerminal()) {
 	    switch( cb.LevelBegin(GetNode()) ) {
 	    case eStop: return eStop;
 	    default:
@@ -1791,6 +1817,13 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.22  2004/02/04 16:14:44  domrach
+ * New iterator types (modes of operation) are introduced. They include:
+ * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
+ * IsTerminal(), IsFirstChild(), and IsLastChild() has been moved from
+ * ITreeNode to ITreeIterator. Node loading f-ns() now return the ITreeNode
+ * for tax id.
+ *
  * Revision 6.21  2003/11/20 15:42:19  ucko
  * Update for new (saner) treatment of ASN.1 NULLs.
  *

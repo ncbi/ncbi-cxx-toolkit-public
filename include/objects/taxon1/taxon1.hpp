@@ -292,41 +292,53 @@ public:
     // This function updates cached partial tree and insures that node
     // with given tax_id and all its ancestors will present in this tree.
     // Returns: false if error
-    //          true  if Ok
+    //          true  if Ok, *ppNode is pointing to the node
     ///
-    bool LoadNode( int tax_id )     { return LoadSubtreeEx( tax_id, 0 ); }
+    bool LoadNode( int tax_id, const ITaxon1Node** ppNode = NULL )
+    { return LoadSubtreeEx( tax_id, 0, ppNode ); }
 
     //--------------------------------------------------
     // This function updates cached partial tree and insures that node
     // with given tax_id and all its ancestors and immediate children (if any)
     // will present in this tree.
     // Returns: false if error
-    //          true  if Ok
+    //          true  if Ok, *ppNode is pointing to the subtree root
     ///
-    bool LoadChildren( int tax_id ) { return LoadSubtreeEx( tax_id, 1 ); }
+    bool LoadChildren( int tax_id, const ITaxon1Node** ppNode = NULL )
+    { return LoadSubtreeEx( tax_id, 1, ppNode ); }
 
     //--------------------------------------------------
     // This function updates cached partial tree and insures that all nodes
     // from subtree with given tax_id as a root will present in this tree.
     // Returns: false if error
-    //          true  if Ok
+    //          true  if Ok, *ppNode is pointing to the subtree root
     ///
-    bool LoadSubtree( int tax_id )  { return LoadSubtreeEx( tax_id, -1 );}
+    bool LoadSubtree( int tax_id, const ITaxon1Node** ppNode = NULL )
+    { return LoadSubtreeEx( tax_id, -1, ppNode ); }
 
+    enum EIteratorMode {
+	eIteratorMode_FullTree, // Iterator in this mode traverses all tree nodes
+	eIteratorMode_LeavesBranches, // traverses only leaves and branches
+	eIteratorMode_Best,           // leaves and branches plus nodes right below branches
+	eIteratorMode_Blast,          // nodes with non-empty blast names
+	eIteratorMode_Default = eIteratorMode_FullTree
+    };
     //--------------------------------------------------
     // This function returnes an iterator of a cached partial tree positioned
     // at the tree root. Please note that the tree is PARTIAL. To traverse the
     // full taxonomy tree invoke LoadSubtree(1) first.
     // Returns: NULL if error
     ///
-    CRef< ITreeIterator > GetTreeIterator();
+    CRef< ITreeIterator > GetTreeIterator( EIteratorMode mode
+					   = eIteratorMode_Default );
 
     //--------------------------------------------------
     // This function returnes an iterator of a cached partial tree positioned
     // at the tree node with tax_id.
     // Returns: NULL if node doesn't exist or some other error occured
     ///
-    CRef< ITreeIterator > GetTreeIterator( int tax_id );
+    CRef< ITreeIterator > GetTreeIterator( int tax_id, EIteratorMode mode
+					   = eIteratorMode_Default );
 
     //--------------------------------------------------
     // These functions retreive the "properties" of the taxonomy nodes. Each
@@ -374,7 +386,8 @@ private:
     void             OrgRefAdjust( COrg_ref& inp_orgRef,
 				   const COrg_ref& db_orgRef,
 				   int tax_id );
-    bool             LoadSubtreeEx( int tax_id, int type );
+    bool             LoadSubtreeEx( int tax_id, int type,
+				    const ITaxon1Node** ppNode );
 };
 
 //-------------------------------------------------
@@ -412,14 +425,6 @@ public:
     virtual short            GetMGC() const = 0;
                        
     //-------------------------------------------------
-    // Returns: true if node is terminal,
-    //          false otherwise
-    // NOTE: Although node is terminal in the partial tree
-    // build by CTaxon object it might be NOT a terminal node
-    // in the full taxonomic tree !
-    virtual bool             IsTerminal() const = 0;
-
-    //-------------------------------------------------
     // Returns: true if node is uncultured,
     //          false otherwise
     virtual bool             IsUncultured() const = 0;
@@ -429,15 +434,6 @@ public:
     //          false otherwise
     virtual bool             IsRoot() const = 0;
 
-    //-------------------------------------------------
-    // Returns: true if node is last child in this partial tree,
-    //          false otherwise
-    virtual bool             IsLastChild() const = 0;
-
-    //-------------------------------------------------
-    // Returns: true if node is last child in this partial tree,
-    //          false otherwise
-    virtual bool             IsFirstChild() const = 0;
 };
 
 //-------------------------------------------------
@@ -446,11 +442,34 @@ public:
 class NCBI_TAXON1_EXPORT ITreeIterator : public CObject {
 public:
     //-------------------------------------------------
+    // Returns: iterator operating mode
+    //
+    virtual CTaxon1::EIteratorMode GetMode() const = 0;
+
+    //-------------------------------------------------
     // Get node pointed by this iterator
     // Returns: pointer to node
     //          or NULL if error
     virtual const ITaxon1Node* GetNode() const = 0;
     const ITaxon1Node* operator->() const { return GetNode(); }
+
+    //-------------------------------------------------
+    // Returns: true if node is terminal,
+    //          false otherwise
+    // NOTE: Although node is terminal in the partial tree
+    // build by CTaxon object it might be NOT a terminal node
+    // in the full taxonomic tree !
+    virtual bool IsTerminal() const = 0;
+
+    //-------------------------------------------------
+    // Returns: true if node is last child in this partial tree,
+    //          false otherwise
+    virtual bool IsLastChild() const = 0;
+
+    //-------------------------------------------------
+    // Returns: true if node is last child in this partial tree,
+    //          false otherwise
+    virtual bool IsFirstChild() const = 0;
 
     //-------------------------------------------------
     // Move iterator to tree root
@@ -606,6 +625,13 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.14  2004/02/04 16:14:43  domrach
+// New iterator types (modes of operation) are introduced. They include:
+// full tree, branches'n'leaves, best, and blast. Position inquiry f-ns
+// IsTerminal(), IsFirstChild(), and IsLastChild() has been moved from
+// ITreeNode to ITreeIterator. Node loading f-ns() now return the ITreeNode
+// for tax id.
+//
 // Revision 1.13  2003/12/22 19:17:29  dicuccio
 // Added export specifiers
 //
