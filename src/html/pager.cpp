@@ -232,20 +232,28 @@ CNCBINode* CPager::GetPageInfo(void) const
     if ( m_ItemCount <= m_PageSize )
         return 0;
     int lastPage = (m_ItemCount - 1) / m_PageSize;
-    return new CHTMLText(
+    return new CHTMLPlainText(
         "Page " + NStr::IntToString(m_DisplayPage + 1) +
         " of " + NStr::IntToString(lastPage + 1));
 }
 
 CNCBINode* CPager::GetItemInfo(void) const
 {
-    if( m_ItemCount == 0 )
-        return new CHTMLText("<div class=medium2>0 items found</div>");
-    int firstItem = m_DisplayPage * m_PageSize + 1;
-    int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
-    return new CHTMLText(
-        "<div class=medium2>Items " + NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
-        " of " + NStr::IntToString(m_ItemCount) + "</div>");
+    CHTML_div* node(new CHTML_div);
+    node->SetClass("medium2");
+    
+    if( m_ItemCount == 0 ) {
+        node->AppendChild(new CHTMLPlainText("0 items found"));
+    } else {
+        int firstItem = m_DisplayPage * m_PageSize + 1;
+        int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
+        node->AppendChild(new CHTMLPlainText("Items " + NStr::IntToString(firstItem)));
+        if(firstItem != endItem) {
+            node->AppendChild(new CHTMLPlainText("-" + NStr::IntToString(endItem)));
+        }
+        node->AppendChild(new CHTMLPlainText(" of " + NStr::IntToString(m_ItemCount)));
+    }
+    return node;
 }
 
 CNCBINode* CPager::GetPagerView(const string& imgDir,
@@ -377,54 +385,61 @@ void CPagerViewButtons::CreateSubNodes()
                                     "frm.cmd.value=''; frm.inputpage.value=" +
                                     NStr::IntToString(currentPage) + 
                                     "; frm.submit();", "Previous");
-        prev->SetAttribute("class", "dblinks");
+        prev->SetClass("dblinks");
         InsertAt(0, column, prev);
-        InsertAt(0, column++, new CHTMLText("&nbsp;"));
+        InsertAt(0, column++, new CHTML_nbsp);
     }
         
     CHTML_input* butt = new CHTML_input("BUTTON", "GoToPage");
-    butt->SetAttribute("class", "dblinks");
+    butt->SetClass("dblinks");
     butt->SetAttribute("value", "Page");
-    butt->SetAttribute("onClick", "javascript:form.cmd.value='';form." + CPager::KParam_InputPage +
-                                  ".value=form.textpage" + m_jssuffix +
-                                  ".value;document.frmQueryBox.submit();");
+    butt->SetEventHandler(eHTML_EH_Click,
+                          "form.cmd.value='';form." + CPager::KParam_InputPage +
+                          ".value=form.textpage" + m_jssuffix +
+                          ".value;document.frmQueryBox.submit();");
     InsertAt(0, column, butt);
-    InsertAt(0, column, new CHTMLText("&nbsp;"));
+    InsertAt(0, column, new CHTML_nbsp);
 
     CHTML_input* textpage =  new CHTML_text("textpage" + m_jssuffix, 4,
                                          NStr::IntToString(currentPage + 1));
-    textpage->SetAttribute("class", "dblinks");
+    textpage->SetClass("dblinks");
     
     string suffix = kEmptyStr;
     if ( m_jssuffix == "" ) {
        suffix = "1";
     }
                                
-    textpage->SetAttribute("onChange", "javascript:document.frmQueryBox.textpage" +
-                                       suffix +".value=" + "this.value;");
-
-    textpage->SetAttribute("onKeyPress", "javascript:document.frmQueryBox." +
-                                         CPager::KParam_InputPage +
-                                         ".value=" + "this.value; KeyPress('',event);");
+    textpage->SetEventHandler(eHTML_EH_Change,
+                              "document.frmQueryBox.textpage" +
+                              suffix +".value=" + "this.value;");
+    
+    textpage->SetEventHandler(eHTML_EH_KeyPress,
+                              "document.frmQueryBox." +
+                              CPager::KParam_InputPage +
+                              ".value=" + "this.value; KeyPress('',event);");
                                          
     InsertAt(0, column++, textpage);
 
-    InsertAt(0, column++, new CHTMLText("<div class=medium2>&nbsp;of&nbsp;" +
-                                        NStr::IntToString(lastPage + 1) +
-                                        "</div>" ));
+
+    CHTML_div* div = new CHTML_div;
+    div->SetClass("medium2");
+    div->AppendChild(new CHTML_nbsp);
+    div->AppendChild(new CHTMLPlainText("of"));
+    div->AppendChild(new CHTML_nbsp);
+    div->AppendChild(new CHTMLPlainText(NStr::IntToString(lastPage + 1)));
+    InsertAt(0, column++, div);
     
     // place holder for page num, to explicitly tell about new page num
-    InsertAt(0, column++, new CHTML_hidden(CPager::KParam_InputPage + m_jssuffix, kEmptyStr));
-    
-    
+    InsertAt(0, column++, new CHTML_hidden(CPager::KParam_InputPage +
+                                           m_jssuffix, kEmptyStr));
     if ( currentPage < lastPage ) {
         CHTML_a* next = new CHTML_a("javascript:var frm = document.frmQueryBox;"
                                     "frm.cmd.value=''; frm.inputpage.value=" +
                                     NStr::IntToString(currentPage + 2) + 
                                     ";frm.submit();", "Next");
-        next->SetAttribute("class", "dblinks");
+        next->SetClass("dblinks");
         InsertAt(0, column, next);
-        InsertAt(0, column++, new CHTMLText("&nbsp;&nbsp;"));
+        InsertAt(0, column++, new CHTML_nbsp(2));
     }
 }
 
