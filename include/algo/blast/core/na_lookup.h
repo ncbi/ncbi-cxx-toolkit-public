@@ -97,7 +97,7 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
 */
 Int4 LIBCALLBACK MB_ScanSubject(const LookupTableWrapPtr lookup,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, const Int4 max_hits,
+       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
        Int4Ptr end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, looking up 
@@ -131,7 +131,7 @@ Int4 LIBCALLBACK MB_DiscWordScanSubject(const LookupTableWrapPtr lookup,
 */
 Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
-       Uint4Ptr q_offsets, Uint4Ptr s_offsets, const Int4 max_hits,
+       Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
        Int4Ptr end_offset); 
 
 /** Deallocate memory for the lookup table */
