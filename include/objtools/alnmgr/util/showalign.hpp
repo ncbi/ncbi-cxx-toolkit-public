@@ -143,6 +143,13 @@ public:
   
  
 private:
+  
+  
+  struct insertInformation{
+    int alnStart;  //aln coords. insert right after this position
+    int seqStart;
+    int insertLen;
+  };
 
   struct alnInfo { //store alnvec and score info
     CRef<CAlnVec> alnVec;
@@ -209,13 +216,13 @@ private:
   string getDumpgnlLink(const list<CRef<CSeq_id> >& ids, int row) const;
   void getFeatureInfo(list<alnFeatureInfo*>& feature, CScope& scope, CSeqFeatData::E_Choice choice, int row) const;
 
-  void fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString) const;
-  void doFills(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<CConstRef<CAlnMap::CAlnChunk> >& chunks, list<string>& inserts) const;
+  void fillInserts(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<string>& inserts, string& insertPosString, list<insertInformation*>& insertList) const;
+  void doFills(int row, CAlnMap::TSignedRange& alnRange, int alnStart, list<insertInformation*>& insertList, list<string>& inserts) const;
   string getSegs(int row) const;
   const void fillIdentityInfo(const string& sequenceStandard, const string& sequence , int& match, int& positive, string& middleLine);
   void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;  
   void setDbGi();
-  
+  void GetInserts(list<insertInformation*>& insertList, CAlnMap::TSeqPosList& insertAlnStart, CAlnMap::TSeqPosList& insertSeqStart, CAlnMap::TSeqPosList& insertLength,  int lineAlnStop);
 };
 
 
