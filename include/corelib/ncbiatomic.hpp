@@ -43,6 +43,10 @@
 #if defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_NO_THREADS)
 // Needed for SwapPointers, even if not for CAtomicCounter
 #  include <CoreServices/CoreServices.h>
+// Darwin's <AssertMacros.h> defines check as a variant of assert....
+#  ifdef check
+#    undef check
+#  endif
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -186,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/04 00:38:02  ucko
+ * Centralize undefinition of Darwin's check macro.
+ *
  * Revision 1.6  2004/02/03 19:28:18  ucko
  * Darwin: include the master CoreServices header because
  * DriverSynchronization.h is officially internal, but limit its use to

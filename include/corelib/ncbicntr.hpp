@@ -112,6 +112,10 @@ extern "C" {
 #  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
 #  include <CoreServices/CoreServices.h>
+// Darwin's <AssertMacros.h> defines check as a variant of assert....
+#  ifdef check
+#    undef check
+#  endif
    typedef SInt32 TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
 #elif defined(NCBI_OS_MAC)
@@ -342,6 +346,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/02/04 00:38:03  ucko
+* Centralize undefinition of Darwin's check macro.
+*
 * Revision 1.18  2004/02/03 19:28:30  ucko
 * Darwin: include the master CoreServices header because
 * DriverSynchronization.h is officially internal.
