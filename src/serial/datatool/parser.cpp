@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/01/28 17:00:15  coremake
+* Fixed MIPSpro 7.3.1.2m SEGVs on throw/catch
+*
 * Revision 1.27  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -111,6 +114,23 @@ BEGIN_NCBI_SCOPE
 
 AutoPtr<CFileModules> ASNParser::Modules(const string& fileName)
 {
+
+// BUG:  MIPSpro 7.3.1.2m SEGVs on throw/catch from function:
+//   CDataTypeModule::Resolve(const string& typeName)
+// This is apparently not needed for MIPSpro 7.3.1.1m. -- First
+// problems appeared with MIPSpro 7.3.1.2m.
+// This also helps if this artificial catch is put to function:
+//   CDataTool::LoadDefinitions()
+#if defined(NCBI_COMPILER_MIPSPRO)
+#  if NCBI_COMPILER_VERSION == 730
+    try {
+        throw runtime_error("MIPS_EXC_BUG");
+    }
+    catch (...) {
+    }
+#  endif
+#endif
+
     AutoPtr<CFileModules> modules(new CFileModules(fileName));
     while ( Next() != T_EOF ) {
         modules->AddModule(Module());
