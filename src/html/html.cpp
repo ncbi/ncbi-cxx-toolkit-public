@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  1999/05/27 21:43:02  vakatov
+* Get rid of some minor compiler warnings
+*
 * Revision 1.40  1999/05/24 13:57:55  pubmed
 * Save Command; MEDLINE, FASTA format changes
 *
@@ -357,7 +360,7 @@ CNCBINode* CHTMLText::CloneSelf() const
 static const string KTagStart = "<@";
 static const string KTagEnd = "@>";
 
-CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)  
+CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode)  
 {
     return out << m_Text;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/05/27 21:43:30  vakatov
+* Get rid of some minor compiler warnings
+*
 * Revision 1.12  1999/05/20 16:52:34  pubmed
 * SaveAsText action for query; minor changes in filters,labels, tabletemplate
 *
@@ -254,12 +257,12 @@ CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
     return out;
 }
 
-CNcbiOstream& CNCBINode::PrintBegin(CNcbiOstream& out, TMode mode)
+CNcbiOstream& CNCBINode::PrintBegin(CNcbiOstream& out, TMode)
 {
     return out;
 }
 
-CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode mode)
+CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode)
 {
     return out;
 }
