@@ -1388,7 +1388,7 @@ inline CBDB_Field& CBDB_BufferManager::GetField(unsigned int n)
 
 inline unsigned int CBDB_BufferManager::FieldCount() const
 {
-    return m_Fields.size();
+    return (unsigned int)m_Fields.size();
 }
 
 
@@ -1485,7 +1485,7 @@ inline void CBDB_BufferManager::ArrangePtrsUnpacked()
     }
 
     for (size_t i = 0;  i < m_Fields.size();  ++i) {
-        CBDB_Field& df = GetField(i);
+        CBDB_Field& df = GetField((unsigned)i);
         df.SetBuffer(m_Ptrs[i]);
     }
 
@@ -1556,6 +1556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/09/29 16:25:14  kuznets
+ * Cleaned up warnings for 64-bit mode
+ *
  * Revision 1.21  2003/09/26 20:45:57  kuznets
  * Comments cleaned up
  *
