@@ -30,50 +30,6 @@
 *
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.12  2003/09/25 12:46:28  kuznets
-* CSubSourceCollector(s) are changed so they can be chained
-* (CByteSourceReader can have more than one CSubSourceCollector)
-*
-* Revision 1.11  2003/04/17 17:50:11  siyan
-* Added doxygen support
-*
-* Revision 1.10  2002/12/19 14:51:00  dicuccio
-* Added export specifier for Win32 DLL builds.
-*
-* Revision 1.9  2001/05/17 15:01:19  lavr
-* Typos corrected
-*
-* Revision 1.8  2001/05/16 17:55:36  grichenk
-* Redesigned support for non-blocking stream read operations
-*
-* Revision 1.7  2001/05/11 20:41:14  grichenk
-* Added support for non-blocking stream reading
-*
-* Revision 1.6  2001/01/05 20:08:52  vasilche
-* Added util directory for various algorithms and utility classes.
-*
-* Revision 1.5  2000/11/01 20:35:27  vasilche
-* Removed ECanDelete enum and related constructors.
-*
-* Revision 1.4  2000/07/03 18:42:32  vasilche
-* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
-* Reduced header dependency.
-*
-* Revision 1.3  2000/05/03 14:38:05  vasilche
-* SERIAL: added support for delayed reading to generated classes.
-* DATATOOL: added code generation for delayed reading.
-*
-* Revision 1.2  2000/04/28 19:14:30  vasilche
-* Fixed stream position and offset typedefs.
-*
-* Revision 1.1  2000/04/28 16:58:00  vasilche
-* Added classes CByteSource and CByteSourceReader for generic reading.
-* Added delayed reading of choice variants.
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -116,7 +72,7 @@ public:
     virtual bool EndOfData(void) const;
 
     virtual CRef<CSubSourceCollector> 
-        SubSource(size_t prepend, CRef<CSubSourceCollector>& parent);
+        SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
 };
 
 /// Sub-source collector
@@ -129,7 +85,7 @@ public:
     /// @param parent_collector pointer on parent(chained) collector
     /// CSubSourceCollector relays all AddChunk calls to the parent object
     /// making possible having several sub-sources chained together.
-    CSubSourceCollector(CRef<CSubSourceCollector>& parent);
+    CSubSourceCollector(CRef<CSubSourceCollector> parent);
 
     virtual ~CSubSourceCollector(void);
 
@@ -213,7 +169,7 @@ public:
     CFileByteSourceReader(const CFileByteSource* source);
 
     CRef<CSubSourceCollector> SubSource(size_t prepend, 
-                                        CRef<CSubSourceCollector>& parent);
+                                        CRef<CSubSourceCollector> parent);
 private:
     CConstRef<CFileByteSource> m_FileSource;
     CNcbiIfstream m_FStream;
@@ -222,7 +178,7 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryChunk : public CObject {
 public:
     CMemoryChunk(const char* data, size_t dataSize,
-                 CRef<CMemoryChunk>& prevChunk);
+                 CRef<CMemoryChunk> prevChunk);
     ~CMemoryChunk(void);
     
     const char* GetData(size_t offset) const
@@ -233,12 +189,12 @@ public:
         {
             return m_DataSize;
         }
-    const CRef<CMemoryChunk>& GetNextChunk(void) const
+    CRef<CMemoryChunk> GetNextChunk(void) const
         {
             return m_NextChunk;
         }
 
-    void SetNextChunk(const CRef<CMemoryChunk>& chunk);
+    void SetNextChunk(CRef<CMemoryChunk> chunk);
 
 private:
     char* m_Data;
@@ -249,7 +205,7 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryByteSource : public CByteSource
 {
 public:
-    CMemoryByteSource(const CConstRef<CMemoryChunk>& bytes)
+    CMemoryByteSource(CConstRef<CMemoryChunk> bytes)
         : m_Bytes(bytes)
         {
         }
@@ -264,7 +220,7 @@ private:
 class NCBI_XUTIL_EXPORT CMemoryByteSourceReader : public CByteSourceReader
 {
 public:
-    CMemoryByteSourceReader(const CConstRef<CMemoryChunk>& bytes)
+    CMemoryByteSourceReader(CConstRef<CMemoryChunk> bytes)
         : m_CurrentChunk(bytes), m_CurrentChunkOffset(0)
         {
         }
@@ -283,7 +239,7 @@ private:
 class NCBI_XUTIL_EXPORT CMemorySourceCollector : public CSubSourceCollector
 {
 public:
-    CMemorySourceCollector(CRef<CSubSourceCollector>& 
+    CMemorySourceCollector(CRef<CSubSourceCollector>
                            parent=CRef<CSubSourceCollector>());
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
@@ -305,9 +261,9 @@ public:
     typedef CNcbiIstream::off_type TFileOff;
 #endif
 
-    CFileSourceCollector(const CConstRef<CFileByteSource>& source,
+    CFileSourceCollector(CConstRef<CFileByteSource> source,
                          TFilePos start,
-                         CRef<CSubSourceCollector>& parent);
+                         CRef<CSubSourceCollector> parent);
 
     virtual void AddChunk(const char* buffer, size_t bufferLength);
     virtual CRef<CByteSource> GetSource(void);
@@ -367,5 +323,56 @@ private:
 //#include <util/bytesrc.inl>
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.13  2003/09/25 13:59:35  ucko
+* Pass C(Const)Ref by value, not reference!
+* Move CVS log to end.
+*
+* Revision 1.12  2003/09/25 12:46:28  kuznets
+* CSubSourceCollector(s) are changed so they can be chained
+* (CByteSourceReader can have more than one CSubSourceCollector)
+*
+* Revision 1.11  2003/04/17 17:50:11  siyan
+* Added doxygen support
+*
+* Revision 1.10  2002/12/19 14:51:00  dicuccio
+* Added export specifier for Win32 DLL builds.
+*
+* Revision 1.9  2001/05/17 15:01:19  lavr
+* Typos corrected
+*
+* Revision 1.8  2001/05/16 17:55:36  grichenk
+* Redesigned support for non-blocking stream read operations
+*
+* Revision 1.7  2001/05/11 20:41:14  grichenk
+* Added support for non-blocking stream reading
+*
+* Revision 1.6  2001/01/05 20:08:52  vasilche
+* Added util directory for various algorithms and utility classes.
+*
+* Revision 1.5  2000/11/01 20:35:27  vasilche
+* Removed ECanDelete enum and related constructors.
+*
+* Revision 1.4  2000/07/03 18:42:32  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
+* Revision 1.3  2000/05/03 14:38:05  vasilche
+* SERIAL: added support for delayed reading to generated classes.
+* DATATOOL: added code generation for delayed reading.
+*
+* Revision 1.2  2000/04/28 19:14:30  vasilche
+* Fixed stream position and offset typedefs.
+*
+* Revision 1.1  2000/04/28 16:58:00  vasilche
+* Added classes CByteSource and CByteSourceReader for generic reading.
+* Added delayed reading of choice variants.
+*
+* ===========================================================================
+*/
 
 #endif  /* BYTESRC__HPP */
