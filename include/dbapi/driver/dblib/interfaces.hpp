@@ -88,7 +88,7 @@ class CDBLibContext : public I_DriverContext
     friend class CDB_Connection;
 
 public:
-    CDBLibContext(DBINT version = DBVERSION_UNKNOWN);
+    CDBLibContext(DBINT version = DBVERSION_46);
 
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
@@ -664,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/06/19 16:46:31  soussov
+ * changes default version from unknown to 46
+ *
  * Revision 1.10  2002/05/29 22:04:43  soussov
  * Makes BlobResult read ahead
  *
