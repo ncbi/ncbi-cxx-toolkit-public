@@ -27,7 +27,6 @@
 #
 ###########################################################################
 
-
 # Get parameters
 timeout="$CHECK_TIMEOUT"
 test -z $timeout  &&  timeout=200
@@ -38,9 +37,16 @@ script_dir=`(cd "$script_dir"; pwd)`
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
 # Run command
-"$@" &
+if [ "-$1" == "--stdin" ]; then
+  cat - > $0.stdin.$$
+  shift
+  cat $0.stdin.$$ | "$@" &
+  rm $0.stdin.$$ > /dev/null 2>&1
+else
+  "$@" &
+fi
 pid=$!
-trap 'kill $pid' 1 2 15
+trap 'kill $pid; rm $0.stdin.$$ > /dev/null 2>&1' 1 2 15
 
 # Execute time-guard
 $script_dir/check_exec_guard.sh $timeout $pid &
