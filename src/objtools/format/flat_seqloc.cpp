@@ -426,12 +426,16 @@ void CFlatSeqLoc::x_AddID
     }
 
     CConstRef<CSeq_id> idp;
-    if (bh) {
-        idp = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::Score);
-    } else {
-        if (id.IsGi()) {
-            idp = FindBestId(ctx.GetScope().GetIds(id), CSeq_id::Score);
+    try {
+        if (bh) {
+            idp.Reset(&GetId(bh, eGetId_Best));
+        } else {
+            if (id.IsGi()) {
+                idp.Reset(&GetId(id, ctx.GetScope(), eGetId_Best));
+            }
         }
+    } catch (CException&) {
+        idp.Reset(NULL);
     }
     if (!idp) {
         idp.Reset(&id);
@@ -455,6 +459,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/10/18 18:47:36  shomrat
+* Use sequence::GetId
+*
 * Revision 1.13  2004/10/05 15:40:02  shomrat
 * Use CScope::GetIds
 *
