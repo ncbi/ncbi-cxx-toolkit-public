@@ -117,8 +117,10 @@ public:
 
     bool IsPartial(void) const;
     bool IsProduct(void) const;
+    bool IsMappedPoint(void) const;
     void SetProduct(bool product);
-    // int GetMappedIndex(void) const;
+
+    ENa_strand GetMappedStrand(void) const;
 
     const CSeq_annot& GetSeq_annot(void) const;
     bool IsFeat(void) const;
@@ -158,14 +160,13 @@ public:
     void SetMappedSeq_id(CSeq_id& id, bool point);
     void SetMappedSeq_align_Mapper(CSeq_align_Mapper& mapper);
     void SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper);
+    void SetTotalRange(const TRange& range);
+    void SetMappedStrand(ENa_strand strand);
 
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
 
 private:
-    friend class CSeq_loc_Conversion;
-    friend class CSeq_loc_Conversion_Set;
-
     CConstRef<CObject>      m_Object;
     CRef<CObject>           m_MappedObject; // master sequence coordinates
     TRange                  m_TotalRange;
@@ -368,6 +369,13 @@ const CAnnotObject_Ref::TRange& CAnnotObject_Ref::GetTotalRange(void) const
 
 
 inline
+void CAnnotObject_Ref::SetTotalRange(const TRange& range)
+{
+    m_TotalRange = range;
+}
+
+
+inline
 Uint4 CAnnotObject_Ref::GetAnnotObjectIndex(void) const
 {
     return m_AnnotObject_Index;
@@ -377,7 +385,7 @@ Uint4 CAnnotObject_Ref::GetAnnotObjectIndex(void) const
 inline
 const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 {
-    _ASSERT(m_ObjectType == eType_Seq_annot_Info);
+    _ASSERT(GetObjectType() == eType_Seq_annot_Info);
     return static_cast<const CSeq_annot_Info&>(*m_Object);
 }
 
@@ -385,7 +393,7 @@ const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 inline
 const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 {
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
     return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
 }
 
@@ -419,6 +427,21 @@ bool CAnnotObject_Ref::IsProduct(void) const
 
 
 inline
+ENa_strand CAnnotObject_Ref::GetMappedStrand(void) const
+{
+    return ENa_strand(m_MappedStrand);
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedStrand(ENa_strand strand)
+{
+    _ASSERT(IsMapped());
+    m_MappedStrand = strand;
+}
+
+
+inline
 CAnnotObject_Ref::EMappedObjectType
 CAnnotObject_Ref::GetMappedObjectType(void) const
 {
@@ -429,8 +452,9 @@ CAnnotObject_Ref::GetMappedObjectType(void) const
 inline
 bool CAnnotObject_Ref::IsMapped(void) const
 {
-    _ASSERT((m_MappedObjectType == eMappedObjType_not_set) == !m_MappedObject);
-    return m_MappedObjectType != eMappedObjType_not_set;
+    _ASSERT((GetMappedObjectType() == eMappedObjType_not_set) ==
+            !m_MappedObject);
+    return GetMappedObjectType() != eMappedObjType_not_set;
 
 }
 
@@ -438,7 +462,7 @@ bool CAnnotObject_Ref::IsMapped(void) const
 inline
 bool CAnnotObject_Ref::MappedSeq_locNeedsUpdate(void) const
 {
-    return m_MappedObjectType == eMappedObjType_Seq_id;
+    return GetMappedObjectType() == eMappedObjType_Seq_id;
 
 }
 
@@ -446,21 +470,21 @@ bool CAnnotObject_Ref::MappedSeq_locNeedsUpdate(void) const
 inline
 bool CAnnotObject_Ref::IsMappedLocation(void) const
 {
-    return IsMapped() && (m_MappedFlags & fMapped_Product) == 0;
+    return IsMapped() && !IsProduct();
 }
 
 
 inline
 bool CAnnotObject_Ref::IsMappedProduct(void) const
 {
-    return IsMapped() && (m_MappedFlags & fMapped_Product) != 0;
+    return IsMapped() && IsProduct();
 }
 
 
 inline
 const CSeq_loc& CAnnotObject_Ref::GetMappedSeq_loc(void) const
 {
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_loc);
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc);
     return static_cast<const CSeq_loc&>(*m_MappedObject);
 }
 
@@ -468,7 +492,7 @@ const CSeq_loc& CAnnotObject_Ref::GetMappedSeq_loc(void) const
 inline
 const CSeq_id& CAnnotObject_Ref::GetMappedSeq_id(void) const
 {
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_id);
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
     return static_cast<const CSeq_id&>(*m_MappedObject);
 }
 
@@ -503,13 +527,21 @@ void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id)
 inline
 void CAnnotObject_Ref::SetMappedPoint(bool point)
 {
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_id);
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
     if ( point ) {
         m_MappedFlags |= fMapped_Seq_point;
     }
     else {
         m_MappedFlags &= ~fMapped_Seq_point;
     }
+}
+
+
+inline
+bool CAnnotObject_Ref::IsMappedPoint(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    return (m_MappedFlags & fMapped_Seq_point) != 0;
 }
 
 
@@ -524,23 +556,23 @@ void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id, bool point)
 inline
 bool CAnnotObject_Ref::IsFeat(void) const
 {
-    return m_ObjectType == eType_Seq_annot_SNP_Info ||
-        m_ObjectType == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsFeat();
+    return GetObjectType() == eType_Seq_annot_SNP_Info ||
+        (GetObjectType() == eType_Seq_annot_Info &&
+         GetAnnotObject_Info().IsFeat());
 }
 
 
 inline
 bool CAnnotObject_Ref::IsSNPFeat(void) const
 {
-    return m_ObjectType == eType_Seq_annot_SNP_Info;
+    return GetObjectType() == eType_Seq_annot_SNP_Info;
 }
 
 
 inline
 bool CAnnotObject_Ref::IsGraph(void) const
 {
-    return m_ObjectType == eType_Seq_annot_Info &&
+    return GetObjectType() == eType_Seq_annot_Info &&
         GetAnnotObject_Info().IsGraph();
 }
 
@@ -548,7 +580,7 @@ bool CAnnotObject_Ref::IsGraph(void) const
 inline
 bool CAnnotObject_Ref::IsAlign(void) const
 {
-    return m_ObjectType == eType_Seq_annot_Info &&
+    return GetObjectType() == eType_Seq_annot_Info &&
         GetAnnotObject_Info().IsAlign();
 }
 
@@ -683,6 +715,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/02/19 19:25:08  vasilche
+* Hidded implementation of CAnnotObject_Ref.
+* Added necessary access methods.
+*
 * Revision 1.65  2004/02/19 17:14:36  vasilche
 * Removed unused include.
 *

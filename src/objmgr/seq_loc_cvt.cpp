@@ -986,12 +986,12 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
 {
     ref.SetProduct(loctype == eProduct);
     ref.SetPartial(m_Partial || ref.IsPartial());
-    ref.m_TotalRange = m_TotalRange;
+    ref.SetTotalRange(m_TotalRange);
     if ( IsSpecialLoc() ) {
         // special interval or point
         ref.SetMappedSeq_id(*m_Dst_id, m_LastType == eMappedObjType_Seq_point);
+        ref.SetMappedStrand(m_LastStrand);
         m_LastType = eMappedObjType_not_set;
-        ref.m_MappedStrand = m_LastStrand;
     }
 }
 
@@ -1010,7 +1010,8 @@ CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(void)
 void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt)
 {
     TRangeMap& ranges = m_IdMap[cvt.m_Src_id_Handle];
-    ranges.insert(TRangeMap::value_type(TRange(cvt.m_Src_from, cvt.m_Src_to), Ref(&cvt)));
+    ranges.insert(TRangeMap::value_type(TRange(cvt.m_Src_from, cvt.m_Src_to),
+                                        Ref(&cvt)));
 }
 
 
@@ -1072,7 +1073,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
     }
     ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
     ref.SetPartial(m_Partial);
-    ref.m_TotalRange = m_TotalRange;
+    ref.SetTotalRange(m_TotalRange);
 }
 
 
@@ -1362,6 +1363,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/02/19 19:25:09  vasilche
+* Hidded implementation of CAnnotObject_Ref.
+* Added necessary access methods.
+*
 * Revision 1.20  2004/02/19 17:18:44  vasilche
 * Formatting + use CRef<> assignment directly.
 *

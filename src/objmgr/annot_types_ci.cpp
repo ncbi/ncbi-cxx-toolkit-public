@@ -109,7 +109,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
 
 const CSeq_annot& CAnnotObject_Ref::GetSeq_annot(void) const
 {
-    if ( m_ObjectType == eType_Seq_annot_SNP_Info ) {
+    if ( GetObjectType() == eType_Seq_annot_SNP_Info ) {
         return GetSeq_annot_SNP_Info().GetSeq_annot();
     }
     else {
@@ -122,17 +122,16 @@ inline
 void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
                                     CSeq_loc_Conversion* cvt)
 {
-    _ASSERT(m_ObjectType == eType_Seq_annot_SNP_Info);
+    _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
     TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
     ENa_strand src_strand =
         snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
     if ( !cvt ) {
-        m_TotalRange.SetFrom(src_from).SetTo(src_to);
-        m_MappedObject.Reset(const_cast<CSeq_id*>
-                             (&GetSeq_annot_SNP_Info().GetSeq_id()));
-        m_MappedObjectType = eMappedObjType_Seq_id;
-        m_MappedFlags = fMapped_Seq_point;
-        m_MappedStrand = src_strand;
+        SetTotalRange(TRange(src_from, src_to));
+        SetMappedSeq_id(const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().
+                                             GetSeq_id()),
+                        true);
+        SetMappedStrand(src_strand);
         return;
     }
 
@@ -159,6 +158,7 @@ CAnnotObject_Ref::GetMappedSeq_align_Mapper(void) const
 
 void CAnnotObject_Ref::SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper)
 {
+    _ASSERT(!IsMapped());
     m_MappedObject.Reset(mapper);
     m_MappedObjectType =
         mapper? eMappedObjType_Seq_align_Mapper: eMappedObjType_not_set;
@@ -173,22 +173,22 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
     if ( !loc || !loc->ReferencedOnlyOnce() ) {
         loc.Reset(new CSeq_loc);
     }
-    if ( m_MappedFlags & fMapped_Seq_point ) {
+    if ( IsMappedPoint() ) {
         CSeq_point& point = loc->SetPnt();
         point.SetId(id);
         point.SetPoint(m_TotalRange.GetFrom());
-        if ( m_MappedStrand != eNa_strand_unknown )
-            point.SetStrand(ENa_strand(m_MappedStrand));
+        if ( GetMappedStrand() != eNa_strand_unknown )
+            point.SetStrand(GetMappedStrand());
         else
             point.ResetStrand();
     }
     else {
         CSeq_interval& interval = loc->SetInt();
         interval.SetId(id);
-        interval.SetFrom(m_TotalRange.GetFrom());
-        interval.SetTo(m_TotalRange.GetTo());
-        if ( m_MappedStrand != eNa_strand_unknown )
-            interval.SetStrand(ENa_strand(m_MappedStrand));
+        interval.SetFrom(GetTotalRange().GetFrom());
+        interval.SetTo(GetTotalRange().GetTo());
+        if ( GetMappedStrand() != eNa_strand_unknown )
+            interval.SetStrand(GetMappedStrand());
         else
             interval.ResetStrand();
     }
@@ -208,7 +208,7 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
     else {
         loc->Reset();
     }
-    if ( m_MappedFlags & fMapped_Seq_point ) {
+    if ( IsMappedPoint() ) {
         if ( !pnt_ref || !pnt_ref->ReferencedOnlyOnce() ) {
             pnt_ref.Reset(new CSeq_point);
         }
@@ -216,8 +216,8 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
         loc->SetPnt(point);
         point.SetId(id);
         point.SetPoint(m_TotalRange.GetFrom());
-        if ( m_MappedStrand != eNa_strand_unknown )
-            point.SetStrand(ENa_strand(m_MappedStrand));
+        if ( GetMappedStrand() != eNa_strand_unknown )
+            point.SetStrand(GetMappedStrand());
         else
             point.ResetStrand();
     }
@@ -230,8 +230,8 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
         interval.SetId(id);
         interval.SetFrom(m_TotalRange.GetFrom());
         interval.SetTo(m_TotalRange.GetTo());
-        if ( m_MappedStrand != eNa_strand_unknown )
-            interval.SetStrand(ENa_strand(m_MappedStrand));
+        if ( GetMappedStrand() != eNa_strand_unknown )
+            interval.SetStrand(GetMappedStrand());
         else
             interval.ResetStrand();
     }
@@ -240,13 +240,13 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
 
 bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 {
-    if ( m_ObjectType != ref.m_ObjectType ) {
-        return m_ObjectType < ref.m_ObjectType;
+    if ( GetObjectType() != ref.GetObjectType() ) {
+        return GetObjectType() < ref.GetObjectType();
     }
     if ( m_Object != ref.m_Object ) {
         return m_Object < ref.m_Object;
     }
-    return m_AnnotObject_Index < ref.m_AnnotObject_Index;
+    return GetAnnotObjectIndex() < ref.GetAnnotObjectIndex();
 }
 
 
@@ -1342,6 +1342,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2004/02/19 19:25:08  vasilche
+* Hidded implementation of CAnnotObject_Ref.
+* Added necessary access methods.
+*
 * Revision 1.112  2004/02/09 14:48:37  vasilche
 * Got rid of performance warning on MSVC.
 *
