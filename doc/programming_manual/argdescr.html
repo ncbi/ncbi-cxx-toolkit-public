@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title> Using the CArgDescriptions class </title>
+  </head>
+  <body bgcolor = white>
+    <h1>Using the CArgDescriptions class </h1>
+
+<ul>
+  <li> <a href="#intro"> Overview</a>
+  <li> The <a href="#argdescr"> <i>CArgDescriptions</i> class </a>
+  <li> The <a href="#cargs"> <i>CArgs</i> class </a>
+</ul>
+
+<a name="intro"> <h3>Overview</h3>
+
+The NCBI C++ Toolkit uses a set of classes that work together to provide methods of:
+<ul>
+<li>Specifying attributes for the command line arguments
+     such as name, synopsis, comment, data type, etc.
+
+<li>Validating the runtime arguments to the program against these descriptions
+
+<li>Validating the number of untagged runtime arguments
+
+<li>Generating usage messages when the validation fails
+
+<li>Accessing the input values specifcally type-cast according to their descriptions
+</ul>
+
+The <i>CArgDescriptions</i> class provides data structures and an interface for specifying these
+attributes. The <i>CArgs</i> class provides data structures and an interface for loading and
+accessing the validated arguments, as checked against the descriptions. The <i>CArgDescriptions</i>
+interface also provides methods of generating <i>usage</i> messages when the validation process fails. 
+
+<a name="argdescr"> <h3> The <a href="../docxx/CArgDescriptions.html"> <i>CArgDescriptions</i></a> class</h3> 
+<ul>
+<li><a href="#keys"> Specifying the argument descriptions</a>
+<li><a href="#pos"> Constraining the number of positional arguments</a>
+<li><a href="#usage"> Generating a usage message</a>
+</ul>
+<a name="keys"> <h4>Specifying the argument descriptions</h4>
+The <i>CArgDescriptions</i> class defines five types of command-line arguments: 
+<dl>
+<dt><font color="#000080">Mandatory named arguments: <i> -&lt;key> &lt;value></i></font>
+<dd>These are position-independent arguments (of any type), and are input as a <i>-key value</i> pair
+on the command line.<p>
+
+<dt><font color="#000080">Optional named arguments: <i>  [-&lt;key> &lt;value>]</i></font>
+<dd>Identical to mandatory named arguments, but not required.<p>
+
+<dt><font color="#000080">Optional named flags: <i>[-&lt;flag>]</i></font>
+<dd>These are position-independent Boolean arguments that are input as a <i>-flag</i> on the command line.<p>
+
+<dt><font color="#000080">Named positional arguments: <i>&lt;value> | [&lt;value>]</i></font>
+<dd>These are position-<i>dependent</i> arguments (of any type), which  are input using a <i>value</i>
+only.  They do however, have names stored with their descriptions, which they are associated with in
+an order-dependent fashion. Specifically, the order in which untagged argument descriptions are
+added to the <i>CArgDescriptions</i> object defines the order in which these arguments should appear
+on the command line. Using a <i>constraint policy</i> (see discussion), it is possible to require
+that all or none of these arguments must be present in the command line. 
+<p>
+
+<dt><font color="#000080">Unnamed positional arguments of a single type: <i> &lt;value> | [value]</i> </font>
+<dd>These are also position-<i>dependent</i> arguments that are input using a <i>value</i> only.
+Again, the constraint policy determines how many of these arguments are required. Unlike the
+previous argument type however, these arguments do not have individual named descriptions, but share
+a single "unnamed" description which specifies their shared type.
+</dl>
+
+Specialized methods are defined for adding descriptors for each of the above argument types.<p> 
+
+<center>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddKey">
+<i>AddKey(name, synopsis, comment, etype, openflags)</i></a></center><p>
+
+adds a descriptor for a mandatory named argument whose <i>key</i> on the command line should
+be <i>-name</i>, and whose type is the enumerated <i>EType</i> value.
+The <i>EType</i> enumeration is defined as:
+
+<font color = "#008080"><pre>
+   enum EType {
+        eString = 0, // an arbitrary string
+        eAlnum,      // [a-zA-Z0-9]
+        eBoolean,    // {'true', 't', 'false', 'f'},  case-insensitive
+        eInteger,    // convertable to an integer number (long)
+        eDouble,     // convertable to a floating point number (double)
+        eInputFile,  // name of file (must exist and be readable)
+        eOutputFile  // name of file (must be writeable)
+    };
+</pre></font>
+
+The last argument, <i>openflags</i>, has meaning only when the <i>EType</i> is <i>eInputFile</i> or
+<i>eOutputFile</i>, and constrains the mode in which the file should be opened.  The remaining
+arguments, synopsis and comment, are strings that may be used in a <i>usage</i> message.<p>
+
+The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddOptionalKey">
+<i>AddOptionalKey()</i></a> method adds a named description for an optional named argument, and takes 
+one additional optional argument that can be used to specify a default value. 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddFlag"><i>AddFlag()</i></a>
+adds a descriptor for an optional named flag argument, and takes only two <i>string</i>
+arguments, <i>name</i> and <i>comment</i>. <p>
+
+Descriptions for <i>named</i> positional arguments are specified using 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddPlain"><i>AddPlain()</i></a>,
+whose arguments are identical to the <i>AddOptionalKey()</i> method, less the <i>synopsis</i> argument.
+Finally, the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=AddExtra">
+<i>AddExtra()</i></a> method is used to define a single description for a set of "extra" unnamed positional
+arguments of uniform type. 
+<p>
+
+Any of the named registered descriptions can be tested and/or deleted using:
+<font color="#008080"><pre>
+    bool Exist(const string& name) const;
+    static bool VerifyName(const string& name);    // check syntax
+    void Delete(const string& name);
+</pre></font>
+
+<a name="pos"><h4>Constraining the number of positional arguments</h4>
+
+Positional arguments on the command line are associated with their argument descriptions according
+to the order in which they occur, and the order in which their descriptions were registered. Thus,
+if your program contained the following lines:
+<font color="#008080"><pre>
+    descriptions.AddPlain("n", "between 1 and 10", eInteger);
+    descriptions.AddPlain("f", "between 0 and 1", eDouble);
+</pre></font>
+then calling the program as: <i>myprog 1 0</i>, would bind the positional parameters
+as <i>n = 1</i> and <i>f = 0.0</i>. <p>
+
+By default, the <i>expected</i> number of <i>named</i> positional arguments is equal to the number 
+of <i>named</i> positional descriptions that were registered (using <i>AddPlain()</i>), making
+them untagged mandatory arguments. It is possible to modify this default behavior however, by using
+the <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=SetConstraint">
+<i>SetConstraint()</i></a> method. This method takes two arguments, an <i>EConstraint policy</i>, and
+an <i>unsigned int</i> value (<i>N</i>), and constrains the <i>total</i> number of (named 
+and unnamed) positional arguments, <i>M</i>, as follows:<p>
+
+<font color="#000080"><table ALIGN=center border=2>
+<tr><th> policy</th> <th>constraint</th></tr>
+<tr><td><i>eAny		</i></td> <td> none </td></tr>
+<tr><td><i>eLessOrEqual </i></td> <td><i>M <= N</i></td></tr>
+<tr><td><i>eEqual	</i></td> <td><i>M == N</i></td></tr>
+<tr><td><i>eMoreOrEqual </i></td> <td><i>M => N</i></td></tr>
+</table></font><p>
+
+
+<p>
+
+Consider next, what would happen if we had also invoked <i>AddExtra("extra args", eInteger)</i>, to
+describe additional unnamed integer arguments.  The default behavior is equivalent to what would result
+from having called <i>SetConstraint(eEqual, n_named_positional)</i>. Thus, to allow <i>unnamed</i>
+positional arguments on the command line as well, the <i>SetConstraint()</i> method should be invoked with
+<i>eMoreOrEqual</i> and/or a larger value of <i>N</i>. <p>
+
+Some care must be applied when using both named and unnamed positional arguments. The unnamed positional
+arguments always follow the named positional parameters, and in some cases it may be necessary to employ
+"dummy" arguments to obtain the correct alignment between the command line arguments and their 
+descriptions.
+
+<a name="usage"><h4>Generating a usage message</h4>
+
+There are many points where an exception may arise, due to either an argument type mismatch or
+missing arguments. <i> CArgDescriptions::CreateArgs() </i> provides a method of checking the command
+line arguments against the descriptions which have been registered. The first step of this method
+involves a <i>pre-check</i> that tests to see if the constraint policy is satisfiable. If so, then
+the individual argument values are loaded, and a <i>post-check</i> is performed to ensure that all
+of the mandatory arguments were present and that the positional arguments satisfied the contraint
+policy. <p>
+
+Exceptions which are thrown during argument processing can be presented to the user, but by
+themselves do not provide very useful information. Catching the exeception and displaying
+it <i>along</i> with a usage message provides a sounder interface to the application, and can be
+done as follows. 
+
+<font color="#008080"><pre>
+	// ...executed inside CNcbiApplication::Run()
+
+	CArgDescriptions argDescr;
+	CNcbiArguments myArgs = GetArguments();
+
+	try {
+	  argDescr.CreateArgs(myArgs);
+	}
+
+	catch (exception& e) {
+	  string a;
+	  cerr << e.what() << endl;
+  	  argDescr.SetUsageContext(myArgs[0], "(program description)");
+	  cerr << argDesc.PrintUsage(a);
+	  return (-1);
+	}
+</pre></font>
+The <i>CreateArgs()</i> method actually serves two purposes: (1) it verifies that all of
+the required arguments are present, and that the number of positional arguments is valid,
+and (2) it creates an instance of the <i>CArgs</i> class, described below.
+Here, we use it only to demonstrate the deployment of the <i>usage</i> message.<p>
+
+The <i>SetUsageContext()</i> method is used to define the name of the program and its
+description, as it will be displayed by the usage message that is generated. <i>PrintUsage(localString)</i>
+writes its message to the <i>localString, and</i> returns that <i>string</i>, so that it
+can be used with an output operator. The output generated when an exception occurs might look something like:
+<font color="#000080"><pre>
+Must specify mandatory argument, with key:  i
+SYNOPSYS
+   ./myApplic -it -i inputFile [l logFile] 
+
+DESCRIPTION   
+   (program description)
+
+OPERANDS   
+ -it    Flag
+   input text
+ -i inputFile    InpFile, mandatory
+   data file in
+ [l logFile]    OutFile, optional
+   log errors to <logFile>
+</pre></font>
+The usage message prints a synopsis of the program and its arguments, a description of the program,
+and a summary of each argument, as obtained from its description. For example, the input file
+argument's description was registered as:
+<font color="#008080"><pre>
+argDesc.AddKey("i", "inputFile", "data file in", argDesc.eInputFile, 0);
+</pre></font>
+
+<a name="cargs"> <h3> The <a href="../docxx/CArgs.html"><i>CArgs</i></a> class</h3>
+
+The <i>CArgs</i> class provides a data structure where the arguments' values
+can be stored, and includes access routines in its public interface:
+<font color="#008080"><pre>
+class CArgs
+{
+public:
+
+    bool Exist(string& name) const;		    // TRUE if name has a description
+    unsigned GetNExtra(void) const;		    // number of extra arguments
+
+    const CArgValue& operator [](string& name);     // retrieve value by argument name
+    const CArgValue& operator [](unsigned idx);     // retrieve value by unnamed arg's index
+
+    void Print(string& str) const;		    // Print all agruments to "str"
+};
+</pre></font>
+One of the most important capabilities of this class is not shown here however, as it is
+a public method implemented by private data members of the <i>CArgs</i> class:
+<pre>		float f = args["f"].AsDouble();
+</pre>
+Here, <i>args</i> is an instance of <i>CArgs</i>, and we are accessing the value
+of the argument that followed the <i>-f</i> key on the command line.
+
+The internal representation of this argument is an instance of a 
+<a href="../docxx/CArgValue.html"> <i>CArgValue</i></a>, whose 
+primary purpose is to provide type-validated loading through its <i>AsXxx()</i> methods:
+
+<font color="#008080"><pre>
+class CArgValue : public CObject
+{
+public:
+
+    // These functions throw an exception on the wrong value type
+
+    string&	   AsString      (void) const;
+    long	   AsInteger     (void) const;
+    double	   AsDouble      (void) const;
+    bool	   AsBoolean     (void) const;
+    CNcbiIstream&  AsInputFile  (EFlags) const;
+    CNcbiOstream&  AsOutputFile (EFlags) const;
+
+    bool IsDefaultValue(void) const;
+};
+</pre></font>
+
+A simple application program, <a href="applic_cpp.html"><i>applic.cpp</i></a> demonstrates the
+usage of these classes for argument processing. See also 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/corelib/test/test_ncbiargs.cpp">
+<i>test_ncbiargs.cpp</i></a>, and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/asn2asn/asn2asn.cpp">
+<i>asn2asn.cpp</i></a> for more examples.
+<p>
+   </body>
+<a href="applic.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="diag.html"> <i> next </i> </a>
+</html>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>

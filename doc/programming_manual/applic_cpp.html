@@ -13,6 +13,7 @@
 #include &lt;corelib/ncbiutil.hpp>
 #include &lt;corelib/ncbiargs.hpp>
 #include &lt;corelib/ncbiapp.hpp>
+#include &lt;corelib/ncbienv.hpp>
 
 <font color = "blue">USING_NCBI_SCOPE;<font color = "black">
 
@@ -53,7 +54,17 @@ int CTestApp::Run() {
         argDesc.AddFlag("it", "input text");
         argDesc.AddFlag("ib", "input binary");
 
-        args.reset(argDesc.CreateArgs(GetArguments()));
+	try {
+            args.reset(argDesc.CreateArgs(GetArguments()));
+	}
+	catch (exception& e) {
+	    string a;
+	    argDesc.SetUsageContext(GetArguments()[0], "CArgDescriptions demo program");
+
+	    cerr << e.what() << endl;
+	    cerr << argDesc.PrintUsage(a);
+	    return (-1);
+	}
     }
 
     int   intIn   = (*args)["n"].AsInteger();

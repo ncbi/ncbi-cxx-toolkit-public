@@ -57,21 +57,20 @@ will be automatically invoked by <i>CNcbiApplication::AppMain()</i>,
 after it has initialized its
 <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> data members.<p>
 
-<a name="CNcbiArguments"> The 
-<a href="../docxx/CNcbiArguments.html">
-<i> CNcbiArguments </i></a> class provides a data structure for holding the application's
-command-line arguments, along with methods for accessing and modifying these.  The data structure is
-a simple C++ vector of strings. Thus access to it is implemented by member functions using the
-built-in [] operator for arrays and vectors. For example, the first argument in <i>argv</i>
-(following the program name) can be retrieved using the <i>CNcbiApplication::GetArguments()</i>
-method, as: <i>GetArguments()[1]</i>. Here, <i>GetArguments()</i> returns the <i>CNcbiArguments</i>
-object, whose argument values can then be retrieved using the <i>[]</i> operator.
-Four additional <i>CNcbiArgument</i> member functions support retrieval and
-modification of the program name (intitially <i>argv</i>[0]). <p>
+<a name="CNcbiArguments"> 
 
-A helper class, <a href="../docxx/CArgDescriptions.html"> CArgDescriptions</a>, supports the
+The <a href="../docxx/CNcbiArguments.html"> <i> CNcbiArguments </i></a> class provides a data
+structure for holding the application's command-line arguments, along with methods for accessing and
+modifying these.  The data structure is a simple C++ vector of strings. Thus access to it is
+implemented by member functions using the built-in [] operator for arrays and vectors. For example,
+the first argument in <i>argv</i> (following the program name) can be retrieved using the
+<i>CNcbiApplication::GetArguments()</i> method, as: <i>GetArguments()[1]</i>. Here,
+<i>GetArguments()</i> returns the <i>CNcbiArguments</i> object, whose argument values can then be
+retrieved using the <i>[]</i> operator.  Four additional <i>CNcbiArgument</i> member functions
+support retrieval and modification of the program name (intitially <i>argv</i>[0]). A helper class,
+described in <a href="argdescr.html"><i>Using the CArgDescriptions class</i></a>, supports the
 generation of <i>usage</i> messages and the imposition of constraints on the values of the input
-arguments. 
+arguments.
 
 <p>
 <a name="CNcbiEnvironment">
@@ -106,8 +105,8 @@ information can then be appended to the message using the overloaded stream oper
 <i>Endm</i>, or implicitly, when the <i>CNcbiDiag</i> object exits scope. When the message is
 finally posted, a user-installed callback function may be invoked to handle the message. The default
 is to post errors to <i>stderr</i>, with the action determined by the severity level of the
-message. See also the <a href="diag.html"> next</a> section in this manual, as well as the discussion
-in the Reference Manual section on <a href="../libs/err_msg.html#ref_Message"> <i>message
+message. See also <a href="diag.html"> <i>Diagnostic Streams </i></a> in this manual, as well as the
+discussion in the Reference Manual section on <a href="../libs/err_msg.html#ref_Message"> <i>message
 posting</i></a>.
 <p>
 <a name="creating">
@@ -283,7 +282,7 @@ should <i>always</i> be <i>#included</i>. <p>
 </body>
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
-<a href="diag.html"> <i> next </i> </a>
+<a href="argdescr.html"> <i> next </i> </a>
 </html>
 
 
