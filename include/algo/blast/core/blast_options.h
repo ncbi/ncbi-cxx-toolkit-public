@@ -187,10 +187,48 @@ typedef struct LookupTableOptions {
                              determining whether exact match is long enough? */
 } LookupTableOptions;
 
+/** Options for dust algorithm, applies only to nucl.-nucl. comparisons.
+ *  value of less than zero means default value will be applied.
+ */
+typedef struct SDustOptions {
+    int level;
+    int window;
+    int linker;  /**< min distance to link segments. */
+} SDustOptions;
+
+
+/** Options for SEG algorithm, applies only to protein-protein comparisons.
+ *  value of less than zero means default value will be applied.
+ */
+typedef struct SSegOptions {
+    int window;     /**< initial window to trigger further work. */
+    double locut;
+    double hicut;
+} SSegOptions;
+
+/** Filtering options for organsim specific repeats filtering.   
+    Currently this consist of only the db name but could be expanded
+    in the future to include other types of filtering or other options.
+ */
+typedef struct SRepeatFilterOptions {
+    char* database;   /**< Nucleotide database for mini BLAST search. */
+} SRepeatFilterOptions;
+
+typedef struct SBlastFilterOptions {
+    Boolean mask_at_hash;         /**< mask query only for lookup table creation */
+    SDustOptions* dustOptions;    /**< low-complexity filtering for nucleotides. */
+    SSegOptions* segOptions;      /**< low-complexity filtering for proteins sequences 
+            (includes translated nucleotides). */
+    SRepeatFilterOptions* repeatFilterOptions;  /**< for organism specific repeat filtering. */
+} SBlastFilterOptions;
+
+
 /** Options required for setting up the query sequence */
 typedef struct QuerySetUpOptions {
-   char* filter_string; /**< Parseable string that determines the filtering
-                             options */
+   SBlastFilterOptions* filtering_options;  /**< structured options for all filtering 
+                             offered from algo/blast/core for BLAST. */
+   char* filter_string; /**< DEPRECATED, filtering options above. */
+
    Uint1 strand_option; /**< In blastn: which strand to search: 1 = forward;
                            2 = reverse; 3 = both */
    Int4 genetic_code;     /**< Genetic code to use for translation, 
@@ -410,6 +448,85 @@ typedef struct BlastDatabaseOptions {
     and free them after use.
 
 *********************************************************************************/
+
+/** Frees SDustOptions.
+ * @param dust_options object to free
+ * @return NULL pointer
+ */
+SDustOptions* DustOptionsFree(SDustOptions* dust_options);
+
+/** Allocates memory for SDustOptions, fills in defaults.
+ * @param dust_options options that are being returned [in|out]
+ * @return zero on sucess
+ */
+Int2 DustSetUpOptionsNew(SDustOptions* *dust_options);
+
+/** Frees SSegOptions.
+ * @param seg_options object to free [in]
+ * @return NULL pointer
+ */
+SSegOptions* SegOptionsFree(SSegOptions* seg_options);
+
+/** Allocates memory for SSegOptions, fills in defaults. [in|out]
+ * @param seg_options options that are being returned [in|out]
+ * @return zero on sucess
+ */
+Int2 SegSetUpOptionsNew(SSegOptions* *seg_options);
+
+/** Resets name of db for repeat filtering.
+ * @param repeat_options already allocated options constaining field to be reset [in|out]
+ * @param dbname name of the database(s) [in]
+ * @return zero on sucess
+ */
+Int2 RepeatOptionsResetDB(SRepeatFilterOptions* *repeat_options, const char* dbname);
+
+/** Frees SRepeatFilterOptions.
+ * @param repeat_options object to free [in]
+ * @return NULL pointer
+ */
+SRepeatFilterOptions* RepeatOptionsFree(SRepeatFilterOptions* repeat_options);
+
+/** Allocates memory for SRepeatFilterOptions, fills in defaults.
+ * @param repeat_options options that are being returned [in|out]
+ * @return zero on sucess
+ */
+Int2 RepeatSetUpOptionsNew(SRepeatFilterOptions* *repeat_options);
+
+/** Frees SBlastFilterOptions and all subservient structures.
+ * @param filter_options object to free
+ * @return NULL pointer
+ */
+SBlastFilterOptions* FilterOptionsFree(SBlastFilterOptions* filter_options);
+
+typedef enum EFilterOptions {
+    eSeg,            /**< low-complexity for proteins. */
+    eDust,           /**< low-complexity for nucleotides. */
+    eRepeats,         /**< Repeat filtering for nucleotides. */
+    eDustRepeats,    /**< Repeat and dust filtering for nucleotides. */
+    eEmpty       /**< no filtering at all. */
+} EFilterOptions;
+
+/** Allocates memory for SBlastFilterOptions and 
+ * @param filter_options options that are being returned [in|out]
+ * @param type specify either dust or seg (now) with EFilterOptions [in]
+ * @return zero on sucess
+ */
+Int2 FilterSetUpOptionsNew(SBlastFilterOptions* *filter_options, EFilterOptions type);
+
+/** Adds SRepeatFilterOptions to SBlastFilterOptions with database specified.
+ * SBlastFilterOptions should already be allocated with FilterSetUpOptionsNew
+ * @param filter_options options to add to [in]
+ * @param database database for SRepeatFilterOptions [in]
+ * @return zero on sucess
+ */
+Int2 FilterSetUpResetRepeatDB(SBlastFilterOptions* filter_options, const char* database);
+
+/** Queries whether masking should be done only for the lookup table or for the entire search.
+ * @param filter_options the object to be queried [in]
+ * @return TRUE or FALSE, FALSE if filter_options is NULL.
+ */
+Boolean FilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options);
+
 
 /** Deallocate memory for QuerySetUpOptions. 
  * @param options Structure to free [in]

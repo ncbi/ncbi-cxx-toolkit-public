@@ -37,6 +37,7 @@
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
+#include <algo/blast/core/blast_options.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,15 +147,13 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
    BlastQueryInfo* query_info, BlastMaskLoc* mask_loc, 
    BlastSeqLoc* *complement_mask);
 
-/** Runs filtering functions, according to the string "instructions", on the
+/** Runs filtering functions, according to the filtering options, returns
  * SeqLocPtr. Should combine all SeqLocs so they are non-redundant.
  * @param program_number Type of BLAST program [in]
  * @param sequence The sequence or part of the sequence to be filtered [in]
  * @param length Length of the (sub)sequence [in]
  * @param offset Offset into the full sequence [in]
- * @param instructions String of instructions to filtering functions. [in]
- * @param mask_at_hash If TRUE masking is done while making the lookup table
- *                     only. [out] 
+ * @param filter_options specifies how filtering is to be done [in]
  * @param seqloc_retval Resulting locations for filtered region. [out]
 */
 NCBI_XBLAST_EXPORT
@@ -163,8 +162,7 @@ BlastSetUp_Filter(EBlastProgramType program_number,
     Uint1* sequence, 
     Int4 length, 
     Int4 offset, 
-    const char* instructions, 
-    Boolean *mask_at_hash, 
+    const SBlastFilterOptions* filter_options,
     BlastSeqLoc* *seqloc_retval);
 
 
@@ -172,17 +170,15 @@ BlastSetUp_Filter(EBlastProgramType program_number,
  * @param query_blk sequence to be filtered [in]
  * @param query_info info on sequence to be filtered [in]
  * @param program_number one of blastn,blastp,blastx,etc. [in]
- * @param filter_string instructions for filtering [in]
+ * @param filter_options specifies how filtering is to be done [in]
  * @param filter_out resulting locations for filtered region. [out]
- * @param mask_at_hash If TRUE masking is done while making the lookup table
- *                     only. [out] 
  * @param blast_message message that needs to be sent back to user.
 */
 NCBI_XBLAST_EXPORT
 Int2
 BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
-    EBlastProgramType program_number, const char* filter_string, BlastMaskLoc** filter_out, Boolean* mask_at_hash,
-    Blast_Message* *blast_message);
+    EBlastProgramType program_number, const SBlastFilterOptions* filter_options, 
+    BlastMaskLoc** filter_out, Blast_Message* *blast_message);
 
 /** Masks the letters in buffer.
  * This is a low-level routine and takes a raw buffer which it assumes
@@ -211,20 +207,18 @@ Int2
 BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info,
     BlastMaskLoc *filter_maskloc, EBlastProgramType program_number);
 
-
-/** Parses out thre repeats filtering option from a filter string option. 
- * @param filter_string Full filtering string, e.g. "m L;R -d rodents.lib" [in]
- * @return Part of filtering string corresponding to repeats filtering.
+/** Produces SBlastFilterOptions from a string that has been traditionally supported
+ * in blast.
+ * @param program_number Type of BLAST program [in]
+ * @param instructions the string describing the filtering to be done [in]
+ * @param filtering_options the structure to be filled in [out]
+ * @param blast_message optional field for error messages [out]
+ * @return zero on success
  */
-char* Blast_GetRepeatsFilterOption(const char* filter_string);
-
-/** Extracts repeats database name from the repeat filtering options string.
- * @param repeat_options Repeat filtering string, e.g. "R -d rodents.lib" [in]
- * @param dbname Database name. Human repeats database "humrep" is returned if 
- *               database is not specified in the option. [out]
- */
-void 
-Blast_ParseRepeatOptions(const char* repeat_options, char** dbname);
+NCBI_XBLAST_EXPORT
+Int2
+BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* instructions, 
+    SBlastFilterOptions* *filtering_options, Blast_Message* *blast_message);
 
 #ifdef __cplusplus
 }
