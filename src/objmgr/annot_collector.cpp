@@ -1452,6 +1452,7 @@ void CAnnot_Collector::x_SearchAll(void)
 void CAnnot_Collector::x_SearchAll(const CSeq_entry_Info& entry_info)
 {
     {{
+        entry_info.UpdateAnnotIndex();
         CConstRef<CBioseq_Base_Info> base = entry_info.m_Contents;
         // Collect all annotations from the entry
         ITERATE( CBioseq_Base_Info::TAnnot, ait, base->GetAnnot() ) {
@@ -1797,6 +1798,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/01/18 15:00:10  grichenk
+* UpdateAnnotIndex before collecting annots.
+*
 * Revision 1.44  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *
