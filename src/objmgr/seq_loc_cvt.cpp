@@ -610,8 +610,9 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
         const CSeq_id& src_id = src.GetWhole();
         // Convert to the allowed master seq interval
         if ( GoodSrcId(src_id) ) {
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id,
-                CScope::eGetBioseq_All);
+            CBioseq_Handle bh =
+                m_Scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(src_id),
+                                         CScope::eGetBioseq_All);
             ConvertInterval(0, bh.GetBioseqLength()-1, eNa_strand_unknown);
         }
         break;
@@ -1520,8 +1521,9 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
         CSeq_interval whole_int;
         whole_int.SetId().Assign(src_id);
         whole_int.SetFrom(0);
-        CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id,
-            CScope::eGetBioseq_All);
+        CBioseq_Handle bh =
+            m_Scope->GetBioseqHandle(CSeq_id_Handle::GetHandle(src_id),
+                                     CScope::eGetBioseq_All);
         whole_int.SetTo(bh.GetBioseqLength());
         res = ConvertInterval(whole_int, dst, loc_index);
         break;
@@ -1584,6 +1586,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/12/22 15:56:34  vasilche
+* Updated to changes in CScope_Impl interface.
+*
 * Revision 1.47  2004/10/28 15:33:49  grichenk
 * Fixed fuzzes.
 *
