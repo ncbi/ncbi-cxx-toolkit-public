@@ -45,6 +45,7 @@ USING_NCBI_SCOPE;
 
 
 const int DP_NEGATIVE_INFINITY = kMin_Int;
+const unsigned int DP_POSITIVE_INFINITY = kMax_UInt;
 const unsigned int DP_UNFROZEN_BLOCK = kMax_UInt;
 
 BEGIN_SCOPE(struct_dp)
@@ -76,7 +77,8 @@ public:
 };
 
 // checks to make sure frozen block positions are legal (borrowing my own code from blockalign.c)
-int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo)
+int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, 
+    unsigned int queryFrom, unsigned int queryTo, bool checkGapSum)
 {
     static const unsigned int NONE = kMax_UInt;
     unsigned int
@@ -121,7 +123,8 @@ int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryF
 
             /* check for too much gap space since last frozen block,
                but if frozen blocks are adjacent, issue warning only */
-            if (blocks->freezeBlocks[block] > prevFrozenBlockEnd + 1 + unfrozenBlocksLength + maxGapsLength)
+            if (checkGapSum &&
+                blocks->freezeBlocks[block] > prevFrozenBlockEnd + 1 + unfrozenBlocksLength + maxGapsLength)
             {
                 if (prevFrozenBlock == block - 1) {
                     WARNING_MESSAGE("Frozen block " << (block+1) << " is further than allowed loop length"
@@ -214,6 +217,93 @@ int CalculateGlobalMatrix(Matrix& matrix,
 
                 // find highest sum of scores for allowed pairing of this block with any previous
                 sum = score + matrix[block - 1][prevResidue - queryFrom].score;
+                if (sum > matrix[block][residue - queryFrom].score) {
+                    matrix[block][residue - queryFrom].score = sum;
+                    matrix[block][residue - queryFrom].tracebackResidue = prevResidue;
+                }
+            }
+        }
+    }
+
+    return STRUCT_DP_OKAY;
+}
+
+// fill matrix values; return true on success. Matrix must have only default values when passed in.
+int CalculateGlobalMatrixGeneric(Matrix& matrix,
+    const DP_BlockInfo *blocks, DP_BlockScoreFunction BlockScore, DP_LoopPenaltyFunction LoopScore,
+    unsigned int queryFrom, unsigned int queryTo)
+{
+    unsigned int block, residue, prevResidue, lastBlock = blocks->nBlocks - 1;
+    int blockScore = 0, loopPenalty, sum;
+
+    // find possible block positions, based purely on block lengths
+    vector < unsigned int > firstPos(blocks->nBlocks), lastPos(blocks->nBlocks);
+    for (block=0; block<=lastBlock; block++) {
+        if (block == 0) {
+            firstPos[0] = queryFrom;
+            lastPos[lastBlock] = queryTo - blocks->blockSizes[lastBlock] + 1;
+        } else {
+            firstPos[block] = firstPos[block - 1] + blocks->blockSizes[block - 1];
+            lastPos[lastBlock - block] =
+                lastPos[lastBlock - block + 1] - blocks->blockSizes[lastBlock - block];
+        }
+    }
+
+    // further restrict the search if blocks are frozen
+    for (block=0; block<=lastBlock; block++) {
+        if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK) {
+            if (blocks->freezeBlocks[block] < firstPos[block] ||
+                blocks->freezeBlocks[block] > lastPos[block])
+            {
+                ERROR_MESSAGE("CalculateGlobalMatrix() - frozen block "
+                    << (block+1) << " does not leave room for unfrozen blocks");
+                return STRUCT_DP_PARAMETER_ERROR;
+            }
+            firstPos[block] = lastPos[block] = blocks->freezeBlocks[block];
+        }
+    }
+
+    // fill in first row with scores of first block at all possible positions
+    for (residue=firstPos[0]; residue<=lastPos[0]; residue++)
+        matrix[0][residue - queryFrom].score = BlockScore(0, residue);
+
+    // for each successive block, find the best allowed pairing of the block with the previous block
+    bool blockScoreCalculated;
+    for (block=1; block<=lastBlock; block++) {
+        for (residue=firstPos[block]; residue<=lastPos[block]; residue++) {
+            blockScoreCalculated = false;
+
+            for (prevResidue=firstPos[block - 1]; prevResidue<=lastPos[block - 1]; prevResidue++) {
+
+                // current block must come after the previous block
+                if (residue < prevResidue + blocks->blockSizes[block - 1])
+                    break;
+
+                // make sure previous block is at an allowed position
+                if (matrix[block - 1][prevResidue - queryFrom].score == DP_NEGATIVE_INFINITY)
+                    continue;
+
+                // get loop score at this position; assume loop score zero if both frozen
+                if (blocks->freezeBlocks[block] != DP_UNFROZEN_BLOCK &&
+                    blocks->freezeBlocks[block - 1] != DP_UNFROZEN_BLOCK)
+                {
+                    loopPenalty = 0;
+                } else {
+                    loopPenalty = LoopScore(block - 1, residue - prevResidue - blocks->blockSizes[block - 1]);
+                    if (loopPenalty == DP_POSITIVE_INFINITY)
+                        continue;
+                }
+
+                // get score at this position
+                if (!blockScoreCalculated) {
+                    blockScore = BlockScore(block, residue);
+                    if (blockScore == DP_NEGATIVE_INFINITY)
+                        break;
+                    blockScoreCalculated = true;
+                }
+
+                // find highest sum of scores + loop score for allowed pairing of this block with previous
+                sum = blockScore + matrix[block - 1][prevResidue - queryFrom].score - loopPenalty;
                 if (sum > matrix[block][residue - queryFrom].score) {
                     matrix[block][residue - queryFrom].score = sum;
                     matrix[block][residue - queryFrom].tracebackResidue = prevResidue;
@@ -506,7 +596,7 @@ int DP_GlobalBlockAlign(
         return STRUCT_DP_PARAMETER_ERROR;
     }
 
-    int status = ValidateFrozenBlockPositions(blocks, queryFrom, queryTo);
+    int status = ValidateFrozenBlockPositions(blocks, queryFrom, queryTo, true);
     if (status != STRUCT_DP_OKAY) {
         ERROR_MESSAGE("DP_GlobalBlockAlign() - ValidateFrozenBlockPositions() returned error");
         return status;
@@ -517,6 +607,43 @@ int DP_GlobalBlockAlign(
     status = CalculateGlobalMatrix(matrix, blocks, BlockScore, queryFrom, queryTo);
     if (status != STRUCT_DP_OKAY) {
         ERROR_MESSAGE("DP_GlobalBlockAlign() - CalculateGlobalMatrix() failed");
+        return status;
+    }
+
+    return TracebackGlobalAlignment(matrix, blocks, queryFrom, queryTo, alignment);
+}
+
+int DP_GlobalBlockAlignGeneric(
+    const DP_BlockInfo *blocks, 
+    DP_BlockScoreFunction BlockScore, DP_LoopPenaltyFunction LoopScore,
+    unsigned int queryFrom, unsigned int queryTo,
+    DP_AlignmentResult **alignment)
+{
+    if (!blocks || blocks->nBlocks < 1 || !blocks->blockSizes || queryTo < queryFrom ||
+            !BlockScore || !LoopScore) {
+        ERROR_MESSAGE("DP_GlobalBlockAlignGeneric() - invalid parameters");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+
+    unsigned int i, sumBlockLen = 0;
+    for (i=0; i<blocks->nBlocks; i++)
+        sumBlockLen += blocks->blockSizes[i];
+    if (sumBlockLen > queryTo - queryFrom + 1) {
+        ERROR_MESSAGE("DP_GlobalBlockAlignGeneric() - sum of block lengths longer than query region");
+        return STRUCT_DP_PARAMETER_ERROR;
+    }
+
+    int status = ValidateFrozenBlockPositions(blocks, queryFrom, queryTo, false);
+    if (status != STRUCT_DP_OKAY) {
+        ERROR_MESSAGE("DP_GlobalBlockAlignGeneric() - ValidateFrozenBlockPositions() returned error");
+        return status;
+    }
+
+    Matrix matrix(blocks->nBlocks, queryTo - queryFrom + 1);
+
+    status = CalculateGlobalMatrixGeneric(matrix, blocks, BlockScore, LoopScore, queryFrom, queryTo);
+    if (status != STRUCT_DP_OKAY) {
+        ERROR_MESSAGE("DP_GlobalBlockAlignGeneric() - CalculateGlobalMatrixGeneric() failed");
         return status;
     }
 
@@ -646,6 +773,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/12/08 16:21:35  thiessen
+* add generic loop scoring function interface
+*
 * Revision 1.14  2003/09/07 01:11:25  thiessen
 * fix small memory leak
 *

@@ -48,6 +48,8 @@ extern "C" {
 /* lowest possible score */
 extern const int DP_NEGATIVE_INFINITY;
 
+/* highest possible loop penalty */
+extern const unsigned int DP_POSITIVE_INFINITY;
 
 /*
  * Block alignment structures and functions
@@ -141,6 +143,20 @@ DP_MultipleLocalBlockAlign(
     unsigned int maxAlignments          /* max # alignments to return, 0 == unlimited (all) */
 );
 
+/* callback function to get the score (a positive or zero penalty) for a given loop number and length */
+typedef unsigned int (*DP_LoopPenaltyFunction)(unsigned int loopNumber, unsigned int loopLength);
+
+/* global alignment routine for generic loop scoring function */
+extern int                              /* returns an above STRUCT_DP_ error code */
+DP_GlobalBlockAlignGeneric(
+    const DP_BlockInfo *blocks,         /* blocks on subject; note that maxLoops are ignored! */
+    DP_BlockScoreFunction BlockScore,   /* scoring function for blocks on query */
+    DP_LoopPenaltyFunction LoopScore,   /* loop scoring function */
+    unsigned int queryFrom,             /* range of query to search */
+    unsigned int queryTo,
+    DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
+);
+
 #ifdef __cplusplus
 }
 #endif
@@ -150,6 +166,9 @@ DP_MultipleLocalBlockAlign(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/12/08 16:21:36  thiessen
+* add generic loop scoring function interface
+*
 * Revision 1.9  2003/09/07 00:06:19  thiessen
 * add multiple tracebacks for local alignments
 *
