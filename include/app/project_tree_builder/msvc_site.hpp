@@ -65,6 +65,7 @@ struct SLibInfo
         m_Libs.clear();
     }
 };
+bool IsLibOk(const SLibInfo& lib_info);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -105,10 +106,35 @@ public:
     // What we have to define:
     void   GetConfigureDefines    (list<string>* defines) const;
 
+    // Lib Choices related:
+    enum ELibChoice {
+        eUnknown,
+        eLib,
+        e3PartyLib
+    };
+    struct SLibChoice
+    {
+        SLibChoice(const CMsvcSite& site,
+                   const string&    lib,
+                   const string&    lib_3party);
+
+        ELibChoice m_Choice;
+        string     m_LibId;
+        string     m_3PartyLib;
+    };
+    bool IsLibWithChoice      (const string& lib_id) const;
+    bool Is3PartyLibWithChoice(const string& lib3party_id) const;
+
+    ELibChoice GetChoiceForLib      (const string& lib) const;
+    ELibChoice GetChoiceFor3PartyLib(const string& lib_3party) const;
+
+
 private:
     const CNcbiRegistry& m_Registry;
     
     set<string> m_NotProvidedThing;
+
+    list<SLibChoice> m_LibChoices;
 
     /// Prohibited to:
     CMsvcSite(void);
@@ -121,6 +147,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/04/19 15:37:43  gorelenk
+ * Added lib choice related members : enum ELibChoice, struct SLibChoice,
+ * functions IsLibWithChoice, Is3PartyLibWithChoice,
+ * GetChoiceForLib and GetChoiceFor3PartyLib to class CMsvcSite.
+ *
  * Revision 1.10  2004/03/22 14:45:38  gorelenk
  * Added member m_LibDefines to struct SLibInfo.
  *
