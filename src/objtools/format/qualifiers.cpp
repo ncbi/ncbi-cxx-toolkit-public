@@ -50,7 +50,6 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
@@ -401,17 +400,12 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const string& name,
 void CFlatPubSetQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags) const
 {
-    /* !!!
-    bool found = false;
-    ITERATE (vector<CRef<CFlatReference> >, it, ctx.GetReferences()) {
+    ITERATE (vector< CRef<CReferenceItem> >, it, ctx.GetReferences()) {
         if ((*it)->Matches(*m_Value)) {
             x_AddFQ(q, name, '[' + NStr::IntToString((*it)->GetSerial()) + ']',
                     CFlatQual::eUnquoted);
-            found = true;
         }
     }
-    // complain if not found?
-    */
 }
 
 
@@ -598,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/03/25 20:46:19  shomrat
+* implement CFlatPubSetQVal formatting
+*
 * Revision 1.8  2004/03/18 15:43:27  shomrat
 * Fixes to quals formatting
 *
