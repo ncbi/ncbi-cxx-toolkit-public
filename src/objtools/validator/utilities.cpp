@@ -859,6 +859,7 @@ const string CCountries::sm_Countries[] = {
   "Juan de Nova Island",
   "Kazakhstan",
   "Kenya",
+  "Kerguelen Archipelago",
   "Kingman Reef",
   "Kiribati",
   "Kuwait",
@@ -1104,6 +1105,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/07/22 16:35:35  shomrat
+* Added Kerguelen Archipelago to the countries list
+*
 * Revision 1.15  2003/06/16 16:17:11  shomrat
 * IsResidue moved to .hpp file as an inline function
 *
