@@ -159,6 +159,7 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
                 m_Subtype = eSubtype_prot;
                 break;
             }
+            break;
         case e_Rna:
             switch (GetRna().GetType()) {
             case CRNA_ref::eType_premsg: m_Subtype = eSubtype_preRNA;   break;
@@ -452,6 +453,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.7  2003/05/19 18:21:32  ucko
+* Add "break" statement accidentally dropped in last change.
+*
 * Revision 6.6  2003/05/19 17:35:56  ucko
 * GetSubtype: properly honor Prot-ref.processed, and ignore bogus
 * imports with corresponding names.
