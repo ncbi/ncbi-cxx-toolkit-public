@@ -373,6 +373,8 @@ int CNcbiApplication::AppMain
         if ( conf ) {
             string x_conf(conf);
             LoadConfig(*m_Config, &x_conf);
+        } else {
+            LoadConfig(*m_Config, NULL);
         }
     } catch (CException& e) {
         NCBI_RETHROW(e, CAppException, eLoadConfig,
@@ -842,6 +844,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2003/06/26 18:55:40  rsmith
+ * call LoadConfig even if conf is null, child classes might do something anyway. (gbench).
+ *
  * Revision 1.62  2003/06/25 15:59:00  rsmith
  * factor out config file DEBUG settings into HonorDebugSettings
  *
