@@ -393,6 +393,28 @@ public:
         return m_VolList[i].OIDStart();
     }
     
+    /// Find total volume length
+    /// 
+    /// Each volume in the set has an internally stored length, which
+    /// indicates the length (in nucleotides/residues/bases) of all of
+    /// the sequences in the volume.  This returns the total of these
+    /// lengths.
+    /// 
+    /// @param volname
+    ///   The name of the volume to search for.
+    /// @return
+    ///   A pointer to the volume matching the specified name, or NULL.
+    Uint8 GetVolumeSetLength() const
+    {
+        Uint8 vol_total = 0;
+        
+        for(Uint4 index = 0; index < m_VolList.size(); index++) {
+            vol_total += m_VolList[index].Vol()->GetVolumeLength();
+        }
+        
+        return vol_total;
+    }
+    
 private:
     /// Private constructor to prevent copy operation.
     CSeqDBVolSet(const CSeqDBVolSet &);

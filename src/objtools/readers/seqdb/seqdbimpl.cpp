@@ -408,7 +408,7 @@ Uint8 CSeqDBImpl::x_GetTotalLength(void) const
 
 Uint8 CSeqDBImpl::x_GetVolumeLength(void) const
 {
-    return m_Aliases.GetVolumeLength(m_VolSet);
+    return m_VolSet.GetVolumeSetLength();
 }
 
 string CSeqDBImpl::GetTitle(void) const
