@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/10/18 21:15:53  lavr
+ * strupr and strlwr added
+ *
  * Revision 6.3  2000/10/06 16:40:23  lavr
  * <string.h> included now in <connect/ncbi_ansi_ext.h>
  * conditional preprocessor statements removed
@@ -90,4 +93,30 @@ int strncasecmp(const char *s1, const char *s2, size_t n)
     } while (--n > 0 && c1 && c1 == c2);
 
     return c1 - c2;
+}
+
+
+char *strupr(char *t)
+{
+    unsigned char *s = t;
+
+    while (*s) {
+        if (islower(*s))
+            *s = toupper(*s);
+        s++;
+    }
+    return t;
+}
+
+
+char *strlwr(char *t)
+{
+    unsigned char *s = t;
+
+    while (*s) {
+        if (isupper(*s))
+            *s = tolower(*s);
+        s++;
+    }
+    return t;
 }

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/10/18 21:15:19  lavr
+ * strupr and strlwr added
+ *
  * Revision 6.6  2000/10/06 16:39:22  lavr
  * <string.h> included and #defines now take care of functions declared
  * through macros (needed on Linux to prevent macro redefinitions)
@@ -74,6 +77,7 @@ extern "C" {
  */
 char *strdup(const char* str);
 
+
 #ifdef strcasecmp
 #  undef strcasecmp
 #  undef strncasecmp
@@ -92,6 +96,26 @@ int strcasecmp(const char* s1, const char* s2);
  * "s1" is lexicographically less than, equal to or greater than "s2".
  */
 int strncasecmp(const char* s1, const char* s2, size_t n);
+
+
+#ifdef strupr
+#  undef strupr
+#  undef strlwr
+#endif
+#define strupr NCBI_strupr
+#define strlwr NCBI_strlwr
+
+/* Convert a string to uppercase. This function return pointer to
+ * the altered string. Because the conversion is made in place, the
+ * returned pointer is the same as the passed one.
+ */
+char *strupr(char *s);
+
+/* Convert a string to lowercase. This function return pointer to
+ * the altered string. Because the conversion is made in place, the
+ * returned pointer is the same as the passed one.
+ */
+char *strlwr(char *s);
 
 
 #ifdef __cplusplus
