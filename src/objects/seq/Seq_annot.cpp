@@ -38,6 +38,7 @@
 
 // generated includes
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/general/Date.hpp>
 
 // generated classes
 
@@ -54,9 +55,12 @@ CSeq_annot::~CSeq_annot(void)
 void CSeq_annot::AddName(const string &name)
 {
     //NB: this used list::remove_if(), which is not portable to Windows
-    NON_CONST_ITERATE (TDesc::Tdata, iter, SetDesc().Set()) {
-        while ( iter != SetDesc().Set().end()  &&  (*iter)->IsName() ) {
+    TDesc::Tdata::iterator iter = SetDesc().Set().begin();
+    for ( ;  iter != SetDesc().Set().end();  ) {
+        if ((*iter)->IsName() ) {
             iter = SetDesc().Set().erase(iter);
+        } else {
+            ++iter;
         }
     }
 
@@ -66,8 +70,27 @@ void CSeq_annot::AddName(const string &name)
 }
 
 
-void CSeq_annot::AddTitle(const string &title)
+void CSeq_annot::AddTitle(const string& title)
 {
+    LOG_POST(Warning
+        << "CSeq_annot::AddTitle(): AddTitle() is deprecated, "
+           "use SetTitle() instead");
+
+    SetTitle(title);
+}
+
+
+void CSeq_annot::SetTitle(const string &title)
+{
+    TDesc::Tdata::iterator iter = SetDesc().Set().begin();
+    for ( ;  iter != SetDesc().Set().end();  ) {
+        if ((*iter)->IsTitle() ) {
+            iter = SetDesc().Set().erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+
     CRef<CAnnotdesc> desc(new CAnnotdesc());
     desc->SetTitle(title);
     SetDesc().Set().push_back(desc);
@@ -82,6 +105,62 @@ void CSeq_annot::AddComment(const string &comment)
 }
 
 
+void CSeq_annot::SetCreateDate(const CTime& dt)
+{
+    CRef<CDate> date(new CDate(dt));
+    SetCreateDate(*date);
+}
+
+
+void CSeq_annot::SetCreateDate(CDate& date)
+{
+    TDesc::Tdata::iterator iter = SetDesc().Set().begin();
+    for ( ;  iter != SetDesc().Set().end();  ) {
+        if ((*iter)->IsCreate_date() ) {
+            iter = SetDesc().Set().erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+
+    CRef<CAnnotdesc> desc(new CAnnotdesc());
+    desc->SetCreate_date(date);
+    SetDesc().Set().push_back(desc);
+}
+
+
+void CSeq_annot::SetUpdateDate(const CTime& dt)
+{
+    CRef<CDate> date(new CDate(dt));
+    SetUpdateDate(*date);
+}
+
+
+void CSeq_annot::SetUpdateDate(CDate& date)
+{
+    TDesc::Tdata::iterator iter = SetDesc().Set().begin();
+    for ( ;  iter != SetDesc().Set().end();  ) {
+        if ((*iter)->IsUpdate_date() ) {
+            iter = SetDesc().Set().erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+
+    CRef<CAnnotdesc> desc(new CAnnotdesc());
+    desc->SetUpdate_date(date);
+    SetDesc().Set().push_back(desc);
+}
+
+
+void CSeq_annot::AddUserObject(CUser_object& obj)
+{
+    CRef<CAnnotdesc> desc(new CAnnotdesc());
+    desc->SetUser(obj);
+    SetDesc().Set().push_back(desc);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -91,6 +170,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/22 13:09:31  dicuccio
+* Added helper functions to add specific kinds of descriptions: dates, user
+* objects.  Added SetTitle() - should replace AddTitle() (LOG_POST warning in
+* place about deprecation)
+*
 * Revision 1.4  2003/05/07 17:44:12  dicuccio
 * oops - make sure not to dereference end() of list in AddName()
 *
