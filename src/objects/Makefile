@@ -1,7 +1,6 @@
 MODULES = docsum taxon1 mim entrez2 general biblio medline medlars pub pubmed mla seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime access featdef objprt seqcode id1 entrezgene
 
-#new_module = $(NCBI)/c++/scripts/new_module.sh
-new_module = ../../../scripts/new_module.sh
+new_module = $(builddir)/new_module.sh
 
 all all_files sources makefiles directories purge_sources purge_all_sources purge_all_files:
 	for i in $(MODULES); do \

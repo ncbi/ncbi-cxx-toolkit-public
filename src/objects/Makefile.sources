@@ -5,20 +5,6 @@
 include $(builddir)/Makefile.mk
 
 all all_r all_p:
-	$(SHELL) -c ' \
-	    cd "$(srcdir)" || exit 2; \
-	    if test -x "$(bindir)/datatool"; then \
-	        LD_LIBRARY_PATH="$(libdir):$$LD_LIBRARY_PATH"; \
-	        export LD_LIBRARY_PATH; \
-	        case "`uname`" in \
-	            IRIX*) \
-	                _RLD_ROOT=/usr; \
-	                export _RLD_ROOT; \
-	            ;; \
-	        esac; \
-	        NCBI_DATATOOL_PATH="$(bindir)"; \
-	        export NCBI_DATATOOL_PATH; \
-	    fi; \
-	    $(MAKE) all_files;'
+	cd "$(srcdir)" || exit 2;  $(MAKE) all_files
 
 clean clean_r clean_p purge purge_r purge_p:

@@ -1,26 +1,21 @@
-#! /bin/sh
+@script_shell@
 #
 # $Id$
-# Author:  Eugene Vasilchenko, NCBI 
+# Authors:  Eugene Vasilchenko, NCBI;  Aaron Ucko, NCBI
 
+top_srcdir="@top_srcdir@"
+build_root="@build_root@"
+bindir=$build_root/bin
+libdir=$build_root/lib
 
-# detect root directory
+# detect root directory of current tree (which may be incomplete!)
 p="`pwd`"
 mp=
 while true; do
     d="`basename \"$p\"`"
     p="`dirname \"$p\"`"
     if test -d "$p/src" && test -d "$p/include"; then
-        makemodule="$p/src/Makefile.module"
-        if test -f "$makemodule"; then
-            break
-        fi
-        makemodule="$NCBI/c++/src/Makefile.module"
-        if test -f "$makemodule"; then
-            break
-        fi
-        echo "Makefile.module not found"
-        exit 1
+        break
     fi
     if test -z "$mp"; then
         mp="$d"
@@ -33,6 +28,18 @@ while true; do
     fi
 done
 # here $p is root directory, $mp is module path so $p/src/$mp is current dir
+
+for d in $p $top_srcdir $NCBI/c++; do
+    if test -f $d/src/Makefile.module; then
+        makemodule=$d/src/Makefile.module
+        break
+    fi
+done
+
+if test -z "$makemodule"; then
+    echo "Makefile.module not found"
+    exit 1
+fi
 
 # define function which will get variable value from file
 # Synopsis: getvar <var_name> <file_name>
@@ -82,15 +89,29 @@ else
     exit 1
 fi
 
-# detect datatool program path
-if test -n "$NCBI_DATATOOL_PATH"; then
-    # NCBI_DATATOOL_PATH variable is set
-    if test -x "$NCBI_DATATOOL_PATH/datatool"; then
-        datatool="$NCBI_DATATOOL_PATH/datatool"
+# Try to find imports
+impdeps=
+space=
+for i in $imports; do
+    if test -f "$p/src/$i.asn"; then
+	  impdeps="${impdeps}${space}${p}/src/$i.asn"
+    elif test -f "$top_srcdir/src/$i.asn"; then
+	  impdeps="${impdeps}${space}${top_srcdir}/src/$i.asn"
     else
-        echo "$datatool not found"
-        exit 1
+	  echo "Import file $i not found."
+	  exit 1
     fi
+    space=' '
+done
+
+# detect datatool program path
+if test -x "$bindir/datatool"; then
+    datatool=$bindir/datatool
+    LD_LIBRARY_PATH=$libdir:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH
+    case "`uname`" in
+        IRIX*) _RLD_ROOT=/usr; export _RLD_ROOT ;;
+    esac    
 elif test -x "$NCBI/c++/Release/bin/datatool"; then
     datatool="$NCBI/c++/Release/bin/datatool"
 else
@@ -105,6 +126,13 @@ if test -z "$MAKE" ; then
     esac
 fi
 
+# figure out what search path to specify
+if test "$top_srcdir" = "$p"; then
+    search="$p/src"
+else
+    search="$p/src,$top_srcdir/src"
+fi
+
 # run command
-echo $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
-$MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "top_srcdir=$p" "DATATOOL=$datatool" "$@"
+echo $MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "IMPDEPS=$impdeps" "top_srcdir=$p" "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"
+$MAKE -f "$makemodule" "MODULE=$module" "MODULE_PATH=$mp" "MODULE_ASN=$asn" "MODULE_IMPORT=$imports" "IMPDEPS=$impdeps" "top_srcdir=$p" "DATATOOL=$datatool" "MODULE_SEARCH=$search" "$@"

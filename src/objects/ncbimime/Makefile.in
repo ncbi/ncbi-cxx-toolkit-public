@@ -1,3 +1,3 @@
-LIB_PROJ = ncbimime
+ASN_PROJ = ncbimime
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -44,7 +44,7 @@ fi
 #### Substitute for the new $(builddir)
 
 files="\
-Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh"
+Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh new_module.sh"
 
 for f in $files ; do
    fff="$script_dir/$f"

@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = seq
+ASN_PROJ = seq
 
 SUB_PROJ = test
 

@@ -204,6 +204,14 @@ tree) to build the specified libraries.
 <br>&nbsp;
 <br>&nbsp;
 <li>
+<a name="masn"></a><b><i>ASN_PROJ</i></b> (optional) is like
+<i>LIB_PROJ</i>, with one additional feature: Any projects listed
+there will be interpreted as the names of ASN.1 module specifications
+to be processed by <a href="tools/datatool/datatool.html">datatool</a>.
+<br>&nbsp;
+<br>&nbsp;
+
+<li>
 <a NAME="mapp"></a><b><i>APP_PROJ</i></b> (optional) - a list of names
 for application makefiles.</li>
 
@@ -392,9 +400,21 @@ Here are the keywords you can list in REQUIRES in a customized
  </tr>
 
  <tr>
+  <td><b>FreeTDS</b></td>
+  <td>FreeTDS libraries</td>
+  <td><i>--without-ftds, --with-ftds=DIR</i></td>
+ </tr>
+
+ <tr>
   <td><b>Fast-CGI</b></td>
   <td>Fast-CGI library</td>
   <td><i>--without-fastcgi</i></td>
+ </tr>
+
+ <tr>
+  <td><b>FLTK</b></td>
+  <td>the Fast Light ToolKit</td>
+  <td><i>--without-fltk, --with-fltk=DIR</i></td>
  </tr>
 
  <tr>
