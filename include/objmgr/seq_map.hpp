@@ -122,10 +122,6 @@ protected:
         CRef<CObject>        m_Object;
     };
 
-protected:
-    friend class CSegment;
-    friend class CSeqMap_SeqPoss;
-
     class SPosLessSegment
     {
     public:
@@ -282,6 +278,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/12/30 19:35:47  vasilche
+* Removed redundant friend declarations.
+*
 * Revision 1.28  2002/12/27 21:11:09  kuznets
 * Fixed Windows specific syntax problem in class CSeqMap::CSegment member
 * m_Iterator was an unnamed structure. For correct MSVC compilation must have
