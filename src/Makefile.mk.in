@@ -152,6 +152,9 @@ RPCSVC_LIBS  = @RPCSVC_LIBS@
 # (see in "configure.in" for the pre-set defaults)
 #
 
+# --with-local-lbsm:  --->  src/connect/Makefile.[x]connect.lib
+LOCAL_LBSM = @local_lbsm@
+
 # Sybase:  headers and libs
 SYBASE_INCLUDE = @SYBASE_INCLUDE@
 SYBASE_LIBS    = @SYBASE_LIBS@
