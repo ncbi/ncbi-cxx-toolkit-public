@@ -6,7 +6,7 @@
 ###########################################################################
 #
 #  Auxilary script -- to be called by "./Makefile.check"
-#`
+#
 #  Reporting mode and addresses' args:
 #     file:[full:]/abs_fname
 #     file:[full:]rel_fname
@@ -20,9 +20,21 @@
 
 
 ####  ERROR STREAM
+
 err_log="/tmp/check.sh.err.$$"
 exec 2>$err_log
 trap "rm -f $err_log" 1 2 15
+
+# The limit on the sending email size in Kbytes
+mail_limit=199
+
+
+####  INCLUDE COMMON.SH
+
+script_name=`basename $0`
+script_dir=`dirname $0`
+script_dir=`(cd "${script_dir}" ; pwd)`
+. ${script_dir}/../../scripts/common.sh
 
 
 ####  DEBUG
@@ -197,23 +209,30 @@ n_err=`grep '^ERR \[[0-9][0-9]*\] --  '  "$summary_res" | wc -l | sed 's/ //g'`
 n_abs=`grep '^ABS --  '                  "$summary_res" | wc -l | sed 's/ //g'`
 
 subject="${signature}  OK:$n_ok ERR:$n_err ABS:$n_abs"
+tmp_src="/tmp/check.sh.$$.src"
+tmp_dst="/tmp/check.sh.$$.dst"
 
 if test -n "$mail_list_full" ; then
-   for loc in $mail_list_full ; do
+    {
+      cat $summary_res
+      echo ; echo '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%' ; echo
+      cat $error_res
+    } > $tmp_src 
+    COMMON_LimitTextFileSize $tmp_src $tmp_dst $mail_limit
+    for loc in $mail_list_full ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
         echo "To: $mailto"
         echo "Subject: [C++ CHECK]  $subject"
         echo
         echo "$subject"; echo
-        cat $summary_res
-        echo ; echo '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%' ; echo
-        cat $error_res
+        cat $tmp_dst
       } | $sendmail $mailto  ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
 if test -n "$mail_list"  -a  -s "$error_res" ; then
+   COMMON_LimitTextFileSize $error_res $tmp_dst $mail_limit
    for loc in $mail_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
@@ -221,19 +240,20 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
         echo "Subject: [C++ ERRORS]  $subject"
         echo
         echo "$subject"; echo
-        cat $error_res
+        cat $tmp_dst
       } | $sendmail $mailto  ||  err_list="$err_list MAIL_ERR:\"$loc\""
    done
 fi
 
 # Post check statistics
 if test -n "$stat_list" ; then
+   COMMON_LimitTextFileSize $summary_res $tmp_dst $mail_limit
    for loc in $stat_list ; do
       mailto=`echo "$loc" | sed 's/,/ /g'`
       {
         echo "To: $mailto"
         echo "Subject: [`date '+%Y-%m-%d %H:%M'`]  $subject"
-        cat $summary_res
+        cat $tmp_dst
       } | $sendmail $mailto  ||  err_list="$err_list STAT_ERR:\"$loc\""
    done
 fi
@@ -248,12 +268,13 @@ if test -n "$watch_list" ; then
         echo "$err_list"
         echo
         echo "========================================"
-        cat $err_log
+        COMMON_LimitTextFileSize $err_log $tmp_dst $mail_limit
+        cat $tmp_dst
       } | $sendmail $watch_list
    fi
 fi
 
-
 # Cleanup
-rm -f $err_log
+rm -f $tmp_src $tmp_dst $err_log >/dev/null 2>&1
+
 exit 0
