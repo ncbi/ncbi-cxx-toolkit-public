@@ -32,6 +32,9 @@
  */
 
 #include <typeinfo>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/ncbireg.hpp>
 #include <util/ddump_viewer.hpp>
 
 #ifdef NCBI_OS_MSWIN
@@ -47,7 +50,7 @@ BEGIN_NCBI_SCOPE
 //---------------------------------------------------------------------------
 //  CDebugDumpViewer implementation
 
-bool CDebugDumpViewer::GetInput(string& input)
+bool CDebugDumpViewer::x_GetInput(string& input)
 {
     char cBuf[512];
     cout << "command>";
@@ -56,14 +59,14 @@ bool CDebugDumpViewer::GetInput(string& input)
     return (input != "go");
 }
 
-const void* CDebugDumpViewer::StrToPtr(const string& str)
+const void* CDebugDumpViewer::x_StrToPtr(const string& str)
 {
     void* addr = 0;
     addr = reinterpret_cast<void*>(NStr::StringToULong(str,16));
     return addr;
 }
 
-bool CDebugDumpViewer::CheckAddr( const void* addr, bool report)
+bool CDebugDumpViewer::x_CheckAddr( const void* addr, bool report)
 {
     bool res = false;
     try {
@@ -84,7 +87,52 @@ bool CDebugDumpViewer::CheckAddr( const void* addr, bool report)
     return res;
 }
 
-void CDebugDumpViewer::Info(
+bool CDebugDumpViewer::x_CheckLocation(const char* file, int line)
+{
+    CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
+    string section("DebugDumpBpt");
+    string value = cfg.Get( section, "enabled");
+    // the section is absent? - enable all
+    if (value.empty()) {
+        return true;
+    }
+    // prerequisite
+    bool enabled = ((value != "false") && (value != "0"));
+    // Now only listed locations will be treated accordingly
+
+    // smth about this particular file?
+    string name = CDirEntry(file).GetName();
+    value = cfg.Get( section, name);
+    if (value.empty() || (value=="none")) {
+        return !enabled; // none are "enabled"
+    } else if (value == "all") {
+        return enabled;  // all are "enabled"
+    }
+    // otherwise - look for this particular line
+    // location range must be in the form "10,20-30,150-200"
+    list<string> loc;
+    NStr::Split( value,",",loc);
+    list<string>::iterator it_loc;
+    for (it_loc = loc.begin(); it_loc != loc.end(); ++it_loc) {
+        list<string> range;
+        list<string>::iterator it_range;
+        NStr::Split( *it_loc,"-",range);
+        int from=0, to;
+        try {
+            it_range = range.begin();
+            from = NStr::StringToInt( *it_range);
+            to   = NStr::StringToInt( *(++it_range));
+        } catch (...) {
+            to = from;
+        }
+        if ((line >= from) && (line <= to)) {
+            return enabled;
+        }
+    }
+    return !enabled;
+}
+
+void CDebugDumpViewer::x_Info(
     const string& name, const CDebugDumpable* curr_object,
     const string& location)
 {
@@ -106,6 +154,10 @@ void CDebugDumpViewer::Bpt(
     const string& name, const CDebugDumpable* curr_object,
     const char* file, int line)
 {
+    if (!x_CheckLocation(file, line)) {
+        return;
+    }
+
     string location, input, cmnd0, cmnd1, cmnd2;
     list<string> cmnd;
     list<string>::iterator it_cmnd;
@@ -114,10 +166,10 @@ void CDebugDumpViewer::Bpt(
     bool need_info;
 
     location = string(file) + "(" + NStr::IntToString(line) + ")";
-    Info( name, curr_object, location);
+    x_Info( name, curr_object, location);
     curr_object->DebugDumpText(cout, location + ": " + name, 0);
 
-    while (GetInput(input)) {
+    while (x_GetInput(input)) {
         cmnd.clear();
         NStr::Split( input, " ", cmnd);
         narg = cmnd.size();
@@ -138,15 +190,15 @@ void CDebugDumpViewer::Bpt(
                 break;
             case 't': // typeid
                 if (narg > 1) {
-                    const void* addr = StrToPtr( cmnd1);
-                    CheckAddr( addr, true);
+                    const void* addr = x_StrToPtr( cmnd1);
+                    x_CheckAddr( addr, true);
                     need_info = false;
                 }
                 break;
             case 'd': // dump
                 if (narg>1) {
-                    const void* addr = StrToPtr( cmnd1);
-                    if (CheckAddr( addr, false))
+                    const void* addr = x_StrToPtr( cmnd1);
+                    if (x_CheckAddr( addr, false))
                     {
                         depth = (narg>2) ? NStr::StringToUInt( cmnd2) : 0;
                         const CDebugDumpable *p =
@@ -168,7 +220,7 @@ void CDebugDumpViewer::Bpt(
         }
         // default = help
         if (need_info) {
-            Info( name, curr_object, location);
+            x_Info( name, curr_object, location);
         }
     }
 }
@@ -178,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/06/04 16:34:58  gouriano
+ * added possibility to enable/disable debug dump breakpoints from registry
+ *
  * Revision 1.2  2002/06/03 20:37:52  gouriano
  * added include <typeinfo>
  *

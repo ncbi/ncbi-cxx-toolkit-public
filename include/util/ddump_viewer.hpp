@@ -57,11 +57,12 @@ public:
     void Bpt(const string& name, const CDebugDumpable* curr_object,
              const char* file, int line);
 private:
-    void        Info(const string& name, const CDebugDumpable* curr_object,
+    void        x_Info(const string& name, const CDebugDumpable* curr_object,
                      const string& location);
-    bool        GetInput(string& input);
-    const void* StrToPtr(const string& str);
-    bool        CheckAddr( const void* addr, bool report);
+    bool        x_GetInput(string& input);
+    const void* x_StrToPtr(const string& str);
+    bool        x_CheckAddr( const void* addr, bool report);
+    bool        x_CheckLocation(const char* file, int line);
 };
 
 
@@ -70,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/06/04 16:35:27  gouriano
+ * added possibility to enable/disable debug dump breakpoints from registry
+ *
  * Revision 1.1  2002/06/03 20:26:10  gouriano
  * initial revision
  *
