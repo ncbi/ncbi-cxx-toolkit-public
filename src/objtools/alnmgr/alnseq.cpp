@@ -41,6 +41,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 
+#include <algorithm>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -245,6 +247,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/01 21:30:57  ucko
+* Remember to include <algorithm> for stable_sort
+*
 * Revision 1.1  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *
