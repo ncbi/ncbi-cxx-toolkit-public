@@ -169,7 +169,8 @@ bool CHandleRange::x_IncludesPlus(const ENa_strand& strand) const
 inline
 bool CHandleRange::x_IncludesMinus(const ENa_strand& strand) const
 {
-    return strand == eNa_strand_minus
+    return strand == eNa_strand_unknown
+        || strand == eNa_strand_minus
         ||  strand == eNa_strand_both
         ||  strand == eNa_strand_both_rev;
 }
@@ -208,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2004/08/26 18:25:43  grichenk
+ * Fixed strands
+ *
  * Revision 1.21  2004/08/25 21:55:25  grichenk
  * Fixed ranges splitting by strand.
  *
