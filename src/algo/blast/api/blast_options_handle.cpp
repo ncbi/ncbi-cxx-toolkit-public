@@ -125,7 +125,11 @@ CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CB
     case eRPSTblastn:
         retval = new CRPSTBlastnOptionsHandle(locality);
         break;
-
+        
+    case ePSIblast:
+        retval = new CPSIBlastOptionsHandle(locality);
+        break;
+        
     default:
         NCBI_THROW(CBlastException, eBadParameter,
         "CBlastOptionFactory cannot construct options handle: invalid program");
@@ -144,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/17 19:42:23  bealer
+ * - Add PSIBlast to factory.
+ *
  * Revision 1.5  2004/04/16 14:26:39  papadopo
  * add handle construction for translated RPS blast
  *
