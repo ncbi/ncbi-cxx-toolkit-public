@@ -261,6 +261,15 @@
 #endif
 
 /*
+ * Export specifier for library dbapi_driver
+ */
+#ifdef NCBI_DBAPIDRIVER_EXPORTS
+#  define NCBI_DBAPIDRIVER_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_DBAPIDRIVER_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library dbapi_driver_ctlib
  */
 #ifdef NCBI_DBAPIDRIVER_CTLIB_EXPORTS
@@ -270,21 +279,21 @@
 #endif
 
 /*
+ * Export specifier for library dbapi_driver_blobstore
+ */
+#ifdef NCBI_DBAPIDRIVER_BLOBSTORE_EXPORTS
+#  define NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library dbapi_driver_dblib
  */
 #ifdef NCBI_DBAPIDRIVER_DBLIB_EXPORTS
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT __declspec(dllexport)
 #else
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT __declspec(dllimport)
-#endif
-
-/*
- * Export specifier for library dbapi_driver
- */
-#ifdef NCBI_DBAPIDRIVER_EXPORTS
-#  define NCBI_DBAPIDRIVER_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_DBAPIDRIVER_EXPORT __declspec(dllimport)
 #endif
 
 /*
@@ -1006,9 +1015,10 @@
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
-#  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
-#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_EXPORT
+#  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
+#  define NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT
+#  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
@@ -1113,6 +1123,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.85  2004/10/20 16:10:52  ivanov
+ * + NCBI_DBAPIDRIVER_BLOBSTORE_EXPORT export specifier
+ *
  * Revision 1.84  2004/10/06 19:50:39  jcherry
  * Added NCBI_XALGOSEQQA_EXPORT
  *
