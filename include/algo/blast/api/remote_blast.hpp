@@ -41,16 +41,7 @@
 #include <algo/blast/api/disc_nucl_options.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
-#include <objects/blast/Blast4_queue_search_reply.hpp>
-#include <objects/blast/Blast4_queue_search_reques.hpp>
-#include <objects/blast/Blast4_reply.hpp>
-#include <objects/blast/Blast4_reply_body.hpp>
-#include <objects/blast/Blast4_request_body.hpp>
-#include <objects/blast/Blas_get_searc_resul_reply.hpp>
-#include <objects/blast/Blast4_subject.hpp>
-#include <objects/blast/Blast4_phi_alignments.hpp>
-#include <objects/blast/Blast4_mask.hpp>
-#include <objects/blast/Blast4_ka_block.hpp>
+#include <objects/blast/blast__.hpp>
 #include <objects/scoremat/Score_matrix_parameters.hpp>
 
 /** @addtogroup AlgoBlast
@@ -150,18 +141,7 @@ public:
         SetDatabase(x.c_str());
     }
     
-    void SetDatabase(const char * x)
-    {
-        if (!x) {
-            NCBI_THROW(CBlastException, eBadParameter,
-                       "NULL specified for database.");
-        }
-        
-        CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
-        subject_p->SetDatabase(x);
-        m_QSR->SetSubject(*subject_p);
-        m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
-    }
+    void SetDatabase(const char * x);
     
     /******************* Entrez Query *******************/
     void SetEntrezQuery(const char * x)
@@ -174,15 +154,9 @@ public:
     }
     
     /******************* Queries *******************/
-    void SetQueries(CRef<objects::CBioseq_set> bioseqs)
-    {
-        if (bioseqs.Empty()) {
-            NCBI_THROW(CBlastException, eBadParameter,
-                       "Empty reference for query.");
-        }
-        m_QSR->SetQueries(*bioseqs);
-        m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
-    }
+    void SetQueries(CRef<objects::CBioseq_set>                bioseqs);
+    void SetQueries(list< CRef<objects::CSeq_loc> >         & seqlocs);
+    void SetQueries(CRef<objects::CScore_matrix_parameters>   pssm);
     
     /******************* Queries *******************/
     void SetMatrixTable(CRef<objects::CScore_matrix_parameters> matrix)
@@ -227,10 +201,15 @@ public:
     // This returns any errors encountered as a string (the empty
     // string implies that everything is running smoothly).
     
-    string GetErrors(void)
-    {
-        return m_Err;
-    }
+    string GetErrors(void);
+    
+    // This returns any warnings encountered as a string.  These do
+    // not necessarily indicate an error or potential error; some
+    // warnings are always returned from certain types of searches.
+    // (This is more of a debugging feature rather than something to
+    // return to the end-user.)
+    
+    string GetWarnings(void);
     
     /******************* Getting Results *******************/
     
@@ -249,6 +228,7 @@ public:
     CRef<objects::CBlast4_mask>              GetMask(void);
     list< CRef<objects::CBlast4_ka_block > > GetKABlocks(void);
     list< string >                           GetSearchStats(void);
+    CRef<objects::CScore_matrix_parameters>  GetPSSM(void);
     
     // Verbose mode
     enum EDebugMode {
@@ -263,6 +243,8 @@ public:
     }
     
 private:
+    typedef objects::CBlast4_get_search_results_reply TGSRR;
+    
     // State helpers (for readability)
     enum EState {
         eStart = 0,
@@ -310,6 +292,8 @@ private:
     
     int x_GetState(void);
     
+    TGSRR * x_GetGSRR(void);
+    
     // Submission/Result progression
     CRef<objects::CBlast4_reply>
     x_SendRequest(CRef<objects::CBlast4_request_body> body);
@@ -320,6 +304,7 @@ private:
     void x_CheckConfig(void);
     void x_SubmitSearch(void);
     void x_CheckResults(void);
+    void x_SearchErrors(CRef<objects::CBlast4_reply> reply);
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
     
     
@@ -329,7 +314,8 @@ private:
     CRef<objects::CBlast4_queue_search_request> m_QSR;
     CRef<objects::CBlast4_reply>                m_Reply;
     
-    string m_Err;
+    vector<string> m_Errs;
+    vector<string> m_Warn;
     string m_RID;
     
     int         m_ErrIgn;
@@ -348,6 +334,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/05/05 15:28:19  bealer
+ * - Add GetWarnings() mechanism.
+ * - Add PSSM queries (for PSI-Blast).
+ * - Add seq-loc-list queries (allows multiple identifier base queries, or
+ *   one query based on identifier plus interval.
+ * - Add GetPSSM() to retrieve results of PSI-Blast run.
+ *
  * Revision 1.4  2004/04/12 16:36:37  bealer
  * - More parameter checking.
  *
