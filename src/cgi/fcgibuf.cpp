@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/10/15 18:26:32  ucko
+* Implement sync; fix a typo
+*
 * Revision 1.8  1999/10/26 18:11:57  vakatov
 * CCgiObuffer::overflow() -- get rid of unused var "bumpCount" (warning)
 *
@@ -102,6 +105,7 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
     while ( count > 0 ) {
         streamsize chunk = min(count, streamsize(out->stop - out->wrNext));
         if ( chunk == 0 ) {
+            _TRACE("flushing FCGX_Stream");
             // output stream overflow - we need flush
             if ( out->isClosed || out->isReader ) {
                 return CT_EOF;
@@ -123,10 +127,11 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
     setp( m_buf, m_buf + m_bufsize );
    
     if ( c == CT_EOF ) {
-        return CT_EOF;
+        return 0;
     }
 
     if ( out->wrNext == out->stop ) {
+        _TRACE("flushing FCGX_Stream");
         out->emptyBuffProc(out, false);
         if ( out->wrNext == out->stop ) {
             if ( !out->isClosed ) {
@@ -140,11 +145,24 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
     return CT_NOT_EOF(*out->wrNext++ = c);
 }
 
+int CCgiObuffer::sync(void)
+{
+    _TRACE("CCgiObuffer::sync");
+    CT_INT_TYPE result1 = CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF);
+    int         result2 = FCGX_FFlush(m_out);
+    if (result1 || result2) {
+        return CT_EOF;
+    } else {
+        return 0;
+    }
+}
+
+
 CCgiIbuffer::CCgiIbuffer(FCGX_Stream* in)
     : m_in(in)
 {
     if ( !in || !in->isReader ) {
-        THROW1_TRACE(runtime_error, "CCgiObuffer: out is not reader");
+        THROW1_TRACE(runtime_error, "CCgiObuffer: in is not reader");
     }
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/10/15 18:26:32  ucko
+* Implement sync; fix a typo
+*
 * Revision 1.4  1999/10/21 14:50:49  sandomir
 * optimization for overflow() (internal buffer added)
 *
@@ -66,6 +69,7 @@ public:
     ~CCgiObuffer(void);
 
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
+    virtual int         sync(void);
 
 private:
 
