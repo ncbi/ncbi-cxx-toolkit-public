@@ -34,6 +34,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/01/20 17:54:55  vakatov
+* CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
+* SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
+* to write the diagnostics to the standard output.
+*
 * Revision 1.19  1999/12/17 04:06:20  vakatov
 * Added CCgiApplication::RunFastCGI()
 *
@@ -111,9 +116,10 @@ class CCgiApplication;
 
 class CCgiApplication : public CNcbiApplication
 {
+    friend class CCgiContext;
     typedef CNcbiApplication CParent;
-public:
 
+public:
     static CCgiApplication* Instance(void); // Singleton method    
     
     // these methods will throw exception if no server context set
@@ -136,18 +142,27 @@ public:
     bool RunFastCGI(unsigned def_iter=3);
 
 protected:
-    // factory method for Context object construction
-    virtual CCgiContext* CreateContext(CNcbiEnvironment* env = 0,
-                                       CNcbiIstream* in = 0, 
-                                       CNcbiOstream* out = 0,
-                                       int argc = 0, char** argv = 0);
+    // Overrides the one from CNcbiApplication
+    // Default:  eDS_User
+    /////
+    // Note for the future development -- to customize it to:
+    //   - at first, store diag. in memory (eDS_ToMemory)
+    //   - after configuration is complete, dump the stored diag. to
+    //     a specified stream, and then continue to write to this stream
+    //   - maybe, try to make a really smart guess of whether it's running
+    //     in a debug mode, and in this case, write to std.err. from the very
+    //     start of the application execution.
+    virtual bool SetupDiag_AppSpecific(void);
+
+    // Factory method for Context object construction
+    virtual CCgiContext* CreateContext(CNcbiArguments*   args = 0,
+                                       CNcbiEnvironment* env  = 0,
+                                       CNcbiIstream*     inp  = 0, 
+                                       CNcbiOstream*     out  = 0);
 
 private:
     CNcbiResource& x_GetResource(void) const;
-
     auto_ptr<CNcbiResource> m_resource;
-
-    friend class CCgiContext;
 };
 
 

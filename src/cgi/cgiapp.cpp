@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/01/20 17:54:58  vakatov
+* CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
+* SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
+* to write the diagnostics to the standard output.
+*
 * Revision 1.21  1999/12/17 17:24:52  vakatov
 * Get rid of some extra stuff
 *
@@ -121,11 +126,13 @@ CCgiApplication* CCgiApplication::Instance(void)
 
 int CCgiApplication::Run(void)
 {
+    // try to run as a Fast-CGI loop
     if ( RunFastCGI() )
         return 0;
 
+    // run as a plain CGI application
     _TRACE("CCgiApplication::Run: calling ProcessRequest");
-    auto_ptr<CCgiContext> ctx(CreateContext(0, 0, 0, m_Argc, m_Argv));
+    auto_ptr<CCgiContext> ctx( CreateContext() );
     int result = ProcessRequest(*ctx);
     _TRACE("CCgiApplication::Run: flushing");
     ctx->GetResponse().Flush();
@@ -164,12 +171,19 @@ CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext&)
     return 0;
 }
  
-CCgiContext* CCgiApplication::CreateContext( CNcbiEnvironment* env,
-                                             CNcbiIstream* in, 
-                                             CNcbiOstream* out,
-                                             int argc, char** argv ) 
+bool CCgiApplication::SetupDiag_AppSpecific(void)
 {
-    return new CCgiContext( *this, env, in, out, argc, argv );
+    return SetupDiag(eDS_User);
 }
+
+CCgiContext* CCgiApplication::CreateContext
+(CNcbiArguments*   args,
+ CNcbiEnvironment* env,
+ CNcbiIstream*     inp, 
+ CNcbiOstream*     out)
+{
+    return new CCgiContext(*this, args, env, inp, out);
+}
+
 
 END_NCBI_SCOPE
