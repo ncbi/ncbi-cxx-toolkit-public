@@ -25,12 +25,12 @@
 #endif
 
 #ifdef NCBI_FTDS
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #endif
 #endif
 
-#ifdef WIN32                                           
+#ifdef _WIN32                                           
 #define IOCTL(a,b,c) ioctlsocket(a, b, c)
 #else
 #define IOCTL(a,b,c) ioctl(a, b, c)
@@ -238,7 +238,7 @@ TDSSOCKET *tds_connect(TDSLOGIN *login, TDSCONTEXT *context, void *parent)
 					inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
 
 #ifdef NCBI_FTDS
-#ifdef WIN32
+#ifdef _WIN32
         {
             WSADATA wsaData; 
             if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)

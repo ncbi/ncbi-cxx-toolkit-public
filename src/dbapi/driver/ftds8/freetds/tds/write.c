@@ -25,7 +25,7 @@
 #include <dmalloc.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define WRITE(a,b,c) send((a),(b),(c), 0L)
 #else 
 #define WRITE(a,b,c) write(a,b,c)

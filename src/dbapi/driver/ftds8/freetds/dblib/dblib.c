@@ -25,7 +25,7 @@
 #include "dblib.h"
 #include "tdsconvert.h"
 #ifdef NCBI_FTDS
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #endif

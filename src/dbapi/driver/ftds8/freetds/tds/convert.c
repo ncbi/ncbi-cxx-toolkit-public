@@ -31,7 +31,7 @@
 
 #ifndef HAVE_ATOLL
 #ifdef NCBI_FTDS
-#ifndef WIN32
+#ifndef _WIN32
 static long int
 atoll(const char *nptr)
 {
@@ -42,7 +42,7 @@ atoll(const char *nptr)
 #endif
 
 #ifdef NCBI_FTDS
-#ifdef WIN32
+#ifdef _WIN32
 char *
 strtok_r(char *str, const char *sep, char **lasts)
 {

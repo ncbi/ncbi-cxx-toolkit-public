@@ -18,7 +18,7 @@
  */
 
 #include <tds_config.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>

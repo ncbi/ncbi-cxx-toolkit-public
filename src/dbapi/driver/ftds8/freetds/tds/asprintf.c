@@ -15,14 +15,14 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #ifndef NCBI_FTDS
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #endif
 #include <string.h>
 #ifndef _REENTRANT
 #ifndef NCBI_FTDS
-#ifndef WIN32
+#ifndef _WIN32
 #include <sys/mman.h>
 #endif
 #endif
@@ -88,7 +88,7 @@ vasprintf(char **ret, const char *fmt, va_list ap)
 
 #ifdef _REENTRANT
 
-# ifdef WIN32
+# ifdef _WIN32
 #  error Win32 do not have /dev/null, should use vsnprintf version
 # endif
 

@@ -34,7 +34,7 @@
 #include <dbapi/driver/ftds/interfaces.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 #ifdef NCBI_FTDS
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #endif
 #endif
@@ -475,6 +475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/12/14 20:46:24  ssikorsk
+ * Changed WIN32 to _WIN32 in ftds8
+ *
  * Revision 1.27  2004/12/10 15:26:11  ssikorsk
  * FreeTDS is ported on windows
  *

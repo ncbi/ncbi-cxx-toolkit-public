@@ -31,12 +31,12 @@
 #ifdef __FreeBSD__
 #include <sys/time.h>
 #endif
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <stdio.h>
 #define PATH_MAX 255
 #endif
-#ifndef WIN32
+#ifndef _WIN32
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -411,7 +411,7 @@ void tdsdump_log(int debug_lvl, const char *fmt, ...)
 /* Jeff's hack*** NEW CODE *** */
 int tds_msleep(long usec)         /* returns 0 if ok, else -1 */
      {
-#ifdef WIN32
+#ifdef _WIN32
      Sleep(0);
      return 0;
 #else

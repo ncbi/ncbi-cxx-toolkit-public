@@ -24,7 +24,7 @@
 #include "sybdb.h"
 #include "dblib.h"
 #ifdef NCBI_FTDS
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #endif

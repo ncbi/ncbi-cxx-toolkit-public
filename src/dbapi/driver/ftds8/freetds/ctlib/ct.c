@@ -20,7 +20,7 @@
 #include <tds_config.h>
 #include <stdlib.h>
 #ifdef NCBI_FTDS
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 #endif

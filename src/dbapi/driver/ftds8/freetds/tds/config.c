@@ -31,12 +31,12 @@
 #ifdef __FreeBSD__
 #include <sys/time.h>
 #endif
-#ifdef WIN32
+#ifdef _WIN32
 #include <windows.h>
 #include <stdio.h>
 #define PATH_MAX 255
 #endif
-#ifndef WIN32
+#ifndef _WIN32
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
