@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/10/25 20:19:51  vasilche
+* Fixed strings representation in text ASN.1 files.
+*
 * Revision 1.27  1999/10/04 16:22:17  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -498,7 +501,8 @@ string CObjectIStreamAsn::ReadString(void)
             break;
         default:
             if ( c < ' ' && c >= 0 ) {
-                ThrowError(eFormatError, "bad char in string");
+                ThrowError(eFormatError,
+                           "bad char in string: " + NStr::IntToString(c));
             }
             else {
                 s += c;

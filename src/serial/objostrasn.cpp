@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/10/25 20:19:51  vasilche
+* Fixed strings representation in text ASN.1 files.
+*
 * Revision 1.27  1999/10/04 16:22:18  vasilche
 * Fixed bug with old ASN.1 structures.
 *
@@ -165,35 +168,18 @@ bool CObjectOStreamAsn::WriteEnumName(const string& name)
     return true;
 }
 
+inline
 void CObjectOStreamAsn::WriteEscapedChar(char c)
 {
-    switch ( c ) {
-    case '\'':
-    case '\"':
-    case '\\':
-        m_Output << '\\' << c;
-        break;
-    case '\t':
-        m_Output << "\\t";
-        break;
-    case '\r':
-        m_Output << "\\r";
-        break;
-    case '\n':
-        m_Output << "\\n";
-        break;
-    default:
-        if ( c >= ' ' && c < 0x7f ) {
-            m_Output << c;
-        }
-        else {
-            // octal escape sequence
-            m_Output << '\\'
-                     << ('0' + ((c >> 6) & 3))
-                     << ('0' + ((c >> 3) & 7))
-                     << ('0' + (c & 7));
-        }
-        break;
+    if ( c == '"' ) {
+        m_Output << "\"\"";
+    }
+    else if ( c >= 0 && c < ' ' ) {
+        THROW1_TRACE(runtime_error,
+                     "bad char in string: " + NStr::IntToString(c));
+    }
+    else {
+        m_Output << c;
     }
 }
 
