@@ -267,7 +267,7 @@ extern void LOG_WriteInternal
     if ( lg ) {
         LOG_LOCK_READ;
         LOG_VALID;
-        assert((raw_data == 0) == (raw_size == 0));
+        assert(!raw_size || raw_data);
 
         if ( lg->handler ) {
             SLOG_Handler call_data;
@@ -461,6 +461,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/05/05 20:17:17  lavr
+ * LOG_WriteInternal() to require data ptr only if data size is not zero
+ *
  * Revision 6.11  2003/02/20 17:52:12  lavr
  * Status verbal names changed not to have caps in the middle
  *
