@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2000/12/29 17:40:30  lavr
+ * Pretty printed; Double 0 return added to SERV_GetNextInfo
+ *
  * Revision 6.9  2000/12/06 22:17:02  lavr
  * Binary host addresses are now explicitly stated to be in network byte
  * order, whereas binary port addresses now use native (host) representation
@@ -102,7 +105,7 @@ SERV_ITER SERV_OpenEx
  TSERV_Type          type,          /* mask of type of servers requested     */
  unsigned int        preferred_host,/* preferred host to use service on, nbo */
  const SConnNetInfo* info,          /* connection information                */
- const SSERV_Info**  skip,          /* array of servers NOT to select        */
+ const SSERV_Info    *const skip[], /* array of servers NOT to select        */
  size_t              n_skip         /* number of servers in preceding array  */
  );
 
@@ -110,6 +113,9 @@ SERV_ITER SERV_OpenEx
 /* Get the next server meta-address.
  * Note that the application program should NOT destroy returned server info:
  * it will be freed automatically upon iterator destruction.
+ * Return 0 if the requested service cannot be found without additional
+ * data exchange, further call initiates data exchange and may be
+ * successful. Double return of 0 signals an error.
  */
 const SSERV_Info* SERV_GetNextInfo
 (SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
