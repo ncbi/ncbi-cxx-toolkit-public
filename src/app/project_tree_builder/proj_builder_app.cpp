@@ -144,11 +144,20 @@ void CProjBulderApp::GetMetaDataFiles(list<string> * pFiles) const
 }
 
 
-void CProjBulderApp::GetBuildConfigs(list<string> * pConfigs)
+void CProjBulderApp::GetBuildConfigs(list<string> * pConfigs) const
 {
     pConfigs->clear();
-    string config_str = GetConfig().GetString("Common", "Configurations", "");
+    string config_str = GetConfig().GetString("msvc7", "Configurations", "");
     NStr::Split(config_str, " \t,", *pConfigs);
+}
+
+
+void CProjBulderApp::GetAdditionalPossibleIncludeDirs(list<string> * 
+                                                            pIncludeDirs) const
+{
+    pIncludeDirs->clear();
+    string include_str = GetConfig().GetString("Common", "AdditionalIncludeDirs", "");
+    NStr::Split(include_str, " \t,", *pIncludeDirs);
 }
 
 

@@ -58,9 +58,10 @@ private:
     void DumpFiles(const TFiles& files, const string& filename) const;
 
 public:
-    void GetMetaDataFiles(list<string> * pFiles) const;
 
-    void GetBuildConfigs(list<string> * pConfigs);
+    void GetMetaDataFiles (list<string> * pFiles)   const;
+    void GetBuildConfigs  (list<string> * pConfigs) const;
+    void GetAdditionalPossibleIncludeDirs(list<string> * pIncludeDirs) const;
 };
 
 

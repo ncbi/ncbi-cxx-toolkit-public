@@ -360,9 +360,14 @@ bool CMsvcProjectGenerator::Generate(const CProjItem& prj)
 
         list<string> rel_pathes;
         list<string> abs_dirs(project_context.IncludeDirsAbs());
+        list<string> additional_inlude_suffxs;
+        GetApp().GetAdditionalPossibleIncludeDirs(&additional_inlude_suffxs);
         ITERATE(list<string>, p, project_context.IncludeDirsAbs()) {
 
-            abs_dirs.push_back(CDirEntry::ConcatPath(*p, "impl"));
+            ITERATE(list<string>, n, additional_inlude_suffxs) {
+
+                abs_dirs.push_back(CDirEntry::ConcatPath(*p, *n));
+            }
         }
         copy(project_context.SourcesDirsAbs().begin(), 
              project_context.SourcesDirsAbs().end(), 
