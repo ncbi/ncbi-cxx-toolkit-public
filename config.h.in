@@ -56,6 +56,15 @@
 /* sysmp() */
 #undef HAVE_SYSMP
 
+/* popen() */
+#undef HAVE_POPEN
+
+/* sigaction() */
+#undef HAVE_SIGACTION
+
+/* strcasecmp() */
+#undef HAVE_STRCASECMP
+
 /* Does not give enough support to the in-class template functions */
 #undef NO_INCLASS_TMPL
 

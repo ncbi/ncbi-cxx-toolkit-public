@@ -33,6 +33,15 @@
 /* sysmp() */
 #undef HAVE_SYSMP
 
+/* popen() */
+#undef HAVE_POPEN
+
+/* sigaction() */
+#undef HAVE_SIGACTION
+
+/* strcasecmp() */
+#undef HAVE_STRCASECMP
+
 /* Microsoft C++ specific */
 #undef SIZEOF___INT64
 
