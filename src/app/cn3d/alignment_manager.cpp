@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/03/10 22:23:02  thiessen
+* damn wx/string problem again
+*
 * Revision 1.43  2001/03/09 15:49:03  thiessen
 * major changes to add initial update viewer
 *
@@ -162,6 +165,8 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 
 #include "cn3d/alignment_manager.hpp"
