@@ -106,11 +106,6 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddKey("subject", "s", "Subject(s) file name",
             CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
-    // File to write Seq-align object
-    arg_desc->AddDefaultKey("seqalign", "filename", 
-            "File name for writting resulting Seq-align",
-            CArgDescriptions::eString, "seqalign.out");
-
     // Copied from blast_app
     arg_desc->AddDefaultKey("strand", "strand", 
         "Query strands to search: 1 forward, 2 reverse, 0,3 both",
@@ -200,6 +195,9 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("frameshift", "frameshift",
                             "Frame shift penalty (blastx only)",
                             CArgDescriptions::eInteger, "0");
+    arg_desc->AddOptionalKey("asnout", "seqalignasn", 
+        "File name for writing the seqalign results in ASN.1 form",
+        CArgDescriptions::eOutputFile);
 
     // Debug parameters
     arg_desc->AddFlag("trace", "Tracing enabled?", true);
@@ -313,6 +311,7 @@ int CBlast2seqApplication::Run(void)
         out << "No hits found" << endl;
     } else {
 
+        // Convert CSeq_align_set to linked list of SeqAlign structs
         DECLARE_ASN_CONVERTER(CSeq_align, SeqAlign, converter);
         SeqAlignPtr salp = NULL, tmp = NULL, tail = NULL;
 
@@ -328,9 +327,9 @@ int CBlast2seqApplication::Run(void)
             }
         }
 
-        if (args["seqalign"]) {
+        if (args["asnout"]) {
             AsnIoPtr aip = AsnIoOpen(
-                    (char*)args["seqalign"].AsString().c_str(), (char*)"w");
+                    (char*)args["asnout"].AsString().c_str(), (char*)"w");
             GenericSeqAlignSetAsnWrite(salp, aip);
             AsnIoReset(aip);
             AsnIoClose(aip);
@@ -351,6 +350,7 @@ int CBlast2seqApplication::Run(void)
 
         Uint4 align_opts = TXALIGN_MATRIX_VAL | TXALIGN_SHOW_QS
             | TXALIGN_COMPRESS | TXALIGN_END_NUM;
+        if (prog == CBlastOption::eBlastx) align_opts |= TXALIGN_BLASTX_SPECIAL;
 
         FILE *fp = GetOutputFilePtr();
         ShowTextAlignFromAnnot(seqannot, 60, fp, NULL, NULL, align_opts, 
@@ -377,24 +377,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/11 21:22:57  camacho
+ * Use same command line option as blast to display seqalign
+ *
  * Revision 1.1  2003/07/10 18:35:58  camacho
  * Initial revision
- *
- * Revision 1.1  2002/04/18 16:05:09  ucko
- * Add centralized tree for sample apps.
- *
- * Revision 6.4  2002/04/16 18:49:07  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 6.3  2001/06/01 15:36:21  vakatov
- * Fixed for the case when "logfile" is not provided in the cmd.line
- *
- * Revision 6.2  2001/06/01 15:17:57  vakatov
- * Workaround a bug in SUN WorkShop 5.1 compiler
- *
- * Revision 6.1  2001/05/31 16:32:51  ivanov
- * Initialization
  *
  * ===========================================================================
  */
