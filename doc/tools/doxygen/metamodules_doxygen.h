@@ -83,6 +83,10 @@
  *  @ingroup CORELIB
  */
 
+/** @defgroup Exception Portable Exception Handling
+ *  @ingroup CORELIB
+ */
+
 /** @defgroup Pipes Portable Process Pipes
  *  @ingroup CORELIB
  */
