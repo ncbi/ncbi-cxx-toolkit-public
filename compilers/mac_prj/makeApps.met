@@ -259,12 +259,12 @@ on SetProjectData()
 			"xncbi", "xser", "xutil", Â
 			"seqset", "seq", "seqres", "seqloc", Â
 			"seqcode", "seqalign", "seqfeat", "seqblock", "sequtil", Â
-			"pub", "medline", "biblio", "general", "submit"}
+			"pub", "medline", "biblio", "general", "submit", "biotree"}
 		
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2"} & CompressLibs
+			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "ncbi_xloader_genbank", "ncbi_xreader_id1", "ncbi_xreader_id2", "biotree"} & CompressLibs
 		
 		-- datatool
 		set myName to "datatool"
@@ -318,6 +318,7 @@ on SetProjectData()
 		
 		AddAppProject("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage"} & objMgrLibs, {})
 		
+		AddAppProjectList("demo_timer", {"fltk", "images"}, "gui:widgets:fl:demo", {"timer_demo.cpp", "timer_demo_ui.cpp"}, {"gui_opengl", "gui_print", "w_fltk", "fltk", "gui_utils", "ximage", "xconnect", "xutil", "xncbi"} & CompressLibs, {})
 		(*
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
 			{"gui_dlg_registry", "gui_utils", "w_flu", "w_fltk", "w_fltable", "xncbi", "fltk"}, {})
@@ -778,7 +779,7 @@ on SetupTarget(proj, targetIndex)
 		on error errmsg number errnum
 			-- ignore errors when none of those libraries exist.
 			-- happens when populating a target when we haven't built any of the libraries for that target spec.
-			if errnum is not 9393 then error errmsg number errnum
+			if errnum is not 9393 and errnum is not 5440 then error errmsg number errnum
 		end try
 		
 		-- Add resources.
