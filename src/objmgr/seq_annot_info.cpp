@@ -282,16 +282,16 @@ void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
     const CSeq_annot::C_Data& data = m_Object->GetData();
     switch ( data.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
-        x_InitFeats(data.GetFtable());
+        x_InitFeats(data.GetFtable(), tse.m_AnnotIdsFlags);
         break;
     case CSeq_annot::C_Data::e_Align:
-        x_InitAligns(data.GetAlign());
+        x_InitAligns(data.GetAlign(), tse.m_AnnotIdsFlags);
         break;
     case CSeq_annot::C_Data::e_Graph:
-        x_InitGraphs(data.GetGraph());
+        x_InitGraphs(data.GetGraph(), tse.m_AnnotIdsFlags);
         break;
     case CSeq_annot::C_Data::e_Locs:
-        x_InitLocs(*m_Object);
+        x_InitLocs(*m_Object, tse.m_AnnotIdsFlags);
         break;
     default:
         break;
@@ -308,7 +308,21 @@ void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
-void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
+inline
+void CSeq_annot_Info::x_UpdateIdsFlags(const CSeq_id_Handle& idh,
+                                       int& ids_flags)
+{
+    if ( !idh.IsGi() ) {
+        ids_flags |= CTSE_Info::fAnnotIds_NonGi;
+        if ( idh.HaveMatchingHandles() ) {
+            ids_flags |= CTSE_Info::fAnnotIds_Matching;
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs,
+                                  int& ids_flags)
 {
     if ( !m_ObjectIndex.IsEmpty() ) {
         _ASSERT(m_ObjectIndex.GetInfos().size() == objs.size());
@@ -339,6 +353,7 @@ void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+                x_UpdateIdsFlags(hrit->first, ids_flags);
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
                 index.m_StrandIndex = hr.GetStrandsFlag();
@@ -365,10 +380,12 @@ void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
             ++index.m_AnnotLocationIndex;
         }
     }
+
 }
 
 
-void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
+void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs,
+                                   int& ids_flags)
 {
     if ( !m_ObjectIndex.IsEmpty() ) {
         _ASSERT(m_ObjectIndex.GetInfos().size() == objs.size());
@@ -398,6 +415,7 @@ void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+                x_UpdateIdsFlags(hrit->first, ids_flags);
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
@@ -417,7 +435,8 @@ void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
 }
 
 
-void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
+void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs,
+                                   int& ids_flags)
 {
     if ( !m_ObjectIndex.IsEmpty() ) {
         _ASSERT(m_ObjectIndex.GetInfos().size() == objs.size());
@@ -447,6 +466,7 @@ void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
 
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+                x_UpdateIdsFlags(hrit->first, ids_flags);
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
@@ -466,7 +486,8 @@ void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
 }
 
 
-void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot)
+void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot,
+                                 int& ids_flags)
 {
     if ( !m_ObjectIndex.IsEmpty() ) {
         _ASSERT(m_ObjectIndex.GetInfos().size() == 1);
@@ -494,6 +515,7 @@ void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot)
 
     ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
         ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+            x_UpdateIdsFlags(hrit->first, ids_flags);
             key.m_Handle = hrit->first;
             const CHandleRange& hr = hrit->second;
             key.m_Range = hr.GetOverlappingRange();
@@ -535,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/03/29 16:04:50  grichenk
+ * Optimized annotation retrieval (reduced nuber of seq-ids checked)
+ *
  * Revision 1.27  2005/02/16 15:18:58  grichenk
  * Ignore e_Locs annotations with unknown format
  *

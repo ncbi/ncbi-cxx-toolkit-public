@@ -680,21 +680,39 @@ CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids)
 }
 
 
+void CDataSource::x_SelectTSEsWithAnnots(const CSeq_id_Handle& idh,
+                                         TTSE_LockSet& load_locks,
+                                         TTSE_LockMatchSet& match_set)
+{
+    TSeq_id2TSE_Set::const_iterator rtse_it = m_TSE_annot.find(idh);
+    if ( rtse_it != m_TSE_annot.end() ) {
+#ifdef DEBUG_MAPS
+        debug::CReadGuard<TTSE_Set> g2(rtse_it->second);
+#endif
+        ITERATE ( TTSE_Set, tse_it, rtse_it->second ) {
+            TTSE_Lock lock = x_LockTSE(**tse_it, load_locks, fLockNoThrow);
+            if ( lock ) {
+                match_set[lock].insert(idh);
+            }
+        }
+    }
+}
+
+
 CDataSource::TTSE_LockMatchSet
 CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
                                        const TTSE_Lock& tse)
 {
-    TTSE_LockMatchSet ret;
+    UpdateAnnotIndex(*tse);
+    bool only_gi = tse->OnlyGiAnnotIds();
+    bool matching_ids = tse->HasMatchingAnnotIds();
 
-    CSeq_id_Handle::TMatches ids;
-    ITERATE ( CBioseq_Info::TId, id_it, bioseq.GetId() ) {
-        id_it->GetReverseMatchingHandles(ids);
-    }
+    TTSE_LockMatchSet ret;
 
     // add bioseq TSE annots
     {{
         TSeq_idSet& dst = ret[tse];
-        ITERATE ( TSeq_idSet, id_it, ids ) {
+        ITERATE ( CBioseq_Info::TId, id_it, bioseq.GetId() ) {
             tse->x_GetRecords(*id_it, false);
             dst.insert(*id_it);
         }
@@ -707,36 +725,51 @@ CDataSource::GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
             m_Loader->GetExternalRecords(bioseq);
         ITERATE ( CDataLoader::TTSE_LockSet, tse_it, tse_set2 ) {
             load_locks.AddLock(*tse_it);
-            ITERATE ( TSeq_idSet, id_it, ids ) {
+            ITERATE ( CBioseq_Info::TId, id_it, bioseq.GetId() ) {
                 (*tse_it)->x_GetRecords(*id_it, false);
             }
+            UpdateAnnotIndex(**tse_it);
+            if ( !(*tse_it)->OnlyGiAnnotIds() ) {
+                only_gi = false;
+            }
+            matching_ids |= (*tse_it)->HasMatchingAnnotIds();
         }
     }
-
-    UpdateAnnotIndex();
 
     TAnnotLockReadGuard guard(*this);
 #ifdef DEBUG_MAPS
     debug::CReadGuard<TSeq_id2TSE_Set> g1(m_TSE_annot);
 #endif
-    ITERATE ( TSeq_idSet, id_it, ids ) {
-        TSeq_id2TSE_Set::const_iterator rtse_it = m_TSE_annot.find(*id_it);
-        if ( rtse_it != m_TSE_annot.end() ) {
-#ifdef DEBUG_MAPS
-            debug::CReadGuard<TTSE_Set> g2(rtse_it->second);
-#endif
-            ITERATE ( TTSE_Set, tse_it, rtse_it->second ) {
-                if ( (*tse_it)->ContainsMatchingBioseq(*id_it) ) {
-                    continue;
-                }
-                TTSE_Lock lock = x_LockTSE(**tse_it, load_locks, fLockNoThrow);
-                if ( lock ) {
-                    ret[lock].insert(*id_it);
-                    continue;
-                }
+
+    if ( only_gi ) {
+        CSeq_id_Handle gi;
+        ITERATE ( CBioseq_Info::TId, id_it, bioseq.GetId() ) {
+            if ( id_it->IsGi() ) {
+                gi = *id_it;
             }
         }
+        // only_gi may be also true for bioseqs without annots, which have
+        // no gi at all
+        if ( gi ) {
+            x_SelectTSEsWithAnnots(gi, load_locks, ret);
+        }
     }
+    else {
+        CSeq_id_Handle::TMatches ids;
+        ITERATE ( CBioseq_Info::TId, id_it, bioseq.GetId() ) {
+            if ( matching_ids ) {
+                id_it->GetReverseMatchingHandles(ids);
+            }
+            else {
+                ids.insert(*id_it);
+            }
+        }
+
+        ITERATE ( TSeq_idSet, id_it, ids ) {
+            x_SelectTSEsWithAnnots(*id_it, load_locks, ret);
+        }
+    }
+
     return ret;
 }
 

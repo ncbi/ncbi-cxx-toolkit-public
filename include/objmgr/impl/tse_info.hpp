@@ -206,6 +206,10 @@ public:
     bool HasUnnamedAnnot(void) const;
     bool HasNamedAnnot(const string& name) const;
 
+    // Check types of IDs used in the annotations
+    bool HasMatchingAnnotIds(void) const;
+    bool OnlyGiAnnotIds(void) const;
+
     // indexes types
     typedef map<int, CBioseq_set_Info*>                      TBioseq_sets;
     typedef CBioseq_Info*                                    TBioseqInfo;
@@ -413,6 +417,15 @@ private:
     mutable TAnnotLock     m_AnnotLock;
     mutable CSeq_id_Handle m_RequestedId;
 
+    enum EAnnotIdsFlags {
+        fAnnotIds_NonGi    = 1 << 0,  // Have annots with non-gi ids
+        fAnnotIds_Matching = 1 << 1   // Have annots with multiple matching ids
+    };
+    typedef int TAnnotIdsFlags;
+
+    // Do not use ID matching for annotations
+    TAnnotIdsFlags m_AnnotIdsFlags;
+
 private:
     // Hide copy methods
     CTSE_Info& operator= (const CTSE_Info&);
@@ -559,6 +572,20 @@ inline
 void CTSE_Info::SetRequestedId(const CSeq_id_Handle& requested_id) const
 {
     m_RequestedId = requested_id;
+}
+
+
+inline
+bool CTSE_Info::HasMatchingAnnotIds(void) const
+{
+    return (m_AnnotIdsFlags & fAnnotIds_Matching) != 0;
+}
+
+
+inline
+bool CTSE_Info::OnlyGiAnnotIds(void) const
+{
+    return (m_AnnotIdsFlags & fAnnotIds_NonGi) == 0;
 }
 
 

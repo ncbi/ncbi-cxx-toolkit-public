@@ -345,6 +345,10 @@ private:
     TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh,
                               CDataLoader::EChoice choice);
 
+    void x_SelectTSEsWithAnnots(const CSeq_id_Handle& idh,
+                                TTSE_LockSet& load_locks,
+                                TTSE_LockMatchSet& match_set);
+
     //typedef CMutex TMainLock;
     //typedef CFastMutex TAnnotLock;
     typedef CRWLock TMainLock;

@@ -124,10 +124,16 @@ protected:
     virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    void x_InitFeats(const CSeq_annot::C_Data::TFtable& objs);
-    void x_InitAligns(const CSeq_annot::C_Data::TAlign& objs);
-    void x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs);
-    void x_InitLocs(const CSeq_annot& annot); // locs case
+    void x_InitFeats(const CSeq_annot::C_Data::TFtable& objs,
+                     int& ids_flags);
+    void x_InitAligns(const CSeq_annot::C_Data::TAlign& objs,
+                      int& ids_flags);
+    void x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs,
+                      int& ids_flags);
+    void x_InitLocs(const CSeq_annot& annot,
+                    int& ids_flags); // locs case
+    void x_UpdateIdsFlags(const CSeq_id_Handle& idh,
+                          int& ids_flags);
 
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
@@ -199,6 +205,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/03/29 16:04:50  grichenk
+* Optimized annotation retrieval (reduced nuber of seq-ids checked)
+*
 * Revision 1.19  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

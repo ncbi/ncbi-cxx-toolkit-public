@@ -1181,18 +1181,21 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
                                               TTSE_MatchSet& match,
                                               CBioseq_ScopeInfo& binfo)
 {
-    // orphan annotations on all synonyms of Bioseq
-    TSeq_idSet ids;
-    // collect ids
-    CConstRef<CSynonymsSet> syns = x_GetSynonyms(binfo);
-    ITERATE ( CSynonymsSet, syn_it, *syns ) {
-        // CSynonymsSet already contains all matching ids
-        ids.insert(syns->GetSeq_id_Handle(syn_it));
-    }
     CDataSource_ScopeInfo& ds_info = binfo.GetTSE_ScopeInfo().GetDSInfo();
     CDataSource& ds = ds_info.GetDataSource();
-    // add orphan annots
-    x_GetTSESetWithOrphanAnnots(lock, match, ids, &ds_info);
+
+    if ( !m_setDataSrc.IsEmpty()  &&  !m_setDataSrc.IsSingle() ) {
+        // orphan annotations on all synonyms of Bioseq
+        TSeq_idSet ids;
+        // collect ids
+        CConstRef<CSynonymsSet> syns = x_GetSynonyms(binfo);
+        ITERATE ( CSynonymsSet, syn_it, *syns ) {
+            // CSynonymsSet already contains all matching ids
+            ids.insert(syns->GetSeq_id_Handle(syn_it));
+        }
+        // add orphan annots
+        x_GetTSESetWithOrphanAnnots(lock, match, ids, &ds_info);
+    }
 
     // datasource annotations on all ids of Bioseq
     // add external annots

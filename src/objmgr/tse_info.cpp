@@ -192,6 +192,7 @@ void CTSE_Info::x_Initialize(void)
     m_LoadState = eNotLoaded;
     m_CacheState = eNotInCache;
     m_LockCounter.Set(0);
+    m_AnnotIdsFlags = 0;
 }
 
 

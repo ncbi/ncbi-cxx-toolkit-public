@@ -86,6 +86,7 @@ public:
     //bool Insert(CDataSource& ds, TPriority priority);
     bool Erase(const TLeaf& leaf);
     bool IsEmpty(void) const;
+    bool IsSingle(void) const;
     void Clear(void);
 
 private:
@@ -122,6 +123,7 @@ public:
     bool Erase(const TLeaf& leaf);
 
     bool IsEmpty(void) const;
+    bool IsSingle(void) const;
     void Clear(void);
 
 private:
@@ -181,6 +183,14 @@ bool CPriorityTree::IsEmpty(void) const
 }
 
 
+inline
+bool CPriorityTree::IsSingle(void) const
+{
+    return !IsEmpty()  &&
+        m_Map.size() == 1  &&  m_Map.begin()->second.IsSingle();
+}
+
+
 // CPriorityNode inline methods
 
 inline
@@ -230,6 +240,13 @@ bool CPriorityNode::IsEmpty(void) const
 }
 
 
+inline
+bool CPriorityNode::IsSingle(void) const
+{
+    return !IsEmpty()  &&  (IsLeaf()  ||  m_SubTree->IsSingle());
+}
+
+
 // CPriority_I inline methods
 
 inline
@@ -254,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/03/29 16:04:50  grichenk
+* Optimized annotation retrieval (reduced nuber of seq-ids checked)
+*
 * Revision 1.16  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *
