@@ -448,7 +448,7 @@ string CValidError_feat::MapToNTCoords
 
     try {
         pnt.SetId().Assign(GetId(product, m_Scope));
-    } catch (CNotUnique) {}
+    } catch (CObjmgrUtilException) {}
 
     CSeq_loc tmp;
     tmp.SetPnt(pnt);
@@ -1899,7 +1899,7 @@ void CValidError_feat::ValidateCommonCDSProduct
         const CSeq_id* sid = 0;
         try {
             sid = &(GetId(feat.GetProduct(), m_Scope));
-        } catch (const CNotUnique&) {}
+        } catch (const CObjmgrUtilException&) {}
 
         // okay to have far RefSeq product, but only if genomic product set
         if ( sid == 0  ||  !sid->IsOther() ) {
@@ -3039,6 +3039,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2004/11/17 21:25:13  grichenk
+* Moved seq-loc related functions to seq_loc_util.[hc]pp.
+* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
+*
 * Revision 1.70  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *

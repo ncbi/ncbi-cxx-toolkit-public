@@ -127,6 +127,8 @@ const char* CObjmgrUtilException::GetErrCodeString(void) const
     case eNotImplemented:   return "eNotImplemented";
     case eBadSequenceType:  return "eBadSequenceType";
     case eBadLocation:      return "eBadLocation";
+    case eNotUnique:        return "eNotUnique";
+    case eUnknownLength:    return "eUnknownLength";
     default:                return CException::GetErrCodeString();
     }
 }

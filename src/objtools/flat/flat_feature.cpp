@@ -98,7 +98,7 @@ void CFlattishFeature::x_AddQuals(void) const
                 if (data.IsCdregion()) {
                     x_AddQual(eFQ_protein_id, new CFlatSeqIdQV(id));
                 }
-            } catch (sequence::CNotUnique&) {
+            } catch (CObjmgrUtilException&) {
             }
         }
     }
@@ -760,6 +760,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/11/17 21:25:13  grichenk
+* Moved seq-loc related functions to seq_loc_util.[hc]pp.
+* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
+*
 * Revision 1.11  2004/05/21 21:42:53  gorelenk
 * Added PCH ncbi_pch.hpp
 *

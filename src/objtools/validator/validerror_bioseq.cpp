@@ -1269,7 +1269,7 @@ void CValidError_bioseq::ValidateSeqParts(const CBioseq& seq)
             // advance both iterators
             ++loc_it;
             ++part_it;
-        } catch (const CNotUnique&) {
+        } catch (const CObjmgrUtilException&) {
             ERR_POST("Seq-loc not for unique sequence");
             return;
         } catch (...) {
@@ -1634,7 +1634,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                 "] than given length [" + NStr::IntToString(seqlen) + "]",
                 seq);
         }
-    } catch (const CNoLength&) {
+    } catch (const CObjmgrUtilException&) {
         ERR_POST(Critical << "Unable to calculate length: ");
     }
 
@@ -1779,7 +1779,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         "Short length (" + NStr::IntToString(loc_len) + 
                         ") on seq-loc (" + loc_str + ") of delta seq_ext", seq);
                 }
-            } catch (const CNoLength&) {
+            } catch (const CObjmgrUtilException&) {
                 string loc_str;
                 loc.GetLabel(&loc_str);
                 if ( loc_str.empty() ) {
@@ -3901,6 +3901,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.90  2004/11/17 21:25:13  grichenk
+* Moved seq-loc related functions to seq_loc_util.[hc]pp.
+* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
+*
 * Revision 1.89  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *

@@ -949,7 +949,7 @@ void CFeatureItem::x_AddRnaQuals
                     }
                 }
             }
-        } catch (CNotUnique&) {}
+        } catch (CObjmgrUtilException&) {}
         if ( !pseudo  &&  cfg.ShowTranscript() ) {
             CSeqVector vec(feat.GetLocation(), ctx.GetScope());
             vec.SetCoding(CBioseq_Handle::eCoding_Iupac);
@@ -1675,7 +1675,7 @@ void CFeatureItem::x_AddProtQuals
                     if ( ctx.IsRefSeq()  ||  !ctx.Config().ForGBRelease() ) {
                         x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(prod_id));
                     }
-                } catch (CNotUnique&) {}
+                } catch (CObjmgrUtilException&) {}
             }
         }
     } else { // protein feature on subpeptide bioseq
@@ -2715,7 +2715,7 @@ void CFeatureItem::x_AddFTableCdregionQuals(const CSeq_feat& feat, CBioseqContex
             if ( id->IsGi() ) {
                 // get "normal" id 
             }
-        } catch (CNotUnique&) {
+        } catch (CObjmgrUtilException&) {
             id = 0;
         }
     }
@@ -3455,6 +3455,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/11/17 21:25:13  grichenk
+* Moved seq-loc related functions to seq_loc_util.[hc]pp.
+* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
+*
 * Revision 1.34  2004/11/15 20:07:20  shomrat
 * Fixed /note qual
 *

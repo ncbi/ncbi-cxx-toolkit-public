@@ -165,7 +165,7 @@ static void s_GetCdregionLabel
                     }
                 }
             }
-        } catch (CNotUnique&) {}
+        } catch (CObjmgrUtilException&) {}
     }
     
     // Try and create a label from a CGene_ref in CSeqFeatXref in feature
@@ -643,6 +643,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.15  2004/11/17 21:25:13  grichenk
+* Moved seq-loc related functions to seq_loc_util.[hc]pp.
+* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
+*
 * Revision 1.14  2004/10/07 15:55:28  ucko
 * Eliminate more uses of GetBioseq(Core).
 *

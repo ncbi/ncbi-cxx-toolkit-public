@@ -141,7 +141,9 @@ public:
     enum EErrCode {
         eNotImplemented,
         eBadSequenceType,
-        eBadLocation
+        eBadLocation,
+        eNotUnique,
+        eUnknownLength
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);
@@ -154,6 +156,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/11/17 21:25:13  grichenk
+* Moved seq-loc related functions to seq_loc_util.[hc]pp.
+* Replaced CNotUnique and CNoLength exceptions with CObjmgrUtilException.
+*
 * Revision 1.8  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
