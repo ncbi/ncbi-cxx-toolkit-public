@@ -140,7 +140,8 @@ void CDebugDumpContext::Log(const string& name, const CObject* value,
     unsigned int depth)
 {
     if ((depth != 0) && value) {
-        CObject::DebugDump(*value, CDebugDumpContext(*this,name), depth-1);
+        CDebugDumpContext ddc(*this,name)
+        CObject::DebugDump(*value, ddc, depth-1);
     } else {
         Log(name, dynamic_cast<const void*>(value));
     }
@@ -197,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  *  $Log$
+ *  Revision 1.2  2002/05/14 16:10:22  gouriano
+ *  *** empty log message ***
+ *
  *  Revision 1.1  2002/05/14 14:44:24  gouriano
  *  added DebugDump function to CObject
  *
