@@ -200,7 +200,7 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
                 if (iter != last  &&  field.GetData().IsFields()) {
                     new_f = *field_iter;
                     break;
-                } else if (iter == last   &&  ! field.GetData().IsFields()) {
+                } else if (iter == last) {
                     new_f = *field_iter;
                     break;
                 }
@@ -246,7 +246,7 @@ CRef<CUser_field> CUser_field::SetFieldRef(const string& str,
                 if (iter != last  &&  field.GetData().IsFields()) {
                     new_f = *field_iter;
                     break;
-                } else if (iter == last  &&  ! field.GetData().IsFields()) {
+                } else if (iter == last) {
                     new_f = *field_iter;
                     break;
                 }
@@ -285,6 +285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/02/07 15:51:08  dicuccio
+* Revert previous commit pending review
+*
 * Revision 1.4  2005/02/04 18:52:32  rsmith
 * When accessing user fields, match a user field if and only if both the key and
 * the user field have lower levels.
