@@ -884,6 +884,7 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         for (;;) {
             // Try to read
             ssize_t bytes_read = read(fd, buf, count);
+            int x_errno =  bytes_read == -1 ? errno : 0;
 
             if (bytes_read > 0) {
                 if ( n_read ) {
@@ -892,30 +893,15 @@ EIO_Status CPipeHandle::Read(void* buf, size_t count, size_t* n_read,
                 status = eIO_Success;
                 break;
             }
-            int x_errno = errno;
 
-            if (x_errno == 0) {
-                status = eIO_Closed;
-                break;      
-            }
-
-#  if defined(NCBI_OS_LINUX)
-            // Linux workaround: 
-            // read() returns ESPIPE if a second pipe end is closed.
-            if (x_errno == ESPIPE) {
-                status = eIO_Closed;
-                break;      
-            }
-#  endif
             // Blocked -- wait for data to come;  exit if timeout/error
-            if (x_errno == EAGAIN) {
+            if ( x_errno == EAGAIN  ||  !bytes_read ) {
                 status = Select(fd, eIO_Read, timeout);
                 if (status != eIO_Success) {
                     break;
                 }
                 continue;
             }
-
             if (x_errno != EINTR) {
                 cout << x_errno << endl;
                 cout.flush();
@@ -952,7 +938,8 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
         for (;;) {
             // Try to read
             ssize_t bytes_written = write(m_ChildStdIn, buf, count);
-            
+            int x_errno =  bytes_written == -1 ? errno : 0;
+
             if ( bytes_written > 0) {
                 if ( n_written ) {
                     *n_written = (size_t)bytes_written;
@@ -960,12 +947,7 @@ EIO_Status CPipeHandle::Write(const void* buf, size_t count,
                 status = eIO_Success;
                 break;
             }
-            int x_errno = errno;
 
-            if (x_errno == 0) {
-                status = eIO_Closed;
-                break;      
-            }
             // Blocked -- wait for data to come;  exit if timeout/error
             if (x_errno == EAGAIN) {
                 status = Select(m_ChildStdIn, eIO_Read, timeout);
@@ -1415,9 +1397,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/09/03 21:37:05  ivanov
+ * Removed Linux ESPIPE workaround
+ *
  * Revision 1.26  2003/09/03 20:53:02  ivanov
- * UNIX CPipeHandle::Read(): Added workaround for Linux -- read() returns ESPIPE
- * if a second pipe end is closed.
+ * UNIX CPipeHandle::Read(): Added workaround for Linux -- read() returns
+ * ESPIPE if a second pipe end is closed.
  * UNIX CPipeHandle::Close(): Implemented close timeout handling.
  *
  * Revision 1.25  2003/09/03 14:35:59  ivanov

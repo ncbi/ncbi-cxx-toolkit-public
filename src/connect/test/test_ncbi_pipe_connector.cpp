@@ -151,12 +151,16 @@ int CTest::Run(void)
     CONN_SetTimeout(conn, eIO_Read,  &kTimeout);
     CONN_SetTimeout(conn, eIO_Close, &kTimeout);
     Delay();
-    status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPersist);
-    NcbiCout.write(buf, n_read);
+    size_t n_read_total = 0;
+    do {
+        status = CONN_Read(conn, buf, kBufferSize, &n_read, eIO_ReadPersist);
+        n_read_total += n_read;
+        NcbiCout.write(buf, n_read);
+    } while (n_read > 0);
     NcbiCout << endl;
     NcbiCout.flush();
-    assert(status == eIO_Success  ||  status == eIO_Closed);
-    assert(n_read > 0);
+    assert(n_read_total > 0); 
+    assert(status == eIO_Success  ||  status == eIO_Timeout);
     assert(CONN_Close(conn) == eIO_Success);
 
     // Pipe connector for writing
@@ -240,6 +244,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/03 21:37:25  ivanov
+ * Removed Linux ESPIPE workaround
+ *
  * Revision 1.1  2003/09/02 20:39:40  ivanov
  * Initial revision
  *
