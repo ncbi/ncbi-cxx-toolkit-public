@@ -49,7 +49,8 @@ void   GetHitsMinMax(const vector<CHit>& hits,
 		     size_t* smin, size_t* smax);
 void   SetPatternFromHits(CSplign& splign, vector<CHit>* hits);
 string RLE(const string& in);
-void   MakeIDX();
+void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr );
+
 
 struct SCompliment
 {
@@ -70,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/05 20:24:21  kapustin
+ * Update fasta indexing routine
+ *
  * Revision 1.2  2003/10/31 19:43:15  kapustin
  * Format and compatibility update
  *

@@ -185,7 +185,7 @@ string RLE(const string& in)
   return out;
 }
 
-// primitive, but works in many cases
+
 size_t TestPolyA(const vector<char>& mrna)
 {
   const size_t dim = mrna.size();
@@ -197,19 +197,22 @@ size_t TestPolyA(const vector<char>& mrna)
   return len > 3 ? i + 1 : kMax_UInt;
 }
 
-// could be improved of course...
-void MakeIDX()
+
+void MakeIDX( istream* inp_istr, const size_t file_index, ostream* out_ostr )
 {
-  noskipws(cin);
-  char c;
-  size_t pos;
-  string s;
-  while((c = cin.get()) && c != EOF) {
-    if(c == '>') {
-      pos = size_t(cin.tellg()) - 1;
-      cin >> s;
-      cout << s << '\t' << pos << endl;
+  istream * inp = inp_istr? inp_istr: &cin;
+  ostream * out = out_ostr? out_ostr: &cout;
+  inp->unsetf(ios_base::skipws);
+  char c0 = '\n', c;
+  while(inp->good()) {
+    c = inp->get();
+    if(c0 == '\n' && c == '>') {
+      size_t pos = size_t(inp->tellg()) - 1;
+      string s;
+      *inp >> s;
+      *out << s << '\t' << file_index << '\t' << pos << endl;
     }
+    c0 = c;
   }
 }
 
@@ -219,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/05 20:24:21  kapustin
+ * Update fasta indexing routine
+ *
  * Revision 1.3  2003/10/31 19:43:15  kapustin
  * Format and compatibility update
  *
