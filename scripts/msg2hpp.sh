@@ -11,14 +11,14 @@
 #    msg2hpp.sh <filename_msg> [<filename_header>]
 #
 # Note:
-#    Read error codes for messages from <filename_msg> and generates 
-#    the header file. If the <filename_header> argument has skipped
-#    that the value of MODULE definition will be used for it.
+#    Read error codes for messages from <filename_msg> and generate
+#    the header file. If the <filename_header> argument has been omitted
+#    then the value of MODULE definition will be used for it instead.
 #
 ###########################################################################
 
 
-# Check numer of arguments
+# Check number of arguments
 if test $# -lt 1 -o $# -gt 2 ; then
 	cat > $x_out <<EOF
 Invalid number of arguments.
@@ -33,7 +33,7 @@ fi
 filename_msg=$1
 filename_header=${2-?}
 
-# Check existing of the message file
+# Check existence of the message file
 if [ ! -f "$filename_msg" ] ; then
     echo "ERROR: Message file \"$filename_msg\" not found."
 	exit 1
@@ -99,7 +99,7 @@ for row in $rows; do
 	echo >> $filename_header
 done
 
-# Write footer
+# Finalize
 cat >> $filename_header <<EOF
 
 #endif
