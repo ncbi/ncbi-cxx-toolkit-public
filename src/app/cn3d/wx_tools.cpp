@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/05/23 17:45:41  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.3  2001/05/17 18:34:27  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -104,21 +107,18 @@ BEGIN_EVENT_TABLE(IntegerSpinCtrl, wxEvtHandler)
 END_EVENT_TABLE()
 
 IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
-    int min, int max, int increment, int initial) :
-        minVal(min), maxVal(max), incrVal(increment),
-        spaceBetween(1)
+    int min, int max, int increment, int initial,
+    const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
+    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
+        minVal(min), maxVal(max), incrVal(increment)
 {
-    iTextCtrl = new IntegerTextCtrl(parent, -1, "", wxDefaultPosition, wxDefaultSize, 0);
+    iTextCtrl = new IntegerTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
     iTextCtrl->SetAllowedRange(min, max);
-    preferredSize.SetHeight(iTextCtrl->GetBestSize().GetHeight());
 
-    spinButton = new wxSpinButton(parent, -1,
-        wxDefaultPosition, wxDefaultSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
+    spinButton = new wxSpinButton(parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
     spinButton->PushEventHandler(this);
-    preferredSize.SetWidth(
-        iTextCtrl->GetBestSize().GetWidth() + spinButton->GetBestSize().GetWidth() + spaceBetween);
-
     spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
+
     SetInteger(initial);
 }
 
@@ -205,21 +205,18 @@ BEGIN_EVENT_TABLE(FloatingPointSpinCtrl, wxEvtHandler)
 END_EVENT_TABLE()
 
 FloatingPointSpinCtrl::FloatingPointSpinCtrl(wxWindow* parent,
-    double min, double max, double increment, double initial) :
-        minVal(min), maxVal(max), incrVal(increment),
-        spaceBetween(1)
+    double min, double max, double increment, double initial,
+    const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
+    const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize) :
+        minVal(min), maxVal(max), incrVal(increment)
 {
-    fpTextCtrl = new FloatingPointTextCtrl(parent, -1, "", wxDefaultPosition, wxDefaultSize, 0);
+    fpTextCtrl = new FloatingPointTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
     fpTextCtrl->SetAllowedRange(min, max);
-    preferredSize.SetHeight(fpTextCtrl->GetBestSize().GetHeight());
 
-    spinButton = new wxSpinButton(parent, -1,
-        wxDefaultPosition, wxDefaultSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
+    spinButton = new wxSpinButton(parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
     spinButton->PushEventHandler(this);
-    preferredSize.SetWidth(
-        fpTextCtrl->GetBestSize().GetWidth() + spinButton->GetBestSize().GetWidth() + spaceBetween);
-
     spinButton->SetRange(-1, 1);    // position irrelevant; just need the button GUI
+
     SetDouble(initial);
 }
 
@@ -261,69 +258,37 @@ bool FloatingPointSpinCtrl::GetDouble(double *value) const
 
 BEGIN_EVENT_TABLE(GetFloatingPointDialog, wxDialog)
     EVT_BUTTON(-1, GetFloatingPointDialog::OnButton)
-    EVT_CLOSE (    GetFloatingPointDialog::OnCloseWindow)
+    EVT_CLOSE (   GetFloatingPointDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     const wxString& message, const wxString& title,
     double min, double max, double increment, double initial) :
         wxDialog(parent, -1, title, wxDefaultPosition, wxDefaultSize,
-            wxCAPTION | wxSYSTEM_MENU // not resizable
-//            wxDEFAULT_FRAME_STYLE
-)
+            wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
-    SetBackgroundColour(*wxLIGHT_GREY);
+    // code modified (heavily) from wxDesigner C++ output of fp_dialog.wdr
+    wxBoxSizer *item0 = new wxBoxSizer(wxVERTICAL);
+    wxStaticText *item1 = new wxStaticText(this, -1, message, wxDefaultPosition, wxDefaultSize, 0);
+    item0->Add(item1, 0, wxALIGN_CENTRE|wxALL, 5);
+    wxFlexGridSizer *grid = new wxFlexGridSizer(1, 0, 0, 0);
+    grid->AddGrowableCol(1);
 
-    wxStaticText *text = new wxStaticText(this, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE);
-    text->SetLabel(message);
+    buttonOK = new wxButton(this, -1, "OK", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(buttonOK, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxRIGHT, 5);
 
-    fpSpinCtrl = new FloatingPointSpinCtrl(this, min, max, increment, initial);
-    buttonOK = new wxButton(this, -1, "&OK");
+    fpSpinCtrl = new FloatingPointSpinCtrl(this,
+        min, max, increment, initial,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    grid->Add(fpSpinCtrl->GetTextCtrl(), 0, wxGROW|wxALIGN_CENTER_VERTICAL, 5);
+    grid->Add(fpSpinCtrl->GetSpinButton(), 0, wxALIGN_CENTRE, 5);
 
-    static const int margin = 1;
-    int minWidth = fpSpinCtrl->GetBestSize().GetWidth() + buttonOK->GetBestSize().GetWidth() + 3*margin;
-    if (text->GetBestSize().GetWidth() + 30 > minWidth) minWidth = text->GetBestSize().GetWidth() + 30;
-    SetClientSize(
-        minWidth,
-        fpSpinCtrl->GetBestSize().GetHeight() + text->GetBestSize().GetHeight() + 3*margin + 20);
-
-    wxLayoutConstraints *c;
-
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (this,      wxTop,      margin + 10);
-    // bug in wxWin makes this not work, and they refuse to patch it! :(
-//    c->bottom.Above         (fpSpinCtrl,                margin + 10);
-    c->bottom.Above         (fpSpinCtrl->GetTextCtrl(),
-                                                    -(margin + 10));    // use this to work around
-    c->left.SameAs          (this,      wxLeft,     margin + 10);
-    c->right.SameAs         (this,      wxRight,    margin + 10);
-    text->SetConstraints(c);
-
-    c = new wxLayoutConstraints();
-    c->bottom.SameAs        (this,      wxBottom,   margin);
-    c->height.SameAs        (fpSpinCtrl->GetTextCtrl(),
-                                        wxHeight);
-    c->left.SameAs          (this,      wxLeft,     margin);
-    c->width.AsIs           ();
-    buttonOK->SetConstraints(c);
-
-    c = new wxLayoutConstraints();
-    c->bottom.SameAs        (this,      wxBottom,   margin);
-    c->height.AsIs          ();
-    c->left.RightOf         (buttonOK,              margin);
-    c->right.LeftOf         (fpSpinCtrl->GetSpinButton(),
-                                        fpSpinCtrl->GetSpaceBetweenControls());
-    fpSpinCtrl->GetTextCtrl()->SetConstraints(c);
-
-    c = new wxLayoutConstraints();
-    c->bottom.SameAs        (this,      wxBottom,   margin);
-    c->height.SameAs        (fpSpinCtrl->GetTextCtrl(),
-                                        wxHeight);
-    c->right.SameAs         (this,      wxRight,    margin);
-    c->width.AsIs           ();
-    fpSpinCtrl->GetSpinButton()->SetConstraints(c);
-
-    Layout();
+    item0->Add(grid, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    this->SetAutoLayout(true);
+    this->SetSizer(item0);
+    item0->Fit(this);
+    item0->SetSizeHints(this);
 }
 
 double GetFloatingPointDialog::GetValue(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/05/23 17:45:41  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.14  2001/05/15 14:57:56  thiessen
 * add cn3d_tools; bring up log window when threading starts
 *
@@ -260,7 +263,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             if (DoMergeBlocks()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
-                viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns);
+                viewerWidget->SetMouseMode(GetMouseModeForCreateAndMerge());
             } else
                 MergeBlocksOff();
             break;
@@ -273,7 +276,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
             if (DoCreateBlock()) {
                 SetCursor(*wxCROSS_CURSOR);
                 prevMouseMode = viewerWidget->GetMouseMode();
-                viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectColumns);
+                viewerWidget->SetMouseMode(GetMouseModeForCreateAndMerge());
             } else
                 CreateBlockOff();
             break;

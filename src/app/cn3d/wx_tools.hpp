@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/05/23 17:43:29  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.3  2001/05/17 18:34:01  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -55,6 +58,14 @@
 
 
 BEGIN_SCOPE(Cn3D)
+
+// "spin control" height
+#if defined(__WXMSW__)
+static const int SPIN_CTRL_HEIGHT = 20;
+#elif defined(__WXGTK__)
+static const int SPIN_CTRL_HEIGHT = 20;
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // a wxTextCtrl that only accepts valid floating point values (turns red otherwise)
@@ -86,7 +97,9 @@ class IntegerSpinCtrl : public wxEvtHandler
 {
 public:
     IntegerSpinCtrl(wxWindow* parent,
-        int min, int max, int increment, int initial);
+        int min, int max, int increment, int initial,
+        const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
+        const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
 
     bool GetInteger(int *value) const;
     void SetInteger(int value);
@@ -95,8 +108,6 @@ private:
     IntegerTextCtrl *iTextCtrl;
     wxSpinButton *spinButton;
     int minVal, maxVal, incrVal;
-    wxSize preferredSize;
-    int spaceBetween;
 
     void OnSpinButtonUp(wxSpinEvent& event);
     void OnSpinButtonDown(wxSpinEvent& event);
@@ -108,9 +119,6 @@ public:
 
     wxTextCtrl * GetTextCtrl(void) const { return iTextCtrl; }
     wxSpinButton * GetSpinButton(void) const { return spinButton; }
-
-    const wxSize& GetBestSize(void) const { return preferredSize; }
-    const int GetSpaceBetweenControls(void) const { return spaceBetween; }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +151,9 @@ class FloatingPointSpinCtrl : public wxEvtHandler
 {
 public:
     FloatingPointSpinCtrl(wxWindow* parent,
-        double min, double max, double increment, double initial);
+        double min, double max, double increment, double initial,
+        const wxPoint& textCtrlPos, const wxSize& textCtrlSize, long textCtrlStyle,
+        const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
 
     bool GetDouble(double *value) const;
     void SetDouble(double value);
@@ -152,8 +162,6 @@ private:
     FloatingPointTextCtrl *fpTextCtrl;
     wxSpinButton *spinButton;
     double minVal, maxVal, incrVal;
-    wxSize preferredSize;
-    int spaceBetween;
 
     void OnSpinButtonUp(wxSpinEvent& event);
     void OnSpinButtonDown(wxSpinEvent& event);
@@ -165,9 +173,6 @@ public:
 
     wxTextCtrl * GetTextCtrl(void) const { return fpTextCtrl; }
     wxSpinButton * GetSpinButton(void) const { return spinButton; }
-
-    const wxSize& GetBestSize(void) const { return preferredSize; }
-    const int GetSpaceBetweenControls(void) const { return spaceBetween; }
 };
 
 /////////////////////////////////////////////////////////////////////////////////

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/05/23 17:43:29  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.8  2001/05/17 18:34:01  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -88,8 +91,6 @@ public:
     bool SaveDialog(bool canCancel);
 
 private:
-    DECLARE_EVENT_TABLE()
-
     UpdateViewer *updateViewer;
 
     // menu identifiers - additional items beyond base class items
@@ -115,6 +116,13 @@ private:
         menuBar->Check(MID_DELETE_ALN, false);
         SetCursor(wxNullCursor);
     }
+
+    SequenceViewerWidget::eMouseMode GetMouseModeForCreateAndMerge(void)
+    {
+        return SequenceViewerWidget::eSelectRectangle;
+    }
+
+    DECLARE_EVENT_TABLE()
 
 public:
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }

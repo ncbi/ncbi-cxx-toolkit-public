@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/05/23 17:43:29  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.10  2001/04/12 18:35:01  thiessen
 * fix merge GUI bug/typo
 *
@@ -206,6 +209,8 @@ protected:
         if (DoCreateBlock()) CreateBlockOff();
         if (DoDeleteBlock()) DeleteBlockOff();
     }
+
+    virtual SequenceViewerWidget::eMouseMode GetMouseModeForCreateAndMerge(void) = 0;
 
 public:
 

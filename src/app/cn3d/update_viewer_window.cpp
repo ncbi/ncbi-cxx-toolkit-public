@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/05/23 17:45:40  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.13  2001/05/22 19:09:32  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -98,15 +101,15 @@ BEGIN_SCOPE(Cn3D)
 
 BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     INCLUDE_VIEWER_WINDOW_BASE_EVENTS
-    EVT_CLOSE     (                                     UpdateViewerWindow::OnCloseWindow)
+    EVT_CLOSE     (                                    UpdateViewerWindow::OnCloseWindow)
     EVT_MENU      (MID_THREAD_ALL,                      UpdateViewerWindow::OnRunThreader)
     EVT_MENU_RANGE(MID_MERGE_ONE, MID_MERGE_ALL,        UpdateViewerWindow::OnMerge)
     EVT_MENU      (MID_DELETE_ALN,                      UpdateViewerWindow::OnDeleteAlignment)
 END_EVENT_TABLE()
 
-UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *parentUpdateViewer) :
-    ViewerWindowBase(parentUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,50), wxSize(1000,300)),
-    updateViewer(parentUpdateViewer)
+UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
+    ViewerWindowBase(thisUpdateViewer, "Cn3D++ Update Viewer", wxPoint(0,50), wxSize(1000,300)),
+    updateViewer(thisUpdateViewer)
 {
     wxMenu *menu = new wxMenu;
     menu->Append(MID_THREAD_ALL, "Thread &All");
@@ -222,210 +225,99 @@ bool UpdateViewerWindow::SaveDialog(bool canCancel)
     return true;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////////
 // ThreaderOptionsDialog implementation
 /////////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(ThreaderOptionsDialog, wxDialog)
     EVT_BUTTON(-1, ThreaderOptionsDialog::OnButton)
-    EVT_CLOSE (    ThreaderOptionsDialog::OnCloseWindow)
+    EVT_CLOSE (   ThreaderOptionsDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions) :
     wxDialog(parent, -1, "Set Threader Options", wxDefaultPosition, wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU // not resizable
-//        wxDEFAULT_FRAME_STYLE   // for debugging/testing only - wxStaticBox doesn't work well with resize
-)
+        wxCAPTION | wxSYSTEM_MENU) // not resizable
 {
-    static const int margin = 15;
-    SetBackgroundColour(*wxLIGHT_GREY);
-
-    // create controls
-    int boxClientHeight = 2*margin, maxTextWidth = 0;
-    bOK = new wxButton(this, -1, "&OK");
-    bCancel = new wxButton(this, -1, "&Cancel");
-
-    box = new wxStaticBox(this, -1, "Available Threader Options");
-    box->SetBackgroundColour(*wxLIGHT_GREY);
-    
-    wxStaticText *tWeight = new wxStaticText(box, -1, "Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
-    wxStaticText *tLoops = new wxStaticText(box, -1, "Loop length multiplier? [0.1 .. 10]", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
-    wxStaticText *tStarts = new wxStaticText(box, -1, "Number of random starts? [1 .. 100]", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
-    wxStaticText *tResults = new wxStaticText(box, -1, "Number of result alignments per row? [1 .. 20]", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
-    wxStaticText *tMerge = new wxStaticText(box, -1, "Merge results after each row is threaded?", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
-    wxStaticText *tFreeze = new wxStaticText(box, -1, "Freeze isolated blocks?", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT, "StaticText");
-
-    if (tWeight->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tWeight->GetBestSize().GetWidth();
-    fpWeight = new FloatingPointSpinCtrl(box, 0.0, 1.0, 0.05, 0.5);
-    boxClientHeight += fpWeight->GetBestSize().GetHeight() + margin;
-
-    if (tLoops->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tLoops->GetBestSize().GetWidth();
-    fpLoops = new FloatingPointSpinCtrl(box, 0.1, 10.0, 0.25, 1.5);
-    boxClientHeight += fpLoops->GetBestSize().GetHeight() + margin;
-
-    if (tStarts->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tStarts->GetBestSize().GetWidth();
-    iStarts = new IntegerSpinCtrl(box, 1, 100, 5, 1);
-    boxClientHeight += iStarts->GetBestSize().GetHeight() + margin;
-
-    if (tResults->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tResults->GetBestSize().GetWidth();
-    iResults = new IntegerSpinCtrl(box, 1, 20, 1, 1);
-    boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
-
-    if (tMerge->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tMerge->GetBestSize().GetWidth();
-    bMerge = new wxCheckBox(box, -1, wxEmptyString);
-    bMerge->SetValue(true);
-    boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
-
-    if (tFreeze->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tFreeze->GetBestSize().GetWidth();
-    bFreeze = new wxCheckBox(box, -1, wxEmptyString);
-    bFreeze->SetValue(true);
-    boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
-
-    // do layout
-    wxLayoutConstraints *c;
-    int textProportion = 100.0 * maxTextWidth / (maxTextWidth + 100 + 1.5*margin);
-
-    // first, layout the controls within the box
+    // the following code is modified (heavily) from wxDesigner C++ output from threader_dialog.wdr
+    wxBoxSizer *item0 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *item1 = new wxBoxSizer(wxVERTICAL);
+    wxStaticBox *item3 = new wxStaticBox(this, -1, "Available Threader Options");
+    wxStaticBoxSizer *item2 = new wxStaticBoxSizer(item3, wxHORIZONTAL);
+    wxFlexGridSizer *grid = new wxFlexGridSizer(3, 5, 0);
 
     // PSSM weight
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (box,       wxTop,      2*margin);
-    c->height.SameAs        (fpWeight->GetTextCtrl(), wxHeight);
-    c->left.SameAs          (box,       wxLeft,     margin);
-    c->width.PercentOf      (box,       wxWidth,    textProportion);
-    tWeight->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (box,       wxTop,      2*margin);
-    c->height.AsIs          ();
-    c->left.RightOf         (tWeight,               margin);
-    c->right.LeftOf         (fpWeight->GetSpinButton(), fpLoops->GetSpaceBetweenControls());
-    fpWeight->GetTextCtrl()->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (box,       wxTop,      2*margin);
-    c->height.SameAs        (fpWeight->GetTextCtrl(), wxHeight);
-    c->width.AsIs           ();
-    c->right.SameAs         (box,       wxRight,    margin);
-    fpWeight->GetSpinButton()->SetConstraints(c);
+    wxStaticText *item5 = new wxStaticText(this, -1, "Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item5, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    fpWeight = new FloatingPointSpinCtrl(this,
+        0.0, 1.0, 0.05, 0.5,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    grid->Add(fpWeight->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    grid->Add(fpWeight->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // loop lengths
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tWeight,   wxBottom,   margin);
-    c->height.SameAs        (fpLoops->GetTextCtrl(), wxHeight);
-    c->left.SameAs          (box,       wxLeft,     margin);
-    c->width.PercentOf      (box,       wxWidth,    textProportion);
-    tLoops->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tWeight,   wxBottom,   margin);
-    c->height.AsIs          ();
-    c->left.RightOf         (tLoops,                margin);
-    c->right.LeftOf         (fpLoops->GetSpinButton(), fpLoops->GetSpaceBetweenControls());
-    fpLoops->GetTextCtrl()->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tWeight,   wxBottom,   margin);
-    c->height.SameAs        (fpLoops->GetTextCtrl(), wxHeight);
-    c->width.AsIs           ();
-    c->right.SameAs         (box,       wxRight,    margin);
-    fpLoops->GetSpinButton()->SetConstraints(c);
+    wxStaticText *item8 = new wxStaticText(this, -1, "Loop length multiplier? [0.1 .. 10]", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item8, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    fpLoops = new FloatingPointSpinCtrl(this,
+        0.1, 10.0, 0.25, 1.5,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    grid->Add(fpLoops->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    grid->Add(fpLoops->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    // # random starts
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tLoops,    wxBottom,   margin);
-    c->height.SameAs        (iStarts->GetTextCtrl(), wxHeight);
-    c->left.SameAs          (box,       wxLeft,     margin);
-    c->width.PercentOf      (box,       wxWidth,    textProportion);
-    tStarts->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tLoops,    wxBottom,   margin);
-    c->height.AsIs          ();
-    c->left.RightOf         (tLoops,                margin);
-    c->right.LeftOf         (iStarts->GetSpinButton(), iStarts->GetSpaceBetweenControls());
-    iStarts->GetTextCtrl()->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tLoops,    wxBottom,   margin);
-    c->height.SameAs        (iStarts->GetTextCtrl(), wxHeight);
-    c->width.AsIs           ();
-    c->right.SameAs         (box,       wxRight,    margin);
-    iStarts->GetSpinButton()->SetConstraints(c);
+    // random starts
+    wxStaticText *item11 = new wxStaticText(this, -1, "Number of random starts? [1 .. 100]", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    iStarts = new IntegerSpinCtrl(this,
+        1, 100, 5, 1,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    grid->Add(iStarts->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    grid->Add(iStarts->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     // # results
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tStarts,   wxBottom,   margin);
-    c->height.SameAs        (iResults->GetTextCtrl(), wxHeight);
-    c->left.SameAs          (box,       wxLeft,     margin);
-    c->width.PercentOf      (box, wxWidth, textProportion);
-    tResults->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tStarts,   wxBottom,   margin);
-    c->height.AsIs          ();
-    c->left.RightOf         (tLoops,                margin);
-    c->right.LeftOf         (iResults->GetSpinButton(), iResults->GetSpaceBetweenControls());
-    iResults->GetTextCtrl()->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tStarts,   wxBottom,   margin);
-    c->height.SameAs        (iResults->GetTextCtrl(), wxHeight);
-    c->width.AsIs           ();
-    c->right.SameAs         (box,       wxRight,    margin);
-    iResults->GetSpinButton()->SetConstraints(c);
+    wxStaticText *item14 = new wxStaticText(this, -1, "Number of result alignments per row? [1 .. 20]", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item14, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    iResults = new IntegerSpinCtrl(this,
+        1, 20, 1, 1,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    grid->Add(iResults->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    grid->Add(iResults->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    // merge?
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tResults,  wxBottom,   margin);
-    c->height.SameAs        (bMerge,    wxHeight);
-    c->left.SameAs          (box,       wxLeft,     margin);
-    c->width.PercentOf      (box,       wxWidth,    textProportion);
-    tMerge->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tResults,  wxBottom,   margin);
-    c->height.SameAs        (tResults,  wxHeight);
-    c->centreX.SameAs       (iResults->GetTextCtrl(), wxCentreX);
-    c->width.AsIs           ();
-    bMerge->SetConstraints(c);
+    // merge results
+    wxStaticText *item17 = new wxStaticText(this, -1, "Merge results after each row is threaded?", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item17, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    bMerge = new wxCheckBox(this, -1, "", wxDefaultPosition, wxDefaultSize, 0);
+    bMerge->SetValue(true);
+    grid->Add(bMerge, 0, wxALIGN_CENTRE|wxALL, 5);
+    grid->Add(20, 20, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    // freeze blocks?
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tMerge,    wxBottom,   margin);
-    c->height.SameAs        (bFreeze,   wxHeight);
-    c->left.SameAs          (box,       wxLeft,     margin);
-    c->width.PercentOf      (box,       wxWidth,    textProportion);
-    tFreeze->SetConstraints(c);
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (tMerge,    wxBottom,   margin);
-    c->height.SameAs        (tMerge,    wxHeight);
-    c->centreX.SameAs       (iResults->GetTextCtrl(), wxCentreX);
-    c->width.AsIs           ();
-    bFreeze->SetConstraints(c);
+    // freeze blocks
+    wxStaticText *item19 = new wxStaticText(this, -1, "Freeze isolated blocks?", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item19, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    bFreeze = new wxCheckBox(this, -1, "", wxDefaultPosition, wxDefaultSize, 0);
+    bFreeze->SetValue(true);
+    grid->Add(bFreeze, 0, wxALIGN_CENTRE|wxALL, 5);
+    grid->Add(20, 20, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    box->SetAutoLayout(true);
+    item2->Add(grid, 0, wxALIGN_CENTRE|wxALL, 5);
+    item1->Add(item2, 0, wxALIGN_CENTRE|wxALL, 5);
+    wxBoxSizer *item21 = new wxBoxSizer(wxHORIZONTAL);
 
-    // then layout box and bottom buttons
-    c = new wxLayoutConstraints();
-    c->top.SameAs           (this,      wxTop,      margin);
-    c->bottom.Above         (bOK,                   -margin); // wx bug requires -
-    c->right.SameAs         (this,      wxRight,    margin);
-    c->left.SameAs          (this,      wxLeft,     margin);
-    box->SetConstraints(c);
+    bOK = new wxButton(this, -1, "OK", wxDefaultPosition, wxDefaultSize, 0);
+    bOK->SetDefault();
+    item21->Add(bOK, 0, wxALIGN_CENTRE|wxALL, 5);
 
-    // OK button
-    c = new wxLayoutConstraints();
-    c->bottom.SameAs        (this,      wxBottom,   margin);
-    c->height.AsIs          ();
-    c->right.SameAs         (this,      wxCentreX,  margin);
-    c->width.AsIs           ();
-    bOK->SetConstraints(c);
+    bCancel = new wxButton(this, -1, "Cancel", wxDefaultPosition, wxDefaultSize, 0);
+    item21->Add(bCancel, 0, wxALIGN_CENTRE|wxALL, 5);
 
-    // Cancel button
-    c = new wxLayoutConstraints();
-    c->bottom.SameAs        (this,      wxBottom,   margin);
-    c->height.AsIs          ();
-    c->left.SameAs          (this,      wxCentreX,  margin);
-    c->width.AsIs           ();
-    bCancel->SetConstraints(c);
-
-    SetClientSize(
-        maxTextWidth + 5*margin + 100,
-        boxClientHeight + bOK->GetSize().GetHeight() + 3*margin);
-    Layout();
+    item1->Add(item21, 0, wxALIGN_CENTRE|wxALL, 5);
+    item0->Add(item1, 0, wxALIGN_CENTRE|wxALL, 5);
+    this->SetAutoLayout(true);
+    this->SetSizer(item0);
+    item0->Fit(this);
+    item0->SetSizeHints(this);
 }
 
 bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)

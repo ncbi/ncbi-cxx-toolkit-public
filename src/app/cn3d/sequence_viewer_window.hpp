@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/05/23 17:43:28  thiessen
+* change dialog implementation to wxDesigner; interface changes
+*
 * Revision 1.9  2001/05/11 02:10:04  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -136,6 +139,11 @@ private:
     {
         menuBar->Check(MID_MARK_BLOCK, false);
         SetCursor(wxNullCursor);
+    }
+
+    SequenceViewerWidget::eMouseMode GetMouseModeForCreateAndMerge(void)
+    {
+        return SequenceViewerWidget::eSelectColumns;
     }
 
     DECLARE_EVENT_TABLE()
