@@ -648,11 +648,16 @@ void CPluginManager<TClass>::Resolve(const string&       /*driver*/,
 
         NON_CONST_ITERATE(CDllResolver::TEntries, ite, entry_points) {
             CDllResolver::SResolvedEntry& entry = *ite;
+
+            if (entry.entry_points.empty()) {
+                continue;
+            }
+            SNamedEntryPoint& epoint = entry.entry_points[0];
             // TODO:
             // check if entry point provides the required interface-driver-version
             // and do not register otherwise...
-            if (entry.entry_point.func) {
-                FNCBI_EntryPoint ep = (FNCBI_EntryPoint)entry.entry_point.func;
+            if (epoint.func) {
+                FNCBI_EntryPoint ep = (FNCBI_EntryPoint)epoint.func;
                 RegisterWithEntryPoint(ep);
                 m_RegisteredEntries.push_back(entry);
             }
@@ -701,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/12/01 19:53:06  kuznets
+ * Reflecting changes in CDllResolver
+ *
  * Revision 1.16  2003/11/19 15:46:04  kuznets
  * Removed clumsy function pointer conversion from plugin manager.
  * (it is now covered by CDll)
