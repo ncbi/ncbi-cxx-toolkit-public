@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/03/12 16:10:23  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.18  2003/02/24 20:01:55  gouriano
 * use template-based exceptions instead of errno and parse exceptions
 *
@@ -241,7 +244,7 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     }
 
     // All header lines (in alphabetical order)
-    iterate (TMap, i, m_HeaderValues) {
+    ITERATE (TMap, i, m_HeaderValues) {
         if (skip_status  &&
             NStr::CompareNocase(i->first, sm_HTTPStatusName) == 0)
             break;

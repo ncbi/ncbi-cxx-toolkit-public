@@ -257,7 +257,7 @@ CCgiCookie* CCgiCookies::Add(const CCgiCookie& cookie)
 
 void CCgiCookies::Add(const CCgiCookies& cookies)
 {
-    iterate (TSet, cookie, cookies.m_Cookies) {
+    ITERATE (TSet, cookie, cookies.m_Cookies) {
         Add(**cookie);
     }
 }
@@ -306,7 +306,7 @@ void CCgiCookies::Add(const string& str)
 CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os)
     const
 {
-    iterate (TSet, cookie, m_Cookies) {
+    ITERATE (TSet, cookie, m_Cookies) {
         os << **cookie;
     }
     return os;
@@ -410,7 +410,7 @@ size_t CCgiCookies::Remove(TRange& range, bool destroy)
 
 void CCgiCookies::Clear(void)
 {
-    iterate (TSet, cookie, m_Cookies) {
+    ITERATE (TSet, cookie, m_Cookies) {
         delete *cookie;
     }
     m_Cookies.clear();
@@ -938,7 +938,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
         return;
     }
     string image_name;
-    iterate (TCgiEntries, i, m_Entries) {
+    ITERATE (TCgiEntries, i, m_Entries) {
         const string& entry = i->first;
 
         // check for our case ("*.x")
@@ -1179,6 +1179,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.68  2003/03/12 16:10:23  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.67  2003/03/11 19:17:31  kuznets
 * Improved error diagnostics in CCgiRequest
 *

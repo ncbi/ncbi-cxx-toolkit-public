@@ -232,7 +232,7 @@ CCgiApplication::CCgiApplication(void) : m_hostIP(0)
 
 CCgiApplication::~CCgiApplication(void)
 {
-    iterate (TDiagFactoryMap, it, m_DiagFactories) {
+    ITERATE (TDiagFactoryMap, it, m_DiagFactories) {
         delete it->second;
     }
     if ( m_hostIP ) free(m_hostIP);
@@ -343,7 +343,7 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
     }
     list<string> flags;
     NStr::Split(format, " ", flags);
-    iterate(list<string>, flag, flags) {
+    ITERATE(list<string>, flag, flags) {
         TFlagMap::const_iterator it;
         if ((it = s_FlagMap.find(*flag)) != s_FlagMap.end()) {
             new_flags |= it->second;
@@ -428,7 +428,7 @@ void CCgiApplication::x_LogPost(const char*             msg_header,
             } else {  // list of variables
                 list<string> vars;
                 NStr::Split(print_env, ",; ", vars);
-                iterate (list<string>, i, vars) {
+                ITERATE (list<string>, i, vars) {
                     msg << *i << "=" << env->Get(*i) << NcbiEndl;
                 }
             }
@@ -637,7 +637,7 @@ string CCgiStatistics::Compose_Entries(void)
     NStr::Split(log_args, ",; \t", vars);
 
     string msg;
-    iterate (list<string>, i, vars) {
+    ITERATE (list<string>, i, vars) {
         bool is_entry_found;
         const string& arg = *i;
 
@@ -689,6 +689,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/03/12 16:10:23  kuznets
+* iterate -> ITERATE
+*
 * Revision 1.43  2003/03/11 19:17:31  kuznets
 * Improved error diagnostics in CCgiRequest
 *
