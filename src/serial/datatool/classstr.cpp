@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/02 18:54:15  vasilche
+* Fixed variable coflict in MSVC.
+* Added missing #include <serial/choice.hpp>
+*
 * Revision 1.1  2000/02/01 21:47:55  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -297,31 +301,39 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPrivate() <<
             "    // members data\n";
-        iterate ( TMembers, i, m_Members ) {
-            if ( i->optional && i->type->NeedSetFlag() ) {
-                code.ClassPrivate() <<
-                    "    bool m_set_"<<i->cName<<";\n";
-            }
+		{
+	        iterate ( TMembers, i, m_Members ) {
+		        if ( i->optional && i->type->NeedSetFlag() ) {
+			        code.ClassPrivate() <<
+				        "    bool m_set_"<<i->cName<<";\n";
+				}
+			}
         }
-        iterate ( TMembers, i, m_Members ) {
-            code.ClassPrivate() <<
-                "    "<<i->tName<<" "<<i->mName<<";\n";
-        }
+		{
+			iterate ( TMembers, i, m_Members ) {
+				code.ClassPrivate() <<
+	                "    "<<i->tName<<" "<<i->mName<<";\n";
+		    }
+		}
     }
 
     // generate member initializers/destructors
     {
-        iterate ( TMembers, i, m_Members ) {
-            if ( i->optional && i->type->NeedSetFlag() ) {
-                code.AddInitializer("m_set_"+i->cName, "false");
-            }
+		{
+	        iterate ( TMembers, i, m_Members ) {
+		        if ( i->optional && i->type->NeedSetFlag() ) {
+			        code.AddInitializer("m_set_"+i->cName, "false");
+				}
+			}
         }
-        iterate ( TMembers, i, m_Members ) {
-            string init = i->defaultValue;
-            if ( init.empty() )
-                init = i->type->GetInitializer();
-            code.AddInitializer(i->mName, init);
-            code.AddDestructionCode(i->type->GetDestructionCode(i->mName));
+		{
+			iterate ( TMembers, i, m_Members ) {
+		        string init = i->defaultValue;
+			    if ( init.empty() )
+				    init = i->type->GetInitializer();
+	            code.AddInitializer(i->mName, init);
+		        code.AddDestructionCode(i->type->GetDestructionCode(i->mName));
+			}
         }
     }
 

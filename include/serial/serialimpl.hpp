@@ -43,6 +43,7 @@
 #include <serial/asntypes.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/enumerated.hpp>
+#include <serial/choice.hpp>
 
 struct valnode;
 
