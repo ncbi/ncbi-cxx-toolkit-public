@@ -74,17 +74,16 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptions* options,
       options->strand_option = strand_option;
    }
 
-   /* "L" indicates low-complexity (seg for proteins, 
-      dust for nucleotides). */
-   if (!filter_string || !strcasecmp(filter_string, "T")) {
-      if (program == eBlastTypeBlastn)
-         options->filter_string = strdup("D");
-      else
-         options->filter_string = strdup("S");
-   } else {
-      options->filter_string = strdup(filter_string); 
+   if (filter_string) {
+       /* Free whatever filter string has been set before. */
+       sfree(options->filter_string);
+       if (!strcasecmp(filter_string, "T"))
+           /* "L" indicates low-complexity - seg for proteins, dust for 
+              nucleotides. */
+           options->filter_string = strdup("L");
+       else
+           options->filter_string = strdup(filter_string); 
    }
-
    return 0;
 }
 
@@ -963,6 +962,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.153  2005/02/03 21:37:03  dondosha
+ * Tiny memory leak fix
+ *
  * Revision 1.152  2005/02/02 18:55:33  dondosha
  * Added BlastScoringOptionsSetMatrix; added setting of more default values in some of the BlastXXXOptionsNew functions
  *
