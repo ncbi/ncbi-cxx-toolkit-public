@@ -1141,10 +1141,14 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(Uint4 oid, CSeqDBLockHold & locked) c
     CRef<CBlast_def_line_set> defline_set(x_GetHdrText(oid, locked));
     
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
-        CRef<CBlast_def_line> defline = defline_set->Get().front();
-        
-        if (defline->CanGetSeqid()) {
-            seqids = defline->GetSeqid();
+        ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
+            if (! (*defline)->CanGetSeqid()) {
+                continue;
+            }
+            
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*defline)->GetSeqid()) {
+                seqids.push_back(*seqid);
+            }
         }
     }
     
