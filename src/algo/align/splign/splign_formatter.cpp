@@ -158,7 +158,7 @@ CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(const CSplign::TResults*
 CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     const vector<size_t>& boxes,
     const vector<string>& transcripts,
-    const vector<int>&    scores ) const
+    const vector<CNWAligner::TScore>&    scores ) const
 {
     const size_t num_exons = boxes.size() / 4;
 
@@ -196,7 +196,7 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       id->SetStr("splign");
       score->SetId(*id);
       CRef< CScore::C_Value > val (new CScore::C_Value);
-      val->SetInt(scores[i]);
+      val->SetReal(scores[i]);
       score->SetValue(*val);
       CSeq_align::TScore& scorelist = sa->SetScore();
       scorelist.push_back(score);
@@ -341,6 +341,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/08/12 20:07:26  kapustin
+ * Fix score type in x_Compartment2SeqAlign
+ *
  * Revision 1.8  2004/06/21 17:46:18  kapustin
  * Add result param to AsText and AsSeqAlignSet with zero default
  *
