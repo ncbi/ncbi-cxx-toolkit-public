@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/02/10 04:13:35  lavr
+ * Extra semicolon removed
+ *
  * Revision 1.1  2001/02/09 17:39:12  lavr
  * Initial revision
  *
@@ -95,7 +98,7 @@ static int s_ErrorHandler(const ErrDesc* err)
 
 extern "C" {
     static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err);
-};
+}
 
 static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
 {
