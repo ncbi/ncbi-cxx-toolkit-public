@@ -136,7 +136,8 @@ public:
         eFileOpen,
         eProjectType,
         eBuildConfiguration,
-        eMetaMakefile
+        eMetaMakefile,
+        eConfigureDefinesPath
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -152,6 +153,8 @@ public:
             return "Unknown build configuration";
         case eMetaMakefile:
             return "Bad or missed metamakefile";
+        case eConfigureDefinesPath:
+            return "Path to configure defines file is empty";
         default:
             return CException::GetErrCodeString();
         }
@@ -165,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/05 16:24:57  gorelenk
+ * + eConfigureDefinesPath in CProjBulderAppException class.
+ *
  * Revision 1.8  2004/01/30 20:41:34  gorelenk
  * Added support of ASN projects
  *
