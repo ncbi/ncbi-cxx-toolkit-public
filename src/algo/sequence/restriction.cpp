@@ -171,7 +171,7 @@ void CFindRSites::Find(const string& seq,
             // part of pattern before first N
             int fsm_pat_size;
             CSeqMatch::IupacToNcbi8na(spec->GetSeq(), pat);
-            if (count(pat.begin(), pat.end(), 0x0f) > 2) {
+            if (count(pat.begin(), pat.end(), (char)0x0f) > 2) {
                 fsm_pat_size = pat.find_first_of(0x0f);
             } else {
                 fsm_pat_size = pat.size();
@@ -421,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/21 12:03:07  dicuccio
+ * Make use of new typedef in plugin_utils.hpp for argument values.
+ *
  * Revision 1.3  2003/08/20 22:57:44  jcherry
  * Reimplemented restriction site finding using finite state machine
  *
