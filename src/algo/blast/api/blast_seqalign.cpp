@@ -1164,8 +1164,13 @@ x_CreateEmptySeq_align_set(CSeq_align_set* sas)
     return retval;
 }
 
-// Always remap the query, the subject is remapped if it's given (assumes
-// alignment created by BLAST 2 Sequences API)
+/// Always remap the query, the subject is remapped if it's given (assumes
+/// alignment created by BLAST 2 Sequences API).
+/// Since the query strands were already taken into account when CSeq_align 
+/// was created, only start position shifts in the CSeq_loc's are relevant in 
+/// this function. However full remapping is necessary for the subject sequence
+/// if it is on a negative strand.
+
 static void
 x_RemapAlignmentCoordinates(CRef<CSeq_align> sar, 
                             const SSeqLoc* query,
@@ -1176,11 +1181,50 @@ x_RemapAlignmentCoordinates(CRef<CSeq_align> sar,
     const int query_dimension = 0;
     const int subject_dimension = 1;
 
-    if (!query->seqloc->IsWhole()) {
+    // If subject is on a minus strand, we'll need to flip subject strands 
+    // and remap subject coordinates on all segments.
+    // Otherwise we only need to shift query and/or subject coordinates, 
+    // if the respective location starts not from 0.
+    bool remap_subject = 
+        (subject && subject->seqloc->IsInt() &&
+         subject->seqloc->GetInt().GetStrand() == eNa_strand_minus);
+
+    TSeqPos q_shift = 0, s_shift = 0;
+
+    if (query->seqloc->IsInt()) {
+        q_shift = query->seqloc->GetInt().GetFrom();
+    }
+    if (subject && subject->seqloc->IsInt()) {
+        s_shift = subject->seqloc->GetInt().GetFrom();
+    }
+
+    if (remap_subject || q_shift > 0 || s_shift > 0) {
         for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
-            itr->RemapToLoc(query_dimension, *query->seqloc);
+            // Create temporary CSeq_locs with strands either matching 
+            // (for query and for subject if it is not on a minus strand),
+            // or opposite to those in the segment, to force RemapToLoc to 
+            // behave in the correct way.
+            CSeq_loc q_seqloc, s_seqloc;
+            const vector<ENa_strand> strands = itr->GetStrands();
+            ENa_strand q_strand = strands[0];
+            q_seqloc.SetInt().SetFrom(q_shift);
+            q_seqloc.SetInt().SetTo(query->seqloc->GetInt().GetTo());
+            q_seqloc.SetInt().SetStrand(q_strand);
+            q_seqloc.SetInt().SetId().Assign(sequence::GetId(*query->seqloc, query->scope));
+            itr->RemapToLoc(query_dimension, q_seqloc);
             if (subject) {
-                itr->RemapToLoc(subject_dimension, *subject->seqloc);
+                ENa_strand s_strand;
+                if (remap_subject) {
+                    s_strand = ((strands[1] == eNa_strand_plus) ? 
+                                eNa_strand_minus : eNa_strand_plus);
+                } else {
+                    s_strand = strands[1];
+                }
+                s_seqloc.SetInt().SetFrom(s_shift);
+                s_seqloc.SetInt().SetTo(subject->seqloc->GetInt().GetTo());
+                s_seqloc.SetInt().SetStrand(s_strand);
+                s_seqloc.SetInt().SetId().Assign(sequence::GetId(*subject->seqloc, subject->scope));
+                itr->RemapToLoc(subject_dimension, s_seqloc);
             }
         }
     }
@@ -1361,6 +1405,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/04/28 19:40:45  dondosha
+* Fixed x_RemapAlignmentCoordinates function to work correctly with all strand combinations
+*
 * Revision 1.38  2004/04/19 12:59:12  madden
 * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure
 *
