@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/07/22 22:49:05  kimelman
+* test fixes for confidential data retrieval
+*
 * Revision 1.2  2002/05/06 03:28:53  vakatov
 * OM/OM1 renaming
 *
@@ -66,12 +69,15 @@ using namespace objects;
 static CFastMutex    s_GlobalLock;
 
 // GIs to process
-#if 1
-    const int g_gi_from = 156000;
-    const int g_gi_to   = 157000;
-#else
+#if 0
+    const int g_gi_from = 156894;
+    const int g_gi_to   = 156896;
+#elif 0
     const int g_gi_from = 156201;
     const int g_gi_to   = 156203;
+#else
+    const int g_gi_from = 156000;
+    const int g_gi_to   = 157000;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -209,6 +215,9 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
 
 bool CTestOM::TestApp_Init(void)
 {
+    CORE_SetLOCK(MT_LOCK_cxx2c());
+    CORE_SetLOG(LOG_cxx2c());
+
     const CArgs& args = GetArgs();
     m_gi_from = args["fromgi"].AsInteger();
     m_gi_to   = args["togi"].AsInteger();

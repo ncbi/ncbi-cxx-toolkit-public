@@ -46,27 +46,35 @@ int main()
 
     CPubseqReader reader;
     CSeq_id seqId;
-    seqId.SetGi(5);
+    seqId.SetGi(156895+k-1);
 
     for(CIStream is(reader.SeqrefStreamBuf(seqId)); ! is.Eof(); )
     {
       auto_ptr<CPubseqSeqref> seqRef(static_cast<CPubseqSeqref *>(reader.RetrieveSeqref(is)));
-      cout << "SatKey=" << seqRef->SatKey() << " Flag=" << seqRef->Flag() << endl;
-
+      cout << "gi: " << seqId.GetGi() << " SatKey=" << seqRef->SatKey() << " Flag=" << seqRef->Flag() << endl;
+      
       CBlobClass cl;
       for(CIStream is1(seqRef->BlobStreamBuf(0, 0, cl)); ! is1.Eof(); )
-      {
-        auto_ptr<CBlob> blob(seqRef->RetrieveBlob(is1));
-        cout << "Class=" << blob->Class() << " Descr=" << blob->Descr() << endl;
         {
-          ofstream ofs("/dev/null");
-          //ostream &o = ofs;
-          ostream &o = cout;
-          CObjectOStreamAsn oos(o);
-          oos << *blob->Seq_entry();
-          o << endl;
+          auto_ptr<CBlob> blob;
+          try { blob.reset(seqRef->RetrieveBlob(is1)); }
+          catch (exception& e) { cout << "exception catched at RetrieveBlob :: " << e.what() << " ;\n" ; }
+          cout << "Class=" << blob->Class() << " Descr=" << blob->Descr() << endl;
+          CSeq_entry *e = blob->Seq_entry();
+          if(!e)
+            {
+              cout << "blob is not available\n";
+              continue;
+            }
+          if(0){
+              ofstream ofs("/dev/null");
+              //ostream &o = ofs;
+              ostream &o = cout;
+              CObjectOStreamAsn oos(o);
+              oos << *e;
+              o << endl;
+          }
         }
-      }
     }
   }
   return 0;
@@ -74,6 +82,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.4  2002/07/22 22:49:05  kimelman
+* test fixes for confidential data retrieval
+*
 * Revision 1.3  2002/05/06 03:28:52  vakatov
 * OM/OM1 renaming
 *

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/07/22 22:49:05  kimelman
+* test fixes for confidential data retrieval
+*
 * Revision 1.16  2002/06/06 20:42:17  kimelman
 * cosmetics
 *
@@ -306,9 +309,12 @@ int CTestApplication::Run()
     for(unsigned global_scope=0;global_scope<=2; ++global_scope)
       for(unsigned thr=0; thr < tc ; ++thr)
         {
-          LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
-                   ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
-                   " ==>> " << timing[thr][global_om][global_scope] << " sec");
+          if(timing[thr][global_om][global_scope]>0)
+            {
+              LOG_POST("TEST: threads:" << thr+1 << ", om=" << (global_om?"global":"local ") <<
+                       ", scope=" << (global_scope==0?"auto      ":(global_scope==1?"per thread":"global    ")) <<
+                       " ==>> " << timing[thr][global_om][global_scope] << " sec");
+            }
         }
   
   LOG_POST("Tests completed");
