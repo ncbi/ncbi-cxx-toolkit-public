@@ -36,6 +36,7 @@ res_journal="${CHECK_RUN_FILE}.journal"
 res_log="${CHECK_RUN_FILE}.log"
 res_concat="${CHECK_RUN_FILE}.out"
 
+PATH=".:\$PATH"
 
 ##  Printout USAGE info and exit
 
@@ -55,7 +56,6 @@ EOF_usage
 
     exit 1
 }
-
 
 
 if test \$# -ne 1 ; then
