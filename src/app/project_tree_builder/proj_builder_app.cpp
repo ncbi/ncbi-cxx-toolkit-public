@@ -44,7 +44,8 @@
 
 BEGIN_NCBI_SCOPE
 
-struct PIsExcludedByMakefile
+
+struct PIsExcludedByProjectMakefile
 {
     typedef CProjectItemsTree::TProjects::value_type TValueType;
     bool operator() (const TValueType& item) const
@@ -66,6 +67,91 @@ struct PIsExcludedByMakefile
     }
 };
 
+
+struct PIsExcludedMakefileIn
+{
+    typedef CProjectItemsTree::TProjects::value_type TValueType;
+
+    PIsExcludedMakefileIn(const string& root_src_dir)
+        :m_RootSrcDir(CDirEntry::NormalizePath(root_src_dir))
+    {
+        ProcessDir(root_src_dir);
+    }
+
+    bool operator() (const TValueType& item) const
+    {
+        const CProjItem& project = item.second;
+
+        const list<string> implicit_exclude_dirs = 
+            GetApp().GetProjectTreeInfo().m_ImplicitExcludedAbsDirs;
+        ITERATE(list<string>, p, implicit_exclude_dirs) {
+            const string& dir = *p;
+            if ( IsSubdir(dir, project.m_SourcesBaseDir) ) {
+                // implicitly excluded from build
+                return !IsExcplicitlyIncluded(project.m_SourcesBaseDir);
+            }
+        }
+        return false;
+    }
+
+private:
+    string m_RootSrcDir;
+
+    typedef map<string, AutoPtr<CNcbiRegistry> > TMakefiles;
+    TMakefiles m_Makefiles;
+
+    void ProcessDir(const string& dir_name)
+    {
+        CDir dir(dir_name);
+        CDir::TEntries contents = dir.GetEntries("*");
+        ITERATE(CDir::TEntries, i, contents) {
+            string name  = (*i)->GetName();
+            if ( name == "."  ||  name == ".."  ||  
+                 name == string(1,CDir::GetPathSeparator()) ) {
+                continue;
+            }
+            string path = (*i)->GetPath();
+
+            if ( (*i)->IsFile()        &&
+                name          == "Makefile.in.msvc" ) {
+                m_Makefiles[path] = 
+                    AutoPtr<CNcbiRegistry>
+                         (new CNcbiRegistry(CNcbiIfstream(path.c_str(), 
+                                            IOS_BASE::in | IOS_BASE::binary)));
+            } 
+            else if ( (*i)->IsDir() ) {
+
+                ProcessDir(path);
+            }
+        }
+    }
+
+    bool IsExcplicitlyIncluded(const string& project_base_dir) const
+    {
+        string dir = project_base_dir;
+        for(;;) {
+
+            if (dir == m_RootSrcDir) 
+                return false;
+            string path = CDirEntry::ConcatPath(dir, "Makefile.in.msvc");
+            TMakefiles::const_iterator p = 
+                m_Makefiles.find(path);
+            if ( p != m_Makefiles.end() ) {
+                string val = 
+                    (p->second)->GetString("Common", "ExcludeProject", "");
+                if (val == "FALSE")
+                    return true;
+            }
+
+            dir = CDirEntry::ConcatPath(dir, "..");
+            dir = CDirEntry::NormalizePath(dir);
+        }
+
+        return false;
+    }
+};
+
+
 struct PIsExcludedByRequires
 {
     typedef CProjectItemsTree::TProjects::value_type TValueType;
@@ -80,6 +166,21 @@ struct PIsExcludedByRequires
 };
 
 
+template <class T1, class T2, class V> class CCombine
+{
+public:
+    CCombine(const T1& t1, const T2& t2)
+        :m_T1(t1), m_T2(t2)
+    {
+    }
+    bool operator() (const V& v) const
+    {
+        return m_T1(v)  &&  m_T2(v);
+    }
+private:
+    const T1 m_T1;
+    const T2 m_T2;
+};
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
@@ -172,11 +273,23 @@ int CProjBulderApp::Run(void)
     // MSVC specific part:
     
     // Exclude some projects from build:
-    // Implicit/Exclicit exclude by msvc makefiles.
-    EraseIf(projects_tree.m_Projects, PIsExcludedByMakefile());
-    // Project requires are not provided
-    EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
+    {{
+        // Implicit/Exclicit exclude by msvc Makefiles.in.msvc
+        // and project .msvc makefiles.
+        PIsExcludedMakefileIn          p_make_in(GetProjectTreeInfo().m_Src);
+        PIsExcludedByProjectMakefile   p_project_makefile;
+        CCombine<PIsExcludedMakefileIn, 
+                 PIsExcludedByProjectMakefile,  
+                 CProjectItemsTree::TProjects::value_type> 
+                                  logical_combine(p_make_in, p_project_makefile);
+        EraseIf(projects_tree.m_Projects, logical_combine);
+    }}
+    {{
+        // Project requires are not provided
 
+        EraseIf(projects_tree.m_Projects, PIsExcludedByRequires());
+
+    }}
 
     // Projects
     CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
@@ -544,6 +657,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/03/03 22:20:02  gorelenk
+ * Added predicate PIsExcludedMakefileIn, class template CCombine,  redesigned
+ * projects exclusion inside CProjBulderApp::Run - to support local
+ * Makefile.in.msvc .
+ *
  * Revision 1.28  2004/03/03 00:06:25  gorelenk
  * Changed implementation of CProjBulderApp::Run.
  *
