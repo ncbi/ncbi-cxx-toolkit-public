@@ -250,9 +250,9 @@ CRef<CTSE_Info> CReader::GetSNPBlob(const CSeqref& seqref, TConn /*conn*/)
 }
 
 
-void CReader::GetTSEChunk(const CSeqref& seqref,
-                          CTSE_Chunk_Info& chunk_info,
-                          TConn conn)
+void CReader::GetTSEChunk(const CSeqref& /*seqref*/,
+                          CTSE_Chunk_Info& /*chunk_info*/,
+                          TConn /*conn*/)
 {
     NCBI_THROW(CLoaderException, eNoData,
                "Chunks are not implemented");
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.30  2004/02/17 21:18:53  vasilche
+ * Fixed 'unused argument' warnings.
+ *
  * Revision 1.29  2004/01/22 20:10:35  vasilche
  * 1. Splitted ID2 specs to two parts.
  * ID2 now specifies only protocol.
