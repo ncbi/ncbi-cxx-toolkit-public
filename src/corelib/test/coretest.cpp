@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2001/07/25 19:14:14  lavr
+* Added test for date/time stamp in message logging
+*
 * Revision 1.75  2001/06/22 21:46:15  ivanov
 * Added test for read/write the registry file with comments
 *
@@ -721,6 +724,10 @@ static void TestDiag(void)
     PushDiagPostPrefix("ERROR");
     SetDiagPostPrefix(0);
     diag << Error << ErrCode(3, 4) << "Message with error code" << Endm;
+
+    UnsetDiagPostFlag(eDPF_DateTime);
+    diag << Warning << "Message without datetime stamp" << Endm;
+    SetDiagPostFlag(eDPF_DateTime);
 }
 
 
