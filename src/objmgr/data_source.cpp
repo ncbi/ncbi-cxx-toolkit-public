@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/04/19 18:02:47  kimelman
+* add verify to catch coredump
+*
 * Revision 1.35  2002/04/17 21:09:14  grichenk
 * Fixed annotations loading
 * +IsSynonym()
@@ -311,6 +314,7 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
         CHandleRangeMap hrm(GetIdMapper());
         CSeq_loc loc;
         CConstRef<CSeq_id> id = handle.GetSeqId();
+        _VERIFY(id);
         SerialAssign<CSeq_id>(loc.SetWhole(), *id);
         hrm.AddLocation(loc);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
