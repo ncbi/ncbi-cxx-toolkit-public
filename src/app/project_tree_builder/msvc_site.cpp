@@ -54,6 +54,15 @@ bool CMsvcSite::IsProvided(const string& thing) const
 }
 
 
+void CMsvcSite::GetComponents(const string& entry, 
+                              list<string>* components) const
+{
+    components->clear();
+    string comp_str = m_Registry.GetString(entry, "Component", "");
+    NStr::Split(comp_str, " ,\t", *components);
+}
+
+
 void CMsvcSite::GetLibInfo(const string& lib, 
                            const SConfigInfo& config, SLibInfo* libinfo) const
 {
@@ -89,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/05 16:31:19  gorelenk
+ * Added definition of function GetComponents.
+ *
  * Revision 1.5  2004/02/05 15:29:06  gorelenk
  * + Configuration information provision.
  *
