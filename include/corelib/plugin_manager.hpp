@@ -238,6 +238,20 @@ struct CPluginManagerBase : public CObject
 };
 
 
+/// Template function to create dll resolver for interface.
+/// Interfaces which require dll resolvers should define
+/// specialization of the template.
+template <class TClass>
+class CDllResolver_Getter
+{
+public:
+    CPluginManager_DllResolver* operator()(void)
+    {
+        return 0;
+    }
+};
+
+
 /// CPluginManager<> --
 ///
 /// To register (either directly, or via an "entry point") class factories
@@ -270,7 +284,24 @@ public:
         return factory->CreateInstance(driver, version, params);
     }
 
+    /// Create first available driver from the list of drivers.
+    /// Several driver names may be separated with ":".
+    TClass* CreateInstanceFromList
+        (const TPluginManagerParamTree* params,
+         const string&                  driver_list,
+         CVersionInfo                   version =
+         CVersionInfo(TIfVer::eMajor,
+                      TIfVer::eMinor,
+                      TIfVer::ePatchLevel));
 
+    /// Detect driver from the parameters using the key to get list of drivers.
+    TClass* CreateInstanceFromKey
+        (const TPluginManagerParamTree* params,
+         const string&                  driver_key,
+         CVersionInfo                   version =
+         CVersionInfo(TIfVer::eMajor,
+                      TIfVer::eMinor,
+                      TIfVer::ePatchLevel));
 
     /// Get class factory
     ///
@@ -403,7 +434,15 @@ public:
     void FreezeResolution(const string& driver, bool value = true);
 
     // ctors
-    CPluginManager(void) : m_BlockResolution(false) {}
+    CPluginManager(void)
+        : m_BlockResolution(false)
+    {
+        CDllResolver_Getter<TClass> getter;
+        CPluginManager_DllResolver* resolver = getter();
+        if ( resolver ) {
+            AddResolver(resolver);
+        }
+    }
     virtual ~CPluginManager();
 
 protected:
@@ -567,6 +606,55 @@ protected:
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
+
+
+template <class TClass, class TIfVer>
+TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromList(
+    const TPluginManagerParamTree* params,
+    const string&                  driver_list,
+    CVersionInfo                   version)
+{
+    TClass* drv = 0;
+
+    list<string> drivers;
+    NStr::Split(driver_list, ":", drivers);
+    ITERATE ( list<string>, it, drivers ) {
+        string drv_name = *it;
+        const TPluginManagerParamTree* driver_params =
+            params->FindNode(drv_name);
+        try {
+            drv = CreateInstance(drv_name, version, driver_params);
+        }
+        catch ( exception& e ) {
+            LOG_POST(drv_name << " reader is not available ::" << e.what());
+        }
+        if ( drv ) {
+            break;
+        }
+    }
+    return drv;
+}
+
+
+template <class TClass, class TIfVer>
+TClass* CPluginManager<TClass, TIfVer>::CreateInstanceFromKey(
+    const TPluginManagerParamTree* params,
+    const string&                  driver_key,
+    CVersionInfo                   version)
+{
+    TClass* drv = 0;
+    if ( !params ) {
+        return drv;
+    }
+    const TPluginManagerParamTree* driver_node = params->FindNode(driver_key);
+    if ( !driver_node ) {
+        return drv;
+    }
+    string driver_name = driver_node->GetValue();
+    // Driver name may contain a list of drivers
+    drv = CreateInstanceFromList(params, driver_name, version);
+    return drv;
+}
 
 
 template <class TClass, class TIfVer>
@@ -838,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/12/22 19:24:45  grichenk
+ * Use CDllResolver_Getter() to add default DLL resolver
+ *
  * Revision 1.37  2004/11/08 16:37:34  kuznets
  * More informative error message
  *
