@@ -33,13 +33,13 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiexec.hpp>
-#include <corelib/ncbifile.hpp>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h> // for _exit
+#if defined(HAVE_UNISTD_H)
+#  include <unistd.h>         // for _exit()
 #endif
 
-#include <test/test_assert.h>  // This header must go last
+#include <test/test_assert.h> // This header must go last
+
 
 USING_NCBI_SCOPE;
 
@@ -47,8 +47,6 @@ USING_NCBI_SCOPE;
 #define TEST_RESULT_C    99   // Test exit code for current test
 #define TEST_RESULT_P     0   // Test exit code for test from PATH
 
-
-string app;
 
 
 ////////////////////////////////
@@ -75,33 +73,7 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
-    if ( !CFile(app).Exists() ) {
-        // Run from some path from the PATH environment variable.
-        // Try to determine that path.
-        string env_path = GetEnvironment().Get("PATH");
-        list<string> split;
-#if defined(NCBI_OS_MSWIN)
-        NStr::Split(env_path, ";", split);
-#else
-        NStr::Split(env_path, ":", split);
-#endif
-        string pname = GetArguments().GetProgramName();
-        ITERATE(list<string>, it, split) {
-#if defined(NCBI_OS_MSWIN)
-            pname = CDirEntry(pname).GetBase();
-            app = CDirEntry::MakePath(*it, pname, "exe");
-#else
-            app = CDirEntry::MakePath(*it, pname);
-#endif
-            if ( CFile(app).Exists() ) {
-                break;
-            }
-            app = kEmptyStr;
-        }
-    }
-    if ( app.empty() ) {
-        exit(1);
-    }
+    string app = GetArguments().GetProgramName();
     cout << "Application path: " << app << endl;
 
     // Initialization of variables and structures
@@ -120,7 +92,6 @@ int CTest::Run(void)
         "TEST_NCBI_EXEC=yes",
         0
     };
-
 
     {{
         string        ld_path_setting               ("LD_LIBRARY_PATH=");
@@ -199,7 +170,7 @@ int CTest::Run(void)
     assert( pid != -1 );
     assert( CExec::Wait(pid) == TEST_RESULT_C );
 
-    pid = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait", 0, my_env);
+    pid = CExec::SpawnLPE(CExec::eNoWait, app_c, "SpawnLPE_eNoWait", 0,my_env);
     assert( pid != -1 );
     assert( CExec::Wait(pid) == TEST_RESULT_C );
 
@@ -246,7 +217,7 @@ int main(int argc, const char* argv[], const char* envp[])
         if ( strstr(argv[1],"E_e")) {
             char* ptr = getenv("TEST_NCBI_EXEC");
             if (!ptr || !*ptr) {
-                cout << "Environment variable TEST_NCBI_EXEC not found " << endl;
+                cout << "Environment variable TEST_NCBI_EXEC not found" <<endl;
                 cout.flush();
                 _exit(88);
             } else {
@@ -256,7 +227,7 @@ int main(int argc, const char* argv[], const char* envp[])
         _exit(TEST_RESULT_C);
     }
     cout << "Start tests:" << endl << endl;
-    app = argv[0];
+
     // Execute main application function
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
@@ -265,6 +236,10 @@ int main(int argc, const char* argv[], const char* envp[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.17  2003/09/16 19:09:10  ivanov
+ * Removed the code for location a current executable file using PATH env
+ * variable. Use renewed GetProgramName() instead.
+ *
  * Revision 6.16  2003/07/16 13:38:06  ucko
  * Make sure to preserve LD_LIBRARY_PATH if it was set in the original
  * environment, since we may need it to find libxncbi.so.
