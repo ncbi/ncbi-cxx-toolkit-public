@@ -28,10 +28,12 @@
  *
  * Author:  Eugene Vasilchenko
  *
- * File Description:
- *   Multi-threading -- conficuration
  *
  */
+
+/// @file ncbithr_conf.hpp
+/// Multi-threading configuration.
+
 
 #include <corelib/ncbistd.hpp>
 
@@ -67,30 +69,55 @@ BEGIN_NCBI_SCOPE
 
 #if defined(NCBI_WIN32_THREADS)
 
+/// Define internal TLS key type.
 typedef DWORD  TTlsKey;
+
+/// Define platform-dependent thread handle type.
 typedef HANDLE TThreadHandle;
+
+/// Define platform-dependent thread ID type.
 typedef DWORD  TThreadSystemID;
 
+/// Define platform-dependent result wrapper.
 typedef DWORD  TWrapperRes;
+
+/// Define platform-dependent argument wrapper.
 typedef LPVOID TWrapperArg;
 
 #elif defined(NCBI_POSIX_THREADS)
 
+/// Define internal TLS key type.
 typedef pthread_key_t TTlsKey;
+
+/// Define platform-dependent thread handle type.
 typedef pthread_t     TThreadHandle;
+
+/// Define platform-dependent thread ID type.
 typedef pthread_t     TThreadSystemID;
 
+/// Define platform-dependent result wrapper.
 typedef void* TWrapperRes;
+
+/// Define platform-dependent argument wrapper.
 typedef void* TWrapperArg;
 
 #else
 
 // fake
+
+/// Define internal TLS key type.
 typedef void* TTlsKey;
+
+/// Define platform-dependent thread handle type.
 typedef int   TThreadHandle;
+
+/// Define platform-dependent thread ID type.
 typedef int   TThreadSystemID;
 
+/// Define platform-dependent result wrapper.
 typedef void* TWrapperRes;
+
+/// Define platform-dependent argument wrapper.
 typedef void* TWrapperArg;
 
 #endif
@@ -104,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/08/04 12:41:19  siyan
+ * Documentation changes.
+ *
  * Revision 1.5  2003/06/03 18:24:28  rsmith
  * wrap includes of sched.h (explicit and implicit) in extern "c" blocks, since Apples headers do not do it themselves.
  *
