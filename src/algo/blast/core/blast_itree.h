@@ -63,7 +63,8 @@ typedef struct SIntervalNode {
     Int4 center;    /**< The center point of the region this node describes */
     Int4 width;     /**< The distance from the region center to region edge */
     Int4 leftptr;   /**< Offset to the subtree describing the left half
-                         of the region */
+                         of the region, OR the query start offset (leaf 
+                         nodes only) */
     Int4 midptr;    /**< Used for linked list of segments that cross the
                          center of the region */
     Int4 rightptr;  /**< Offset to the subtree describing the right half
@@ -125,9 +126,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp,
  *  within that many diagonals of an HSP in the tree.
  *  @param tree Interval tree to search [in]
  *  @param hsp The HSP used to query the tree [in]
- *  @param query_start_offset The starting offset (within a collection
- *                            of concatenated queries) of the query
- *                            sequence containing the input HSP [in]
+ *  @param query_info Structure with query offset information [in]
  *  @param min_diag_separation Number of diagonals separating 
  *                             nonoverlapping hits (only nonzero 
  *                             for megablast) [in]
@@ -136,7 +135,7 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp,
 Boolean
 BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
                              const BlastHSP *hsp,
-                             Int4 query_start_offset,
+                             const BlastQueryInfo *query_info,
                              Int4 min_diag_separation);
 
 #ifdef __cplusplus
