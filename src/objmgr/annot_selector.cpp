@@ -61,7 +61,6 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_ResolveMethod(eResolve_TSE),
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
-      m_CombineMethod(eCombine_None),
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
@@ -81,7 +80,6 @@ SAnnotSelector::SAnnotSelector(TFeatType feat)
       m_ResolveMethod(eResolve_TSE),
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
-      m_CombineMethod(eCombine_None),
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
@@ -101,7 +99,6 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_ResolveMethod(eResolve_TSE),
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
-      m_CombineMethod(eCombine_None),
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
@@ -122,7 +119,6 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_ResolveMethod(eResolve_TSE),
       m_SegmentSelect(eSegmentSelect_All),
       m_SortOrder(eSortOrder_Normal),
-      m_CombineMethod(eCombine_None),
       m_LimitObjectType(eLimit_None),
       m_IdResolving(eIgnoreUnresolved),
       m_MaxSize(kMax_UInt),
@@ -148,7 +144,6 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_ResolveMethod = sel.m_ResolveMethod;
         m_SegmentSelect = sel.m_SegmentSelect;
         m_SortOrder = sel.m_SortOrder;
-        m_CombineMethod = sel.m_CombineMethod;
         m_LimitObjectType = sel.m_LimitObjectType;
         m_IdResolving = sel.m_IdResolving;
         m_LimitObject = sel.m_LimitObject;
@@ -599,6 +594,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/25 17:11:25  grichenk
+* Removed obsolete SAnnotSelector::SetCombineMethod()
+*
 * Revision 1.13  2004/08/05 18:24:05  vasilche
 * Added TSE_Lock field.
 *

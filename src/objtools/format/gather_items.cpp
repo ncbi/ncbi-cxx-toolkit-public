@@ -292,7 +292,6 @@ void CFlatGatherer::x_GatherReferences(void) const
 
     // gather references from features
     SAnnotSelector sel(CSeqFeatData::e_Pub);
-    sel.SetCombineMethod(SAnnotSelector::eCombine_All);
     CFeat_CI it(m_Current->GetScope(), m_Current->GetLocation(), sel);
     for ( ; it; ++it) {
         refs.push_back(CBioseqContext::TRef(new CReferenceItem(it->GetData().GetPub(),
@@ -748,7 +747,6 @@ void CFlatGatherer::x_CollectSourceFeatures
     SAnnotSelector as;
     as.SetFeatType(CSeqFeatData::e_Biosrc);
     as.SetOverlapIntervals();
-    as.SetCombineMethod(SAnnotSelector::eCombine_All);
     as.SetResolveDepth(1);  // in case segmented
     as.SetNoMapping(false);
 
@@ -1287,6 +1285,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2004/08/25 17:11:26  grichenk
+* Removed obsolete SAnnotSelector::SetCombineMethod()
+*
 * Revision 1.24  2004/08/25 15:03:56  grichenk
 * Removed duplicate methods from CSeqMap
 *

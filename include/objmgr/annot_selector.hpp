@@ -78,11 +78,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         eSortOrder_Normal,  // default - increasing start, decreasing length
         eSortOrder_Reverse  // decresing end, decreasing length
     };
-    // Flag to indicate joining feature visible through multiple segments
-    enum ECombineMethod {
-        eCombine_None,       // default - do not combine feature from segments
-        eCombine_All         // combine feature from different segments
-    };
     enum EIdResolving {
         eLoadedOnly,       // Resolve only ids already loaded into the scope
         eIgnoreUnresolved, // Ignore unresolved ids (default)
@@ -164,12 +159,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetSortOrder(ESortOrder sort_order)
         {
             m_SortOrder = sort_order;
-            return *this;
-        }
-
-    SAnnotSelector& SetCombineMethod(ECombineMethod combine_method)
-        {
-            m_CombineMethod = combine_method;
             return *this;
         }
 
@@ -315,7 +304,6 @@ protected:
     EResolveMethod        m_ResolveMethod;
     ESegmentSelect        m_SegmentSelect;
     ESortOrder            m_SortOrder;
-    ECombineMethod        m_CombineMethod;
 
     enum ELimitObject {
         eLimit_None,
@@ -347,6 +335,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/08/25 17:11:25  grichenk
+* Removed obsolete SAnnotSelector::SetCombineMethod()
+*
 * Revision 1.31  2004/08/05 18:23:48  vasilche
 * CAnnotName and CAnnotTypeSelector are moved in separate headers. Added TSE_Lock field.
 *
