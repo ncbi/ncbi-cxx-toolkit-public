@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/07/10 17:32:00  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
 * Revision 1.21  2000/06/16 20:01:30  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -282,8 +287,9 @@ CDataType* CDataTypeModule::ExternalResolve(const string& typeName,
     if ( t != types.end() )
         return t->second;
 
-    if ( !allowInternal && m_LocalTypes.find(typeName) != m_LocalTypes.end() ) {
-        THROW1_TRACE(CTypeNotFound, "not exported type: " + typeName);
+    if ( !allowInternal &&
+         m_LocalTypes.find(typeName) != m_LocalTypes.end() ) {
+        throw CTypeNotFound("not exported type: " + typeName);
     }
 
     throw CTypeNotFound("undefined type: " + typeName);

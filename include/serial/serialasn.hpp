@@ -33,15 +33,16 @@
 *
 */
 
-#include <serial/serial.hpp>
-#include <serial/typeref.hpp>
+#include <corelib/ncbistd.hpp>
+
+#if HAVE_NCBI_C
+
+#include <serial/serialimpl.hpp>
 
 struct asnio;
 struct asntype;
 
 BEGIN_NCBI_SCOPE
-
-#if HAVE_NCBI_C
 
 TTypeInfo COctetStringTypeInfoGetTypeInfo(void);
 TTypeInfo CAutoPointerTypeInfoGetTypeInfo(TTypeInfo type);
@@ -77,7 +78,7 @@ inline
 CTypeRef GetSetTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetCTypeRef(p));
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
 }
 
 template<typename T>
@@ -85,7 +86,7 @@ inline
 CTypeRef GetSequenceTypeRef(const T* const* )
 {
     const T* p = 0;
-    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetCTypeRef(p));
+    return CTypeRef(&CAutoPointerTypeInfoGetTypeInfo, GetAsnStructTypeInfo(p));
 }
 
 template<typename T>
@@ -125,24 +126,144 @@ CTypeRef GetOldAsnTypeRef(const string& name,
                                       reinterpret_cast<TReadProc>(readProc),
                                       reinterpret_cast<TWriteProc>(writeProc));
 }
-#endif
 
-// type info declaration
-#define ASN_TYPE_INFO_GETTER_NAME(name) NCBI_NAME2(GetTypeInfo_struct_, name)
-#define ASN_STRUCT_NAME(name) NCBI_NAME2(struct_, name)
+template<typename T>
+inline
+CMemberInfo* SetMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSetTypeRef(member));
+}
 
-#define ASN_TYPE_INFO_GETTER_DECL(name) \
-NCBI_NS_NCBI::TTypeInfo ASN_TYPE_INFO_GETTER_NAME(name)(void)
+template<typename T>
+inline
+CMemberInfo* SequenceMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSequenceTypeRef(member));
+}
 
-#define ASN_TYPE_REF(name) \
-struct ASN_STRUCT_NAME(name); \
-ASN_TYPE_INFO_GETTER_DECL(name); \
-inline NCBI_NS_NCBI::TTypeInfoGetter GetCTypeRef(const ASN_STRUCT_NAME(name)* ) \
-{ return &ASN_TYPE_INFO_GETTER_NAME(name); }
+template<typename T>
+inline
+CMemberInfo* SetOfMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSetOfTypeRef(member));
+}
 
-#define ASN_CHOICE_REF(name) \
-ASN_TYPE_INFO_GETTER_DECL(name);
+template<typename T>
+inline
+CMemberInfo* SequenceOfMemberInfo(const T* const* member)
+{
+	return MemberInfo(member, GetSequenceOfTypeRef(member));
+}
+
+inline
+CMemberInfo* OctetStringMemberInfo(const void* const* member)
+{
+	return MemberInfo(member, GetOctetStringTypeRef(member));
+}
+
+inline
+CMemberInfo* ChoiceMemberInfo(const valnode* const* member,
+                              TTypeInfo (*func)(void))
+{
+	return MemberInfo(member, GetChoiceTypeRef(func));
+}
+
+template<typename T>
+inline
+CMemberInfo* OldAsnMemberInfo(const T* const* member, const string& name,
+                              T* (ASNCALL*newProc)(void),
+							  T* (ASNCALL*freeProc)(T*),
+                              T* (ASNCALL*readProc)(asnio*, asntype*),
+                              unsigned char (ASNCALL*writeProc)(T*, asnio*, asntype*))
+{
+    return MemberInfo(member,
+                      GetOldAsnTypeRef(name, newProc, freeProc,
+                                       readProc, writeProc));
+}
+
+#define ASN_STRUCT_NAME(AsnStructName) NCBI_NAME2(struct_, AsnStructName)
+#define ASN_STRUCT_METHOD_NAME(AsnStructName) \
+    NCBI_NAME2(GetTypeInfo_struct_,AsnStructName)
+
+#define DECLARE_ASN_TYPE_INFO(AsnStructName) \
+    const NCBI_NS_NCBI::CTypeInfo* ASN_STRUCT_METHOD_NAME(AsnStructName)(void)
+#define DECLARE_ASN_STRUCT_INFO(AsnStructName) \
+    struct ASN_STRUCT_NAME(AsnStructName); \
+    DECLARE_ASN_TYPE_INFO(AsnStructName); \
+    inline \
+    const NCBI_NS_NCBI::CTypeInfo* \
+    GetAsnStructTypeInfo(const ASN_STRUCT_NAME(AsnStructName)* ) \
+    { \
+        return ASN_STRUCT_METHOD_NAME(AsnStructName)(); \
+    } \
+    struct ASN_STRUCT_NAME(AsnStructName)
+
+#define DECLARE_ASN_CHOICE_INFO(AsnChoiceName) \
+    DECLARE_ASN_TYPE_INFO(AsnChoiceName)
+
+// old ASN structires info
+#define BEGIN_NAMED_ASN_STRUCT_INFO(AsnStructAlias, AsnStructName) \
+    BEGIN_TYPE_INFO(NCBI_NAME2(struct_,AsnStructName), \
+        ASN_STRUCT_METHOD_NAME(AsnStructName), \
+        NCBI_NS_NCBI::CClassTypeInfo, \
+        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAsnStructInfo(AsnStructAlias))
+#define BEGIN_ASN_STRUCT_INFO(AsnStructName) \
+    BEGIN_NAMED_ASN_STRUCT_INFO(#AsnStructName, AsnStructName)
+#define END_ASN_STRUCT_INFO END_TYPE_INFO
+
+#define BEGIN_NAMED_ASN_CHOICE_INFO(AsnChoiceAlias, AsnChoiceName) \
+    BEGIN_TYPE_INFO(valnode, \
+        ASN_STRUCT_METHOD_NAME(AsnChoiceName), \
+        NCBI_NS_NCBI::CChoiceTypeInfo, \
+        NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAsnChoiceInfo(AsnChoiceAlias))
+#define BEGIN_ASN_CHOICE_INFO(AsnChoiceName) \
+    BEGIN_NAMED_ASN_CHOICE_INFO(#AsnChoiceName, AsnChoiceName)
+#define END_ASN_CHOICE_INFO END_TYPE_INFO
+
+// adding old ASN members
+#define ASN_MEMBER(MemberName, AsnTypeKind) \
+	NCBI_NAME2(AsnTypeKind,MemberInfo)(MEMBER_PTR(MemberName))
+#define ADD_NAMED_ASN_MEMBER(MemberAlias, MemberName, AsnTypeKind) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+        ASN_MEMBER(MemberName, AsnTypeKind))
+#define ADD_ASN_MEMBER(MemberName, AsnTypeKind) \
+    ADD_NAMED_ASN_MEMBER(#MemberName, MemberName, AsnTypeKind)
+
+#define OLD_ASN_MEMBER(MemberName, AsnTypeAlias, AsnTypeName) \
+    NCBI_NS_NCBI::OldAsnMemberInfo(MEMBER_PTR(MemberName), AsnTypeAlias, \
+        &NCBI_NAME2(AsnTypeName,New), &NCBI_NAME2(AsnTypeName,Free), \
+        &NCBI_NAME2(AsnTypeName,AsnRead), &NCBI_NAME2(AsnTypeName,AsnWrite))
+#define ADD_NAMED_OLD_ASN_MEMBER(MemberAlias, MemberName, AsnTypeAlias, AsnTypeName) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+        OLD_ASN_MEMBER(MemberName, AsnTypeAlias, AsnTypeName))
+#define ADD_OLD_ASN_MEMBER(MemberName, AsnTypeName) \
+    ADD_NAMED_OLD_ASN_MEMBER(#MemberName, MemberName, #AsnTypeName, AsnTypeName)
+
+#define ASN_CHOICE_MEMBER(MemberName, AsnChoiceName) \
+    NCBI_NS_NCBI::ChoiceMemberInfo(MEMBER_PTR(MemberName), \
+                                   ASN_STRUCT_METHOD_NAME(AsnChoiceName))
+#define ADD_NAMED_ASN_CHOICE_MEMBER(MemberAlias, MemberName, AsnChoiceName) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+        ASN_CHOICE_MEMBER(MemberName, AsnChoiceName))
+#define ADD_ASN_CHOICE_MEMBER(MemberName, AsnChoiceName) \
+    ADD_NAMED_ASN_CHOICE_MEMBER(#MemberName, MemberName, AsnChoiceName)
+
+#define ADD_NAMED_ASN_CHOICE_STD_VARIANT(VariantAlias, AsnTypeName) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),VariantAlias, \
+        MEMBER_PTR(data.NCBI_NAME2(AsnTypeName,value)), \
+        GetStdTypeInfoGetter(MEMBER_PTR(data.NCBI_NAME2(AsnTypeName,value))))
+#define ADD_ASN_CHOICE_STD_VARIANT(VariantName, AsnTypeName) \
+    ADD_NAMED_ASN_CHOICE_STD_VARIANT(#VariantName, AsnTypeName)
+#define ADD_NAMED_ASN_CHOICE_VARIANT(VariantAlias, AsnTypeKind, AsnTypeName) \
+    NCBI_NS_NCBI::AddMember(info->GetMembers(),VariantAlias, \
+        MEMBER_PTR(data.ptrvalue), \
+        NCBI_NAME3(Get,AsnTypeKind,TypeRef)(reinterpret_cast<const NCBI_NAME2 \
+            (struct_,AsnTypeName)* const*>(MEMBER_PTR(data.ptrvalue))))
+#define ADD_ASN_CHOICE_VARIANT(VariantName, AsnTypeKind, AsnTypeName) \
+    ADD_NAMED_ASN_CHOICE_VARIANT(#VariantName, AsnTypeKind, AsnTypeName)
 
 END_NCBI_SCOPE
+
+#endif /* HAVE_NCBI_C */
 
 #endif

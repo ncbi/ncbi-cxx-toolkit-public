@@ -1,6 +1,7 @@
 #include "serialobject.hpp"
 #include <serial/serialbase.hpp>
 #include <serial/serialimpl.hpp>
+#include <serial/serialasn.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 # include "twebenv.h"

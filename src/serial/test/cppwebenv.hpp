@@ -3,17 +3,17 @@
 
 #include <serial/serialasn.hpp>
 
-ASN_TYPE_REF(Web_Env)
-ASN_TYPE_REF(Argument)
-ASN_TYPE_REF(Db_Env)
-ASN_TYPE_REF(Query_History)
-ASN_TYPE_REF(Filter_Value)
-ASN_TYPE_REF(Item_Set)
-ASN_CHOICE_REF(Time)
-ASN_TYPE_REF(Full_Time)
-ASN_CHOICE_REF(Query_Command)
-ASN_TYPE_REF(Query_Search)
-ASN_TYPE_REF(Query_Select)
-ASN_TYPE_REF(Query_Related)
+DECLARE_ASN_STRUCT_INFO(Web_Env);
+DECLARE_ASN_STRUCT_INFO(Argument);
+DECLARE_ASN_STRUCT_INFO(Db_Env);
+DECLARE_ASN_STRUCT_INFO(Query_History);
+DECLARE_ASN_STRUCT_INFO(Filter_Value);
+DECLARE_ASN_STRUCT_INFO(Item_Set);
+DECLARE_ASN_CHOICE_INFO(Time);
+DECLARE_ASN_STRUCT_INFO(Full_Time);
+DECLARE_ASN_CHOICE_INFO(Query_Command);
+DECLARE_ASN_STRUCT_INFO(Query_Search);
+DECLARE_ASN_STRUCT_INFO(Query_Select);
+DECLARE_ASN_STRUCT_INFO(Query_Related);
 
 #endif

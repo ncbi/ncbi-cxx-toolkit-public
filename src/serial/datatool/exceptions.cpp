@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/10 17:31:59  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
 * Revision 1.2  2000/04/07 19:26:26  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -127,7 +132,7 @@ CDataType* CResolvedTypeSet::GetType(void) const
             msg += m_Module;
             msg += '.';
         }
-        THROW1_TRACE(CTypeNotFound, msg+m_Name);
+        throw CTypeNotFound(msg+m_Name);
     }
 
     {
@@ -150,7 +155,7 @@ CDataType* CResolvedTypeSet::GetType(void) const
         msg += ':';
         msg += NStr::IntToString((*i)->GetSourceLine());
     }
-    THROW_TRACE(CAmbiguiousTypes, (msg, m_Types));
+    throw CAmbiguiousTypes(msg, m_Types);
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/07/10 17:31:51  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
 * Revision 1.29  2000/07/03 18:42:32  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -145,6 +150,7 @@
 #include <corelib/ncbistd.hpp>
 
 #if HAVE_NCBI_C
+
 #include <serial/typeinfo.hpp>
 #include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
@@ -262,36 +268,6 @@ public:
     virtual bool RandomOrder(void) const;
 
 };
-
-/*
-class CAsnChoiceTypeInfo : public CChoiceTypeInfoBase {
-    typedef CChoiceTypeInfoBase CParent;
-public:
-    typedef valnode TObjectType;
-
-    CChoiceTypeInfo(const string& name);
-    CChoiceTypeInfo(const char* name);
-    ~CChoiceTypeInfo(void);
-
-    // object getters:
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-
-    virtual size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
-
-protected:
-    virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
-    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
-    virtual TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
-};
-*/
 
 class COctetStringTypeInfo : public CPrimitiveTypeInfo {
     typedef CPrimitiveTypeInfo CParent;

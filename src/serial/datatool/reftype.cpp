@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/07/10 17:32:00  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
 * Revision 1.12  2000/06/16 16:31:40  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -181,7 +186,7 @@ CDataType* CReferenceDataType::ResolveOrThrow(void) const
         return GetModule()->Resolve(m_UserTypeName);
     }
     catch (CTypeNotFound& exc) {
-        THROW1_TRACE(CTypeNotFound, LocationString() + ": " + exc.what());
+        throw CTypeNotFound(LocationString() + ": " + exc.what());
     }
 }
 

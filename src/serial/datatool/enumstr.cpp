@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/07/10 17:31:59  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
 * Revision 1.7  2000/06/16 16:31:38  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -133,7 +138,6 @@ string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
 string CEnumTypeStrings::GetRef(void) const
 {
     return "ENUM, ("+m_CType+", "+m_EnumName+')';
-    //return "NCBI_NS_NCBI::CreateEnumeratedTypeInfo("+GetCType(CNamespace::KEmptyNamespace)+"(0), GetEnumInfo_"+m_EnumName+"())";
 }
 
 string CEnumTypeStrings::GetInitializer(void) const
@@ -160,22 +164,28 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         hpp << "\n"
             "};\n"
             "\n";
-        // prototype of GetEnumInfo function
+        // prototype of GetTypeInfo_enum_* function
         if ( inClass )
             hpp << "static ";
         hpp <<
-            "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetEnumInfo_"
+            "const NCBI_NS_NCBI::CEnumeratedTypeValues* GetTypeInfo_enum_"
             <<m_EnumName<<"(void);\n"
             "\n";
         ctx.AddHPPCode(hpp);
     }
     {
-        // definition of GetEnumInfo function
+        // definition of GetTypeInfo_enum_ function
         CNcbiOstrstream cpp;
-        cpp <<
-            "BEGIN_NAMED_ENUM_INFO(\""<<GetExternalName()<<"\", "<<
-            methodPrefix<<"GetEnumInfo_"<<m_EnumName<<", "<<
-            m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
+        if ( methodPrefix.empty() ) {
+            cpp <<
+                "BEGIN_NAMED_ENUM_INFO(\""<<GetExternalName()<<'\"';
+        }
+        else {
+            cpp <<
+                "BEGIN_NAMED_ENUM_IN_INFO(\""<<GetExternalName()<<"\", "<<
+                methodPrefix;
+        }
+        cpp <<", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
             "{\n";
         iterate ( TValues, i, m_Values ) {
             string id = Identifier(i->first, false);

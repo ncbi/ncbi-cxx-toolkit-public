@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/07/10 17:32:00  vasilche
+* Macro arguments made more clear.
+* All old ASN stuff moved to serialasn.hpp.
+* Changed prefix of enum info functions to GetTypeInfo_enum_.
+*
 * Revision 1.22  2000/06/16 20:01:30  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -185,7 +190,7 @@ CDataType* CFileModules::ExternalResolve(const string& moduleName,
 }
 
 CDataType* CFileModules::ResolveInAnyModule(const string& typeName,
-                                          bool allowInternal) const
+                                            bool allowInternal) const
 {
     CResolvedTypeSet types(typeName);
     for ( TModules::const_iterator i = m_Modules.begin();
