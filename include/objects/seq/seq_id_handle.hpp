@@ -140,6 +140,9 @@ public:
     int GetGi(void) const;
     unsigned GetHash(void) const;
 
+    CSeq_id::E_Choice Which(void) const;
+    CSeq_id::EAccessionInfo IdentifyAccession(void) const;
+
     CConstRef<CSeq_id> GetSeqId(void) const;
     CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
 
@@ -317,6 +320,20 @@ bool CSeq_id_Handle::operator<(const CSeq_id_Handle& handle) const
 
 
 inline
+CSeq_id::E_Choice CSeq_id_Handle::Which(void) const
+{
+    return m_Info->GetType();
+}
+
+
+inline
+CSeq_id::EAccessionInfo CSeq_id_Handle::IdentifyAccession(void) const
+{
+    return m_Info->GetSeqId()->IdentifyAccession();
+}
+
+
+inline
 bool CSeq_id_Handle::IsGi(void) const
 {
     return m_Gi != 0;
@@ -357,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/11/29 19:52:56  grichenk
+* +Which, IdentifyAccession
+*
 * Revision 1.28  2004/11/15 22:21:48  grichenk
 * Doxygenized comments, fixed group names.
 *
