@@ -30,8 +30,8 @@
 *
 */
 
-#ifndef BL2SEQ__HPP
-#define BL2SEQ__HPP
+#ifndef ALGO_BLAST_API___BL2SEQ__HPP
+#define ALGO_BLAST_API___BL2SEQ__HPP
 
 #include <algo/blast/api/blast_option.hpp>
 
@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-USING_SCOPE(objects);
+
 
 /// Runs the BLAST algorithm between 2 sequences.
 class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
@@ -82,17 +82,17 @@ public:
     void SetOptions(const CBlastOption& opts);
     const CBlastOption& GetOptions() const;
 
-    virtual CRef<CSeq_align_set> Run();
+    virtual CRef<objects::CSeq_align_set> Run();
 
     /// Retrieves regions filtered on the query/queries
     //const TSeqLocVector& GetFilteredQueryRegions() const;
-    const vector< CConstRef<CSeq_loc> >& GetFilteredQueryRegions() const;
+    const vector< CConstRef<objects::CSeq_loc> >& GetFilteredQueryRegions() const;
 
 protected:
     virtual void SetupSearch();
     virtual void ScanDB();
     virtual void Traceback();
-    virtual CRef<CSeq_align_set> x_Results2SeqAlign();
+    virtual CRef<objects::CSeq_align_set> x_Results2SeqAlign();
 
 private:
     // Data members received from client code
@@ -135,7 +135,7 @@ private:
 
     /// Regions filtered out from the query sequence
     //TSeqLocVector                       mi_vFilteredRegions;
-    vector< CConstRef<CSeq_loc> >       mi_vFilteredRegions;
+    vector< CConstRef<objects::CSeq_loc> >       mi_vFilteredRegions;
 
     //void x_SetupQuery();    // FIXME: should be setup_queries
     void x_SetupQueries();
@@ -232,7 +232,7 @@ CBl2Seq::GetOptions() const
     return *m_pOptions;
 }
 
-inline const vector< CConstRef<CSeq_loc> >&
+inline const vector< CConstRef<objects::CSeq_loc> >&
 CBl2Seq::GetFilteredQueryRegions() const
 {
     return mi_vFilteredRegions;
@@ -245,6 +245,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.12  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *
@@ -289,4 +293,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BL2SEQ__HPP */
+#endif  /* ALGO_BLAST_API___BL2SEQ__HPP */

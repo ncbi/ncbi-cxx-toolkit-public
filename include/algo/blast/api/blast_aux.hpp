@@ -30,8 +30,8 @@
 *
 */
 
-#ifndef BLAST_AUX__HPP
-#define BLAST_AUX__HPP
+#ifndef ALGO_BLAST_API___BLAST_AUX__HPP
+#define ALGO_BLAST_API___BLAST_AUX__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ddumpable.hpp>
@@ -51,14 +51,16 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-USING_SCOPE(objects);
+
 
 struct SSeqLoc {
-    CConstRef<CSeq_loc>     seqloc;
-    mutable CRef<CScope>    scope;
+    CConstRef<objects::CSeq_loc>     seqloc;
+    mutable CRef<objects::CScope>    scope;
 
-    SSeqLoc() : seqloc(), scope() {}
-    SSeqLoc(CConstRef<CSeq_loc> sl, CRef<CScope> s) : seqloc(sl), scope(s) {}
+    SSeqLoc()
+        : seqloc(), scope() {}
+    SSeqLoc(CConstRef<objects::CSeq_loc> sl, CRef<objects::CScope> s)
+        : seqloc(sl), scope(s) {}
 };
 typedef vector<SSeqLoc>   TSeqLocVector;
 
@@ -69,9 +71,9 @@ typedef vector<SSeqLoc>   TSeqLocVector;
  */
 NCBI_XBLAST_EXPORT
 BlastMask*
-CSeqLoc2BlastMask(const CSeq_loc *slp, int index);
+CSeqLoc2BlastMask(const objects::CSeq_loc *slp, int index);
 
-CRef<CSeq_loc>
+CRef<objects::CSeq_loc>
 BlastMask2CSeqLoc(BlastMask* mask);
 
 void BlastMaskDNAToProtein(BlastMask** mask, TSeqLocVector & slp);
@@ -142,6 +144,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.15  2003/08/18 22:17:52  camacho
 * Renaming of SSeqLoc members
 *
@@ -194,4 +200,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BLAST_AUX__HPP */
+#endif  /* ALGO_BLAST_API___BLAST_AUX__HPP */

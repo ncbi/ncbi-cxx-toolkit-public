@@ -30,8 +30,8 @@
 *
 */
 
-#ifndef BLAST_SETUP__HPP
-#define BLAST_SETUP__HPP
+#ifndef ALGO_BLAST_API___BLAST_SETUP__HPP
+#define ALGO_BLAST_API___BLAST_SETUP__HPP
 
 BEGIN_NCBI_SCOPE
 
@@ -41,7 +41,6 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-USING_SCOPE(objects);
 
 
 /** Retrieves a sequence using the object manager
@@ -54,8 +53,9 @@ USING_SCOPE(objects);
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  */
 Uint1*
-BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& buflen,
-                 CScope* scope, ENa_strand strand = eNa_strand_plus, 
+BLASTGetSequence(const objects::CSeq_loc& sl, Uint1 encoding, int& buflen,
+                 objects::CScope* scope,
+                 objects::ENa_strand strand = objects::eNa_strand_plus, 
                  bool add_nucl_sentinel = true);
 
 #if 0
@@ -89,6 +89,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.7  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *
@@ -116,4 +120,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BLAST_SETUP__HPP */
+#endif  /* ALGO_BLAST_API___BLAST_SETUP__HPP */

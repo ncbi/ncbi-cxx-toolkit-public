@@ -27,12 +27,12 @@
 *
 * File Description:
 *   Utility function to convert internal BLAST result structures into
-*   CSeq_align_set objects
+*   objects::CSeq_align_set objects
 *
 */
 
-#ifndef BLASTSEQALIGN__HPP
-#define BLASTSEQALIGN__HPP
+#ifndef ALGO_BLAST_API___BLAST_SEQALIGN__HPP
+#define ALGO_BLAST_API___BLAST_SEQALIGN__HPP
 
 #include <corelib/ncbistd.hpp>
 
@@ -48,9 +48,9 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-USING_SCOPE(objects);
 
-/** Converts BlastResults structure into CSeq_align_set class (handles 
+
+/** Converts BlastResults structure into objects::CSeq_align_set class (handles 
  * query concatenation).
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
@@ -62,14 +62,14 @@ USING_SCOPE(objects);
  * @param is_gapped Was this a gapped search? [in]
  * @return set of CSeq_align objects
  */
-CRef<CSeq_align_set>
+CRef<objects::CSeq_align_set>
 BLAST_Results2CSeqAlign(const BlastResults* results, 
-                          CBlastOption::EProgram prog,
-                          TSeqLocVector &query, 
-                          const BlastSeqSrc* bssp, 
-                          const SSeqLoc* subject,
-                          const BlastScoringOptions* score_options, 
-                          const BlastScoreBlk* sbp, bool is_gapped);
+                        CBlastOption::EProgram prog,
+                        TSeqLocVector &query, 
+                        const BlastSeqSrc* bssp, 
+                        const SSeqLoc* subject,
+                        const BlastScoringOptions* score_options, 
+                        const BlastScoreBlk* sbp, bool is_gapped);
 
 
 END_SCOPE(blast)
@@ -79,6 +79,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.13  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *
@@ -126,4 +130,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BLASTSEQALIGN__HPP */
+#endif  /* ALGO_BLAST_API___BLAST_SEQALIGN__HPP */

@@ -30,29 +30,33 @@
 *
 */
 
-#ifndef BLAST_SEQ__HPP
-#define BLAST_SEQ__HPP
+#ifndef ALGO_BLAST_API___BLAST_SEQ__HPP
+#define ALGO_BLAST_API___BLAST_SEQ__HPP
 
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/blast_option.hpp>
 // NewBlast includes
 #include <algo/blast/core/blast_options.h>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-USING_SCOPE(blast);
+BEGIN_SCOPE(blast)
 
 int
 BLAST_SetUpQuery(CBlastOption::EProgram program_number, 
     TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk);
 
-
+END_SCOPE(blast)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.5  2003/08/18 22:17:52  camacho
 * Renaming of SSeqLoc members
 *
@@ -87,4 +91,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BLAST_AUX__HPP */
+#endif  /* ALGO_BLAST_API___BLAST_AUX__HPP */

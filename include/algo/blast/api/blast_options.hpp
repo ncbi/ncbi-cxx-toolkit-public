@@ -30,8 +30,8 @@
 *
 */
 
-#ifndef BLAST_OPTION__HPP
-#define BLAST_OPTION__HPP
+#ifndef ALGO_BLAST_API___BLAST_OPTION__HPP
+#define ALGO_BLAST_API___BLAST_OPTION__HPP
 
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -43,7 +43,7 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-USING_SCOPE(objects);
+
 
 /// @todo Constants used to initialize default values (word size, evalue
 /// threshold, ...) should be defined in this module when the C NewBlast is
@@ -109,11 +109,11 @@ public:
     const char* GetFilterString() const;
     void SetFilterString(const char* f);
 
-    vector< CConstRef<CSeq_loc> >& GetLCaseMask() const;
-    void SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector);
+    vector< CConstRef<objects::CSeq_loc> >& GetLCaseMask() const;
+    void SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector);
 
-    ENa_strand GetStrandOption() const;
-    void SetStrandOption(ENa_strand s);
+    objects::ENa_strand GetStrandOption() const;
+    void SetStrandOption(objects::ENa_strand s);
 
     int GetQueryGeneticCode() const;
     void SetQueryGeneticCode(int gc);
@@ -486,43 +486,43 @@ CBlastOption::SetFilterString(const char* f)
     m_QueryOpts->filter_string = strdup(f);
 }
 
-inline ENa_strand
+inline objects::ENa_strand
 CBlastOption::GetStrandOption() const
 {
-    return (ENa_strand) m_QueryOpts->strand_option;
+    return (objects::ENa_strand) m_QueryOpts->strand_option;
 }
 
 inline void
-CBlastOption::SetStrandOption(ENa_strand s)
+CBlastOption::SetStrandOption(objects::ENa_strand s)
 {
     m_QueryOpts->strand_option = (unsigned char) s;
 }
 
 #if 0
-vector< CConstRef<CSeq_loc> >
+vector< CConstRef<objects::CSeq_loc> >
 x_BlastMask2CSeqLoc(BlastMask* mask, CBlastOption::EProgram program)
 {
     abort();
 }
 
-inline vector< CConstRef<CSeq_loc> >& 
+inline vector< CConstRef<objects::CSeq_loc> >& 
 CBlastOption::GetLCaseMask() const
 {
-    // Convert BlastMaskPtrs to CSeq_loc
+    // Convert BlastMaskPtrs to objects::CSeq_loc
     abort();
 }
 #endif
 
 
 inline void 
-CBlastOption::SetLCaseMask(vector< CConstRef<CSeq_loc> >& sl_vector)
+CBlastOption::SetLCaseMask(vector< CConstRef<objects::CSeq_loc> >& sl_vector)
 {
     BlastMask* mask = NULL,* curr = NULL,* tail = NULL;
     int index = 0;
 
-    // Convert from CSeq_loc's to BlastMask*'s
+    // Convert from objects::CSeq_loc's to BlastMask*'s
     // index corresponds to the query index in the case of query concatenation
-    ITERATE(vector< CConstRef<CSeq_loc> >, itr, sl_vector) {
+    ITERATE(vector< CConstRef<objects::CSeq_loc> >, itr, sl_vector) {
 
         curr = CSeqLoc2BlastMask(*itr, index++);
         if (!mask) {
@@ -1006,6 +1006,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.15  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *
@@ -1058,4 +1062,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BLAST_OPTION__HPP */
+#endif  /* ALGO_BLAST_API___BLAST_OPTION__HPP */

@@ -30,8 +30,8 @@
 *
 */
 
-#ifndef BLAST_EXCEPTION__HPP
-#define BLAST_EXCEPTION__HPP
+#ifndef ALGO_BLAST_API___BLAST_EXCEPTION__HPP
+#define ALGO_BLAST_API___BLAST_EXCEPTION__HPP
 
 #include <corelib/ncbiexpt.hpp>
 
@@ -76,6 +76,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/19 13:45:21  dicuccio
+* Removed 'USING_SCOPE(objects)'.  Changed #include guards to be standards
+* compliant.  Added 'objects::' where necessary.
+*
 * Revision 1.2  2003/08/18 20:58:56  camacho
 * Added blast namespace, removed *__.hpp includes
 *
@@ -86,4 +90,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif  /* BLAST_EXCEPTION__HPP */
+#endif  /* ALGO_BLAST_API___BLAST_EXCEPTION__HPP */
