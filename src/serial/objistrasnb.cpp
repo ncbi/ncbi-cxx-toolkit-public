@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/03/16 17:48:21  gouriano
+* make it possible to skip unknown data members
+*
 * Revision 1.67  2003/11/26 19:59:40  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid
@@ -1023,7 +1026,13 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag);
     if ( index == kInvalidMember )
-        UnexpectedMember(tag);
+        if (GetSkipUnknownMembers()) {
+            ReadAnyContent();
+            ExpectEndOfContent();
+            return BeginClassMember(classType);
+        } else {
+            UnexpectedMember(tag);
+        }
     return index;
 }
 
@@ -1038,7 +1047,13 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
     ExpectIndefiniteLength();
     TMemberIndex index = classType->GetMembers().Find(tag, pos);
     if ( index == kInvalidMember )
-        UnexpectedMember(tag);
+        if (GetSkipUnknownMembers()) {
+            ReadAnyContent();
+            ExpectEndOfContent();
+            return BeginClassMember(classType, pos);
+        } else {
+            UnexpectedMember(tag);
+        }
     return index;
 }
 
@@ -1051,99 +1066,65 @@ void CObjectIStreamAsnBinary::EndClassMember(void)
 void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
                                               TObjectPtr classPtr)
 {
-    ExpectSysTag(eUniversal, true, eSet);
-    ExpectIndefiniteLength();
+    BeginClass(classType);
 
     ReadClassRandomContentsBegin(classType);
 
-    while ( HaveMoreElements() ) {
-        TTag tag = PeekTag(eContextSpecific, true);
-        ExpectIndefiniteLength();
-        TMemberIndex index = classType->GetMembers().Find(tag);
-        if ( index == kInvalidMember )
-            UnexpectedMember(tag);
-
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
         ReadClassRandomContentsMember(classPtr);
-
-        ExpectEndOfContent();
+        EndClassMember();
     }
 
     ReadClassRandomContentsEnd();
 
-    ExpectEndOfContent();
+    EndClass();
 }
 
 void CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
                                                   TObjectPtr classPtr)
 {
-    ExpectSysTag(eUniversal, true, eSequence);
-    ExpectIndefiniteLength();
-
+    BeginClass(classType);
     ReadClassSequentialContentsBegin(classType);
 
-    while ( HaveMoreElements() ) {
-        TTag tag = PeekTag(eContextSpecific, true);
-        ExpectIndefiniteLength();
-        TMemberIndex index = classType->GetMembers().Find(tag, *pos);
-        if ( index == kInvalidMember )
-            UnexpectedMember(tag);
-
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType,*pos)) != kInvalidMember ) {
         ReadClassSequentialContentsMember(classPtr);
-
-        ExpectEndOfContent();
+        EndClassMember();
     }
 
     ReadClassSequentialContentsEnd(classPtr);
-
-    ExpectEndOfContent();
+    EndClass();
 }
 
 void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
 {
-    ExpectSysTag(eUniversal, true, eSet);
-    ExpectIndefiniteLength();
-
+    BeginClass(classType);
     SkipClassRandomContentsBegin(classType);
 
-    while ( HaveMoreElements() ) {
-        TTag tag = PeekTag(eContextSpecific, true);
-        ExpectIndefiniteLength();
-        TMemberIndex index = classType->GetMembers().Find(tag);
-        if ( index == kInvalidMember )
-            UnexpectedMember(tag);
-
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
         SkipClassRandomContentsMember();
-
-        ExpectEndOfContent();
+        EndClassMember();
     }
 
     SkipClassRandomContentsEnd();
-
-    ExpectEndOfContent();
+    EndClass();
 }
 
 void CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classType)
 {
-    ExpectSysTag(eUniversal, true, eSequence);
-    ExpectIndefiniteLength();
-
+    BeginClass(classType);
     SkipClassSequentialContentsBegin(classType);
 
-    while ( HaveMoreElements() ) {
-        TTag tag = PeekTag(eContextSpecific, true);
-        ExpectIndefiniteLength();
-        TMemberIndex index = classType->GetMembers().Find(tag, *pos);
-        if ( index == kInvalidMember )
-            UnexpectedMember(tag);
-
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType,*pos)) != kInvalidMember ) {
         SkipClassSequentialContentsMember();
-
-        ExpectEndOfContent();
+        EndClassMember();
     }
 
     SkipClassSequentialContentsEnd();
-
-    ExpectEndOfContent();
+    EndClass();
 }
 #endif
 
@@ -1166,11 +1147,7 @@ void CObjectIStreamAsnBinary::EndChoiceVariant(void)
 void CObjectIStreamAsnBinary::ReadChoice(const CChoiceTypeInfo* choiceType,
                                          TObjectPtr choicePtr)
 {
-    TTag tag = PeekTag(eContextSpecific, true);
-    ExpectIndefiniteLength();
-    TMemberIndex index = choiceType->GetVariants().Find(tag);
-    if ( index == kInvalidMember )
-        UnexpectedMember(tag);
+    TMemberIndex index = BeginChoiceVariant(choiceType);
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
@@ -1179,16 +1156,12 @@ void CObjectIStreamAsnBinary::ReadChoice(const CChoiceTypeInfo* choiceType,
 
     END_OBJECT_FRAME();
 
-    ExpectEndOfContent();
+    EndChoiceVariant();
 }
 
 void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
 {
-    TTag tag = PeekTag(eContextSpecific, true);
-    ExpectIndefiniteLength();
-    TMemberIndex index = choiceType->GetVariants().Find(tag);
-    if ( index == kInvalidMember )
-        UnexpectedMember(tag);
+    TMemberIndex index = BeginChoiceVariant(choiceType);
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
@@ -1197,7 +1170,7 @@ void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
 
     END_OBJECT_FRAME();
 
-    ExpectEndOfContent();
+    EndChoiceVariant();
 }
 #endif
 
@@ -1244,18 +1217,39 @@ void CObjectIStreamAsnBinary::ReadNull(void)
     EndOfTag();
 }
 
+bool CObjectIStreamAsnBinary::ReadAnyContent()
+{
+    Uint1 byte = PeekAnyTag();
+    if (ExtractConstructed(byte) && PeekIndefiniteLength()) {
+        ExpectIndefiniteLength();
+        if (ReadAnyContent()) {
+            while (HaveMoreElements()) {
+                ReadAnyContent();
+            }
+            ExpectEndOfContent();
+        }
+        return true;
+    }
+    size_t length = ReadLength();
+    if (length) {
+        SkipBytes(length);
+    }
+    EndOfTag();
+    return (length != 0);
+}
+
 void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
 {
     NCBI_THROW(CSerialException,eNotImplemented,
         "CObjectIStreamAsnBinary::ReadAnyContentObject: "
-        "unable to read AnyContent object in ASN");
+        "unable to read AnyContent object in ASN binary");
 }
 
 void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
 {
     NCBI_THROW(CSerialException,eNotImplemented,
         "CObjectIStreamAsnBinary::SkipAnyContentObject: "
-        "unable to skip AnyContent object in ASN");
+        "unable to skip AnyContent object in ASN binary");
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
