@@ -47,6 +47,8 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 class CCit_sub;
+class CCit_art;
+class CCit_gen;
 class CSeq_feat;
 class CBioseq;
 class CSeqdesc;
@@ -56,6 +58,8 @@ class CProt_ref;
 class CSeq_loc;
 class CFeat_CI;
 class CPub_set;
+class CAuthor;
+class CTitle;
 
 BEGIN_SCOPE(validator)
 
@@ -209,6 +213,7 @@ enum EErrType {
     eErr_SEQ_FEAT_MultiIntervalGene,
     eErr_SEQ_FEAT_FeatContentDup,
     eErr_SEQ_FEAT_BadProductSeqId,
+    eErr_SEQ_FEAT_RnaProductMismatch,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -366,6 +371,13 @@ private:
     void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
 
     bool IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc);
+
+    void ValidatePubGen(const CCit_gen& gen, const CSerialObject& obj);
+    void ValidatePubArticle(const CCit_art& art, const CSerialObject& obj);
+    
+    bool HasName(const list< CRef< CAuthor > >& authors);
+    bool HasTitle(const CTitle& title);
+    bool HasIsoJTA(const CTitle& title);
 
     CObjectManager* const m_ObjMgr;
     CRef<CScope> m_Scope;
@@ -571,6 +583,7 @@ private:
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
     void ValidateMrnaTrans(const CSeq_feat& feat);
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
+    void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
     void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat);
@@ -683,6 +696,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/01/21 20:20:43  shomrat
+* Added private methods to facilitate the PubDesc Validation
+*
 * Revision 1.6  2003/01/10 16:31:23  shomrat
 * Added private functions to CValidError_feat
 *
