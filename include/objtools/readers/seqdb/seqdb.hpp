@@ -129,16 +129,28 @@ public:
     /// Sequence type accepted and returned for OID indexes.
     typedef Uint4 TOID;
     
-    /// Constructor.
-    ///
-    /// @param dbpath
-    ///   Path to the blast databases, sometimes found in environment
-    ///   variable BLASTDB.
+    /// Short Constructor.
+    /// 
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
     /// @param prot_nucl
     ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
     ///   for nucleotide.  These can also be specified as 'p' or 'n'.
+    
+    CSeqDB(const string & dbname, char prot_nucl);
+    
+    /// Constructor with MMap Flag and OID Range.
+    /// 
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces.
+    /// @param prot_nucl
+    ///   Either kSeqTypeProt for a protein database, or kSeqTypeNucl
+    ///   for nucleotide.  These can also be specified as 'p' or 'n'.
+    /// @param oid_begin
+    ///   Iterator will skip OIDs less than this value.  Only OIDs
+    ///   found in the OID lists (if any) will be returned.
+    /// @param oid_end
+    ///   Iterator will return up to (but not including) this OID.
     /// @param use_mmap
     ///   If kSeqDBMMap is specified (the default), memory mapping is
     ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
@@ -147,7 +159,9 @@ public:
     
     CSeqDB(const string & dbname,
            char           prot_nucl,
-           bool           use_mmap = true);
+           Uint4          oid_begin,
+           Uint4          oid_end,
+           bool           use_mmap);
     
     /// Destructor.
     ///
@@ -279,12 +293,6 @@ public:
     /// This gets an iterator designed to allow traversal of the
     /// database from beginning to end.
     CSeqDBIter Begin(void) const;
-    
-    /// Restrict iterators to range of OIDs.
-    ///
-    /// This causes iteration using iterators or the CheckOrFindOID()
-    /// method to skip OIDs outside of the range [first,last].
-    void SetOIDRange(TOID first, TOID last);
     
     /// Find an included OID, incrementing next_oid if necessary.
     ///
