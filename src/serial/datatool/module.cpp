@@ -9,7 +9,7 @@
 
 void Warning(const string& message)
 {
-    CNcbiDiag() << Warning << message;
+    CNcbiDiag() << NCBI_NS_NCBI::Warning << message;
 }
 
 CDataTypeModule::CDataTypeModule(const string& n)
@@ -160,7 +160,7 @@ bool CDataTypeModule::CheckNames()
 CDataType* CDataTypeModule::ExternalResolve(const string& typeName,
                                             bool allowInternal) const
 {
-    const TTypesByName& types(allowInternal? m_LocalTypes: m_ExportedTypes);
+    const TTypesByName& types = allowInternal? m_LocalTypes: m_ExportedTypes;
     TTypesByName::const_iterator t = types.find(typeName);
     if ( t != types.end() )
         return t->second;

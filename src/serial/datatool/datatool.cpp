@@ -1,4 +1,5 @@
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
@@ -370,7 +371,11 @@ void LoadDefinitions(CFileSet& fileSet, const list<FileInfo>& names)
             continue;
         }
         try {
-            fileSet.AddFile(ASNParser(ASNLexer(SourceFile(name))).Modules(name));
+			SourceFile fName(name);
+            fileSet.AddFile(ASNParser(ASNLexer(fName)).Modules(name));
+        }
+        catch (exception& exc) {
+            ERR_POST("Parsing failed: " << exc.what());
         }
         catch (...) {
             ERR_POST("Parsing failed: " << name);

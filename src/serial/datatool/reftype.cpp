@@ -40,7 +40,7 @@ bool CReferenceDataType::CheckType(void) const
         GetModule()->InternalResolve(m_UserTypeName);
         return true;
     }
-    catch ( CTypeNotFound& exc ) {
+    catch ( CTypeNotFound& /* ignored */ ) {
         Warning("Unresolved type: " + m_UserTypeName);
         return false;
     }
@@ -101,7 +101,7 @@ CDataType* CReferenceDataType::ResolveOrNull(void) const
     try {
         return GetModule()->InternalResolve(m_UserTypeName);
     }
-    catch (CTypeNotFound& exc) {
+    catch (CTypeNotFound& /* ignored */) {
         return 0;
     }
 }
