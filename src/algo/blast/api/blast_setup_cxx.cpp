@@ -135,6 +135,9 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
     // Set up the context offsets into the sequence that will be added
     // to the sequence block structure.
     unsigned int ctx_index = 0;      // index into context_offsets array
+    // Longest query length, to be saved in the query info structure
+    Uint4 max_length = 0;
+
     ITERATE(TSeqLocVector, itr, queries) {
         TSeqPos length = sequence::GetLength(*itr->seqloc, itr->scope);
         ASSERT(length != numeric_limits<TSeqPos>::max());
@@ -148,6 +151,8 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
             for (unsigned int i = 0; i < nframes; i++) {
                 unsigned int prot_length = 
                     (length - i % CODON_LENGTH) / CODON_LENGTH;
+                max_length = MAX(max_length, prot_length);
+
                 switch (strand) {
                 case eNa_strand_plus:
                     if (i < 3) {
@@ -179,40 +184,43 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
                     abort();
                 }
             }
-        } else if (is_na) {
-            switch (strand) {
-            case eNa_strand_plus:
-                context_offsets[ctx_index + 1] =
+        } else {
+            max_length = MAX(max_length, length);
+            if (is_na) {
+                switch (strand) {
+                case eNa_strand_plus:
+                    context_offsets[ctx_index + 1] =
+                        context_offsets[ctx_index] + length + 1;
+                    context_offsets[ctx_index + 2] =
+                        context_offsets[ctx_index + 1];
+                    break;
+
+                case eNa_strand_minus:
+                    context_offsets[ctx_index + 1] =
+                        context_offsets[ctx_index];
+                    context_offsets[ctx_index + 2] =
+                        context_offsets[ctx_index + 1] + length + 1;
+                    break;
+
+                case eNa_strand_both:
+                case eNa_strand_unknown:
+                    context_offsets[ctx_index + 1] =
+                        context_offsets[ctx_index] + length + 1;
+                    context_offsets[ctx_index + 2] =
+                        context_offsets[ctx_index + 1] + length + 1;
+                    break;
+
+                default:
+                    abort();
+                }
+            } else {    // protein
+                context_offsets[ctx_index + 1] = 
                     context_offsets[ctx_index] + length + 1;
-                context_offsets[ctx_index + 2] =
-                    context_offsets[ctx_index + 1];
-                break;
-
-            case eNa_strand_minus:
-                context_offsets[ctx_index + 1] =
-                    context_offsets[ctx_index];
-                context_offsets[ctx_index + 2] =
-                    context_offsets[ctx_index + 1] + length + 1;
-                break;
-
-            case eNa_strand_both:
-            case eNa_strand_unknown:
-                context_offsets[ctx_index + 1] =
-                    context_offsets[ctx_index] + length + 1;
-                context_offsets[ctx_index + 2] =
-                    context_offsets[ctx_index + 1] + length + 1;
-                break;
-
-            default:
-                abort();
             }
-        } else {    // protein
-            context_offsets[ctx_index + 1] = 
-                context_offsets[ctx_index] + length + 1;
         }
-
         ctx_index += nframes;
     }
+    (*qinfo)->max_length = max_length;
 }
 
 Uint1
@@ -844,6 +852,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/02/24 18:14:56  dondosha
+* Set the maximal length in the set of queries, when filling BlastQueryInfo structure
+*
 * Revision 1.56  2004/02/18 15:16:28  camacho
 * Consolidated ncbi2na mask definition
 *
