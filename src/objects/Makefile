@@ -7,7 +7,7 @@ all sources makefiles directories clean_all_sources:
 		( cd $$i && $(new_module) $$i $@; ) || exit 2; \
 	done
 
-all sources: clean_sources
+all: clean_sources
 
 clean_sources:
 	for i in $(SUB_PROJ); do \
