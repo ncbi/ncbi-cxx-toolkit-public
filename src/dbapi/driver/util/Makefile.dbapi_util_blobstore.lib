@@ -2,7 +2,7 @@
 
 SRC = blobstore
 
-LIB    = dbapi_driver_blobstore
+LIB = dbapi_util_blobstore
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
 
