@@ -26,41 +26,42 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Definition of CSeqMaskerUStatFactory class.
+ *   Definition for CSeqMaskerIstatFactory class.
  *
  */
 
-#ifndef C_WIN_MASK_USTAT_FACTORY_H
-#define C_WIN_MASK_USTAT_FACTORY_H
+#ifndef C_SEQ_MASKER_ISTAT_FACTORY_H
+#define C_SEQ_MASKER_ISTAT_FACTORY_H
 
 #include <string>
 
-#include <corelib/ncbistre.hpp>
+#include <corelib/ncbitype.h>
 #include <corelib/ncbistr.hpp>
-#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbiobj.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CSeqMaskerOstat;
+class CSeqMaskerIstat;
 
 /**
- **\brief Factory of CSeqMaskerOstat objects.
+ **\brief Factory class to generate an appropriate CSeqMaskerIstat
+ **       derived class based on the format name.
  **/
-class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatFactory
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatFactory
 {
     public:
 
-        /**
-        **\brief Exceptions that CSeqMaskerOstatFactory might throw.
-        **/
-        class CSeqMaskerOstatFactoryException : public CException
+        /** 
+         **\brief Exceptions that CSeqMaskerIstatFactory might throw.
+         **/
+        class Exception : public CException
         {
             public:
-            
+
                 enum EErrCode
                 {
-                    eBadName,   /**< Unknown format name. */
-                    eCreateFail /**< Failure to create the requested object. */
+                    eBadFormat, /**< Unknown file format. */
+                    eCreateFail /**< Could not create the CSeqMaskerIstat object. */
                 };
 
                 /**
@@ -68,24 +69,34 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatFactory
                  **\return C-style description string
                  **/
                 virtual const char * GetErrCodeString() const;
+    
+                NCBI_EXCEPTION_DEFAULT( Exception, CException );
 
-                NCBI_EXCEPTION_DEFAULT( 
-                    CSeqMaskerOstatFactoryException, CException );
         };
 
         /**
-         **\brief Method used to create a CSeqMakserOstat object by format name.
+         **\brief Create a unit counts container from a file.
          **
-         ** The method instantiates the appropriate subclass of CSeqMaskerOstat
-         ** corresponding to the name of the file format, or throws an exception
-         ** if the format name is not recognized.
+         ** All parameters after name are forwarded to the constructor of the
+         ** proper subclass of CSeqMaskerIstat.
          **
-         **\param ustat_type the name of the unit counts file format
-         **\param name the name of the file to save unit counts data to
-         **\return pointer to the newly created object
+         **\param name name of the file containing the unit counts information
+         **\param threshold T_threshold
+         **\param textend T_extend
+         **\param max_count T_high
+         **\param use_max_count value to use for units with count > T_high
+         **\param min_count T_low
+         **\param use_min_count value to use for units with count < T_low
          **/
-        static CSeqMaskerOstat * create( 
-            const string & ustat_type, const string & name );
+        static CSeqMaskerIstat * create( const string & name,
+                                         Uint4 threshold,
+                                         Uint4 textend,
+                                         Uint4 max_count,
+                                         Uint4 use_max_count,
+                                         Uint4 min_count,
+                                         Uint4 use_min_count );
+
+    private:
 };
 
 END_NCBI_SCOPE
@@ -95,22 +106,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
- * Revision 1.3  2005/04/04 14:28:46  morgulis
+ * Revision 1.1  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit
  * counts file formats.
- *
- * Revision 1.2  2005/03/30 17:53:54  ivanov
- * Added export specifiers
- *
- * Revision 1.1  2005/03/28 22:41:06  morgulis
- * Moved win_mask_ustat* files to library and renamed them.
- *
- * Revision 1.1  2005/03/28 21:33:26  morgulis
- * Added -sformat option to specify the output format for unit counts file.
- * Implemented framework allowing usage of different output formats for
- * unit counts. Rewrote the code generating the unit counts file using
- * that framework.
  *
  * ========================================================================
  */

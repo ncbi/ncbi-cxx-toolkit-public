@@ -35,7 +35,7 @@
 
 #include <corelib/ncbitype.h>
 
-#include <algo/winmask/seq_masker.hpp>
+#include <algo/winmask/seq_masker_istat.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -58,12 +58,12 @@ public:
     /**
      **\brief Object constructor
      **
-     **\param arg_lstat determines which unit score statistics
+     **\param arg_ustat determines which unit score statistics
      **                 should be used
      **
      **/
-    CSeqMaskerScore( const CSeqMasker::LStat & arg_lstat ) 
-        : window( 0 ), lstat( arg_lstat ) {}
+    CSeqMaskerScore( const CRef< CSeqMaskerIstat > & arg_ustat ) 
+        : window( 0 ), ustat( arg_ustat ) {}
 
     /**
      **\brief Object destructor
@@ -140,7 +140,7 @@ protected:
      **\brief Unit score statistics that should be used by
      **       the score function object.
      **/
-    const CSeqMasker::LStat & lstat;
+    const CRef< CSeqMaskerIstat > & ustat;
 };
 
 END_NCBI_SCOPE
@@ -148,6 +148,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

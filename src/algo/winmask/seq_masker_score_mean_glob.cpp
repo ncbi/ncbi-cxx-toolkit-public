@@ -60,7 +60,8 @@ void CSeqMaskerScoreMeanGlob::Init()
     avg = 0.0;
     num = window->NumUnits();
 
-    for( Uint1 i = 0; i < num; ++i ) avg += lstat[(*window)[i]];
+    for( Uint1 i = 0; i < num; ++i ) 
+        avg += (*ustat)[(*window)[i]];
 
     avg /= num;
 }
@@ -69,7 +70,7 @@ void CSeqMaskerScoreMeanGlob::Init()
 void CSeqMaskerScoreMeanGlob::update( Uint4 unit )
 {
     ++num;
-    avg += (lstat[unit] - avg)/num;
+    avg += ((*ustat)[unit] - avg)/num;
 }
 
 
@@ -79,6 +80,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

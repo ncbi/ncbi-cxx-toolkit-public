@@ -45,6 +45,7 @@
 #include <algo/winmask/seq_masker_score_mean_glob.hpp>
 #include <algo/winmask/seq_masker.hpp>
 #include <algo/winmask/seq_masker_util.hpp>
+#include <algo/winmask/seq_masker_istat_factory.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -70,9 +71,13 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                         Uint1 tmin_count,
                         bool arg_discontig,
                         Uint4 arg_pattern )
-    : lstat( lstat_name, arg_cutoff_score, arg_textend,
-             arg_max_score, arg_min_score,
-             arg_set_max_score, arg_set_min_score ),
+    : ustat( CSeqMaskerIstatFactory::create( lstat_name,
+                                             arg_cutoff_score,
+                                             arg_textend,
+                                             arg_max_score,
+                                             arg_set_max_score,
+                                             arg_min_score,
+                                             arg_set_min_score ) ),
       score( NULL ), score_p3( NULL ), trigger_score( NULL ),
       window_size( arg_window_size ), window_step( arg_window_step ),
       unit_step( arg_unit_step ),
@@ -86,12 +91,12 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
       discontig( arg_discontig ), pattern( arg_pattern )
 {
     if( window_size == 0 )
-        window_size = lstat.UnitSize() + 4;
+        window_size = ustat->UnitSize() + 4;
 
-    trigger_score = score = new CSeqMaskerScoreMean( lstat );
+    trigger_score = score = new CSeqMaskerScoreMean( ustat );
 
     if( trigger == eTrigger_Min )
-        trigger_score = new CSeqMaskerScoreMin( lstat, tmin_count );
+        trigger_score = new CSeqMaskerScoreMin( ustat, tmin_count );
 
     if( !score )
     {
@@ -102,7 +107,7 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
 
     if( arg_merge_pass )
     {
-        score_p3 = new CSeqMaskerScoreMeanGlob( lstat );
+        score_p3 = new CSeqMaskerScoreMeanGlob( ustat );
 
         if( !score )
         {
@@ -126,8 +131,8 @@ CSeqMasker::~CSeqMasker()
 CSeqMasker::TMaskList *
 CSeqMasker::operator()( const CSeqVector& data ) const
 {
-    Uint4 cutoff_score = lstat.cutoff_score;
-    Uint4 textend = lstat.textend;
+    Uint4 cutoff_score = ustat->get_threshold();
+    Uint4 textend = ustat->get_textend();
     auto_ptr<TMaskList> mask(new TMaskList);
 
     if( window_size > data.size() )
@@ -137,7 +142,7 @@ CSeqMasker::operator()( const CSeqVector& data ) const
     }
 
     Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
-    Uint4 unit_size = lstat.UnitSize() + nbits;
+    Uint4 unit_size = ustat->UnitSize() + nbits;
     auto_ptr<CSeqMaskerWindow> window_ptr
         (discontig ? new CSeqMaskerWindowPattern( data, unit_size, 
                                                   window_size, window_step, 
@@ -369,162 +374,6 @@ void CSeqMasker::Merge( TMList & m, TMList::iterator mi,
     umi = um.erase( umi );
 }
 
-//-------------------------------------------------------------------------
-CSeqMasker::LStat::LStat(   const string & name, 
-                            Uint4 arg_cutoff_score, Uint4 arg_textend,
-                            Uint4 arg_max_score, Uint4 arg_min_score, 
-                            Uint4 arg_set_max_score, Uint4 arg_set_min_score )
-    :   cutoff_score( arg_cutoff_score ), textend( arg_textend ),
-        max_score( arg_max_score ), min_score( arg_min_score ),
-        set_max_score( arg_set_max_score ), 
-        set_min_score( arg_set_min_score ),
-        ambig_unit( 0 )
-{
-    CNcbiIfstream lstat_stream( name.c_str() );
-
-    if( !lstat_stream )
-    {
-        NCBI_THROW( CSeqMaskerException,
-                    eLstatStreamIpenFail,
-                    name );
-    }
-
-    bool start = true;
-    Uint4 linenum = 0UL;
-    Uint4 ambig_len = kMax_UI4;
-
-    units.reserve(1024*1024);
-    lengths.reserve(1024*1024);
-    string line;
-
-    while( lstat_stream )
-    {
-        line.erase();
-        NcbiGetlineEOL( lstat_stream, line );
-        ++linenum;
-
-        if( !line.length() || line[0] == '#' ) continue;
-
-        // Check if we have a precomputed parameter.
-        if( line[0] == '>' )
-        {
-            SIZE_TYPE name_end = line.find_first_of( " \t", 0 );
-            SIZE_TYPE val_start = line.find_first_not_of( " \t", name_end );
-
-            if( name_end == NPOS || val_start == NPOS )
-            {
-                CNcbiOstrstream str;
-                str << "at line " << linenum;
-                string msg = CNcbiOstrstreamToString(str);
-                NCBI_THROW( CSeqMaskerException,
-                            eLstatSyntax, msg);
-            }
-
-            string name = line.substr( 1, name_end - 1 );
-
-            if( name == "t_threshold" && cutoff_score == 0 )
-                cutoff_score 
-                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
-
-            if( name == "t_extend" && textend == 0 )
-                textend
-                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
-
-            if( name == "t_low" && min_score == 0 )
-                min_score
-                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
-
-            if( name == "t_high" && max_score == 0 )
-                max_score
-                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
-
-            continue;
-        }
-
-        if( start )
-        {
-            start = false;
-            unit_size = static_cast< Uint1 >( NStr::StringToUInt( line ) );
-            continue;
-        }
-
-        SIZE_TYPE unit_start = line.find_first_not_of( " \t", 0 );
-        SIZE_TYPE unit_end = line.find_first_of( " \t", unit_start );
-        SIZE_TYPE len_start = line.find_first_not_of( " \t", unit_end );
-
-        if( unit_start == NPOS || unit_end == NPOS || len_start == NPOS )
-        {
-            CNcbiOstrstream str;
-            str << "at line " << linenum;
-            string msg = CNcbiOstrstreamToString(str);
-            NCBI_THROW( CSeqMaskerException,
-                        eLstatSyntax, msg);
-        }
-
-        Uint4 unit = NStr::StringToUInt( line.substr( unit_start, 
-                                                      unit_end - unit_start ),
-                                         16 );
-        Uint4 len = NStr::StringToUInt( line.substr( len_start ) );
-
-        if( len < ambig_len )
-        {
-            ambig_len = len;
-            ambig_unit = unit;
-        }
-
-        if( len >= min_score ) 
-        {
-            units.push_back( unit );
-            lengths.push_back( len );
-        }
-    }
-
-    string bad_param;
-
-    if( cutoff_score == 0 )
-        bad_param += "t_threhold ";
-
-    if( textend == 0 )
-        bad_param += "t_extend ";
-
-    if( max_score == 0 )
-        bad_param += "t_high ";
-
-    if( min_score == 0 )
-        bad_param += "t_low ";
-
-    if( !bad_param.empty() )
-    {
-        NCBI_THROW( CSeqMaskerException, eLstatParam, bad_param );
-    }
-
-    if( set_min_score == 0 )
-      set_min_score = (min_score + 1)/2;
-
-    if( set_max_score == 0 )
-      set_max_score = max_score;
-}
-
-//----------------------------------------------------------------------------
-Uint4 CSeqMasker::LStat::operator[]( Uint4 target ) const
-{
-    Uint4 rtarget = CSeqMaskerUtil::reverse_complement( target, unit_size );
-
-    if( target > rtarget )
-      target = rtarget;
-
-    vector< Uint4 >::const_iterator res = lower_bound( units.begin(), 
-                                                       units.end(),
-                                                       target );
-
-    if( res == units.end() || *res != target ) return set_min_score;
-    else
-    {
-        Uint4 result = lengths[res - units.begin()];
-        return (result > max_score) ? set_max_score : result;
-    }
-}
-
 //----------------------------------------------------------------------------
 const char * CSeqMasker::CSeqMaskerException::GetErrCodeString() const
 {
@@ -563,7 +412,7 @@ CSeqMasker::mitem::mitem( Uint4 arg_start, Uint4 arg_end, Uint1 unit_size,
     : start( arg_start ), end( arg_end ), avg( 0.0 )
 {
     const Uint1 & window_size = owner.window_size;
-    const CSeqMaskerWindow::TUnit & ambig_unit = owner.lstat.AmbigUnit();
+    const CSeqMaskerWindow::TUnit & ambig_unit = owner.ustat->AmbigUnit();
     CSeqMaskerScore * const score = owner.score_p3;
     CSeqMaskerWindow * window = NULL;
 
@@ -648,6 +497,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.10  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

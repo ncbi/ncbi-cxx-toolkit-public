@@ -41,34 +41,89 @@
 
 BEGIN_NCBI_SCOPE
 
+/**
+ **\brief Class responsible for creation of unit counts statistics
+ **       in text format.
+ **/
 class CSeqMaskerOstatAscii : public CSeqMaskerOstat
 {
     public:
 
+        /** 
+         **\brief Exceptions that CSeqMaskerOstatAscii might throw.
+         **/
         class CSeqMaskerOstatAsciiException : public CException
         {
             public:
                 
                 enum EErrCode
                 {
-                    eBadOrder
+                    eBadOrder   /**< Unit information is not added in ascending order of units. */
                 };
 
+                /**
+                 **\brief Get a description string for this exception.
+                 **\return C-style description string
+                 **/
                 virtual const char * GetErrCodeString() const;
 
                 NCBI_EXCEPTION_DEFAULT( CSeqMaskerOstatAsciiException, CException );
         };
 
+        /**
+         **\brief Object constructor.
+         **\param name name of the output file containing the unit
+         **            counts data
+         **/
         explicit CSeqMaskerOstatAscii( const string & name );
 
+        /**
+         **\brief Object destructor.
+         **/
         virtual ~CSeqMaskerOstatAscii();
 
     protected:
 
+        /**
+         **\brief Output a line containing the unit size.
+         **\param us the value of the unit size
+         **/
         virtual void doSetUnitSize( Uint4 us );
+
+        /**
+         **\brief Output a line with information about the given unit count.
+         **
+         ** The line contains two words: the unit value in hex format and
+         ** the unit count in decimal format. The function checks that the
+         ** unit value is greater than that of all previously written units.
+         **
+         **\param unit the unit value
+         **\param count the number of times the unit and its reverse complement
+         **             occur in the genome
+         **/
         virtual void doSetUnitCount( Uint4 unit, Uint4 count );
+
+        /**
+         **\brief Prints msg as a comment line in the output file.
+         **\param msg the comment message
+         **/
         virtual void doSetComment( const string & msg );
+
+        /**
+         **\brief Output a line with information about the given parameter value.
+         **
+         ** The line starts with '>' and contains 2 words: the name of the
+         ** parameter and the decimal integer value of the parameter.
+         ** This method should be called after all unit counts are reported.
+         **
+         **\param name the parameter name
+         **\param value the parameter value
+         **/
         virtual void doSetParam( const string & name, Uint4 value );
+
+        /**
+         **\brief Create a blank line in the output file.
+         **/
         virtual void doSetBlank();
 };
 
@@ -77,6 +132,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.2  2005/03/29 13:29:37  dicuccio
  * Use <> for includes
  *

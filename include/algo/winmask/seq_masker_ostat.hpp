@@ -41,57 +41,130 @@
 
 BEGIN_NCBI_SCOPE
 
+/**
+ **\brief Base class for computing and saving unit counts data.
+ **/
 class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstat : public CObject
 {
     public:
 
+        /**
+         **\brief Exceptions that CSeqMaskerOstat can throw.
+         **/
         class CSeqMaskerOstatException : public CException
         {
             public:
 
                 enum EErrCode
                 {
-                    eBadState
+                    eBadState   /**< Operation can not be performed in the current state. */
                 };
 
+                /**
+                 **\brief Get a description string for this exception.
+                 **\return C-style description string
+                 **/
                 virtual const char * GetErrCodeString() const;
 
                 NCBI_EXCEPTION_DEFAULT( CSeqMaskerOstatException, CException );
         };
 
+        /**
+         **\brief Object constructor.
+         **\param os C++ stream that should be used to save the unit counts data
+         **/
         explicit CSeqMaskerOstat( CNcbiOstream & os )
             : out_stream( os ), state( start )
         {}
 
+        /**
+         **\brief Trivial object destructor.
+         **/
         virtual ~CSeqMaskerOstat() {}
 
+        /**
+         **\brief Set the unit size value.
+         **
+         ** This method must be called before any call to setUnitCount().
+         **
+         **\param us new value of unit size 
+         **/
         void setUnitSize( Uint1 us );
+
+        /**
+         **\brief Add count value for a particular unit.
+         **
+         ** This method can not be called before setUnitSize() and after
+         ** the first call to setParam().
+         **
+         **\param unit unit value
+         **\param count number of times the unit and its reverse complement
+         **             occur in the genome
+         **/
         void setUnitCount( Uint4 unit, Uint4 count );
+
+        /**
+         **\brief Add a comment to the unit counts file.
+         **
+         ** It is possible that this method is NOP for some unit counts
+         ** formats.
+         **
+         **\param msg comment message
+         **/
         void setComment( const string & msg ) { doSetComment( msg ); }
+
+        /**
+         **\brief Set a value of a WindowMasker parameter.
+         **
+         ** This method only can be called after all setUnitCount() calls.
+         **
+         **\param name the name of the parameter
+         **\param value the value of the parameter
+         **/
         void setParam( const string & name, Uint4 value );
+
+        /**
+         **\brief Create a blank line in the unit counts file.
+         **
+         ** It is possible that this method is NOP for some unit counts
+         ** formats.
+         **/
         void setBlank() { doSetBlank(); }
 
     protected:
 
+        /**\name Methods used to delegate functionality to derived classes */
+        /**@{*/
         virtual void doSetUnitSize( Uint4 us ) = 0;
         virtual void doSetUnitCount( Uint4 unit, Uint4 count ) = 0;
         virtual void doSetComment( const string & msg ) = 0;
         virtual void doSetParam( const string & name, Uint4 value ) = 0;
         virtual void doSetBlank() = 0;
+        /**@}*/
 
+        /**
+         **\brief Refers to the C++ stream that should be used to write
+         **       out the unit counts data.
+         **/
         CNcbiOstream& out_stream;
 
     private:
 
+        /**\name Provide reference semantics for the class */
+        /**@{*/
         CSeqMaskerOstat( const CSeqMaskerOstat & );
         CSeqMaskerOstat& operator=( const CSeqMaskerOstat & );
+        /**@}*/
 
+        /**\internal
+         **\brief Possible object states.
+         **/
         enum 
         {
-            start,
-            ulen,
-            udata,
-            thres
+            start, /**<\internal The object has just been created. */
+            ulen,  /**<\internal The unit size has been set. */
+            udata, /**<\internal The unit counts data is being added. */
+            thres  /**<\internal The parameters values are being set. */
         } state;
 };
 
@@ -100,6 +173,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.3  2005/03/30 17:53:54  ivanov
  * Added export specifiers
  *

@@ -26,58 +26,60 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   CSeqMaskerScoreMin class member and method definitions.
+ *   Implementation of CSeqMaskerIstatFactory class.
  *
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_limits.h>
 
-#include <algo/winmask/seq_masker_window.hpp>
-#include <algo/winmask/seq_masker_score_min.hpp>
+#include "algo/winmask/seq_masker_istat_factory.hpp"
+#include "algo/winmask/seq_masker_istat_ascii.hpp"
 
 BEGIN_NCBI_SCOPE
 
-//-------------------------------------------------------------------------
-Uint4 CSeqMaskerScoreMin::operator()()
+//------------------------------------------------------------------------------
+const char * CSeqMaskerIstatFactory::Exception::GetErrCodeString() const
 {
-    list< Uint4 > stats;
-    Uint4 num = window->NumUnits();
-
-    for( Uint1 i = 0; i < num; ++i )
+    switch( GetErrCode() )
     {
-        Uint4 result = (*ustat)[(*window)[i]];
-        list< Uint4 >::iterator j = stats.begin();
-
-        while( j != stats.end() && result > *j ) ++j;
-
-        stats.insert( j, result );
-
-        if( stats.size() > num - count + 1 ) stats.pop_back();
+        case eBadFormat:    return "unknown format";
+        case eCreateFail:   return "creation failure";
+        default:            return CException::GetErrCodeString();
     }
-
-    return stats.back();
 }
 
+//------------------------------------------------------------------------------
+CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
+                                                  Uint4 threshold,
+                                                  Uint4 textend,
+                                                  Uint4 max_count,
+                                                  Uint4 use_max_count,
+                                                  Uint4 min_count,
+                                                  Uint4 use_min_count )
+{
+    try
+    {
+        return new CSeqMaskerIstatAscii( name,
+                                         threshold, textend,
+                                         max_count, use_max_count,
+                                         min_count, use_min_count );
+    }
+    catch( ... )
+    {
+        NCBI_THROW( Exception, eCreateFail,
+                    "could not create a unit counts container" );
+    }
+}
 
 END_NCBI_SCOPE
-
 
 /*
  * ========================================================================
  * $Log$
- * Revision 1.3  2005/04/04 14:28:46  morgulis
+ * Revision 1.1  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit
  * counts file formats.
  *
- * Revision 1.2  2005/02/12 19:58:04  dicuccio
- * Corrected file type issues introduced by CVS (trailing return).  Updated
- * typedef names to match C++ coding standard.
- *
- * Revision 1.1  2005/02/12 19:15:11  dicuccio
- * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
- *
  * ========================================================================
  */
-

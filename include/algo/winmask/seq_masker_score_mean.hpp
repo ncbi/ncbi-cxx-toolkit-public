@@ -36,7 +36,7 @@
 #include <corelib/ncbitype.h>
 
 #include <algo/winmask/seq_masker_score.hpp>
-
+#include <algo/winmask/seq_masker_istat.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -51,11 +51,11 @@ public:
     /**
      **\brief Object constructor.
      **
-     **\param lstat unit score statistics; forwarded to the base class
+     **\param ustat unit score statistics; forwarded to the base class
      **             constructor
      **
      **/
-    CSeqMaskerScoreMean( const CSeqMasker::LStat & lstat );
+    CSeqMaskerScoreMean( const CRef< CSeqMaskerIstat > & ustat );
 
     /**
      **\brief Object destructor.
@@ -141,6 +141,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.3  2005/02/25 21:09:18  morgulis
  * 1. Reduced the number of binary searches by the factor of 2 by locally
  *    caching some search results.

@@ -38,8 +38,9 @@ BEGIN_NCBI_SCOPE
 
 
 //-------------------------------------------------------------------------
-CSeqMaskerScoreMean::CSeqMaskerScoreMean( const CSeqMasker::LStat & lstat )
-: CSeqMaskerScore( lstat ), sum( 0 ), start( 0 ), num( 0 )
+CSeqMaskerScoreMean::CSeqMaskerScoreMean( 
+    const CRef< CSeqMaskerIstat > & ustat )
+: CSeqMaskerScore( ustat ), sum( 0 ), start( 0 ), num( 0 )
 {
 }
 
@@ -66,7 +67,7 @@ void CSeqMaskerScoreMean::PostAdvance( Uint4 step )
            && window->UnitStep() == 1 
            && window->Start() - start == 1 )
     {
-        *scores_start = lstat[(*window)[num - 1]];
+        *scores_start = (*ustat)[(*window)[num - 1]];
         sum += *scores_start;
         scores_start = (scores_start - &scores[0] == (int)(num - 1) ) 
 	             ? &scores[0]
@@ -93,7 +94,7 @@ void CSeqMaskerScoreMean::FillScores()
 
   for( Uint1 i = 0; i < num; ++i )
   {
-    scores[i] = lstat[(*window)[i]];
+    scores[i] = (*ustat)[(*window)[i]];
     sum += scores[i];
   }
 }
@@ -103,6 +104,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.3  2005/02/25 21:09:18  morgulis
  * 1. Reduced the number of binary searches by the factor of 2 by locally
  *    caching some search results.

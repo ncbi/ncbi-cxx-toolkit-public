@@ -38,6 +38,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <algo/winmask/seq_masker_window.hpp>
+#include <algo/winmask/seq_masker_istat.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -186,112 +187,6 @@ public:
      **/
     TMaskList * operator()( const objects::CSeqVector & data ) const;
 
-    /**
-     **\brief Internal class encapsulating unit frequency information
-     **
-     **/
-    class LStat
-    {
-        friend class CSeqMasker;
-
-    public:
-
-        /**
-         **\brief Object constructor.
-         **
-         ** Reads unit frequency information from the specified
-         ** file and initialized internal data structure.
-         **
-         **\param name the name of the file containing the unit
-         **            frequencies
-         **\param arg_max_score maximum allowed unit score
-         **\param arg_min_score minimum allowed unit score
-         **\param arg_set_max_score score to use for units exceeding max_score
-         **\param arg_set_min_score score to use for units below min_score
-         **
-         **/
-        LStat(  const string & name, 
-                Uint4 arg_cutoff_score, Uint4 arg_textend,
-                Uint4 arg_max_score, Uint4 arg_min_score, 
-                Uint4 arg_set_max_score, Uint4 arg_set_min_score );
-
-        /**
-         **\brief Access by index operator.
-         **
-         **\param target the unit value
-         **\return the unit score
-         **
-         **/
-        Uint4 operator[]( Uint4 target ) const;
-
-        /**
-         **\brief Get the size of the units used.
-         **
-         **\return the unit size
-         **
-         **/
-        Uint1 UnitSize() const { return unit_size; }
-
-        /**
-         **\brief Return the unit value used to represent units with
-         **       ambiguous characters.
-         **
-         **/
-        CSeqMaskerWindow::TUnit AmbigUnit() const { return ambig_unit; }
-
-    private:
-
-        /**\internal
-         **\brief Ordered set of unit values with scores larger than min_score.
-         **/
-        vector< Uint4 > units;
-
-        /**\internal
-         **\brief Unit scores corresponding to values in units.
-         **/
-        vector< Uint4 > lengths;
-
-        /**\internal
-        **\brief Score that triggers masking.
-        **/
-        Uint4 cutoff_score;
-
-        /**\internal
-        **\brief The score above which it is allowed to extend masking.
-        **/
-        Uint4 textend;
-
-        /**\internal
-         **\brief Maximum allowed unit score.
-         **/
-        Uint4 max_score;
-
-        /**\internal
-         **\brief Minimum allowed unit score.
-         **/
-        Uint4 min_score;
-
-        /**\internal
-         **\brief Score to use when unit score is more than max_score.
-         **/
-        Uint4 set_max_score;
-
-        /**\internal
-         **\brief Score to use when unit score is less than min_score.
-         **/
-        Uint4 set_min_score;
-
-        /**\internal
-         **\brief The unit size in bases.
-         **/
-        Uint1 unit_size;
-
-        /**\internal
-         **\brief Unit value to use for units with ambiguities.
-         **/
-        CSeqMaskerWindow::TUnit ambig_unit;
-    };
-
 private:
 
     /**\internal
@@ -361,7 +256,7 @@ private:
     /**\internal
      **\brief Container of the unit score statistics.
      **/
-    LStat lstat;
+    CRef< CSeqMaskerIstat > ustat;
 
     /**\internal
      **\brief Score function object to use for extensions.
@@ -458,6 +353,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/04/04 14:28:46  morgulis
+ * Decoupled reading and accessing unit counts information from seq_masker
+ * core functionality and changed it to be able to support several unit
+ * counts file formats.
+ *
  * Revision 1.5  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.
