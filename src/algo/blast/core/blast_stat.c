@@ -2215,32 +2215,37 @@ Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 }
 
 Int2
-Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context_end)
+Blast_ReplaceUngappedKbpWithIdealKbp(BlastScoreBlk* sbp, 
+                                     Int4 context_start, 
+                                     Int4 context_end)
 {
-
-	Blast_KarlinBlk* kbp_ideal,* kbp;
-	Int4 index;
+    Blast_KarlinBlk* kbp_ideal,* kbp;
+    Int4 index;
 
     ASSERT(sbp);
     ASSERT(sbp->kbp_ideal); /* this field is allocated unconditionally */
 
-	kbp_ideal = sbp->kbp_ideal;
-/* Replace the calculated values with ideal ones for blastx, tblastx. */
-	for (index=context_start; index<=context_end; index++)
-	{
-		kbp = sbp->kbp[index];	
-      if (!kbp)
-         continue;
-		if (kbp->Lambda >= kbp_ideal->Lambda)
-		{
-			kbp->Lambda = kbp_ideal->Lambda;
-			kbp->K = kbp_ideal->K;
-			kbp->logK = kbp_ideal->logK;
-			kbp->H = kbp_ideal->H;
-		}
-	}
+    /* This function should NOT be called for gapped Karlin-Altschul blocks */
+    ASSERT(sbp->kbp != sbp->kbp_gap_std);
+    ASSERT(sbp->kbp != sbp->kbp_gap_psi);
 
-	return 0;
+    kbp_ideal = sbp->kbp_ideal;
+    /* Replace the calculated values with ideal ones for blastx, tblastx. */
+    for (index=context_start; index<=context_end; index++)
+    {
+        kbp = sbp->kbp[index];    
+        if (!kbp)
+            continue;
+        if (kbp->Lambda >= kbp_ideal->Lambda)
+        {
+            kbp->Lambda = kbp_ideal->Lambda;
+            kbp->K = kbp_ideal->K;
+            kbp->logK = kbp_ideal->logK;
+            kbp->H = kbp_ideal->H;
+        }
+    }
+
+    return 0;
 }
 
 /*
@@ -3621,6 +3626,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.104  2004/11/30 18:34:28  camacho
+ * Rename Blast_KarlinBlkStandardCalc to Blast_ReplaceUngappedKbpWithIdealKbp
+ *
  * Revision 1.103  2004/11/30 15:27:16  camacho
  * Rename Blast_ResFreqDestruct to Blast_ResFreqFree
  *

@@ -237,18 +237,18 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
 Int2 Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
 
 
-/** Fills KarlinBlk pointers in BlastScoreBlk with "ideal" values if the 
- * ideal Lambda is less than the actual Lambda.  This happens if 
+/** Replaces the ungapped KarlinBlk pointers in BlastScoreBlk with "ideal" 
+ * values if the ideal Lambda is less than the actual Lambda.  This happens
  * if the query is translated and the calculated (real) Karlin
- *
  * parameters are bad, as they're calculated for non-coding regions.
  * @param sbp the object to be modified [in|out]
  * @param context_start first context to start with [in]
  * @param context_end last context to work on [in]
  * @return zero on success
  */
-Int2 Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
-                                 Int4 context_end);
+Int2 Blast_ReplaceUngappedKbpWithIdealKbp(BlastScoreBlk* sbp, 
+                                          Int4 context_start, 
+                                          Int4 context_end);
 
 /** Attempts to fill KarlinBlk for given gap opening, extensions etc.
  *
