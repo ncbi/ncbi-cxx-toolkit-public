@@ -3,19 +3,6 @@
 IMPORT = .
 EXPORT = $(IMPORT)
 
-DEP = \
-../include/ncbicgi.hpp \
-../include/ncbicgi.inl \
-../include/ncbiconf.h \
-../include/ncbidbg.hpp \
-../include/ncbidiag.hpp \
-../include/ncbidiag.inl \
-../include/ncbiexpt.hpp \
-../include/ncbistd.hpp \
-../include/ncbistl.hpp \
-../include/ncbistre.hpp \
-../include/ncbitype.h
-
 OBJ  = corelib.o
 LIBS = -lxncbi
 LIBS_DEP = ../src/libxncbi.a
@@ -44,7 +31,7 @@ LFLAGS    = -xildoff -L../src -L$(I_LIB)
 .SUFFIXES:
 .SUFFIXES:  .o .c .h .hpp .cpp
 
-.cpp.o: $(DEP)
+.cpp.o:
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .KEEP_STATE:
