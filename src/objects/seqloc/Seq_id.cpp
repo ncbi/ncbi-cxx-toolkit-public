@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/01/10 19:00:04  clausen
+ * Added GetLength
+ *
  * Revision 6.17  2002/01/09 15:59:30  grichenk
  * Fixed includes
  *
@@ -98,6 +101,9 @@
 
 // generated includes
 #include <objects/seqloc/Seq_id.hpp>
+
+#include <objects/seq/Seq_inst.hpp>
+
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqloc/Giimport_id.hpp>
@@ -110,6 +116,8 @@
 // object manager includes
 #include <objects/seq/Bioseq.hpp>
 #include <objects/objmgr/objmgr_base.hpp>
+#include <objects/objmgr/scopes.hpp>
+#include <objects/objmgr/om_iter.hpp>
 
 #include <string>
 
@@ -738,6 +746,19 @@ bool CSeq_id::Equals(const CSerialUserOp& object) const
     return m_ObjectManager == obj.m_ObjectManager;
 }
 
+// Get sequence length if a scope is available to resolve sequence, else
+// return kMax_Int
+int CSeq_id::GetLength(CScope* scope) const
+{
+    if( !scope ) {
+        return kMax_Int;
+    }
+    
+    CBioseqHandle hnd = scope->GetBioseqHandle(*this);
+    CScope::TBioseqCore core = scope->GetBioseqCore(hnd);
+    return core->GetInst().IsSetLength() ? core->GetInst().GetLength() : 
+        kMax_Int;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
