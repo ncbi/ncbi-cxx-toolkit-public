@@ -105,6 +105,120 @@ const string& CSeq_annot_Handle::GetName(void) const
 }
 
 
+const CSeq_annot& CSeq_annot_Handle::x_GetSeq_annotCore(void) const
+{
+    return *x_GetInfo().GetSeq_annotCore();
+}
+
+
+CSeq_annot::C_Data::E_Choice CSeq_annot_Handle::Which(void) const
+{
+    return x_GetSeq_annotCore().GetData().Which();
+}
+
+
+bool CSeq_annot_Handle::IsFtable(void) const
+{
+    return x_GetSeq_annotCore().GetData().IsFtable();
+}
+
+
+bool CSeq_annot_Handle::IsAlign(void) const
+{
+    return x_GetSeq_annotCore().GetData().IsAlign();
+}
+
+
+bool CSeq_annot_Handle::IsGraph(void) const
+{
+    return x_GetSeq_annotCore().GetData().IsGraph();
+}
+
+
+bool CSeq_annot_Handle::IsIds(void) const
+{
+    return x_GetSeq_annotCore().GetData().IsIds();
+}
+
+
+bool CSeq_annot_Handle::IsLocs(void) const
+{
+    return x_GetSeq_annotCore().GetData().IsLocs();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_IsSetId(void) const
+{
+    return x_GetSeq_annotCore().IsSetId();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_CanGetId(void) const
+{
+    return x_GetSeq_annotCore().CanGetId();
+}
+
+
+const CSeq_annot::TId& CSeq_annot_Handle::Seq_annot_GetId(void) const
+{
+    return x_GetSeq_annotCore().GetId();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_IsSetDb(void) const
+{
+    return x_GetSeq_annotCore().IsSetDb();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_CanGetDb(void) const
+{
+    return x_GetSeq_annotCore().CanGetDb();
+}
+
+
+CSeq_annot::TDb CSeq_annot_Handle::Seq_annot_GetDb(void) const
+{
+    return x_GetSeq_annotCore().GetDb();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_IsSetName(void) const
+{
+    return x_GetSeq_annotCore().IsSetName();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_CanGetName(void) const
+{
+    return x_GetSeq_annotCore().CanGetName();
+}
+
+
+const CSeq_annot::TName& CSeq_annot_Handle::Seq_annot_GetName(void) const
+{
+    return x_GetSeq_annotCore().GetName();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_IsSetDesc(void) const
+{
+    return x_GetSeq_annotCore().IsSetDesc();
+}
+
+
+bool CSeq_annot_Handle::Seq_annot_CanGetDesc(void) const
+{
+    return x_GetSeq_annotCore().CanGetDesc();
+}
+
+
+const CSeq_annot::TDesc& CSeq_annot_Handle::Seq_annot_GetDesc(void) const
+{
+    return x_GetSeq_annotCore().GetDesc();
+}
+
+
 CSeq_annot_Info& CSeq_annot_EditHandle::x_GetInfo(void) const
 {
     return const_cast<CSeq_annot_Info&>(CSeq_annot_Handle::x_GetInfo());
@@ -144,6 +258,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/01/03 21:51:58  grichenk
+* Added proxy methods for CSeq_annot getters.
+*
 * Revision 1.13  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *

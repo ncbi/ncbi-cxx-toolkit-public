@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objmgr/tse_handle.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -132,6 +133,30 @@ public:
     bool IsNamed(void) const;
     const string& GetName(void) const;
 
+    // Mappings for CSeq_annot::C_Data methods
+    CSeq_annot::C_Data::E_Choice Which(void) const;
+    bool IsFtable(void) const;
+    bool IsAlign(void) const;
+    bool IsGraph(void) const;
+    bool IsIds(void) const;
+    bool IsLocs(void) const;
+
+    bool Seq_annot_IsSetId(void) const;
+    bool Seq_annot_CanGetId(void) const;
+    const CSeq_annot::TId& Seq_annot_GetId(void) const;
+
+    bool Seq_annot_IsSetDb(void) const;
+    bool Seq_annot_CanGetDb(void) const;
+    CSeq_annot::TDb Seq_annot_GetDb(void) const;
+
+    bool Seq_annot_IsSetName(void) const;
+    bool Seq_annot_CanGetName(void) const;
+    const CSeq_annot::TName& Seq_annot_GetName(void) const;
+
+    bool Seq_annot_IsSetDesc(void) const;
+    bool Seq_annot_CanGetDesc(void) const;
+    const CSeq_annot::TDesc& Seq_annot_GetDesc(void) const;
+
 protected:
     friend class CScope_Impl;
     friend class CSeq_annot_CI;
@@ -147,6 +172,7 @@ protected:
 
 public: // non-public section
     const CSeq_annot_Info& x_GetInfo(void) const;
+    const CSeq_annot& x_GetSeq_annotCore(void) const;
 
 #if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
 // !!!!! Deprecated methods !!!!!
@@ -295,6 +321,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/01/03 21:51:58  grichenk
+* Added proxy methods for CSeq_annot getters.
+*
 * Revision 1.13  2004/12/22 15:56:04  vasilche
 * Introduced CTSE_Handle.
 *
