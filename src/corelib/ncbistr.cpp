@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/04/09 19:51:37  sandomir
+* minor changes in NStr::StringToXXX - base added
+*
 * Revision 1.7  1999/01/21 16:18:04  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -68,11 +71,11 @@ BEGIN_NCBI_SCOPE
 #define snprintf _snprintf
 #endif
 
-int NStr::StringToInt(const string& str)
+int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* error = 0;
-    long value = strtol(str.c_str(), &error, 0);
+    long value = strtol(str.c_str(), &error, base);
     if ( errno || error && *error ||
          value < numeric_limits<int>::min() ||
          value > numeric_limits<int>::max() )
@@ -80,11 +83,11 @@ int NStr::StringToInt(const string& str)
     return value;
 }
 
-unsigned int NStr::StringToUInt(const string& str)
+unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
 {
     errno = 0;
     char* error = 0;
-    long value = strtol(str.c_str(), &error, 0);
+    long value = strtol(str.c_str(), &error, base);
     if ( errno || error && *error ||
          value < numeric_limits<unsigned int>::min() ||
          value > numeric_limits<unsigned int>::max() )

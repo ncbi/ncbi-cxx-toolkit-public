@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/04/09 19:51:36  sandomir
+* minor changes in NStr::StringToXXX - base added
+*
 * Revision 1.15  1999/01/21 16:18:04  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -80,8 +83,8 @@ const string NcbiEmptyString;
 struct NStr {
 
     // conversion functions
-    static int StringToInt(const string& str);
-    static unsigned int StringToUInt(const string& str);
+    static int StringToInt(const string& str, int base = 10 );
+    static unsigned int StringToUInt(const string& str, int base = 10);
     static double StringToDouble(const string& str);
     static string IntToString(int value);
     static string IntToString(int value, bool sign);
