@@ -35,6 +35,7 @@
 #include <bdb/bdb_util.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objtools/lds/lds_query.hpp>
 #include <objtools/lds/lds_set.hpp>
@@ -68,7 +69,7 @@ public:
 
     void operator()(SLDS_ObjectDB& dbf)
     {
-        if (dbf.primary_seqid.IsNull())
+        if (dbf.primary_seqid.IsEmpty())
             return;
 
         int object_id = dbf.object_id;
@@ -77,21 +78,32 @@ public:
         string seq_id_str = dbf.primary_seqid;
         if (seq_id_str.empty())
             return;
+
         CSeq_id seq_id_db(seq_id_str);
+        if (seq_id_db.Which() == CSeq_id::e_not_set) {
+            seq_id_db.SetLocal().SetStr(seq_id_str);
+            if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                return;
+            }
+        }
 
         // Check the seqids vector against the primary seq id
         //
         vector<string>::const_iterator it;
         for (it = m_SeqIds.begin(); it != m_SeqIds.end(); ++it) {
-            const CSeq_id seq_id(*it);
+            CSeq_id seq_id(*it);
 
-            if (seq_id.Which() == CSeq_id::e_not_set)
-                continue;
+            if (seq_id.Which() == CSeq_id::e_not_set) {
+                seq_id.SetLocal().SetStr(*it);
+                if (seq_id.Which() == CSeq_id::e_not_set) {
+                    continue;
+                }
+            }
 
             if (seq_id.Match(seq_id_db)) {
                 m_ResultSet->insert(tse_id ? tse_id : object_id);
                 return;
-            }            
+            }
         } // for
 
         // Primary seq id gave no hit. Scanning the supplemental list (attributes)
@@ -111,17 +123,25 @@ public:
         
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
         for (it = seq_id_arr.begin(); it != seq_id_arr.end(); ++it) {
-            const CSeq_id seq_id_db(*it);
+            CSeq_id seq_id_db(*it);
 
-            if (seq_id_db.Which() == CSeq_id::e_not_set)
-                continue;
+            if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                seq_id_db.SetLocal().SetStr(*it);
+                if (seq_id_db.Which() == CSeq_id::e_not_set) {
+                    continue;
+                }
+            }
 
             vector<string>::const_iterator it2;
             for (it2 = m_SeqIds.begin(); it2 != m_SeqIds.end(); ++it2) {
-                const CSeq_id seq_id(*it2);
+                CSeq_id seq_id(*it2);
 
-                if (seq_id.Which() == CSeq_id::e_not_set)
-                    continue;
+                if (seq_id.Which() == CSeq_id::e_not_set) {
+                    seq_id.SetLocal().SetStr(*it2);
+                    if (seq_id.Which() == CSeq_id::e_not_set) {
+                        continue;
+                    }
+                }
                 
                 if (seq_id.Match(seq_id_db)) {
                     m_ResultSet->insert(tse_id ? tse_id : object_id);
@@ -175,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/24 15:40:30  kuznets
+ * Working on sequence id scan search. Improved recognition of local sequences.
+ *
  * Revision 1.2  2003/06/20 19:56:41  kuznets
  * Implemented new function "FindSequences"
  *
