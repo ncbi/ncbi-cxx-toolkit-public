@@ -96,7 +96,7 @@ public:
     virtual void AssignValue(CDB_Object& v)= 0;
 
     // Create and return a new object (with internal value NULL) of type "type".
-    // NOTE:  "size" matters only for eDB_Char, eDB_Binary.
+    // NOTE:  "size" matters only for eDB_Char, eDB_Binary, eDB_LongChar, eDB_LongBinary.
     static CDB_Object* Create(EDB_Type type, size_t size = 1);
 
 protected:
@@ -988,7 +988,7 @@ public:
         return *this;
     }
 
-    CDB_Numeric& Assign(unsigned int precision, unsigned int scale, 
+    CDB_Numeric& Assign(unsigned int precision, unsigned int scale,
                         bool is_negative, const unsigned char* arr) {
         m_Precision = precision;
         m_Scale     = scale;
@@ -997,7 +997,7 @@ public:
         memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
         return *this;
     }
- 
+
     CDB_Numeric& operator= (const char* val) {
         x_MakeFromString(m_Precision, m_Scale, val);
         return *this;
@@ -1042,6 +1042,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/05/13 16:54:40  sapojnik
+ * CDB_Object::Create() - support for LongChar, LongBinary
+ *
  * Revision 1.16  2003/05/05 15:56:15  soussov
  * new default size 8K-1 for CDB_LongChar, CDB_LongBinary
  *

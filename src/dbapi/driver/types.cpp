@@ -61,22 +61,24 @@ void CDB_Object::AssignNULL()
 CDB_Object* CDB_Object::Create(EDB_Type type, size_t size)
 {
     switch ( type ) {
-    case eDB_Int             : return new CDB_Int          ();
-    case eDB_SmallInt        : return new CDB_SmallInt     ();
-    case eDB_TinyInt         : return new CDB_TinyInt      ();
-    case eDB_BigInt          : return new CDB_BigInt       ();
-    case eDB_VarChar         : return new CDB_VarChar      ();
-    case eDB_Char            : return new CDB_Char     (size);
-    case eDB_VarBinary       : return new CDB_VarBinary    ();
-    case eDB_Binary          : return new CDB_Binary   (size);
-    case eDB_Float           : return new CDB_Float        ();
-    case eDB_Double          : return new CDB_Double       ();
-    case eDB_DateTime        : return new CDB_DateTime     ();
-    case eDB_SmallDateTime   : return new CDB_SmallDateTime();
-    case eDB_Text            : return new CDB_Text         ();
-    case eDB_Image           : return new CDB_Image        ();
-    case eDB_Bit             : return new CDB_Bit          ();
-    case eDB_Numeric         : return new CDB_Numeric      ();
+    case eDB_Int             : return new CDB_Int           ();
+    case eDB_SmallInt        : return new CDB_SmallInt      ();
+    case eDB_TinyInt         : return new CDB_TinyInt       ();
+    case eDB_BigInt          : return new CDB_BigInt        ();
+    case eDB_VarChar         : return new CDB_VarChar       ();
+    case eDB_Char            : return new CDB_Char      (size);
+    case eDB_VarBinary       : return new CDB_VarBinary     ();
+    case eDB_Binary          : return new CDB_Binary    (size);
+    case eDB_Float           : return new CDB_Float         ();
+    case eDB_Double          : return new CDB_Double        ();
+    case eDB_DateTime        : return new CDB_DateTime      ();
+    case eDB_SmallDateTime   : return new CDB_SmallDateTime ();
+    case eDB_Text            : return new CDB_Text          ();
+    case eDB_Image           : return new CDB_Image         ();
+    case eDB_Bit             : return new CDB_Bit           ();
+    case eDB_Numeric         : return new CDB_Numeric       ();
+    case eDB_LongBinary      : return new CDB_LongBinary(size);
+    case eDB_LongChar        : return new CDB_LongChar  (size);
     case eDB_UnsupportedType : break;
     }
     throw CDB_ClientEx(eDB_Error, 2, "CDB_Object::Create", "unknown type");
@@ -874,6 +876,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/05/13 16:54:40  sapojnik
+ * CDB_Object::Create() - support for LongChar, LongBinary
+ *
  * Revision 1.12  2003/05/05 15:58:22  soussov
  * fixed bug in Clone() method for CDB_Char, CDB_LongChar and CDB_LongBinary when NULL value is cloned
  *
