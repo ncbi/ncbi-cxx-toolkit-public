@@ -80,6 +80,19 @@ CNetCacheClient::~CNetCacheClient()
 }
 
 
+static
+void s_WaitForServer(CSocket& sock)
+{
+    STimeout to = {2, 0};
+    while (true) {
+        EIO_Status io_st = sock.Wait(eIO_Read, &to);
+        if (io_st == eIO_Timeout)
+            continue;
+        else 
+            break;            
+    }
+}        
+
 string CNetCacheClient::PutData(const void*  buf,
                                 size_t       size,
                                 unsigned int time_to_live)
@@ -94,6 +107,8 @@ string CNetCacheClient::PutData(const void*  buf,
     }
    
     WriteStr(request.c_str(), request.length() + 1);
+    
+    s_WaitForServer(*m_Sock);
 
     // Read BLOB_ID answer from the server
     ReadStr(*m_Sock, &blob_id);
@@ -150,6 +165,8 @@ IReader* CNetCacheClient::GetData(const string& key)
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
 
+    s_WaitForServer(*m_Sock);
+    
     string answer;
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
@@ -227,6 +244,7 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
         size_t n_read;
         char ch;
         for (;;) {
+             
             io_st = sock.Read(&ch, 1, &n_read, eIO_ReadPlain);
             switch (io_st) {
             case eIO_Success:
@@ -265,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/10/13 14:46:38  kuznets
+ * Optimization in the networking
+ *
  * Revision 1.6  2004/10/08 12:30:35  lavr
  * Cosmetics
  *
