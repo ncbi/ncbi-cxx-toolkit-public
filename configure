@@ -1009,9 +1009,9 @@ else
 fi
 
 if test $ac_dir_in != .; then
-  ac_dir_suffix=/`echo $ac_dir_in | sed 's,^\.[\\/],,'`
+  ac_dir_suffix=`echo $ac_dir_in | sed 's,^\.[\\/],,'`
   # A "../" for each directory in $ac_dir_suffix.
-  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
+  ac_top_builddir=../`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
 else
   ac_dir_suffix= ac_top_builddir=
 fi
@@ -1025,10 +1025,10 @@ case $srcdir in
        ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
     fi ;;
   [\\/]* | ?:[\\/]* )  # Absolute path.
-    ac_srcdir=$srcdir$ac_dir_suffix;
+    ac_srcdir=$srcdir/$ac_dir_suffix;
     ac_top_srcdir=$srcdir ;;
   *) # Relative path.
-    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
+    ac_srcdir=$ac_top_builddir$srcdir/$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
@@ -23334,9 +23334,9 @@ else
 fi
 
 if test $ac_dir_in != .; then
-  ac_dir_suffix=/`echo $ac_dir_in | sed 's,^\.[\\/],,'`
+  ac_dir_suffix=`echo $ac_dir_in | sed 's,^\.[\\/],,'`
   # A "../" for each directory in $ac_dir_suffix.
-  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
+  ac_top_builddir=../`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
 else
   ac_dir_suffix= ac_top_builddir=
 fi
@@ -23350,10 +23350,10 @@ case $srcdir in
        ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
     fi ;;
   [\\/]* | ?:[\\/]* )  # Absolute path.
-    ac_srcdir=$srcdir$ac_dir_suffix;
+    ac_srcdir=$srcdir/$ac_dir_suffix;
     ac_top_srcdir=$srcdir ;;
   *) # Relative path.
-    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
+    ac_srcdir=$ac_top_builddir$srcdir/$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
@@ -23761,9 +23761,9 @@ else
 fi
 
 if test $ac_dir_in != .; then
-  ac_dir_suffix=/`echo $ac_dir_in | sed 's,^\.[\\/],,'`
+  ac_dir_suffix=`echo $ac_dir_in | sed 's,^\.[\\/],,'`
   # A "../" for each directory in $ac_dir_suffix.
-  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
+  ac_top_builddir=../`echo "$ac_dir_suffix" | sed 's,/[^\\/]*,../,g'`
 else
   ac_dir_suffix= ac_top_builddir=
 fi
@@ -23777,10 +23777,10 @@ case $srcdir in
        ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
     fi ;;
   [\\/]* | ?:[\\/]* )  # Absolute path.
-    ac_srcdir=$srcdir$ac_dir_suffix;
+    ac_srcdir=$srcdir/$ac_dir_suffix;
     ac_top_srcdir=$srcdir ;;
   *) # Relative path.
-    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
+    ac_srcdir=$ac_top_builddir$srcdir/$ac_dir_suffix
     ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
 # Do not use `cd foo && pwd` to compute absolute paths, because
