@@ -342,7 +342,6 @@ _PSIValidateMSA(const _PSIMsa* msa);
  */
 int
 _PSIComputeAlignmentBlocks(const _PSIMsa* msa,
-                           Boolean nsg_compatibility_mode,
                            _PSIAlignedBlock* aligned_block);
 
 /** Main function to calculate the sequence weights. Should be called with the
@@ -583,6 +582,11 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2005/03/22 15:35:10  camacho
+ * Fix to enable backwards compatibility with old PSSM engine when the query is
+ * the only sequence aligned for a given column of the multiple sequence
+ * alignment.
+ *
  * Revision 1.25  2005/02/28 13:40:11  camacho
  * Minor doxygen fix
  *

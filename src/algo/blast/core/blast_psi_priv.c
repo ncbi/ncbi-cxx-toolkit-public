@@ -1062,14 +1062,10 @@ _PSIComputePositionExtents(const _PSIMsa* msa,
 /** Calculates the aligned blocks lengths in the multiple sequence alignment
  * data structure.
  * @param msa multiple sequence alignment data structure [in]
- * @param nsg_compatibility_mode set to true to emulate the structure group's
- * use of PSSM engine in the cddumper application. By default should be FALSE
- * [in]
  * @param aligned_blocks aligned regions' extents [in|out]
  */
 static void
 _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
-                                Boolean nsg_compatibility_mode,
                                 _PSIAlignedBlock* aligned_blocks);
 
 /****************************************************************************/
@@ -1077,7 +1073,6 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
 /* posComputeExtents in posit.c */
 int
 _PSIComputeAlignmentBlocks(const _PSIMsa* msa,                  /* [in] */
-                           Boolean nsg_compatibility_mode,      /* [in] */
                            _PSIAlignedBlock* aligned_blocks)    /* [out] */
 {
     Uint4 s = 0;     /* index on aligned sequences */
@@ -1096,8 +1091,7 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,                  /* [in] */
         _PSIComputePositionExtents(msa, s, aligned_blocks);
     }
 
-    _PSIComputeAlignedRegionLengths(msa, nsg_compatibility_mode,
-                                    aligned_blocks);
+    _PSIComputeAlignedRegionLengths(msa, aligned_blocks);
 
     return PSI_SUCCESS;
 }
@@ -1209,7 +1203,6 @@ _PSIComputePositionExtents(const _PSIMsa* msa,
 
 static void
 _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
-                                Boolean nsg_compatibility_mode,
                                 _PSIAlignedBlock* aligned_blocks)
 {
     const Uint1 kXResidue = AMINOACID_TO_NCBISTDAA['X'];
@@ -1221,12 +1214,12 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
     for (i = 0; i < msa->dimensions->query_length; i++) {
         aligned_blocks->size[i] = aligned_blocks->pos_extnt[i].right - 
                                    aligned_blocks->pos_extnt[i].left + 1;
-
-        if ( !nsg_compatibility_mode ) {
-            /* Sanity check: if aligned_blocks->pos_extnt[i].{right,left} was
-               not modified after initialization, this assertion will fail */
-            ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
-        }
+        /* Sanity check: if aligned_blocks->pos_extnt[i].{right,left} was
+           not modified after initialization, this assertion will fail 
+           N.B.: This is allowed in the old code, i.e.: the size field will be
+           query_length + 2, because of this the assertion below was removed.
+        ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
+        */
     }
 
     /* Do not include X's in aligned region lengths */
@@ -2362,6 +2355,11 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/03/22 15:35:10  camacho
+ * Fix to enable backwards compatibility with old PSSM engine when the query is
+ * the only sequence aligned for a given column of the multiple sequence
+ * alignment.
+ *
  * Revision 1.51  2005/03/07 18:46:05  camacho
  * Removed dead code
  *

@@ -128,8 +128,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
         }
     }
 
-    status = _PSIComputeAlignmentBlocks(msa, options->nsg_compatibility_mode,
-                                        aligned_block);
+    status = _PSIComputeAlignmentBlocks(msa, aligned_block);
     if (status != PSI_SUCCESS) {
         s_PSICreatePssmCleanUp(pssm, msa, aligned_block, seq_weights, 
                               internal_pssm);
