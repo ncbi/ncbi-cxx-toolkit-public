@@ -57,19 +57,12 @@ extern "C" {
 #define IS_residue(x) (x <= 250)
 #endif
 
-#define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & 0x03)
+/** Bit mask for obtaining a single base from a byte in ncbi2na format */
+#define NCBI2NA_MASK 0x03
 
-#if 0
-/** Retrieve a sequence from the BLAST database
- * @param db BLAST database [in]
- * @param seq_ptr Pointer to sequence buffer [out]
- * @param oid Ordinal id of the sequence to be retrieved [in]
- * @param encoding In what encoding should the sequence be retrieved? [in]
- */ 
-void
-MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlk** seq_ptr,
-                     Int4 oid, Uint1 encoding);
-#endif
+/** Macro to extract base N from a byte x (N >= 0, N < 4) */
+#define READDB_UNPACK_BASE_N(x, N) (((x)>>(2*(N))) & NCBI2NA_MASK)
+
 
 /** Deallocate memory only for the sequence in the sequence block */
 Int2 BlastSequenceBlkClean(BLAST_SequenceBlk* seq_blk);
@@ -192,32 +185,6 @@ Int4 BLAST_TranslateCompressedSequence(Uint1* translation, Int4 length,
  */
 Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length, 
                             Uint1** rev_sequence_ptr);
-
-#if 0
-/** CC: Moved to blast_engine.c as static functions? */
-/** Initialize the thread information structure
- * @param last_oid2search Last ordinal id to examine in a database search.
- */
-BlastThrInfo* BLAST_ThrInfoNew(Int4 last_oid2search);
-
-/** Deallocate the thread information structure */
-void BLAST_ThrInfoFree(BlastThrInfo* thr_info);
-
-/** Gets the next set of sequences from the database to search.
- * @param rdfp The BLAST database(s) being searched [in]
- * @param start The first ordinal id in the chunk [out]
- * @param stop The last ordinal id in the chunk, plus 1 [out]
- * @param id_list List of ordinal ids to search in case of masked 
- *                database(s) [out]
- * @param id_list_number Number of sequences in id_list [out]
- * @param thr_info Keeps track of what sequences of the databases have already
- *                 been searched [in] [out]
- * @return Is this the last chunk of the database? 
-*/
-Boolean 
-BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4* start, Int4* stop, 
-                Int4* id_list, Int4* id_list_number, BlastThrInfo* thr_info);
-#endif
 
 /** This function translates the context number of a context into the frame of 
  * the sequence.
