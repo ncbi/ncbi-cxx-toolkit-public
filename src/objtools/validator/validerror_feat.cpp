@@ -1210,6 +1210,7 @@ void CValidError_feat::ValidateImpGbquals
 
             case CGbqualType::e_Rpt_unit:
                 {
+                    /*
                     bool found = false,
                          multiple_rpt_unit = true;
 
@@ -1227,6 +1228,7 @@ void CValidError_feat::ValidateImpGbquals
                          (!multiple_rpt_unit && val.length() > 48) ) {
                         error = true;
                     }
+                    */
                     break;
                 }
                 
@@ -2457,6 +2459,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/10/13 12:49:37  shomrat
+*                     // now any text will be allowed
+*
 * Revision 1.37  2003/10/01 21:00:24  shomrat
 * suppress partial not at end warning for CDD region
 *
