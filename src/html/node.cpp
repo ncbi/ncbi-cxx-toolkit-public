@@ -229,12 +229,10 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
             PrintChildren(out, mode);
         }
         catch (CHTMLException& e) {
-            PrintEnd(out, mode);
             e.AddTraceInfo(GetName());
             throw;
         }
         catch (CException& e) {
-            PrintEnd(out, mode);
             TExceptionFlags flags = GetExceptionFlags();
             if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
                 throw;
@@ -245,7 +243,6 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
             throw new_e;
         }
         catch (exception& e) {
-            PrintEnd(out, mode);
             TExceptionFlags flags = GetExceptionFlags();
             if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
                 throw;
@@ -257,7 +254,6 @@ CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
             throw new_e;
         }
         catch (...) {
-            PrintEnd(out, mode);
             TExceptionFlags flags = GetExceptionFlags();
             if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
                 throw;
@@ -331,6 +327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/02/04 17:17:57  ivanov
+ * CNCBINode::Print(). Removed PrintEnd() calls from exception catch blocks.
+ *
  * Revision 1.30  2004/02/02 14:26:23  ivanov
  * CNCBINode: added ability to repeat stored context
  *
