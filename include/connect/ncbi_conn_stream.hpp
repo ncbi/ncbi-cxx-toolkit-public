@@ -32,24 +32,35 @@
  *   CONN-based C++ streams
  *
  * Classes:
- *   CConn_IOStream - base class derived from "std::iostream" to perform I/O
- *                    by means of underlying CConn_Streambuf (implemented
- *                    privately in ncbi_conn_streambuf.[ch]pp).
+ *   CConn_IOStream 
+ *      base class derived from "std::iostream" to perform I/O by means
+ *      of underlying CConn_Streambuf (implemented privately in
+ *      ncbi_conn_streambuf.[ch]pp).
  *
- *   CConn_SocketStream  - I/O stream based on socket connector.
+ *   CConn_SocketStream
+ *      I/O stream based on socket connector.
  *
- *   CConn_HttpStream    - I/O stream based on HTTP connector (that is,
- *                         the stream, which connects to HTTP server and
- *                         exchanges information using HTTP protocol).
+ *   CConn_HttpStream
+ *      I/O stream based on HTTP connector (that is, the stream, which
+ *      connects to HTTP server and exchanges information using HTTP
+ *      protocol).
  *
- *   CConn_ServiceStream - I/O stream based on service connector, which is
- *                         able to exchange data to/from a named service
- *                         that can be found via dispatcher/load-balancing
- *                         daemon and implemented as either HTTP GCI,
- *                         standalone server, or NCBID service.
+ *   CConn_ServiceStream
+ *      I/O stream based on service connector, which is able to exchange
+ *      data to/from a named service  that can be found via
+ *      dispatcher/load-balancing  daemon and implemented as either
+ *      HTTP GCI, standalone server, or NCBID service.
  *
- *   CConn_MemoryStream  - In-memory stream of data (analogous to strstream).
+ *   CConn_MemoryStream
+ *      In-memory stream of data (analogous to strstream).
  *
+ *   CConn_PipeStream
+ *      I/O stream based on PIPE connector, which is  able to exchange data
+ *      to/from another child process.
+ *
+ *   CConn_NamedPipeStream
+ *      I/O stream based on NAMEDPIPE connector, which is able to exchange
+ *      data to/from another process.
  */
 
 #include <corelib/ncbistd.hpp>
@@ -101,6 +112,7 @@ public:
 
 protected:
     CConn_IOStream(CConn_Streambuf* sb);
+    void Cleanup(void);
 
 private:
     CConn_Streambuf* m_CSb;
@@ -276,14 +288,12 @@ public:
      const STimeout*       timeout      = kDefaultTimeout,
      streamsize            buf_size     = kConn_DefaultBufSize
      );
+    virtual ~CConn_PipeStream();
 
-    /// Set the read handle of the child process as specified by "handle"
-    /// (eStdOut/eStdErr).
-    EIO_Status SetReadHandle(CPipe::EChildIOHandle from_handle);
-    CPipe&     GetPipe(void) { return m_Pipe; };
+    CPipe& GetPipe(void) { return m_Pipe; };
 
 protected:
-    CPipe m_Pipe;                       // underlying pipe
+    CPipe  m_Pipe; ///< Underlying pipe.
 
 private:
     // Disable copy constructor and assignment.
@@ -314,7 +324,6 @@ private:
 };
 
 
-
 END_NCBI_SCOPE
 
 
@@ -322,8 +331,11 @@ END_NCBI_SCOPE
 
 
 /*
- * ---------------------------------------------------------------------------
+ * ===========================================================================
  * $Log$
+ * Revision 6.24  2003/11/12 16:36:12  ivanov
+ * Added Cleanup(), removed SetReadHandle()
+ *
  * Revision 6.23  2003/10/23 12:16:48  lavr
  * CConn_IOStream:: base class is now CNcbiIostream
  *
