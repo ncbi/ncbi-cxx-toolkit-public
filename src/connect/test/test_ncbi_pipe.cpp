@@ -241,7 +241,7 @@ int main(int argc, const char* argv[])
         command = s_ReadFile(stdin);
         assert(command == "Child, are you ready?");
         cout << "Ok. Test 1 running." << endl;
-        _exit(TEST_RESULT);
+        exit(TEST_RESULT);
     }
 
     // Spawned process for bidirectional test (direct from pipe)
@@ -250,7 +250,7 @@ int main(int argc, const char* argv[])
         command = s_ReadFile(stdin);
         assert(command == "Child, are you ready again?");
         s_WriteFile(stdout, "Ok. Test 2 running.");
-        _exit(TEST_RESULT);
+        exit(TEST_RESULT);
     }
 
     // Spawned process for bidirectional test (iostream)
@@ -264,7 +264,7 @@ int main(int argc, const char* argv[])
             cout.flush();
         }
         cerr << "Done" << endl;
-        _exit(TEST_RESULT);
+        exit(TEST_RESULT);
     }
 
     // Execute main application function
@@ -275,6 +275,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2002/08/14 14:33:29  ivanov
+ * Changed allcalls _exit() to exit() back -- non crossplatform function
+ *
  * Revision 6.7  2002/08/13 14:09:48  ivanov
  * Changed exit() to _exit() in the child's branch of the test
  *
