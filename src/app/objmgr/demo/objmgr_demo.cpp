@@ -59,6 +59,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -738,6 +739,7 @@ int CDemoApp::Run(void)
             if ( count_subtypes ) {
                 subtypes_counts.assign(CSeqFeatData::eSubtype_max+1, 0);
             }
+            CSeq_loc_Mapper mapper(handle);
             for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
                 if ( count_types ) {
                     ++types_counts[it->GetData().Which()];
@@ -770,6 +772,10 @@ int CDemoApp::Run(void)
                         NcbiCout << "\n" <<
                             MSerial_AsnText <<
                             it->GetOriginalFeature().GetLocation();
+                        NcbiCout << "Mapped location:";
+                        NcbiCout << "\n" <<
+                            MSerial_AsnText <<
+                            *mapper.Map(it->GetOriginalFeature().GetLocation());
                     }
                     else {
                         NcbiCout << "Location:\n" <<
@@ -1022,6 +1028,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2004/10/26 20:03:33  vasilche
+* Added output of CSeq_loc_Mapper result.
+*
 * Revision 1.88  2004/10/21 15:48:40  vasilche
 * Added options -range_loc and -overlap.
 *
