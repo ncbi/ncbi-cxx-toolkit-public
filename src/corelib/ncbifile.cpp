@@ -866,12 +866,9 @@ bool CDirEntry::SetTime(CTime *modification, CTime *last_access) const
 {
     struct utimbuf times;
 
-    if (modification) {
-        times.modtime = modification->GetTimeT();
-    }
-    if (last_access) {
-        times.actime = last_access->GetTimeT();
-    }
+    times.modtime = modification ? modification->GetTimeT() : time(0);
+    times.actime = last_access ? last_access->GetTimeT() : time(0);
+
     return utime(GetPath().c_str(), &times) == 0;
 }
 
@@ -1807,6 +1804,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2003/11/28 16:51:48  ivanov
+ * Fixed CDirEntry::SetTime() to set current time if parameter is empty
+ *
  * Revision 1.63  2003/11/28 16:22:42  ivanov
  * + CDirEntry::SetTime()
  *
