@@ -62,15 +62,18 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //
 
 
-// load multiple dta's
+
+///
+/// load multiple dta's in xml-like format
+///
 int CSpectrumSet::LoadMultDTA(std::istream& DTA)
 {   
     CRef <CMSSpectrum> MySpectrum;
     int iIndex(-1); // the spectrum index
     string Line;
-    double dummy;
+    //    double dummy;
     bool GotOne(false);  // has a spectrum been read?
-    try{
+    try {
 	do {
 	    do {
 		getline(DTA, Line);
@@ -99,69 +102,133 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA)
 		MySpectrum->SetName(Match);
 	    }
     
-	    MySpectrum->SetScale(MSSCALE);
-	    DTA >> dummy;
-	    MySpectrum->SetPrecursormz(static_cast <int> (dummy*MSSCALE));
-	    DTA >> dummy;
-	    MySpectrum->SetCharge().push_back(static_cast <int> (dummy));
+	    GetDTAHeader(DTA, MySpectrum);
 	    getline(DTA, Line);
 	    getline(DTA, Line);
 
 	    while(NStr::Compare(Line, 0, 5, "</dta") != 0) {
-		dummy = 0;
 		CNcbiIstrstream istr(Line.c_str());
-		istr >> dummy;
-		if(dummy == 0) break;
-		MySpectrum->SetMz().push_back(static_cast <int> 
-					      (dummy*MSSCALE));
-		// attenuate the really big peaks
-		istr >> dummy;
-		if(dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
-		MySpectrum->SetAbundance().push_back(static_cast <int>
-						     (dummy*MSSCALE));
+		if(!GetDTABody(istr, MySpectrum)) break;;
 		getline(DTA, Line);
 	    } 
 
 	    Set().push_back(MySpectrum);
 	} while(DTA && !DTA.eof());
 
-    } catch (exception& e) {
-	ERR_POST(Error << e.what());
-	return 1;
+    } catch (NCBI_NS_STD::exception& e) {
+	ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
+	throw;
+    }
+
+    return 0;
+}
+
+///
+/// load multiple dta's separated by a blank line
+///
+int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA)
+{   
+    CRef <CMSSpectrum> MySpectrum;
+    int iIndex(0); // the spectrum index
+    string Line;
+    //    double dummy;
+    bool GotOne(false);  // has a spectrum been read?
+    try {
+	while (DTA && !DTA.eof()){
+	    GotOne = true;
+    
+	    MySpectrum = new CMSSpectrum;
+	    MySpectrum->SetNumber(iIndex);
+	    iIndex++;
+    
+	    GetDTAHeader(DTA, MySpectrum);
+	    getline(DTA, Line);
+	    getline(DTA, Line);
+
+	    if(!DTA || DTA.eof()) {
+		if(GotOne) return 0;
+		else return 1;
+	    }
+
+	    while(Line != "") {
+		CNcbiIstrstream istr(Line.c_str());
+		if(!GetDTABody(istr, MySpectrum)) break;;
+		getline(DTA, Line);
+	    } 
+
+	    Set().push_back(MySpectrum);
+	} while(DTA && !DTA.eof());
+	if(GotOne) return 0;
+	else return 1;
+
+    } catch (NCBI_NS_STD::exception& e) {
+	ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
+	throw;
     }
 
     return 0;
 }
 
 
-// load in a single dta file
-
-int CSpectrumSet::LoadDTA(std::istream& DTA)
-{   
-    CRef <CMSSpectrum> MySpectrum(new CMSSpectrum);
-    MySpectrum->SetNumber(1);
-    MySpectrum->SetScale(MSSCALE);
-    bool GotOne(false);  // has a spectrum been read?
-
+///
+///  Read in the header of a DTA file
+///
+void CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+{
     double dummy;
+
+    MySpectrum->SetScale(MSSCALE);
     DTA >> dummy;
     MySpectrum->SetPrecursormz(static_cast <int> (dummy*MSSCALE));
     DTA >> dummy;
-    MySpectrum->SetCharge().push_back(static_cast <int> (dummy));
-    
-    while(DTA) {
-	dummy = 0;
-	DTA >> dummy;
-	if(dummy == 0) break;
-	MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
-	// attenuate the really big peaks
-	DTA >> dummy;
-	if(dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
-	MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
-	GotOne = true;
-    } 
+    MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
+}
 
-    Set().push_back(MySpectrum);
+
+///
+/// Read in the body of a dta file
+///
+bool CSpectrumSet::GetDTABody(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+{
+    double dummy(0.0L);
+
+    DTA >> dummy;
+    if(dummy == 0) return false;
+    MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
+    // attenuate the really big peaks
+    DTA >> dummy;
+    if(dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
+    MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
+
+    return true;
+}
+
+
+///
+/// load in a single dta file
+///
+int CSpectrumSet::LoadDTA(std::istream& DTA)
+{   
+    CRef <CMSSpectrum> MySpectrum;
+    bool GotOne(false);  // has a spectrum been read?
+
+    try {
+	MySpectrum = new CMSSpectrum;
+	MySpectrum->SetNumber(1);
+	MySpectrum->SetScale(MSSCALE);
+	GetDTAHeader(DTA, MySpectrum);
+    
+	while(DTA) {
+	    if(!GetDTABody(DTA, MySpectrum)) break;
+	    GotOne = true;
+	} 
+
+	Set().push_back(MySpectrum);
+    } catch (NCBI_NS_STD::exception& e) {
+	ERR_POST(Info << "Exception in CSpectrumSet::LoadDTA: " << e.what());
+	throw;
+    }
+
     if(GotOne) return 0;
     else return 1;
 }
@@ -176,6 +243,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/05/27 20:52:15  lewisg
+ * better exception checking, use of AutoPtr, command line parsing
+ *
  * Revision 1.7  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -52,26 +52,32 @@ USING_SCOPE(omssa);
 //  Used by CMSPeak class to hold hits
 //
 
+
 // helper function for RecordHits that scans thru a single ladder
 void CMSHit::RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
 			       int Which)
 {
-    unsigned *Intensity = new unsigned [Ladder.size()];
-    Peaks->CompareSorted(Ladder, Which, Intensity);
+    try {
+	TIntensity Intensity(new unsigned [Ladder.size()]);
+	Peaks->CompareSorted(Ladder, Which, &Intensity);
 
-    // examine hits array
-    unsigned i;
-    for(i = 0; i < Ladder.size(); i++) {
-	// if hit, add to hitlist
-	if(Ladder.GetHit()[i] > 0) {
-	    HitInfo[iHitInfo].SetCharge() = (char) Ladder.GetCharge();
-	    HitInfo[iHitInfo].SetIon() = (char) Ladder.GetType();
-	    HitInfo[iHitInfo].SetNumber() = (short) i;
-	    HitInfo[iHitInfo].SetIntensity() = Intensity[i];
-	    iHitInfo++;
+	// examine hits array
+	unsigned i;
+	for(i = 0; i < Ladder.size(); i++) {
+	    // if hit, add to hitlist
+	    if(Ladder.GetHit()[i] > 0) {
+		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
+		SetHitInfo(iHitInfo).SetIon() = (char) Ladder.GetType();
+		SetHitInfo(iHitInfo).SetNumber() = (short) i;
+		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
+		iHitInfo++;
+	    }
 	}
+    } catch (NCBI_NS_STD::exception& e) {
+	ERR_POST(Info << "Exception caught in CMSHit::RecordMatchesScan: " << e.what());
+	throw;
     }
-    delete [] Intensity;
+
 }
 
 // make a record of the ions hit
@@ -79,8 +85,8 @@ void CMSHit::RecordMatches(CLadder& BLadder, CLadder& YLadder,
 			   CLadder& B2Ladder,
 			   CLadder& Y2Ladder, CMSPeak *Peaks)
 {
-    // create hitlist
-    HitInfo = new CMSHitInfo[Hits];
+    // create hitlist.  note that this is deleted in the copy operator
+    HitInfo.reset(new CMSHitInfo[Hits]);
     // increment thru hithist
     int iHitInfo(0); 
     int Which = Peaks->GetWhich(Charge);
@@ -105,7 +111,7 @@ int CMSHit::GetHits(double Threshold, int MaxI)
     int i, retval(0);
 
     for(i = 0; i < Hits; i++)
-        if(HitInfo[i].GetIntensity() > MaxI*Threshold)
+        if(SetHitInfo(i).GetIntensity() > MaxI*Threshold)
             retval++;
     return retval;
 }
@@ -282,7 +288,7 @@ bool CMSPeak::ContainsFast(int value, int Which)
 // compare assuming all lists are sorted
 // the intensity array holds the intensity if there is a match to the ladder
 // returns total number of matches, which may be more than is recorded in the ladder due to overlap
-int CMSPeak::CompareSorted(CLadder& Ladder, int Which, unsigned* Intensity)
+int CMSPeak::CompareSorted(CLadder& Ladder, int Which, TIntensity* Intensity)
 {
     unsigned i(0), j(0);
     int retval(0);
@@ -307,7 +313,7 @@ int CMSPeak::CompareSorted(CLadder& Ladder, int Which, unsigned* Intensity)
 	    retval++;
 	    // record the intensity if requested, used for auto adjust
 	    if(Intensity) {
-		Intensity[i] = MZI[Which][j].Intensity;
+		*(Intensity->get() + i) = MZI[Which][j].Intensity;
 	    }
 	    j++;
 	    if(j >= Num[Which]) break;
@@ -342,60 +348,32 @@ bool CMSPeak::CompareTop(CLadder& Ladder)
 }
 
 
-void CMSPeak::Read(std::istream& FileIn, double ToleranceIn, CMSPeak::EFileType FileType)
-{
-    double inputval, totalmass, intensity;
-    deque <int> temp1;
-    deque <unsigned> temp2;
-	
-    if(!FileIn || FileType != eDTA) return;
-    SetTolerance(ToleranceIn);
-    FileIn >> totalmass >> Charge;
-    TotalMass = static_cast <int> (totalmass * MSSCALE);
-    Num[MSORIGINAL] = 0;
-	
-    while(FileIn)
-	{
-	    inputval = 0;
-	    FileIn >> inputval >> intensity;
-	    if(inputval == 0) break;
-	    // attenuate the really big peaks
-	    if(intensity > kMax_UInt) intensity = kMax_UInt;
-	    temp1.push_back(static_cast <int>(inputval*MSSCALE));
-	    temp2.push_back(static_cast <unsigned> (intensity));
-	    Num[MSORIGINAL]++;
-	} 
-    MZI[MSORIGINAL] = new CMZI [Num[MSORIGINAL]];
-    unsigned i;
-    for(i = 0; i < Num[MSORIGINAL]; i++)
-	{
-	    MZI[MSORIGINAL][i].MZ = temp1[i];
-	    MZI[MSORIGINAL][i].Intensity = temp2[i];
-	}
-    Sort(MSORIGINAL);
-}
-
-
 // read in an asn.1 spectrum and initialize peak values
 int CMSPeak::Read(CMSSpectrum& Spectrum, double MSMSTolerance)
 {
-    int Scale = Spectrum.GetScale();
-    TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
-    SetTolerance(MSMSTolerance);
-    Charge = *(Spectrum.GetCharge().begin());
-    Num[MSORIGINAL] = 0;   
+    try {
+	int Scale = Spectrum.GetScale();
+	TotalMass = Spectrum.GetPrecursormz()*MSSCALE/Scale;
+	SetTolerance(MSMSTolerance);
+	Charge = *(Spectrum.GetCharge().begin());
+	Num[MSORIGINAL] = 0;   
     
-    const CMSSpectrum::TMz& Mz = Spectrum.GetMz();
-    const CMSSpectrum::TAbundance& Abundance = Spectrum.GetAbundance();
-    MZI[MSORIGINAL] = new CMZI [Mz.size()];
-    Num[MSORIGINAL] = Mz.size();
+	const CMSSpectrum::TMz& Mz = Spectrum.GetMz();
+	const CMSSpectrum::TAbundance& Abundance = Spectrum.GetAbundance();
+	MZI[MSORIGINAL] = new CMZI [Mz.size()];
+	Num[MSORIGINAL] = Mz.size();
 
-    int i;
-    for(i = 0; i < Num[MSORIGINAL]; i++) {
-	MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/Scale;
-	MZI[MSORIGINAL][i].Intensity = Abundance[i]/Scale;
+	int i;
+	for(i = 0; i < Num[MSORIGINAL]; i++) {
+	    MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/Scale;
+	    MZI[MSORIGINAL][i].Intensity = Abundance[i]/Scale;
+	}
+	Sort(MSORIGINAL);
+    } catch (NCBI_NS_STD::exception& e) {
+	ERR_POST(Info << "Exception in CMSPeak::Read: " << e.what());
+	throw;
     }
-    Sort(MSORIGINAL);
+
     return 0;
 }
 
@@ -909,7 +887,6 @@ CMSPeakSet::~CMSPeakSet()
 	delete *PeakSet.begin();
 	PeakSet.pop_front();
     }
-    delete [] MassPeak;
 }
 
 // compares m/z.  Lower m/z first in sort.
@@ -959,15 +936,16 @@ void CMSPeakSet::SortPeaks(int Peptol)
     // then create static array
 
     ArraySize = MassMap.size();
-    MassPeak = new TMassPeak[ArraySize];
+    MassPeak.reset(new TMassPeak[ArraySize]);
 
     TMassPeakMap::iterator iMassMap;
     int i(0);
     for(iMassMap = MassMap.begin(); iMassMap != MassMap.end(); iMassMap++, i++) {
-	MassPeak[i].Mass = iMassMap->second.Mass;
-	MassPeak[i].Peptol = iMassMap->second.Peptol;
-	MassPeak[i].Peak = iMassMap->second.Peak;
-	MassPeak[i].Charge = iMassMap->second.Charge;
+	GetMassPeak(i).Mass =
+ iMassMap->second.Mass;
+	GetMassPeak(i).Peptol = iMassMap->second.Peptol;
+	GetMassPeak(i).Peak = iMassMap->second.Peak;
+	GetMassPeak(i).Charge = iMassMap->second.Charge;
     }
 
     MassMap.clear();
@@ -984,7 +962,7 @@ TMassPeak *CMSPeakSet::GetIndexLo(int Mass)
     temp.Mass = Mass;
     temp.Peptol = 0;
     // look for first spectrum whose upper mass value + tolerance exceeds calculated mass
-    retval = lower_bound(MassPeak, MassPeak + ArraySize, temp, 
+    retval = lower_bound(MassPeak.get(), MassPeak.get() + ArraySize, temp, 
 			 CMassPeakCompareHi());
     return retval;
 }
@@ -993,5 +971,5 @@ TMassPeak *CMSPeakSet::GetIndexLo(int Mass)
 CMSPeak *CMSPeakSet::GetPeak(int Index)
 {
     if(Index < 0 || Index >= ArraySize) return 0;
-    return MassPeak[Index].Peak;
+    return GetMassPeak(Index).Peak;
 }

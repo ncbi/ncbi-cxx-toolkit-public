@@ -48,16 +48,20 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// the number of mods defined in asn.1 spec
-const int kNumMods = 5;
+///
+/// the number of mods defined in asn.1 spec
+///
+const int kNumMods = 9;
 
-// there are five kinds of mods:
-// 1. specific to an AA
-// 2. N terminus, not specific to an AA
-// 3. N terminus, specific to an AA
-// 4. C terminus, not specific to an AA
-// 5. C terminus, specific to an AA
-
+///
+/// Modification types
+/// there are five kinds of mods:
+/// 1. specific to an AA
+/// 2. N terminus, not specific to an AA
+/// 3. N terminus, specific to an AA
+/// 4. C terminus, not specific to an AA
+/// 5. C terminus, specific to an AA
+///
 const int kNumModType = 5;
 
 enum EMSModType {
@@ -76,8 +80,9 @@ enum EMSModType {
 //  These are separate arrays for speed considerations
 //
 
-
-// categorizes existing mods as the types listed above
+///
+/// categorizes existing mods as the types listed above
+///
 const EMSModType ModTypes[kNumMods] = {
     eModN,
     eModAA,
@@ -86,19 +91,41 @@ const EMSModType ModTypes[kNumMods] = {
     eModAA
 };
 
-// the characters to compare
-// rows are indexed by mod
-// column are the AA's modified (if any)
+///
+/// the names of the various modifications codified in the asn.1
+///
+char const * const kModNames[kNumMods] = {
+    "methylation of K",
+    "oxidation of methionine",
+    "carboxymethyl cysteine",
+    "carbamidomethyl cysteine",
+    "deamidation of K and Q",
+    "propionamide cysteine",
+    "phosphorylation of S",
+    "phosphorylation of T",
+    "phosphorylation of Y"
+};	   
+ 
+///
+/// the characters to compare
+/// rows are indexed by mod
+/// column are the AA's modified (if any)
+///
 const char ModChar [3][kNumMods] = {
-    {'\x0','\xc','\xc','\x3','\xd' },
-    {'\x0','\x0','\x0','\x0','\xf' },
-    {'\x0','\x0','\x0','\x0','\x0' }
+    {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16' },
+    {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00' },
+    {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
 };
 
-// the number of characters to compare
-const int NumModChars[] = { 0, 1, 1, 1, 2 };
+///
+/// the number of characters to compare
+///
+const int NumModChars[] = { 1, 1, 1, 1, 2, 1, 1, 1, 1 };
 
-const int ModMass[] = { 0, 1600, 0, 5702, 98 };
+///
+/// the modification masses
+///
+const int ModMass[] = { 1403, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997};
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -135,6 +162,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/27 20:52:15  lewisg
+* better exception checking, use of AutoPtr, command line parsing
+*
 * Revision 1.2  2004/03/04 02:22:49  lewisg
 * add msvc defines
 *

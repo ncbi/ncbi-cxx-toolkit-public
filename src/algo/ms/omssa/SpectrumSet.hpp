@@ -59,15 +59,46 @@ public:
     // destructor
     ~CSpectrumSet(void);
 
-    // load in a single dta file
+    ///
+    /// load in a single dta file
+    ///
     int LoadDTA(
 		std::istream& DTA  // stream containing dta
 		);
 
-    // load in multiple dta files with <dta> tag separators
+    ///
+    /// load in multiple dta files with <dta> tag separators
+    ///
     int LoadMultDTA(
 		    std::istream& DTA  // stream containing tag delimited dtas
 		    );
+
+    ///
+    /// load multiple dta's separated by a blank line
+    ///
+    int LoadMultBlankLineDTA(
+			     std::istream& DTA  // stream containing blank delimited dtas
+			     );
+
+protected:
+
+    ///
+    ///  Read in the header of a DTA file
+    ///
+    void GetDTAHeader(
+		      std::istream& DTA,  // input stream
+		      CRef <CMSSpectrum>& MySpectrum   // asn.1 container for spectra
+		      );
+
+    ///
+    /// Read in the body of a dta file
+    ///
+    bool CSpectrumSet::GetDTABody(
+				  std::istream& DTA,   // input stream
+				  CRef <CMSSpectrum>& MySpectrum   // asn.1 container for spectra
+				  );
+
+
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -101,6 +132,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/05/27 20:52:15  lewisg
+ * better exception checking, use of AutoPtr, command line parsing
+ *
  * Revision 1.3  2004/03/16 20:18:54  gorelenk
  * Changed includes of private headers.
  *

@@ -44,6 +44,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/iterator.hpp>
 #include <objects/omssa/omssa__.hpp>
+#include <serial/objostrxml.hpp>
 
 #include <fstream>
 #include <string>
@@ -52,6 +53,7 @@
 
 #include "omssa.hpp"
 #include "SpectrumSet.hpp"
+#include "Mod.hpp"
 #include <readdb.h>
 
 
@@ -65,55 +67,95 @@ USING_SCOPE(omssa);
 //
 //  Main application
 //
+typedef list <string> TStringList;
 
 class COMSSA : public CNcbiApplication {
 public:
     virtual int Run();
     virtual void Init();
+    void PrintMods(void);
+    void InsertMods(TStringList& List, CMSRequest::TVariable& Mods);
 };
+
+
+///
+/// Insert modifications
+///
+void COMSSA::InsertMods(TStringList& List, CMSRequest::TVariable& Mods)
+{
+    TStringList::iterator iList(List.begin());
+    int ModNum;
+
+    for(;iList != List.end(); iList++) {
+	try {
+	    ModNum = NStr::StringToInt(*iList);
+	} catch (CStringException &e) {
+	    ERR_POST(Info << "omssacl: unrecognized modification number");
+	    continue;
+	}
+	Mods.push_back(ModNum);
+    }
+}
+
+
+///
+/// print out a list of modification that can be used in OMSSA
+///
+void COMSSA::PrintMods(void)
+{
+    int i;
+    for(i = 0; i < kNumMods; i++)
+	cout << i << ": " << kModNames[i] << endl;
+}
 
 
 void COMSSA::Init()
 {
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
-    argDesc->AddDefaultKey("d", "blastdb", "Blast database to parse",
+    argDesc->AddDefaultKey("d", "blastdb", "Blast sequence library to search",
 			   CArgDescriptions::eString, "nr");
-    argDesc->AddDefaultKey("f", "infile", "dta file to read in",
+    argDesc->AddDefaultKey("f", "infile", "single dta file to search",
 			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("m", "xmlinfile", "xml encapsulated dta file to read in",
+    argDesc->AddDefaultKey("fx", "xmlinfile", "multiple xml-encapsulated dta files to search",
 			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("o", "outfile", "search results file",
+    argDesc->AddDefaultKey("fb", "dtainfile", "multiple dta files separated by blank lines to search",
 			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("o", "outfile", "asn.1 format search results filenam",
+			   CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("ox", "outfile", "xml format search results filename",
+			   CArgDescriptions::eString, "");
+#if MSGRAPH
     argDesc->AddDefaultKey("g", "graph", "graph file to write out",
 			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("t", "tol", "msms tolerance",
+#endif
+    argDesc->AddDefaultKey("to", "pretol", "product ion mass tolerance in Da",
 			   CArgDescriptions::eDouble, "0.8");
-    argDesc->AddDefaultKey("p", "ptol", "peptide mass tolerance",
+    argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
-    argDesc->AddDefaultKey("cl", "cutlo", "low end of intensity cutoff",
+    argDesc->AddDefaultKey("cl", "cutlo", "low intensity cutoff in % of max peak",
 			   CArgDescriptions::eDouble, "0.0");
-    argDesc->AddDefaultKey("ch", "cuthi", "high end of intensity cutoff",
+    argDesc->AddDefaultKey("ch", "cuthi", "high intensity cutoff in % of max peak",
 			   CArgDescriptions::eDouble, "0.2");
-    argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment",
+    argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment in % of max peak",
 			   CArgDescriptions::eDouble, "0.0005");
-    argDesc->AddDefaultKey("c", "cull", 
-			   "number of peaks to leave in each 100Da bin",
-			   CArgDescriptions::eInteger, "3");
-    argDesc->AddDefaultKey("l", "cleave", 
+    //    argDesc->AddDefaultKey("u", "cull", 
+    //			   "number of peaks to leave in each 100Da bin",
+    //			   CArgDescriptions::eInteger, "3");
+    argDesc->AddDefaultKey("v", "cleave", 
 			   "number of missed cleavages allowed",
 			   CArgDescriptions::eInteger, "1");
-    argDesc->AddDefaultKey("n", "numseq", 
-			   "number of sequences to search (0 = all)",
-			   CArgDescriptions::eInteger, "0");
+    //    argDesc->AddDefaultKey("n", "numseq", 
+    //			   "number of sequences to search (0 = all)",
+    //			   CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("x", "taxid", 
 			   "taxid to search (0 = all)",
 			   CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("w1", "window1", 
-			   "single charge window",
+			   "single charge window in Da",
 			   CArgDescriptions::eInteger, "20");
     argDesc->AddDefaultKey("w2", "window2", 
-			   "double charge window",
+			   "double charge window in Da",
 			   CArgDescriptions::eInteger, "14");
     argDesc->AddDefaultKey("h1", "hit1", 
 			   "number of peaks allowed in single charge window",
@@ -122,8 +164,20 @@ void COMSSA::Init()
 			   "number of peaks allowed in double charge window",
 			   CArgDescriptions::eInteger, "2");
     argDesc->AddDefaultKey("hl", "hitlist", 
-			   "number of hits kept for spectrum",
-			   CArgDescriptions::eInteger, "100");
+			   "maximum number of hits retained for one spectrum",
+			   CArgDescriptions::eInteger, "30");
+    argDesc->AddDefaultKey("mf", "fixedmod", 
+			   "comma delimited list of id numbers for fixed modifications",
+			   CArgDescriptions::eString,
+			   "");
+    //  NStr::IntToString(eMSMod_Ccarbamidomethyl));
+    argDesc->AddDefaultKey("mv", "variablemod", 
+			   "comma delimited list of id numbers for variable modifications",
+			   CArgDescriptions::eString,
+			   "");
+    // NStr::IntToString(eMSMod_Moxy));
+    argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
+
 
     SetupArgDescriptions(argDesc.release());
 
@@ -140,126 +194,171 @@ int main(int argc, const char* argv[])
 
 int COMSSA::Run()
 {    
-    CArgs args = GetArgs();
-    _TRACE("omssa: initializing score");
-    CSearch Search;
-    int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
-    if(retval) {
-	ERR_POST(Fatal << "ommsacl: unable to initialize blastdb, error " <<
-	    retval);
-	return 1;
-    }
-    _TRACE("ommsa: score initialized");
-    CRef <CSpectrumSet> Spectrumset(new CSpectrumSet);
 
-    if(args["m"].AsString().size() != 0) {
-	ifstream PeakFile(args["m"].AsString().c_str());
-	if(!PeakFile) {
-	    ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
-		args["m"].AsString());
+    try {
+
+	CArgs args = GetArgs();
+
+	// print out the modification list
+	if(args["ml"]) {
+	    PrintMods();
+	    return 0;
+	}
+
+
+	_TRACE("omssa: initializing score");
+	CSearch Search;
+	int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
+	if(retval) {
+	    ERR_POST(Fatal << "ommsacl: unable to initialize blastdb, error " 
+		     << retval);
 	    return 1;
 	}
-	if(Spectrumset->LoadMultDTA(PeakFile) != 0) {
-	    ERR_POST(Fatal <<" omssacl: error reading spectrum file " <<
-		     args["m"].AsString());
-	    return 1;
-	}
-    }
-    else if(args["f"].AsString().size() != 0) {
-	ifstream PeakFile(args["f"].AsString().c_str());
-	if(!PeakFile) {
-	    ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
-		args["f"].AsString());
-	    return 1;
-	}
-	if(Spectrumset->LoadDTA(PeakFile) != 0) {
-	    ERR_POST(Fatal << "omssacl: not able to read spectrum file " <<
-		args["f"].AsString());
-	    return 1;
-	}
-    }
-    else {
-	ERR_POST(Fatal << "omssatest: input file not given.");
-	return 1;
-    }
+	_TRACE("ommsa: score initialized");
+	CRef <CSpectrumSet> Spectrumset(new CSpectrumSet);
 
-    CMSResponse Response;
-    CMSRequest Request;
-    Request.SetSearchtype(eMSSearchType_monoisotopic);
-    Request.SetPeptol(args["p"].AsDouble());
-    Request.SetMsmstol(args["t"].AsDouble());
-    Request.SetCutlo(args["cl"].AsDouble());
-    Request.SetCuthi(args["ch"].AsDouble());
-    Request.SetCutinc(args["ci"].AsDouble());
-    Request.SetSinglewin(args["w1"].AsInteger());
-    Request.SetDoublewin(args["w2"].AsInteger());
-    Request.SetSinglenum(args["h1"].AsInteger());
-    Request.SetDoublenum(args["h2"].AsInteger());
-    Request.SetEnzyme(eMSEnzymes_trypsin);
-    Request.SetMissedcleave(args["l"].AsInteger());
-    Request.SetSpectra(*Spectrumset);
-    Request.SetFixed().push_back(eMSMod_mcarbamidomethyl);
-    Request.SetVariable().push_back(eMSMod_moxy);
-    Request.SetDb(args["d"].AsString());
-    Request.SetCull(args["c"].AsInteger());
-    Request.SetHitlistlen(args["hl"].AsInteger());
-    if(args["x"].AsInteger() != 0) 
-	Request.SetTaxids().push_back(args["x"].AsInteger());
-
-
-    _TRACE("omssa: search begin");
-    Search.Search(Request, Response);
-    _TRACE("omssa: search end");
-
-    // read out hits
-    CMSResponse::THitsets::const_iterator iHits;
-    iHits = Response.GetHitsets().begin();
-    for(; iHits != Response.GetHitsets().end(); iHits++) {
-	CRef< CMSHitSet > HitSet =  *iHits;
-	ERR_POST(Info << "Hitset: " << HitSet->GetNumber());
-	if( HitSet-> CanGetError() && HitSet->GetError() ==
-	    eMSHitError_notenuffpeaks) {
-	    ERR_POST(Info << "Hitset Empty");
-	    continue;
-	}
-	CRef< CMSHits > Hit;
-	CMSHitSet::THits::const_iterator iHit; 
-	CMSHits::TPephits::const_iterator iPephit;
-	for(iHit = HitSet->GetHits().begin();
-	    iHit != HitSet->GetHits().end(); iHit++) {
-	    //	Hit = *iHit;
-	    ERR_POST(Info << (*iHit)->GetPepstring() << ": " << "P = " << 
-		(*iHit)->GetPvalue() << " E = " <<
-		(*iHit)->GetEvalue());    
-	    for(iPephit = (*iHit)->GetPephits().begin();
-		iPephit != (*iHit)->GetPephits().end();
-		iPephit++) {
-		ERR_POST(Info << (*iPephit)->GetGi() << ": " << (*iPephit)->GetStart() << "-" << (*iPephit)->GetStop() << ":" << (*iPephit)->GetDefline());
+	if(args["fx"].AsString().size() != 0) {
+	    ifstream PeakFile(args["fx"].AsString().c_str());
+	    if(!PeakFile) {
+		ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
+			 args["fx"].AsString());
+		return 1;
 	    }
-    
+	    if(Spectrumset->LoadMultDTA(PeakFile) != 0) {
+		ERR_POST(Fatal <<" omssacl: error reading spectrum file " <<
+			 args["fx"].AsString());
+		return 1;
+	    }
 	}
-    }
+	else if(args["f"].AsString().size() != 0) {
+	    ifstream PeakFile(args["f"].AsString().c_str());
+	    if(!PeakFile) {
+		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
+			 args["f"].AsString());
+		return 1;
+	    }
+	    if(Spectrumset->LoadDTA(PeakFile) != 0) {
+		ERR_POST(Fatal << "omssacl: not able to read spectrum file " <<
+			 args["f"].AsString());
+		return 1;
+	    }
+	}
+	else if(args["fb"].AsString().size() != 0) {
+	    ifstream PeakFile(args["fb"].AsString().c_str());
+	    if(!PeakFile) {
+		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
+			 args["fb"].AsString());
+		return 1;
+	    }
+	    if(Spectrumset->LoadMultBlankLineDTA(PeakFile) != 0) {
+		ERR_POST(Fatal << "omssacl: not able to read spectrum file " <<
+			 args["fb"].AsString());
+		return 1;
+	    }
+	}
+	else {
+	    ERR_POST(Fatal << "omssatest: input file not given.");
+	    return 1;
+	}
+
+	CMSResponse Response;
+	CMSRequest Request;
+	Request.SetSearchtype(eMSSearchType_monoisotopic);
+	Request.SetPeptol(args["te"].AsDouble());
+	Request.SetMsmstol(args["to"].AsDouble());
+	Request.SetCutlo(args["cl"].AsDouble());
+	Request.SetCuthi(args["ch"].AsDouble());
+	Request.SetCutinc(args["ci"].AsDouble());
+	Request.SetSinglewin(args["w1"].AsInteger());
+	Request.SetDoublewin(args["w2"].AsInteger());
+	Request.SetSinglenum(args["h1"].AsInteger());
+	Request.SetDoublenum(args["h2"].AsInteger());
+	Request.SetEnzyme(eMSEnzymes_trypsin);
+	Request.SetMissedcleave(args["v"].AsInteger());
+	Request.SetSpectra(*Spectrumset);
+	{
+	    TStringList List;
+	    NStr::Split(args["mv"].AsString(), ",", List);
+	    InsertMods(List, Request.SetVariable());
+	    List.clear();
+	    NStr::Split(args["mf"].AsString(), ",", List);
+	    InsertMods(List, Request.SetFixed());
+	}
+	Request.SetDb(args["d"].AsString());
+	//	Request.SetCull(args["u"].AsInteger());
+	Request.SetHitlistlen(args["hl"].AsInteger());
+	if(args["x"].AsInteger() != 0) 
+	    Request.SetTaxids().push_back(args["x"].AsInteger());
 
 
-    if(args["o"].AsString() != "") {
-	auto_ptr<CObjectOStream>
-	    txt_out(CObjectOStream::Open(args["o"].AsString().c_str(),
-					 eSerial_AsnText));
-	txt_out->Write(ObjectInfo(Response));
-    }
-#if MSGRAPH
-    if(args["g"].AsString() != "") {
-	CMSDrawSpectra DrawIt(kMSWIDTH, kMSHEIGHT);
-	DrawIt.Init(Request);
-	DrawIt.DrawHit(Response, 0, Search, true, true);
-	DrawIt.DrawSpectra();
-	
-	FILE *os;
-	os = fopen(args["g"].AsString().c_str(), "wb");
-	DrawIt.Output(os);
-	fclose(os);
-    }
+	_TRACE("omssa: search begin");
+	Search.Search(Request, Response);
+	_TRACE("omssa: search end");
+
+
+#if _DEBUG
+	// read out hits
+	CMSResponse::THitsets::const_iterator iHits;
+	iHits = Response.GetHitsets().begin();
+	for(; iHits != Response.GetHitsets().end(); iHits++) {
+	    CRef< CMSHitSet > HitSet =  *iHits;
+	    ERR_POST(Info << "Hitset: " << HitSet->GetNumber());
+	    if( HitSet-> CanGetError() && HitSet->GetError() ==
+		eMSHitError_notenuffpeaks) {
+		ERR_POST(Info << "Hitset Empty");
+		continue;
+	    }
+	    CRef< CMSHits > Hit;
+	    CMSHitSet::THits::const_iterator iHit; 
+	    CMSHits::TPephits::const_iterator iPephit;
+	    for(iHit = HitSet->GetHits().begin();
+		iHit != HitSet->GetHits().end(); iHit++) {
+		ERR_POST(Info << (*iHit)->GetPepstring() << ": " << "P = " << 
+			 (*iHit)->GetPvalue() << " E = " <<
+			 (*iHit)->GetEvalue());    
+		for(iPephit = (*iHit)->GetPephits().begin();
+		    iPephit != (*iHit)->GetPephits().end();
+		    iPephit++) {
+		    ERR_POST(Info << (*iPephit)->GetGi() << ": " << (*iPephit)->GetStart() << "-" << (*iPephit)->GetStop() << ":" << (*iPephit)->GetDefline());
+		}
+    
+	    }
+	}
 #endif
+
+
+	if(args["o"].AsString() != "") {
+	    auto_ptr<CObjectOStream>
+		txt_out(CObjectOStream::Open(args["o"].AsString().c_str(),
+					     eSerial_AsnText));
+	    txt_out->Write(ObjectInfo(Response));
+	}
+	else if(args["ox"].AsString() != "") {
+	    CNcbiOfstream os(args["ox"].AsString().c_str());
+	    auto_ptr<CObjectOStreamXml>
+		txt_out(new CObjectOStreamXml(os, false));
+	    //txt_out->SetEnforcedStdXml();
+	    txt_out->Write(ObjectInfo(Response));
+	}
+
+#if MSGRAPH
+	if(args["g"].AsString() != "") {
+	    CMSDrawSpectra DrawIt(kMSWIDTH, kMSHEIGHT);
+	    DrawIt.Init(Request);
+	    DrawIt.DrawHit(Response, 0, Search, true, true);
+	    DrawIt.DrawSpectra();
+	
+	    FILE *os;
+	    os = fopen(args["g"].AsString().c_str(), "wb");
+	    DrawIt.Output(os);
+	    fclose(os);
+	}
+#endif
+
+    } catch (NCBI_NS_STD::exception& e) {
+	ERR_POST(Fatal << "Exception in COMSSA::Run: " << e.what());
+    }
+
     return 0;
 }
 
@@ -267,6 +366,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.13  2004/05/27 20:52:15  lewisg
+  better exception checking, use of AutoPtr, command line parsing
+
   Revision 1.12  2004/05/21 21:41:03  gorelenk
   Added PCH ncbi_pch.hpp
 

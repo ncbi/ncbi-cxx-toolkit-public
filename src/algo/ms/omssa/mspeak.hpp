@@ -34,6 +34,7 @@
 #ifndef MSPEAK__HPP
 #define MSPEAK__HPP
 
+#include <corelib/ncbimisc.hpp>
 #include <objects/omssa/omssa__.hpp>
 
 #include <set>
@@ -82,6 +83,9 @@ private:
     unsigned Intensity;
 };
 
+// typedef for holding hit information
+typedef AutoPtr <CMSHitInfo, ArrayDeleter<CMSHitInfo> > THitInfo;
+
 // class to contain preliminary hits.  memory footprint must be kept small.
 class CMSHit {
 public:
@@ -105,7 +109,7 @@ public:
     void SetHits(int HitsIn);
     int GetCharge(void);
     void SetCharge(int ChargeIn);
-
+    CMSHitInfo& SetHitInfo(int n);
 
     // return number of hits above threshold
     int GetHits(double Threshold, int MaxI);
@@ -128,28 +132,28 @@ private:
     int Index, Mass;
     int Hits;  // number of peaks hit
     int Charge;  // the charge of the hit
-    CMSHitInfo *HitInfo;
+    THitInfo HitInfo;
 };
 
 
 /////////////////// CMSHit inline methods
 
-inline CMSHit::CMSHit(void): Hits(0), HitInfo(0)
+inline CMSHit::CMSHit(void): Hits(0)
 {}
 
 inline CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn):
-    Start(StartIn), Stop(StopIn), Index(IndexIn), Hits(0), HitInfo(0)
+    Start(StartIn), Stop(StopIn), Index(IndexIn), Hits(0)
 {}
 
 inline CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn, int MassIn, int HitsIn,
 		      int ChargeIn):
     Start(StartIn), Stop(StopIn), Index(IndexIn), Mass(MassIn),
-    Hits(HitsIn), Charge(ChargeIn), HitInfo(0)
+    Hits(HitsIn), Charge(ChargeIn)
 {}
 
 inline CMSHit::~CMSHit() 
 { 
-    delete [] HitInfo; 
+    //    delete [] HitInfo; 
 }
 
 inline int CMSHit::GetStart(void) 
@@ -212,6 +216,11 @@ inline void CMSHit::SetCharge(int ChargeIn)
     Charge = ChargeIn;
 }
 
+inline CMSHitInfo& CMSHit::SetHitInfo(int n)
+{
+    return *(HitInfo.get() + n);
+}
+
 inline CMSHit& CMSHit::operator= (CMSHit& in) 
 { 
     Start = in.Start; 
@@ -220,12 +229,11 @@ inline CMSHit& CMSHit::operator= (CMSHit& in)
     Mass = in.Mass;
     Hits = in.Hits;
     Charge = in.Charge;
-    delete [] HitInfo;
-    HitInfo = 0;
+    HitInfo.reset();
     if(in.HitInfo) {
-	HitInfo = new CMSHitInfo[Hits];
+	HitInfo.reset(new CMSHitInfo[Hits]);
 	int i;
-	for(i = 0; i < Hits; i++) HitInfo[i] = in.HitInfo[i];
+	for(i = 0; i < Hits; i++) SetHitInfo(i) = in.SetHitInfo(i);
     }
     return *this;
 }
@@ -322,6 +330,11 @@ enum EChargeState {
     eCharge4,
     eCharge5 };
 
+// typedef for holding intensity
+typedef AutoPtr <unsigned, ArrayDeleter<unsigned> > TIntensity;
+
+
+// class to hold experimental data and manipulate
 
 class NCBI_XOMSSA_EXPORT CMSPeak {
 public:
@@ -339,13 +352,11 @@ public:
     void AddTotalMass(int massin, int tolin);
     void Sort(int Which = MSORIGINAL);
 	
-	
-    // Read in a DTA File
-    enum EFileType { eDTA, eASC, ePKL, ePKS, eSCIEX, eUnknown };
-    void Read(std::istream& FileIn, double ToleranceIn, EFileType FileType = eDTA);
+    // Read a spectrum set into a CMSPeak
     int Read(CMSSpectrum& Spectrum, double MSMSTolerance);
+    // Write out a CMSPeak in dta format (useful for debugging)
+    enum EFileType { eDTA, eASC, ePKL, ePKS, eSCIEX, eUnknown };
     void Write(std::ostream& FileOut, EFileType FileType = eDTA, int Which = MSORIGINAL);
-
 
     // functions used in SmartCull
     // iterate thru peaks, deleting ones that pass the test
@@ -426,7 +437,7 @@ public:
 
     // compare assuming all lists are sorted
     // Intensity is optional argument that allows recording of the intensity
-    int CompareSorted(CLadder& Ladder, int Which, unsigned* Intensity);
+    int CompareSorted(CLadder& Ladder, int Which, TIntensity * Intensity);
 
 
     // initializes arrays used to track hits
@@ -640,6 +651,8 @@ typedef struct _MassPeak {
     CMSPeak *Peak;
 } TMassPeak;
 
+typedef AutoPtr <TMassPeak, ArrayDeleter<TMassPeak> > TAPMassPeak;
+
 typedef multimap <int, TMassPeak> TMassPeakMap;
 
 class NCBI_XOMSSA_EXPORT CMSPeakSet {
@@ -665,18 +678,20 @@ public:
 
     CMSPeak *GetPeak(int Index);  
     TMassPeak *GetEndMassPeak(void); 
+    // get a particular MassPeak
+    TMassPeak& GetMassPeak(int i);
     TPeakSet& GetPeaks(void);
 
 private:
     TPeakSet PeakSet;  // peak list for deletion
     TMassPeakMap MassMap;
-    TMassPeak *MassPeak; // array of neutral masses
+    TAPMassPeak MassPeak; // array of neutral masses
     int ArraySize;  // size of above array
 };
 
 ///////////////////   CMSPeakSet inline methods
 
-inline CMSPeakSet::CMSPeakSet(void): MassPeak(0)
+inline CMSPeakSet::CMSPeakSet(void)
 {}
 
 inline void CMSPeakSet::AddPeak(CMSPeak *PeakIn)
@@ -691,9 +706,14 @@ inline int CMSPeakSet::GetArraySize(void)
 
 inline TMassPeak * CMSPeakSet::GetEndMassPeak(void) 
 { 
-    return MassPeak+ArraySize; 
+    return MassPeak.get()+ArraySize; 
 }
-  
+
+inline TMassPeak& CMSPeakSet::GetMassPeak(int i) 
+{ 
+    return *(MassPeak.get()+i); 
+}
+
 inline TPeakSet& CMSPeakSet::GetPeaks(void) 
 { 
     return PeakSet; 
@@ -709,6 +729,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.14  2004/05/27 20:52:15  lewisg
+  better exception checking, use of AutoPtr, command line parsing
+
   Revision 1.13  2004/04/06 19:53:20  lewisg
   allow adjustment of precursor charges that allow multiply charged product ions
 

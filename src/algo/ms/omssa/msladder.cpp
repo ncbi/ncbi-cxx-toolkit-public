@@ -53,19 +53,19 @@ USING_SCOPE(omssa);
 //
 
 // constructor
-CLadder::CLadder(void): LadderIndex(0)
+CLadder::CLadder(void): LadderIndex(0), 
+			Ladder(new int[kMSLadderMax]),
+			Hit(new int[kMSLadderMax]),
+			LadderSize(kMSLadderMax)
 { 
-    Ladder = new int[kMSLadderMax];
-    Hit = new int[kMSLadderMax];
-    LadderSize = kMSLadderMax;
 }
 
 // constructor
-CLadder::CLadder(int SizeIn): LadderIndex(0)
+CLadder::CLadder(int SizeIn): LadderIndex(0),
+			      Ladder(new int[SizeIn]),
+			      Hit(new int[SizeIn]),
+			      LadderSize(SizeIn)
 {
-    Ladder = new int[SizeIn];
-    Hit = new int[SizeIn];
-    LadderSize = SizeIn;
 }
 
 
@@ -83,8 +83,8 @@ CLadder::CLadder(const CLadder& Old)
   
     unsigned i;
     for(i = 0; i < size(); i++) {
-	Ladder[i] = Old.Ladder[i];
-	Hit[i] = Old.Hit[i];
+	(*this)[i] = *(Old.Ladder.get() + i);
+	GetHit()[i] = *(Old.Hit.get() + i);
     }
 }
 
@@ -92,8 +92,6 @@ CLadder::CLadder(const CLadder& Old)
 // destructor
 CLadder::~CLadder()
 {
-    delete [] Ladder;
-    delete [] Hit;
 }
 
 
@@ -130,7 +128,7 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
 
     LadderIndex = stop - start;
     for(i = 0; i < LadderIndex; i++) {
-	Hit[i] = 0;
+	GetHit()[i] = 0;
 	if(kIonDirection[IonType] == 1) {
 	    delta = IntMassArray[AAMap[Sequence[start + i]]];
 	    if(!delta) return false; // unusable char (-BXZ*)
@@ -140,11 +138,6 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
 		if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
 		ModIndex++;
 	    }
-	 
-	    //	    if(NumMod > 1 && (Sequence[start + i] == 'M' || Sequence[start + i] == '\x0c')) {
-	    //		if(ModMask[ModIndex]) delta += 16*MSSCALE;
-	    //		ModIndex++;
-	    //	    }
 	}
 	else {
 	    delta = IntMassArray[AAMap[Sequence[stop - i]]];
@@ -154,15 +147,9 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
 		if (MaskSet(ModMask, ModIndex)) delta += DeltaMass[ModIndex];
 		ModIndex--;
 	    }
-
-
-	    //	    if(NumMod > 1 && (Sequence[stop - i] == 'M' || Sequence[stop - i] == '\x0c')) {
-	    //		if(ModMask[NumMod - ModIndex - 2]) delta += 16*MSSCALE;
-	    //		ModIndex++;
-	    //	    }
 	}
 	ion += delta/Charge;
-	Ladder[i] = ion;
+	(*this)[i] = ion;
     }
     return true;
 }
@@ -174,13 +161,13 @@ void CLadder::Or(CLadder& LadderIn)
     int i;
     if(kIonDirection[Type] ==  LadderIn.GetType()) {
 	for(i = 0; i < LadderIndex; i++) {
-	    Hit[i] = Hit[i] + LadderIn.GetHit()[i];
+	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[i];
 	}
     }
     else if( size() != static_cast <unsigned> (Stop - Start)) return;  // unusable chars
     else {  // different direction
 	for(i = 0; i < LadderIndex; i++) {
-	    Hit[i] = Hit[i] + LadderIn.GetHit()[LadderIndex - i - 1];
+	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[LadderIndex - i - 1];
 	}
     }
 }
@@ -192,8 +179,8 @@ bool CLadder::Contains(int MassIndex, int Tolerance)
     int i;
     // go thru ladder 
     for(i = 0; i < LadderIndex; i++) {
-	if(Ladder[i] <= MassIndex + Tolerance && 
-	   Ladder[i] > MassIndex - Tolerance ) return true;
+	if((*this)[i] <= MassIndex + Tolerance && 
+	   (*this)[i] > MassIndex - Tolerance ) return true;
     }
     return false;
 }
@@ -205,15 +192,15 @@ bool CLadder::ContainsFast(int MassIndex, int Tolerance)
     
     while(l <= r) {
         x = (l + r)/2;
-        if (Ladder[x] < MassIndex - Tolerance) 
+        if ((*this)[x] < MassIndex - Tolerance) 
 	    l = x + 1;
-        else if (Ladder[x] > MassIndex + Tolerance)
+        else if ((*this)[x] > MassIndex + Tolerance)
 	    r = x - 1;
 	else return true;
     } 
     
     if (x < LadderIndex - 1 && x >= 0 &&
-	Ladder[x+1] < MassIndex + Tolerance && Ladder[x+1] > 
+	(*this)[x+1] < MassIndex + Tolerance && (*this)[x+1] > 
 	MassIndex - Tolerance) 
 	return true;
     return false;

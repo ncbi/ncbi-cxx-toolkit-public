@@ -34,7 +34,7 @@
 #ifndef MSLADDER__HPP
 #define MSLADDER__HPP
 
-// #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <objects/omssa/omssa__.hpp>
 
 #include <set>
@@ -49,7 +49,7 @@ BEGIN_SCOPE(omssa)
 
 
 // container for mass ladders
-typedef int * THit;
+typedef int THit;
 
 // max size of ladder
 const int kMSLadderMax = 10000;
@@ -88,7 +88,7 @@ public:
     bool MaskSet(unsigned ModMask, int ModIndex);
 
     // getter setters
-    THit GetHit(void);
+    THit * GetHit(void);
     int GetStart(void);
     int GetStop(void);
     int GetSeqIndex(void);
@@ -111,10 +111,10 @@ public:
     void ClearHits(void);
 
 private:
-    int *Ladder;
-    unsigned LadderSize;  // size of allocated buffer
     int LadderIndex; // current end of the ladder
-    THit Hit;
+    AutoPtr <int, ArrayDeleter<int> > Ladder;
+    AutoPtr <THit, ArrayDeleter<THit> > Hit;
+    unsigned LadderSize;  // size of allocated buffer
     int Start, Stop;  // inclusive start and stop position in sequence
     int Index;  // gi or position in blastdb
     int Type;  // ion type
@@ -127,7 +127,7 @@ private:
 
 inline int& CLadder::operator [] (int n) 
 { 
-    return Ladder[n]; 
+    return *(Ladder.get() + n); 
 }
 
 inline unsigned CLadder::size(void) 
@@ -137,7 +137,7 @@ inline unsigned CLadder::size(void)
 
 inline void CLadder::push_back(int val) 
 { 
-    Ladder[LadderIndex] = val; 
+    *(Ladder.get() + LadderIndex) = val; 
     LadderIndex++;
 }
 
@@ -146,9 +146,9 @@ inline void CLadder::clear(void)
     LadderIndex = 0; 
 }
 
-inline THit CLadder::GetHit(void) 
+inline THit * CLadder::GetHit(void) 
 { 
-    return Hit; 
+    return Hit.get(); 
 }
 
 inline int CLadder::GetStart(void) 
@@ -186,7 +186,7 @@ inline int CLadder::HitCount(void)
 {
     int i, retval(0);
     for(i = 0; i < LadderIndex; i++)
-	retval += Hit[i];
+	retval += *(Hit.get() + i);
     return retval;
 }
 
@@ -195,7 +195,7 @@ inline void CLadder::ClearHits(void)
 {
     int i;
     for(i = 0; i < LadderIndex; i++)
-	Hit[i] = 0;
+	*(Hit.get() + i) = 0;
 }
 
 inline bool CLadder::MaskSet(unsigned ModMask, int ModIndex)
@@ -214,6 +214,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.8  2004/05/27 20:52:15  lewisg
+  better exception checking, use of AutoPtr, command line parsing
+
   Revision 1.7  2004/03/30 19:36:59  lewisg
   multiple mod code
 
