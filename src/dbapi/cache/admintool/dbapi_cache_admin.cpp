@@ -83,7 +83,7 @@ void CDBAPI_CacheAdmin::Init(void)
 
     arg_desc->AddOptionalKey("u",
                              "username",
-                             "Login name (default: cwriter)",
+                             "Login name (default: cwrite)",
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("p",
@@ -91,11 +91,10 @@ void CDBAPI_CacheAdmin::Init(void)
                              "Password",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("m",
-                             "maintain",
-                             "Run cache maintenance (Timeout based BLOB removal).",
-                             CArgDescriptions::eString);
-
+    arg_desc->AddFlag("m",
+                      "Run cache maintenance (Timeout based BLOB removal).");
+    
+    
 
     arg_desc->AddOptionalKey("st",
                       "stimeout",
@@ -149,7 +148,7 @@ int CDBAPI_CacheAdmin::Connect(const CArgs& args)
 
     string server = (args["s"]) ? args["s"].AsString() : "MSSQL10";
     string database = (args["d"]) ? args["d"].AsString() : "NCBI_Cache";
-    string user = (args["u"]) ? args["u"].AsString() : "cwriter";
+    string user = (args["u"]) ? args["u"].AsString() : "cwrite";
     string passwd = (args["p"]) ? args["p"].AsString() : "allowed";
 
     m_Conn->Connect(user, passwd, server, database);
@@ -210,6 +209,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/21 15:33:46  kuznets
+ * Fixed auto-login name and application parameters
+ *
  * Revision 1.1  2004/07/20 18:14:05  kuznets
  * Initial revision
  *
