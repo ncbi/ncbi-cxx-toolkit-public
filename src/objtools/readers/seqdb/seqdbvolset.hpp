@@ -251,8 +251,6 @@ public:
     /// The specified filename is recorded as a GI list file, unless
     /// the volume is already marked as unfiltered.
     /// 
-    /// @param gilist_file
-    ///   The file name of GI list file.
     /// @param begin
     ///   The first OID to include in the range.
     /// @param end
@@ -630,12 +628,18 @@ public:
     /// Add a volume with a GI list filter
     ///
     /// This method adds a new volume to the set, which will be
-    /// filtered by the specified GI list.
+    /// filtered by the specified GI list.  The begin and end
+    /// parameters specify a range of OIDs.  If the GI translates to
+    /// an OID that is outside of this range, it will be skipped.
     /// 
     /// @param volname
     ///   The name of the new volume.
     /// @param gilist
     ///   The filename of the GI list used to filter this volume.
+    /// @param begin
+    ///   Start of OID range to use.
+    /// @param end
+    ///   End of OID range to use (non-inclusive).
     void AddGiListVolume(const string & volname,
                          const string & gilist,
                          Uint4          begin,
@@ -652,12 +656,19 @@ public:
     /// Add a volume with an OID mask filter
     ///
     /// This method adds a new volume to the set, which will be
-    /// filtered by the specified OID mask.
+    /// filtered by the specified OID mask.  The begin and end
+    /// parameters specify a range of OIDs.  Only the part of the file
+    /// corresponding to this range of OIDs will be copied into the
+    /// virtual oid list.
     /// 
     /// @param volname
     ///   The name of the new volume.
     /// @param maskfile
     ///   The filename of the OID mask used to filter this volume.
+    /// @param begin
+    ///   Start of OID range to use.
+    /// @param end
+    ///   End of OID range to use (non-inclusive).
     void AddMaskedVolume(const string & volname,
                          const string & maskfile,
                          Uint4          begin,

@@ -162,9 +162,6 @@ Int4 CSeqDBVol::GetSeqLengthApprox(Uint4 oid) const
     return (whole_bytes * 4) + (oid & 0x03);
 }
 
-
-static CMutex s_MapNaMutex;
-
 /// Build NA2 to NcbiNA4 translation table
 ///
 /// This builds a translation table for nucleotide data.  The table
@@ -561,11 +558,11 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
 /// @param sentinel
 ///     True if sentinel bytes are used
 static void
-s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
+s_SeqDBRebuildDNA_NA8(vector<char>       & buf8bit,
                       const vector<Int4> & amb_chars,
                       bool                 sentinel)
 {
-    if (buf4bit.empty())
+    if (buf8bit.empty())
         return;
     
     if (amb_chars.empty()) 
@@ -602,7 +599,7 @@ s_SeqDBRebuildDNA_NA8(vector<char>       & buf4bit,
         // This could be made slightly faster for long runs.
         
         for(Int4 j = 0; j <= row_len; j++) {
-            buf4bit[index++] = trans_ch;
+            buf8bit[index++] = trans_ch;
     	}
         
 	if (new_format) /* for new format we have 8 bytes for each element. */

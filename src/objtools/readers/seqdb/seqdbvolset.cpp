@@ -93,8 +93,8 @@ void CSeqDBVolSet::x_AddVolume(CSeqDBAtlas  & atlas,
 
 CSeqDBVolFilter::CSeqDBVolFilter(const string & oid_fn,
                                  const string & gi_fn,
-                                 unsigned       start,
-                                 unsigned       end)
+                                 Uint4          start,
+                                 Uint4          end)
     : m_OIDMask  (oid_fn),
       m_GIList   (gi_fn),
       m_BeginOID (start),
