@@ -5,6 +5,7 @@ unset GENBANK_ID1_STATS
 test_dir="./data"
 tmp_out=$test_dir/out.asn
 return_status=0
+SYS=`uname -s`
 
 run_prg() {
   $CHECK_EXEC alnmrg -in $test_dir/$1.asn $2 > $tmp_out
@@ -15,6 +16,9 @@ run_prg() {
 }
 
 check_diff() {
+  if [ $SYS = "CYGWIN_NT-5.0" ] ; then
+    dos2unix $tmp_out 2>/dev/null
+  fi
   cmp -s $test_dir/$1.asn $tmp_out
   if test "$?" != 0; then
       echo "FAILURE: $2"
