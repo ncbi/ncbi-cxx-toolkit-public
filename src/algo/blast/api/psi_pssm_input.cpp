@@ -325,15 +325,15 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
     // Get the portion of the subject sequence corresponding to this Dense-seg
     TSeqPair seq = x_GetSubjectSequence(denseg, *m_Scope);
 
-    // if this isn't available, reset its corresponding row in the multiple
-    // sequence alignment structure
+    // if this isn't available, set its corresponding row in the multiple
+    // sequence alignment to the query sequence so that it can be purged in
+    // PSIPurgeMatrix -> This is a hack, it should withdraw the sequence from
+    // the multiple sequence alignment structure!
     if (seq.first.get() == NULL) {
         for (unsigned int i = 0; i < GetQueryLength(); i++) {
-            m_Msa->data[msa_index][i].letter = (unsigned char) -1;
-            m_Msa->data[msa_index][i].is_aligned = false;
+            m_Msa->data[msa_index][i].letter = m_Query[i];
+            m_Msa->data[msa_index][i].is_aligned = true;
         }
-        //m_Msa->use_sequences[msa_index] = false;
-        // FIXME: this needs to withdraw the sequence!
         return;
     }
 
@@ -489,6 +489,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/08/13 22:33:06  camacho
+ * Change to be backwards compatible with old pssm engine
+ *
  * Revision 1.6  2004/08/04 21:49:01  camacho
  * Minor change to avoid compiler warning
  *
