@@ -324,8 +324,8 @@ int CWinMaskApplication::Run (void)
                 total += len;
                 _TRACE( "Sequence length " << len );
                 const CSeq_data & seqdata = bioseq.GetInst().GetSeq_data();
-                auto_ptr< CSeq_data > dest( new CSeq_data );
-                CSeqportUtil::Convert( seqdata, dest.get(), CSeq_data::e_Iupacna, 
+                CRef< CSeq_data > dest( new CSeq_data );
+                CSeqportUtil::Convert( seqdata, dest, CSeq_data::e_Iupacna, 
                                        0, len );
                 const string & data = dest->GetIupacna().Get();
                 auto_ptr< CSeqMasker::TMaskList > mask_info( theMasker( data ) );
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/14 12:14:36  dicuccio
+ * CRef<> instead of auto_ptr<> for CObject-derived class
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.
