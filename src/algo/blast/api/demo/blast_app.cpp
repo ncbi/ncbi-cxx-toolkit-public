@@ -43,37 +43,25 @@ Contents: C++ driver for running BLAST
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/gbloader.hpp>
+#include <objmgr/util/sequence.hpp>
 
+#include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_seq.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_input.hpp>
 #include <algo/blast/api/seqsrc_readdb.h>
-#include <algo/blast/api/blast_format.h>
+#include <algo/blast/api/blast_seqalign.hpp>
+#include <algo/blast/api/blast_format.hpp>
 
 #ifndef NCBI_C_TOOLKIT
 #define NCBI_C_TOOLKIT
 #endif
 
 // C include files
-/*#include <ncbi.h>*/
-#include <sqnutils.h>
-#include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/blastkar.h>
-#include <algo/blast/core/mb_lookup.h>
-#include <algo/blast/core/blast_extend.h>
-#include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/blast_hits.h>
-#include <algo/blast/core/blast_message.h>
 #include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/blast_engine.h>
-#include <algo/blast/core/blast_seqalign.h>
-#include <algo/blast/core/blast_filter.h>
-
-extern "C" Uint1 LIBCALL
-BlastGetTypes(char *blast_program, bool *query_is_na, bool *db_is_na);
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -207,7 +195,7 @@ void CBlastApplication::Init(void)
 
 static int 
 CBlast_FillOptions(const CArgs& args, Uint1 program_number,
-    char *dbname, LookupTableOptions* lookup_options,
+    LookupTableOptions* lookup_options,
     QuerySetUpOptions* query_options, 
     BlastInitialWordOptions* word_options,
     BlastExtensionOptions* ext_options,
@@ -215,7 +203,7 @@ CBlast_FillOptions(const CArgs& args, Uint1 program_number,
     BlastScoringOptions* score_options,
     BlastEffectiveLengthsOptions* eff_len_options,
     PSIBlastOptions* psi_options,
-    BlastDatabaseOptions* db_options, int subject_length)
+    BlastDatabaseOptions* db_options, BlastSeqSrc* bssp)
 {
     bool ag_blast = TRUE, variable_wordsize = FALSE;
     int lut;
@@ -296,16 +284,9 @@ CBlast_FillOptions(const CArgs& args, Uint1 program_number,
     hit_options->percent_identity = args["perc"].AsDouble();
     hit_options->longest_intron = args["maxintron"].AsInteger();
    
-    if (subject_length > 0) {
-        totlen = (Int8) subject_length;
-    } else if (dbname) {
-        ReadDBFILEPtr rdfp = readdb_new_ex(dbname, !db_is_na, FALSE);
-        if (rdfp == NULL)
-            return -1;
-        readdb_get_totals_ex(rdfp, &totlen, &numseqs, TRUE);
-        rdfp = readdb_destruct(rdfp);
-    }
-   
+    totlen =  BLASTSeqSrcGetTotLen(bssp);
+    numseqs = BLASTSeqSrcGetNumSeqs(bssp);
+
     BLAST_FillEffectiveLengthsOptions(eff_len_options, numseqs, totlen, 
                                       (Int8)args["searchsp"].AsDouble());
     
@@ -336,23 +317,39 @@ CBlast_FillOptions(const CArgs& args, Uint1 program_number,
     return 0;
 }
 
-static void BLASTInitScope(CRef<CScope> &scope, CRef<CObjectManager> &objmgr)
+static CScope* BLASTInitScope(CRef<CObjectManager> &objmgr)
 {
-    if (scope.Empty()) {
-        objmgr.Reset(new CObjectManager());
-        objmgr->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                CObjectManager::eDefault);
+    CScope* scope;
 
-        scope.Reset(new CScope(*objmgr));
-        scope->AddDefaults();
-        _TRACE("Blast2seqApp: Initializing scope");
-    }
+    objmgr.Reset(new CObjectManager());
+    objmgr->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
+                               CObjectManager::eDefault);
+    
+    scope = new CScope(*objmgr);
+    scope->AddDefaults();
+    _TRACE("Blast2seqApp: Initializing scope");
+    return scope;
+}
+
+static CBlastOption::EProgram
+GetEProgram(Uint1 prog)
+{
+    if (prog == blast_type_blastp)
+        return CBlastOption::eBlastp;
+    if (prog == blast_type_blastn)
+        return CBlastOption::eBlastn;
+    if (prog == blast_type_blastx)
+        return CBlastOption::eBlastx;
+    if (prog == blast_type_tblastn)
+        return CBlastOption::eTblastn;
+    if (prog == blast_type_tblastx)
+        return CBlastOption::eTblastx;
+    return CBlastOption::eBlastUndef;
 }
 
 int CBlastApplication::Run(void)
 {
     BLAST_SequenceBlk* subject = NULL,* query = NULL;
-    ReadDBFILEPtr rdfp = NULL;
     SeqLocPtr subject_slp = NULL; /* SeqLoc for the subject sequence in two
                                      sequences case */
     LookupTableOptions* lookup_options;
@@ -368,43 +365,31 @@ int CBlastApplication::Run(void)
     LookupTableWrap* lookup_wrap;
     int subject_length = 0;
     Uint1 program_number;
-    bool query_is_na, db_is_na;
-    bool done;
+    bool db_is_na;
     int status;
     int ctr = 0;
     BlastMask* filter_loc = NULL;	/* Masking/filtering locations */
-    vector < CConstRef<CSeq_loc> > query_slp = NULL;
+    TSeqLocVector query_slp;
     BlastScoreBlk* sbp = NULL;
-    FILE *infp, *outfp;
     BlastQueryInfo* query_info;
     BlastResults* results = NULL;
     Blast_Message* blast_message = NULL;
-    SeqAlignPtr seqalign;
-    BlastFormattingOptions* format_options;
     BlastReturnStat* return_stats;
     char *dbname = NULL;
     Boolean translated_query;
-    Int4 num_queries;
     BlastSeqSrcNewInfo bssn_info;
     ReaddbNewArgs readdb_args;
 
     // Process command line args
     const CArgs& args = GetArgs();
     
-    UseLocalAsnloadDataAndErrMsg ();
-   
-    if (! SeqEntryLoad())
-        return 1;
-   
-    char *outfile = strdup(args["out"].AsString().c_str());
-    if ((outfp = fopen(outfile, "w")) == NULL) {
-        ERR_POST(Error << "Can't OPEN " << outfile << " for writing!");
-        return (1);
-    }
-
     char *blast_program = strdup(args["program"].AsString().c_str());
-    BlastGetTypes(blast_program, &query_is_na, &db_is_na);
+
     BlastProgram2Number(blast_program, &program_number);
+
+    db_is_na = (program_number == blast_type_blastn || 
+                program_number == blast_type_tblastn || 
+                program_number == blast_type_tblastx);
 
     BLAST_InitDefaultOptions(program_number, &lookup_options,
         &query_options, &word_options, &ext_options, &hit_options,
@@ -416,28 +401,29 @@ int CBlastApplication::Run(void)
     
     bssn_info.constructor = &ReaddbSeqSrcNew;
     bssn_info.ctor_argument = (void*) &readdb_args;
-    
-    if ( !(rdfp = readdb_new(dbname, !db_is_na)))
-        ERR_POST(Fatal << "Cannot open " << dbname << " blast db");
+    BlastSeqSrc *bssp = BlastSeqSrcNew(&bssn_info);
 
-    CBlast_FillOptions(args, program_number, dbname, lookup_options, 
+    CBlast_FillOptions(args, program_number, lookup_options, 
         query_options, word_options, ext_options, hit_options, 
         score_options, eff_len_options, psi_options, db_options, 
-        subject_length);
-#ifdef DO_FORMATTING
-    if ((status = 
-         BlastFormattingOptionsNew(program_number, 
-             outfile, args["descr"].AsInteger(), 
-             args["align"].AsInteger(), args["format"].AsInteger(), 
-             &format_options)) != 0)
-        return status;
-    format_options->html = args["html"].AsBoolean();
-    
+        bssp);
+
+    CBlastFormatOptions *format_options = 
+        new CBlastFormatOptions(GetEProgram(program_number), 
+                                args["out"].AsOutputFile());
+
+    format_options->SetAlignments(args["align"].AsInteger());
+    format_options->SetDescriptions(args["descr"].AsInteger());
+    format_options->SetAlignView(args["format"].AsInteger());
+    format_options->SetHtml(args["html"].AsBoolean());
+
+#ifdef C_FORMATTING
     if (dbname) {
         BLAST_PrintOutputHeader(format_options, args["greedy"].AsBoolean(), 
                                 dbname, db_is_na);
     }
 #endif
+
     return_stats = (BlastReturnStat*) calloc(1, sizeof(BlastReturnStat));
 
     translated_query = (program_number == blast_type_blastx || 
@@ -447,10 +433,10 @@ int CBlastApplication::Run(void)
     Int4 from = args["qstart"].AsInteger();
     Int4 to = args["qend"].AsInteger();
 
-    CRef<CScope> scope;
+    CScope *scope;
     CRef<CObjectManager> objmgr;
 
-    BLASTInitScope(scope, objmgr);
+    scope = BLASTInitScope(objmgr);
 
     int id_counter = 0;
     // Read the query(ies) from input file; perform the setup
@@ -465,10 +451,10 @@ int CBlastApplication::Run(void)
     if (translated_query) {
         /* Translated lower case mask must be converted to protein 
            coordinates here */
-        BlastMaskDNAToProtein(&query_options->lcase_mask, query_slp, scope);
+        BlastMaskDNAToProtein(&query_options->lcase_mask, query_slp);
     }
 
-    status = BLAST_SetUpQuery(program_number, query_slp, scope, query_options,
+    status = BLAST_SetUpQuery(program_number, query_slp, query_options,
                               &query_info, &query);
     
     status = 
@@ -479,7 +465,7 @@ int CBlastApplication::Run(void)
     if (translated_query) {
         /* Filter locations were returned in protein coordinates; 
            convert them back to nucleotide here */
-        BlastMaskProteinToDNA(&filter_loc, query_slp, scope);
+        BlastMaskProteinToDNA(&filter_loc, query_slp);
     }
         
     if (status) {
@@ -491,18 +477,10 @@ int CBlastApplication::Run(void)
     LookupTableWrapInit(query, lookup_options, lookup_segments, sbp,
                         &lookup_wrap);
     
-    // Run the BLAST search
-    if (rdfp) {
-        BLAST_DatabaseSearchEngine(program_number, query, query_info, 
-            &bssn_info, sbp, score_options, lookup_wrap, 
-            word_options, ext_options, hit_options, eff_len_options, 
-            psi_options, db_options, results, return_stats);
-    } else {
-        BLAST_TwoSequencesEngine(program_number, query, query_info, 
-            subject, sbp, score_options, lookup_wrap, 
-            word_options, ext_options, hit_options, eff_len_options, 
-            psi_options, db_options, results, return_stats);
-    }
+    BLAST_DatabaseSearchEngine(program_number, query, query_info, 
+         bssp, sbp, score_options, lookup_wrap, 
+         word_options, ext_options, hit_options, eff_len_options, 
+         psi_options, db_options, results, return_stats);
 
     lookup_wrap = BlastLookupTableDestruct(lookup_wrap);
         
@@ -510,20 +488,23 @@ int CBlastApplication::Run(void)
        double-integer structures */
     lookup_segments = ListNodeFreeData(lookup_segments);
 
-#if DO_FORMATTING
     // Convert results to the SeqAlign form 
-    BLAST_ResultsToSeqAlign(program_number, results, query_slp, rdfp, 
-         subject_slp, score_options, sbp, hit_options->is_gapped, &seqalign);
-           
+    vector< CConstRef<CSeq_id> > query_seqids;
+    int index;
+
+    for (index = 0; index < query_slp.size(); ++index) {
+        CConstRef<CSeq_id> id(&sequence::GetId(*query_slp[index].first, 
+                                               query_slp[index].second));
+        query_seqids.push_back(id);
+    }
+    
+    CRef<CSeq_align_set> seqalign;
+    seqalign = BLAST_Results2CppSeqAlign(results, GetEProgram(program_number), query_seqids,
+                                         bssp, 0, score_options, sbp);
+
     results = BLAST_ResultsFree(results);
     
-    if (args["asnout"]) {
-        char *asnfile = const_cast<char*>(args["asnout"].AsString().c_str());
-        AsnIoPtr asnout = AsnIoOpen(asnfile, (char*)"w");
-        GenericSeqAlignSetAsnWrite(seqalign, asnout);
-        asnout = AsnIoClose(asnout);
-    } 
-    
+#ifdef C_FORMATTING
     /* Format the results */
     status = BLAST_FormatResults(seqalign, dbname, 
                  blast_program, query_info->num_queries, query_slp,
@@ -532,10 +513,10 @@ int CBlastApplication::Run(void)
 #endif
     filter_loc = BlastMaskFree(filter_loc);
     
-#if DO_FORMATTING
+#ifdef C_FORMATTING
     PrintOutputFooter(program_number, format_options, score_options, 
         sbp, lookup_options, word_options, ext_options, hit_options, 
-        query_info, rdfp, return_stats);
+        query_info, bssp, return_stats);
 #endif
 
     query = BlastSequenceBlkFree(query);
@@ -554,18 +535,8 @@ int CBlastApplication::Run(void)
     PSIBlastOptionsFree(psi_options);
     BlastDatabaseOptionsFree(db_options);
 
-    readdb_destruct(rdfp);
-    
-#if DO_FORMATTING
-    BlastFormattingOptionsFree(format_options);
-#endif
-    
-    if (infp)
-        fclose(infp);
-    
     sfree(blast_program);
     sfree(dbname);
-    sfree(outfile);
 
     return status;
 }
