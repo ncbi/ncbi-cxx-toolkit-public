@@ -89,7 +89,8 @@ public:
     /// Base directory of source files (....c++/src/a/ )
     string       m_SourcesBaseDir;
 
-    /// List of source files without extension ( *.cpp ) - with full pathes.
+    /// List of source files without extension ( *.cpp or *.c ) -
+    /// with relative pathes from m_SourcesBaseDir.
     list<string> m_Sources;
     
     /// What projects this project is depend upon (IDs).
@@ -102,6 +103,7 @@ public:
     list<string> m_Libs3Party;
 
     /// Resolved contents of CPPFLAG ( -I$(include)<m_IncludeDir> -I$(srcdir)/..)
+    /// Absolute pathes
     list<string>  m_IncludeDirs;
 
     /// Source files *.asn , *.dtd to be processed by datatool app
@@ -328,6 +330,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/04 23:15:27  gorelenk
+ * To class CProjItem added members m_Libs3Party and m_IncludeDirs.
+ * Redesigned constructors of class CProjItem.
+ *
  * Revision 1.7  2004/02/03 17:05:08  gorelenk
  * Added members to class CProjItem
  *
