@@ -1077,7 +1077,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
       /* By default, sum statistics is used for all translated searches 
        * (except RPS BLAST), and for ungapped blastn.
        */
-      if ((program_number == blast_type_blastn && !gapped_calculation) ||  
+      if (!gapped_calculation ||  
           (program_number == blast_type_blastx) ||
           (program_number == blast_type_tblastn) ||
           (program_number == blast_type_tblastx))
@@ -1359,6 +1359,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.116  2004/06/09 22:44:03  dondosha
+ * Set sum statistics parameter to TRUE by default for ungapped blastp
+ *
  * Revision 1.115  2004/06/09 22:27:44  dondosha
  * Do not reduce score cutoffs to gap_trigger value for ungapped blastn
  *
