@@ -46,9 +46,22 @@ extern "C" {
 #include <readdb.h>
 #include <blast_def.h>
 
+/** Different types of sequence encodings for sequence retrieval from the 
+ * BLAST database 
+ */
+#define BLASTP_ENCODING 0
+#define BLASTNA_ENCODING 1
+#define NCBI4NA_ENCODING 2
+
+/** Retrieve a sequence from the BLAST database
+ * @param db BLAST database [in]
+ * @param seq_ptr Pointer to sequence buffer [out]
+ * @param oid Ordinal id of the sequence to be retrieved [in]
+ * @param encoding In what encoding should the sequence be retrieved? [in]
+ */ 
 void
 MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_ptr,
-                     Int4 oid, Boolean compressed);
+                     Int4 oid, Uint1 encoding);
 
 
 /** Set number for a given program type.  Return is zero on success.
@@ -107,7 +120,6 @@ BLAST_MakeTempProteinBioseq (Uint1Ptr sequence, Int4 length, Uint1 alphabet);
  * @param gi the gi of the sequence to read
  * @param seq pointer to the sequence block to fill out
  */
- 
 Int4 MakeBlastSequenceBlkFromGI(ReadDBFILEPtr db, Int4 gi, BLAST_SequenceBlkPtr seq);
 
 
@@ -117,7 +129,6 @@ Int4 MakeBlastSequenceBlkFromGI(ReadDBFILEPtr db, Int4 gi, BLAST_SequenceBlkPtr 
  * @param oid the ordinal id of the sequence to read
  * @param seq pointer to the sequence block to fill out
  */
-
 Int4 MakeBlastSequenceBlkFromOID(ReadDBFILEPtr db, Int4 oid, BLAST_SequenceBlkPtr seq);
 
 /** Given a file containing sequence(s) in fasta format,
@@ -127,8 +138,38 @@ Int4 MakeBlastSequenceBlkFromOID(ReadDBFILEPtr db, Int4 oid, BLAST_SequenceBlkPt
  * @param seq pointer to the sequence block to fill out
  * @return Zero if successful, one on any error.
  */
-
 Int4 MakeBlastSequenceBlkFromFasta(FILE *fasta_fp, BLAST_SequenceBlkPtr seq);
+
+/** Translate a nucleotide sequence without ambiguity codes.
+ * This is used for the first-pass translation of the database.
+ * The genetic code to be used is determined by the translation_table
+ * This function translates a packed (ncbi2na) nucl. alphabet.  It
+ * views a basepair as being in one of four sets of 2-bits:
+ * |0|1|2|3||0|1|2|3||0|1|2|3||...
+ *
+ * 1st byte | 2 byte | 3rd byte...
+ *
+ * A codon that starts at the beginning of the above sequence starts in
+ * state "0" and includes basepairs 0, 1, and 2.  The next codon, in the
+ * same frame, after that starts in state "3" and includes 3, 0, and 1.
+ *
+ *** Optimization:
+ * changed the single main loop to 
+ * - advance to state 0, 
+ * - optimized inner loop does two (3 byte->4 codon) translation per iteration
+ *   (loads are moved earlier so they can be done in advance.)
+ * - do remainder
+ *
+ * @param translation The translation table [in]
+ * @param length Length of the nucleotide sequence [in]
+ * @param nt_seq The original nucleotide sequence [in]
+ * @param frame What frame to translate to? [in]
+ * @param prot_seq Preallocated buffer for the (translated) protein sequence, 
+ *                 with NULLB sentinels on either end. [out]
+*/
+Int4 LIBCALL
+BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length, 
+   Uint1Ptr nt_seq, Int2 frame, Uint1Ptr prot_seq);
 
 #ifdef __cplusplus
 }
