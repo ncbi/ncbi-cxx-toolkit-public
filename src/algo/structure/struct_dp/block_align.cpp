@@ -458,11 +458,13 @@ int TracebackMultipleLocalAlignments(const Matrix& matrix,
     *alignments = new DP_MultipleAlignmentResults;
     (*alignments)->nAlignments = 0;
     (*alignments)->alignments = new DP_AlignmentResult[tracebacks.size()];
+    unsigned int a;
+    for (a=0; a<tracebacks.size(); a++)
+        (*alignments)->alignments[a].blockPositions = NULL;
 
     // fill in results from tracebacks
     list < Traceback >::const_iterator t, te = tracebacks.end();
-    unsigned int a = 0;
-    for (t=tracebacks.begin(); t!=te; t++, a++) {
+    for (t=tracebacks.begin(), a=0; t!=te; t++, a++) {
         if (TracebackAlignment(matrix, t->block, t->residue, queryFrom, &((*alignments)->alignments[a]))
                 == STRUCT_DP_FOUND_ALIGNMENT)
         {
@@ -611,7 +613,9 @@ void DP_DestroyMultipleAlignmentResults(DP_MultipleAlignmentResults *alignments)
 {
     if (!alignments) return;
     for (unsigned int i=0; i<alignments->nAlignments; i++)
-        delete[] alignments->alignments[i].blockPositions;
+        if (alignments->alignments[i].blockPositions)
+            delete[] alignments->alignments[i].blockPositions;
+    delete[] alignments->alignments;
     delete alignments;
 }
 
@@ -642,6 +646,9 @@ unsigned int DP_CalculateMaxLoopLength(
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/09/07 01:11:25  thiessen
+* fix small memory leak
+*
 * Revision 1.13  2003/09/07 00:06:19  thiessen
 * add multiple tracebacks for local alignments
 *
