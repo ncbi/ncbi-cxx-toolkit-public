@@ -56,8 +56,8 @@ protected: // mostly no-ops
     void FormatReference (const CFlatReference& ref)   { }
     void FormatComment   (const CFlatComment& comment) { }
     void FormatPrimary   (const CFlatPrimary& prim)    { }
-    void FormatFeatHeader(void)                        { }
-    void FormatFeature   (const CFlatFeature& feat);
+    void FormatFeatHeader(const CFlatFeatHeader& fh)   { }
+    void FormatFeature   (const IFlattishFeature& f);
     void FormatDataHeader(const CFlatDataHeader& dh)   { }
     void FormatData      (const CFlatData& data)       { }
     void FormatContig    (const CFlatContig& contig)   { }
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.1  2003/03/28 19:04:23  ucko
 * Add a formatter for 5-column tabular output.
 *

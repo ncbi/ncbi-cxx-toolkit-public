@@ -71,8 +71,8 @@ protected:
     void FormatReference (const CFlatReference& ref);
     void FormatComment   (const CFlatComment& comment);
     void FormatPrimary   (const CFlatPrimary& prim); // TPAs
-    void FormatFeatHeader(void) { }
-    void FormatFeature   (const CFlatFeature& feat);
+    void FormatFeatHeader(const CFlatFeatHeader& /* fh */) { }
+    void FormatFeature   (const IFlattishFeature& f);
     void FormatDataHeader(const CFlatDataHeader& /* dh */) { }
     void FormatData      (const CFlatData& data);
     // alternatives to DataHeader + Data...
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.2  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

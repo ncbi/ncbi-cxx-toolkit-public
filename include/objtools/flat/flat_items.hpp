@@ -159,7 +159,7 @@ class CFlatFeatHeader : public IFlatItem
 {
 public:
     CFlatFeatHeader() { }
-    void Format(IFlatFormatter& f) const { f.FormatFeatHeader(); }
+    void Format(IFlatFormatter& f) const { f.FormatFeatHeader(*this); }
 };
 
 
@@ -275,6 +275,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.3  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

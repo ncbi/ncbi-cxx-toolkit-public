@@ -131,8 +131,8 @@ public:
     virtual void FormatReference (const CFlatReference& ref)   = 0;
     virtual void FormatComment   (const CFlatComment& comment) = 0;
     virtual void FormatPrimary   (const CFlatPrimary& prim)    = 0; // TPAs
-    virtual void FormatFeatHeader(void)                        = 0;
-    virtual void FormatFeature   (const CFlatFeature& feat)    = 0;
+    virtual void FormatFeatHeader(const CFlatFeatHeader& fh)   = 0;
+    virtual void FormatFeature   (const IFlattishFeature& f)   = 0;
     virtual void FormatDataHeader(const CFlatDataHeader& dh)   = 0;
     virtual void FormatData      (const CFlatData& data)       = 0;
     // alternatives to DataHeader + Data...
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.4  2003/03/28 17:45:36  dicuccio
 * Added (very judicious) use of Win32 exports - only needed in external classes
 * CFlatTextFormatter and IFlatFormatter

@@ -49,15 +49,16 @@ void CFlatTableFormatter::FormatHead(const CFlatHead& head)
 {
     list<string> l;
     l.push_back(">Features " + head.GetLocus());
-    m_Stream->AddParagraph(l, &m_Context->GetPrimaryID());
+    m_Stream->AddParagraph(l, &head, &m_Context->GetPrimaryID());
 }
 
 
-void CFlatTableFormatter::FormatFeature(const CFlatFeature& feat)
+void CFlatTableFormatter::FormatFeature(const IFlattishFeature& f)
 {
-    list<string> l;
-    string       line;
-    bool         need_key = true;
+    const CFlatFeature& feat     = *f.Format();
+    list<string>        l;
+    string              line;
+    bool                need_key = true;
     ITERATE (CFlatLoc::TIntervals, it, feat.GetLoc().GetIntervals()) {
         if (it->m_Accession != m_Context->GetAccession()) {
             continue; // or should we turn it into a prefix?
@@ -90,7 +91,7 @@ void CFlatTableFormatter::FormatFeature(const CFlatFeature& feat)
             line += '\t' + (*it)->GetValue();
         }
     }
-    m_Stream->AddParagraph(l, &feat.GetFeat());
+    m_Stream->AddParagraph(l, &f, &feat.GetFeat());
 }
 
 
@@ -101,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.1  2003/03/28 19:04:33  ucko
 * Add a formatter for 5-column tabular output.
 *

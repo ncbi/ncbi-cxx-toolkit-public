@@ -258,9 +258,10 @@ void CFlatGBSeqFormatter::FormatPrimary(const CFlatPrimary& primary)
 }
 
 
-void CFlatGBSeqFormatter::FormatFeature(const CFlatFeature& feat)
+void CFlatGBSeqFormatter::FormatFeature(const IFlattishFeature& f)
 {
-    CRef<CGBFeature> gbfeat(new CGBFeature);
+    const CFlatFeature& feat = *f.Format();
+    CRef<CGBFeature>    gbfeat(new CGBFeature);
     gbfeat->SetKey(feat.GetKey());
     gbfeat->SetLocation(feat.GetLoc().GetString());
     ITERATE (vector<CFlatLoc::SInterval>, it, feat.GetLoc().GetIntervals()) {
@@ -318,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.3  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

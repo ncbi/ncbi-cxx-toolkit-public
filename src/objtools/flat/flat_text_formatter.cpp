@@ -58,7 +58,8 @@ CFlatTextOStream::CFlatTextOStream(CNcbiOstream& stream, bool trace_topics)
 }
 
 
-void CFlatTextOStream::AddParagraph(const list<string>& lines,
+void CFlatTextOStream::AddParagraph(const list<string>&  lines,
+                                    const IFlatItem*     item,
                                     const CSerialObject* topic)
 {
     if (topic  &&  m_TraceStream.get()) {
@@ -127,14 +128,14 @@ void CFlatTextFormatter::FormatHead(const CFlatHead& head)
         FormatDate(head.GetUpdateDate(), tmp);
         locus_line << tmp;
         Wrap(l, "LOCUS", CNcbiOstrstreamToString(locus_line));
-        m_Stream->AddParagraph(l);
+        m_Stream->AddParagraph(l, &head);
         l.clear();
     }}
 
     // XXX - quote HTML if needed
     Wrap(l, "DEFINITION", head.GetDefinition());
     // hunt down appropriate descriptor, if any?
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &head);
     l.clear();
 
     {{
@@ -146,7 +147,7 @@ void CFlatTextFormatter::FormatHead(const CFlatHead& head)
         Wrap(l, "VERSION",
              m_Context->GetAccession()
              + "  GI:" + NStr::IntToString(m_Context->GetGI()));
-        m_Stream->AddParagraph(l, &m_Context->GetPrimaryID());
+        m_Stream->AddParagraph(l, &head, &m_Context->GetPrimaryID());
     }}
 
     if ( !head.GetDBSource().empty() ) {
@@ -157,7 +158,7 @@ void CFlatTextFormatter::FormatHead(const CFlatHead& head)
             tag.erase();
         }
         if ( !l.empty() ) {
-            m_Stream->AddParagraph(l, head.GetProteinBlock());
+            m_Stream->AddParagraph(l, &head, head.GetProteinBlock());
         }
     }
 }
@@ -175,7 +176,7 @@ void CFlatTextFormatter::FormatKeywords(const CFlatKeywords& keys)
     string tag;
     NStr::WrapList(kw, m_Stream->GetWidth(), " ", l, 0, m_Indent,
                    Pad("KEYWORDS", tag, ePara));
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &keys);
 }
 
 
@@ -185,7 +186,7 @@ void CFlatTextFormatter::FormatSegment(const CFlatSegment& seg)
     Wrap(l, "SEGMENT",
          NStr::IntToString(seg.GetNum()) + " of "
          + NStr::IntToString(seg.GetCount()));
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &seg);
 }
 
 
@@ -208,7 +209,7 @@ void CFlatTextFormatter::FormatSource(const CFlatSource& source)
         Wrap(l, "ORGANISM", source.GetFormalName(), eSubp);
     }
     Wrap(l, kEmptyStr, source.GetLineage() + '.');
-    m_Stream->AddParagraph(l, &source.GetDescriptor());
+    m_Stream->AddParagraph(l, &source, &source.GetDescriptor());
 }
 
 
@@ -260,7 +261,7 @@ void CFlatTextFormatter::FormatReference(const CFlatReference& ref)
 
     Wrap(l, "REMARK", ref.GetRemark(), eSubp);
     
-    m_Stream->AddParagraph(l, &ref.GetPubdesc());
+    m_Stream->AddParagraph(l, &ref, &ref.GetPubdesc());
 }
 
 
@@ -275,7 +276,7 @@ void CFlatTextFormatter::FormatComment(const CFlatComment& comment)
     }
     list<string> l;
     Wrap(l, "COMMENT", comment2);
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &comment);
 }
 
 
@@ -288,21 +289,23 @@ void CFlatTextFormatter::FormatPrimary(const CFlatPrimary& primary)
         Wrap(l, kEmptyStr, it->Format(s));
     }
     m_Stream->AddParagraph
-        (l, &m_Context->GetHandle().GetBioseqCore()->GetInst().GetHist());
+        (l, &primary,
+         &m_Context->GetHandle().GetBioseqCore()->GetInst().GetHist());
 }
 
 
-void CFlatTextFormatter::FormatFeatHeader(void)
+void CFlatTextFormatter::FormatFeatHeader(const CFlatFeatHeader& fh)
 {
     list<string> l;
     Wrap(l, "FEATURES", "Location/Qualifiers", eFeatHead);
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &fh);
 }
 
 
-void CFlatTextFormatter::FormatFeature(const CFlatFeature& feat)
+void CFlatTextFormatter::FormatFeature(const IFlattishFeature& f)
 {
-    list<string> l;
+    const CFlatFeature& feat = *f.Format();
+    list<string>        l;
     Wrap(l, feat.GetKey(), feat.GetLoc().GetString(), eFeat);
     ITERATE (vector<CRef<CFlatQual> >, it, feat.GetQuals()) {
         string qual = '/' + (*it)->GetName(), value = (*it)->GetValue();
@@ -317,7 +320,7 @@ void CFlatTextFormatter::FormatFeature(const CFlatFeature& feat)
                    DoHTML() ? NStr::fWrap_HTMLPre : 0, m_FeatIndent,
                    m_FeatIndent + qual);
     }
-    m_Stream->AddParagraph(l, &feat.GetFeat());
+    m_Stream->AddParagraph(l, &f, &feat.GetFeat());
 }
 
 
@@ -336,7 +339,7 @@ void CFlatTextFormatter::FormatDataHeader(const CFlatDataHeader& dh)
         Wrap(l, "BASE COUNT", CNcbiOstrstreamToString(oss));
     }
     l.push_back("ORIGIN");
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &dh);
 }
 
 
@@ -367,7 +370,7 @@ void CFlatTextFormatter::FormatData(const CFlatData& data)
         }
         NStr::Split(CNcbiOstrstreamToString(oss), "\n", lines);
         // should use narrower location
-        m_Stream->AddParagraph(lines, &data.GetLoc());
+        m_Stream->AddParagraph(lines, &data, &data.GetLoc());
     }
 }
 
@@ -377,7 +380,8 @@ void CFlatTextFormatter::FormatContig(const CFlatContig& contig)
     list<string> l;
     Wrap(l, "CONTIG", CFlatLoc(contig.GetLoc(), *m_Context).GetString());
     m_Stream->AddParagraph
-        (l, &m_Context->GetHandle().GetBioseqCore()->GetInst().GetExt());
+        (l, &contig,
+         &m_Context->GetHandle().GetBioseqCore()->GetInst().GetExt());
 }
 
 
@@ -393,7 +397,7 @@ void CFlatTextFormatter::FormatWGSRange(const CFlatWGSRange& range)
     } else {
         Wrap(l, "WGS", range.GetFirstID() + "-" + range.GetLastID());
     }
-    m_Stream->AddParagraph(l, &range.GetUserObject());
+    m_Stream->AddParagraph(l, &range, &range.GetUserObject());
 }
 
 
@@ -405,7 +409,7 @@ void CFlatTextFormatter::FormatGenomeInfo(const CFlatGenomeInfo& g)
         s += " (" + g.GetMoltype() + ')';
     }
     Wrap(l, "GENOME", s);
-    m_Stream->AddParagraph(l, &g.GetUserObject());
+    m_Stream->AddParagraph(l, &g, &g.GetUserObject());
 }
 
 
@@ -437,6 +441,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.3  2003/03/21 18:49:17  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

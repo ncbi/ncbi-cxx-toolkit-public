@@ -118,7 +118,7 @@ class IFlattishFeature : public IFlatItem
 {
 public:
     CRef<CFlatFeature> Format(void) const;
-    void Format(IFlatFormatter& f) const { f.FormatFeature(*Format()); }
+    void Format(IFlatFormatter& f) const { f.FormatFeature(*this); }
     bool operator<(const IFlattishFeature& f2) const 
         { return m_Feat->Compare(*f2.m_Feat, *m_Loc, *f2.m_Loc) < 0; }
 
@@ -283,6 +283,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.2  2003/03/21 18:47:47  ucko
 * Turn most structs into (accessor-requiring) classes; replace some
 * formerly copied fields with pointers to the original data.

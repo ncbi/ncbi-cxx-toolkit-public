@@ -44,7 +44,9 @@ class IFlatTextOStream : public CObject
 {
 public:
     virtual void NewSequence (void) { } // switch to a new window/tab in GUIs?
-    virtual void AddParagraph(const list<string>& lines,
+    // NB: item may be null, or appear for multiple paragraphs.
+    virtual void AddParagraph(const list<string>&  lines,
+                              const IFlatItem*     item = 0,
                               const CSerialObject* topic = 0) = 0;
 
     virtual SIZE_TYPE GetWidth(void) const { return 79; }
@@ -55,7 +57,8 @@ class CFlatTextOStream : public IFlatTextOStream
 {
 public:
     CFlatTextOStream(CNcbiOstream& stream, bool trace_topics = false);
-    virtual void AddParagraph(const list<string>& lines,
+    virtual void AddParagraph(const list<string>&  lines,
+                              const IFlatItem*     item = 0,
                               const CSerialObject* topic = 0);
 
 private:
@@ -88,8 +91,8 @@ protected:
     void FormatReference (const CFlatReference& ref);
     void FormatComment   (const CFlatComment& comment);
     void FormatPrimary   (const CFlatPrimary& prim); // TPAs
-    void FormatFeatHeader(void);
-    void FormatFeature   (const CFlatFeature& feat);
+    void FormatFeatHeader(const CFlatFeatHeader& fh);
+    void FormatFeature   (const IFlattishFeature& f);
     void FormatDataHeader(const CFlatDataHeader& dh);
     void FormatData      (const CFlatData& data);
     // alternatives to DataHeader + Data...
@@ -152,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.3  2003/03/28 17:45:36  dicuccio
 * Added (very judicious) use of Win32 exports - only needed in external classes
 * CFlatTextFormatter and IFlatFormatter

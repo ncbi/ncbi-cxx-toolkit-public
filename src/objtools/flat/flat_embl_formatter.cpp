@@ -89,7 +89,7 @@ void CFlatEMBLFormatter::FormatHead(const CFlatHead& head)
                 << m_Context->GetLength() << ' '
                 << Upcase(m_Context->GetUnits()) << '.';
         Wrap(l, "ID", CNcbiOstrstreamToString(id_line));
-        m_Stream->AddParagraph(l);
+        m_Stream->AddParagraph(l, &head);
         l.clear();
     }}
     x_AddXX();
@@ -101,7 +101,7 @@ void CFlatEMBLFormatter::FormatHead(const CFlatHead& head)
         Wrap(l, "AC", acc + ';');
         l.push_back("XX   ");
         Wrap(l, "SV", m_Context->GetAccession());
-        m_Stream->AddParagraph(l, &m_Context->GetPrimaryID());
+        m_Stream->AddParagraph(l, &head, &m_Context->GetPrimaryID());
         l.clear();
     }}
     x_AddXX();
@@ -109,17 +109,17 @@ void CFlatEMBLFormatter::FormatHead(const CFlatHead& head)
         string date;
         FormatDate(head.GetUpdateDate(), date);
         Wrap(l, "DT", date);
-        m_Stream->AddParagraph(l, &head.GetUpdateDate());
+        m_Stream->AddParagraph(l, &head, &head.GetUpdateDate());
         l.clear();
         date.erase();
         FormatDate(head.GetCreateDate(), date);
         Wrap(l, "DT", date);
-        m_Stream->AddParagraph(l, &head.GetCreateDate());
+        m_Stream->AddParagraph(l, &head, &head.GetCreateDate());
         l.clear();
     }}
     x_AddXX();
     Wrap(l, "DE", head.GetDefinition());
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &head);
     // DBSOURCE for EMBLPEPT?
 }
 
@@ -141,7 +141,7 @@ void CFlatEMBLFormatter::FormatKeywords(const CFlatKeywords& keys)
     }
     string tag;
     NStr::WrapList(kw, m_Stream->GetWidth(), " ", l, 0, Pad("KW", tag, ePara));
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &keys);
 }
 
 
@@ -152,7 +152,7 @@ void CFlatEMBLFormatter::FormatSegment(const CFlatSegment& seg)
     // Done as comment (no corresponding line type)
     Wrap(l, "CC", "SEGMENT " + NStr::IntToString(seg.GetNum()) + " of "
          + NStr::IntToString(seg.GetCount()));
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &seg);
 }
 
 
@@ -168,7 +168,7 @@ void CFlatEMBLFormatter::FormatSource(const CFlatSource& source)
         Wrap(l, "OS", name);
     }}
     Wrap(l, "OC", source.GetLineage() + '.');
-    m_Stream->AddParagraph(l, &source.GetDescriptor());
+    m_Stream->AddParagraph(l, &source, &source.GetDescriptor());
     // XXX -- OG (Organelle)?
 }
 
@@ -211,7 +211,7 @@ void CFlatEMBLFormatter::FormatReference(const CFlatReference& ref)
         Wrap(l, "RL", journal,     eSubp);
     }}
 
-    m_Stream->AddParagraph(l, &ref.GetPubdesc());
+    m_Stream->AddParagraph(l, &ref, &ref.GetPubdesc());
 }
 
 
@@ -227,7 +227,7 @@ void CFlatEMBLFormatter::FormatComment(const CFlatComment& comment)
     }
     list<string> l;
     Wrap(l, "CC", comment2);
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &comment);
 }
 
 
@@ -241,17 +241,18 @@ void CFlatEMBLFormatter::FormatPrimary(const CFlatPrimary& primary)
         Wrap(l, "AS", it->Format(s));
     }
     m_Stream->AddParagraph
-        (l, &m_Context->GetHandle().GetBioseqCore()->GetInst().GetHist());
+        (l, &primary,
+         &m_Context->GetHandle().GetBioseqCore()->GetInst().GetHist());
 }
 
 
-void CFlatEMBLFormatter::FormatFeatHeader(void)
+void CFlatEMBLFormatter::FormatFeatHeader(const CFlatFeatHeader& fh)
 {
     list<string> l;
     x_AddXX();
     Wrap(l, "Key", "Location/Qualifiers", eFeatHead);
     l.push_back("FH   ");
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &fh);
 }
 
 
@@ -269,7 +270,7 @@ void CFlatEMBLFormatter::FormatDataHeader(const CFlatDataHeader& dh)
             << other << " other;";
     }
     Wrap(l, "SQ", CNcbiOstrstreamToString(oss));
-    m_Stream->AddParagraph(l);
+    m_Stream->AddParagraph(l, &dh);
 }
 
 
@@ -302,7 +303,7 @@ void CFlatEMBLFormatter::FormatData(const CFlatData& data)
         }
         NStr::Split(CNcbiOstrstreamToString(oss), "\n", lines);
         // should use narrower location
-        m_Stream->AddParagraph(lines, &data.GetLoc());
+        m_Stream->AddParagraph(lines, &data, &data.GetLoc());
     }
 }
 
@@ -313,7 +314,8 @@ void CFlatEMBLFormatter::FormatContig(const CFlatContig& contig)
     list<string> l;
     Wrap(l, "CO", CFlatLoc(contig.GetLoc(), *m_Context).GetString());
     m_Stream->AddParagraph
-        (l, &m_Context->GetHandle().GetBioseqCore()->GetInst().GetExt());
+        (l, &contig,
+         &m_Context->GetHandle().GetBioseqCore()->GetInst().GetExt());
 }
 
 
@@ -331,7 +333,7 @@ void CFlatEMBLFormatter::FormatWGSRange(const CFlatWGSRange& range)
     } else {
         Wrap(l, "CC", "WGS: " + range.GetFirstID() + "-" + range.GetLastID());
     }
-    m_Stream->AddParagraph(l, &range.GetUserObject());
+    m_Stream->AddParagraph(l, &range, &range.GetUserObject());
 }
 
 
@@ -345,7 +347,7 @@ void CFlatEMBLFormatter::FormatGenomeInfo(const CFlatGenomeInfo& g)
         s += " (" + g.GetMoltype() + ')';
     }
     Wrap(l, "CC", s);
-    m_Stream->AddParagraph(l, &g.GetUserObject());
+    m_Stream->AddParagraph(l, &g, &g.GetUserObject());
 }
 
 
@@ -368,6 +370,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/04/10 20:08:22  ucko
+* Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
+*
 * Revision 1.6  2003/03/31 19:52:06  ucko
 * Fixed typo that made last commit ineffective.
 *
