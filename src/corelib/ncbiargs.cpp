@@ -1292,7 +1292,7 @@ void CArgDescriptions::SetArgsType(EArgSetType args_type)
             if (s_IsFlag(*arg)) {
                 const string& name = arg->GetName();
 
-                if (name == "h")  // help
+                if (name == s_AutoHelp || name == s_AutoHelpFull)  // help
                     continue;
 
                 string err = 
@@ -2404,6 +2404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/02/11 18:10:22  gouriano
+ * Fix checking for help command line args
+ *
  * Revision 1.56  2005/02/11 16:03:31  gouriano
  * Distinguish short and detailed help message
  *
