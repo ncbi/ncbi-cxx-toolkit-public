@@ -300,6 +300,9 @@ public:
 
     virtual void SetLoginTimeout(unsigned int i) = 0;
     virtual void SetLogStream(ostream* out) = 0;
+
+    // Returns the pointer to the general driver interface
+    virtual I_DriverContext* GetDriverContext() = 0;
 };
 
 
@@ -309,6 +312,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/04/25 13:35:05  kholodov
+ * Added GetDriverContext() returning pointer to underlying I_DriverContext interface
+ *
  * Revision 1.5  2002/04/05 19:36:16  kholodov
  * Added: IResultset::GetVariant(const string& colName) to retrieve
  * column values by column name
