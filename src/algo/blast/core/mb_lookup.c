@@ -800,9 +800,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
           if (query_offset && (hitsfound >= max_hits))
              break;
           while (query_offset) {
-             *(q_ptr++) = query_offset - 1;
-             *(s_ptr++) = subject_offset;
-             ++hitsfound;
+             q_offsets[hitsfound] = query_offset - 1;
+             s_offsets[hitsfound++] = subject_offset;
              query_offset = mb_lt->next_pos[query_offset];
           }
        }
@@ -848,9 +847,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             if (query_offset && (hitsfound >= max_hits))
                break;
             while (query_offset) {
-               *(q_ptr++) = query_offset - 1;
-               *(s_ptr++) = subject_offset;
-               ++hitsfound;
+               q_offsets[hitsfound] = query_offset - 1;
+               s_offsets[hitsfound++] = subject_offset;
                query_offset = mb_lt->next_pos[query_offset];
             }
          }
