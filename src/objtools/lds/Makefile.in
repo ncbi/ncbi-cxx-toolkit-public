@@ -4,7 +4,7 @@
 ##################################
 
 LIB_PROJ = lds
-SUB_PROJ = lds_admin
+SUB_PROJ = admin
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
