@@ -50,6 +50,8 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
+#include <objmgr/gbloader.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -72,7 +74,7 @@ void CSampleAlnmgrApplication::Init(void)
     // Specify USAGE context
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
-         "Object serialization demo program: Seq-entry translator");
+         "Alignment manager demo program: Seq-align extractor/viewer");
 
     // Describe the expected command-line arguments
     arg_desc->AddDefaultKey
@@ -119,7 +121,13 @@ int CSampleAlnmgrApplication::Run(void)
 
     CNcbiOstream& out = args["out"].AsOutputFile();
 
-    CAlnMix mix;
+    CObjectManager objmgr;
+    objmgr.RegisterDataLoader(*new CGBDataLoader("ID"),
+                              CObjectManager::eDefault);
+    CScope scope(objmgr);
+    scope.AddDefaults();
+
+    CAlnMix mix(scope);
     for (CTypeIterator<CDense_seg> sa_it = Begin(in_se); sa_it; ++sa_it) {
         mix.Add(*sa_it);
     }
@@ -130,7 +138,7 @@ int CSampleAlnmgrApplication::Run(void)
     *asn_out << Separator;
     asn_out->Flush();
 
-    CAlnVec av(mix.GetDenseg());
+    CAlnVec av(mix.GetDenseg(), scope);
 
     av.SetAnchor(0);
 
@@ -192,6 +200,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/12/22 21:29:27  ucko
+* Fix for new alnmgr API.
+*
 * Revision 1.5  2003/06/02 16:06:17  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
