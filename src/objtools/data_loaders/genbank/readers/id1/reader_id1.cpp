@@ -219,9 +219,44 @@ int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
 CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
                                         TConn conn)
 {
+    CID1server_back id1_reply;
+    x_ReadBlob(id1_reply, seqref, conn);
+
+    CRef<CSeq_entry> seq_entry;
+    if ( id1_reply.IsGotseqentry() ) {
+        seq_entry.Reset(&id1_reply.SetGotseqentry());
+    }
+    else if (id1_reply.IsGotdeadseqentry()) {
+        seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
+    }
+    else {
+        // no data
+        NCBI_THROW(CLoaderException, eNoData, "no data");
+    }
+
+    return Ref(new CTSE_Info(*seq_entry, id1_reply.IsGotdeadseqentry()));
+}
+
+
+void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
+                            const CSeqref& seqref,
+                            TConn conn)
+{
     CConn_ServiceStream* stream = x_GetConnection(conn);
     x_SendRequest(seqref, stream, false);
-    return x_ReceiveMainBlob(stream);
+    x_ReadBlob(id1_reply, seqref, *stream);
+}
+
+
+void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
+                            const CSeqref& /*seqref*/,
+                            CNcbiIstream& stream)
+{
+    CObjectIStreamAsnBinary in(stream);
+    
+    CReader::SetSeqEntryReadHooks(in);
+    
+    in >> id1_reply;
 }
 
 
@@ -258,34 +293,6 @@ void CId1Reader::x_SendRequest(const CSeqref& seqref,
     CObjectOStreamAsnBinary server_output(*stream);
     server_output << id1_request;
     server_output.Flush();
-}
-
-
-CRef<CTSE_Info> CId1Reader::x_ReceiveMainBlob(CConn_ServiceStream* stream)
-{
-    CID1server_back id1_reply;
-
-    {{
-        CObjectIStreamAsnBinary in(*stream);
-        
-        CReader::SetSeqEntryReadHooks(in);
-        
-        in >> id1_reply;
-    }}
-
-    CRef<CSeq_entry> seq_entry;
-    if ( id1_reply.IsGotseqentry() ) {
-        seq_entry.Reset(&id1_reply.SetGotseqentry());
-    }
-    else if (id1_reply.IsGotdeadseqentry()) {
-        seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
-    }
-    else {
-        // no data
-        NCBI_THROW(CLoaderException, eNoData, "no data");
-    }
-
-    return Ref(new CTSE_Info(*seq_entry, id1_reply.IsGotdeadseqentry()));
 }
 
 
@@ -337,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.45  2003/09/30 19:38:26  vasilche
+ * Added support for cached id1 reader.
+ *
  * Revision 1.44  2003/09/30 16:22:02  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

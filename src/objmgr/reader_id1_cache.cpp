@@ -22,293 +22,80 @@
  *
  * ===========================================================================
  *
- *  Author:  Anton Butanaev, Eugene Vasilchenko
+ *  Author:  Eugene Vasilchenko, Anatoliy Kuznetsov
  *
- *  File Description: Data reader from ID1
+ *  File Description: Cached extension of data reader from ID1
  *
  */
 
-#include <objmgr/reader_id1.hpp>
+#include <objmgr/reader_id1_cache.hpp>
 
-#include <objmgr/objmgr_exception.hpp>
-#include <objmgr/impl/seqref_id1.hpp>
-#include <objmgr/impl/reader_zlib.hpp>
-#include <objmgr/impl/reader_snp.hpp>
-#include <objmgr/impl/tse_info.hpp>
-
-#include <corelib/ncbistre.hpp>
-
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/id1/id1__.hpp>
-
-#include <serial/enumvalues.hpp>
-#include <serial/iterator.hpp>
-#include <serial/objistrasnb.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/objostrasnb.hpp>
-#include <serial/serial.hpp>
-
-#include <memory>
-
+#include <util/cache/blob_cache.hpp>
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CId1Reader::CId1Reader(TConn noConn)
+CCachedId1Reader::CCachedId1Reader(TConn noConn)
+    : CId1Reader(noConn)
 {
-#if !defined(NCBI_THREADS)
-    noConn=1;
-#endif
-    try {
-        SetParallelLevel(noConn);
-    }
-    catch ( ... ) {
-        SetParallelLevel(0);
-        throw;
-    }
 }
 
 
-CId1Reader::~CId1Reader()
+CCachedId1Reader::~CCachedId1Reader()
 {
-    SetParallelLevel(0);
 }
 
 
-CReader::TConn CId1Reader::GetParallelLevel(void) const
+void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
+                                  const CSeqref& seqref,
+                                  TConn conn)
 {
-    return m_Pool.size();
-}
-
-
-void CId1Reader::SetParallelLevel(TConn size)
-{
-    size_t oldSize = m_Pool.size();
-    for (size_t i = size; i < oldSize; ++i) {
-        delete m_Pool[i];
-        m_Pool[i] = 0;
-    }
-
-    m_Pool.resize(size);
-    for (size_t i = oldSize; i < min(1u, size); ++i) {
-        m_Pool[i] = x_NewConnection();
-    }
-}
-
-
-CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
-{
-    conn = conn % m_Pool.size();
-    CConn_ServiceStream* ret = m_Pool[conn];
-    if ( !ret ) {
-        ret = m_Pool[conn] = x_NewConnection();
-    }
-    return ret;
-}
-
-
-void CId1Reader::Reconnect(TConn conn)
-{
-    _TRACE("Reconnect(" << conn << ")");
-    conn = conn % m_Pool.size();
-    delete m_Pool[conn];
-    m_Pool[conn] = 0;
-}
-
-
-CConn_ServiceStream* CId1Reader::x_NewConnection(void)
-{
-    _TRACE("CId1Reader(" << this << ")->x_NewConnection()");
-    STimeout tmout;
-    tmout.sec = 20;
-    tmout.usec = 0;
-    return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
-}
-
-
-void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs,
-                                 const CSeq_id& seqId,
-                                 TConn conn)
-{
-    x_RetrieveSeqrefs(srs, seqId, x_GetConnection(conn));
-}
-
-
-void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
-                                   const CSeq_id& seqId,
-                                   CConn_ServiceStream* stream)
-{
-    int gi;
-    if ( !seqId.IsGi() ) {
-        gi = x_ResolveSeq_id_to_gi(seqId, stream);
+    auto_ptr<IReader> reader(OpenBlob(seqref));
+    if ( reader.get() ) {
+        CIReaderByteSourceReader rd(*reader);
+        CObjectIStreamAsnBinary in(rd);
+        CReader::SetSeqEntryReadHooks(in);
+        in >> id1_reply;
     }
     else {
-        gi = seqId.GetGi();
-    }
-
-    if ( gi ) {
-        x_RetrieveSeqrefs(srs, gi, stream);
+        CId1Reader::x_ReadBlob(id1_reply, seqref, conn);
     }
 }
 
 
-void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
-                                   int gi,
-                                   CConn_ServiceStream* stream)
+void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
+                                  const CSeqref& seqref,
+                                  CNcbiIstream& stream)
 {
-    {{
-        CID1server_request id1_request;
-        CID1server_maxcomplex& blob = id1_request.SetGetblobinfo();
-        blob.SetMaxplex(eEntry_complexities_entry);
-        blob.SetGi(gi);
-
-        CObjectOStreamAsnBinary out(*stream);
-        out << id1_request;
-    }}
-
-    CID1server_back    id1_reply;
-    {{
-        CObjectIStreamAsnBinary in(*stream);
-        in >> id1_reply;
-    }}
-
-    if ( !id1_reply.IsGotblobinfo() ) {
-        return;
-    }
-
-    const CID1blob_info& info = id1_reply.GetGotblobinfo();
-    srs.push_back(Ref(new CSeqref(gi, info.GetSat(), info.GetSat_key())));
-    if ( TrySNPSplit() ) {
-        if ( !info.IsSetExtfeatmask() ) {
-            AddSNPSeqref(srs, gi, CSeqref::fPossible);
+    auto_ptr<IWriter> writer(StoreBlob(seqref));
+    if ( writer.get() ) {
+        try {
+            CProxyByteSourceReader proxy(stream, *writer);
+            CObjectIStreamAsnBinary in(proxy);
+            
+            CReader::SetSeqEntryReadHooks(in);
+            
+            CStreamDelayBufferGuard guard(in);
+            
+            in >> id1_reply;
         }
-        else if ( info.GetExtfeatmask() != 0 ) {
-            AddSNPSeqref(srs, gi);
+        catch ( ... ) {
+            writer->Erase();
+            throw;
         }
-    }
-}
-
-
-int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
-                                      CConn_ServiceStream* stream)
-{
-    {{
-        CID1server_request id1_request;
-        id1_request.SetGetgi(const_cast<CSeq_id&>(seqId));
-        
-        CObjectOStreamAsnBinary out(*stream);
-        out << id1_request;
-    }}
-    
-    CID1server_back id1_reply;
-    {{
-        CObjectIStreamAsnBinary in(*stream);
-        in >> id1_reply;
-    }}
-    
-    if ( !id1_reply.IsGotgi() ) {
-        return 0;
-    }
-    return id1_reply.GetGotgi();
-}
-
-
-CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
-                                        TConn conn)
-{
-    CID1server_back id1_reply;
-    x_ReadBlob(id1_reply, seqref, conn);
-
-    CRef<CSeq_entry> seq_entry;
-    if ( id1_reply.IsGotseqentry() ) {
-        seq_entry.Reset(&id1_reply.SetGotseqentry());
-    }
-    else if (id1_reply.IsGotdeadseqentry()) {
-        seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
     }
     else {
-        // no data
-        NCBI_THROW(CLoaderException, eNoData, "no data");
+        CId1Reader::x_ReadBlob(id1_reply, seqref, stream);
     }
-
-    return Ref(new CTSE_Info(*seq_entry, id1_reply.IsGotdeadseqentry()));
 }
 
 
-void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& seqref,
-                            TConn conn)
-{
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(seqref, stream, false);
-    x_ReadBlob(id1_reply, seqref, *stream);
-}
-
-
-void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& /*seqref*/,
-                            CNcbiIstream& stream)
-{
-    CObjectIStreamAsnBinary in(stream);
-    
-    CReader::SetSeqEntryReadHooks(in);
-    
-    in >> id1_reply;
-}
-
-
-CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CSeqref& seqref,
-                                                  TConn conn)
+CRef<CSeq_annot_SNP_Info> CCachedId1Reader::GetSNPAnnot(const CSeqref& seqref,
+                                                        TConn conn)
 {
     CConn_ServiceStream* stream = x_GetConnection(conn);
     x_SendRequest(seqref, stream, true);
     return x_ReceiveSNPAnnot(stream);
-}
-
-
-void CId1Reader::x_SendRequest(const CSeqref& seqref,
-                               CConn_ServiceStream* stream,
-                               bool is_snp)
-{
-    CID1server_request id1_request;
-    
-    bool is_external = is_snp;
-    bool skip_extfeat = !is_external && TrySNPSplit();
-    enum {
-        kNoExtFeat = 1<<4
-    };
-    EEntry_complexities maxplex = eEntry_complexities_entry;
-    if ( skip_extfeat ) {
-        maxplex = EEntry_complexities(int(maxplex) | kNoExtFeat);
-    }
-    CID1server_maxcomplex& params = id1_request.SetGetsefromgi();
-    params.SetMaxplex(maxplex);
-    params.SetGi(seqref.GetGi());
-    params.SetEnt(seqref.GetSatKey());
-    params.SetSat(NStr::IntToString(seqref.GetSat()));
-    
-    CObjectOStreamAsnBinary server_output(*stream);
-    server_output << id1_request;
-    server_output.Flush();
-}
-
-
-static void s_SkipBytes(CByteSourceReader& reader, size_t to_skip)
-{
-    // skip 2 bytes of hacked header
-    const size_t kBufferSize = 128;
-    char buffer[kBufferSize];
-    while ( to_skip ) {
-        size_t cnt = reader.Read(buffer, min(to_skip, sizeof(buffer)));
-        if ( cnt == 0 ) {
-            NCBI_THROW(CEofException, eEof,
-                       "unexpected EOF while skipping ID1 SNP wrapper bytes");
-        }
-        to_skip -= cnt;
-    }
 }
 
 
@@ -344,7 +131,7 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
- * Revision 1.45  2003/09/30 19:38:26  vasilche
+ * Revision 1.1  2003/09/30 19:38:26  vasilche
  * Added support for cached id1 reader.
  *
  * Revision 1.44  2003/09/30 16:22:02  vasilche

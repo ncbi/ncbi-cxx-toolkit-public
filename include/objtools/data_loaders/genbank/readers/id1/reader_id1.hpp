@@ -38,7 +38,7 @@ class CConn_ServiceStream;
 
 BEGIN_SCOPE(objects)
 
-class CId1Seqref;
+class CID1server_back;
 
 class NCBI_XOBJMGR_EXPORT CId1Reader : public CReader
 {
@@ -60,6 +60,11 @@ public:
 protected:
     CConn_ServiceStream* x_GetConnection(TConn conn);
     CConn_ServiceStream* x_NewConnection(void);
+
+    virtual void x_ReadBlob(CID1server_back& id1_reply,
+                            const CSeqref& seqref, TConn conn);
+    virtual void x_ReadBlob(CID1server_back& id1_reply,
+                            const CSeqref& seqref, CNcbiIstream& in);
 
 private:
 
@@ -88,6 +93,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.18  2003/09/30 19:38:26  vasilche
+* Added support for cached id1 reader.
+*
 * Revision 1.17  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
