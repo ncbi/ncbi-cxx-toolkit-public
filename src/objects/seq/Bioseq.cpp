@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2002/03/28 21:21:49  grichenk
+ * Fixed range exclusion
+ *
  * Revision 6.8  2002/03/18 21:46:13  grichenk
  * +ConstructExcludedSequence()
  *
@@ -149,7 +152,9 @@ void CBioseq::x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext)
         {
             // Just add the location
             CDelta_seq* dseq = new CDelta_seq;
-            dseq->SetLoc(loc);
+            CSeq_loc* cp_loc = new CSeq_loc;
+            SerialAssign<CSeq_loc>(*cp_loc, loc);
+            dseq->SetLoc(*cp_loc);
             ext.Set().push_back(dseq);
         }
     }
@@ -187,7 +192,6 @@ void CBioseq::x_ExcludeRange(TRanges& ranges, int start, int stop)
         return;
     TRanges::iterator lo = ranges.lower_bound(start);
     TRanges::iterator hi = ranges.upper_bound(stop+1);
-
     if (lo != ranges.end()) {
         if (lo->second == eStop) {
             // eStop will be removed, add the correct one
@@ -201,6 +205,9 @@ void CBioseq::x_ExcludeRange(TRanges& ranges, int start, int stop)
             return;
         }
         --hi;
+    }
+    if (lo->first == start  &&  lo->second == eStop) {
+        ++lo;
     }
     ranges.erase(lo, hi);
 }
