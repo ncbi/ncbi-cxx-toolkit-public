@@ -866,8 +866,8 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     long	lineno = 0;
     double	xscore;
     register int	index1, index2;
-    const char k_comment_chr = '#';
-    const char* k_token_str = " \t\n\r";
+    const char kCommentChar = '#';
+    const char* kTokenStr = " \t\n\r";
     
     matrix = sbp->matrix;	
     
@@ -884,15 +884,15 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
             return 2;
         }
 
-        if (buf[0] == k_comment_chr) {
+        if (buf[0] == kCommentChar) {
             /* save the comment line in a linked list */
             *strchr(buf, '\n') = NULLB;
             ListNodeCopyStr(&sbp->comments, 0, buf+1);
             continue;
         }
-        if ((cp = strchr(buf, k_comment_chr)) != NULL)
+        if ((cp = strchr(buf, kCommentChar)) != NULL)
             *cp = NULLB;
-        lp = (char*)strtok(buf, k_token_str);
+        lp = (char*)strtok(buf, kTokenStr);
         if (lp == NULL) /* skip blank lines */
             continue;
         while (lp != NULL) {
@@ -904,7 +904,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
               ch = *lp;
            }
             a2chars[a2cnt++] = ch;
-            lp = (char*)strtok(NULL, k_token_str);
+            lp = (char*)strtok(NULL, kTokenStr);
         }
         
         break;	/* Exit loop after reading one line. */
@@ -922,13 +922,13 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
         if ((cp = strchr(buf, '\n')) == NULL) {
             return 2;
         }
-        if ((cp = strchr(buf, k_comment_chr)) != NULL)
+        if ((cp = strchr(buf, kCommentChar)) != NULL)
             *cp = NULLB;
-        if ((lp = (char*)strtok(buf, k_token_str)) == NULL)
+        if ((lp = (char*)strtok(buf, kTokenStr)) == NULL)
             continue;
         ch = *lp;
         cp = (char*) lp;
-        if ((cp = strtok(NULL, k_token_str)) == NULL) {
+        if ((cp = strtok(NULL, kTokenStr)) == NULL) {
             return 2;
         }
         if (a1cnt >= DIM(a1chars)) {
@@ -967,7 +967,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
             
             m[(int)a2chars[index2++]] = score;
             
-            cp = strtok(NULL, k_token_str);
+            cp = strtok(NULL, kTokenStr);
         }
     }
     
@@ -3540,7 +3540,7 @@ BLAST_ComputeLengthAdjustment(double K,
                              Int4 * length_adjustment)
 {
     Int4 i;                     /* iteration index */
-    const Int4 maxits = 20;     /* maximum allowed iterations */
+    const Int4 kMaxIterations = 20;     /* maximum allowed iterations */
     double m = (double) query_length;
     double n = (double) db_length;
     double N = (double) db_num_seqs;
@@ -3571,7 +3571,7 @@ BLAST_ComputeLengthAdjustment(double K,
         }
     } /* end scope of a, mb and c */
 
-    for(i = 1; i <= maxits; i++) {      /* for all iteration indices */
+    for(i = 1; i <= kMaxIterations; i++) {      /* for all iteration indices */
         double ell_bar;         /* proposed next value of ell */
         ell      = ell_next;
         ss       = (m - ell) * (n - N * ell);
@@ -3621,6 +3621,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.99  2004/11/15 16:34:45  dondosha
+ * Changed constants names in accordance with C++ toolkit guidelines
+ *
  * Revision 1.98  2004/11/02 17:56:48  camacho
  * Add DOXYGEN_SKIP_PROCESSING to guard rcsid string
  *

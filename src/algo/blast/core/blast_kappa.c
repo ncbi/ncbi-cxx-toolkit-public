@@ -1511,7 +1511,7 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
    double *standardProb; /*probabilities of each letter*/
    Int4 i,j;  /* Loop indices. */
    SFreqRatios* freqRatios=NULL; /* frequency ratio container for given matrix */
-   const double KposEpsilon = 0.0001;
+   const double kPosEpsilon = 0.0001;
 
    returnRatios = allocateStartFreqs(numPositions);
 
@@ -1533,9 +1533,9 @@ static double **getStartFreqRatios(BlastScoreBlk* sbp,
    /*reverse multiplication done in posit.c*/
    for(i = 0; i < numPositions; i++)
      for(j = 0; j < BLASTAA_SIZE; j++)
-       if ((standardProb[query[i]] > KposEpsilon) && (standardProb[j] > KposEpsilon) &&
+       if ((standardProb[query[i]] > kPosEpsilon) && (standardProb[j] > kPosEpsilon) &&
              (j != AMINOACID_TO_NCBISTDAA['X']) && (j != AMINOACID_TO_NCBISTDAA['*'])
-             && (startNumerator[i][j] > KposEpsilon))
+             && (startNumerator[i][j] > kPosEpsilon))
            returnRatios[i][j] = startNumerator[i][j]/standardProb[j];
 
    sfree(standardProb);
@@ -1802,9 +1802,9 @@ Kappa_MatchingSequenceInitialize(Kappa_MatchingSequence * self,
   amino acid string and return the filtered string*/
   {{
      BlastSeqLoc* mask_seqloc;
-     const Uint1 k_program_name = eBlastTypeBlastp;
+     const Uint1 kProgramType = eBlastTypeBlastp;
 
-     BlastSetUp_Filter(k_program_name, self->sequence, self->length,
+     BlastSetUp_Filter(kProgramType, self->sequence, self->length,
         0, BLASTP_MASK_INSTRUCTIONS, NULL, &mask_seqloc);
 
      Blast_MaskTheResidues(self->filteredSequence, self->length, FALSE, mask_seqloc, FALSE, 0);
@@ -2163,9 +2163,9 @@ Kappa_RecordInitialSearch(Kappa_SearchParameters * searchParams,
 {
   Uint1* query;               /* the query sequence */
   Int4 queryLength;             /* the length of the query sequence */
-  const Int4 k_context_offset = queryInfo->context_offsets[0];  /* offset in buffer of start of query. */
+  const Int4 kContextOffset = queryInfo->context_offsets[0];  /* offset in buffer of start of query. */
 
-  query = &queryBlk->sequence[k_context_offset];
+  query = &queryBlk->sequence[kContextOffset];
   queryLength = BLAST_GetQueryLength(queryInfo, 0);
 
   if(searchParams->adjustParameters) {
@@ -2468,7 +2468,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
                   BlastHSPResults* results)
 {
 
-  const Uint1 k_program_name = eBlastTypeBlastp;
+  const Uint1 kProgramType = eBlastTypeBlastp;
   Boolean adjustParameters = FALSE; /* If true take match composition into account
                                                           and seg match sequence. */
   Boolean SmithWaterman = FALSE; /* USe smith-waterman to get scores.*/
@@ -2730,7 +2730,7 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
          * the following call to BlastGetGapAlgnTbck, so that
          * thisMatch stores newly computed alignments between the
          * query and the matching sequence number index */
-          if ((status=Blast_TracebackFromHSPList(k_program_name, thisMatch, queryBlk, 
+          if ((status=Blast_TracebackFromHSPList(kProgramType, thisMatch, queryBlk, 
              matchingSeq.seq_blk, queryInfo, gapAlign, sbp, scoringParams, 
              extendOptions, hitsavingParams, NULL)) != 0)
              return status;
