@@ -211,6 +211,12 @@ NCBI_USING_NAMESPACE_STD;
 #  define USE_NO_ALLOC_TRAITS
 #endif
 
+#ifdef NCBI_COMPILER_METROWERKS
+#  define NO_STD_CONSTRUCT
+#  define NO_STD_DESTROY
+#  define NO_STD_IDENTITY
+#endif
+
 #ifdef _DEBUG
 #  define _STLP_DEBUG_UNINITIALIZED
 // uninitialized value filler
@@ -451,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/28 20:59:05  rsmith
+ * add defines for Metrowerks/Codewarrior compiler.
+ *
  * Revision 1.6  2005/02/09 21:29:14  grichenk
  * Fixed GCC 2.9.5 options
  *
