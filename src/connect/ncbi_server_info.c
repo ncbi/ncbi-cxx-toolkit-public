@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/05/18 14:12:43  lavr
+ * Cosmetic change
+ *
  * Revision 6.6  2000/05/17 16:15:13  lavr
  * NCBI_* (for ANSI ext) undone - now "ncbi_ansi_ext.h" does good prototyping
  *
@@ -171,7 +174,7 @@ static int s_Write_HostPort(char *str, unsigned int host, unsigned short port)
 
     addr.sin_addr.s_addr = host;
     return sprintf(str, "%s:%hu", host ? inet_ntoa(addr.sin_addr) : "",
-                   (unsigned short)ntohs(port));
+                   ntohs(port));
 }
 
 #define N_FLAG_TAGS 2
