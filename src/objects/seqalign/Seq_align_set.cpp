@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
 // generated classes
@@ -74,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/19 17:25:43  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.1  2004/05/05 19:16:25  johnson
 * Added SwapRows method for 'disc' seq-align / seq-align-set
 *

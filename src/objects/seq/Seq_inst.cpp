@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 // generated classes
@@ -89,6 +90,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.2  2004/05/19 17:25:14  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.1  2002/12/19 20:11:06  kans
 * added IsNa and IsAa methods
 *

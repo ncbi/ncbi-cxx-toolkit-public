@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2004/05/19 17:18:17  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.2  2004/02/24 15:53:46  grichenk
  * Redesigned GetLabel(), moved most functionality from pub to biblio
  *
@@ -48,6 +51,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_pat.hpp>
 #include <objects/biblio/label_util.hpp>
 #include <objects/general/Date.hpp>

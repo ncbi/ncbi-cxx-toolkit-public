@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -109,6 +109,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/19 17:22:13  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.2  2002/10/08 20:25:23  ucko
 * Make sure that passing booleans and string literals to GetDate works properly.
 *

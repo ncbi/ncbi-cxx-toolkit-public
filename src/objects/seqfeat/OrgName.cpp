@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 
 #include <objects/seqfeat/PartialOrgName.hpp>
@@ -118,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/05/19 17:26:04  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.2  2003/04/18 19:40:39  kans
 * changed iterate to ITERATE
 *

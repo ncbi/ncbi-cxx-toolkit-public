@@ -38,6 +38,7 @@
 
 // generated includes
 
+#include <ncbi_pch.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
 #include <objects/entrez2/Entrez2_db_id.hpp>
@@ -203,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/19 17:20:02  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.8  2004/03/11 17:29:07  dicuccio
 * Added APIs for retrieving neighbors for multiple UIDs.  Changed how link type
 * is interpreted - both link and db are databases

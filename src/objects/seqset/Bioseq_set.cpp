@@ -36,6 +36,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <serial/serial.hpp>
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
@@ -199,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/05/19 17:26:48  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 1.8  2002/12/30 13:21:24  clausen
  * Replaced os.str() with CNcbiOstrstreamToString(os)
  *

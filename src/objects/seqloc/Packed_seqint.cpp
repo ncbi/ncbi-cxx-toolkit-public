@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -116,6 +117,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.6  2004/05/19 17:26:25  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.5  2004/01/28 17:18:01  shomrat
  * Added methods to ease the construction of objects
  *

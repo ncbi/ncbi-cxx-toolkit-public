@@ -39,6 +39,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/general/Int_fuzz.hpp>
 
 #include <algorithm>
@@ -361,6 +362,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.12  2004/05/19 17:21:39  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.11  2004/04/12 16:51:46  vasilche
  * Fixed conversion warnings.
  *

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
@@ -1497,6 +1498,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.78  2004/05/19 17:26:25  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.77  2004/05/16 16:57:44  dicuccio
  * Removed insertion of db type in general seq-id labels of type content - led to
  * duplicates of type

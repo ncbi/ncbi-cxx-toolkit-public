@@ -29,6 +29,7 @@
  * File Description:
  */  
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objects/seq/seqport_util.hpp>
 
@@ -6486,6 +6487,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2004/05/19 17:25:14  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.23  2004/03/30 21:25:09  shomrat
  * Do not attempt to pack protein sequences
  *

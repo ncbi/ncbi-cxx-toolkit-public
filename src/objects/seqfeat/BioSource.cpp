@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
@@ -96,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2004/05/19 17:26:04  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.2  2002/11/26 19:01:11  shomrat
 * Bug fix in GetGenCode
 *

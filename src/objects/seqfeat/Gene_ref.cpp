@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2004/05/19 17:26:04  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.4  2003/01/27 17:35:40  shomrat
  * Added Locus_tag to GetLabel
  *
@@ -54,6 +57,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 
 #include <objects/general/Dbtag.hpp>

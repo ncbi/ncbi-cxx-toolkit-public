@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
@@ -566,6 +567,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.7  2004/05/19 17:21:39  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.6  2004/01/20 20:38:09  vasilche
 * Added required includes.
 *

@@ -35,6 +35,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <serial/enumvalues.hpp>
 
 // generated includes
@@ -161,6 +162,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.4  2004/05/19 17:25:14  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.3  2003/03/11 15:53:25  kuznets
 * iterate -> ITERATE
 *

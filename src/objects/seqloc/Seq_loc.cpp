@@ -36,6 +36,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <serial/enumvalues.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -1507,6 +1508,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.42  2004/05/19 17:26:25  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.41  2004/05/07 12:51:13  shomrat
  * Removed return from function returning void
  *

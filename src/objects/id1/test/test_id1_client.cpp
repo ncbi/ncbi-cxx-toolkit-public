@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
@@ -185,6 +186,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/19 17:22:59  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.5  2003/04/09 16:00:14  ucko
 * Give all RPC clients unique basenames.
 *

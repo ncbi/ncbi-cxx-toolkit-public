@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/19 17:24:27  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.1  2003/06/02 17:02:51  dicuccio
 * Changed file name
 *
@@ -44,6 +47,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>

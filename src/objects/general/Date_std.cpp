@@ -38,6 +38,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/general/general_exception.hpp>
 
@@ -324,6 +325,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.7  2004/05/19 17:21:39  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.6  2003/03/11 15:38:42  kuznets
  * iterate -> ITERATE
  *

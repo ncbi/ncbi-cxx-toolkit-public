@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2004/05/19 17:26:25  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.10  2002/01/09 15:59:30  grichenk
  * Fixed includes
  *
@@ -68,6 +71,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 

@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include "cache.hpp"
 
@@ -1369,6 +1370,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.21  2004/05/19 17:27:10  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.20  2004/02/04 16:14:44  domrach
  * New iterator types (modes of operation) are introduced. They include:
  * full tree, branches'n'leaves, best, and blast. Position inquiry f-ns

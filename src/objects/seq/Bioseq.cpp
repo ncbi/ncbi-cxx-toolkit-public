@@ -36,6 +36,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <vector>
 #include <serial/enumvalues.hpp>
 #include <serial/typeinfo.hpp>
@@ -235,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2004/05/19 17:25:14  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.20  2003/04/24 16:14:12  vasilche
  * Fixed Parentize().
  *

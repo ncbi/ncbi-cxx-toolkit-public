@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 
 // generated classes
@@ -154,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/19 17:25:43  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.1  2003/09/16 16:17:12  todorov
 * Added validation methods. Added seq range methods
 *

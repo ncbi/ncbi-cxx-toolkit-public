@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2004/05/19 17:27:10  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.2  2002/01/31 00:31:26  vakatov
  * Follow the renaming of "CTreeCont.hpp" to "ctreecont.hpp".
  * Get rid of "std::" which is unnecessary and sometimes un-compilable.
@@ -46,6 +49,7 @@
  * ===========================================================================
  */
 
+#include <ncbi_pch.hpp>
 #include <objects/taxon1/Taxon1_error.hpp>
 
 BEGIN_NCBI_SCOPE

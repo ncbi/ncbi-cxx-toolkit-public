@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2004/05/19 17:24:52  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.2  2003/03/11 15:51:42  kuznets
  * iterate -> ITERATE
  *
@@ -48,6 +51,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 

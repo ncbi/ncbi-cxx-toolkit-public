@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
 // generated classes
@@ -116,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2004/05/19 17:26:04  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.2  2003/04/18 19:40:38  kans
 * changed iterate to ITERATE
 *

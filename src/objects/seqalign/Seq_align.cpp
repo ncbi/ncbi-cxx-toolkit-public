@@ -35,6 +35,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <objects/seqalign/seqalign_exception.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
@@ -613,6 +614,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/05/19 17:25:43  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.15  2004/05/05 19:16:25  johnson
 * Added SwapRows method for 'disc' seq-align / seq-align-set
 *

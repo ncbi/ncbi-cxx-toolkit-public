@@ -31,6 +31,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <objects/taxon1/taxon1.hpp>
 
 #include "ctreecont.hpp"

@@ -34,6 +34,7 @@
  *   'pub.asn'.
  */
 
+#include <ncbi_pch.hpp>
 #include <objects/pub/Pub.hpp>
 
 #include <objects/pub/Pub_equiv.hpp>
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2004/05/19 17:24:52  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.6  2004/02/24 15:53:48  grichenk
  * Redesigned GetLabel(), moved most functionality from pub to biblio
  *

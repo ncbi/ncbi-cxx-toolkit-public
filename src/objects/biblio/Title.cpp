@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2004/05/19 17:18:17  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.2  2003/11/21 14:45:01  grichenk
  * Replaced runtime_error with CException
  *
@@ -48,6 +51,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/biblio/Title.hpp>
 
 #include <corelib/ncbiexpt.hpp>

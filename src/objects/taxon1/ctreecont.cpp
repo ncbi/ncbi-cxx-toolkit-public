@@ -31,6 +31,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include "ctreecont.hpp"
 
 
@@ -944,6 +945,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.5  2004/05/19 17:27:10  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.4  2003/05/06 19:53:53  domrach
  * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
  *

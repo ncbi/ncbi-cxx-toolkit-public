@@ -35,6 +35,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <corelib/ncbithr.hpp>
@@ -697,6 +698,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.17  2004/05/19 17:26:04  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.16  2004/03/24 13:58:59  friedman
 * Fixed mutex comments
 *

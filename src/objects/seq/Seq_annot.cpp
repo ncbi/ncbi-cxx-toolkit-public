@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Date.hpp>
 
@@ -170,6 +171,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/05/19 17:25:14  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.5  2004/04/22 13:09:31  dicuccio
 * Added helper functions to add specific kinds of descriptions: dates, user
 * objects.  Added SetTitle() - should replace AddTitle() (LOG_POST warning in

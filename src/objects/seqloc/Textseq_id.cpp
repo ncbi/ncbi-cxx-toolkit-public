@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2004/05/19 17:26:25  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.7  2003/02/06 22:23:29  vasilche
  * Added CSeq_id::Assign(), CSeq_loc::Assign().
  * Added int CSeq_id::Compare() (not safe).
@@ -65,6 +68,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 
 

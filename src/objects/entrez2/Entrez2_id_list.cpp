@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2004/05/19 17:20:02  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 1.2  2004/03/11 17:28:12  dicuccio
  * Added API to resize the list and to assign from a vector of integers
  *
@@ -50,6 +53,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/entrez2/Entrez2_id_list.hpp>
 
 // generated classes

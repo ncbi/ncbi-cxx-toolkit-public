@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/general/Date.hpp>
 
 #include <objects/general/Date_std.hpp>
@@ -119,6 +120,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.6  2004/05/19 17:21:39  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.5  2002/12/09 17:30:11  ucko
  * Rename Assign to SetToTime to avoid shadowing CSerialObject; propagate tz
  *

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/entrez2/Entrez2_docsum.hpp>
 #include <objects/entrez2/Entrez2_docsum_data.hpp>
 
@@ -89,6 +90,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/19 17:20:02  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.1  2003/12/04 18:05:07  dicuccio
 * Added simple accessors for named fields
 *

@@ -35,6 +35,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <algorithm>
 #include <objects/seqalign/seqalign_exception.hpp>
 
@@ -484,6 +485,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/05/19 17:25:43  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.12  2004/05/06 18:23:54  todorov
 * + optional ignore_strand param to RemapToLoc
 *

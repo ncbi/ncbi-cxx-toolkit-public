@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.27  2004/05/19 17:26:48  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.26  2003/06/04 17:25:05  ucko
  * Move FASTA reader to objtools/readers.
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2004/05/19 17:26:25  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.7  2004/05/06 16:55:00  shomrat
  * Added methods to set partial left and right
  *
@@ -61,6 +64,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
 // generated includes

@@ -35,6 +35,7 @@
  */
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -264,6 +265,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.19  2004/05/19 17:26:04  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.18  2004/02/09 14:45:07  vasilche
  * Do not check type order if types are equal.
  *

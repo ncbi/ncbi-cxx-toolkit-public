@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2004/05/19 17:21:39  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.1  2002/01/10 19:45:09  clausen
  * Added GetLabel
  *
@@ -43,6 +46,7 @@
  */
 
 // standard includes
+#include <ncbi_pch.hpp>
 #include <algorithm>
 
 // generated includes

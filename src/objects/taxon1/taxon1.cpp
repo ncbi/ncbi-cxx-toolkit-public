@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
@@ -1945,6 +1946,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.25  2004/05/19 17:27:10  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.24  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *

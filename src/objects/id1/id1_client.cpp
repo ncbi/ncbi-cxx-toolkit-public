@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/id1/id1_client.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <serial/exception.hpp>
@@ -80,6 +81,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/19 17:22:32  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.1  2003/04/09 16:00:14  ucko
 * Give all RPC clients unique basenames.
 *

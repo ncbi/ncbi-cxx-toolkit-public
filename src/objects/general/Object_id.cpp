@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2004/05/19 17:21:39  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.8  2003/02/07 16:03:07  vasilche
  * Fixed CObject_id::Match().
  *
@@ -66,6 +69,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
 

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/cdd/Cdd.hpp>
 
 // generated classes
@@ -56,6 +57,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/05/19 17:19:41  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 1.26  2002/12/06 15:51:33  hurwitz
  * pulled code I added to this class and moved it to cdt_ccd.[c|h]pp
  *

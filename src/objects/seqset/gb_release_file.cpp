@@ -28,6 +28,7 @@
 *   Utility class for processing Genbank release files.
 *
 */
+#include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objhook.hpp>
 #include <serial/objistr.hpp>
@@ -163,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/05/19 17:26:48  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.1  2004/05/19 14:41:29  shomrat
 * Initial Revision
 *

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/pub/Pub_set.hpp>
 
 // generated classes
@@ -111,6 +112,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.4  2004/05/19 17:24:52  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.3  2004/04/26 16:48:38  ucko
  * Add an explicit "typename" annotation required by GCC 3.4.
  * Move CVS log to end per current practice.

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2004/05/19 17:26:04  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.3  2002/01/28 22:20:14  grichenk
  * Fixed & assignments
  *
@@ -51,6 +54,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2004/05/19 17:18:17  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 6.1  2002/01/10 20:06:14  clausen
  * Added GetLabel
  *
@@ -45,6 +48,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/biblio/Cit_proc.hpp>
 
 // generated classes

@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -1802,6 +1803,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.13  2004/05/19 17:26:04  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 6.12  2004/05/19 14:41:02  shomrat
 * Added list of qualifiers
 *

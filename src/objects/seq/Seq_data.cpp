@@ -37,6 +37,7 @@
 // standard includes
 
 // generated includes
+#include <ncbi_pch.hpp>
 #include <objects/seq/Seq_data.hpp>
 
 // additional includes
@@ -189,6 +190,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/19 17:25:14  gorelenk
+* Added include of PCH - ncbi_pch.hpp
+*
 * Revision 1.4  2003/10/21 13:48:50  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

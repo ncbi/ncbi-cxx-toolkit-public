@@ -29,7 +29,7 @@
  *
  */
 
-
+#include <ncbi_pch.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -425,6 +425,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/19 17:21:09  gorelenk
+ * Added include of PCH - ncbi_pch.hpp
+ *
  * Revision 1.3  2003/11/20 15:41:17  ucko
  * Update for new (saner) treatment of ASN.1 NULLs.
  *
