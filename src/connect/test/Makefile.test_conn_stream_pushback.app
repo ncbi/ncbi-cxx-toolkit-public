@@ -1,11 +1,9 @@
-#################################
 # $Id$
 
-APP = test_pushback
-OBJ = test_pushback
-LIB = xutil xconnect xncbi
+APP = test_conn_stream_pushback
+OBJ = test_conn_stream_pushback
+LIB = xconnect xutil xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
-# LINK = purify $(ORIG_LINK)
 
 CHECK_CMD =
