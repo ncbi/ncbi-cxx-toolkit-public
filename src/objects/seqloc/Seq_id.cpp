@@ -561,7 +561,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'K': case 'N': case 'O': case 'V':
             case 'X':                               return eAcc_gb_est;
             case 'C': case 'E': case 'G': case 'L':
-            case 'W':                               return eAcc_gb_gss;
+            case 'W': case 'Z':                     return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
             case 'P': case 'Y':                     return eAcc_gb_genome;
@@ -569,7 +569,6 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'R':                               return eAcc_embl_genome;
                 // no specific assignments for CS-CU yet
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
-            case 'Z':                               return eAcc_gb_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1529,6 +1528,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.95  2004/12/08 19:51:52  ucko
+ * IdentifyAccession: We have now specifically assigned CZ for our own
+ * GSS sequences.
+ *
  * Revision 6.94  2004/12/08 15:20:03  ucko
  * IdentifyAccession: DDBJ has specifically assigned DE for GSS.
  *
