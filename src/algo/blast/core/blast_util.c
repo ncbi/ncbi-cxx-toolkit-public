@@ -867,3 +867,22 @@ Int2 FrameToContext(Int2 frame)
    else
       return 2 - frame;
 }
+
+Int4 BinarySearchInt4(Int4 n, Int4Ptr A, Int4 size)
+{
+    Int4 m, b, e;
+
+    b = 0;
+    e = size;
+    while (b < e - 1) {
+	m = (b + e) / 2;
+	if (A[m] > n)
+	    e = m;
+	else
+	    b = m;
+    }
+    return b;
+}
+
+
+
