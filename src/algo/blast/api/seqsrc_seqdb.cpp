@@ -226,7 +226,7 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
     if (!seqdb || !itr)
         return BLAST_SEQSRC_ERROR;
 
-    vector<Uint4> oid_list(itr->chunk_sz);
+    vector<int> oid_list(itr->chunk_sz);
 
     CSeqDB::EOidListType chunk_type = 
         (*seqdb)->GetNextOIDChunk(itr->oid_range[0], itr->oid_range[1], 
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/02/07 20:57:23  bealer
+ * - Changes for Uint4->int usage in SeqDB.
+ *
  * Revision 1.26  2005/02/02 05:04:47  dondosha
  * Doxygen comments
  *
