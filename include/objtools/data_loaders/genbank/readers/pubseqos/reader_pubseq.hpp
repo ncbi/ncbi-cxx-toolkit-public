@@ -93,7 +93,6 @@ private:
 };
 
 
-
 END_SCOPE(objects)
 
 extern NCBI_XREADER_PUBSEQOS_EXPORT const string kPubseqReaderDriverName;
@@ -105,40 +104,8 @@ void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_ReaderPubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method);
 
-inline
-void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_Pubseqos(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
-}
-
-inline
-void NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_ncbi_xreader_pubseqos(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
-}
-
 inline void 
-NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_ncbi_xreader_pubseqos(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
-}
-
-inline void 
-NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Pubseqos_ncbi_xreader_pubseqos(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_ReaderPubseqos(info_list, method);
-}
-
-inline void 
-NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_Reader_Pubseqos_ncbi_xreader_pubseqos(
+NCBI_XREADER_PUBSEQOS_EXPORT NCBI_EntryPoint_xreader_pubseqos(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {

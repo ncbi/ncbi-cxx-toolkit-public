@@ -196,39 +196,7 @@ void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_Id2Reader(
      CPluginManager<objects::CReader>::EEntryPointRequest method);
 
 inline 
-void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_Reader_Id2(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_Id2Reader(info_list, method);
-}
-
-inline 
-void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_ncbi_xreader_id2(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_Id2Reader(info_list, method);
-}
-
-inline 
-void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_Reader_ncbi_xreader_id2(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_Id2Reader(info_list, method);
-}
-
-inline 
-void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_Reader_Id2_ncbi_xreader_id2(
-     CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
-     CPluginManager<objects::CReader>::EEntryPointRequest method)
-{
-    NCBI_EntryPoint_Id2Reader(info_list, method);
-}
-
-inline 
-void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_Id2_ncbi_xreader_id2(
+void NCBI_XREADER_ID2_EXPORT NCBI_EntryPoint_xreader_id2(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {

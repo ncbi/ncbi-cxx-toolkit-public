@@ -62,6 +62,7 @@
 #include <dbapi/driver/interfaces.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <util/plugin_manager_store.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -75,10 +76,15 @@ BEGIN_SCOPE(objects)
 // 
 
 static const char* const DRV_ENV_VAR = "GENBANK_LOADER_METHOD";
+
+#if defined(HAVE_PUBSEQ_OS)
 static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
-static const char* const DRV_PUBSEQOS = "PUBSEQOS";
-static const char* const DRV_ID1 = "ID1";
-static const char* const DRV_ID2 = "ID2";
+#else
+static const char* const DEFAULT_DRV_ORDER = "ID1";
+#endif
+//static const char* const DRV_PUBSEQOS = "PUBSEQOS";
+//static const char* const DRV_ID1 = "ID1";
+//static const char* const DRV_ID2 = "ID2";
 
 class CGBReaderRequestResult : public CReaderRequestResult
 {
@@ -204,24 +210,35 @@ void CGBDataLoader::x_CreateDriver(const string& driver_name)
 CReader* CGBDataLoader::x_CreateReader(const string& env)
 {
     typedef CPluginManager<CReader> TReader_PluginManager;
-    TReader_PluginManager ReaderPluginManager;
+    // TReader_PluginManager ReaderPluginManager;
+    CRef<TReader_PluginManager> ReaderPluginManager;
+    string rpm_name = CInterfaceVersion<CReader>::GetName();
+
+    if ( CPluginManagerStore::HasObject(rpm_name) ) {
+        ReaderPluginManager.Reset(
+            dynamic_cast<TReader_PluginManager*>(
+            CPluginManagerStore::GetObject(rpm_name)));
+    }
+    else {
+        ReaderPluginManager.Reset(new TReader_PluginManager);
+        CPluginManagerStore::PutObject(rpm_name, &*ReaderPluginManager);
 
 #define REGISTER_READER_ENTRY_POINTS
-
 #if defined(REGISTER_READER_ENTRY_POINTS)
-    ReaderPluginManager.RegisterWithEntryPoint(NCBI_EntryPoint_Id1Reader);
-    ReaderPluginManager.RegisterWithEntryPoint(NCBI_EntryPoint_Id2Reader);
+        ReaderPluginManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id1Reader);
+        ReaderPluginManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id2Reader);
 
 #if defined(HAVE_PUBSEQ_OS)
-    ReaderPluginManager.RegisterWithEntryPoint(NCBI_EntryPoint_Reader_Pubseqos);
+        ReaderPluginManager->RegisterWithEntryPoint(NCBI_EntryPoint_ReaderPubseqos);
 #endif // HAVE_PUBSEQ_OS
 
 #endif // REGISTER_READER_ENTRY_POINTS
+    }
 
     string reader_name = env;
     NStr::ToLower(reader_name);
     try {
-        return ReaderPluginManager.CreateInstance(reader_name);
+        return ReaderPluginManager->CreateInstance(reader_name);
     }
     catch ( exception& e ) {
         LOG_POST(env << " reader is not available ::" << e.what());

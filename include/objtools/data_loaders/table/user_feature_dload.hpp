@@ -183,7 +183,7 @@ void NCBI_XLOADER_TABLE_EXPORT NCBI_EntryPoint_DataLoader_UsrFeat(
 
 inline 
 void NCBI_XLOADER_TABLE_EXPORT
-NCBI_EntryPoint_DataLoader_ncbi_xloader_usrfeat(
+NCBI_EntryPoint_xloader_usrfeat(
     CPluginManager<objects::CDataLoader>::TDriverInfoList&   info_list,
     CPluginManager<objects::CDataLoader>::EEntryPointRequest method)
 {
@@ -199,6 +199,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/04 19:35:09  grichenk
+ * Renamed entry points to be found by dll resolver.
+ * GB loader uses CPluginManagerStore to get/put
+ * plugin manager for readers.
+ *
  * Revision 1.7  2004/08/04 14:56:34  vasilche
  * Updated to changes in TSE locking scheme.
  *
