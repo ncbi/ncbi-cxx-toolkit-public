@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFeat_CI : public CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CFeat_CI : public CAnnotTypes_CI
 {
 public:
     enum EFeat_Location {
@@ -80,8 +80,6 @@ public:
     operator bool (void) const;
     const CSeq_feat& operator* (void) const;
     const CSeq_feat* operator-> (void) const;
-private:
-    CFeat_CI operator++ (int);
 };
 
 
@@ -148,6 +146,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/12/26 20:50:18  dicuccio
+* Added Win32 export specifier.  Removed unimplemented (private) operator++(int)
+*
 * Revision 1.16  2002/12/24 15:42:44  grichenk
 * CBioseqHandle argument to annotation iterators made const
 *
