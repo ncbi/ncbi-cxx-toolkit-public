@@ -51,7 +51,49 @@ BEGIN_NCBI_SCOPE
 //
 
 
+/// Visit every parent of the specified node
+/// 
+/// @param tree_node
+///    Starting node
+/// @param func
+///    Visiting functor
+/// @param skip_self
+///    Flag to skip the first node (tree_node itself)
+///    When TRUE visits only true ancestors
+template<class TTreeNode, class TFunc>
+TFunc TreeForEachParent(const TTreeNode& tree_node, 
+                        TFunc            func,
+                        bool             skip_self = false)
+{
+    const TTreeNode* node_ptr = &tree_node;
+    if (skip_self) {
+        node_ptr = node_ptr->GetParent();
+    }
+    for ( ;node_ptr; node_ptr = node_ptr->GetParent()) {
+        func(*node_ptr);
+    }
+    return func;
+}
 
+/// Functor to trace node pointers to root (TreeForEachParent)
+///
+/// @internal
+/// @sa TreeForEachParent
+template<class TTreeNode, class TTraceContainer>
+class CTreeParentTraceFunc
+{
+public:
+    CTreeParentTraceFunc(TTraceContainer* trace) 
+     : m_Trace(trace)
+    {}
+
+    void operator()(const TTreeNode& node)
+    {
+        m_Trace->push_back(&node);
+    }
+private:
+    TTraceContainer* m_Trace;
+};
 
 
 /// Trace from the specified node to to the tree root
@@ -70,12 +112,8 @@ BEGIN_NCBI_SCOPE
 template<class TTreeNode, class TTraceContainer>
 void TreeTraceToRoot(const TTreeNode& tree_node, TTraceContainer& trace)
 {
-    const TTreeNode* node_ptr = &tree_node;
-
-    while (node_ptr) {
-        trace.push_back(node_ptr);
-        node_ptr = node_ptr->GetParent();
-    }
+    CTreeParentTraceFunc<TTreeNode, TTraceContainer> func(&trace);
+    TreeForEachParent(tree_node, func);
 }
 
 
@@ -327,6 +365,182 @@ const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_pa
 }
 
 
+/// Convert list of node pointers to set of ids
+/// Input set is represented by input forward iterators
+/// Output set is a back insert iterator
+template<class TNodeListIt, class TBackInsert>
+void TreeListToSet(TNodeListIt node_list_first, 
+                   TNodeListIt node_list_last, 
+                   TBackInsert back_ins)
+{
+    for (;node_list_first != node_list_last; ++node_list_first)
+    {
+        unsigned uid = (unsigned)(*node_list_first)->GetValue().GetId();
+        *back_ins = uid;
+        ++back_ins;
+    }
+}
+
+/// Convert list of node pointers to set of ids
+/// @param node_list
+///     node list container (must support const_iterator)
+/// @param back_ins
+///     back insert iterator for the set container
+template<class TNodeList, class TBackInsert>
+void TreeListToSet(const TNodeList& node_list, TBackInsert back_ins)
+{
+    typename TNodeList::const_iterator it = node_list.begin();
+    typename TNodeList::const_iterator it_end = node_list.end();
+    TreeListToSet(it, it_end, back_ins);
+}
+
+
+/// Functor to trace node pointers to root and create set of parents 
+/// (TreeForEachParent)
+///
+/// @internal
+/// @sa TreeForEachParent
+template<class TTreeNode, class TBackInsert>
+class CTreeIdToSetFunc
+{
+public:
+    CTreeIdToSetFunc(TBackInsert back_ins) 
+     : m_BackIns(back_ins)
+    {}
+
+    ETreeTraverseCode operator()(const TTreeNode& node, 
+                                 int              delta_level=0)
+    {
+        if (delta_level >= 0) {
+            *m_BackIns = node.GetValue().GetId();
+            ++m_BackIns;
+        }
+        return eTreeTraverse;
+    }
+
+private:
+    TBackInsert m_BackIns;
+};
+
+
+/// Traverses all ancestors and add their ids to a set
+///
+/// @param tree_node
+///   Starting node
+/// @param back_ins
+///   Back insert iterator (represents set)
+///
+template<class TNode, class TBackInsert>
+void TreeMakeParentsSet(const TNode& tree_node, TBackInsert back_ins)
+{
+    CTreeIdToSetFunc<TNode, TBackInsert> func(back_ins);
+    TreeForEachParent(tree_node, func, true /* only true parents */);
+}
+
+
+/// Create set of all tree nodes (ids)
+/// 
+/// @param tree_node
+///    root node
+/// @param back_ins
+///   Back insert iterator (represents set)
+///
+template<class TNode, class TBackInsert>
+void TreeMakeSet(const TNode& tree_node, TBackInsert back_ins)
+{
+    TNode* node = const_cast<TNode*>(&tree_node);
+    CTreeIdToSetFunc<TNode, TBackInsert> func(back_ins);
+    TreeDepthFirstTraverse(node, func);
+}
+
+
+/// Functor to convert tree to a nodelist by the set pattern
+///
+/// @internal
+template<class TTreeNode, class TSet, class TNodeList>
+class CTreeSet2NodeListFunc
+{
+public:
+    CTreeSet2NodeListFunc(const TSet& node_set, TNodeList* node_list)
+    : m_NodeSet(node_set),
+      m_NodeList(node_list)
+    {}
+
+    ETreeTraverseCode operator()(const TTreeNode& node, 
+                                 int              delta_level=0)
+    {
+        if (delta_level >= 0) {
+            unsigned id = node.GetValue().GetId();
+            bool b = m_NodeSet[id];
+            if (b) {
+                m_NodeList->push_back(&node);
+            }
+        }
+        return eTreeTraverse;
+    }
+
+private:
+    const TSet&   m_NodeSet;
+    TNodeList*    m_NodeList;
+};
+
+
+
+
+/// Convert set of node ids to list of nodes
+///
+/// Traverses the tree, if node is in the set adds node pointer to 
+/// the nodelist.
+///
+template<class TNode, class TSet, class TNodeList>
+void TreeSetToNodeList(const TNode&  tree_node, 
+                       const TSet&   node_set, 
+                       TNodeList&    nlist)
+{
+    TNode* node = const_cast<TNode*>(&tree_node);
+    CTreeSet2NodeListFunc<TNode, TSet, TNodeList> func(node_set, &nlist);
+    TreeDepthFirstTraverse(node, func);
+}
+
+/// Class-algorithm to compute Non Redundant Set
+///
+/// Takes a single nodelist as an arguiment and copies every node
+/// which has no ancestors in the source set. 
+/// @note Result set might be not minimal
+///
+template<class TNode, class TSet, class TNodeList>
+class CTreeNonRedundantSet
+{
+public:
+    void operator()(const TNodeList& src_nlist,
+                    TNodeList&       dst_nlist)
+    {
+        TSet src_set;
+        TreeListToSet(src_nlist, src_set.inserter());
+
+        TSet ancestor_set;
+
+        ITERATE(TNodeList, it, src_nlist) {
+            TNode* snode = *it;
+
+            ancestor_set.clear();
+
+            TreeMakeParentsSet(*snode, ancestor_set.inserter());
+
+            ancestor_set &= src_set;
+            unsigned cnt = ancestor_set.count();
+
+            if (cnt == 0) { // source set contains no ancestors of the node
+                // node is part of the non redundant set
+                dst_nlist.push_back(snode);
+            }
+
+        } // ITERATE
+    }
+
+};
+                         
+
 /* @} */
 
 END_NCBI_SCOPE
@@ -335,6 +549,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/04/21 12:56:34  kuznets
+ * Added tree related algorithms and utilities based on sets algebra
+ * (TreeListToSet, TreeMakeParentsSet, TreeMakeSet, TreeSetToNodeList
+ * CTreeNonRedundantSet)
+ *
  * Revision 1.1  2004/04/19 16:02:06  kuznets
  * Initial revision. Migrated from <corelib/ncbi_tree.hpp>
  *
