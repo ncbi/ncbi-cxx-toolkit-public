@@ -828,6 +828,11 @@ void CAlnMix::x_CreateSegmentsVector()
         if (gapped_segs.size()) {
             sort(gapped_segs.begin(), gapped_segs.end(),
                  x_CompareAlnSegIndexes);
+
+            if (m_MergeFlags & fGapJoin) {
+                // request for trying to align gapped segments
+                x_ConsolidateGaps(gapped_segs);
+            }
             iterate (TSegments, seg_i, gapped_segs) {
                 m_Segments.push_back(*seg_i);
             }
@@ -839,6 +844,104 @@ void CAlnMix::x_CreateSegmentsVector()
     }
 }
 
+
+void CAlnMix::x_ConsolidateGaps(TSegments& gapped_segs)
+{
+    TSegments::iterator seg1_i, seg2_i;
+
+    seg2_i = seg1_i = gapped_segs.begin();
+    seg2_i++;
+
+    bool         cache = false;
+    string       s1;
+    TSeqPos      start1;
+    int          score1;
+    CAlnMixSeq * seq1;
+
+    while (seg2_i != gapped_segs.end()) {
+
+        CAlnMixSegment * seg1 = *seg1_i;
+        CAlnMixSegment * seg2 = *seg2_i;
+
+        // check if this seg possibly aligns with the previous one
+        bool possible = true;
+            
+        if (seg2->m_Len == seg1->m_Len  && 
+            seg2->m_StartIts.size() == 1) {
+
+            CAlnMixSeq * seq2 = (seg2->m_StartIts.begin())->first;
+
+            // check if this seq was already used
+            iterate (CAlnMixSegment::TStartIterators,
+                     st_it,
+                     (*seg1_i)->m_StartIts) {
+                if (st_it->first == seq2) {
+                    possible = false;
+                    break;
+                }
+            }
+
+            // check if score is sufficient
+            if (possible) {
+                if (!cache) {
+
+                    seq1 = ((*seg1_i)->m_StartIts.begin())->first;
+                
+                    start1 = seg1->m_StartIts[seq1]->first;
+
+                    seq1->m_BioseqHandle->GetSeqVector
+                        (CBioseq_Handle::eCoding_Iupac,
+                         seq1->m_PositiveStrand ? 
+                         eNa_strand_plus : eNa_strand_minus).
+                        GetSeqData(start1, start1 + seg1->m_Len, s1);
+
+                    score1 = 
+                        x_CalculateScore(s1, s1,
+                                         seq1->m_IsAA, seq1->m_IsAA);
+
+                    cache = true;
+                }
+                
+                string s2;
+
+                TSeqPos start2 = seg2->m_StartIts[seq2]->first;
+                            
+                seq2->m_BioseqHandle->GetSeqVector
+                    (CBioseq_Handle::eCoding_Iupac,
+                     seq2->m_PositiveStrand ? 
+                     eNa_strand_plus : eNa_strand_minus).
+                    GetSeqData(start2, start2 + seg2->m_Len, s2);
+
+                int score2 = 
+                    x_CalculateScore(s1, s2, seq1->m_IsAA, seq2->m_IsAA);
+
+                if (score2 < 75 * score1 / 100) {
+                    possible = false;
+                }
+            }
+            
+        } else {
+            possible = false;
+        }
+
+        if (possible) {
+            // consolidate the ones so far
+            
+            // add the new row
+            seg1->m_StartIts[seg2->m_StartIts.begin()->first] =
+                seg2->m_StartIts.begin()->second;
+            
+            // point the row's start position to the beginning seg
+            seg2->m_StartIts.begin()->second->second = seg1;
+            
+            seg2_i = gapped_segs.erase(seg2_i);
+        } else {
+            cache = false;
+            seg1_i++;
+            seg2_i++;
+        }
+    }
+}
 
 void CAlnMix::x_CreateDenseg()
 {
@@ -899,6 +1002,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2002/12/19 00:09:23  todorov
+* Added optional consolidation of segments that are gapped on the query.
+*
 * Revision 1.5  2002/12/18 18:58:17  ucko
 * Tweak syntax to avoid confusing MSVC.
 *

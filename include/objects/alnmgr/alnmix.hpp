@@ -83,6 +83,10 @@ private:
     CAlnMix(const CAlnMix& value);
     CAlnMix& operator=(const CAlnMix& value);
 
+    typedef vector<CAlnMixSeq*>                    TSeqs;
+    typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
+    typedef vector<CRef<CAlnMixMatch> >            TMatches;
+    typedef vector<CAlnMixSegment*>                TSegments;
 
     void x_InitBlosum62Map     (void);
     void x_CreateScope         (void);
@@ -93,6 +97,7 @@ private:
     void x_CreateDenseg        (void);
     int  x_CalculateScore      (const string& s1, const string& s2,
                                 bool s1_is_prot, bool s2_is_prot);
+    void x_ConsolidateGaps     (TSegments& gapped_segs);
 
 
     static bool x_CompareAlnSeqScores  (const CAlnMixSeq* aln_seq1,
@@ -101,11 +106,6 @@ private:
                                         const CAlnMixMatch* aln_match2);
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
-
-    typedef vector<CAlnMixSeq*>                    TSeqs;
-    typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
-    typedef vector<CRef<CAlnMixMatch> >            TMatches;
-    typedef vector<CAlnMixSegment*>                TSegments;
 
     CRef<CObjectManager>        m_ObjMgr;
     mutable CRef<CScope>        m_Scope;
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2002/12/19 00:06:55  todorov
+* Added optional consolidation of segments that are gapped on the query.
+*
 * Revision 1.7  2002/12/18 03:47:05  todorov
 * created an algorithm for mixing alignments that share a single sequence.
 *
