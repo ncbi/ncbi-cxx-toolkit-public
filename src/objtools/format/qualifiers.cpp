@@ -43,7 +43,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
+//#include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -266,7 +266,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
 
     ETildeStyle tilde_style = (name == "seqfeat_note" ? eTilde_newline : eTilde_space);
     m_Value = ExpandTildes(m_Value, tilde_style);
-
+                
     TFlatQual qual = x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
     if ((flags & fAddPeriod)  &&  qual) {
         qual->SetAddPeriod();
@@ -399,9 +399,11 @@ void CFlatGeneSynonymsQVal::Format
 void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
+    static const char* kOTHER = "OTHER";
+
     ITERATE (CCdregion::TCode_break, it, m_Value) {
         string pos = CFlatSeqLoc((*it)->GetLoc(), ctx).GetString();
-        string aa  = "OTHER";
+        const char* aa  = kOTHER;
         switch ((*it)->GetAa().Which()) {
         case CCode_break::C_Aa::e_Ncbieaa:
             aa = GetAAName((*it)->GetAa().GetNcbieaa(), true);
@@ -629,6 +631,18 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const string& name,
 }
 
 
+void s_ConvertGtLt(string& subname)
+{
+    SIZE_TYPE pos;
+    for (pos = subname.find('<'); pos != NPOS; pos = subname.find('<', pos)) {
+        subname.replace(pos, 1, "&lt");
+    }
+    for (pos = subname.find('>'); pos != NPOS; pos = subname.find('>', pos)) {
+        subname.replace(pos, 1, "&gt");
+    }
+}
+
+
 void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
                               CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
@@ -638,6 +652,9 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
         subname = kEmptyStr;
     }
     ConvertQuotes(subname);
+    if (ctx.Config().DoHTML()) {
+        s_ConvertGtLt(subname);
+    }
 
     if ( s_IsNote(flags) ) {
         bool add_period = RemovePeriodFromEnd(subname, true);
@@ -674,14 +691,13 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
 void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
                          CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
-    // XXX - add link in HTML mode?
     ITERATE (TXref, it, m_Value) {
         const CDbtag& dbt = **it;
         if (!m_Quals.Empty()  &&  x_XrefInGeneXref(dbt)) {
             continue;
         }
 
-        const string& db = dbt.GetDb();
+        CDbtag::TDb db = dbt.GetDb();
         if (db == "PID"  ||  db == "GI") {
             continue;
         }
@@ -692,32 +708,38 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const string& name,
             }
         }
 
-        const CObject_id& oid = (*it)->GetTag();
-
-        string db_xref = db + ':';
-        switch (oid.Which()) {
-        case CObject_id::e_Id:
-        {{
-            db_xref += NStr::IntToString(oid.GetId());
-            break;
-        }}
-        case CObject_id::e_Str:
-        {{
-            string id = oid.GetStr();
+        const CDbtag::TTag& tag = (*it)->GetTag();
+        string id;
+        if (tag.IsId()) {
+            id = NStr::IntToString(tag.GetId());
+        } else if (tag.IsStr()) {        
+            id = tag.GetStr();
             if (NStr::EqualNocase(db, "MGI")  ||  NStr::EqualNocase(db, "MGD")) {
                 if (NStr::StartsWith(id, "MGI:", NStr::eNocase)  ||
                     NStr::StartsWith(id, "MGD:", NStr::eNocase)) {
-                    db_xref = "MGI:";
+                    db = "MGI:";
                     id.erase(0, 4);
                 }
             }
-            db_xref += id;
-            break;
-        }}
-        default:
-            break;
         }
-        x_AddFQ(q, name, db_xref);
+        if (NStr::IsBlank(id)) {
+            continue;
+        }
+
+        CNcbiOstrstream db_xref;
+        db_xref << db << ':';
+        if (ctx.Config().DoHTML()) {
+            string url = dbt.GetUrl();
+            if (!NStr::IsBlank(url)) {
+                db_xref <<  "<a href=" <<  url << '>' << id << "</a>";
+            } else {
+                db_xref << id;
+            }
+        } else {
+            db_xref << id;
+        }
+
+        x_AddFQ(q, name, CNcbiOstrstreamToString(db_xref));
     }
 }
 
@@ -883,6 +905,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/02/09 14:59:39  shomrat
+* Initial support for HTML output
+*
 * Revision 1.24  2005/01/12 17:24:26  vasilche
 * Avoid performance warning on MSVC.
 *
