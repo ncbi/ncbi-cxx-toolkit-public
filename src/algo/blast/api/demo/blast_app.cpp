@@ -164,16 +164,10 @@ void CBlastApplication::Init(void)
         CArgDescriptions::eInteger, "0");
     arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,3));
 
-    arg_desc->AddDefaultKey("stack", "stack",
-        "Use stacks instead of diagonal array for initial hits information",
-        CArgDescriptions::eBoolean, "F");
-
     arg_desc->AddDefaultKey("varword", "varword", 
         "Should variable word size be used, i.e. no partial byte extensions"
         "when checking initial word length?",
         CArgDescriptions::eBoolean, "F");
-    arg_desc->AddDefaultKey("stride","stride", "Database scanning stride",
-                            CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("xungap", "xungapped", 
         "X-dropoff value for ungapped extensions",
         CArgDescriptions::eDouble, "0");
@@ -361,36 +355,8 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         if (args["templtype"].AsInteger()) {
             opt.SetMBTemplateType(args["templtype"].AsInteger());
         }
-        // Setting seed extension method involves changing the scanning 
-        // stride as well, which is handled in the derived 
-        // CBlastNucleotideOptionsHandle class, but not in the base
-        // CBlastOptionsHandle class.
-        CBlastNucleotideOptionsHandle* nucl_handle = 
-            dynamic_cast<CBlastNucleotideOptionsHandle*>(opts_handle);
-        switch(args["scantype"].AsInteger()) {
-        case 1:
-            nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
-            break;
-        case 2:
-            nucl_handle->SetSeedExtensionMethod(eRight);
-            break;
-        case 3:
-            nucl_handle->SetSeedExtensionMethod(eUpdateDiag);
-            break;
-        default:
-            break;
-        }
-        nucl_handle->SetSeedContainerType(eDiagArray);
         
-        if (args["stack"].AsBoolean())
-            nucl_handle->SetSeedContainerType(eWordStacks);
-
         opt.SetVariableWordSize(args["varword"].AsBoolean());
-
-        // Override the scan step value if it is set by user
-        if (args["stride"].AsInteger()) {
-            opt.SetScanStep(args["stride"].AsInteger());
-        }
     }
 
     if (args["xungap"].AsDouble()) {

@@ -147,19 +147,10 @@ void CBlast2seqApplication::Init(void)
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("window","window", "Window size for two-hit extension",
                             CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("scantype", "scantype", 
-        "Method for scanning the database: 0 default; "
-        "1 AG - extension in both directions, \n"
-        "2 traditional - extension to the right,\n"
-        "3 Update of word length on diagonal entries.",
-        CArgDescriptions::eInteger, "0");
-    arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,3));
 
     arg_desc->AddDefaultKey("varword", "varword", 
         "Should variable word size be used?",
         CArgDescriptions::eBoolean, "F");
-    arg_desc->AddDefaultKey("stride","stride", "Database scanning stride",
-                            CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("xungap", "xungapped", 
         "X-dropoff value for ungapped extensions",
         CArgDescriptions::eDouble, "0");
@@ -277,6 +268,7 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
     }
     if (args["templen"].AsInteger()) {
         opt.SetMBTemplateLength(args["templen"].AsInteger());
+        opt.SetFullByteScan(false);
     }
     if (args["templtype"].AsInteger()) {
         opt.SetMBTemplateType(args["templtype"].AsInteger());
@@ -300,37 +292,12 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
                 dynamic_cast<CDiscNucleotideOptionsHandle*>(retval);
 
             disc_nucl_handle->SetTemplateLength(args["templen"].AsInteger());
+            disc_nucl_handle->SetFullByteScan(false);
         }
         if (args["templtype"].AsInteger()) {
             opt.SetMBTemplateType(args["templtype"].AsInteger());
         }
-        // Setting seed extension method involves changing the scanning 
-        // stride as well, which is handled in the derived 
-        // CBlastNucleotideOptionsHandle class, but not in the base
-        // CBlastOptionsHandle class.
-        CBlastNucleotideOptionsHandle* nucl_handle =
-            dynamic_cast<CBlastNucleotideOptionsHandle*>(retval);
-        switch(args["scantype"].AsInteger()) {
-        case 1:
-            nucl_handle->SetSeedExtensionMethod(eRightAndLeft);
-            break;
-        case 2:
-            nucl_handle->SetSeedExtensionMethod(eRight);
-            break;
-        case 3:
-            nucl_handle->SetSeedExtensionMethod(eUpdateDiag);
-            break;
-        default:
-            break;
-        }
-        nucl_handle->SetSeedContainerType(eDiagArray);
-
         opt.SetVariableWordSize(args["varword"].AsBoolean());
-
-        // Override the scan step value if it is set by user
-        if (args["stride"].AsInteger()) {
-            opt.SetScanStep(args["stride"].AsInteger());
-        }
     }
 
     if (args["xungap"].AsDouble()) {
@@ -511,6 +478,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/01/10 13:39:21  madden
+ * Removal of calls to delete methods such as SetSeedExtensionMethod, SetSeedContainerType, and SetScanStep
+ *
  * Revision 1.55  2004/12/21 17:18:44  dondosha
  * eSkipTbck option has been removed
  *
