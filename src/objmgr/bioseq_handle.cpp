@@ -216,6 +216,28 @@ const CSeqMap& CBioseq_Handle::CreateResolvedSeqMap(void) const
 }
 
 
+void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
+{
+    _ASSERT(m_DataSource  &&  m_Entry);
+    m_DataSource->AttachAnnot(*m_Entry, annot);
+}
+
+
+void CBioseq_Handle::RemoveAnnot(const CSeq_annot& annot)
+{
+    _ASSERT(m_Scope  &&  m_Entry);
+    m_DataSource->RemoveAnnot(*m_Entry, annot);
+}
+
+
+void CBioseq_Handle::ReplaceAnnot(const CSeq_annot& old_annot,
+                                  CSeq_annot& new_annot)
+{
+    _ASSERT(m_Scope  &&  m_Entry);
+    m_DataSource->ReplaceAnnot(*m_Entry, old_annot, new_annot);
+}
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -223,6 +245,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/11/08 22:15:51  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.23  2002/11/08 19:43:35  grichenk
 * CConstRef<> constructor made explicit
 *

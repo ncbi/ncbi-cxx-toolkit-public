@@ -96,6 +96,34 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 }
 
 
+bool CScope::RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot)
+{
+    CMutexGuard guard(m_Scope_Mtx);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->GetDataLoader() )
+            continue; // can not modify loaded data
+        if ( (*it)->RemoveAnnot(entry, annot) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CScope::ReplaceAnnot(const CSeq_entry& entry,
+                          const CSeq_annot& old_annot,
+                          CSeq_annot& new_annot)
+{
+    CMutexGuard guard(m_Scope_Mtx);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->ReplaceAnnot(entry, old_annot, new_annot) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CScope::AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
     CMutexGuard guard(m_Scope_Mtx);
@@ -409,6 +437,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/11/08 22:15:51  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.35  2002/11/08 19:43:35  grichenk
 * CConstRef<> constructor made explicit
 *

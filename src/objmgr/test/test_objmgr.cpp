@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/11/08 22:15:53  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.24  2002/11/04 21:29:14  grichenk
 * Fixed usage of const CRef<> and CRef<> constructor
 *
@@ -193,12 +196,16 @@ int CTestApp::Run(void)
         pScope->AddTopLevelSeqEntry(*entry1);
         CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
         pScope->AddTopLevelSeqEntry(*entry2);
-
+        CTestHelper::TestDataRetrieval( *pScope, idx, 0);
         // add annotation
         CRef<CSeq_annot> annot(&CDataGenerator::CreateAnnotation1(idx));
         pScope->AttachAnnot(*entry1, *annot);
         // retrieve data  (delta=1 - one more annotation)
         CTestHelper::TestDataRetrieval( *pScope, idx, 1);
+
+        // Take the added annotation back
+        pScope->RemoveAnnot(*entry1, *annot);
+        CTestHelper::TestDataRetrieval( *pScope, idx, 0);
     }
 
     // 1.2.6. Constructed bio sequences

@@ -141,6 +141,12 @@ public:
    
     CScope& GetScope(void) const;
 
+    // Modification functions
+    // Add/remove/replace annotations:
+    void AddAnnot(CSeq_annot& annot);
+    void RemoveAnnot(const CSeq_annot& annot);
+    void ReplaceAnnot(const CSeq_annot& old_annot, CSeq_annot& new_annot);
+
 private:
     CBioseq_Handle(CSeq_id_Handle value);
 
@@ -270,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/11/08 22:15:50  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.24  2002/09/03 21:26:58  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.

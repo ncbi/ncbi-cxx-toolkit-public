@@ -89,6 +89,11 @@ public:
     /// Return FALSE and do nothing if "parent" is not a node in an
     /// existing TSE tree of this data-source.
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
+    // Remove/replace seq-annot from the given entry
+    bool RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot);
+    bool ReplaceAnnot(const CSeq_entry& entry,
+                      const CSeq_annot& old_annot,
+                      CSeq_annot& new_annot);
 
     /// Get Bioseq handle by Seq-Id.
     /// Return "NULL" handle if the Bioseq cannot be resolved.
@@ -214,7 +219,10 @@ private:
 
     // Remove entry from the datasource, update indexes
     void x_DropEntry(CSeq_entry& entry);
-    void x_DropAnnotMap(CSeq_entry& entry);
+    void x_DropAnnotMap(const CSeq_entry& entry);
+    // The same as x_DropAnnotMap() but iterates over the sub-entries
+    void x_DropAnnotMapRecursive(const CSeq_entry& entry);
+
     // Process a single data element
     void x_DropFeature(const CSeq_feat& feat, const CSeq_annot& annot);
     void x_DropAlign(const CSeq_align& align, const CSeq_annot& annot);
@@ -317,6 +325,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/11/08 22:15:51  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.29  2002/10/18 19:12:40  grichenk
 * Removed mutex pools, converted most static mutexes to non-static.
 * Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent

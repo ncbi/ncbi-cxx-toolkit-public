@@ -78,6 +78,11 @@ public:
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
+    bool RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot);
+    bool ReplaceAnnot(const CSeq_entry& entry,
+                      const CSeq_annot& old_annot,
+                      CSeq_annot& new_annot);
+
     // Add new sub-entry to the existing tree if it is in this scope
     bool AttachEntry(const CSeq_entry& parent, CSeq_entry& entry);
     // Add sequence map for a bioseq if it is in this scope
@@ -177,6 +182,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/11/08 22:15:50  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.24  2002/11/01 05:34:06  kans
 * added GetBioseqHandle taking CBioseq parameter
 *

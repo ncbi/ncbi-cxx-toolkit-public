@@ -705,6 +705,52 @@ bool CDataSource::AttachAnnot(const CSeq_entry& entry,
 }
 
 
+bool CDataSource::RemoveAnnot(const CSeq_entry& entry, const CSeq_annot& annot)
+{
+    if ( m_Loader ) {
+        THROW1_TRACE(runtime_error,
+            "CDataSource::RemoveAnnot() -- can not modify a loaded entry");
+    }
+    CSeq_entry* found = x_FindEntry(entry);
+    if ( !found ) {
+        return false;
+    }
+
+    CTSE_Info* tse = m_Entries[CRef<CSeq_entry>(found)];
+    //### Lock the TSE !!!!!!!!!!!
+    CTSE_Guard tse_guard(*tse);
+    x_DropAnnotMapRecursive(*tse->m_TSE);
+    m_IndexedAnnot = false;
+    tse->SetIndexed(false);
+
+    if ( found->IsSet() ) {
+        found->SetSet().SetAnnot().
+            remove(CRef<CSeq_annot>(&const_cast<CSeq_annot&>(annot)));
+        if (found->SetSet().SetAnnot().size() == 0) {
+            found->SetSet().ResetAnnot();
+        }
+    }
+    else {
+        found->SetSeq().SetAnnot().
+            remove(CRef<CSeq_annot>(&const_cast<CSeq_annot&>(annot)));
+        if (found->SetSeq().SetAnnot().size() == 0) {
+            found->SetSeq().ResetAnnot();
+        }
+    }
+    return true;
+}
+
+
+bool CDataSource::ReplaceAnnot(const CSeq_entry& entry,
+                               const CSeq_annot& old_annot,
+                               CSeq_annot& new_annot)
+{
+    if ( !RemoveAnnot(entry, old_annot) )
+        return false;
+    return AttachAnnot(entry, new_annot);
+}
+
+
 CTSE_Info* CDataSource::x_AddToBioseqMap(CSeq_entry& entry,
                                          bool dead,
                                          TTSESet* tse_set)
@@ -1438,7 +1484,18 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
 }
 
 
-void CDataSource::x_DropAnnotMap(CSeq_entry& entry)
+void CDataSource::x_DropAnnotMapRecursive(const CSeq_entry& entry)
+{
+    if ( entry.IsSet() ) {
+        iterate ( CBioseq_set::TSeq_set, it, entry.GetSet().GetSeq_set() ) {
+            x_DropAnnotMapRecursive(**it);
+        }
+    }
+    x_DropAnnotMap(entry);
+}
+
+
+void CDataSource::x_DropAnnotMap(const CSeq_entry& entry)
 {
     const CBioseq::TAnnot* annot_list = 0;
     if ( entry.IsSeq() ) {
@@ -1966,6 +2023,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2002/11/08 22:15:51  grichenk
+* Added methods for removing/replacing annotations
+*
 * Revision 1.69  2002/11/08 21:03:30  ucko
 * CConstRef<> now requires an explicit constructor.
 *
