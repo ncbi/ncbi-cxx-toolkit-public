@@ -63,27 +63,23 @@ protected:
     IWriter* StoreBlob(const CSeqref& seqref, int version);
 
 protected:
-    void x_ReadBlob(CID1server_back& id1_reply,
-                                  const CSeqref& seqref,
-                                  TConn conn);
+    void x_GetBlob(CID1server_back& id1_reply,
+                   const CSeqref& seqref,
+                   TConn conn);
+    void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                       const CSeqref& seqref,
+                       TConn conn);
 
     void x_ReadBlob(CID1server_back& id1_reply,
                     const CSeqref&   seqref,
-                    int              version,
                     CNcbiIstream&    stream);
-
-
-
-/*
-    void x_ReadBlob(CID1server_back& id1_reply,
-                    CObjectIStream&  in);
-*/
-    CRef<CSeq_annot_SNP_Info> GetSNPAnnot(const CSeqref& seqref, TConn conn);
+    void x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                        const CSeqref& seqref,
+                        CByteSourceReader&  reader);
 
     /// Return BLOB key string based on CSeqref Sat() and SatKey()
     /// @sa CSeqref::Sat(), CSeqref::SatKey()
     string x_GetBlobKey(const CSeqref& seqref);
-    //CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
 
 private:
 
@@ -102,6 +98,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2003/10/14 18:31:53  vasilche
+* Added caching support for SNP blobs.
+* Added statistics collection of ID1 connection.
+*
 * Revision 1.5  2003/10/08 18:57:49  kuznets
 * Implemeneted correct ID1 BLOB versions.
 *

@@ -35,10 +35,12 @@
 BEGIN_NCBI_SCOPE
 
 class CConn_ServiceStream;
+class CByteSourceReader;
 
 BEGIN_SCOPE(objects)
 
 class CID1server_back;
+class CID1server_request;
 class CID1server_maxcomplex;
 class CID1blob_info;
 
@@ -66,10 +68,23 @@ protected:
     CConn_ServiceStream* x_GetConnection(TConn conn);
     CConn_ServiceStream* x_NewConnection(void);
 
+    virtual void x_GetBlob(CID1server_back& id1_reply,
+                           const CSeqref&   seqref,
+                           TConn            conn);
+    virtual void x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                               const CSeqref&       seqref,
+                               TConn                conn);
+
     virtual void x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& seqref, TConn conn);
-    virtual void x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& seqref, CNcbiIstream& in);
+                            const CSeqref&   seqref,
+                            CNcbiIstream&    stream);
+    virtual void x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                                const CSeqref&       seqref,
+                                CByteSourceReader&   reader);
+
+    void x_GetBlobInfo(CID1server_back& id1_reply,
+                       const CID1server_request& id1_request,
+                       CConn_ServiceStream* stream);
 
     void x_SendRequest(const CSeqref& seqref,
                        CConn_ServiceStream* stream,
@@ -79,8 +94,6 @@ protected:
                      bool is_snp);
     void x_UpdateVersion(CSeqref& seqref,
                          const CID1blob_info& info);
-
-    CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
 
 private:
 
@@ -106,6 +119,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.22  2003/10/14 18:31:53  vasilche
+* Added caching support for SNP blobs.
+* Added statistics collection of ID1 connection.
+*
 * Revision 1.21  2003/10/08 14:16:12  vasilche
 * Added version of blobs loaded from ID1.
 *

@@ -116,7 +116,6 @@ string CCachedId1Reader::x_GetBlobKey(const CSeqref& seqref)
 {
     int sat = seqref.GetSat();
     int sat_key = seqref.GetSatKey();
-    int version = 0; // TODO: put actual BLOB version here
 
     char szBlobKeyBuf[256];
     sprintf(szBlobKeyBuf, "%i-%i", sat, sat_key);
@@ -124,12 +123,11 @@ string CCachedId1Reader::x_GetBlobKey(const CSeqref& seqref)
 }
 
 
-void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                                  const CSeqref& seqref,
-                                  TConn conn)
+void CCachedId1Reader::x_GetBlob(CID1server_back& id1_reply,
+                                 const CSeqref& seqref,
+                                 TConn conn)
 {
-    int version = GetVersion(seqref, conn);
-    auto_ptr<IReader> reader(OpenBlob(seqref, version));
+    auto_ptr<IReader> reader(OpenBlob(seqref, GetVersion(seqref, conn)));
     if ( reader.get() ) {
 
         CIRByteSourceReader rd(reader.get());
@@ -141,10 +139,7 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
 
     }
     else {
-        CConn_ServiceStream* stream = x_GetConnection(conn);
-        x_SendRequest(seqref, stream, false);
-
-        x_ReadBlob(id1_reply, seqref, version, *stream);
+        CId1Reader::x_GetBlob(id1_reply, seqref, conn);
     }
 }
 
@@ -152,10 +147,9 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
 
 void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
                                   const CSeqref& seqref,
-                                  int version,
                                   CNcbiIstream& stream)
 {
-    IWriter* wr = StoreBlob(seqref, version);
+    IWriter* wr = StoreBlob(seqref, seqref.GetVersion());
     auto_ptr<IWriter> writer(wr);
     if ( writer.get() ) {
         try {
@@ -187,40 +181,59 @@ void CCachedId1Reader::x_ReadBlob(CID1server_back& id1_reply,
 }
 
 
-CRef<CSeq_annot_SNP_Info> CCachedId1Reader::GetSNPAnnot(const CSeqref& seqref,
-                                                        TConn conn)
+void CCachedId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                                     const CSeqref& seqref,
+                                     TConn conn)
 {
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(seqref, stream, true);
-    return x_ReceiveSNPAnnot(stream);
+    auto_ptr<IReader> reader(OpenBlob(seqref, GetVersion(seqref, conn)));
+    if ( reader.get() ) {
+
+        CIRByteSourceReader rd(reader.get());
+
+        auto_ptr<CObjectIStream> in(CObjectIStream::Create(eSerial_AsnBinary, rd));
+
+        snp_info.Read(*in);
+    }
+    else {
+        CId1Reader::x_GetSNPAnnot(snp_info, seqref, conn);
+    }
 }
 
-/*
-CRef<CSeq_annot_SNP_Info>
-CCachedId1Reader::x_ReceiveSNPAnnot(CConn_ServiceStream* stream)
+
+void CCachedId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                                      const CSeqref& seqref,
+                                      CByteSourceReader& reader)
 {
-    CRef<CSeq_annot_SNP_Info> snp_annot_info(new CSeq_annot_SNP_Info());
+    IWriter* wr = StoreBlob(seqref, seqref.GetVersion());
+    auto_ptr<IWriter> writer(wr);
+    if ( writer.get() ) {
+        try {
+            CWriterCopyByteSourceReader proxy(&reader, writer.get());
 
-    {{
-        const size_t kSkipHeader = 2, kSkipFooter = 2;
-        
-        CStreamByteSourceReader src(0, stream);
-        
-        Id1ReaderSkipBytes(src, kSkipHeader);
-        
-        CResultZBtSrc src2(&src);
-        
-        auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src2));
-        
-        snp_annot_info->Read(*in);
-        
-        Id1ReaderSkipBytes(src, kSkipFooter);
-    }}
-
-    return snp_annot_info;
+            auto_ptr<CObjectIStream> in(CObjectIStream::Create(eSerial_AsnBinary,proxy));
+            
+            CReader::SetSeqEntryReadHooks(*in);
+            
+            CStreamDelayBufferGuard guard(*in);
+            
+            snp_info.Read(*in);
+        }
+        catch ( ... ) {
+            // In case of an error we need to remove incomplete BLOB
+            // from the cache.
+            if (m_Cache) {
+                string blob_key = x_GetBlobKey(seqref);
+                m_Cache->Remove(blob_key);
+            }
+            
+            throw;
+        }
+    }
+    else {
+        CId1Reader::x_ReadSNPAnnot(snp_info, seqref, reader);
+    }
 }
-*/
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -228,6 +241,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.6  2003/10/14 18:31:55  vasilche
+ * Added caching support for SNP blobs.
+ * Added statistics collection of ID1 connection.
+ *
  * Revision 1.5  2003/10/08 18:58:23  kuznets
  * Implemented correct ID1 BLOB versions
  *

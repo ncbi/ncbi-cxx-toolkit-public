@@ -37,6 +37,7 @@
 #include <objmgr/impl/tse_info.hpp>
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
@@ -56,6 +57,29 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+static int resolve_id_count = 0;
+static double resolve_id_time = 0;
+static int resolve_gi_count = 0;
+static double resolve_gi_time = 0;
+static int blob_count = 0;
+static double bytes_count = 0;
+static double last_bytes_count = 0;
+static double bytes_time = 0;
+static double compr_size = 0;
+static double decompr_size = 0;
+
+static bool GetConnectionStatistics(void)
+{
+    const char* env = getenv("GENBANK_ID1_STATS");
+    return env && *env && *env != '0';
+}
+
+
+static bool ConnectionStatistics(void)
+{
+    static bool ret = GetConnectionStatistics();
+    return ret;
+}
 
 CId1Reader::CId1Reader(TConn noConn)
 {
@@ -75,6 +99,27 @@ CId1Reader::CId1Reader(TConn noConn)
 CId1Reader::~CId1Reader()
 {
     SetParallelLevel(0);
+    if ( ConnectionStatistics() ) {
+        if ( resolve_id_count ) {
+            LOG_POST("Total: resolved ids "<<resolve_id_count<<" in "<<
+                     (resolve_id_time*1000)<<" ms "<<
+                     (resolve_id_time*1000/resolve_id_count)<<" ms/one");
+        }
+        if ( resolve_gi_count ) {
+            LOG_POST("Total: resolved "<<resolve_gi_count<<" in "<<
+                     (resolve_gi_time*1000)<<" ms "<<
+                     (resolve_gi_time*1000/resolve_gi_count)<<" ms/one");
+        }
+        LOG_POST("Total: loaded "<<blob_count<<" blobs "<<
+                 (bytes_count/1024)<<" kB in "<<
+                 (bytes_time*1000)<<" ms "<<
+                 (bytes_count/bytes_time/1024)<<" kB/s");
+        if ( compr_size ) {
+            LOG_POST("Total SNP: "<<(compr_size/1024)<<" kB -> decompressed "<<
+                     (decompr_size/1024)<<" kB, compession ratio: "<<
+                     (decompr_size/compr_size));
+        }
+    }
 }
 
 
@@ -128,7 +173,6 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(void)
     return new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmout);
 }
 
-
 void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs,
                                  const CSeq_id& seqId,
                                  TConn conn)
@@ -159,21 +203,15 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
                                    int gi,
                                    CConn_ServiceStream* stream)
 {
+    CID1server_request id1_request;
     {{
-        CID1server_request id1_request;
         CID1server_maxcomplex& blob = id1_request.SetGetblobinfo();
         blob.SetMaxplex(eEntry_complexities_entry);
         blob.SetGi(gi);
-
-        CObjectOStreamAsnBinary out(*stream);
-        out << id1_request;
     }}
-
-    CID1server_back    id1_reply;
-    {{
-        CObjectIStreamAsnBinary in(*stream);
-        in >> id1_reply;
-    }}
+    
+    CID1server_back id1_reply;
+    x_GetBlobInfo(id1_reply, id1_request, stream);
 
     if ( !id1_reply.IsGotblobinfo() ) {
         return;
@@ -199,23 +237,12 @@ int CId1Reader::GetVersion(const CSeqref& seqref,
                            TConn conn)
 {
     if ( seqref.GetVersion() == 0 ) {
-        CConn_ServiceStream* stream = x_GetConnection(conn);
-        {{
-            CID1server_request id1_request;
-            x_SetParams(seqref,
-                        id1_request.SetGetblobinfo(),
-                        IsSNPSeqref(seqref));
-            CObjectOStreamAsnBinary out(*stream);
-            out << id1_request;
-            out.Flush();
-        }}
+        CID1server_request id1_request;
+        x_SetParams(seqref, id1_request.SetGetblobinfo(), IsSNPSeqref(seqref));
 
         CID1server_back    id1_reply;
-        {{
-            CObjectIStreamAsnBinary in(*stream);
-            in >> id1_reply;
-        }}
-
+        x_GetBlobInfo(id1_reply, id1_request, x_GetConnection(conn));
+        
         if ( id1_reply.IsGotblobinfo() ) {
             x_UpdateVersion(const_cast<CSeqref&>(seqref),
                             id1_reply.GetGotblobinfo());
@@ -225,9 +252,42 @@ int CId1Reader::GetVersion(const CSeqref& seqref,
 }
 
 
+void CId1Reader::x_GetBlobInfo(CID1server_back& id1_reply,
+                               const CID1server_request& id1_request,
+                               CConn_ServiceStream* stream)
+{
+    CStopWatch sw;
+    if ( ConnectionStatistics() ) {
+        sw.Start();
+    }
+
+    {{
+        CObjectOStreamAsnBinary out(*stream);
+        out << id1_request;
+    }}
+    
+    {{
+        CObjectIStreamAsnBinary in(*stream);
+        in >> id1_reply;
+    }}
+
+    if ( ConnectionStatistics() ) {
+        double time = sw.Elapsed();
+        LOG_POST("CId1Reader: resolved gi in "<<(time*1000)<<" ms");
+        resolve_gi_count++;
+        resolve_gi_time += time;
+    }
+}
+
+
 int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
                                       CConn_ServiceStream* stream)
 {
+    CStopWatch sw;
+    if ( ConnectionStatistics() ) {
+        sw.Start();
+    }
+
     {{
         CID1server_request id1_request;
         id1_request.SetGetgi(const_cast<CSeq_id&>(seqId));
@@ -241,11 +301,24 @@ int CId1Reader::x_ResolveSeq_id_to_gi(const CSeq_id& seqId,
         CObjectIStreamAsnBinary in(*stream);
         in >> id1_reply;
     }}
-    
+
+    int gi;
     if ( !id1_reply.IsGotgi() ) {
-        return 0;
+        gi = 0;
     }
-    return id1_reply.GetGotgi();
+    else {
+        gi = id1_reply.GetGotgi();
+    }
+    
+    if ( ConnectionStatistics() ) {
+        double time = sw.Elapsed();
+        LOG_POST("CId1Reader: resolved "<<seqId.AsFastaString()<<" in "<<
+                 (time*1000)<<" ms");
+        resolve_id_count++;
+        resolve_id_time += time;
+    }
+
+    return gi;
 }
 
 
@@ -253,7 +326,7 @@ CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
                                         TConn conn)
 {
     CID1server_back id1_reply;
-    x_ReadBlob(id1_reply, seqref, conn);
+    x_GetBlob(id1_reply, seqref, conn);
 
     CRef<CSeq_entry> seq_entry;
     if ( id1_reply.IsGotseqentry() ) {
@@ -271,34 +344,98 @@ CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
 }
 
 
-void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& seqref,
-                            TConn conn)
-{
-    CConn_ServiceStream* stream = x_GetConnection(conn);
-    x_SendRequest(seqref, stream, false);
-    x_ReadBlob(id1_reply, seqref, *stream);
-}
-
-
-void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
-                            const CSeqref& /*seqref*/,
-                            CNcbiIstream& stream)
-{
-    CObjectIStreamAsnBinary in(stream);
-    
-    CReader::SetSeqEntryReadHooks(in);
-    
-    in >> id1_reply;
-}
-
-
 CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CSeqref& seqref,
                                                   TConn conn)
 {
+    CRef<CSeq_annot_SNP_Info> ret(new CSeq_annot_SNP_Info);
+
+    x_GetSNPAnnot(*ret, seqref, conn);
+
+    return ret;
+}
+
+
+void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
+{
+    // skip 2 bytes of hacked header
+    const size_t kBufferSize = 128;
+    char buffer[kBufferSize];
+    while ( to_skip ) {
+        size_t cnt = reader.Read(buffer, min(to_skip, sizeof(buffer)));
+        if ( cnt == 0 ) {
+            NCBI_THROW(CEofException, eEof,
+                       "unexpected EOF while skipping ID1 SNP wrapper bytes");
+        }
+        to_skip -= cnt;
+    }
+}
+
+
+void CId1Reader::x_GetBlob(CID1server_back& id1_reply,
+                           const CSeqref& seqref,
+                           TConn conn)
+{
+    CStopWatch sw;
+    if ( ConnectionStatistics() ) {
+        sw.Start();
+    }
+    
+    CConn_ServiceStream* stream = x_GetConnection(conn);
+    x_SendRequest(seqref, stream, false);
+    x_ReadBlob(id1_reply, seqref, *stream);
+
+    if ( ConnectionStatistics() ) {
+        double time = sw.Elapsed();
+        LOG_POST("CId1Reader: read blob "<<seqref.printTSE()<<" "<<
+                 (last_bytes_count/1024)<<" kB in "<<(time*1000)<<" ms");
+        blob_count++;
+        bytes_count += last_bytes_count;
+        bytes_time += time;
+    }
+}
+
+
+void CId1Reader::x_GetSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                               const CSeqref& seqref,
+                               TConn conn)
+{
+    CStopWatch sw;
+    extern int s_ResultZBtSrcX_compr_size;
+
+    if ( ConnectionStatistics() ) {
+        s_ResultZBtSrcX_compr_size = 0;
+        
+        sw.Start();
+    }
+
     CConn_ServiceStream* stream = x_GetConnection(conn);
     x_SendRequest(seqref, stream, true);
-    return x_ReceiveSNPAnnot(stream);
+
+    {{
+        const size_t kSkipHeader = 2, kSkipFooter = 2;
+        
+        CStreamByteSourceReader src(0, stream);
+        
+        Id1ReaderSkipBytes(src, kSkipHeader);
+        
+        CResultZBtSrcRdr src2(&src);
+        
+        x_ReadSNPAnnot(snp_info, seqref, src2);
+        
+        Id1ReaderSkipBytes(src, kSkipFooter);
+    }}
+
+    if ( ConnectionStatistics() ) {
+        double time = sw.Elapsed();
+        LOG_POST("CId1Reader: read SNP blob "<<seqref.printTSE()<<" "<<
+                 (s_ResultZBtSrcX_compr_size/1024)<<" kB in "<<
+                 (time*1000)<<" ms");
+        blob_count++;
+        bytes_count += s_ResultZBtSrcX_compr_size;
+        compr_size += s_ResultZBtSrcX_compr_size;
+        decompr_size += last_bytes_count;
+        bytes_time += time;
+    }
 }
 
 
@@ -350,45 +487,29 @@ void CId1Reader::x_SendRequest(const CSeqref& seqref,
 }
 
 
-void Id1ReaderSkipBytes(CByteSourceReader& reader, size_t to_skip)
+void CId1Reader::x_ReadBlob(CID1server_back& id1_reply,
+                            const CSeqref& /*seqref*/,
+                            CNcbiIstream& stream)
 {
-    // skip 2 bytes of hacked header
-    const size_t kBufferSize = 128;
-    char buffer[kBufferSize];
-    while ( to_skip ) {
-        size_t cnt = reader.Read(buffer, min(to_skip, sizeof(buffer)));
-        if ( cnt == 0 ) {
-            NCBI_THROW(CEofException, eEof,
-                       "unexpected EOF while skipping ID1 SNP wrapper bytes");
-        }
-        to_skip -= cnt;
-    }
+    CObjectIStreamAsnBinary in(stream);
+    CReader::SetSeqEntryReadHooks(in);
+
+    in >> id1_reply;
+
+    last_bytes_count = in.GetStreamOffset();
 }
 
 
-CRef<CSeq_annot_SNP_Info>
-CId1Reader::x_ReceiveSNPAnnot(CConn_ServiceStream* stream)
+void CId1Reader::x_ReadSNPAnnot(CSeq_annot_SNP_Info& snp_info,
+                                const CSeqref& /*seqref*/,
+                                CByteSourceReader& reader)
 {
-    CRef<CSeq_annot_SNP_Info> snp_annot_info(new CSeq_annot_SNP_Info);
+    auto_ptr<CObjectIStream> in;
+    in.reset(CObjectIStream::Create(eSerial_AsnBinary, reader));
 
-    {{
-        const size_t kSkipHeader = 2, kSkipFooter = 2;
-        
-        CStreamByteSourceReader src(0, stream);
-        
-        Id1ReaderSkipBytes(src, kSkipHeader);
-        
-        CResultZBtSrc src2(&src);
-        
-        auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Create(eSerial_AsnBinary, src2));
-        
-        snp_annot_info->Read(*in);
-        
-        Id1ReaderSkipBytes(src, kSkipFooter);
-    }}
+    snp_info.Read(*in);
 
-    return snp_annot_info;
+    last_bytes_count = in->GetStreamOffset();
 }
 
 
@@ -398,6 +519,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.48  2003/10/14 18:31:54  vasilche
+ * Added caching support for SNP blobs.
+ * Added statistics collection of ID1 connection.
+ *
  * Revision 1.47  2003/10/08 14:16:13  vasilche
  * Added version of blobs loaded from ID1.
  *
