@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.41  2003/11/24 23:18:32  dondosha
+ * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
+ *
  * Revision 1.40  2003/11/19 15:17:42  dondosha
  * Removed unused members from Karlin block structure
  *
@@ -2869,24 +2872,6 @@ BlastGapDecay(double pvalue, unsigned nsegs, double decayrate)
 	return pvalue / ((1. - decayrate) * BLAST_Powi(decayrate, nsegs - 1));
 }
 
-/*
-	BlastCutoffs
-
-	Calculate the cutoff score, S, and the highest expected score.
-
-	WRG (later modified by TLM).
-*/
-Int2
-BLAST_Cutoffs(Int4 *S, /* cutoff score */
-	double* E, /* expected no. of HSPs scoring at or above S */
-	BLAST_KarlinBlk* kbp,
-	double qlen, /* length of query sequence */
-	double dblen, /* length of database or database sequence */
-	Boolean dodecay) /* TRUE ==> use gapdecay feature */
-{
-	return BLAST_Cutoffs_simple(S, E, kbp, qlen*dblen, dodecay);
-}
-
 /* Smallest float that might not cause a floating point exception in
 	S = (Int4) (ceil( log((double)(K * searchsp / E)) / Lambda ));
 below.
@@ -2915,12 +2900,18 @@ BlastKarlinEtoS_simple(double	E,	/* Expect value */
 	return S;
 }
 
+/*
+	BlastCutoffs
+	Calculate the cutoff score, S, and the highest expected score.
+	WRG (later modified by TLM).
+*/
 Int2
-BLAST_Cutoffs_simple(Int4 *S, /* cutoff score */
+BLAST_Cutoffs(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
 	BLAST_KarlinBlk* kbp,
 	double searchsp, /* size of search space. */
-	Boolean dodecay) /* TRUE ==> use gapdecay feature */
+	Boolean dodecay,  /* TRUE ==> use gapdecay feature */
+   double gap_decay_rate)
 {
 	Int4	s = *S, es;
 	double	e = *E, esave;
@@ -2938,7 +2929,7 @@ BLAST_Cutoffs_simple(Int4 *S, /* cutoff score */
 	if (e > 0.) 
 	{
 		if (dodecay)
-			e = BlastGapDecayInverse(e, 1, 0.5);
+			e = BlastGapDecayInverse(e, 1, gap_decay_rate);
 		es = BlastKarlinEtoS_simple(e, kbp, searchsp);
 	}
 	/*
@@ -2957,7 +2948,7 @@ BLAST_Cutoffs_simple(Int4 *S, /* cutoff score */
 	{
 		e = BLAST_KarlinStoE_simple(s, kbp, searchsp);
 		if (dodecay)
-			e = BlastGapDecay(e, 1, 0.5);
+			e = BlastGapDecay(e, 1, gap_decay_rate);
 		*E = e;
 	}
 

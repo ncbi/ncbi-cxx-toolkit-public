@@ -270,10 +270,16 @@ char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_exten
 
 double BLAST_KarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
 
-Int2 BLAST_Cutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double qlen, double dblen, Boolean dodecay);
-
-
-Int2 BLAST_Cutoffs_simple (Int4 *S, double* E, BLAST_KarlinBlk* kbp, double search_sp, Boolean dodecay);
+/** Calculate the cutoff score from the expected number of HSPs or vice versa.
+ * @param S The calculated score [in] [out]
+ * @param E The calculated e-value [in] [out]
+ * @param kbp The Karlin-Altschul statistical parameters [in]
+ * @param searchsp The effective search space [in]
+ * @param dodecay Use gap decay feature? [in]
+ * @param gap_decay_rate Gap decay rate to use, if dodecay is set [in]
+ */
+Int2 BLAST_Cutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, 
+                    double searchsp, Boolean dodecay, double gap_decay_rate);
 
 /* Functions to calculate SumE (for large and small gaps). */
 double BLAST_SmallGapSumE (BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);

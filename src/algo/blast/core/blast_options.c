@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.72  2003/11/24 23:18:32  dondosha
+ * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
+ *
  * Revision 1.71  2003/11/12 18:17:46  dondosha
  * Correction in calculating scanning stride
  *
@@ -515,7 +518,8 @@ BlastInitialWordParametersNew(Uint1 program_number,
       eff_len_options->dbseq_num;
 
    e2 = UNGAPPED_CUTOFF_EVALUE;
-   BLAST_Cutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
+   BLAST_Cutoffs(&s2, &e2, kbp, MIN(avglen, qlen)*avglen, TRUE, 
+                 hit_params->gap_decay_rate);
 
    cutoff_score = MIN(hit_params->cutoff_score, s2);
 
@@ -1168,9 +1172,9 @@ BlastHitSavingParametersNew(Uint1 program_number,
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
    } else if (!options->phi_align) {
-      BLAST_Cutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
+      BLAST_Cutoffs(&(params->cutoff_score), &evalue, kbp, 
          (double)query_info->eff_searchsp_array[query_info->first_context], 
-         FALSE);
+         FALSE, 0);
    } else {
       params->cutoff_score = 0;
    }
