@@ -33,17 +33,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/11/06 22:42:34  vakatov
-* Introduced BEGIN_, END_ and USING_ NCBI_SCOPE macros to put NCBI C++
-* API to namespace "ncbi::" and to use it by default, respectively
-* Introduced THROWS_NONE and THROWS(x) macros for the exception
-* specifications
-* Other fixes and rearrangements throughout the most of "corelib" code
+* Revision 1.4  1999/04/16 18:00:36  vakatov
+* <ncbistd.hpp> --> <corelib/ncbistd.hpp>
 *
 * ===========================================================================
 */
 
-#include <ncbistd.hpp>
+#include <corelib/ncbistd.hpp>
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //  !!! PUT YOUR OTHER #include's HERE !!!
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
