@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-APP_PROJ = cpgdemo
+APP_PROJ = cpgdemo regexplocdemo
 
 REQUIRES = objects
 
