@@ -27,9 +27,10 @@
  * ===========================================================================
  *
  * Author:  Jian Ye
- *
- * File Description:
- *   Sequence alignment display
+ */
+
+/** @file showalign.hpp
+ *  Sequence alignment display tool
  *
  */
 
@@ -43,13 +44,25 @@
 
 BEGIN_NCBI_SCOPE BEGIN_SCOPE(objects)
 
-  
+/**
+ * Example:
+ * @code
+ * int option = 0;
+ * option += CDisplaySeqalign::eShowGi;
+ * option += CDisplaySeqalign::eHtml;
+ * .......
+ * CDisplaySeqalign ds(aln_set, scope);   
+ * ds.SetOption(defline_option);
+ * ds.DisplaySeqalign(stdout);
+ * @endcode
+ */
+
 class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
 
   public:
     // Defines
-
-    // frame defines for translated alignment
+    
+    /// frame defines for translated alignment
     enum TranslatedFrames {
         eFrameNotSet = 0,
         ePlusStrand1 = 1,
@@ -60,28 +73,32 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         eMinusStrand3 = -3
     };
 
-    // Alignment display type, specific for showing blast-related info
+    /// Alignment display type, specific for showing blast-related info
     enum AlignType {
         eNotSet = 0,            // Default
         eNuc = 1,
         eProt = 2
     };
 
+    ///structure for seqloc info
     struct SeqlocInfo {
         CRef < CSeq_loc > seqloc;       // must be seqloc int
-        TranslatedFrames frame; // For translated nucleotide sequence
+        TranslatedFrames frame;         // For translated nucleotide sequence
     };
 
+    ///structure for store feature display info
     struct FeatureInfo {
         CConstRef < CSeq_loc > seqloc;  // must be seqloc int
-        char featureChar;       // Character for feature
-        string featureId;       // ID for feature
+        char feature_char;               // Character for feature
+        string feature_id;               // ID for feature
     };
 
+    ///protein matrix define
     enum {
         kPMatrixSize = 23       // number of amino acid for matrix
     };
 
+    ///option for alignment display
     enum DisplayOption {
         eHtml = (1 << 0),               // Html output. Default text.
         eLinkout = (1 << 1),            // Linkout gifs. 
@@ -113,20 +130,20 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
                                         // anchored
         eColorDifferentBases = (1 << 14),       // Coloring mismatches for
                                                 // subject seq
-        eTranslateNucToNucAlignment = (1 << 15), //Show nuecleotide to nucleotide
+        eTranslateNucToNucAlignment = (1 << 15), //nuecleotide to nucleotide
                                                 //alignment as translated
         eShowBl2seqLink = (1 << 16),    // Show web link to bl2seq
         eDynamicFeature = (1 << 17)     //show dynamic feature line
     };
-
-    // Need to set eShowMiddleLine to get this
+    
+    ///Middle line style option
     enum MiddleLineStyle {
         eChar = 0,              // show character as identity between query
                                 // and hit. Default
         eBar                    // show bar as identity between query and hit
     };
-
-    // character used to display seqloc, such as masked sequence
+    
+    /// character used to display seqloc, such as masked sequence
     enum SeqLocCharOption {
         eX = 0,                 // use X to replace sequence character.
                                 // Default 
@@ -134,145 +151,187 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         eLowerCase              // use lower case of the original sequence
                                 // letter
     };
-    // color for seqloc
+
+    /// colors for seqloc display
     enum SeqLocColorOption {
         eBlack = 0,             // Default
         eGrey,
         eRed
     };
 
-
-    // Constructors
-    /* CSeq_align_set: seqalign to display. 
-       maskSeqloc: seqloc to be displayed with different characters such as
-         masked sequence.  Must be seqloc-int
-       externalFeature: Feature to display such as phiblast pattern.
-         Must be seqloc-int 
-       matrix: customized matrix for computing
-         positive protein matchs.  Note the matrix must exactly consist of
-        "ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62 
-      scope: scope to fetch your sequence */
+    /// Constructors
+    ///@param seqalign: seqalign to display. 
+    ///@param mask_seqloc: seqloc to be displayed with different characters
+    ///and colors such as masked sequence.  Must be seqloc-int
+    ///@param external_feature:  Feature to display such as phiblast pattern.
+    ///Must be seqloc-int 
+    ///@param matrix: customized matrix for computing
+    ///positive protein matchs.  Note the matrix must exactly consist of
+    ///"ARNDCQEGHILKMFPSTWYVBZX", default matrix is blosum62 
+    ///@param scope: scope to fetch your sequence 
+    ///
     CDisplaySeqalign(const CSeq_align_set & seqalign,
                      CScope & scope,
-                     list < SeqlocInfo * >* maskSeqloc = NULL,
-                     list < FeatureInfo * >* externalFeature = NULL,
+                     list < SeqlocInfo * >* mask_seqloc = NULL,
+                     list < FeatureInfo * >* external_feature = NULL,
                      const int matrix[][kPMatrixSize] = NULL);
-
-    // Destructor
+    
+    /// Destructor
     ~CDisplaySeqalign();
-
-    // Set functions
-    /* These are for all alignment display */
-    // Set according to DsiplayOption
+    
+    ///call this to display seqalign
+    ///@param out: stream for display
+    ///
+    void DisplaySeqalign(CNcbiOstream & out);
+    
+    /// Set functions
+    /***The following functions are for all alignment display ****/
+    
+    /// Set according to DsiplayOption
+    ///@param option: display option disired
+    ///
     void SetAlignOption(int option)
     {
         m_AlignOption = option;
     } 
+    
+    ///character style for seqloc display such as masked region
+    ///@param option: character style option
+    ///
     void SetSeqLocChar(SeqLocCharOption option = eX) {
         m_SeqLocChar = option;
     }
 
+    ///color for seqloc display such as masked region
+    ///@param option: color desired
+    ///
     void SetSeqLocColor(SeqLocColorOption option = eBlack) {
         m_SeqLocColor = option;
     }
-      // number of bases or amino acids per line
+    
+    ///number of bases or amino acids per line
+    ///@param len: length desired
+    ///
     void SetLineLen(int len) {
         m_LineLen = len;
     }
 
-      // Display top num seqalign
+    ///Display top num seqalign
+    ///@param num: number desired
+    ///
     void SetNumAlignToShow(int num) {
         m_NumAlignToShow = num;
     }
-
+    
+    ///set middle line style
+    ///@param option: style desired
+    ///
     void SetMiddleLineStyle(MiddleLineStyle option = eBar) {
         m_MidLineStyle = option;
     }
 
-      /* These are for blast alignment style display only */
-      // Needed only if you want to display positives and strand 
+    /***The following functions are for blast alignment style display only***/
+    
+    ///Needed only if you want to display positives and strand 
+    ///@param type: type of seqalign
+    ///
     void SetAlignType(AlignType type) {
         m_AlignType = type;
     }
 
-      // blastdb name.  
+    ///set blast database name
+    ///@param name: db name
+    ///
     void SetDbName(string name) {
         m_DbName = name;
     }
 
-      // for seq fetching from blast db
-    void SetDbType(bool isNa) {
-        m_IsDbNa = isNa;
+    ///database type.  used for seq fetching from blast db
+    ///@param is_na: is nuc database or not
+    ///
+    void SetDbType(bool is_na) {
+        m_IsDbNa = is_na;
     }
-
-      // type for query sequence
-    void SetQueryType(bool isNa) {
-        m_IsQueryNa = isNa;
-    }
-
-      // blast request id
+    
+    ///set blast request id
+    ///@param rid: blast RID
+    ///
     void SetRid(string rid) {
         m_Rid = rid;
     }
 
-      // CDD rid for constructing linkout
-    void SetCddRid(string cddRid) {
-        m_CddRid = cddRid;
+    /// CDD rid for constructing linkout
+    ///@param cdd_rid: cdd RID
+    ///
+    void SetCddRid(string cdd_rid) {
+        m_CddRid = cdd_rid;
     }
 
-      // for constructing structure linkout
+    ///for constructing structure linkout
+    ///@param term: entrez query term
+    ///
     void SetEntrezTerm(string term) {
         m_EntrezTerm = term;
     }
 
-      // for linking to mapviewer
+    /// for linking to mapviewer
+    ///@param number: blast query number
+    ///
     void SetQueryNumber(int number) {
         m_QueryNumber = number;
     }
 
-      // refer to blobj->adm->trace->created_by
+    ///internal blast type
+    ///@param type: refer to blobj->adm->trace->created_by
+    ///
     void SetBlastType(string type) {
         m_BlastType = type;
     }
-
-      // static
-      /* Need to call this if the seqalign is stdseg or dendiag for ungapped
-         blast alignment display as each stdseg ro dendiag is a distinct
-         alignment.  Don't call it for other case as it's a waste of time. */
+    
+    /// static functions
+    ///Need to call this if the seqalign is stdseg or dendiag for ungapped
+    ///blast alignment display as each stdseg ro dendiag is a distinct
+    /// alignment.  Don't call it for other case as it's a waste of time.
+    ///@param alnset: input alnset
+    ///@return processed alnset
+    ///
     static CRef < CSeq_align_set >
-        PrepareBlastUngappedSeqalign(CSeq_align_set & alnset);
-      // display seqalign
-    void DisplaySeqalign(CNcbiOstream & out);
-
-
+    PrepareBlastUngappedSeqalign(CSeq_align_set & alnset);
+    
 private:
     
-    struct insertInformation {
-        int alnStart;               // aln coords. insert right after this
+    ///internal insert information
+    struct SInsertInformation {
+        int aln_start;               // aln coords. insert right after this
                                     // position
-        int seqStart;
-        int insertLen;
+        int seq_start;
+        int insert_len;
     };
-
-    struct alnInfo {                // store alnvec and score info
-        CRef < CAlnVec > alnVec;
+    
+    /// store alnvec and score info
+    struct SAlnInfo {               
+        CRef < CAlnVec > alnvec;
         int score;
         double bits;
-        double eValue;
+        double evalue;
         list<int> use_this_gi;
     };
 
-    struct alnFeatureInfo {
+    ///store feature information
+    struct SAlnFeatureInfo {
         FeatureInfo *feature;
-        string featureString;
-        CRange < TSignedSeqPos > alnRange;
+        string feature_string;
+        CRange < TSignedSeqPos > aln_range;
+    };
+    
+    ///store seqloc info
+    struct SAlnSeqlocInfo {
+        SeqlocInfo *seqloc;
+        CRange < TSignedSeqPos > aln_range;
     };
 
-    struct alnSeqlocInfo {
-        SeqlocInfo *seqloc;
-        CRange < TSignedSeqPos > alnRange;
-    };
-    CConstRef < CSeq_align_set > m_SeqalignSetRef;  // reference to seqalign set
+    /// reference to seqalign set
+    CConstRef < CSeq_align_set > m_SeqalignSetRef; 
                                                     // for displaying
     list < SeqlocInfo * >* m_Seqloc; // display character option for list of
                                     // seqloc 
@@ -286,10 +345,9 @@ private:
                                     //blast info
     int m_NumAlignToShow;           // number of alignment to display
     SeqLocCharOption m_SeqLocChar;  // character for seqloc display
-    SeqLocColorOption m_SeqLocColor;        // clolor for seqloc display
+    SeqLocColorOption m_SeqLocColor; // clolor for seqloc display
     int m_LineLen;                  // number of sequence character per line
     bool m_IsDbNa;
-    bool m_IsQueryNa;
     bool m_IsDbGi;
     string m_DbName;
     string m_BlastType;
@@ -301,55 +359,181 @@ private:
     CNcbiRegistry *m_Reg;
     CGetFeature* m_DynamicFeature;
     map < string, string > m_Segs;
-    CRef < CObjectManager > m_FeatObj;      // used for fetching feature
-    CRef < CScope > m_featScope;    // used for fetching feature
-    
+    CRef < CObjectManager > m_FeatObj;  // used for fetching feature
+    CRef < CScope > m_featScope;        // used for fetching feature
     MiddleLineStyle m_MidLineStyle;
-      // helper functions
-    void DisplayAlnvec(CNcbiOstream & out);
-    const void PrintDefLine(const CBioseq_Handle & bspHandle, 
-                            list<int>& use_this_gi,
-                            CNcbiOstream & out) const;
-    // display sequence, start is seqalign coodinate
-    const void OutputSeq(string & sequence, const CSeq_id & id, int start, 
-                         int len, int frame, int row, bool colorMismatch, 
-                         list<alnSeqlocInfo*> loc_list, 
-                         CNcbiOstream & out) const;
 
-    int getNumGaps();               // Count number of total gaps
-    const CRef < CBlast_def_line_set >
-        GetBlastDefline(const CBioseq_Handle& handle) const;
-    void AddLinkout(const CBioseq & cbsp, const CBlast_def_line & bdl,
-                    int firstGi, int gi, CNcbiOstream & out) const;
-    string getUrl(const list < CRef < CSeq_id > >&ids, int gi, int row) const;
-    string getDumpgnlLink(const list < CRef < CSeq_id > >&ids, int row,
-                          const string & alternativeUrl) const;
-    void getFeatureInfo(list < alnFeatureInfo * >&feature, CScope & scope,
-                        CSeqFeatData::E_Choice choice, int row,
-                        string & sequence) const;
+    ///Display the current alnvec
+    ///@param out: stream for display
+    ///
+    void x_DisplayAlnvec(CNcbiOstream & out);
 
-    void fillInserts(int row, CAlnMap::TSignedRange & alnRange, int alnStart,
-                     list < string > &inserts, string & insertPosString,
-                     list < insertInformation * >&insertList) const;
-    void doFills(int row, CAlnMap::TSignedRange & alnRange, int alnStart,
-                 list < insertInformation * >&insertList,
-                 list < string > &inserts) const;
-    string getSegs(int row) const;
-    const void fillIdentityInfo(const string & sequenceStandard,
-                                const string & sequence, int &match,
-                                int &positive, string & middleLine);
-    void setFeatureInfo(alnFeatureInfo * featInfo, const CSeq_loc & seqloc,
-                        int alnFrom, int alnTo, int alnStop, char patternChar,
-                        string patternId, string & alternativeFeatStr) const;
-    void setDbGi(const CSeq_align_set& actual_aln_list);
-    void GetInserts(list < insertInformation * >&insertList,
-                    CAlnMap::TSeqPosList & insertAlnStart,
-                    CAlnMap::TSeqPosList & insertSeqStart,
-                    CAlnMap::TSeqPosList & insertLength, int lineAlnStop);
-    void x_DisplayAlnvecList(CNcbiOstream & out, list < alnInfo * >&avList);
+    ///print defline
+    ///@param bsp_handle: bioseq of interest
+    ///@param use_this_gi: display this gi instead
+    ///@param out: output stream
+    ///
+    const void x_PrintDefLine(const CBioseq_Handle& bsp_handle, 
+                              list<int>& use_this_gi,
+                              CNcbiOstream& out) const;
+
+    /// display sequence for one row
+    ///@param sequence: the sequence for that row
+    ///@param start: seqalign coodinate
+    ///@param len: length desired
+    ///@param frame: for tranlated alignment
+    ///@param row: the current row
+    ///@param color_mismatch: colorize the mismatch or not
+    ///@param loc_list: seqlocs to be shown as specified in constructor
+    ///@param out: output stream
+    ///
+    const void x_OutputSeq(string& sequence, const CSeq_id& id, int start, 
+                           int len, int frame, int row, bool color_mismatch, 
+                           list<SAlnSeqlocInfo*> loc_list, 
+                           CNcbiOstream& out) const;
+    
+    /// Count number of total gaps
+    ///@return: number of toal gaps for the current alnvec
+    ///
+    int x_GetNumGaps();               
+    
+    ///add linkout url
+    ///@param cbsp: bioseq of interest
+    ///@param bdl: blast defline structure
+    ///@param first_gi: the first gi in redundant sequence
+    ///@param gi: the actual gi
+    //@param out: output stream
+    ///
+    void x_AddLinkout(const CBioseq & cbsp, const CBlast_def_line & bdl,
+                      int first_gi, int gi, CNcbiOstream & out) const;
+
+    ///get url to sequence record
+    ///@param ids: id list
+    ///@param gi: gi or 0 if no gi
+    ///@param row: the current row
+    ///
+    string x_GetUrl(const list < CRef < CSeq_id > >&ids, int gi, int row) const;
+
+    ///get dumpgnl url to sequence record 
+    ///@param ids: id list
+    ///@param row: the current row
+    ///@param alternative_url: user specified url or empty string
+    ///
+    string x_GetDumpgnlLink(const list < CRef < CSeq_id > >&ids, int row,
+                            const string & alternative_url) const;
+    
+    ///get feature info
+    ///@param feature: where feature info to be filled
+    ///@param scope: scope to fectch sequence
+    ///@param choice: which feature to get
+    ///@param row: current row number
+    ///@sequence: the sequence string
+    ///
+    void x_GetFeatureInfo(list < SAlnFeatureInfo * >&feature, CScope & scope,
+                          CSeqFeatData::E_Choice choice, int row,
+                          string& sequence) const;
+    
+    ///get inserts info
+    ///@param row: current row
+    ///@param aln_range: the alignment range
+    ///@param aln_start: start for current row
+    ///@param inserts: inserts to be filled
+    ///@param insert_pos_string: string to indicate the start of insert
+    ///@param insert_list: information containing the insert info
+    ///
+    void x_FillInserts(int row, CAlnMap::TSignedRange& aln_range, 
+                       int aln_start, list < string >& inserts, 
+                       string& insert_pos_string,
+                       list < SInsertInformation * >& insert_list) const;
+    
+    ///recusively fill the insert for anchored view
+    ///@param row: the row number
+    ///@param aln_range: the alignment range
+    ///@param aln_start: start for current row
+    ///@param insert_list: information containing the insert info
+    ///@param inserts: inserts strings to be inserted
+    ///
+    void x_DoFills(int row, CAlnMap::TSignedRange& aln_range, int aln_start,
+                   list < SInsertInformation * >&insert_list,
+                   list < string > &inserts) const;
+    
+    ///segments starts and stops used for map viewer, etc
+    ///@param row: row number
+    ///@return: the seg string
+    ///
+    string x_GetSegs(int row) const;
+
+    ///compute number of identical and positive residues
+    ///and set middle line accordingly
+    ///@param sequence_standard: the master sequence
+    ///@param sequence: the slave sequence
+    ///@param match: the number of identical match
+    ///@param positive: number of positive match
+    ///@param middle_line: the middle line to be filled
+    ///
+    const void x_FillIdentityInfo(const string& sequence_standard,
+                                  const string& sequence, int& match,
+                                  int& positive, string& middle_line);
+
+    ///set feature info
+    ///@param feat_info: feature to fill in
+    ///@param seqloc: feature for this seqloc
+    ///@aln_from: from coodinate
+    ///@param aln_to: to coordinate
+    ///@param aln_stop: the stop position for whole alignment
+    ///@param pattern_char: the pattern character to show
+    ///@param pattern_id: the pattern id to show
+    ///@alternative_feat_str: use this as feature string instead
+    ///
+    void x_SetFeatureInfo(SAlnFeatureInfo* feat_info, const CSeq_loc& seqloc,
+                          int aln_from, int aln_to, int aln_stop,
+                          char pattern_char,  string pattern_id,
+                          string& alternative_feat_str) const;
+
+    ///Set the database as gi type
+    ///@param actual_aln_list: the alignment
+    ///
+    void x_SetDbGi(const CSeq_align_set& actual_aln_list);
+
+    ///get insert information
+    ///@param insert_list: list to be filled
+    ///@param insert_aln_start: alnment start coordinate info
+    ///@param insert_seq_start: alnment sequence start info
+    ///@param insert_length: insert length info
+    ///@param line_aln_stop: alignment stop for this row
+    ///
+    void x_GetInserts(list < SInsertInformation * >&insert_list,
+                      CAlnMap::TSeqPosList& insert_aln_start,
+                      CAlnMap::TSeqPosList& insert_seq_start,
+                      CAlnMap::TSeqPosList& insert_length, 
+                      int line_aln_stop);
+
+    ///display alnvec list
+    ///@param out: output stream
+    ///@av_list: alnvec list
+    ///
+    void x_DisplayAlnvecList(CNcbiOstream& out, list < SAlnInfo * >& av_list);
+
+    ///output dynamic feature url
+    ///@param out: output stream
+    ///
     void x_PrintDynamicFeatures(CNcbiOstream& out);
-    void x_FillLocList(list<alnSeqlocInfo*>& loc_list) const;
-    list<alnFeatureInfo*>* x_GetQueryFeatureList(int row_num, int aln_stop) const;
+
+    ///convert the internal seqloc list info using alnment coordinates
+    ///@param loc_list: fill the list with seqloc info using aln coordinates
+    ///
+    void x_FillLocList(list<SAlnSeqlocInfo*>& loc_list) const;
+
+    ///get external query feature info such as phi blast pattern
+    ///@param row: row number
+    ///@param: aln_stop: the stop position for the whole alignment
+    ///
+    list<SAlnFeatureInfo*>* x_GetQueryFeatureList(int row_num, 
+                                                 int aln_stop) const;
+    ///make the appropriate seqid
+    ///@param id: the id to be filled
+    ///@param row: row number
+    ///
     void x_FillSeqid(string& id, int row) const;
 
 };
@@ -363,6 +547,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.25  2005/02/22 15:59:16  jianye
+*some style change
+*
 *Revision 1.24  2005/02/14 19:04:28  jianye
 *changed constructor
 *
