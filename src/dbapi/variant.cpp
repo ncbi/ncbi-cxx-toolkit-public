@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/02/15 23:24:42  vakatov
+* CVariant::CVariant() -- fixed a bug introduced during the cleanup
+*
 * Revision 1.5  2002/02/14 00:59:40  vakatov
 * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
 *
@@ -133,7 +136,7 @@ CVariant CVariant::DateTime(CTime *p)
 
 CVariant CVariant::Numeric(unsigned int precision,
                            unsigned int scale,
-                           const char* p)
+                           const char*  p)
 {
     return CVariant(p ? new CDB_Numeric(precision, scale, p) 
                     : new CDB_Numeric());
@@ -143,60 +146,61 @@ CVariant CVariant::Numeric(unsigned int precision,
 CVariant::CVariant(EDB_Type type)
     : m_data(0)
 {
-    switch(type) {
+    switch ( type ) {
     case eDB_Int:
         m_data = new CDB_Int();
-        break;  
+        return;  
     case eDB_SmallInt:
         m_data = new CDB_SmallInt();
-        break;  
+        return;  
     case eDB_TinyInt:
         m_data = new CDB_TinyInt();
-        break;  
+        return;  
     case eDB_BigInt:
         m_data = new CDB_BigInt();
-        break;  
+        return;  
     case eDB_VarChar:
         m_data = new CDB_VarChar();
-        break;  
+        return;  
     case eDB_Char:
         m_data = new CDB_Char();
-        break;  
+        return;  
     case eDB_VarBinary:
         m_data = new CDB_Binary();
-        break;  
+        return;  
     case eDB_Binary:
         m_data = new CDB_Binary();
-        break;  
+        return;  
     case eDB_Float:
         m_data = new CDB_Float();
-        break;  
+        return;  
     case eDB_Double:
         m_data = new CDB_Double();
-        break;  
+        return;  
     case eDB_DateTime:
         m_data = new CDB_DateTime();
-        break;
+        return;
     case eDB_SmallDateTime:
         m_data = new CDB_SmallDateTime();
-        break;
+        return;
     case eDB_Text:
         m_data = new CDB_Text();
-        break;
+        return;
     case eDB_Image:
         m_data = new CDB_Image();
-        break;
+        return;
     case eDB_Bit:
         m_data = new CDB_Bit();
-        break;
+        return;
     case eDB_Numeric:
         m_data = new CDB_Numeric();
-        break;
+        return;
     case eDB_UnsupportedType:
         break;
     }
-    throw CVariantException("CVariant::ctor(): unsupported type");
+    throw CVariantException("CVariant::ctor():  unsupported type");
 }
+
 
 CVariant::CVariant(CDB_Object* o) 
     : m_data(o) 
