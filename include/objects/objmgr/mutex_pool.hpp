@@ -53,7 +53,7 @@ const size_t kMutexPoolSize = 16;
 
 
 template<class TProtected>
-class NCBI_XOBJMGR_EXPORT CMutexPool_Base {
+class CMutexPool_Base {
 public:
     CMutexPool_Base(void) {}
 
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/03 18:46:45  dicuccio
+* Removed unnecessary Win32 export specifier
+*
 * Revision 1.2  2002/12/26 20:51:35  dicuccio
 * Added Win32 export specifier
 *
