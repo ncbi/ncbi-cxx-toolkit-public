@@ -97,8 +97,7 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlkPtr sbp,
  *	The first function sorts in forward, the second in reverse order.
 */
 static int
-fwd_compare_hsps(VoidPtr v1, VoidPtr v2)
-
+fwd_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
 	BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -130,8 +129,7 @@ fwd_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 /* Comparison function based on end position in the query */
 static int
-end_compare_hsps(VoidPtr v1, VoidPtr v2)
-
+end_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
 	BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -162,8 +160,7 @@ end_compare_hsps(VoidPtr v1, VoidPtr v2)
 }
 
 static int
-sumscore_compare_hsps(VoidPtr v1, VoidPtr v2)
-
+sumscore_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
 	BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -500,7 +497,7 @@ BlastLinkHsps(Uint1 program_number, BlastHSPListPtr hsp_list,
  * Ties are broken based on subject sequence offsets.
  */
 static int
-score_compare_hsps(VoidPtr v1, VoidPtr v2)
+score_compare_hsps(const void* v1, const void* v2)
 {
    BlastHSPPtr h1, h2;
    BlastHSPPtr PNTR hp1, PNTR hp2;

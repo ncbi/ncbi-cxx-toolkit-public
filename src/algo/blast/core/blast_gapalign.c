@@ -108,8 +108,7 @@ MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
 
 /** Callback for sorting HSPs by starting offset in query */ 
 static int
-query_offset_compare_hsps(VoidPtr v1, VoidPtr v2)
-
+query_offset_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
 	BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -132,8 +131,7 @@ query_offset_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 /** Callback for sorting HSPs by ending offset in query */
 static int
-query_end_compare_hsps(VoidPtr v1, VoidPtr v2)
-
+query_end_compare_hsps(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
 	BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -156,8 +154,7 @@ query_end_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 /** Callback for sorting HSPs by score */
 static int
-score_compare_hsp(VoidPtr v1, VoidPtr v2)
-
+score_compare_hsp(const void* v1, const void* v2)
 {
 	BlastHSPPtr h1, h2;
 	BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -1475,7 +1472,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 
 /** Callback function for a sorting of initial HSPs by diagonal */
 static int
-diag_compare_match(VoidPtr v1, VoidPtr v2)
+diag_compare_match(const void* v1, const void* v2)
 {
    BlastInitHSPPtr h1, h2;
 
@@ -2116,7 +2113,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
 
 /** Callback for sorting initial HSPs by score. */
 static int
-score_compare_match(VoidPtr v1, VoidPtr v2)
+score_compare_match(const void* v1, const void* v2)
 
 {
 	BlastInitHSPPtr h1, h2;

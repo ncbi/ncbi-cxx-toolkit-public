@@ -128,8 +128,7 @@ static Boolean hasdash(SequencePtr win)
 
 /*------------------------------------------------------------(state_cmp)---*/
 
-static int state_cmp(VoidPtr s1, VoidPtr s2)
-
+static int state_cmp(const void* s1, const void* s2)
 {
 	int *np1, *np2;
 

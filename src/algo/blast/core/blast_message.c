@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.4  2003/07/25 19:11:16  camacho
+ * Change VoidPtr to const void* in compare functions
+ *
  * Revision 1.3  2003/07/25 17:25:43  coulouri
  * in progres:
  *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
@@ -77,7 +80,7 @@ Blast_MessageWrite(Blast_MessagePtr *blast_msg, Int4 severity, Int4 code,
 	if (blast_msg == NULL)
 		return 1;
 
-	*blast_msg = MemNew(sizeof(Blast_Message));
+	*blast_msg = (Blast_MessagePtr) malloc(sizeof(Blast_Message));
 
 	(*blast_msg)->severity = severity;
 	(*blast_msg)->code = code;

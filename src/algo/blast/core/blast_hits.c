@@ -271,8 +271,7 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject,
 
 /** Comparison callback function for sorting HSPs by e-value */
 static int
-evalue_compare_hsps(VoidPtr v1, VoidPtr v2)
-
+evalue_compare_hsps(const void* v1, const void* v2)
 {
    BlastHSPPtr h1, h2;
    
@@ -294,7 +293,7 @@ evalue_compare_hsps(VoidPtr v1, VoidPtr v2)
  * the HSPs contained in or identical to other HSPs.
 */
 static int
-diag_uniq_compare_hsps(VoidPtr v1, VoidPtr v2)
+diag_uniq_compare_hsps(const void* v1, const void* v2)
 {
    BlastHSPPtr h1, h2;
    BlastHSPPtr PNTR hp1, PNTR hp2;
@@ -645,7 +644,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
  * Turns array into a heap with respect to a given comparison function.
  */
 static void
-heapify (CharPtr base0, CharPtr base, CharPtr lim, CharPtr last, size_t width, int (*compar )(VoidPtr, VoidPtr ))
+heapify (CharPtr base0, CharPtr base, CharPtr lim, CharPtr last, size_t width, int (*compar )(const void*, const void* ))
 {
    size_t i;
    char   ch;
@@ -677,7 +676,7 @@ heapify (CharPtr base0, CharPtr base, CharPtr lim, CharPtr last, size_t width, i
  * @param width The size of each element [in]
  */
 static void CreateHeap (VoidPtr b, size_t nel, size_t width, 
-   int (*compar )(VoidPtr, VoidPtr ))   
+   int (*compar )(const void*, const void* ))   
 {
    CharPtr    base = (CharPtr)b;
    size_t i;
@@ -700,7 +699,7 @@ static void CreateHeap (VoidPtr b, size_t nel, size_t width,
  * e-value/score.
 */
 static int
-evalue_compare_hsp_lists(VoidPtr v1, VoidPtr v2)
+evalue_compare_hsp_lists(const void* v1, const void* v2)
 {
    BlastHSPListPtr h1, h2;
    
@@ -1041,7 +1040,7 @@ void AdjustOffsetsInHSPList(BlastHSPListPtr hsp_list, Int4 offset)
 
 /** Comparison callback for sorting HSPs by diagonal */
 static int
-diag_compare_hsps(VoidPtr v1, VoidPtr v2)
+diag_compare_hsps(const void* v1, const void* v2)
 {
    BlastHSPPtr h1, h2;
 
