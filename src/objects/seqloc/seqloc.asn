@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
@@ -70,7 +70,7 @@ Seq-interval ::= SEQUENCE {
     from INTEGER ,
     to INTEGER ,
     strand Na-strand OPTIONAL ,
-    id Seq-id ,
+    id Seq-id OPTIONAL ,    -- WARNING: this will not remain optional long
     fuzz-from Int-fuzz OPTIONAL ,
     fuzz-to Int-fuzz OPTIONAL }
 
