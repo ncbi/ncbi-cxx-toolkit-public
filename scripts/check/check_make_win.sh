@@ -307,10 +307,10 @@ for x_conf in $x_confs; do
          echo "Unable to create directory \"$x_build_dir/$res_bin/$x_conf\"."
       fi
    fi
-   # Make soft link for all binaries in <x_conf> folders
+   # Copy all binaries in <x_conf> folders
    x_files=`find . -name "*.exe" | grep "/$x_conf/"`
    for x_file in $x_files; do
-      ln -s "$x_file" "$x_build_dir/$res_bin/$x_conf" > /dev/null 2>&1
+      cp "$x_file" "$x_build_dir/$res_bin/$x_conf" > /dev/null 2>&1
    done 
    x_files=`find . -name "*.dll" | grep "/$x_conf/"`
    for x_file in $x_files; do
