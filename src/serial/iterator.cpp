@@ -285,6 +285,11 @@ bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
         SIteratorFunctions::s_ContainsType(object, GetIteratorType());
 }
 
+#if 0
+// There is an (unconfirmed) opinion that putting these two functions
+// into header (iterator.hpp) increases the size of an executable.
+// Still, keeping them here is reported as bug by
+// Metrowerks Codewarrior 9.0 (Mac OSX)
 template<class Parent>
 bool CTypesIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
@@ -314,14 +319,17 @@ bool CTypesIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
     return false;
 }
 
+#if 0 // these are obsolete
 template class NCBI_XSERIAL_EXPORT CTreeIteratorTmpl<CTreeLevelIterator>;
 template class NCBI_XSERIAL_EXPORT CTreeIteratorTmpl<CConstTreeLevelIterator>;
 template class NCBI_XSERIAL_EXPORT CTypeIteratorBase<CTreeIterator>;
 template class NCBI_XSERIAL_EXPORT CTypeIteratorBase<CTreeConstIterator>;
 template class NCBI_XSERIAL_EXPORT CLeafTypeIteratorBase<CTreeIterator>;
 template class NCBI_XSERIAL_EXPORT CLeafTypeIteratorBase<CTreeConstIterator>;
+#endif
 template class NCBI_XSERIAL_EXPORT CTypesIteratorBase<CTreeIterator>;
 template class NCBI_XSERIAL_EXPORT CTypesIteratorBase<CTreeConstIterator>;
+#endif
 
 bool CType_Base::Match(const CTypesIterator& it, TTypeInfo typeInfo)
 {
@@ -375,6 +383,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/09/15 20:02:04  gouriano
+* fixed the definition of CTypesIteratorBase to eliminate compilation warnings
+*
 * Revision 1.21  2003/03/11 20:08:07  kuznets
 * iterate -> ITERATE
 *

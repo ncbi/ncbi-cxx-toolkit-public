@@ -507,8 +507,40 @@ public:
         }
 
 protected:
+#if 0
+// There is an (unconfirmed) opinion that putting these two functions
+// into source (iterator.cpp) reduces the size of an executable.
+// Still, keeping them there is reported as bug by
+// Metrowerks Codewarrior 9.0 (Mac OSX)
     virtual bool CanSelect(const CConstObjectInfo& object);
     virtual bool CanEnter(const CConstObjectInfo& object);
+#else
+    virtual bool CanSelect(const CConstObjectInfo& object)
+    {
+        if ( !CParent::CanSelect(object) )
+            return false;
+        m_MatchType = 0;
+        TTypeInfo type = object.GetTypeInfo();
+        ITERATE ( TTypeList, i, GetTypeList() ) {
+            if ( type->IsType(*i) ) {
+                m_MatchType = *i;
+                return true;
+            }
+        }
+        return false;
+    }
+    virtual bool CanEnter(const CConstObjectInfo& object)
+    {
+        if ( !CParent::CanEnter(object) )
+            return false;
+        TTypeInfo type = object.GetTypeInfo();
+        ITERATE ( TTypeList, i, GetTypeList() ) {
+            if ( type->MayContainType(*i) )
+                return true;
+        }
+        return false;
+    }
+#endif
 
 private:
     TTypeList m_TypeList;
@@ -816,6 +848,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/09/15 20:01:15  gouriano
+* fixed the definition of CTypesIteratorBase to eliminate compilation warnings
+*
 * Revision 1.27  2003/04/15 14:15:21  siyan
 * Added doxygen support
 *
