@@ -69,6 +69,8 @@
 #include <objects/general/Date.hpp>
 // #include <objects/util/sequence.hpp>
 
+#include <corelib/ncbithr.hpp>
+
 #include <test/test_assert.h>  /* This header must go last */
 
 
@@ -999,7 +1001,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             }
             //### _ASSERT(feat_it->
         }
-        _ASSERT(count == seq_feat_ra_cnt);
+              LOG_POST(CThread::GetSelf() << ":: seq-feat RA: " << count << " ? " << seq_feat_ra_cnt);
+              _ASSERT(count == seq_feat_ra_cnt);
     }
     CHECK_END("get annot set");
 
@@ -1225,6 +1228,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/05/09 20:28:03  grichenk
+* Changed warnings to info
+*
 * Revision 1.31  2003/04/24 16:12:39  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -89,8 +89,10 @@ void CScope::AddDataLoader (const string& loader_name,
     // Clear annot cache
     m_AnnotCache.clear();
     if (!m_History.empty()) {
-        LOG_POST(Warning <<
-            "CScope::AddDataLoader() -- cached data may become inconsistent");
+        LOG_POST(Info <<
+            "CScope::AddDataLoader() -- "
+            "adding new data to a scope with non-empty history "
+            "may cause the cached data to become inconsistent");
     }
     x_UpdatePriorityMap();
 }
@@ -105,8 +107,10 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
     //### Take each seq-id from history with priority lower than
     //### the one of modified entry, check if there are any conflicts.
     if (!m_History.empty()) {
-        LOG_POST(Warning <<
-            "CScope::AddTopLevelSeqEntry() -- cached data may become inconsistent");
+        LOG_POST(Info <<
+            "CScope::AddTopLevelSeqEntry() -- "
+            "adding new data to a scope with non-empty history "
+            "may cause the cached data to become inconsistent");
     }
     x_UpdatePriorityMap();
 }
@@ -120,8 +124,10 @@ void CScope::AddScope(CScope& scope, CPriorityNode::TPriority priority)
     //### Take each seq-id from history with priority lower than
     //### the one of modified entry, check if there are any conflicts.
     if (!m_History.empty()) {
-        LOG_POST(Warning <<
-            "CScope::AddScope() -- cached data may become inconsistent");
+        LOG_POST(Info <<
+            "CScope::AddScope() -- "
+            "adding new data to a scope with non-empty history "
+            "may cause the cached data to become inconsistent");
     }
     x_UpdatePriorityMap();
 }
@@ -197,8 +203,10 @@ bool CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
             //### Take each seq-id from history with priority lower than
             //### the one of modified entry, check if there are any conflicts.
             if (!m_History.empty()) {
-                LOG_POST(Warning <<
-                    "CScope::AttachEntry() -- cached data may become inconsistent");
+                LOG_POST(Info <<
+                    "CScope::AttachEntry() -- "
+                    "adding new data to a scope with non-empty history "
+                    "may cause the cached data to become inconsistent");
             }
             return true;
         }
@@ -453,7 +461,6 @@ CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     NON_CONST_ITERATE(TTSE_LockSet, tse, with_seq) {
         if (m_History.find(*tse) != m_History.end()) {
             if ( unique_from_history ) {
-LOG_POST("Annot conflict - history");
                 CSeqMatch_Info info1(idh, *unique_from_history);
                 CSeqMatch_Info info2(idh, **tse);
                 x_ThrowConflict(eConflict_History, info1, info2);
@@ -738,6 +745,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/05/09 20:28:03  grichenk
+* Changed warnings to info
+*
 * Revision 1.63  2003/05/06 18:54:09  grichenk
 * Moved TSE filtering from CDataSource to CScope, changed
 * some filtering rules (e.g. priority is now more important

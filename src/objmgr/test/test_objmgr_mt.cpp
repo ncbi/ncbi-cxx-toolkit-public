@@ -62,6 +62,7 @@ protected:
     virtual bool Thread_Run(int idx);
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
+    virtual bool TestApp_Args(CArgDescriptions& args);
 
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope> m_Scope;
@@ -161,6 +162,10 @@ bool CTestObjectManager::Thread_Run(int idx)
 
 bool CTestObjectManager::TestApp_Init(void)
 {
+    const CArgs& args = GetArgs();
+    CDataGenerator::sm_DumpEntries = args["dump_entries"];
+    CTestHelper::sm_DumpFeatures = args["dump_features"];
+
     NcbiCout << "Testing ObjectManager (" << s_NumThreads << " threads)..." << NcbiEndl;
 
     m_ObjMgr = new CObjectManager;
@@ -178,6 +183,15 @@ bool CTestObjectManager::TestApp_Exit(void)
     NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
     return true;
 }
+
+bool CTestObjectManager::TestApp_Args(CArgDescriptions& args)
+{
+    // Prepare command line descriptions
+    args.AddFlag("dump_entries", "print all generated seq entries");
+    args.AddFlag("dump_features", "print all found features");
+    return true;
+}
+
 END_NCBI_SCOPE
 
 
@@ -194,6 +208,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/05/09 20:28:03  grichenk
+* Changed warnings to info
+*
 * Revision 1.21  2003/04/24 16:12:39  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
