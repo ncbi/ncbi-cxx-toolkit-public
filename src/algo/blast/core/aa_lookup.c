@@ -229,9 +229,11 @@ for(i=0;i<lookup->backbone_size;i++)
  MemFree(lookup->thin_backbone);
  lookup->thin_backbone=NULL;
 
+#ifdef LOOKUP_VERBOSE
  printf("backbone size : %d\nbackbone occupancy: %d (%f%%)\nthick_backbone occupancy: %d (%f%%)\nnum_overflows: %d\noverflow size: %d\nlongest chain: %d\n",lookup->backbone_size, backbone_occupancy, 100.0 * (float) backbone_occupancy/ (float) lookup->backbone_size, thick_backbone_occupancy, 100.0 * (float) thick_backbone_occupancy / (float) lookup->backbone_size, num_overflows, overflow_cells_needed,longest_chain);
 
  printf("exact matches : %d\nneighbor matches : %d\n",lookup->exact_matches,lookup->neighbor_matches);
+#endif
 
  return 0;
 }
