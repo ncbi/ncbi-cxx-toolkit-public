@@ -1044,7 +1044,7 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
     } else if (strcasecmp(sbp->name, "PAM250") == 0) {
         psm = (SNCBIPackedScoreMatrix*) &NCBISM_Pam250;
     } else {
-        return -1;
+        return 1;
     }
 
     /* Initialize with BLAST_SCORE_MIN */
@@ -3619,6 +3619,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.97  2004/10/05 21:32:55  camacho
+ * Return 1 to indicate error in BlastScoreBlkMatrixLoad
+ *
  * Revision 1.96  2004/10/04 13:38:53  camacho
  * Do not use hard coded constants in RPSfindUngappedLambda
  *
