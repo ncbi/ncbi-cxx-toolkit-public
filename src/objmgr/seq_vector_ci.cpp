@@ -152,7 +152,12 @@ CSeqVector_CI::~CSeqVector_CI(void)
 CSeqVector_CI::CSeqVector_CI(const CSeqVector_CI& sv_it)
 {
     x_InitializeCache();
-    *this = sv_it;
+    try {
+        *this = sv_it;
+    }
+    catch (...) {
+        x_DestroyCache();
+    }
 }
 
 
@@ -183,13 +188,18 @@ CSeqVector_CI::CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos)
       m_Coding(seq_vector.GetCoding())
 {
     x_InitializeCache();
-    if (pos >= m_Vector->size()) {
-        pos = m_Vector->size();
+    try {
+        if (pos >= m_Vector->size()) {
+            pos = m_Vector->size();
+        }
+        // Initialize segment iterator
+        m_Seg = m_Vector->x_GetSeqMap().FindResolved(
+            pos, m_Vector->m_Scope, m_Vector->m_Strand);
+        x_UpdateCache(pos);
     }
-    // Initialize segment iterator
-    m_Seg = m_Vector->x_GetSeqMap().FindResolved(
-        pos, m_Vector->m_Scope, m_Vector->m_Strand);
-    x_UpdateCache(pos);
+    catch (...) {
+        x_DestroyCache();
+    }
 }
 
 
@@ -505,6 +515,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/07/18 20:41:48  grichenk
+* Fixed memory leaks in CSeqVector_CI
+*
 * Revision 1.18  2003/07/18 19:42:42  vasilche
 * Added x_DestroyCache() method.
 *
