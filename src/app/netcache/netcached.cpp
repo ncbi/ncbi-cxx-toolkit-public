@@ -558,7 +558,8 @@ void CNetCacheServer::ProcessShutdown()
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
-    WriteMsg(sock, "OK:", "NCBI NetCache server version=1.2.3");
+    WriteMsg(sock, "OK:", 
+      "NCBI NetCache server version=1.2.4 __DATE__ __TIME__");
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -1060,6 +1061,7 @@ private:
 void CNetCacheDApp::Init(void)
 {
     SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_DateTime);
 
     // Setup command line arguments and parameters
         
@@ -1248,6 +1250,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/03/31 19:16:49  kuznets
+ * Added build date to the version string
+ *
  * Revision 1.48  2005/03/24 20:20:00  kuznets
  * Suppressed communication error (carries no information anyway)
  *
