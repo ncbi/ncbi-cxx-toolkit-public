@@ -1,34 +1,33 @@
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Soussov
-*
-* File Description:  CTLib language command
-*
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Soussov
+ *
+ * File Description:  CTLib Results
+ *
+ */
 
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
@@ -293,7 +292,8 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
                                "Wrong type of CDB_Object");
         }
 
-        char* v = (fmt.maxlength < 2048) ? buffer : new char[fmt.maxlength + 1];
+        char* v = fmt.maxlength < 2048
+            ? buffer : new char[fmt.maxlength + 1];
         switch ( ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
@@ -581,11 +581,14 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
                 else {
                     if (b_type == eDB_Numeric) {
                         ((CDB_Numeric*) item_buf)->Assign
-                            ((unsigned int) v.scale, (unsigned int) v.precision,
+                            ((unsigned int)         v.scale,
+                             (unsigned int)         v.precision,
                              (const unsigned char*) v.array);
                     }
                     else {
-                        *((CDB_BigInt*) item_buf) = numeric_to_longlong((unsigned int) v.precision, v.array);
+                        *((CDB_BigInt*) item_buf) =
+                            numeric_to_longlong((unsigned int)
+                                                v.precision, v.array);
                     }
                 }
                 return item_buf;
@@ -594,7 +597,8 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
             if (fmt.scale == 0  &&  fmt.precision < 20) {
                 return (outlen == 0)
                     ? new CDB_BigInt
-                    : new CDB_BigInt(numeric_to_longlong((unsigned int) v.precision, v.array));
+                    : new CDB_BigInt(numeric_to_longlong((unsigned int)
+                                                         v.precision,v.array));
             } else {
                 return  (outlen == 0)
                     ? new CDB_Numeric
@@ -872,15 +876,16 @@ EDB_ResType CTL_CursorResult::ResultType() const
     return eDB_CursorResult;
 }
 
+
 CTL_CursorResult::~CTL_CursorResult()
 {
-    if (m_EOR) { // this is not a bug.
+    if (m_EOR) { // this is not a bug
         CS_INT res_type;
         while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
             continue;
         }
     }
-    else m_EOR= true; // to prevent the ct_cancel call (close cursor will do a job)
+    else m_EOR= true; // to prevent ct_cancel call (close cursor will do a job)
 }
 
 
@@ -889,6 +894,12 @@ CTL_CursorResult::~CTL_CursorResult()
 //
 //  CTL_ITDescriptor::
 //
+
+CTL_ITDescriptor::CTL_ITDescriptor()
+{
+    return;
+}
+
 
 CTL_ITDescriptor::~CTL_ITDescriptor()
 {
@@ -903,8 +914,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2001/11/06 18:02:00  lavr
+ * Added methods formely inline (moved from header files)
+ *
  * Revision 1.9  2001/10/11 16:30:44  soussov
- * excludes ctlib dependences fron numeric conversions calls
+ * exclude ctlib dependencies from numeric conversion calls
  *
  * Revision 1.8  2001/10/03 14:21:01  soussov
  * pevents the ct_cancel call in ~CTL_CursorResult()

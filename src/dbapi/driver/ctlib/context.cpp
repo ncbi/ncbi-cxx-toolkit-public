@@ -27,7 +27,6 @@
  *
  * File Description:  Driver for CTLib server
  *
- *
  */
 
 #include <dbapi/driver/ctlib/interfaces.hpp>
@@ -313,6 +312,42 @@ CTLibContext::~CTLibContext()
 }
 
 
+void CTLibContext::CTLIB_SetApplicationName(const string& a_name)
+{
+    m_AppName = a_name;
+}
+
+
+void CTLibContext::CTLIB_SetHostName(const string& host_name)
+{
+    m_HostName = host_name;
+}
+
+
+void CTLibContext::CTLIB_SetPacketSize(CS_INT packet_size)
+{
+    m_PacketSize = packet_size;
+}
+
+
+void CTLibContext::CTLIB_SetLoginRetryCount(CS_INT n)
+{
+    m_LoginRetryCount = n;
+}
+
+
+void CTLibContext::CTLIB_SetLoginLoopDelay(CS_INT nof_sec)
+{
+    m_LoginLoopDelay = nof_sec;
+}
+
+
+CS_CONTEXT* CTLibContext::CTLIB_GetContext() const
+{
+    return m_Context;
+}
+
+
 bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
 {
     CS_INT       outlen;
@@ -418,7 +453,8 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 }
 
 
-bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
+bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
+                                        CS_CONNECTION* con,
                                         CS_SERVERMSG* msg)
 {
     if ((msg->severity == 0  &&  msg->msgnumber == 0)  ||
@@ -565,11 +601,10 @@ void g_CTLIB_GetRowCount(CS_COMMAND* cmd, int* cnt)
     CS_INT n;
     CS_INT outlen;
     if (cnt  &&
-        ct_res_info(cmd, CS_ROW_COUNT, &n, CS_UNUSED, &outlen) == CS_SUCCEED  &&
-        n >= 0  &&  n != CS_NO_COUNT)
-        {
-            *cnt = (int) n;
-        }
+        ct_res_info(cmd, CS_ROW_COUNT, &n, CS_UNUSED, &outlen) == CS_SUCCEED
+        && n >= 0  &&  n != CS_NO_COUNT) {
+        *cnt = (int) n;
+    }
 }
 
 
@@ -630,8 +665,8 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
 
         CS_NUMERIC value;
         Int8 v8 = par.Value();
-	memset(&value, 0, sizeof(value));
-	value.precision= 18;
+        memset(&value, 0, sizeof(value));
+        value.precision= 18;
         if (longlong_to_numeric(v8, 18, value.array) == 0)
             return false;
 
@@ -747,11 +782,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2001/11/06 18:02:00  lavr
+ * Added methods formely inline (moved from header files)
+ *
  * Revision 1.7  2001/10/12 21:21:55  lavr
  * Bugfix: Changed '=' -> '==' in severity parsing
  *
  * Revision 1.6  2001/10/11 16:30:44  soussov
- * excludes ctlib dependencies from numeric conversions calls
+ * exclude ctlib dependencies from numeric conversion calls
  *
  * Revision 1.5  2001/10/01 20:09:30  vakatov
  * Introduced a generic default user error handler and the means to
