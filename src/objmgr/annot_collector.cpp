@@ -1169,10 +1169,13 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                 master_hr.AddRange(aoit->first, eNa_strand_unknown);
                 CConstRef<CSeqMap> seqMap =
                     CSeqMap::CreateSeqMapForSeq_loc(ref_loc, m_Scope);
+                CHandleRange::TRange master_range = range & aoit->first;
+                TSeqPos start = master_range.GetFrom() - aoit->first.GetFrom();
+                TSeqPos length = master_range.GetLength();
                 CSeqMap_CI smit(seqMap->
                                 ResolvedRangeIterator(m_Scope,
-                                                      range.GetFrom(),
-                                                      range.GetLength(),
+                                                      start,
+                                                      length,
                                                       eNa_strand_unknown,
                                                       0, // do not resolve refs
                                                       CSeqMap::fFindRef));
@@ -1406,8 +1409,7 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
     {{ // translate master_loc to ref_loc
         CHandleRange& hr = ref_loc.AddRanges(ref_id);
         ITERATE ( CHandleRange, mlit, master_hr ) {
-            CHandleRange::TOpenRange range =
-                master_seg_range.IntersectionWith(mlit->first);
+            CHandleRange::TOpenRange range = master_seg_range & mlit->first;
             if ( !range.Empty() ) {
                 ENa_strand strand = mlit->second;
                 if ( !reversed ) {
@@ -1446,6 +1448,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/15 16:51:30  vasilche
+* Fixed segment shift in Seq-annot.locs processing.
+*
 * Revision 1.13  2004/07/14 16:04:03  grichenk
 * Fixed range when searching through annot-locs
 *
