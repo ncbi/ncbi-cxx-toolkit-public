@@ -5,14 +5,14 @@
 
 COMMON_AddRunpath()
 {
-    add_rpath="$1"
+    x_add_rpath="$1"
 
-    test -z "$add_rpath"  &&  return 0
+    test -z "$x_add_rpath"  &&  return 0
 
     if test -n "$LD_LIBRARY_PATH" ; then
-        LD_LIBRARY_PATH="$libdir:$LD_LIBRARY_PATH"
+        LD_LIBRARY_PATH="$x_add_rpath:$LD_LIBRARY_PATH"
     else
-        LD_LIBRARY_PATH="$libdir"
+        LD_LIBRARY_PATH="$x_add_rpath"
     fi
     export LD_LIBRARY_PATH
 
