@@ -102,11 +102,11 @@ static void TestCgi_Cookies(void)
     cookies.Add("AAA", "11", "qq.yy.dd");
     cookies.Add("AAA", "12", "QQ.yy.Dd");
     assert( cookies.Find("AAA", "qq.yy.dd", NcbiEmptyString)->GetValue()
-             == "12" );
+            == "12" );
 
     cookies.Add("aaa", "1", "QQ.yy.Dd");
     assert( cookies.Find("AAA", "qq.yy.dd", NcbiEmptyString)->GetValue()
-             == "1" );
+            == "1" );
 
     cookies.Add("aaa", "19");
 
@@ -281,8 +281,8 @@ static void TestCgi_Request_Full(CNcbiIstream*         istr,
     NcbiCout << "\nCCgiRequest::  All properties:\n";
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
         NcbiCout << NcbiSetw(24)
-            << CCgiRequest::GetPropertyName((ECgiProp)prop) << " = \""
-            << CCR.GetProperty((ECgiProp)prop) << "\"\n";
+                 << CCgiRequest::GetPropertyName((ECgiProp)prop) << " = \""
+                 << CCR.GetProperty((ECgiProp)prop) << "\"\n";
     }
 
     CCgiCookies cookies;
@@ -361,23 +361,26 @@ static void TestCgiMisc(void)
 
 static void TestCgi(const CNcbiArguments& args)
 {
+    // this is to get rid of warnings on some strict compilers (like SUN Forte)
+#define X_PUTENV(s)  ::putenv((char*) s)
+
     TestCgi_Cookies();
     TestCgi_Request_Static();
 
-    assert( !::putenv("CONTENT_TYPE=application/x-www-form-urlencoded") );
+    assert( !X_PUTENV("CONTENT_TYPE=application/x-www-form-urlencoded") );
 
     try { // POST only
         char inp_str[] = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[32];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
+        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
         assert( !::putenv(len) );
 
-        assert( !::putenv("SERVER_PORT=") );
-        assert( !::putenv("REMOTE_ADDRESS=") );
-        assert( !::putenv("REQUEST_METHOD=POST") );
-        assert( !::putenv("QUERY_STRING=") );
-        assert( !::putenv("HTTP_COOKIE=") );
+        assert( !X_PUTENV("SERVER_PORT=") );
+        assert( !X_PUTENV("REMOTE_ADDRESS=") );
+        assert( !X_PUTENV("REQUEST_METHOD=POST") );
+        assert( !X_PUTENV("QUERY_STRING=") );
+        assert( !X_PUTENV("HTTP_COOKIE=") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST only)");
 
@@ -385,14 +388,14 @@ static void TestCgi(const CNcbiArguments& args)
         char inp_str[] = "post11=val11&post12void=&post13=val13";
         CNcbiIstrstream istr(inp_str);
         char len[32];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
+        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
         assert( !::putenv(len) );
 
-        assert( !::putenv("SERVER_PORT=") );
-        assert( !::putenv("REMOTE_ADDRESS=") );
-        assert( !::putenv("REQUEST_METHOD=POST") );
-        assert( !::putenv("QUERY_STRING=") );
-        assert( !::putenv("HTTP_COOKIE=") );
+        assert( !X_PUTENV("SERVER_PORT=") );
+        assert( !X_PUTENV("REMOTE_ADDRESS=") );
+        assert( !X_PUTENV("REQUEST_METHOD=POST") );
+        assert( !X_PUTENV("QUERY_STRING=") );
+        assert( !X_PUTENV("HTTP_COOKIE=") );
         TestCgi_Request_Full(&istr, 0, CCgiRequest::fDoNotParseContent);
     } STD_CATCH("TestCgi(POST only)");
 
@@ -400,65 +403,65 @@ static void TestCgi(const CNcbiArguments& args)
         char inp_str[] = "post22void=&post23void=";
         CNcbiIstrstream istr(inp_str);
         char len[32];
-        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)));
+        assert(::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)));
         assert( !::putenv(len) );
 
-        assert( !::putenv("SERVER_PORT=9999") );
-        assert( !::putenv("HTTP_USER_AGENT=MyUserAgent") );
-        assert( !::putenv("HTTP_MY_RANDOM_PROP=MyRandomPropValue") );
-        assert( !::putenv("REMOTE_ADDRESS=130.14.25.129") );
+        assert( !X_PUTENV("SERVER_PORT=9999") );
+        assert( !X_PUTENV("HTTP_USER_AGENT=MyUserAgent") );
+        assert( !X_PUTENV("HTTP_MY_RANDOM_PROP=MyRandomPropValue") );
+        assert( !X_PUTENV("REMOTE_ADDRESS=130.14.25.129") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST + aux. functions)");
 
     // this is for all following tests...
     char inp_str[] = "postXXX=valXXX";
     char len[32];
-    assert( ::sprintf(len, "CONTENT_LENGTH=%ld", (long)::strlen(inp_str)) );
+    assert( ::sprintf(len, "CONTENT_LENGTH=%ld", (long) ::strlen(inp_str)) );
     assert( !::putenv(len) );
 
     try { // POST + ISINDEX(action)
         CNcbiIstrstream istr(inp_str);
-        assert( !::putenv("QUERY_STRING=isidx1+isidx2+isidx3") );
+        assert( !X_PUTENV("QUERY_STRING=isidx1+isidx2+isidx3") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST + ISINDEX(action))");
 
     try { // POST + QUERY(action)
         CNcbiIstrstream istr(inp_str);
-        assert( !::putenv("QUERY_STRING=query1=vv1&query2=") );
+        assert( !X_PUTENV("QUERY_STRING=query1=vv1&query2=") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(POST + QUERY(action))");
 
     try { // GET ISINDEX + COOKIES
         CNcbiIstrstream istr(inp_str);
-        assert( !::putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
-        assert( !::putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
+        assert( !X_PUTENV("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
+        assert( !X_PUTENV("HTTP_COOKIE=cook1=val1; cook2=val2;") );
         TestCgi_Request_Full(&istr, 0, CCgiRequest::fIndexesNotEntries);
     } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
 
     try { // GET REGULAR, NO '='
         CNcbiIstrstream istr(inp_str);
-        assert( !::putenv("QUERY_STRING=get_query1_empty&get_query2_empty") );
+        assert( !X_PUTENV("QUERY_STRING=get_query1_empty&get_query2_empty") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(GET REGULAR, NO '=' )");
 
     try { // GET REGULAR + COOKIES
         CNcbiIstrstream istr(inp_str);
-        assert( !::putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
-        assert( !::putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
+        assert( !X_PUTENV("QUERY_STRING=get_query1=gq1&get_query2=") );
+        assert( !X_PUTENV("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(GET REGULAR + COOKIES)");
 
     try { // ERRONEOUS STDIN
         CNcbiIstrstream istr("123");
-        assert( !::putenv("QUERY_STRING=get_query1=gq1&get_query2=") );
-        assert( !::putenv("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
+        assert( !X_PUTENV("QUERY_STRING=get_query1=gq1&get_query2=") );
+        assert( !X_PUTENV("HTTP_COOKIE=_cook1=_val1;_cook2=_val2") );
         TestCgi_Request_Full(&istr);
     } STD_CATCH("TestCgi(ERRONEOUS STDIN)");
 
     try { // USER INPUT(real STDIN)
-        assert( !::putenv("QUERY_STRING=u_query1=uq1") );
-        assert( !::putenv("HTTP_COOKIE=u_cook1=u_val1; u_cook2=u_val2") );
-        assert( !::putenv("REQUEST_METHOD=POST") );
+        assert( !X_PUTENV("QUERY_STRING=u_query1=uq1") );
+        assert( !X_PUTENV("HTTP_COOKIE=u_cook1=u_val1; u_cook2=u_val2") );
+        assert( !X_PUTENV("REQUEST_METHOD=POST") );
         NcbiCout << "Enter the length of CGI posted data now: " << NcbiFlush;
         long l = 0;
         if (!(NcbiCin >> l)  ||  len < 0) {
@@ -466,8 +469,8 @@ static void TestCgi(const CNcbiArguments& args)
             runtime_error("Invalid length of CGI posted data");
         }
         char cs[32];
-        assert( ::sprintf(cs, "CONTENT_LENGTH=%ld", (long)l) );
-        assert( !::putenv(cs) );
+        assert( ::sprintf(cs, "CONTENT_LENGTH=%ld", (long) l) );
+        assert( !X_PUTENV(cs) );
         NcbiCout << "Enter the CGI posted data now(no spaces): " << NcbiFlush;
         NcbiCin >> NcbiWs;
         TestCgi_Request_Full(0);
@@ -475,12 +478,13 @@ static void TestCgi(const CNcbiArguments& args)
     } STD_CATCH("TestCgi(USER STDIN)");
 
     try { // CMD.-LINE ARGS
-        assert( !::putenv("REQUEST_METHOD=") );
-        assert( !::putenv("QUERY_STRING=MUST NOT BE USED HERE!!!") );
+        assert( !X_PUTENV("REQUEST_METHOD=") );
+        assert( !X_PUTENV("QUERY_STRING=MUST NOT BE USED HERE!!!") );
         TestCgi_Request_Full(&NcbiCin/* dummy */, &args);
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
 
     TestCgiMisc();
+#undef X_PUTENV
 }
 
 
@@ -576,6 +580,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.15  2002/12/30 21:13:29  vakatov
+ * Cosmetics and compiler warning elimination
+ *
  * Revision 1.14  2002/07/10 18:41:53  ucko
  * Drop unnecessary uses of c_str().
  * Adapt slightly for CCgiEntry.
