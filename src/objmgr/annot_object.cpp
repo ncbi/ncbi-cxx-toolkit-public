@@ -521,7 +521,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TDisc& disc =
                 align.GetSegs().GetDisc();
             ITERATE ( CSeq_align_set::Tdata, it, disc.Get() ) {
-                x_ProcessAlign(hrmaps, **it, hrmaps.size());
+                x_ProcessAlign(hrmaps, **it, 0);
             }
             break;
         }
@@ -535,6 +535,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/06/23 19:51:56  vasilche
+* Fixed duplication of discontiguous alignments.
+*
 * Revision 1.40  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *
