@@ -1,4 +1,4 @@
---$Revision: 3.6 $
+--$Revision: 3.7 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -10,7 +10,7 @@
 NCBI-Seqfeat DEFINITIONS ::=
 BEGIN
 
-EXPORTS Seq-feat, Feat-id;
+EXPORTS Seq-feat, Feat-id, Genetic-code;
 
 IMPORTS Gene-ref FROM NCBI-Gene
         Prot-ref FROM NCBI-Protein
