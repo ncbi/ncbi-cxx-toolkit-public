@@ -1,3 +1,5 @@
 PRE     { font-family: Courier; font-size: 11pt; color: #008080; }
 XMP     { font-family: Courier; font-size: 11pt; color: #008080; }
 TT.code { font-family: Courier; font-size: 11pt; color: #008080; }
+VAR     { font-style:italic;}
+EM      { font-style:normal; font-weight:bold;}

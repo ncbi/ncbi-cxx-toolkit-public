@@ -1,0 +1,353 @@
+<!--#set var="TITLE" value="NCBI C++ CGI library" -->
+<!--#set var="DOCROOT" value="../.." -->
+<!--#include virtual="../../ssi/header.shtml" -->
+
+
+<div align="Center">
+<H1>Object Manager.</H1>
+</div>
+<div align="Left">
+<H2>How to use it.</H2>
+</div>
+
+<HR>
+<!-- =================== list of Q =============================== -->
+<OL>
+
+<LI>
+<A HREF="#start">
+Start working with the <VAR>Object Manager</VAR>.
+</A>
+</LI>
+
+<LI>
+<A HREF="#add_tse">
+Add externally created top-level Seq_entry to the <VAR>Scope</VAR>.
+</A>
+</LI>
+
+
+<LI>
+<A HREF="#add_data_loader">
+Add a data loader to the <VAR>Scope</VAR>.
+</A>
+</LI>
+
+
+<LI>
+<A HREF="#add_annot">
+Modify Seq_entry data.
+</A>
+</LI>
+
+
+<LI>
+<A HREF="#find_tse">
+Start working with a Seq_entry, load entry if necessary.
+</A>
+</LI>
+
+
+<LI>
+<A HREF="#seq_vector">
+Access bio sequence data.
+</A>
+</LI>
+
+
+<LI>
+<A HREF="#descriptions">
+Enumerate sequence desciptions.
+</A>
+</LI>
+
+
+<LI>
+<A HREF="#annotations">
+Enumerate sequence annotations.
+</A>
+</LI>
+
+</OL>
+
+
+
+<HR>
+<!-- =================== start =============================== -->
+<H4>
+<A NAME="start">
+Start working with the <VAR>Object Manager</VAR>.
+</A>
+</H4>
+<P>
+Include the necessary headers:
+<PRE>
+#include &lt;objects/objmgr1/object_manager.hpp&gt;
+#include &lt;objects/objmgr1/scope.hpp&gt;
+#include &lt;objects/objmgr1/bioseq_handle.hpp&gt;
+#include &lt;objects/objmgr1/seq_vector.hpp&gt;
+#include &lt;objects/objmgr1/desc_ci.hpp&gt;
+#include &lt;objects/objmgr1/feat_ci.hpp&gt;
+#include &lt;objects/objmgr1/align_ci.hpp&gt;
+</PRE>
+Create <VAR>Object Manager</VAR> as a referenced object on the heap:
+<PRE>
+    CRef&lt;CObjectManager&gt; pObjMgr = new CObjectManager;
+</PRE>
+Create a <VAR>Scope</VAR> of reference resolution. There is a lot
+of freedom in how the <VAR>Scope</VAR>
+can be created: either as an object on the stack, or on the heap, either as
+a referenced or non-referenced object:
+<PRE>
+    CRef&lt;CScope&gt; pScope1 = new CScope(*pObjMgr);
+    CScope Scope2(*pObjMgr);
+    CScope* pScope3 = new CScope(*pObjMgr);
+</PRE>
+</P>
+
+
+<HR>
+<!-- =================== add_tse =============================== -->
+<H4>
+<A NAME="add_tse">
+Add externally created top-level Seq_entry to the <VAR>Scope</VAR>.
+</A>
+</H4>
+<P>
+Once there is a Seq_entry created somehow, it can be added to the
+<VAR>Scope</VAR> using the following:
+<PRE>
+    CRef&lt;CSeq_entry&gt; entry = YourFunctionCallHere();
+    Scope.AddTopLevelSeqEntry(*entry);
+</PRE>
+</P>
+
+
+
+<HR>
+<!-- =================== add_data_loader =============================== -->
+<H4>
+<A NAME="add_data_loader">
+Add a data loader to the <VAR>Scope</VAR>.
+</A>
+</H4>
+<P>
+<VAR>Data loader</VAR> is designed to be a replaceable object.
+There can be a variety of data loaders, each of which would load bio sequence data
+from different databases, flat files, etc. Data loaders are to created by
+client and registered with the <VAR>Object Manager</VAR>.
+One distinguishes them later by their names.
+At present there is only one data loader implemented - the one that
+loads data from the GenBank. Here is how to create and register it:
+<PRE>
+#include &lt;objects/objmgr1/gbloader.hpp&gt;
+#include &lt;objects/objmgr1/reader_id1.hpp&gt;
+...
+    pObjMgr->RegisterDataLoader(*new CGBDataLoader(),CObjectManager::eDefault);
+</PRE>
+There are default and non-default data loaders.
+A <VAR>Scope</VAR> can request a data loader from the
+<VAR>Object Manager</VAR> either one at a time - by name:
+<PRE>
+    Scope.AddDataLoader("GENBANK");
+</PRE>
+or all default data loaders at once:
+<PRE>
+    Scope.AddDefaults();
+</PRE>
+</P>
+
+
+
+<HR>
+<!-- =================== add_annot =============================== -->
+<H4>
+<A NAME="add_annot">
+Modify Seq_entry data.
+</A>
+</H4>
+<P>
+One can modify the Seq_entry data using the following interface of the <VAR>Scope</VAR> object:
+<PRE>
+    // Add annotations to a seq-entry (seq or set)
+    bool AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot);
+    // Add new sub-entry to the existing tree if it is in this scope
+    bool AttachEntry(const CSeq_entry& parent, CSeq_entry& entry);
+    // Add sequence map for a bioseq if it is in this scope
+    bool AttachMap(const CSeq_entry& entry, CSeqMap& seqmap);		 
+    // Add seq-data to a bioseq if it is in this scope
+    bool AttachSeqData(const CSeq_entry& entry, CSeq_data& seq,
+                       TSeqPosition start, TSeqLength length);
+</PRE>
+Once the entry is modified in one <VAR>Scope</VAR>, the changes become visible in
+other <VAR>Scopes</VAR> as well, provided all the <VAR>Scopes</VAR> belong to the same
+<VAR>Object Manager</VAR> of course.
+Please note, all the changes is being made <EM>locally</EM>.
+There is no way this modifications can be uploaded to the source database.
+</P>
+
+
+
+<HR>
+<!-- =================== find_tse =============================== -->
+<H4>
+<A NAME="find_tse">
+Start working with a Seq_entry, load entry if necessary.
+</A>
+</H4>
+<P>
+In order to be able to access Seq_entry data, one has to obtain a
+<VAR>Bioseq handle</VAR> from the Scope, based on a known Seq_id:
+<PRE>
+    CBioseq_Handle handle = Scope.GetBioseqHandle(seqid);
+</PRE>
+It is possible then to get direct access to the Seq_entry data
+by calling either one of these functions:
+<PRE>
+    const CBioseq&   bioseq = handle.GetBioseq();
+    const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
+</PRE>
+</P>
+
+
+
+<HR>
+<!-- =================== seq_vector =============================== -->
+<H4>
+<A NAME="seq_vector">
+Access bio sequence data.
+</A>
+</H4>
+<P>
+The access to the sequence data is provided through the <VAR>Sequence vector</VAR> object,
+which is created by <VAR>Bioseq handle</VAR>:
+<PRE>
+    CSeqVector seq_vec = handle.GetSeqVector();
+</PRE>
+There are basically there functions available:
+<PRE>
+    // Target sequence coding.
+    void SetCoding(TCoding coding);
+    // length of the sequence
+    size_t size(void);
+    // 0-based array of residues
+    TResidue operator[] (int pos);
+</PRE>
+For example:
+<PRE>
+    CSeqVector seq_vec = handle.GetSeqVector();
+    string sout = "";
+    for (size_t i = 0; i < seq_vec.size(); i++) {
+        sout += seq_vec[i];
+    }
+</PRE>
+<VAR>Sequence vector</VAR> is much more than the plain data storage.
+It rather "knows where to find" the data. As a result of a query, it may initiate
+reference resolution process, send requests to the source database for more data etc.
+</P>
+<P>
+There is another useful object, which describes sequence data - <VAR>Sequence map</VAR>.
+It is a collection of <VAR>segments</VAR>, which describe sequence parts in general -
+location and type only, without providing any real data.
+One obtains <VAR>Sequence map</VAR> from a <VAR>Bioseq handle</VAR>:
+<PRE>
+    const CSeqMap& seqmap = handle.GetSeqMap();
+</PRE>
+It is possible then to enumerate all the segments in the map asking their type, length or position.
+<BR>
+For example:
+<PRE>
+    const CSeqMap& seqmap = handle.GetSeqMap();
+    int len = 0;
+    for (size_t i = 0; i < seq_map.size(); i++) {
+        switch (seq_map[i].GetType()) {
+            case CSeqMap::eSeqData:
+                len += seq_map[i].GetLength();
+                break;
+            case CSeqMap::eSeqRef:
+                len += seq_map[i].GetLength();
+                break;
+            case CSeqMap::eSeqGap:
+                len += seq_map[i].GetLength();
+                break;
+            default:
+                break;
+        }
+    }
+</PRE>
+</P>
+
+
+
+<HR>
+<!-- =================== descriptions =============================== -->
+<H4>
+<A NAME="descriptions">
+Enumerate sequence desciptions.
+</A>
+</H4>
+<P>
+Description iterator uses <VAR>Bioseq handle</VAR> to access the sequence data.
+It makes it possible to enumerate all CSeq_descr data objects the sequence refers to.
+<BR>
+Example of usage:
+<PRE>
+    CDesc_CI(const CBioseq_Handle& handle);
+    for (CDesc_CI desc_it(handle); desc_it; ++desc_it) {
+        const CSeq_descr& descr = *desc_it;
+        ... your code here ...
+    }
+</PRE>
+</P>
+
+
+
+
+<HR>
+<!-- =================== annotations =============================== -->
+<H4>
+<A NAME="annotations">
+Enumerate sequence annotations.
+</A>
+</H4>
+<P>
+One may wish to search all top-level seq. entries in the Scope, or only one of them.
+Accordingly, there are two types of constructors of annotation iterator, one may wish to use:
+<BR>
+Feature iterator:
+<PRE>
+    // Search all TSEs in the Scope
+    CFeat_CI(CScope& scope, const CSeq_loc& loc,
+             SAnnotSelector::TFeatChoice feat_choice);
+    // Search only in TSE, which contains the bioseq
+    CFeat_CI(CBioseq_Handle& bioseq, int start, int stop,
+             SAnnotSelector::TFeatChoice feat_choice);
+</PRE>
+Alignment data iterator:
+<PRE>
+    CAlign_CI(CScope& scope, const CSeq_loc& loc);
+    CAlign_CI(CBioseq_Handle& handle, int start, int stop);
+</PRE>
+Graph data iterator:
+<PRE>
+    CGraph_CI(CScope& scope, const CSeq_loc& loc);
+    CGraph_CI(CBioseq_Handle& handle, int start, int stop);
+</PRE>
+<VAR>Start</VAR> and <VAR>stop</VAR> parameters here describe Seq_loc.
+This is made to narrow down possible input seq.location descriptions (Seq_loc).
+<BR>
+Example of usage:
+<PRE>
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
+         feat_it;  ++feat_it) {
+         const CSeq_feat& feat = *feat_it;
+         ... or ...
+         const CSeq_annot& annot = feat_it.GetSeq_annot();
+         ... your code here ...
+    }
+</PRE>
+</P>
+
+
+
+<!--#include virtual="../../ssi/footer.shtml" -->
