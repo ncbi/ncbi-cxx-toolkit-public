@@ -425,6 +425,11 @@ protected:
     virtual I_ITDescriptor* GetImageOrTextDescriptor();
     virtual bool            SkipItem();
 
+    CS_RETCODE my_ct_get_data(CS_COMMAND* cmd, CS_INT item, 
+							  CS_VOID* buffer, 
+							  CS_INT buflen, CS_INT *outlen);
+    CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
+						  CDB_Object* item_buf);
     virtual ~CTL_RowResult();
 
     // data
@@ -434,6 +439,11 @@ protected:
     unsigned int m_NofCols;
     unsigned int m_CmdNum;
     CS_DATAFMT*  m_ColFmt;
+    int          m_BindedCols;
+    CS_VOID**    m_BindItem;
+    CS_INT*      m_Copied;
+    CS_SMALLINT* m_Indicator;
+    unsigned char m_BindBuff[2048];
 };
 
 
@@ -544,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/04/21 20:17:06  soussov
+ * Buffering fetched result to avoid ct_get_data performance issue
+ *
  * Revision 1.13  2003/04/01 20:26:24  vakatov
  * Temporarily rollback to R1.11 -- until more backward-incompatible
  * changes (in CException) are ready to commit (to avoid breaking the

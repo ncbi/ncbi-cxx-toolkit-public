@@ -66,6 +66,9 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
     }
     m_CmdNum = cmd_num;
 
+	CS_INT bind_len= 0;
+	m_BindedCols= 0;
+
     m_ColFmt = new CS_DATAFMT[m_NofCols];
     for (unsigned int nof_items = 0;  nof_items < m_NofCols;  nof_items++) {
         if (ct_describe(m_Cmd, (CS_INT) nof_items + 1, &m_ColFmt[nof_items])
@@ -73,7 +76,22 @@ CTL_RowResult::CTL_RowResult(CS_COMMAND* cmd)
             throw CDB_ClientEx(eDB_Error, 130002, "::CTL_RowResult",
                                "ct_describe failed");
         }
+		bind_len+= m_ColFmt[nof_items].maxlength;
+		if(bind_len <= 2048) m_BindedCols++;
     }
+	if(m_BindedCols) {
+	    m_BindItem= new CS_VOID*[m_BindedCols];
+		m_Copied= new CS_INT[m_BindedCols];
+		m_Indicator= new CS_SMALLINT[m_BindedCols];
+		for(int i= 0; i < m_BindedCols; i++) {
+		  m_BindItem[i]= i? ((unsigned char*)(m_BindItem[i-1])) + m_ColFmt[i-1].maxlength : m_BindBuff;
+		  if(ct_bind(m_Cmd, i+1, &m_ColFmt[i], m_BindItem[i], &m_Copied[i], &m_Indicator[i]) 
+			 != CS_SUCCEED) {
+            throw CDB_ClientEx(eDB_Error, 130042, "::CTL_RowResult",
+                               "ct_bind failed");
+		  }
+		}
+	}
 }
 
 
@@ -167,10 +185,33 @@ int CTL_RowResult::CurrentItemNo() const
     return m_CurrItem;
 }
 
+CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item, 
+										 CS_VOID* buffer, 
+										 CS_INT buflen, CS_INT *outlen)
+{
+  if(item > m_BindedCols)
+	return ct_get_data(cmd, item, buffer, buflen, outlen);
+
+  --item;
+
+  if((m_Indicator[item] < 0) || ((CS_INT)m_Indicator[item] >= m_Copied[item])) {
+	if(outlen) *outlen= 0;
+	return CS_END_ITEM;
+  }
+
+  if(!buffer || (buflen < 1)) return CS_SUCCEED;
+
+  CS_INT n= m_Copied[item] - m_Indicator[item];
+  if(buflen > n) buflen= n;
+  memcpy(buffer, (char*)(m_BindItem[item]) + m_Indicator[item], buflen);
+  if(outlen) *outlen= buflen;
+  m_Indicator[item]+= buflen;
+  return (n == buflen)? CS_END_ITEM : CS_SUCCEED;
+}
 
 // Aux. for CTL_RowResult::GetItem()
-static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
-                             CDB_Object* item_buf)
+CDB_Object* CTL_RowResult::s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
+									 CDB_Object* item_buf)
 {
     CS_INT outlen = 0;
     char buffer[2048];
@@ -188,7 +229,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         char* v = (fmt.maxlength < (CS_INT) sizeof(buffer))
             ? buffer : new char[fmt.maxlength + 1];
 
-        switch ( ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -242,7 +283,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_BIT v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -294,7 +335,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
 
         char* v = fmt.maxlength < 2048
             ? buffer : new char[fmt.maxlength + 1];
-        switch ( ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, v, fmt.maxlength, &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -352,7 +393,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_DATETIME v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -394,7 +435,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_DATETIME4 v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -443,7 +484,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_TINYINT v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -491,7 +532,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_SMALLINT v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -535,7 +576,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_INT v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -570,7 +611,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_NUMERIC v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -626,7 +667,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_FLOAT v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -661,7 +702,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         }
 
         CS_REAL v;
-        switch ( ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
+        switch ( my_ct_get_data(cmd, item_no, &v, (CS_INT) sizeof(v), &outlen) ) {
         case CS_SUCCEED:
         case CS_END_ITEM:
         case CS_END_DATA: {
@@ -701,7 +742,7 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
             :                                  (CDB_Stream*) new CDB_Image;
 
         for (;;) {
-            switch ( ct_get_data(cmd, item_no, buffer, 2048, &outlen) ) {
+            switch ( my_ct_get_data(cmd, item_no, buffer, 2048, &outlen) ) {
             case CS_SUCCEED:
                 if (outlen != 0)
                     val->Append(buffer, outlen);
@@ -756,7 +797,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
 	buffer= (void*)(&buffer_size);
     }
 
-    switch ( ct_get_data(m_Cmd, m_CurrItem+1, buffer, (CS_INT) buffer_size,
+    switch ( my_ct_get_data(m_Cmd, m_CurrItem+1, buffer, (CS_INT) buffer_size,
                          &outlen) ) {
     case CS_END_ITEM:
     case CS_END_DATA:
@@ -786,7 +827,7 @@ I_ITDescriptor* CTL_RowResult::GetImageOrTextDescriptor()
     }
 
     char dummy[4];
-    switch ( ct_get_data(m_Cmd, m_CurrItem+1, dummy, 0, 0) ) {
+    switch ( my_ct_get_data(m_Cmd, m_CurrItem+1, dummy, 0, 0) ) {
     case CS_END_ITEM:
     case CS_END_DATA:
     case CS_SUCCEED:
@@ -832,6 +873,11 @@ CTL_RowResult::~CTL_RowResult()
     if ( m_ColFmt ) {
         delete[] m_ColFmt;
     }
+	if(m_BindedCols) {
+	  delete [] m_BindItem;
+	  delete [] m_Copied;
+	  delete [] m_Indicator;
+	}
 
     if ( m_EOR ) {
         return;
@@ -887,7 +933,7 @@ bool CTL_CursorResult::SkipItem()
     if (m_CurrItem < (int) m_NofCols) {
         ++m_CurrItem;
 	char dummy[4];
-	switch ( ct_get_data(m_Cmd, m_CurrItem, dummy, 0, 0) ) {
+	switch ( my_ct_get_data(m_Cmd, m_CurrItem, dummy, 0, 0) ) {
 	case CS_END_ITEM:
 	case CS_END_DATA:
 	case CS_SUCCEED:
@@ -949,6 +995,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/04/21 20:18:14  soussov
+ * Buffering fetched result to avoid ct_get_data performance issue
+ *
  * Revision 1.15  2003/01/03 21:47:42  soussov
  * set m_CurrItem = -1 if fetch failes
  *
