@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/06 22:21:57  kholodov
+* Reformatted the source code
+*
 * Revision 1.1  2002/01/30 14:51:21  kholodov
 * User DBAPI implementation, first commit
 *
@@ -42,52 +45,49 @@
 #include "ds_impl.hpp"
 #include "conn_impl.hpp"
 #include "dbexception.hpp"
-//#include <dbapi/driver/public.hpp>
-#include <dbapi/driver/ctlib/interfaces.hpp>
 
 
-CDataSource::CDataSource(I_DriverContext *ctx,
-			 CNcbiOstream *out)
-  : m_loginTimeout(30), m_context(ctx), m_poolUsed(false)
+CDataSource::CDataSource(I_DriverContext *ctx, CNcbiOstream *out)
+    : m_loginTimeout(30), m_context(ctx), m_poolUsed(false)
 {
 
-  SetLogStream(out);
+    SetLogStream(out);
 }
 
 CDataSource::~CDataSource()
 {
-  Notify(CDbapiDeletedEvent(this));
-  delete m_context;
+    Notify(CDbapiDeletedEvent(this));
+    delete m_context;
 }
 
 void CDataSource::SetLoginTimeout(unsigned int i) 
 {
-  m_loginTimeout = i;
-  if( m_context != 0 ) {
-    m_context->SetLoginTimeout(i);
-  }
+    m_loginTimeout = i;
+    if( m_context != 0 ) {
+        m_context->SetLoginTimeout(i);
+    }
 }
 
 void CDataSource::SetLogStream(CNcbiOstream* out) 
 {
-  if( out != 0 ) {
-    CDB_UserHandler *newH = new CDB_UserHandler_Stream(out);
-    CDB_UserHandler *h = CDB_UserHandler::SetDefault(newH);
-    delete h;
-  }
+    if( out != 0 ) {
+        CDB_UserHandler *newH = new CDB_UserHandler_Stream(out);
+        CDB_UserHandler *h = CDB_UserHandler::SetDefault(newH);
+        delete h;
+    }
 }
 
 IConnection* CDataSource::CreateConnection()
 {
-  CConnection *ci = new CConnection(this);
-  AddListener(ci);
-  return ci;
+    CConnection *ci = new CConnection(this);
+    AddListener(ci);
+    return ci;
 }
 
 void CDataSource::Action(const CDbapiEvent& e) 
 {
-  if( dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-    RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
-  }
+    if( dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+    }
 }
 
