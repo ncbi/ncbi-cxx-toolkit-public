@@ -276,6 +276,9 @@ void
 SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
              const CBlastQueryInfo& qinfo, BLAST_SequenceBlk** seqblk)
 {
+    ASSERT(seqblk);
+    ASSERT(queries.size() != 0);
+
     EProgram prog = options.GetProgram();
 
     // Determine sequence encoding
@@ -410,6 +413,7 @@ SetupSubjects(const TSeqLocVector& subjects,
     ASSERT(options);
     ASSERT(seqblk_vec);
     ASSERT(max_subjlen);
+    ASSERT(subjects.size() != 0);
 
     EProgram prog = options->GetProgram();
     // Nucleotide subject sequences are stored in ncbi2na format, but the
@@ -641,7 +645,7 @@ FindGeneticCode(int genetic_code)
 
     try {
         retval = new Uint1[nconv];
-    } catch (bad_alloc&) {
+    } catch (const bad_alloc&) {
         return NULL;
     }
 
@@ -791,6 +795,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/10/22 14:21:55  camacho
+* Added sanity checking assertions
+*
 * Revision 1.41  2003/10/21 13:04:54  camacho
 * Fix bug in SetupSubjects, use sequence blk set functions
 *
