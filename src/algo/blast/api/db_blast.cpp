@@ -203,11 +203,6 @@ compare_hsplist_hspcnt(const void* v1, const void* v2)
 /** Removes extra results if a limit is imposed on the total number of HSPs
  * returned. Makes sure that at least 1 HSP is still returned for each
  * database sequence hit. 
- * 
- * @param results All results from a BLAST run [in] [out]
- * @param total_hsp_limit Maximal number of HSPs to return per query 
- *                        sequence. No bound if 0. [in]
- * @return Has the HSP limit been exceeded? 
  */
 void 
 CDbBlast::TrimBlastHSPResults()
@@ -314,6 +309,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/03/16 14:45:28  dondosha
+ * Removed doxygen comments for nonexisting parameters
+ *
  * Revision 1.17  2004/03/15 19:57:00  dondosha
  * Merged TwoSequences and Database engines
  *
