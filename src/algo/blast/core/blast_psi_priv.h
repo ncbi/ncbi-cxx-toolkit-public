@@ -222,18 +222,42 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights);
 #define PSIERR_NOFREQRATIOS     (-4)   
 /** Positive average score found when scaling matrix */
 #define PSIERR_POSITIVEAVGSCORE (-5)   
+/** After purge stage of PSSM creation, no sequences are left */
+#define PSIERR_NOALIGNEDSEQS    (-6)
+/** GAP residue found in query sequence */
+#define PSIERR_GAPINQUERY       (-7)
+/** Found an entire column with no participating sequences */
+#define PSIERR_UNALIGNEDCOLUMN  (-8)
+/** Found an entire column full of GAP residues */
+#define PSIERR_COLUMNOFGAPS     (-9)
+/** Found flanking gap at start of alignment */
+#define PSIERR_STARTINGGAP      (-10)
+/** Found flanking gap at end of alignment */
+#define PSIERR_ENDINGGAP        (-11)
 
 /****************************************************************************/
 /* Function prototypes for the various stages of the PSSM generation engine */
 
 /** Main function for keeping only those selected sequences for PSSM
- * construction (stage 2)
- * FIXME: add boolean flag for custom selection of sequences?
+ * construction (stage 2). After this function the multiple sequence alignment
+ * data will not be modified.
+ * N.B.: If ignore_consensus is TRUE, the function _PSIPurgeAlignedRegion
+ * should have been called before this function.
  * @return PSIERR_BADPARAM if alignment is NULL
  *         PSI_SUCCESS otherwise
  */
 int 
 _PSIPurgeBiasedSegments(_PSIMsa* msa);
+
+/** Main validation function for multiple sequence alignment structure. Should
+ * be called after _PSIPurgeBiasedSegments.
+ * @param msa multiple sequence alignment data structure [in]
+ * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @return One of the errors defined above if validation fails or bad
+ * parameter is passed in, else PSI_SUCCESS
+ */
+int
+_PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus);
 
 /** Main function to compute aligned blocks for each position within multiple 
  * alignment (stage 3) 
@@ -245,10 +269,13 @@ _PSIComputeAlignmentBlocks(const _PSIMsa* msa,                  /* [in] */
                            _PSIAlignedBlock* aligned_block);    /* [out] */
 
 /** Main function to calculate the sequence weights. Should be called with the
- * return value of PSIComputeAlignmentBlocks (stage 4) */
+ * return value of PSIComputeAlignmentBlocks (stage 4)
+ * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ */
 int
 _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
                            const _PSIAlignedBlock* aligned_blocks,  /* [in] */
+                           Boolean ignore_consensus,                /* [in] */
                           _PSISequenceWeights* seq_weights);        /* [out] */
 
 /** Main function to compute the residue frequencies for the PSSM (stage 5) */
@@ -412,6 +439,11 @@ _PSICalculateInformationContentFromResidueFreqs(
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2004/10/18 14:33:14  camacho
+ * 1. Added validation routines
+ * 2. Fixed bug in calculating sequence weights
+ * 3. Expanded error codes
+ *
  * Revision 1.13  2004/08/31 16:13:28  camacho
  * Documentation changes
  *

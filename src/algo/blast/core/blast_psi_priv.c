@@ -322,6 +322,9 @@ _PSIAlignedBlockNew(Uint4 num_positions)
         return _PSIAlignedBlockFree(retval);
     }
 
+    /* N.B.: these initial values are deliberate so that the retval->size[i]
+     * field is initialized with a value that exceeds num_positions in
+     * _PSIComputeAlignedRegionLengths and can be used as a sanity check */
     for (i = 0; i < num_positions; i++) {
         retval->pos_extnt[i].left = -1;
         retval->pos_extnt[i].right = num_positions;
@@ -439,6 +442,238 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
     return NULL;
 }
 
+#ifdef DEBUG
+static char getRes(char input)
+{
+    switch (input) {
+    case 0: return ('-');
+    case 1: return ('A');
+    case 2: return ('B');
+    case 3: return ('C');
+    case 4: return ('D');
+    case 5: return ('E');
+    case 6: return ('F');
+    case 7: return ('G');
+    case 8: return ('H');
+    case 9: return ('I');
+    case 10: return ('K');
+    case 11: return ('L');
+    case 12: return ('M');
+    case 13: return ('N');
+    case 14: return ('P');
+    case 15: return ('Q');
+    case 16: return ('R');
+    case 17: return ('S');
+    case 18: return ('T');
+    case 19: return ('V');
+    case 20: return ('W');
+    case 21: return ('X');
+    case 22: return ('Y');
+    case 23: return ('Z');
+    case 24: return ('U');
+    case 25: return ('*');
+    default: return ('?');
+    }
+}
+
+static void
+_DEBUG_printMsa(const char* filename, const _PSIMsa* msa)
+{
+    Uint4 i, j;
+    FILE* fp = NULL;
+
+    ASSERT(msa);
+    ASSERT(filename);
+
+    fp = fopen(filename, "w");
+
+    for (i = 0; i < msa->dimensions->num_seqs + 1; i++) {
+        /*fprintf(fp, "%3d\t", i);*/
+        for (j = 0; j < msa->dimensions->query_length; j++) {
+            if (msa->cell[i][j].is_aligned) {
+                fprintf(fp, "%c", getRes(msa->cell[i][j].letter));
+            } else {
+                fprintf(fp, ".");
+            }
+        }
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+}
+#endif
+
+/************** Validation routines *****************************************/
+
+/** Validate that there are no gaps in the query sequence
+ * @param msa multiple sequence alignment data structure [in]
+ * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @return PSIERR_GAPINQUERY if validation fails, else PSI_SUCCESS
+ */
+static int
+_PSIValidateNoGapsInQuery(const _PSIMsa* msa, Boolean ignore_consensus)
+{
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    Uint4 p = 0;            /* index on positions sequences */
+    ASSERT(msa);
+
+    if (ignore_consensus) {
+        return PSI_SUCCESS;
+    }
+
+    for (p = 0; p < msa->dimensions->query_length; p++) {
+        if (msa->cell[kQueryIndex][p].letter == GAP || msa->query[p] == GAP) {
+            return PSIERR_GAPINQUERY;
+        }
+    }
+    return PSI_SUCCESS;
+}
+
+/** Validate that there are no flanking gaps in the multiple sequence alignment
+ * @param msa multiple sequence alignment data structure [in]
+ * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @return PSIERR_STARTINGGAP or PSIERR_ENDINGGAP if validation fails, 
+ * else PSI_SUCCESS
+ */
+static int
+_PSIValidateNoFlankingGaps(const _PSIMsa* msa, Boolean ignore_consensus)
+{
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    Uint4 s = 0;            /* index on sequences */
+    Uint4 p = 0;            /* index on positions sequences */
+    ASSERT(msa);
+
+    /* Look for starting gaps in alignments */
+    s = ignore_consensus ? 1 : 0;
+    for ( ; s < msa->dimensions->num_seqs + 1; s++) {
+        /* find the first aligned residue */
+        for (p = 0; p < msa->dimensions->query_length; p++) {
+            if (msa->cell[s][p].is_aligned) {
+                if (msa->cell[s][p].letter == GAP) {
+                    return PSIERR_STARTINGGAP;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    /* Look for ending gaps in alignments */
+    s = ignore_consensus ? 1 : 0;
+    for ( ; s < msa->dimensions->num_seqs + 1; s++) {
+        /* find the first aligned residue */
+        for (p = msa->dimensions->query_length - 1; p >= 0; p--) {
+            if (msa->cell[s][p].is_aligned) {
+                if (msa->cell[s][p].letter == GAP) {
+                    return PSIERR_ENDINGGAP;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    return PSI_SUCCESS;
+}
+
+/** Validate that there are no unaligned columns or columns which only contain
+ * gaps in the multiple sequence alignment.
+ * @param msa multiple sequence alignment data structure [in]
+ * @param ignore_consensus TRUE if query sequence should be ignored [in]
+ * @return PSIERR_UNALIGNEDCOLUMN or PSIERR_COLUMNOFGAPS if validation fails, 
+ * else PSI_SUCCESS
+ */
+static int
+_PSIValidateAlignedColumns(const _PSIMsa* msa, Boolean ignore_consensus)
+{
+    const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
+    Uint4 s = 0;            /* index on sequences */
+    Uint4 p = 0;            /* index on positions sequences */
+    ASSERT(msa);
+
+    for (p = 0; p < msa->dimensions->query_length; p++) {
+
+        Boolean found_aligned_sequence = FALSE;
+        Boolean found_non_gap_residue = FALSE;
+        s = ignore_consensus ? 1 : 0;
+
+        for ( ; s < msa->dimensions->num_seqs + 1; s++) {
+
+            if (msa->cell[s][p].is_aligned) {
+                found_aligned_sequence = TRUE;
+                if (msa->cell[s][p].letter != GAP) {
+                    found_non_gap_residue = TRUE;
+                    break;
+                }
+            }
+        }
+        if ( !found_aligned_sequence ) {
+            return PSIERR_UNALIGNEDCOLUMN;
+        }
+        if ( !found_non_gap_residue ) {
+            return PSIERR_COLUMNOFGAPS;
+        }
+    }
+
+    return PSI_SUCCESS;
+}
+
+/** Verify that after purging biased sequences in multiple sequence alignment
+ * there are still sequences participating in the multiple sequences alignment
+ * @todo merge with validation performed at the PSSM engine level. Will need to
+ * pass Blast_Message to provide informative error messages.
+ * @param msa multiple sequence alignment structure [in]
+ * @return PSIERR_NOALIGNEDSEQS if validation fails, else PSI_SUCCESS
+ */
+static int
+_PSIValidateParticipatingSequences(const _PSIMsa* msa)
+{
+    Uint4 s = 0;            /* index on aligned sequences */
+    ASSERT(msa);
+
+    for (s = 0; s < msa->dimensions->num_seqs + 1; s++) {
+        if (msa->use_sequence[s]) {
+            break;
+        }
+    }
+
+    if (s == msa->dimensions->num_seqs + 1) { /* break was never executed */
+        return PSIERR_NOALIGNEDSEQS;
+    } else {
+        return PSI_SUCCESS;
+    }
+}
+
+int
+_PSIValidateMSA(const _PSIMsa* msa, Boolean ignore_consensus)
+{
+    int retval = PSI_SUCCESS;
+
+    if ( !msa ) {
+        return PSIERR_BADPARAM;
+    }
+
+    retval = _PSIValidateNoFlankingGaps(msa, ignore_consensus);
+    if (retval != PSI_SUCCESS) {
+        return retval;
+    }
+
+    retval = _PSIValidateAlignedColumns(msa, ignore_consensus);
+    if (retval != PSI_SUCCESS) {
+        return retval;
+    }
+
+    retval = _PSIValidateNoGapsInQuery(msa, ignore_consensus);
+    if (retval != PSI_SUCCESS) {
+        return retval;
+    }
+
+    retval = _PSIValidateParticipatingSequences(msa);
+    if (retval != PSI_SUCCESS) {
+        return retval;
+    }
+
+    return retval;
+}
 
 /****************************************************************************/
 /* Function prototypes */
@@ -484,8 +719,6 @@ _PSIPurgeSelfHits(_PSIMsa* msa)
 
     ASSERT(msa);
 
-    /* FIXME: change this to implement "exclude the query" option for structure
-     * group */
     for (s = kQueryIndex + 1; s < msa->dimensions->num_seqs + 1; s++) {
         _PSIPurgeSimilarAlignments(msa, kQueryIndex, s, kPSIIdentical);
     }
@@ -515,6 +748,7 @@ _PSIPurgeNearIdenticalAlignments(_PSIMsa* msa)
  * present in each position of the query.
  * Should be called after multiple alignment data has been purged from biased
  * sequences.
+ * @param msa multiple sequence alignment structure [in]
  */
 void
 _PSIUpdatePositionCounts(_PSIMsa* msa)
@@ -925,11 +1159,13 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
     ASSERT(msa);
     ASSERT(aligned_blocks);
 
-    /* FIXME: pos_extnt[i].left should not be -1? */
-    /* FIXME: pos_extnt[i].right should not be query_length? */
     for (i = 0; i < msa->dimensions->query_length; i++) {
         aligned_blocks->size[i] = aligned_blocks->pos_extnt[i].right - 
                                    aligned_blocks->pos_extnt[i].left + 1;
+
+        /* Sanity check: if aligned_blocks->pos_extnt[i].{right,left} was not
+         * modified after initialization, this assertion will fail */
+        ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
     }
 
     /* Do not include X's in aligned region lengths */
@@ -952,11 +1188,6 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
             }
         }
 
-    }
-    
-    /* Sanity check */
-    for (i = 0; i < msa->dimensions->query_length; i++) {
-        ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
     }
 }
 
@@ -986,12 +1217,14 @@ _PSICalculateMatchWeights(
 
 static void
 _PSISpreadGapWeights(const _PSIMsa* msa,
-                     _PSISequenceWeights* seq_weights);
+                     _PSISequenceWeights* seq_weights,
+                     Boolean ignore_consensus);
 
 static int
 _PSICheckSequenceWeights(
     const _PSIMsa* msa,         /* [in] */
-    const _PSISequenceWeights* seq_weights);    /* [in] */
+    const _PSISequenceWeights* seq_weights,
+    Boolean ignore_consensus);    /* [in] */
 
 /****************************************************************************/
 /******* Calculate sequence weights stage of PSSM creation ******************/
@@ -1001,6 +1234,7 @@ _PSICheckSequenceWeights(
 int
 _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
                            const _PSIAlignedBlock* aligned_blocks,  /* [in] */
+                           Boolean ignore_consensus,                /* [in] */
                            _PSISequenceWeights* seq_weights)        /* [out] */
 {
     Uint4* aligned_seqs = NULL;     /* list of indices of sequences
@@ -1008,6 +1242,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
                                        aligned position */
     Uint4 pos = 0;                  /* position index */
     int retval = PSI_SUCCESS;       /* return value */
+    const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
 
     ASSERT(msa);
     ASSERT(aligned_blocks);
@@ -1024,8 +1259,8 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
         Uint4 num_aligned_seqs = 0;
 
         /* ignore positions of no interest */
-        if (aligned_blocks->size[pos] == 0 || msa->num_matching_seqs[pos] <= 1) {
-        /* FIXME: num_matching_seqs could be 0 if ignore_query */
+        if (aligned_blocks->size[pos] == 0 || 
+            msa->num_matching_seqs[pos] <= kExpectedNumMatchingSeqs) {
             continue;
         }
 
@@ -1035,7 +1270,7 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
         num_aligned_seqs = _PSIGetAlignedSequencesForPosition(msa, pos,
                                                               aligned_seqs);
         ASSERT(msa->num_matching_seqs[pos] == num_aligned_seqs);
-        if (num_aligned_seqs <= 1) {
+        if (num_aligned_seqs <= kExpectedNumMatchingSeqs) {
             continue;
         }
 
@@ -1057,14 +1292,14 @@ _PSIComputeSequenceWeights(const _PSIMsa* msa,                      /* [in] */
     sfree(aligned_seqs);
 
     /* Check that the sequence weights add up to 1 in each column */
-    retval = _PSICheckSequenceWeights(msa, seq_weights);
+    retval = _PSICheckSequenceWeights(msa, seq_weights, ignore_consensus);
     if (retval != PSI_SUCCESS) {
         return retval;
     }
 
 #ifndef PSI_IGNORE_GAPS_IN_COLUMNS
-    _PSISpreadGapWeights(msa, seq_weights);
-    retval = _PSICheckSequenceWeights(msa, seq_weights);
+    _PSISpreadGapWeights(msa, seq_weights, ignore_consensus);
+    retval = _PSICheckSequenceWeights(msa, seq_weights, ignore_consensus);
 #endif
 
     /* Return seq_weights->match_weigths, should free others? FIXME: need to
@@ -1275,19 +1510,21 @@ _PSIGetAlignedSequencesForPosition(const _PSIMsa* msa,
 /* The second parameter is not really const, it's updated! */
 static void
 _PSISpreadGapWeights(const _PSIMsa* msa,
-                     _PSISequenceWeights* seq_weights)
+                     _PSISequenceWeights* seq_weights,
+                     Boolean ignore_consensus)
 {
     const Uint1 GAP = AMINOACID_TO_NCBISTDAA['-'];
     const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 pos = 0;   /* residue position (ie: column number) */
     Uint4 res = 0;   /* residue */
+    const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
 
     ASSERT(msa);
     ASSERT(seq_weights);
 
     for (pos = 0; pos < msa->dimensions->query_length; pos++) {
 
-        if (msa->num_matching_seqs[pos] <= 1 &&
+        if (msa->num_matching_seqs[pos] <= kExpectedNumMatchingSeqs ||
             msa->cell[kQueryIndex][pos].letter == X) {
             continue;
         }
@@ -1309,11 +1546,13 @@ _PSISpreadGapWeights(const _PSIMsa* msa,
  * structure adds up to 1. */
 static int
 _PSICheckSequenceWeights(const _PSIMsa* msa,
-                         const _PSISequenceWeights* seq_weights)
+                         const _PSISequenceWeights* seq_weights,
+                         Boolean ignore_consensus)
 {
     const Uint1 X = AMINOACID_TO_NCBISTDAA['X'];
     Uint4 pos = 0;   /* residue position (ie: column number) */
     Boolean check_performed = FALSE;  /* were there any sequences checked? */
+    const Uint4 kExpectedNumMatchingSeqs = ignore_consensus ? 0 : 1;
 
     ASSERT(msa);
     ASSERT(seq_weights);
@@ -1323,8 +1562,7 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
         double running_total = 0.0;
         Uint4 residue = 0;
 
-        /* FIXME: num_matching_seqs might be 0 if ignore_consensus... */
-        if (msa->num_matching_seqs[pos] <= 1 ||
+        if (msa->num_matching_seqs[pos] <= kExpectedNumMatchingSeqs ||
             msa->cell[kQueryIndex][pos].letter == X) {
             continue;
         }
@@ -1342,8 +1580,7 @@ _PSICheckSequenceWeights(const _PSIMsa* msa,
     /* This condition should never happen because it means that no sequences
      * were selected to calculate the sequence weights! */
     if ( !check_performed ) {
-        /* FIXME: need to return some error code */
-        abort();
+        assert(!"Did not perform sequence weights check");
     }
 
     return PSI_SUCCESS;
@@ -1921,10 +2158,7 @@ _PSIPurgeAlignedRegion(_PSIMsa* msa,
     if (!msa)
         return PSIERR_BADPARAM;
 
-    /* Cannot remove the query sequence from multiple alignment data or
-       bad index FIXME "exclude query" option for structure group */
-    if (seq_index == kQueryIndex || 
-        seq_index > msa->dimensions->num_seqs + 1 ||
+    if (seq_index > msa->dimensions->num_seqs + 1 ||
         stop > msa->dimensions->query_length)
         return PSIERR_BADPARAM;
 
@@ -2070,6 +2304,11 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/10/18 14:33:14  camacho
+ * 1. Added validation routines
+ * 2. Fixed bug in calculating sequence weights
+ * 3. Expanded error codes
+ *
  * Revision 1.28  2004/10/13 16:03:00  camacho
  * Add assertions as sanity checks
  *
