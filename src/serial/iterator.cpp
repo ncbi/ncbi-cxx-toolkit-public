@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/09 16:38:40  vasilche
+* Fixed error on WorkShop compiler: static functions are unusable from templates.
+*
 * Revision 1.15  2000/11/09 15:21:40  vasilche
 * Fixed bugs in iterators.
 * Added iterator constructors from CObjectInfo.
@@ -255,8 +258,7 @@ bool CConstTreeLevelIterator::HaveChildren(const CConstObjectInfo& object)
     }
 }
 
-static
-bool ContainsType(const CConstObjectInfo& object,
+bool s_ContainsType(const CConstObjectInfo& object,
                   TTypeInfo needType)
 {
     if ( object.GetTypeInfo()->IsType(needType) )
@@ -265,7 +267,7 @@ bool ContainsType(const CConstObjectInfo& object,
     case eTypeFamilyClass:
         for ( CConstObjectInfo::CMemberIterator m(object); m; ++m ) {
             if ( m.GetMemberInfo()->GetTypeInfo()->MayContainType(needType) &&
-                 ContainsType(*m, needType) )
+                 s_ContainsType(*m, needType) )
                 return true;
         }
         return false;
@@ -275,13 +277,13 @@ bool ContainsType(const CConstObjectInfo& object,
                 object.GetCurrentChoiceVariant();
             return v &&
                 v.GetVariantInfo()->GetTypeInfo()->MayContainType(needType) &&
-                ContainsType(*v, needType);
+                s_ContainsType(*v, needType);
         }
     case eTypeFamilyPointer:
-        return ContainsType(object.GetPointedObject(), needType);
+        return s_ContainsType(object.GetPointedObject(), needType);
     case eTypeFamilyContainer:
         for ( CConstObjectInfo::CElementIterator e(object); e; ++e ) {
-            if ( ContainsType(*e, needType) )
+            if ( s_ContainsType(*e, needType) )
                 return true;
         }
         return false;
@@ -469,7 +471,7 @@ template<class Parent>
 bool CLeafTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
     return CParent::CanSelect(object) &&
-        ContainsType(object, GetIteratorType());
+        s_ContainsType(object, GetIteratorType());
 }
 
 template<class Parent>
