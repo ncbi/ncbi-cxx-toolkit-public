@@ -1112,15 +1112,24 @@ After the installation is complete you can build the Toolkit projects in two dif
 		following projects:
 	<ul>
   		<li> <b>all</b> -- everything
-  		<li> <b>core_all</b> -- all basic libraries and test applications
-  		<li> <b>core_libs</b> -- all basic libraries
-  		<li> <b>core_objects_all</b> -- all serialization libraries (as of now,
+  		<li> <b>all_core</b> -- all basic libraries and test applications
+  		<li> <b>all_core_libs</b> -- all basic libraries
+  		<li> <b>all_objects</b> -- all serialization libraries (as of now,
 		  	providing for the serialization of NCBI ASN.1 objects), and their test applications
+  		<li> <b>all_objects_libs</b> -- serialization libraries only
+  		<li> <b>all_gui</b> -- all GUI stuff (libraries plus applications)
+  		<li> <b>all_gui_libs</b> -- GUI libraries only
+  		<li> <b>all_tools</b> -- non-graphics tools and their related libraries
+  		<li> <b>all_tools_libs</b> -- non-graphics libraries only  		
   		<li> any single library and/or application -- other projects in this workspace</li>
    	</ul>
     	You can build <i>any</i> project in any of Debug and/or Release versions. To switch among Debug or
 		Release configurations, use <i>"Build"/"Set active configuration..."</i> menu.
+		<br>If the Toolkit tree was extracted by the script <i>cvs_core.sh</i> with option <i>--without-objects</i>,
+		then the target <b>all</b> is made nearly equivalent to <b>all_core</b> because almost every other project requires
+		serialization libraries (<i>objects</i>) to be present.
 </ul>
+
 
 <p>
 
@@ -1163,7 +1172,7 @@ the proper links to required versions of the libraries are automatically maintai
 <p>
 If, however, you need to trace through the library source code, then you have to put
 <i>\\dizzy\public\cxx\<b>src</b></i> to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>,
-and list <i>"Source files"</i>.
+list <i>"Source files"</i>.
 <p>
 In either case, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
 to make sure that it is built compatible with the chosen NCBI C++ libraries.
@@ -1174,7 +1183,7 @@ to make sure that it is built compatible with the chosen NCBI C++ libraries.
 </a>
 
 <p>
-The pre-built versions of this library (with, however, class <tt>wxSocket</tt> disabled by <tt>#define wxUSE_SOCKETS 0</tt>
+The pre-built versions of this library (with, however, <tt>class wxSocket</tt> disabled by <tt>#define wxUSE_SOCKETS 0</tt>
 in the include file <b>include\wx\msw\setup.h</b>), along with include files, sources, documentation and project files,
 which we provide, are all put to:
 <ul>
@@ -1221,7 +1230,7 @@ Moreover, if one of <a href="msvc_prj.html#scripts">conversion scripts</a> is th
 the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
 <p>
 If, however, you need to trace through the library source code, you have to put <i>\\dizzy\public\wxwin\<b>src</b></i>
-to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, and list <i>"Source files"</i>.
+to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, list <i>"Source files"</i>.
 <p>
 You may have a local copy of wxWindows package, which has to be installed in directory
 <tt>wxwin</tt> at exactly the same level where the NCBI C++ Toolkit is installed (that is, their upper level
@@ -1286,12 +1295,9 @@ list <i>"Additional include directories"</i>.
 For example, here are the paths to the automatically built C Toolkit:
 <ul>
   <li> <i>\\dizzy\public\<b>include</b></i>
-  <li> <i>\\dizzy\public\<b>src</b></i> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-			 (also <i>\\dizzy\public\<b>altsrc</b></i>)
-  <li> <i>\\dizzy\public\<b>ReleaseMT</b></i> &nbsp;&nbsp;
-			 (also <i>\\dizzy\public\<b>lib</b></i>)
-  <li> <i>\\dizzy\public\<b>DebugMT</b></i> &nbsp;&nbsp;&nbsp;&nbsp;
-			 (also <i>\\dizzy\public\<b>dbglib</b></i>)
+  <li> <i>\\dizzy\public\<b>altsrc</b></i>
+  <li> <i>\\dizzy\public\<b>lib</b></i>
+  <li> <i>\\dizzy\public\<b>dbglib</b></i>
 </ul>
 
 From now on, we maintain copies of production libraries (<b>lib</b>) in <i>\\dizzy\public\<b>ReleaseMT</b></i>, and
