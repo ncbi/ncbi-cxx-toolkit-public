@@ -453,7 +453,7 @@ sub mark_headline
    my ($data) = @_; shift;
    my ($word) = @_;
 
-   $data =~ s/($word)/<b>$1<\/b>/gi;
+   $data =~ s/($word)([^<>])/<b>$1<\/b>$2/gi;
 
    return $data;
 }
