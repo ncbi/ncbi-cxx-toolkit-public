@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/10/03 21:20:34  lavr
+ * Request method changed from POST to {GET|POST}
+ *
  * Revision 6.2  2000/09/26 22:02:55  lavr
  * HTTP request method added
  *
@@ -54,7 +57,7 @@ extern "C" {
 
 
 /* Create new CONNECTOR structure to hit the specified URL using HTTP
- * with method POST.
+ * with either POST or GET method.
  * Use the configuration values recorded in "info". If "info" is NULL, then
  * use the default info (created by "ConnNetInfo_Create(0)").
  *
@@ -63,7 +66,7 @@ extern "C" {
  *     first "Read" (or "Peek", or "Close", or "Wait" on read) is attempted.
  *  2) On the first "Read" (or "Peek", or "Close", or "Wait" on read), compose
  *     and send the whole HTTP request as:
- *        POST <info->path>?<info->args> HTTP/1.0\r\n
+ *        {POST|GET} <info->path>?<info->args> HTTP/1.0\r\n
  *        <user_header\r\n>
  *        Content-Length: <accumulated_data_length>\r\n
  *        \r\n
