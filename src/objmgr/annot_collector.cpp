@@ -738,7 +738,7 @@ CCreatedFeat_Ref::MakeOriginalFeature(const CSeq_feat_Handle& feat_h)
 {
     CConstRef<CSeq_feat> ret;
     if ( feat_h.IsTableSNP() ) {
-        const CSeq_annot_SNP_Info snp_annot = feat_h.x_GetSNP_annot_Info();
+        const CSeq_annot_SNP_Info& snp_annot = feat_h.x_GetSNP_annot_Info();
         const SSNP_Info& snp_info = feat_h.x_GetSNP_Info();
         CRef<CSeq_feat> orig_feat;
         CRef<CSeq_point> created_point;
@@ -1866,6 +1866,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/03/07 16:19:05  vasilche
+* Added lost ampersand.
+*
 * Revision 1.50  2005/02/28 17:26:44  vasilche
 * Fixed collection of stranded features from minus strand segments.
 *
