@@ -2206,6 +2206,72 @@ int test1(int argc, char ** argv)
             continue;
         } else desc += " [-num <seqs to get]";
         
+        if ((s == "-splitp") || (s == "-splitn")) {
+            string db;
+            char st;
+            
+            if (s == "-splitp") {
+                db = "nr";
+                st = 'p';
+            } else {
+                db = "nt";
+                st = 'n';
+            }
+            
+            CSeqDB nr(db.c_str(), st);
+            
+            Uint8 total_bases = nr.GetTotalLength();
+            Uint8 num_seqs    = nr.GetNumSeqs();
+            
+            for(Uint4 i = 0; i<10; i++) {
+                Uint8 offset = (i*total_bases) / 10;
+                
+                Uint4 split_oid = nr.GetOidAtOffset(0, offset);
+                
+                cout << "\n\niteration #" << i << "\n\n";
+                cout << "req. offset = " << offset      << "\n";
+                cout << "total_bases = " << total_bases << "\n";
+                cout << "num_seqs    = " << num_seqs    << "\n";
+                cout << "split_oid   = " << split_oid   << endl;
+                cout << "base %      = " << (100.0*offset)/total_bases << endl;
+                cout << "oids %      = " << (100.0*split_oid)/num_seqs << endl;
+            }
+            
+            Uint8 start  = 0; 
+            Uint8 offset = start + (total_bases - start) / 2;
+           
+            Uint4 oid1 = 1;
+            Uint4 oid2 = 0;
+            
+            Uint4 oid_same_cnt = 0;
+            
+            while((oid_same_cnt < 10) && ((total_bases - start) > 5)) {
+                oid1 = oid2;
+                oid2 = nr.GetOidAtOffset(0, offset);
+                
+                if (oid1 == oid2) {
+                    oid_same_cnt ++;
+                } else {
+                    oid_same_cnt = 0;
+                }
+                
+                cout << "Convergence?  split_oid = " << oid2
+                     << " (of " << num_seqs
+                     << ")  given residue " << offset
+                     << " of total " << total_bases;
+                
+                if (oid_same_cnt) {
+                    cout << "  !! SAME";
+                }
+                cout << endl;
+                
+                start = offset;
+                offset = start + (total_bases - start) / 2;
+            }
+            
+            return 0;
+        } else desc += " [-splitp | -splitn]";
+        
         if (s == "-loop") {
             if (args.empty()) {
                 cerr << "Error: -loop requires an argument." << endl;
