@@ -42,7 +42,6 @@
 
 
 #include <connect/ncbi_core.h>
-#include <connect/connect_export.h>
 #include <corelib/ncbistd.hpp>
 #include <stdio.h>
 #include <vector>
@@ -361,6 +360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/02 20:46:59  lavr
+ * -<connect/connect_export.h> -- included from <connect/ncbi_core.h>
+ *
  * Revision 1.13  2003/09/02 20:24:32  ivanov
  * Moved ncbipipe to CONNECT library from CORELIB.
  * Rewritten CPipe class using I/O timeouts.
