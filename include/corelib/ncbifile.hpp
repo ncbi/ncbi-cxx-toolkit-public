@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/12/13 20:14:34  juran
+ * Add forward declaration of struct FSSpec for Mac OS.
+ *
  * Revision 1.5  2001/11/19 18:07:38  juran
  * Change Contents() to GetEntries().
  * Implement MatchesMask().
@@ -57,6 +60,12 @@
 
 #include <corelib/ncbistd.hpp>
 #include <vector>
+
+
+#ifdef NCBI_OS_MAC
+struct FSSpec;
+#include <Files.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
