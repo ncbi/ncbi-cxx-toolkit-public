@@ -40,7 +40,6 @@
 
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/code.hpp>
-#include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/lexer.hpp>
 #include <serial/datatool/dtdlexer.hpp>
 #include <serial/datatool/parser.hpp>
@@ -212,8 +211,9 @@ bool CDataTool::ProcessModules(void)
         NStr::Split(opm.AsString(), ",", modulesPath);
     }
     
-    LoadDefinitions(generator.GetMainModules(),
-                    modulesPath, args["m"].AsString());
+    SourceFile::EType srctype =
+        LoadDefinitions(generator.GetMainModules(),
+                        modulesPath, args["m"].AsString());
 
     if ( const CArgValue& sxo = args["sxo"] ) {
         CDataType::SetEnforcedStdXml(true);
@@ -239,7 +239,7 @@ bool CDataTool::ProcessModules(void)
     }
     
     LoadDefinitions(generator.GetImportModules(),
-                    modulesPath, args["M"].AsString());
+                    modulesPath, args["M"].AsString(),srctype);
 
     if ( !generator.Check() ) {
         if ( !args["i"] ) { // ignored
@@ -451,21 +451,43 @@ bool CDataTool::GenerateCode(void)
 }
 
 
-void CDataTool::LoadDefinitions(CFileSet& fileSet,
-                                const list<string>& modulesPath,
-                                const string& nameList)
+SourceFile::EType CDataTool::LoadDefinitions(
+    CFileSet& fileSet, const list<string>& modulesPath,
+    const string& nameList, SourceFile::EType srctype)
 {
+    SourceFile::EType moduleType;
     list<string> names;
     NStr::Split(nameList, " ", names);
     ITERATE ( list<string>, fi, names ) {
         const string& name = *fi;
         if ( !name.empty() ) {
             SourceFile fName(name, modulesPath);
-            switch (fName.GetType()) {
+            moduleType = fName.GetType();
+
+// if first module has unknown type - assume ASN
+            if (srctype == SourceFile::eUnknown) {
+                if (moduleType == SourceFile::eUnknown) {
+                    moduleType = SourceFile::eASN;
+                }
+                srctype = moduleType;
+            }
+// if second module has unknown type - assume same as the previous one
+            else {
+                if (moduleType == SourceFile::eUnknown) {
+                    moduleType = srctype;
+                }
+// if modules have different types - exception
+                else if (moduleType != srctype) {
+                    NCBI_THROW(CDatatoolException,eWrongInput,
+                               "Unable to process modules of different types"
+                               " simultaneously: "+name);
+                }
+            }
+
+            switch (moduleType) {
             default:
-                // throw exception here
                 NCBI_THROW(CDatatoolException,eWrongInput,"Unknown file type: "+name);
-                break;
+
             case SourceFile::eASN:
                 {
                     ASNLexer lexer(fName);
@@ -484,6 +506,7 @@ void CDataTool::LoadDefinitions(CFileSet& fileSet,
             }
         }
     }
+    return srctype;
 }
 
 END_NCBI_SCOPE
@@ -500,6 +523,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2003/05/23 19:18:39  gouriano
+* modules of unknown type are assumed to be ASN
+* all modules must have the same type
+*
 * Revision 1.64  2003/05/23 13:54:48  gouriano
 * throw exception on unknown module file type
 *

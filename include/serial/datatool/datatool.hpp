@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <serial/datatool/generate.hpp>
+#include <serial/datatool/fileutil.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -53,9 +54,9 @@ private:
     bool ProcessData(void);
     bool GenerateCode(void);
 
-    void LoadDefinitions(CFileSet& fileSet,
-                         const list <string>& modulesPath,
-                         const string& names);
+    SourceFile::EType LoadDefinitions(
+        CFileSet& fileSet, const list <string>& modulesPath,
+        const string& names, SourceFile::EType srctype = SourceFile::eUnknown);
 
     CCodeGenerator generator;
 };
@@ -68,6 +69,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/05/23 19:19:08  gouriano
+* modules of unknown type are assumed to be ASN
+* all modules must have the same type
+*
 * Revision 1.2  2002/08/06 17:03:47  ucko
 * Let -opm take a comma-delimited list; move relevant CVS logs to end.
 *
