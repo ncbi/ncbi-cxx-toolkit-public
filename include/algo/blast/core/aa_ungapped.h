@@ -36,7 +36,7 @@
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/blast_extend.h>
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -269,7 +269,8 @@ Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length);
   */
 Int4 DiagClear(BLAST_DiagTable* diag);
 
-#ifdef _cplusplus
+
+#ifdef __cplusplus
 }
 #endif
 
