@@ -366,6 +366,35 @@ private:
 };
 
 
+
+//=============================================================================
+//
+//  CStopWatch
+//
+//=============================================================================
+
+
+class NCBI_XNCBI_EXPORT CStopWatch
+{
+public:
+    CStopWatch(void);
+
+    // Start the timer
+    void Start(void);
+
+    // Check the elapsed time for a given call
+    double Elapsed(void) const;
+
+protected:
+    // Get current time mark
+    static double GetTimeMark();
+
+private:
+    double m_Start;  // Start time value
+};
+
+
+
 /* @} */
 
 
@@ -409,6 +438,8 @@ extern CTime Truncate(const CTime& t);
 //
 //=============================================================================
 
+
+// CTime
 
 inline 
 int CTime::Year(void) const { return m_Year; }
@@ -611,10 +642,18 @@ CTime CTime::GetGmtTime(void) const
 }
 
 inline
-CTime& CTime::ToLocalTime(void) { ToTime(eLocal);  return *this; }
+CTime& CTime::ToLocalTime(void)
+{
+    ToTime(eLocal);
+    return *this;
+}
 
 inline
-CTime& CTime::ToGmtTime(void) { ToTime(eGmt);  return *this; }
+CTime& CTime::ToGmtTime(void)
+{
+    ToTime(eGmt);
+    return *this;
+}
 
 inline 
 bool CTime::x_NeedAdjustTime(void) const
@@ -623,12 +662,37 @@ bool CTime::x_NeedAdjustTime(void) const
 }
 
 
+// CStopWatch
+
+inline
+CStopWatch::CStopWatch(void)
+    : m_Start(0)
+{
+}
+
+inline
+void CStopWatch::Start()
+{
+    m_Start = GetTimeMark();
+}
+
+inline
+double CStopWatch::Elapsed() const
+{
+    return GetTimeMark() - m_Start;
+}
+
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/04/16 20:28:26  ivanov
+ * Added class CStopWatch
+ *
  * Revision 1.21  2003/04/14 19:41:32  ivanov
  * Rollback to R1.19 -- accidental commit
  *

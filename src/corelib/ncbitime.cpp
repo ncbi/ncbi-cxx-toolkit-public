@@ -37,6 +37,7 @@
 
 #if defined(NCBI_OS_MSWIN)
 #  include <sys/timeb.h>
+#  include <windows.h>
 #elif defined(NCBI_OS_UNIX)
 #  include <sys/time.h>
 #endif
@@ -1109,6 +1110,47 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
 }
 
 
+
+//=============================================================================
+//
+//  CStopWatch
+//
+//=============================================================================
+
+
+double CStopWatch::GetTimeMark()
+{
+#if defined(NCBI_OS_MSWIN)
+    // For Win32, we use QueryPerformanceCounter()
+
+    LARGE_INTEGER bigint;
+    static double freq;
+    static bool first = true;
+
+    if (first) {
+        LARGE_INTEGER nfreq;
+        QueryPerformanceFrequency(&nfreq);
+        freq  = nfreq.QuadPart;
+        first = false;
+    }
+
+    if ( !QueryPerformanceCounter(&bigint) ) {
+        return 0.0;
+    }
+    return double(bigint.QuadPart) / freq;
+
+#else
+    // For Unixes, we use gettimeofday()
+
+    struct timeval time;
+    if (gettimeofday (&time, 0)) {
+        return 0.0;
+    }
+    return double(time.tv_sec) + double(time.tv_usec) / 1e6f;
+#endif
+}
+
+
 //============================================================================
 //
 //  Extern
@@ -1214,6 +1256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2003/04/16 20:28:00  ivanov
+ * Added class CStopWatch
+ *
  * Revision 1.34  2003/04/04 16:02:38  lavr
  * Lines wrapped at 79th column; some minor reformatting
  *
