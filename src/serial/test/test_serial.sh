@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 for f in webenv.ent webenv.bin test.asn test.asb test.bin; do
     cp @srcdir@/$f ./
