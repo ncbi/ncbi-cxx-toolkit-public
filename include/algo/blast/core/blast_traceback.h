@@ -155,37 +155,6 @@ Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
 NCBI_XBLAST_EXPORT
 Uint1 Blast_TracebackGetEncoding(EBlastProgramType program_number);
 
-/** Perform traceback stage of the BLAST search, given the source of HSP lists,
- * obtained from the preliminary stage. The parameters internal to the engine
- * are calculated here independently of the similar calculation in the
- * preliminary stage, effectively making the two stages independent of each 
- * other.
- * @param program BLAST program type [in]
- * @param query Query sequence(s) structure [in]
- * @param query_info Additional query information [in]
- * @param seq_src Source of subject sequences [in]
- * @param score_options Scoring options [in]
- * @param ext_options Word extension options, needed for cutoff scores 
- *                    calculation only [in]
- * @param hit_options Hit saving options [in]
- * @param eff_len_options Options for calculating effective lengths [in]
- * @param db_options Database options (database genetic code) [in]
- * @param psi_options PSI BLAST options [in]
- * @param sbp Scoring block with statistical parameters and matrix [in]
- * @param hsp_stream Source of HSP lists. [in]
- * @param results Where to save the results after traceback. [out]
- */
-Int2 
-Blast_RunTracebackSearch(EBlastProgramType program, 
-   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
-   const BlastExtensionOptions* ext_options,
-   const BlastHitSavingOptions* hit_options,
-   const BlastEffectiveLengthsOptions* eff_len_options,
-   const BlastDatabaseOptions* db_options, 
-   const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
-   BlastHSPStream* hsp_stream, BlastHSPResults** results);
-
 #ifdef __cplusplus
 }
 #endif
