@@ -54,8 +54,7 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddMasterProject   (const string& full_path);
-    void AddConfigureProject(const string& full_path);
+    void AddUtilityProject(const string& full_path);
 
     void SaveSolution(const string& file_path);
     
@@ -66,12 +65,8 @@ private:
 
     /// Basename / GUID
     typedef pair<string, string> TUtilityProject;
-    TUtilityProject m_MasterProject;
-    bool IsSetMasterProject(void) const;
+    list<TUtilityProject> m_UtilityProjects;
 
-    /// Basename / GUID
-    TUtilityProject m_ConfigureProject;
-    bool IsSetConfigureProject(void) const;
 
     class CPrjContext
     {
@@ -123,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/12 23:13:49  gorelenk
+ * Declared function for MSVC utility project creation.
+ *
  * Revision 1.7  2004/02/12 17:46:35  gorelenk
  * Re-designed addition of utility projects.
  *

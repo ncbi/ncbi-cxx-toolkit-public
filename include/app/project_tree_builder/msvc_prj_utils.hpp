@@ -218,11 +218,21 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
 /// Checks if 2 dirs has the same root
 bool SameRootDirs(const string& dir1, const string& dir2);
 
+
+/// Fill-In MSVC 7.10 Utility project
+void CreateUtilityProject(const string&            name, 
+                          const list<SConfigInfo>& configs, 
+                          CVisualStudioProject*    project);
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/12 23:13:49  gorelenk
+ * Declared function for MSVC utility project creation.
+ *
  * Revision 1.11  2004/02/12 16:22:40  gorelenk
  * Changed generation of command line for custom build info.
  *
