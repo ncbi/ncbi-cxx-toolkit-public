@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
 #include <ctools/ctools.h>
+#include <serial/objostr.hpp>
 
 #include <algorithm>
 
@@ -206,6 +207,10 @@ Cn3DApp::Cn3DApp() : wxGLApp()
     SetDiagPostLevel(eDiag_Info);   // report all messages
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
     SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
+
+    // C++ object verification
+    CSerialObject::SetVerifyDataGlobal(eSerialVerifyData_Always);
+    CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
     if (!InitGLVisual(NULL)) FATALMSG("InitGLVisual failed");
 }
@@ -449,6 +454,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/05/29 14:34:19  thiessen
+* force serial object verification
+*
 * Revision 1.2  2003/03/13 16:57:14  thiessen
 * fix favorites load/save problem
 *
