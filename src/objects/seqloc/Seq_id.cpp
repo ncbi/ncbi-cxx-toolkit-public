@@ -577,10 +577,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A': case 'B': case 'C':           return eAcc_ddbj_est;
             case 'D':                               return eAcc_ddbj_patent;
-                // no specific assignments for DE-DM yet
-            case 'E': case 'F': case 'G': case 'H':
-            case 'I': case 'J': case 'K': case 'L':
-            case 'M':                               return eAcc_ddbj_other_nuc;
+            case 'E':                               return eAcc_ddbj_gss;
+                // no specific assignments for DF-DM yet
+            case 'F': case 'G': case 'H': case 'I': 
+            case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1529,6 +1529,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.94  2004/12/08 15:20:03  ucko
+ * IdentifyAccession: DDBJ has specifically assigned DE for GSS.
+ *
  * Revision 6.93  2004/12/01 20:04:04  ucko
  * IdentifyAccession: CY is now specifically for (flu) genomes.
  *
