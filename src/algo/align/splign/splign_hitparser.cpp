@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include "splign_hitparser.hpp"
 #include <algo/align/align_exception.hpp>
 
@@ -1336,6 +1337,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/24 16:13:57  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.6  2004/05/18 21:43:40  kapustin
 * Code cleanup
 *

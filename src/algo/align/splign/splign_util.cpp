@@ -30,6 +30,7 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
 #include "splign_util.hpp"
 #include "splign_hitparser.hpp"
 
@@ -378,6 +379,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/05/24 16:13:57  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.7  2004/05/17 14:50:57  kapustin
  * Add/remove/rearrange some includes and object declarations
  *

@@ -30,6 +30,7 @@
 *
 */
 
+#include <ncbi_pch.hpp>
 #include <algo/align/splign/splign_hit.hpp>
 #include <algo/align/align_exception.hpp>
 #include <corelib/ncbistre.hpp>
@@ -471,6 +472,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/24 16:13:57  gorelenk
+* Added PCH ncbi_pch.hpp
+*
 * Revision 1.7  2004/05/10 16:33:52  kapustin
 * Report unexpected strands in CHit(CSeq_align&). Calculate length and identity based on alignment data.
 *

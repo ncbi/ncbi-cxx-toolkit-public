@@ -31,6 +31,7 @@
 */
 
 
+#include <ncbi_pch.hpp>
 #include "splign_compartment_finder.hpp"
 #include "splign_util.hpp"
 
@@ -1148,6 +1149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/05/24 16:13:57  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.11  2004/05/19 13:37:48  kapustin
  * Remove test dumping code
  *

@@ -29,6 +29,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 #include "splign_util.hpp"
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -366,6 +367,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/05/24 16:13:57  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
  * Revision 1.5  2004/05/04 15:23:45  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
