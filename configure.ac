@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.325 2004/10/04 14:27:31 ucko Exp $
+#  $Id: configure.ac,v 1.326 2004/10/06 20:33:38 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3536,6 +3536,8 @@ NCBI_CHECK_THIRD_PARTY_LIB(sablot,
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 : ${LIBXML_PATH=$NCBI/libxml}
+vpath="$LIBXML_PATH/${compiler_vpfx}${release_debug}${mt_sfx}"
+test -d "$vpath"  &&  LIBXML_PATH=$vpath
 NCBI_CHECK_THIRD_PARTY_LIB_(libxml, LIBXML, xml2,
  AC_LANG_PROGRAM([#include <libxml/parser.h>],
     [xmlDocPtr doc = xmlParseFile("foo.xml");]))

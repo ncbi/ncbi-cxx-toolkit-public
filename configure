@@ -18742,6 +18742,8 @@ _ACEOF
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 : ${LIBXML_PATH=$NCBI/libxml}
+vpath="$LIBXML_PATH/${compiler_vpfx}${release_debug}${mt_sfx}"
+test -d "$vpath"  &&  LIBXML_PATH=$vpath
 if test "$with_libxml" != "no"; then
     case "$with_libxml" in
        yes | "" ) ;;
