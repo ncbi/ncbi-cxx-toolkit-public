@@ -183,7 +183,13 @@ public:
     // Check if resultset is not empty
     virtual bool HasRows() = 0;
 
+    // Purge results
+    // NOTE: Calls fetch for every resultset received until
+    // finished. 
+    virtual void PurgeResults() = 0;
+
     // Cancel statement
+    // NOTE: Rolls back current transaction
     virtual void Cancel() = 0;
 
     // Close statement
@@ -495,6 +501,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/04/22 15:15:09  kholodov
+ * Added: PurgeResults()
+ *
  * Revision 1.28  2004/04/22 14:22:51  kholodov
  * Added: Cancel()
  *

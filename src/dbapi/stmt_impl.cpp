@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.20  2004/04/22 15:14:53  kholodov
+* Added: PurgeResults()
+*
 * Revision 1.19  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -266,6 +269,11 @@ void CStatement::FreeResources()
     ClearParamList();
 }
   
+void CStatement::PurgeResults()
+{
+    GetBaseCmd()->DumpResults();
+}
+
 void CStatement::Cancel()
 {
     GetBaseCmd()->Cancel();
