@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/05/05 16:26:51  vasilche
+* Simplified iterator templates.
+*
 * Revision 1.6  2000/05/05 13:08:16  vasilche
 * Simplified CTypesIterator interface.
 *
@@ -67,11 +70,12 @@
 
 BEGIN_NCBI_SCOPE
 
-class CTreeIterator;
-
 class CBeginInfo
 {
 public:
+    typedef CChildrenIterator TChildrenIterator;
+    typedef CObjectInfo TObjectInfo;
+
     CBeginInfo(TObjectPtr objectPtr, TTypeInfo typeInfo,
                bool detectLoops = false)
         : m_ObjectPtr(objectPtr), m_TypeInfo(typeInfo),
@@ -101,6 +105,9 @@ private:
 class CConstBeginInfo
 {
 public:
+    typedef CConstChildrenIterator TChildrenIterator;
+    typedef CConstObjectInfo TObjectInfo;
+
     CConstBeginInfo(TConstObjectPtr objectPtr, TTypeInfo typeInfo,
                bool detectLoops = false)
         : m_ObjectPtr(objectPtr), m_TypeInfo(typeInfo),
@@ -133,14 +140,14 @@ private:
     bool m_DetectLoops;
 };
 
-template<class Iterator, class BeginInfo>
+template<class BeginInfo>
 class CTreeIteratorBase
 {
-    typedef CTreeIteratorBase<Iterator, BeginInfo> TThis;
+    typedef CTreeIteratorBase<BeginInfo> TThis;
 public:
-    typedef Iterator TIteratorType;
     typedef BeginInfo TBeginInfo;
-    typedef typename Iterator::TObjectInfo TObjectInfo;
+    typedef typename TBeginInfo::TChildrenIterator TChildrenIterator;
+    typedef typename TChildrenIterator::TObjectInfo TObjectInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
 
     CTreeIteratorBase(void)
@@ -193,16 +200,16 @@ public:
         {
             return !End();
         }
-    TThis& operator++(void)
+    CTreeIteratorBase<BeginInfo>& operator++(void)
         {
             Next();
             return *this;
         }
 
-    class CTreeLevel : public TIteratorType {
+    class CTreeLevel : public TChildrenIterator {
     public:
         CTreeLevel(const TObjectInfo& owner, CTreeLevel* previousLevel)
-            : TIteratorType(owner), m_PreviousLevel(previousLevel)
+            : TChildrenIterator(owner), m_PreviousLevel(previousLevel)
             {
             }
 
@@ -218,17 +225,26 @@ public:
     };
 
     void Begin(const TBeginInfo& beginInfo);
+    void Erase(void)
+        {
+            PrepareErase();
+            m_Stack->Erase();
+            m_Valid = false;
+            m_SkipSubTree = true;
+        }
 
 protected:
     // post condition: Valid() || End()
     virtual bool CanSelectCurrentObject(void);
     virtual bool CanEnterCurrentObject(void);
 
-    CTreeIteratorBase(const TThis&);
-    TThis& operator=(const TThis&);
+protected:
+    // have to make these methods protected instead of private due to
+    // bug in GCC
+    CTreeIteratorBase(const CTreeIteratorBase<BeginInfo>&);
+    CTreeIteratorBase<BeginInfo>& operator=(const CTreeIteratorBase<BeginInfo>&);
 private:
-    
-    friend class CTreeIterator; // for Erase
+    void PrepareErase(void);
 
     bool m_Valid;
     bool m_SkipSubTree;
@@ -240,66 +256,18 @@ private:
     auto_ptr<TVisitedObjects> m_VisitedObjects;
 };
 
-class CTreeIterator
-    : public CTreeIteratorBase<CChildrenIterator, CBeginInfo>
+template<class BeginInfo>
+class CTypeIteratorBase : public CTreeIteratorBase<BeginInfo>
 {
-    typedef CTreeIteratorBase<CChildrenIterator, CBeginInfo> CParent;
-public:
-    
-    // precondition: Valid()
-    // postcondition: !Valid() until Next()
-    void Erase(void);
-};
-
-typedef CTreeIteratorBase<CConstChildrenIterator, CConstBeginInfo> CTreeConstIterator;
-/*
-class CTreeConstIterator
-    : public CTreeIteratorBase<CConstChildrenIterator, CConstBeginInfo>
-{
-    typedef CTreeIteratorBase<CConstChildrenIterator, CConstBeginInfo> CParent;
-public:
-    void Begin(const TBeginInfo& beginInfo)
-        {
-            x_Begin(beginInfo);
-        }
-};
-*/
-
-class CTypeIteratorBase : public CTreeIterator
-{
-    typedef CTreeIterator CParent;
+    typedef CTreeIteratorBase<BeginInfo> CParent;
 protected:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
     CTypeIteratorBase(TTypeInfo needType)
         : m_NeedType(needType)
         {
         }
-    CTypeIteratorBase(TTypeInfo needType, const CBeginInfo& beginInfo)
-        : m_NeedType(needType)
-        {
-            Begin(beginInfo);
-        }
-
-    virtual bool CanSelectCurrentObject(void);
-    virtual bool CanEnterCurrentObject(void);
-
-private:
-    TTypeInfo m_NeedType;
-};
-
-class CTypeConstIteratorBase : public CTreeConstIterator
-{
-    typedef CTreeConstIterator CParent;
-protected:
-    CTypeConstIteratorBase(TTypeInfo needType)
-        : m_NeedType(needType)
-        {
-        }
-    CTypeConstIteratorBase(TTypeInfo needType, const CBeginInfo& beginInfo)
-        : m_NeedType(needType)
-        {
-            Begin(beginInfo);
-        }
-    CTypeConstIteratorBase(TTypeInfo needType, const CConstBeginInfo& beginInfo)
+    CTypeIteratorBase(TTypeInfo needType, const TBeginInfo& beginInfo)
         : m_NeedType(needType)
         {
             Begin(beginInfo);
@@ -313,20 +281,22 @@ private:
 };
 
 template<class C, class TypeGetter = C>
-class CTypeIterator : public CTypeIteratorBase
+class CTypeIterator : public CTypeIteratorBase<CBeginInfo>
 {
-    typedef CTypeIteratorBase CParent;
+    typedef CTypeIteratorBase<CBeginInfo> CParent;
 public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
     CTypeIterator(void)
         : CParent(TypeGetter::GetTypeInfo())
         {
         }
-    CTypeIterator(const CBeginInfo& beginInfo)
+    CTypeIterator(const TBeginInfo& beginInfo)
         : CParent(TypeGetter::GetTypeInfo(), beginInfo)
         {
         }
 
-    CTypeIterator<C>& operator=(const CBeginInfo& beginInfo)
+    CTypeIterator<C, TypeGetter>& operator=(const TBeginInfo& beginInfo)
         {
             Begin(beginInfo);
             return *this;
@@ -343,29 +313,22 @@ public:
 };
 
 template<class C, class TypeGetter = C>
-class CTypeConstIterator : public CTypeConstIteratorBase
+class CTypeConstIterator : public CTypeIteratorBase<CConstBeginInfo>
 {
-    typedef CTypeConstIteratorBase CParent;
+    typedef CTypeIteratorBase<CConstBeginInfo> CParent;
 public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
     CTypeConstIterator(void)
         : CParent(TypeGetter::GetTypeInfo())
         {
         }
-    CTypeConstIterator(const CConstBeginInfo& beginInfo)
-        : CParent(TypeGetter::GetTypeInfo(), beginInfo)
-        {
-        }
-    CTypeConstIterator(const CBeginInfo& beginInfo)
+    CTypeConstIterator(const TBeginInfo& beginInfo)
         : CParent(TypeGetter::GetTypeInfo(), beginInfo)
         {
         }
 
-    CTypeConstIterator<C>& operator=(const CConstBeginInfo& beginInfo)
-        {
-            Begin(beginInfo);
-            return *this;
-        }
-    CTypeConstIterator<C>& operator=(const CBeginInfo& beginInfo)
+    CTypeConstIterator<C, TypeGetter>& operator=(const TBeginInfo& beginInfo)
         {
             Begin(beginInfo);
             return *this;
@@ -382,15 +345,17 @@ class CStdTypeIterator : public CTypeIterator<T, CStdTypeInfo<T> >
 {
     typedef CTypeIterator<T, CStdTypeInfo<T> > CParent;
 public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
     CStdTypeIterator(void)
         {
         }
-    CStdTypeIterator(const CBeginInfo& beginInfo)
+    CStdTypeIterator(const TBeginInfo& beginInfo)
         : CParent(beginInfo)
         {
         }
 
-    CStdTypeIterator<T>& operator=(const CBeginInfo& beginInfo)
+    CStdTypeIterator<T>& operator=(const TBeginInfo& beginInfo)
         {
             Begin(beginInfo);
             return *this;
@@ -402,24 +367,17 @@ class CStdTypeConstIterator : public CTypeConstIterator<T, CStdTypeInfo<T> >
 {
     typedef CTypeConstIterator<T, CStdTypeInfo<T> > CParent;
 public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+
     CStdTypeConstIterator(void)
         {
         }
-    CStdTypeConstIterator(const CBeginInfo& beginInfo)
-        : CParent(beginInfo)
-        {
-        }
-    CStdTypeConstIterator(const CConstBeginInfo& beginInfo)
+    CStdTypeConstIterator(const TBeginInfo& beginInfo)
         : CParent(beginInfo)
         {
         }
 
-    CStdTypeConstIterator<T>& operator=(const CBeginInfo& beginInfo)
-        {
-            Begin(beginInfo);
-            return *this;
-        }
-    CStdTypeConstIterator<T>& operator=(const CConstBeginInfo& beginInfo)
+    CStdTypeConstIterator<T>& operator=(const TBeginInfo& beginInfo)
         {
             Begin(beginInfo);
             return *this;
@@ -429,10 +387,10 @@ public:
 typedef CTypeIterator<CObject> CObjectsIterator;
 typedef CTypeConstIterator<CObject> CObjectsConstIterator;
 
-template<class Iterator>
-class CTypesIteratorBase : public Iterator
+template<class BeginInfo>
+class CTypesIteratorBase : public CTreeIteratorBase<BeginInfo>
 {
-    typedef Iterator CParent;
+    typedef CTreeIteratorBase<BeginInfo> CParent;
 public:
     typedef typename CParent::TBeginInfo TBeginInfo;
     typedef list<TTypeInfo> TTypeList;
@@ -464,19 +422,19 @@ public:
             return m_TypeList;
         }
 
-    CTypesIteratorBase<Iterator>& AddType(TTypeInfo type)
+    CTypesIteratorBase<BeginInfo>& AddType(TTypeInfo type)
         {
             m_TypeList.push_back(type);
             return *this;
         }
 
-    CTypesIteratorBase<Iterator>& operator=(const TBeginInfo& beginInfo)
+    CTypesIteratorBase<BeginInfo>& operator=(const TBeginInfo& beginInfo)
         {
             Begin(beginInfo);
             return *this;
         }
 
-    typename Iterator::TObjectInfo::TObjectPtr GetFoundPtr(void) const
+    typename CParent::TObjectInfo::TObjectPtr GetFoundPtr(void) const
         {
             return Get().GetObjectPtr();
         }
@@ -498,8 +456,8 @@ private:
     TTypeInfo m_MatchType;
 };
 
-typedef CTypesIteratorBase<CTreeIterator> CTypesIterator;
-typedef CTypesIteratorBase<CTreeConstIterator> CTypesConstIterator;
+typedef CTypesIteratorBase<CBeginInfo> CTypesIterator;
+typedef CTypesIteratorBase<CConstBeginInfo> CTypesConstIterator;
 
 enum EDetectLoops {
     eDetectLoops

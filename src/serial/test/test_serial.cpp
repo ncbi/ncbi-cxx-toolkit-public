@@ -92,9 +92,13 @@ int CTestSerial::Run(void)
         CTypeIterator<CSerialObject> j2(Begin(write));
         CTypeIterator<CSerialObject> j3 = Begin(write);
 
+        j1.Erase();
+
         CTypeConstIterator<CSerialObject> k1; k1 = Begin(write);
         CTypeConstIterator<CSerialObject> k2(Begin(write));
-        CTypeConstIterator<CSerialObject> k3 = Begin(write);
+        CTypeConstIterator<CSerialObject> k3 = ConstBegin(write);
+
+        //k1.Erase();
 
         CTypeConstIterator<CSerialObject> l1; l1 = ConstBegin(write);
         CTypeConstIterator<CSerialObject> l2(ConstBegin(write));
@@ -121,7 +125,7 @@ int CTestSerial::Run(void)
             }
         }
         {
-            for ( CTypeConstIterator<CSerialObject> oi = Begin(write); oi;
+            for ( CTypeConstIterator<CSerialObject> oi = ConstBegin(write); oi;
                   ++oi ) {
                 const CSerialObject& obj = *oi;
                 NcbiCerr<<"CSerialObject @ "<<NStr::PtrToString(&obj)<<

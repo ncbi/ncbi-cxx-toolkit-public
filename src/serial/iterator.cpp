@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/05/05 16:26:56  vasilche
+* Simplified iterator templates.
+*
 * Revision 1.5  2000/05/05 13:08:21  vasilche
 * Simplified CTypesIterator interface.
 *
@@ -59,14 +62,14 @@
 
 BEGIN_NCBI_SCOPE
 
-template<class Iterator, class BeginInfo>
-CTreeIteratorBase<Iterator, BeginInfo>::~CTreeIteratorBase(void)
+template<class BeginInfo>
+CTreeIteratorBase<BeginInfo>::~CTreeIteratorBase(void)
 {
     Reset();
 }
 
-template<class Iterator, class BeginInfo>
-void CTreeIteratorBase<Iterator, BeginInfo>::Reset(void)
+template<class BeginInfo>
+void CTreeIteratorBase<BeginInfo>::Reset(void)
 {
     m_CurrentObject.Reset();
     m_VisitedObjects.reset(0);
@@ -80,8 +83,8 @@ void CTreeIteratorBase<Iterator, BeginInfo>::Reset(void)
     _ASSERT(End());
 }
 
-template<class Iterator, class BeginInfo>
-void CTreeIteratorBase<Iterator, BeginInfo>::Begin(const TBeginInfo& beginInfo)
+template<class BeginInfo>
+void CTreeIteratorBase<BeginInfo>::Begin(const TBeginInfo& beginInfo)
 {
     Reset();
     if ( !beginInfo.GetObjectPtr() )
@@ -98,8 +101,8 @@ void CTreeIteratorBase<Iterator, BeginInfo>::Begin(const TBeginInfo& beginInfo)
     }
 }
 
-template<class Iterator, class BeginInfo>
-void CTreeIteratorBase<Iterator, BeginInfo>::Next(void)
+template<class BeginInfo>
+void CTreeIteratorBase<BeginInfo>::Next(void)
 {
     // cache object/type
     if ( End() )
@@ -152,8 +155,8 @@ void CTreeIteratorBase<Iterator, BeginInfo>::Next(void)
     }
 }
 
-template<class Iterator, class BeginInfo>
-bool CTreeIteratorBase<Iterator, BeginInfo>::CanSelectCurrentObject(void)
+template<class BeginInfo>
+bool CTreeIteratorBase<BeginInfo>::CanSelectCurrentObject(void)
 {
     TVisitedObjects* visitedObjects = m_VisitedObjects.get();
     if ( visitedObjects ) {
@@ -166,54 +169,66 @@ bool CTreeIteratorBase<Iterator, BeginInfo>::CanSelectCurrentObject(void)
 	return true;
 }
 
-template<class Iterator, class BeginInfo>
-bool CTreeIteratorBase<Iterator, BeginInfo>::CanEnterCurrentObject(void)
+template<class BeginInfo>
+bool CTreeIteratorBase<BeginInfo>::CanEnterCurrentObject(void)
 {
     return !m_SkipSubTree && m_CurrentObject &&
         GetCurrentTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
 }
 
-template class CTreeIteratorBase<CConstChildrenIterator, CConstBeginInfo>;
-template class CTreeIteratorBase<CChildrenIterator, CBeginInfo>;
+template
+CTreeIteratorBase<CBeginInfo>::~CTreeIteratorBase(void);
+template
+void CTreeIteratorBase<CBeginInfo>::Reset(void);
+template
+void CTreeIteratorBase<CBeginInfo>::Begin(const TBeginInfo&);
+template
+void CTreeIteratorBase<CBeginInfo>::Next(void);
+template
+bool CTreeIteratorBase<CBeginInfo>::CanSelectCurrentObject(void);
+template
+bool CTreeIteratorBase<CBeginInfo>::CanEnterCurrentObject(void);
 
-void CTreeIterator::Erase(void)
+template
+CTreeIteratorBase<CConstBeginInfo>::~CTreeIteratorBase(void);
+template
+void CTreeIteratorBase<CConstBeginInfo>::Reset(void);
+template
+void CTreeIteratorBase<CConstBeginInfo>::Begin(const TBeginInfo&);
+template
+void CTreeIteratorBase<CConstBeginInfo>::Next(void);
+template
+bool CTreeIteratorBase<CConstBeginInfo>::CanSelectCurrentObject(void);
+template
+bool CTreeIteratorBase<CConstBeginInfo>::CanEnterCurrentObject(void);
+
+template<>
+void CTreeIteratorBase<CBeginInfo>::PrepareErase(void)
 {
     if ( !Valid() )
         THROW1_TRACE(runtime_error, "cannot erase nonvalid iterator");
     if ( !m_Stack )
         THROW1_TRACE(runtime_error, "cannot erase root object of iterator");
     m_CurrentObject.Reset();
-    m_Stack->Erase();
-    m_Valid = false;
-    m_SkipSubTree = true;
 }
 
-bool CTypeIteratorBase::CanSelectCurrentObject(void)
+
+template<class BeginInfo>
+bool CTypeIteratorBase<BeginInfo>::CanSelectCurrentObject(void)
 {
     return CParent::CanSelectCurrentObject() &&
         GetCurrentTypeInfo()->IsType(m_NeedType);
 }
 
-bool CTypeIteratorBase::CanEnterCurrentObject(void)
+template<class BeginInfo>
+bool CTypeIteratorBase<BeginInfo>::CanEnterCurrentObject(void)
 {
     return CParent::CanEnterCurrentObject() &&
         GetCurrentTypeInfo()->MayContainType(m_NeedType);
 }
 
-bool CTypeConstIteratorBase::CanSelectCurrentObject(void)
-{
-    return CParent::CanSelectCurrentObject() &&
-        GetCurrentTypeInfo()->IsType(m_NeedType);
-}
-
-bool CTypeConstIteratorBase::CanEnterCurrentObject(void)
-{
-    return CParent::CanEnterCurrentObject() &&
-        GetCurrentTypeInfo()->MayContainType(m_NeedType);
-}
-
-template<class Iterator>
-bool CTypesIteratorBase<Iterator>::CanSelectCurrentObject(void)
+template<class BeginInfo>
+bool CTypesIteratorBase<BeginInfo>::CanSelectCurrentObject(void)
 {
     if ( !CParent::CanSelectCurrentObject() )
         return false;
@@ -228,8 +243,8 @@ bool CTypesIteratorBase<Iterator>::CanSelectCurrentObject(void)
     return false;
 }
 
-template<class Iterator>
-bool CTypesIteratorBase<Iterator>::CanEnterCurrentObject(void)
+template<class BeginInfo>
+bool CTypesIteratorBase<BeginInfo>::CanEnterCurrentObject(void)
 {
     if ( !CParent::CanEnterCurrentObject() )
         return false;
@@ -241,7 +256,22 @@ bool CTypesIteratorBase<Iterator>::CanEnterCurrentObject(void)
     return false;
 }
 
-template class CTypesIteratorBase<CTreeIterator>;
-template class CTypesIteratorBase<CTreeConstIterator>;
+template
+bool CTypeIteratorBase<CBeginInfo>::CanSelectCurrentObject(void);
+template
+bool CTypeIteratorBase<CBeginInfo>::CanEnterCurrentObject(void);
+template
+bool CTypeIteratorBase<CConstBeginInfo>::CanSelectCurrentObject(void);
+template
+bool CTypeIteratorBase<CConstBeginInfo>::CanEnterCurrentObject(void);
+
+template
+bool CTypesIteratorBase<CBeginInfo>::CanSelectCurrentObject(void);
+template
+bool CTypesIteratorBase<CBeginInfo>::CanEnterCurrentObject(void);
+template
+bool CTypesIteratorBase<CConstBeginInfo>::CanSelectCurrentObject(void);
+template
+bool CTypesIteratorBase<CConstBeginInfo>::CanEnterCurrentObject(void);
 
 END_NCBI_SCOPE
