@@ -238,7 +238,7 @@ void CSeqDBAliasNode::x_ReadValues(const string   & fname,
                                    bool             use_mmap,
                                    CSeqDBLockHold & locked)
 {
-    Uint8 file_length = 0;
+    CSeqDBAtlas::TIndx file_length(0);
     
     const char * bp = m_Atlas.GetFile(fname, file_length, locked);
     const char * ep = bp + file_length;

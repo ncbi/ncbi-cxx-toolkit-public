@@ -58,11 +58,26 @@ BEGIN_NCBI_SCOPE
 
 /// Create an empty atlas.
 
+template<class TIn, class TOut>
+TOut SeqDB_CheckLength(TIn value)
+{
+    TOut result = TOut(value);
+    
+    if (sizeof(TOut) < sizeof(TIn)) {
+        if (TIn(result) != value) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Offset type does not span file length.");
+        }
+    }
+    
+    return result;
+}
+
 CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
     : m_UseMmap   (use_mmap),
       m_CurAlloc  (0),
-      m_LastFID   (0),
-      m_FreeIdents(0)
+      m_LastFID   (0)
 {
     for(Uint4 i = 0; i < eNumRecent; i++) {
         m_Recent[i] = 0;
@@ -98,7 +113,7 @@ CSeqDBAtlas::~CSeqDBAtlas()
     m_Pool.clear();
 }
 
-const char * CSeqDBAtlas::GetFile(const string & fname, Uint8 & length, CSeqDBLockHold & locked)
+const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked)
 {
     if (! GetFileSize(fname, length)) {
         NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
@@ -129,7 +144,7 @@ const char * CSeqDBAtlas::GetFile(const string & fname, Uint8 & length, CSeqDBLo
     return GetRegion(fname, 0, length, locked);
 }
 
-void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease, const string & fname, Uint8 & length, CSeqDBLockHold & locked)
+void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease, const string & fname, TIndx & length, CSeqDBLockHold & locked)
 {
     if (! GetFileSize(fname, length)) {
         NCBI_THROW(CSeqDBException, eFileErr, "File did not exist.");
@@ -163,12 +178,12 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease, const string & fname, Uint8 & 
     GetRegion(lease, fname, 0, length);
 }
 
-bool CSeqDBAtlas::GetFileSize(const string & fname, Uint8 & length)
+bool CSeqDBAtlas::GetFileSize(const string & fname, TIndx & length)
 {
     CFile whole(fname);
     
     if (whole.Exists()) {
-        length = whole.GetLength();
+        length = SeqDB_CheckLength<Uint8,TIndx>(whole.GetLength());
         return true;
     }
     
@@ -182,7 +197,7 @@ void CSeqDBAtlas::GarbageCollect(CSeqDBLockHold & locked)
     x_GarbageCollect(0);
 }
 
-void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
+void CSeqDBAtlas::x_GarbageCollect(TIndx reduce_to)
 {
     x_ClearRecent();
     
@@ -195,7 +210,7 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
     int  num_gcs  = 1;
     
     if (reduce_to > 0) {
-        Uint8 in_use = m_CurAlloc;
+        TIndx in_use = m_CurAlloc;
         
         for(unsigned i = 0; i < m_Regions.size(); i++) {
             CRegionMap * mr = m_Regions[i];
@@ -238,9 +253,6 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
             
             m_CurAlloc -= mr->Length();
             
-            _ASSERT(mr->Ident() != (Uint4)-1);
-            m_IdentLookup[mr->Ident()] = 0;
-            m_FreeIdents++;
             m_NameOffsetLookup.erase(mr);
             m_AddressLookup.erase(mr->Data());
             
@@ -299,18 +311,18 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 // portion of a file, or whole mappings of short files. (KMB)
 
 
-void CSeqDBAtlas::CRegionMap::x_Roundup(Uint8 & begin,
-                                        Uint8 & end,
-                                        int   & penalty,
-                                        Uint8   file_size,
-                                        bool    use_mmap)
+void CRegionMap::x_Roundup(TIndx & begin,
+                           TIndx & end,
+                           int   & penalty,
+                           TIndx   file_size,
+                           bool    use_mmap)
 {
     // These should be made available to some kind of interface to
     // allow memory-usage tuning.
     
-    const Uint8 large_slice = 1024 * 1024 * 128;
-    const Uint8 small_slice = 1024 * 1024 * 1;
-    const Uint8 block_size  = 1024 * 512;
+    const Uint4 large_slice = 1024 * 1024 * 256;
+    const Uint4 small_slice = 1024 * 8;
+    const Uint4 block_size  = 1024 * 512;
     
     _ASSERT(begin <  end);
     _ASSERT(end   <= file_size);
@@ -320,8 +332,8 @@ void CSeqDBAtlas::CRegionMap::x_Roundup(Uint8 & begin,
     int align = 1;
     
     if (use_mmap) {
-        Uint8 page_b = begin / large_slice;
-        Uint8 page_e = end   / large_slice;
+        TIndx page_b = begin / large_slice;
+        TIndx page_e = end   / large_slice;
         
         if (page_b == page_e) {
             align = large_slice;
@@ -346,8 +358,8 @@ void CSeqDBAtlas::CRegionMap::x_Roundup(Uint8 & begin,
     if (align > 1) {
         // Integer math can do the rounding.
         
-        Uint8 new_begin = (begin / align) * align;
-        Uint8 new_end = ((end + align - 1) / align) * align;
+        TIndx new_begin = (begin / align) * align;
+        TIndx new_end = ((end + align - 1) / align) * align;
         
         if ((new_end + align) > file_size) {
             new_end = file_size;
@@ -388,32 +400,11 @@ void CSeqDBAtlas::CRegionMap::x_Roundup(Uint8 & begin,
     }
 }
 
-Uint4 CSeqDBAtlas::x_GetNewIdent()
-{
-    Uint4 id = (Uint4)-1;
-    
-    if (m_FreeIdents > (m_IdentLookup.size() / 2)) {
-        for(Uint4 i = 0; i<m_IdentLookup.size(); i++) {
-            if (m_IdentLookup[i] == 0) {
-                m_FreeIdents--;
-                id = i;
-                break;
-            }
-        }
-        _ASSERT(id != (Uint4)-1);
-    } else {
-        id = m_IdentLookup.size();
-        m_IdentLookup.push_back(0);
-    }
-
-    return id;
-}
-
 const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
-                                       Uint8       & begin,
-                                       Uint8       & end,
-                                       Uint4       & ident,
-                                       const char ** start)
+                                       TIndx       & begin,
+                                       TIndx       & end,
+                                       const char ** start,
+                                       CRegionMap ** region)
 {
     // Try recent matches first.
     
@@ -421,11 +412,17 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
         if (! m_Recent[i])
             break;
         
-        const char * retval = m_Recent[i]->MatchAndUse(fid, begin, end, ident, start);
+        const char * retval = m_Recent[i]->MatchAndUse(fid, begin, end, start);
         
         if (retval) {
             // Moves region to top
-            x_AddRecent(m_Recent[i]);
+            if (region) {
+                *region = m_Recent[i];
+            }
+            
+            if (i) {
+                x_AddRecent(m_Recent[i]);
+            }
             
             return retval;
         }
@@ -438,7 +435,7 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
     // Start key - will be used to find the least element that is NOT
     // good enough.  We want the elements before this to have
     
-    CRegionMap key(0, fid, begin, end, (Uint4)-1);
+    CRegionMap key(0, fid, begin, end);
     
     TNameOffsetTable::iterator iter
         = m_NameOffsetLookup.upper_bound(& key);
@@ -449,16 +446,20 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
         if ((*iter)->Fid() != fid)
             return 0;
         
-        CRegionMap & rmap = *(*iter);
+        CRegionMap * rmap = *iter;
         
         // Should be guaranteed by the ordering we are using.
-        _ASSERT(rmap.Begin() <= begin);
+        _ASSERT(rmap->Begin() <= begin);
         
-        if (rmap.End() >= end) {
-            const char * retval = rmap.MatchAndUse(fid, begin, end, ident, start);
+        if (rmap->End() >= end) {
+            const char * retval = rmap->MatchAndUse(fid, begin, end, start);
             _ASSERT(retval);
             
-            x_AddRecent(& rmap);
+            if (region) {
+                *region = rmap;
+            }
+            
+            x_AddRecent(rmap);
             return retval;
         }
     }
@@ -468,10 +469,10 @@ const char * CSeqDBAtlas::x_FindRegion(Uint4         fid,
 
 const char *
 CSeqDBAtlas::x_GetRegion(const string   & fname,
-                         Uint8          & begin,
-                         Uint8          & end,
-                         Uint4          & ident,
-                         const char    ** start)
+                         TIndx          & begin,
+                         TIndx          & end,
+                         const char    ** start,
+                         CRegionMap    ** rmap)
 {
     const char * dummy = 0;
     
@@ -487,7 +488,7 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
     
     const char * retval = 0;
     
-    if ((retval = x_FindRegion(fid, begin, end, ident, start))) {
+    if ((retval = x_FindRegion(fid, begin, end, start, rmap))) {
         return retval;
     }
     
@@ -506,16 +507,14 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         }
     }
     
-    ident = x_GetNewIdent();
-    
-    _ASSERT(ident != (Uint4)-1);
-    
-    CRegionMap * nregion = new CRegionMap(strp, fid, begin, end, ident);
+    CRegionMap * nregion = new CRegionMap(strp, fid, begin, end);
     
     auto_ptr<CRegionMap> newmap(nregion);
     
-    m_IdentLookup[ident] = nregion;
     m_NameOffsetLookup.insert(nregion);
+    
+    if (rmap)
+        *rmap = nregion;
     
     if (m_UseMmap) {
         if (newmap->MapMmap()) {
@@ -551,34 +550,32 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
 }
 
 const char * CSeqDBAtlas::GetRegion(const string   & fname,
-                                    Uint8            begin,
-                                    Uint8            end,
+                                    TIndx            begin,
+                                    TIndx            end,
                                     CSeqDBLockHold & locked)
 {
     Lock(locked);
     
-    Uint4 ident;
-    return x_GetRegion(fname, begin, end, ident, 0);
+    return x_GetRegion(fname, begin, end, 0, 0);
 }
 
 // Assumes lock is held.
 void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
                             const string   & fname,
-                            Uint8            begin,
-                            Uint8            end)
+                            TIndx            begin,
+                            TIndx            end)
 {
     RetRegion(lease);
     
-    const char * start = 0;
-    Uint4 ident = 0;
+    const char * start(0);
+    CRegionMap * rmap(0);
     
-    const char * result = x_GetRegion(fname, begin, end, ident, & start);
+    const char * result = x_GetRegion(fname, begin, end, & start, & rmap);
     
     if (result) {
-        _ASSERT(ident != (Uint4) -1);
         _ASSERT(start);
         
-        lease.SetRegion(begin, end, ident, start);
+        lease.SetRegion(begin, end, start, rmap);
     }
 }
 
@@ -588,22 +585,13 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
 void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
 {
     if (ml.m_Data) {
-        Uint4        ident = ml.m_Ident;
-        
 #ifdef _DEBUG
         const char * datap = ml.m_Data;
 #endif
+        _ASSERT(ml.m_RMap && ml.m_RMap->InRange(datap));
         
-        _ASSERT(ident != (Uint4) -1);
+        ml.m_RMap->RetRef();
         
-        CRegionMap * rmap = m_IdentLookup[ident];
-        
-        _ASSERT(rmap);
-        _ASSERT(rmap->InRange(datap));
-        
-        rmap->RetRef();
-        
-        ml.m_Ident = (Uint4) -1;
         ml.m_Data  = 0;
         ml.m_Begin = 0;
         ml.m_End   = 0;
@@ -615,13 +603,33 @@ void CSeqDBAtlas::RetRegion(const char * datap, CSeqDBLockHold & locked)
 {
     Lock(locked);
     
+    for(Uint4 i = 0; i<eNumRecent; i++) {
+        CRegionMap * rec_map = m_Recent[i];
+        
+        if (! rec_map)
+            break;
+        
+        if (rec_map->InRange(datap)) {
+            rec_map->RetRef();
+            
+            if (i) {
+                x_AddRecent(rec_map);
+            }
+            
+            return;
+        }
+    }
+    
     CSeqDBAtlas::TAddressTable::iterator iter = m_AddressLookup.upper_bound(datap);
     
     if (iter != m_AddressLookup.begin()) {
         --iter;
         
-        if ((*iter).second->InRange(datap)) {
-            (*iter).second->RetRef();
+        CRegionMap * rmap = (*iter).second;
+        
+        if (rmap->InRange(datap)) {
+            x_AddRecent(rmap);
+            rmap->RetRef();
             return;
         }
     }
@@ -634,7 +642,7 @@ void CSeqDBAtlas::RetRegion(const char * datap, CSeqDBLockHold & locked)
     }
 }
 
-void CSeqDBAtlas::ShowLayout(bool locked, Uint8 index)
+void CSeqDBAtlas::ShowLayout(bool locked, TIndx index)
 {
     CFastMutexGuard guard;
     
@@ -645,7 +653,7 @@ void CSeqDBAtlas::ShowLayout(bool locked, Uint8 index)
     // MSVC fails to grok "ostream << [Uint8]". (Okalee-dokalee...)
     
 #if _DEBUG
-    cout << "\n\nShowing layout (index " << NStr::UInt8ToString(index)
+    cout << "\n\nShowing layout (index " << NStr::UInt8ToString((Uint8)index)
          << "), current alloc = " << m_CurAlloc << endl;
 #endif
     
@@ -722,23 +730,7 @@ bool CSeqDBAtlas::x_Free(const char * freeme)
 
 // Assumes lock is held.
 
-void CSeqDBAtlas::IncrementRefCnt(CSeqDBMemLease & lease)
-{
-    if (lease.Empty()) {
-        return;
-    }
-    
-    _ASSERT(this == & lease.m_Atlas);
-    
-    _ASSERT(lease.m_Ident != (Uint4) -1);
-    CRegionMap * rmap = m_IdentLookup[lease.m_Ident];
-    
-    _ASSERT(rmap);
-    
-    rmap->AddRef();
-}
-
-void CSeqDBAtlas::CRegionMap::Show()
+void CRegionMap::Show()
 {
 #if VERBOSE
     cout << " [" << static_cast<const void*>(m_Data) << "]-["
@@ -747,7 +739,7 @@ void CSeqDBAtlas::CRegionMap::Show()
 #endif
 }
 
-CSeqDBAtlas::CRegionMap::CRegionMap(const string * fname, Uint4 fid, Uint8 begin, Uint8 end, Uint4 ident)
+CRegionMap::CRegionMap(const string * fname, Uint4 fid, TIndx begin, TIndx end)
     : m_Data     (0),
       m_MemFile  (0),
       m_ManualMap(false),
@@ -755,14 +747,13 @@ CSeqDBAtlas::CRegionMap::CRegionMap(const string * fname, Uint4 fid, Uint8 begin
       m_Begin    (begin),
       m_End      (end),
       m_Fid      (fid),
-      m_Ident    (ident),
       m_Ref      (0),
       m_Clock    (0),
       m_Penalty  (0)
 {
 }
 
-CSeqDBAtlas::CRegionMap::~CRegionMap()
+CRegionMap::~CRegionMap()
 {
     if (m_MemFile) {
         delete m_MemFile;
@@ -782,51 +773,66 @@ CSeqDBAtlas::CRegionMap::~CRegionMap()
     }
 }
 
-bool CSeqDBAtlas::CRegionMap::MapMmap()
+bool CRegionMap::MapMmap()
 {
+    bool rv = false;
+    
     CFile file(*m_Fname);
+    
+    TIndx flength = SeqDB_CheckLength<Uint8,TIndx>(file.GetLength());
     
     if (file.Exists() &&
         (m_Begin == 0)          &&
-        (m_End   == (Uint8) file.GetLength())) {
+        (m_End   == flength)) {
         
         m_MemFile    = new CMemoryFile(*m_Fname);
         m_Data       = (const char*) m_MemFile->GetPtr();
         m_ManualMap  = false;
         
-        return true;
+        rv = true;
     }
     
-    x_Roundup(m_Begin, m_End, m_Penalty, file.GetLength(), true);
-    
+    if (! rv) {
+        x_Roundup(m_Begin, m_End, m_Penalty, flength, true);
+        
 #if defined(NCBI_OS_UNIX)
-    // Use default attributes (we were going to anyway)
-    int map_protect = PROT_READ;
-    int file_access = O_RDONLY;
-    int map_share   = MAP_PRIVATE;
+        // Use default attributes (we were going to anyway)
+        int map_protect = PROT_READ;
+        int file_access = O_RDONLY;
+        int map_share   = MAP_PRIVATE;
         
-    // Open file
-    int fd = open(m_Fname->c_str(), file_access);
-    if (fd < 0) {
-        return false;
-    }
+        // Open file
+        int fd = open(m_Fname->c_str(), file_access);
+        if (fd < 0) {
+            return false;
+        }
         
-    // Map file to memory
-    m_Data = (const char*) mmap(0, (size_t) (m_End - m_Begin), map_protect, map_share, fd, (size_t) m_Begin);
-    close(fd);
-    
-    if (m_Data == (const char*)MAP_FAILED) {
-        m_Data = 0;
-    } else {
-        m_ManualMap = true;
-        return true;
-    }
+        // Map file to memory
+        m_Data = (const char*) mmap(0, (size_t) (m_End - m_Begin), map_protect, map_share, fd, (size_t) m_Begin);
+        close(fd);
+        
+        if (m_Data == (const char*)MAP_FAILED) {
+            m_Data = 0;
+        } else {
+            m_ManualMap = true;
+            rv = true;
+        }
 #endif
+    }
     
-    return false;
+    // This does more harm than good, for reasons unknown.
+    
+// #if defined(NCBI_OS_UNIX)
+//     if (rv && eSeqMadvise) {
+//         cerr << "MADVISE: data " << (Uint4*)(m_Data) << " length " << (m_End - m_Begin) << " sequential." << endl;
+//         madvise((void*) m_Data, m_End - m_Begin, MADV_SEQUENTIAL);
+//     }
+// #endif
+    
+    return rv;
 }
 
-bool CSeqDBAtlas::CRegionMap::MapFile()
+bool CRegionMap::MapFile()
 {
     // Okay, rethink:
     
@@ -873,14 +879,14 @@ bool CSeqDBAtlas::CRegionMap::MapFile()
     // file, where we would be storing regions consisting of only 4 or
     // 8 bytes.
     
-    x_Roundup(m_Begin, m_End, m_Penalty, file.GetLength(), false);
+    x_Roundup(m_Begin, m_End, m_Penalty, SeqDB_CheckLength<Uint8,TIndx>(file.GetLength()), false);
     
     istr.seekg(m_Begin);
     
     Uint8 rdsize8 = m_End - m_Begin;
-    _ASSERT((rdsize8 >> 32) == 0);
+    _ASSERT((TIndx(rdsize8) & TIndx(-1)) == rdsize8);
     
-    Uint4 rdsize = rdsize8;
+    TIndx rdsize = (TIndx) rdsize8;
     
     char * newbuf = new char[rdsize];
     
@@ -907,32 +913,13 @@ bool CSeqDBAtlas::CRegionMap::MapFile()
     return (amt_read == rdsize);
 }
 
-const char * CSeqDBAtlas::CRegionMap::Data(Uint8 begin, Uint8 end)
+const char * CRegionMap::Data(TIndx begin, TIndx end)
 {
     _ASSERT(m_Data != 0);
     _ASSERT(begin  >= m_Begin);
     _ASSERT(end    <= m_End);
     
     return m_Data + begin - m_Begin;
-}
-
-void CSeqDBAtlas::CRegionMap::AddRef()
-{
-    _ASSERT(m_Ref >= 0);
-    m_Ref ++;
-    m_Clock = 0;
-}
-
-void CSeqDBAtlas::CRegionMap::RetRef()
-{
-    _ASSERT(m_Ref > 0);
-    m_Ref --;
-}
-
-bool CSeqDBAtlas::CRegionMap::InRange(const char * p)
-{
-    _ASSERT(m_Data);
-    return ((p >= m_Data) && (p < (m_Data + (m_End - m_Begin))));
 }
 
 Uint4 CSeqDBAtlas::x_LookupFile(const string  & fname,

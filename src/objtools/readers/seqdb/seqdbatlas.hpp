@@ -66,14 +66,141 @@ private:
     bool                m_Locked;
 };
 
+class CRegionMap {
+public:
+    typedef Uint4 TIndx;
+    
+    typedef map<const char *, CRegionMap*> TAddressTable;
+    
+    CRegionMap(const string * fname,
+               Uint4          fid,
+               TIndx          begin,
+               TIndx          end);
+    
+    ~CRegionMap();
+    
+    bool MapMmap();
+    bool MapFile();
+    
+    void AddRef()
+    {
+        _ASSERT(m_Ref >= 0);
+        m_Ref ++;
+        m_Clock = 0;
+    }
+    
+    void RetRef()
+    {
+        _ASSERT(m_Ref > 0);
+        m_Ref --;
+    }
+    
+    bool InUse()
+    {
+        return m_Ref != 0;
+    }
+    
+    bool InRange(const char * p) const
+    {
+        _ASSERT(m_Data);
+        return ((p >= m_Data) && (p < (m_Data + (m_End - m_Begin))));
+    }
+    
+    const string & Name()
+    {
+        return *m_Fname;
+    }
+    
+    TIndx Begin()
+    {
+        return m_Begin;
+    }
+    
+    TIndx End()
+    {
+        return m_End;
+    }
+    
+    TIndx Length()
+    {
+        return m_End - m_Begin;
+    }
+    
+    const char * Data(TIndx begin, TIndx end);
+        
+    const char * Data() { return m_Data; }
+        
+    Uint4 Fid()
+    {
+        return m_Fid;
+    }
+        
+    int GetClock()
+    {
+        return m_Clock + m_Penalty;
+    }
+        
+    void BumpClock()
+    {
+        _ASSERT(! m_Ref);
+        m_Clock++;
+    }
+        
+    inline const char *
+    MatchAndUse(Uint4            fid,
+                TIndx          & begin,
+                TIndx          & end,
+                const char    ** start);
+        
+    void Show();
+        
+    void GetBoundaries(const char ** p,
+                       TIndx      &  begin,
+                       TIndx      &  end)
+    {
+        *p    = m_Data;
+        begin = m_Begin;
+        end   = m_End;
+    }
+        
+    void x_Roundup(TIndx & begin,
+                   TIndx & end,
+                   int   & penalty,
+                   TIndx   file_size,
+                   bool    use_mmap);
+        
+    inline bool operator < (const CRegionMap & other) const;
+        
+private:
+    const char    * m_Data;
+    CMemoryFile   * m_MemFile;
+    bool            m_ManualMap;
+        
+    const string * m_Fname;
+    TIndx          m_Begin;
+    TIndx          m_End;
+    Uint4          m_Fid;
+    
+    // Usage of clock: When a reference is gotten, the clock is
+    // set to zero.  When GC is run, all unused clocks are bumped.
+    // The GC adds "clock" and "penalty" together and removes
+    // regions with the highest resulting value first.
+        
+    int m_Ref;
+    int m_Clock;
+    int m_Penalty;
+};
+
 class CSeqDBMemLease {
 public:
+    typedef CRegionMap::TIndx TIndx;
+    
     CSeqDBMemLease(CSeqDBAtlas & atlas)
         : m_Atlas(atlas),
           m_Data (0),
           m_Begin(0),
           m_End  (0),
-          m_Ident(0)
+          m_RMap (0)
     {
     }
     
@@ -86,11 +213,11 @@ public:
     inline void Clear();
     
     // ASSUMES lock is held.
-    inline bool Contains(Uint8 begin, Uint8 end) const;
+    inline bool Contains(TIndx begin, TIndx end) const;
     
-    const char * GetPtr(Uint8 offset) const
+    const char * GetPtr(TIndx offset) const
     {
-        return (m_Data + (Uint4)(offset - m_Begin));
+        return (m_Data + (offset - m_Begin));
     }
     
     bool Empty() const
@@ -104,26 +231,26 @@ private:
     CSeqDBMemLease(const CSeqDBMemLease & ml);
     CSeqDBMemLease & operator =(const CSeqDBMemLease & ml);
     
-    void SetRegion(Uint8            begin,
-                   Uint8            end,
-                   Uint4            ident,
-                   const char     * data)
+    void SetRegion(TIndx        begin,
+                   TIndx        end,
+                   const char * data,
+                   CRegionMap * rmap)
     {
         Clear();
         
         m_Data  = data;
         m_Begin = begin;
         m_End   = end;
-        m_Ident = ident;
+        m_RMap  = rmap;
     }
     
     friend class CSeqDBAtlas;
     
-    CSeqDBAtlas & m_Atlas;
-    const char  * m_Data;
-    Uint8         m_Begin;
-    Uint8         m_End;
-    Uint4         m_Ident;
+    CSeqDBAtlas      & m_Atlas;
+    const char       * m_Data;
+    TIndx              m_Begin;
+    TIndx              m_End;
+    class CRegionMap * m_RMap;
 };
 
 class CSeqDBAtlas {
@@ -133,6 +260,8 @@ class CSeqDBAtlas {
     };
     
 public:
+    typedef CRegionMap::TIndx TIndx;
+    
     /// Create an empty atlas.
     CSeqDBAtlas(bool use_mmap);
     
@@ -140,22 +269,22 @@ public:
     ~CSeqDBAtlas();
     
     /// Gets whole-file mapping, and returns file data and length.
-    const char * GetFile(const string & fname, Uint8 & length, CSeqDBLockHold & locked);
+    const char * GetFile(const string & fname, TIndx & length, CSeqDBLockHold & locked);
     
     /// Gets whole-file mapping, and returns file data and length.
-    void GetFile(CSeqDBMemLease & lease, const string & fname, Uint8 & length, CSeqDBLockHold & locked);
+    void GetFile(CSeqDBMemLease & lease, const string & fname, TIndx & length, CSeqDBLockHold & locked);
     
     /// Gets mapping for entire file and file length, return true if found.
-    bool GetFileSize(const string & fname, Uint8 & length);
+    bool GetFileSize(const string & fname, TIndx & length);
     
     /// Gets a partial mapping of the file.
-    const char * GetRegion(const string & fname, Uint8 begin, Uint8 end, CSeqDBLockHold & locked);
+    const char * GetRegion(const string & fname, TIndx begin, TIndx end, CSeqDBLockHold & locked);
     
     /// Gets a partial mapping of the file.
     void GetRegion(CSeqDBMemLease  & lease,
                    const string    & fname,
-                   Uint8             begin,
-                   Uint8             end);
+                   TIndx             begin,
+                   TIndx             end);
     
     // Assumes lock is held.
     
@@ -169,18 +298,13 @@ public:
     void GarbageCollect(CSeqDBLockHold & locked);
     
     /// Display memory layout (this code is temporary).
-    void ShowLayout(bool locked, Uint8 index);
+    void ShowLayout(bool locked, TIndx index);
     
     /// Allocate memory and track it with an internal set.
     char * Alloc(Uint4 length, CSeqDBLockHold & locked);
     
     /// Return memory, removing it from the internal set.
     void Free(const char * freeme, CSeqDBLockHold & locked);
-    
-    // Assumes lock is held.
-    
-    /// Copy range from one lease to another (updating refcnts).
-    void IncrementRefCnt(CSeqDBMemLease & lease);
     
     /// Lock internal mutex.
     void Lock(CSeqDBLockHold & locked)
@@ -200,159 +324,41 @@ public:
         }
     }
     
-    class CRegionMap {
-    public:
-        typedef map<const char *, CRegionMap*> TAddressTable;
-        
-        CRegionMap(const string * fname,
-                   Uint4          fid,
-                   Uint8          begin,
-                   Uint8          end,
-                   Uint4          ident);
-        
-        ~CRegionMap();
-        
-        bool MapMmap();
-        bool MapFile();
-        
-        void AddRef();
-        void RetRef();
-        
-        bool InUse()
-        {
-            return m_Ref != 0;
-        }
-        
-        bool InRange(const char * p);
-        
-        const string & Name()
-        {
-            return *m_Fname;
-        }
-        
-        Uint8 Begin()
-        {
-            return m_Begin;
-        }
-
-        Uint8 End()
-        {
-            return m_End;
-        }
-        
-        Uint8 Length()
-        {
-            return m_End - m_Begin;
-        }
-        
-        const char * Data(Uint8 begin, Uint8 end);
-        
-        const char * Data() { return m_Data; }
-        
-        Uint4 Ident()
-        {
-            return m_Ident;
-        }
-        
-        Uint4 Fid()
-        {
-            return m_Fid;
-        }
-        
-        int GetClock()
-        {
-            return m_Clock + m_Penalty;
-        }
-        
-        void BumpClock()
-        {
-            _ASSERT(! m_Ref);
-            m_Clock++;
-        }
-        
-        inline const char *
-        MatchAndUse(Uint4            fid,
-                    Uint8          & begin,
-                    Uint8          & end,
-                    Uint4          & ident,
-                    const char    ** start);
-        
-        void Show();
-        
-        void GetBoundaries(const char ** p,
-                           Uint8      &  begin,
-                           Uint8      &  end)
-        {
-            *p    = m_Data;
-            begin = m_Begin;
-            end   = m_End;
-        }
-        
-        void x_Roundup(Uint8 & begin,
-                       Uint8 & end,
-                       int   & penalty,
-                       Uint8   file_size,
-                       bool    use_mmap);
-        
-        inline bool operator < (const CRegionMap & other) const;
-        
-    private:
-        const char    * m_Data;
-        CMemoryFile   * m_MemFile;
-        bool            m_ManualMap;
-        
-        const string * m_Fname;
-        Uint8          m_Begin;
-        Uint8          m_End;
-        Uint4          m_Fid;
-        Uint4          m_Ident;
-        
-        // Usage of clock: When a reference is gotten, the clock is
-        // set to zero.  When GC is run, all unused clocks are bumped.
-        // The GC adds "clock" and "penalty" together and removes
-        // regions with the highest resulting value first.
-        
-        int m_Ref;
-        int m_Clock;
-        int m_Penalty;
-    };
     
 private:
     typedef map<const char *, Uint4>::iterator TPoolIter;
 
     // Assumes lock is held
     const char * x_FindRegion(Uint4            fid,
-                              Uint8          & begin,
-                              Uint8          & end,
-                              Uint4          & ident,
-                              const char    ** startp);
+                              TIndx          & begin,
+                              TIndx          & end,
+                              const char    ** startp,
+                              CRegionMap    ** rmap);
     
     /// Gets a partial mapping of the file.
     const char * x_GetRegion(const string   & fname,
-                             Uint8          & begin,
-                             Uint8          & end,
-                             Uint4          & ident,
-                             const char    ** start);
+                             TIndx          & begin,
+                             TIndx          & end,
+                             const char    ** start,
+                             CRegionMap    ** rmap);
     
     /// Try to find the region in the memory pool and free it.
     bool x_Free(const char * freeme);
     
     /// Clean up unreferenced objects (non-locking version.)
     // Assumes lock is held
-    void x_GarbageCollect(Uint8 reduce_to);
+    void x_GarbageCollect(TIndx reduce_to);
     
     /// Possibly adjust mapping request to cover larger area.
-    void x_Roundup(Uint8  & begin,
-                   Uint8  & end,
+    void x_Roundup(TIndx  & begin,
+                   TIndx  & end,
                    int    & penalty,
-                   Uint8    file_size,
+                   TIndx    file_size,
                    bool     use_mmap);
     
     // Assumes lock is held
     Uint4 x_LookupFile(const string  & fname,
                        const string ** map_fname_ptr);
-    
-    Uint4 x_GetNewIdent();
     
     // Recent region lookup
     
@@ -455,12 +461,6 @@ private:
     
     enum { eNumRecent = 8 };
     CRegionMap * m_Recent[ eNumRecent ];
-    
-    // Ident table - regions are erased by setting pointer to zero.
-    // Index into table is "Ident" of region.
-    
-    vector<CRegionMap*> m_IdentLookup;
-    Uint4               m_FreeIdents;
 };
 
 // Assumes lock is held.
@@ -471,18 +471,17 @@ inline void CSeqDBMemLease::Clear()
 }
 
 // ASSUMES lock is held.
-inline bool CSeqDBMemLease::Contains(Uint8 begin, Uint8 end) const
+inline bool CSeqDBMemLease::Contains(TIndx begin, TIndx end) const
 {
     return m_Data && (m_Begin <= begin) && (end <= m_End);
 }
 
 
 const char *
-CSeqDBAtlas::CRegionMap::MatchAndUse(Uint4            fid,
-                                     Uint8          & begin,
-                                     Uint8          & end,
-                                     Uint4          & ident,
-                                     const char    ** start)
+CRegionMap::MatchAndUse(Uint4            fid,
+                        TIndx          & begin,
+                        TIndx          & end,
+                        const char    ** start)
 {
     _ASSERT(fid);
     _ASSERT(m_Fid);
@@ -494,7 +493,6 @@ CSeqDBAtlas::CRegionMap::MatchAndUse(Uint4            fid,
         
         begin  = m_Begin;
         end    = m_End;
-        ident  = m_Ident;
         *start = m_Data;
         
         return location;
@@ -503,7 +501,7 @@ CSeqDBAtlas::CRegionMap::MatchAndUse(Uint4            fid,
     return 0;
 }
 
-bool CSeqDBAtlas::CRegionMap::operator < (const CRegionMap & other) const
+bool CRegionMap::operator < (const CRegionMap & other) const
 {
 #define COMPARE_FIELD_AND_RETURN(OTH,FLD) \
     if (FLD < other.FLD) \
@@ -511,14 +509,12 @@ bool CSeqDBAtlas::CRegionMap::operator < (const CRegionMap & other) const
     if (OTH.FLD < FLD) \
         return false;
     
-    // Sort via fields: fid,begin,end,ident.
-    // Should never get to "ident".
+    // Sort via fields: fid,begin,end.
     
     COMPARE_FIELD_AND_RETURN(other, m_Fid);
     COMPARE_FIELD_AND_RETURN(other, m_Begin);
-    COMPARE_FIELD_AND_RETURN(other, m_End);
     
-    return m_Ident < other.m_Ident;
+    return m_End < other.m_End;
 }
 
 inline CSeqDBLockHold::~CSeqDBLockHold()
@@ -526,10 +522,11 @@ inline CSeqDBLockHold::~CSeqDBLockHold()
     m_Atlas.Unlock(*this);
 }
 
+// Assumes lock is held.
 inline void CSeqDBMemLease::IncrementRefCnt()
 {
-    _ASSERT(m_Data);
-    m_Atlas.IncrementRefCnt(*this);
+    _ASSERT(m_Data && m_RMap);
+    m_RMap->AddRef();
 }
 
 
