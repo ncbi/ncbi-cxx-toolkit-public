@@ -259,5 +259,9 @@ chmod 755 ${target_dir}/bin/move-gbench.sh
 COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
 
 echo "Configuring plugin cache"
-COMMON_AddRunpath ${target_dir}/lib
+# COMMON_AddRunpath may interfere with compiled-in runpaths, so we
+# explicitly search FLTK's library directory.
+fltk_config=`sed -ne 's/^FLTK_CONFIG *= *//p' ${src_dir}/build/Makefile.mk`
+fltk_libdir=`$fltk_config --exec-prefix`/lib
+COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan ${target_dir}/plugins
