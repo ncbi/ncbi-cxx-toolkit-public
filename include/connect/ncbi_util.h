@@ -99,7 +99,8 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
   LOG_Write(lg, level, THIS_MODULE, THIS_FILE, __LINE__, message)
 
 #define LOG_DATA(lg, data, size, message) \
-  LOG_Data(lg, eLOG_Trace, 0, 0, 0, data, size, message)
+  LOG_Data(lg, eLOG_Trace, THIS_MODULE, THIS_FILE, __LINE__, \
+           data, size, message)
 
 
 /* Defaults for the THIS_FILE and THIS_MODULE macros (used by LOG_WRITE)
@@ -243,6 +244,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/10/21 11:17:17  lavr
+ * Add location information in LOG_DATA()
+ *
  * Revision 6.19  2003/04/30 16:57:41  lavr
  * Changed internal automatic buf -> _buf to avoid name collision warnings
  *
