@@ -256,6 +256,14 @@ CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjItem& project)
     string file_path = CDirEntry::ConcatPath(m_ProjectDir, project.m_ID);
     file_path += m_ProjectItemExt;
 
+    // Create dir if no such dir...
+    string dir;
+    CDirEntry::SplitPath(file_path, &dir);
+    CDir project_dir(dir);
+    if ( !project_dir.Exists() ) {
+        CDir(dir).CreatePath();
+    }
+
     CNcbiOfstream  ofs(file_path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
@@ -267,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/10 22:12:43  gorelenk
+ * Added creation of new dir while saving _MasterProject parts.
+ *
  * Revision 1.8  2004/02/10 18:21:44  gorelenk
  * Implemented overwrite only in case when _MasterProject is different from
  * already present one.
