@@ -80,6 +80,7 @@ typedef enum {
     eGetJob,
     eWaitGetJob,
     ePutJobResult,
+    ePutJobFailure,
     eReturnJob,
     eJobRunTimeout,
     eDropQueue,
@@ -185,6 +186,7 @@ public:
     void ProcessGet(CSocket& sock, SThreadData& tdata);
     void ProcessWaitGet(CSocket& sock, SThreadData& tdata);
     void ProcessPut(CSocket& sock, SThreadData& tdata);
+    void ProcessPutFailure(CSocket& sock, SThreadData& tdata);
     void ProcessDropQueue(CSocket& sock, SThreadData& tdata);
     void ProcessReturn(CSocket& sock, SThreadData& tdata);
     void ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata);
@@ -366,6 +368,9 @@ void CNetScheduleServer::Process(SOCK sock)
             case ePutJobResult:
                 ProcessPut(socket, *tdata);
                 break;
+            case ePutJobFailure:
+                ProcessPutFailure(socket, *tdata);
+                break;
             case eReturnJob:
                 ProcessReturn(socket, *tdata);
                 break;
@@ -524,6 +529,18 @@ void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
         } else {
             st = (int)CNetScheduleClient::eJobNotFound;
         }
+    } 
+    else if (status == CNetScheduleClient::eFailed) {
+        bool b = queue.GetErrMsg(job_id, tdata.req.output);
+
+        if (b) {
+            sprintf(szBuf, 
+                    "%i %i \"\" \"%s\"", st, 0, tdata.req.output);
+            WriteMsg(sock, "OK:", szBuf);
+            return;
+        } else {
+            st = (int)CNetScheduleClient::eJobNotFound;
+        }
     }
 
     sprintf(szBuf, "%i", st);
@@ -593,6 +610,16 @@ void CNetScheduleServer::ProcessWaitGet(CSocket& sock, SThreadData& tdata)
 
 }
 
+void CNetScheduleServer::ProcessPutFailure(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    queue.JobFailed(job_id, req.err_msg);
+    WriteMsg(sock, "OK:", kEmptyStr.c_str());
+}
+
 void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
 {
     SJS_Request& req = tdata.req;
@@ -602,6 +629,7 @@ void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
     queue.PutResult(job_id, req.job_return_code, req.output);
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
+
 
 void CNetScheduleServer::ProcessReturn(CSocket& sock, SThreadData& tdata)
 {
@@ -680,6 +708,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     // 13.WGET udp_port_number timeout
     // 14.JRTO JSID_01_1 timeout
     // 15.DROJ JSID_01_1
+    // 16.FPUT JSID_01_1 "error message"
 
     const char* s = reqstr.c_str();
 
@@ -872,6 +901,32 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         }
         return;
     }
+
+    if (strncmp(s, "FPUT", 4) == 0) {
+        req->req_type = ePutJobFailure;
+        s += 4;
+        NS_SKIPSPACE(s)
+        NS_GETSTRING(s, req->job_key_str)
+
+        if (req->job_key_str.empty()) {
+            NS_RETURN_ERROR("Misformed put error request")
+        }
+
+        if (!*s) return;
+        NS_SKIPSPACE(s)
+        if (!*s) return;
+
+        if (*s !='"') {
+            NS_RETURN_ERROR("Misformed PUT error request")
+        }
+        for (++s; *s != '"'; ++s) {
+            NS_CHECKEND(s, "Misformed PUT error request")
+            req->err_msg.push_back(*s);
+        }
+        
+        return;
+    }
+
 
     if (strncmp(s, "RETURN", 6) == 0) {
         req->req_type = eReturnJob;
@@ -1272,6 +1327,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/17 20:37:07  kuznets
+ * Implemented FPUT
+ *
  * Revision 1.15  2005/03/17 16:05:21  kuznets
  * Sensible error message if timeout expired
  *

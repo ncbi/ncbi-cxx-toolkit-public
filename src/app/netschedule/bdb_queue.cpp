@@ -680,6 +680,8 @@ CQueueDataBase::CQueue::Submit(const string& input,
     db.input = input;
     db.output = "";
 
+    db.err_msg = "";
+
     db.cout = "";
     db.cerr = "";
 
@@ -815,7 +817,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
         (time_submit + subm_timeout >= (unsigned)curr)) {
 
         char msg[1024];
-        sprintf(msg, "DONE %u", job_id);
+        sprintf(msg, "JNTF %u", job_id);
 
         CFastMutexGuard guard(m_LQueue.us_lock);
 
@@ -824,6 +826,68 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                      CSocketAPI::ntoa(subm_addr), subm_port);
     }
 }
+
+void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
+                                       const string& err_msg)
+{
+    m_LQueue.status_tracker.SetStatus(job_id, CNetScheduleClient::eFailed);
+
+    SQueueDB& db = m_LQueue.db;
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    unsigned subm_addr, subm_port, subm_timeout, time_submit;
+    time_t curr = time(0);
+
+    {{
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(&trans);
+
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);    
+
+    cur.SetCondition(CBDB_FileCursor::eEQ);
+    cur.From << job_id;
+
+    if (cur.FetchFirst() != eBDB_Ok) {
+        // TODO: Integrity error or job just expired?
+        return;
+    }
+    time_submit = db.time_submit;
+    subm_addr = db.subm_addr;
+    subm_port = db.subm_port;
+    subm_timeout = db.subm_timeout;
+    
+    db.status = (int) CNetScheduleClient::eFailed;
+    db.time_done = curr;
+    db.err_msg = err_msg;
+
+    cur.Update();
+
+    }}
+
+    trans.Commit();
+
+    RemoveFromTimeLine(job_id);
+
+    // check if we need to send a UDP notification
+
+    if ( subm_addr && subm_timeout &&
+        (time_submit + subm_timeout >= (unsigned)curr)) {
+
+        char msg[1024];
+        sprintf(msg, "JNTF %u", job_id);
+
+        CFastMutexGuard guard(m_LQueue.us_lock);
+
+        //EIO_Status status = 
+            m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
+                                     CSocketAPI::ntoa(subm_addr), subm_port);
+    }
+
+}
+
 
 void CQueueDataBase::CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
 {
@@ -1107,8 +1171,6 @@ bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
     _ASSERT(ret_code);
     _ASSERT(output);
 
-//    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
-
     SQueueDB& db = m_LQueue.db;
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(0);
@@ -1124,6 +1186,26 @@ bool CQueueDataBase::CQueue::GetOutput(unsigned int job_id,
     return false; // job not found
 
 }
+
+bool CQueueDataBase::CQueue::GetErrMsg(unsigned int job_id,
+                                       char*        err_msg)
+{
+    _ASSERT(err_msg);
+
+    SQueueDB& db = m_LQueue.db;
+    CFastMutexGuard guard(m_LQueue.lock);
+    db.SetTransaction(0);
+
+    db.id = job_id;
+    if (db.Fetch() == eBDB_Ok) {
+        const char* str = db.err_msg;
+        ::strcpy(err_msg, str);
+        return true;
+    }
+
+    return false; // job not found
+}
+
 
 CNetScheduleClient::EJobStatus 
 CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
@@ -1474,6 +1556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/03/17 20:37:07  kuznets
+ * Implemented FPUT
+ *
  * Revision 1.17  2005/03/17 16:04:38  kuznets
  * Get job algorithm improved to re-get if job expired
  *

@@ -90,6 +90,8 @@ struct SQueueDB : public CBDB_File
     CBDB_FieldString       input;           ///< Input data
     CBDB_FieldString       output;          ///< Result data
 
+    CBDB_FieldString       err_msg;         ///< Error message (exception::what())
+
     CBDB_FieldString       cout;            ///< Reserved
     CBDB_FieldString       cerr;            ///< Reserved
 
@@ -122,8 +124,10 @@ struct SQueueDB : public CBDB_File
         BindData("input",  &input,  kNetScheduleMaxDataSize);
         BindData("output", &output, kNetScheduleMaxDataSize);
 
-        BindData("cout",  &cout, 128);
-        BindData("cerr",  &cerr, 128);
+        BindData("err_msg", &err_msg, kNetScheduleMaxErrSize);
+
+        BindData("cout",  &cout, kNetScheduleMaxDataSize);
+        BindData("cerr",  &cerr, kNetScheduleMaxDataSize);
     }
 };
 
@@ -294,6 +298,10 @@ public:
         void PutResult(unsigned int  job_id,
                        int           ret_code,
                        const char*   output);
+        
+        void JobFailed(unsigned int  job_id,
+                       const string& err_msg);
+
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input);
@@ -311,6 +319,10 @@ public:
         bool GetOutput(unsigned int job_id,
                        int*         ret_code,
                        char*        output);
+
+        // Get output for failed job
+        bool GetErrMsg(unsigned int job_id,
+                       char*        err_msg);
 
         CNetScheduleClient::EJobStatus 
         GetStatus(unsigned int job_id) const;
@@ -421,6 +433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/17 20:37:07  kuznets
+ * Implemented FPUT
+ *
  * Revision 1.12  2005/03/15 20:14:30  kuznets
  * Implemented notification to client waiting for job
  *
