@@ -107,7 +107,9 @@ AC_ARG_WITH(sybase,
 AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
-   [ --without-objects       do not generate/build serializeable objects from ASNs])
+   [ --with-objects          generate/build serializeable objects from ASNs])
+AC_ARG_WITH(app,
+   [ --with-app              build standalone applications like ID1_FETCH])
 AC_ARG_WITH(ctools,
    [ --without-ctools        do not build NCBI C Toolkit based projects])
 AC_ARG_WITH(gui,
@@ -124,7 +126,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization dll runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy \
-ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects ctools gui internal"
+ncbi-c wxwin fastcgi sss sssdb sssutils pubmed sybase serial objects app ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -1458,12 +1460,34 @@ if test ! -f src/objects/Makefile.in  -o  ! -d include/objects ; then
    with_objects="no"
 fi
 
+if test "$with_objects" != "no"  &&  test "$with_app" = "yes" ; then
+   with_objects="yes"
+fi
+
 if test "$with_objects" = "yes"  &&  test -n "$serial" ; then
    WithProjects="$WithProjects objects"
    objects="objects"
 else
    WithoutProjects="$WithoutProjects objects"
    objects=
+fi
+
+
+## `app' projects
+
+if test ! -f src/app/Makefile.in  -o  ! -d include/app ; then
+   if test "$with_app" = "yes" ; then
+      AC_MSG_ERROR(["--with-app:  APP sources are missing"])
+   fi
+   with_app="no"
+fi
+
+if test "$with_app" = "yes"  &&  test -n "$objects" ; then
+   WithProjects="$WithProjects app"
+   app="app"
+else
+   WithoutProjects="$WithoutProjects app"
+   app=
 fi
 
 
@@ -1638,6 +1662,7 @@ AC_SUBST(CXXFLAGS_DLL)
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(serial)
 AC_SUBST(objects)
+AC_SUBST(app)
 
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
