@@ -35,6 +35,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/06/11 02:48:03  vakatov
+* [_DEBUG] Refined the output from THROW*_TRACE macro
+*
 * Revision 1.10  1999/05/04 00:03:07  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -122,26 +125,56 @@ extern void DoThrowTraceAbort(void);
 } while(0)
 
 // Example:  THROW0_TRACE("Throw just a string");
+// Example:  THROW0_TRACE(123);
 #  define THROW0_TRACE(exception_class) do { \
-    _TRACE("EXCEPTION: " << #exception_class);\
-    DoThrowTraceAbort(); \
-    throw exception_class; \
+    try { \
+        throw exception_class; \
+    } catch (exception& e) { \
+        _TRACE("EXCEPTION: " << e.what()); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } catch (const string& s) { \
+        _TRACE("EXCEPTION: " << s); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } catch (...) { \
+        _TRACE("EXCEPTION: " << #exception_class); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } \
 } while(0)
 
 // Example:  THROW1_TRACE(runtime_error, "Something is weird...");
 #  define THROW1_TRACE(exception_class, exception_arg) do { \
-    _TRACE("EXCEPTION: " << #exception_class << "(" << #exception_arg << ")");\
-    DoThrowTraceAbort(); \
-    throw exception_class(exception_arg); \
+    try { \
+        throw exception_class(exception_arg); \
+    } catch (exception& e) { \
+        _TRACE("EXCEPTION: " << e.what()); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } catch (...) { \
+        _TRACE("EXCEPTION: " \
+               << #exception_class << "(" << #exception_arg << ")"); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } \
 } while(0)
 
 // Example:  THROW_TRACE(bad_alloc, ());
 // Example:  THROW_TRACE(runtime_error, ("Something is weird..."));
-// Example:  THROW_TRACE(CParseExceprion, ("Some parse error", 123));
+// Example:  THROW_TRACE(CParseException, ("Some parse error", 123));
 #  define THROW_TRACE(exception_class, exception_args) do { \
-    _TRACE("EXCEPTION: " << #exception_class << #exception_args); \
-    DoThrowTraceAbort(); \
-    throw exception_class exception_args; \
+    try { \
+        throw exception_class exception_args; \
+    } catch (exception& e) { \
+        _TRACE("EXCEPTION: " << e.what()); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } catch (...) { \
+        _TRACE("EXCEPTION: " << #exception_class << #exception_args); \
+        DoThrowTraceAbort(); \
+        throw; \
+    } \
 } while(0)
 
 #else  /* _DEBUG */
