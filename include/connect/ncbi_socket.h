@@ -255,6 +255,12 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
  */
 
 
+/*
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_SetSelectInternalRestartTimeout
+(unsigned timeout);
+
+
 /* By default (on UNIX platforms) the SOCK API functions automagically call
  * "signal(SIGPIPE, SIG_IGN)" on initialization.  To prohibit this feature,
  * you must call SOCK_AllowSigPipeAPI() before you call any other
@@ -951,6 +957,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2003/11/18 20:18:49  lavr
+ * +SetSelectInternalRestartTimeout()
+ *
  * Revision 6.45  2003/11/12 17:43:08  lavr
  * +SOCK_CloseEx()
  *

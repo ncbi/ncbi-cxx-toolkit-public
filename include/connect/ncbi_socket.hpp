@@ -325,9 +325,10 @@ class NCBI_XCONNECT_EXPORT CSocketAPI
 {
 public:
     // Generic
-    static void       AllowSigPipe   (void);
-    static EIO_Status Initialize     (void);
-    static EIO_Status Shutdown       (void);
+    static unsigned int SetSelectInternalRestartTimeout(unsigned int timeout);
+    static void         AllowSigPipe   (void);
+    static EIO_Status   Initialize     (void);
+    static EIO_Status   Shutdown       (void);
 
     // Defaults  (see also per-socket CSocket::SetReadOnWrite, etc.)
     static ESwitch SetReadOnWrite       (ESwitch read_on_write);
@@ -537,6 +538,12 @@ inline void CSocketAPI::AllowSigPipe(void)
 }
 
 
+inline unsigned int CSocketAPI::SetSelectInternalRestartTimeout(unsigned int t)
+{
+    return SOCK_SetSelectInternalRestartTimeout(t);
+}
+
+
 inline EIO_Status CSocketAPI::Initialize(void)
 {
     return SOCK_InitializeAPI();
@@ -606,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2003/11/18 20:18:49  lavr
+ * +SetSelectInternalRestartTimeout()
+ *
  * Revision 6.33  2003/11/12 17:43:53  lavr
  * Few (non-functional) rearrangements
  *
