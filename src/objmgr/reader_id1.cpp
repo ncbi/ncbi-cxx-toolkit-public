@@ -386,7 +386,7 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
         if ( !info.IsSetExtfeatmask() ) {
             AddSNPSeqref(srs, gi, CSeqref::fPossible);
         }
-        else if ( info.GetExtfeatmask() != 0 ) {
+        else if ( info.GetExtfeatmask() & 1 ) {
             AddSNPSeqref(srs, gi);
         }
     }
@@ -714,6 +714,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.59  2003/11/04 21:53:32  vasilche
+ * Check only SNP bit in extfeat field in ID1 response.
+ *
  * Revision 1.58  2003/10/27 18:50:49  vasilche
  * Detect 'private' blobs in ID1 reader.
  * Avoid reconnecting after ID1 server replied with error packet.
