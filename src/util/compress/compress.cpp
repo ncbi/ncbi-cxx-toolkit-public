@@ -69,36 +69,25 @@ bool CCompression::x_CompressFile(const string&     src_file,
     if ( !buf_size ) {
         return false;
     }
-    char* buffer = 0;
-    FILE* file   = 0;
-    try {
-        buffer = new char[buf_size];
-        if ( !buffer ) {
-            throw;
-        }
-        file = fopen(src_file.c_str(),"rb");
-        if ( !file ) {
-            throw;
-        }
-        size_t nread, nwritten;
-        while ( (nread = fread(buffer, 1, buf_size, file)) > 0 ) {
-            nwritten = dst_file.Write(buffer, nread); 
-            if (nwritten != nread) {
-                throw;
-            }
-        }
-        delete buffer;
-        fclose(file);
-
-    } catch (...) {
-        if ( buffer ) {
-            delete buffer;
-        }
-        if ( file ) {
-            fclose(file);
-        }
+    char* buffer;
+    CNcbiIfstream is(src_file.c_str());
+    if ( !is.good() ) {
         return false;
     }
+    buffer = new char[buf_size];
+    if ( !buffer ) {
+        return false;
+    }
+    while ( is ) {
+        is.read(buffer, buf_size);
+        size_t nread = is.gcount();
+        size_t nwritten = dst_file.Write(buffer, nread); 
+        if ( nwritten != nread ) {
+            delete buffer;
+            return false;
+        }
+    }
+    delete buffer;
     return true;
 }
 
@@ -110,37 +99,24 @@ bool CCompression::x_DecompressFile(CCompressionFile& src_file,
     if ( !buf_size ) {
         return false;
     }
-    char* buffer = 0;
-    FILE* file   = 0;
-    try {
-        buffer = new char[buf_size];
-        if ( !buffer ) {
-            throw;
-        }
-        file = fopen(dst_file.c_str(),"wb");
-        if ( !file ) {
-            throw;
-        }
-        int    nread;
-        size_t nwritten;
-        while ( (nread = src_file.Read(buffer, buf_size)) > 0 ) {
-            nwritten = fwrite(buffer, 1, nread, file);
-            if (nwritten != (size_t)nread) {
-                throw;
-            }
-        }
-        delete buffer;
-        fclose(file);
-
-    } catch (...) {
-        if ( buffer ) {
-            delete buffer;
-        }
-        if ( file ) {
-            fclose(file);
-        }
+    char* buffer;
+    CNcbiOfstream os(dst_file.c_str());
+    if ( !os.good() ) {
         return false;
     }
+    buffer = new char[buf_size];
+    if ( !buffer ) {
+        return false;
+    }
+    int nread;
+    while ( (nread = src_file.Read(buffer, buf_size)) > 0 ) {
+        os.write(buffer, nread);
+        if ( !os.good() ) {
+            delete buffer;
+            return false;
+        }
+    }
+    delete buffer;
     return true;
 }
 
@@ -188,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/10 19:56:29  ivanov
+ * Using classes CNcbi[I/O]fstream instead FILE* streams
+ *
  * Revision 1.3  2003/07/10 16:24:26  ivanov
  * Added auxiliary file compression/decompression functions.
  *
