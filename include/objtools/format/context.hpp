@@ -166,9 +166,13 @@ public:
     bool IsRSWGSProt          (void) const;  // ZP_
     
     bool IsHup(void) const { return m_IsHup; }  // !!! should move to global?
+
+    // patent seqid
+    int GetPatentSeqId (void) const { return m_PatSeqid; }
+
     // global data from CFlatFileContext
     const CSubmit_block* GetSubmitBlock(void) const;
-    const CSeq_entry_Handle& GetEntry(void) const;
+    const CSeq_entry_Handle& GetTopLevelEntry(void) const;
     const CFlatFileConfig& Config(void) const;
     const SAnnotSelector* GetAnnotSelector(void) const;
     SAnnotSelector& SetAnnotSelector(void);
@@ -231,6 +235,7 @@ private:
     bool m_IsHup;
     int  m_Gi;
     bool m_ShowGBBSource;
+    int  m_PatSeqid;
     
     TReferences             m_References;
     CConstRef<CSeq_loc>     m_Location;
@@ -429,7 +434,7 @@ const CSubmit_block* CBioseqContext::GetSubmitBlock(void) const
 }
 
 inline
-const CSeq_entry_Handle& CBioseqContext::GetEntry(void) const
+const CSeq_entry_Handle& CBioseqContext::GetTopLevelEntry(void) const
 {
     return m_FFCtx.GetEntry();
 }
@@ -520,6 +525,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/01/12 15:16:57  shomrat
+* Added GetPatentSeqId
+*
 * Revision 1.22  2004/11/24 16:46:21  shomrat
 * + IsGenbank
 *

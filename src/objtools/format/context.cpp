@@ -41,6 +41,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
 
 #include <objmgr/scope.hpp>
@@ -99,6 +100,7 @@ CBioseqContext::CBioseqContext
     m_IsHup(false),
     m_Gi(0),
     m_ShowGBBSource(false),
+    m_PatSeqid(0),
     m_FFCtx(ffctx),
     m_Master(mctx)
 {
@@ -171,7 +173,7 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
     _ASSERT(user_loc == 0  ||  user_loc->IsInt()  ||  user_loc->IsWhole());
     CRef<CSeq_loc> source;
 
-    if ( user_loc != 0 ) {
+    if (user_loc != NULL) {
         // map the location to the current bioseq
         CSeq_loc_Mapper mapper(m_Handle);
         mapper.SetMergeAll();  // just to be safe
@@ -183,31 +185,28 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
              source->GetEnd() == m_Handle.GetInst_Length() - 1) {
             source.Reset();
         }
-        _ASSERT(!source  ||  source->IsInt());
 
         if ( source ) {
             CScope& scope = GetScope();
 
-            CSeq_loc target;
-            target.SetInt().SetFrom(0);
-            target.SetInt().SetTo(GetLength(*source, &scope) - 1);
-            target.SetId(*m_PrimaryId);
+            CRef<CSeq_loc> target = 
+                m_Handle.GetRangeSeq_loc(0, source->GetTotalRange().GetLength());
 
-            m_Mapper.Reset(new CSeq_loc_Mapper(*source, target, &scope));
+            m_Mapper.Reset(new CSeq_loc_Mapper(*source, *target, &scope));
             m_Mapper->SetMergeAbutting();
-            m_Mapper->PreserveDestinationLocs();  // ???
+            m_Mapper->PreserveDestinationLocs();
             m_Mapper->KeepNonmappingRanges();
         }
     }
+
     // if no location is specified do the entire sequence
     if ( !source ) {
         source.Reset(new CSeq_loc);
         source->SetWhole(*m_PrimaryId);
     }
+
     _ASSERT(source);
     m_Location = source;
-
-    
 }
 
 
@@ -247,6 +246,9 @@ void CBioseqContext::x_SetId(void)
         // Patent
         case CSeq_id::e_Patent:
             m_IsPatent = true;
+            if (id.GetPatent().IsSetSeqid()) {
+                m_PatSeqid = id.GetPatent().GetSeqid();
+            }
             break;
         // RefSeq
         case CSeq_id::e_Other:
@@ -606,6 +608,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/01/12 15:17:12  shomrat
+* Added GetPatentSeqId
+*
 * Revision 1.30  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
