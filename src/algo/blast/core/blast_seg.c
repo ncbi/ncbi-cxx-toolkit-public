@@ -958,7 +958,7 @@ Int2 SeqBufferSegAa (Uint1Ptr sequence, Int4 length, Int4 offset,
    SegsToBlastSeqLoc(segs, offset, seg_locs);   
    
    /* clean up & return */
-   
+   seqwin->seq = NULL;
    SeqFree (seqwin);
    SegFree (segs);
 
