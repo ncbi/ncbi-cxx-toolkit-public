@@ -28,6 +28,9 @@
   <li><a href="#largeseq">
   Sequence gi=18565551.
   </a></li>
+  <li><a href="#cgi">
+  How to convert the test application into CGI one?
+  </a></li>
   <li><a href="#fcgi">
   How to convert CGI application into FCGI one?
   </a></li>
@@ -137,6 +140,64 @@ solution to this problem. Probably, in some cases the <var>Object Manager</var>
 does not need to retrieve all features for all bioseq segments, but we
 are not sure how to filter them out.
 </p>
+
+
+
+<hr>
+<a name="cgi"></a>
+<h4>How to convert the test application into CGI one?</h4>
+<p>
+It is a good idea to create another application, based on your original test.
+In order to do this:
+</p>
+<ol>
+  <li>
+  Create copy of the source (<i>task.cpp</i>) and makefile (<i>Makefile.task.app</i>)
+  <pre>
+  cp task.cpp <b>task_cgi.cpp</b>
+  cp Makefile.task.app <b>Makefile.task_cgi.app</b>
+  </pre>
+  </li>
+  <li>
+  Edit the makefile for the CGI application (<i>Makefile.task_cgi.app</i>):
+  change application name, name of the source file,   add <tt>cgi</tt> libraries:
+  <pre>
+  APP = <b>omtask1.cgi</b>
+  SRC = <b>task_cgi</b>
+  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+      xser <b>xhtml xcgi</b> xutil xconnect xncbi
+  LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) <b>$(FASTCGI_LIBS)</b> $(NETWORK_LIBS) $(ORIG_LIBS)
+  </pre>
+  </li>
+  <li>
+  Edit <i>Makefile.in</i>: add the new application
+  <pre>
+  APP_PROJ = task <b>task_cgi</b>
+  </pre>
+  </li>
+  <li>
+  Add new files to CVS
+  <pre>
+  cvs add -m 'CGI version of the C++ ObjMgr learning task application' Makefile.task_cgi.app
+  cvs ci -m 'Initial revision' Makefile.task_cgi.app
+  cvs ci -m 'APP_PROJ += task_cgi' Makefile.in
+  </pre>
+  </li>
+  <li>
+  Generate local makefiles for your project using <i>import_project.sh</i>
+  shell script and build the application
+  <pre>
+  cd ~/<i>omlab</i>
+  $NCBI/c++/scripts/import_project.sh internal/objmgr_lab/<i>userid</i>
+  cd ~/omlab/internal/c++/src/internal/objmgr_lab/<i>userid</i>
+  make
+  </pre>
+  </li>
+  <li>
+  Convert <i>task_cgi.cpp</i> into a CGI application.
+  </li>
+</ol>
+
 
 
 <hr>
