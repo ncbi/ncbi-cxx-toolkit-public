@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.118 2002/08/15 21:08:16 ucko Exp $
+#  $Id: configure.ac,v 1.119 2002/08/15 22:03:41 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -28,13 +28,13 @@
 # Authors:  Denis Vakatov, Aaron Ucko
 #
 # File Description:
-#   Generate platform-dependent header("ncbiconf.h") for NCBI C++ libs
+#   Setup NCBI C++ Toolkit build tree - tuned for your platform, compiler, etc.
 #   USAGE:
 #    1) Process this file with "autoconf" to produce a "configure" script.
-#    2) Run the resultant "configure" script to produce
+#    2) Run the resultant "configure" script to produce:
 #      a) "<builddir>/inc/ncbiconf.h"
 #      b) "<builddir>/build/Makefile.mk"
-#      c) other "Makefile"s and scripts in "<builddir>/build"
+#      c) other Makefile's and scripts in "<builddir>/build" and below
 #
 #############################################################################
 
@@ -2803,6 +2803,7 @@ AC_SUBST(compiler_version)
 AC_SUBST(COMPILER)
 AC_SUBST(OSTYPE)
 AC_SUBST(NCBI_PLATFORM_BITS)
+
 
 #############################################################################
 ### Create output files and do some post-configuration
