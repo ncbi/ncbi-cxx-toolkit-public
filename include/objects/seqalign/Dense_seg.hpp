@@ -56,6 +56,15 @@ public:
     // destructor
     ~CDense_seg(void);
 
+    typedef vector<int> TWidths;
+
+    // optional
+    // typedef vector<int> TWidths
+    bool IsSetWidths(void) const;
+    bool CanGetWidths(void) const;
+    void ResetWidths(void);
+    const TWidths& GetWidths(void) const;
+    TWidths& SetWidths(void);
 
     /// Reverse the segments' orientation
     void Reverse(void);
@@ -65,6 +74,9 @@ private:
     CDense_seg(const CDense_seg& value);
     CDense_seg& operator=(const CDense_seg& value);
 
+    // data
+    Uint4 m_set_State1[1];
+    TWidths m_Widths;
 };
 
 
@@ -75,7 +87,47 @@ private:
 inline
 CDense_seg::CDense_seg(void)
 {
+    memset(m_set_State1,0,sizeof(m_set_State1));
 }
+
+
+inline
+bool CDense_seg::IsSetWidths(void) const
+{
+    return ((m_set_State1[0] & 0x3) != 0);
+}
+
+
+inline
+bool CDense_seg::CanGetWidths(void) const
+{
+    return true;
+}
+
+
+inline
+const vector<int>& CDense_seg::GetWidths(void) const
+{
+    return m_Widths;
+}
+
+
+inline
+vector<int>& CDense_seg::SetWidths(void)
+{
+    m_set_State1[0] |= 0x1;
+    return m_Widths;
+}
+
+
+inline
+void CDense_seg::ResetWidths(void)
+{
+    m_Widths.clear();
+    m_set_State1[0] &= ~0x3;
+
+}
+
 
 
 /////////////////// end of CDense_seg inline methods
@@ -90,6 +142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/14 19:52:53  todorov
+* Added m_Widths to support nuc2prot aligns
+*
 * Revision 1.1  2003/08/13 18:11:35  johnson
 * added 'Reverse' method
 *
