@@ -87,7 +87,7 @@ int CBoyerMooreMatcher::Search(const string& text, unsigned int shift) const
     size_t text_len = text.length();
     
     while ( shift + m_PatLen <= text_len ) {
-        int j = m_PatLen - 1;
+        int j = (int)m_PatLen - 1;
         
         for ( char text_char = 
                 m_CaseSensitive ? text[shift + j] : toupper(text[shift + j]);
@@ -99,7 +99,7 @@ int CBoyerMooreMatcher::Search(const string& text, unsigned int shift) const
         if ( (j == -1)  &&  IsWholeWord(text, shift) ) {
             return  shift;
         } else {
-            shift += m_LastOccurance[text[shift + j]];
+            shift += (unsigned int)m_LastOccurance[text[shift + j]];
         }
     }
     
@@ -130,7 +130,7 @@ bool CBoyerMooreMatcher::IsWholeWord(const string& text, unsigned int pos) const
     }
     
     // check on the right
-    pos += m_PatLen;
+    pos += (unsigned int)m_PatLen;
     if ( pos < text.length() ) {
         right = isspace(text[pos]) != 0;
     }
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/11/07 17:16:23  ivanov
+* Fixed  warnings on 64-bit Workshop compiler
+*
 * Revision 1.4  2003/02/04 20:16:15  shomrat
 * Change signed to unsigned to eliminate compilation warning
 *

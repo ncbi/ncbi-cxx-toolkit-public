@@ -56,7 +56,7 @@ CFormatGuess::ESequenceType
 CFormatGuess::SequenceType(const char* str, unsigned length)
 {
     if (length == 0)
-        length = ::strlen(str);
+        length = (unsigned)::strlen(str);
 
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
@@ -128,7 +128,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
     
     unsigned ATGC_content = 0;
     unsigned amino_acid_content = 0;
-    unsigned seq_length = count;
+    unsigned seq_length = (unsigned)count;
 
     unsigned alpha_content = 0;
 
@@ -141,7 +141,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
                 ++alpha_content;
             }
         }
-        seq_length = count - i;
+        seq_length = (unsigned)count - i;
         if (seq_length == 0) {
             return eUnknown;   // No way to tell what format is this...
         }
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/07 17:16:23  ivanov
+ * Fixed  warnings on 64-bit Workshop compiler
+ *
  * Revision 1.7  2003/07/10 19:58:25  ivanov
  * Get rid of compilation warning: removed double variable declaration
  *

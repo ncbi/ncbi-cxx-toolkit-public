@@ -118,8 +118,9 @@ string CRegexp::GetMatch(
     TMatch        flags,
     bool          noreturn)
 {
-    m_NumFound = pcre_exec(m_PReg, NULL, str.c_str(), str.length(), offset,
-                           flags, m_Results, (kRegexpMaxSubPatterns +1) * 3);
+    m_NumFound = pcre_exec(m_PReg, NULL, str.c_str(), (int)str.length(),
+                           (int)offset, flags, m_Results,
+                           (int)(kRegexpMaxSubPatterns +1) * 3);
     if ( noreturn ) {
         return kEmptyStr;
     } else {
@@ -175,7 +176,7 @@ size_t CRegexpUtil::Replace(
     for (size_t count = 0; !(max_replace && count >= max_replace); count++) {
 
         // Match pattern.
-        re.GetMatch(m_Content.c_str(), start_pos, 0, match_flags, true);
+        re.GetMatch(m_Content.c_str(), (int)start_pos, 0, match_flags, true);
         int num_found = re.NumFound();
         if (num_found <= 0) {
             break;
@@ -351,6 +352,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/07 17:16:23  ivanov
+ * Fixed  warnings on 64-bit Workshop compiler
+ *
  * Revision 1.5  2003/11/07 13:39:56  ivanov
  * Fixed lines wrapped at 79th columns
  *
