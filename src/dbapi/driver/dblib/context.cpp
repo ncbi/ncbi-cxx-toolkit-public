@@ -451,8 +451,8 @@ I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
     if(cntx && attr) {
       string page_size= (*attr)["packet"];
       if(!page_size.empty()) {
-	int s= atoi(page_size.c_str());
-	cntx->DBLIB_SetPacketSize(s);
+    int s= atoi(page_size.c_str());
+    cntx->DBLIB_SetPacketSize(s);
       }
     }
     return cntx;
@@ -464,6 +464,7 @@ void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
 }
 
 extern "C" {
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
     void* DBAPI_E_dblib()
     {
         return (void*)DBAPI_RegisterDriver_DBLIB;
@@ -501,6 +502,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/06/16 16:08:51  ivanov
+ * Added export specifier for DBAPI_E_dblib()
+ *
  * Revision 1.30  2004/05/17 21:12:41  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
