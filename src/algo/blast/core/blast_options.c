@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.61  2003/10/01 22:36:52  dondosha
+ * Correction of setting of e2 in revision 1.57 was wrong
+ *
  * Revision 1.60  2003/09/24 19:28:20  dondosha
  * Correction in setting extend word method: unset options that are set by default but overridden
  *
@@ -482,7 +485,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    avglen = ((double) eff_len_options->db_length) / 
       eff_len_options->dbseq_num;
 
-   e2 = MAX(UNGAPPED_CUTOFF_EVALUE, hit_params->options->expect_value);
+   e2 = UNGAPPED_CUTOFF_EVALUE;
    BLAST_Cutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
 
    cutoff_score = MIN(hit_params->cutoff_score, s2);
