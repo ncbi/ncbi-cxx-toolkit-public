@@ -98,7 +98,7 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         ITERATE (CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             oss << delim;
             x_Add(**it, oss, ctx);
-            delim = ",";
+            delim = ", \b";
         }
         oss << ')';
         break;
@@ -132,7 +132,7 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
             oss << delim;
             x_AddPnt(*it, ppnt.IsSetFuzz() ? &ppnt.GetFuzz() : 0, oss, ctx);
             x_AddInt(*it, *it, accn);
-            delim = ",";
+            delim = ", \b";
         }
         if (IsReverse(ppnt.GetStrand())) {
             oss << ")";
@@ -146,7 +146,7 @@ void SFlatLoc::x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         ITERATE (CSeq_loc_mix::Tdata, it, loc.GetMix().Get()) {
             oss << delim;
             x_Add(**it, oss, ctx);
-            delim = ",";
+            delim = ", \b";
         }
         oss << ')';
         break;
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/03/11 17:00:21  ucko
+* Delimit join(...) elements with ", \b" as a hint to NStr::Wrap.
+*
 * Revision 1.2  2003/03/11 15:37:51  kuznets
 * iterate -> ITERATE
 *
