@@ -772,7 +772,7 @@ same type, but the label or comment are different.",
 "This feature has a gene xref that is identical to the overlapping gene. \
 This is redundant, and probably should be removed.",
 
-"A \transl_except qualifier was not on a codon boundary.",
+"A /transl_except qualifier was not on a codon boundary.",
 
 "The tRNA codon recognized does not code for the indicated amino acid \
 using the specified genetic code.",
@@ -995,6 +995,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/12/26 16:34:43  shomrat
+* Typo
+*
 * Revision 1.3  2002/12/24 16:51:41  shomrat
 * Changes to include directives
 *

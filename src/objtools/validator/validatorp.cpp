@@ -315,7 +315,7 @@ void CValidError_imp::PostErr
  TAnnot    an)
 {
     // Append Annotation label
-    string msg(message + " ANNOTAION: ");
+    string msg(message + " ANNOTATION: ");
 
     // !!! need to decide on the message
 
@@ -1274,6 +1274,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2002/12/26 16:35:11  shomrat
+* Typo
+*
 * Revision 1.2  2002/12/24 16:51:54  shomrat
 * Changes to include directives
 *
