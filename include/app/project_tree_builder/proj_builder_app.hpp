@@ -130,6 +130,7 @@ public:
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
+    void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs);
 };
 
 
@@ -187,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/02/14 18:52:45  gouriano
+ * Generate a file with all features and packages listed
+ *
  * Revision 1.18  2004/10/04 15:31:32  gouriano
  * Take into account LIB_OR_DLL Makefile parameter
  *

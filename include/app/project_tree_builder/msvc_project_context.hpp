@@ -135,6 +135,16 @@ public:
     {
         return m_MakeType;
     }
+
+    static const set<string>& GetEnabledPackages(const string& config_name)
+    {
+        return s_EnabledPackages[config_name];
+    }
+    static const set<string>& GetDisabledPackages(const string& config_name)
+    {
+        return s_DisabledPackages[config_name];
+    }
+
 private:
     // Prohibited to:
     CMsvcPrjProjectContext(void);
@@ -175,6 +185,9 @@ private:
     list<string> m_NcbiCLibs;
     
     EMakeFileType m_MakeType;
+
+    static map<string, set<string> > s_EnabledPackages;
+    static map<string, set<string> > s_DisabledPackages;
 };
 
 
@@ -525,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/02/14 18:52:45  gouriano
+ * Generate a file with all features and packages listed
+ *
  * Revision 1.22  2005/01/31 16:38:00  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *

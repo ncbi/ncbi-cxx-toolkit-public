@@ -363,12 +363,14 @@ int CProjBulderApp::Run(void)
 
     }}
 
+    const list<SConfigInfo>* configurations = 0;
     LOG_POST(Info << "*** Generating MSVC projects ***");
     if (GetBuildType().GetType() == CBuildType::eStatic) {
         
         // Static build
         LOG_POST(Info << "Static build");
         string str_log("Configurations: ");
+        configurations = &GetRegSettings().m_ConfigInfo;
         ITERATE(list<SConfigInfo>, p , GetRegSettings().m_ConfigInfo) {
             str_log += p->m_Name + " ";
         }
@@ -444,13 +446,14 @@ int CProjBulderApp::Run(void)
         sln_gen.SaveSolution(m_Solution);
     }
 
+    list<SConfigInfo> dll_configs;
     if (GetBuildType().GetType() == CBuildType::eDll) {
 
         //Dll build
         LOG_POST(Info << "DLL build");
 
-        list<SConfigInfo> dll_configs;
         GetDllsInfo().GetBuildConfigs(&dll_configs);
+        configurations = &dll_configs;
 
         string str_log("Configurations: ");
         ITERATE(list<SConfigInfo>, p , dll_configs) {
@@ -533,9 +536,70 @@ int CProjBulderApp::Run(void)
         sln_gen.SaveSolution(m_Solution);
     }
 
+    CreateFeaturesAndPackagesFiles(configurations);
+
     //
     LOG_POST(Info << "Finished at "+ CTime(CTime::eCurrent).AsString());
     return 0;
+}
+
+
+void CProjBulderApp::CreateFeaturesAndPackagesFiles(
+    const list<SConfigInfo>* configs)
+{
+    // Create makefile path
+    string base_path = GetProjectTreeInfo().m_Compilers;
+    base_path = CDirEntry::ConcatPath(base_path, 
+        GetRegSettings().m_CompilersSubdir);
+
+    base_path = CDirEntry::ConcatPath(base_path, GetBuildType().GetTypeStr());
+    ITERATE(list<SConfigInfo>, c , *configs) {
+        string file_path = CDirEntry::ConcatPath(base_path, c->m_Name);
+        string enabled = CDirEntry::ConcatPath(file_path, 
+            "features_and_packages.txt");
+        string disabled = CDirEntry::ConcatPath(file_path, 
+            "features_and_packages_disabled.txt");
+        file_path = CDirEntry::ConcatPath(file_path, 
+                                          "features_and_packages.txt");
+        CNcbiOfstream ofs(enabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+        if ( !ofs )
+            NCBI_THROW(CProjBulderAppException, eFileCreation, enabled);
+
+        CNcbiOfstream ofsd(disabled.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+        if ( !ofsd )
+            NCBI_THROW(CProjBulderAppException, eFileCreation, disabled);
+/*
+    rtMultiThreaded = 0,
+    rtMultiThreadedDebug = 1,
+    rtMultiThreadedDLL = 2,
+    rtMultiThreadedDebugDLL = 3,
+    rtSingleThreaded = 4,
+    rtSingleThreadedDebug = 5
+*/
+        if (c->m_RuntimeLibrary == "0") {
+            ofs << "MT" << endl;
+        } else if (c->m_RuntimeLibrary == "1") {
+            ofs << "MT" << endl << "Debug" << endl;
+        } else if (c->m_RuntimeLibrary == "2") {
+            ofs << "MT" << endl << "DLL" << endl;
+        } else if (c->m_RuntimeLibrary == "3") {
+            ofs << "MT" << endl << "DLL" << endl << "Debug" << endl;
+        } else if (c->m_RuntimeLibrary == "4") {
+        } else if (c->m_RuntimeLibrary == "5") {
+            ofs << "Debug" << endl;
+        }
+        ofs << "mswin" << endl;
+        const set<string>& epackages =
+            CMsvcPrjProjectContext::GetEnabledPackages(c->m_Name);
+        ITERATE(set<string>, e, epackages) {
+            ofs << *e << endl;
+        }
+        const set<string>& dpackages =
+            CMsvcPrjProjectContext::GetDisabledPackages(c->m_Name);
+        ITERATE(set<string>, d, dpackages) {
+            ofsd << *d << endl;
+        }
+    }
 }
 
 
@@ -876,6 +940,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/02/14 18:52:29  gouriano
+ * Generate a file with all features and packages listed
+ *
  * Revision 1.49  2004/12/20 15:26:03  gouriano
  * Changed diagnostic output
  *

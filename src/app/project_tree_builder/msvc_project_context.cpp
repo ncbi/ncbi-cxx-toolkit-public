@@ -42,6 +42,8 @@
 
 BEGIN_NCBI_SCOPE
 
+map<string, set<string> > CMsvcPrjProjectContext::s_EnabledPackages;
+map<string, set<string> > CMsvcPrjProjectContext::s_DisabledPackages;
 
 //-----------------------------------------------------------------------------
 CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
@@ -480,6 +482,7 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
     libs_3party.unique();
 
     // Test third-party libs and requires:
+    bool result = true;
     ITERATE(list<string>, p, libs_3party) {
         const string& requires = *p;
         SLibInfo lib_info;
@@ -490,13 +493,19 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
 
         if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) ) {
             if (unmet) {
-                *unmet = requires;
+                if (!unmet->empty()) {
+                    *unmet += ", ";
+                }
+                *unmet += requires;
             }
-            return false;
+            result = false;
+            s_DisabledPackages[config.m_Name].insert(requires);
+        } else {
+            s_EnabledPackages[config.m_Name].insert(requires);
         }
     }
 
-    return true;
+    return result;
 }
 
 
@@ -955,6 +964,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/02/14 18:52:29  gouriano
+ * Generate a file with all features and packages listed
+ *
  * Revision 1.46  2005/01/31 16:37:38  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *
