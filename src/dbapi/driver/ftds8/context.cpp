@@ -213,10 +213,10 @@ unsigned int CTDSContext::NofConnections(const string& srv_name) const
 bool CTDSContext::IsAbleTo(ECapability cpb) const
 {
     switch(cpb) {
-    case fReturnITDescriptors:
+    case eReturnITDescriptors:
         return true;
-    case fReturnComputeResults:
-    case fBcp:
+    case eReturnComputeResults:
+    case eBcp:
     default:
         break;
     }
@@ -466,6 +466,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/12/20 18:01:38  soussov
+ * renames the members of ECapability enum
+ *
  * Revision 1.13  2002/12/13 21:59:10  vakatov
  * Provide FreeTDS-version specific driver name and DLL entry point
  * ("ftds7" or "ftds8" in addition to the generic "ftds").
