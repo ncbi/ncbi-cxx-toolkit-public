@@ -59,6 +59,20 @@ public:
     // Append a label to label base on content
     void GetLabel(string* label) const;
 
+    // add a data field to the user object that holds a given value
+    CUser_object& AddField(const string& label, const string& value);
+    CUser_object& AddField(const string& label, int           value);
+    CUser_object& AddField(const string& label, double        value);
+    CUser_object& AddField(const string& label, bool          value);
+
+    CUser_object& AddField(const string& label, const vector<string>& value);
+    CUser_object& AddField(const string& label, const vector<int>&    value);
+    CUser_object& AddField(const string& label, const vector<double>& value);
+
+    CUser_object& AddField(const string& label, CUser_object& value);
+    CUser_object& AddField(const string& label,
+                           const list< CRef<CUser_object> >& value);
+
 private:
     // Prohibit copy constructor and assignment operator
     CUser_object(const CUser_object& value);
@@ -89,6 +103,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/06/19 00:53:56  dicuccio
+* Added interface functions for adding defined key-value pairs as CUser_field
+* sub-objects
+*
 * Revision 1.3  2002/12/26 12:40:33  dicuccio
 * Added Win32 export specifiers
 *
