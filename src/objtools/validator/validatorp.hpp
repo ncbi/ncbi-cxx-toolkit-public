@@ -112,6 +112,7 @@ enum EErrType {
     eErr_SEQ_INST_MultipleAccessions,
     eErr_SEQ_INST_HistAssemblyMissing,
     eErr_SEQ_INST_TerminalNs,
+    eErr_SEQ_INST_UnexpectedIdentifierChange,
 
     eErr_SEQ_DESCR_BioSourceMissing,
     eErr_SEQ_DESCR_InvalidForType,
@@ -333,6 +334,7 @@ public:
     inline bool IsOvlPepErr(void) const { return m_OvlPepErr; }
     inline bool IsRequireTaxonID(void) const { return m_RequireTaxonID; }
     inline bool IsRequireISOJTA(void) const { return m_RequireISOJTA; }
+    inline bool IsValidateIdSet(void) const { return m_ValidaetIdSet; }
 
     // !!! DEBUG {
     inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
@@ -409,14 +411,15 @@ private:
     CValidError*       m_ErrRepository;
 
     // flags derived from options parameter
-    bool m_NonASCII;                // User sets if Non ASCII char found
-    bool m_SuppressContext;         // Include context in errors if true
-    bool m_ValidateAlignments;      // Validate Alignments if true
-    bool m_ValidateExons;           // Check exon feature splice sites
-    bool m_SpliceErr;               // Bad splice site error if true, else warn
-    bool m_OvlPepErr;               // Peptide overlap error if true, else warn
-    bool m_RequireTaxonID;          // BioSource requires taxonID dbxref
-    bool m_RequireISOJTA;           // Journal requires ISO JTA
+    bool m_NonASCII;            // User sets if Non ASCII char found
+    bool m_SuppressContext;     // Include context in errors if true
+    bool m_ValidateAlignments;  // Validate Alignments if true
+    bool m_ValidateExons;       // Check exon feature splice sites
+    bool m_SpliceErr;           // Bad splice site error if true, else warn
+    bool m_OvlPepErr;           // Peptide overlap error if true, else warn
+    bool m_RequireTaxonID;      // BioSource requires taxonID dbxref
+    bool m_RequireISOJTA;       // Journal requires ISO JTA
+    bool m_ValidaetIdSet;       // validate update against ID set in database
 
     // !!! DEBUG {
     bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
@@ -569,6 +572,7 @@ private:
 
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
+    void ValidateIDSetAgainstDb(const CBioseq& seq);
 
     void CheckForPubOnBioseq(const CBioseq& seq);
     void CheckForBiosourceOnBioseq(const CBioseq& seq);
@@ -591,6 +595,7 @@ private:
     bool IsHistAssemblyMissing(const CBioseq& seq);
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
+    
 };
 
 
@@ -745,6 +750,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/03/21 16:21:46  shomrat
+* Added ValidateIDSetAgainstDb
+*
 * Revision 1.16  2003/03/20 18:55:28  shomrat
 * Added validation of standalone Seq-annot objects
 *
