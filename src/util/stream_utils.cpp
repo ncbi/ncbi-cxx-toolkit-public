@@ -38,14 +38,22 @@
 #include <string.h>
 
 
-BEGIN_NCBI_SCOPE
-
-
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
 #  define CPushback_StreambufBase CNcbiStreambuf
-#endif/*NCBI_COMPILER_MIPSPRO*/
+#endif //NCBI_COMPILER_MIPSPRO
+
+#ifdef HAVE_GOOD_IOS_CALLBACKS
+#  undef  HAVE_GOOD_IOS_CALLBACKS
+#endif
+#if defined(HAVE_IOS_CALLBACKS)  &&  defined(HAVE_XALLOC)  &&  \
+  (!defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(_MT))
+#  define HAVE_GOOD_IOS_CALLBACKS 1
+#endif
+
+
+BEGIN_NCBI_SCOPE
 
 
 /*****************************************************************************
@@ -90,10 +98,10 @@ private:
     streamsize          m_BufSize;
     void*               m_DelPtr;
 
-#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
+#ifdef HAVE_GOOD_IOS_CALLBACKS
     int                 m_Index;
     static void         x_Callback(IOS_BASE::event, IOS_BASE&, int);
-#endif
+#endif //HAVE_GOOD_IOS_CALLBACKS
 
     static const streamsize k_MinBufSize;
 };
@@ -102,19 +110,15 @@ private:
 const streamsize CPushback_Streambuf::k_MinBufSize = 4096;
 
 
-#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
+#ifdef HAVE_GOOD_IOS_CALLBACKS
 void CPushback_Streambuf::x_Callback(IOS_BASE::event event,
                                      IOS_BASE&       ios,
                                      int             index)
 {
-    if (event != IOS_BASE::erase_event)
-        return;
-
-    streambuf* sb = static_cast<streambuf*> (ios.pword(index));
-    if (sb)
-        delete sb;
+    if (event == IOS_BASE::erase_event)
+        delete static_cast<streambuf*> (ios.pword(index));
 }
-#endif
+#endif //HAVE_GOOD_IOS_CALLBACKS
 
 
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
@@ -126,28 +130,28 @@ CPushback_Streambuf::CPushback_Streambuf(istream&      is,
     setp(0, 0); // unbuffered output at this level of streambuf's hierarchy
     setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Sb = m_Is.rdbuf(this);
-#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
+#ifdef HAVE_GOOD_IOS_CALLBACKS
     try {
         m_Index             = m_Is.xalloc();
         m_Is.pword(m_Index) = this;
         m_Is.register_callback(x_Callback, m_Index);
     }
     STD_CATCH_ALL("CPushback_Streambuf::CPushback_Streambuf");
-#endif
+#endif //HAVE_GOOD_IOS_CALLBACKS
 }
 
 
 CPushback_Streambuf::~CPushback_Streambuf()
 {
-    delete[] (CT_CHAR_TYPE*) m_DelPtr;
-    if (m_Sb)
-        m_Is.rdbuf(m_Sb);
-#if defined(HAVE_IOS_XALLOC) && !defined(HAVE_BUGGY_IOS_CALLBACKS)
+#ifdef HAVE_GOOD_IOS_CALLBACKS
     m_Is.pword(m_Index) = 0;
-#else
-    if (dynamic_cast<CPushback_Streambuf*> (m_Sb))
-        delete m_Sb;
-#endif
+#endif //HAVE_GOOD_IOS_CALLBACKS
+    delete[] (CT_CHAR_TYPE*) m_DelPtr;
+    if (m_Sb) {
+        m_Is.rdbuf(m_Sb);
+        if (dynamic_cast<CPushback_Streambuf*> (m_Sb))
+            delete m_Sb;
+    }
 }
 
 
@@ -197,7 +201,7 @@ CT_INT_TYPE CPushback_Streambuf::underflow(void)
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
     m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
-#endif
+#endif //NCBI_COMPILER_MIPSPRO
 
     x_FillBuffer(m_Sb->in_avail());
     return gptr() < egptr() ? CT_TO_INT_TYPE(*gptr()) : CT_EOF;
@@ -487,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.39  2004/01/20 20:39:59  lavr
+ * Replace use of HAVE_BUGGY_IOS_CALLBACKS with (better) HAVE_GOOD_IOS_CALLBACKS
+ *
  * Revision 1.38  2003/12/31 16:24:54  lavr
  * Fix istream::readsome() return counter use for Rogue Wave implementations
  *
