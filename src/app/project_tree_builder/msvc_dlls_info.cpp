@@ -134,8 +134,16 @@ string CMsvcDllsInfo::GetDllHost(const string& lib_id) const
             return dll_id;
         }
     }
-
+    map<string,string>::const_iterator i = m_DllHostedLibs.find(lib_id);
+    if ( i != m_DllHostedLibs.end()) {
+        return i->second;
+    }
     return "";
+}
+
+void CMsvcDllsInfo::AddDllHostedLib(const string& lib_id, const string& host)
+{
+    m_DllHostedLibs[lib_id] = host;
 }
 
 
@@ -452,11 +460,11 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         s_InitalizeDllProj(dll_id, dll_info, &dll, tree_dst);
 
         bool complete = true;
+        CProjectItemsTree::TProjects::const_iterator k;
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
-            CProjectItemsTree::TProjects::const_iterator k = 
-             GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
-                                                              lib_id));
+            k = GetApp().GetWholeTree().m_Projects.find(CProjKey(CProjKey::eLib,
+                                                                 lib_id));
             if (k == GetApp().GetWholeTree().m_Projects.end()) {
                 LOG_POST(Error << "No project " +
                                    lib_id + " hosted in dll : " + dll_id);
@@ -466,6 +474,11 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                 //break;
             }
 
+            const CProjItem& lib = k->second;
+            s_AddProjItemToDll(lib, &dll);
+        }
+        k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib,dll_id));
+        if (k != tree_src.m_Projects.end()) {
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
         }
@@ -541,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/10/04 15:31:57  gouriano
+ * Take into account LIB_OR_DLL Makefile parameter
+ *
  * Revision 1.21  2004/09/13 13:49:08  gouriano
  * Make it to rely more on UNIX makefiles
  *

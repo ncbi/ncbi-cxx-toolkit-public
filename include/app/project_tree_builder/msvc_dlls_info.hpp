@@ -62,9 +62,11 @@ public:
 
     bool   IsDllHosted(const string& lib_id) const;
     string GetDllHost (const string& lib_id) const; 
+    void AddDllHostedLib(const string& lib_id, const string& host);
 
 private:
     CNcbiRegistry m_Registry;
+    map<string,string> m_DllHostedLibs;
 
     //no value-type semantics
     CMsvcDllsInfo(void);
@@ -88,12 +90,14 @@ void CreateDllsList(const CProjectItemsTree& tree_src,
 void CollectDllsDepends(const list<string>& dll_ids,
                         list<string>*       dll_depends_ids);
 
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/04 15:31:32  gouriano
+ * Take into account LIB_OR_DLL Makefile parameter
+ *
  * Revision 1.7  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

@@ -725,7 +725,7 @@ const CBuildType& CProjBulderApp::GetBuildType(void)
 }
 
 
-const CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
+CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
 {
     if ( !m_DllsInfo.get() ) {
         string site_ini_dir = GetProjectTreeInfo().m_Compilers;
@@ -822,6 +822,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2004/10/04 15:31:57  gouriano
+ * Take into account LIB_OR_DLL Makefile parameter
+ *
  * Revision 1.45  2004/07/20 13:38:40  gouriano
  * Added conditional macro definition
  *

@@ -639,6 +639,31 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         SMakeProjectT::CreateDefines(cpp_flags, &defines);
 
     }
+    
+    string lib_or_dll;
+    k = m->second.m_Contents.find("LIB_OR_DLL");
+    if (k != m->second.m_Contents.end()) {
+        lib_or_dll = k->second.front();
+    }
+    if (!lib_or_dll.empty()) {
+        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+            list<string> dll_depends;
+            k = m->second.m_Contents.find("DLL_LIB");
+            if (k != m->second.m_Contents.end())
+                dll_depends = k->second;
+            list<CProjKey> dll_depends_ids;
+            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids);
+            copy(dll_depends_ids.begin(), 
+                    dll_depends_ids.end(), 
+                    back_inserter(depends_ids));
+            if (!GetApp().GetDllsInfo().IsDllHosted(proj_id)) {
+                if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
+                    NStr::CompareNocase(lib_or_dll,"both") == 0) {
+                    GetApp().GetDllsInfo().AddDllHostedLib(proj_id, proj_id);
+                }
+            }
+        }
+    }
     CProjKey proj_key(CProjKey::eLib, proj_id);
     tree->m_Projects[proj_key] = CProjItem(CProjKey::eLib,
                                            proj_name, 
@@ -1034,7 +1059,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                 const CProjKey& prj_id = *p;
                 CProjectItemsTree::TProjects::const_iterator n = 
                                GetApp().GetWholeTree().m_Projects.find(prj_id);
-            
+
                 if (n != GetApp().GetWholeTree().m_Projects.end()) {
                     //insert this project to target_tree
                     target_tree.m_Projects[prj_id] = n->second;
@@ -1392,6 +1417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/10/04 15:31:57  gouriano
+ * Take into account LIB_OR_DLL Makefile parameter
+ *
  * Revision 1.16  2004/09/13 13:49:08  gouriano
  * Make it to rely more on UNIX makefiles
  *

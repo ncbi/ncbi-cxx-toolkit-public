@@ -115,7 +115,7 @@ public:
 
     const CBuildType&        GetBuildType      (void);
 
-    const CMsvcDllsInfo&     GetDllsInfo       (void);
+          CMsvcDllsInfo&     GetDllsInfo       (void);
 
     const CProjectItemsTree& GetWholeTree      (void);
 
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/10/04 15:31:32  gouriano
+ * Take into account LIB_OR_DLL Makefile parameter
+ *
  * Revision 1.17  2004/07/16 16:32:34  gouriano
  * change pre-build rule for projects with ASN dependencies
  *
