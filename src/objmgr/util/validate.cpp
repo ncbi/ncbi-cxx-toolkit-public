@@ -51,32 +51,9 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objects/seq/Annot_descr.hpp>
-#include <objects/seq/Annotdesc.hpp>
-#include <objects/seq/Delta_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Seq_literal.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/IUPACna.hpp>
-#include <objects/seq/IUPACaa.hpp>
-#include <objects/seq/NCBI2na.hpp>
-#include <objects/seq/NCBI4na.hpp>
-#include <objects/seq/NCBI8na.hpp>
-#include <objects/seq/NCBIpna.hpp>
-#include <objects/seq/NCBI8aa.hpp>
-#include <objects/seq/NCBIeaa.hpp>
-#include <objects/seq/NCBIpaa.hpp>
-#include <objects/seq/NCBIstdaa.hpp>
-#include <objects/seq/Seq_hist.hpp>
-#include <objects/seq/gencode.hpp>
+#include <objects/seq/seq__.hpp>
 #include <objects/seq/seqport_util.hpp>
-#include <objects/seq/Seg_ext.hpp>
+#include <objects/seq/gencode.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -1266,8 +1243,9 @@ private:
     void ValidateRawConst(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
     void ValidateDelta(const CBioseq& seq, bool isNTorNC);
-    void ValidateBioSource(const CBioSource& bsrc, const CConstObjectInfo& oi);
-    void ValidatePub(const CPub& pub, const CConstObjectInfo& oi);
+    void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
+    void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
+    void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj);
 
     typedef const CSeq_feat& TFeat;
     typedef const CBioseq& TBioseq;
@@ -1275,6 +1253,7 @@ private:
     typedef const CSeqdesc& TDesc;
 
     // Posts errors.
+    void ValidErr(EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj);
     void ValidErr(EDiagSev sv, EErrType et, string msg, TDesc ds);
     void ValidErr(EDiagSev sv, EErrType et, string msg, TFeat ft);
     void ValidErr(EDiagSev sv, EErrType et, string msg, TBioseq sq);
@@ -2296,7 +2275,26 @@ static bool s_NotPeptideException(const CSeq_feat& ft)
 void CValidError_impl::ValidErr
 (EDiagSev sv,
  EErrType et,
- string  msg,
+ const string&  msg,
+ const CSerialObject& obj)
+{
+    const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
+    if (desc != 0) {
+        ValidErr (sv, et, msg, *desc);
+        return;
+    }
+    const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
+    if (feat != 0) {
+        ValidErr (sv, et, msg, *feat);
+        return;
+    }
+}
+
+
+void CValidError_impl::ValidErr
+(EDiagSev sv,
+ EErrType et,
+ string   msg,
  TDesc    ds)
 {
     // Append Descriptor label
@@ -2310,8 +2308,8 @@ void CValidError_impl::ValidErr
 void CValidError_impl::ValidErr
 (EDiagSev sv,
  EErrType et,
- string msg,
- TFeat ft)
+ string   msg,
+ TFeat    ft)
 {
     // Add feature part of label
     msg += " FEATURE: ";
@@ -2373,7 +2371,7 @@ void CValidError_impl::ValidErr
 void CValidError_impl::ValidErr
 (EDiagSev sv,
  EErrType et,
- string  msg,
+ string   msg,
  TBioseq  sq)
 {
     // Append bioseq label
@@ -2390,7 +2388,7 @@ void CValidError_impl::ValidErr
 void CValidError_impl::ValidErr
 (EDiagSev sv,
  EErrType et,
- string  msg,
+ string   msg,
  TBioseq  sq,
  TDesc    ds)
 {
@@ -2832,18 +2830,16 @@ void CValidError_impl::ValidateSeqDescr(const CBioseq& seq, bool isTpa)
         }
     }
     
-    CConstObjectInfo dinfo(&seq.GetDescr(), CSeq_descr::GetTypeInfo());
-    
     // Validate CBioSource
     CTypeConstIterator<CBioSource> bsit(ConstBegin(seq.GetDescr()));
     for (; bsit; ++bsit) {
-        ValidateBioSource(*bsit, dinfo);
+        ValidateBioSource(*bsit, seq.GetDescr());
     }
     
-    // Validate CPub
-    CTypeConstIterator<CPub> pit(ConstBegin(seq.GetDescr()));
+    // Validate CPubdesc
+    CTypeConstIterator<CPubdesc> pit(ConstBegin(seq.GetDescr()));
     for (;pit; ++pit) {
-        ValidatePub(*pit, dinfo);
+        ValidatePubdesc(*pit, seq.GetDescr());
     }
 }
 
@@ -2923,18 +2919,25 @@ void CValidError_impl::ValidateSeqFeatContext(const CBioseq& seq)
 
 void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 {
-    CConstObjectInfo finfo(&feat, CSeq_feat::GetTypeInfo());
-    
-    // Validate CBioSource
-    CTypeConstIterator<CBioSource> bsit(ConstBegin(feat));
-    for (; bsit; ++bsit) {
-        ValidateBioSource(*bsit, finfo);
-    }
-    
-    // Validate CPub
-    CTypeConstIterator<CPub> pit(ConstBegin(feat));
-    for (;pit; ++pit) {
-        ValidatePub(*pit, finfo);
+    switch (feat.GetData ().Which ()) {
+        case CSeqFeatData::e_Gene:
+            break;
+        case CSeqFeatData::e_Cdregion:
+            break;
+        case CSeqFeatData::e_Prot:
+            break;
+        case CSeqFeatData::e_Rna:
+            break;
+        case CSeqFeatData::e_Pub:
+            // Validate CPubdesc
+            ValidatePubdesc(feat.GetData ().GetPub (), feat);
+            break;
+        case CSeqFeatData::e_Biosrc:
+            // Validate CBioSource
+            ValidateBioSource(feat.GetData ().GetBiosrc (), feat);
+            break;
+        default:
+            break;
     }
 }
 
@@ -3568,6 +3571,7 @@ public:
 
 void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& seq)
 {
+    /*
     // Loop through features and insert into multimap sorted by
     // feature label--case insensitive
     typedef multimap<string, const CSeq_feat*, CNoCaseCompare> TSmap;
@@ -3598,6 +3602,7 @@ void CValidError_impl::ValidateCollidingGeneNames(const CBioseq& seq)
         }
         plabel = &(it->first);
     }
+    */
 }
 
 
@@ -4064,16 +4069,23 @@ void CValidError_impl::ValidateDelta(const CBioseq& seq, bool isNTorNC)
 }
 
 
-void CValidError_impl::ValidateBioSource
-(const CBioSource&       bsrc,
- const CConstObjectInfo& oi)
+void CValidError_impl::ValidateDbxref
+(const CDbtag& xref,
+ const CSerialObject& obj)
 {
 }
 
 
-void CValidError_impl::ValidatePub
-(const CPub&             pub,
- const CConstObjectInfo& oi)
+void CValidError_impl::ValidateBioSource
+(const CBioSource&    bsrc,
+ const CSerialObject& obj)
+{
+}
+
+
+void CValidError_impl::ValidatePubdesc
+(const CPubdesc&      pub,
+ const CSerialObject& obj)
 {
 }
 
@@ -4124,6 +4136,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/10/08 19:51:37  kans
+* ValidateBioSource and ValidatePubdesc take CSerialObject
+*
 * Revision 1.7  2002/10/08 14:35:42  clausen
 * Added calls to ValidateBiosource() & ValidatePub()
 *
