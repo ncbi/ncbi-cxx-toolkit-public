@@ -476,6 +476,148 @@ void CAlnVec::CreateConsensus(void)
 #endif
 }
 
+
+#define BLOSUMSIZE 24
+
+static const char s_AlnVecBlosum62Fields[BLOSUMSIZE] =
+    { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K',
+      'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X', '*' };
+
+static const char s_AlnVecBlosum62Matrix[BLOSUMSIZE][BLOSUMSIZE] = {
+    /*       A,  R,  N,  D,  C,  Q,  E,  G,  H,  I,  L,  K,
+             M,  F,  P,  S,  T,  W,  Y,  V,  B,  Z,  X,  * */
+    /*A*/ {  4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1,
+            -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0, -4 },
+    /*R*/ { -1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2,
+            -1, -3, -2, -1, -1, -3, -2, -3, -1,  0, -1, -4 },
+    /*N*/ { -2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0,
+            -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1, -4 },
+    /*D*/ { -2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1,
+            -3, -3, -1,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
+    /*C*/ {  0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3,
+            -1, -2, -3, -1, -1, -2, -2, -1, -3, -3, -2, -4 },
+    /*Q*/ { -1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,
+             0, -3, -1,  0, -1, -2, -1, -2,  0,  3, -1, -4 },
+    /*E*/ { -1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1,
+            -2, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
+    /*G*/ {  0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2,
+            -3, -3, -2,  0, -2, -2, -3, -3, -1, -2, -1, -4 },
+    /*H*/ { -2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1,
+            -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1, -4 },
+    /*I*/ { -1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,
+             1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1, -4 },
+    /*L*/ { -1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,
+             2,  0, -3, -2, -1, -2, -1,  1, -4, -3, -1, -4 },
+    /*K*/ { -1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5,
+            -1, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1, -4 },
+    /*M*/ { -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,
+             5,  0, -2, -1, -1, -1, -1,  1, -3, -1, -1, -4 },
+    /*F*/ { -2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,
+             0,  6, -4, -2, -2,  1,  3, -1, -3, -3, -1, -4 },
+    /*P*/ { -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1,
+            -2, -4,  7, -1, -1, -4, -3, -2, -2, -1, -2, -4 },
+    /*S*/ {  1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0,
+            -1, -2, -1,  4,  1, -3, -2, -2,  0,  0,  0, -4 },
+    /*T*/ {  0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1,
+            -1, -2, -1,  1,  5, -2, -2,  0, -1, -1,  0, -4 },
+    /*W*/ { -3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3,
+            -1,  1, -4, -3, -2, 11,  2, -3, -4, -3, -2, -4 },
+    /*Y*/ { -2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2,
+            -1,  3, -3, -2, -2,  2,  7, -1, -3, -2, -1, -4 },
+    /*V*/ {  0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,
+             1, -1, -2, -2,  0, -3, -1,  4, -3, -2, -1, -4 },
+    /*B*/ { -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0,
+            -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1, -4 },
+    /*Z*/ { -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1,
+            -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4 },
+    /*X*/ {  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1, -4 },
+    /***/ { -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,
+            -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1 }
+};
+
+static map<char, map<char, int> >  s_AlnVecBlosum62Map;
+
+int CAlnVec::CalculateScore(const string& s1, const string& s2,
+                            bool s1_is_prot, bool s2_is_prot)
+{
+    int score = 0;
+
+    string::const_iterator res1 = s1.begin();
+    string::const_iterator res2 = s2.begin();
+
+    if (s1_is_prot  &&  s2_is_prot) {
+        if (s_AlnVecBlosum62Map.empty()) {
+            // initialize Blosum62Map
+            for (int row=0; row<BLOSUMSIZE; row++) {
+                for (int col=0; col<BLOSUMSIZE; col++) {
+                    s_AlnVecBlosum62Map
+                        [s_AlnVecBlosum62Fields[row]]
+                        [s_AlnVecBlosum62Fields[col]] =
+                        s_AlnVecBlosum62Matrix[row][col];
+                }
+            }
+        }            
+
+        // use BLOSUM62 matrix
+        for ( ;  res1 != s1.end();  res1++, res2++) {
+            score += s_AlnVecBlosum62Map[*res1][*res2];
+        }
+    } else if ( !s1_is_prot  &&  !s2_is_prot ) {
+        // use match score/mismatch penalty
+        for ( ; res1 != s1.end();  res1++, res2++) {
+            if (*res1 && *res2) {
+                if (*res1 == *res2) {
+                    score += 1;
+                } else {
+                    score -= 3;
+                }
+            }
+        }
+    } else {
+        NCBI_THROW(CAlnException, eMergeFailure,
+                   "CAlnVec::CalculateScore(): "
+                   "Mixing prot and nucl not implemented yet.");
+    }
+    return score;
+}
+
+
+int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2)
+{
+    TNumrow numrows = m_DS->GetDim();
+    TNumrow index1 = row1, index2 = row2;
+    int     start1, start2;
+    string  buff1, buff2;
+    bool    isAA1, isAA2;
+    int     score = 0;
+    
+    isAA1 = GetBioseqHandle(row1).GetBioseqCore()
+        ->GetInst().GetMol() == CSeq_inst::eMol_aa;
+
+    isAA2 = GetBioseqHandle(row2).GetBioseqCore()
+        ->GetInst().GetMol() == CSeq_inst::eMol_aa;
+
+    for (TNumseg seg = 0; seg < m_DS->GetNumseg(); seg++) {
+        start1 = m_DS->GetStarts()[index1];
+        start2 = m_DS->GetStarts()[index2];
+
+        if (start1 >=0  &&  start2 >= 0) {
+            x_GetSeqVector(row1).GetSeqData(start1,
+                                            start1 + m_DS->GetLens()[seg],
+                                            buff1);
+            x_GetSeqVector(row2).GetSeqData(start2,
+                                            start2 + m_DS->GetLens()[seg],
+                                            buff2);
+            score += CalculateScore(buff1, buff2, isAA1, isAA2);
+        }
+
+        index1 += numrows;
+        index2 += numrows;
+    }
+    return score;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -483,6 +625,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2003/01/23 16:31:34  todorov
+* Added calc score methods
+*
 * Revision 1.16  2003/01/17 19:25:04  ucko
 * Clear buffer with erase(), as G++ 2.9x lacks string::clear.
 *

@@ -112,6 +112,13 @@ public:
     bool    IsSetConsensus      (void) const;
     TNumrow GetConsensusRow     (void) const;
 
+    // utilities
+    int CalculateScore(TNumrow row1, TNumrow row2);
+
+    // static utilities
+    static int  CalculateScore(const string& s1, const string& s2,
+                               bool s1_is_prot, bool s2_is_prot);
+    
     // temporaries for conversion (see note below)
     static unsigned char FromIupac(unsigned char c);
     static unsigned char ToIupac  (unsigned char c);
@@ -350,6 +357,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2003/01/23 16:31:56  todorov
+ * Added calc score methods
+ *
  * Revision 1.15  2003/01/22 22:54:04  todorov
  * Removed an obsolete function
  *
