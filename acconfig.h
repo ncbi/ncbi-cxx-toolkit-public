@@ -36,3 +36,6 @@
 
 /* This is good for the EGCS C/C++ compiler on Linux(e.g. proto for putenv) */
 #undef _SVID_SOURCE
+
+/* There is no "std::char_traits" type defined */
+#undef HAVE_NO_CHAR_TRAITS

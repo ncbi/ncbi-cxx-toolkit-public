@@ -348,6 +348,22 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(for std::char_traits::)
+AC_TRY_COMPILE(
+   [#include <iostream>],
+   [using namespace $x_std;
+   char_traits<char>::int_type  i = char_traits<char>::eof();
+   i = char_traits<char>::not_eof(i);
+   char_traits<char>::char_type c = '\0';
+   char_traits<char>::pos_type  p = 0;
+   char_traits<char>::off_type  o = 1;
+   ],
+   ,
+   AC_DEFINE_UNQUOTED(HAVE_NO_CHAR_TRAITS, 1)
+)
+AC_MSG_RESULT()
+
+
 if test "$with_internal" = "yes" ; then
    internal="internal"   
 else
