@@ -810,7 +810,12 @@ void CObjectIStreamXml::ReadAnyContentObject(CAnyContentObject& obj)
         }
         string value;
         ReadAttributeValue(value, true);
-        obj.AddAttribute( attribName, m_NsPrefixToName[m_CurrNsPrefix],value);
+        if (attribName == "xmlns") {
+            m_NsPrefixToName[ns_prefix] = value;
+            m_NsNameToPrefix[value] = ns_prefix;
+        } else {
+            obj.AddAttribute( attribName, m_NsPrefixToName[m_CurrNsPrefix],value);
+        }
     }
     obj.SetNamespacePrefix(ns_prefix);
     obj.SetNamespaceName(m_NsPrefixToName[ns_prefix]);
@@ -2072,6 +2077,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2004/06/22 14:58:58  gouriano
+* Corrected reading namespace name of AnyContentObject
+*
 * Revision 1.63  2004/06/18 18:17:12  gouriano
 * Use case-insensitive comparison to identify character encoding
 *
