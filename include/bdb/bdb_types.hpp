@@ -1329,6 +1329,9 @@ public:
 	
 	/// Check if any field is NULL
 	bool HasNull() const;
+	
+	/// Copy all fields from another manager with the same(a must!) structure
+	void CopyFrom(const CBDB_BufferManager& bman);
 
 protected:
     CBDB_BufferManager();
@@ -1348,14 +1351,14 @@ protected:
 	///       unless field ownership is set to TRUE	
     void Bind(CBDB_Field* field, ENullable is_nullable = eNotNullable);
 
+    /// Copy all field values from the 'buf_mgr'.
+    void CopyFieldsFrom(const CBDB_BufferManager& buf_mgr);
+
     /// Duplicate (dynamic allocation is used) all fields from 'buf_mgr' and
     /// bind them to the this buffer manager. Field values are not copied.
     /// NOTE: CBDB_BufferManager does not own or deallocate fields, 
     ///       caller is responsible for deallocation,
 	///       unless field ownership is set to TRUE	
-    void CopyFieldsFrom(const CBDB_BufferManager& buf_mgr);
-
-    /// Copy all field values from the 'buf_mgr'.
     void DuplicateStructureFrom(const CBDB_BufferManager& buf_mgr);
 
     /// Compare fields of this buffer with those of 'buf_mgr' using
@@ -1659,6 +1662,7 @@ inline void CBDB_Field::CopyFrom(const void* src_buf)
         BDB_THROW(eOverflow, "Cannot copy. Data length exceeds max value");
     }
     ::memcpy(dst_ptr, src_buf, copy_len);
+	SetNotNull();
 }
 
 
@@ -2031,6 +2035,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/06/29 12:25:24  kuznets
+ * CBDB_BufferManager added functions to bulk copy fields
+ *
  * Revision 1.43  2004/06/28 14:33:39  kuznets
  * +CBDB_BufferManager::HasNull()
  *

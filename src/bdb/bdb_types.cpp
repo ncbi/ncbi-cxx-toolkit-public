@@ -594,7 +594,10 @@ void CBDB_BufferManager::DuplicateStructureFrom(const CBDB_BufferManager& buf_mg
     _ASSERT(FieldCount() == 0);
     for (unsigned int i = 0;  i < buf_mgr.FieldCount();  ++i) {
         const CBDB_Field& src_fld = buf_mgr.GetField(i);
+		
+		// "0" value selects the same buffer size as in src_fld
         auto_ptr<CBDB_Field> dst_fld(src_fld.Construct(0));
+		
         dst_fld->SetName(src_fld.GetName().c_str());
         Bind(dst_fld.get());
         dst_fld.release();
@@ -603,7 +606,10 @@ void CBDB_BufferManager::DuplicateStructureFrom(const CBDB_BufferManager& buf_mg
 }
 
 
-
+void CBDB_BufferManager::CopyFrom(const CBDB_BufferManager& buf_mgr)
+{
+	CopyFieldsFrom(buf_mgr);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_FieldLString::
@@ -997,6 +1003,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/06/29 12:25:40  kuznets
+ * CBDB_BufferManager added functions to bulk copy fields
+ *
  * Revision 1.29  2004/06/28 12:14:53  kuznets
  * Added uint1 to the types class factory
  *
