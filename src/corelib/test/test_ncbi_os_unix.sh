@@ -1,7 +1,7 @@
 #! /bin/sh
 # $Id
 
-test_ncbi_os_unix
+check_exec_test.sh test_ncbi_os_unix
 test $? = 0  ||  exit 1
 sleep 1
 test -f ./test_ncbi_os_unix.log  ||  exit 1

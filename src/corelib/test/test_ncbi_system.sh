@@ -1,12 +1,17 @@
 #! /bin/sh
 # $Id$
 
-test_ncbi_system general;
-test_general=$?; echo "exit_code(General-test) = $test_general"
-test_ncbi_system cpu;
-test_cpu=$?;     echo "exit_code(CPU-test) = $test_cpu"
-test_ncbi_system mem;
-test_mem=$?;     echo "exit_code(MEM-test) = $test_mem"
+check_exec_test.sh test_ncbi_system general
+test_general=$?
+echo "exit_code(General-test) = $test_general"
+
+check_exec_test.sh test_ncbi_system cpu
+test_cpu=$?
+echo "exit_code(CPU-test) = $test_cpu"
+
+check_exec_test.sh test_ncbi_system mem
+test_mem=$?
+echo "exit_code(MEM-test) = $test_mem"
 
 test $test_general -eq 0  ||  exit 1
 
