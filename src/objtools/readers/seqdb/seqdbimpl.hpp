@@ -149,8 +149,8 @@ public:
     /// Translate a GI to an OID.
     bool OidToGi(Uint4 oid, Uint4 & gi) const;
     
-    /// Find an OID matching the specified string.
-    bool AccessionToOid(const string & acc, Uint4 & oid) const;
+    /// Find OIDs matching the specified string.
+    void AccessionToOids(const string & acc, vector<TOID> & oids) const;
     
 private:
     string x_FixString(const string &) const;

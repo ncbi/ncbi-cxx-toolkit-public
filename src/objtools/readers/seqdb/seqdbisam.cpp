@@ -252,7 +252,6 @@ CSeqDBIsam::x_SearchDataNumeric(Uint4            Number,
     SNumericKeyData * KeyDataPage      = NULL;
     SNumericKeyData * KeyDataPageStart = NULL;
     
-    
     if (NoData) {
         TIndx offset_begin = Start*sizeof(Int4);
         TIndx offset_end = offset_begin + sizeof(Int4)*NumElements;
@@ -423,11 +422,21 @@ Int4 CSeqDBIsam::x_DiffCharLease(const string   & term_in,
     return dc_result;
 }
 
+static inline char
+s_SeqDBIsam_NullifyEOLs(char c)
+{
+    if ((c == '\n') || (c == '\r')) {
+        return 0;
+    } else {
+        return c;
+    }
+}
+
 const char ISAM_DATA_CHAR = (char) 2;
 
 inline bool ENDS_ISAM_KEY(char P)
 {
-    return (P == 0) || (P == ISAM_DATA_CHAR) || (P == '\n') || (P == '\r');
+    return (P == ISAM_DATA_CHAR) || (s_SeqDBIsam_NullifyEOLs(P) == 0);
 }
 
 Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
@@ -445,13 +454,18 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
         char ch1 = term_in[i];
         char ch2 = file_data[i];
         
-        if (ignore_case) {
-            ch1 = toupper(ch1);
-            ch2 = toupper(ch2);
-        }
-        
         if (ch1 != ch2) {
-            break;
+            ch1 = s_SeqDBIsam_NullifyEOLs(ch1);
+            ch2 = s_SeqDBIsam_NullifyEOLs(ch2);
+            
+            if (ignore_case) {
+                ch1 = toupper(ch1);
+                ch2 = toupper(ch2);
+            }
+            
+            if (ch1 != ch2) {
+                break;
+            }
         }
     }
     
@@ -470,23 +484,182 @@ Int4 CSeqDBIsam::x_DiffChar(const string & term_in,
     return result;
 }
 
-void CSeqDBIsam::x_ExtractData(const char * key_start,
-                               const char * map_end,
-                               string     & key_out,
-                               string     & data_out)
+void CSeqDBIsam::x_ExtractPageData(const string   & term_in,
+                                   Uint4            page_index,
+                                   const char     * beginp,
+                                   const char     * endp,
+                                   vector<Uint4>  & indices_out,
+                                   vector<string> & keys_out,
+                                   vector<string> & data_out)
+{
+    // Collect all 'good' data from the page.
+    
+    bool ignore_case = true;
+    
+    Uint4 TermNum(0);
+    
+    const char * indexp(beginp);
+    bool found_match(false);
+    
+    while (indexp < endp) {
+        Int4 Diff = x_DiffChar(term_in,
+                               indexp,
+                               endp,
+                               ignore_case);
+        
+        if (Diff == -1) { // Complete match
+            found_match = true;
+            
+            x_ExtractData(indexp,
+                          endp,
+                          keys_out,
+                          data_out);
+            
+            indices_out.push_back(page_index + TermNum);
+        } else {
+            // If we found a match, but the current term doesn't
+            // match, then we are past the set of matching entries.
+            
+            if (found_match) {
+                break;
+            }
+        }
+        
+        // Skip remainder of term, and any nulls after it.
+        
+        while((indexp < endp) && s_SeqDBIsam_NullifyEOLs(*indexp)) {
+            indexp++;
+        }
+        while((indexp < endp) && (! s_SeqDBIsam_NullifyEOLs(*indexp))) {
+            indexp++;
+        }
+        
+        TermNum++;
+    }
+}
+
+void CSeqDBIsam::x_ExtractAllData(const string   & term_in,
+                                  Uint4            sample_index,
+                                  vector<Uint4>  & indices_out,
+                                  vector<string> & keys_out,
+                                  vector<string> & data_out,
+                                  CSeqDBLockHold & locked)
+{
+    // The object at sample_index is known to match; we will iterate
+    // over the surrounding values to see if they match as well.  No
+    // assumptions about how many keys can match are made here.
+    
+    bool ignore_case = true;
+    
+    Uint4 pre_amt  = 1;
+    Uint4 post_amt = 1;
+    
+    bool done_b(false), done_e(false);
+    
+    const char * beginp(0);
+    const char * endp(0);
+    
+    Uint4 beg_off(0);
+    Uint4 end_off(0);
+    
+    while(! (done_b && done_e)) {
+        if (sample_index < pre_amt) {
+            beg_off = 0;
+            done_b = true;
+        } else {
+            beg_off = sample_index - pre_amt;
+        }
+        
+        if ((m_NumSamples - sample_index) < post_amt) {
+            end_off = m_NumSamples;
+            done_e = true;
+        } else {
+            end_off = sample_index + post_amt;
+        }
+        
+        x_LoadPage(beg_off, end_off, & beginp, & endp, locked);
+        
+        if (! done_b) {
+            Int4 diff_begin = x_DiffChar(term_in,
+                                         beginp,
+                                         endp,
+                                         ignore_case);
+            
+            if (diff_begin != -1) {
+                done_b = true;
+            } else {
+                pre_amt ++;
+            }
+        }
+        
+        if (! done_e) {
+            const char * last_term(0);
+            const char * p(endp-1);
+            
+            // Skip over any non-terminating junk at the end
+            
+            enum { eEndNulls, eLastTerm } search_stage = eEndNulls;
+            
+            while(p > beginp) {
+                bool terminal = (0 == s_SeqDBIsam_NullifyEOLs(*p));
+                
+                if (search_stage == eEndNulls) {
+                    if (! terminal) { 
+                        search_stage = eLastTerm;
+                    }
+                } else {
+                    if (terminal) {
+                        last_term = p + 1;
+                        break;
+                    }
+                }
+                
+                p--;
+            }
+            
+            if (! last_term) {
+                last_term = beginp;
+            }
+            
+            Int4 diff_end = x_DiffChar(term_in,
+                                       last_term,
+                                       endp,
+                                       ignore_case);
+            
+            if (diff_end != -1) {
+                done_e = true;
+            } else {
+                post_amt ++;
+            }
+        }
+    }
+    
+    x_ExtractPageData(term_in,
+                      m_PageSize * beg_off,
+                      beginp,
+                      endp,
+                      indices_out,
+                      keys_out,
+                      data_out);
+}
+
+void CSeqDBIsam::x_ExtractData(const char     * key_start,
+                               const char     * map_end,
+                               vector<string> & keys_out,
+                               vector<string> & data_out)
 {
     const char * data_ptr(0);
     const char * p(key_start);
     
     while(p < map_end) {
-        switch(*p) {
+        switch(s_SeqDBIsam_NullifyEOLs(*p)) {
         case 0:
             if (data_ptr) {
-                key_out.assign(key_start, data_ptr);
-                data_out.assign(data_ptr+1, p);
+                keys_out.push_back(string(key_start, data_ptr));
+                data_out.push_back(string(data_ptr+1, p));
             } else {
-                key_out.assign(key_start, p);
-                data_out.erase();
+                keys_out.push_back(string(key_start, p));
+                data_out.push_back("");
             }
             return;
             
@@ -554,12 +727,90 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
     str.assign(key_offset_addr, length);
 }
 
+// Given an index, this computes the diff from the input term.  It
+// also returns the offset for that sample's key in KeyOffset.
+
+Int4 CSeqDBIsam::x_DiffSample(const string   & term_in,
+                              Uint4            SampleNum,
+                              Uint4          & KeyOffset,
+                              CSeqDBLockHold & locked)
+{
+    // Meaning:
+    // a. Compute SampleNum*4
+    // b. Address this number into SamplePos (indexlease)
+    // c. Swap this number to compute Key offset.
+    // d. Add to beginning of file to get key data pointer.
+    
+    bool ignore_case(true);
+    
+    Uint4 SampleOffset(m_KeySampleOffset);
+    
+    if(m_PageSize != MEMORY_ONLY_PAGE_SIZE) {
+        SampleOffset += (m_NumSamples + 1) * sizeof(Uint4);
+    }
+    
+    TIndx offset_begin = SampleOffset + (SampleNum * sizeof(Uint4));
+    TIndx offset_end   = offset_begin + sizeof(Uint4);
+    
+    m_Atlas.Lock(locked);
+    
+    if (! m_IndexLease.Contains(offset_begin, offset_end)) {
+        m_Atlas.GetRegion(m_IndexLease,
+                          m_IndexFname,
+                          offset_begin,
+                          offset_end);
+    }
+    
+    KeyOffset = SeqDB_GetStdOrd((Int4*) m_IndexLease.GetPtr(offset_begin));
+    
+    Uint4 max_lines_2 = m_MaxLineSize * 2;
+    
+    return x_DiffCharLease(term_in,
+                           m_IndexLease,
+                           m_IndexFname,
+                           m_IndexFileLength,
+                           max_lines_2,
+                           KeyOffset,
+                           ignore_case,
+                           locked);
+}
+
+void CSeqDBIsam::x_LoadPage(Uint4             SampleNum1,
+                            Uint4             SampleNum2,
+                            const char     ** beginp,
+                            const char     ** endp,
+                            CSeqDBLockHold &  locked)
+{
+    // Load the appropriate page of terms into memory.
+    
+    _ASSERT(SampleNum2 > SampleNum1);
+    
+    Uint4 begin_offset = m_KeySampleOffset + SampleNum1       * sizeof(Uint4);
+    Uint4 end_offset   = m_KeySampleOffset + (SampleNum2 + 1) * sizeof(Uint4);
+    
+    if (! m_IndexLease.Contains(begin_offset, end_offset)) {
+        m_Atlas.GetRegion(m_IndexLease, m_IndexFname, begin_offset, end_offset);
+    }
+    
+    Uint4 * key_offsets((Uint4*) m_IndexLease.GetPtr(begin_offset));
+    
+    Uint4 key_off1 = SeqDB_GetStdOrd(& key_offsets[0]);
+    Uint4 key_off2 = SeqDB_GetStdOrd(& key_offsets[SampleNum2 - SampleNum1]);
+    
+    if (! m_DataLease.Contains(key_off1, key_off2)) {
+        m_Atlas.GetRegion(m_DataLease, m_DataFname, key_off1, key_off2);
+    }
+    
+    *beginp = (const char *) m_DataLease.GetPtr(key_off1);
+    *endp   = (const char *) m_DataLease.GetPtr(key_off2);
+}
+
 
 // ------------------------StringSearch--------------------------
-// Purpose:     Main search function of Numeric ISAM
+// Purpose:     Main search function of string search.
 // 
 // Parameters:  Key - interer to search
-//              Data - returned value (for NIASM with data)
+//              Data - returned value
 //              Index - internal index in database
 // Returns:     ISAM Error Code
 // NOTE:        None
@@ -567,13 +818,21 @@ CSeqDBIsam::x_GetIndexString(Uint4            key_offset,
 
 CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_StringSearch(const string   & term_in,
-                           bool             follow_match,
-                           bool             short_match,
-                           string         & term_out,
-                           string         & value_out,
-                           Uint4          & index_out,
+                           //bool             follow_match,
+                           //bool             short_match,
+                           vector<string> & terms_out,
+                           vector<string> & values_out,
+                           vector<Uint4>  & indices_out,
                            CSeqDBLockHold & locked)
 {
+    // These are always false; They may relate to the prior find_one /
+    // expand_to_many method of getting multiple OIDs.
+    
+    bool short_match(false);
+    bool follow_match(false);
+    
+    Uint4 preexisting_data_count = values_out.size();
+    
     if (m_Initialized == false) {
         EErrorCode error = x_InitSearch(locked);
         
@@ -606,51 +865,40 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
     while(Stop >= Start) {
         SampleNum = ((Uint4)(Stop + Start)) >> 1;
         
-        // Meaning:
-        // a. Compute SampleNum*4
-        // b. Address this number into SamplePos (indexlease)
-        // c. Swap this number to compute Key offset.
-        // d. Add to beginning of file to get key data pointer.
+        Uint4 KeyOffset(0);
         
-        TIndx offset_begin = SampleOffset + (SampleNum * sizeof(Uint4));
-        TIndx offset_end   = offset_begin + sizeof(Uint4);
-        
-        m_Atlas.Lock(locked);
-        
-        if (! m_IndexLease.Contains(offset_begin, offset_end)) {
-            m_Atlas.GetRegion(m_IndexLease,
-                              m_IndexFname,
-                              offset_begin,
-                              offset_end);
-        }
-        
-        Uint4 KeyOffset =
-            SeqDB_GetStdOrd((Int4*) m_IndexLease.GetPtr(offset_begin));
-        
-        Uint4 max_lines_2 = m_MaxLineSize * 2;
-        
-        Int4 diff = x_DiffCharLease(term_in,
-                                    m_IndexLease,
-                                    m_IndexFname,
-                                    m_IndexFileLength,
-                                    max_lines_2,
-                                    KeyOffset,
-                                    ignore_case,
-                                    locked);
+        Int4 diff = x_DiffSample(term_in, SampleNum, KeyOffset, locked);
         
         // If this is an exact match, return the master term number.
         
         const char * KeyData = m_IndexLease.GetPtr(KeyOffset);
         Uint4 BytesToEnd = m_IndexFileLength - KeyOffset;
         
+        Uint4 max_lines_2 = m_MaxLineSize * 2;
+        
         if (BytesToEnd > max_lines_2) {
             BytesToEnd = max_lines_2;
         }
         
         if (diff == -1) {
-            x_ExtractData(KeyData, KeyData + BytesToEnd, term_out, value_out);
+            //if (collect_all) {
             
-            index_out = m_PageSize * SampleNum;
+            x_ExtractAllData(term_in,
+                             SampleNum,
+                             indices_out,
+                             terms_out,
+                             values_out,
+                             locked);
+
+//           } else {
+//               x_ExtractData(KeyData,
+//                             KeyData + BytesToEnd,
+//                             terms_out,
+//                             values_out);
+//              
+//               indices_out.push_back(m_PageSize * SampleNum);
+//           }
+            
             return eNoError;
         }
         
@@ -722,128 +970,29 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
         return eNotFound;
     }
     
-    
     // Load the appropriate page of terms into memory.
     
-    Uint4 begin_offset = m_KeySampleOffset + SampleNum * sizeof(Uint4);
-    Uint4 end_offset   = m_KeySampleOffset + (SampleNum+2) * sizeof(Uint4);
+    const char * beginp(0);
+    const char * endp(0);
     
-    if (! m_IndexLease.Contains(begin_offset, end_offset)) {
-        m_Atlas.GetRegion(m_IndexLease, m_IndexFname, begin_offset, end_offset);
-    }
-    
-    Uint4 * key_offsets((Uint4*) m_IndexLease.GetPtr(begin_offset));
-    
-    Uint4 key_off1 = SeqDB_GetStdOrd(& key_offsets[0]);
-    Uint4 key_off2 = SeqDB_GetStdOrd(& key_offsets[1]);
-    Uint4 num_bytes = key_off2 - key_off1;
-    
-    if (! m_DataLease.Contains(key_off1, key_off2)) {
-        m_Atlas.GetRegion(m_DataLease, m_DataFname, key_off1, key_off2);
-    }
-    
-    string Page;
-    Page.reserve(num_bytes + 1);
-    
-    Page.assign((const char *) m_DataLease.GetPtr(key_off1),
-                (const char *) m_DataLease.GetPtr(key_off2));
-    
-    Page.resize(num_bytes + 1);
-    Page[Page.size()-1] = 0;
-    
-    // Remove all \n and \r characters
-    
-    for(Uint4 i = 0; i < Page.size(); i++) {
-        switch(Page[i]) {
-        case '\n':
-        case '\r':
-            Page[i] = 0;
-            break;
-            
-        default:
-            break;
-        }
-    }
+    x_LoadPage(SampleNum, SampleNum + 1, & beginp, & endp, locked);
     
     // Search the page for the term.
     
-    Uint4 TermNum = 0;
-    Uint4 idx = 0;
+    x_ExtractPageData(term_in,
+                      m_PageSize * SampleNum,
+                      beginp,
+                      endp,
+                      indices_out,
+                      terms_out,
+                      values_out);
     
-    while (idx < Page.size()) {
-        Int4 Diff = x_DiffChar(term_in,
-                               Page.data() + idx,
-                               Page.data() + Page.size(),
-                               ignore_case);
-        
-        if (Diff == -1) { // Complete match
-            break;
-        }
-        
-        if (short_match && (Diff >= Length)) { // Partially complete
-            break;
-        }
-        
-        // Just next available term accepted
-        
-        // (Note: non-portable code)
-        
-        if (follow_match) {
-            if (ignore_case) {
-                if (toupper(term_in[Diff]) < toupper(Page[Diff + idx])) {
-                    break;
-                }
-            } else {
-                if (term_in[Diff] < Page[Diff + idx]) {
-                    break;
-                }
-            }
-        }
-        
-        // Skip remainder of term, and any nulls after it.
-        
-        while((idx < Page.size()) && (Page[idx])) {
-            idx++;
-        }
-        while((idx < Page.size()) && (! Page[idx])) {
-            idx++;
-        }
-        
-        TermNum++;
-    }
+    // For now the short and follow logic is not implemented.
     
+    EErrorCode rv(eNoError);
     
-    // If we didn't find a match in the page, then we failed, unless
-    // the items that begins the next page is a match (only possible
-    // if ISAM_SHORT_KEY or ISAM_FOLLOW_KEY was specified).
-    
-    EErrorCode rv(eNotFound);
-    
-    if (idx >= num_bytes) {
-        if (found_short >= 0) {
-            const char * p = short_term.data();
-            
-            x_ExtractData(p, p + short_term.size(), term_out, value_out);
-            
-            index_out = m_PageSize * found_short;
-            
-            rv = eNoError;
-        } else {
-            index_out = (Uint4) -1;
-            
-            rv = eNotFound;
-        }
-    } else {
-        // Otherwise, we found a match.
-        
-        x_ExtractData(Page.data() + idx,
-                      Page.data() + Page.size(),
-                      term_out,
-                      value_out);
-        
-        index_out = (m_PageSize * SampleNum) + TermNum;
-        
-        rv = eNoError;
+    if (preexisting_data_count == values_out.size()) {
+        rv = eNotFound;
     }
     
     return rv;
@@ -1039,9 +1188,10 @@ s_SeqDB_ParseSeqIDs(const string              & line,
     return ! seqids.empty();
 }
 
-bool CSeqDBIsam::StringToOid(const string   & acc,
-                             Uint4          & oid,
-                             CSeqDBLockHold & locked)
+void CSeqDBIsam::StringToOids(const string   & acc,
+                              vector<Uint4>  & oids,
+                              bool             adjusted,
+                              CSeqDBLockHold & locked)
 {
     _ASSERT(m_IdentType == eStringID);
     
@@ -1049,59 +1199,78 @@ bool CSeqDBIsam::StringToOid(const string   & acc,
     
     if(m_Initialized == false) {
         if (eNoError != x_InitSearch(locked)) {
-            return false;
+            return;
         }
     }
     
     if (m_IdxOption) {
-        
         // Under what circumstance can this path be taken?
         
-        return x_SparseStringToOid(acc, oid, locked);
+        x_SparseStringToOids(acc, oids, adjusted, locked);
     } else {
+        bool found = false;
+        
         string accession(string("gb|") + acc + "|");
         string locus_str(string("gb||") + acc);
         
         EErrorCode err = eNoError;
         
-        string keyout, data;
-        Uint4 index(0);
+        vector<string> keys_out;
+        vector<string> data_out;
+        vector<Uint4>  indices_out;
         
-        if ((err = x_StringSearch(accession, false, false, keyout, data, index, locked)) < 0) {
-            return false;
+        if (! adjusted) {
+            if ((err = x_StringSearch(accession,
+                                      keys_out,
+                                      data_out,
+                                      indices_out,
+                                      locked)) < 0) {
+                return;
+            }
+            
+            if (err == eNoError) {
+                found = true;
+            }
+            
+            if ((! found) &&
+                (err = x_StringSearch(locus_str,
+                                      keys_out,
+                                      data_out,
+                                      indices_out,
+                                      locked)) < 0) {
+                return;
+            }
+            
+            if (err != eNotFound) {
+                found = true;
+            }
+        }
+        
+        if ((! found) &&
+            (err = x_StringSearch(acc,
+                                  keys_out,
+                                  data_out,
+                                  indices_out,
+                                  locked)) < 0) {
+            return;
         }
         
         if (err != eNotFound) {
-            //oids.push_back(atol(data.c_str()));
-            oid = atol(data.c_str());
-            return true;
+            found = true;
         }
         
-        if ((err = x_StringSearch(locus_str, false, false, keyout, data, index, locked)) < 0) {
-            return false;
-        }
-        
-        if (err != eNotFound) {
-            oid = atol(data.c_str());
-            return true;
-        }
-        
-        if ((err = x_StringSearch(acc, false, false, keyout, data, index, locked)) < 0) {
-            return false;
-        }
-        
-        if (err != eNotFound) {
-            oid = atol(data.c_str());
-            return true;
+        if (found) {
+            ITERATE(vector<string>, iter, data_out) {
+                oids.push_back(atol((*iter).c_str()));
+            }
         }
     }
-    
-    return false;
 }
 
-bool CSeqDBIsam::x_SparseStringToOid(const string   &,
-                                     Uint4          &,
-                                     CSeqDBLockHold &)
+bool CSeqDBIsam::x_SparseStringToOids(const string   &,
+                                      vector<Uint4>  &,
+                                      bool,
+                                      CSeqDBLockHold &)
 {
     cerr << " this should be derived from readdb_acc2fastaEx().." << endl;
     _TROUBLE;
@@ -1112,19 +1281,24 @@ CSeqDBIsam::EIdentType
 CSeqDBIsam::x_SimplifySeqID(const string  & acc,
                             CRef<CSeq_id>   bestid,
                             Uint4         & num_id,
-                            string        & str_id)
+                            string        & str_id,
+                            bool          & simpler)
 {
     EIdentType result = eStringID;
     
-    const CTextseq_id * tsip = 0;
+    CTextseq_id * tsip = 0;
+    
+    bool use_version = false;
     
     switch(bestid->Which()) {
     case CSeq_id::e_Gi:
+        simpler = true;
         num_id = bestid->GetGi();
         result = eGi;
         break;
         
     case CSeq_id::e_Gibbsq:    /* gibbseq */
+        simpler = true;
         result = eStringID;
         str_id = NStr::UIntToString(bestid->GetGibbsq());
         break;
@@ -1135,12 +1309,14 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
             
             if (dbt.CanGetDb()) {
                 if (dbt.GetDb() == "BL_ORD_ID") {
+                    simpler = true;
                     num_id = dbt.GetTag().GetId();
                     result = eOID;
                     break;
                 }
                 
                 if (dbt.GetDb() == "PIG") {
+                    simpler = true;
                     num_id = dbt.GetTag().GetId();
                     result = ePig;
                     break;
@@ -1153,6 +1329,7 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
         break;
         
     case CSeq_id::e_Local:     /* local */
+        simpler = true;
         result = eStringID;
         str_id = bestid->GetLocal().GetStr();
         break;
@@ -1161,63 +1338,80 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
         // tsip types
         
     case CSeq_id::e_Embl:      /* embl */
-        tsip = & (bestid->GetEmbl());
+        tsip = & (bestid->SetEmbl());
+        use_version = true;
         break;
         
     case CSeq_id::e_Ddbj:      /* ddbj */
-        tsip = & (bestid->GetDdbj());
+        tsip = & (bestid->SetDdbj());
+        use_version = true;
         break;
         
     case CSeq_id::e_Genbank:   /* genbank */
-        tsip = & (bestid->GetGenbank());
+        tsip = & (bestid->SetGenbank());
+        use_version = true;
         break;
         
     case CSeq_id::e_Tpg:       /* Third Party Annot/Seq Genbank */
-        tsip = & (bestid->GetTpg());
+        tsip = & (bestid->SetTpg());
+        use_version = true;
         break;
         
     case CSeq_id::e_Tpe:       /* Third Party Annot/Seq EMBL */
-        tsip = & (bestid->GetTpe());
+        tsip = & (bestid->SetTpe());
+        use_version = true;
         break;
         
     case CSeq_id::e_Tpd:       /* Third Party Annot/Seq DDBJ */
-        tsip = & (bestid->GetTpd());
+        tsip = & (bestid->SetTpd());
+        use_version = true;
         break;
         
     case CSeq_id::e_Other:     /* other */
-        tsip = & (bestid->GetOther());
+        tsip = & (bestid->SetOther());
+        use_version = true;
         break;
         
     case CSeq_id::e_Pir:       /* pir   */
-        tsip = & (bestid->GetPir());
+        tsip = & (bestid->SetPir());
         break;
         
     case CSeq_id::e_Swissprot: /* swissprot */
-        tsip = & (bestid->GetSwissprot());
+        tsip = & (bestid->SetSwissprot());
         break;
         
     case CSeq_id::e_Prf:       /* prf   */
-        tsip = & (bestid->GetPrf());
+        tsip = & (bestid->SetPrf());
         break;
         
         
         // Default: do nothing to string; maybe it will work as is.
         
     default:
+        simpler = false;
         result = eStringID;
         str_id = acc;
         break;
     }
     
     if (tsip) {
+        simpler = true;
         result = eStringID;
         
-        if (tsip->CanGetAccession()) {
-            str_id = tsip->GetAccession();
-        } else if (tsip->CanGetName()) {
-            str_id = tsip->GetName();
-        } else {
-            str_id.erase();
+        string tmp_name;
+        
+        if (tsip->CanGetName() && tsip->CanGetAccession()) {
+            tmp_name = tsip->GetName();
+            tsip->ResetName();
+        }
+        
+        CSeq_id::ELabelFlags flags = (CSeq_id::ELabelFlags)
+            (CSeq_id::fLabel_GeneralDbIsContent | CSeq_id::fLabel_Version);
+        
+        bestid->GetLabel(& str_id, CSeq_id::eFasta, flags);
+        
+        if (! tmp_name.empty()) {
+            tsip->SetName(tmp_name);
         }
     }
     
@@ -1227,7 +1421,8 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
 CSeqDBIsam::EIdentType
 CSeqDBIsam::TryToSimplifyAccession(const string & acc,
                                    Uint4        & num_id,
-                                   string       & str_id)
+                                   string       & str_id,
+                                   bool         & simpler)
 {
     EIdentType result = eStringID;
     num_id = (Uint4)-1;
@@ -1239,10 +1434,11 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
         CRef<CSeq_id> bestid =
             FindBestChoice(seqid_set, CSeq_id::BestRank);
         
-        result = x_SimplifySeqID(acc, bestid, num_id, str_id);
+        result = x_SimplifySeqID(acc, bestid, num_id, str_id, simpler);
     } else {
         str_id = acc;
         result = eStringID;
+        simpler = false;
     }
     
     return result;

@@ -119,13 +119,9 @@ public:
     
     bool GetGi(Uint4 oid, Uint4 & gi, CSeqDBLockHold & locked) const;
     
-    bool AccessionToOids(const string   & acc,
+    void AccessionToOids(const string   & acc,
                          vector<Uint4>  & oids,
                          CSeqDBLockHold & locked) const;
-    
-    bool AccessionToOid(const string   & acc,
-                        Uint4          & oid,
-                        CSeqDBLockHold & locked) const;
     
 private:
     CRef<CBlast_def_line_set>

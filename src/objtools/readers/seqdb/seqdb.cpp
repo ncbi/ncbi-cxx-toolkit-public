@@ -214,15 +214,7 @@ bool CSeqDB::GiToPig(TGI gi, TPIG & pig) const
 
 void CSeqDB::AccessionToOids(const string & acc, vector<TOID> & oids) const
 {
-    // Temporary shim version -- actually this is the worst of both
-    // worlds, but for now I want to stabilize the interfaces,
-    // implementation smoothing can come later.
-    
-    TOID oid(0);
-    
-    if (m_Impl->AccessionToOid(acc, oid)) {
-        oids.push_back(oid);
-    }
+    return m_Impl->AccessionToOids(acc, oids);
 }
 
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)

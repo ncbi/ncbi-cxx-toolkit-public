@@ -85,20 +85,18 @@ public:
         return x_IdentToOid(gi, oid, locked);
     }
     
-//  bool StringToOids(const string   & acc,
-//                    vector<TOid>   & oids,
-//                    CSeqDBLockHold & locked);
-    
-    bool StringToOid(const string   & acc,
-                     TOid           & oid,
-                     CSeqDBLockHold & locked);
+    void StringToOids(const string   & acc,
+                      vector<TOid>   & oids,
+                      bool             simpler,
+                      CSeqDBLockHold & locked);
     
     bool SeqidToOid(const string & acc, TOid & oid, CSeqDBLockHold & locked);
     
     static EIdentType
     TryToSimplifyAccession(const string & acc,
                            Uint4        & num_id,
-                           string       & str_id);
+                           string       & str_id,
+                           bool         & simpler);
     
     void UnLease();
     
@@ -154,11 +152,11 @@ private:
     
     EErrorCode
     x_StringSearch(const string   & term_in,
-                   bool             follow_match,
-                   bool             short_match,
-                   string         & term_out,
-                   string         & value,
-                   Uint4          & index,
+                   //bool             follow_match,
+                   //bool             short_match,
+                   vector<string> & term_out,
+                   vector<string> & value_out,
+                   vector<Uint4>  & index_out,
                    CSeqDBLockHold & locked);
     
     EErrorCode
@@ -167,13 +165,10 @@ private:
     Int4 x_GetPageNumElements(Int4       SampleNum,
                               Int4     * Start);
     
-    bool x_SparseStringToOid(const string   & acc,
-                             Uint4          & oids,
-                             CSeqDBLockHold & locked);
-    
-//     bool x_SparseStringToOids(const string   & acc,
-//                               vector<Uint4>  & oids,
-//                               CSeqDBLockHold & locked);
+    bool x_SparseStringToOids(const string   & acc,
+                              vector<Uint4>  & oids,
+                              bool             adjusted,
+                              CSeqDBLockHold & locked);
     
     Int4
     x_DiffCharLease(const string   & term_in,
@@ -191,10 +186,10 @@ private:
                const char   * end,
                bool           ignore_case);
     
-    void x_ExtractData(const char * key_start,
-                       const char * entry_end,
-                       string     & key_out,
-                       string     & data_out);
+    void x_ExtractData(const char     * key_start,
+                       const char     * entry_end,
+                       vector<string> & key_out,
+                       vector<string> & data_out);
     
     Uint4 x_GetIndexKeyOffset(Uint4            sample_offset,
                               Uint4            sample_num,
@@ -214,8 +209,34 @@ private:
     x_SimplifySeqID(const string  & acc,
                     CRef<CSeq_id>   bestid,
                     Uint4         & num_id,
-                    string        & str_id);
+                    string        & str_id,
+                    bool          & simpler);
     
+    Int4 x_DiffSample(const string   & term_in,
+                      Uint4            SampleNum,
+                      Uint4          & KeyOffset,
+                      CSeqDBLockHold & locked);
+    
+    void x_ExtractAllData(const string   & term_in,
+                          Uint4            sample_index,
+                          vector<Uint4>  & indices_out,
+                          vector<string> & keys_out,
+                          vector<string> & data_out,
+                          CSeqDBLockHold & locked);
+    
+    void x_ExtractPageData(const string   & term_in,
+                           Uint4            page_index,
+                           const char     * beginp,
+                           const char     * endp,
+                           vector<Uint4>  & indices_out,
+                           vector<string> & keys_out,
+                           vector<string> & data_out);
+    
+    void x_LoadPage(Uint4             SampleNum1,
+                    Uint4             SampleNum2,
+                    const char     ** beginp,
+                    const char     ** endp,
+                    CSeqDBLockHold &  locked);
     
     // Data
     
