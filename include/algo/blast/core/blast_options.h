@@ -522,7 +522,7 @@ Boolean SBlastFilterOptionsMaskAtHash(const SBlastFilterOptions* filter_options)
 
 /** Validates filter options to ensure that program and options are consistent
  * and that options have valid values.
- * @param program Program number (blastn, blastp, etc.) [in]
+ * @param program_number Program number (blastn, blastp, etc.) [in]
  * @param filter_options options to add to [in]
  * @param blast_message error or warning (optional) [out] 
  * @return zero on success
