@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <internal/util/tar/tar.hpp>
+#include <util/compress/tar.hpp>
 #include <memory>
 
 #if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_UNIX)
@@ -790,6 +790,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/01/31 15:09:55  ivanov
+ * Fixed include path to tar.hpp
+ *
  * Revision 1.5  2005/01/31 14:28:51  ivanov
  * CTar:: rewritten Extract() methods using universal x_ReadAndProcess().
  * Added some private auxiliary methods to support Create(), Append(), List(),
