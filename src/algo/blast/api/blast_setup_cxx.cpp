@@ -386,27 +386,6 @@ GetNumberOfFrames(EProgram p)
     return retval;
 }
 
-EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type) 
-{
-    switch (prog_type) {
-    case eBlastTypeBlastn:
-        return eBlastn;
-    case eBlastTypeBlastp:
-        return eBlastp;
-    case eBlastTypeBlastx:
-        return eBlastx;
-    case eBlastTypeTblastn:
-        return eTblastn;
-    case eBlastTypeTblastx:
-        return eTblastx;
-    case eBlastTypeRpsBlast:
-        return eRPSBlast;
-    case eBlastTypeRpsTblastn:
-        return eRPSTblastn;
-    default:
-        return eBlastProgramMax;
-    }
-}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -417,6 +396,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.73  2004/08/17 15:13:00  ivanov
+ * Moved GetProgramFromBlastProgramType() from blast_setup_cxx.cpp
+ * to blast_options_cxx.cpp
+ *
  * Revision 1.72  2004/08/11 14:24:50  camacho
  * Move FindGeneticCode
  *
