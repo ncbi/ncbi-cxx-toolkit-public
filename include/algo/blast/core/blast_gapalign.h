@@ -272,12 +272,6 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
    const BlastScoreBlk* sbp, Uint4 q_start, Uint4 q_length, 
    Uint4 s_start, Uint4 s_length);
 
-Int4
-ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* S, Int4* a_offset, 
-	Int4* b_offset, Int4** sapp, BlastGapAlignStruct* gap_align, 
-	const BlastScoringParameters* score_params, Int4 query_offset, 
-   Boolean reversed, Boolean reverse_sequence);
-
 #ifdef __cplusplus
 }
 #endif
