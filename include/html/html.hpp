@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/07/25 15:26:00  vasilche
+* Added newline symbols before table and after each table row in text mode.
+*
 * Revision 1.44  2000/07/18 19:08:48  vasilche
 * Fixed uninitialized members.
 * Fixed NextCell to advance to next cell.
@@ -505,6 +508,8 @@ public:
 
     void ResetTableCache(void);
 
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream &, TMode mode);
+
 protected:
     virtual void DoAppendChild(CNCBINode* node);
     void AppendCell(CHTML_tc* cell);
@@ -591,6 +596,8 @@ public:
     CHTML_table* SetCellPadding(int padding);
 
     void ResetTableCache(void);
+
+    virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);   
 
 protected:
     TIndex m_CurrentRow, m_CurrentCol;
@@ -746,6 +753,8 @@ public:
 };
 
 // the button tag
+/*
+  commented out because it's not supported in most browsers
 class CHTML_button : public CHTMLElement
 {
     typedef CHTMLElement CParent;
@@ -767,6 +776,7 @@ public:
     CHTML_button* SetSubmit(const string& name,
                             const string& value = NcbiEmptyString);
 };
+*/
 
 // input type=text tag
 class CHTML_text : public CHTML_input

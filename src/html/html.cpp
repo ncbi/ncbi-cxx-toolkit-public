@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/07/25 15:27:38  vasilche
+* Added newline symbols before table and after each table row in text mode.
+*
 * Revision 1.57  2000/07/20 20:37:19  vasilche
 * Fixed null pointer dereference.
 *
@@ -729,6 +732,14 @@ void CHTML_tr::ResetTableCache(void)
         m_Parent->ResetTableCache();
 }
 
+CNcbiOstream& CHTML_tr::PrintEnd(CNcbiOstream& out, TMode mode)
+{
+    CParent::PrintEnd(out, mode);
+    if ( mode == ePlainText )
+        out << CHTMLHelper::GetNL();
+    return out;
+}
+
 CHTML_tc::~CHTML_tc(void)
 {
 }
@@ -1145,6 +1156,13 @@ CHTML_table::TIndex CHTML_table::CalculateNumberOfColumns(void) const
 CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 {
     return GetCache().GetRowCount();
+}
+
+CNcbiOstream& CHTML_table::PrintBegin(CNcbiOstream& out, TMode mode)
+{
+    if ( mode == ePlainText )
+        out << CHTMLHelper::GetNL();
+    return CParent::PrintBegin(out, mode);
 }
 
 // form element
