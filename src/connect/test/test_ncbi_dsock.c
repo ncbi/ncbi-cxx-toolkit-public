@@ -42,8 +42,9 @@
 /* This header must go last */
 #include "test_assert.h"
 
-#ifdef NCBI_OS_BSD
+#if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1)
    /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
+   /* For OSF1 (and FreeBSD) see also: /usr/include/netinet/udp_var.h   */
 #  define MAX_DGRAM_SIZE 9*1024
 #else
    /* This is the maximal datagram size defined by the UDP standard */
@@ -317,6 +318,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/02/14 15:41:26  lavr
+ * Limit packet size on OSF1, too
+ *
  * Revision 6.4  2003/02/06 04:34:28  lavr
  * Do not exceed maximal dgram size on BSD; trickier readout in s_Server()
  *
