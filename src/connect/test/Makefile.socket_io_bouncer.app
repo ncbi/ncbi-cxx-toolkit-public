@@ -2,6 +2,6 @@
 
 APP = socket_io_bouncer
 OBJ = socket_io_bouncer
-LIB = xconnect
+LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)

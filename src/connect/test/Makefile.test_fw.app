@@ -2,6 +2,6 @@
 
 APP = test_fw
 OBJ = test_fw
-LIB = xconnect
+LIB = connect
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
