@@ -1,4 +1,4 @@
---$Revision: 3.3 $
+--$Revision: 3.4 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -338,6 +338,7 @@ OrgMod ::= SEQUENCE {
         acronym (19) ,
         dosage (20) ,					   -- chromosome dosage of hybrid
         nat-host (21) ,					   -- natural host of this specimen
+	sub-species (22) ,
         other (255) } ,
     subname VisibleString ,
     attrib VisibleString OPTIONAL }  -- attribution/source of name
