@@ -105,14 +105,16 @@ string CDataSource::GetErrorInfo()
         CDB_UserHandler_Stream h(&out);
         h.HandleIt(GetHandler()->GetMultiEx());
 
-        // Install new MultiEx 
+        // Replace MultiEx 
+        GetHandler()->ReplaceMultiEx();
+/*
         m_context->PopCntxMsgHandler(m_multiExH);
         m_context->PopDefConnMsgHandler(m_multiExH);
         delete m_multiExH;
         m_multiExH = new CToMultiExHandler;
         m_context->PushCntxMsgHandler(m_multiExH);
         m_context->PushDefConnMsgHandler(m_multiExH);
-
+*/
         return CNcbiOstrstreamToString(out);
     }
     else
@@ -154,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/11/01 22:58:01  kholodov
+ * Modified: CDBMultiEx object is replace instead of whole handler
+ *
  * Revision 1.15  2004/10/22 21:43:50  kholodov
  * Fixed: the message stack is cleaned after GetErrorInfo() called
  *

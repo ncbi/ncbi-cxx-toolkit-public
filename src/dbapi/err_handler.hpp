@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2004/11/01 22:58:01  kholodov
+* Modified: CDBMultiEx object is replace instead of whole handler
+*
 * Revision 1.1  2002/11/25 15:18:30  kholodov
 * First commit
 *
@@ -57,6 +60,11 @@ public:
     
     CDB_MultiEx* GetMultiEx() {
         return m_ex;
+    }
+
+    void ReplaceMultiEx() {
+        delete m_ex;
+        m_ex = new CDB_MultiEx;
     }
 
 private:
