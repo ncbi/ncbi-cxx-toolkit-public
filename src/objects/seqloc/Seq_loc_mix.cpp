@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  .......
+ * Author:  Eugene Vasilchenko
  *
  * File Description:
  *   .......
@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/01/24 23:29:48  vakatov
+ * Note for ourselves that the bug workaround "BW_010" is not needed
+ * anymore, and we should get rid of it in about half a year
+ *
  * Revision 6.3  2002/01/07 05:20:03  vakatov
  * Workaround for the SUN Forte 6 Update 1,2 compiler's internal bug.
  *
@@ -49,29 +53,26 @@
  * ===========================================================================
  */
 
-// standard includes
-
-// generated includes
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbiutil.hpp>
 
-// generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-// constructor
+
 CSeq_loc_mix::CSeq_loc_mix(void)
 {
     return;
 }
 
 
-// destructor
 CSeq_loc_mix::~CSeq_loc_mix(void)
 {
+// NOTE:  This compiler bug was fixed by Jan 24 2002, test passed with:
+//           CC: Sun WorkShop 6 update 2 C++ 5.3 Patch 111685-03 2001/10/19
+//        We leave the workaround here for maybe half a year (for other guys).
 #if defined(NCBI_COMPILER_WORKSHOP)
 // We have to use two #if's here because KAI C++ cannot handle #if foo == bar
 #  if (NCBI_COMPILER_VERSION == 530)
@@ -97,10 +98,12 @@ int CSeq_loc_mix::GetLength(void) const
     return length;
 }
 
+
 void CSeq_loc_mix::ResetRangeMap(void) const
 {
     m_RangeMap.reset(0);
 }
+
 
 const CSeq_loc_mix::TRangeMap& CSeq_loc_mix::GetRangeMap(void) const
 {
@@ -122,7 +125,7 @@ const CSeq_loc_mix::TRangeMap& CSeq_loc_mix::GetRangeMap(void) const
     return *rangeMap;
 }
 
-END_objects_SCOPE // namespace ncbi::objects::
 
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 

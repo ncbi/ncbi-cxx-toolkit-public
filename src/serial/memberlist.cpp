@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2002/01/24 23:30:01  vakatov
+* Note for ourselves that the bug workaround "BW_010" is not needed
+* anymore, and we should get rid of it in about half a year
+*
 * Revision 1.25  2001/10/15 19:48:26  vakatov
 * Use two #if's instead of "#if ... && ..." as KAI cannot handle #if x == y
 *
@@ -154,6 +158,9 @@ CItemsInfo::CItemsInfo(void)
 
 CItemsInfo::~CItemsInfo(void)
 {
+// NOTE:  This compiler bug was fixed by Jan 24 2002, test passed with:
+//           CC: Sun WorkShop 6 update 2 C++ 5.3 Patch 111685-03 2001/10/19
+//        We leave the workaround here for maybe half a year (for other guys).
 #if defined(NCBI_COMPILER_WORKSHOP)
 // We have to use two #if's here because KAI C++ cannot handle #if foo == bar
 #  if (NCBI_COMPILER_VERSION == 530)
