@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/06/07 11:59:10  clausen
+ * Added related function comment
+ *
  * Revision 1.3  2002/06/06 20:56:30  clausen
  * Moved GetLabel to objects/util/feature.hpp
  *
@@ -69,7 +72,13 @@ public:
     CSeq_feat(void);
     // destructor
     ~CSeq_feat(void);
-            
+    
+    //
+    // See related function in util/feature.hpp
+    //
+    //   void GetLabel (const CSeq_feat&, string*, ELabelType, CScope*)
+    //
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_feat(const CSeq_feat& value);
