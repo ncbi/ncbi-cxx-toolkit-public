@@ -57,31 +57,21 @@ class CSeq_entry_Handle;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-///  CBioseq_CI_Base --
-///
-///  Base class for CBioseq_CI to make enums visible in CScope
-///
-
-class CBioseq_CI_Base {
-public:
-    enum EBioseqLevelFlag {
-        eLevel_All,
-        eLevel_Mains,
-        eLevel_Parts
-    };
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
 ///  CBioseq_CI --
 ///
 ///  Enumerate bioseqs in a given seq-entry
 ///
 
-class NCBI_XOBJMGR_EXPORT CBioseq_CI : public CBioseq_CI_Base
+class NCBI_XOBJMGR_EXPORT CBioseq_CI
 {
 public:
+    /// Class of bioseqs to iterate
+    enum EBioseqLevelFlag {
+        eLevel_All,    ///< Any bioseq
+        eLevel_Mains,  ///< Main bioseq only
+        eLevel_Parts   ///< Parts only
+    };
+
     // 'ctors
     CBioseq_CI(void);
 
@@ -173,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/12/13 18:40:43  grichenk
+* Removed CBioseq_CI_Base
+*
 * Revision 1.16  2004/10/01 14:45:19  kononenk
 * Added doxygen formatting
 *

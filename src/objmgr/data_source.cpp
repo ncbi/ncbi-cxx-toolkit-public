@@ -1124,7 +1124,7 @@ void CDataSource::x_CollectBioseqs(const CSeq_entry_Info& info,
     // parts should be changed to all before adding bioseqs to the list
     if ( info.IsSeq() ) {
         const CBioseq_Info& seq = info.GetSeq();
-        if ( level != CBioseq_CI_Base::eLevel_Parts &&
+        if ( level != CBioseq_CI::eLevel_Parts &&
              (filter == CSeq_inst::eMol_not_set ||
               seq.GetInst_Mol() == filter) ) {
             bioseqs.push_back(ConstRef(&seq));
@@ -1138,12 +1138,12 @@ void CDataSource::x_CollectBioseqs(const CSeq_entry_Info& info,
             if ( sub_info.IsSet() &&
                  sub_info.GetSet().GetClass() == CBioseq_set::eClass_parts ) {
                 switch (level) {
-                case CBioseq_CI_Base::eLevel_Mains:
+                case CBioseq_CI::eLevel_Mains:
                     // Skip parts
                     continue;
-                case CBioseq_CI_Base::eLevel_Parts:
+                case CBioseq_CI::eLevel_Parts:
                     // Allow adding bioseqs from lower levels
-                    local_level = CBioseq_CI_Base::eLevel_All;
+                    local_level = CBioseq_CI::eLevel_All;
                     break;
                 default:
                     break;
