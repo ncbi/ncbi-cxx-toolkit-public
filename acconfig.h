@@ -6,3 +6,6 @@
 
 /* Define if C++ namespaces are supported */
 #undef HAVE_NAMESPACE
+
+/* Microsoft C++ specific */
+#undef SIZEOF___INT64
