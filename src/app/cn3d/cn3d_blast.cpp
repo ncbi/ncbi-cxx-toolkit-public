@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/18 19:57:32  thiessen
+* fix redundant creation of C bioseqs
+*
 * Revision 1.3  2001/09/27 15:37:58  thiessen
 * decouple sequence import and BLAST
 *
@@ -83,25 +86,15 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
     }
 //    options->discontinuous = FALSE;
 
-    // create C Bioseq for master
-    Bioseq *masterBioseq;
-    std::string err;
-    if (!(masterBioseq = (Bioseq *)
-            ConvertAsnFromCPPToC(*(master->bioseqASN), (AsnReadFunc) BioseqAsnRead, &err))) {
-        ERR_POST(Error << "Bioseq C++ -> C failed: " << err);
-        return;
-    }
+    // get C Bioseq for master
+    Bioseq *masterBioseq = master->parentSet->GetOrCreateBioseq(master);
 
+    std::string err;
     SequenceList::const_iterator s, se = newSequences.end();
     for (s=newSequences.begin(); s!=se; s++) {
 
-        // create C Bioseq for slave
-        Bioseq *slaveBioseq;
-        if (!(slaveBioseq = (Bioseq *)
-                ConvertAsnFromCPPToC(*((*s)->bioseqASN), (AsnReadFunc) BioseqAsnRead, &err))) {
-            ERR_POST(Error << "Bioseq C++ -> C failed: " << err);
-            continue;
-        }
+        // get C Bioseq for slave
+        Bioseq *slaveBioseq = master->parentSet->GetOrCreateBioseq(*s);
 
         // actually do the BLAST alignment
         SeqAlign *salp = BlastTwoSequences(masterBioseq, slaveBioseq, "blastp", options);
@@ -176,10 +169,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const Sequence *master,
             ERR_POST(Error << "CreateNewPairwiseAlignments() - error finalizing alignment");
             delete newAlignment;
         }
-        BioseqFree(slaveBioseq);
     }
 
-    BioseqFree(masterBioseq);
     BLASTOptionDelete(options);
 }
 
