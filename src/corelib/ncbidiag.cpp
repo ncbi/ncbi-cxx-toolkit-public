@@ -755,7 +755,7 @@ void CNcbiDiag::DiagValidate(const char* file, size_t line,
         DiagAssert(file, line, expression);
     }
 #endif
-    throw CCoreException(file, line, 0, CCoreException::eCore, message);
+    throw CCoreException(file, (int) line, 0, CCoreException::eCore, message);
 }
 
 ///////////////////////////////////////////////////////
@@ -1069,6 +1069,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.70  2003/02/21 21:08:57  vakatov
+ * Minor cast to get rid of 64-bit compilation warning
+ *
  * Revision 1.69  2003/01/13 20:42:50  gouriano
  * corrected the problem with ostrstream::str(): replaced such calls with
  * CNcbiOstrstreamToString(os)

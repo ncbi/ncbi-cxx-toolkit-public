@@ -301,7 +301,7 @@ void CDebugDumpFormatterText::x_InsertPageBreak(
     m_Out << endl;
     string tmp;
     if (!title.empty()) {
-        int i1 = (len - title.length() - 2)/2;
+        int i1 = (int) (len - title.length() - 2) / 2;
         int l;
         for (l=0; l<i1; ++l) {
             tmp+=c;
@@ -324,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/02/21 21:07:46  vakatov
+ * Minor cast to get rid of 64-bit compilation warning
+ *
  * Revision 1.3  2002/05/29 21:17:32  gouriano
  * changed formatter interface: added value type
  *
