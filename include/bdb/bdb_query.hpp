@@ -257,6 +257,7 @@ protected:
 
 /// Function prints the query tree on the specified ostream
 /// (Intended more for debugging purposes)
+NCBI_BDB_EXPORT
 void BDB_PrintQueryTree(CNcbiOstream& os, const CBDB_Query& query);
 
 /* @} */
@@ -267,6 +268,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/17 19:34:53  gorelenk
+ * Added missed export prefix to BDB_PrintQueryTree
+ *
  * Revision 1.9  2004/03/23 14:50:43  kuznets
  * Implemented logical NOT
  *
