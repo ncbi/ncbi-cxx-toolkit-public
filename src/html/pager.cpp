@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/04/15 22:11:32  vakatov
+* "min/max" --> "NcbiMin/Max"
+*
 * Revision 1.9  1999/04/15 19:48:24  vasilche
 * Fixed several warnings detected by GCC
 *
@@ -80,7 +83,7 @@ string CPagerView::sm_DefaultImagesDir = "/images/";
 
 CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
     : m_PageSize(GetPageSize(request, defaultPageSize)),
-      m_PageBlockSize(max(1, pageBlockSize)),
+      m_PageBlockSize(NcbiMax(1, pageBlockSize)),
       m_PageChanged(false)
 {
     TCgiEntries& entries = const_cast<TCgiEntries&>(request.GetEntries());
@@ -228,7 +231,7 @@ void CPager::SetItemCount(int itemCount)
 pair<int, int> CPager::GetRange(void) const
 {
     int firstItem = m_DisplayPage * m_PageSize;
-    return pair<int, int>(firstItem, min(firstItem + m_PageSize, m_ItemCount));
+    return pair<int, int>(firstItem, NcbiMin(firstItem + m_PageSize, m_ItemCount));
 }
 
 void CPager::CreateSubNodes(void)
@@ -252,7 +255,7 @@ CNCBINode* CPager::GetItemInfo(void) const
     if ( m_ItemCount <= m_PageSize )
         return 0;
     int firstItem = m_DisplayPage * m_PageSize + 1;
-    int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
+    int endItem = NcbiMin((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
     return new CHTMLText(
         NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
         " items of " + NStr::IntToString(m_ItemCount));
@@ -305,8 +308,8 @@ void CPagerView::CreateSubNodes()
     int itemCount = m_Pager.m_ItemCount;
 
     int firstBlockPage = currentPage - currentPage % blockSize;
-    int lastPage = max(0, (itemCount + pageSize - 1) / pageSize - 1);
-    int lastBlockPage = min(firstBlockPage + blockSize - 1, lastPage);
+    int lastPage = NcbiMax(0, (itemCount + pageSize - 1) / pageSize - 1);
+    int lastBlockPage = NcbiMin(firstBlockPage + blockSize - 1, lastPage);
 
     if ( firstBlockPage > 0 ) {
         InsertAt(0, column++, new CHTML_image(CPager::KParam_PreviousPages,
