@@ -465,7 +465,9 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.annot_db.file_id = file_id;
         m_db.annot_db.annot_type = type_id;
         m_db.annot_db.file_offset = obj_info->offset;
-
+        m_db.annot_db.TSE_object_id = top_level_id;
+        m_db.annot_db.parent_object_id = parent_id;
+/*
         LOG_POST(Info << "Saving annotation: " 
                       << type_name 
                       << " " 
@@ -475,6 +477,7 @@ int CLDS_Object::SaveObject(int file_id,
                       << "offs=" 
                       << obj_info->offset
                       );
+*/
 
         EBDB_ErrCode err = m_db.annot_db.Insert();
         BDB_CHECK(err, "LDS::Annotation");
@@ -586,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/01/13 17:39:22  kuznets
+ * Track parent object for annotations
+ *
  * Revision 1.23  2004/08/30 18:21:44  gouriano
  * Use CNcbiStreamoff instead of size_t for stream offset operations
  *
