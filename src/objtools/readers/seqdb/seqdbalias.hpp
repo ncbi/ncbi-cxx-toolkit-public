@@ -98,6 +98,9 @@ public:
     // values until value specification or volume is reached.
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const;
     
+    // Get the membership bit if there is one.
+    Uint4 GetMembBit(const CSeqDBVolSet & volset) const;
+    
     void WalkNodes(CSeqDB_AliasWalker * walker,
                    const CSeqDBVolSet & volset) const;
     
@@ -183,6 +186,12 @@ public:
     Uint8 GetTotalLength(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetTotalLength(volset);
+    }
+    
+    // Get the membership bit if there is one.
+    Uint4 GetMembBit(const CSeqDBVolSet & volset) const
+    {
+        return m_Node.GetMembBit(volset);
     }
     
     void SetMasks(CSeqDBVolSet & volset)

@@ -152,7 +152,7 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
         string search_path;
         
         namevec[i] =
-            SeqDB_FindBlastDBPath(namevec[i], prot_nucl, & search_path);
+            SeqDB_FindBlastDBPath(namevec[i], prot_nucl, & search_path, false);
         
         if (namevec[i].empty()) {
             string msg("No alias or index file found for component [");
@@ -512,6 +512,38 @@ private:
 };
 
 
+class CSeqDB_MembBitWalker : public CSeqDB_AliasWalker {
+public:
+    CSeqDB_MembBitWalker(void)
+    {
+        m_Value = 0;
+    }
+    
+    virtual const char * GetFileKey(void) const
+    {
+        return "MEMB_BIT";
+    }
+    
+    virtual void Accumulate(const CSeqDBVol & vol)
+    {
+        // Volumes don't have this data, only alias files.
+    }
+    
+    virtual void AddString(const string & value)
+    {
+        m_Value = NStr::StringToUInt(value);
+    }
+    
+    Uint4 GetMembBit(void) const
+    {
+        return m_Value;
+    }
+    
+private:
+    Uint4 m_Value;
+};
+
+
 void
 CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
                            const CSeqDBVolSet & volset) const
@@ -594,6 +626,14 @@ Uint8 CSeqDBAliasNode::GetTotalLength(const CSeqDBVolSet & volset) const
     WalkNodes(& walk, volset);
     
     return walk.GetTotalLength();
+}
+
+Uint4 CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
+{
+    CSeqDB_MembBitWalker walk;
+    WalkNodes(& walk, volset);
+    
+    return walk.GetMembBit();
 }
 
 END_NCBI_SCOPE
