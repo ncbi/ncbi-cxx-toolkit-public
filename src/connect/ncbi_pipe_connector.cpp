@@ -70,8 +70,7 @@ static const char* s_VT_GetType
 }
 
 
-static char* s_VT_Descr
-(CONNECTOR connector)
+static char* s_VT_Descr(CONNECTOR connector)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     string cmd_line(xxx->cmd);
@@ -222,8 +221,7 @@ static void s_Setup
 }
 
 
-static void s_Destroy
-(CONNECTOR connector)
+static void s_Destroy(CONNECTOR connector)
 {
     SPipeConnector* xxx = (SPipeConnector*) connector->handle;
     if (xxx) {
@@ -251,8 +249,7 @@ extern CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
  CPipe::TCreateFlags   create_flags,
- CPipe*                pipe
-)
+ CPipe*                pipe)
 {
     CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
     SPipeConnector* xxx = new SPipeConnector();
@@ -282,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2003/11/12 17:46:38  lavr
+ * Few (non-functional) rearrangements
+ *
  * Revision 1.5  2003/11/12 16:41:36  ivanov
  * Close: return eIO_Success if pipe is already closed
  *

@@ -290,7 +290,7 @@ public:
     EIO_Status Accept(CSocket&  sock,
                       const STimeout* timeout = kInfiniteTimeout) const;
 
-    // NOTE:  closes the undelying SOCK only if it is owned by this "CSocket"!
+    // NOTE:  closes the undelying LSOCK only if it is owned by this object!
     EIO_Status Close(void);
 
     // Specify if this "CListeningSocket" is to own the underlying "LSOCK".
@@ -402,8 +402,8 @@ inline EIO_Status CSocket::Abort(void)
 
 inline EIO_Status CSocket::GetStatus(EIO_Event direction) const
 {
-    return direction == eIO_Open ? (m_Socket ? eIO_Success : eIO_Closed)
-        : (m_Socket ? SOCK_Status(m_Socket, direction) : eIO_Closed);
+    return m_Socket ? (direction == eIO_Open ? eIO_Success :
+                       SOCK_Status(m_Socket, direction))   : eIO_Closed;
 }
 
 
@@ -606,6 +606,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2003/11/12 17:43:53  lavr
+ * Few (non-functional) rearrangements
+ *
  * Revision 6.32  2003/10/24 16:51:11  lavr
  * GetTimeout(eIO_ReadWrite): return the lesser of eIO_Read and eIO_Write
  *
