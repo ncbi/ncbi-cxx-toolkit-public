@@ -143,12 +143,57 @@ string CNetCacheClient_LB::PutData(const string& key,
             m_RWBytes += size;
             ++m_Requests;
             return k;
+        } else {
+            // go to an alternative service
+            CNetCacheClient cl(m_ClientName);
+            return cl.PutData(key, buf, size, time_to_live);
         }
     }
 
-    CNetCacheClient cl(m_ClientName);
-    return cl.PutData(key, buf, size, time_to_live);
+    // key is empty
+    string k = TParent::PutData(key, buf, size, time_to_live);
+    m_RWBytes += size;
+    ++m_Requests;
+    return k;
 }
+
+IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
+{
+    CNetCache_Key blob_key;
+    if (!key->empty()) {
+        CNetCache_ParseBlobKey(&blob_key, *key);
+    
+        if ((blob_key.hostname == m_Host) && 
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            ++m_Requests;
+            // TODO: size based rebalancing is an open question in this case
+            //m_RWBytes += size;
+            return TParent::PutData(key, time_to_live);
+        } else {
+            // go to an alternative service
+            CNetCacheClient cl(m_ClientName);
+            IWriter* wrt = cl.PutData(key, time_to_live);
+            cl.DetachSocket();
+            CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(wrt);
+            if (rw) {
+                rw->OwnSocket();
+            } else {
+                _ASSERT(0);
+            }
+            return wrt;
+        }
+    }
+
+    // key is empty
+
+    ++m_Requests;
+    // TODO: size based rebalancing is an open question in this case
+    //m_RWBytes += size;
+    return TParent::PutData(key, time_to_live);
+}
+
 
 IReader* CNetCacheClient_LB::GetData(const string& key, 
                                      size_t*       blob_size)
@@ -178,7 +223,7 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
     CNetCacheClient cl(m_ClientName);
     IReader* rd = cl.GetData(key, blob_size);
     cl.DetachSocket();
-    CNetCacheSock_Reader* rw = dynamic_cast<CNetCacheSock_Reader*>(rd);
+    CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(rd);
     if (rw) {
         rw->OwnSocket();
     } else {
@@ -263,6 +308,7 @@ void CNetCacheClient_LB::CheckConnect(const string& key)
         return;
     }
 
+    TParent::CheckConnect(key);
 }
 
 END_NCBI_SCOPE
@@ -271,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/01/28 14:47:14  kuznets
+ * Fixed connection bug
+ *
  * Revision 1.4  2005/01/19 12:21:58  kuznets
  * +CNetCacheClient_LB
  *
