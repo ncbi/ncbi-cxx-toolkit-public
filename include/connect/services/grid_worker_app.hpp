@@ -78,8 +78,6 @@ public:
 
     void RequestShutdown();
 
-    void HandleSignals(bool on_off) { m_HandleSignals = on_off; }
-
 protected:
 
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
@@ -94,8 +92,6 @@ private:
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
 
     auto_ptr<CGridWorkerNode> m_WorkerNode;
-    bool                      m_HandleSignals;
-
 
 };
 
@@ -127,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 14:38:49  didenko
+ * Removed signal handling
+ *
  * Revision 1.4  2005/03/25 16:24:58  didenko
  * Classes restructure
  *

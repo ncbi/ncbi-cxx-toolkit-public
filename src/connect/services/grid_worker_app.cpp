@@ -40,9 +40,6 @@
 #include <connect/services/netcache_nsstorage_imp.hpp>
 #include <connect/threaded_server.hpp>
 
-#if defined(NCBI_OS_UNIX)
-# include <signal.h>
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -190,26 +187,11 @@ void CWorkerNodeThreadedServer::Process(SOCK sock)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-#if defined(NCBI_OS_UNIX)
-/// @internal
-extern "C" 
-void GridWorker_SignalHandler( int )
-{
-    CGridWorkerApp* app = 
-        dynamic_cast<CGridWorkerApp*>(CNcbiApplication::Instance());
-    if (app) {
-        app->RequestShutdown();
-    }
-}
-#endif
-
-/////////////////////////////////////////////////////////////////////////////
-//
 CGridWorkerApp::CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
                                INetScheduleStorageFactory* storage_factory,
                                INetScheduleClientFactory* client_factory)
 : m_JobFactory(job_factory), m_StorageFactory(storage_factory),
-  m_ClientFactory(client_factory), m_HandleSignals(true)
+  m_ClientFactory(client_factory)
 {
     if (!m_JobFactory.get())
         NCBI_THROW(CGridWorkerAppException,
@@ -264,14 +246,6 @@ int CGridWorkerApp::Run(void)
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
 
 
-#if defined(NCBI_OS_UNIX)
-    if (m_HandleSignals ) {
-    // attempt to get server gracefully shutdown on signal
-        signal( SIGINT, GridWorker_SignalHandler);
-        signal( SIGTERM, GridWorker_SignalHandler);    
-    }
-#endif
-
     {{
     CRef<CGridWorkerNodeThread> worker_thread(
                                 new CGridWorkerNodeThread(*m_WorkerNode));
@@ -287,6 +261,7 @@ int CGridWorkerApp::Run(void)
     control_server.Run();
     worker_thread->Join();
     }}
+
     m_WorkerNode.reset(0);    
     return 0;
 }
@@ -303,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/28 14:39:43  didenko
+ * Removed signal handling
+ *
  * Revision 1.5  2005/03/25 16:27:02  didenko
  * Moved defaults factories the their own header file
  *
