@@ -37,7 +37,6 @@
 #include "ncbi_conn_streambuf.hpp"
 #include "ncbi_core_cxxp.hpp"
 #include <connect/ncbi_conn_stream.hpp>
-#include <corelib/ncbimisc.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -96,7 +95,6 @@ CConn_SocketStream::CConn_SocketStream(const string&   host,
     : CConn_IOStream(SOCK_CreateConnector(host.c_str(), port, max_try),
                      timeout, buf_size)
 {
-    return;
 }
 
 
@@ -107,7 +105,6 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
     : CConn_IOStream(SOCK_CreateConnectorOnTop(sock, max_try),
                      timeout, buf_size)
 {
-    return;
 }
 
 
@@ -166,7 +163,6 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                             timeout),
                      timeout, buf_size)
 {
-    return;
 }
 
 
@@ -185,7 +181,6 @@ CConn_HttpStream::CConn_HttpStream(const string&       url,
                                             timeout),
                      timeout, buf_size)
 {
-    return;
 }
 
 
@@ -205,7 +200,6 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                             timeout),
                      timeout, buf_size)
 {
-    return;
 }
 
 
@@ -243,36 +237,43 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                                                timeout),
                      timeout, buf_size)
 {
-    return;
+}
+
+
+static CONNECTOR s_MemoryConnectorBuilder(BUF        buf,
+                                          CRWLock*   lk,
+                                          EOwnership lk_owner,
+                                          MT_LOCK*   lock)
+{
+    *lock = MT_LOCK_cxx2c(lk,
+                          lk_owner == eTakeOwnership ? 1/*true*/ : 0/*false*/);
+    return MEMORY_CreateConnectorEx(buf, *lock);
 }
 
 
 CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
-                                       bool       pass_lk_ownership,
+                                       EOwnership lk_owner,
                                        streamsize buf_size)
-    : CConn_IOStream(MEMORY_CreateConnector
-                     (MT_LOCK_cxx2c(lk, pass_lk_ownership)),
+    : CConn_IOStream(s_MemoryConnectorBuilder(0, lk, lk_owner, &m_Lock),
                      0, buf_size), m_Buf(0)
 {
-    return;
 }
 
 
 CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                        CRWLock*   lk,
-                                       bool       pass_lk_ownership,
+                                       EOwnership lk_owner,
                                        streamsize buf_size)
-    : CConn_IOStream(MEMORY_CreateConnectorEx
-                     (buf, MT_LOCK_cxx2c(lk, pass_lk_ownership)),
+    : CConn_IOStream(s_MemoryConnectorBuilder(buf, lk, lk_owner, &m_Lock),
                      0, buf_size), m_Buf(buf)
 {
-    return;
 }
 
 
 CConn_MemoryStream::~CConn_MemoryStream()
 {
     BUF_Destroy(m_Buf);
+    MT_LOCK_Delete(m_Lock);
 }
 
 
@@ -312,7 +313,6 @@ CConn_PipeStream::CConn_PipeStream(const string&         cmd,
     : CConn_IOStream(PIPE_CreateConnector(cmd, args, create_flags, &m_Pipe),
                      timeout, buf_size), m_Pipe()
 {
-    return;
 }
 
 
@@ -333,7 +333,6 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
     : CConn_IOStream(NAMEDPIPE_CreateConnector(pipename, pipebufsize),
                      timeout, buf_size)
 {
-    return;
 }
 
 
@@ -343,6 +342,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2004/10/28 12:49:33  lavr
+ * Memory stream lock ownership -> EOwnership, MT_LOCK cleanup in dtor()
+ *
  * Revision 6.38  2004/10/27 20:59:37  vasilche
  * Initialize m_Buf in all constructors.
  *

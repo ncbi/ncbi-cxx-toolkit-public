@@ -278,14 +278,13 @@ class NCBI_XCONNECT_EXPORT CConn_MemoryStream : public CConn_IOStream
 {
 public:
     CConn_MemoryStream(CRWLock*   lk = 0,
-                       bool       pass_lk_ownership = true,
+                       EOwnership lk_owner = eTakeOwnership,
                        streamsize buf_size = kConn_DefaultBufSize);
-
     // Build a stream on top of NCBI buffer (which could in turn
     // be built over a memory area of a specified size).
     CConn_MemoryStream(BUF        buf,
                        CRWLock*   lk = 0,
-                       bool       pass_lk_ownership = true,
+                       EOwnership lk_owner= eTakeOwnership,
                        streamsize buf_size = kConn_DefaultBufSize);
     virtual ~CConn_MemoryStream();
 
@@ -293,6 +292,7 @@ public:
     char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
 
 protected:
+    MT_LOCK m_Lock;            ///< I/O interlock
     BUF     m_Buf;             ///< Underlying buffer (if used)
 
 private:
@@ -363,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.32  2004/10/28 12:48:26  lavr
+ * Memory stream lock ownership -> EOwnership, MT_LOCK cleanup in dtor()
+ *
  * Revision 6.31  2004/10/27 18:53:22  lavr
  * +CConn_MemoryStream(BUF buf,...)
  *
