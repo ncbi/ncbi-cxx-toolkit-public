@@ -1035,7 +1035,6 @@ size_t CBDB_Cache::GetSize(const string&  key,
 bool CBDB_Cache::HasBlobs(const string&  key,
                           const string&  subkey)
 {
-	EBDB_ErrCode ret;
     time_t curr = time(0); 
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -1049,11 +1048,12 @@ bool CBDB_Cache::HasBlobs(const string&  key,
         return false;
     }
 
-    const char* key = m_CacheAttrDB->key;
+    const char* skey = m_CacheAttrDB->key;
     int overflow = m_CacheAttrDB->overflow;
-    const char* subkey = m_CacheAttrDB->subkey;
+    const char* ssubkey = m_CacheAttrDB->subkey;
+    int version = m_CacheAttrDB->version;
 
-    if (x_CheckTimestampExpired(key, version, subkey, curr)) {
+    if (x_CheckTimestampExpired(skey, version, ssubkey, curr)) {
         return false;
     }
 
@@ -2294,6 +2294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2005/02/22 14:06:28  kuznets
+ * Bug fix
+ *
  * Revision 1.104  2005/02/22 13:02:05  kuznets
  * +HasBlobs()
  *
