@@ -10,8 +10,12 @@ all all_r all_p:
 	    if test -x "$(bindir)/datatool"; then \
 	        LD_LIBRARY_PATH="$(libdir):$$LD_LIBRARY_PATH"; \
 	        export LD_LIBRARY_PATH; \
-		_RLD_ROOT=/usr; \
-		export _RLD_ROOT; \
+	        case "`uname`" in \
+	            IRIX*) \
+	                _RLD_ROOT=/usr; \
+	                export _RLD_ROOT; \
+	            ;; \
+	        esac; \
 	        NCBI_DATATOOL_PATH="$(bindir)"; \
 	        export NCBI_DATATOOL_PATH; \
 	    fi; \
