@@ -25,7 +25,9 @@
 *
 * Author: Philip Johnson
 *
-* File Description: cpg -- c++ cpg island finder
+* File Description: cpg -- c++ cpg island finder based upon algorithm in
+*     Takai, D. & Jones, PA.  "Comprehensive analysis of CpG islands in
+*     human chromosomes 21 and 22."  PNAS, 2002.
 *
 * ===========================================================================*/
 
@@ -213,6 +215,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.2  2003/07/21 15:53:35  johnson
+* added reference in header comment
+*
 * Revision 1.1  2003/06/17 15:33:33  johnson
 * initial revision
 *
