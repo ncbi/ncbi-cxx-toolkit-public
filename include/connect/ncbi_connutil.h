@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Auxiliary API to:
@@ -58,8 +58,16 @@
  *       CONN_StripToPattern()
  *       SOCK_StripToPattern()
  *
+ *    6.Convert "[host][:port]" from verbal into binary form and vice versa:
+ *       StringToHostPort()
+ *       HostPortToString()
+ *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/09/10 21:14:47  lavr
+ * Added functions: StringToHostPort()
+ *                  HostPortToString()
+ *
  * Revision 6.15  2001/06/01 16:01:58  vakatov
  * MIME_ParseContentTypeEx() -- extended description
  *
@@ -522,6 +530,34 @@ extern int/*bool*/ MIME_ParseContentType
 (const char*     str,      /* the HTTP "Content-Type:" header to parse */
  EMIME_SubType*  subtype,  /* can be NULL */
  EMIME_Encoding* encoding  /* can be NULL */
+ );
+
+
+/* Read (skipping leading blanks) "[host][:port]" from a string.
+ * On success, return the advanced pointer past the host/port read.
+ * If no host/port detected, return 'str'.
+ * On format error, return 0.
+ * If host and/or port fragments are missing,
+ * then corresponding 'host'/'port' value returned as 0.
+ * Note that 'host' returned is in network byte order,
+ * unlike 'port', which always comes out in host (native) byte order.
+ */
+extern const char* StringToHostPort
+(const char*     str,   /* must not be NULL */
+ unsigned int*   host,  /* must not be NULL */
+ unsigned short* port   /* must not be NULL */
+ );
+
+
+/* Print host:port into provided buffer string, not to exceed 'buflen' size.
+ * Suppress printing host if parameter 'host' is zero.
+ * Return the number of bytes printed.
+ */
+extern size_t HostPortToString
+(unsigned int   host,
+ unsigned short port,
+ char*          buf,
+ size_t         buflen
  );
 
 
