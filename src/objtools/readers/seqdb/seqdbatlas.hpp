@@ -745,7 +745,7 @@ class CSeqDBAtlas {
         eDefaultSliceSize  = 1024 * 1024 * 128,
         eDefaultOverhang   = 1024 * 1024 * 4,
         eMaxOpenRegions    = 500,
-        eOpenRegionsWindow = 128
+        eOpenRegionsWindow = 100
     };
     
 public:
