@@ -52,6 +52,13 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
+#if 0
+// for extended diagnostics in x_ThrowConflict()
+# include <serial/serial.hpp>
+# include <serial/objostr.hpp>
+# include <objects/seqset/Seq_entry.hpp>
+#endif
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -460,6 +467,8 @@ CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
         return cached->second;
     }
 
+    CBioseq_Handle bh = GetBioseqHandle(idh);
+
     // Create new entry for idh
     CRef<TAnnotRefSet>& tse_set_ref = m_AnnotCache[idh];
     tse_set_ref.Reset(new TAnnotRefSet);
@@ -473,6 +482,10 @@ CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
     // Filter the set depending on the requests history?
     const CTSE_Info* unique_from_history = 0;
     const CTSE_Info* unique_with_seq = 0;
+    if ( bh ) {
+        with_seq.clear();
+        unique_with_seq = &bh.m_Bioseq_Info->GetTSE_Info();
+    }
     NON_CONST_ITERATE(TTSE_LockSet, tse, with_seq) {
         if (m_History.find(*tse) != m_History.end()) {
             if ( unique_from_history ) {
@@ -615,6 +628,39 @@ void CScope::x_ThrowConflict(EConflict conflict_type,
 {
     const char* msg =
         conflict_type == eConflict_History? "history": "live TSE";
+#if 0
+    ERR_POST(Error << "CScope -- multiple " << msg << " matches: " <<
+             info1.GetDataSource().GetName() << "::" <<
+             x_GetIdMapper().GetSeq_id(info1.GetIdHandle()).DumpAsFasta() <<
+             " vs " <<
+             info2.GetDataSource().GetName() << "::" <<
+             x_GetIdMapper().GetSeq_id(info2.GetIdHandle()).DumpAsFasta());
+    {{
+        CNcbiOstrstream s;
+        s <<
+            "---------------------------------------------------\n" <<
+            "CTSE_Info1: " << &info1.GetTSE_Info() <<
+            "  TSE1: " << &info1.GetTSE_Info().GetTSE() <<
+            "  dead: " << info1.GetTSE_Info().IsDead() << "\n" <<
+            "---------------------------------------------------\n" <<
+            "CTSE_Info2: " << &info2.GetTSE_Info() <<
+            "  TSE2: " << &info2.GetTSE_Info().GetTSE() <<
+            "  dead: " << info2.GetTSE_Info().IsDead() << "\n" <<
+            "---------------------------------------------------\n";
+        if ( &info1.GetTSE_Info().GetTSE() != &info2.GetTSE_Info().GetTSE() ) {
+            auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText,
+                                                              s));
+            s << "-- Seq_entry 1 ----------------------------------\n";
+            *out << info1.GetTSE_Info().GetTSE();
+            out->Flush();
+            s << "-- Seq_entry 2 ----------------------------------\n";
+            *out << info2.GetTSE_Info().GetTSE();
+            out->Flush();
+            s << "-------------------------------------------------\n";
+        }
+        NcbiCerr << string(CNcbiOstrstreamToString(s));
+    }}
+#endif
     ERR_POST(Fatal << "CScope -- multiple " << msg << " matches: " <<
              info1.GetDataSource().GetName() << "::" <<
              x_GetIdMapper().GetSeq_id(info1.GetIdHandle()).DumpAsFasta() <<
@@ -784,6 +830,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/05/13 18:33:01  vasilche
+* Fixed CScope::GetTSESetWithAnnots() conflict resolution.
+*
 * Revision 1.65  2003/05/12 19:18:29  vasilche
 * Fixed locking of object manager classes in multi-threaded application.
 *
