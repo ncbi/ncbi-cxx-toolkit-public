@@ -606,6 +606,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 // no specific assignments for DF-DM yet
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
+            case 'N':                               return eAcc_gb_est;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1546,6 +1547,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.99  2005/02/01 17:10:30  ucko
+ * IdentifyAccession: DN -> eAcc_gb_est
+ *
  * Revision 6.98  2005/01/25 17:24:55  ucko
  * IdentifyAccession: CS -> eAcc_embl_patent
  *
