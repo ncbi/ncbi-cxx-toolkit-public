@@ -16,6 +16,7 @@
 #################################
 
 builddir = @builddir@
+build_root = @build_root@
 top_srcdir = @top_srcdir@
 abs_top_srcdir = @abs_top_srcdir@
 
@@ -44,7 +45,7 @@ USRP_BRA = \
 	|| test ! -z "$(EXPENDABLE_USR_PROJ)" ; then \
    x_project="$(USR_PROJ) @UNIX_USR_PROJ@ - $(EXPENDABLE_USR_PROJ)" ; \
    expendable=false ; \
-   test -f requirements  ||  touch -t 197001010000 requirements ; \
+   test -f requirements  ||  touch -t 197607040000 requirements ; \
    for i in $$x_project ; do \
       if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
       if test -f "Makefile.$$i" ; then \
@@ -52,7 +53,7 @@ USRP_BRA = \
       else \
          x_mfile="$(srcdir)/Makefile.$$i" ; \
       fi ; \
-      if $(MAKE_USR) -q requirements ; then \
+      if NCBICXX_TESTING_REQS=1 $(MAKE_USR) -q requirements ; then \
          $(RWL) -base "make_$$i" $(MAKE_USR)
 USRP_KET = || $(NOTK_BRA) exit 1 $(NOTK_KET) ; \
       else \
@@ -82,7 +83,7 @@ LIBP_BRA = \
    expendable=false ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-     if $(MAKE_LIB) -q requirements ; then \
+     if NCBICXX_TESTING_REQS=1 $(MAKE_LIB) -q requirements ; then \
         $(RWL) -base "make_$$i" $(MAKE_LIB)
 LIBP_KET = || $(NOTK_BRA) exit 2 $(NOTK_KET) ; \
      else \
@@ -98,10 +99,10 @@ APPP_BRA = \
 +if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    x_project="$(APP_PROJ) - $(EXPENDABLE_APP_PROJ)" ; \
    expendable=false ; \
-   test -f requirements  ||  touch -t 197001010000 requirements ; \
+   test -f requirements  ||  touch -t 197607040000 requirements ; \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
-     if $(MAKE_APP) -q requirements ; then \
+     if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements ; then \
         $(RWL) -base "make_$$i" $(MAKE_APP)
 APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
      else \
@@ -136,7 +137,7 @@ check:     check.needs-reqs
 check_add: check_add.needs-reqs
 
 
-all.real:
+all.real: configurables
 	@$(USRP_BRA) all   $(USRP_KET)
 	@$(ASNP_BRA) all   $(ASNP_KET)
 	@$(LIBP_BRA) all   $(LIBP_KET)
@@ -274,6 +275,8 @@ check_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 check_add_p.real: $(RELEVANT_FILE) $(IRRELEVANT_FILE)
 	@if $(RELEVANT_DIR); then $(CHECK_ADD_BRA) $(CHECK_ADD_KET); else true; fi
 	@+if $(RELEVANT_SUBS); then $(SUB_BRA_P) check_add_p $(SUB_KET_P); else true; fi
+
+include $(top_srcdir)/src/Makefile.configurables
 
 .PHONY: all        clean        purge        check        check_add
 .PHONY: all.real   clean.real   purge.real   check.real   check_add.real

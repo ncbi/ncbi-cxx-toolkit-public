@@ -10,5 +10,7 @@ USR_PROJ = precompile
 LIB_PROJ = corelib test_mt
 SUB_PROJ = test
 
+EXTRA_CONFIGURABLES = Makefile.precompile ncbicfg.c
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

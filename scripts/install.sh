@@ -150,6 +150,11 @@ for d in $install_dirs ; do
    fi
 done
 
+echo "Making the \"configurables\" target a no-op."
+sed -e 's/\(Makefile\.configurables\)\.real/\1.null/' \
+    $top_srcdir/src/Makefile.configurables \
+    > $install_dir/src/Makefile.configurables
+
 
 # Done
 echo "DONE"
