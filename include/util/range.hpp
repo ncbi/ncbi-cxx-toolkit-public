@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/01/22 20:05:24  vasilche
+* Simplified CRange<> implementation.
+* Removed special handling of Empty & Whole bounds.
+* Added simplier COpenRange<> template.
+*
 * Revision 1.9  2002/12/20 20:53:28  grichenk
 * Removed range normalization
 *
@@ -72,21 +77,20 @@ BEGIN_NCBI_SCOPE
 
 // range
 template<class Position>
-class CRange
+class COpenRange
 {
 public:
     typedef Position position_type;
-    typedef CRange<Position> TThisType;
+    typedef COpenRange<Position> TThisType;
 
     // constructors
-    CRange(void)
-        : m_From(GetEmptyFrom()), m_To(GetEmptyTo())
+    COpenRange(void)
+        : m_From(GetEmptyFrom()), m_ToOpen(GetEmptyToOpen())
         {
         }
-    CRange(position_type from, position_type to)
-        : m_From(from), m_To(to)
+    COpenRange(position_type from, position_type toOpen)
+        : m_From(from), m_ToOpen(toOpen)
         {
-            // x_Normalize();
         }
     
     // parameters
@@ -94,123 +98,111 @@ public:
         {
             return m_From;
         }
+    position_type GetToOpen(void) const
+        {
+            return m_ToOpen;
+        }
     position_type GetTo(void) const
         {
-            return m_To;
+            return GetToOpen()-1;
         }
 
     // state
-    bool HaveInfiniteBound(void) const
-        {
-            return GetFrom() == GetWholeFrom() || GetTo() == GetWholeTo();
-        }
-    bool HaveEmptyBound(void) const
-        {
-            return GetFrom() == GetEmptyFrom() || GetTo() == GetEmptyTo();
-        }
     bool Empty(void) const
         {
-            return /*HaveEmptyBound() || */ // GetTo() < GetFrom();
-                IsEmptyFrom() && IsEmptyTo();
+            return GetToOpen() <= GetFrom();
         }
-    bool Regular(void) const
+    bool NotEmpty(void) const
         {
-            return !Empty() && !HaveInfiniteBound();
+            return GetToOpen() > GetFrom();
         }
     // return length of regular region
     position_type GetLength(void) const
         {
-            return GetTo() - GetFrom() + 1;
+            position_type from = GetFrom(), toOpen = GetToOpen();
+            if ( toOpen <= from )
+                return 0;
+            position_type len = toOpen - from;
+            if ( len < 0 )
+                len = GetWholeLength();
+            return len;
         }
 
     // modifiers
-    /*
     TThisType& SetFrom(position_type from)
         {
             m_From = from;
-            x_Normalize();
+            return *this;
+        }
+    TThisType& SetToOpen(position_type toOpen)
+        {
+            m_ToOpen = toOpen;
             return *this;
         }
     TThisType& SetTo(position_type to)
         {
-            m_To = to;
-            x_Normalize();
-            return *this;
+            return SetToOpen(to+1);
         }
-    */
-    TThisType& Set(position_type from,
-                   position_type to)
+    TThisType& SetOpen(position_type from, position_type toOpen)
         {
-            m_From = from;
-            m_To = to;
-            // x_Normalize();
-            return *this;
+            return SetFrom(from).SetToOpen(toOpen);
         }
+    TThisType& Set(position_type from, position_type to)
+        {
+            return SetFrom(from).SetTo(to);
+        }
+
+    // length must be >= 0
     TThisType& SetLength(position_type length)
         {
-            Set(GetFrom(), GetFrom() + length - 1);
-            // x_Normalize();
-            return *this;
+            _ASSERT(length >= 0);
+            position_type from = GetFrom();
+            position_type toOpen = from + length;
+            if ( toOpen < from )
+                toOpen = GetWholeToOpen();
+            return SetToOpen(toOpen);
         }
+    // length must be >= 0
     TThisType& SetLengthDown(position_type length)
         {
-            Set(GetTo() - length + 1, GetTo());
-            // x_Normalize();
-            return *this;
+            _ASSERT(length >= 0);
+            position_type toOpen = GetToOpen();
+            position_type from = toOpen - length;
+            if ( from > toOpen )
+                from = GetWholeFrom();
+            return SetFrom(from);
         }
 
     // comparison
-    bool operator==(TThisType range) const
+    bool operator==(TThisType r) const
         {
-            return GetFrom() == range.GetFrom() && GetTo() == range.GetTo();
+            return GetFrom() == r.GetFrom() && GetToOpen() == r.GetToOpen();
         }
-    bool operator!=(TThisType range) const
+    bool operator!=(TThisType r) const
         {
-            return !(*this == range);
+            return !(*this == r);
         }
-    bool operator<(TThisType range) const
+    bool operator<(TThisType r) const
         {
-            return GetFrom() < range.GetFrom() ||
-                GetFrom() == range.GetFrom() && GetTo() < range.GetTo();
+            return GetFrom() < r.GetFrom() ||
+                GetFrom() == r.GetFrom() && GetToOpen() < r.GetToOpen();
         }
-    bool operator<=(TThisType range) const
+    bool operator<=(TThisType r) const
         {
-            return GetFrom() < range.GetFrom() ||
-                GetFrom() == range.GetFrom() && GetTo() <= range.GetTo();
+            return GetFrom() < r.GetFrom() ||
+                GetFrom() == r.GetFrom() && GetToOpen() <= r.GetToOpen();
         }
-    bool operator>(TThisType range) const
+    bool operator>(TThisType r) const
         {
-            return GetFrom() > range.GetFrom() ||
-                GetFrom() == range.GetFrom() && GetTo() > range.GetTo();
+            return GetFrom() > r.GetFrom() ||
+                GetFrom() == r.GetFrom() && GetToOpen() > r.GetToOpen();
         }
-    bool operator>=(TThisType range) const
+    bool operator>=(TThisType r) const
         {
-            return GetFrom() > range.GetFrom() ||
-                GetFrom() == range.GetFrom() && GetTo() >= range.GetTo();
+            return GetFrom() > r.GetFrom() ||
+                GetFrom() == r.GetFrom() && GetToOpen() >= r.GetToOpen();
         }
 
-    // check if intersected when ranges may be empty
-    bool IntersectingWithPossiblyEmpty(TThisType range) const
-        {
-            if ( Empty()  ||  range.Empty() )
-                return false;
-            return IntersectingWith(range);
-        }
-    // check if intersected when ranges are not empty
-    bool IntersectingWith(TThisType range) const
-        {
-            if ( IsWholeFrom() ) {
-                return IsWholeTo()  ||  range.IsWholeFrom()  ||
-                    range.GetFrom() <= GetTo();
-            }
-            if ( IsWholeTo() ) {
-                return range.IsWholeTo()  ||  range.GetTo() >= GetFrom();
-            }
-            if ( GetFrom() <= range.GetFrom() )
-                return GetTo() >= range.GetFrom();
-            else
-                return GetFrom() <= range.GetTo();
-        }
 
     // special values
     static position_type GetPositionMin(void)
@@ -227,9 +219,13 @@ public:
         {
             return GetPositionMin();
         }
-    static position_type GetWholeTo(void)
+    static position_type GetWholeToOpen(void)
         {
             return GetPositionMax();
+        }
+    static position_type GetWholeTo(void)
+        {
+            return GetWholeToOpen()-1;
         }
     static position_type GetWholeLength(void)
         {
@@ -237,7 +233,7 @@ public:
         }
     static TThisType GetWhole(void)
         {
-            return TThisType(GetWholeFrom(), GetWholeTo());
+            return TThisType(GetWholeFrom(), GetWholeToOpen());
         }
     bool IsWholeFrom(void) const
         {
@@ -245,17 +241,25 @@ public:
         }
     bool IsWholeTo(void) const
         {
-            return GetTo() == GetWholeTo();
+            return GetToOpen() == GetWholeToOpen();
+        }
+    bool IsWhole(void) const
+        {
+            return IsWholeFrom() && IsWholeTo();
         }
 
     // empty range
     static position_type GetEmptyFrom(void)
         {
-            return GetPositionMax() - 1;
+            return GetPositionMax();
+        }
+    static position_type GetEmptyToOpen(void)
+        {
+            return GetPositionMax();
         }
     static position_type GetEmptyTo(void)
         {
-            return GetPositionMax() - 1;
+            return GetEmptyToOpen()-1;
         }
     static position_type GetEmptyLength(void)
         {
@@ -263,53 +267,103 @@ public:
         }
     static TThisType GetEmpty(void)
         {
-            return TThisType(GetEmptyFrom(), GetEmptyTo());
+            return TThisType(GetEmptyFrom(), GetEmptyToOpen());
         }
-    bool IsEmptyFrom(void) const
+
+    // intersecting ranges
+    TThisType IntersectionWith(TThisType r) const
         {
-            return GetFrom() == GetEmptyFrom();
+            return TThisType(max(GetFrom(), r.GetFrom()),
+                             min(GetToOpen(), r.GetToOpen()));
         }
-    bool IsEmptyTo(void) const
+    TThisType IntersectWith(TThisType r)
         {
-            return GetTo() == GetEmptyTo();
+            m_From = max(GetFrom(), r.GetFrom());
+            m_ToOpen = min(GetToOpen(), r.GetToOpen());
+            return *this;
+        }
+    TThisType operator&(TThisType r) const
+        {
+            return IntersectionWith(r);
+        }
+    TThisType& operator&=(TThisType r)
+        {
+            return IntersectWith(r);
+        }
+    bool IntersectingWith(TThisType r) const
+        {
+            return IntersectionWith(r).NotEmpty();
         }
 
     // combine ranges
-    TThisType& CombineFrom(position_type from)
+    TThisType& CombineWith(TThisType r)
         {
-            if ( from < GetFrom()  ||  IsEmptyFrom() )
-                m_From =from;
-            // x_Normalize();
+            if ( !r.Empty() ) {
+                if ( !Empty() ) {
+                    m_From = min(m_From, r.GetFrom());
+                    m_ToOpen = max(m_ToOpen, r.GetToOpen());
+                }
+                else {
+                    *this = r;
+                }
+            }
             return *this;
         }
-    TThisType& CombineTo(position_type to)
+    TThisType CombinationWith(TThisType r) const
         {
-            if ( to > GetTo()  ||  IsEmptyTo() )
-                m_To = to;
-            // x_Normalize();
+            if ( !r.Empty() ) {
+                if ( !Empty() ) {
+                    return TThisType(min(m_From, r.GetFrom()),
+                                     max(m_ToOpen, r.GetToOpen()));
+                }
+                else {
+                    return r;
+                }
+            }
             return *this;
         }
-    TThisType& operator+=(TThisType range)
+    TThisType& operator+=(TThisType r)
         {
-            CombineFrom(range.GetFrom());
-            CombineTo(range.GetTo());
-            return *this;
+            return CombineWith(r);
+        }
+    TThisType operator+(TThisType r) const
+        {
+            return CombinationWith(r);
         }
 
 private:
-    // Set from <= to
-    void x_Normalize(void)
-        {
-            if ( IsWholeFrom()  ||  IsWholeTo()
-                 ||  m_To >= m_From
-                 ||  IsEmptyFrom()  ||  IsEmptyTo() )
-                return;
-            position_type tmp = GetFrom();
-            m_From = m_To;
-            m_To = tmp;
-        }
+    position_type m_From, m_ToOpen;
+};
 
-    position_type m_From, m_To;
+
+// range
+template<class Position>
+class CRange : public COpenRange<Position>
+{
+    typedef COpenRange<Position> TParent;
+public:
+    typedef TParent::position_type position_type;
+    typedef CRange<Position> TThisType;
+
+    // constructors
+    CRange(void)
+        {
+        }
+    CRange(position_type from, position_type to)
+        : TParent(from, to+1)
+        {
+        }
+    CRange(TParent range)
+        : TParent(range)
+        {
+        }
+    
+    // modifiers
+    TThisType& operator=(TParent range)
+        {
+            TParent::operator=(range);
+            return *this;
+        }
 };
 
 //#include <util/range.inl>
