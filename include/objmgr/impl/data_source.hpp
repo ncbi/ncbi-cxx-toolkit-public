@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
 * Revision 1.6  2002/02/05 21:46:28  gouriano
 * added FindSeqid function, minor tuneup in CSeq_id_mapper
 *
@@ -72,6 +75,7 @@
 #include <objects/objmgr1/seq_map.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
 #include <objects/objmgr1/object_manager.hpp>
+#include "seq_id_mapper.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -114,10 +118,11 @@ public:
     /// Return "NULL" handle if the Bioseq cannot be resolved.
     CBioseq_Handle GetBioseqHandle(CScope& scope, const CSeq_id& id);
 
-    // Find set of CSeq_id by a string identifier
-    // The latter could be name, accession, something else
-    // which could be found in CSeq_id
-    void FindSeqid( set< CRef<const CSeq_id> >& setId, const string& searchBy) const;
+    // Filter set of CSeq_id (setSource)
+    // Select from the setSource ones which are "owned" by this DataSource
+    // and move them into setResult
+    void FilterSeqid(TSeq_id_HandleSet& setResult,
+                     TSeq_id_HandleSet& setSource) const;
 
     // Remove TSE from the datasource, update indexes
     bool DropTSE(const CSeq_entry& tse);

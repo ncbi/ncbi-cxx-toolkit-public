@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
 * Revision 1.8  2002/02/05 21:46:28  gouriano
 * added FindSeqid function, minor tuneup in CSeq_id_mapper
 *
@@ -183,8 +186,17 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 {
     CMutexGuard guard(sm_Scope_Mutex);
     setId.clear();
-    iterate (set<CDataSource*>, it, m_setDataSrc) {
-        (*it)->FindSeqid( setId, searchBy);
+
+    TSeq_id_HandleSet setSource, setResult;
+    // find all
+    m_pObjMgr->m_IdMapper->GetMatchingHandlesStr( searchBy, setSource);
+    // filter those which "belong" to my data sources
+    iterate(set<CDataSource*>, itSrc, m_setDataSrc) {
+        (*itSrc)->FilterSeqid( setResult, setSource);
+    }
+    // create result
+    iterate(TSeq_id_HandleSet, itSet, setResult) {
+        setId.insert( &(m_pObjMgr->m_IdMapper->GetSeq_id(*itSet)));
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
 * Revision 1.3  2002/02/05 21:46:28  gouriano
 * added FindSeqid function, minor tuneup in CSeq_id_mapper
 *
@@ -469,6 +472,8 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id& id,
 void CSeq_id_Textseq_Tree::FindMatchStr(string sid,
                                         TSeq_id_MatchList& id_list) const
 {
+    // ignore '.' in the search string - cut it out
+    sid = sid.substr(0, sid.find('.'));
     // Find by accession
     TStringMap::const_iterator it = m_ByAccession.find(sid);
     if (it != m_ByAccession.end()) {
@@ -1397,7 +1402,15 @@ void CSeq_id_PDB_Tree::AddSeq_idMapping(CSeq_id_Handle& handle)
 {
     const CSeq_id& id = x_GetSeq_id(handle);
     _ASSERT( id.IsPdb() );
-    TSubMolList& sub = m_MolMap[id.GetPdb().GetMol().Get()];
+// this is an attempt to follow the undocumented rules of PDB
+// ("documented" as code written elsewhere)
+    string skey = id.GetPdb().GetMol().Get();
+    switch (char chain = (char)id.GetPdb().GetChain()) {
+    case '\0': skey += " ";   break;
+    case '|':  skey += "VB";  break;
+    default:   skey += chain; break;
+    }
+    TSubMolList& sub = m_MolMap[skey];
     iterate(TSubMolList, sub_it, sub) {
         _ASSERT(!SerialEquals<CPDB_seq_id>(
             x_GetSeq_id(handle).GetPdb(), x_GetSeq_id(*sub_it).GetPdb()));
@@ -1515,6 +1528,11 @@ void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id& id,
 void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                         TSeq_id_HandleSet& h_set)
 {
+    if (sid.find('|') != string::npos) {
+        throw runtime_error(
+            "CSeq_id_Mapper::GetMatchingHandlesStr() -- symbol \'|\'"
+            " is not supported here");
+    }
     CSeq_id_Which_Tree::TSeq_id_MatchList m_list;
     iterate(TIdMap, map_it, m_IdMap) {
         map_it->second->FindMatchStr(sid, m_list);

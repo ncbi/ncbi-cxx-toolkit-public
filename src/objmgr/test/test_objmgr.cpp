@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/02/06 21:46:11  gouriano
+* *** empty log message ***
+*
 * Revision 1.10  2002/02/05 21:46:28  gouriano
 * added FindSeqid function, minor tuneup in CSeq_id_mapper
 *
@@ -783,7 +786,7 @@ int CTestApp::Run(void)
         // Find seq_id
         {
             set< CRef<const CSeq_id> > setId;
-            Scope.FindSeqid(setId, "seq11");
+            Scope.FindSeqid(setId, "seq11.3");
         }
     }
     

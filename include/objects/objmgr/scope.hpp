@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/02/06 21:46:43  gouriano
+* *** empty log message ***
+*
 * Revision 1.6  2002/02/05 21:47:21  gouriano
 * added FindSeqid function, minor tuneup in CSeq_id_mapper
 *
@@ -116,7 +119,8 @@ public:
     // Find set of CSeq_id by a string identifier
     // The latter could be name, accession, something else
     // which could be found in CSeq_id
-    void FindSeqid( set< CRef<const CSeq_id> >& setId, const string& searchBy) const;
+    void FindSeqid(set< CRef<const CSeq_id> >& setId,
+                   const string& searchBy) const;
 
     // Find mode flags: how to treat duplicate IDs within the same scope
     enum EFindMode {
