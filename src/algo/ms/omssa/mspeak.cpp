@@ -66,16 +66,16 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder, int& iHitInfo, CMSPeak *Peaks,
 	for(i = 0; i < Ladder.size(); i++) {
 	    // if hit, add to hitlist
 	    if(Ladder.GetHit()[i] > 0) {
-		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
-		SetHitInfo(iHitInfo).SetIon() = (char) Ladder.GetType();
-		SetHitInfo(iHitInfo).SetNumber() = (short) i;
-		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
-		//  for poisson test
-		SetHitInfo(iHitInfo).SetMz() = Ladder[i];
-		//
-		iHitInfo++;
-	    }
-	}
+    		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
+    		SetHitInfo(iHitInfo).SetIon() = (char) Ladder.GetType();
+    		SetHitInfo(iHitInfo).SetNumber() = (short) i;
+    		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
+    		//  for poisson test
+    		SetHitInfo(iHitInfo).SetMz() = Ladder[i];
+    		//
+    		iHitInfo++;
+            }
+        }
     } catch (NCBI_NS_STD::exception& e) {
 	ERR_POST(Info << "Exception caught in CMSHit::RecordMatchesScan: " << e.what());
 	throw;

@@ -45,6 +45,7 @@
 #include <set>
 #include <deque>
 #include <map>
+#include <objects/omssa/MSModSpecSet.hpp>
 #include <objects/omssa/MSSearchSettings.hpp>
 #include "Mod.hpp"
 #include "SpectrumSet.hpp"
@@ -55,14 +56,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
 
-const int kNumUniqueAA = 26;
-// U is selenocystine
-// this is NCBIstdAA.  Doesn't seem to be a central location to get this.
-// all blast protein databases are encoded with this.
-// U is selenocystine
-const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
-//                             01234567890123456789012345
-//                             0123456789abcdef0123456789
 
 // non-redundified integer intervals of amino acids
 const int kNumAAIntervals = 19;
@@ -110,11 +103,12 @@ public:
     const double* GetMass(void);
     const int* GetIntMass(void);
 
-    // initialize mass arrays
+    //! initialize mass arrays with fixed mods
     void Init(const CMSSearchSettings::TProductsearchtype &SearchType);
     // initialize mass arrays with fixed mods
     void Init(const CMSMod &Mods, 
-	      const CMSSearchSettings::TProductsearchtype &SearchType);
+	      const CMSSearchSettings::TProductsearchtype &SearchType,
+              CRef <CMSModSpecSet> Modset);
 private:
     // inits mass arrays
     void x_Init(const CMSSearchSettings::TProductsearchtype &SearchType);
@@ -200,7 +194,8 @@ public:
 			    const int *IntCalcMass,  // array of int AA masses
                 const int *PrecursorIntCalcMass, // precursor masses
                 int *ModEnum,     // the mod type at each site
-                int *IsFixed
+                int *IsFixed,
+                    CRef <CMSModSpecSet> Modset
 		    );
 
     ///
@@ -232,7 +227,8 @@ public:
 			      const char *iPepStart, // position in protein
                   int *ModEnum,   // enum of mod
                   int *IsFixed,
-                  bool setfixed
+                  bool setfixed,
+                              CRef <CMSModSpecSet> Modset
                   ); 
 
     ///
@@ -248,7 +244,8 @@ public:
 		     const char *iPepStart,  // position in protein
              int *ModEnum,   // enum of mod
              int *IsFixed,
-             bool setfixed
+             bool setfixed,
+                     CRef <CMSModSpecSet> Modset
              );
 
 ///
@@ -259,7 +256,8 @@ public:
 				   int& NumMod, char SeqChar, int MaxNumMod,
 				   const char **Site,
 				   int *DeltaMass, const char *iPepStart,
-                   int *ModEnum, int *IsFixed );
+                   int *ModEnum, int *IsFixed,
+                   CRef <CMSModSpecSet> Modset);
 
 protected:
     int ProtonMass; // mass of the proton
@@ -303,7 +301,8 @@ inline
 void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
 			 char SeqChar, int MaxNumMod, const char **Site,
 			 int *DeltaMass, const char *iPepStart,
-        int *ModEnum, int *IsFixed, bool setfixed)
+        int *ModEnum, int *IsFixed, bool setfixed,
+                          CRef <CMSModSpecSet> Modset)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -311,10 +310,10 @@ void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
 
     for(iMods = VariableMods.GetAAMods(ModType).begin();
 	iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
-	for(iChar = 0; iChar < NumModChars[*iMods]; iChar++) {
-	    if (SeqChar == ModChar[iChar][*iMods] && NumMod < MaxNumMod) {
+	for(iChar = 0; iChar < Modset->GetModNumChars(*iMods); iChar++) {
+	    if (SeqChar == Modset->GetModChar(*iMods, iChar) && NumMod < MaxNumMod) {
 		Site[NumMod] = iPepStart;
-		DeltaMass[NumMod] = ModMass[*iMods];
+		DeltaMass[NumMod] = Modset->GetModMass(*iMods);
         ModEnum[NumMod] = *iMods;
         if(setfixed) IsFixed[NumMod] = 1;
         else IsFixed[NumMod] = 0;
@@ -330,7 +329,8 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 				   int& NumMod, int MaxNumMod,
 				   const char **Site,
 				   int *DeltaMass, const char *iPepStart,
-        int *ModEnum, int *IsFixed, bool setfixed)
+        int *ModEnum, int *IsFixed, bool setfixed,
+                                   CRef <CMSModSpecSet> Modset)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
@@ -339,7 +339,7 @@ void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
 	iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
 	if (NumMod < MaxNumMod) {
 	    Site[NumMod] = iPepStart;
-	    DeltaMass[NumMod] = ModMass[*iMods];
+	    DeltaMass[NumMod] = Modset->GetModMass(*iMods);
         ModEnum[NumMod] = *iMods;
         if(setfixed) IsFixed[NumMod] = 1;
         else IsFixed[NumMod] = 0;
@@ -354,16 +354,17 @@ void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
                         int& NumMod, char SeqChar, int MaxNumMod,
                         const char **Site,
                         int *DeltaMass, const char *iPepStart,
-                        int *ModEnum, int *IsFixed)
+                        int *ModEnum, int *IsFixed,
+                        CRef <CMSModSpecSet> Modset)
 {
     // check non-specific mods
     CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, Site,
-                 DeltaMass, iPepStart, ModEnum, IsFixed, false);
+                 DeltaMass, iPepStart, ModEnum, IsFixed, false, Modset);
     CheckNonSpecificMods(NonSpecific, FixedMods, NumMod, MaxNumMod, Site,
-                 DeltaMass, iPepStart, ModEnum, IsFixed, true);
+                 DeltaMass, iPepStart, ModEnum, IsFixed, true, Modset);
     // check specific mods
     CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod,
-            Site, DeltaMass, iPepStart, ModEnum, IsFixed, false);
+            Site, DeltaMass, iPepStart, ModEnum, IsFixed, false, Modset);
 }
 
 
@@ -459,6 +460,16 @@ public:
 };
 
 
+//! whole protein (no cleavage)
+class NCBI_XOMSSA_EXPORT CWholeProtein: public CCleave {
+public:
+    CWholeProtein(void);
+
+    virtual bool CheckCleave(char SeqChar, const char *iPepStart);
+};
+
+
+
 ///
 /// factory to return back object for enzyme
 ///
@@ -471,25 +482,6 @@ public:
 };
 
 
-///
-/// the names of the enzymes codified in the asn.1
-///
-
-char const * const kEnzymeNames[eMSEnzymes_max] = {
-    "Trypsin",
-    "Arg-C",
-    "CNBr",
-    "Chymotrypsin",
-    "Formic Acid",
-    "Lys-C",
-    "Lys-C/P",
-    "Pepsin A",
-    "Trypsin-CNBr",
-    "Trypsin-Chymotrypsin",
-    "Trypsin/P"
-};
-
-
 char const * const kIonLabels[eMSIonType_max] = { 
     "a",
     "b", 
@@ -499,8 +491,6 @@ char const * const kIonLabels[eMSIonType_max] = {
     "z"
 };
 
-// used to scale all float masses into ints
-#define MSSCALE 100
 
 END_SCOPE(omssa)
 END_SCOPE(objects)
@@ -510,6 +500,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.19  2005/03/14 22:29:54  lewisg
+  add mod file input
+
   Revision 1.18  2005/01/31 17:30:57  lewisg
   adjustable intensity, z dpendence of precursor mass tolerance
 

@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/omssa/MSMod.hpp>
+#include <objects/omssa/MSModType.hpp>
 #include <objects/omssa/MSSearchSettings.hpp>
 
 // generated classes
@@ -59,12 +60,12 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class NCBI_XOMSSA_EXPORT CMSMod {
 public:
     CMSMod(void) {};
-    CMSMod(const CMSSearchSettings::TVariable &Mods);
+    CMSMod(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset);
     // initialize variable mod type array
-    void Init(const CMSSearchSettings::TVariable &Mods);
+    void Init(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset);
     const CMSSearchSettings::TVariable &GetAAMods(EMSModType Type) const;    
 private:
-    CMSSearchSettings::TVariable ModLists[kNumModType];
+    CMSSearchSettings::TVariable ModLists[eMSModType_modmax];
 };
 
 ///////////////////  CMSMod  inline methods
@@ -85,6 +86,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/03/14 22:29:54  lewisg
+* add mod file input
+*
 * Revision 1.10  2004/12/07 23:38:22  lewisg
 * add modification handling code
 *

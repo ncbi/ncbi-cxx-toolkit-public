@@ -73,7 +73,6 @@ public:
     // vector operations on the ladder
     int& operator [] (int n);
     int size(void);
-//    void push_back(int val);
     void clear(void);
 
     // make a ladder
@@ -161,14 +160,6 @@ inline int CLadder::size(void)
     return LadderIndex; 
 }
 
-#if 0
-inline void CLadder::push_back(int val) 
-{ 
-    *(Ladder.get() + LadderIndex) = val; 
-    LadderIndex++;
-}
-#endif
-
 inline void CLadder::clear(void) 
 { 
     LadderIndex = 0; 
@@ -242,6 +233,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.12  2005/03/14 22:29:54  lewisg
+  add mod file input
+
   Revision 1.11  2005/01/11 21:08:43  lewisg
   average mass search
 

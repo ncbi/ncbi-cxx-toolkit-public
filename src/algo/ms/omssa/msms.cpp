@@ -116,19 +116,20 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 			  const int *IntCalcMass,  // array of int AA masses
               const int *PrecursorIntCalcMass, // precursor masses
               int *ModEnum,       // the mod type at each site
-              int *IsFixed
+              int *IsFixed,
+                         CRef <CMSModSpecSet> Modset
 			  )
 {
     char SeqChar(**PepStart);
 
     // n terminus protein
-    if(*PepStart == SeqStart) CheckMods(eModN, eModNAA, VariableMods, FixedMods,
+    if(*PepStart == SeqStart) CheckMods(eMSModType_modn, eMSModType_modnaa, VariableMods, FixedMods,
                                         NumMod, SeqChar, MaxNumMod, Site,
-                                        DeltaMass, *PepStart, ModEnum, IsFixed);
+                                        DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
 
     // n terminus peptide
-    CheckMods(eModNP, eModNPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum, IsFixed);
+    CheckMods(eMSModType_modnp, eMSModType_modnpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+    				 DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
 
 
     // iterate through sequence
@@ -137,9 +138,9 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     	SeqChar = **PepStart;
     
     	// check for mods that are type AA only
-    	CheckAAMods(eModAA, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
-    		    DeltaMass, *PepStart, ModEnum, IsFixed, false);
-//    	CheckAAMods(eModAA, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+    	CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
+    		    DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
+//    	CheckAAMods(eMSModType_modaa, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
 //    		    DeltaMass, *PepStart, ModEnum, IsFixed, true);
     
     
@@ -148,8 +149,8 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     	// check for cleavage point
     	if(CheckCleave(SeqChar, *PepStart)) { 
             // check c term peptide mods
-            CheckMods(eModCP, eModCPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum, IsFixed);
+            CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+    				 DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
     	    EndMass(EndMasses);
     	    return false;
     	}
@@ -160,11 +161,11 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     CalcMass(**PepStart, Masses, PrecursorIntCalcMass);
 
     // check c term peptide mods
-    CheckMods(eModCP, eModCPAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-             DeltaMass, *PepStart, ModEnum, IsFixed);
+    CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+             DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
     // check c term protein mods
-    CheckMods(eModC, eModCAA, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-             DeltaMass, *PepStart, ModEnum, IsFixed);
+    CheckMods(eMSModType_modc, eMSModType_modcaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
+             DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
 
     EndMass(EndMasses);
     return true;  // end of sequence
@@ -409,6 +410,20 @@ bool CTrypsinP::CheckCleave(char SeqChar, const char *iPepStart)
     return false;
 }
 
+
+//!  Whole Protein
+
+CWholeProtein::CWholeProtein(void)
+{
+    CleaveAt = "\x00";
+    kCleave = 0;
+}
+
+bool CWholeProtein::CheckCleave(char SeqChar, const char *iPepStart)
+{
+    return false;
+}
+
 ///
 /// Simple minded factory to return back object for enzyme
 ///
@@ -449,6 +464,9 @@ CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
     break;
   case eMSEnzymes_trypsin_p:
     return new CTrypsinP;
+    break;
+  case eMSEnzymes_whole_protein:
+    return new CWholeProtein;
     break;
   default:
     return 0;
@@ -499,23 +517,31 @@ void CMassArray::x_Init(const CMSSearchSettings::TProductsearchtype &SearchType)
 
 // set up the mass array with fixed mods
 void CMassArray::Init(const CMSMod &Mods, 
-		      const CMSSearchSettings::TProductsearchtype &SearchType)
+		      const CMSSearchSettings::TProductsearchtype &SearchType,
+                      CRef <CMSModSpecSet> Modset)
 {
+    if(!Modset || !Modset->IsArrayed()) {
+        ERR_POST(Error << "CMassArray::Init: unable to use modification set");
+        return;
+    }
     x_Init(SearchType);
     CMSSearchSettings::TVariable::const_iterator i;  // iterate thru fixed mods
     int j; // the number of characters affected by the fixed mod
 
-    for(i = Mods.GetAAMods(eModAA).begin(); i != Mods.GetAAMods(eModAA).end(); i++) {
-	for(j = 0; j < NumModChars[*i]; j++) {
-	    CalcMass[ModChar[j][*i]] +=  ModMass[*i]/(double)MSSCALE;
-	    IntCalcMass[ModChar[j][*i]] += ModMass[*i];
-	}
+    for(i = Mods.GetAAMods(eMSModType_modaa).begin(); i != Mods.GetAAMods(eMSModType_modaa).end(); i++) {
+    	for(j = 0; j < Modset->GetModNumChars(*i); j++) {
+    	    CalcMass[Modset->GetModChar(*i, j)] +=  Modset->GetModMass(*i)/(double)MSSCALE;
+    	    IntCalcMass[Modset->GetModChar(*i, j)] += Modset->GetModMass(*i);
+    	}
     }
 }
 
 
 /*
   $Log$
+  Revision 1.17  2005/03/14 22:29:54  lewisg
+  add mod file input
+
   Revision 1.16  2005/01/31 17:30:57  lewisg
   adjustable intensity, z dpendence of precursor mass tolerance
 

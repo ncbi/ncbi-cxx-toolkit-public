@@ -42,126 +42,25 @@
 
 // generated includes
 #include <objects/omssa/MSMod_.hpp>
-
+#include <objects/omssa/MSModType_.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+// list out the amino acids using NCBIstdAA
+const int kNumUniqueAA = 26;
+// U is selenocystine
+// this is NCBIstdAA.  Doesn't seem to be a central location to get this.
+// all blast protein databases are encoded with this.
+// U is selenocystine
+const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
+//                             01234567890123456789012345
+//                             0123456789abcdef0123456789
 
-///
-/// Modification types
-/// there are five kinds of mods:
-/// 1. specific to an AA
-/// 2. N terminus protein, not specific to an AA
-/// 3. N terminus protein, specific to an AA
-/// 4. C terminus protein, not specific to an AA
-/// 5. C terminus protein, specific to an AA
-/// 6. N terminus peptide, not specific
-/// 7. N terminus peptide, specific AA
-/// 8. C terminus peptide, not specific
-/// 9. C terminus peptide, specific AA
-///
-
-const int kNumModType = 9;
-
-enum EMSModType {
-    eModAA = 0,
-    eModN,
-    eModNAA,
-    eModC,
-    eModCAA,
-    eModNP,
-    eModNPAA,
-    eModCP,
-    eModCPAA
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  Informational arrays for mods
-//
-//  These are separate arrays for speed considerations
-//
-
-///
-/// categorizes existing mods as the types listed above
-///
-const EMSModType ModTypes[eMSMod_max] = {
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModNAA,
-    eModN,
-    eModN,
-    eModN,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModAA,
-    eModCP,
-    eModAA,
-    eModAA,
-    eModCP
-};
-
-///
-/// the names of the various modifications codified in the asn.1
-///
-char const * const kModNames[eMSMod_max] = {
-    "methylation of K",
-    "oxidation of M",
-    "carboxymethyl C",
-    "carbamidomethyl C",
-    "deamidation of N and Q",
-    "propionamide C",
-    "phosphorylation of S",
-    "phosphorylation of T",
-    "phosphorylation of Y",
-    "N-term M removal",
-    "N-term acetylation",
-    "N-term methylation",
-    "N-term trimethylation",
-    "beta methythiolation of D",
-    "methylation of Q",
-    "trimethylation of K",
-    "methylation of D",
-    "methylation of E",
-    "C-term peptide methylation",
-    "trideuteromethylation of D",
-    "trideuteromethylation of E",
-    "C-term peptide trideuteromethylation"
-};	   
- 
-///
-/// the characters to compare
-/// rows are indexed by mod
-/// column are the AA's modified (if any)
-///
-const char ModChar [3][eMSMod_max] = {
-    {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16','\x0c','\x00','\x00','\x00','\x04','\x0f','\x0a','\x04','\x05','\x00','\x04','\x05','\x00' },
-    {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' },
-    {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
-};
-
-///
-/// the number of characters to compare
-///
-const int NumModChars[eMSMod_max] = { 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0 };
-
-///
-/// the modification masses
-///
-const int ModMass[eMSMod_max] = { 1402, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997, -13104, 4201, 1402, 4205, 4599, 1402, 4205, 1402, 1402, 1402, 1704, 1704, 1704};
+// used to scale all float masses into ints
+#define MSSCALE 100
 
 
 
@@ -174,6 +73,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/14 22:29:54  lewisg
+* add mod file input
+*
 * Revision 1.1  2004/12/07 23:38:22  lewisg
 * add modification handling code
 *

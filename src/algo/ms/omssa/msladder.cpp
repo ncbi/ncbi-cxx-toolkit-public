@@ -141,7 +141,8 @@ bool CLadder::CreateLadder(int IonType, int ChargeIn, char *Sequence,
     }
 
     LadderIndex = stop - start;
-    if(LadderIndex > LadderSize) return false;
+    // make the ladder fit in memory for long peptides/proteins
+    if(LadderIndex > LadderSize) LadderIndex = LadderSize;
     for(i = 0; i < LadderIndex; i++) {
         GetHit()[i] = 0;
         if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
@@ -159,15 +160,15 @@ void CLadder::Or(CLadder& LadderIn)
 {
     int i;
     if(kIonDirection[Type] ==  LadderIn.GetType()) {
-	for(i = 0; i < LadderIndex; i++) {
-	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[i];
-	}
+    	for(i = 0; i < LadderIndex; i++) {
+    	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[i];
+    	}
     }
     else if( size() != static_cast <int> (Stop - Start)) return;  // unusable chars
     else {  // different direction
-	for(i = 0; i < LadderIndex && i < LadderSize; i++) {
-	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[LadderIndex - i - 1];
-	}
+    	for(i = 0; i < LadderIndex && i < LadderSize; i++) {
+    	    GetHit()[i] = GetHit()[i] + LadderIn.GetHit()[LadderIndex - i - 1];
+    	}
     }
 }
 
@@ -178,8 +179,8 @@ bool CLadder::Contains(int MassIndex, int Tolerance)
     int i;
     // go thru ladder 
     for(i = 0; i < LadderIndex; i++) {
-	if((*this)[i] <= MassIndex + Tolerance && 
-	   (*this)[i] > MassIndex - Tolerance ) return true;
+    	if((*this)[i] <= MassIndex + Tolerance && 
+    	   (*this)[i] > MassIndex - Tolerance ) return true;
     }
     return false;
 }

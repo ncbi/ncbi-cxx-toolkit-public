@@ -39,6 +39,7 @@
 // generated includes
 #include <ncbi_pch.hpp>
 #include "Mod.hpp"
+#include <objects/omssa/MSModSpecSet.hpp>
 
 // generated classes
 
@@ -47,16 +48,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-CMSMod::CMSMod(const CMSSearchSettings::TVariable &Mods)
+CMSMod::CMSMod(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset)
 {
-    Init(Mods);
+    Init(Mods, Modset);
 }
 
-void CMSMod::Init(const CMSSearchSettings::TVariable &Mods)
+void CMSMod::Init(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset)
 {
     CMSSearchSettings::TVariable::const_iterator iMods;
+    if (!Modset || !Modset->IsArrayed()) {
+        ERR_POST(Error << "CMSMod::Init: not able to use modification arrays");
+        return;
+    }
     for(iMods = Mods.begin(); iMods != Mods.end(); iMods++) {
-	ModLists[ModTypes[*iMods]].push_back(*iMods);
+	    ModLists[Modset->GetModType(*iMods)].push_back(*iMods);
     }
 }
 
@@ -69,6 +74,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/03/14 22:29:54  lewisg
+* add mod file input
+*
 * Revision 1.4  2004/06/08 19:46:21  lewisg
 * input validation, additional user settable parameters
 *

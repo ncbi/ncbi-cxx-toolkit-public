@@ -75,7 +75,7 @@ public:
 private:
     virtual int Run();
     virtual void Init();
-    void PrintMods(void);
+    void PrintMods(CRef <CMSModSpecSet> Modset);
     void PrintEnzymes(void);
     void PrintIons(void);
     template <class T> void InsertList(const string& List, T& ToInsert, string error); 
@@ -110,11 +110,12 @@ template <class T> void COMSSA::InsertList(const string& Input, T& ToInsert, str
 ///
 /// print out a list of modification that can be used in OMSSA
 ///
-void COMSSA::PrintMods(void)
+void COMSSA::PrintMods(CRef <CMSModSpecSet> Modset)
 {
     int i;
     for(i = 0; i < eMSMod_max; i++)
-	cout << i << ": " << kModNames[i] << endl;
+        if(Modset->GetModMass(i) != 0.0)
+            cout << i << ": " << Modset->GetModName(i) << endl;
 }
 
 
@@ -163,19 +164,6 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("ox", "xmloutfile", "filename for xml formatted search results",
 			   CArgDescriptions::eString, "");
     argDesc->AddFlag("w", "include spectra and search params in search results");
-
-#if 0
-    argDesc->AddDefaultKey("wi", "textasninfile", "filename to _write_ text asn.1 formatted search input",
-			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("wib", "binaryasninfile", "filename to _write_ binary asn.1 formatted search input",
-			   CArgDescriptions::eString, "");
-    argDesc->AddDefaultKey("wix", "xmlinfile", "filename to _write_ xml formatted search input",
-			   CArgDescriptions::eString, "");
-#endif
-#if MSGRAPH
-    argDesc->AddDefaultKey("g", "graph", "graph file to write out",
-			   CArgDescriptions::eString, "");
-#endif
     argDesc->AddDefaultKey("to", "pretol", "product ion mass tolerance in Da",
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
@@ -200,15 +188,9 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.2");
     argDesc->AddDefaultKey("ci", "cutinc", "intensity cutoff increment as a fraction of max peak",
 			   CArgDescriptions::eDouble, "0.0005");
-    //    argDesc->AddDefaultKey("u", "cull", 
-    //			   "number of peaks to leave in each 100Da bin",
-    //			   CArgDescriptions::eInteger, "3");
     argDesc->AddDefaultKey("v", "cleave", 
 			   "number of missed cleavages allowed",
 			   CArgDescriptions::eInteger, "1");
-    //    argDesc->AddDefaultKey("n", "numseq", 
-    //			   "number of sequences to search (0 = all)",
-    //			   CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("x", "taxid", 
 			   "comma delimited list of taxids to search (0 = all)",
 			   CArgDescriptions::eString, "0");
@@ -248,6 +230,10 @@ void COMSSA::Init()
 			   CArgDescriptions::eString,
 			   "");
     argDesc->AddFlag("ml", "print a list of modifications and their corresponding id number");
+    argDesc->AddDefaultKey("mx", "modinputfile", 
+			   "file containing modification data",
+			   CArgDescriptions::eString,
+			   "mods.xml");
     argDesc->AddDefaultKey("mm", "maxmod", 
 			   "the maximum number of mass ladders to generate per database peptide",
 			   CArgDescriptions::eInteger, NStr::IntToString(MAXMOD2));
@@ -293,10 +279,23 @@ int COMSSA::Run()
     try {
 
 	CArgs args = GetArgs();
+    CRef <CMSModSpecSet> Modset(new CMSModSpecSet);
+
+    // read in modifications
+    auto_ptr<CObjectIStream> 
+    modsin(CObjectIStream::Open(args["mx"].AsString().c_str(), eSerial_Xml));
+    if(modsin->fail()) {	    
+        ERR_POST(Fatal << "ommsacl: unable open modification file" << 
+                 args["mx"].AsString());
+	    return 1;
+    }
+    modsin->Read(ObjectInfo(*Modset));
+
 
 	// print out the modification list
 	if(args["ml"]) {
-	    PrintMods();
+        Modset->CreateArrays();
+	    PrintMods(Modset);
 	    return 0;
 	}
 
@@ -405,7 +404,6 @@ int COMSSA::Run()
 	InsertList(args["mv"].AsString(), Request.SetSettings().SetVariable(), "unknown variable mod");
 	InsertList(args["mf"].AsString(), Request.SetSettings().SetFixed(), "unknown fixed mod");
 	Request.SetSettings().SetDb(args["d"].AsString());
-	//	Request.SetCull(args["u"].AsInteger());
 	Request.SetSettings().SetHitlistlen(args["hl"].AsInteger());
 	Request.SetSettings().SetTophitnum(args["ht"].AsInteger());
 	Request.SetSettings().SetMinhit(args["hm"].AsInteger());
@@ -433,7 +431,7 @@ int COMSSA::Run()
 
 
 	_TRACE("omssa: search begin");
-	Search.Search(Request, Response);
+	Search.Search(Request, Response, Modset);
 	_TRACE("omssa: search end");
 
 
@@ -524,6 +522,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.27  2005/03/14 22:29:54  lewisg
+  add mod file input
+
   Revision 1.26  2005/01/31 17:30:57  lewisg
   adjustable intensity, z dpendence of precursor mass tolerance
 

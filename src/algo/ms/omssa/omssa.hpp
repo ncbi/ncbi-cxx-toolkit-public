@@ -93,7 +93,21 @@ public:
 
     // loads spectra into peaks
     void Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet);
-    int Search(CMSRequest& MyRequest, CMSResponse& MyResponse);
+
+    //! set up modifications from both user input and mod file data
+    /*!
+    \param MyRequest the user search params and spectra
+    \param Modset list of modifications
+    */
+    void SetupMods(CMSRequest& MyRequest, CRef <CMSModSpecSet>& Modset);
+
+    //! Performs the ms/ms search
+    /*!
+    \param MyRequest the user search params and spectra
+    \param MyResponse the results of the search
+    \param Modset list of modifications
+    */
+    int Search(CMSRequest& MyRequest, CMSResponse& MyResponse, CRef <CMSModSpecSet>& Modset);
 
     // set up the ions to use
     void SetIons(CMSRequest& MyRequest, int& ForwardIon, int& BackwardIon);
@@ -291,6 +305,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.20  2005/03/14 22:29:54  lewisg
+  add mod file input
+
   Revision 1.19  2005/01/11 21:08:43  lewisg
   average mass search
 

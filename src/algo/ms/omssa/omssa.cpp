@@ -179,7 +179,7 @@ bool CSearch::CompareLaddersTop(CLadder& BLadder,
 #ifdef CHECKGI
 bool CheckGi(int gi)
 {
-    if( gi == 115646){
+    if( gi == 6320304){
 	ERR_POST(Info << "test seq");
 	return true;
     }
@@ -422,11 +422,30 @@ void CSearch::SetIons(CMSRequest& MyRequest, int& ForwardIon, int& BackwardIon)
 }
 
 
-int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
+//! set up modifications from both user input and mod file data
+/*!
+\param MyRequest the user search params and spectra
+\param Modset list of modifications
+*/
+void CSearch::SetupMods(CMSRequest& MyRequest, CRef <CMSModSpecSet>& Modset)
+{
+    //Modset->Append(MyRequest.);
+    Modset->CreateArrays();
+}
+
+
+//! Performs the ms/ms search
+/*!
+\param MyRequest the user search params and spectra
+\param MyResponse the results of the search
+\param Modset list of modifications
+*/
+int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, CRef <CMSModSpecSet>& Modset)
 {
 
     try {
 
+        SetupMods(MyRequest, Modset);
 	int length;
 	CCleave* enzyme =
 		  CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
@@ -455,11 +474,11 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	int iSearch, hits;
 	unsigned char *Sequence;  // start position
 	int endposition, position;
-	FixedMods.Init(MyRequest.GetSettings().GetFixed());
-	MassArray.Init(FixedMods, MyRequest.GetSettings().GetProductsearchtype());
+	FixedMods.Init(MyRequest.GetSettings().GetFixed(), Modset);
+	MassArray.Init(FixedMods, MyRequest.GetSettings().GetProductsearchtype(), Modset);
 	PrecursorMassArray.Init(FixedMods, 
-                            MyRequest.GetSettings().GetPrecursorsearchtype());
-	VariableMods.Init(MyRequest.GetSettings().GetVariable());
+                            MyRequest.GetSettings().GetPrecursorsearchtype(), Modset);
+	VariableMods.Init(MyRequest.GetSettings().GetVariable(), Modset);
 	const int *IntMassArray = MassArray.GetIntMass();
 	const int *PrecursorIntMassArray = PrecursorMassArray.GetIntMass();
 	const char *PepStart[MAXMISSEDCLEAVE];
@@ -613,7 +632,9 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				       IntMassArray,
                        PrecursorIntMassArray,
                        ModEnum[Missed - 1],
-                       IsFixed[Missed - 1]);
+                       IsFixed[Missed - 1],
+                               Modset
+                               );
 			
 
 		UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, Site,
@@ -792,8 +813,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
                 NumModCount = 0;
     			for(iMod = 0; iMod < NumMod[iMissed + 1]; iMod++) {
                     // throw away the c term peptide mods as we have a new c terminus
-                    if(ModTypes[ModEnum[iMissed + 1][iMod]] != eModCP  && 
-                       ModTypes[ModEnum[iMissed + 1][iMod]] != eModCPAA) {
+                    if(Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcp  && 
+                       Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcpaa) {
         			    DeltaMass[iMissed][NumModCount] = 
         				DeltaMass[iMissed + 1][iMod];
         			    Site[iMissed][NumModCount] = 
@@ -1240,6 +1261,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.37  2005/03/14 22:29:54  lewisg
+add mod file input
+
 Revision 1.36  2005/01/31 17:30:57  lewisg
 adjustable intensity, z dpendence of precursor mass tolerance
 

@@ -143,12 +143,16 @@ int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
             CRegexp RxpGetName("\\sname\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
             if ((Match = RxpGetName.GetMatch(Line.c_str(), 0, 2)) != "" ||
                 (Match = RxpGetName.GetMatch(Line.c_str(), 0, 3)) != "") {
-                MySpectrum->SetIds().push_back(Match);
+                MySpectrum->SetIds().push_back(NStr::PrintableString(Match));
             }
-
-            if(!GetDTAHeader(DTA, MySpectrum)) {
-                ERR_POST(Info << "LoadMultDTA: not able to get header");
-                return 1;
+            {
+                getline(DTA, Line);
+                CNcbiIstrstream istr(Line.c_str());
+    
+                if(!GetDTAHeader(istr, MySpectrum)) {
+                    ERR_POST(Info << "LoadMultDTA: not able to get header");
+                    return 1;
+                }
             }
             getline(DTA, Line);
             getline(DTA, Line);
@@ -203,12 +207,16 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max, bool isPKL)
             MySpectrum = new CMSSpectrum;
             MySpectrum->SetNumber(iIndex);
             iIndex++;
+            {
+                getline(DTA, Line);
+                CNcbiIstrstream istr(Line.c_str());
 
-            if (!GetDTAHeader(DTA, MySpectrum, isPKL)) 
-                if(DTA.eof() && GotOne) 
-                    break;  // probably the end of the file
-                else
-                    return 1;
+                if (!GetDTAHeader(istr, MySpectrum, isPKL)) 
+                    if(DTA.eof() && GotOne) 
+                        break;  // probably the end of the file
+                    else
+                        return 1;
+            }
             getline(DTA, Line);
             getline(DTA, Line);
 
@@ -335,14 +343,11 @@ bool CSpectrumSet::GetDTABody(std::istream& DTA, TInputPeaks& InputPeaks)
         return false;
     if (dummy > kMax_Int) dummy = kMax_Int/MSSCALE;
     InputPeak.mz = static_cast <int> (dummy*MSSCALE);
-//    MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
 
     DTA >> dummy;
     if (dummy <= 0) 
         return false;
-//    if (dummy > kMax_Int) dummy = kMax_Int/MSISCALE;
     InputPeak.Intensity = dummy;
-//    MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSISCALE));
 
     InputPeaks.push_back(InputPeak);
     return true;
@@ -356,17 +361,25 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
 {   
     CRef <CMSSpectrum> MySpectrum;
     bool GotOne(false);  // has a spectrum been read?
+    string Line;
 
     try {
 //        DTA.exceptions(ios_base::failbit | ios_base::badbit);
 
         MySpectrum = new CMSSpectrum;
         MySpectrum->SetNumber(1);
-        if(!GetDTAHeader(DTA, MySpectrum)) return 1;
+
+        {
+            getline(DTA, Line);
+            CNcbiIstrstream istr(Line.c_str());
+            if(!GetDTAHeader(istr, MySpectrum)) return 1;
+        }
 
         TInputPeaks InputPeaks;
         while (DTA) {
-            if (!GetDTABody(DTA, InputPeaks)) break;
+            getline(DTA, Line);
+            CNcbiIstrstream istr(Line.c_str());
+            if (!GetDTABody(istr, InputPeaks)) break;
             GotOne = true;
         } 
 
@@ -459,7 +472,8 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
         if(!DTA || DTA.eof()) 
             return 1;
         if (NStr::CompareNocase(Line, 0, 6, "TITLE=") == 0) {
-            MySpectrum->SetIds().push_back(Line.substr(6, Line.size()-6));
+            MySpectrum->SetIds().push_back(
+                NStr::PrintableString(Line.substr(6, Line.size()-6)));
         }
         else if (NStr::CompareNocase(Line, 0, 8, "PEPMASS=") == 0) {
             // mandatory.
@@ -483,7 +497,8 @@ int CSpectrumSet::GetMGFBlock(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
             return 1;
         CNcbiIstrstream istr(Line.c_str());
         // get rid of blank lines (technically not allowed, but they do occur)
-        if(Line.empty()) 
+        // size one allows for dos/mac end of line chars.
+        if(Line.size() <= 1) 
             goto skipone;
         // skip comments (technically not allowed)
         if(Line.find_first_of("#;/!") == 0) 
@@ -507,6 +522,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/03/14 22:29:54  lewisg
+ * add mod file input
+ *
  * Revision 1.16  2005/01/31 17:30:57  lewisg
  * adjustable intensity, z dpendence of precursor mass tolerance
  *

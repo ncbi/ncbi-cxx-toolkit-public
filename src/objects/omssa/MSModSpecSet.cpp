@@ -38,10 +38,7 @@
 #include <ncbi_pch.hpp>
 
 // generated includes
-#include <objects/omssa/MSHits.hpp>
-
-#include <objects/omssa/MSMod.hpp>
-#include <objects/omssa/MSModHit.hpp>
+#include <objects/omssa/MSModSpecSet.hpp>
 
 // generated classes
 
@@ -50,42 +47,50 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // destructor
-CMSHits::~CMSHits(void)
+CMSModSpecSet::~CMSModSpecSet(void)
 {
 }
 
-
-///
-///  Makes a string of mods, positions for display purposes
-///  
-void CMSHits::MakeModString(string& StringOut, CRef <CMSModSpecSet> Modset) const
+//! creates arrays for the existing set
+void CMSModSpecSet::CreateArrays(void)
 {
-    StringOut.erase();
-    if(CanGetMods()) {
-        ITERATE(TMods, i, GetMods()) {
-            if(!StringOut.empty()) StringOut += " ,";
-            if((*i)->GetModtype() < eMSMod_max) StringOut += Modset->GetModName((*i)->GetModtype());
-            else StringOut += NStr::IntToString((*i)->GetModtype());
-            StringOut += ":" + NStr::IntToString((*i)->GetSite()+1);
+    Tdata::const_iterator iMods;
+    for(iMods = Get().begin(); iMods != Get().end(); ++iMods) {
+        int ModNum = (*iMods)->GetMod();
+        if(ModNum >= eMSMod_max){
+            ERR_POST(Warning << "CMSModSpecSet::CreateArrays modification number unknown");
+            continue;
         }
-    }
-}
+        // ignore unspecified mods
+        if((*iMods)->GetMonomass() == 0.0) continue;
 
+        ModTypes[ModNum] = static_cast <EMSModType> ((*iMods)->GetType());
+        ModMass[ModNum] = static_cast <int> ((*iMods)->GetMonomass() * MSSCALE);
+        strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);
+        // make sure name is null terminated
+        ModNames[ModNum][kMaxNameSize] = '\0';
 
-///
-///  Makes a peptide AA string, lower case for mods
-///  
-void CMSHits::MakePepString(string& StringOut) const
-{    
-    StringOut.erase();
-    if(CanGetPepstring()) {
-        StringOut = GetPepstring();
-        NStr::ToUpper(StringOut);
-        ITERATE(TMods, i, GetMods()) {
-            if((*i)->GetSite() < StringOut.size())
-                StringOut[(*i)->GetSite()] = tolower(StringOut[(*i)->GetSite()]);
+        int iChars(0);
+        CMSModSpec::TResidues::const_iterator iRes;
+        // loop thru chars
+        for(iRes = (*iMods)->GetResidues().begin(); iRes != (*iMods)->GetResidues().end(); ++iRes) {
+            if (iChars >= kMaxAAs) {
+                ERR_POST(Warning << "CMSModSpecSet::CreateArrays too many AAs in mod " << ModNum);
+                break;
+            }
+            if(strchr(UniqueAA, (*iRes)[0]) != 0)
+                ModChar[ModNum][iChars] = strchr(UniqueAA, (*iRes)[0]) - UniqueAA;
+            else {
+                ERR_POST(Warning << "CMSModSpecSet::CreateArrays unknown AA " <<
+                         (*iRes) << " specified for mod " << ModNum);
+                 break;
+            }
+
+            iChars++;
         }
+        NumModChars[ModNum] = iChars;
     }
+    isArrayed = true;
 }
 
 
@@ -98,23 +103,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.5  2005/03/14 22:29:54  lewisg
+* Revision 1.1  2005/03/14 22:29:54  lewisg
 * add mod file input
-*
-* Revision 1.4  2004/12/08 19:21:12  lewisg
-* start sequence position by 1
-*
-* Revision 1.3  2004/12/08 19:12:43  lewisg
-* const
-*
-* Revision 1.2  2004/12/08 02:00:08  ucko
-* Use string::erase() rather than string::clear(), which is not 100%
-* portable.  (GCC 2.95.x continues not to support it....)
-*
-* Revision 1.1  2004/12/07 23:38:22  lewisg
-* add modification handling code
 *
 *
 * ===========================================================================
 */
-/* Original file checksum: lines: 65, chars: 1878, CRC32: e17e37ca */
+/* Original file checksum: lines: 65, chars: 1896, CRC32: ed716b4 */

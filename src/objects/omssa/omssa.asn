@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.19 2005/01/31 17:30:57 lewisg Exp $
+-- $Id: omssa.asn,v 1.20 2005/03/14 22:29:54 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -55,7 +55,8 @@ MSEnzymes ::= INTEGER {
 	tryp-cnbr (8),
 	tryp-chymo (9),
 	trypsin-p (10),
-        max(11),
+	whole-protein (11),
+        max(12),
 	none (255)
 	}
 
@@ -63,32 +64,170 @@ MSEnzymes ::= INTEGER {
 -- enumerate modifications
 
 MSMod ::= INTEGER {
-    kmethyl (0),          -- methylation of K
-    moxy (1),             -- oxidation of methionine
-    ccarboxymethyl (2),   -- carboxymethyl cysteine
-    ccarbamidomethyl(3),  -- carbamidomethyl cysteine
-    kqdeamidation (4),    -- deamidation of K and Q
-    cpropionamide (5),    -- propionamide cysteine
-    sphosphorylation (6), -- phosphorylation of S
-    tphosphorylation (7), -- phosphorylation of T
-    yphosphorylation (8), -- phosphorylation of Y    
+    methylk (0),          -- methylation of K
+    oxym (1),             -- oxidation of methionine
+    carboxymethylc (2),   -- carboxymethyl cysteine
+    carbamidomethylc(3),  -- carbamidomethyl cysteine
+    deamidationkq (4),    -- deamidation of K and Q
+    propionamidec (5),    -- propionamide cysteine
+    phosphorylations (6), -- phosphorylation of S
+    phosphorylationt (7), -- phosphorylation of T
+    phosphorylationy (8), -- phosphorylation of Y    
     ntermmcleave (9),     -- N terminal methionine cleavage
-    ntermacetyl (10),     -- N terminal acetyl
-    ntermmethyl (11),     -- N terminal methyl
-    ntermtrimethyl (12),  -- N terminal trimethyl
-    dmethythiol (13),     -- beta methythiolation of D
-    qmethyl (14),         -- methylation of Q
-    ktrimethyl (15),      -- trimethylation of K
-    dmethyl (16),         -- methylation of D
-    emethyl (17),         -- methylation of E
-    ctermmethyl (18),     -- C terminal methylation
-    dtrideuteromethyl (19), -- trideuteromethylation of D
-    etrideuteromethyl (20), -- trideuteromethylation of E
-    ctermtrideuteromethy (21),  -- C terminal trideuteromethylation
-    max(22),
-    none(255)
+    ntermacetyl (10),     -- N terminal protein acetyl
+    ntermmethyl (11),     -- N terminal protein methyl
+    ntermtrimethyl (12),  -- N terminal protein trimethyl
+    methythiold (13),     -- beta methythiolation of D
+    methylq (14),         -- methylation of Q
+    trimethylk (15),      -- trimethylation of K
+    methyld (16),         -- methylation of D
+    methyle (17),         -- methylation of E
+    ctermpepmethyl (18),     -- C terminal methylation
+    trideuteromethyld (19), -- trideuteromethylation of D
+    trideuteromethyle (20), -- trideuteromethylation of E
+    ctermpeptrideuteromethyl (21),  -- C terminal trideuteromethylation
+    nformylmet (22),
+    twoamino3oxobutanoicacid (23),
+    acetylk (24),
+    ctermamide (25),
+    bmethylthiold (26),
+    carbamidomethylk (27),
+    carbamidometylh (28),
+    carbamidomethyld (29),
+    carbamidomethyle (30),
+    carbamylk (31),
+    ntermcarbamyl (32),
+    citrullinationr (33),
+    cysteicacidc (34),
+    diiodinationy (35),
+    dimethylk (36),
+    dimethylr (37),
+    ntermpepdimethyl (38),
+    dihydroxyf (39),
+    thioacetylk (40),
+    ntermpeptioacetyl (41),
+    farnesylationc (42),
+    formylk (43),
+    ntermpepformyl (44),
+    formylkynureninw (45),
+    phef (46),
+    gammacarboxyld (47),
+    gammacarboxyle (48),
+    geranylgeranylc (49),
+    ntermpepglucuronylg (50),
+    glutathionec (51),
+    glyglyk (52),
+    guanidinationk (53),
+    his2asnh (54),
+    his2asph (55),
+    ctermpephsem (56),
+    ctermpephselactm (57),
+    hydroxykynureninw (58),
+    hydroxylationd (59),
+    hydroxylationk (60),
+    hydroxylationn (61),
+    hydroxylationp (62),
+    hydroxylationf (63),
+    hydroxylationy (64),
+    iodinationy (65),
+    kynureninw (66),
+    lipoylk (67),
+    ctermpepmeester (68),
+    meesterd (69),
+    meestere (70),
+    meesters (71),
+    meestery (72),
+    methylc (73),
+    methylh (74),
+    methyln (75),
+    ntermpepmethyl (76),
+    methylr (77),
+    ntermpepmyristoyeylationg (78),
+    ntermpepmyristoyl4hg (79),
+    ntermpepmyristoylationg (80),
+    myristoylationk (81),
+    ntermformyl (82),
+    nemc (83),
+    nipcam (84),
+    nitrow (85),
+    nitroy (86),
+    ctermpepo18 (87),
+    ctermpepdio18 (88),
+    oxyh (89),
+    oxyw (90),
+    ppantetheines (91),
+    palmitoylationc (92),
+    palmitoylationk (93),
+    palmitoylations (94),
+    palmitoylationt (95),
+    phospholosss (96),
+    phospholosst (97),
+    phospholossy (98),
+    phosphoneutrallossc (99),
+    phosphoneutrallossd (100),
+    phosphoneutrallossh (101),
+    propionylk (102),
+    ntermpeppropionyl (103),
+    propionylheavyk (104),
+    ntermpeppropionylheavy (105),
+    pyridylk (106),
+    ntermpeppyridyl (107),
+    ntermpeppyrocmc (108),
+    ntermpeppyroe (109),
+    ntermpeppyroq (110),
+    pyroglutamicp (111),
+    spyridylethylc (112),
+    semetm (113),
+    sulfationy (114),
+    suphonem (115),
+    triiodinationy (116),
+    trimethylationr (117),
+    ntermpeptripalmitatec (118),
+    usermod1 (119),  -- start of user defined mods
+    usermod2 (120),
+    usermod3 (121),
+    usermod4 (122),
+    usermod5 (123),
+    usermod6 (124),
+    usermod7 (125),
+    usermod8 (126),
+    usermod9 (127),
+    usermod10 (128), -- end of user defined mods
+    max (129), -- maximum number of mods
+    none(10000)
     }
 
+-- enumerate modification types
+
+MSModType ::= INTEGER {
+    modaa (0),   -- at particular amino acids
+    modn (1),    -- at the N terminus of a protein
+    modnaa (2),  -- at the N terminus of a protein at particular amino acids
+    modc (3),    -- at the C terminus of a protein
+    modcaa (4),  -- at the C terminus of a protein at particular amino acids
+    modnp (5),   -- at the N terminus of a peptide
+    modnpaa (6), -- at the N terminus of a peptide at particular amino acids
+    modcp (7),   -- at the C terminus of a peptide
+    modcpaa (8), -- at the C terminus of a peptide at particular amino acids
+    modmax (9)   -- the max number of modification types
+    }
+
+
+-- Modification Definition
+
+MSModSpec ::= SEQUENCE {
+    mod MSMod,  -- what is the mod
+    type MSModType,  -- modification type
+    name VisibleString,  -- friendly name of mod
+    monomass REAL,       -- monoisotopic mass
+    averagemass REAL,    -- average mass
+    n15mass REAL,        -- monoisotopic n15 mass
+    residues SEQUENCE OF VisibleString OPTIONAL  -- residues to apply mod to
+    }
+    
+-- Holds a set of modifications
+
+MSModSpecSet ::= SEQUENCE OF MSModSpec
 
 -- How is charge to be handled?  Some input files are not clear
 -- on this.  For example, a dta file only specifies one charge, 
@@ -169,7 +308,8 @@ MSSearchSettings ::= SEQUENCE {
         maxmods INTEGER DEFAULT 64,  -- maximum number of mass ladders per
                                      -- database peptide
 	taxids SEQUENCE OF INTEGER OPTIONAL,  -- taxa to limit search
-	chargehandling MSChargeHandle OPTIONAL  -- how to deal with charges
+	chargehandling MSChargeHandle OPTIONAL,  -- how to deal with charges
+	usermods MSModSpecSet OPTIONAL  -- user defined modifications
 }
 
 
