@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/09/16 16:19:44  vakatov
+* *** empty log message ***
+*
 * Revision 1.5  1998/09/15 20:21:10  vakatov
 * <just a save>
 *
@@ -79,18 +82,32 @@ namespace ncbi_cgi {
 
 
 
+    ///////////////////////////////////////////////////////
+    // The CGI cookie class
+    //
+    class CCookie {
+    public:
+        CCookie(void);
+        CCookie(const string& str);
+
+        void m_AddCookie(string key, string value);
+        void m_AddCookies(const string& key_value);
+        void m_AddCookies(const CCookie& cookie);
+
+        list< pair<string,string> > m_FindCookie(const string& key);
+
+    private:
+        multimap<string,string> m_Cookies;
+    };
 
     ///////////////////////////////////////////////////////
     // The CGI request class
     //
     class CRequest {
     public:
-        /* Startup initialization using environment and/or standard input
-         */
+        // The startup initialization using environment and/or standard input
         CRequest(void);
 
-        /* Access to the properties set by the HTTP server(read-only)
-         */
         // get "standard" properties(empty string if not found)
         string  m_GetProperty(EProperty property);
         // get random client properties("HTTP_<key>")
@@ -100,12 +117,11 @@ namespace ncbi_cgi {
         Uint4   m_GetServerAddr(void);  // (in the network byte order)
         size_t  m_GetContentLength(void);
 
-        /* Set of entries(decoded) as received from the client
-         */
-        const multimap<string, string>& m_Entries(void) {
-            return m_ContentFetched ?
-                m_Entries : g_ParseContent(m_Content(), m_Entries);
-        }
+        // Set of cookies received from the client
+        const multimap<string,string>& m_GetCookies(void);
+
+        // Set of entries(decoded) received from the client
+        const multimap<string,string>& m_GetEntries(void);
 
         /* DANGER!!!  Direct access to the data received from client
          * NOTE 1: m_Entries() would not work(return an empty set) if
@@ -116,7 +132,7 @@ namespace ncbi_cgi {
          *         a reference to an empty string; in other words,
          *         m_Entries() and m_Content() are mutially exclusive
          */
-        istream& m_Content(void);
+        istream& m_GetContent(void);
 
     private:
         // CGI request method
@@ -126,17 +142,20 @@ namespace ncbi_cgi {
         } m_Method;
 
         // True after m_Entries() or m_Content() call
-        bool m_ContentFetched;
+        bool m_IsContentFetched;
 
         // "istream"-based wrapper for the QueryString(eMethod_Get);
         // only needed if m_Content() gets called
         istrstream m_QueryStream;
 
         // set of the request properties(already retrieved; cached)
-        map<string, string> m_Properties;
+        map<string,string> m_Properties;
 
         // set of the request entries(already retrieved; cached)
-        multimap<string, string> m_Entries;
+        multimap<string,string> m_Entries;
+
+        // set of the request cookies(already retrieved; cached)
+        multimap<string,string> m_Cookies;
     };  // CRequest
 
 
@@ -144,9 +163,18 @@ namespace ncbi_cgi {
     ///////////////////////////////////////////////////////
     // EXTERN Functions
 
-    // Parse the URL-encoded stream into a set of entries(<name, value>)
-    extern multimap<string, string>&
-        g_ParseContent(istream& istr, multimap<string, string>& entries);
+    // Fetch cookies from "str", add them to "cookies"
+    // Format of the string:  "Cookie: name1=value1; name2=value2; ..."
+    // Return the resultant set of cookies
+    extern multimap<string,string>&
+        g_ParseCookies(const string& str, multimap<string,string>& cookies);
+
+    // Decode the URL-encoded stream "istr" into a set of entries
+    // (<name, value>) and add them to the "entries" set
+    // Return the resultant set of entries
+    extern multimap<string,string>&
+        g_ParseContent(istream& istr, multimap<string,string>& entries);
+
 
 
 
