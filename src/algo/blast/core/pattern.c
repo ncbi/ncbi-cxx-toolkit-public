@@ -147,7 +147,8 @@ static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
     remain = len % 4;
   }
   for (i = 0; i < end; i++) {
-    if (tmp = (prefixMatchedBitPattern & patternSearch->DNAwhichPrefixPosPtr[seq[i]])) {
+    if ( (tmp = (prefixMatchedBitPattern &
+                 patternSearch->DNAwhichPrefixPosPtr[seq[i]]))) {
       for (j = 0; j < 4; j++) {
 	if (tmp & patternSearch->match_mask) {
 	  hitArray[twiceNumHits++] = i*4+j + pos;
@@ -160,7 +161,8 @@ static Int4 find_hitsS_DNA(Int4* hitArray, const Uint1* seq, Int4 pos, Int4 len,
     prefixMatchedBitPattern = (((prefixMatchedBitPattern << 4) | mask2) & patternSearch->DNAwhichSuffixPosPtr[seq[i]]);
   }
   /* In the last byte check bits only up to 'remain' */
-  if (tmp = (prefixMatchedBitPattern & patternSearch->DNAwhichPrefixPosPtr[seq[i]])) {
+  if ( (tmp = (prefixMatchedBitPattern &
+               patternSearch->DNAwhichPrefixPosPtr[seq[i]]))) {
      for (j = 0; j < remain; j++) {
         if (tmp & patternSearch->match_mask) {
            hitArray[twiceNumHits++] = i*4+j + pos;
@@ -223,7 +225,7 @@ static Int4 and(Int4 *result, Int4 *a, Int4 *b, patternSearchItems *patternSearc
     Int4 returnValue = 0;
 
     for (i = 0; i < patternSearch->numWords; i++) 
-      if (result[i] = (a[i] & b[i])) 
+      if ( (result[i] = (a[i] & b[i]) ) ) 
 	returnValue = 1;
     return returnValue;
 }
