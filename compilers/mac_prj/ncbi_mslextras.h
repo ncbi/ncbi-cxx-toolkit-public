@@ -99,6 +99,12 @@ struct	hostent {
 struct hostent	*gethostbyaddr (const char *, int, int);
 struct hostent	*gethostbyname (const char *);
 
+
+/* ============================================================
+ * from arpa/inet.h 
+ */
+unsigned long	 inet_addr (const char *);
+
 /* ============================================================
  * from string.h 
  */
@@ -123,6 +129,9 @@ int      fileno (FILE *);
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2003/04/04 20:43:52  rsmith
+ * add declaration of inet_addr from arpa/inet.h for ncbi_socket.c
+ *
  * Revision 1.1  2003/04/02 13:50:22  rsmith
  * Provide declarations missing from Codewarriors MSL headers.
  *
