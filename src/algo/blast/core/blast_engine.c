@@ -422,13 +422,14 @@ BLAST_SetUpAuxStructures(const BlastSeqSrc* seq_src,
    Int2 status = 0;
    BlastCoreAuxStruct* aux_struct;
    Boolean blastp = (lookup_wrap->lut_type == AA_LOOKUP_TABLE ||
-                         lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
+                     lookup_wrap->lut_type == RPS_LOOKUP_TABLE);
    Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
    Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
    Boolean ag_blast = (word_options->extension_method == eRightAndLeft);
    Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
    Uint4 avg_subj_length;
+   Boolean is_na = mb_lookup || (lookup_wrap->lut_type == NA_LOOKUP_TABLE);
 
    ASSERT(seq_src);
 
@@ -437,7 +438,7 @@ BLAST_SetUpAuxStructures(const BlastSeqSrc* seq_src,
 
    avg_subj_length = BLASTSeqSrcGetAvgSeqLen(seq_src);
      
-   if ((status = BlastExtendWordNew(query->length, word_options, 
+   if ((status = BlastExtendWordNew(is_na, query->length, word_options, 
                     avg_subj_length, &aux_struct->ewp)) != 0)
       return status;
 
@@ -575,8 +576,10 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
       concatenated DB */
    avg_subj_length = (Uint4) (dbsize / num_db_seqs);
    BlastExtendWordFree(aux_struct->ewp);
-   BlastExtendWordNew(concat_db.length, word_options, 
-			avg_subj_length, &aux_struct->ewp);
+   /* First argument in BlastExtendWordNew is false because RPS search is 
+      never a blastn search. */
+   BlastExtendWordNew(FALSE, concat_db.length, word_options, 
+                      avg_subj_length, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned
       and the concatenated DB is the sequence associated with

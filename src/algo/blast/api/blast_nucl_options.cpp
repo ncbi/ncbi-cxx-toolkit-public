@@ -141,7 +141,7 @@ CBlastNucleotideOptionsHandle::SetInitialWordOptionsDefaults()
 {
     SetXDropoff(BLAST_UNGAPPED_X_DROPOFF_NUCL);
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eLastHitArray);
+    SetSeedContainerType(eDiagArray);
     SetVariableWordSize(BLAST_VARWORD_NUCL);
     SetSeedExtensionMethod(eRightAndLeft);
     SetUngappedExtension();
@@ -151,7 +151,7 @@ void
 CBlastNucleotideOptionsHandle::SetMBInitialWordOptionsDefaults()
 {
     SetWindowSize(BLAST_WINDOW_SIZE_NUCL);
-    SetSeedContainerType(eLastHitArray);
+    SetSeedContainerType(eWordStacks);
     SetVariableWordSize(BLAST_VARWORD_MEGABLAST);
     SetSeedExtensionMethod(eRightAndLeft);
 }
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/08/05 20:41:18  dondosha
+ * Implemented stacks initial word container for all blastn extension methods
+ *
  * Revision 1.14  2004/08/03 20:21:42  dondosha
  * Set seed extension method to eLastHitArray rather than eDiagArray
  *

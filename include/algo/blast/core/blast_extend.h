@@ -70,11 +70,6 @@ typedef struct BlastInitHitList {
    Boolean do_not_reallocate; /**< Can the init_hsp_array be reallocated? */
 } BlastInitHitList;
 
-typedef enum {
-   eDiagStructArray = 0,
-   eUint4Array
-} EDiagArrayType;
-
 /** Structure for keeping last hit information for a diagonal */
 typedef struct DiagStruct {
    Int4 last_hit; /**< Offset of the last hit */
@@ -88,19 +83,21 @@ typedef struct MB_Stack {
    Int4 length; /**< To what length has this hit been extended so far? */
 } MB_Stack;
 
+typedef struct BlastnStack {
+   Int4 diag; /**< This hit's actual diagonal */
+   Int4 level; /**< This hit's offset in the subject sequence */
+}  BlastnStack;
+  
 /** Structure containing parameters needed for initial word extension.
  * Only one copy of this structure is needed, regardless of how many
  * contexts there are.
 */
 typedef struct BLAST_DiagTable {
-   EDiagArrayType array_type;
-   union {
-      DiagStruct* hit_level_array;/**< Array to hold latest hits and their 
-                                     lengths for all diagonals */
-      Uint4* last_hit_array; /**< Array of latest hits on all diagonals, with 
-                                top byte indicating whether hit has been 
-                                saved. */
-   } diag_array;
+   DiagStruct* hit_level_array;/**< Array to hold latest hits and their 
+                                  lengths for all diagonals */
+   Uint4* last_hit_array; /**< Array of latest hits on all diagonals, with 
+                             top byte indicating whether hit has been 
+                             saved. */
    Int4 diag_array_length; /**< Smallest power of 2 longer than query length */
    Int4 diag_mask; /**< Used to mask off everything above
                           min_diag_length (mask = min_diag_length-1). */
@@ -119,28 +116,32 @@ typedef struct BLAST_DiagTable {
 
 /** Structure containing an array of stacks for keeping track of the 
  * initial word matches. Can be used in megablast. */
-typedef struct MB_StackTable {
+typedef struct BLAST_StackTable {
    Int4 num_stacks; /**< Number of stacks to be used for storing hit offsets
                        by MegaBLAST */
    Int4* stack_index; /**< Current number of elements in each stack */
    Int4* stack_size;  /**< Available memory for each stack */
-   MB_Stack** estack; /**< Array of stacks for most recent hits */
-} MB_StackTable;
+   MB_Stack** mb_stack_array; /**< Array of stacks for most recent hits with
+                                 lengths. */
+   BlastnStack** bn_stack_array; /**< Array of stacks for most recent hits 
+                                    without lengths. */
+} BLAST_StackTable;
    
 /** Structure for keeping initial word extension information */
 typedef struct Blast_ExtendWord {
    BLAST_DiagTable* diag_table; /**< Diagonal array and related parameters */
-   MB_StackTable* stack_table; /**< Stacks and related parameters */ 
+   BLAST_StackTable* stack_table; /**< Stacks and related parameters */ 
 } Blast_ExtendWord;
 
 /** Initializes the word extension structure
+ * @param is_na Is this a nucleotide-nucleotide (blastn) search? [in]
  * @param query_length Length of the query sequence [in]
  * @param word_options Options for initial word extension [in]
  * @param subject_length Average length of a subject sequence, used to 
  *                       calculate average search space. [in]
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
-Int2 BlastExtendWordNew(Uint4 query_length,
+Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
    const BlastInitialWordOptions* word_options,
    Uint4 subject_length, Blast_ExtendWord** ewp_ptr);
 

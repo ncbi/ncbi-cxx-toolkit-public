@@ -202,9 +202,7 @@ typedef struct QuerySetUpOptions {
 typedef enum SeedContainerType {
     eDiagArray,         /**< use diagonal structures with array of last hits
                            and levels. */
-    eLastHitArray,      /**< use diagonal structures with array of last hits
-                           only */
-    eMbStacks,          /**< use stacks (megablast only) */
+    eWordStacks,          /**< use stacks (megablast only) */
     eMaxContainerType   /**< maximum value for this enumeration */
 } SeedContainerType;
 

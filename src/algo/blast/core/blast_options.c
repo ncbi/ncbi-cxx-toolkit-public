@@ -221,14 +221,11 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
       options->container_type = eDiagArray;
    } else {
       if (mb_lookup) {
-         options->container_type = eMbStacks;
+         options->container_type = eWordStacks;
          options->extension_method = eUpdateDiag;
       } else {
          options->extension_method = eRight;
-         if (program == eBlastTypeBlastn)
-            options->container_type = eLastHitArray;
-         else
-            options->container_type = eDiagArray;
+         options->container_type = eDiagArray;
       }
    }
 
@@ -1513,6 +1510,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.127  2004/08/05 20:41:01  dondosha
+ * Implemented stacks initial word container for all blastn extension methods
+ *
  * Revision 1.126  2004/08/05 19:54:12  dondosha
  * Allow stride 1 for discontiguous megablast in options validation
  *
