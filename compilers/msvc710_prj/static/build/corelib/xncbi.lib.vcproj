@@ -4,8 +4,8 @@
     <Platform Name="Win32"></Platform>
   </Platforms>
   <Configurations>
-    <Configuration Name="Debug|Win32" OutputDirectory="..\lib\Debug" IntermediateDirectory="Debug" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="5" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
+    <Configuration Name="Debug|Win32" OutputDirectory="..\..\lib\Debug" IntermediateDirectory="Debug" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="5" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCCustomBuildTool"></Tool>
@@ -19,8 +19,8 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="DebugDLL|Win32" OutputDirectory="..\lib\DebugDLL" IntermediateDirectory="DebugDLL" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="3" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
+    <Configuration Name="DebugDLL|Win32" OutputDirectory="..\..\lib\DebugDLL" IntermediateDirectory="DebugDLL" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="3" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCCustomBuildTool"></Tool>
@@ -34,8 +34,8 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="DebugMT|Win32" OutputDirectory="..\lib\DebugMT" IntermediateDirectory="DebugMT" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="1" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
+    <Configuration Name="DebugMT|Win32" OutputDirectory="..\..\lib\DebugMT" IntermediateDirectory="DebugMT" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="0" PreprocessorDefinitions="_DEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="3" RuntimeLibrary="1" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="1" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="1" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="0" OmitFramePointers="FALSE" StringPooling="FALSE" EnableFunctionLevelLinking="FALSE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="FALSE" FavorSizeOrSpeed="0"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCCustomBuildTool"></Tool>
@@ -49,8 +49,8 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="Release|Win32" OutputDirectory="..\lib\Release" IntermediateDirectory="Release" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="4" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
+    <Configuration Name="Release|Win32" OutputDirectory="..\..\lib\Release" IntermediateDirectory="Release" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="4" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCCustomBuildTool"></Tool>
@@ -64,8 +64,8 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\lib\ReleaseDLL" IntermediateDirectory="ReleaseDLL" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
+    <Configuration Name="ReleaseDLL|Win32" OutputDirectory="..\..\lib\ReleaseDLL" IntermediateDirectory="ReleaseDLL" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="2" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCCustomBuildTool"></Tool>
@@ -79,8 +79,8 @@
       <Tool Name="VCManagedWrapperGeneratorTool"></Tool>
       <Tool Name="VCAuxiliaryManagedWrapperGeneratorTool"></Tool>
     </Configuration>
-    <Configuration Name="ReleaseMT|Win32" OutputDirectory="..\lib\ReleaseMT" IntermediateDirectory="ReleaseMT" ConfigurationType="4" CharacterSet="2">
-      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="0" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
+    <Configuration Name="ReleaseMT|Win32" OutputDirectory="..\..\lib\ReleaseMT" IntermediateDirectory="ReleaseMT" ConfigurationType="4" CharacterSet="2">
+      <Tool Name="VCCLCompilerTool" Optimization="2" PreprocessorDefinitions="NDEBUG;WIN32;_LIB;" AdditionalIncludeDirectories="..\..\..\..\..\include\" BasicRuntimeChecks="0" RuntimeLibrary="0" RuntimeTypeInfo="TRUE" WarningLevel="3" DebugInformationFormat="0" CompileAs="0" UsePrecompiledHeader="0" BrowseInformation="0" MinimalRebuild="FALSE" Detect64BitPortabilityProblems="FALSE" InlineFunctionExpansion="1" OmitFramePointers="TRUE" StringPooling="FALSE" EnableFunctionLevelLinking="TRUE" AdditionalOptions="" OptimizeForProcessor="0" StructMemberAlignment="0" CallingConvention="0" IgnoreStandardIncludePath="FALSE" ExceptionHandling="TRUE" BufferSecurityCheck="TRUE" DisableSpecificWarnings="" UndefinePreprocessorDefinitions="" GlobalOptimizations="TRUE" FavorSizeOrSpeed="1"></Tool>
       <Tool Name="VCLinkerTool" OutputFile="" LinkIncremental="" GenerateDebugInformation="" SubSystem="" TargetMachine="" AdditionalLibraryDirectories="" ProgramDatabaseFile="" ImportLibrary="" EnableCOMDATFolding="" OptimizeReferences="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCLibrarianTool" OutputFile="$(OutDir)/xncbi.lib" AdditionalLibraryDirectories="" AdditionalOptions="" IgnoreAllDefaultLibraries="FALSE" IgnoreDefaultLibraryNames="FALSE"></Tool>
       <Tool Name="VCCustomBuildTool"></Tool>
@@ -98,82 +98,82 @@
   <References></References>
   <Files>
     <Filter Name="Source Files" Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx">
-      <File RelativePath="..\..\..\..\src\corelib\ncbithr.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbidiag.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiexpt.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbistre.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiapp.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbireg.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbienv.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiargs.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbistr.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiobj.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbitime.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbimtx.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbi_safe_static.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbi_system.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbifile.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbidbg.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbidll.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiexec.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ddumpable.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\version.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\metareg.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiatomic.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbi_process.cpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\plugin_manager.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbithr.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbidiag.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiexpt.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbistre.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiapp.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbireg.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbienv.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiargs.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbistr.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiobj.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbitime.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbimtx.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_safe_static.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_system.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbifile.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbidbg.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbidll.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiexec.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ddumpable.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\version.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\metareg.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiatomic.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbi_process.cpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\plugin_manager.cpp"></File>
     </Filter>
     <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inc;xsd">
-      <File RelativePath="..\..\..\..\include\corelib\mswin_export.h"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbicfg.h"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbifloat.h"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbitype.h"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_limits.h"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ddumpable.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\metareg.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiapp.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiargs.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiatomic.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbicntr.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbidbg.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbidiag.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbidll.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbienv.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiexec.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiexpt.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbifile.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbimisc.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbimtx.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiobj.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbireg.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbistd.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbistl.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbistr.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbistre.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbithr.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbithr_conf.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbitime.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiutil.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_bswap.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_limits.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_os_mac.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_os_mswin.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_os_unix.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_process.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_safe_static.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_system.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbi_tree.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\plugin_manager.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\plugin_manager_impl.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\test_mt.hpp"></File>
-      <File RelativePath="..\..\..\..\include\corelib\version.hpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbiargs_p.hpp"></File>
-      <File RelativePath="..\..\..\..\src\corelib\ncbidbg_p.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\mswin_export.h"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbicfg.h"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbifloat.h"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbitype.h"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.h"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ddumpable.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\metareg.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiapp.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiargs.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiatomic.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbicntr.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbidbg.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbidiag.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbidll.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbienv.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiexec.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiexpt.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbifile.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbimisc.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbimtx.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiobj.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbireg.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbistd.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbistl.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbistr.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbistre.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbithr.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbithr_conf.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbitime.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiutil.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_bswap.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_limits.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mac.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_mswin.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_os_unix.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_process.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_safe_static.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_system.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbi_tree.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\plugin_manager.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\plugin_manager_impl.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\test_mt.hpp"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\version.hpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbiargs_p.hpp"></File>
+      <File RelativePath="..\..\..\..\..\src\corelib\ncbidbg_p.hpp"></File>
     </Filter>
     <Filter Name="Inline Files" Filter="inl">
-      <File RelativePath="..\..\..\..\include\corelib\ncbidiag.inl"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbimtx.inl"></File>
-      <File RelativePath="..\..\..\..\include\corelib\ncbiobj.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbidiag.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbimtx.inl"></File>
+      <File RelativePath="..\..\..\..\..\include\corelib\ncbiobj.inl"></File>
     </Filter>
     <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"></Filter>
   </Files>
