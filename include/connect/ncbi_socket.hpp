@@ -39,7 +39,9 @@
  */
 
 #include <connect/ncbi_socket.h>
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbitype.h>
+#include <corelib/ncbimisc.hpp>
+#include <string>
 #include <vector>
 
 
@@ -589,6 +591,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2003/10/09 19:58:26  vakatov
+ * Fine-tune the set of included CORELIB headers, mostly to avoid the weird
+ * dependence of XNCBI library on ICC 7.1.
+ *
  * Revision 6.29  2003/08/25 14:37:07  lavr
  * Introduce CPollable and more generic SCocketAPI::Poll()
  *
