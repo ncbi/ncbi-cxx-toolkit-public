@@ -31,7 +31,7 @@ struct charbox {
 
 int hang10()
 {
-    if (int(& dbl_time) == 1102000) {
+    if (long(& dbl_time) == 1102000L) {
         cout << "inconceivable!" << endl;
     }
     return 0;
