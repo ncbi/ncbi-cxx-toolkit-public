@@ -305,14 +305,14 @@ int fcntl(int sockFD, int command, int flags)
     case F_GETFL:
       /* return whether the socket is nonblocking */
       if(OTIsNonBlocking(gSockets[sockFD]->ref))
-        newFlags |= O_NONBLOCK;
+        newFlags |= kO_NONBLOCK;
         
       /* Should add O_ASYNC support here */
       break;
       
 	case F_SETFL:
 		/* set whether the socket is non-blocking */
-		if(flags & O_NONBLOCK){
+		if(flags & kO_NONBLOCK){
 		//	temp pjc... this doesn't work right yet...
 		//	OTSetNonBlocking(gSockets[sockFD]->ref);
 		}
