@@ -239,9 +239,7 @@ on SetProjectData()
 			"pub", "medline", "biblio", "general", "submit"}
 		
 		set objMgrLibs to {Â
-			"seq", "seqcode", "cdd", "seqset", "sequtil", Â
-			"pub", "biblio", "pubmed", "medline", Â
-			"general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress"}
+			"seq", "seqcode", "cdd", "seqset", "sequtil", "seqsplit", "pub", "biblio", "pubmed", "medline", "general", "submit", "xobjmgr", "id1", "id2", "xser", "xobjutil", "xobjread", "xutil", "xconnect", "xncbi", "z", "bz2", "xcompress", "ncbi_xloader_genbank", "ncbi_xreader_id1"}
 		
 		-- datatool
 		set myName to "datatool"
@@ -254,7 +252,6 @@ on SetProjectData()
 			
 		
 	end tell
-	
 	
 	-- fluid
 	set saveCppExt to pCPlusPlusExt
@@ -282,14 +279,25 @@ on SetProjectData()
 	
 	if pBuildDemos then
 		---- DEMO ---
+		AddAppProject("test_density_map", {"libdl"}, "gui:utils:demo:test_density_map", Â
+			{"gui_utils", "xalnmgr", "tables"} & objMgrLibs, {})
+		
+		AddAppProject("config_dlg_demo", {"fltk"}, "gui:dialogs:config:demo", {"w_seq_graphic", "gui_dlg_config", "gui_config", "w_fltk", "fltk", "w_gl", "gui_utils", "xncbi"}, {})
 		
 		AddAppProject("demo_seqgraphic", {"fltk"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "xalnmgr", "w_gl"}, {"gui_core"})
 		
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
 			{"gui_dlg_registry", "gui_utils", "w_flek", "w_fltable", "xncbi", "fltk"}, {})
 		
-		AddAppProject("test_toggletree", {"fltk"}, "gui:widgets:Flek:demo", Â
-			{"w_flek", "xncbi", "fltk"}, {})
+		AddAppProject("test_treebrowser", {"fltk"}, "gui:widgets:fl:demo", Â
+			{"w_flu", "xncbi", "w_fltk", "fltk"}, {})
+		
+		AddProject(DataPlusLibs(SimpleProjectData("test_treebrowser", "gui:widgets:fl:demo", {"C++", "fltk"}), Â
+			{"w_flu", "xncbi", "w_fltk", "fltk"}, {}))
+		
+		AddAppProject("featgroup_config_dlg", {"fltk"}, "gui:config:test2", Â
+			{"gui_config", "gui_dlg_config", "gui_utils", "w_flu", "w_fltk", "fltk", "gui_opengl", "xncbi", "xser", "xutil", "seq", "xobjmgr", "general", "pub", "medline", "biblio", "id1"}, {})
+		
 	end if
 end SetProjectData
 
