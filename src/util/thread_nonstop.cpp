@@ -38,19 +38,21 @@ BEGIN_NCBI_SCOPE
 
 
 CThreadNonStop::CThreadNonStop(unsigned run_delay,
-                               unsigned stop_request_poll)
+                               unsigned)
 : m_RunInterval(run_delay),
-  m_StopSignal(0, 100)
+  m_StopSignal(0, 10000000)
 {
+    m_StopFlag.Set(0);
 }
 
 bool CThreadNonStop::IsStopRequested() const
 {
-    return m_StopSignal.TryWait(0, 0);
+    return m_StopFlag.Get() != 0;
 }
 
 void CThreadNonStop::RequestStop()
 {
+    m_StopFlag.Add(1);
     m_StopSignal.Post();
 }
 
@@ -62,7 +64,9 @@ void* CThreadNonStop::Main(void)
 
         bool flag = m_StopSignal.TryWait(m_RunInterval, 0);
         if (flag) {
-            break; 
+            if (m_StopFlag.Get() != 0) {
+                break; 
+            }
         }       
     
     } // for flag
@@ -77,6 +81,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/04/06 14:19:26  kuznets
+ * +RequestDoJob()
+ *
  * Revision 1.3  2005/03/30 16:03:42  kuznets
  * Code cleanup
  *

@@ -34,7 +34,7 @@
 
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbimtx.hpp>
-
+#include <corelib/ncbicntr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -51,8 +51,7 @@ public:
     /// @param run_delay
     ///    Interval in seconds between consecutive job (DoJob) runs.
     /// @param stop_request_poll
-    ///    Interval in seconds object polls stop thread flag
-    ////   (stop can be scheduled by RequestStop())
+    ///    Obsolete parameter
     CThreadNonStop(unsigned run_delay,
                    unsigned stop_request_poll = 10);
 
@@ -63,6 +62,9 @@ public:
     /// waits for the current job to complete and for the next stop flag poll.
     /// Use Join to wait for the actual stop.
     void RequestStop();
+
+    /// Interrupt the thread sleeping condition and force DoJob() run
+    void RequestDoJob();
 
 protected:
     ~CThreadNonStop() {}
@@ -77,8 +79,9 @@ protected:
     virtual void* Main(void);
 
 private:
-    unsigned int           m_RunInterval;
-    mutable CSemaphore     m_StopSignal;
+    unsigned int            m_RunInterval;
+    mutable CSemaphore      m_StopSignal; 
+    mutable CAtomicCounter  m_StopFlag;
 };
 
 
@@ -87,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/04/06 14:19:10  kuznets
+ * +RequestDoJob()
+ *
  * Revision 1.2  2005/03/30 13:41:42  kuznets
  * Use semaphore to stop thread
  *
