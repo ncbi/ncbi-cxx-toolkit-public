@@ -50,17 +50,18 @@ int main(int argc, char** argv) {
             CConstResizingIterator<string> it(s, new_size);
             string s2(s.size(), '?');
             CResizingIterator<string> it2(s2, new_size);
-            for (unsigned int n = 0;  n < s.size() * kBitsPerByte / new_size;
+            for (unsigned int n = 0;  n < s.size() * CHAR_BIT / new_size;
                  n += count) {
-                for (unsigned int i = 0; i < count; i++) {
+                for (unsigned int i = 0; i < count; ++i) {
                     int value = *it;
-                    *(it2++) = value;
+                    *it2 = value;
+                    ++it2;
                     cout << value;
                     if (new_size > 4)
                         cout << ' ';
                 }
-                for (unsigned int i = 0; i < count; i++) {
-                    it++;
+                for (unsigned int i = 0; i < count; ++i) {
+                    ++it;
                 }
             }
             cout << ' ' << s2 << ' ' << it.AtEnd()
@@ -74,6 +75,9 @@ int main(int argc, char** argv) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/30 20:39:11  ucko
+ * kBitsPerByte changed to CHAR_BIT; use preincrement rather than post-.
+ *
  * Revision 1.2  2002/04/16 18:52:16  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
