@@ -299,10 +299,8 @@ public:
 	return false;
     }
     bool GoNode(const CTreeContNodeBase* pNode) {
-	const CTreeContNodeBase* node =
-	    dynamic_cast<const CTreeContNodeBase*>(pNode);
-	if(node) {
-	    m_node= node;
+	if(pNode) {
+	    m_node= pNode;
 	    return true;
 	}
 	return false;
@@ -346,6 +344,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.4  2003/05/08 16:00:07  ucko
+ * Remove inappropriate dynamic_cast<>.
+ *
  * Revision 6.3  2003/05/06 19:53:53  domrach
  * New functions and interfaces for traversing the cached partial taxonomy tree introduced. Convenience functions GetDivisionName() and GetRankName() were added
  *
