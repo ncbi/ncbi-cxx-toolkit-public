@@ -145,15 +145,35 @@ int CSearch::CompareLadders(CLadder& BLadder,
     return 0;
 }
 
+// compare ladders to experiment
+bool CSearch::CompareLaddersTop(CLadder& BLadder,
+			    CLadder& YLadder, CLadder& B2Ladder,
+			    CLadder& Y2Ladder, CMSPeak *Peaks,
+			    TMassPeak *MassPeak)
+{
+    if(MassPeak && MassPeak->Charge > 2 ) {
+	if(Peaks->CompareTop(BLadder)) return true; 
+	if(Peaks->CompareTop(YLadder)) return true; 
+	if(Peaks->CompareTop(B2Ladder)) return true; 
+	if(Peaks->CompareTop(Y2Ladder)) return true;
+    }
+    else {
+	if(Peaks->CompareTop(BLadder)) return true; 
+	if(Peaks->CompareTop(YLadder)) return true; 
+    }
+    return false;
+}
 
 #ifdef _DEBUG
-#define CHECKGI
+// #define CHECKGI
 #ifdef CHECKGI
-static void CheckGi(int gi)
+bool CheckGi(int gi)
 {
-    if(gi == 28393739 ) {
+    if(gi == 21742354) {
 	ERR_POST(Info << "test seq");
+	return true;
     }
+    return false;
 }
 #endif
 #endif
@@ -249,12 +269,17 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 	if(iSearch/10000*10000 == iSearch) ERR_POST(Info << "sequence " << 
 						    iSearch);
 	header = 0;
+#ifdef CHECKGI
+	    int testgi;
+#endif 
 	while(readdb_get_header_ex(rdfp, iSearch, &header, &sip,
 				   &blastdefline, &taxid, NULL, NULL)) {
 			
 #ifdef CHECKGI
 	    SeqId *bestid = SeqIdFindBest(sip, SEQID_GI);
 	    CheckGi(bestid->data.intvalue);
+	    testgi = bestid->data.intvalue;
+	    //			    cout << testgi << endl;
 #endif 
 			
 	    MemFree(blastdefline);
@@ -360,7 +385,9 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			header = 0;
 			readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
 			bestid = SeqIdFindBest(sip, SEQID_GI);
-			CheckGi(bestid->data.intvalue);
+			if(/*Peaks->GetNumber() == 245 && */CheckGi(bestid->data.intvalue))
+			    cerr << "hello" << endl;
+			//			int testgi = bestid->data.intvalue;
 			MemFree(blastdefline);
 			SeqIdSetFree(sip);
 #endif
@@ -378,7 +405,8 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 			do {
 			    MakeBoolMap(ModMask, ModIndex, iMod,
 					NumMod[iMissed]);
-			    LadderVal = MakeIntFromBoolMap(ModMask,  iMod);
+			    LadderVal = MakeIntFromBoolMap(ModMask, 
+							   NumMod[iMissed]);
 			    if(!LadderCalc[LadderVal]) {
 				LadderCalc[LadderVal] = true;	
 				if(CreateLadders(Sequence, iSearch, position,
@@ -399,8 +427,21 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 				B2Ladder[LadderVal].ClearHits();
 				Y2Ladder[LadderVal].ClearHits();
 			    }
-							
+				
+			    //start of new addition
+			    if(CompareLaddersTop(BLadder[LadderVal], 
+						 YLadder[LadderVal],
+						 B2Ladder[LadderVal], 
+						 Y2Ladder[LadderVal],
+						 Peaks, MassPeak)) {
+				// end of new addition
+
+
 			    Peaks->SetPeptidesExamined(MassPeak->Charge)++;
+#ifdef CHECKGI
+			    /*if(Peaks->GetNumber() == 245)*/
+			    //			    cout << testgi << " " << position << " " << endposition << endl;
+#endif
 			    Peaks->ClearUsedAll();
 			    CompareLadders(BLadder[LadderVal], 
 					   YLadder[LadderVal],
@@ -431,6 +472,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse)
 						      Peaks);
 				}
 			    }
+			    } // new addition
 			} while(CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
 		    } // MassPeak
 		} //iMod
@@ -508,7 +550,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 	// now calculate scores and sort
 	for(Threshold = ThreshStart; Threshold <= ThreshEnd; 
 	    Threshold += ThreshInc) {
-	    CalcNSort(ScoreList, Threshold, Peaks);
+	    CalcNSort(ScoreList, Threshold, Peaks, false);
 	    if(!ScoreList.empty()) {
 		_TRACE("Threshold = " << Threshold <<
 		       "EVal = " << ScoreList.begin()->first);
@@ -520,18 +562,18 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 	    ScoreList.clear();
 	}
 	_TRACE("Min Threshold = " << MinThreshold);
-	CalcNSort(ScoreList, MinThreshold, Peaks);
+	CalcNSort(ScoreList, MinThreshold, Peaks, true);
 		
 		
 	// keep a list of redundant peptides
-	map <string, CRef< CMSHits > > PepDone;
+	map <string, CMSHits * > PepDone;
 	// add to hitset by score
 	for(iScoreList = ScoreList.begin(), iSearch = 0;
 	    iScoreList != ScoreList.end();
 	    iScoreList++, iSearch++) {
 	    
-	    CRef< CMSHits > Hit;
-	    CRef< CMSPepHit > Pephit;
+	    CMSHits * Hit;
+	    CMSPepHit * Pephit;
 			
 	    MSHit = iScoreList->second;
 	    header = 0;
@@ -558,7 +600,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		    Hit = PepDone[seqstring];
 		}
 		else {
-		    Hit.Reset(new CMSHits);
+		    Hit = new CMSHits;
 		    Hit->SetPepstring(seqstring);
 		    double Score = iScoreList->first;
 		    Hit->SetEvalue(Score);
@@ -566,17 +608,19 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 				   GetPeptidesExamined(MSHit->
 						       GetCharge()));	   
 		    Hit->SetCharge(MSHit->GetCharge());
-		    HitSet->SetHits().push_back(Hit);  
+		    CRef<CMSHits> hitref(Hit);
+		    HitSet->SetHits().push_back(hitref);  
 		    PepDone[seqstring] = Hit;
 		}
 		
-		Pephit.Reset(new CMSPepHit);
+		Pephit = new CMSPepHit;
 				
 		Pephit->SetStart(MSHit->GetStart());
 		Pephit->SetStop(MSHit->GetStop());
 		Pephit->SetGi(bestid->data.intvalue);
 		Pephit->SetDefline(deflinestring);
-		Hit->SetPephits().push_back(Pephit);
+		CRef<CMSPepHit> pepref(Pephit);
+		Hit->SetPephits().push_back(pepref);
 		MemFree(blastdefline);
 		SeqIdSetFree(sip);
 	    }
@@ -587,7 +631,7 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 
 
 // calculate the evalues of the top hits and sort
-void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
+void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks, bool NewScore)
 {
     int iCharges;
     int iHitList;
@@ -630,10 +674,24 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
 				       Threshold);
 	    if ( a < 0) continue;  // error return;
 	    if(HitList[iHitList].GetHits() < a) continue;
-	    double pval =
-		CalcPvalue(a, HitList[iHitList].
-			   GetHits(Threshold, Peaks->GetMaxI(Which)),
-			   Peaks->GetPeptidesExamined(Charge));
+	    double pval;
+	    if(NewScore) {
+		int High, Low, NumPeaks, NumLo, NumHi;
+		Peaks->HighLow(High, Low, NumPeaks, tempMass, Charge, Threshold, NumLo, NumHi);
+ 
+		double TopHitProb = ((double)MSNUMTOP)/NumPeaks;
+		double Normal = CalcNormalTopHit(a, TopHitProb);
+		pval = CalcPvalueTopHit(a, 
+					HitList[iHitList].GetHits(Threshold, Peaks->GetMaxI(Which)),
+					Peaks->GetPeptidesExamined(Charge), Normal, TopHitProb);
+		cerr << "pval = " << pval << " Normal = " << Normal << endl;
+	    }
+	    else {
+		pval =
+		    CalcPvalue(a, HitList[iHitList].
+			       GetHits(Threshold, Peaks->GetMaxI(Which)),
+			       Peaks->GetPeptidesExamined(Charge));
+	    }
 	    double eval = pval * Peaks->GetPeptidesExamined(Charge);
 	    ScoreList.insert(pair<const double, CMSHit *> 
 			     (eval, &(HitList[iHitList])));
@@ -641,6 +699,19 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
     } 
 }
 
+
+//calculates the poisson times the top hit probability
+double CSearch::CalcPoissonTopHit(double Mean, int i, double TopHitProb)
+{
+double retval;
+#ifdef NCBI_OS_MSWIN
+    retval =  exp(-Mean) * pow(Mean, i) / exp(LnGamma(i+1));
+#else
+    retval =  exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
+#endif
+retval *= 1.0L - pow((1.0L-TopHitProb), i);
+return retval;
+}
 
 double CSearch::CalcPoisson(double Mean, int i)
 {
@@ -665,6 +736,53 @@ double CSearch::CalcPvalue(double Mean, int Hits, int n)
     if(retval <= 0.0L) retval = numeric_limits<double>::min();
     return retval;
 }
+
+#define MSDOUBLELIMIT 0.0000000000000001L
+// do full summation of probability distribution
+double CSearch::CalcNormalTopHit(double Mean, double TopHitProb)
+{
+    int i;
+    double retval(0.0L), before(-1.0L), increment;
+	
+    for(i = 1; i < 1000; i++) {
+	increment = CalcPoissonTopHit(Mean, i, TopHitProb);
+	// convergence hack -- on linux (at least) convergence test doesn't work
+	// for gcc release build
+	if(increment <= MSDOUBLELIMIT) break;
+	//	if(increment <= numeric_limits<double>::epsilon()) break;
+	retval += increment;
+	if(retval == before) break;  // convergence
+	before = retval;
+    }
+#if 0
+    if(isnan(retval)) {
+	before = 1;
+    }
+#endif
+    return retval;
+}
+
+
+double CSearch::CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb)
+{
+    if(Hits <= 0) return 1.0L;
+	
+    int i;
+    double retval(0.0L), increment;
+	
+    for(i = 1; i < Hits; i++) {
+	increment = CalcPoissonTopHit(Mean, i, TopHitProb);
+	if(increment <= MSDOUBLELIMIT) break;
+	retval += increment;
+    }
+
+    retval /= Normal;
+	
+    retval = 1.0L - pow(retval, n);
+    if(retval <= 0.0L) retval = numeric_limits<double>::min();
+    return retval;
+}
+
 
 double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
 								int Charge, double Threshold)
@@ -724,6 +842,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.12  2003/12/22 21:58:00  lewisg
+top hit code and variable mod fixes
+
 Revision 1.11  2003/12/04 23:39:08  lewisg
 no-overlap hits and various bugfixes
 

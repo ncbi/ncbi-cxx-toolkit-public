@@ -94,6 +94,7 @@ public:
 
     // sees if ladder contains the given mass value
     bool Contains(int MassIndex, int Tolerance);
+    bool ContainsFast(int MassIndex, int Tolerance);
 
     // or's hitlist with hitlist from other ladder
     // takes into account direction
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.5  2003/12/22 21:57:59  lewisg
+  top hit code and variable mod fixes
+
   Revision 1.4  2003/11/18 18:16:03  lewisg
   perf enhancements, ROCn adjusted params made default
 

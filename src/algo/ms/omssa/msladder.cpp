@@ -176,3 +176,24 @@ bool CLadder::Contains(int MassIndex, int Tolerance)
     }
     return false;
 }
+
+
+bool CLadder::ContainsFast(int MassIndex, int Tolerance)
+{
+    int x, l(0), r(LadderIndex - 1);
+    
+    while(l <= r) {
+        x = (l + r)/2;
+        if (Ladder[x] < MassIndex - Tolerance) 
+	    l = x + 1;
+        else if (Ladder[x] > MassIndex + Tolerance)
+	    r = x - 1;
+	else return true;
+    } 
+    
+    if (x < LadderIndex - 1 &&
+	Ladder[x+1] < MassIndex + Tolerance && Ladder[x+1] > 
+	MassIndex - Tolerance) 
+	return true;
+    return false;
+}

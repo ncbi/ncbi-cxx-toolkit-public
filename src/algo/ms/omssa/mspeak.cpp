@@ -160,9 +160,11 @@ void CMSPeak::xCMSPeak(void)
     MZI[MSCULLED1] = 0;
     MZI[MSCULLED2] = 0;
     MZI[MSORIGINAL] = 0;
+    MZI[MSTOPHITS] = 0;
     Used[MSCULLED1] = 0;
     Used[MSCULLED2] = 0;
     Used[MSORIGINAL] = 0;    
+    Used[MSTOPHITS] = 0;    
     PlusOne = 0.8L;
     ComputedCharge = eChargeUnknown;
     Error = eMSHitError_none;
@@ -185,6 +187,8 @@ CMSPeak::~CMSPeak(void)
     delete [] MZI[MSCULLED2];
     delete [] Used[MSCULLED2];
     delete [] MZI[MSORIGINAL];
+    delete [] Used[MSTOPHITS];
+    delete [] MZI[MSTOPHITS];
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
 	delete [] HitList[iCharges];
@@ -235,11 +239,8 @@ void CMSPeak::AddTotalMass(int massin, int tolin)
 
 void CMSPeak::Sort(int Which)
 {
-    if((Which != MSORIGINAL && Which != MSCULLED1 && Which != MSCULLED2) || 
-       !MZI[Which]) return;
+    if(Which < MSORIGINAL || Which >=  MSNUMDATA) return;
     sort(MZI[Which], MZI[Which] + Num[Which], CMZICompare());
-    Min = MZI[Which][0].MZ;
-    Max = MZI[Which][Num[Which]-1].MZ;
     Sorted[Which] = true;
 }
 
@@ -271,7 +272,8 @@ bool CMSPeak::ContainsFast(int value, int Which)
 	else return true;
     } 
     
-    if (MZI[Which][x+1].MZ < value + tol && MZI[Which][x+1].MZ > value - tol) 
+    if (x < Num[Which] - 1 && 
+	MZI[Which][x+1].MZ < value + tol && MZI[Which][x+1].MZ > value - tol) 
 	return true;
     return false;
 }
@@ -326,6 +328,16 @@ int CMSPeak::Compare(CLadder& Ladder, int Which)
 	}
     }
     return retval;
+}
+
+// compares the top peaks to the ladder.  returns immediately when finding a hit
+bool CMSPeak::CompareTop(CLadder& Ladder)
+{
+    unsigned i;
+    for(i = 0; i < Num[MSTOPHITS]; i++) {
+	if(Ladder.ContainsFast(MZI[MSTOPHITS][i].MZ, tol)) return true;
+    }
+    return false;
 }
 
 
@@ -620,6 +632,25 @@ void CMSPeak::CullAll(double Threshold, int SingleWindow,
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
 	SmartCull(Threshold, GetCharges()[iCharges], SingleWindow,
 		  DoubleWindow, SingleHit, DoubleHit);
+
+    // make the high intensity list
+    iCharges = GetNumCharges() - 1;
+    int Which = GetWhich(GetCharges()[iCharges]);
+    CMZI *Temp = new CMZI [Num[Which]]; // temporary holder
+    copy(MZI[Which], MZI[Which] + Num[Which], Temp);
+    sort(Temp, Temp + Num[Which], CMZICompareIntensity());
+
+    if(Num[Which] > MSNUMTOP)  Num[MSTOPHITS] = MSNUMTOP;
+    else  Num[MSTOPHITS] = Num[Which];
+
+    MZI[MSTOPHITS] = new CMZI [Num[MSTOPHITS]]; // holds highest hits
+    Used[MSTOPHITS] = new char [Num[MSTOPHITS]];
+    ClearUsed(MSTOPHITS);
+    Sorted[MSTOPHITS] = false;
+    copy(Temp, Temp + Num[MSTOPHITS], MZI[MSTOPHITS]);
+    Sort(MSTOPHITS);
+
+    delete [] Temp;
 }
 
 // check to see if TestMZ is Diff away from BigMZ
@@ -645,7 +676,7 @@ bool CMSPeak::IsMajorPeak(int BigMZ, int TestMZ, int tol)
 void CMSPeak::SmartCull(double Threshold, int Charge, int SingleWindow,
 			int DoubleWindow, int SingleNum, int DoubleNum)
 {
-    sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompare());
+    //       sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompare());
     sort(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL], CMZICompareIntensity());
     Sorted[MSORIGINAL] = false;
     double Precursor;

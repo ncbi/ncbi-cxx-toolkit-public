@@ -90,24 +90,32 @@ public:
 		       CLadder& YLadder, CLadder& B2Ladder,
 		       CLadder& Y2Ladder, CMSPeak *Peaks,
 		       bool OrLadders,  TMassPeak *MassPeak);
+    bool CompareLaddersTop(CLadder& BLadder,
+		       CLadder& YLadder, CLadder& B2Ladder,
+		       CLadder& Y2Ladder, CMSPeak *Peaks,
+		       TMassPeak *MassPeak);
 
     void InitModIndex(int *ModIndex, int& iMod, int& NumMod);
     void MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& NumMod);
     bool CalcModIndex(int *ModIndex, int& iMod, int& NumMod);
-    unsigned MakeIntFromBoolMap(bool *ModMask,  int& iMod);
+    unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
     ReadDBFILEPtr Getrdfp(void) { return rdfp; }
     int Getnumseq(void) { return numseq; }
     double CalcPoisson(double Mean, int i);
     double CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
 			   int Charge, double Threshold);
     double CalcPvalue(double Mean, int Hits, int n);
+double CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb);
+double CalcNormalTopHit(double Mean, double TopHitProb);
+double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
 
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		   double ThreshStart, double ThreshEnd,
 		   double ThreshInc);
     // calculate the evalues of the top hits and sort
-    void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks);
+    void CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks,
+		   bool NewScore);
 
 private:
     ReadDBFILEPtr rdfp; 
@@ -137,10 +145,10 @@ inline void CSearch::MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& N
 	ModMask[ModIndex[j]] = true;
 }
 
-inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& iMod)
+inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& NumMod)
 {
     int j, retval(0);
-    for(j = 0; j < iMod; j++)
+    for(j = 0; j < NumMod - 1; j++)
 	if(ModMask[j]) retval |= 1 << j;
     return retval;
 }
@@ -168,6 +176,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.5  2003/12/22 21:58:00  lewisg
+  top hit code and variable mod fixes
+
   Revision 1.4  2003/12/04 23:39:08  lewisg
   no-overlap hits and various bugfixes
 
