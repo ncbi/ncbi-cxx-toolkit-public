@@ -19,7 +19,9 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
                                      const CDataToolGeneratedSrc&  src,                                   
                                      SCustomBuildInfo*             build_info);
 
+
 //-----------------------------------------------------------------------------
+
 CMsvcProjectGenerator::CMsvcProjectGenerator(const list<SConfigInfo>& configs)
     :m_Configs(configs)
 {
@@ -34,8 +36,9 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 void CMsvcProjectGenerator::Generate(const CProjItem& prj)
 {
     // Already have it
-    if ( prj.m_ProjType == CProjKey::eMsvc)
+    if ( prj.m_ProjType == CProjKey::eMsvc) {
         return;
+    }
 
     CMsvcPrjProjectContext project_context(prj);
     CVisualStudioProject xmlprj;
@@ -53,7 +56,6 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
         } else {
             project_configs.push_back(cfg_info);
         }
-
     }
     if (project_configs.empty()) {
         LOG_POST(Info << "WARNING: Project " << project_context.ProjectId()
@@ -61,19 +63,19 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
         return;
     }
     
+    // Attributes:
     {{
-        // Attributes:
         xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
         xmlprj.SetAttlist().SetVersion     (MSVC_PROJECT_VERSION);
         xmlprj.SetAttlist().SetName        (project_context.ProjectName());
         xmlprj.SetAttlist().SetKeyword     (MSVC_PROJECT_KEYWORD_WIN32);
     }}
-    
+
+    // Platforms
     {{
-        // Platforms
-         CRef<CPlatform> platform(new CPlatform(""));
-         platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
-         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
+        CRef<CPlatform> platform(new CPlatform(""));
+        platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
+        xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
     ITERATE(list<SConfigInfo>, p , project_configs) {
@@ -92,323 +94,185 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
 #define BIND_TOOLS(tool, msvctool, X) \
                   tool->SetAttlist().Set##X(msvctool->X())
 
+        // Configuration
         {{
-            //Configuration
-
-            //Name
             BIND_TOOLS(conf, msvc_tool.Configuration(), Name);
-            
-            //OutputDirectory
             BIND_TOOLS(conf, msvc_tool.Configuration(), OutputDirectory);
-
-            //IntermediateDirectory
             BIND_TOOLS(conf, msvc_tool.Configuration(), IntermediateDirectory);
-
-            //ConfigurationType
             BIND_TOOLS(conf, msvc_tool.Configuration(), ConfigurationType);
-
-            //CharacterSet
             BIND_TOOLS(conf, msvc_tool.Configuration(), CharacterSet);
         }}
-
-        
+       
+        // Compiler
         {{
-            //Compiler
             CRef<CTool> tool(new CTool("")); 
 
-            //Name
             BIND_TOOLS(tool, msvc_tool.Compiler(), Name);
-            
-            //Optimization
             BIND_TOOLS(tool, msvc_tool.Compiler(), Optimization);
-
             //AdditionalIncludeDirectories - more dirs are coming from makefile
             BIND_TOOLS(tool, 
                        msvc_tool.Compiler(), AdditionalIncludeDirectories);
-
-            //PreprocessorDefinitions
             BIND_TOOLS(tool, msvc_tool.Compiler(), PreprocessorDefinitions);
-            
-            //MinimalRebuild
             BIND_TOOLS(tool, msvc_tool.Compiler(), MinimalRebuild);
-
-            //BasicRuntimeChecks
             BIND_TOOLS(tool, msvc_tool.Compiler(), BasicRuntimeChecks);
-
-            //RuntimeLibrary
             BIND_TOOLS(tool, msvc_tool.Compiler(), RuntimeLibrary);
-
-            //RuntimeTypeInfo
             BIND_TOOLS(tool, msvc_tool.Compiler(), RuntimeTypeInfo);
-
-            //UsePrecompiledHeader
             BIND_TOOLS(tool, msvc_tool.Compiler(), UsePrecompiledHeader);
-
-            //WarningLevel
             BIND_TOOLS(tool, msvc_tool.Compiler(), WarningLevel);
-
-            //Detect64BitPortabilityProblems
-            BIND_TOOLS(tool, 
+            BIND_TOOLS(tool,
                        msvc_tool.Compiler(), Detect64BitPortabilityProblems);
-
-            //DebugInformationFormat
             BIND_TOOLS(tool, msvc_tool.Compiler(), DebugInformationFormat);
-
-            //CompileAs
             BIND_TOOLS(tool, msvc_tool.Compiler(), CompileAs);
-            
-            //InlineFunctionExpansion
             BIND_TOOLS(tool, msvc_tool.Compiler(), InlineFunctionExpansion);
-
-            //OmitFramePointers
             BIND_TOOLS(tool, msvc_tool.Compiler(), OmitFramePointers);
-
-            //StringPooling
             BIND_TOOLS(tool, msvc_tool.Compiler(), StringPooling);
-
-            //EnableFunctionLevelLinking
             BIND_TOOLS(tool, msvc_tool.Compiler(), EnableFunctionLevelLinking);
-
-            //OptimizeForProcessor
             BIND_TOOLS(tool, msvc_tool.Compiler(), OptimizeForProcessor);
-            
-            //StructMemberAlignment 
             BIND_TOOLS(tool, msvc_tool.Compiler(), StructMemberAlignment);
-            
-            //CallingConvention
             BIND_TOOLS(tool, msvc_tool.Compiler(), CallingConvention);
-            
-            //IgnoreStandardIncludePath
             BIND_TOOLS(tool, msvc_tool.Compiler(), IgnoreStandardIncludePath);
-            
-            //ExceptionHandling
             BIND_TOOLS(tool, msvc_tool.Compiler(), ExceptionHandling);
-            
-            //BufferSecurityCheck
             BIND_TOOLS(tool, msvc_tool.Compiler(), BufferSecurityCheck);
-            
-            //DisableSpecificWarnings
             BIND_TOOLS(tool, msvc_tool.Compiler(), DisableSpecificWarnings);
-            
-            //UndefinePreprocessorDefinitions
             BIND_TOOLS(tool, 
                        msvc_tool.Compiler(), UndefinePreprocessorDefinitions);
-            
-            //AdditionalOptions
             BIND_TOOLS(tool, msvc_tool.Compiler(), AdditionalOptions);
-            
-            //GlobalOptimizations
             BIND_TOOLS(tool, msvc_tool.Compiler(), GlobalOptimizations);
-            
-            //FavorSizeOrSpeed
             BIND_TOOLS(tool, msvc_tool.Compiler(), FavorSizeOrSpeed);
-            
-            //BrowseInformation
             BIND_TOOLS(tool, msvc_tool.Compiler(), BrowseInformation);
 
             conf->SetTool().push_back(tool);
         }}
 
+        // Linker
         {{
-            //Linker
             CRef<CTool> tool(new CTool(""));
 
-            //Name
             BIND_TOOLS(tool, msvc_tool.Linker(), Name);
-
-            //AdditionalOptions
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalOptions);
-            
-            //OutputFile
             BIND_TOOLS(tool, msvc_tool.Linker(), OutputFile);
-
-            //LinkIncremental
             BIND_TOOLS(tool, msvc_tool.Linker(), LinkIncremental);
-            
-            //GenerateDebugInformation
             BIND_TOOLS(tool, msvc_tool.Linker(), GenerateDebugInformation);
-            
-            //ProgramDatabaseFile
             BIND_TOOLS(tool, msvc_tool.Linker(), ProgramDatabaseFile);
-
-            //SubSystem
             BIND_TOOLS(tool, msvc_tool.Linker(), SubSystem);
-
-            //ImportLibrary
             BIND_TOOLS(tool, msvc_tool.Linker(), ImportLibrary);
-
-            //TargetMachine
             BIND_TOOLS(tool, msvc_tool.Linker(), TargetMachine);
-
-            //OptimizeReferences
             BIND_TOOLS(tool, msvc_tool.Linker(), OptimizeReferences);
-
-            //EnableCOMDATFolding
             BIND_TOOLS(tool, msvc_tool.Linker(), EnableCOMDATFolding);
-
-            //IgnoreAllDefaultLibraries
             BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreAllDefaultLibraries);
-            
-            //IgnoreDefaultLibraryNames
             BIND_TOOLS(tool, msvc_tool.Linker(), IgnoreDefaultLibraryNames);
-            
-            //AdditionalLibraryDirectories
             BIND_TOOLS(tool, msvc_tool.Linker(), AdditionalLibraryDirectories);
 
             conf->SetTool().push_back(tool);
         }}
 
+        // Librarian
         {{
-            //Librarian
             CRef<CTool> tool(new CTool(""));
 
-            //Name
             BIND_TOOLS(tool, msvc_tool.Librarian(), Name);
-
-            //AdditionalOptions
             BIND_TOOLS(tool, msvc_tool.Librarian(), AdditionalOptions);
-
-            //OutputFile
             BIND_TOOLS(tool, msvc_tool.Librarian(), OutputFile);
-
-            //IgnoreAllDefaultLibraries
             BIND_TOOLS(tool, msvc_tool.Librarian(), IgnoreAllDefaultLibraries);
-
-            //IgnoreDefaultLibraryNames
             BIND_TOOLS(tool, msvc_tool.Librarian(), IgnoreDefaultLibraryNames);
-
-            //AdditionalLibraryDirectories
             BIND_TOOLS(tool, 
                        msvc_tool.Librarian(), AdditionalLibraryDirectories);
 
             conf->SetTool().push_back(tool);
         }}
 
+        // CustomBuildTool
         {{
-            //CustomBuildTool
             CRef<CTool> tool(new CTool(""));
-
-            //Name
             BIND_TOOLS(tool, msvc_tool.CustomBuid(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //MIDL
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // MIDL
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.MIDL(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //PostBuildEvent
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // PostBuildEvent
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.PostBuildEvent(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //PreBuildEvent
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // PreBuildEvent
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), Name);
-            //CommandLine
             BIND_TOOLS(tool, msvc_tool.PreBuildEvent(), CommandLine);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //PreLinkEvent
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // PreLinkEvent
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.PreLinkEvent(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //ResourceCompiler
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // ResourceCompiler
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Name);
-             
-            //AdditionalIncludeDirectories
             BIND_TOOLS(tool, 
                        msvc_tool.ResourceCompiler(), 
                        AdditionalIncludeDirectories);
-
-            //AdditionalOptions
             BIND_TOOLS(tool, 
                        msvc_tool.ResourceCompiler(), 
                        AdditionalOptions);
-
-            //Culture
             BIND_TOOLS(tool, msvc_tool.ResourceCompiler(), Culture);
-
-            //PreprocessorDefinitions
             BIND_TOOLS(tool, 
                        msvc_tool.ResourceCompiler(), 
                        PreprocessorDefinitions);
-            
-
-
             conf->SetTool().push_back(tool);
         }}
 
+        // WebServiceProxyGenerator
         {{
-            //WebServiceProxyGenerator
             CRef<CTool> tool(new CTool(""));
-
-            //Name
             BIND_TOOLS(tool, msvc_tool.WebServiceProxyGenerator(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //XMLDataGenerator
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // XMLDataGenerator
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.XMLDataGenerator(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //ManagedWrapperGenerator
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // ManagedWrapperGenerator
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, msvc_tool.ManagedWrapperGenerator(), Name);
-
             conf->SetTool().push_back(tool);
         }}
-        {{
-            //AuxiliaryManagedWrapperGenerator
-            CRef<CTool> tool(new CTool(""));
 
-            //Name
+        // AuxiliaryManagedWrapperGenerator
+        {{
+            CRef<CTool> tool(new CTool(""));
             BIND_TOOLS(tool, 
                        msvc_tool.AuxiliaryManagedWrapperGenerator(),
                        Name);
-
             conf->SetTool().push_back(tool);
         }}
 
         xmlprj.SetConfigurations().SetConfiguration().push_back(conf);
     }
+    // References
     {{
-        //References
         xmlprj.SetReferences("");
     }}
 
     // Collect all source, header, inline, resource files
-    CMsvcPrjFilesCollector      collector(project_context, prj);
+    CMsvcPrjFilesCollector collector(project_context, project_configs, prj);
     
     // Insert sources, headers, inlines:
     auto_ptr<IFilesToProjectInserter> inserter;
@@ -445,7 +309,6 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
         inserter->AddInlineFile(rel_source_file);
     }
     inserter->Finalize();
-
 
     {{
         //Resource Files - header files - empty
@@ -524,7 +387,6 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
     project_path += MSVC_PROJECT_FILE_EXT;
 
     SaveIfNewer(project_path, xmlprj);
-
 }
 
 static 
@@ -593,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/10/12 16:18:26  ivanov
+ * Added configurable file support
+ *
  * Revision 1.36  2004/08/20 13:35:46  gouriano
  * Added warning when all project configurations are disabled
  *

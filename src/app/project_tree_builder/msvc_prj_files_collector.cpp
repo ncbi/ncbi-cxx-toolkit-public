@@ -1,4 +1,3 @@
-
 /* $Id$
  * ===========================================================================
  *
@@ -27,11 +26,12 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <app/project_tree_builder/stl_msvc_usage.hpp>
 #include <app/project_tree_builder/msvc_prj_files_collector.hpp>
 #include <app/project_tree_builder/msvc_prj_utils.hpp>
-
+#include <app/project_tree_builder/configurable_file.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -42,16 +42,20 @@ static void s_CollectRelPathes(const string&        path_from,
 
 
 //-----------------------------------------------------------------------------
+
 CMsvcPrjFilesCollector::CMsvcPrjFilesCollector
                                 (const CMsvcPrjProjectContext& project_context,
+                                 const list<SConfigInfo>&      project_configs,
                                  const CProjItem&              project)
+    : m_Context(&project_context),
+      m_Configs(&project_configs),
+      m_Project(&project)
 {
-    CollectSources  (project, project_context, &m_SourceFiles);
-    CollectHeaders  (project, project_context, &m_HeaderFiles);
-    CollectInlines  (project, project_context, &m_InlineFiles);
-    CollectResources(project, project_context, &m_ResourceFiles);
+    CollectSources();
+    CollectHeaders();
+    CollectInlines();
+    CollectResources();
 }
-
 
 
 CMsvcPrjFilesCollector::~CMsvcPrjFilesCollector(void)
@@ -76,7 +80,9 @@ const list<string>& CMsvcPrjFilesCollector::InlineFiles(void) const
     return m_InlineFiles;
 }
 
+
 // source files helpers -------------------------------------------------------
+
 const list<string>& CMsvcPrjFilesCollector::ResourceFiles(void) const
 {
     return m_ResourceFiles;
@@ -150,35 +156,33 @@ static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
 
 
 void 
-CMsvcPrjFilesCollector::CollectSources (const CProjItem&              project,
-                                        const CMsvcPrjProjectContext& context,
-                                        list<string>*                 rel_pathes)
+CMsvcPrjFilesCollector::CollectSources(void)
 {
-    rel_pathes->clear();
+    m_SourceFiles.clear();
 
     list<string> sources;
-    ITERATE(list<string>, p, project.m_Sources) {
+    ITERATE(list<string>, p, m_Project->m_Sources) {
 
         const string& src_rel = *p;
         string src_path = 
-            CDirEntry::ConcatPath(project.m_SourcesBaseDir, src_rel);
+            CDirEntry::ConcatPath(m_Project->m_SourcesBaseDir, src_rel);
         src_path = CDirEntry::NormalizePath(src_path);
 
         sources.push_back(src_path);
     }
 
     list<string> included_sources;
-    context.GetMsvcProjectMakefile().GetAdditionalSourceFiles //TODO
+    m_Context->GetMsvcProjectMakefile().GetAdditionalSourceFiles //TODO
                                             (SConfigInfo(),&included_sources);
 
     ITERATE(list<string>, p, included_sources) {
         sources.push_back(CDirEntry::NormalizePath
                                         (CDirEntry::ConcatPath
-                                              (project.m_SourcesBaseDir, *p)));
+                                              (m_Project->m_SourcesBaseDir, *p)));
     }
 
     list<string> excluded_sources;
-    context.GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
+    m_Context->GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
                                             (SConfigInfo(), &excluded_sources);
     PSourcesExclude pred(excluded_sources);
     EraseIf(sources, pred);
@@ -188,18 +192,48 @@ CMsvcPrjFilesCollector::CollectSources (const CProjItem&              project,
         const string& abs_path = *p; // whithout ext.
 
         string ext = SourceFileExt(abs_path);
-        if ( !ext.empty() ) {
+        if ( NStr::EndsWith(ext, ".in") ) {
+            // Special case: skip configurable file generation
+            // if configurations was not specified
+            if ( m_Configs->empty() ) {
+                m_SourceFiles.push_back(
+                    CDirEntry::CreateRelativePath(m_Context->ProjectDir(),
+                                                  abs_path));
+            } else {
+                // configurable source file
+                string orig_ext = NStr::Replace(ext, ".in", "");
+                string dst_path;
+                CDirEntry::SplitPath(abs_path, NULL, &dst_path, NULL);
+                dst_path = CDirEntry::MakePath(m_Context->ProjectDir(), dst_path);
+
+                // Create configurable file for each enabled configuration
+                ITERATE(list<SConfigInfo>, p , *m_Configs) {
+                    const SConfigInfo& cfg_info = *p;
+                    string file_dst_path;
+                    file_dst_path = dst_path + "." +
+                                    ConfigurableFileSuffix(cfg_info.m_Name)+
+                                    orig_ext;
+                    CreateConfigurableFile(abs_path + ext, file_dst_path,
+                                           cfg_info.m_Name);
+                }
+                dst_path += ".@config@" + orig_ext;
+                m_SourceFiles.push_back(
+                    CDirEntry::CreateRelativePath(m_Context->ProjectDir(),
+                                                  dst_path));
+                }
+        }
+        else if ( !ext.empty() ) {
             // add ext to file
             string source_file_abs_path = abs_path + ext;
-            rel_pathes->push_back(
-                CDirEntry::CreateRelativePath(context.ProjectDir(), 
+            m_SourceFiles.push_back(
+                CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               source_file_abs_path));
         } 
-        else if ( s_IsProducedByDatatool(abs_path, project) ||
+        else if ( s_IsProducedByDatatool(abs_path, *m_Project) ||
                   s_IsInsideDatatoolSourceDir(abs_path) ) {
             // .cpp file extension
-            rel_pathes->push_back(
-                CDirEntry::CreateRelativePath(context.ProjectDir(), 
+            m_SourceFiles.push_back(
+                CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                               abs_path + ".cpp"));
         } else {
             LOG_POST(Warning <<"Can not resolve/find source file : " + abs_path);
@@ -210,59 +244,56 @@ CMsvcPrjFilesCollector::CollectSources (const CProjItem&              project,
 
 // header files helpers -------------------------------------------------------
 void 
-CMsvcPrjFilesCollector::CollectHeaders(const CProjItem&              project,
-                                       const CMsvcPrjProjectContext& context,
-                                       list<string>*                 rel_pathes)
+CMsvcPrjFilesCollector::CollectHeaders(void)
 {
-    rel_pathes->clear();
-    s_CollectRelPathes(context.ProjectDir(), context.IncludeDirsAbs(), rel_pathes);
+    m_HeaderFiles.clear();
+    s_CollectRelPathes(m_Context->ProjectDir(), m_Context->IncludeDirsAbs(),
+                       &m_HeaderFiles);
 }
 
 
 // inline files helpers -------------------------------------------------------
+
 void 
-CMsvcPrjFilesCollector::CollectInlines(const CProjItem&              project,
-                                       const CMsvcPrjProjectContext& context,
-                                       list<string>*                 rel_pathes)
+CMsvcPrjFilesCollector::CollectInlines(void)
 {
-    rel_pathes->clear();
-    s_CollectRelPathes(context.ProjectDir(), context.InlineDirsAbs(), rel_pathes);
+    m_InlineFiles.clear();
+    s_CollectRelPathes(m_Context->ProjectDir(), m_Context->InlineDirsAbs(),
+                       &m_InlineFiles);
 }
 
 
 // resource files helpers -------------------------------------------------------
+
 void 
-CMsvcPrjFilesCollector::CollectResources
-    (const CProjItem&              project,
-     const CMsvcPrjProjectContext& context,
-     list<string>*                 rel_pathes)
+CMsvcPrjFilesCollector::CollectResources(void)
 {
-    rel_pathes->clear();
+    m_ResourceFiles.clear();
 
     // resources from msvc makefile - first priority
     list<string> included_sources;
-    context.GetMsvcProjectMakefile().GetResourceFiles
+    m_Context->GetMsvcProjectMakefile().GetResourceFiles
                                             (SConfigInfo(),&included_sources);
     list<string> sources;
     ITERATE(list<string>, p, included_sources) {
         sources.push_back(CDirEntry::NormalizePath
                                         (CDirEntry::ConcatPath
-                                              (project.m_SourcesBaseDir, *p)));
+                                              (m_Project->m_SourcesBaseDir, *p)));
     }
 
     ITERATE(list<string>, p, sources) {
 
         const string& abs_path = *p; // whith ext.
-        rel_pathes->push_back(
-            CDirEntry::CreateRelativePath(context.ProjectDir(), 
+        m_ResourceFiles.push_back(
+            CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                           abs_path));
     }
-    if ( !rel_pathes->empty() )
+    if ( !m_ResourceFiles.empty() )
         return;
 
     // if there are no makefile resources - 'll use defaults
     string default_rc;
-    if (project.m_ProjType == CProjKey::eApp) {
+    if (m_Project->m_ProjType == CProjKey::eApp) {
         default_rc = GetApp().GetSite().GetAppDefaultResource();
     }
     if ( !default_rc.empty() ) {
@@ -272,8 +303,8 @@ CMsvcPrjFilesCollector::CollectResources
                                   GetApp().GetRegSettings().m_CompilersSubdir);
         abs_path = CDirEntry::ConcatPath(abs_path, default_rc);
         abs_path = CDirEntry::NormalizePath(abs_path);
-        rel_pathes->push_back(
-            CDirEntry::CreateRelativePath(context.ProjectDir(), 
+        m_ResourceFiles.push_back(
+            CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
                                           abs_path));
     }
 }
@@ -298,7 +329,7 @@ static void s_CollectRelPathes(const string&        path_from,
         SIZE_TYPE negation_pos = value.find('!');
         bool remove = negation_pos != NPOS;
         if (remove) {
-            value = NStr::Replace(value,"!",kEmptyStr);
+            value = NStr::Replace(value, "!", kEmptyStr);
             if (value.empty() ||
                 value[value.length()-1] == CDirEntry::GetPathSeparator()) {
                 continue;
@@ -333,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/12 16:18:26  ivanov
+ * Added configurable file support
+ *
  * Revision 1.7  2004/10/12 13:27:35  gouriano
  * Added possibility to specify which headers to include into project
  *

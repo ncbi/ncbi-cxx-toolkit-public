@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 
-CVisualStudioProject * LoadFromXmlFile(const string& file_path)
+CVisualStudioProject* LoadFromXmlFile(const string& file_path)
 {
     auto_ptr<CObjectIStream> in(CObjectIStream::Open(eSerial_Xml, 
                                                     file_path, 
@@ -54,8 +54,8 @@ CVisualStudioProject * LoadFromXmlFile(const string& file_path)
 }
 
 
-void SaveToXmlFile  (const string&               file_path, 
-                     const CVisualStudioProject& project)
+void SaveToXmlFile(const string&               file_path, 
+                   const CVisualStudioProject& project)
 {
     // Create dir if no such dir...
     string dir;
@@ -65,8 +65,8 @@ void SaveToXmlFile  (const string&               file_path,
         CDir(dir).CreatePath();
     }
 
-    CNcbiOfstream  ofs(file_path.c_str(), 
-                       IOS_BASE::out | IOS_BASE::trunc );
+    CNcbiOfstream ofs(file_path.c_str(), 
+                      IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs )
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
@@ -133,15 +133,14 @@ void PromoteIfDifferent(const string& present_path,
 }
 
 
-void SaveIfNewer    (const string&               file_path, 
-                     const CVisualStudioProject& project)
+void SaveIfNewer(const string&               file_path, 
+                 const CVisualStudioProject& project)
 {
     // If no such file then simple write it
     if ( !CDirEntry(file_path).Exists() ) {
         SaveToXmlFile(file_path, project);
         return;
     }
-
 
     // Save new file to tmp path.
     string candidate_file_path = file_path + ".candidate";
@@ -150,6 +149,7 @@ void SaveIfNewer    (const string&               file_path,
 }
 
 //-----------------------------------------------------------------------------
+
 class CGuidGenerator
 {
 public:
@@ -167,7 +167,6 @@ private:
     string DoGenerateSlnGUID(void);
     set<string> m_Trace;
 };
-
 
 
 string GenerateSlnGUID(void)
@@ -226,15 +225,22 @@ string SourceFileExt(const string& file_path)
     if (explicit_cpp  &&  CFile(file_path).Exists()) {
         return ".cpp";
     }
-
-    string file_path_cpp = file_path + ".cpp";
-    if ( CFile(file_path_cpp).Exists() ) 
+    string file = file_path + ".cpp";
+    if ( CFile(file).Exists() ) {
         return ".cpp";
-
-    string file_path_c = file_path + ".c";
-    if ( CFile(file_path_c).Exists() ) 
+    }
+    file += ".in";
+    if ( CFile(file).Exists() ) {
+        return ".cpp.in";
+    }
+    file = file_path + ".c";
+    if ( CFile(file).Exists() ) {
         return ".c";
-
+    }
+    file += ".in";
+    if ( CFile(file).Exists() ) {
+        return ".c.in";
+    }
     return "";
 }
 
@@ -276,6 +282,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 
 //-----------------------------------------------------------------------------
+
 CMsvc7RegSettings::CMsvc7RegSettings(void)
 {
     //TODO
@@ -333,13 +340,14 @@ string ConfigName(const string& config)
 
 
 //-----------------------------------------------------------------------------
+
 CSrcToFilterInserterWithPch::CSrcToFilterInserterWithPch
                                         (const string&            project_id,
                                          const list<SConfigInfo>& configs,
                                          const string&            project_dir)
-    :m_ProjectId  (project_id),
-     m_Configs    (configs),
-     m_ProjectDir (project_dir)
+    : m_ProjectId  (project_id),
+      m_Configs    (configs),
+      m_ProjectDir (project_dir)
 {
 }
 
@@ -348,34 +356,37 @@ CSrcToFilterInserterWithPch::~CSrcToFilterInserterWithPch(void)
 {
 }
 
-void 
-CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter, 
-                                        const string&   rel_source_file)
+
+void CSrcToFilterInserterWithPch::InsertFile(CRef<CFilter>&  filter, 
+                                             const string&   rel_source_file,
+                                             const string&   enable_cfg)
 {
-    CRef< CFFile > file(new CFFile());
+    CRef<CFFile> file(new CFFile());
     file->SetAttlist().SetRelativePath(rel_source_file);
     //
     TPch pch_usage = DefinePchUsage(m_ProjectDir, rel_source_file);
     //
-    ITERATE(list<SConfigInfo>, n , m_Configs) {
-        // Iterate all configurations
-        const string& config = (*n).m_Name;
-
+    // For each configuration
+    ITERATE(list<SConfigInfo>, iconfig, m_Configs) {
+        const string& config = (*iconfig).m_Name;
         CRef<CFileConfiguration> file_config(new CFileConfiguration());
         file_config->SetAttlist().SetName(ConfigName(config));
+        if ( !enable_cfg.empty()  &&  enable_cfg != config ) {
+            file_config->SetAttlist().SetExcludedFromBuild("TRUE");
+        }
 
         CRef<CTool> compilerl_tool(new CTool(""));
         compilerl_tool->SetAttlist().SetName("VCCLCompilerTool");
 
         if (pch_usage.first == eCreate) {
             compilerl_tool->SetAttlist().SetPreprocessorDefinitions
-                             (GetApp().GetMetaMakefile().GetPchUsageDefine());
+                                (GetApp().GetMetaMakefile().GetPchUsageDefine());
             compilerl_tool->SetAttlist().SetUsePrecompiledHeader("1");
             compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
-                                                            (pch_usage.second);
+                                                            (pch_usage.second); 
         } else if (pch_usage.first == eUse) {
             compilerl_tool->SetAttlist().SetPreprocessorDefinitions
-                              (GetApp().GetMetaMakefile().GetPchUsageDefine());
+                                (GetApp().GetMetaMakefile().GetPchUsageDefine());
             compilerl_tool->SetAttlist().SetUsePrecompiledHeader("3");
             compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough
                                                             (pch_usage.second);
@@ -385,13 +396,34 @@ CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter,
             compilerl_tool->SetAttlist().SetPrecompiledHeaderThrough("");
         }
         file_config->SetTool(*compilerl_tool);
-
         file->SetFileConfiguration().push_back(file_config);
     }
-    //
     CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
     ce->SetFile(*file);
     filter->SetFF().SetFF().push_back(ce);
+    return;
+}
+
+
+void 
+CSrcToFilterInserterWithPch::operator()(CRef<CFilter>&  filter, 
+                                        const string&   rel_source_file)
+{
+    if ( NStr::Find(rel_source_file, ".@config@") == NPOS ) {
+        // Ordinary file
+        InsertFile(filter, rel_source_file);
+    } else {
+        // Configurable file
+
+        // Exclude from build all file versions
+        // except one for current configuration.
+        ITERATE(list<SConfigInfo>, icfg, m_Configs) {
+            const string& cfg = (*icfg).m_Name;
+            string source_file = NStr::Replace(rel_source_file,
+                                               ".@config@", "." + cfg);
+            InsertFile(filter, source_file, cfg);
+        }
+    }
 }
 
 CSrcToFilterInserterWithPch::TPch 
@@ -434,16 +466,15 @@ CSrcToFilterInserterWithPch::DefinePchUsage(const string& project_dir,
 
 
 //-----------------------------------------------------------------------------
+
 CBasicProjectsFilesInserter::CBasicProjectsFilesInserter
                                 (CVisualStudioProject*    vcproj,
                                 const string&            project_id,
                                 const list<SConfigInfo>& configs,
                                 const string&            project_dir)
-    :m_Vcproj     (vcproj),
-     m_SrcInserter(project_id, 
-                   configs, 
-                   project_dir),
-     m_Filters    (project_dir)
+    : m_Vcproj     (vcproj),
+      m_SrcInserter(project_id, configs, project_dir),
+      m_Filters    (project_dir)
 {
     m_Filters.Initilize();
 }
@@ -457,10 +488,12 @@ void CBasicProjectsFilesInserter::AddSourceFile(const string& rel_file_path)
 {
     m_Filters.AddSourceFile(m_SrcInserter, rel_file_path);
 }
+
 void CBasicProjectsFilesInserter::AddHeaderFile(const string& rel_file_path)
 {
     m_Filters.AddHeaderFile(rel_file_path);
 }
+
 void CBasicProjectsFilesInserter::AddInlineFile(const string& rel_file_path)
 {
     m_Filters.AddInlineFile(rel_file_path);
@@ -469,14 +502,12 @@ void CBasicProjectsFilesInserter::AddInlineFile(const string& rel_file_path)
 void CBasicProjectsFilesInserter::Finalize(void)
 {
     m_Vcproj->SetFiles().SetFilter().push_back(m_Filters.m_SourceFiles);
-    if ( m_Filters.m_HeaderFilesPrivate->IsSetFF() )
-    {
+    if ( m_Filters.m_HeaderFilesPrivate->IsSetFF() ) {
         CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
         ce->SetFilter(*m_Filters.m_HeaderFilesPrivate);
         m_Filters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
     }
-    if ( m_Filters.m_HeaderFilesImpl->IsSetFF() )
-    {
+    if ( m_Filters.m_HeaderFilesImpl->IsSetFF() )  {
         CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
         ce->SetFilter(*m_Filters.m_HeaderFilesImpl);
         m_Filters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
@@ -486,12 +517,14 @@ void CBasicProjectsFilesInserter::Finalize(void)
 }
 
 //-----------------------------------------------------------------------------
+
 static bool s_IsPrivateHeader(const string& header_abs_path)
 {
     string src_dir = GetApp().GetProjectTreeInfo().m_Src;
     return header_abs_path.find(src_dir) != NPOS;
 
 }
+
 static bool s_IsImplHeader(const string& header_abs_path)
 {
     string src_trait = CDirEntry::GetPathSeparator()        +
@@ -499,7 +532,9 @@ static bool s_IsImplHeader(const string& header_abs_path)
                        CDirEntry::GetPathSeparator();
     return header_abs_path.find(src_trait) != NPOS;
 }
+
 //-----------------------------------------------------------------------------
+
 CBasicProjectsFilesInserter::SFiltersItem::SFiltersItem(void)
 {
 }
@@ -508,7 +543,6 @@ CBasicProjectsFilesInserter::SFiltersItem::SFiltersItem
     :m_ProjectDir(project_dir)
 {
 }
-
 
 void CBasicProjectsFilesInserter::SFiltersItem::Initilize(void)
 {
@@ -577,6 +611,7 @@ void CBasicProjectsFilesInserter::SFiltersItem::AddInlineFile
 
 
 //-----------------------------------------------------------------------------
+
 CDllProjectFilesInserter::CDllProjectFilesInserter
                                 (CVisualStudioProject*    vcproj,
                                  const CProjKey           dll_project_key,
@@ -704,14 +739,12 @@ void CDllProjectFilesInserter::Finalize(void)
 {
     m_Vcproj->SetFiles().SetFilter().push_back(m_PrivateFilters.m_SourceFiles);
 
-    if ( !m_PrivateFilters.m_HeaderFilesPrivate->IsSetFF() )
-    {
+    if ( !m_PrivateFilters.m_HeaderFilesPrivate->IsSetFF() ) {
         CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
         ce->SetFilter(*m_PrivateFilters.m_HeaderFilesPrivate);
         m_PrivateFilters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
     }
-    if ( !m_PrivateFilters.m_HeaderFilesImpl->IsSetFF() )
-    {
+    if ( !m_PrivateFilters.m_HeaderFilesImpl->IsSetFF() ) {
         CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
         ce->SetFilter(*m_PrivateFilters.m_HeaderFilesImpl);
         m_PrivateFilters.m_HeaderFiles->SetFF().SetFF().push_back(ce);
@@ -735,14 +768,12 @@ void CDllProjectFilesInserter::Finalize(void)
             hosted_lib_filter->SetFF().SetFF().push_back(ce);
         }}
 
-        if ( filters_item.m_HeaderFilesPrivate->IsSetFF() )
-        {
+        if ( filters_item.m_HeaderFilesPrivate->IsSetFF() ) {
             CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFilter(*filters_item.m_HeaderFilesPrivate);
             filters_item.m_HeaderFiles->SetFF().SetFF().push_back(ce);
         }
-        if ( filters_item.m_HeaderFilesImpl->IsSetFF() )
-        {
+        if ( filters_item.m_HeaderFilesImpl->IsSetFF() ) {
             CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFilter(*filters_item.m_HeaderFilesImpl);
             filters_item.m_HeaderFiles->SetFF().SetFF().push_back(ce);
@@ -752,7 +783,6 @@ void CDllProjectFilesInserter::Finalize(void)
             ce->SetFilter(*(filters_item.m_HeaderFiles));
             hosted_lib_filter->SetFF().SetFF().push_back(ce);
         }}
-
         {{
             CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
             ce->SetFilter(*(filters_item.m_InlineFiles));
@@ -764,13 +794,12 @@ void CDllProjectFilesInserter::Finalize(void)
             m_HostedLibrariesRootFilter->SetFF().SetFF().push_back(ce);
         }}
     }
-
     m_Vcproj->SetFiles().SetFilter().push_back(m_HostedLibrariesRootFilter);
 }
 
 
-
 //-----------------------------------------------------------------------------
+
 void AddCustomBuildFileToFilter(CRef<CFilter>&          filter, 
                                 const list<SConfigInfo> configs,
                                 const string&           project_dir,
@@ -781,7 +810,7 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
         (CDirEntry::CreateRelativePath(project_dir, 
                                        build_info.m_SourceFile));
 
-    ITERATE(list<SConfigInfo>, n , configs) {
+    ITERATE(list<SConfigInfo>, n, configs) {
         // Iterate all configurations
         const string& config = (*n).m_Name;
 
@@ -811,7 +840,6 @@ bool SameRootDirs(const string& dir1, const string& dir2)
         return false;
     if ( dir2.empty() )
         return false;
-
     return dir1[0] == dir2[0];
 }
 
@@ -820,7 +848,6 @@ void CreateUtilityProject(const string&            name,
                           const list<SConfigInfo>& configs, 
                           CVisualStudioProject*    project)
 {
-    
     {{
         //Attributes:
         project->SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
@@ -844,24 +871,19 @@ void CreateUtilityProject(const string&            name,
         
         CRef<CConfiguration> conf(new CConfiguration());
 
-#define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
+#  define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
 
         {{
             //Configuration
             SET_ATTRIBUTE(conf, Name,               ConfigName(config));
-
             SET_ATTRIBUTE(conf, 
                           OutputDirectory,
                           "$(SolutionDir)$(ConfigurationName)");
-            
             SET_ATTRIBUTE(conf, 
                           IntermediateDirectory,  
                           "$(ConfigurationName)");
-            
             SET_ATTRIBUTE(conf, ConfigurationType,  "10");
-            
             SET_ATTRIBUTE(conf, CharacterSet,       "2");
-            
             SET_ATTRIBUTE(conf, ManagedExtensions,  "TRUE");
         }}
 
@@ -898,7 +920,6 @@ void CreateUtilityProject(const string&            name,
         project->SetReferences("");
     }}
 
- 
     {{
         //Globals
         project->SetGlobals("");
@@ -925,6 +946,7 @@ string CreateProjectName(const CProjKey& project_id)
 
 
 //-----------------------------------------------------------------------------
+
 CBuildType::CBuildType(bool dll_flag)
     :m_Type(dll_flag? eDll: eStatic)
 {
@@ -946,7 +968,6 @@ string CBuildType::GetTypeStr(void) const
     case eDll:
         return "dll";
     }
-
     NCBI_THROW(CProjBulderAppException, 
                eProjectType, 
                NStr::IntToString(m_Type));
@@ -955,10 +976,10 @@ string CBuildType::GetTypeStr(void) const
 
 
 //-----------------------------------------------------------------------------
+
 CDllSrcFilesDistr::CDllSrcFilesDistr(void)
 {
 }
-
 
 void CDllSrcFilesDistr::RegisterSource(const string&   src_file_path, 
                                        const CProjKey& dll_project_id,
@@ -990,7 +1011,6 @@ CProjKey CDllSrcFilesDistr::GetSourceLib(const string&   src_file_path,
         const CProjKey& lib_id = p->second;
         return lib_id;
     }
-
     return CProjKey();
 }
 
@@ -1004,7 +1024,6 @@ CProjKey CDllSrcFilesDistr::GetHeaderLib(const string&   hdr_file_path,
         const CProjKey& lib_id = p->second;
         return lib_id;
     }
-
     return CProjKey();
 }
 
@@ -1017,7 +1036,6 @@ CProjKey CDllSrcFilesDistr::GetInlineLib(const string&   inl_file_path,
         const CProjKey& lib_id = p->second;
         return lib_id;
     }
-
     return CProjKey();
 }
 
@@ -1027,6 +1045,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/10/12 16:18:26  ivanov
+ * Added configurable file support
+ *
  * Revision 1.31  2004/06/15 19:01:08  gorelenk
  * Changed CGuidGenerator::Generate12Chars to fix compilation errors on
  * GCC 2.95.

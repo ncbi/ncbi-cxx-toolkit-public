@@ -1,4 +1,3 @@
-
 /* $Id$
  * ===========================================================================
  *
@@ -265,7 +264,11 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
     }
 
     CMsvcPrjProjectContext lib_context(lib);
-    CMsvcPrjFilesCollector collector(lib_context, lib);
+    // Define empty configuration list -- to skip configurable file
+    // generation on this step. They will be generated later.
+    const list<SConfigInfo> no_configs;
+    CMsvcPrjFilesCollector collector(lib_context, no_configs, lib);
+
     // Sources - all pathes are relative to one dll->m_SourcesBaseDir
     ITERATE(list<string>, p, collector.SourceFiles()) {
         const string& rel_path = *p;
@@ -289,7 +292,6 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
             CDirEntry::CreateRelativePath(dll->m_SourcesBaseDir, 
                                           abs_source_path);
         dll->m_Sources.push_back(new_rel_path);
-
     }
     dll->m_Sources.sort();
     dll->m_Sources.unique();
@@ -391,9 +393,8 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
             dll->m_NcbiCLibs.unique();
 
         }
-
-
     }}
+
     // m_NcbiCLibs
     copy(lib.m_NcbiCLibs.begin(), 
          lib.m_NcbiCLibs.end(), back_inserter(dll->m_NcbiCLibs));
@@ -473,20 +474,19 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
                 //complete = false; // do not create incomplete DLLs
                 //break;
             }
-
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
         }
-        k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib,dll_id));
+        k = tree_src.m_Projects.find(CProjKey(CProjKey::eLib, dll_id));
         if (k != tree_src.m_Projects.end()) {
             const CProjItem& lib = k->second;
             s_AddProjItemToDll(lib, &dll);
         }
-        if ( complete )
+        if ( complete ) {
             tree_dst->m_Projects[CProjKey(CProjKey::eDll, dll_id)] = dll;
+        }
     }
 }
-
 
 
 void CreateDllsList(const CProjectItemsTree& tree_src,
@@ -507,7 +507,6 @@ void CreateDllsList(const CProjectItemsTree& tree_src,
             dll_set.insert(GetApp().GetDllsInfo().GetDllHost(proj_id.Id()));
         }
     }    
-
     copy(dll_set.begin(), dll_set.end(), back_inserter(*dll_ids));
 }
 
@@ -554,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/10/12 16:18:26  ivanov
+ * Added configurable file support
+ *
  * Revision 1.22  2004/10/04 15:31:57  gouriano
  * Take into account LIB_OR_DLL Makefile parameter
  *
