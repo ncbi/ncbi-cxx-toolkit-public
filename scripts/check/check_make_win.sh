@@ -330,9 +330,11 @@ RunTest() {
    # Run check
    CHECK_TIMEOUT="\$x_timeout"
    export CHECK_TIMEOUT
+   start_time="\`date\`"
    check_exec="\$root_dir/scripts/check/check_exec.sh"
    \$check_exec time.exe -p \`eval echo \$x_run_fix\` > \$x_test_out.\$\$ 2>&1
    result=\$?
+   stop_time="\`date\`"
 
    sed -e '/ ["][$][@]["].*\$/ {
       s/^.*: //
@@ -344,10 +346,12 @@ RunTest() {
    exec_time=\`echo \$exec_time | tr '\n' '?'\`
    exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
    rm -f $x_tmp/\$\$.out
-
    rm -f \$x_test_out.\$\$
 
    # Write result of the test into the his output file
+   echo "Start time: \$start_time" >> \$x_test_out
+   echo "Stop  time: \$stop_time" >> \$x_test_out
+   echo >> \$x_test_out
    echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
