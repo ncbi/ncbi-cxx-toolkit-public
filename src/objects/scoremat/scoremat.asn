@@ -1,4 +1,4 @@
---$Id: scoremat.asn,v 1.7 2004/02/23 15:42:24 camacho Exp $
+--$Id: scoremat.asn,v 1.8 2004/07/19 17:34:54 papadopo Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,12 @@
 --
 -- ===========================================================================
 -- $Log: scoremat.asn,v $
+-- Revision 1.8  2004/07/19 17:34:54  papadopo
+-- change weights and position frequencies to type REAL, remove their associated scaling factors
+--
+-- Revision 1.8  2004/07/19 17:06:26  papadopo
+-- change weights and position frequencies to type REAL, remove their associated scaling factors
+--
 -- Revision 1.7  2004/02/23 15:42:24  camacho
 -- 1. Gave default value to Score-matrix::byrow field
 -- 2. Updated documentation
@@ -139,13 +145,13 @@ Score-matrix ::= SEQUENCE {
     query        Seq-entry OPTIONAL,           
 
     -- frequencies observed in alignment
-    rawFreqs     SEQUENCE OF INTEGER OPTIONAL, 
+    rawFreqs     SEQUENCE OF REAL OPTIONAL, 
 
     -- residue frequencies
-    posFreqs     SEQUENCE OF INTEGER OPTIONAL, 
+    posFreqs     SEQUENCE OF REAL OPTIONAL, 
 
     -- sequence weights for individual cells
-    weights      SEQUENCE OF INTEGER OPTIONAL, 
+    weights      SEQUENCE OF REAL OPTIONAL, 
 
     -- frequencies used in pseudocount method
     freq-Ratios  INTEGER { unassigned  (0),
@@ -162,12 +168,6 @@ Score-matrix ::= SEQUENCE {
 
     -- scaling factor for the scores
     score-scale-factor INTEGER OPTIONAL,       
-    -- scaling factor for the frequencies
-    posFreqs-scale-factor INTEGER OPTIONAL,    
-    -- scaling factor for frequencies
-    rawFreqs-scale-factor INTEGER OPTIONAL,    
-    -- and their scaling factor
-    weights-scale-factor INTEGER OPTIONAL,     
 
     -- scaled by score-scale-factor (above)
     gapOpen      INTEGER OPTIONAL,             
