@@ -65,8 +65,8 @@ void CImageTestApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Image read/write test application");
 
-    arg_desc->AddPositional("image", "Image to crop",
-                            CArgDescriptions::eString);
+    arg_desc->AddDefaultPositional("image", "Image to crop",
+                                   CArgDescriptions::eInputFile, "-");
 
     arg_desc->AddOptionalKey("out", "OutFile",
                              "File name of resultant JPEG image",
@@ -91,7 +91,7 @@ int CImageTestApp::Run(void)
 {
     CArgs args = GetArgs();
 
-    string fname = args["image"].AsString();
+    CNcbiIstream& istr = args["image"].AsInputFile();
     int x = args["x"].AsInteger();
     int y = args["y"].AsInteger();
     int w = args["wd"].AsInteger();
@@ -99,11 +99,11 @@ int CImageTestApp::Run(void)
 
     CStopWatch sw;
     sw.Start();
-    CRef<CImage> image(CImageIO::ReadSubImage(fname, x, y, w, h));
+    CRef<CImage> image(CImageIO::ReadSubImage(istr, x, y, w, h));
     double read_time = sw.Elapsed();
 
     if ( !image ) {
-        LOG_POST(Error << "error: can't get subimage from " << fname);
+        LOG_POST(Error << "error: can't get subimage");
         return 1;
     }
 
@@ -111,8 +111,7 @@ int CImageTestApp::Run(void)
              << ", " << y+h << ") in " << read_time << " seconds");
 
     if (args["out"]) {
-        CImageIO::WriteImage(*image, args["out"].AsString(),
-                             CImageIO::ePng);
+        CImageIO::WriteImage(*image, args["out"].AsString());
         double write_time = sw.Elapsed();
         LOG_POST(Info << "wrote image in " << write_time - read_time
                  << " seconds");
@@ -149,6 +148,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/20 17:49:25  dicuccio
+ * Changed sub_image to use streams instead of file names.  Changed to us implicit
+ * format guessing.
+ *
  * Revision 1.3  2003/12/16 16:16:43  dicuccio
  * Added more options - raw files
  *
