@@ -14,6 +14,7 @@ be there. I hope. */
 /* Have to include stdlib.h in order to ensure that size_t is defined. */
 
 #include <stdlib.h>
+#include <corelib/mswin_export.hpp>
 
 /* Allow for C++ users */
 
@@ -76,9 +77,13 @@ typedef struct {
 
 /* The functions */
 
+NCBI_XUTIL_EXPORT
 extern int    regcomp(regex_t *, const char *, int);
+NCBI_XUTIL_EXPORT
 extern int    regexec(regex_t *, const char *, size_t, regmatch_t *, int);
+NCBI_XUTIL_EXPORT
 extern size_t regerror(int, const regex_t *, char *, size_t);
+NCBI_XUTIL_EXPORT
 extern void   regfree(regex_t *);
 
 #ifdef __cplusplus
