@@ -402,6 +402,9 @@ CDiagLexParser::ESymbol CDiagLexParser::Parse(istream& in)
     case eExpectClosePar :
         throw CDiagSyntaxParser::TErrorInfo
             ( "unexpected end of input, ')' expected", m_Pos );
+    case eExpectCloseBracket:
+        throw CDiagSyntaxParser::TErrorInfo
+            ( "unexpected end of input, ']' expected", m_Pos );
     case eInsideId :
         return eId;
     case eInsidePath :
@@ -702,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2004/12/17 12:15:37  kuznets
+ * A parser state situation tracked more carefully
+ *
  * Revision 1.5  2004/12/13 14:38:32  kuznets
  * Implemented severity filtering
  *
