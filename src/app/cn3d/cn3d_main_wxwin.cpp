@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2001/11/01 19:01:42  thiessen
+* use meta key instead of ctrl on Mac
+*
 * Revision 1.103  2001/10/30 02:54:12  thiessen
 * add Biostruc cache
 *
@@ -1801,7 +1804,11 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
             OpenGLRenderer::eViewAdjust action;
             if (event.ShiftDown())
                 action = OpenGLRenderer::eXYTranslateHV;    // shift-drag = translate
+#ifdef __WXMAC__
+            else if (event.MetaDown())      // control key + mouse doesn't work on Mac?
+#else
             else if (event.ControlDown())
+#endif
                 action = OpenGLRenderer::eZoomH;            // ctrl-drag = zoom
             else
                 action = OpenGLRenderer::eXYRotateHV;       // normal rotate
@@ -1817,7 +1824,13 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     if (event.LeftDClick()) {   // double-click = select, +ctrl = set center
         unsigned int name;
         if (structureSet && renderer->GetSelected(event.GetX(), event.GetY(), &name))
-            structureSet->SelectedAtom(name, event.ControlDown());
+            structureSet->SelectedAtom(name, 
+#ifdef __WXMAC__
+                event.MetaDown()      // control key + mouse doesn't work on Mac?
+#else
+                event.ControlDown()
+#endif
+            );
     }
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/11/01 19:01:40  thiessen
+* use meta key instead of ctrl on Mac
+*
 * Revision 1.1  2001/10/30 02:54:11  thiessen
 * add Biostruc cache
 *
@@ -168,6 +171,11 @@ bool LoadBiostrucViaCache(int mmdbID, int modelType, ncbi::objects::CBiostruc *b
 
 void TruncateCache(int maxSize)
 {
+#ifdef __WXMAC__
+    // doesn't work, until wxFindFirstFile() is fixed...
+    return;
+#endif
+
     std::string cacheFolder;
     if (!RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cacheFolder) ||
         !wxDirExists(cacheFolder.c_str())) {

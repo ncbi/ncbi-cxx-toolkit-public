@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/11/01 19:01:45  thiessen
+* use meta key instead of ctrl on Mac
+*
 * Revision 1.28  2001/09/26 15:27:54  thiessen
 * tweak sequence viewer widget for wx2.3.2, tweak cdd annotation
 *
@@ -702,7 +705,12 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         // find out which (if any) control keys are down at this time
         unsigned int controls = 0;
         if (event.ShiftDown()) controls |= ViewableAlignment::eShiftDown;
-        if (event.ControlDown()) controls |= ViewableAlignment::eControlDown;
+#ifdef __WXMAC__
+        if (event.MetaDown())      // control key + mouse doesn't work on Mac?
+#else
+        if (event.ControlDown())
+#endif
+            controls |= ViewableAlignment::eControlDown;
         if (event.AltDown() || event.MetaDown()) controls |= ViewableAlignment::eAltOrMetaDown;
 
         // send MouseDown message; don't start selection if MouseDown returns false
@@ -990,7 +998,12 @@ void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
         // find out which (if any) control keys are down at this time
         unsigned int controls = 0;
         if (event.ShiftDown()) controls |= ViewableAlignment::eShiftDown;
-        if (event.ControlDown()) controls |= ViewableAlignment::eControlDown;
+#ifdef __WXMAC__
+        if (event.MetaDown())      // control key + mouse doesn't work on Mac?
+#else
+        if (event.ControlDown())
+#endif
+            controls |= ViewableAlignment::eControlDown;
         if (event.AltDown() || event.MetaDown()) controls |= ViewableAlignment::eAltOrMetaDown;
 
         // send MouseDown message
