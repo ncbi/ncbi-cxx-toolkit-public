@@ -63,7 +63,7 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
                         4 +    // taxid count
                         16);   // 4 reserved fields
     
-    Uint4 idx_file_len = CFile(m_IndexFN).GetLength();
+    Uint4 idx_file_len = (Uint4) CFile(m_IndexFN).GetLength();
     
     if (idx_file_len < (data_start + sizeof(CSeqDBTaxId))) {
         NCBI_THROW(CSeqDBException,
