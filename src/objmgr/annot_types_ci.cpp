@@ -200,7 +200,14 @@ bool CFeat_Less::x_less(const CAnnotObject_Ref& x,
         x_loc = &x_feat->GetLocation();
     if ( !y_loc )
         y_loc = &y_feat->GetLocation();
-    int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+    int diff;
+    try {
+        diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+    }
+    catch ( exception& /*ignored*/ ) {
+        // do not fail sort when compare function throws an exception
+        diff = 0;
+    }
     return diff? diff < 0: x_info < y_info;
 }
 
@@ -221,7 +228,14 @@ bool CFeat_Reverse_Less::x_less(const CAnnotObject_Ref& x,
         x_loc = &x_feat->GetLocation();
     if ( !y_loc )
         y_loc = &y_feat->GetLocation();
-    int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+    int diff;
+    try {
+        diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+    }
+    catch ( exception& /*ignored*/ ) {
+        // do not fail sort when compare function throws an exception
+        diff = 0;
+    }
     return diff? diff < 0: x_info < y_info;
 }
 
@@ -1145,6 +1159,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/07/29 15:55:16  vasilche
+* Catch exceptions when sorting features.
+*
 * Revision 1.77  2003/07/18 19:32:30  vasilche
 * Workaround for GCC 3.0.4 bug.
 *
