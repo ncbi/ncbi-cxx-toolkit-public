@@ -37,6 +37,10 @@
 BEGIN_NCBI_SCOPE
 
 
+// These can be found in VCProjectEngine.dll type library
+// See OLE/COM Object Viewer, Type Libraries
+// Microsoft Development Environment VC++ Project System Engine 7.0 Type Library (Ver 1.0)
+
 /// Traits for MSVC projects:
 
 
@@ -358,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/29 16:21:10  gouriano
+ * Added comment about VCProjectEngine type library location
+ *
  * Revision 1.5  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *
