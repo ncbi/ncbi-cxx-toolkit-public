@@ -278,6 +278,30 @@ NCBI_XOBJUTIL_EXPORT
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope);
 
 
+enum ESeqLocFlags
+{
+    fMergeIntervals  = 1,    // merge overlapping intervals
+    fFuseAbutting    = 2,    // fuse together abutting intervals
+    fSingleInterval  = 4,    // create a single interval
+    fAddNulls        = 8     // will add a null Seq-loc between intervals 
+};
+typedef unsigned int TSeqLocFlags;  // logical OR of ESeqLocFlags
+
+
+// Merge two Seq-locs returning the merged location.
+NCBI_XOBJUTIL_EXPORT
+CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
+                      const CSeq_loc& loc1, const CSeq_loc& loc2,
+                      TSeqLocFlags flags = 0);
+
+
+// Merge a set of locations, returning the result.
+NCBI_XOBJUTIL_EXPORT
+CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
+                      vector< CConstRef<CSeq_loc> >& locs,
+                      TSeqLocFlags flags = 0);
+
+
 // Get the encoding CDS feature of a given protein sequence.
 NCBI_XOBJUTIL_EXPORT
 const CSeq_feat* GetCDSForProduct(const CBioseq& product, CScope* scope);
@@ -531,6 +555,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.35  2004/01/28 17:17:14  shomrat
+* Added SeqLocMerge
+*
 * Revision 1.34  2003/12/16 19:37:13  shomrat
 * Retrieve encoding feature and bioseq of a protein
 *
