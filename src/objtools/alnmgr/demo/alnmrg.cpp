@@ -57,6 +57,7 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <objtools/alnmgr/alnmix.hpp>
+#include <objtools/alnmgr/alnvwr.hpp>
 
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -69,7 +70,7 @@ class CAlnMrgApp : public CNcbiApplication
     void             SetOptions          (void);
     void             LoadInputAlignments (void);
     void             PrintMergedAlignment(void);
-    void             View4               (int screen_width);
+    void             ViewMergedAlignment (void);
 
 private:
     CAlnMix::TMergeFlags         m_MergeFlags;
@@ -102,6 +103,12 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
+        ("asnout", "asn_out_file_name",
+         "ASN output",
+         CArgDescriptions::eOutputFile, "-",
+         CArgDescriptions::fPreOpen);
+
+    arg_desc->AddDefaultKey
         ("b", "bin_obj_type",
          "This forced the input file to be read in binary ASN.1 mode\n"
          "and specifies the type of the top-level ASN.1 object.\n",
@@ -110,7 +117,7 @@ void CAlnMrgApp::Init(void)
     arg_desc->AddDefaultKey
         ("log", "log_file_name",
          "Name of log file to write to",
-         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
+         CArgDescriptions::eOutputFile, "/dev/null", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
         ("gen2est", "bool",
@@ -166,6 +173,38 @@ void CAlnMrgApp::Init(void)
          "Force translation of nucleotides",
          CArgDescriptions::eBoolean, "f");
 
+
+    // Viewing args:
+    arg_desc->AddOptionalKey
+        ("v", "",
+         "View format:\n"
+         " 1. CSV table\n"
+         " 2. Print segments\n"
+         " 3. Print chunks\n"
+         " 4. Popset style using GetAlnSeqString\n"
+         "    (memory efficient for large alns, but slower)\n"
+         " 5. Popset style using GetSeqString\n"
+         "   (memory inefficient)\n"
+         " 6. Popset style using GetWholeAlnSeqString\n"
+         "   (fastest, but memory inefficient)\n",
+         CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey
+        ("a", "AnchorRow",
+         "Anchor row (zero based)",
+         CArgDescriptions::eInteger);
+
+    arg_desc->AddDefaultKey
+        ("w", "ScreenWidth",
+         "Screen width for some of the viewers",
+         CArgDescriptions::eInteger, "60");
+
+    arg_desc->AddDefaultKey
+        ("cf", "GetChunkFlags",
+         "Flags for GetChunks (CAlnMap::TGetChunkFlags)",
+         CArgDescriptions::eInteger, "0");
+
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -186,7 +225,7 @@ CScope& CAlnMrgApp::GetScope(void) const
 
 void CAlnMrgApp::LoadInputAlignments(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CNcbiIstream& is = args["in"].AsInputFile();
     
@@ -274,7 +313,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
 
 void CAlnMrgApp::SetOptions(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     if ( args["log"] ) {
         SetDiagStream( &args["log"].AsOutputFile() );
@@ -326,59 +365,67 @@ void CAlnMrgApp::SetOptions(void)
 
 void CAlnMrgApp::PrintMergedAlignment(void)
 {
+    const CArgs& args = GetArgs();
     auto_ptr<CObjectOStream> asn_out 
-        (CObjectOStream::Open(eSerial_AsnText, cout));
+        (CObjectOStream::Open(eSerial_AsnText,
+                              args["asnout"].AsOutputFile()));
 
     *asn_out << m_Mix->GetDenseg();
 }
 
 
-void CAlnMrgApp::View4(int scrn_width)
+void CAlnMrgApp::ViewMergedAlignment(void)
 {
-    CAlnVec av(m_Mix->GetDenseg(), GetScope());
-    CAlnMap::TNumrow row, nrows = av.GetNumRows();
+    const CArgs& args = GetArgs();
 
-    vector<string> buffer(nrows);
-    vector<CAlnMap::TSeqPosList> insert_aln_starts(nrows);
-    vector<CAlnMap::TSeqPosList> insert_starts(nrows);
-    vector<CAlnMap::TSeqPosList> insert_lens(nrows);
-    vector<CAlnMap::TSeqPosList> scrn_lefts(nrows);
-    vector<CAlnMap::TSeqPosList> scrn_rights(nrows);
-    
-    // Fill in the vectors for each row
-    for (row = 0; row < nrows; row++) {
-        av.GetWholeAlnSeqString
-            (row,
-             buffer[row],
-             &insert_aln_starts[row],
-             &insert_starts[row],
-             &insert_lens[row],
-             scrn_width,
-             &scrn_lefts[row],
-             &scrn_rights[row]);
+    int screen_width = args["w"].AsInteger();
+
+    CRef<CObjectManager> obj_mgr;
+    CRef<CScope>         scope;
+
+    {{
+        obj_mgr = CObjectManager::GetInstance();
+        CGBDataLoader::RegisterInObjectManager(*obj_mgr);
+
+        scope = new CScope(*obj_mgr);
+        scope->AddDefaults();
+    }}
+
+
+    CAlnVec aln_vec(m_Mix->GetDenseg(), *scope);
+    aln_vec.SetGapChar('-');
+    aln_vec.SetEndChar('.');
+    if (args["a"]) {
+        aln_vec.SetAnchor(args["a"].AsInteger());
     }
-        
-    // Visualization
-    TSeqPos pos = 0, aln_len = av.GetAlnStop() + 1;
-    do {
-        for (row = 0; row < nrows; row++) {
-            cout << av.GetSeqId(row)
-                 << "\t" 
-                 << scrn_lefts[row].front()
-                 << "\t"
-                 << buffer[row].substr(pos, scrn_width)
-                 << "\t"
-                 << scrn_rights[row].front()
-                 << endl;
-            scrn_lefts[row].pop_front();
-            scrn_rights[row].pop_front();
+
+    if (args["v"]) {
+        switch (args["v"].AsInteger()) {
+        case 1: 
+            CAlnVwr::CsvTable(aln_vec, NcbiCout);
+            break;
+        case 2:
+            CAlnVwr::Segments(aln_vec, NcbiCout);
+            break;
+        case 3:
+            CAlnVwr::Chunks(aln_vec, NcbiCout, args["cf"].AsInteger());
+            break;
+        case 4:
+            CAlnVwr::PopsetStyle(aln_vec, NcbiCout, screen_width,
+                                 CAlnVwr::eUseAlnSeqString);
+            break;
+        case 5: 
+            CAlnVwr::PopsetStyle(aln_vec, NcbiCout, screen_width,
+                                 CAlnVwr::eUseSeqString);
+            break;
+        case 6:
+            CAlnVwr::PopsetStyle(aln_vec, NcbiCout, screen_width,
+                                 CAlnVwr::eUseWholeAlnSeqString);
+            break;
+        default:
+            NcbiCout << "Unknown view format." << NcbiEndl;
         }
-        cout << endl;
-        pos += scrn_width;
-        if (pos + scrn_width > aln_len) {
-            scrn_width = aln_len - pos;
-        }
-    } while (pos < aln_len);
+    }
 }
 
 
@@ -389,7 +436,13 @@ int CAlnMrgApp::Run(void)
     m_Mix = new CAlnMix(GetScope());
     LoadInputAlignments();
     m_Mix->Merge(m_MergeFlags);
+
+    const CArgs& args = GetArgs();
+
     PrintMergedAlignment();
+    if ( args["v"] ) {
+        ViewMergedAlignment();
+    }
     return 0;
 }
 
@@ -409,6 +462,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/09/16 18:44:46  todorov
+* +Viewers, mostly to be able to view translated Dense_segs (DS + m_Widths)
+*
 * Revision 1.21  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
