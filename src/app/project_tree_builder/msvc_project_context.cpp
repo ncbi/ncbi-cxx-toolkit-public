@@ -361,6 +361,10 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
         string (project_dir, 
                 0, 
                 project_dir.find(project_tag) + project_tag.length());
+    
+    output_dir_prefix = 
+        CDirEntry::ConcatPath(output_dir_prefix, 
+                              GetApp().GetBuildType().GetTypeStr());
 
     if (m_Type == eLib)
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "lib");
@@ -372,6 +376,7 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
                    eProjectType, NStr::IntToString(m_Type));
     }
 
+    //output to ..static\DebugDLL or ..dll\DebugDLL
     string output_dir_abs = 
         CDirEntry::ConcatPath(output_dir_prefix, config.m_Name);
     m_OutputDirectory = 
@@ -733,6 +738,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/03/02 23:33:55  gorelenk
+ * Changed implementation of class CMsvcPrjGeneralContext constructor.
+ *
  * Revision 1.17  2004/02/26 15:15:38  gorelenk
  * Changed implementation of CMsvcPrjProjectContext::IsConfigEnabled.
  *
