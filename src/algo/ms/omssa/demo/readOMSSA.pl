@@ -6,6 +6,7 @@ use strict;
 # sample usage:  "perl readOMSSA.pl test.xml"
 
 # any standard SAX parser should work
+# note that you need to install the perl SAX library for this to work
 
 # use XML::LibXML::SAX;
 # my $parser = XML::LibXML::SAX->new( Handler => $my_handler );
