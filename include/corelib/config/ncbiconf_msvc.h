@@ -77,25 +77,3 @@ typedef   int   ssize_t;
 /* PROJECT_TREE_BUILDER-generated site localization
  */
 #include "ncbiconf_msvc_site.h"
-
-
-/* Default site localization (for MSVC6)
- */
-#if (_MSC_VER < 1300)
-#  if !defined(CORELIB_CONFIG___NCBICONF_MSVC_SITE__H)
-#    define HAVE_OPENGL      1
-#    define HAVE_FLTK        1
-
-#    define HAVE_ODBC        1
-#    define HAVE_ODBCSS_H    1
-
-/* optional parameters */
-/*#    define HAVE_PUBSEQ_OS   1*/
-/*#    define HAVE_LIBZ        1*/
-/*#    define HAVE_LIBBZ2      1*/
-#    define HAVE_LIBJPEG     1
-#    define HAVE_LIBTIFF     1
-#    define HAVE_LIBPNG      1
-#    define HAVE_LIBGIF      1
-#  endif
-#endif
