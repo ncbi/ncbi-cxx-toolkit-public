@@ -117,6 +117,7 @@ res_list="\$res_script.list"
 res_concat="\$res_script.out"
 res_concat_err="\$res_script.out_err"
 
+BUILDTREE=\`echo \${BUILDTREE} | sed 's/\"//g'\`
 
 ##  Printout USAGE info and exit
 
