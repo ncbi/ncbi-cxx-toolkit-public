@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/04/03 14:17:43  vasilche
+* Allow using data loaded from file.
+*
 * Revision 1.20  2003/03/27 19:40:11  vasilche
 * Implemented sorting in CGraph_CI.
 * Added Rewind() method to feature/graph/align iterators.
@@ -104,6 +107,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
 
@@ -113,6 +117,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 
 // Object manager includes
@@ -155,16 +160,19 @@ void CDemoApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
-    arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
-         CArgDescriptions::eInteger);
-    // GI to fetch
-    arg_desc->AddDefaultKey("count", "RepeatCount", "repeat test work RepeatCount times",
-         CArgDescriptions::eInteger, "1");
+    arg_desc->AddKey("gi", "SeqEntryID",
+                     "GI id of the Seq-Entry to fetch",
+                     CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("file", "SeqEntryFile",
+                             "file with Seq-Entry to load",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddDefaultKey("count", "RepeatCount",
+                            "repeat test work RepeatCount times",
+                            CArgDescriptions::eInteger, "1");
 
-    arg_desc->AddDefaultKey
-        ("resolve", "ResolveMethod",
-         "Method of segments resolution",
-         CArgDescriptions::eString, "tse");
+    arg_desc->AddDefaultKey("resolve", "ResolveMethod",
+                            "Method of segments resolution",
+                            CArgDescriptions::eString, "tse");
     arg_desc->SetConstraint("resolve",
                             &(*new CArgAllow_Strings,
                               "none", "tse", "all"));
@@ -189,8 +197,8 @@ int CDemoApp::Run(void)
 {
     // Process command line args: get GI to load
     const CArgs& args = GetArgs();
-    int gi = args["gi"].AsInteger();
 
+    int gi = args["gi"].AsInteger();
     CFeat_CI::EResolveMethod resolve = CFeat_CI::eResolve_TSE;
     if ( args["resolve"].AsString() == "all" )
         resolve = CFeat_CI::eResolve_All;
@@ -221,13 +229,25 @@ int CDemoApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
 
-    // Create seq-id, set it to GI specified on the command line
-    CSeq_id id;
-    id.SetGi(gi);
-
     // Get bioseq handle for the seq-id. Most of requests will use
     // this handle.
-    CBioseq_Handle handle = scope.GetBioseqHandle(id);
+    CBioseq_Handle handle;
+
+    if ( args["file"] ) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        auto_ptr<CObjectIStream> in
+            (CObjectIStream::Open(eSerial_AsnText,
+                                  args["file"].AsInputFile()));
+        *in >> *entry;
+        scope.AddTopLevelSeqEntry(*entry);
+    }
+
+    // Create seq-id, set it to GI specified on the command line
+    {
+        CSeq_id id;
+        id.SetGi(gi);
+        handle = scope.GetBioseqHandle(id);
+    }
 
     // Check if the handle is valid
     if ( !handle ) {
