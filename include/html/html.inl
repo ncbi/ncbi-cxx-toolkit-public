@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/12/28 21:01:03  vasilche
+* Fixed conflict on MS VC between bool and const string& arguments by
+* adding const char* argument.
+*
 * Revision 1.21  1999/12/28 18:55:28  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -223,6 +227,12 @@ CHTML_ol::CHTML_ol(bool compact)
 }
 
 inline
+CHTML_ol::CHTML_ol(const char* type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+}
+
+inline
 CHTML_ol::CHTML_ol(const string& type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
@@ -236,10 +246,71 @@ CHTML_ol::CHTML_ol(int start, bool compact)
 }
 
 inline
+CHTML_ol::CHTML_ol(int start, const char* type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+    SetStart(start);
+}
+
+inline
 CHTML_ol::CHTML_ol(int start, const string& type, bool compact)
     : CParent(sm_TagName, type, compact)
 {
     SetStart(start);
+}
+
+inline
+CHTML_ul::CHTML_ul(bool compact)
+    : CParent(sm_TagName, compact)
+{
+}
+
+inline
+CHTML_ul::CHTML_ul(const char* type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+}
+
+inline
+CHTML_ul::CHTML_ul(const string& type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+}
+
+inline
+CHTML_dir::CHTML_dir(bool compact)
+    : CParent(sm_TagName, compact)
+{
+}
+
+inline
+CHTML_dir::CHTML_dir(const char* type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+}
+
+inline
+CHTML_dir::CHTML_dir(const string& type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+}
+
+inline
+CHTML_menu::CHTML_menu(bool compact)
+    : CParent(sm_TagName, compact)
+{
+}
+
+inline
+CHTML_menu::CHTML_menu(const char* type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
+}
+
+inline
+CHTML_menu::CHTML_menu(const string& type, bool compact)
+    : CParent(sm_TagName, type, compact)
+{
 }
 
 inline
@@ -289,6 +360,16 @@ CHTML_option::CHTML_option(const string& value, const string& label,
 }
 
 inline
+CHTML_option::CHTML_option(const string& value, const char* label,
+                           bool selected)
+    : CParent(sm_TagName, label)
+{
+    SetValue(value);
+    if ( selected )
+        SetSelected();
+}
+
+inline
 CHTML_select::CHTML_select(const string& name, bool multiple)
     : CParent(sm_TagName)
 {
@@ -317,6 +398,14 @@ CHTML_select* CHTML_select::AppendOption(const string& value, bool selected)
 inline
 CHTML_select* CHTML_select::AppendOption(const string& value,
                                          const string& label, bool selected)
+{
+    AppendChild(new CHTML_option(value, label, selected));
+    return this;
+}
+
+inline
+CHTML_select* CHTML_select::AppendOption(const string& value,
+                                         const char* label, bool selected)
 {
     AppendChild(new CHTML_option(value, label, selected));
     return this;

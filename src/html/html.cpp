@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  1999/12/28 21:01:08  vasilche
+* Fixed conflict on MS VC between bool and const string& arguments by
+* adding const char* argument.
+*
 * Revision 1.51  1999/12/28 18:55:45  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -498,6 +502,12 @@ CHTMLListElement::~CHTMLListElement(void)
 {
 }
 
+CHTMLListElement* CHTMLListElement::SetType(const char* type)
+{
+    SetAttribute("type", type);
+    return this;
+}
+
 CHTMLListElement* CHTMLListElement::SetType(const string& type)
 {
     SetAttribute("type", type);
@@ -640,7 +650,7 @@ CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
             THROW1_TRACE(runtime_error,
                          "CHTML_table: wrong cell type: TD expected");
         break;
-    case eAnyCell:
+    default:
         ret = dynamic_cast<CHTML_tc*>(cell);
         if ( !ret )
             THROW1_TRACE(runtime_error,
@@ -1398,6 +1408,24 @@ CHTML_ol* CHTML_ol::SetStart(int start)
     return this;
 }
 
+const char CHTML_ul::sm_TagName[] = "ul";
+
+CHTML_ul::~CHTML_ul(void)
+{
+}
+
+const char CHTML_dir::sm_TagName[] = "dir";
+
+CHTML_dir::~CHTML_dir(void)
+{
+}
+
+const char CHTML_menu::sm_TagName[] = "menu";
+
+CHTML_menu::~CHTML_menu(void)
+{
+}
+
 const char CHTML_font::sm_TagName[] = "font";
 
 CHTML_font::~CHTML_font(void)
@@ -1488,9 +1516,6 @@ DEFINE_HTML_ELEMENT(pnop);
 DEFINE_HTML_ELEMENT(pre);
 DEFINE_HTML_ELEMENT(dt);
 DEFINE_HTML_ELEMENT(dd);
-DEFINE_HTML_ELEMENT(ul);
-DEFINE_HTML_ELEMENT(dir);
-DEFINE_HTML_ELEMENT(menu);
 DEFINE_HTML_ELEMENT(li);
 DEFINE_HTML_ELEMENT(caption);
 DEFINE_HTML_ELEMENT(col);

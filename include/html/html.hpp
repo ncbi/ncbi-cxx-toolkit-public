@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  1999/12/28 21:01:03  vasilche
+* Fixed conflict on MS VC between bool and const string& arguments by
+* adding const char* argument.
+*
 * Revision 1.40  1999/12/28 18:55:28  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -400,6 +404,14 @@ public:
             if ( compact )
                 SetCompact();
         }
+    CHTMLListElement(const char* tagname, const char* type,
+                     bool compact = false)
+        : CParent(tagname)
+        {
+            SetType(type);
+            if ( compact )
+                SetCompact();
+        }
     CHTMLListElement(const char* tagname, const string& type,
                      bool compact = false)
         : CParent(tagname)
@@ -414,6 +426,7 @@ public:
     CHTMLListElement* AppendItem(const string& text);
     CHTMLListElement* AppendItem(CNCBINode* node);
 
+    CHTMLListElement* SetType(const char* type);
     CHTMLListElement* SetType(const string& type);
     CHTMLListElement* SetCompact(void);
 };
@@ -685,6 +698,8 @@ public:
 
     // return 'this' to allow chained AppendOption
     CHTML_select* AppendOption(const string& value, bool selected = false);
+    CHTML_select* AppendOption(const string& value, const char* label,
+                               bool selected = false);
     CHTML_select* AppendOption(const string& value, const string& label,
                                bool selected = false);
     CHTML_select* SetMultiple(void);
@@ -697,6 +712,8 @@ class CHTML_option : public CHTMLElement
     static const char sm_TagName[];
 public:
     CHTML_option(const string& value, bool selected = false);
+    CHTML_option(const string& value, const char* label,
+                 bool selected = false);
     CHTML_option(const string& value, const string& label,
                  bool selected = false);
     ~CHTML_option(void);
@@ -768,12 +785,47 @@ class CHTML_ol : public CHTMLListElement
     static const char sm_TagName[];
 public:
     CHTML_ol(bool compact = false);
+    CHTML_ol(const char* type, bool compact = false);
     CHTML_ol(const string& type, bool compact = false);
     CHTML_ol(int start, bool compact = false);
+    CHTML_ol(int start, const char* type, bool compact = false);
     CHTML_ol(int start, const string& type, bool compact = false);
     ~CHTML_ol(void);
 
     CHTML_ol* SetStart(int start);
+};
+
+class CHTML_ul : public CHTMLListElement
+{
+    typedef CHTMLListElement CParent;
+    static const char sm_TagName[];
+public:
+    CHTML_ul(bool compact = false);
+    CHTML_ul(const char* type, bool compact = false);
+    CHTML_ul(const string& type, bool compact = false);
+    ~CHTML_ul(void);
+};
+
+class CHTML_dir : public CHTMLListElement
+{
+    typedef CHTMLListElement CParent;
+    static const char sm_TagName[];
+public:
+    CHTML_dir(bool compact = false);
+    CHTML_dir(const char* type, bool compact = false);
+    CHTML_dir(const string& type, bool compact = false);
+    ~CHTML_dir(void);
+};
+
+class CHTML_menu : public CHTMLListElement
+{
+    typedef CHTMLListElement CParent;
+    static const char sm_TagName[];
+public:
+    CHTML_menu(bool compact = false);
+    CHTML_menu(const char* type, bool compact = false);
+    CHTML_menu(const string& type, bool compact = false);
+    ~CHTML_menu(void);
 };
 
 class CHTML_font : public CHTMLElement
@@ -888,9 +940,6 @@ DECLARE_HTML_ELEMENT(pnop, CHTMLOpenElement);
 DECLARE_HTML_ELEMENT(pre, CHTMLElement);
 DECLARE_HTML_ELEMENT(dt, CHTMLElement);
 DECLARE_HTML_ELEMENT(dd, CHTMLElement);
-DECLARE_HTML_ELEMENT(ul, CHTMLListElement);
-DECLARE_HTML_ELEMENT(dir, CHTMLListElement);
-DECLARE_HTML_ELEMENT(menu, CHTMLListElement);
 DECLARE_HTML_ELEMENT(li, CHTMLElement);
 DECLARE_HTML_ELEMENT(caption, CHTMLElement);
 DECLARE_HTML_ELEMENT(col, CHTMLElement);
