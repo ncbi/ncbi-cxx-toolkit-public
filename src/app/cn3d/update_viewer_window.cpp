@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.50  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -218,7 +221,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_PSSM_ONE,   UpdateViewerWindow::OnRunBlast)
     EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
-    EVT_MENU_RANGE(MID_BLOCKALIGN_OPTIONS, MID_BLOCKALIGN_ALL,  UpdateViewerWindow::OnBlockAlign)
+    EVT_MENU_RANGE(MID_BLOCKALIGN_ONE, MID_BLOCKALIGN_ALL,  UpdateViewerWindow::OnBlockAlign)
 END_EVENT_TABLE()
 
 UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
@@ -247,7 +250,6 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
     menu->AppendSeparator();
-    menu->Append(MID_BLOCKALIGN_OPTIONS, "Block Aligner &Options...");
     menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
     menu->Append(MID_BLOCKALIGN_ALL, "Bloc&k Align All");
     menu->AppendSeparator();
@@ -460,10 +462,6 @@ void UpdateViewerWindow::OnBlockAlign(wxCommandEvent& event)
             SetCursor(*wxCROSS_CURSOR);
         else
             BlockAlignSingleOff();
-    }
-
-    else if (event.GetId() == MID_BLOCKALIGN_OPTIONS) {
-        updateViewer->alignmentManager->blockAligner->SetOptions(this);
     }
 
     else if (event.GetId() == MID_BLOCKALIGN_ALL) {

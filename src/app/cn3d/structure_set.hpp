@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.67  2002/09/14 17:03:07  thiessen
 * center initial view on aligned residues
 *
@@ -347,7 +350,7 @@ public:
 
     // select either biopolymer residues only or all residues/molecules within cutoff distance
     // of currently selected residues
-    void SelectByDistance(double cutoff, bool biopolymersOnly) const;
+    void SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly) const;
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates
@@ -471,7 +474,8 @@ public:
     // public methods
 
     typedef std::map < const Residue *, const Molecule * > ResidueMap;
-    void SelectByDistance(double cutoff, bool biopolymersOnly, ResidueMap *selectedResidues) const;
+    void SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly,
+        ResidueMap *selectedResidues) const;
 
     // set transform based on asn1 data
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);

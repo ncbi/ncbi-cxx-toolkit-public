@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.12  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -313,6 +316,9 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     SeqAlignPtr results;
     SeqAlignPtr listOfSeqAligns = NULL;
 
+    // show options dialog each time block aligner is run
+    SetOptions(NULL);
+
     // the following would be command-line arguments to Alejandro's standalone program
     Boolean localAlignment = currentOptions.globalAlignment ? FALSE : TRUE;
     BLAST_Score scoreThresholdSingleBlock =
@@ -409,6 +415,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             Lambda, K, searchSpaceSize, localAlignment);
 
         // process results; assume first result SeqAlign is the highest scoring
+        BlockMultipleAlignment *newAlignment;
         if (results) {
 #ifdef _DEBUG
             AsnIoPtr aip = AsnIoOpen("seqalign-ba.txt", "w");
@@ -418,7 +425,6 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
             CSeq_align best;
             std::string err;
-            BlockMultipleAlignment *newAlignment;
             if (!ConvertAsnFromCToCPP(results, (AsnWriteFunc) SeqAlignAsnWrite, &best, &err) ||
                 (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
                 ERR_POST(Error << "conversion of results to C++ object failed: " << err);
@@ -446,7 +452,18 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
             }
 
             SeqAlignSetFree(results);
+        }
 
+        // no alignment block aligner failed - add old alignment to list so it doesn't get lost
+        else {
+            ERR_POST(Warning <<
+                "block aligner found no significant alignment - current alignment unchanged");
+            newAlignment = (*s)->Clone();
+            newAlignment->SetRowDouble(0, -1.0);
+            newAlignment->SetRowDouble(1, -1.0);
+            newAlignment->SetRowStatusLine(0, "block aligner found no significant alignment");
+            newAlignment->SetRowStatusLine(1, "block aligner found no significant alignment");
+            newAlignments->push_back(newAlignment);
         }
 
         // cleanup

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.30  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -163,7 +166,6 @@ private:
         MID_THREAD_ALL,
         MID_BLAST_ONE,
         MID_BLAST_PSSM_ONE,
-        MID_BLOCKALIGN_OPTIONS,
         MID_BLOCKALIGN_ONE,
         MID_BLOCKALIGN_ALL,
         MID_SET_REGION,

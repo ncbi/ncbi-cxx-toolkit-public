@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.64  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -369,6 +372,7 @@ public:
             MID_DIST_SELECT,
                 MID_DIST_SELECT_RESIDUES,
                 MID_DIST_SELECT_ALL,
+                MID_DIST_SELECT_OTHER,
         // Structure Alignments menu
         // Style menu
             MID_EDIT_STYLE,

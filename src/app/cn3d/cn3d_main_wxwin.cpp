@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.161  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.160  2002/09/18 13:19:32  thiessen
 * use wxTE_RICH style for big textctrls
 *
@@ -1162,7 +1165,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_PNG,                                 Cn3DMainFrame::OnPNG)
     EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
-    EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_ALL, Cn3DMainFrame::OnDistanceSelect)
+    EVT_MENU_RANGE(MID_DIST_SELECT_RESIDUES, MID_DIST_SELECT_OTHER, Cn3DMainFrame::OnDistanceSelect)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
@@ -1258,6 +1261,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu = new wxMenu;
     subMenu->Append(MID_DIST_SELECT_RESIDUES, "&Residues Only");
     subMenu->Append(MID_DIST_SELECT_ALL, "&All Molecules");
+    subMenu->Append(MID_DIST_SELECT_OTHER, "&Other Molecules");
     menu->Append(MID_DIST_SELECT, "Select by Dis&tance...", subMenu);
     menuBar->Append(menu, "Show/&Hide");
 
@@ -1476,7 +1480,9 @@ void Cn3DMainFrame::OnDistanceSelect(wxCommandEvent& event)
         0.0, 1000.0, 0.5, latestCutoff);
     if (dialog.ShowModal() == wxOK) {
         latestCutoff = dialog.GetValue();
-        glCanvas->structureSet->SelectByDistance(latestCutoff, (event.GetId() == MID_DIST_SELECT_RESIDUES));
+        glCanvas->structureSet->SelectByDistance(latestCutoff,
+            (event.GetId() == MID_DIST_SELECT_RESIDUES),
+            (event.GetId() == MID_DIST_SELECT_OTHER));
     }
 }
 

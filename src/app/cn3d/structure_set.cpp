@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2002/09/19 12:51:08  thiessen
+* fix block aligner / update bug; add distance select for other molecules only
+*
 * Revision 1.112  2002/09/16 21:24:58  thiessen
 * add block freezing to block aligner
 *
@@ -1289,14 +1292,14 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     }
 }
 
-void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly) const
+void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly) const
 {
     StructureObject::ResidueMap residuesToHighlight;
 
     // add residues to highlight to master list, based on proximities within objects
     ObjectList::const_iterator o, oe = objects.end();
     for (o=objects.begin(); o!=oe; o++)
-        (*o)->SelectByDistance(cutoff, biopolymersOnly, &residuesToHighlight);
+        (*o)->SelectByDistance(cutoff, biopolymersOnly, otherMoleculesOnly, &residuesToHighlight);
 
     // now actually add highlights for new selected residues
     StructureObject::ResidueMap::const_iterator r, re = residuesToHighlight.end();
@@ -1667,17 +1670,15 @@ void StructureObject::RealignStructure(int nCoords,
     delete oss.str();
 }
 
-void StructureObject::SelectByDistance(
-    double cutoff, bool biopolymersOnly, ResidueMap *selectedResidues) const
+void StructureObject::SelectByDistance(double cutoff, bool biopolymersOnly, bool otherMoleculesOnly,
+    ResidueMap *selectedResidues) const
 {
+    // first make a list of coordinates of atoms in selected residues,
     typedef std::vector < const AtomCoord * > CoordList;
     CoordList highlightedAtoms;
+    typedef std::map < const Molecule * , bool > MoleculeList;
+    MoleculeList moleculesWithHighlights;
 
-    typedef std::vector < const Residue * > ResidueList;
-    ResidueList unhighlightedResidues;
-
-    // first make a list of coordinates of atoms in selected residues,
-    // and also of unselected residues to check for proximity
     ChemicalGraph::MoleculeMap::const_iterator m, me = graph->molecules.end();
     for (m=graph->molecules.begin(); m!=me; m++) {
         Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
@@ -1691,14 +1692,31 @@ void StructureObject::SelectByDistance(
                         GetAtom(AtomPntr(m->second->id, r->second->id, a->first), true, true);
                     if (atomCoord) highlightedAtoms.push_back(atomCoord);
                 }
-            }
-
-            else if (!biopolymersOnly || m->second->IsProtein() || m->second->IsNucleotide()) {
-                unhighlightedResidues.push_back(r->second);
+                moleculesWithHighlights[m->second] = true;
             }
         }
     }
-    if (highlightedAtoms.size() == 0 || unhighlightedResidues.size() == 0) return;
+    if (highlightedAtoms.size() == 0) return;
+
+    // now make a list of unselected residues to check for proximity
+    typedef std::vector < const Residue * > ResidueList;
+    ResidueList unhighlightedResidues;
+
+    for (m=graph->molecules.begin(); m!=me; m++) {
+        Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+
+        if (otherMoleculesOnly &&
+                moleculesWithHighlights.find(m->second) != moleculesWithHighlights.end())
+            continue;
+
+        for (r=m->second->residues.begin(); r!=re; r++) {
+
+            if (!GlobalMessenger()->IsHighlighted(m->second, r->second->id) &&
+                    (!biopolymersOnly || m->second->IsProtein() || m->second->IsNucleotide()))
+                unhighlightedResidues.push_back(r->second);
+        }
+    }
+    if (unhighlightedResidues.size() == 0) return;
 
     // now check all unhighlighted residues, to see if any atoms are within cutoff distance
     // of any highlighted atoms; if so, add to residue selection list
