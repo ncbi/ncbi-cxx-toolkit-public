@@ -164,10 +164,12 @@ void* CBlastTabularFormatThread::Main(void)
    }
 
    vector<CSeq_id*> query_id_v;
+   vector<Int4> query_lengths;
 
    ITERATE(TSeqLocVector, itr, m_QueryVec) {
       query_id_v.push_back(
           const_cast<CSeq_id*>(&sequence::GetId(*itr->seqloc, itr->scope)));
+      query_lengths.push_back(sequence::GetLength(*itr->seqloc, itr->scope));
    }
 
    bool one_seq_update_params = (BLASTSeqSrcGetTotLen(m_ipSeqSrc) == 0);
@@ -218,6 +220,7 @@ void* CBlastTabularFormatThread::Main(void)
 
        int index;
        char bit_score_buff[10], eval_buff[10];
+       Int4 subject_length = BLASTSeqSrcGetSeqLen(m_ipSeqSrc, (void*)&hsp_list->oid);
 
        for (index = 0; index < hsp_list->hspcnt; ++index) {
            BlastHSP* hsp = hsp_list->hsp_array[index];
@@ -245,7 +248,8 @@ void* CBlastTabularFormatThread::Main(void)
          
            Int4 q_start=0, q_end=0, s_start=0, s_end=0;
 
-           Blast_HSPGetAdjustedOffsets(hsp, &q_start, &q_end, &s_start, &s_end);
+           Blast_HSPGetAdjustedOffsets(m_Program, hsp, query_lengths[query_index], 
+               subject_length, &q_start, &q_end, &s_start, &s_end);
          
            *m_OutStream << query_buffer << "\t" << subject_buffer << "\t" <<
                perc_ident << "\t" << align_length << "\t" << num_mismatches <<
@@ -276,6 +280,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/04/06 21:07:20  dondosha
+* Change due to BlastHSP structure size reduction
+*
 * Revision 1.13  2005/03/31 14:55:46  ucko
 * Eliminate use of removed GetOptions() shortcut.
 *
