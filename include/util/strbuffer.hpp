@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/02/23 21:06:13  vasilche
+* Added HasMore().
+*
 * Revision 1.32  2004/08/30 18:14:23  gouriano
 * use CNcbiStreamoff instead of size_t for stream offset operations
 *
@@ -197,6 +200,7 @@ public:
     char PeekChar(size_t offset = 0)
         THROWS1((CIOException, bad_alloc));
     char PeekCharNoEOF(size_t offset = 0);
+    bool HasMore(void);
     char GetChar(void)
         THROWS1((CIOException, bad_alloc));
     // precondition: GetChar or SkipChar was last method called
@@ -261,8 +265,8 @@ protected:
     // return: new value of pos pointer if buffer content was shifted
     char* FillBuffer(char* pos, bool noEOF = false)
         THROWS1((CIOException, bad_alloc));
-    char FillBufferNoEOF(char* pos)
-        THROWS1((CIOException, bad_alloc));
+    char FillBufferNoEOF(char* pos);
+    bool TryToFillBuffer(void);
 
     void BadNumber(void);
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/02/23 21:06:13  vasilche
+* Added HasMore().
+*
 * Revision 1.6  2004/08/30 18:14:23  gouriano
 * use CNcbiStreamoff instead of size_t for stream offset operations
 *
@@ -85,12 +88,17 @@ char CIStreamBuffer::PeekChar(size_t offset)
 
 inline
 char CIStreamBuffer::PeekCharNoEOF(size_t offset)
-    THROWS1((CIOException, bad_alloc))
 {
     char* pos = m_CurrentPos + offset;
     if ( pos >= m_DataEndPos )
         return FillBufferNoEOF(pos);
     return *pos;
+}
+
+inline
+bool CIStreamBuffer::HasMore(void)
+{
+    return m_CurrentPos < m_DataEndPos || TryToFillBuffer();
 }
 
 inline

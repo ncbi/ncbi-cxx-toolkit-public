@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/02/23 21:06:13  vasilche
+* Added HasMore().
+*
 * Revision 1.45  2004/09/07 14:27:41  vasilche
 * Allow nested CSubSourceCollectors.
 *
@@ -478,13 +481,17 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
 }
 
 char CIStreamBuffer::FillBufferNoEOF(char* pos)
-    THROWS1((CIOException, bad_alloc))
 {
     pos = FillBuffer(pos, true);
     if ( pos >= m_DataEndPos )
         return 0;
     else
         return *pos;
+}
+
+bool CIStreamBuffer::TryToFillBuffer(void)
+{
+    return FillBuffer(m_CurrentPos, true) < m_DataEndPos;
 }
 
 void CIStreamBuffer::GetChars(char* buffer, size_t count)
@@ -536,13 +543,7 @@ void CIStreamBuffer::SkipEndOfLine(char lastChar)
     _ASSERT(lastChar == '\n' || lastChar == '\r');
     _ASSERT(m_CurrentPos > m_Buffer && m_CurrentPos[-1] == lastChar);
     m_Line++;
-    char nextChar;
-    try {
-        nextChar = PeekChar();
-    }
-    catch ( CEofException& /* ignored */ ) {
-        return;
-    }
+    char nextChar = PeekCharNoEOF();
     // lastChar either '\r' or \n'
     // if nextChar is compliment, skip it
     if ( (lastChar + nextChar) == ('\r' + '\n') )
@@ -738,10 +739,12 @@ COStreamBuffer::~COStreamBuffer(void)
 void COStreamBuffer::Close(void)
 {
     if ( m_Output ) {
-        Flush();
-        if ( m_DeleteOutput )
+        FlushBuffer();
+        if ( m_DeleteOutput ) {
+            Flush();
             delete &m_Output;
-        m_DeleteOutput = false;
+            m_DeleteOutput = false;
+        }
     }
     m_Error = 0;
     m_IndentLevel = 0;
