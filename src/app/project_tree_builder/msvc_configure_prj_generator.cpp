@@ -211,7 +211,7 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
         << "echo -CONFIGURE- has failed" << endl
         << "echo Configuration log was saved at \"%SLN_PATH%_configuration_log.txt\"" << endl
         << "echo ******************************************************************************" << endl
-        << "\"%SLN_PATH%_configuration_log.txt\"" << endl
+        << "start \"\" \"%SLN_PATH%_configuration_log.txt\"" << endl
         << "exit 1" << endl;
 }
 
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/12/20 15:31:46  gouriano
+ * changed generated batch file to open error log asynchronously
+ *
  * Revision 1.14  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *
