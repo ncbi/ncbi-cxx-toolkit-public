@@ -2,36 +2,36 @@
 #define DBAPI_DRIVER_CTLIB___INTERFACES__HPP
 
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Vladimir Soussov
-*
-* File Description:  Driver for CTLib server
-*
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Vladimir Soussov
+ *
+ * File Description:  Driver for CTLib server
+ *
+ *
+ */
 
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/util/parameters.hpp>
@@ -96,13 +96,13 @@ public:
     // the following methods are optional (driver will use the default values
     // if not called), the values will affect the new connections only
 
-    void CTLIB_SetApplicationName(const string& a_name) { m_AppName = a_name; }
-    void CTLIB_SetHostName(const string& host_name) { m_HostName = host_name; }
-    void CTLIB_SetPacketSize(CS_INT packet_size) { m_PacketSize = packet_size; }
-    void CTLIB_SetLoginRetryCount(CS_INT n)      { m_LoginRetryCount = n; }
-    void CTLIB_SetLoginLoopDelay(CS_INT nof_sec) { m_LoginLoopDelay = nof_sec; }
+    virtual void CTLIB_SetApplicationName(const string& a_name) { m_AppName = a_name; }
+    virtual void CTLIB_SetHostName(const string& host_name) { m_HostName = host_name; }
+    virtual void CTLIB_SetPacketSize(CS_INT packet_size) { m_PacketSize = packet_size; }
+    virtual void CTLIB_SetLoginRetryCount(CS_INT n)      { m_LoginRetryCount = n; }
+    virtual void CTLIB_SetLoginLoopDelay(CS_INT nof_sec) { m_LoginLoopDelay = nof_sec; }
 
-    CS_CONTEXT* CTLIB_GetContext() const { return m_Context; }
+    virtual CS_CONTEXT* CTLIB_GetContext() const { return m_Context; }
 
     static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
     static bool CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
@@ -363,7 +363,7 @@ private:
         CS_SMALLINT indicator;
         char        buffer[sizeof(CS_NUMERIC)];
     };
-    SBcpBind* m_Bind;
+    SBcpBind*       m_Bind;
 };
 
 
@@ -379,7 +379,7 @@ class CTL_SendDataCmd : public I_SendDataCmd
 protected:
     CTL_SendDataCmd(CTL_Connection* con, CS_COMMAND* cmd, size_t nof_bytes);
 
-    virtual size_t SendChunk(const void* pChunk, size_t nofBytes);
+    virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual void   Release();
 
     virtual ~CTL_SendDataCmd();
@@ -531,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2001/10/22 15:14:50  lavr
+ * Beautifications...
+ *
  * Revision 1.6  2001/09/27 23:01:06  vakatov
  * CTL_***Result::  virtual methods' implementation moved away from the header
  *
