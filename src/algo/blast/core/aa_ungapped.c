@@ -187,7 +187,7 @@ while(first_offset <= last_offset)
  
 /* increment the offset in the diagonal array */
  
- DiagUpdate(diag, subject->length + 40); 
+ DiagUpdate(diag, subject->length + diag->window); 
  
  return totalhits;
 }
