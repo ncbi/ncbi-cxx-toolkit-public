@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/23 19:01:06  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
 * Revision 1.6  2002/02/21 19:27:00  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -92,7 +96,10 @@ private:
     friend class CBioseq_Handle;
 
     // Created by CScope only
-    CSeqVector(const CBioseq_Handle& handle, bool plus_strand, CScope& scope);
+    CSeqVector(const CBioseq_Handle& handle,
+        bool use_iupac_coding,
+        bool plus_strand,
+        CScope& scope);
 
     // Get residue assuming the data in m_CurrentData are valid
     TResidue x_GetResidue(int pos);

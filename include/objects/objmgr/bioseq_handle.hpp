@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/04/23 19:01:06  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
 * Revision 1.14  2002/04/22 20:06:58  grichenk
 * +GetSequenceView(), +x_IsSynonym()
 *
@@ -90,8 +94,8 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CSeqMap;
-class CSeqVector;
 class CTSE_Info;
+class CSeqVector;
 
 
 // Bioseq handle -- must be a copy-safe const type.
@@ -144,8 +148,9 @@ public:
     // sequences.
     virtual const CSeqMap& GetResolvedSeqMap(void) const;
 
-    // Get sequence: Iupacna or Iupacaa
-    virtual CSeqVector GetSeqVector(bool plus_strand = true) const;
+    // Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
+    virtual CSeqVector GetSeqVector(bool use_iupac_coding = false,
+        bool plus_strand = true) const;
 
     // Sequence filtering: get a seq-vector for a part of the sequence.
     // The part shown depends oon the mode selected. If the location
@@ -161,6 +166,7 @@ public:
     };
     virtual CSeqVector GetSequenceView(const CSeq_loc& location,
                                        ESequenceViewMode mode,
+                                       bool use_iupac_coding = false,
                                        bool plus_strand = true) const;
 
     // Get sequence's title (used in various flat-file formats.)

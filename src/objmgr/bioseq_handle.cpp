@@ -29,6 +29,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/04/23 19:01:07  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
 * Revision 1.10  2002/04/22 20:06:59  grichenk
 * +GetSequenceView(), +x_IsSynonym()
 *
@@ -147,9 +151,10 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 }
 
 
-CSeqVector CBioseq_Handle::GetSeqVector(bool plus_strand) const
+CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
+                                        bool plus_strand) const
 {
-    return CSeqVector(*this, plus_strand, *m_Scope);
+    return CSeqVector(*this, use_iupac_coding, plus_strand, *m_Scope);;
 }
 
 
@@ -165,6 +170,7 @@ bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
 
 CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
                                            ESequenceViewMode mode,
+                                           bool use_iupac_coding,
                                            bool plus_strand) const
 {
     // Parse the location
@@ -222,7 +228,6 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
     // Convert ranges to seq-loc
     CRef<CSeq_loc> view_loc(new CSeq_loc);
     iterate (CHandleRange::TRanges, rit, mode_rlist.GetRanges()) {
-        LOG_POST("%%%rg = " << rit->first.GetFrom() << "-" << rit->first.GetTo());
         CRef<CSeq_loc> seg_loc(new CSeq_loc);
         CRef<CSeq_id> id(new CSeq_id);
         SerialAssign<CSeq_id>(*id,
@@ -249,7 +254,7 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
     CSeq_id id;
     id.SetLocal().SetStr(bs_id);
     CBioseq_Handle view_handle = m_Scope->GetBioseqHandle(id);
-    return CSeqVector(view_handle, plus_strand, *m_Scope);
+    return CSeqVector(view_handle, use_iupac_coding, plus_strand, *m_Scope);
 }
 
 

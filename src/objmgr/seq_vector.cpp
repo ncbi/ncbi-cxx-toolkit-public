@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/23 19:01:07  grichenk
+* Added optional flag to GetSeqVector() and GetSequenceView()
+* for switching to IUPAC encoding.
+*
 * Revision 1.12  2002/04/22 20:03:08  grichenk
 * Updated comments
 *
@@ -96,8 +100,9 @@ BEGIN_SCOPE(objects)
 
 
 CSeqVector::CSeqVector(const CBioseq_Handle& handle,
-                         bool plus_strand,
-                         CScope& scope)
+                       bool use_iupac_coding,
+                       bool plus_strand,
+                       CScope& scope)
     : m_Scope(&scope),
       m_Handle(handle),
       m_PlusStrand(plus_strand),
@@ -107,6 +112,8 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
     m_CurData.dest_start = -1;
     m_CurData.length = 0;
     m_SeqMap.Reset(&m_Handle.x_GetDataSource().GetSeqMap(m_Handle));
+    if (use_iupac_coding)
+        SetIupacCoding();
 }
 
 
