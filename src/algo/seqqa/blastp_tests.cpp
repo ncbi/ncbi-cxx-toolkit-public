@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
@@ -64,17 +65,18 @@ bool CTestBlastp::CanTest(const CSerialObject& obj,
 
 static CObject_id::TId s_GetTaxid(const CSeq_id& id, CScope& scope) {
     CBioseq_Handle hand = scope.GetBioseqHandle(id);
-    const CSeq_descr& descr = hand.GetDescr();
-    ITERATE (CSeq_descr::Tdata, desc, descr.Get()) {
-        if ((*desc)->IsSource()) {
+    CSeqdesc_CI desc(hand, CSeqdesc::e_Source);
+    while (desc) {
+        if (desc->IsSource()) {
             const vector<CRef<CDbtag> >& db
-                = (*desc)->GetSource().GetOrg().GetDb();
+                = desc->GetSource().GetOrg().GetDb();
             ITERATE (vector<CRef<CDbtag> >, dbtag, db) {
                 if ((*dbtag)->GetDb() == "taxon") {
                     return (*dbtag)->GetTag().GetId();
                 }
             }
         }
+        ++desc;
     }
     throw runtime_error("didn't find taxon");
 }
@@ -98,6 +100,8 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     const list<CRef<CSeq_align> >& alns = annot->GetData().GetAlign();
     if (alns.size() == 0) {
         // No alignments (blastp found nothing)
+        result->SetOutput_data()
+            .AddField("has_blastp_match", false);
         return ref;
     }
 
@@ -130,6 +134,16 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
         }
     }
 
+    if (top_score == 0) {
+        // no matches to different taxid
+        result->SetOutput_data()
+            .AddField("has_blastp_match", false);
+        return ref;
+    }
+
+    result->SetOutput_data()
+        .AddField("has_blastp_match", true);
+
     result->SetOutput_data().AddField("best_score", top_score);
     if (top_score > 0) {
         result->SetOutput_data()
@@ -145,6 +159,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/20 18:36:58  jcherry
+ * Explicitly report whether there is an appropriate blast hit.
+ * Look for source organism using CSeqdesc_CI, not just in Bioseq.
+ *
  * Revision 1.1  2004/10/06 19:57:15  jcherry
  * Initial version
  *
