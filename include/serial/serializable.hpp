@@ -26,49 +26,60 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Author:  Michael Kholodov, Denis Vakatov
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   General serializable interface for different output formats
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/17 04:08:01  vakatov
+* Redesigned from a pure interface (ISerializable) into a regular
+* base class (CSerializable) to make its usage safer, more formal and
+* less bulky.
+*
 * Revision 1.1  2001/04/12 17:01:04  kholodov
 * General serializable interface for different output formats
-*
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class ISerializable {
 
-public:
+class CSerializable
+{
+protected:
+    enum EOutputType { eAsFasta, eAsAsnText, eAsAsnBinary, eAsXML };
 
-  enum EOutputType { eAsFasta, eAsAsnText, eAsAsnBinary, eAsXML };
+    virtual void WriteAsFasta     (ostream& out) const;
+    virtual void WriteAsAsnText   (ostream& out) const;
+    virtual void WriteAsAsnBinary (ostream& out) const;
+    virtual void WriteAsXML       (ostream& out) const;
 
-  virtual void WriteAsFasta(ostream& out) {
-    throw CSerialNotImplemented("ISerializable::WriteAsFasta() not implemented");
-  }
-  virtual void WriteAsAsnText(ostream& out) {
-    throw CSerialNotImplemented("ISerializable::WriteAsAsnText() not implemented");
-  }
-  virtual void WriteAsAsnBinary(ostream& out) {
-    throw CSerialNotImplemented("ISerializable::WriteAsAsnBinary() not implemented");
-  }
-  virtual void WriteAsXML(ostream& out) {
-    throw CSerialNotImplemented("ISerializable::WriteAsXML() not implemented");
-  }
-  
-  virtual EOutputType GetOutputType() = 0;
+    const CSerializable& Dump(EOutputType output_type) const;
 
+private:
+    mutable EOutputType m_OutputType;
+
+    friend ostream& operator << (ostream& out, const CSerializable& src);
 };
 
-ostream& operator << (ostream& out, ISerializable& src); 
+
+
+inline
+const CSerializable& CSerializable::Dump(EOutputType output_type)
+    const
+{
+    m_OutputType = output_type;
+    return *this;
+}
+
+
+ostream& operator << (ostream& out, const CSerializable& src);
+
 
 END_NCBI_SCOPE
 

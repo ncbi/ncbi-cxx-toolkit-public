@@ -23,44 +23,84 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Author:  Michael Kholodov
 *
 * File Description:
-*   !!! PUT YOUR DESCRIPTION HERE !!!
+*   General serializable interface for different output formats
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/04/17 04:08:27  vakatov
+* Redesigned from a pure interface (ISerializable) into a regular
+* base class (CSerializable) to make its usage safer, more formal and
+* less bulky.
+*
 * Revision 1.1  2001/04/12 17:01:11  kholodov
 * General serializable interface for different output formats
-*
 *
 * ===========================================================================
 */
 
 #include <serial/serializable.hpp>
+#include <serial/exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
-ostream& operator << (ostream& out, ISerializable& src) 
-{
-  switch( src.GetOutputType() ) {
-  case ISerializable::eAsFasta:
-    src.WriteAsFasta(out);
-    break;
-  case ISerializable::eAsAsnText:
-    src.WriteAsAsnText(out);
-    break;
-  case ISerializable::eAsAsnBinary:
-    src.WriteAsAsnBinary(out);
-    break;
-  case ISerializable::eAsXML:
-    src.WriteAsXML(out);
-    break;
-  default:
-    throw runtime_error("operator << (ostream&, ISerializable&): wrong output type");
-  }
 
-  return out;
+void CSerializable::WriteAsFasta(ostream& /*out*/)
+    const
+{
+    THROW1_TRACE(CSerialNotImplemented,
+                 "CSerializable::WriteAsFasta() not implemented");
+}
+
+
+void CSerializable::WriteAsAsnText(ostream& /*out*/)
+    const
+{
+    THROW1_TRACE(CSerialNotImplemented,
+                 "CSerializable::WriteAsAsnText() not implemented");
+}
+
+
+void CSerializable::WriteAsAsnBinary(ostream& /*out*/)
+    const
+{
+    THROW1_TRACE(CSerialNotImplemented,
+                 "CSerializable::WriteAsAsnBinary() not implemented");
+}
+
+
+void CSerializable::WriteAsXML(ostream& /*out*/)
+    const
+{
+    THROW1_TRACE(CSerialNotImplemented,
+                 "CSerializable::WriteAsXML() not implemented");
+}
+
+
+ostream& operator << (ostream& out, const CSerializable& src) 
+{
+    switch ( src.m_OutputType ) {
+    case CSerializable::eAsFasta:
+        src.WriteAsFasta(out);
+        break;
+    case CSerializable::eAsAsnText:
+        src.WriteAsAsnText(out);
+        break;
+    case CSerializable::eAsAsnBinary:
+        src.WriteAsAsnBinary(out);
+        break;
+    case CSerializable::eAsXML:
+        src.WriteAsXML(out);
+        break;
+    default:
+        THROW1_TRACE(runtime_error,
+                     "operator<<(ostream&,CSerializable&): wrong output type");
+    }
+
+    return out;
 };
+
 
 END_NCBI_SCOPE
