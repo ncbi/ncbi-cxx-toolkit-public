@@ -63,8 +63,7 @@
 	 <i>"somefile.cpp"</i> at line 333:
 <pre>
 int x = 100;
-_TRACE( "x + 5 = "  <<  (x + 5) );
-</pre>
+_TRACE( "x + 5 = "  <<  (x + 5) ); </pre>
 	 will output:
 <pre>
 {somefile.cpp:333}  x + 5 = 105
@@ -130,8 +129,7 @@ try {
    // (derived from "std::exception") exception "exception_derived_user"
 }
 // handle all the rest "standard" exceptions in a uniform way
-STD_CATCH ( "in SomeFunc(" << arg1 << "," << arg2 << ")" );
-	 </pre>
+STD_CATCH ( "in SomeFunc(" << arg1 << "," << arg2 << ")" ); </pre>
 
 	 <p>
 	 Here, if <i>SomeFunc</i> do <i>throw std::runtime_error("Invalid Arg2");</i>
@@ -155,14 +153,12 @@ Error: [in SomeFunc(qqq,888)] Exception: Invalid Arg2
 	 <pre>
 void f1(int i) THROWS_NONE;
 int  f2(void) THROWS((e0));
-int  f3(long) THROWS((e1,e2));
-	 </pre>
+int  f3(long) THROWS((e1,e2)); </pre>
 	 in the place of:
 	 <pre>
 void f1(int i) throw();
 int  f2(void)  throw(e0);
-int  f3(long)  throw(e1,e2);
-	 </pre>
+int  f3(long)  throw(e1,e2); </pre>
 	 respectively. -- Please note the double parenthesis for <i>THROWS()</i>.
 
 
@@ -189,8 +185,7 @@ int  f3(long)  throw(e1,e2);
 	 (one can call <b><i>SetDiagStream(NcbiCerr)</i></b> to dump the diagnostics to
 	 the standard error output stream):
 	 <pre>
-extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true);
-	 </pre>
+extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true); </pre>
 
 	 Using <b><i>SetDiagHandler()</i></b>, one can install his own callback function
 	 of type <b><i>FDiagHandler</i></b> to process messages posted via
@@ -205,8 +200,7 @@ typedef void (*FDiagHandler)(EDiagSev    sev,
 typedef void (*FDiagCleanup)(void* data);
 extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
-                           FDiagCleanup cleanup);
-	 </pre>
+                           FDiagCleanup cleanup); </pre>
 
 	 <p>
 	 To compose a diagnostic message with <b><i>CNcbiDiag</i></b> one must
@@ -244,8 +238,7 @@ diag1 << "Message1_End" << Endm;  // message 1 finished and flushed by "Endm"
 diag1 << "Message1_1";  // will be flushed by the following "Warning"
 diag1 << Warning << "Discard this warning" << ++iii << Reset; // message discarded
 diag1 << "This is a warning " << iii;
-diag1 << Endm;
-	 </pre>
+diag1 << Endm; </pre>
 	 will write to the diagnostic stream(if the latter was set with
 	 <b><i>SetDiagStream()</i></b>):
 	 <pre>
@@ -254,6 +247,17 @@ Info: Message2
 Error: Message1_End
 Error: Message1_1
 Warning: This is a warning 12345
+	 </pre>
+
+There is an <b><i>ERR_POST(message)</i></b> macro that can be used to shorten the
+error posting code. This macro implicitely creates a temporary
+<b><i>CNcbiDiag</i></b> object and put the passed "message" into it. For example:
+	 <pre>
+long lll = 345;
+ERR_POST("My ERR_POST message, print long: " << lll); </pre>
+	 will write to the diagnostic stream:
+	 <pre>
+My ERR_POST message, print long: 345
 	 </pre>
 
 	 <hr>

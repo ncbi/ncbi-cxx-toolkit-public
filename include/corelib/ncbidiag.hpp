@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/03/12 18:04:06  vakatov
+* Added ERR_POST macro to perform a plain "standard" error posting
+*
 * Revision 1.8  1998/12/30 21:52:16  vakatov
 * Fixed for the new SunPro 5.0 beta compiler that does not allow friend
 * templates and member(in-class) templates
@@ -83,6 +86,11 @@ typedef enum {
     eDiag_Trace
 } EDiagSev;
 
+// Auxiliary macro for a "standard" error posting
+#define ERR_POST(message)  { \
+    NCBI_NS_NCBI::CNcbiDiag _diag_(NCBI_NS_NCBI::eDiag_Error); \
+    _diag_ << message; \
+}
 
 
 //////////////////////////////////////////////////////////////////

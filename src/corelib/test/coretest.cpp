@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/03/12 18:04:09  vakatov
+* Added ERR_POST macro to perform a plain "standard" error posting
+*
 * Revision 1.35  1999/01/21 16:18:04  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -317,8 +320,9 @@ static void TestDiag(void)
     _TRACE( "[Unset Diag Stream]  Trace double = " << d );
 
     SetDiagStream(&NcbiCerr);
-    diag << "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
-    _TRACE( "[Set Diag Stream(cerr)]  Trace double = " << d );
+    diag <<   "[Set Diag Stream(cerr)]  Diagnostics double = " << d << Endm;
+    ERR_POST( "[Set Diag Stream(cerr)]  Std.Diag. double = "   << d );
+    _TRACE  ( "[Set Diag Stream(cerr)]  Trace double = "       << d );
 
     CNcbiTestDiag cntd;
     SetDiagPostLevel(eDiag_Error);
