@@ -139,10 +139,11 @@ LIB_OR_DLL = @LIB_OR_DLL@
 # library name suffix; either "-static" or empty
 STATIC     = @STATIC@
 
-LINK_DLL     = @LINK_DLL@
-CFLAGS_DLL   = @CFLAGS_DLL@
-CXXFLAGS_DLL = @CXXFLAGS_DLL@
-LDFLAGS_DLL  = $(LDFLAGS)
+LINK_DLL      = @LINK_DLL@
+LINK_LOADABLE = @LINK_LOADABLE@
+CFLAGS_DLL    = @CFLAGS_DLL@
+CXXFLAGS_DLL  = @CXXFLAGS_DLL@
+LDFLAGS_DLL   = $(LDFLAGS)
 
 ### To enable extra, potentially unsafe, optimization
 FAST_CFLAGS   = @FAST_CFLAGS@

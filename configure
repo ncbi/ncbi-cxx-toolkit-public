@@ -3245,10 +3245,11 @@ case "$host_os:$compiler" in
    ;;
 
  darwin*:GCC)
-   # XXX -- there's a distinction between shared libraries (dylibs) and
+   # There's a distinction between shared libraries (dylibs) and
    # loadable objects (bundles).
    # See <http://fink.sourceforge.net/doc/porting/shared.php>.
    CONF_dll_ext=".dylib"
+   CONF_loadable_ext=".so"
    ;;
 esac
 
@@ -3344,9 +3345,6 @@ else
       ;;
     irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
-      ;;
-     darwin*:GCC )
-      LIBS="-framework CoreServices $LIBS"
       ;;
    esac
 fi
@@ -3518,6 +3516,7 @@ fi
 
 
 # Linker command-line to build DLL
+has_dll_loadable="@: "
 case "$compiler" in
  GCC | MIPSpro73 | ICC | Compaq )
    case "$host_os" in
@@ -3526,10 +3525,12 @@ case "$compiler" in
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -mimpure-text -o"
         ;;
       darwin* )
-        # XXX -- there's a distinction between shared libraries (dylibs)
+        # There is a distinction between shared libraries (dylibs)
         # and loadable objects (bundles).
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+        has_dll_loadable=""
         LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
+        LINK_LOADABLE="$CXX $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
         ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
@@ -3979,6 +3980,7 @@ if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pr
 if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
 if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
 if test "$CONF_dll_ext"   = " " ;  then dll_ext="" ; else dll_ext="${CONF_dll_ext:=.so}" ; fi
+if test "$CONF_loadable_ext"  = " " ;  then loadable_ext="" ; else loadable_ext="${CONF_loadable_ext:=.so}" ; fi
 if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
 if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
 if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
@@ -14417,6 +14419,9 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
+
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -15084,6 +15089,8 @@ s,@DEBUG_SFX@,$DEBUG_SFX,;t t
 s,@LIB_OR_DLL@,$LIB_OR_DLL,;t t
 s,@FORCE_STATIC_LIB@,$FORCE_STATIC_LIB,;t t
 s,@LINK_DLL@,$LINK_DLL,;t t
+s,@has_dll_loadable@,$has_dll_loadable,;t t
+s,@LINK_LOADABLE@,$LINK_LOADABLE,;t t
 s,@CFLAGS_DLL@,$CFLAGS_DLL,;t t
 s,@CXXFLAGS_DLL@,$CXXFLAGS_DLL,;t t
 s,@OPT_GROUPS@,$OPT_GROUPS,;t t
@@ -15102,6 +15109,7 @@ s,@lib_pre@,$lib_pre,;t t
 s,@lib_l_pre@,$lib_l_pre,;t t
 s,@lib_ext@,$lib_ext,;t t
 s,@dll_ext@,$dll_ext,;t t
+s,@loadable_ext@,$loadable_ext,;t t
 s,@lib_l_ext@,$lib_l_ext,;t t
 s,@exe_ext@,$exe_ext,;t t
 s,@f_compile@,$f_compile,;t t

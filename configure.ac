@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.101 2002/06/24 15:54:20 ucko Exp $
+#  $Id: configure.ac,v 1.102 2002/06/30 03:16:13 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -596,10 +596,11 @@ case "$host_os:$compiler" in
    ;;
 
  darwin*:GCC)
-   # XXX -- there's a distinction between shared libraries (dylibs) and
+   # There's a distinction between shared libraries (dylibs) and
    # loadable objects (bundles).
    # See <http://fink.sourceforge.net/doc/porting/shared.php>.
    CONF_dll_ext=".dylib"
+   CONF_loadable_ext=".so"
    ;;
 esac
 
@@ -699,9 +700,6 @@ changequote(, )dnl
 changequote([, ])dnl
     irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
-      ;;
-     darwin*:GCC )
-      LIBS="-framework CoreServices $LIBS"
       ;;
    esac
 fi
@@ -872,6 +870,7 @@ fi
 AC_SUBST(STATIC)
 
 # Linker command-line to build DLL
+has_dll_loadable="@: "
 case "$compiler" in
  GCC | MIPSpro73 | ICC | Compaq )
    case "$host_os" in
@@ -880,10 +879,12 @@ case "$compiler" in
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -mimpure-text -o"
         ;;
       darwin* )
-        # XXX -- there's a distinction between shared libraries (dylibs)
+        # There is a distinction between shared libraries (dylibs)
         # and loadable objects (bundles).
         # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+        has_dll_loadable=""
         LINK_DLL="$CXX $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -o"
+        LINK_LOADABLE="$CXX $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
         ;;
       * )
         LINK_DLL="$CXX $ARCH_CFLAGS -shared -o"
@@ -1102,6 +1103,7 @@ if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pr
 if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
 if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
 if test "$CONF_dll_ext"   = " " ;  then dll_ext="" ; else dll_ext="${CONF_dll_ext:=.so}" ; fi
+if test "$CONF_loadable_ext"  = " " ;  then loadable_ext="" ; else loadable_ext="${CONF_loadable_ext:=.so}" ; fi
 if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
 if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
 if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
@@ -2548,6 +2550,8 @@ AC_SUBST(DEBUG_SFX)
 AC_SUBST(LIB_OR_DLL)
 AC_SUBST(FORCE_STATIC_LIB)
 AC_SUBST(LINK_DLL)
+AC_SUBST(has_dll_loadable)
+AC_SUBST(LINK_LOADABLE)
 AC_SUBST(CFLAGS_DLL)
 AC_SUBST(CXXFLAGS_DLL)
 
@@ -2569,6 +2573,7 @@ AC_SUBST(lib_pre)
 AC_SUBST(lib_l_pre)
 AC_SUBST(lib_ext)
 AC_SUBST(dll_ext)
+AC_SUBST(loadable_ext)
 AC_SUBST(lib_l_ext)
 AC_SUBST(exe_ext)
 AC_SUBST(f_compile)

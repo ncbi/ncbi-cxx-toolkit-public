@@ -78,21 +78,25 @@ $(XLIB): $(XLIBOBJ)
 	    $(LN_S) $(XLIBDEP) $(XLIBDEPLINK); \
 	fi
 
+
 ### The shared library build rule
 
-#XDLLOBJ     = $(SOURCES:%=shared/%@obj_ext@) $(OBJ:%=shared/%@obj_ext@)
-XDLLOBJ     = $(XLIBOBJ) $(XOBJ)
-XDLL        = $(LIB:%=@lib_pre@%@dll_ext@)
-XDLLDEP     = .$(LIB).dep
-XDLL_LIB    = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
+XDLLOBJ       = $(XLIBOBJ) $(XOBJ)
+XDLL          = $(LIB:%=@lib_pre@%@dll_ext@)
+XDLL_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
+XDLLDEP       = .$(LIB).dep
+XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
 
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)
+	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(XDLLOBJ) $(XDLL_LIB) $(LIBS)
+	@has_dll_loadable@$(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP)
 	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
 	$(BINCOPY) $(XDLL) $(libdir)
+	@has_dll_loadable@$(BINCOPY) $(XDLL_LOADABLE) $(libdir)
 	@$(BINCOPY) $(XDLLDEP) $(status_dir)
 	@$(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP)
 
@@ -106,11 +110,13 @@ clean:
 	-$(RMDIR) ii_files
 	-$(RMDIR) ti_files
 	-$(RM) .make.state
-	-$(RM) $(XLIBOBJ) $(XDLLOBJ)
+	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB) $(XDLL) $(XLIBDEP) $(XDLLDEP)
+	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
 	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XDLL) $(libdir)/$(XLIBLINK) \
 		$(status_dir)/$(XLIBDEP) $(status_dir)/$(XDLLDEP) \
 		$(status_dir)/$(XLIBDEPLINK)
+	@has_dll_loadable@-$(RM) $(libdir)/$(XDLL_LOADABLE)

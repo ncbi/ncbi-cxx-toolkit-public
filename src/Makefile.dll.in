@@ -43,19 +43,23 @@ include $(builddir)/Makefile.$(Rules)
 
 ### The library build rule
 
-XLIBOBJ     = $(SOURCES:=@obj_ext@)
-XOBJ        = $(OBJ:=@obj_ext@)
-XLIB        = $(LIB:%=@lib_pre@%@dll_ext@)
-XLIBDEP     = .$(LIB).dep
-XDLL_LIB    = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
+XLIBOBJ       = $(SOURCES:=@obj_ext@)
+XOBJ          = $(OBJ:=@obj_ext@)
+XLIB          = $(LIB:%=@lib_pre@%@dll_ext@)
+XLIB_LOADABLE = $(LIB:%=@lib_pre@%@loadable_ext@)
+XLIBDEP       = .$(LIB).dep
+XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
 
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XLIB)
+	@has_dll_loadable@-$(RM) $(XLIB_LOADABLE)
 	$(LINK_DLL) $(XLIB) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
+	@has_dll_loadable@$(LINK_LOADABLE) $(XLIB_LOADABLE) $(LDFLAGS_DLL) $(XLIBOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
+	@has_dll_loadable@$(BINCOPY) $(XLIB_LOADABLE) $(libdir)
 	@$(BINCOPY) $(XLIBDEP) $(status_dir)
 	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
 
@@ -71,7 +75,9 @@ clean:
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB) $(XLIBDEP)
+	@has_dll_loadable@-$(RM) $(XLIB_LOADABLE)
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
 	-$(RM) $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
+	@has_dll_loadable@-$(RM) $(libdir)/$(XLIB_LOADABLE)
