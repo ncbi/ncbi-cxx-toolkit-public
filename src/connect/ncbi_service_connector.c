@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2001/05/30 18:46:38  lavr
+ * Always call dispatcher in header-parsing callback (to see err.msg. if any)
+ *
  * Revision 6.21  2001/05/23 21:53:19  lavr
  * Do not close dispatcher in Open; leave it as it is
  *
@@ -204,17 +207,17 @@ static int/*bool*/ s_ParseHeader(const char* header, void* data,
     static const char kStateless[] = "TRY_STATELESS";
     SServiceConnector* uuu = (SServiceConnector*) data;
 
+    SERV_Update(uuu->iter, header);
     if (server_error)
         return 1/*parsed okay*/;
-    SERV_Update(uuu->iter, header);
-    
+
     while (header && *header) {
         if (strncasecmp(header, HTTP_CONNECTION_INFO,
                         sizeof(HTTP_CONNECTION_INFO) - 1) == 0) {
             unsigned int i1, i2, i3, i4, temp;
             unsigned char o1, o2, o3, o4;
             char host[64];
-            
+
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
             while (*header && isspace((unsigned char)(*header)))
                 header++;
