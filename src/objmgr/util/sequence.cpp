@@ -2613,13 +2613,14 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
         ENa_strand     cstrand = cit.GetStrand();
         TSeqPos        pos     = 0;
         for (CSeq_loc_CI pit(parent);  pit;  ++pit) {
-            if ( !sequence::IsSameBioseq(cseqid, pit.GetSeq_id(), scope) ) {
-                continue;
-            }
             TRange0 prange = pit.GetRange();
             if (prange.IsWholeTo()  &&  scope) {
                 // determine actual end
                 prange.SetToOpen(sequence::GetLength(pit.GetSeq_id(), scope));
+            }
+            if ( !sequence::IsSameBioseq(cseqid, pit.GetSeq_id(), scope) ) {
+                pos += prange.GetLength();
+                continue;
             }
             CRef<TRange> intersection(new TRange);
             intersection->SetFrom(max(prange.GetFrom(), crange.GetFrom()));
@@ -3024,6 +3025,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.58  2003/06/19 17:11:43  ucko
+* SRelLoc::SRelLoc: remember to update the base position when skipping
+* parent ranges whose IDs don't match.
+*
 * Revision 1.57  2003/06/13 17:23:32  grichenk
 * Added special processing of multi-ID seq-locs in TestForOverlap()
 *
