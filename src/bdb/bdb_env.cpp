@@ -74,6 +74,9 @@ void CBDB_Env::OpenWithLocks(const char* db_home)
 
 void CBDB_Env::OpenWithTrans(const char* db_home)
 {
+    int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
+    BDB_CHECK(ret, "DB_ENV");
+
     Open(db_home, 
          DB_INIT_TXN | DB_RECOVER |
          DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL | DB_THREAD);
@@ -123,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/29 12:55:35  kuznets
+ * Minor tweaking of locking mechanism.
+ *
  * Revision 1.8  2003/12/15 14:51:43  kuznets
  * Checking environment flags in JoinEnv to determine environment is
  * transactional.
