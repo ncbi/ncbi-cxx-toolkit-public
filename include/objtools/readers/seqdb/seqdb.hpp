@@ -40,7 +40,7 @@
 /// Implemented for: UNIX, MS-Windows
 
 
-#include "seqdbcommon.hpp"
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/general/Dbtag.hpp>
