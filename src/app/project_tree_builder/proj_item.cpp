@@ -624,6 +624,7 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
         const list<string> libs_flags = k->second;
         SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
     }
+    
     //CPPFLAGS
     list<string> include_dirs;
     list<string> defines;
@@ -633,6 +634,12 @@ string SAppProjectT::DoCreate(const string& source_base_dir,
         SMakeProjectT::CreateIncludeDirs(cpp_flags, 
                                          source_base_dir, &include_dirs);
         SMakeProjectT::CreateDefines(cpp_flags, &defines);
+    }
+
+    //NCBI_C_LIBS - Special case for NCBI C Toolkit
+    k = m->second.m_Contents.find("NCBI_C_LIBS");
+    if (k != m->second.m_Contents.end()) {
+        libs_3_party.push_back("NCBI_C_LIBS");
     }
 
     CProjItem project(CProjItem::eApp, 
@@ -1239,6 +1246,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/18 23:35:40  gorelenk
+ * Added special processing for NCBI_C_LIBS tag.
+ *
  * Revision 1.14  2004/02/13 16:02:24  gorelenk
  * Modified procedure of depends resolve.
  *
