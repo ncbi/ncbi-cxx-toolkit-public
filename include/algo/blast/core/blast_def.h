@@ -88,6 +88,14 @@ typedef struct BlastMaskLoc {
    struct BlastMaskLoc* next; /**< Pointer to the next query mask */
 } BlastMaskLoc;
 
+
+/** Encapsulates masking/filtering information. */
+typedef struct BlastMaskInformation {
+   BlastMaskLoc* filter_slp; /**< masking locations. */
+   Boolean mask_at_hash; /**< if TRUE masking used only for building lookup table. */
+} BlastMaskInformation; 
+
+
 /** Structure to hold a sequence. */
 typedef struct BLAST_SequenceBlk {
    Uint1* sequence; /**< Sequence used for search (could be translation). */
