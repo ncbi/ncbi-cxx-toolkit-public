@@ -252,7 +252,7 @@ int CTest::Run(void)
     assert(n_written == message.length());
     assert(pipe.Close(&exitcode) == eIO_Success);
     assert(exitcode == kTestResult);
-    
+
     // Bidirectional pipe (direct from pipe)
     args.clear();
     args.push_back("one");
@@ -326,7 +326,7 @@ int main(int argc, const char* argv[])
         command = s_ReadFile(stdin);
         _TRACE("read back >>" << command << "<<");
         assert(command == "Child, are you ready?");
-        cout << "Ok. Test 1 running." << endl;
+        cerr << "Ok. Test 1 running." << endl;
         exit(kTestResult);
     }
 
@@ -361,6 +361,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.18  2003/09/30 21:00:34  lavr
+ * Formatting
+ *
  * Revision 6.17  2003/09/23 21:13:32  lavr
  * Adapt test for new stream and pipe API
  *
