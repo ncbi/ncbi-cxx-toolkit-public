@@ -1206,8 +1206,8 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
     // another seq.data format
     id.SetGi(23+idx*1000);
     ProcessBioseq(scope, id, 13,
-        "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
-        "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
+        "\\x00\\x03\\x02\\x01\\x00\\x02\\x01\\x03\\x02\\x03\\x00\\x01\\x02",
+        "\\x03\\x00\\x01\\x02\\x03\\x01\\x02\\x00\\x01\\x00\\x03\\x02\\x01",
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
@@ -1218,6 +1218,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/03/26 14:30:23  lavr
+* Conform to modified representation of NUL char in NStr::PrintableString()
+*
 * Revision 1.29  2003/03/21 14:52:28  vasilche
 * Modified testobjmgr1 to reflect changes in CFeat_CI and CAlign_CI
 * constructors' behaviour.
