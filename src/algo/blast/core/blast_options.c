@@ -1109,6 +1109,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    Blast_KarlinBlk* kbp;
    double evalue;
    double scale_factor = sbp->scale_factor;
+   Boolean gapped_calculation;
 
    ASSERT(params);
    ASSERT(query_info);
@@ -1120,7 +1121,8 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    /* Scoring options are not available here, but we can determine whether
       this is a gapped or ungapped search by checking whether gapped
       Karlin blocks have been set. */
-   if (sbp->kbp_gap) {
+   gapped_calculation = (sbp->kbp_gap != NULL);
+   if (gapped_calculation) {
       kbp = sbp->kbp_gap[query_info->first_context];
    } else {
       kbp = sbp->kbp[query_info->first_context];
@@ -1145,16 +1147,22 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
          cutoff are saved until the sum statistics is applied to potentially
          link them with other HSPs and improve their e-values. 
          However this does not apply to the ungapped search! */
-      if (params->do_sum_stats) {
+      if (params->do_sum_stats && gapped_calculation) {
          params->cutoff_score = 
             MIN(params->cutoff_score, ext_params->gap_trigger);
       }
    } else {
       params->cutoff_score = 0;
    }
-   
-   params->cutoff_small_gap = 
-      MIN(params->cutoff_score, ext_params->gap_trigger);
+
+   if (params->do_sum_stats) { 
+      if (gapped_calculation) {
+         params->cutoff_small_gap = 
+            MIN(params->cutoff_score, ext_params->gap_trigger);
+      } else {
+         params->cutoff_small_gap = params->cutoff_score;
+      }
+   }
       
    return 0;
 }
@@ -1351,6 +1359,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.115  2004/06/09 22:27:44  dondosha
+ * Do not reduce score cutoffs to gap_trigger value for ungapped blastn
+ *
  * Revision 1.114  2004/06/09 14:11:34  camacho
  * Set default for use_best_alignment
  *
