@@ -618,7 +618,8 @@ void SFlatReference::x_AddImprint(const CImprint& imp, const SFlatContext& ctx)
                     if (x > 0  ||  (x == 0  &&  len1 >= len2)) {
                         // complain?
                     } else {
-                        m_Pages.insert(hyphen + 1, 0, digits2 - digits1);
+                        m_Pages.insert(hyphen + 1, m_Pages, 0,
+                                       digits1 - digits2);
                     }
                 }
             }
@@ -639,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 20:18:16  ucko
+* Fix broken call to string::insert (caught by Compaq's compiler).
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *
