@@ -248,6 +248,15 @@ CLDS_Database* CLDS_DatabaseHolder::GetDatabase(const string& alias)
     
 }
 
+void CLDS_DatabaseHolder::EnumerateAliases(vector<string>* aliases)
+{
+    ITERATE(vector<CLDS_Database*>, it, m_DataBases) {
+        CLDS_Database* db = *it;
+        const string& db_alias = db->GetAlias();
+        aliases->push_back(db_alias);
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -255,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/10/29 16:23:31  kuznets
+ * Implemented CLDS_DatabaseHolder::EnumerateAliases
+ *
  * Revision 1.14  2003/10/27 20:16:57  kuznets
  * +CLDS_DatabaseHolder::GetDatabase
  *
