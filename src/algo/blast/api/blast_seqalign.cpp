@@ -891,13 +891,10 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
     if (hsp->num_ident > 0)
         scores.push_back(x_MakeScore(score_type, 0.0, hsp->num_ident));
 
-    if (hsp->num > 1 && hsp->ordering_method == 0/*BLAST_SMALL_GAPS*/) {
-        score_type = "small_gap";
-        scores.push_back(x_MakeScore(score_type, 0.0, 1));
-    } else if (hsp->ordering_method > 3) {
-        // In new tblastn this means splice junction was found
+    if (hsp->splice_junction > 0) {
+        // Splice junction(s) was (were) found between linked HSPs
         score_type = "splice_junction";
-        scores.push_back(x_MakeScore(score_type, 0.0, 1));
+        scores.push_back(x_MakeScore(score_type, 0.0, hsp->splice_junction));
     }
 
     return;
@@ -1359,6 +1356,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/03/24 19:14:14  dondosha
+* BlastHSP structure does not have ordering_method field any more, but it does contain a splice_junction field
+*
 * Revision 1.34  2004/03/23 18:22:06  dondosha
 * Minor memory leak fix
 *
