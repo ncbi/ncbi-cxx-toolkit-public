@@ -124,7 +124,7 @@ bool s_CheckExists(const string&  host,
 
 /// @internal
 static
-string s_PutBlob(const string&             host,
+string s_PutBlob(const string&           host,
                unsigned short            port,
                const void*               buf, 
                size_t                    size, 
@@ -140,7 +140,7 @@ string s_PutBlob(const string&             host,
 
     info.connection_time = sw.Elapsed();
     sw.Restart();
-    info.key = nc_client.PutData(buf, size, 60 * 5);
+    info.key = nc_client.PutData(buf, size, 60 * 8);
     info.transaction_time = sw.Elapsed();
 
     log->push_back(info);
@@ -380,6 +380,11 @@ void s_TestAlive(const string& host, unsigned short port)
     assert(b);
     b = ncc.IsAlive();
     assert(b);
+    
+    for (int i = 0; i < 2000; ++i) {
+        b = ncc.IsAlive();
+        assert(b);        
+    }
 }
 
 int CTestNetCacheClient::Run(void)
@@ -449,7 +454,6 @@ int CTestNetCacheClient::Run(void)
         CNetCacheClient::EReadResult rres = 
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
         assert(rres == CNetCacheClient::eReadComplete);
-
         int res = strcmp(dataBuf, test_data2);
         assert(res == 0);
 
@@ -480,8 +484,10 @@ int CTestNetCacheClient::Run(void)
     s_RemoveBLOB_Test(host, port);
 
     s_ReadUpdateCharTest(host, port);
-
+    
+    NcbiCout << "Testing IsAlive()... ";
     s_TestAlive(host, port);
+    NcbiCout << "Ok." << NcbiEndl;
 
 /*
     unsigned delay = 70;
@@ -559,6 +565,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/01/05 17:36:02  kuznets
+ * More careful testing of IsAlive
+ *
  * Revision 1.21  2004/12/27 19:54:43  kuznets
  * Improved statistics reporting
  *
