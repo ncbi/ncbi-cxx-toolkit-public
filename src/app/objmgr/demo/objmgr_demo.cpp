@@ -146,6 +146,12 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("print_descr", "print all found descriptors");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
+    arg_desc->AddOptionalKey("range_from", "RangeFrom",
+                             "features starting at this point on the sequence",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("range_to", "RangeTo",
+                             "features ending at this point on the sequence",
+                             CArgDescriptions::eInteger);
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
     arg_desc->AddFlag("get_original_feature", "get original location");
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
@@ -630,6 +636,8 @@ int CDemoApp::Run(void)
             //int cnt0 = newCObjects.Get();
             CFeat_CI it(scope, loc, sel);
             //int cnt1 = newCObjects.Get();
+            bool print = print_features &&
+                !args["range_from"] && !args["range_to"];
             for ( ; it;  ++it) {
                 count++;
                 if ( get_mapped_location )
@@ -640,7 +648,7 @@ int CDemoApp::Run(void)
                     it->GetMappedFeature();
                 
                 // Get seq-annot containing the feature
-                if ( print_features ) {
+                if ( print ) {
                     NcbiCout << "Feature:";
                     if ( it->IsSetPartial() ) {
                         NcbiCout << " partial = " << it->GetPartial();
@@ -659,10 +667,10 @@ int CDemoApp::Run(void)
                 }
                 CSeq_annot_Handle annot = it.GetAnnot();
                 /*
-                const CSeq_id* mapped_id = 0;
-                it->GetLocation().CheckId(mapped_id);
-                _ASSERT(mapped_id);
-                _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == master_id);
+                  const CSeq_id* mapped_id = 0;
+                  it->GetLocation().CheckId(mapped_id);
+                  _ASSERT(mapped_id);
+                  _ASSERT(CSeq_id_Handle::GetHandle(*mapped_id) == master_id);
                 */
             }
             //int cnt2 = newCObjects.Get();
@@ -677,10 +685,7 @@ int CDemoApp::Run(void)
             _ASSERT(count == (int)it.GetSize());
         }}
 
-        if ( only_features )
-            continue;
-
-        {
+        if ( !only_features ) {
             count = 0;
             // The same region (whole sequence), but restricted feature type:
             // searching for e_Cdregion features only. If the sequence is
@@ -728,29 +733,64 @@ int CDemoApp::Run(void)
         // Region set to interval 0..9 on the bioseq. Any feature
         // intersecting with the region should be selected.
         loc.SetInt().SetId(*id);
-        loc.SetInt().SetFrom(0);
-        loc.SetInt().SetTo(9);
+        TSeqPos range_from = 0;
+        if ( args["range_from"] ) {
+            range_from = args["range_from"].AsInteger();
+        }
+        TSeqPos range_to = 9;
+        if ( args["range_to"] ) {
+            range_to = args["range_to"].AsInteger();
+        }
+        loc.SetInt().SetFrom(range_from);
+        loc.SetInt().SetTo(range_to);
         count = 0;
         // Iterate features. No feature type restrictions.
         for (CFeat_CI it(scope, loc, base_sel); it;  ++it) {
             count++;
+            if ( print_features ) {
+                NcbiCout << "Feature:";
+                if ( it->IsSetPartial() ) {
+                    NcbiCout << " partial = " << it->GetPartial();
+                }
+                NcbiCout << "\n" <<
+                    MSerial_AsnText << it->GetMappedFeature();
+                if ( 1 ) {
+                    NcbiCout << "Original location:\n" <<
+                        MSerial_AsnText <<
+                        it->GetOriginalFeature().GetLocation();
+                }
+                else {
+                    NcbiCout << "Location:\n" <<
+                        MSerial_AsnText << it->GetLocation();
+                }
+            }
         }
-        NcbiCout << "Feat count (int. 0..9, any):   " << count << NcbiEndl;
+        NcbiCout << "Feat count (id, "<<range_from<<".."<<range_to<<", any):   "
+                 << count << NcbiEndl;
 
         // Search features only in the TSE containing the target bioseq.
         // Since only one seq-id may be used as the target bioseq, the
         // iterator is constructed not from a seq-loc, but from a bioseq handle
         // and start/stop points on the bioseq. If both start and stop are 0 the
-        // whole bioseq is used. The last parameter may be used for type filtering.
+        // whole bioseq is used.
+        // The last parameter may be used for type filtering.
         count = 0;
-        for ( CFeat_CI it(handle, 0, 999, base_sel); it;  ++it ) {
-            count++;
-            if ( print_features ) {
-                NcbiCout << MSerial_AsnText <<
-                    it->GetMappedFeature() << it->GetLocation();
-            }
+        range_from = 0;
+        if ( args["range_from"] ) {
+            range_from = args["range_from"].AsInteger();
         }
-        NcbiCout << "Feat count (bh, 0..999, any):  " << count << NcbiEndl;
+        range_to = 999;
+        if ( args["range_to"] ) {
+            range_to = args["range_to"].AsInteger();
+        }
+        for ( CFeat_CI it(handle, range_from, range_to, base_sel); it;  ++it ) {
+            count++;
+        }
+        NcbiCout << "Feat count (bh, "<<range_from<<".."<<range_to<<", any):  "
+                 << count << NcbiEndl;
+
+        if ( only_features )
+            continue;
 
         // The same way may be used to iterate aligns and graphs,
         // except that there is no type filter for both of them.
@@ -815,6 +855,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2004/07/13 21:09:09  vasilche
+* Added "range_from" and "range_to" options.
+*
 * Revision 1.72  2004/07/13 14:04:28  vasilche
 * Optional compilation with Berkley DB.
 *
