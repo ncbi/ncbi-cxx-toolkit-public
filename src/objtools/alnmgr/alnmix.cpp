@@ -259,6 +259,9 @@ void CAlnMix::Add(const CDense_seg &ds)
                 &m_BioseqHandles.find(bioseq_handle)->first;
             aln_seq->m_DS_Count = 1;
 
+            // add this sequence
+            m_Seqs.push_back(aln_seq);
+            
             // mark if protein sequence
             aln_seq->m_IsAA = aln_seq->m_BioseqHandle->GetBioseqCore()
                 ->GetInst().GetMol() == CSeq_inst::eMol_aa;
@@ -411,33 +414,38 @@ int CAlnMix::x_CalculateScore(const string& s1, const string& s2,
 
 void CAlnMix::x_Merge()
 {
-    int  ref_seq_score = 0;
+    // Find the refseq (if such exists)
+    {{
+        TSeqs::iterator refseq_it;
+        iterate (TSeqs, it, m_Seqs){
+            CAlnMixSeq * aln_seq = *it;
 
-    iterate (TBioseqHandleMap, it, m_BioseqHandles){
-        CRef<CAlnMixSeq> aln_seq = it->second;
-
-        m_Seqs.push_back(aln_seq);
-        
-        if (aln_seq->m_DS_Count == m_InputDSs.size()) {
-            // found a potential reference sequence
-            if ( !m_SingleRefseq  ||  aln_seq->m_Score > ref_seq_score) {
-                // it has the best score (so far)
-                m_SingleRefseq = true;
-                ref_seq_score = aln_seq->m_Score;
-                if (m_Seqs.size() > 1) {
-                    // put in front
-                    m_Seqs.pop_back();
-                    m_Seqs.insert(m_Seqs.begin(), aln_seq);
+            if (aln_seq->m_DS_Count == m_InputDSs.size()) {
+                // found a potential reference sequence
+                if ( !m_SingleRefseq  ||
+                     m_SingleRefseq  &&  
+                     aln_seq->m_Score > (*refseq_it)->m_Score) {
+                    // it has the best score (so far)
+                    m_SingleRefseq = true;
+                    refseq_it = it;
                 }
             }
         }
-    }
+        if (m_SingleRefseq) {
+            // move to the front
+            CAlnMixSeq * refseq = *refseq_it;
+            m_Seqs.erase(refseq_it);
+            m_Seqs.insert(m_Seqs.begin(), refseq);
+        }
+    }}
 
-    // Sort sequences by score,
-    // leaving the reference sequence (if such exists) on
-    stable_sort(m_Seqs.begin() + (m_SingleRefseq ? 1 : 0),
-                m_Seqs.end(),
-                x_CompareAlnSeqScores);
+    if (m_MergeFlags & fSortSeqsByScore) {
+        // Sort sequences by score,
+        // leaving the reference sequence (if such exists) on
+        stable_sort(m_Seqs.begin() + (m_SingleRefseq ? 1 : 0),
+                    m_Seqs.end(),
+                    x_CompareAlnSeqScores);
+    }
 
     // Index the sequences
     {{
@@ -1175,6 +1183,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/01/10 00:42:53  todorov
+* Optional sorting of seqs by score
+*
 * Revision 1.17  2003/01/10 00:11:37  todorov
 * Implemented fNegativeStrand
 *

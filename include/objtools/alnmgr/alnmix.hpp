@@ -69,7 +69,8 @@ public:
         fTruncateOverlaps     = 0x02, // otherwise put on separate rows
         fNegativeStrand       = 0x04,
         fTryOtherMethodOnFail = 0x08,
-        fGapJoin              = 0x10
+        fGapJoin              = 0x10,
+        fSortSeqsByScore      = 0x20  // Seqs with better scoring aligns on top
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
     void Merge(TMergeFlags flags = 0);
@@ -288,6 +289,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2003/01/10 00:42:42  todorov
+* Optional sorting of seqs by score
+*
 * Revision 1.13  2003/01/02 16:39:57  todorov
 * Added accessors to the input data
 *
