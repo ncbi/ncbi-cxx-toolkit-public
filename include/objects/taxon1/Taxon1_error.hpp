@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/01/31 00:30:11  vakatov
+ * Get rid of "std::" which is unnecessary and sometimes un-compilable.
+ * Also done some source identation/beautification.
+ *
  * Revision 1.1  2002/01/29 17:19:30  domrach
  * Initial checkin
  *
@@ -64,11 +68,11 @@ public:
     // destructor
     ~CTaxon1_error(void);
 
-    void GetErrorText( std::string& err ) const;
+    void GetErrorText(string& err) const;
 private:
     // Prohibit copy constructor and assignment operator
-    CTaxon1_error(const CTaxon1_error& value);
-    CTaxon1_error& operator=(const CTaxon1_error& value);
+    CTaxon1_error(const CTaxon1_error&);
+    CTaxon1_error& operator= (const CTaxon1_error&);
 
 };
 

@@ -1,5 +1,6 @@
 #ifndef NCBI_TAXON1_HPP
 #define NCBI_TAXON1_HPP
+
 /* $Id$
  * ===========================================================================
  *
@@ -31,6 +32,8 @@
  *     NCBI Taxonomy information retreival library
  *
  */
+
+
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -48,14 +51,16 @@
 #include <objects/taxon1/taxon1__.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_objects_SCOPE
+
 
 class COrgRefCache;
 
+
 class CTaxon1 {
 public:
-    typedef std::list< std::string > TNameList;
-    typedef std::vector< int > TTaxIdList;
+    typedef list< string > TNameList;
+    typedef vector< int > TTaxIdList;
 
     CTaxon1();
     ~CTaxon1();
@@ -64,7 +69,7 @@ public:
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
     ///
-    bool Init(std::time_t timeout=120, unsigned reconnect_attempts=5);
+    bool Init(time_t timeout=120, unsigned reconnect_attempts=5);
 
     //---------------------------------------------
     // Taxon1 server fini (closes connection, frees memory)
@@ -117,15 +122,15 @@ public:
     //         -tax_id - if multiple nodes found
     //                   (where -tax_id is id of one of the nodes)
     ///
-    int GetTaxIdByName(const std::string& orgname);
-    int FindTaxIdByName(const std::string& orgname);
+    int GetTaxIdByName(const string& orgname);
+    int FindTaxIdByName(const string& orgname);
 
 
     //----------------------------------------------
     // Get ALL tax_id by organism name
     // Returns: number of organisms found, id list appended with found tax ids
     ///
-    int GetAllTaxIdByName(const std::string& orgname, TTaxIdList& lIds);
+    int GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds);
 
     //----------------------------------------------
     // Get organism by tax_id
@@ -138,7 +143,7 @@ public:
     CConstRef< COrg_ref > GetOrgRef(int tax_id,
 				    bool& is_species,
 				    bool& is_uncultured,
-				    std::string& blast_name);
+				    string& blast_name);
 
     //---------------------------------------------
     // Set mode for synonyms in OrgRef
@@ -171,7 +176,7 @@ public:
     //---------------------------------------------
     // Get genetic code name by genetic code id
     ///
-    bool GetGCName(short gc_id, std::string& gc_name_out );
+    bool GetGCName(short gc_id, string& gc_name_out );
 
     //---------------------------------------------
     // Get the nearest common ancestor for two nodes
@@ -214,7 +219,7 @@ public:
     //                this node in the lineage or empty if there is no blast
     //                name above
     ///
-    bool GetBlastName(int tax_id, std::string& blast_name_out);
+    bool GetBlastName(int tax_id, string& blast_name_out);
 
     //--------------------------------------------------
     // Get error message after latest erroneous operation
@@ -239,9 +244,9 @@ private:
     COrgRefCache*            m_plCache;
 
     bool                     m_bWithSynonyms;
-    std::string              m_sLastError;
+    string                   m_sLastError;
 
-    typedef std::map< short, std::string > TGCMap;
+    typedef map<short, string> TGCMap;
     TGCMap                   m_gcStorage;
 
     void             Reset(void);
@@ -249,16 +254,23 @@ private:
     void             SetLastError(const char* err_msg);
 };
 
-END_objects_SCOPE // namespace ncbi::objects::
+
+END_objects_SCOPE
 END_NCBI_SCOPE
+
 
 
 //
 // $Log$
+// Revision 1.2  2002/01/31 00:30:11  vakatov
+// Get rid of "std::" which is unnecessary and sometimes un-compilable.
+// Also done some source identation/beautification.
+//
 // Revision 1.1  2002/01/28 19:52:20  domrach
 // Initial checkin
 //
 //
 // ===========================================================================
 //
+
 #endif //NCBI_TAXON1_HPP
