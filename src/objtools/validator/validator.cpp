@@ -438,6 +438,8 @@ const string CValidErrItem::sm_Terse [] = {
     "TpaAssmeblyProblem",
     "SeqLocLength",
     "MissingGaps",
+    "CompleteTitleProblem",
+    "CompleteCircleProblem",
     END(SEQ_INST),
 
     BEGIN(SEQ_DESCR),
@@ -772,6 +774,10 @@ Seq-hist.assembly alignment for the PRIMARY block.",
 "A SeqLoc component of a delta Bioseq is suspiciously small.",
 //  SEQ_INST_MissingGaps
 "HTGS delta records should have gaps between each sequence segment.",
+//  SEQ_INST_CompleteTitleProblem
+"The sequence title has complete genome in it, but it is not marked as complete.",
+//  SEQ_INST_CompleteCircleProblem
+"This sequence has a circular topology, but it is not marked as complete.",
 
 END(SEQ_INST),
 
@@ -1320,6 +1326,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2004/08/09 14:54:10  shomrat
+* Added eErr_SEQ_INST_CompleteTitleProblem and eErr_SEQ_INST_CompleteCircleProblem
+*
 * Revision 1.52  2004/08/04 17:47:34  shomrat
 * + SEQ_FEAT_TaxonDbxrefOnFeature
 *

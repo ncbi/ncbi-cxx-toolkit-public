@@ -66,7 +66,6 @@ class CFeat_CI;
 class CPub_set;
 class CAuthor;
 class CTitle;
-class CDesc_CI;
 class CMolInfo;
 class CUser_object;
 class CSeqdesc_CI;
@@ -147,6 +146,8 @@ enum EErrType {
     eErr_SEQ_INST_TpaAssmeblyProblem,
     eErr_SEQ_INST_SeqLocLength,
     eErr_SEQ_INST_MissingGaps,
+    eErr_SEQ_INST_CompleteTitleProblem,
+    eErr_SEQ_INST_CompleteCircleProblem,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR),
@@ -452,6 +453,7 @@ public:
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsCuratedRefSeq(void) const;
+    inline bool IsGenbank(void) const { return m_IsGB; }
     
     const CSeq_entry& GetTSE(void) { return *m_TSE; }
 
@@ -543,6 +545,7 @@ private:
     bool m_IsNW;
     bool m_IsXR;
     bool m_IsGI;
+    bool m_IsGB;
     
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
@@ -673,7 +676,7 @@ private:
     void ValidateDelta(const CBioseq& seq);
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);
     void ValidateSeqParts(const CBioseq& seq);
-    void ValidateProteinTitle(const CBioseq& seq);
+    void x_ValidateTitle(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
     void ValidateNs(const CBioseq& seq);
     
@@ -962,6 +965,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2004/08/09 14:53:55  shomrat
+* Added eErr_SEQ_INST_CompleteTitleProblem and eErr_SEQ_INST_CompleteCircleProblem
+*
 * Revision 1.73  2004/08/04 17:47:00  shomrat
 * + eErr_SEQ_FEAT_TaxonDbxrefOnFeature
 *
