@@ -5,11 +5,10 @@
 
 LIBOBJ = \
   typeref typeinfo stdtypes ptrinfo autoptrinfo choiceptr \
-  member memberid memberlist \
-  stltypes \
-  asntypes classinfo \
-  objistr objostr objlist objistrb objostrb \
-  objostrasn objistrasn objostrasnb objistrasnb \
+  member memberid memberlist classinfo \
+  stltypes enumerated choice asntypes \
+  objistr objostr objlist \
+  objistrb objostrb objostrasn objistrasn objostrasnb objistrasnb \
   rtti
 LIB    = xser
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/24 18:19:19  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.22  1999/09/23 21:16:08  vasilche
 * Removed dependance on asn.h
 *
@@ -388,27 +391,18 @@ extern "C" {
         return length;
     }
 }
-#endif
 
 CObjectOStream::AsnIo::AsnIo(CObjectOStream& out)
     : m_Out(out)
 {
-#if !HAVE_NCBI_C
-	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
-#else
     m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
     out.AsnOpen(*this);
-#endif
 }
 
 CObjectOStream::AsnIo::~AsnIo(void)
 {
-#if !HAVE_NCBI_C
-	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
-#else
     AsnIoClose(*this);
     m_Out.AsnClose(*this);
-#endif
 }
 
 void CObjectOStream::AsnOpen(AsnIo& )
@@ -428,5 +422,6 @@ void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
 {
     THROW1_TRACE(runtime_error, "illegal call");
 }
+#endif
 
 END_NCBI_SCOPE

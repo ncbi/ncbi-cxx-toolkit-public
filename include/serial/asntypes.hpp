@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/09/24 18:19:12  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.14  1999/09/23 18:56:51  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -82,12 +85,9 @@
 */
 
 #include <serial/typeinfo.hpp>
-#include <serial/stdtypes.hpp>
 #include <serial/typeref.hpp>
-#include <serial/memberid.hpp>
-#include <serial/memberlist.hpp>
 #include <serial/typemap.hpp>
-#include <vector>
+#include <serial/choice.hpp>
 #include <map>
 
 struct valnode;
@@ -194,42 +194,30 @@ private:
     static CTypeInfoMap<CSetOfTypeInfo> sm_Map;
 };
 
-class CChoiceTypeInfo : public CTypeInfo {
-    typedef CTypeInfo CParent;
+class CChoiceTypeInfo : public CChoiceTypeInfoBase {
+    typedef CChoiceTypeInfoBase CParent;
 public:
-    CChoiceTypeInfo(const string& name)
-        : CParent(name)
-        { }
+    typedef valnode TObjectType;
 
-    void AddVariant(const CMemberId& id, const CTypeRef& type);
-    void AddVariant(const string& name, const CTypeRef& type);
+    CChoiceTypeInfo(const string& name);
+
+    // object getters:
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
 
     virtual size_t GetSize(void) const;
     virtual TObjectPtr Create(void) const;
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
-    virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-    TMemberIndex GetVariantsCount(void) const
-        { return m_VariantTypes.size(); }
-
-    TTypeInfo GetVariantTypeInfo(TMemberIndex index) const
-        { return m_VariantTypes[index].Get(); }
-
 protected:
-    
-    void CollectExternalObjects(COObjectList& list,
-                                TConstObjectPtr object) const;
-
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-private:
-    CMembers m_Variants;
-    vector<CTypeRef> m_VariantTypes;
+    virtual TMemberIndex GetIndex(TConstObjectPtr object) const;
+    virtual void SetIndex(TObjectPtr object, TMemberIndex index) const;
+    virtual TObjectPtr x_GetData(TObjectPtr object) const;
 };
 
 class COctetStringTypeInfo : public CTypeInfoTmpl<bytestore*> {
@@ -294,31 +282,6 @@ private:
     TWriteProc m_WriteProc;
 
     static map<TNewProc, COldAsnTypeInfo*> m_Types;
-};
-
-class CEnumeratedTypeInfo : public CStdTypeInfo<int>
-{
-    typedef CStdTypeInfo<int> CParent;
-public:
-    typedef CParent::TObjectType TValue;
-    typedef map<string, TValue> TNameToValue;
-    typedef map<TValue, string> TValueToName;
-
-    CEnumeratedTypeInfo(const string& name, bool isInteger = false);
-
-    void AddValue(const string& name, TValue value);
-
-    TValue FindValue(const string& name) const;
-    const string& FindName(TValue value) const;
-
-protected:
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-private:
-    bool m_Integer;
-    TNameToValue m_NameToValue;
-    TValueToName m_ValueToName;
 };
 
 //#include <serial/asntypes.inl>

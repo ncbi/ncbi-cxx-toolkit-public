@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/09/24 18:19:13  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.18  1999/09/23 18:56:52  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -148,9 +151,11 @@ protected:
     virtual double ReadDouble(void);
     virtual string ReadString(void);
 
+#if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
     virtual void AsnOpen(AsnIo& asn);
     virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+#endif
 
 protected:
     virtual void VBegin(Block& block);

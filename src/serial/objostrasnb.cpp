@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  1999/09/24 18:19:19  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.21  1999/09/24 14:21:52  vasilche
 * Fixed usage of strstreams.
 *
@@ -576,13 +579,10 @@ void CObjectOStreamAsnBinary::WriteBytes(const ByteBlock& ,
 	WriteBytes(bytes, length);
 }
 
+#if HAVE_NCBI_C
 unsigned CObjectOStreamAsnBinary::GetAsnFlags(void)
 {
-#if HAVE_NCBI_C
     return ASNIO_BIN;
-#else
-    return 0;
-#endif
 }
 
 void CObjectOStreamAsnBinary::AsnWrite(AsnIo& , const char* data, size_t length)
@@ -600,5 +600,6 @@ void CObjectOStreamAsnBinary::AsnWrite(AsnIo& , const char* data, size_t length)
     if ( !m_Output.write(data, length) )
         THROW1_TRACE(runtime_error, "write error");
 }
+#endif
 
 END_NCBI_SCOPE

@@ -3,7 +3,8 @@
 #include <serial/stltypes.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
-#include <serial/asntypes.hpp>
+#include <serial/enumerated.hpp>
+#include <serial/choice.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <algorithm>
 #include "type.hpp"
@@ -11,6 +12,15 @@
 #include "module.hpp"
 #include "moduleset.hpp"
 #include "code.hpp"
+
+typedef int TInteger;
+
+union AnyType {
+    bool booleanValue;
+    TInteger integerValue;
+    double realValue;
+    void* pointerValue;
+};
 
 inline
 string replace(string s, char from, char to)
@@ -204,25 +214,21 @@ void CTypeStrings::x_AddMember(CClassCode& code,
 class CTypeSource : public CTypeInfoSource
 {
 public:
-    CTypeSource(ASNType* type)
-        : m_Type(type)
+    CTypeSource(AutoPtr<ASNType>& type)
+        : m_Type(type.get())
         {
         }
 
     TTypeInfo GetTypeInfo(void)
         {
-            return m_Type->GetTypeInfo();
+            TTypeInfo typeInfo = m_Type->GetTypeInfo();
+            if ( typeInfo->GetSize() > sizeof(AnyType) )
+                typeInfo = new CAutoPointerTypeInfo(typeInfo);
+            return typeInfo;
         }
 
 private:
     ASNType* m_Type;
-};
-
-union dataval {
-    bool booleanValue;
-    int integerValue;
-    double realValue;
-    void* pointerValue;
 };
 
 ASNType::ASNType(ASNModule& module, const string& n)
@@ -258,7 +264,8 @@ TTypeInfo ASNType::GetTypeInfo(void)
 {
     _TRACE(name << "::GetTypeInfo()");
     if ( !m_CreatedTypeInfo ) {
-        if ( !(m_CreatedTypeInfo = CreateTypeInfo()) )
+        m_CreatedTypeInfo = CreateTypeInfo();
+        if ( !m_CreatedTypeInfo )
             THROW1_TRACE(runtime_error, "type undefined");
     }
     _TRACE(name << "::GetTypeInfo(): " << m_CreatedTypeInfo->GetName());
@@ -290,13 +297,6 @@ CTypeInfo* ASNType::CreateTypeInfo(void)
 {
     return 0;
 }
-
-/*
-bool ASNType::SimpleType(void) const
-{
-    return false;
-}
-*/
 
 #define CheckValueType(value, type, name) do{ \
 if ( dynamic_cast<const type*>(&(value)) == 0 ) { \
@@ -583,13 +583,6 @@ void ASNEnumeratedType::GetCType(CTypeStrings& tType,
     // TODO: generate enum
 }
 
-/*
-bool ASNEnumeratedType::SimpleType(void) const
-{
-    return true;
-}
-*/
-
 ASNIntegerType::ASNIntegerType(ASNModule& module)
     : ASNFixedType(module, "INTEGER")
 {
@@ -608,7 +601,7 @@ TObjectPtr ASNIntegerType::CreateDefault(const ASNValue& value)
 
 TTypeInfo ASNIntegerType::GetTypeInfo(void)
 {
-    return CStdTypeInfo<int>::GetTypeInfo();
+    return CStdTypeInfo<TInteger>::GetTypeInfo();
 }
 
 string ASNIntegerType::GetDefaultCType(void) const
@@ -739,7 +732,7 @@ ASNSetOfType::ASNSetOfType(const AutoPtr<ASNType>& type)
 
 CTypeInfo* ASNSetOfType::CreateTypeInfo(void)
 {
-    return new CSetOfTypeInfo(name, type->GetTypeInfo());
+    return new CStlClassInfoList<AnyType>(new CTypeSource(type));
 }
 
 void ASNSetOfType::GetCType(CTypeStrings& tType,
@@ -786,7 +779,7 @@ ASNSequenceOfType::ASNSequenceOfType(const AutoPtr<ASNType>& type)
 
 CTypeInfo* ASNSequenceOfType::CreateTypeInfo(void)
 {
-    return new CSequenceOfTypeInfo(name, type->GetTypeInfo());
+    return new CStlClassInfoList<AnyType>(new CTypeSource(type));
 }
 
 void ASNSequenceOfType::GetCType(CTypeStrings& tType,
@@ -845,27 +838,27 @@ ASNContainerType::ASNContainerType(ASNModule& module, const string& kw)
 
 CTypeInfo* ASNContainerType::CreateTypeInfo(void)
 {
-    return new CAutoPointerTypeInfo(CreateClassInfo());
+    return CreateClassInfo();
 }
 
 CClassInfoTmpl* ASNContainerType::CreateClassInfo(void)
 {
     auto_ptr<CClassInfoTmpl> typeInfo(new CStructInfoTmpl(name, typeid(void),
-        members.size()*sizeof(dataval)));
+        members.size()*sizeof(AnyType)));
 
     int index = 0;
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i, ++index ) {
         ASNMember* member = i->get();
-        ASNType* type = member->type.get();
         CMemberInfo* memberInfo =
             typeInfo->AddMember(member->name,
-                                new CRealMemberInfo(index*sizeof(dataval),
-                                                    new CTypeSource(type)));
+                new CRealMemberInfo(index * sizeof(AnyType),
+                                    new CTypeSource(member->type)));
         if ( member->Optional() )
             memberInfo->SetOptional();
         else if ( member->defaultValue )
-            memberInfo->SetDefault(type->CreateDefault(*member->defaultValue));
+            memberInfo->SetDefault(member->type->
+                                   CreateDefault(*member->defaultValue));
     }
     return typeInfo.release();
 }
@@ -890,26 +883,6 @@ void ASNContainerType::GenerateCode(CClassCode& code) const
         code.CPP() << ';' << endl;
     }
 }
-
-/*
-void ASNContainerType::GetCType(CTypeStrings& tType,
-                                CClassCode& code, const string& key) const
-{
-    string className = ClassName(code);
-    tType.SetClass(className);
-    tType.AddHPPInclude(FileName(code));
-    tType.AddForwardDeclaration(className, Namespace(code));
-
-    string memberType = code.GetVar(key + "._type");
-    if ( memberType == "*" ) {
-        tType.ToSimple();
-    }
-    else if ( !memberType.empty() ) {
-        tType.SetComplex("std::" + memberType, "STL_" + memberType,
-                         tType);
-    }
-}
-*/
 
 ASNSetType::ASNSetType(ASNModule& module)
     : CParent(module, "SET")
@@ -1036,11 +1009,11 @@ bool ASNChoiceType::CheckValue(const ASNValue& value)
 
 CTypeInfo* ASNChoiceType::CreateTypeInfo(void)
 {
-    auto_ptr<CChoiceTypeInfo> typeInfo(new CChoiceTypeInfo(name));
+    auto_ptr<CChoiceTypeInfoBase> typeInfo(new CChoiceTypeInfoTmpl<AnyType>(name));
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i ) {
         ASNMember* member = i->get();
-        typeInfo->AddVariant(member->name, new CTypeSource(member->type.get()));
+        typeInfo->AddVariant(member->name, new CTypeSource(member->type));
     }
     return new CAutoPointerTypeInfo(typeInfo.release());
 }

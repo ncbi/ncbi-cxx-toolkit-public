@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/09/24 18:19:19  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.20  1999/09/23 21:16:09  vasilche
 * Removed dependance on asn.h
 *
@@ -421,13 +424,10 @@ void CObjectOStreamBinary::WriteBytes(const ByteBlock& ,
 	WriteBytes(bytes, length);
 }
 
+#if HAVE_NCBI_C
 unsigned CObjectOStreamBinary::GetAsnFlags(void)
 {
-#if HAVE_NCBI_C
     return ASNIO_BIN;
-#else
-    return 0;
-#endif
 }
 
 void CObjectOStreamBinary::AsnWrite(AsnIo& , const char* data, size_t length)
@@ -436,5 +436,6 @@ void CObjectOStreamBinary::AsnWrite(AsnIo& , const char* data, size_t length)
     WriteSize(length);
     WriteBytes(data, length);
 }
+#endif
 
 END_NCBI_SCOPE

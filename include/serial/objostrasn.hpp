@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/09/24 18:19:14  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.16  1999/09/23 18:56:53  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -120,9 +123,11 @@ protected:
     virtual void WriteString(const string& str);
     virtual void WriteCString(const char* str);
 
+#if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
     virtual void AsnOpen(AsnIo& asn);
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
+#endif
 
     virtual void WriteMemberSuffix(const CMemberId& id);
     virtual void WriteNullPointer(void);

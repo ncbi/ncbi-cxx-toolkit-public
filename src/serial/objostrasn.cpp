@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  1999/09/24 18:19:19  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.25  1999/09/23 21:16:08  vasilche
 * Removed dependance on asn.h
 *
@@ -345,20 +348,14 @@ void CObjectOStreamAsn::End(const ByteBlock& )
 	m_Output << "\'H";
 }
 
+#if HAVE_NCBI_C
 unsigned CObjectOStreamAsn::GetAsnFlags(void)
 {
-#if HAVE_NCBI_C
     return ASNIO_TEXT;
-#else
-    return 0;
-#endif
 }
 
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
-#if !HAVE_NCBI_C
-	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
-#else
     size_t indent = asn->indent_level = m_Ident;
     size_t max_indent = asn->max_indent;
     if ( indent >= max_indent ) {
@@ -368,7 +365,6 @@ void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
         MemFree(tmp);
         asn->max_indent = indent;
     }
-#endif
 }
 
 void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
@@ -388,5 +384,6 @@ void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
     if ( !m_Output.write(data, length) )
         THROW1_TRACE(runtime_error, "write fault");
 }
+#endif
 
 END_NCBI_SCOPE

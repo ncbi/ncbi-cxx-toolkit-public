@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/09/24 18:19:17  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.24  1999/09/23 21:16:07  vasilche
 * Removed dependance on asn.h
 *
@@ -500,112 +503,36 @@ bool CSetOfTypeInfo::RandomOrder(void) const
     return true;
 }
 
-void CChoiceTypeInfo::AddVariant(const CMemberId& id,
-                                 const CTypeRef& typeRef)
+CChoiceTypeInfo::CChoiceTypeInfo(const string& name)
+    : CParent(name)
 {
-    m_Variants.AddMember(id);
-    m_VariantTypes.push_back(typeRef);
-}
-
-void CChoiceTypeInfo::AddVariant(const string& name,
-                                 const CTypeRef& typeRef)
-{
-    AddVariant(CMemberId(name), typeRef);
 }
 
 size_t CChoiceTypeInfo::GetSize(void) const
 {
-    return sizeof(valnode);
+    return sizeof(TObjectType);
 }
 
 TObjectPtr CChoiceTypeInfo::Create(void) const
 {
-    return Alloc(sizeof(valnode));
+    return Alloc(sizeof(TObjectType));
 }
 
-bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
+typedef CChoiceTypeInfo::TMemberIndex TMemberIndex;
+
+TMemberIndex CChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
 {
-    return object == 0;
+    return Get(object).choice - 1;
 }
 
-bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
-                             TConstObjectPtr object2) const
+void CChoiceTypeInfo::SetIndex(TObjectPtr object, TMemberIndex index) const
 {
-    const valnode* val1 = static_cast<const valnode*>(object1);
-    const valnode* val2 = static_cast<const valnode*>(object2);
-    TMemberIndex choice = val1->choice;
-    if ( choice != val2->choice )
-        return false;
-    TMemberIndex index = choice - 1;
-    if ( index >= 0 && index < GetVariantsCount() ) {
-        return GetVariantTypeInfo(index)->Equals(&val1->data, &val2->data);
-    }
-    return choice == 0;
+    Get(object).choice = index + 1;
 }
 
-void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
+TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object) const
 {
-    valnode* node = static_cast<valnode*>(dst);
-    node->choice = 0;
-    node->data.ptrvalue = 0;
-}
-
-void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
-{
-    valnode* valDst = static_cast<valnode*>(dst);
-    const valnode* valSrc = static_cast<const valnode*>(src);
-    TMemberIndex choice = valSrc->choice;
-    valDst->choice = choice;
-    TMemberIndex index = choice;
-    if ( index >= 0 && index < GetVariantsCount() ) {
-        GetVariantTypeInfo(index)->Assign(&valDst->data, &valSrc->data);
-    }
-    else {
-        valDst->data.ptrvalue = 0;
-    }
-}
-
-void CChoiceTypeInfo::CollectExternalObjects(COObjectList& l,
-                                             TConstObjectPtr object) const
-{
-    _TRACE("Choice<" << GetName() << ">::Collect: " << unsigned(object));
-    const valnode* node = static_cast<const valnode*>(object);
-    TMemberIndex index = node->choice - 1;
-    if ( index < 0 || index >= GetVariantsCount() ) {
-        THROW1_TRACE(runtime_error,
-                     "illegal choice value: " +
-                     NStr::IntToString(node->choice));
-    }
-    GetVariantTypeInfo(index)->CollectExternalObjects(l, &node->data);
-}
-
-void CChoiceTypeInfo::WriteData(CObjectOStream& out,
-                                TConstObjectPtr object) const
-{
-    const valnode* node = static_cast<const valnode*>(object);
-    TMemberIndex index = node->choice - 1;
-    if ( index < 0 || index >= GetVariantsCount() ) {
-        THROW1_TRACE(runtime_error,
-                     "illegal choice value: " +
-                     NStr::IntToString(node->choice));
-    }
-    CObjectOStream::Member m(out, m_Variants.GetCompleteMemberId(index));
-    GetVariantTypeInfo(index)->WriteData(out, &node->data);
-}
-
-void CChoiceTypeInfo::ReadData(CObjectIStream& in,
-                               TObjectPtr object) const
-{
-    _TRACE("Choice<" << GetName() << ">::ReadData(" << unsigned(object) << ")");
-    CObjectIStream::Member id(in);
-    TMemberIndex index = m_Variants.FindMember(id);
-    if ( index < 0 ) {
-        THROW1_TRACE(runtime_error,
-                     "illegal choice variant: " + id.Id().ToString());
-    }
-    valnode* node = static_cast<valnode*>(object);
-    node->choice = index + 1;
-    GetVariantTypeInfo(index)->ReadData(in, &node->data);
+    return &Get(object).data;
 }
 
 COctetStringTypeInfo::COctetStringTypeInfo(void)
@@ -769,75 +696,5 @@ void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
         THROW1_TRACE(runtime_error, "read fault");
 }
 #endif
-
-CEnumeratedTypeInfo::CEnumeratedTypeInfo(const string& name, bool isInteger)
-    : CParent(name), m_Integer(isInteger)
-{
-}
-
-int CEnumeratedTypeInfo::FindValue(const string& name) const
-{
-    TNameToValue::const_iterator i = m_NameToValue.find(name);
-    if ( i == m_NameToValue.end() )
-        THROW1_TRACE(runtime_error,
-                     "invalid value of enumerated type");
-    return i->second;
-}
-
-const string& CEnumeratedTypeInfo::FindName(TValue value) const
-{
-    TValueToName::const_iterator i = m_ValueToName.find(value);
-    if ( i == m_ValueToName.end() )
-        THROW1_TRACE(runtime_error,
-                     "invalid value of enumerated type");
-    return i->second;
-}
-
-void CEnumeratedTypeInfo::AddValue(const string& name, TValue value)
-{
-    if ( name.empty() )
-        THROW1_TRACE(runtime_error, "empty enum value name");
-    pair<TNameToValue::iterator, bool> p1 =
-        m_NameToValue.insert(TNameToValue::value_type(name, value));
-    if ( !p1.second )
-        THROW1_TRACE(runtime_error,
-                     "duplicated enum value name " + name);
-    pair<TValueToName::iterator, bool> p2 =
-        m_ValueToName.insert(TValueToName::value_type(value, name));
-    if ( !p2.second ) {
-        m_NameToValue.erase(p1.first);
-        THROW1_TRACE(runtime_error,
-                     "duplicated enum value " + name);
-    }
-}
-
-void CEnumeratedTypeInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
-{
-    string name = in.ReadEnumName();
-    if ( name.empty() ) {
-        if ( m_Integer ) {
-            in.ReadStd(Get(object));
-        }
-        else {
-            FindName(Get(object) = in.ReadEnumValue());
-        }
-    }
-    else {
-        Get(object) = FindValue(name);
-    }
-}
-
-void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
-{
-    const string& name = FindName(Get(object));
-    if ( !out.WriteEnumName(name) ) {
-        if ( m_Integer )
-            out.WriteStd(Get(object));
-        else
-            out.WriteEnumValue(Get(object));
-    }
-}
 
 END_NCBI_SCOPE

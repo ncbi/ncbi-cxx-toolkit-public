@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/09/24 18:19:14  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.22  1999/09/23 18:56:53  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -311,6 +314,7 @@ public:
 		size_t m_Length;
 	};
 
+#if HAVE_NCBI_C
     class AsnIo {
     public:
         AsnIo(CObjectOStream& out);
@@ -331,11 +335,13 @@ public:
         CObjectOStream& m_Out;
         asnio* m_AsnIo;
     };
-
+    friend class AsnIo;
+protected:
     virtual void AsnOpen(AsnIo& asn);
     virtual void AsnClose(AsnIo& asn);
     virtual unsigned GetAsnFlags(void);
     virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
+#endif
 
 protected:
     // block interface

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1999/09/24 18:19:17  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.26  1999/09/23 21:16:07  vasilche
 * Removed dependance on asn.h
 *
@@ -234,7 +237,7 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
     CObject info;
     switch ( ReadPointerType() ) {
     case eNullPointer:
-        _TRACE("CObjectIStreamAsn::ReadPointer: null");
+        _TRACE("CObjectIStream::ReadPointer: null");
         return 0;
     case eObjectPointer:
         {
@@ -610,27 +613,18 @@ extern "C" {
         return static_cast<CObjectIStream::AsnIo*>(object)->Read(data, length);
     }
 }
-#endif
 
 CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
     : m_In(in), m_Count(0)
 {
-#if !HAVE_NCBI_C
-	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
-#else
     m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
     in.AsnOpen(*this);
-#endif
 }
 
 CObjectIStream::AsnIo::~AsnIo(void)
 {
-#if !HAVE_NCBI_C
-	THROW1_TRACE(runtime_error, "ASN.1 toolkit is not accessible");
-#else
     AsnIoClose(*this);
     m_In.AsnClose(*this);
-#endif
 }
 
 void CObjectIStream::AsnOpen(AsnIo& )
@@ -655,5 +649,6 @@ size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
     SetFailFlags(eIllegalCall);
     THROW1_TRACE(runtime_error, "illegal call");
 }
+#endif
 
 END_NCBI_SCOPE

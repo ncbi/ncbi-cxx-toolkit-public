@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/09/24 18:19:18  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.16  1999/09/23 21:16:08  vasilche
 * Removed dependance on asn.h
 *
@@ -617,14 +620,18 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     if ( length < 2 ) {
         ThrowError(eFormatError, "too short REAL data");
     }
+    if ( length > 32 ) {
+        ThrowError(eFormatError, "too long REAL data");
+    }
 
     ExpectByte(eDecimal);
     length--;
-    char buffer[128];
+    char buffer[32];
     ReadBytes(buffer, length);
     buffer[length] = 0;
-    double data;
-    if ( sscanf(buffer, "%lg", &data) != 1 ) {
+    char* endptr;
+    double data = strtod(buffer, &endptr);
+    if ( *endptr != 0 ) {
         ThrowError(eFormatError, "bad REAL data string");
     }
     return data;
@@ -799,13 +806,10 @@ void CObjectIStreamAsnBinary::SkipValue()
     }
 }
 
+#if HAVE_NCBI_C
 unsigned CObjectIStreamAsnBinary::GetAsnFlags(void)
 {
-#if HAVE_NCBI_C
     return ASNIO_BIN;
-#else
-    return 0;
-#endif
 }
 
 void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
@@ -825,5 +829,6 @@ size_t CObjectIStreamAsnBinary::AsnRead(AsnIo& , char* data, size_t )
     *data = ReadByte();
     return 1;
 }
+#endif
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/09/24 18:19:13  vasilche
+* Removed dependency on NCBI toolkit.
+*
 * Revision 1.24  1999/09/23 18:56:51  vasilche
 * Fixed bugs with overloaded methods in objistr*.hpp & objostr*.hpp
 *
@@ -403,6 +406,7 @@ public:
 		friend class CObjectIStream;
 	};
 
+#if HAVE_NCBI_C
     // ASN.1 interface
     class AsnIo {
     public:
@@ -427,12 +431,19 @@ public:
     public:
         size_t m_Count;
     };
+    friend class AsnIo;
+protected:
+    // ASN.1 interface
+    virtual void AsnOpen(AsnIo& asn);
+    virtual void AsnClose(AsnIo& asn);
+    virtual unsigned GetAsnFlags(void);
+    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+#endif
 
 protected:
     friend class Block;
     friend class Member;
 	friend class ByteBlock;
-    friend class AsnIo;
 
     // member interface
     virtual void StartMember(Member& member) = 0;
@@ -465,12 +476,6 @@ protected:
 	virtual size_t ReadBytes(const ByteBlock& block,
                              char* buffer, size_t count) = 0;
 	virtual void End(const ByteBlock& block);
-
-    // ASN.1 interface
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnClose(AsnIo& asn);
-    virtual unsigned GetAsnFlags(void);
-    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
 
     // low level readers
     CObject ReadObjectInfo(void);
