@@ -63,13 +63,6 @@ public:
     virtual size_t Read(char* buffer, size_t bufferLength);
     virtual bool Pushback(const char* data, size_t size);
 
-    size_t GetCompressedSize(void) const;
-    double GetDecompressionTime(void) const;
-    double GetTotalReadTime(void) const
-        {
-            return m_TotalReadTime;
-        }
-
 private:
     CNlmZipBtRdr(const CNlmZipBtRdr&);
     const CNlmZipBtRdr& operator=(const CNlmZipBtRdr&);
@@ -77,7 +70,6 @@ private:
     CRef<CByteSourceReader>  m_Src;
     EType                    m_Type;
     auto_ptr<CResultZBtSrcX> m_Decompressor;
-    double                   m_TotalReadTime;
 };
 
 
@@ -174,6 +166,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/14 17:31:54  vasilche
+ * Removed obsolete methods and data members.
+ *
  * Revision 1.4  2005/03/10 20:51:49  vasilche
  * Implemented IReader filter for NlmZip format.
  *

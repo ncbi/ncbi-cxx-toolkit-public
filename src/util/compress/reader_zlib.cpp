@@ -199,8 +199,7 @@ size_t CResultZBtSrcX::Read(char* buffer, size_t buffer_length)
 
 
 CNlmZipBtRdr::CNlmZipBtRdr(CByteSourceReader* src)
-    : m_Src(src), m_Type(eType_unknown),
-      m_TotalReadTime(0)
+    : m_Src(src), m_Type(eType_unknown)
 {
 }
 
@@ -212,17 +211,9 @@ CNlmZipBtRdr::~CNlmZipBtRdr()
 
 size_t CNlmZipBtRdr::Read(char* buffer, size_t buffer_length)
 {
-    CStopWatch sw;
-    if ( 1 ) {
-        sw.Start();
-    }
     EType type = m_Type;
     if ( type == eType_plain ) {
-        size_t ret = m_Src->Read(buffer, buffer_length);
-        if ( 1 ) {
-            m_TotalReadTime += sw.Elapsed();
-        }
-        return ret;
+        return m_Src->Read(buffer, buffer_length);
     }
 
     if ( type == eType_unknown ) {
@@ -244,9 +235,6 @@ size_t CNlmZipBtRdr::Read(char* buffer, size_t buffer_length)
                 // or header is not "ZIP"
                 _TRACE("CNlmZipBtRdr: non-ZIP: " << got_already);
                 m_Type = eType_plain;
-                if ( 1 ) {
-                    m_TotalReadTime += sw.Elapsed();
-                }
                 return got_already;
             }
         } while ( got_already != kHeaderSize );
@@ -258,11 +246,7 @@ size_t CNlmZipBtRdr::Read(char* buffer, size_t buffer_length)
         m_Decompressor.reset(new CResultZBtSrcX(m_Src));
     }
 
-    size_t ret = m_Decompressor->Read(buffer, buffer_length);
-    if ( 1 ) {
-        m_TotalReadTime += sw.Elapsed();
-    }
-    return ret;
+    return m_Decompressor->Read(buffer, buffer_length);
 }
 
 
@@ -481,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/14 17:32:22  vasilche
+ * Removed obsolete methods and data members.
+ *
  * Revision 1.6  2005/03/10 20:51:49  vasilche
  * Implemented IReader filter for NlmZip format.
  *
