@@ -2359,7 +2359,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             {
                 const CSeqdesc::TSource& source = desc.GetSource();
                 
-                if ( source.IsSetIs_focus()  &&  source.GetIs_focus() ) {
+                if ( source.IsSetIs_focus() ) {
                     // skip proteins, segmented bioseqs, or segmented parts
                     if ( !seq.IsAa()  &&
                         !(seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg)  &&
@@ -3358,6 +3358,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2003/11/20 15:56:47  ucko
+* Update for new (saner) treatment of ASN.1 NULLs.
+*
 * Revision 1.55  2003/11/14 15:57:58  shomrat
 * added check for TPA assembly problem
 *
