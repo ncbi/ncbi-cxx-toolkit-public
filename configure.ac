@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.223 2003/10/08 22:52:08 vakatov Exp $
+#  $Id: configure.ac,v 1.224 2003/10/12 17:04:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -732,8 +732,8 @@ case "$host_os:$compiler" in
       CFLAGS="-Wno-long-double -fno-common $CFLAGS"
       CXXFLAGS="-Wno-long-double -fno-common $CXXFLAGS"
    fi
-   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
-   LIBS="-Wl,-framework,ApplicationServices $LIBS"
+   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks -I/sw/include $CPPFLAGS"
+   LIBS="-Wl,-framework,ApplicationServices -L/sw/lib $LIBS"
    ;;
 esac
 
