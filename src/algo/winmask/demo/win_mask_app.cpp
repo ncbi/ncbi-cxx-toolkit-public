@@ -103,9 +103,9 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "highscore", "max_score",
                              "maximum useful unit score",
                              CArgDescriptions::eInteger, "500" );
-    arg_desc->AddDefaultKey( "lowscore", "min_score",
-                             "minimum useful unit score",
-                             CArgDescriptions::eInteger, "10" );
+    arg_desc->AddOptionalKey( "lowscore", "min_score",
+                              "minimum useful unit score",
+                              CArgDescriptions::eInteger );
     arg_desc->AddOptionalKey( "sethighscore", "score_value",
                               "alternative high score for a unit if the"
                               "original unit score is more than highscore",
@@ -191,23 +191,23 @@ void CWinMaskApplication::Init(void)
 
     // Set some constraints on command line parameters
     arg_desc->SetConstraint( "window",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "wstep",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "ustep",
-                             new CArgAllow_Integers( 0, 256 ) );
+                             new CArgAllow_Integers( 1, 256 ) );
     arg_desc->SetConstraint( "xdrop",
                              new CArgAllow_Integers( 0, kMax_Int ) );
     arg_desc->SetConstraint( "score",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "highscore",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "lowscore",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "sethighscore",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "setlowscore",
-                             new CArgAllow_Integers( 0, kMax_Int ) );
+                             new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "mscore",
                              new CArgAllow_Integers( 0, kMax_Int ) );
     arg_desc->SetConstraint( "mabs",
@@ -226,7 +226,7 @@ void CWinMaskApplication::Init(void)
                              ->Allow( "min" ) );
     arg_desc->SetConstraint( "tmin_count",
                              new CArgAllow_Integers( 0, kMax_Int ) );
-    arg_desc->SetConstraint( "mem", new CArgAllow_Integers( 0, kMax_Int ) );
+    arg_desc->SetConstraint( "mem", new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "unit", new CArgAllow_Integers( 1, 16 ) );
 
     // Parse the arguments according to descriptions.
@@ -254,6 +254,7 @@ int CWinMaskApplication::Run (void)
                                     aConfig.UnitSize(),
                                     aConfig.MinScore(),
                                     aConfig.MaxScore(),
+                                    aConfig.HasMinScore(),
                                     aConfig.CheckDup(),
                                     aConfig.FaList() );
         cg();
@@ -359,6 +360,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.3  2005/02/14 12:14:36  dicuccio
  * CRef<> instead of auto_ptr<> for CObject-derived class
  *

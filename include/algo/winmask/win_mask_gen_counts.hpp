@@ -82,6 +82,7 @@ public:
                              Uint1 unit_size,
                              Uint4 min_count,
                              Uint4 max_count,
+                             bool has_min_count,
                              bool check_duplicates,
                              bool use_list );
 
@@ -111,7 +112,8 @@ private:
      **
      **/
     void process( Uint4 prefix, Uint1 prefix_size, 
-                  const vector< string > & input );
+                  const vector< string > & input,
+                  bool do_output );
 
     string input;      /**<\internal input file (or list of input files) */
     CNcbiOstream * out_stream;  /**<\internal output stream (standard C++ ostream) */
@@ -119,6 +121,7 @@ private:
     Uint4 unit_size;        /**<\internal n-mer length in base pairs */
     Uint4 min_count;        /**<\internal minimal n-mer count to consider */
     Uint4 max_count;        /**<\internal maximal n-mer count to consider */
+    bool has_min_count;     /**<\internal user has provided the min_count value */
     bool check_duplicates;  /**<\internal whether to check input for duplicates */
     bool use_list;      /**<\internal whether input is a fasta file or a file list */
 
@@ -132,6 +135,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *

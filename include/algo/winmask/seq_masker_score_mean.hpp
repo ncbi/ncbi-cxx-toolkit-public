@@ -105,6 +105,11 @@ protected:
 private:
 
     /**\internal
+     **\brief Update the sum and scores array for "bad" windows.
+     **/
+    void FillScores();
+
+    /**\internal
      **\brief The current total of unit scores in a window.
      **/
     Uint4 sum;
@@ -118,6 +123,17 @@ private:
      **\brief The number of units in a window.
      **/
     Uint4 num;
+ 
+    /**\internal
+     **\brief Circular array of num elements containing scores of
+     **       units in the current window.
+     **/
+    vector< Uint4 > scores;
+
+    /**\internal
+     **\brief Logical start of the scores array.
+     **/
+    Uint4 * scores_start;
 };
 
 END_NCBI_SCOPE
@@ -125,6 +141,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

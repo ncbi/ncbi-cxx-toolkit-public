@@ -151,6 +151,15 @@ public:
     Uint4 MaxScore() const { return max_score; }
 
     /**
+     **\brief Check if the "-lowscore" argument was given on 
+     **       command line.
+     **
+     **\return true if -lowscore appeared on the command line;
+     **        false otherwise
+     **/
+    bool HasMinScore() const { return has_min_score; }
+
+    /**
      **\brief Get the minimum unit score.
      **
      **\return the current value of the minimum unit score.
@@ -620,6 +629,7 @@ private:
     Uint4 xdrop;            /**< x-drop value for extension of masked intervals */
     Uint4 cutoff_score;         /**< window score that triggers masking */
     Uint4 max_score;            /**< maximum allowed unit score */
+    bool has_min_score;         /**< true if -lowscore was given on the command line */
     Uint4 min_score;            /**< minimum allowed unit score */
     Uint4 set_max_score;        /**< score to use for high scoring units */
     Uint4 set_min_score;        /**< score to use for low scoring units */
@@ -657,6 +667,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

@@ -111,13 +111,15 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator( const string & arg_input,
                                                   Uint1 arg_unit_size,
                                                   Uint4 arg_min_count,
                                                   Uint4 arg_max_count,
+                                                  bool arg_has_min_count,
                                                   bool arg_check_duplicates,
                                                   bool arg_use_list )
-: input( arg_input ), out_stream( &NcbiCout ),
+:   input( arg_input ), out_stream( &NcbiCout ),
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
     min_count( arg_min_count ), max_count( arg_max_count ),
+    has_min_count( arg_has_min_count ),
     check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
-total_ecodes( 0 ), score_counts( arg_max_count, 0 )
+    total_ecodes( 0 ), score_counts( arg_max_count, 0 )
 {
     if( !output.empty() )
         out_stream = new CNcbiOfstream( output.c_str() );
@@ -185,11 +187,9 @@ void CWinMaskCountsGenerator::operator()()
     Uint4 prefix_exp( 1<<(2*prefix_size) );
 
     for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
-        process( prefix, prefix_size, file_list );
+        process( prefix, prefix_size, file_list, has_min_count );
 
     // Now put the final statistics as comments at the end of the output.
-    *out_stream << "\n# " << total_ecodes << " ecodes" << endl;
-
     for( Uint4 i( 1 ); i < max_count; ++i )
         score_counts[i] += score_counts[i-1];
 
@@ -198,19 +198,53 @@ void CWinMaskCountsGenerator::operator()()
     double previous( 0.0 );
     double current;
 
+    if( has_min_count )
+        *out_stream << "\n# " << total_ecodes << " ecodes" << endl;
+
     for( Uint4 i( 1 ); i <= max_count; ++i )
     {
         current 
             = 100.0*(((double)(score_counts[i - 1] + offset))/((double)total_ecodes));
-        *out_stream << "# " << dec << i << "\t" 
-            << score_counts[i - 1] + offset << "\t"
-            << current << endl;
+
+        if( has_min_count )
+            *out_stream << "# " << dec << i << "\t" 
+                        << score_counts[i - 1] + offset << "\t"
+                        << current << endl;
 
         for( Uint1 j( 0 ); j < 4; ++j )
             if( previous < th[j] && current >= th[j] )
                 index[j] = i;
 
         previous = current;
+    }
+
+    // If min_count must be deduced do it and reprocess.
+    if( !has_min_count )
+    {
+        total_ecodes = 0;
+        min_count = index[0];
+
+        for( Uint4 i( 0 ); i < max_count; ++i )
+            score_counts[i] = 0;
+
+        for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
+            process( prefix, prefix_size, file_list, true );
+
+        for( Uint4 i( 1 ); i < max_count; ++i )
+            score_counts[i] += score_counts[i-1];
+
+        offset = total_ecodes - score_counts[max_count - 1];
+        *out_stream << "\n# " << total_ecodes << " ecodes" << endl;
+
+        for( Uint4 i( 1 ); i <= max_count; ++i )
+        {
+            current 
+                = 100.0*(((double)(score_counts[i - 1] + offset))/((double)total_ecodes));
+    
+            *out_stream << "# " << dec << i << "\t" 
+                        << score_counts[i - 1] + offset << "\t"
+                        << current << endl;
+        }
     }
 
     *out_stream << "#" << endl;
@@ -223,8 +257,10 @@ void CWinMaskCountsGenerator::operator()()
 }
 
 //------------------------------------------------------------------------------
-void CWinMaskCountsGenerator::process( 
-                                      Uint4 prefix, Uint1 prefix_size, const vector< string > & input )
+void CWinMaskCountsGenerator::process( Uint4 prefix, 
+                                       Uint1 prefix_size, 
+                                       const vector< string > & input,
+                                       bool do_output )
 {
     Uint1 suffix_size( unit_size - prefix_size );
     Uint4 vector_size( 1<<(2*suffix_size) );
@@ -293,8 +329,9 @@ void CWinMaskCountsGenerator::process(
                 ++score_counts[max_count - 1];
             else ++score_counts[counts[i] - 1];
 
-            *out_stream << hex << prefix + i << " " 
-                << dec << counts[i] << "\n";
+            if( do_output )
+                *out_stream << hex << prefix + i << " " 
+                            << dec << counts[i] << "\n";
         }
     }
 }
@@ -305,6 +342,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *

@@ -55,7 +55,7 @@ void CSeqMaskerScoreMean::PreAdvance( Uint4 step )
     if( step == 1 && window->UnitStep() == 1 )
     {
         start = window->Start();
-        sum -= lstat[(*window)[0]];
+        sum -= *scores_start;
     }
 }
 
@@ -65,13 +65,14 @@ void CSeqMaskerScoreMean::PostAdvance( Uint4 step )
     if(    step == 1 
            && window->UnitStep() == 1 
            && window->Start() - start == 1 )
-        sum += lstat[(*window)[num - 1]];
-    else 
     {
-        sum = 0;
-
-        for( Uint1 i = 0; i < num; ++i ) sum += lstat[(*window)[i]];
+        *scores_start = lstat[(*window)[num - 1]];
+        sum += *scores_start;
+        scores_start = (scores_start - &scores[0] == (int)(num - 1) ) 
+	             ? &scores[0]
+                     : scores_start + 1;
     }
+    else{ FillScores(); }
 }
 
 //-------------------------------------------------------------------------
@@ -79,17 +80,35 @@ void CSeqMaskerScoreMean::Init()
 {
     start = window->Start();
     num = window->NumUnits();
-    sum = 0;
-
-    for( Uint1 i = 0; i < num; ++i ) sum += lstat[(*window)[i]];
+    scores.resize( num, 0 );
+  
+    FillScores();
 }
 
+//-------------------------------------------------------------------------
+void CSeqMaskerScoreMean::FillScores()
+{
+  sum = 0;
+  scores_start = &scores[0];
+
+  for( Uint1 i = 0; i < num; ++i )
+  {
+    scores[i] = lstat[(*window)[i]];
+    sum += scores[i];
+  }
+}
 
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

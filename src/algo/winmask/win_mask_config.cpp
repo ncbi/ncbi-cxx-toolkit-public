@@ -54,7 +54,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       xdrop( args["xdrop"].AsInteger() ), 
       cutoff_score( args["score"].AsInteger() ),
       max_score( args["highscore"].AsInteger() ),
-      min_score( args["lowscore"].AsInteger() ),
+      has_min_score( args["lowscore"] ? true : false ),
+      min_score( args["lowscore"] ? args["lowscore"].AsInteger() : 1 ),
       window_size( args["window"].AsInteger() ),
       merge_pass( args["mpass"].AsBoolean() ),
       merge_cutoff_score( args["mscore"].AsInteger() ),
@@ -177,6 +178,12 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/02/25 21:09:18  morgulis
+ * 1. Reduced the number of binary searches by the factor of 2 by locally
+ *    caching some search results.
+ * 2. Automatically compute -lowscore value if it is not specified on the
+ *    command line during the counts generation pass.
+ *
  * Revision 1.3  2005/02/12 20:24:39  dicuccio
  * Dropped use of std:: (not needed)
  *
