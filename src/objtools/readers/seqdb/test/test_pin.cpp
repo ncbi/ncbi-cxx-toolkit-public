@@ -188,7 +188,7 @@ int main(int argc, char ** argv)
          
          
         if (s == "-lib") {
-            CSeqDB phil(dbpath, "month", 'n', true);
+            CSeqDB phil(dbpath, "month month month nt nt nt", 'n', true);
             phil.GetSeqLength(123);
             phil.GetSeqLengthApprox(123);
             phil.GetHdr(123);
