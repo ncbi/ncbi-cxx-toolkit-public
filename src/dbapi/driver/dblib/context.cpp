@@ -434,26 +434,38 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 //
 #ifndef MS_DBLIB_IN_USE
 
-I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
+I_DriverContext* DBLIB_CreateContext(const map<string,string>* attr = 0)
 {
     DBINT version= DBVERSION_46;
 
-    if(attr) {
-        string vers= (*attr)["version"];
-        if(vers.find("46") != string::npos)
+    if ( attr ) {
+        // Old code
+//         string vers= (*attr)["version"];
+        string vers;
+        map<string,string>::const_iterator citer = attr->find("version");
+        if ( citer != attr->end() ) {
+            vers = citer->second;
+        }
+        if ( vers.find("46") != string::npos )
             version= DBVERSION_46;
-        else if(vers.find("100") != string::npos)
+        else if ( vers.find("100") != string::npos )
             version= DBVERSION_100;
 
     }
 
     CDBLibContext* cntx= new CDBLibContext(version);
-    if(cntx && attr) {
-      string page_size= (*attr)["packet"];
-      if(!page_size.empty()) {
-    int s= atoi(page_size.c_str());
-    cntx->DBLIB_SetPacketSize(s);
-      }
+    if ( cntx && attr ) {
+        // Old code
+//       string page_size= (*attr)["packet"];
+        string page_size;
+        map<string,string>::const_iterator citer = attr->find("packet");
+        if ( citer != attr->end() ) {
+            page_size = citer->second;
+        }
+        if ( !page_size.empty() ) {
+            int s= atoi(page_size.c_str());
+            cntx->DBLIB_SetPacketSize(s);
+        }
     }
     return cntx;
 }
@@ -473,7 +485,7 @@ extern "C" {
 
 #else
 
-I_DriverContext* MSDBLIB_CreateContext(map<string,string>* attr = 0)
+I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
 {
     DBINT version= DBVERSION_46;
 
@@ -502,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.31  2004/06/16 16:08:51  ivanov
  * Added export specifier for DBAPI_E_dblib()
  *

@@ -142,12 +142,12 @@ const unsigned int kTDSMaxNameLen = 128 + 4;
 //  CTDSContext::
 //
 
-I_DriverContext* FTDS_CreateContext(map<string,string>* attr = 0);
+I_DriverContext* FTDS_CreateContext(const map<string,string>* attr = 0);
 
 class NCBI_DBAPIDRIVER_FTDS_EXPORT CTDSContext : public I_DriverContext
 {
     friend class CDB_Connection;
-    friend I_DriverContext* FTDS_CreateContext(map<string,string>* attr);
+    friend I_DriverContext* FTDS_CreateContext(const map<string,string>* attr);
 public:
     CTDSContext(DBINT version = DBVERSION_UNKNOWN);
 
@@ -207,6 +207,7 @@ private:
     LOGINREC*           m_Login;
     unsigned int        m_LoginTimeout;
     unsigned int        m_Timeout;
+    DBINT               m_TDSVersion;
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
@@ -408,9 +409,9 @@ protected:
     virtual bool BindParam(const string& param_name, CDB_Object* pVal);
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true);
-    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
@@ -742,6 +743,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/12/20 16:20:48  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.17  2004/12/10 15:26:41  ssikorsk
  * FreeTDS is ported on windows
  *

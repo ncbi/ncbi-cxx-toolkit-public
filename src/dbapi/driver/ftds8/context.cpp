@@ -54,7 +54,7 @@ extern "C" {
                                   char*      dberrstr, char* oserrstr)
     {
         return CTDSContext::TDS_dberr_handler
-            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "", 
+            (dblink, severity, dberr, oserr, dberrstr? dberrstr : "",
              oserrstr? oserrstr : "");
     }
 
@@ -66,7 +66,7 @@ extern "C" {
         CTDSContext::TDS_dbmsg_handler
             (dblink, msgno,   msgstate, severity,
              msgtxt? msgtxt : "",
-             srvname? srvname : "", procname? procname : "", 
+             srvname? srvname : "", procname? procname : "",
              line);
         return 0;
     }
@@ -77,7 +77,7 @@ CTDSContext* CTDSContext::m_pTDSContext = 0;
 
 
 CTDSContext::CTDSContext(DBINT version) :
-    m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0)
+    m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0), m_TDSVersion(version)
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
@@ -88,11 +88,11 @@ CTDSContext::CTDSContext(DBINT version) :
                            "concurrently");
     }
 
-	char hostname[256];
-	if(gethostname(hostname, 256) == 0) {
-	    hostname[255]= '\0';
-	    m_HostName= hostname;
-	}
+    char hostname[256];
+    if(gethostname(hostname, 256) == 0) {
+        hostname[255]= '\0';
+        m_HostName= hostname;
+    }
 
     if (dbinit() != SUCCEED) {
         throw CDB_ClientEx(eDB_Fatal, 200001, "CTDSContext::CTDSContext",
@@ -382,9 +382,10 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
         DBSETLENCRYPT(m_Login, TRUE);
 #endif
 
-    
-    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout, 
+
+    tds_set_timeouts((tds_login*)(m_Login->tds_login), (int)m_LoginTimeout,
                      (int)m_Timeout, 0 /*(int)m_Timeout*/);
+    tds_setTDS_version((tds_login*)(m_Login->tds_login), m_TDSVersion);
     return dbopen(m_Login, (char*) srv_name.c_str());
 }
 
@@ -394,34 +395,55 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
 // Driver manager related functions
 //
 
-I_DriverContext* FTDS_CreateContext(map<string,string>* attr)
+I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
 {
     DBINT version= DBVERSION_UNKNOWN;
+    map<string,string>::const_iterator citer;
 
-    if(attr) {
-        if((*attr)["reuse_context"] == "true" && 
-           CTDSContext::m_pTDSContext) {
-            return CTDSContext::m_pTDSContext;
+    if ( attr ) {
+        // Old code
+//         if((*attr)["reuse_context"] == "true" &&
+//            CTDSContext::m_pTDSContext) {
+//             return CTDSContext::m_pTDSContext;
+//         }
+        citer = attr->find("reuse_context");
+        if ( citer != attr->end() ) {
+            if ( citer->second == "true" &&
+                 CTDSContext::m_pTDSContext ) {
+                return CTDSContext::m_pTDSContext;
+            }
         }
-            
-        string vers= (*attr)["version"];
-        if(vers.find("42") != string::npos)
+
+        // Old code
+//         string vers= (*attr)["version"];
+        string vers;
+        citer = attr->find("version");
+        if ( citer != attr->end() ) {
+            vers = citer->second;
+        }
+        if ( vers.find("42") != string::npos )
             version= DBVERSION_42;
-        else if(vers.find("46") != string::npos)
+        else if ( vers.find("46") != string::npos )
             version= DBVERSION_46;
-        else if(vers.find("70") != string::npos)
+        else if ( vers.find("70") != string::npos )
             version= DBVERSION_70;
-        else if(vers.find("100") != string::npos)
+        else if ( vers.find("100") != string::npos )
             version= DBVERSION_100;
 
     }
     CTDSContext* cntx=  new CTDSContext(version);
-    if(cntx && attr) {
-      string page_size= (*attr)["packet"];
-      if(!page_size.empty()) {
-	int s= atoi(page_size.c_str());
-	cntx->TDS_SetPacketSize(s);
-      }
+    if ( cntx && attr ) {
+        // Old code
+//       string page_size= (*attr)["packet"];
+        string page_size;
+        citer = attr->find("packet");
+        if ( citer != attr->end() ) {
+            page_size = citer->second;
+        }
+        if ( !page_size.empty() ) {
+            int s= atoi(page_size.c_str());
+            cntx->TDS_SetPacketSize(s);
+        }
     }
     return cntx;
 }
@@ -465,7 +487,7 @@ extern "C" {
     {
         return NCBI_FTDS_ENTRY_POINT();
     }
-} 
+}
 
 
 END_NCBI_SCOPE
@@ -475,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.28  2004/12/14 20:46:24  ssikorsk
  * Changed WIN32 to _WIN32 in ftds8
  *

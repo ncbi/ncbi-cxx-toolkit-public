@@ -44,20 +44,20 @@ public:
         m_Drivers= new SDrivers[m_NofRoom];
         m_NofDrvs= 0;
     }
-    
-    FDBAPI_CreateContext GetDriver(const string& driver_name, 
+
+    FDBAPI_CreateContext GetDriver(const string& driver_name,
                                    string* err_msg= 0);
-    
+
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
     virtual ~C_xDriverMgr() {
         delete [] m_Drivers;
     }
-    
+
 protected:
     bool LoadDriverDll(const string& driver_name, string* err_msg);
-    
+
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
     typedef FDriverRegister (*FDllEntryPoint)  (void);
@@ -92,7 +92,7 @@ void C_xDriverMgr::RegisterDriver(const string&        driver_name,
         throw CDB_ClientEx(eDB_Error, 101, "C_xDriverMgr::RegisterDriver",
                            "No space left for driver registration");
     }
-	
+
 }
 
 
@@ -101,13 +101,13 @@ FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
 {
     CFastMutexGuard mg(m_Mutex1);
     unsigned int i;
-    
+
     for(i= m_NofDrvs; i--; ) {
         if(m_Drivers[i].drv_name == driver_name) {
             return m_Drivers[i].drv_func;
         }
     }
-    
+
     if (!LoadDriverDll(driver_name, err_msg)) {
         return 0;
     }
@@ -163,7 +163,7 @@ C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
     ++s_DrvCount;
 }
 
-    
+
 C_DriverMgr::~C_DriverMgr()
 {
     CFastMutexGuard mg(s_DrvMutex); // lock the mutex
@@ -190,13 +190,13 @@ void C_DriverMgr::RegisterDriver(const string&        driver_name,
 
 I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
                                                string*             err_msg,
-                                               map<string,string>* attr)
+                                               const map<string,string>* attr)
 {
     FDBAPI_CreateContext create_context_func= GetDriver(driver_name, err_msg);
 
-    if(!create_context_func) 
+    if(!create_context_func)
         return 0;
-        
+
     return create_context_func(attr);
 
 }
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.15  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

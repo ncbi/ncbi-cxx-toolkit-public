@@ -137,7 +137,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
         if (r != CS_SUCCEED) {
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            delete p_pot;   
+            delete p_pot;
             throw CDB_ClientEx(eDB_Error, 100002, "CTLibContext::CTLibContext",
                                "ct_init failed");
         }
@@ -148,7 +148,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             ct_exit(m_Context, CS_FORCE_EXIT);
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            delete p_pot;           
+            delete p_pot;
             throw CDB_ClientEx(eDB_Error, 100003, "CTLibContext::CTLibContext",
                                "Can not install the client message callback");
         }
@@ -159,7 +159,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             ct_exit(m_Context, CS_FORCE_EXIT);
             cs_ctx_drop(m_Context);
             m_Context = 0;
-            delete p_pot;           
+            delete p_pot;
             throw CDB_ClientEx(eDB_Error, 100004, "CTLibContext::CTLibContext",
                                "Can not install the server message callback");
         }
@@ -440,15 +440,15 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     case CS_SV_RETRY_FAIL: {
         CDB_TimeoutEx to((int) msg->msgnumber, "ctlib", msg->msgstring);
         hs->PostMsg(&to);
-	if(con) {
-	  CS_INT status;
-	  if((ct_con_props(con, CS_GET, CS_LOGIN_STATUS, (CS_VOID*)&status, CS_UNUSED, NULL) != CS_SUCCEED) ||
-	   (!status)) return false;
-	
-	  if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) return false;
-	}
-	else return false;
-	break;
+    if(con) {
+      CS_INT status;
+      if((ct_con_props(con, CS_GET, CS_LOGIN_STATUS, (CS_VOID*)&status, CS_UNUSED, NULL) != CS_SUCCEED) ||
+       (!status)) return false;
+
+      if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) return false;
+    }
+    else return false;
+    break;
     }
     case CS_SV_CONFIG_FAIL:
     case CS_SV_API_FAIL:
@@ -560,7 +560,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
 
     ct_callback(NULL, con, CS_SET, CS_CLIENTMSG_CB,
                 (CS_VOID*) s_CTLIB_cterr_callback);
-    
+
     ct_callback(NULL, con, CS_SET, CS_SERVERMSG_CB,
                 (CS_VOID*) s_CTLIB_srverr_callback);
 
@@ -569,7 +569,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
       strcpy(hostname, "UNKNOWN");
     }
     else hostname[255]= '\0';
-    
+
 
     if (ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
                      CS_NULLTERM, NULL) != CS_SUCCEED  ||
@@ -841,39 +841,67 @@ bool g_CTLIB_AssignCmdParam(CS_COMMAND*   cmd,
 // Driver manager related functions
 //
 
-I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
+I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
 {
     bool reuse_context= true;
     CS_INT version= CS_VERSION_110;
 
-    if(attr) {
-	  reuse_context= (*attr)["reuse_context"] != "false";
-	  string vers= (*attr)["version"];
-	  if(vers.find("100") != string::npos) {
-		version= CS_VERSION_100;
-	  }
-	  else {
-		char* e;
-		long v= strtol(vers.c_str(), &e, 10);
-		if (v > 0 && (e == 0 || (!isalpha(*e)))) version= v;
-	  }
-	}
-	CTLibContext* cntx= new CTLibContext(reuse_context, version);
-	if(cntx && attr) {
-	  string page_size= (*attr)["packet"];
-	  if(!page_size.empty()) {
-		CS_INT s= atoi(page_size.c_str());
-		cntx->CTLIB_SetPacketSize(s);
-	  }
-     string prog_name= (*attr)["prog_name"];
-     if(!prog_name.empty()) {
-         cntx->CTLIB_SetApplicationName(prog_name);
-     }
-     string host_name= (*attr)["host_name"];
-     if(!host_name.empty()) {
-         cntx->CTLIB_SetHostName(host_name);
-     }
-	}
+    if ( attr ) {
+        // Old code ...
+//       reuse_context= (*attr)["reuse_context"] != "false";
+//       string vers= (*attr)["version"];
+        map<string,string>::const_iterator citer = attr->find("reuse_context");
+        if ( citer != attr->end() ) {
+            reuse_context = (citer->second != "false");
+        }
+        string vers;
+        citer = attr->find("version");
+        if ( citer != attr->end() ) {
+            vers = citer->second;
+        }
+
+        if ( vers.find("100") != string::npos ) {
+            version= CS_VERSION_100;
+        } else {
+            char* e;
+            long v= strtol(vers.c_str(), &e, 10);
+            if ( v > 0 && (e == 0 || (!isalpha(*e))) ) version= v;
+        }
+    }
+    CTLibContext* cntx= new CTLibContext(reuse_context, version);
+    if ( cntx && attr ) {
+        // Old code ...
+//       string page_size= (*attr)["packet"];
+        string page_size;
+        map<string,string>::const_iterator citer = attr->find("packet");
+        if ( citer != attr->end() ) {
+            page_size = citer->second;
+        }
+        if ( !page_size.empty() ) {
+            CS_INT s= atoi(page_size.c_str());
+            cntx->CTLIB_SetPacketSize(s);
+        }
+        // Old code ...
+//      string prog_name= (*attr)["prog_name"];
+        string prog_name;
+        citer = attr->find("prog_name");
+        if ( citer != attr->end() ) {
+            prog_name = citer->second;
+        }
+        if ( !prog_name.empty() ) {
+            cntx->CTLIB_SetApplicationName(prog_name);
+        }
+        // Old code ...
+//      string host_name= (*attr)["host_name"];
+        string host_name;
+        citer = attr->find("host_name");
+        if ( citer != attr->end() ) {
+            host_name = citer->second;
+        }
+        if ( !host_name.empty() ) {
+            cntx->CTLIB_SetHostName(host_name);
+        }
+    }
     return cntx;
 }
 
@@ -888,7 +916,7 @@ extern "C" {
     {
     return (void*)DBAPI_RegisterDriver_CTLIB;
     }
-} 
+}
 
 
 END_NCBI_SCOPE
@@ -898,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.32  2004/05/17 21:12:03  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

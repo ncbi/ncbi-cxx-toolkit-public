@@ -31,388 +31,607 @@
 */
 
 #include <ncbi_pch.hpp>
-#include "dbapi_testspeed.hpp"
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbifile.hpp>
+#include "dbapi_testspeed.hpp"
+#include "../dbapi_sample_base.hpp"
 
 USING_NCBI_SCOPE;
 
-const char usage[] =
-  "Run a series of BCP/insert/select commands,\n"
-  "measure the time required for their execution. \n"
-  "\n"
-  "USAGE:   dbapi_testspeed -parameters [file]\n"
-  "REQUIRED PARAMETERS:\n"
-  "  -S server\n"
-  "  -d driver (e.g. ctlib dblib ftds odbc gateway)\n"
-  "  -g sss_server:port for gateway database driver\n"
-  "     (only one of -d/-g is required to be present)\n"
-  "OPTIONAL PARAMETERS:\n"
-  "  -r row_count (default is 1)\n"
-  "  -b text_blob_size in kilobytes (default is 1 kb)\n"
-  "  -c column_count  1..5 (int_val fl_val date_val str_val txt_val)\n"
-  "  -t table_name (default is 'TestSpeed')\n"
-  "  -m mode_character:\n"
-  "     r  write and read as usual,\n"
-  "        use CDB_Result->ReadItem() instead of GetItem() whenever possible\n"
-  "     w  write to the table, do not read, do not delete it\n"
-  "     R  read using ReadItem() (can be done many times after '-m w' )\n"
-  "     G  read using GetItem()  (can be done many times after '-m w' )\n"
-  "FILE (optional):\n"
-  "  Upload the specified file as a blob into the table,\n"
-  "  then download it to \"./testspeed.out\".\n"
-  "  \"diff\" can then be used to verify the data.\n"
-  "  -r -b -c parameterss are ignored.\n"
-  "\n"
-  ;
+/////////////////////////////////////////////////////////////////////////////
+//  CDbapiTestBcpApp::
+//
 
-int Usage()
+class CDbapiTestSpeedApp : public CDbapiSampleApp
 {
-  cout << usage;
-  return 1;
+public:
+    CDbapiTestSpeedApp(void);
+    virtual ~CDbapiTestSpeedApp(void);
+
+protected:
+    virtual void InitSample(CArgDescriptions& arg_desc);
+    virtual int  RunSample(void);
+
+protected:
+    ///
+    void FetchFile (const string& table_name, bool readItems);
+    ///
+    void FetchResults (const string& table_name, bool readItems);
+    string GetTableName(void) const;
+
+private:
+    string m_TableName;
+};
+
+CDbapiTestSpeedApp::CDbapiTestSpeedApp(void)
+{
+}
+
+CDbapiTestSpeedApp::~CDbapiTestSpeedApp(void)
+{
+}
+
+inline
+string
+CDbapiTestSpeedApp::GetTableName(void) const
+{
+    return m_TableName + GetTableUID();
+}
+
+// const char usage[] =
+// "Run a series of BCP/insert/select commands,\n"
+// "measure the time required for their execution. \n"
+// "\n"
+// "USAGE:   dbapi_testspeed -parameters [file]\n"
+// "REQUIRED PARAMETERS:\n"
+// "  -S server\n"
+// "  -d driver (e.g. ctlib dblib ftds odbc gateway)\n"
+// "  -g sss_server:port for gateway database driver\n"
+// "     (only one of -d/-g is required to be present)\n"
+// "OPTIONAL PARAMETERS:\n"
+// "  -r row_count (default is 1)\n"
+// "  -b text_blob_size in kilobytes (default is 1 kb)\n"
+// "  -c column_count  1..5 (int_val fl_val date_val str_val txt_val)\n"
+// "  -t table_name (default is 'TestSpeed')\n"
+// "  -m mode_character:\n"
+// "     r  write and read as usual,\n"
+// "        use CDB_Result->ReadItem() instead of GetItem() whenever possible\n"
+// "     w  write to the table, do not read, do not delete it\n"
+// "     R  read using ReadItem() (can be done many times after '-m w' )\n"
+// "     G  read using GetItem()  (can be done many times after '-m w' )\n"
+// "FILE (optional):\n"
+// "  Upload the specified file as a blob into the table,\n"
+// "  then download it to \"./testspeed.out\".\n"
+// "  \"diff\" can then be used to verify the data.\n"
+// "  -r -b -c parameterss are ignored.\n"
+// "\n"
+// ;
+
+void
+CDbapiTestSpeedApp::InitSample(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddOptionalKey(
+        "g", "sss_server",
+        "Server:port for gateway database driver\n"
+        "(only one of -d/-g is required to be present)",
+         CArgDescriptions::eString
+    );
+
+    arg_desc.AddDefaultKey(
+        "r", "row_count",
+        "Row count",
+        CArgDescriptions::eInteger,
+        "1"
+    );
+
+    arg_desc.AddDefaultKey(
+        "b", "text_blob_size",
+        "Text blob size in kilobytes",
+        CArgDescriptions::eInteger,
+        "1"
+    );
+
+    arg_desc.AddOptionalKey(
+        "c", "column_count",
+        "Column count  1..5 (int_val fl_val date_val str_val txt_val)",
+        CArgDescriptions::eInteger
+    );
+
+    arg_desc.AddDefaultKey(
+        "t", "table_name",
+        "Table name",
+        CArgDescriptions::eString,
+        "spd"
+    );
+
+    arg_desc.AddOptionalKey(
+        "m", "mode_character",
+        "Mode character \n"
+        "     r  write and read as usual,\n"
+        "        use CDB_Result->ReadItem() instead of GetItem() whenever possible\n"
+        "     w  write to the table, do not read, do not delete it\n"
+        "     R  read using ReadItem() (can be done many times after '-m w' )\n"
+        "     G  read using GetItem()  (can be done many times after '-m w' )",
+        CArgDescriptions::eString
+    );
+    arg_desc.SetConstraint("m", new CArgAllow_Symbols("rwRG"));
+
+    arg_desc.AddOptionalKey(
+        "FILE", "mode_character",
+        "Upload the specified file as a blob into the table,\n"
+        "then download it to \"./testspeed.out\" \n"
+        "\"diff\" can then be used to verify the data.\n"
+        "-r -b -c parameterss are ignored.\n",
+        CArgDescriptions::eInputFile
+    );
 }
 
 // Create a table with 5 columns, fill it using BCP or insert commands(1),
 // fetch results(2), delete the table. Execution time is measured for steps 1, 2.
-
-int main (int argc, char* argv[])
+int
+CDbapiTestSpeedApp::RunSample(void)
 {
-  int count=0;
-  I_DriverContext* my_context;
-  CDB_Connection* con;
-  CDB_BCPInCmd* bcp=NULL;
-  CDB_LangCmd* ins_cmd=NULL;
-  CStopWatch timer;
+    string host_name;
+    string port_num;
+    int count = 0;
+    int row_count = 1;
+    int col_count = 5;
+    int blob_size = 1;
+    bool readItems = false;
+    bool writeOnly = false;
+    bool selectOnly = false;
+    string fileParam;
+    CStopWatch timer;
+    double timeElapsed;
 
-  // Command line args
-  string server_name, driver_name;
-  int row_count;
-  string table_name = "TestSpeed";
-  int blob_size=1;
-  int col_count=5;
+    const CArgs& args = GetArgs();
 
-  const char* p = NULL;
-  bool readItems=false;
-  bool writeOnly=false;
-  bool selectOnly=false;
-  double timeElapsed;
+    // Process additional arguments ...
 
-  // Read required args
-  p= getParam('S', argc, argv);
-  if(p) { server_name = p; } else return Usage();
+    //
+    if (args["g"]) {
+        host_name = args["g"].AsString();
 
-  p= getParam('d', argc, argv);
-  if(p) { driver_name = p; };
-
-  string sss_host, sss_port;
-  p= getParam('g', argc, argv);
-  if(p){
-    sss_host=p;
-    int i=NStr::Find(sss_host, ":");
-    if(i>0) {
-      sss_port = sss_host.substr(i+1);
-      sss_host.resize(i);
-    }
-    if( driver_name.size()==0 ) {
-      driver_name="gateway";
-    }
-  }
-
-  // one fo "-d" or "-g" must be present
-  if( driver_name.size()==0 ) return Usage();
-
-  // Read optional args
-  p= getParam('r', argc, argv);
-  if(p){
-    row_count = atoi(p);
-    if(row_count<1 || row_count>0x100000) {
-      cerr << "Error -- invalid row count; valid values are 1 .. 1 Meg.\n";
-      return Usage();
-    }
-  }
-  //else return Usage();
-  else row_count=1;
-
-  p= getParam('c', argc, argv);
-  if(p){
-    col_count = atoi(p);
-    if(col_count<1 || col_count>5) {
-      cerr << "Error -- invalid column count = " << col_count << "; valid values are: 1..5\n";
-      return Usage();
-    }
-  }
-
-  p= getParam('b', argc, argv);
-  if(p){
-    blob_size = atoi(p);
-    if(blob_size<1 || blob_size>1024000 ) {
-      cerr << "Error -- invalid blob size; valid values are 1 (kb) to 1000 (kb)\n";
-      return Usage();
-    }
-    if(col_count<5) {
-      cerr << "Error -- blob size makes sense for '-c 5' only.\n";
-      return 1;
-    }
-  }
-
-  p= getParam('t', argc, argv);
-  if(p) { table_name = p; };
-
-  p= getParam('m', argc, argv);
-  if(p) {
-    switch(*p) {
-      case 'r': readItems  = true; break;
-      case 'w': writeOnly  = true; break;
-      case 'G': selectOnly = true; break;
-      case 'R': selectOnly = true; readItems = true; break;
-      default:
-        cerr << "Error -- invalid mode character '" << p[0] << "'\n";
-        return Usage();
-    }
-  };
-
-
-  char *fileParam=getParam(0, argc, argv);
-
-  /*
-  char *param;
-  while( param=getParam(0, argc, argv) ) {
-    cout << ">" << param << "<\n";
-  }
-  return 0;
-  */
-
-
-  // Load the database driver
-  C_DriverMgr drv_mgr;
-  string err_msg;
-
-  map<string, string> mapDrvAttrib;
-  if(driver_name == "dblib") {
-    // Needed to work with BCP when using dblib Sybase 12.5
-    mapDrvAttrib.insert(
-      map<string,string>::value_type( string("version"), string("100") )
-    );
-  }
-  else{
-    if( sss_port.size() ) {
-      mapDrvAttrib.insert(
-        map<string,string>::value_type( string("port"), sss_port )
-      );
-    }
-    if( sss_host.size() ) {
-      mapDrvAttrib.insert(
-        map<string,string>::value_type( string("host"), sss_host )
-      );
-    }
-  }
-  if( mapDrvAttrib.size() ) {
-    my_context = drv_mgr.GetDriverContext(driver_name, &err_msg, &mapDrvAttrib);
-  }
-  else{
-    my_context = drv_mgr.GetDriverContext( driver_name, &err_msg );
-  }
-
-  if(!my_context) {
-    cerr << "Can not load a driver " << driver_name
-         << " [" << err_msg << "]\n";
-    return 1;
-  }
-
-  try {
-    // Prepare the connection
-    con = my_context->Connect(
-        server_name, "anyone", "allowed", I_DriverContext::fBcpIn);
-
-    CDB_LangCmd* set_cmd= con->LangCmd("use DBAPI_Sample");
-    set_cmd->Send();
-    CDB_Result* r;
-    while(set_cmd->HasMoreResults()) {
-      r= set_cmd->Result();
-      if(r) delete r;
-    }
-    delete set_cmd;
-
-    set_cmd= con->LangCmd("set textsize 1024000");
-    set_cmd->Send();
-    while(set_cmd->HasMoreResults()) {
-      r= set_cmd->Result();
-      if(r) delete r;
-    }
-    delete set_cmd;
-
-
-    //cout<< "driver " << driver_name;
-
-    // Create table, insert data
-    if(!selectOnly) {
-      CreateTable(con, table_name); // Deletes the pre-existing table, if present
-      cout<< ", rows " << row_count
-          << ", cols " << col_count
-          << ", blob size " << blob_size << "\n";
-
-      if(col_count>4) {
-        // "Bulk copy in" command
-        bcp = con->BCPIn(table_name, col_count);
-      }
-      else {
-        //cerr << "-c option not supported yet\n";
-        //return 1;
-        string s  = "insert into ";
-        s+= table_name;
-        s+= " (int_val";
-        string sv = "@i";
-
-        if(col_count>1) { s+= ", fl_val"  ; sv+=", @f"; }
-        if(col_count>2) { s+= ", date_val"; sv+=", @d"; }
-        if(col_count>3) { s+= ", str_val" ; sv+=", @s"; }
-
-        s+= ") values (";
-        s+= sv;
-        s+= ")";
-
-        ins_cmd = con->LangCmd(s);
-      }
-
-      CDB_Int int_val;
-      CDB_Float fl_val;
-      CDB_DateTime date_val(CTime::eCurrent);
-      CDB_VarChar str_val;
-      CDB_Text pTxt;
-      int i;
-
-      if(fileParam) {
-        CNcbiIfstream f(fileParam, IOS_BASE::in|IOS_BASE::binary);
-        if(!f.is_open()) {
-          cerr << "Error -- cannot read '" << fileParam << "'\n";
-          return 1;
-        }
-        char buf[10240];
-        int sz;
-        while( f.good() && !f.eof() ) {
-          f.read( buf, sizeof(buf) );
-          sz = f.gcount();
-          // cout << sz << "\n";
-          if( sz <= 0 ) break;
-          pTxt.Append(buf, sz);
-          if( sz != sizeof(buf) ) break;
-        }
-        f.close();
-        // cout << "pTxt.Size()=" << pTxt.Size() << "\n";
-
-        col_count=5;
-        row_count=1;
-      }
-      else if(col_count>4) {
-        for(i=0; i<blob_size; i++) {
-          // Add 1024 chars
-          for( int j=0; j<32; j++ ) {
-            pTxt.Append("If you want to know who we are--");
-          }
-        }
-      }
-
-      timer.Start();
-
-      // Bind program variables as data source
-      if(bcp) {
-        bcp->Bind(0, &int_val);
-        if(col_count>1) bcp->Bind(1, &fl_val  );
-        if(col_count>2) bcp->Bind(2, &date_val);
-        if(col_count>3) bcp->Bind(3, &str_val );
-        if(col_count>4) bcp->Bind(4, &pTxt    );
-      }
-      else{
-        if( !ins_cmd->BindParam("@i", &int_val) ) {
-          cerr << "Error in BindParam()\n";
-          DeleteTable(con, table_name);
-          return 1;
+        int i = NStr::Find(host_name, ":");
+        if ( i > 0 ) {
+            port_num = host_name.substr( i + 1 );
+            host_name.resize(i);
         }
 
-        if(col_count>1) ins_cmd->BindParam("@f", &fl_val  );
-        if(col_count>2) ins_cmd->BindParam("@d", &date_val);
-        if(col_count>3) ins_cmd->BindParam("@s", &str_val );
-      }
-
-      for(i= 0; i<row_count; i++) {
-        int_val  = i;
-        fl_val   = i + 0.999;
-        if(fileParam) {
-          CDirEntry fileEntry(fileParam);
-          CTime fileTime;
-          fileEntry.GetTime(&fileTime);
-
-          date_val = fileTime;
-          str_val = fileParam;
+        if ( GetDriverName().empty() ) {
+            SetDriverName("gateway");
         }
-        else {
-          date_val = date_val.Value();
-          str_val  = string("Franz Joseph Haydn symphony # ")+NStr::IntToString(i);
-        }
-        pTxt.MoveTo(0);
-
-        if( bcp ) {
-          bcp->SendRow();
-
-          if (count == 2) {
-            bcp->CompleteBatch();
-            count = 0;
-          }
-          count++;
-        }
-        else {
-          ins_cmd->Send();
-          CDB_Result* r;
-          while(ins_cmd->HasMoreResults()) {
-            r= ins_cmd->Result();
-            if(r) delete r;
-          }
-        }
-      }
-      if( bcp ) {
-        bcp->CompleteBCP();
-        delete bcp;
-      }
-      if( ins_cmd ) {
-        delete ins_cmd;
-      }
-      timeElapsed = timer.Elapsed();
-      cout << "inserting timeElapsed=" << NStr::DoubleToString(timeElapsed, 2) << "\n";
-    }
-    else{
-      cout << "\n";
     }
 
-    if(!writeOnly) {
-      // Read data
-      timer.Start();
-      if(fileParam) {
-        FetchFile(con, table_name, readItems);
-      }
-      else {
-        FetchResults(con, table_name, readItems);
-      }
-      timeElapsed = timer.Elapsed();
-      cout << "fetching timeElapsed=" << NStr::DoubleToString(timeElapsed,2) << "\n";
-      cout << "\n";
+    //
+    row_count = args["r"].AsInteger();
+    if ( row_count < 1  ||  row_count > 0x100000 ) {
+        cerr << "Error -- invalid row count; valid values are 1 .. 1 Meg.\n";
+        return 1;
     }
 
-    if(!(selectOnly || writeOnly)) {
-      DeleteTable(con, table_name);
+    //
+    if (args["c"]) {
+        col_count = args["g"].AsInteger();
     }
-    delete con;
-  }
-  catch (CDB_Exception& e) {
-    HandleIt(&e);
-    //DeleteTable(con, table_name);
-    return 1;
-  }
 
-  return 0;
+    //
+    blob_size = args["b"].AsInteger();
+    if ( blob_size < 1  ||  blob_size > 1024000 ) {
+        cerr << "Error -- invalid blob size; valid values are 1 (kb) to 1000 (kb)\n";
+        return 1;
+    }
+    if ( col_count < 5 ) {
+        cerr << "Error -- blob size makes sense for '-c 5' only.\n";
+        return 1;
+    }
+
+    //
+    m_TableName = args["t"].AsString();
+
+    //
+    if (args["m"]) {
+        string key_value = args["m"].AsString();
+
+        switch ( *key_value.c_str() ) {
+        case 'r':
+            readItems  = true;
+            break;
+        case 'w':
+            writeOnly  = true;
+            break;
+        case 'G':
+            selectOnly = true;
+            break;
+        case 'R':
+            selectOnly = true;
+            readItems  = true;
+            break;
+        default:
+            cerr << "Error -- invalid mode character '" << key_value << "'\n";
+            return 1;
+        }
+    }
+
+    //
+    if (args["FILE"]) {
+        fileParam = args["FILE"].AsString();
+    }
+
+    // Modify connection atributes
+    // Do it before establishing of a connection to a server ...
+    if ( !host_name.empty() ) {
+        SetDatabaseParameter("host", host_name);
+    }
+    if ( !port_num.empty() ) {
+        SetDatabaseParameter("port", port_num);
+    }
+
+    try {
+        auto_ptr<CDB_LangCmd> set_cmd;
+        auto_ptr<CDB_LangCmd> ins_cmd;
+        auto_ptr<CDB_BCPInCmd> bcp;
+
+        set_cmd.reset(GetConnection().LangCmd("set textsize 1024000"));
+        set_cmd->Send();
+        while ( set_cmd->HasMoreResults() ) {
+            auto_ptr<CDB_Result> r(set_cmd->Result());
+        }
+
+        // Create table, insert data
+        if ( !selectOnly ) {
+            // Deletes the pre-existing table, if present
+            CreateTable(GetTableName());
+            cout << ", rows " << row_count;
+            cout << ", cols " << col_count;
+            cout << ", blob size " << blob_size << "\n";
+
+            if ( col_count > 4 ) {
+                // "Bulk copy in" command
+                bcp.reset(GetConnection().BCPIn(GetTableName(), col_count));
+            } else {
+                string s  = "insert into ";
+                s += GetTableName();
+                s += " (int_val";
+                string sv = "@i";
+
+                if ( col_count > 1 ) {
+                    s += ", fl_val";
+                    sv +=", @f";
+                }
+                if ( col_count > 2 ) {
+                    s += ", date_val";
+                    sv += ", @d";
+                }
+                if ( col_count > 3 ) {
+                    s += ", str_val";
+                    sv +=", @s";
+                }
+
+                s += ") values (";
+                s += sv;
+                s += ")";
+
+                ins_cmd.reset(GetConnection().LangCmd(s));
+            }
+
+            CDB_Int int_val;
+            CDB_Float fl_val;
+            CDB_DateTime date_val(CTime::eCurrent);
+            CDB_VarChar str_val;
+            CDB_Text pTxt;
+            int i;
+
+            if ( !fileParam.empty() ) {
+                CNcbiIfstream f(fileParam.c_str(), IOS_BASE::in |
+                                IOS_BASE::binary);
+                if ( !f.is_open() ) {
+                    cerr << "Error -- cannot read '" << fileParam << "'\n";
+                    return 1;
+                }
+                char buf[10240];
+                int sz;
+                while ( f.good() && !f.eof() ) {
+                    f.read( buf, sizeof(buf) );
+                    sz = f.gcount();
+                    if ( sz <= 0 ) break;
+                    pTxt.Append(buf, sz);
+                    if ( sz != sizeof(buf) ) break;
+                }
+                f.close();
+
+                col_count = 5;
+                row_count = 1;
+            } else if ( col_count > 4 ) {
+                for ( i = 0; i < blob_size; ++i ) {
+                    // Add 1024 chars
+                    for ( int j = 0; j < 32; ++j ) {
+                        pTxt.Append("If you want to know who we are--");
+                    }
+                }
+            }
+
+            timer.Start();
+
+            // Bind program variables as data source
+            if ( bcp.get() ) {
+                bcp->Bind(0, &int_val);
+                if ( col_count > 1 ) bcp->Bind(1, &fl_val  );
+                if ( col_count > 2 ) bcp->Bind(2, &date_val);
+                if ( col_count > 3 ) bcp->Bind(3, &str_val );
+                if ( col_count > 4 ) bcp->Bind(4, &pTxt    );
+            } else {
+                if ( !ins_cmd->BindParam("@i", &int_val) ) {
+                    cerr << "Error in BindParam()\n";
+                    DeleteTable(GetTableName());
+                    return 1;
+                }
+
+                if ( col_count > 1 ) ins_cmd->BindParam("@f", &fl_val  );
+                if ( col_count > 2 ) ins_cmd->BindParam("@d", &date_val );
+                if ( col_count > 3 ) ins_cmd->BindParam("@s", &str_val );
+            }
+
+            for ( i = 0; i < row_count; ++i ) {
+                int_val  = i;
+                fl_val   = i + 0.999;
+                if ( !fileParam.empty() ) {
+                    CDirEntry fileEntry(fileParam);
+                    CTime fileTime;
+                    fileEntry.GetTime(&fileTime);
+
+                    date_val = fileTime;
+                    str_val = fileParam;
+                } else {
+                    date_val = date_val.Value();
+                    str_val  = string("Franz Joseph Haydn symphony # ") +
+                        NStr::IntToString(i);
+                }
+                pTxt.MoveTo(0);
+
+                if ( bcp.get() ) {
+                    bcp->SendRow();
+
+                    if ( count == 2 ) {
+                        bcp->CompleteBatch();
+                        count = 0;
+                    }
+                    ++count;
+                } else {
+                    ins_cmd->Send();
+                    while ( ins_cmd->HasMoreResults() ) {
+                        auto_ptr<CDB_Result> r(ins_cmd->Result());
+                    }
+                }
+            }
+            if ( bcp.get() ) {
+                bcp->CompleteBCP();
+            }
+            timeElapsed = timer.Elapsed();
+            cout << "inserting timeElapsed=" << NStr::DoubleToString(timeElapsed, 2) << "\n";
+        } else {
+            cout << "\n";
+        }
+
+        if ( !writeOnly ) {
+            // Read data
+            timer.Start();
+            if ( !fileParam.empty() ) {
+                FetchFile(GetTableName(), readItems);
+            } else {
+                FetchResults(GetTableName(), readItems);
+            }
+            timeElapsed = timer.Elapsed();
+            cout << "fetching timeElapsed=" << NStr::DoubleToString(timeElapsed,2) << "\n";
+            cout << "\n";
+        }
+
+        if ( !(selectOnly || writeOnly) ) {
+            DeleteTable(GetTableName());
+        }
+
+        // Drop lost tables.
+        DeleteLostTables();
+    }
+    catch ( CDB_Exception& e ) {
+        CDB_UserHandler::GetDefault().HandleIt(&e);
+        return 1;
+    }
+
+    return 0;
 }
 
+void
+CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
+{
+    CDB_VarChar str_val;
+    CDB_DateTime date_val;
+
+    string query = "select date_val,str_val,txt_val from ";
+    query += table_name;
+    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
+    lcmd->Send();
+
+    //CTime fileTime;
+    while ( lcmd->HasMoreResults() ) {
+        auto_ptr<CDB_Result> r(lcmd->Result());
+        if ( !r.get() ) continue;
+
+        if ( r->ResultType() == eDB_RowResult ) {
+            while ( r->Fetch() ) {
+                CNcbiOfstream f("testspeed.out", IOS_BASE::trunc|IOS_BASE::out|IOS_BASE::binary);
+
+                for ( unsigned int j = 0;  j < r->NofItems(); j++ ) {
+                    EDB_Type rt = r->ItemDataType(j);
+                    const char* iname= r->ItemName(j);
+
+                    if ( readItems && rt == eDB_Text ) {
+                        bool isNull=false;
+                        char txt_buf[10240];
+                        // cout<< "j=" << j
+                        //    << " CurrentItemNo()=" << r->CurrentItemNo() << "\n";
+                        for ( ;; ) {
+                            int len_txt = r->ReadItem(txt_buf, sizeof(txt_buf), &isNull);
+                            //cout << "len_txt=" << len_txt << " isNull=" << isNull << "\n";
+                            if ( isNull || len_txt<=0 ) break;
+                            f.write(txt_buf, len_txt);
+                        }
+                        f.close();
+                        continue;
+                    }
+
+                    // Type-specific GetItem()
+                    if ( rt == eDB_Char || rt == eDB_VarChar ) {
+                        r->GetItem(&str_val);
+
+                    } else if ( rt == eDB_DateTime || rt == eDB_SmallDateTime ) {
+                        r->GetItem(&date_val);
+                    } else if ( rt == eDB_Text ) {
+                        CDB_Text text_val;
+                        r->GetItem(&text_val);
+
+                        if ( text_val.IsNULL() ) {
+                            // cout << "{NULL}";
+                        } else {
+                            char txt_buf[10240];
+                            //cout << "text_val.Size()=" << text_val.Size() << "\n";
+                            for ( ;; ) {
+                                int len_txt = text_val.Read( txt_buf, sizeof(txt_buf) );
+                                if ( len_txt<=0 ) break;
+                                f.write(txt_buf, len_txt);
+                            }
+                        }
+                        f.close();
+                    } else {
+                        r->SkipItem();
+                        // cout << "{unprintable}";
+                    }
+                }
+                // cout << "</ROW>" << endl << endl;
+            }
+        }
+    }
+
+    cout << "File " << str_val.Value() << " dated "
+        << date_val.Value().AsString() << " was written to testspeed.out using "
+        << (readItems?"ReadItem":"GetItem") << "\n";
+}
+
+void
+CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
+{
+    char* txt_buf = NULL ;
+    long len_txt = 0;
 
 
+    string query = "select int_val,fl_val,date_val,str_val,txt_val from ";
+    query += table_name;
+
+    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(query));
+    lcmd->Send();
+
+    while ( lcmd->HasMoreResults() ) {
+        auto_ptr<CDB_Result> r(lcmd->Result());
+        if ( !r.get() ) continue;
+
+        if ( r->ResultType() == eDB_RowResult ) {
+            while ( r->Fetch() ) {
+                // cout << "<ROW>"<< endl;
+                for ( unsigned int j = 0;  j < r->NofItems(); ++j ) {
+                    //    Determination of data type:
+                    EDB_Type rt = r->ItemDataType(j);
+                    const char* iname= r->ItemName(j);
+
+                    //    Printing to stdout:
+                    if ( iname == 0 ) iname= "";
+                    // cout << iname << '=';
+
+                    if ( readItems && rt!=eDB_Numeric &&
+                         rt != eDB_DateTime && rt != eDB_SmallDateTime ) {
+                        bool isNull;
+                        char buf[1024];
+                        int sz=0;
+                        while ( j == r->CurrentItemNo() ) {
+                            sz += r->ReadItem(buf, sizeof(buf), &isNull);
+                        }
+                        continue;
+                    }
+
+                    // Type-specific GetItem()
+                    if ( rt == eDB_Char || rt == eDB_VarChar ) {
+                        CDB_VarChar str_val;
+                        r->GetItem(&str_val);
+                        // cout << (str_val.IsNULL()? "{NULL}" : str_val.Value()) << endl << endl ;
+
+                    } else if ( rt == eDB_Int || rt == eDB_SmallInt || rt == eDB_TinyInt ) {
+                        CDB_Int int_val;
+                        r->GetItem(&int_val);
+                        if ( int_val.IsNULL() ) {
+                            // cout << "{NULL}";
+                        } else {
+                            // cout << int_val.Value() << endl << endl ;
+                        }
+                    } else if ( rt == eDB_Float ) {
+                        CDB_Float fl_val;
+                        r->GetItem(&fl_val);
+                        if ( fl_val.IsNULL() ) {
+                            // cout << "{NULL}";
+                        } else {
+                            // cout << fl_val.Value() << endl<< endl ;
+                        }
+                    } else if ( rt == eDB_Double ) {
+                        CDB_Double fl_val;
+                        r->GetItem(&fl_val);
+                        if ( fl_val.IsNULL() ) {
+                            // cout << "{NULL}";
+                        } else {
+                            // cout << fl_val.Value() << endl<< endl ;
+                        }
+                    } else if ( rt == eDB_DateTime || rt == eDB_SmallDateTime ) {
+                        CDB_DateTime date_val;
+                        r->GetItem(&date_val);
+                        if ( date_val.IsNULL() ) {
+                            // cout << "{NULL}";
+                        } else {
+                            // cout << date_val.Value().AsString() << endl<< endl ;
+                        }
+                    } else if ( rt == eDB_Text ) {
+                        CDB_Text text_val;
+                        r->GetItem(&text_val);
+
+                        if ( text_val.IsNULL() ) {
+                            // cout << "{NULL}";
+                        } else {
+                            txt_buf = ( char*) malloc (text_val.Size());
+                            len_txt = text_val.Read (( char*)txt_buf, text_val.Size());
+                            txt_buf[text_val.Size()] = '\0';
+                            // cout << txt_buf << endl<< endl ;
+                        }
+                    } else {
+                        r->SkipItem();
+                        // cout << "{unprintable}";
+                    }
+                }
+                // cout << "</ROW>" << endl << endl;
+            }
+        }
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    // Execute main application function
+    return CDbapiTestSpeedApp().AppMain(argc, argv);
+}
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.15  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
+ * ===========================================================================
+ */
 
 
 

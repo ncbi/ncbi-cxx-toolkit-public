@@ -50,15 +50,15 @@ class NCBI_DBAPIDRIVER_EXPORT C_DriverMgr : public I_DriverMgr
 public:
     C_DriverMgr(unsigned int nof_drivers = 16);
 
-    FDBAPI_CreateContext GetDriver(const string& driver_name, 
+    FDBAPI_CreateContext GetDriver(const string& driver_name,
                                    string*       err_msg = 0);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
-    I_DriverContext* GetDriverContext(const string&       driver_name, 
+    I_DriverContext* GetDriverContext(const string&       driver_name,
                                       string*             err_msg = 0,
-                                      map<string,string>* attr    = 0);
+                                      const map<string,string>* attr = 0);
 
     virtual ~C_DriverMgr();
 };
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/20 16:20:47  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.11  2003/04/11 17:46:01  siyan
  * Added doxygen support
  *

@@ -4,30 +4,30 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                          
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
- *                                                                          
- *  This software/database is a "United States Government Work" under the   
- *  terms of the United States Copyright Act.  It was written as part of    
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
- *  to the public for use. The National Library of Medicine and the U.S.    
- *  Government have not placed any restriction on its use or reproduction.  
- *                                                                          
- *  Although all reasonable efforts have been taken to ensure the accuracy  
- *  and reliability of the software and data, the NLM and the U.S.          
- *  Government do not and cannot warrant the performance or results that    
- *  may be obtained by using this software or data. The NLM and the U.S.    
- *  Government disclaim all warranties, express or implied, including       
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                                
- *                                                                          
- *  Please cite the author in any work or product based on this material.   
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
  * Author:  Vladimir Soussov
- *   
+ *
  * File Description:  Data Server interfaces
  *
  */
@@ -257,7 +257,7 @@ protected:
     // into the table
     virtual bool CompleteBatch() = 0;
 
-    // Cancel the BCP command 
+    // Cancel the BCP command
     virtual bool Cancel() = 0;
 
     // Complete the BCP and store all rows transferred in last batch into
@@ -287,10 +287,10 @@ protected:
     // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query) = 0;
 
-    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
+    virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
                                  bool log_it = true) = 0;
 
-    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
+    virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true) = 0;
     // Delete the last fetched row.
     // NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
@@ -326,7 +326,7 @@ public:
     friend class CDB_SendDataCmd;
 };
 
-    
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -390,7 +390,7 @@ public:
 };
 
 
-    
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  I_DriverContext::
@@ -424,7 +424,7 @@ public:
     // It is your responsibility to delete the returned connection object.
     virtual CDB_Connection* Connect(const string&   srv_name,
                                     const string&   user_name,
-                                    const string&   passwd, 
+                                    const string&   passwd,
                                     TConnectionMode mode,
                                     bool            reusable  = false,
                                     const string&   pool_name = kEmptyStr) = 0;
@@ -435,7 +435,7 @@ public:
                                         const string& pool_name = kEmptyStr)
         const;
 
-    // Add message handler "h" to process 'context-wide' (not bound 
+    // Add message handler "h" to process 'context-wide' (not bound
     // to any particular connection) error messages.
     virtual void PushCntxMsgHandler(CDB_UserHandler* h);
 
@@ -577,7 +577,8 @@ public:
 };
 
 
-typedef I_DriverContext* (*FDBAPI_CreateContext)(map<string,string>* attr);
+typedef I_DriverContext* (*FDBAPI_CreateContext)(const map<string,string>*
+attr);
 
 class NCBI_DBAPIDRIVER_EXPORT I_DriverMgr
 {
@@ -597,6 +598,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/12/20 16:20:47  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
  * Revision 1.25  2003/11/14 20:45:22  soussov
  * adds DoNotConnect mode
  *

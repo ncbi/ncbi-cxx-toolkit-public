@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi cursor
 * $Log$
+* Revision 1.3  2004/12/20 16:20:29  ssikorsk
+* Refactoring of dbapi/driver/samples
+*
 * Revision 1.2  2002/12/09 16:25:21  starchen
 * remove the text files from samples
 *
@@ -47,15 +50,6 @@
 
 
 USING_NCBI_SCOPE;
-
-
-const char* prnType(EDB_Type t);
-const char* prnSeverity(EDB_Severity s); 
-bool HandleIt(const CDB_Exception* ex) ;
-char* getParam(char tag, int argc, char* argv[], bool* flag= 0);
-int CreateTable (CDB_Connection* con);
-int ShowResults (CDB_Connection* con);
-int DeleteTable (CDB_Connection* con);
 
 
 #endif

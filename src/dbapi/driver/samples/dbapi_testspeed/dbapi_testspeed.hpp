@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.4  2004/12/20 16:20:29  ssikorsk
+* Refactoring of dbapi/driver/samples
+*
 * Revision 1.3  2003/12/09 15:10:47  sapojnik
 * option to upload/download a file
 *
@@ -55,14 +58,5 @@
 #include <stdio.h>
 
 USING_NCBI_SCOPE;
-
-const char* prnType(EDB_Type t);
-const char* prnSeverity(EDB_Severity s);
-bool HandleIt(const CDB_Exception* ex) ;
-char* getParam(char tag, int argc, char* argv[], bool* flag= 0);
-int CreateTable(CDB_Connection* con, const string& table_name);
-int FetchResults(CDB_Connection* con, const string& table_name, bool readItems=false);
-int FetchFile(CDB_Connection* con, const string& table_name, bool readItems=false);
-int DeleteTable(CDB_Connection* con, const string& table_name);
 
 #endif

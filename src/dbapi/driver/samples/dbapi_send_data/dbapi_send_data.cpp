@@ -26,10 +26,7 @@
 
 #include <ncbi_pch.hpp>
 #include "dbapi_send_data.hpp"
-#include <map> 
-
-map<string, string> dblib_version;
-
+#include "../dbapi_sample_base.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -39,102 +36,89 @@ USING_NCBI_SCOPE;
 
 // The following function illustrates an update text in the table by using SendData();
 
-int main(int argc, char* argv[])
+/////////////////////////////////////////////////////////////////////////////
+//  CDbapiTestBcpApp::
+//
+
+class CDbapiSendDataApp : public CDbapiSampleApp
 {
-   
-    I_DriverContext* my_context;
-    string server_name;
-    string driver_name;
-    const char* p = NULL;
-    CDB_Connection* con;
-    C_DriverMgr drv_mgr;
-    string err_msg;
+public:
+    CDbapiSendDataApp(void);
+    virtual ~CDbapiSendDataApp(void);
 
-  // Read args from a command line:
+protected:
+    virtual int  RunSample(void);
+    string GetTableName(void) const;
+};
 
-    p= getParam('S', argc, argv);
-    if(p) server_name = p;
+CDbapiSendDataApp::CDbapiSendDataApp(void)
+{
+}
 
-    p= getParam('d', argc, argv);
-    if(p) driver_name = p;
+CDbapiSendDataApp::~CDbapiSendDataApp(void)
+{
+}
 
-    if ( p == NULL) {
-       cout << endl << "usage: for Sybase dblib: -S STRAUSS -d dblib" << endl 
-            << "for Sybase ctlib: -S STRAUSS -d ctlib" << endl
-            << "for MSSQL: -S MS_DEV1 -d ftds" << endl << endl;
-    }
+inline
+string
+CDbapiSendDataApp::GetTableName(void) const
+{
+    return "snd" + GetTableUID();
+}
 
-    //    Driver Manager allowes you to change a type of SQL server
-    //    without rebuilding your program.
-    //    Driver's types:
-    //         ctlib - to work with Sybase SQL Server (ct_ library);
-    //         dblib - to work with Sybase SQL Server (db library);
-    //         ftds  - to work with MS SQL Server.
-
-
-    if (driver_name == "dblib") {    
-      
-       // create attr for dblib:"version=100"
-       // you have to set version if you need to work with BCP dblib Sybase 12.5
-       // in this program BCP used to populate a table
-
-       dblib_version.insert (map<string, string>::value_type (string("version"), 
-                                                                     string("100")));
-       my_context = drv_mgr.GetDriverContext (driver_name, &err_msg, &dblib_version);
-    } else {
-       my_context = drv_mgr.GetDriverContext (driver_name, &err_msg);
-    }
-    // Change a default size of text(image)
-    my_context->SetMaxTextImageSize(1000000);
-    if (!my_context) {
-            cout << "Can not load a driver " << driver_name << " [" 
-                 << err_msg << "] " << endl;
-            return 1;
-    }
-
+int
+CDbapiSendDataApp::RunSample(void)
+{
     try {
-        //    Connect to the server:
-        con = my_context->Connect (server_name, "anyone", "allowed",
-                                                I_DriverContext::fBcpIn);
+        auto_ptr<CDB_LangCmd> set_cmd;
 
-        //  Change default database:
-        CDB_LangCmd* set_cmd= con->LangCmd("use DBAPI_Sample");
-        set_cmd->Send();
-        CDB_Result* r;
-        while(set_cmd->HasMoreResults()) {
-	        r= set_cmd->Result();
-	        if(r) delete r;
-        }
-        delete set_cmd;
+        GetDriverContext().SetMaxTextImageSize(1000000);
 
         // Create table in database for the test
-        CreateTable(con);
+        CreateTable(GetTableName());
 
         CDB_Text txt;
 
         txt.Append ("This text will replace a text in the table.");
 
         // Example: update text field in the table CursorSample where int_val=4,
-        // by using function SendData() 
-       
+        // by using function SendData()
+
         // Get a descriptor
-        CDB_ITDescriptor d ("CursorSample", "text_val", "int_val = 4");
+        CDB_ITDescriptor d(GetTableName(), "txt_val", "int_val = 4");
 
         // Update text field
-        con->SendData(d, txt);
+        GetConnection().SendData(d, txt);
 
         // Print resutls on the screen
-        ShowResults(con);
-      
+        ShowResults("select int_val,fl_val,date_val,str_val,txt_val from " + GetTableName());
+
         // Delete table from database
-        DeleteTable(con);
-	     delete con;
-    	
-    } catch (CDB_Exception& e) {
-	     HandleIt(&e);
-        DeleteTable(con);
+        DeleteTable(GetTableName());
+
+        // Drop lost tables.
+        DeleteLostTables();
+    }
+    catch ( CDB_Exception& e ) {
+        CDB_UserHandler::GetDefault().HandleIt(&e);
         return 1;
     }
 
     return 0;
 }
+
+int main(int argc, char* argv[])
+{
+    // Execute main application function
+    return CDbapiSendDataApp().AppMain(argc, argv);
+}
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
+ * ===========================================================================
+ */
+

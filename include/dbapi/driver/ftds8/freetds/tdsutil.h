@@ -37,7 +37,7 @@
 extern "C" {
 #if 0
 } /* keep the paren matcher and indenter happy */
-#endif 
+#endif
 #endif
 
 
@@ -78,7 +78,7 @@ void tdsdump_on();
 void tdsdump_close();
 void tdsdump_log(int dbg_lvl, const char *fmt, ...);
 void tdsdump_dump_buf(const void *buf, int length);
-		      
+
 
 int  tds_is_result_row(TDSSOCKET *tds);
 int  tds_is_result_set(TDSSOCKET *tds);
@@ -95,7 +95,7 @@ TDS_INT tds_get_int(TDSSOCKET *tds);
 #ifdef __cplusplus
 #if 0
 { /* keep the paren matcher and indenter happy */
-#endif 
+#endif
 }
 #endif
 

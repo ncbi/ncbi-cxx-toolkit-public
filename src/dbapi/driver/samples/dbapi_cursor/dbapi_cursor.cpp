@@ -25,8 +25,9 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <map>
 #include "dbapi_cursor.hpp"
-#include <map> 
+#include "../dbapi_sample_base.hpp"
 
 map<string, string> dblib_version;
 
@@ -37,115 +38,172 @@ USING_NCBI_SCOPE;
 // PRINT table on screen (each row will begin with <ROW> and ended by </ROW>)
 // and DELETE table from the database.
 
-//The following function illustrates a usage of dbapi cursor
-int main(int argc, char* argv[])
+/////////////////////////////////////////////////////////////////////////////
+//  CDbapiCursorApp::
+//
+
+class CDbapiCursorApp : public CDbapiSampleApp
 {
-   
-    I_DriverContext* my_context;
-    string server_name;
-    string driver_name;
-    const char* p = NULL;
-    CDB_Connection* con;
-    C_DriverMgr drv_mgr;
-    string err_msg;
+public:
+    CDbapiCursorApp(void);
+    virtual ~CDbapiCursorApp(void);
 
-  // Read args from a command line:
+protected:
+    virtual int  RunSample(void);
 
-    p= getParam('S', argc, argv);
-    if(p) server_name = p;
+protected:
+    string GetTableName(void) const;
+    /// function CreateTable is creating table in the database
+    void CreateTable (const string& table_name);
+};
 
-    p= getParam('d', argc, argv);
-    if(p) driver_name = p;
+CDbapiCursorApp::CDbapiCursorApp(void)
+{
+}
 
-    if ( p == NULL) {
-       cout << endl << "usage: for Sybase dblib: -S STRAUSS -d dblib" << endl 
-            << "for Sybase ctlib: -S STRAUSS -d ctlib" << endl
-            << "for MSSQL: -S MS_DEV1 -d ftds" << endl << endl;
+CDbapiCursorApp::~CDbapiCursorApp(void)
+{
+}
+
+void
+CDbapiCursorApp::CreateTable (const string& table_name)
+{
+    string sql;
+
+    // Drop a table with same name.
+    sql  = string(" IF EXISTS (select * from sysobjects WHERE name = '");
+    sql += table_name + "' AND type = 'U') begin ";
+    sql += " DROP TABLE " + table_name + " end ";
+
+    auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd (sql));
+    lcmd->Send();
+
+    while ( lcmd->HasMoreResults() ) {
+        auto_ptr<CDB_Result> r(lcmd->Result());
     }
 
-    //    Driver Manager allowes you to change a type of SQL server
-    //    without rebuilding your program.
-    //    Driver's types:
-    //         ctlib - to work with Sybase SQL Server (ct_ library);
-    //         dblib - to work with Sybase SQL Server (db library);
-    //         ftds  - to work with MS SQL Server.
+    // Create a new table.
+    sql  = " create table " + table_name + "( \n";
+    sql += "    int_val int not null, \n";
+    sql += "    fl_val real not null, \n";
+    sql += "    date_val datetime not null, \n";
+    sql += "    str_val varchar(255) null, \n";
+    sql += "    txt_val text null, \n";
+    sql += "    primary key clustered(int_val) \n";
+    sql += ")";
 
+    lcmd.reset(GetConnection().LangCmd ( sql ));
+    lcmd->Send();
 
-    if (driver_name == "dblib") {    
-      
-       // create attr for dblib:"version=100"
-       // you have to set version if you need to work with BCP dblib Sybase 12.5
-       // in this program BCP used to populate a table
-
-       dblib_version.insert (map<string, string>::value_type (string("version"), 
-                                                                     string("100")));
-       my_context = drv_mgr.GetDriverContext (driver_name, &err_msg, &dblib_version);
-    } else {
-       my_context = drv_mgr.GetDriverContext (driver_name, &err_msg);
+    while ( lcmd->HasMoreResults() ) {
+        auto_ptr<CDB_Result> r(lcmd->Result());
     }
 
-    // Change a default size of text(image)
-    my_context->SetMaxTextImageSize(1000000);
+    lcmd.release();
 
-    if (!my_context) {
-            cout << "Can not load a driver " << driver_name << " [" 
-                 << err_msg << "] " << endl;
-            return 1;
+    auto_ptr<CDB_BCPInCmd> bcp(GetConnection().BCPIn(table_name, 5));
+
+    CDB_Int int_val;
+    CDB_Float fl_val;
+    CDB_DateTime date_val(CTime::eCurrent);
+    CDB_VarChar str_val;
+    CDB_Text pTxt;
+    int i;
+    pTxt.Append("This is a test string.");
+
+    // Bind data from a program variables
+    bcp->Bind(0, &int_val);
+    bcp->Bind(1, &fl_val);
+    bcp->Bind(2, &date_val);
+    bcp->Bind(3, &str_val);
+    bcp->Bind(4, &pTxt);
+
+    for ( i = 0; *file_name[i] != '\0'; ++i ) {
+        int_val = i;
+        fl_val = i + 0.999;
+        date_val = date_val.Value();
+
+        str_val = file_name[i];
+
+        pTxt.MoveTo(0);
+        bcp->SendRow();
     }
+    bcp->CompleteBCP();
+}
 
+
+inline
+string
+CDbapiCursorApp::GetTableName(void) const
+{
+    return "crs" + GetTableUID();
+}
+
+// The following function illustrates a usage of dbapi cursor
+int
+CDbapiCursorApp::RunSample(void)
+{
     try {
-        // Connect to the server:
-        con = my_context->Connect (server_name, "anyone", "allowed",
-                                                I_DriverContext::fBcpIn);
+        auto_ptr<CDB_LangCmd> set_cmd;
 
-        // Change default database:
-        CDB_LangCmd* set_cmd = con->LangCmd("use DBAPI_Sample");
-        set_cmd->Send();
-        CDB_Result* r;
-        while(set_cmd->HasMoreResults()) {
-	        r= set_cmd->Result();
-	        if(r) delete r;
-        }
-        delete set_cmd;
+        // Change a default size of text(image)
+        GetDriverContext().SetMaxTextImageSize(1000000);
 
         // Create table in database for the test
-        CreateTable(con);
+        CreateTable(GetTableName());
 
         CDB_Text txt;
 
         txt.Append ("This text will replace a text in the table.");
 
-       // Example : update text field in the table CursorSample where int_val = 2,
-       // by using cursor
+        // Example : update text field in the table CursorSample where int_val = 2,
+        // by using cursor
 
-       CDB_CursorCmd* upd = con->Cursor("upd", 
-                        "select int_val, text_val from CursorSample for update of text_val", 0);
-       //Open cursor
-       CDB_Result* crres= upd->Open();
-       //fetch row
-       while (crres->Fetch()) {
-           CDB_Int v;
-           crres->GetItem(&v);
-           if (v.Value() == 2) {
-               txt.MoveTo(0); // rewind
-               //update text field
-               upd->UpdateTextImage (1, txt);
-           }
-       }
-       //print resutls on the screen
-       ShowResults(con);
-       //close cursor
-       upd->Close();
-       delete crres;    
-       delete upd; 
-       //Delete table from database
-       DeleteTable(con);
-	    delete con;
-    	
-    } catch (CDB_Exception& e) {
-	     HandleIt(&e);
-        DeleteTable(con);
+        auto_ptr<CDB_CursorCmd> upd(GetConnection().Cursor("upd",
+           "select int_val, txt_val from " + GetTableName() +
+           " for update of txt_val", 0));
+
+        //Open cursor
+        auto_ptr<CDB_Result> crres(upd->Open());
+        //fetch row
+        while ( crres->Fetch() ) {
+            CDB_Int v;
+            crres->GetItem(&v);
+            if ( v.Value() == 2 ) {
+                txt.MoveTo(0); // rewind
+                //update text field
+                upd->UpdateTextImage (1, txt);
+            }
+        }
+        //print resutls on the screen
+        ShowResults("select int_val,fl_val,date_val,str_val,txt_val from " +
+            GetTableName());
+        //close cursor
+        upd->Close();
+
+        //Delete table from database
+        DeleteTable(GetTableName());
+
+        // Drop lost tables.
+        DeleteLostTables();
+    } catch ( CDB_Exception& e ) {
+        CDB_UserHandler::GetDefault().HandleIt(&e);
         return 1;
     }
+
     return 0;
 }
+
+int main(int argc, const char* argv[])
+{
+    return CDbapiCursorApp().AppMain(argc, argv);
+}
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.5  2004/12/20 16:20:29  ssikorsk
+ * Refactoring of dbapi/driver/samples
+ *
+ * ===========================================================================
+ */

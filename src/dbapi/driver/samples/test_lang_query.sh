@@ -7,8 +7,10 @@ ulimit -n          1024 > /dev/null 2>&1
 
 
 driver_list="ctlib dblib ftds"
-server_list="MS_DEV2 BARTOK BARTOK_12"
-server_mssql="MS_DEV2"
+# server_list="MS_DEV2 BARTOK BARTOK_12"
+server_list="MS_DEV1 STRAUSS MOZART"
+# server_mssql="MS_DEV2"
+server_mssql="MS_DEV1"
 
 res_file="/tmp/$0.$$"
 trap 'rm -f $res_file' 1 2 15
@@ -17,8 +19,27 @@ n_ok=0
 n_err=0
 sum_list=""
 
+# Run one test
+RunSimpleTest()
+{
+  echo
+  $CHECK_EXEC $cmd > $res_file 2>&1
 
-# Run one test (RunTest sql_command reg_expression) 
+  if test $? -eq 0 ; then
+      echo "OK:"
+      n_ok=`expr $n_ok + 1`
+      sum_list="$sum_list XXX_SEPARATOR +  $cmd"
+      return
+  fi
+
+  # error occurred
+  n_err=`expr $n_err + 1`
+  sum_list="$sum_list XXX_SEPARATOR -  $cmd"
+
+  cat $res_file
+}
+
+# Run one test (RunTest sql_command reg_expression)
 RunTest()
 {
   sql="$1"
@@ -68,21 +89,35 @@ EOF
       if test $driver = "ctlib"  -a  $server = $server_mssql ; then
          continue
       fi
-      if test \( $driver = "ftds"  -o  $driver = "ftds7" \)  -a \
-                 $server != $server_mssql ; then
-         continue
-      fi
 
       cat <<EOF
 
 
 ~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
 EOF
+# lang_query
       cmd="lang_query -d $driver -S $server -Q"
       RunTest 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
       RunTest 'select qq = 57 + 33' '<ROW><qq>90<'
       RunTest 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
       RunTest 'select name, type from sysobjects' '<ROW><name>'
+# simple tests
+      if test $driver = "dblib"  -a  $server = $server_mssql ; then
+         continue
+      fi
+      if test \( $driver = "ftds"  -o  $driver = "ftds7" \)  -a \
+                 $server = $server_mssql ; then
+          cmd="dbapi_bcp/dbapi_bcp -d $driver -S $server"
+          RunSimpleTest
+          cmd="dbapi_cursor/dbapi_cursor -d $driver -S $server"
+          RunSimpleTest
+          cmd="dbapi_testspeed/dbapi_testspeed -d $driver -S $server"
+          RunSimpleTest
+      fi
+      cmd="dbapi_query/dbapi_query -d $driver -S $server"
+      RunSimpleTest
+      cmd="dbapi_send_data/dbapi_send_data -d $driver -S $server"
+      RunSimpleTest
     done
 
   else

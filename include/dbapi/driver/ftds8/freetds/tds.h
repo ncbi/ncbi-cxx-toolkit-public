@@ -21,7 +21,7 @@
 #define _tds_h_
 
 static char rcsid_tds_h[]=
-	 "$Id$";
+     "$Id$";
 static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 
 #include <tds_config.h>
@@ -34,7 +34,7 @@ static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 #include <netdb.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
-#endif 
+#endif
 
 #ifdef WIN32
 #include <windows.h>
@@ -44,11 +44,11 @@ static void *no_unused_tds_h_warn[]={rcsid_tds_h, no_unused_tds_h_warn};
 #ifdef NCBI_FTDS
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #include <windows.h>
-#define READSOCKET(a,b,c)	recv((a), (b), (c), 0L)
-#define WRITESOCKET(a,b,c)	send((a), (b), (c), 0L)
-#define CLOSESOCKET(a)		closesocket((a))
-#define IOCTLSOCKET(a,b,c)	ioctlsocket((a), (b), (c))
-#define NETDB_REENTRANT 1	/* BSD-style netdb interface is reentrant */
+#define READSOCKET(a,b,c)   recv((a), (b), (c), 0L)
+#define WRITESOCKET(a,b,c)  send((a), (b), (c), 0L)
+#define CLOSESOCKET(a)      closesocket((a))
+#define IOCTLSOCKET(a,b,c)  ioctlsocket((a), (b), (c))
+#define NETDB_REENTRANT 1   /* BSD-style netdb interface is reentrant */
 
 #define TDSSOCK_EINTR WSAEINTR
 #define TDSSOCK_EINPROGRESS WSAEINPROGRESS
@@ -68,40 +68,40 @@ typedef DWORD pid_t;
 #define WIN32 1
 #endif
 
-#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) */ 
+#endif /* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) */
 #endif /* NCBI_FTDS */
 
 #ifndef sock_errno
 #define sock_errno errno
 #endif
- 
+
 #ifndef TDSSOCK_EINTR
 #define TDSSOCK_EINTR EINTR
 #endif
 
-#ifndef TDSSOCK_EINPROGRESS 
+#ifndef TDSSOCK_EINPROGRESS
 #define TDSSOCK_EINPROGRESS EINPROGRESS
-#endif 
+#endif
 
-#ifndef TDSSOCK_EWOULDBLOCK 
+#ifndef TDSSOCK_EWOULDBLOCK
 #define TDSSOCK_EWOULDBLOCK EWOULDBLOCK
-#endif 
+#endif
 
 #ifndef READSOCKET
-#define READSOCKET(a,b,c)	read((a), (b), (c))
+#define READSOCKET(a,b,c)   read((a), (b), (c))
 #endif /* !READSOCKET */
 
 #ifndef WRITESOCKET
-#define WRITESOCKET(a,b,c)	write((a), (b), (c))
+#define WRITESOCKET(a,b,c)  write((a), (b), (c))
 #endif /* !WRITESOCKET */
 
 #ifndef CLOSESOCKET
-#define CLOSESOCKET(a)		close((a))
+#define CLOSESOCKET(a)      close((a))
 #endif /* !CLOSESOCKET */
 
 #ifndef IOCTLSOCKET
-#define IOCTLSOCKET(a,b,c)	ioctl((a), (b), (c))
-#endif /* !IOCTLSOCKET */ 
+#define IOCTLSOCKET(a,b,c)  ioctl((a), (b), (c))
+#endif /* !IOCTLSOCKET */
 
 #ifdef __INCvxWorksh
 #include <signal.h>
@@ -129,31 +129,31 @@ typedef DWORD pid_t;
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
-/* 
+/*
 ** this is where platform specific changes need to be made.
-** I've tried to change all references to data that goes to 
-** or comes off the wire to use these typedefs.  I've probably 
-** missed a bunch, but the idea is we can do an ifdef here 
+** I've tried to change all references to data that goes to
+** or comes off the wire to use these typedefs.  I've probably
+** missed a bunch, but the idea is we can do an ifdef here
 ** to set the appropriately sized native type.
 **
-** If you have problems on 64-bit machines and the code is 
+** If you have problems on 64-bit machines and the code is
 ** using a native datatype, please change the code to use
 ** these. (In the TDS layer only, the API layers have their
 ** own typedefs which equate to these).
 */
-typedef char				TDS_CHAR;      /*  8 bit char     */
-typedef unsigned char		TDS_UCHAR;     /*  8 bit uchar    */
-typedef unsigned char		TDS_TINYINT;   /*  8 bit int      */
+typedef char                TDS_CHAR;      /*  8 bit char     */
+typedef unsigned char       TDS_UCHAR;     /*  8 bit uchar    */
+typedef unsigned char       TDS_TINYINT;   /*  8 bit int      */
 typedef short            TDS_SMALLINT;  /* 16 bit int      */
-typedef unsigned short  	TDS_USMALLINT; /* 16 bit unsigned */
+typedef unsigned short      TDS_USMALLINT; /* 16 bit unsigned */
 typedef int                 TDS_INT;       /* 32 bit int      */
-typedef unsigned int       	TDS_UINT;      /* 32 bit unsigned */
+typedef unsigned int        TDS_UINT;      /* 32 bit unsigned */
 typedef float                TDS_REAL;      /* 32 bit float    */
 typedef double               TDS_FLOAT;     /* 64 bit float    */
-typedef long long			TDS_INT8;     	/* 64 bit integer  */
-typedef unsigned long long	TDS_UINT8;     	/* 64 bit integer  */
+typedef long long           TDS_INT8;       /* 64 bit integer  */
+typedef unsigned long long  TDS_UINT8;      /* 64 bit integer  */
 
 typedef struct tdsnumeric
 {
@@ -164,41 +164,41 @@ typedef struct tdsnumeric
 
 typedef struct tdsoldmoney
 {
-	TDS_INT         mnyhigh;
-	TDS_INT         mnylow;
+    TDS_INT         mnyhigh;
+    TDS_INT         mnylow;
 } TDS_OLD_MONEY;
 
 typedef union tdsmoney
-{	TDS_OLD_MONEY	tdsoldmoney;
+{   TDS_OLD_MONEY   tdsoldmoney;
         TDS_INT8        mny;
 } TDS_MONEY;
 
 typedef struct tdsmoney4
-{	
+{
         TDS_INT          mny4;
 } TDS_MONEY4;
 
 typedef struct tdsdatetime
 {
-	TDS_INT dtdays;
-	TDS_INT dttime;
+    TDS_INT dtdays;
+    TDS_INT dttime;
 } TDS_DATETIME;
 
 typedef struct tdsdatetime4
 {
-	TDS_USMALLINT days;
-	TDS_USMALLINT minutes;
+    TDS_USMALLINT days;
+    TDS_USMALLINT minutes;
 } TDS_DATETIME4;
 
 typedef struct tdsvarbinary
 {
-	TDS_INT len;
-	TDS_CHAR array[256];
+    TDS_INT len;
+    TDS_CHAR array[256];
 } TDS_VARBINARY;
 typedef struct tdsvarchar
 {
-	TDS_INT len;
-	TDS_CHAR array[256];
+    TDS_INT len;
+    TDS_CHAR array[256];
 } TDS_VARCHAR;
 
 typedef struct tdsunique
@@ -211,16 +211,16 @@ typedef struct tdsunique
 
 typedef struct tdsdaterec
 {
-	TDS_INT   year;
-	TDS_INT   month;
-	TDS_INT   day;
-	TDS_INT   dayofyear;
-	TDS_INT   weekday;
-	TDS_INT   hour;
-	TDS_INT   minute;
-	TDS_INT   second;
-	TDS_INT   millisecond;
-	TDS_INT   tzone;
+    TDS_INT   year;
+    TDS_INT   month;
+    TDS_INT   day;
+    TDS_INT   dayofyear;
+    TDS_INT   weekday;
+    TDS_INT   hour;
+    TDS_INT   minute;
+    TDS_INT   second;
+    TDS_INT   millisecond;
+    TDS_INT   tzone;
 } TDSDATEREC;
 
 #define TDS_NO_MORE_ROWS     -2
@@ -228,11 +228,11 @@ typedef struct tdsdaterec
 #define TDS_FAIL             0
 #define TDS_NO_MORE_RESULTS  2
 /*
-** TDS_ERROR indicates a successful processing, but an TDS_ERR_TOKEN or 
+** TDS_ERROR indicates a successful processing, but an TDS_ERR_TOKEN or
 ** TDS_EED_TOKEN error was encountered, whereas TDS_FAIL indicates an
 ** unrecoverable failure.
 */
-#define TDS_ERROR            3  
+#define TDS_ERROR            3
 #define TDS_DONT_RETURN      42
 
 #define TDS5_DYN_TOKEN      231  /* 0xE7    TDS 5.0 only              */
@@ -280,8 +280,8 @@ typedef struct tdsdaterec
 #define TDS_ENV_CHARSET   3
 #define TDS_ENV_BLOCKSIZE 4
 
-/* 
-<rant> Sybase does an awful job of this stuff, non null ints of size 1 2 
+/*
+<rant> Sybase does an awful job of this stuff, non null ints of size 1 2
 and 4 have there own codes but nullable ints are lumped into INTN
 sheesh! </rant>
 */
@@ -335,44 +335,44 @@ sheesh! </rant>
           ((((unsigned long)value)>>24) & 0x000000FF))
 
 #define is_end_token(x) (x==TDS_DONE_TOKEN    || \
-			x==TDS_DONEPROC_TOKEN    || \
-			x==TDS_DONEINPROC_TOKEN)
+            x==TDS_DONEPROC_TOKEN    || \
+            x==TDS_DONEINPROC_TOKEN)
 
 #define is_hard_end_token(x) (x==TDS_DONE_TOKEN    || \
-			x==TDS_DONEPROC_TOKEN)
+            x==TDS_DONEPROC_TOKEN)
 
 #define is_msg_token(x) (x==TDS_MSG_TOKEN    || \
-			x==TDS_ERR_TOKEN    || \
-			x==TDS_EED_TOKEN)
+            x==TDS_ERR_TOKEN    || \
+            x==TDS_EED_TOKEN)
 
 #define is_result_token(x) (x==TDS_RESULT_TOKEN    || \
-			x==TDS7_RESULT_TOKEN    || \
-			x==TDS_COL_INFO_TOKEN    || \
-			x==TDS_COL_NAME_TOKEN)
+            x==TDS7_RESULT_TOKEN    || \
+            x==TDS_COL_INFO_TOKEN    || \
+            x==TDS_COL_NAME_TOKEN)
 
 /* FIX ME -- not a complete list */
 #define is_fixed_type(x) (x==SYBINT1    || \
-			x==SYBINT2      || \
-			x==SYBINT4      || \
-			x==SYBINT8      || \
-			x==SYBREAL	 || \
-			x==SYBFLT8      || \
-			x==SYBDATETIME  || \
-			x==SYBDATETIME4 || \
-			x==SYBBIT       || \
-			x==SYBMONEY     || \
-			x==SYBMONEY4    || \
-			x==SYBUNIQUE)
+            x==SYBINT2      || \
+            x==SYBINT4      || \
+            x==SYBINT8      || \
+            x==SYBREAL   || \
+            x==SYBFLT8      || \
+            x==SYBDATETIME  || \
+            x==SYBDATETIME4 || \
+            x==SYBBIT       || \
+            x==SYBMONEY     || \
+            x==SYBMONEY4    || \
+            x==SYBUNIQUE)
 #define is_nullable_type(x) (x==SYBINTN || \
-			x==SYBFLTN      || \
-			x==SYBDATETIMN  || \
-			x==SYBVARCHAR   || \
-			x==SYBVARBINARY	|| \
-			x==SYBMONEYN	|| \
-			x==SYBTEXT	|| \
-			x==SYBNTEXT	|| \
-			x==SYBBITN      || \
-			x==SYBIMAGE)
+            x==SYBFLTN      || \
+            x==SYBDATETIMN  || \
+            x==SYBVARCHAR   || \
+            x==SYBVARBINARY || \
+            x==SYBMONEYN    || \
+            x==SYBTEXT  || \
+            x==SYBNTEXT || \
+            x==SYBBITN      || \
+            x==SYBIMAGE)
 #define is_blob_type(x) (x==SYBTEXT || x==SYBIMAGE || x==SYBNTEXT)
 /* large type means it has a two byte size field */
 #define is_large_type(x) (x>128)
@@ -380,36 +380,36 @@ sheesh! </rant>
 #define is_unicode(x) (x==XSYBNVARCHAR || x==XSYBNCHAR || x==SYBNTEXT)
 #define is_collate_type(x) (x==XSYBVARCHAR || x==XSYBCHAR || x==SYBTEXT || x == XSYBNVARCHAR || x==SYBNTEXT)
 
-#define TDS_MAX_CAPABILITY	18
-#define MAXPRECISION 		50
-#define TDS_MAX_CONN		4096
-#define TDS_MAX_DYNID_LEN	30
+#define TDS_MAX_CAPABILITY  18
+#define MAXPRECISION        50
+#define TDS_MAX_CONN        4096
+#define TDS_MAX_DYNID_LEN   30
 
 /* defaults to use if no others are found */
-#define TDS_DEF_SERVER		"SYBASE"
-#define TDS_DEF_BLKSZ		512
-#define TDS_DEF_CHARSET		"iso_1"
-#define TDS_DEF_LANG		"us_english"
+#define TDS_DEF_SERVER      "SYBASE"
+#define TDS_DEF_BLKSZ       512
+#define TDS_DEF_CHARSET     "iso_1"
+#define TDS_DEF_LANG        "us_english"
 #if TDS42
-#define TDS_DEF_MAJOR		4
-#define TDS_DEF_MINOR		2
-#define TDS_DEF_PORT		1433
+#define TDS_DEF_MAJOR       4
+#define TDS_DEF_MINOR       2
+#define TDS_DEF_PORT        1433
 #elif TDS46
-#define TDS_DEF_MAJOR		4
-#define TDS_DEF_MINOR		6
-#define TDS_DEF_PORT		4000
+#define TDS_DEF_MAJOR       4
+#define TDS_DEF_MINOR       6
+#define TDS_DEF_PORT        4000
 #elif TDS70
-#define TDS_DEF_MAJOR		7
-#define TDS_DEF_MINOR		0
-#define TDS_DEF_PORT		1433
+#define TDS_DEF_MAJOR       7
+#define TDS_DEF_MINOR       0
+#define TDS_DEF_PORT        1433
 #elif TDS80
-#define TDS_DEF_MAJOR		8
-#define TDS_DEF_MINOR		0
-#define TDS_DEF_PORT		1433
+#define TDS_DEF_MAJOR       8
+#define TDS_DEF_MINOR       0
+#define TDS_DEF_PORT        1433
 #else
-#define TDS_DEF_MAJOR		5
-#define TDS_DEF_MINOR		0
-#define TDS_DEF_PORT		4000
+#define TDS_DEF_MAJOR       5
+#define TDS_DEF_MINOR       0
+#define TDS_DEF_PORT        4000
 #endif
 
 /* normalized strings from freetds.conf file */
@@ -430,39 +430,39 @@ sheesh! </rant>
 #define TDS_STR_PORT     "port"
 #define TDS_STR_TEXTSZ   "text size"
 /* for big endian hosts */
-#define TDS_STR_EMUL_LE	"emulate little endian"
-#define TDS_STR_CHARSET	"charset"
-#define TDS_STR_CLCHARSET	"client charset"
-#define TDS_STR_LANGUAGE	"language"
-#define TDS_STR_APPENDMODE	"dump file append"
-#define TDS_STR_DATEFMT	"date format"
+#define TDS_STR_EMUL_LE "emulate little endian"
+#define TDS_STR_CHARSET "charset"
+#define TDS_STR_CLCHARSET   "client charset"
+#define TDS_STR_LANGUAGE    "language"
+#define TDS_STR_APPENDMODE  "dump file append"
+#define TDS_STR_DATEFMT "date format"
 
 #define TDS_MAX_LOGIN_STR_SZ 30
 #define TDS_MAX_LIBRARY_STR_SZ 11
 typedef struct tds_login {
-	TDS_CHAR  host_name[TDS_MAX_LOGIN_STR_SZ+1];
-	TDS_CHAR  user_name[TDS_MAX_LOGIN_STR_SZ+1];
-	/* FIXME temporary fix, 40 pwd max len */
-	TDS_CHAR  password[40+1];
-	TDS_TINYINT bulk_copy; 
-	TDS_CHAR  app_name[TDS_MAX_LOGIN_STR_SZ+1];
-	TDS_CHAR  server_name[TDS_MAX_LOGIN_STR_SZ+1];
-	TDS_TINYINT  major_version; /* TDS version */
-	TDS_TINYINT  minor_version; /* TDS version */
-	/* Ct-Library, DB-Library,  TDS-Library or ODBC */
-	TDS_CHAR  library[TDS_MAX_LIBRARY_STR_SZ+1];
-	TDS_CHAR language[TDS_MAX_LOGIN_STR_SZ+1]; /* ie us-english */
-	TDS_TINYINT encrypted; 
-	TDS_CHAR char_set[TDS_MAX_LOGIN_STR_SZ+1]; /*  ie iso_1 */
-	TDS_SMALLINT block_size; 
-	TDS_TINYINT suppress_language;
+    TDS_CHAR  host_name[TDS_MAX_LOGIN_STR_SZ+1];
+    TDS_CHAR  user_name[TDS_MAX_LOGIN_STR_SZ+1];
+    /* FIXME temporary fix, 40 pwd max len */
+    TDS_CHAR  password[40+1];
+    TDS_TINYINT bulk_copy;
+    TDS_CHAR  app_name[TDS_MAX_LOGIN_STR_SZ+1];
+    TDS_CHAR  server_name[TDS_MAX_LOGIN_STR_SZ+1];
+    TDS_TINYINT  major_version; /* TDS version */
+    TDS_TINYINT  minor_version; /* TDS version */
+    /* Ct-Library, DB-Library,  TDS-Library or ODBC */
+    TDS_CHAR  library[TDS_MAX_LIBRARY_STR_SZ+1];
+    TDS_CHAR language[TDS_MAX_LOGIN_STR_SZ+1]; /* ie us-english */
+    TDS_TINYINT encrypted;
+    TDS_CHAR char_set[TDS_MAX_LOGIN_STR_SZ+1]; /*  ie iso_1 */
+    TDS_SMALLINT block_size;
+    TDS_TINYINT suppress_language;
      TDS_INT connect_timeout;
      TDS_INT query_timeout;
      TDS_INT longquery_timeout;
      void (*longquery_func)(long lHint);
      long longquery_param;
-	unsigned char capabilities[TDS_MAX_CAPABILITY];
-	int port;
+    unsigned char capabilities[TDS_MAX_CAPABILITY];
+    int port;
 } TDSLOGIN;
 
 #ifdef NCBI_FTDS
@@ -503,8 +503,8 @@ typedef struct tds_config_info {
         char *password;
         char *library;
         int bulk_copy;
-	   int suppress_language;
-	   int encrypted;
+       int suppress_language;
+       int encrypted;
         char *client_charset;
 } TDSCONFIGINFO;
 
@@ -514,65 +514,65 @@ typedef struct tds_loc_info {
         char *date_fmt;
 } TDSLOCINFO;
 
-/* structure for storing data about regular and compute rows */ 
+/* structure for storing data about regular and compute rows */
 typedef struct tds_column_info {
-	TDS_SMALLINT column_type;
-	TDS_SMALLINT column_type_save;
-	TDS_SMALLINT column_usertype;
-	TDS_SMALLINT column_flags;
-	TDS_INT column_size;
-	TDS_INT column_offset;
-	TDS_TINYINT column_namelen;
-	TDS_TINYINT column_varint_size;
+    TDS_SMALLINT column_type;
+    TDS_SMALLINT column_type_save;
+    TDS_SMALLINT column_usertype;
+    TDS_SMALLINT column_flags;
+    TDS_INT column_size;
+    TDS_INT column_offset;
+    TDS_TINYINT column_namelen;
+    TDS_TINYINT column_varint_size;
 #ifdef NCBI_FTDS
-    TDS_CHAR column_name[140]; 
+    TDS_CHAR column_name[140];
     TDS_CHAR full_column_name[140];
 #else
    TDS_CHAR column_name[256];
 #endif
-	TDS_SMALLINT column_bindtype;
-	TDS_SMALLINT column_bindfmt;
-	TDS_UINT column_bindlen;
-	TDS_CHAR *column_nullbind;
-	TDS_CHAR *varaddr;
-	TDS_CHAR *column_lenbind;
-	TDS_SMALLINT column_prec;
-	TDS_SMALLINT column_scale;
-	TDS_INT column_textsize;
-	TDS_INT column_textpos;
-	TDS_INT column_text_sqlgetdatapos;
-	TDS_CHAR column_textptr[16];
-	TDS_CHAR column_timestamp[8];
-	TDS_CHAR *column_textvalue;
-	TDS_TINYINT column_nullable;
-	TDS_TINYINT column_writeable;
-	TDS_TINYINT column_identity;
-	TDS_TINYINT column_unicodedata;
+    TDS_SMALLINT column_bindtype;
+    TDS_SMALLINT column_bindfmt;
+    TDS_UINT column_bindlen;
+    TDS_CHAR *column_nullbind;
+    TDS_CHAR *varaddr;
+    TDS_CHAR *column_lenbind;
+    TDS_SMALLINT column_prec;
+    TDS_SMALLINT column_scale;
+    TDS_INT column_textsize;
+    TDS_INT column_textpos;
+    TDS_INT column_text_sqlgetdatapos;
+    TDS_CHAR column_textptr[16];
+    TDS_CHAR column_timestamp[8];
+    TDS_CHAR *column_textvalue;
+    TDS_TINYINT column_nullable;
+    TDS_TINYINT column_writeable;
+    TDS_TINYINT column_identity;
+    TDS_TINYINT column_unicodedata;
     TDS_CHAR    collation[5];
-	TDS_INT cur_row_size; /* size of this column in the current row */
+    TDS_INT cur_row_size; /* size of this column in the current row */
 } TDSCOLINFO;
 
 typedef struct tds_result_info {
-	TDS_SMALLINT  rows_exist;
-	TDS_INT       row_count;
-	TDS_INT       row_size;
-	TDS_SMALLINT  num_cols;
-	TDS_TINYINT   more_results;
-	TDSCOLINFO    **columns;
-	int           null_info_size;
-	unsigned char *current_row;
+    TDS_SMALLINT  rows_exist;
+    TDS_INT       row_count;
+    TDS_INT       row_size;
+    TDS_SMALLINT  num_cols;
+    TDS_TINYINT   more_results;
+    TDSCOLINFO    **columns;
+    int           null_info_size;
+    unsigned char *current_row;
 } TDSRESULTINFO;
 
 /* values for tds->state */
 enum {
-	TDS_QUERYING,
-	TDS_PENDING,
-	TDS_COMPLETED,
-	TDS_CANCELED,
-	TDS_DEAD
+    TDS_QUERYING,
+    TDS_PENDING,
+    TDS_COMPLETED,
+    TDS_CANCELED,
+    TDS_DEAD
 };
 
-#define TDS_DBG_FUNC    7  
+#define TDS_DBG_FUNC    7
 #define TDS_DBG_INFO2   6
 #define TDS_DBG_INFO1   5
 #define TDS_DBG_NETWORK 4
@@ -582,25 +582,25 @@ enum {
 
 typedef struct tds_compute_info {
         TDS_SMALLINT num_cols;
-	TDS_INT row_size;
+    TDS_INT row_size;
         TDSCOLINFO **columns;
-	int           null_info_size;
-	unsigned char *current_row;
+    int           null_info_size;
+    unsigned char *current_row;
 } TDSCOMPUTEINFO;
 
 typedef struct tds_param_info {
         TDS_SMALLINT num_cols;
-	TDS_INT row_size;
+    TDS_INT row_size;
         TDSCOLINFO **columns;
-	int           null_info_size;
-	unsigned char *current_row;
+    int           null_info_size;
+    unsigned char *current_row;
 } TDSPARAMINFO;
 
 typedef struct tds_input_param {
-	TDS_SMALLINT column_type;
-	TDS_CHAR *varaddr;
-	TDS_UINT column_bindlen;
-	TDS_CHAR is_null;
+    TDS_SMALLINT column_type;
+    TDS_CHAR *varaddr;
+    TDS_UINT column_bindlen;
+    TDS_CHAR is_null;
 } TDSINPUTPARAM;
 
 typedef struct tds_msg_info {
@@ -626,18 +626,18 @@ typedef struct tds_blob_info {
 ** This is the current environment as reported by the server
 */
 typedef struct tds_env_info {
-	int block_size;
-	char *language;
-	char *charset;
-	char *database;
+    int block_size;
+    char *language;
+    char *charset;
+    char *database;
 } TDSENVINFO;
 
 typedef struct tds_dynamic {
-	char id[30];
-	int dyn_state;
-	TDSRESULTINFO *res_info;
-	int num_params;
-	TDSINPUTPARAM **params;
+    char id[30];
+    int dyn_state;
+    TDSRESULTINFO *res_info;
+    int num_params;
+    TDSINPUTPARAM **params;
 } TDSDYNAMIC;
 
 /* forward declaration */
@@ -645,64 +645,64 @@ typedef struct tds_context TDSCONTEXT;
 typedef struct tds_socket  TDSSOCKET;
 
 struct tds_context {
-	TDSLOCINFO *locale;
-	void *parent;
-	/* handler */
-	int (*msg_handler)(TDSCONTEXT*, TDSSOCKET*, TDSMSGINFO*);
-	int (*err_handler)(TDSCONTEXT*, TDSSOCKET*, TDSMSGINFO*);
+    TDSLOCINFO *locale;
+    void *parent;
+    /* handler */
+    int (*msg_handler)(TDSCONTEXT*, TDSSOCKET*, TDSMSGINFO*);
+    int (*err_handler)(TDSCONTEXT*, TDSSOCKET*, TDSMSGINFO*);
 };
 
 struct tds_socket {
-	/* fixed and connect time */
+    /* fixed and connect time */
         int s;
-	TDS_SMALLINT major_version;
-	TDS_SMALLINT minor_version;
-	unsigned char capabilities[TDS_MAX_CAPABILITY];
-	unsigned char broken_dates;
-	/* in/out buffers */
-	unsigned char *in_buf;
-	unsigned char *out_buf;
-	unsigned int in_buf_max;
-	unsigned in_pos;
-	unsigned out_pos;
-	unsigned in_len;
-	unsigned out_len;
-	unsigned char out_flag;
-	unsigned char last_packet;
-	void *parent;
-	/* info about current query */
-	TDSRESULTINFO *res_info;
+    TDS_SMALLINT major_version;
+    TDS_SMALLINT minor_version;
+    unsigned char capabilities[TDS_MAX_CAPABILITY];
+    unsigned char broken_dates;
+    /* in/out buffers */
+    unsigned char *in_buf;
+    unsigned char *out_buf;
+    unsigned int in_buf_max;
+    unsigned in_pos;
+    unsigned out_pos;
+    unsigned in_len;
+    unsigned out_len;
+    unsigned char out_flag;
+    unsigned char last_packet;
+    void *parent;
+    /* info about current query */
+    TDSRESULTINFO *res_info;
         TDSCOMPUTEINFO *comp_info;
         TDSPARAMINFO *param_info;
-	TDS_TINYINT   has_status;
-	TDS_INT       ret_status;
-	TDSMSGINFO *msg_info;
-	TDS_TINYINT   state;
-	int rows_affected;
-	/* timeout stuff from Jeff */
-	TDS_INT timeout;
-	TDS_INT longquery_timeout;
-	void (*longquery_func)(long lHint);
-	long longquery_param;
-	time_t queryStarttime;
-	TDSENVINFO *env;
-	/* dynamic placeholder stuff */
-	int num_dyns;
-	int cur_dyn_elem;
-	TDSDYNAMIC **dyns;
-	int emul_little_endian;
-	char *date_fmt;
-	TDSCONTEXT *tds_ctx;
-	void *iconv_info;
+    TDS_TINYINT   has_status;
+    TDS_INT       ret_status;
+    TDSMSGINFO *msg_info;
+    TDS_TINYINT   state;
+    int rows_affected;
+    /* timeout stuff from Jeff */
+    TDS_INT timeout;
+    TDS_INT longquery_timeout;
+    void (*longquery_func)(long lHint);
+    long longquery_param;
+    time_t queryStarttime;
+    TDSENVINFO *env;
+    /* dynamic placeholder stuff */
+    int num_dyns;
+    int cur_dyn_elem;
+    TDSDYNAMIC **dyns;
+    int emul_little_endian;
+    char *date_fmt;
+    TDSCONTEXT *tds_ctx;
+    void *iconv_info;
 #ifdef NCBI_FTDS
     /* bcp stuff */
-    int                packet_count; 
-    int                f_batch; 
+    int                packet_count;
+    int                f_batch;
     int                rows_in_batch;
-#endif   
+#endif
 
-	/** config for login stuff. After login this field is NULL */
-	TDSCONFIGINFO *config;
+    /** config for login stuff. After login this field is NULL */
+    TDSCONFIGINFO *config;
 };
 
 void tds_set_longquery_handler(TDSLOGIN * tds_login, void (* longquery_func)(long), long longquery_param);
@@ -782,7 +782,7 @@ void tds_iconv_open(TDSSOCKET *tds, char *charset);
 void tds_iconv_close(TDSSOCKET *tds);
 unsigned char *tds7_ascii2unicode(TDSSOCKET *tds, const char *in_string, char *out_string, int maxlen);
 char *tds7_unicode2ascii(TDSSOCKET *tds, const char *in_string, char *out_string, int len);
- 
+
 /* threadsafe.c */
 char *tds_timestamp_str(char *str, int maxlen);
 struct hostent *tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer, int buflen, int *h_errnop);
@@ -792,10 +792,14 @@ char *tds_strtok_r(char *s, const char *delim, char **ptrptr);
 
 typedef struct tds_answer
 {
-	unsigned char lm_resp[24];
-	unsigned char nt_resp[24];
+    unsigned char lm_resp[24];
+    unsigned char nt_resp[24];
 } TDSANSWER;
 void tds_answer_challenge(char *passwd, char *challenge,TDSANSWER* answer);
+
+#ifdef NCBI_FTDS
+void tds_setTDS_version(TDSLOGIN *tds_login, int version);
+#endif
 
 #define IS_TDS42(x) (x->major_version==4 && x->minor_version==2)
 #define IS_TDS46(x) (x->major_version==4 && x->minor_version==6)
@@ -807,6 +811,6 @@ void tds_answer_challenge(char *passwd, char *challenge,TDSANSWER* answer);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 #endif /* _tds_h_ */
