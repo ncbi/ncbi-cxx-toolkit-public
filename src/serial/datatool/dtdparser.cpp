@@ -70,7 +70,7 @@ AutoPtr<CFileModules> DTDParser::Modules(const string& fileName)
 {
     AutoPtr<CFileModules> modules(new CFileModules(fileName));
 
-    while( Next() != T_EOF ) {
+    while( GetNextToken() != T_EOF ) {
         CDirEntry entry(fileName);
         m_StackPath.push(entry.GetDir());
         m_StackLexerName.push_back(fileName);
@@ -93,29 +93,8 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 #endif
 
     GenerateDataTree(*module);
-
-
-/*
-    string moduleName = ModuleReference();
-    AutoPtr<CDataTypeModule> module(new CDataTypeModule(moduleName));
-
-    Consume(K_DEFINITIONS, "DEFINITIONS");
-    Consume(T_DEFINE, "::=");
-    Consume(K_BEGIN, "BEGIN");
-
-    Next();
-
-    CopyComments(module->Comments());
-
-    ModuleBody(*module);
-    Consume(K_END, "END");
-
-    CopyComments(module->LastComments());
-
-*/
     return module;
 }
-
 
 void DTDParser::BuildDocumentTree(void)
 {
@@ -123,37 +102,26 @@ void DTDParser::BuildDocumentTree(void)
     int conditional_level = 0;
     for (;;) {
         try {
-            switch ( Next() ) {
+            switch ( GetNextToken() ) {
             case K_ELEMENT:
-                Consume();
+                ConsumeToken();
                 BeginElementContent();
                 break;
             case K_ATTLIST:
-                Consume();
+                ConsumeToken();
                 BeginAttributesContent();
                 break;
             case K_ENTITY:
-                Consume();
+                ConsumeToken();
                 BeginEntityContent();
                 break;
-            case T_ENTITY:
-                // must be external entity
-                PushEntityLexer(NextToken().GetText());
-                break;
             case T_EOF:
-                if (PopEntityLexer()) {
-                    // was external entity
-                    Consume();
-                    break;
-                } else {
-                    // end of doc
-                    return;
-                }
+                return;
             case K_INCLUDE:
-                Consume();
+                ConsumeToken();
                 break;
             case K_IGNORE:
-                Consume();
+                ConsumeToken();
                 conditional_ignore = true;
                 break;
             case T_CONDITIONAL_BEGIN:
@@ -170,7 +138,7 @@ void DTDParser::BuildDocumentTree(void)
                 if(NextToken().GetSymbol() != '[') {
                     ParseError("Incorrect format","[");
                 }
-                Consume();
+                ConsumeToken();
                 if (conditional_ignore) {
                     SkipConditionalSection();
                     --conditional_level;
@@ -204,6 +172,8 @@ void DTDParser::SkipConditionalSection(void)
                 break;
             case T_CONDITIONAL_END:
                 return;
+            case T_IDENTIFIER_END:
+                break;
             default:
                 Consume();
                 break;
@@ -219,14 +189,87 @@ void DTDParser::SkipConditionalSection(void)
     }
 }
 
+string DTDParser::GetLocation(void)
+{
+    string loc;
+    list<string>::const_iterator i;
+    for (i = m_StackLexerName.begin(); i != m_StackLexerName.end(); ++i) {
+        if (i != m_StackLexerName.begin()) {
+            loc += "/";
+        }
+        loc += *i;
+    }
+    loc += ": ";
+    return loc + AbstractParser::GetLocation();
+}
+
+TToken DTDParser::GetNextToken(void)
+{
+    for (;;) {
+        TToken tok = Next();
+        switch (tok) {
+        case T_ENTITY:
+            PushEntityLexer(NextToken().GetText());
+            break;
+        case T_IDENTIFIER_END:
+            if (!m_IdentifierText.empty()) {
+                return T_IDENTIFIER;
+            }
+            break;
+        case T_EOF:
+            if (PopEntityLexer()) {
+                Consume();
+                break;
+            } else {
+                if (!m_IdentifierText.empty()) {
+                    return T_IDENTIFIER;
+                }
+                return tok;
+            }
+        case T_IDENTIFIER:
+            m_IdentifierText += NextToken().GetText();
+            Consume();
+            break;
+        default:
+            if (!m_IdentifierText.empty()) {
+                return T_IDENTIFIER;
+            }
+            return tok;
+        }
+    }
+// we should never be here
+    return T_EOF;
+}
+
+string DTDParser::GetNextTokenText(void)
+{
+    if (!m_IdentifierText.empty()) {
+        return m_IdentifierText;
+    }
+    GetNextToken();
+    if (!m_IdentifierText.empty()) {
+        return m_IdentifierText;
+    }
+    return NextToken().GetText();
+}
+
+void  DTDParser::ConsumeToken(void)
+{
+    if (!m_IdentifierText.empty()) {
+        m_IdentifierText.erase();
+        return;
+    }
+    Consume();
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // DTDParser - elements
 
 void DTDParser::BeginElementContent(void)
 {
     // element name
-    string name = NextToken().GetText();
-    Consume();
+    string name = GetNextTokenText();
+    ConsumeToken();
     ParseElementContent(name, false);
 }
 
@@ -234,19 +277,18 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
 {
     DTDElement& node = m_MapElement[ name];
     node.SetName(name);
-    switch (Next()) {
+    switch (GetNextToken()) {
     default:
     case T_IDENTIFIER:
         ParseError("incorrect format","element category");
-//        _ASSERT(0);
         break;
     case K_ANY:     // category
         node.SetType(DTDElement::eAny);
-        Consume();
+        ConsumeToken();
         break;
     case K_EMPTY:   // category
         node.SetType(DTDElement::eEmpty);
-        Consume();
+        ConsumeToken();
         break;
     case T_SYMBOL:     // contents. the symbol must be '('
         ConsumeElementContent(node);
@@ -255,14 +297,9 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
             return;
         }
         break;
-    case T_ENTITY:
-        PushEntityLexer(NextToken().GetText());
-        ConsumeElementContent(node);
-        PopEntityLexer();
-        Consume();
-        break;
     }
     // element description is ended
+    GetNextToken();
     ConsumeSymbol('>');
 }
 
@@ -279,25 +316,25 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
     if(NextToken().GetSymbol() != '(') {
         ParseError("Incorrect format","(");
     }
-//    _ASSERT(NextToken().GetSymbol() == '(');
 
     for (skip = false; ;) {
         if (skip) {
             skip=false;
         } else {
-            Consume();
+            ConsumeToken();
         }
-        switch (Next()) {
+        switch (GetNextToken()) {
         default:
             ParseError("Unrecognized token","token");
-//            _ASSERT(0);
+            break;
+        case T_EOF:
+            ParseError("Unexpected end of file","token");
             break;
         case T_IDENTIFIER:
-            id_name = NextToken().GetText();
+            id_name = GetNextTokenText();
             if(id_name.empty()) {
                 ParseError("Incorrect format","identifier");
             }
-//            _ASSERT(!id_name.empty());
             break;
         case K_PCDATA:
             node.SetType(DTDElement::eString);
@@ -326,7 +363,6 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
                 if(id_name.empty()) {
                     ParseError("Incorrect format","identifier");
                 }
-//                _ASSERT(!id_name.empty());
                 node.SetOccurrence(id_name,
                     symbol == '+' ? DTDElement::eOneOrMore :
                         (symbol == '*' ? DTDElement::eZeroOrMore :
@@ -334,17 +370,8 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
                 break;
             default:
                 ParseError("Unrecognized symbol","symbol");
-//                _ASSERT(0);
                 break;
             }
-            break;
-        case T_ENTITY:
-            id_name = NextToken().GetText();
-            PushEntityLexer(id_name);
-            skip = true;
-            break;
-        case T_EOF:
-            PopEntityLexer();
             break;
         }
     }
@@ -372,11 +399,10 @@ void DTDParser::EndElementContent(DTDElement& node)
     if (NextToken().GetSymbol() != ')') {
         ParseError("Incorrect format", ")");
     }
-//    _ASSERT(NextToken().GetSymbol() == ')');
-    Consume();
+    ConsumeToken();
 // occurrence
     char symbol;
-    switch (Next()) {
+    switch (GetNextToken()) {
     default:
         break;
     case T_SYMBOL:
@@ -390,7 +416,7 @@ void DTDParser::EndElementContent(DTDElement& node)
                 symbol == '+' ? DTDElement::eOneOrMore :
                     (symbol == '*' ? DTDElement::eZeroOrMore :
                         DTDElement::eZeroOrOne));
-            Consume();
+            ConsumeToken();
             break;
         }
         break;
@@ -427,22 +453,19 @@ void DTDParser::BeginEntityContent(void)
 // Entity:
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-entity-decl
 
-    TToken tok = Next();
+    TToken tok = GetNextToken();
     if (tok != T_SYMBOL || NextToken().GetSymbol() != '%') {
         ParseError("Incorrect format", "%");
     }
-//    _ASSERT(tok == T_SYMBOL);
-//    _ASSERT(NextToken().GetSymbol() == '%');
 
-    Consume();
-    tok = Next();
+    ConsumeToken();
+    tok = GetNextToken();
     if (tok != T_IDENTIFIER) {
         ParseError("identifier");
     }
-//    _ASSERT(tok == T_IDENTIFIER);
     // entity name
-    string name = NextToken().GetText();
-    Consume();
+    string name = GetNextTokenText();
+    ConsumeToken();
     ParseEntityContent(name);
 }
 
@@ -451,28 +474,27 @@ void DTDParser::ParseEntityContent(const string& name)
     DTDEntity& node = m_MapEntity[name];
     node.SetName(name);
 
-    TToken tok = Next();
+    TToken tok = GetNextToken();
     if ((tok==K_SYSTEM) || (tok==K_PUBLIC)) {
         node.SetExternal();
-        Consume();
+        ConsumeToken();
         if (tok==K_PUBLIC) {
             // skip public id
-            tok = Next();
+            tok = GetNextToken();
             if (tok!=T_STRING) {
                 ParseError("string");
             }
-//            _ASSERT(tok==T_STRING);
-            Consume();
+            ConsumeToken();
         }
-        tok = Next();
+        tok = GetNextToken();
     }
     if (tok!=T_STRING) {
         ParseError("string");
     }
-//    _ASSERT(tok==T_STRING);
-    node.SetData(NextToken().GetText());
-    Consume();
+    node.SetData(GetNextTokenText());
+    ConsumeToken();
     // entity description is ended
+    GetNextToken();
     ConsumeSymbol('>');
 }
 
@@ -482,8 +504,8 @@ void DTDParser::PushEntityLexer(const string& name)
     if (i == m_MapEntity.end()) {
         ParseError("Undefined entity","entity");
     }
-//    _ASSERT (i != m_MapEntity.end());
     CNcbiIstream* in;
+    string lexer_name;
     if (m_MapEntity[name].IsExternal()) {
         string filename(m_MapEntity[name].GetData());
         string fullname = CDirEntry::MakePath(m_StackPath.top(), filename);
@@ -491,20 +513,20 @@ void DTDParser::PushEntityLexer(const string& name)
         if (!file.Exists()) {
             ParseError("file not found", fullname.c_str());
         }
-//        _ASSERT(file.Exists());
         in = new CNcbiIfstream(fullname.c_str());
         if (!((CNcbiIfstream*)in)->is_open()) {
             ParseError("cannot access file",fullname.c_str());
         }
-//        _ASSERT(((CNcbiIfstream*)in)->is_open());
         m_StackPath.push(file.GetDir());
         m_StackLexerName.push_back(fullname);
+        lexer_name = fullname;
     } else {
         in = new CNcbiIstrstream(m_MapEntity[name].GetData().c_str());
         m_StackPath.push("");
         m_StackLexerName.push_back(name);
+        lexer_name = name;
     }
-    DTDEntityLexer *lexer = new DTDEntityLexer(*in);
+    DTDEntityLexer *lexer = new DTDEntityLexer(*in,lexer_name);
     m_StackLexer.push(lexer);
     SetLexer(lexer);
 }
@@ -530,45 +552,36 @@ void DTDParser::BeginAttributesContent(void)
 // Attributes
 // http://www.w3.org/TR/2000/REC-xml-20001006#attdecls
     // element name
-    string name = NextToken().GetText();
-    Consume();
+    string name = GetNextTokenText();
+    ConsumeToken();
     ParseAttributesContent(name);
-
 }
 
 void DTDParser::ParseAttributesContent(const string& name)
 {
     string id_name;
     DTDElement& node = m_MapElement[ name];
-    while (Next()==T_IDENTIFIER) {
+    while (GetNextToken()==T_IDENTIFIER) {
         // attribute name
-        id_name = NextToken().GetText();
-        Consume();
+        id_name = GetNextTokenText();
+        ConsumeToken();
         ConsumeAttributeContent(node, id_name);
     }
     // attlist description is ended
+    GetNextToken();
     ConsumeSymbol('>');
 }
 
 void DTDParser::ConsumeAttributeContent(DTDElement& node,
                                         const string& id_name)
 {
-    bool skip;
     bool done=false;
     DTDAttribute attrib;
     attrib.SetName(id_name);
-    for (done=skip=false; !done;) {
-        switch(Next()) {
+    for (done=false; !done;) {
+        switch(GetNextToken()) {
         default:
             ParseError("Unknown token", "token");
-//            _ASSERT(0);
-            break;
-        case T_ENTITY:
-            PushEntityLexer(NextToken().GetText());
-            skip = true;
-            break;
-        case T_EOF:
-            PopEntityLexer();
             break;
         case T_IDENTIFIER:
             if (attrib.GetType() == DTDAttribute::eUnknown) {
@@ -584,13 +597,13 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
             case '(':
                 // parse enumerated list
                 attrib.SetType(DTDAttribute::eEnum);
-                Consume();
+                ConsumeToken();
                 ParseEnumeratedList(attrib);
                 break;
             }
             break;
         case T_STRING:
-            attrib.SetValue(NextToken().GetText());
+            attrib.SetValue(GetNextTokenText());
             break;
         case K_CDATA:
             attrib.SetType(DTDAttribute::eString);
@@ -632,12 +645,8 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
             attrib.SetValueType(DTDAttribute::eFixed);
             break;
         }
-        if (skip) {
-            skip=false;
-        } else {
-            if (!done) {
-                Consume();
-            }
+        if (!done) {
+            ConsumeToken();
         }
     }
     node.AddAttribute(attrib);
@@ -646,28 +655,20 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
 void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
 {
     for (;;) {
-        switch(Next()) {
+        switch(GetNextToken()) {
         default:
             ParseError("Unknown token", "token");
-//            _ASSERT(0);
             break;
         case T_IDENTIFIER:
-            attrib.AddEnumValue(NextToken().GetText());
-            Consume();
+            attrib.AddEnumValue(GetNextTokenText());
+            ConsumeToken();
             break;
         case T_SYMBOL:
             // may be either '|' or ')'
             if (NextToken().GetSymbol() == ')') {
                 return;
             }
-            Consume();
-            break;
-        case T_ENTITY:
-            PushEntityLexer(NextToken().GetText());
-            break;
-        case T_EOF:
-            PopEntityLexer();
-            Consume();
+            ConsumeToken();
             break;
         }
     }
@@ -779,7 +780,6 @@ CDataType* DTDParser::x_Type(
             break;
         default:
             ParseError("Unknown element", "element");
-//            _ASSERT(0);
             break;
         }
     }
@@ -890,7 +890,6 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     switch (att.GetType()) {
     case DTDAttribute::eUnknown:
         ParseError("Unknown attribute", "attribute");
-        _ASSERT(0);
         break;
     case DTDAttribute::eId:
     case DTDAttribute::eIdRef:
@@ -1080,6 +1079,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.22  2005/01/06 20:30:38  gouriano
+ * added support for compound identifier names
+ *
  * Revision 1.21  2005/01/03 16:51:15  gouriano
  * Added parsing of conditional sections
  *
