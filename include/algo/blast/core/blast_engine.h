@@ -124,30 +124,6 @@ typedef Int2 (*BlastWordFinderType)
       Blast_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*,
       BlastUngappedStats*);
 
-/** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
-    to various preallocated structures and arrays. */
-typedef struct BlastCoreAuxStruct {
-
-   Blast_ExtendWord* ewp; /**< Structure for keeping track of diagonal
-                               information for initial word matches */
-   BlastWordFinderType WordFinder; /**< Word finder function pointer */
-   BlastGetGappedScoreType GetGappedScore; /**< Gapped extension function
-                                              pointer */
-   BlastInitHitList* init_hitlist; /**< Placeholder for HSPs after 
-                                        ungapped extension */
-   BlastHSPList* hsp_list; /**< Placeholder for HSPs after gapped 
-                                extension */
-   Uint4* query_offsets; /**< Placeholder for initial word match query 
-                              offsets */
-   Uint4* subject_offsets; /**< Placeholder for initial word match  
-                              subject offsets */
-   Uint1* translation_buffer; /**< Placeholder for translated subject
-                                   sequences */
-   Uint1* translation_table; /**< Translation table for forward strand */
-   Uint1* translation_table_rc; /**< Translation table for reverse 
-                                     strand */
-} BlastCoreAuxStruct;
-
 #ifdef __cplusplus
 }
 #endif
