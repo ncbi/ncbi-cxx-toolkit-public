@@ -308,6 +308,11 @@ bool CObjectTypeInfoII::operator!=(const CObjectTypeInfoII& iter) const
 // CObjectTypeInfoMI //////////////////////////////////////////////////////
 
 inline
+CObjectTypeInfoMI::CObjectTypeInfoMI(void)
+{
+}
+
+inline
 CObjectTypeInfoMI::CObjectTypeInfoMI(const CObjectTypeInfo& info)
     : CParent(info.GetClassTypeInfo())
 {
@@ -660,6 +665,21 @@ bool CObjectTypeInfoCV::operator!(void) const
 }
 
 inline
+void CObjectTypeInfoCV::Init(const CObjectTypeInfo& info)
+{
+    m_ChoiceTypeInfo = info.GetChoiceTypeInfo();
+    m_VariantIndex = kEmptyChoice;
+}
+
+inline
+void CObjectTypeInfoCV::Init(const CObjectTypeInfo& info,
+                             TMemberIndex index)
+{
+    m_ChoiceTypeInfo = info.GetChoiceTypeInfo();
+    m_VariantIndex = index;
+}
+
+inline
 CObjectTypeInfoCV& CObjectTypeInfoCV::operator=(const CObjectTypeInfo& info)
 {
     m_ChoiceTypeInfo = info.GetChoiceTypeInfo();
@@ -954,6 +974,10 @@ CObjectInfoCV CObjectInfo::GetCurrentChoiceVariant(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/07/17 22:49:31  vasilche
+* Added export specifiers.
+* Added missing methods.
+*
 * Revision 1.5  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

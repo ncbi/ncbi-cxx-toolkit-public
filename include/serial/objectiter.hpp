@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CConstObjectInfoEI
+class NCBI_XSERIAL_EXPORT CConstObjectInfoEI
 {
 public:
     CConstObjectInfoEI(void);
@@ -73,7 +73,7 @@ private:
 #endif
 };
 
-class CObjectInfoEI
+class NCBI_XSERIAL_EXPORT CObjectInfoEI
 {
 public:
     CObjectInfoEI(void);
@@ -104,7 +104,7 @@ private:
 #endif
 };
 
-class CObjectTypeInfoII // item iterator (either member or variant)
+class NCBI_XSERIAL_EXPORT CObjectTypeInfoII // item iterator (either member or variant)
 {
 public:
     const string& GetAlias(void) const;
@@ -145,7 +145,7 @@ protected:
     bool CheckValid(void) const;
 };
 
-class CObjectTypeInfoMI : public CObjectTypeInfoII
+class NCBI_XSERIAL_EXPORT CObjectTypeInfoMI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
 public:
@@ -197,7 +197,7 @@ private:
     CMemberInfo* GetNCMemberInfo(void) const;
 };
 
-class CObjectTypeInfoVI : public CObjectTypeInfoII
+class NCBI_XSERIAL_EXPORT CObjectTypeInfoVI : public CObjectTypeInfoII
 {
     typedef CObjectTypeInfoII CParent;
 public:
@@ -244,7 +244,7 @@ private:
     CVariantInfo* GetNCVariantInfo(void) const;
 };
 
-class CConstObjectInfoMI : public CObjectTypeInfoMI
+class NCBI_XSERIAL_EXPORT CConstObjectInfoMI : public CObjectTypeInfoMI
 {
     typedef CObjectTypeInfoMI CParent;
 public:
@@ -267,7 +267,7 @@ private:
     CConstObjectInfo m_Object;
 };
 
-class CObjectInfoMI : public CObjectTypeInfoMI
+class NCBI_XSERIAL_EXPORT CObjectInfoMI : public CObjectTypeInfoMI
 {
     typedef CObjectTypeInfoMI CParent;
 public:
@@ -294,7 +294,7 @@ private:
     CObjectInfo m_Object;
 };
 
-class CObjectTypeInfoCV
+class NCBI_XSERIAL_EXPORT CObjectTypeInfoCV
 {
 public:
     CObjectTypeInfoCV(void);
@@ -355,7 +355,7 @@ private:
     CVariantInfo* GetNCVariantInfo(void) const;
 };
 
-class CConstObjectInfoCV : public CObjectTypeInfoCV
+class NCBI_XSERIAL_EXPORT CConstObjectInfoCV : public CObjectTypeInfoCV
 {
     typedef CObjectTypeInfoCV CParent;
 public:
@@ -380,7 +380,7 @@ private:
     TMemberIndex m_VariantIndex;
 };
 
-class CObjectInfoCV : public CObjectTypeInfoCV
+class NCBI_XSERIAL_EXPORT CObjectInfoCV : public CObjectTypeInfoCV
 {
     typedef CObjectTypeInfoCV CParent;
 public:
@@ -417,6 +417,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/17 22:49:31  vasilche
+* Added export specifiers.
+* Added missing methods.
+*
 * Revision 1.4  2003/04/15 16:18:15  siyan
 * Added doxygen support
 *
