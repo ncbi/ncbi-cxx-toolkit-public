@@ -42,160 +42,6 @@ static char const rcsid[] =
 #include <algo/blast/core/greedy_align.h>
 #include <algo/blast/core/blast_util.h> /* for NCBI2NA_UNPACK_BASE macros */
 
-/** Ensures that an edit script has enough memory allocated
-    to hold a given number of edit operations
-
-    @param script The script to examine [in/modified]
-    @param total_ops Number of operations the script must support [in]
-    @return 0 if successful, nonzero otherwise
-*/
-static Int2 
-s_EditScriptRealloc(MBGapEditScript *script, Uint4 total_ops)
-{
-    if (script->num_ops_allocated <= total_ops) {
-        Uint4 new_size = total_ops * 3 / 2;
-        MBEditOp *new_ops;
-    
-        new_ops = realloc(script->edit_ops, new_size * 
-                                sizeof(MBEditOp));
-        if (new_ops == NULL)
-            return -1;
-
-        script->edit_ops = new_ops;
-        script->num_ops_allocated = new_size;
-    }
-    return 0;
-}
-
-/** Add an edit operation to an edit script
-
-  @param script The edit script to update [in/modified]
-  @param op_type The edit operation to add [in]
-  @param num_ops The number of operations of the specified type [in]
-  @return 0 on success, nonzero otherwise
-*/
-static Int2 
-s_EditScriptAddNew(MBGapEditScript *script, 
-                enum EOpType op_type, Uint4 num_ops)
-{
-    if (s_EditScriptRealloc(script, script->num_ops + 2) != 0)
-        return -1;
-
-    ASSERT(op_type != eEditOpError);
-
-    script->last_op = op_type;
-    script->edit_ops[script->num_ops].op_type = op_type;
-    script->edit_ops[script->num_ops].num_ops = num_ops;
-    script->num_ops++;
-
-    return 0;
-}
-
-/** Initialize an edit script structure
-
-  @param script Pointer to an uninitialized edit script
-  @return The initialized edit script
-*/
-static MBGapEditScript *
-s_EditScriptInit(MBGapEditScript *script)
-{
-        script->edit_ops = NULL;
-        script->num_ops_allocated = 0;
-        script->num_ops = 0;
-        script->last_op = eEditOpError;
-        s_EditScriptRealloc(script, 8);
-        return script;
-}
-
-/** Add a new operation to an edit script, possibly combining
-    it with the last operation if the two operations are identical
-
-    @param script The edit script to update [in/modified]
-    @param op_type The operation type to add [in]
-    @param num_ops The number of the specified type of operation to add [in]
-    @return 0 on success, nonzero otherwise
-*/
-static Int2 
-s_EditScriptAdd(MBGapEditScript *script, 
-                 enum EOpType op_type, Uint4 num_ops)
-{
-    if (op_type == eEditOpError) {
-#ifdef ERR_POST_EX_DEFINED
-        ErrPostEx(SEV_FATAL, 1, 0, 
-                  "edit_script_more: bad opcode %d:%d", op_type, num_ops);
-#endif
-        return -1;
-    }
-    
-    if (script->last_op == op_type)
-        script->edit_ops[script->num_ops-1].num_ops += num_ops;
-    else
-        s_EditScriptAddNew(script, op_type, num_ops);
-
-    return 0;
-}
-
-/** See greedy_align.h for description */
-MBGapEditScript *
-MBGapEditScriptAppend(MBGapEditScript *dest_script, 
-                      MBGapEditScript *src_script)
-{
-    Uint4 i;
-
-    for (i = 0; i < src_script->num_ops; i++) {
-        MBEditOp *edit_op = src_script->edit_ops + i;
-
-        s_EditScriptAdd(dest_script, edit_op->op_type, edit_op->num_ops);
-    }
-
-    return dest_script;
-}
-
-/** See greedy_align.h for description */
-MBGapEditScript *
-MBGapEditScriptNew(void)
-{
-    MBGapEditScript *script = calloc(1, sizeof(MBGapEditScript));
-    if (script != NULL)
-        return s_EditScriptInit(script);
-    return NULL;
-}
-
-/** See greedy_align.h for description */
-MBGapEditScript *
-MBGapEditScriptFree(MBGapEditScript *script)
-{
-    if (script == NULL)
-        return NULL;
-
-    if (script->edit_ops)
-        sfree(script->edit_ops);
-
-    sfree(script);
-    return NULL;
-}
-
-/** Finish processing an edit script
-
-    @param script The script to be processed [in/modified]
-    @return Pointer to the updated edit script
-*/
-static MBGapEditScript *
-s_ProcessEditScript(MBGapEditScript *script)
-{
-    Uint4 i;
-    const Uint4 kNumOps = script->num_ops;
-    const Uint4 kMid = kNumOps / 2;
-    const Uint4 kEnd = kNumOps - 1;
-    
-    for (i = 0; i < kMid; ++i) {
-        const MBEditOp kOp = script->edit_ops[i];
-        script->edit_ops[i] = script->edit_ops[kEnd - i];
-        script->edit_ops[kEnd - i] = kOp;
-    }
-    return script;
-}
-
 /** see greedy_align.h for description */
 SMBSpace* 
 MBSpaceNew()
@@ -298,7 +144,7 @@ s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
                 operation has completed [out]
     @return The state for the next traceback operation
 */
-static enum EOpType 
+static EGapAlignOpType 
 s_GetNextAffineTbackFromMatch(SGreedyOffset** last_seq2_off, Int4* diag_lower, 
                            Int4* diag_upper, Int4* d, Int4 diag, Int4 op_cost, 
                            Int4* seq2_index)
@@ -313,17 +159,17 @@ s_GetNextAffineTbackFromMatch(SGreedyOffset** last_seq2_off, Int4* diag_lower,
                                   last_seq2_off[*d][diag].delete_off)) {
             *d -= op_cost;
             *seq2_index = new_seq2_index;
-            return eEditOpReplace;
+            return eGapAlignSub;
         }
     }
     if (last_seq2_off[*d][diag].insert_off > 
                         last_seq2_off[*d][diag].delete_off) {
         *seq2_index = last_seq2_off[*d][diag].insert_off;
-        return eEditOpInsert;
+        return eGapAlignIns;
     } 
     else {
         *seq2_index = last_seq2_off[*d][diag].delete_off;
-        return eEditOpDelete;
+        return eGapAlignDel;
     }
 }
 
@@ -344,16 +190,16 @@ s_GetNextAffineTbackFromMatch(SGreedyOffset** last_seq2_off, Int4* diag_lower,
     @param IorD The state of the traceback at present [in]
     @return The state for the next traceback operation
 */
-static enum EOpType 
+static EGapAlignOpType 
 s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower, 
                     Int4* diag_upper, Int4* d, Int4 diag, Int4 gap_open, 
-                    Int4 gap_extend, enum EOpType IorD)
+                    Int4 gap_extend, EGapAlignOpType IorD)
 {
     Int4 new_diag; 
     Int4 new_seq2_index;
     Int4 gap_open_extend = gap_open + gap_extend;
 
-    if (IorD == eEditOpInsert)
+    if (IorD == eGapAlignIns)
         new_diag = diag - 1;
     else 
         new_diag = diag + 1;
@@ -361,7 +207,7 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
     if (new_diag >= diag_lower[(*d) - gap_extend] && 
         new_diag <= diag_upper[(*d) - gap_extend]) {
 
-        if (IorD == eEditOpInsert)
+        if (IorD == eGapAlignIns)
             new_seq2_index = 
                     last_seq2_off[(*d) - gap_extend][new_diag].insert_off;
         else
@@ -378,7 +224,7 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
                 last_seq2_off[(*d) - gap_open_extend][new_diag].match_off) {
 
         *d -= gap_open_extend;
-        return eEditOpReplace;
+        return eGapAlignSub;
     }
 
     *d -= gap_extend;
@@ -400,7 +246,8 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
     @return The next distance remaining after the traceback operation
 */
 static Int4 
-s_GetNextTback(Int4 **last_seq2_off, Int4 d, Int4 diag, Int4 *seq2_index)
+s_GetNextNonAffineTback(Int4 **last_seq2_off, Int4 d, 
+                        Int4 diag, Int4 *seq2_index)
 {
     if (last_seq2_off[d-1][diag-1] > 
                 MAX(last_seq2_off[d-1][diag], last_seq2_off[d-1][diag+1])) {
@@ -422,7 +269,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                        Int4 match_cost, Int4 mismatch_cost,
                        Int4* seq1_align_len, Int4* seq2_align_len, 
                        SGreedyAlignMem* aux_data, 
-                       MBGapEditScript *script, Uint1 rem)
+                       GapPrelimEditBlock *edit_block, Uint1 rem)
 {
     Int4 seq1_index;
     Int4 seq2_index;
@@ -459,7 +306,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
        very similar, the average running time will be sig-
        nificantly better than this */
 
-    max_dist = len1 / GREEDY_MAX_COST_FRACTION + 1;
+    max_dist = len2 / GREEDY_MAX_COST_FRACTION + 1;
 
     /* the main loop assumes that the index of all diagonals is
        biased to lie in the middle of allocated bookkeeping 
@@ -485,40 +332,40 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     
     /* find the offset of the first mismatch between seq1 and seq2 */
 
-    seq1_index = 0;
+    index = 0;
     if (reverse) {
         if (rem == 4) {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[len2-1 - seq1_index] != seq1[len1-1 - seq1_index])
+            while (index < len1 && index < len2) {
+                if (seq1[len1-1 - index] != seq2[len2-1 - index])
                     break;
-                seq1_index++;
+                index++;
             }
         } 
         else {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[len2-1 - seq1_index] != 
-                          NCBI2NA_UNPACK_BASE(seq1[(len1-1 - seq1_index) / 4], 
-                                              3 - (len1-1 - seq1_index) % 4)) 
+            while (index < len1 && index < len2) {
+                if (seq1[len1-1 - index] != 
+                          NCBI2NA_UNPACK_BASE(seq2[(len2-1 - index) / 4], 
+                                              3 - (len2-1 - index) % 4)) 
                     break;
-                seq1_index++;
+                index++;
             }
         }
     } 
     else {
         if (rem == 4) {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[seq1_index] != seq1[seq1_index])
+            while (index < len1 && index < len2) {
+                if (seq1[index] != seq2[index])
                     break; 
-                seq1_index++;
+                index++;
             }
         } 
         else {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[seq1_index] != 
-                          NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4], 
-                                              3 - (seq1_index + rem) % 4))
+            while (index < len1 && index < len2) {
+                if (seq1[index] != 
+                          NCBI2NA_UNPACK_BASE(seq2[(index + rem) / 4], 
+                                              3 - (index + rem) % 4))
                     break;
-                seq1_index++;
+                index++;
             }
         }
     }
@@ -526,19 +373,20 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     /* update the extents of the alignment, and bail out
        early if no further work is needed */
 
-    *seq1_align_len = seq1_index;
-    *seq2_align_len = seq1_index;
+    *seq1_align_len = index;
+    *seq2_align_len = index;
+    seq1_index = index;
 
-    if (seq1_index == len1 || seq1_index == len2) {
-        if (script != NULL)
-            s_EditScriptAdd(script, eEditOpReplace, seq1_index);
+    if (index == len1 || index == len2) {
+        if (edit_block != NULL)
+            GapPrelimEditBlockAdd(edit_block, eGapAlignSub, index);
         return best_dist;
     }
 
     /* set up the memory pool */
 
     mem_pool = aux_data->space;
-    if (script == NULL) {
+    if (edit_block == NULL) {
        mem_pool = NULL;
     } 
     else if (mem_pool == NULL) {
@@ -647,17 +495,17 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                 if (reverse) {
                     if (rem == 4) {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                                        seq2[len2-1 - seq2_index] == 
-                                        seq1[len1-1 - seq1_index]) {
+                                        seq1[len1-1 - seq1_index] == 
+                                        seq2[len2-1 - seq2_index]) {
                             ++seq1_index;
                             ++seq2_index;
                         }
                     } 
                     else {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                            seq2[len2-1 - seq2_index] == 
-                            NCBI2NA_UNPACK_BASE(seq1[(len1-1-seq1_index) / 4],
-                                                 3 - (len1-1-seq1_index) % 4)) {
+                            seq1[len1-1 - seq1_index] == 
+                            NCBI2NA_UNPACK_BASE(seq2[(len2-1-seq2_index) / 4],
+                                                 3 - (len2-1-seq2_index) % 4)) {
                             ++seq1_index;
                             ++seq2_index;
                         }
@@ -666,16 +514,16 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                 else {
                     if (rem == 4) {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                               seq2[seq2_index] == seq1[seq1_index]) {
+                               seq1[seq1_index] == seq2[seq2_index]) {
                             ++seq1_index;
                             ++seq2_index;
                         }
                     } 
                     else {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                            seq2[seq2_index] == 
-                            NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4],
-                                                 3 - (seq1_index + rem) % 4)) {
+                            seq1[seq1_index] == 
+                            NCBI2NA_UNPACK_BASE(seq2[(seq2_index + rem) / 4],
+                                                 3 - (seq2_index + rem) % 4)) {
                             ++seq1_index;
                             ++seq2_index;
                         }
@@ -746,7 +594,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
         /* if no traceback is specified, the next row of
            last_seq2_off can reuse previously allocated memory */
 
-        if (script == NULL) {
+        if (edit_block == NULL) {
 
             /** @todo FIXME The following assumes two arrays of
                 at least max_dist+4 Int4's have already been allocated */
@@ -772,7 +620,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     }   /* end loop over distinct distances */
 
     
-    if (script == NULL)
+    if (edit_block == NULL)
         return best_dist;
 
     /* perform traceback */
@@ -792,8 +640,8 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
            traceback operation. best_diag starts off with the
            value computed during the alignment process */
 
-        new_diag = s_GetNextTback(last_seq2_off, d, 
-                                  best_diag, &new_seq2_index);
+        new_diag = s_GetNextNonAffineTback(last_seq2_off, d, 
+                                           best_diag, &new_seq2_index);
         new_seq1_index = new_seq2_index + new_diag - diag_origin;
 
         if (new_diag == best_diag) {
@@ -801,7 +649,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
             /* same diagonal: issue a group of substitutions */
 
             if (seq2_index - new_seq2_index > 0) {
-                s_EditScriptAdd(script, eEditOpReplace, 
+                GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
                                 seq2_index - new_seq2_index);
             }
         } 
@@ -811,20 +659,20 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
                and then a gap in seq2 */
 
             if (seq2_index - new_seq2_index > 0) {
-                s_EditScriptAdd(script, eEditOpReplace, 
+                GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
                                 seq2_index - new_seq2_index);
             }
-            s_EditScriptAdd(script, eEditOpInsert, 1);
+            GapPrelimEditBlockAdd(edit_block, eGapAlignIns, 1);
         } 
         else {
             /* larger diagonal: issue a group of substitutions
                and then a gap in seq1 */
 
             if (seq2_index - new_seq2_index - 1 > 0) {
-                s_EditScriptAdd(script, eEditOpReplace, 
+                GapPrelimEditBlockAdd(edit_block, eGapAlignSub,
                                 seq2_index - new_seq2_index -1);
             }
-            s_EditScriptAdd(script, eEditOpDelete, 1);
+            GapPrelimEditBlockAdd(edit_block, eGapAlignDel, 1);
         }
         d--; 
         best_diag = new_diag; 
@@ -835,10 +683,8 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     /* handle the final group of substitutions back to distance zero,
        i.e. back to offset zero of seq1 and seq2 */
 
-    s_EditScriptAdd(script, eEditOpReplace, last_seq2_off[0][diag_origin]);
-
-    if (!reverse) 
-        s_ProcessEditScript(script);
+    GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
+                          last_seq2_off[0][diag_origin]);
 
     return best_dist;
 }
@@ -851,7 +697,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                               Int4 in_gap_open, Int4 in_gap_extend,
                               Int4* seq1_align_len, Int4* seq2_align_len, 
                               SGreedyAlignMem* aux_data, 
-                              MBGapEditScript *script, Uint1 rem)
+                              GapPrelimEditBlock *edit_block, Uint1 rem)
 {
     Int4 seq1_index;
     Int4 seq2_index;
@@ -900,7 +746,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
        return BLAST_GreedyAlign(seq1, len1, seq2, len2, reverse, 
                                 xdrop_threshold, match_score, 
                                 mismatch_score, seq1_align_len, 
-                                seq2_align_len, aux_data, script, 
+                                seq2_align_len, aux_data, edit_block, 
                                 rem);
     }
     
@@ -928,7 +774,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     /* set the number of distinct distances the algorithm will
        examine in the search for an optimal alignment */
 
-    max_dist = len1 / GREEDY_MAX_COST_FRACTION + 1;
+    max_dist = len2 / GREEDY_MAX_COST_FRACTION + 1;
     scaled_max_dist = max_dist * gap_extend;
     
     /* the main loop assumes that the index of all diagonals is
@@ -957,40 +803,40 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
 
     /* find the offset of the first mismatch between seq1 and seq2 */
 
-    seq1_index = 0;
+    index = 0;
     if (reverse) {
         if (rem == 4) {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[len2-1 - seq1_index] != seq1[len1-1 - seq1_index])
+            while (index < len1 && index < len2) {
+                if (seq1[len1-1 - index] != seq2[len2-1 - index])
                     break;
-                seq1_index++;
+                index++;
             }
         } 
         else {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[len2-1 - seq1_index] != 
-                          NCBI2NA_UNPACK_BASE(seq1[(len1-1 - seq1_index) / 4], 
-                                              3 - (len1-1 - seq1_index) % 4)) 
+            while (index < len1 && index < len2) {
+                if (seq1[len1-1 - index] != 
+                          NCBI2NA_UNPACK_BASE(seq2[(len2-1 - index) / 4], 
+                                              3 - (len2-1 - index) % 4)) 
                     break;
-                seq1_index++;
+                index++;
             }
         }
     } 
     else {
         if (rem == 4) {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[seq1_index] != seq1[seq1_index])
+            while (index < len1 && index < len2) {
+                if (seq1[index] != seq2[index])
                     break; 
-                seq1_index++;
+                index++;
             }
         } 
         else {
-            while (seq1_index < len1 && seq1_index < len2) {
-                if (seq2[seq1_index] != 
-                          NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4], 
-                                              3 - (seq1_index + rem) % 4))
+            while (index < len1 && index < len2) {
+                if (seq1[index] != 
+                          NCBI2NA_UNPACK_BASE(seq2[(index + rem) / 4], 
+                                              3 - (index + rem) % 4))
                     break;
-                seq1_index++;
+                index++;
             }
         }
     }
@@ -998,19 +844,20 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     /* update the extents of the alignment, and bail out
        early if no further work is needed */
 
-    *seq1_align_len = seq1_index;
-    *seq2_align_len = seq1_index;
+    *seq1_align_len = index;
+    *seq2_align_len = index;
+    seq1_index = index;
 
-    if (seq1_index == len1 || seq1_index == len2) {
-        if (script != NULL)
-            s_EditScriptAdd(script, eEditOpReplace, seq1_index);
+    if (index == len1 || index == len2) {
+        if (edit_block != NULL)
+            GapPrelimEditBlockAdd(edit_block, eGapAlignSub, index);
         return best_dist;
     }
 
     /* set up the memory pool */
 
     mem_pool = aux_data->space;
-    if (script == NULL) {
+    if (edit_block == NULL) {
         mem_pool = NULL;
     } 
     else if (!mem_pool) {
@@ -1194,17 +1041,17 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                 if (reverse) {
                     if (rem == 4) {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                                        seq2[len2-1 - seq2_index] == 
-                                        seq1[len1-1 - seq1_index]) {
+                                        seq1[len1-1 - seq1_index] == 
+                                        seq2[len2-1 - seq2_index]) {
                             ++seq1_index;
                             ++seq2_index;
                         }
                     } 
                     else {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                            seq2[len2-1 - seq2_index] == 
-                            NCBI2NA_UNPACK_BASE(seq1[(len1-1-seq1_index) / 4],
-                                                 3 - (len1-1-seq1_index) % 4)) {
+                            seq1[len1-1 - seq1_index] == 
+                            NCBI2NA_UNPACK_BASE(seq2[(len2-1-seq2_index) / 4],
+                                                 3 - (len2-1-seq2_index) % 4)) {
                             ++seq1_index;
                             ++seq2_index;
                         }
@@ -1213,16 +1060,16 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                 else {
                     if (rem == 4) {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                               seq2[seq2_index] == seq1[seq1_index]) {
+                               seq1[seq1_index] == seq2[seq2_index]) {
                             ++seq1_index;
                             ++seq2_index;
                         }
                     } 
                     else {
                         while (seq1_index < len1 && seq2_index < len2 && 
-                            seq2[seq2_index] == 
-                            NCBI2NA_UNPACK_BASE(seq1[(seq1_index + rem) / 4],
-                                                 3 - (seq1_index + rem) % 4)) {
+                            seq1[seq1_index] == 
+                            NCBI2NA_UNPACK_BASE(seq2[(seq2_index + rem) / 4],
+                                                 3 - (seq2_index + rem) % 4)) {
                             ++seq1_index;
                             ++seq2_index;
                         }
@@ -1317,7 +1164,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
             curr_diag_upper = MIN(curr_diag_upper, end1_diag);
 
         if (d > max_penalty) {
-            if (script == NULL) {
+            if (edit_block == NULL) {
 
                 /* if no traceback is specified, the next row of
                    last_seq2_off can reuse previously allocated memory */
@@ -1338,51 +1185,48 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     
     /* compute the traceback if desired */
 
-    if (script != NULL) { 
+    if (edit_block != NULL) { 
         Int4 new_seq2_index;
-        enum EOpType state;
+        EGapAlignOpType state;
 
         d = best_dist; 
         seq2_index = *seq2_align_len; 
-        state = eEditOpReplace;
+        state = eGapAlignSub;
 
         while (d > 0) {
-            if (state == eEditOpReplace) {
+            if (state == eGapAlignSub) {
                 /* substitution */
                 state = s_GetNextAffineTbackFromMatch(last_seq2_off, 
                                        diag_lower, diag_upper, &d, best_diag, 
                                        op_cost, &new_seq2_index);
 
                 if (seq2_index - new_seq2_index > 0) 
-                    s_EditScriptAdd(script, eEditOpReplace, 
+                    GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
                                     seq2_index - new_seq2_index);
 
                 seq2_index = new_seq2_index;
             } 
-            else if (state == eEditOpInsert) {
+            else if (state == eGapAlignIns) {
                 /* gap in seq1 */
                 state = s_GetNextAffineTbackFromIndel(last_seq2_off, 
                                      diag_lower, diag_upper, &d, best_diag, 
-                                     gap_open, gap_extend, eEditOpInsert);
+                                     gap_open, gap_extend, eGapAlignIns);
                 best_diag--;
-                s_EditScriptAdd(script, eEditOpInsert, 1);
+                GapPrelimEditBlockAdd(edit_block, eGapAlignIns, 1);
             } 
             else {
                 /* gap in seq2 */
-                s_EditScriptAdd(script, eEditOpDelete, 1);
+                GapPrelimEditBlockAdd(edit_block, eGapAlignDel, 1);
                 state = s_GetNextAffineTbackFromIndel(last_seq2_off, 
                                      diag_lower, diag_upper, &d, best_diag, 
-                                     gap_open, gap_extend, eEditOpDelete);
+                                     gap_open, gap_extend, eGapAlignDel);
                 best_diag++;
                 seq2_index--;
             }
         }
 
-        s_EditScriptAdd(script, eEditOpReplace, 
+        GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
                         last_seq2_off[0][diag_origin].match_off);
-
-        if (!reverse) 
-            s_ProcessEditScript(script);
     }
 
     return max_score[best_dist];
