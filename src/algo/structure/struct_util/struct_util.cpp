@@ -230,9 +230,6 @@ bool AlignmentUtility::DoIBM(void)
     return true;
 }
 
-// implemented in su_block_multiple_alignment.cpp
-extern int LookupBLASTResidueNumberFromCharacter(unsigned char r);
-
 // global stuff for DP block aligner score callback
 DP_BlockInfo *g_dpBlocks = NULL;
 const BLAST_Matrix *g_dpPSSM = NULL;
@@ -250,9 +247,20 @@ int ScoreByPSSM(unsigned int block, unsigned int queryPos)
     }
 
     int masterPos = g_dpBlocks->blockPositions[block], score = 0;
-    for (unsigned i=0; i<g_dpBlocks->blockSizes[block]; ++i)
-        score += g_dpPSSM->matrix[masterPos + i]
-            [LookupBLASTResidueNumberFromCharacter(g_dpQuery->m_sequenceString[queryPos + i])];
+    for (unsigned i=0; i<g_dpBlocks->blockSizes[block]; ++i) {
+        int blRes = LookupBLASTResidueNumberFromCharacter(g_dpQuery->m_sequenceString[queryPos + i]);
+        switch (blRes) {
+            case 2: // B -> rounded average D/N
+                score += Round(((double) g_dpPSSM->matrix[masterPos + i][4] + g_dpPSSM->matrix[masterPos + i][13]) / 2);
+                break;
+            case 23: // Z -> rounded average E/Q
+                score += Round(((double) g_dpPSSM->matrix[masterPos + i][5] + g_dpPSSM->matrix[masterPos + i][15]) / 2);
+                break;
+            default:
+                score += g_dpPSSM->matrix[masterPos + i][blRes];
+                break;
+        }
+    }
 
     return score;
 }
@@ -489,6 +497,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/28 19:32:34  thiessen
+* use average scores for B, Z
+*
 * Revision 1.12  2004/07/15 13:52:09  thiessen
 * calculate max loops before row extraction; add quertFrom/To parameters
 *
