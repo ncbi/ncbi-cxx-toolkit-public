@@ -436,7 +436,8 @@ CBDB_File::CBDB_File(EDuplicateKeys dup_keys)
       m_KeyBuf(new CBDB_BufferManager),
       m_BufsAttached(false),
       m_BufsCreated(false),
-      m_DataBufDisabled(false)
+      m_DataBufDisabled(false),
+      m_LegacyString(false)
 {
 }
 
@@ -470,6 +471,7 @@ void CBDB_File::BindData(const char* field_name,
         auto_ptr<CBDB_BufferManager> dbuf(new CBDB_BufferManager);
         m_DataBuf = dbuf;
         m_DataBuf->SetNullable();
+        m_DataBuf->SetLegacyStringsCheck(m_LegacyString);
     }
 
     m_DataBuf->Bind(data_field);
@@ -514,6 +516,18 @@ void CBDB_File::Attach(CBDB_File& db_file)
     CBDB_RawFile::Attach(db_file);
     x_CheckConstructBuffers();
 }
+
+void CBDB_File::SetLegacyStringsCheck(bool value) 
+{ 
+    m_LegacyString = value; 
+    if (m_KeyBuf.get()) {
+        m_KeyBuf->SetLegacyStringsCheck(value);
+    }
+    if (m_DataBuf.get()) {
+        m_DataBuf->SetLegacyStringsCheck(value);
+    }
+}
+
 
 EBDB_ErrCode CBDB_File::x_Fetch(unsigned int flags)
 {
@@ -702,9 +716,12 @@ void CBDB_File::x_StartRead()
 
 void CBDB_File::x_EndRead()
 {
+    m_KeyBuf->SetDBT_Size(m_DBT_Key->size);
     m_KeyBuf->ArrangePtrsPacked();
-    if ( m_DataBuf.get() )
+    if ( m_DataBuf.get() ) {
+        m_DataBuf->SetDBT_Size(m_DBT_Data->size);
         m_DataBuf->ArrangePtrsPacked();
+    }
 }
 
 
@@ -763,6 +780,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/12/22 18:57:02  kuznets
+ * Minor implementation changes: DBT size passed to underlying buffer
+ * manager in order to better detect c-strings.
+ *
  * Revision 1.29  2003/12/16 13:43:35  kuznets
  * + CBDB_RawFile::x_RemoveTransaction
  *
