@@ -1,9 +1,0 @@
-# $Id$
-
-SRC     = netschedule_client netschedule_client_lb \
-          netcache_client netcache_client_lb \
-          netservice_client
-
-LIB     = xconnserv
-LIBS    = $(NETWORK_LIBS)
-DLL_LIB = xutil xconnect

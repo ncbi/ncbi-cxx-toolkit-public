@@ -1,4 +1,0 @@
-[AddToProject]
-HeadersInInclude = netschedule_client.hpp netcache_client.hpp \
-                   netservice_client.hpp
-HeadersInSrc = !
