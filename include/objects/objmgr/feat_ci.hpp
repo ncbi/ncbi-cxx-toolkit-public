@@ -90,12 +90,12 @@ public:
 
     bool IsSetPartial(void) const
         { return m_Feat->IsSetPartial()  ||  m_Partial; }
-    const bool GetPartial(void) const
+    bool GetPartial(void) const
         { return m_Feat->GetPartial()  ||  m_Partial; }
 
     bool IsSetExcept(void) const
         { return m_Feat->IsSetExcept(); }
-    const bool GetExcept(void) const
+    bool GetExcept(void) const
         { return m_Feat->GetExcept(); }
 
     bool IsSetComment(void) const
@@ -149,7 +149,7 @@ public:
 
     bool IsSetPseudo(void) const
         { return m_Feat->IsSetPseudo(); }
-    const bool GetPseudo(void) const
+    bool GetPseudo(void) const
         { return m_Feat->GetPseudo(); }
 
     bool IsSetExcept_text(void) const
@@ -374,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/03/26 14:55:57  vasilche
+* Removed redundant 'const' from methods returning 'const bool'.
+*
 * Revision 1.24  2003/03/05 20:56:42  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *
