@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/02/09 20:17:32  thiessen
+* ignore atoms w/o alpha when doing structure realignment
+*
 * Revision 1.3  2000/11/13 18:06:53  thiessen
 * working structure re-superpositioning
 *
@@ -71,22 +74,22 @@ void SetRotationMatrix(Matrix* m, const Vector& v, double rad, int n)
     c=cos(n*rad);
     s=sin(n*rad);
     t=1.0-c;
-  
-    m->m[0]=u.x*u.x*t+c; 
-    m->m[1]=u.x*u.y*t-u.z*s; 
+
+    m->m[0]=u.x*u.x*t+c;
+    m->m[1]=u.x*u.y*t-u.z*s;
     m->m[2]=u.x*u.z*t+u.y*s;
     m->m[3]=0;
-  
-    m->m[4]=u.x*u.y*t+u.z*s; 
-    m->m[5]=u.y*u.y*t+c; 
+
+    m->m[4]=u.x*u.y*t+u.z*s;
+    m->m[5]=u.y*u.y*t+c;
     m->m[6]=u.y*u.z*t-u.x*s;
     m->m[7]=0;
-  
-    m->m[8]=u.x*u.z*t-u.y*s; 
-    m->m[9]=u.y*u.z*t+u.x*s; 
+
+    m->m[8]=u.x*u.z*t-u.y*s;
+    m->m[9]=u.y*u.z*t+u.x*s;
     m->m[10]=u.z*u.z*t+c;
     m->m[11]=0;
-  
+
     m->m[12]=m->m[13]=m->m[14]=0; m->m[15]=1;
 
     return;
@@ -95,7 +98,7 @@ void SetRotationMatrix(Matrix* m, const Vector& v, double rad, int n)
 void ApplyTransformation(Vector* v, const Matrix& m)
 {
     Vector t;
-  
+
     t.x=m.m[0]*v->x + m.m[1]*v->y + m.m[2]*v->z  + m.m[3];
     t.y=m.m[4]*v->x + m.m[5]*v->y + m.m[6]*v->z  + m.m[7];
     t.z=m.m[8]*v->x + m.m[9]*v->y + m.m[10]*v->z + m.m[11];
@@ -215,6 +218,7 @@ void RigidBodyFit(
     }
     for (iatv=0; iatv<natx; iatv++) {
         for (i=0; i<3; i++) {
+            if (weights[iatv] <= 0.) continue;
             xx = ((*(xvar[iatv]))[i] - cgvar[i]) * weights[iatv];
             for (j=0; j<3; j++) {
                 corlnmatrx[i][j] += xx * ((*(xref[iatv]))[j] - cgref[j]);
@@ -251,7 +255,7 @@ void RigidBodyFit(
         }
 
         if (!flag3) {
-            fz = f; 
+            fz = f;
             flag3 = true;
             phix = phibes + sgn * del;
             phi[ix] = phix;

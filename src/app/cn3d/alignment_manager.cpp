@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/02/09 20:17:32  thiessen
+* ignore atoms w/o alpha when doing structure realignment
+*
 * Revision 1.36  2001/02/08 23:01:48  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -358,10 +361,7 @@ void AlignmentManager::RealignAllSlaves(void) const
     int *masterSeqIndexes = new int[nResidues], *slaveSeqIndexes = new int[nResidues];
     GetAlignedResidueIndexes(blocks->begin(), blocks->end(), 0, masterSeqIndexes);
 
-    // for now, just use flat weighting
     double *weights = new double[nResidues];
-    int i;
-    for (i=0; i<nResidues; i++) weights[i] = 1;
 
     const StructureObject *slaveObj;
 
@@ -375,7 +375,7 @@ void AlignmentManager::RealignAllSlaves(void) const
 
         masterMol->parentSet->ClearStructureAlignments(masterSeq->mmdbLink);
 
-        for (i=1; i<multiple->NRows(); i++) {
+        for (int i=1; i<multiple->NRows(); i++) {
             slaveSeq = multiple->GetSequenceOfRow(i);
             if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
 
@@ -383,6 +383,14 @@ void AlignmentManager::RealignAllSlaves(void) const
             if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
 
             if (!slaveMol->GetParentOfType(&slaveObj)) continue;
+
+            // if any Vector* is NULL, make sure that weight is 0 so the pointer won't be accessed
+            for (int j=0; j<nResidues; j++) {
+                if (!masterCoords[j] || !slaveCoords[j])
+                    weights[j] = 0.0;
+                else
+                    weights[j] = 1.0; // for now, just use flat weighting
+            }
 
             TESTMSG("realigning slave " << slaveSeq->pdbID << " against master " << masterSeq->pdbID);
             (const_cast<StructureObject*>(slaveObj))->

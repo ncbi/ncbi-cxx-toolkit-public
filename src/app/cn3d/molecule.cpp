@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/02/09 20:17:32  thiessen
+* ignore atoms w/o alpha when doing structure realignment
+*
 * Revision 1.22  2001/02/08 23:01:50  thiessen
 * hook up C-toolkit stuff for threading; working PSSM calculation
 *
@@ -286,14 +289,21 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
 
         int aID = (r->second->alphaID);
         if (aID == Residue::NO_ALPHA_ID) {
-            ERR_POST(Error << "No alpha atom in residueID " << rID
+            ERR_POST(Warning << "No alpha atom in residueID " << rID
                 << " from " << pdbID << " chain '" << (char) pdbChain << "'");
-            return false;
+            coords[i] = NULL;
+            continue;
         }
 
         AtomPntr atom(id, rID, aID);
         const AtomCoord* atomCoord = object->coordSets.front()->atomSet->GetAtom(atom);
-        if (!atomCoord) return false;
+        if (!atomCoord) {
+            ERR_POST(Warning << "Can't get AtomCoord for (m"
+                << id << ",r" << rID << ",a" << aID << ")");
+            coords[i] = NULL;
+            continue;
+        }
+
         coords[i] = &(atomCoord->site);
     }
 
