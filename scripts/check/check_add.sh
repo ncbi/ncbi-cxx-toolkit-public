@@ -42,7 +42,8 @@ fi
 
 
 # Copy specified files to the build (current) directory
-x_files=`grep '^ *CHECK_COPY' ${x_srcdir}/Makefile.${x_test}.app | sed -e 's/^.*=//'`
+x_files=`grep '^ *CHECK_COPY' ${x_srcdir}/Makefile.${x_test}.app`
+x_files=`echo "$x_files" | sed -e 's/^.*=//'`
 
 if test ! -z "${x_files}" ; then
    for i in ${x_files} ; do
@@ -57,7 +58,8 @@ if test ! -z "${x_files}" ; then
 fi
 
 # Get cmd-lines to run test
-x_run=`grep '^ *CHECK_CMD' ${x_srcdir}/Makefile.${x_test}.app | sed -e 's/^.*=//'`
+x_run=`grep '^ *CHECK_CMD' ${x_srcdir}/Makefile.${x_test}.app`
+x_run=`echo "$x_run" | sed -e 's/^.*=//'`
 
 if test -z "${x_run}"; then
     # If command line not defined, then just run the test without parameters
