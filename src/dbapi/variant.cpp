@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2002/09/16 20:22:44  kholodov
+* Fixed: return statement for the void function
+*
 * Revision 1.10  2002/09/16 19:30:58  kholodov
 * Added: Numeric datatype support
 * Added: CVariant::operator=() methods for working with bulk insert
@@ -518,14 +521,15 @@ void CVariant::Truncate(size_t len)
 
     switch(GetType()) {
     case eDB_Image:
-        return ((CDB_Image*)GetData())->Truncate(len);
-        
+        ((CDB_Image*)GetData())->Truncate(len);
+        break;
     case eDB_Text:
-        return ((CDB_Text*)GetData())->Truncate(len);
-
+        ((CDB_Text*)GetData())->Truncate(len);
+        break;
     default:
         throw CVariantException("CVariant::TruncateRight(): invalid type");
     }
+    return;
 }
 
 template<class I, class T>
