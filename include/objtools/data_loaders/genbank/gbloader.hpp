@@ -133,20 +133,30 @@ class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
     // typedefs from CReader
-    typedef unsigned TConn;
-    typedef vector< CRef<CSeqref> > TSeqrefs;
+    typedef unsigned                  TConn;
+    typedef vector< CRef<CSeqref> >   TSeqrefs;
     typedef pair<pair<int, int>, int> TKeyByTSE;
-    typedef int TMask;
+    typedef int                       TMask;
     typedef CPluginManager<CReader>   TReader_PluginManager;
 
-    CGBDataLoader(const string& loader_name="GENBANK",
-                  CReader *driver=0,
-                  int gc_threshold=100);
+    // Create GB loader and register in the object manager if
+    // no loader with the same name is registered yet.
+    static CGBDataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        CReader* driver = 0,
+        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(CReader* driver = 0);
 
-    CGBDataLoader(const string& loader_name/* ="GENBANK"*/,
-                  TReader_PluginManager *plugin_manager /*=0*/,
-                  EOwnership  take_plugin_manager /*= eNoOwnership */,
-                  int gc_threshold);
+    static CGBDataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        TReader_PluginManager *plugin_manager,
+        EOwnership            take_plugin_manager,
+        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs
+        (TReader_PluginManager* plugin_manager,
+         EOwnership             take_plugin_manager);
 
     virtual ~CGBDataLoader(void);
   
@@ -158,13 +168,20 @@ public:
   
     virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle& handle,
                                                  const TTSE_LockSet& tse_set);
-  
+
     virtual void GC(void);
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     const CSeqref& GetSeqref(const CTSE_Info& tse_info);
   
 private:
+    CGBDataLoader(const string& loader_name,
+                  CReader*      driver);
+
+    CGBDataLoader(const string&          loader_name,
+                  TReader_PluginManager* plugin_manager,
+                  EOwnership             take_plugin_manager);
+
     struct STSEinfo : public CObject
     {
         typedef set<CSeq_id_Handle>  TSeqids;
@@ -252,6 +269,12 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.50  2004/07/21 15:51:23  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.49  2004/06/30 21:02:02  vasilche
  * Added loading of external annotations from 26 satellite.
  *

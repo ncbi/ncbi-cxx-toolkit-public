@@ -250,9 +250,8 @@ int CTestApp::Run(void)
     // GI with many segments of different sizes.
     int gi = args["gi"].AsInteger(); // 29791621;
 
-    m_OM.Reset(new CObjectManager);
-    m_OM->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                             CObjectManager::eDefault);
+    m_OM = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*m_OM);
 
     CScope scope(*m_OM);
     scope.AddDefaults();
@@ -495,6 +494,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.5  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -169,7 +169,7 @@ bool CTestObjectManager::TestApp_Init(void)
 
     NcbiCout << "Testing ObjectManager (" << s_NumThreads << " threads)..." << NcbiEndl;
 
-    m_ObjMgr = new CObjectManager;
+    m_ObjMgr = CObjectManager::GetInstance();
     // Scope shared by all threads
     m_Scope = new CScope(*m_ObjMgr);
     CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(0));
@@ -209,6 +209,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/07/21 15:51:25  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.26  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *

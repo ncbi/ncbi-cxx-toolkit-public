@@ -122,10 +122,9 @@ int CSampleAlnmgrApplication::Run(void)
 
     CNcbiOstream& out = args["out"].AsOutputFile();
 
-    CObjectManager objmgr;
-    objmgr.RegisterDataLoader(*new CGBDataLoader("ID"),
-                              CObjectManager::eDefault);
-    CScope scope(objmgr);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CScope scope(*objmgr);
     scope.AddDefaults();
 
     CAlnMix mix(scope);
@@ -201,6 +200,12 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/07/21 15:51:24  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.8  2004/05/21 21:41:41  gorelenk
 * Added PCH ncbi_pch.hpp
 *

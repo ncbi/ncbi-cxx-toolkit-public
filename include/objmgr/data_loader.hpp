@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <set>
@@ -62,8 +63,9 @@ class NCBI_XOBJMGR_EXPORT CDataLoader : public CObject
 {
 protected:
     CDataLoader(void);
-public:
     CDataLoader(const string& loader_name);
+
+public:
     virtual ~CDataLoader(void);
 
 public:
@@ -112,6 +114,13 @@ public:
     virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
 protected:
+    // register the loader only if the name is not yet
+    // registered in the object manager
+    static bool RegisterInObjectManager(CObjectManager& om,
+                                        const string& name,
+                                        CDataLoader& loader,
+                                        CObjectManager::EIsDefault is_default,
+                                        CObjectManager::TPriority priority);
     void SetName(const string& loader_name);
     CDataSource* GetDataSource(void);
     
@@ -134,6 +143,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/07/21 15:51:23  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.26  2004/07/12 15:05:31  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

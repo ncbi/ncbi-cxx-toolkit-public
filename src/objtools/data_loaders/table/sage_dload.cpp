@@ -62,10 +62,46 @@ bool CSageDataLoader::SIdHandleByContent::operator()(const CSeq_id_Handle& h1,
 }
 
 
-CSageDataLoader::CSageDataLoader(const string& input_file,
+CSageDataLoader* CSageDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& input_file,
+    const string& temp_file,
+    bool delete_file,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs(input_file,
+                                        temp_file,
+                                        delete_file);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CSageDataLoader* loader = new CSageDataLoader(name,
+                                                  input_file,
+                                                  temp_file,
+                                                  delete_file);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CSageDataLoader::GetLoaderNameFromArgs(
+    const string& input_file,
+    const string& temp_file,
+    bool          delete_file)
+{
+    // This may cause conflicts if some other loader uses the same
+    // approach. Probably needs to add some prefix.
+    return input_file;
+}
+
+
+CSageDataLoader::CSageDataLoader(const string& loader_name,
+                                 const string& input_file,
                                  const string& temp_file,
-                                 bool delete_file)
-    : CDataLoader(input_file)
+                                 bool          delete_file)
+    : CDataLoader(loader_name)
 {
     //
     // create our SQLite DB
@@ -297,6 +333,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.5  2004/05/21 21:42:53  gorelenk
  * Added PCH ncbi_pch.hpp
  *

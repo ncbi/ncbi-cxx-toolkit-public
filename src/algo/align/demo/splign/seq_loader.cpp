@@ -284,11 +284,11 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
 CSeqLoaderPairwise::CSeqLoaderPairwise(const string& query_filename,
                                        const string& subj_filename)
 {
-    CRef<CObjectManager> objmgr (new CObjectManager);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
 
     // load query (the spliced sequence)
     CRef<CScope> scope_query (new CScope(*objmgr));
-    scope_query->AddDefaults();    
+    scope_query->AddDefaults();
     {{
     CNcbiIfstream istream (query_filename.c_str());
     CRef<CSeq_entry> se = ReadFasta(istream, fReadFasta_OneSeq);
@@ -382,6 +382,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.19  2004/06/23 21:44:25  kapustin
  * Use Endl() to figure out EOL length
  *

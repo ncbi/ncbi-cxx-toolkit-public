@@ -59,16 +59,25 @@ public:
         eUnknown = 2        ///< protein is attempted first, then nucleotide
     };
 
-    CBlastDbDataLoader(const string& loader_name = "BLASTDB", const string&
-            dbname = "nr", const EDbType dbtype = eUnknown);
-                    
+    static CBlastDbDataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        const string& dbname = "nr",
+        const EDbType dbtype = eUnknown,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const string& dbname = "nr",
+                                        const EDbType dbtype = eUnknown);
+
     virtual ~CBlastDbDataLoader(void);
   
-    virtual void GetRecords(const CSeq_id_Handle& idh, const EChoice choice);
+    virtual void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
   
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
-  private:
+private:
+    CBlastDbDataLoader(const string& loader_name,
+                       const string& dbname,
+                       const EDbType dbtype);
 
     const string m_dbname;      ///< blast database name
     EDbType m_dbtype;           ///< is this database protein or nucleotide?
@@ -85,6 +94,12 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.3  2004/07/21 15:51:23  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.2  2003/09/30 16:36:33  vasilche
  * Updated CDataLoader interface.
  *

@@ -304,7 +304,7 @@ istream* CSplignApp::x_GetPairwiseHitStream(
     seq_loader.Load(seq_loader.GetQueryStringId(), &query, 0, kMax_UInt);
     seq_loader.Load(seq_loader.GetSubjStringId(), &subj, 0, kMax_UInt);
     
-    CRef<CObjectManager> objmgr(new CObjectManager);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CSeq_loc> seqloc_query;
     CRef<CScope> scope_query;
     {{
@@ -651,6 +651,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.30  2004/06/29 20:51:21  kapustin
  * Support simultaneous segment computing
  *

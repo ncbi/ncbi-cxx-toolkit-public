@@ -194,11 +194,8 @@ void CAlnMgrTestApp::LoadDenseg(void)
     
     //create scope
     {{
-        m_ObjMgr = new CObjectManager;
-        
-        m_ObjMgr->RegisterDataLoader
-            (*new CGBDataLoader("ID", NULL, 2),
-             CObjectManager::eDefault);
+        m_ObjMgr = CObjectManager::GetInstance();
+        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
         m_Scope = new CScope(*m_ObjMgr);
         m_Scope->AddDefaults();
@@ -669,6 +666,12 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.22  2004/05/21 21:42:51  gorelenk
 * Added PCH ncbi_pch.hpp
 *

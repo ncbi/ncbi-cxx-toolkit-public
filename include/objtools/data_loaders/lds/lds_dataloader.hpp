@@ -51,17 +51,30 @@ class CLDS_Database;
 class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
-    CLDS_DataLoader();
+    static CLDS_DataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(void);
 
-    // Construct dataloader, attach the external LDS database
-    CLDS_DataLoader(CLDS_Database& lds_db,
-                    const string& dl_name = "LDS_dataloader");
+    static CLDS_DataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        CLDS_Database& lds_db,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(CLDS_Database& lds_db);
 
-    // Construct dataloader, with opening its own database
-    CLDS_DataLoader(const string& db_path,
-                    const string& dl_name = "LDS_dataloader");
+    static CLDS_DataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        const string& db_path,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const string& db_path);
 
-    virtual ~CLDS_DataLoader();
+    // Public constructor not to break CSimpleClassFactoryImpl code
+    CLDS_DataLoader(void);
+
+    virtual ~CLDS_DataLoader(void);
 
     virtual void GetRecords(const CSeq_id_Handle& idh,
                             EChoice choice);
@@ -72,6 +85,16 @@ public:
                      const string&  dl_name);
 
 private:
+    CLDS_DataLoader(const string& dl_name);
+
+    // Construct dataloader, attach the external LDS database
+    CLDS_DataLoader(const string& dl_name,
+                    CLDS_Database& lds_db);
+
+    // Construct dataloader, with opening its own database
+    CLDS_DataLoader(const string& dl_name,
+                    const string& db_path);
+
     CLDS_Database*      m_LDS_db;        // Reference on the LDS database 
     CLDS_Set            m_LoadedObjects; // Set of already loaded objects
     bool                m_OwnDatabase;   // "TRUE" if datalaoder owns m_LDS_db
@@ -85,6 +108,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/07/21 15:51:23  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.9  2003/12/16 20:49:17  vasilche
  * Fixed compile errors - added missing includes and declarations.
  *

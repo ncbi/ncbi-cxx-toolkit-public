@@ -86,6 +86,8 @@ public:
     // Loads types map from m_ObjectTypeDB to memory.
     void LoadTypeMap();
 
+    const string& GetDirName(void) const { return m_LDS_DirName; }
+    const string& GetDbName(void) const { return m_LDS_DbName; }
 private:
     CLDS_Database(const CLDS_Database&);
     CLDS_Database& operator=(const CLDS_Database&);
@@ -143,6 +145,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.21  2003/11/05 13:32:24  kuznets
  * Fixed a bug in GetDefaultDatabase() (resulted in core when there are no
  * databases attached)

@@ -38,6 +38,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/07/21 15:51:23  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.23  2004/07/12 15:24:59  grichenk
 * Reverted changes related to CObjectManager singleton
 *
@@ -156,7 +162,8 @@ class CSeq_id_Mapper;
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
-    CObjectManager(void);
+    // Return the existing object manager or create one
+    static CRef<CObjectManager> GetInstance(void);
     virtual ~CObjectManager(void);
 
 public:
@@ -177,6 +184,24 @@ public:
         kPriority_NotSet = -1
     };
 
+    // Try to find data loader by name
+    CDataLoader* FindDataLoader(const string& loader_name) const;
+
+    // Revoke previously registered data loader.
+    // Return FALSE if the loader is still in use (by some scope).
+    // Throw an exception if the loader is not registered with this ObjMgr.
+    bool RevokeDataLoader(CDataLoader& loader);
+    bool RevokeDataLoader(const string& loader_name);
+
+    // Register top-level seq_entry
+    //void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
+
+    //CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
+
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+protected:
+// functions for data loaders
     // Register existing data loader.
     // NOTE:  data loader must be created in the heap (ie using operator new).
     void RegisterDataLoader(CDataLoader& loader,
@@ -195,22 +220,6 @@ public:
                             EIsDefault   is_default = eNonDefault,
                             TPriority priority = kPriority_NotSet);
 
-
-    // Revoke previously registered data loader.
-    // Return FALSE if the loader is still in use (by some scope).
-    // Throw an exception if the loader is not registered with this ObjMgr.
-    bool RevokeDataLoader(CDataLoader& loader);
-    bool RevokeDataLoader(const string& loader_name);
-
-    // Register top-level seq_entry
-    //void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
-
-    //CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
-
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-
-protected:
-
 // functions for scopes
     void RegisterScope(CScope_Impl& scope);
     void RevokeScope  (CScope_Impl& scope);
@@ -224,6 +233,7 @@ protected:
     bool ReleaseDataSource(TDataSourceLock& data_source);
 
 private:
+    CObjectManager(void);
 
 // these are for Object Manager itself
 // nobody else should use it
@@ -260,6 +270,7 @@ private:
 
     friend class CScope_Impl;
     friend class CDataSource; // To get id-mapper
+    friend class CDataLoader; // To register data loaders
 };
 
 

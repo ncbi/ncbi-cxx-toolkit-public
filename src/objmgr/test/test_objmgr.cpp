@@ -92,7 +92,7 @@ int CTestApp::Run(void)
     CTestHelper::sm_DumpFeatures = args["dump_features"];
     CTestHelper::sm_TestRemoveEntry = true;
 
-    m_ObjMgr = new CObjectManager;
+    m_ObjMgr = CObjectManager::GetInstance();
 
     // 1.2.3. Scope is an object on the stack
     for (idx = 0; idx <= 0; idx++) {
@@ -254,6 +254,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/07/21 15:51:25  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.42  2004/06/03 18:33:48  grichenk
 * Modified annot collector to better resolve synonyms
 * and matching IDs. Do not add id to scope history when

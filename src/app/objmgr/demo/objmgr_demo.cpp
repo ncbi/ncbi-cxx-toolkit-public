@@ -308,7 +308,7 @@ int CDemoApp::Run(void)
     bool scan_seq_map = args["seq_map"];
 
     // Create object manager. Use CRef<> to delete the OM on exit.
-    CRef<CObjectManager> pOm(new CObjectManager);
+    CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
 #ifdef HAVE_BERKELEY_DB
     if ( args["cache"] ) {
@@ -384,16 +384,16 @@ int CDemoApp::Run(void)
             LOG_POST(Info << "ID1 cache disabled.");
         }
 
-        gb_loader = new CGBDataLoader("GenBank", id1_reader.release(), 2);
+        gb_loader.Reset(CGBDataLoader::RegisterInObjectManager(*pOm,
+            id1_reader.release()));
     }
 #endif
     if ( !gb_loader ) {
         // Create genbank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader
         // must be included in scopes during the CScope::AddDefaults() call
-        gb_loader = new CGBDataLoader("ID", 0, 2);
+        gb_loader.Reset(CGBDataLoader::RegisterInObjectManager(*pOm));
     }
-    pOm->RegisterDataLoader(*gb_loader, CObjectManager::eDefault);
 
     // Create a new scope.
     CScope scope(*pOm);
@@ -823,6 +823,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2004/07/21 15:51:24  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.74  2004/07/15 16:50:51  vasilche
 * All annotation iterators use -range_from and -range_to options.
 *

@@ -362,13 +362,12 @@ void CTest_validatorApplication::Setup(const CArgs& args)
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
     // Create object manager
-    m_ObjMgr.Reset(new CObjectManager);
+    m_ObjMgr = CObjectManager::GetInstance();
     if ( args["g"] ) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
-        m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
-            CObjectManager::eDefault);
+        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
     }
 
     SetupValidatorOptions(args);
@@ -491,6 +490,12 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.27  2004/05/21 21:42:56  gorelenk
  * Added PCH ncbi_pch.hpp
  *

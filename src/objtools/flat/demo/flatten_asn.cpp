@@ -77,8 +77,8 @@ void CFlatteningApp::Init(void)
 int CFlatteningApp::Run(void)
 {
     const CArgs&   args = GetArgs();
-    CObjectManager objmgr;
-    CScope         scope(objmgr);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope         scope(*objmgr);
 
     CRef<CSeq_entry> entry(new CSeq_entry);
     {{
@@ -89,8 +89,7 @@ int CFlatteningApp::Run(void)
     scope.AddTopLevelSeqEntry(*entry);
 
     // allow external references
-    objmgr.RegisterDataLoader(*new CGBDataLoader("ID"),
-                              CObjectManager::eDefault);
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
     scope.AddDefaults();
 
     auto_ptr<CObjectOStream> oos;
@@ -138,6 +137,12 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.6  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *

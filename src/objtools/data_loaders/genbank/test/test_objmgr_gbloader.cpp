@@ -75,14 +75,9 @@ int CTestApplication::Run()
     NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
     CORE_SetLOG(LOG_cxx2c());
 
-    {{
-        CRef<CObjectManager> pOm(new CObjectManager);
-    }}
+    CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
-    CObjectManager Om, *pOm=&Om;
-
-    CRef<CGBDataLoader> pLoader(new CGBDataLoader("ID", 0, 2));
-    pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
+    CRef<CGBDataLoader> pLoader(CGBDataLoader::RegisterInObjectManager(*pOm));
 
     for ( int gi = 18565540;  gi < 18565650; gi++ ) {
         CSeq_id id;
@@ -177,6 +172,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.6  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *

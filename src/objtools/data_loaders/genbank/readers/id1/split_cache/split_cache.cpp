@@ -340,14 +340,14 @@ void CSplitCacheApp::SetupCache(void)
         cache->Open(cache_dir.c_str(), "ids");
     }}
 
-    {{ // create loader
-        m_Reader = new CCachedId1Reader(1, &*m_Cache, &*m_IdCache);
-        m_Loader.Reset(new CGBDataLoader("GenBank", m_Reader));
+    {{ // create object manager
+        m_ObjMgr = CObjectManager::GetInstance();
     }}
 
-    {{ // create object manager
-        m_ObjMgr.Reset(new CObjectManager);
-        m_ObjMgr->RegisterDataLoader(*m_Loader, CObjectManager::eDefault);
+    {{ // create loader
+        m_Reader = new CCachedId1Reader(1, &*m_Cache, &*m_IdCache);
+        m_Loader.Reset(CGBDataLoader::RegisterInObjectManager(
+            *m_ObjMgr, m_Reader));
     }}
 
     {{ // Create scope
@@ -774,6 +774,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.22  2004/07/01 15:41:58  vasilche
 * Do not reset DisableSplitDescriptions flag.
 *

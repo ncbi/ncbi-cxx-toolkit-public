@@ -74,13 +74,13 @@ void CTitleTester::Init(void)
 int CTitleTester::Run(void)
 {
     const CArgs&   args = GetArgs();
-    CObjectManager objmgr;
-    CScope         scope(objmgr);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope         scope(*objmgr);
     CSeq_id        id;
     
     id.SetGi(args["gi"].AsInteger());
 
-    objmgr.RegisterDataLoader(*(new CGBDataLoader), CObjectManager::eDefault);
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
     scope.AddDefaults();
 
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
@@ -110,6 +110,12 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.4  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

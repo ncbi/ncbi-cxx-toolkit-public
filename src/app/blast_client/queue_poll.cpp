@@ -511,12 +511,10 @@ QueueAndPoll(string                program,
     string RID;
         
 
-    CRef<CObjectManager> objmgr(new CObjectManager);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CScope>         scope (new CScope(*objmgr));
-        
-    objmgr->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                               CObjectManager::eDefault);
-    
+
+    CGBDataLoader::RegisterInObjectManager(*objmgr);    
     scope->AddDefaults();
         
     CRef<CBioseq_set> cbss;
@@ -577,6 +575,12 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.10  2004/06/07 14:17:01  camacho
  * Use anonymous exception to avoid warning
  *

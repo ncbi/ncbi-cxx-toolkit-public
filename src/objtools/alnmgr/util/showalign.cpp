@@ -954,8 +954,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 
   //scope for feature fetching
   if(!(m_AlignOption & eMasterAnchored) && (m_AlignOption & eShowCdsFeature || m_AlignOption & eShowGeneFeature)){
-    m_FeatObj = new CObjectManager();
-    m_FeatObj->RegisterDataLoader(*new CGBDataLoader("ID", NULL, 2), CObjectManager::eDefault); 
+      m_FeatObj = CObjectManager::GetInstance();
+      CGBDataLoader::RegisterInObjectManager(*m_FeatObj);
     m_featScope = new CScope(*m_FeatObj);  //for seq feature fetch
     m_featScope->AddDefaults();	     
   }	
@@ -2029,6 +2029,12 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.38  2004/07/21 15:51:26  grichenk
+*CObjectManager made singleton, GetInstance() added.
+*CXXXXDataLoader constructors made private, added
+*static RegisterInObjectManager() and GetLoaderNameFromArgs()
+*methods.
+*
 *Revision 1.37  2004/07/12 15:20:45  jianye
 *handles use_this_gi in alignment score structure
 *

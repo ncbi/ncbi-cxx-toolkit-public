@@ -86,15 +86,8 @@ CTestThread::~CTestThread()
 
 void* CTestThread::Main(void)
 {
-    CObjectManager om;
-    CObjectManager *pom=0;
-    switch((m_mode>>2)&1) {
-    case 1: pom =  &*m_ObjMgr; break;
-    case 0:
-        pom =  &om;
-        om.RegisterDataLoader(*new CGBDataLoader("ID",0,2),CObjectManager::eDefault);
-        break;
-    }
+    CRef<CObjectManager> pom = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*pom);
   
     CScope scope1(*pom);
     scope1.AddDefaults();
@@ -155,24 +148,18 @@ const unsigned c_GI_count = c_TestTo - c_TestFrom;
 int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
 {
   int step= c_GI_count/thread_count;
-  CObjectManager Om;
-  CScope         scope(Om);
+  CRef<CObjectManager> pOm = CObjectManager::GetInstance();
+  CScope         scope(*pOm);
   typedef CTestThread* CTestThreadPtr;
   
   CTestThreadPtr  *thr = new CTestThreadPtr[thread_count];
-  
-  // CRef< CGBDataLoader> pLoader = new CGBDataLoader;
-  // pOm->RegisterDataLoader(*pLoader, CObjectManager::eDefault);
-  if(((test_mode>>2)&1)==1)
-    {
-      Om.RegisterDataLoader(*new CGBDataLoader("ID", 0,1+2*thread_count),
-                            CObjectManager::eDefault);
-      scope.AddDefaults();
-    }
+
+  CGBDataLoader::RegisterInObjectManager(*pOm);
+  scope.AddDefaults();
     
   for (unsigned i=0; i<thread_count; ++i)
     {
-      thr[i] = new CTestThread(test_mode, Om, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
+      thr[i] = new CTestThread(test_mode, *pOm, scope,c_TestFrom+i*step,c_TestFrom+(i+1)*step);
       thr[i]->Run(CThread::fRunAllowST);
     }
     
@@ -204,12 +191,10 @@ int CTestApplication::Run()
   CORE_SetLOG(LOG_cxx2c());
 
   {
+#if defined(HAVE_PUBSEQ_OS)
     time_t x = time(0);
     LOG_POST("START: " << time(0) );
-#if defined(HAVE_PUBSEQ_OS)
-    {
-      CGBDataLoader preload_ctlib_("ID", 0,1);
-    }
+    CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
     LOG_POST("CTLIB loaded: " << time(0)-x  );
 #endif
   }
@@ -264,6 +249,12 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.3  2004/05/21 21:42:52  gorelenk
 * Added PCH ncbi_pch.hpp
 *

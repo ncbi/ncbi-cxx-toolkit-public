@@ -220,8 +220,8 @@ void CBlast2seqApplication::Init(void)
 void 
 CBlast2seqApplication::InitObjMgr(void)
 {
-    m_ObjMgr.Reset(new CObjectManager);
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader, CObjectManager::eDefault);
+    m_ObjMgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 }
 
 EProgram
@@ -500,6 +500,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.48  2004/07/06 15:52:07  dondosha
  * Distinguish between 2 different enumerations for program
  *

@@ -49,8 +49,36 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CCddDataLoader::CCddDataLoader()
-    : CDataLoader("CDD_DataLoader")
+CCddDataLoader* CCddDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs();
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CCddDataLoader* loader = new CCddDataLoader(name);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CCddDataLoader::GetLoaderNameFromArgs(void)
+{
+    return "CDD_DataLoader";
+}
+
+
+CCddDataLoader::CCddDataLoader(void)
+    : CDataLoader(GetLoaderNameFromArgs())
+{
+}
+
+
+CCddDataLoader::CCddDataLoader(const string& loader_name)
+    : CDataLoader(loader_name)
 {
 }
 
@@ -110,6 +138,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.3  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

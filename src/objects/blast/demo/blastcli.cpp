@@ -346,9 +346,9 @@ finish_params()
 static CRef<CBioseq>
 get_seq(int gi)
 {
-    CObjectManager objmgr;
-    CScope scope(objmgr);
-    objmgr.RegisterDataLoader(*new CGBDataLoader, CObjectManager::eDefault);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
     scope.AddDefaults();
 
     CRef<CSeq_id> id(new CSeq_id);

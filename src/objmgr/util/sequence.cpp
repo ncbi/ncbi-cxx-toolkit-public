@@ -3185,8 +3185,8 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
 
 void CFastaOstream::Write(CSeq_entry& entry, const CSeq_loc* location)
 {
-    CObjectManager om;
-    CScope         scope(om);
+    CRef<CObjectManager> om = CObjectManager::GetInstance();
+    CScope         scope(*om);
 
     scope.AddTopLevelSeqEntry(entry);
     for (CTypeConstIterator<CBioseq> it(entry);  it;  ++it) {
@@ -4111,6 +4111,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.84  2004/07/21 15:51:25  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.83  2004/07/12 16:54:43  vasilche
 * Fixed compilation warnings.
 *

@@ -50,8 +50,35 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CBlastDbDataLoader::CBlastDbDataLoader(const string& loader_name, 
-        const string& dbname, const EDbType dbtype)
+CBlastDbDataLoader* CBlastDbDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& dbname,
+    const EDbType dbtype,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs(dbname, dbtype);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CBlastDbDataLoader* loader =
+        new CBlastDbDataLoader(name, dbname, dbtype);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CBlastDbDataLoader::GetLoaderNameFromArgs(const string& /*dbname*/,
+                                                 const EDbType /*dbtype*/)
+{
+    return "BLASTDB";
+}
+
+
+CBlastDbDataLoader::CBlastDbDataLoader(const string& loader_name,
+                                       const string& dbname,
+                                       const EDbType dbtype)
     : CDataLoader(loader_name), m_dbname(dbname), m_dbtype(dbtype), m_rdfp(0)
 {
     m_mutex = new CFastMutex();
@@ -179,6 +206,12 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.6  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.5  2004/07/12 15:05:32  grichenk
  * Moved seq-id mapper from xobjmgr to seq library
  *

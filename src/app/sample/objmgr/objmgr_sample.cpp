@@ -109,13 +109,12 @@ int CSampleObjmgrApplication::Run(void)
 
     // Create object manager
     // * We use CRef<> here to automatically delete the OM on exit.
-    CRef<CObjectManager> object_manager(new CObjectManager);
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     // Create GenBank data loader and register it with the OM.
     // * The last argument "eDefault" informs the OM that the loader must
     // * be included in scopes during the CScope::AddDefaults() call.
-    object_manager->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                                       CObjectManager::eDefault);
+    CGBDataLoader::RegisterInObjectManager(*object_manager);
 
     // Create a new scope ("attached" to our OM).
     CScope scope(*object_manager);
@@ -261,6 +260,12 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.15  2004/05/21 21:41:42  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -504,7 +504,7 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
 
         if (seq_entry) {
             m_Scope.Reset();
-            m_TSE_Manager = new CObjectManager;
+            m_TSE_Manager = CObjectManager::GetInstance();
             m_Scope = new CScope(*m_TSE_Manager);
 
             m_Scope->AddTopLevelSeqEntry(*seq_entry);
@@ -512,7 +512,7 @@ bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_i
         } else {
             CBioseq* bioseq = CType<CBioseq>().Get(parse_info.info);
             if (bioseq) {
-                m_TSE_Manager = new CObjectManager;
+                m_TSE_Manager = CObjectManager::GetInstance();
                 m_Scope = new CScope(*m_TSE_Manager);
 
                 m_Scope->AddBioseq(*bioseq);
@@ -586,6 +586,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.21  2004/06/23 19:59:03  vasilche
  * Fix order of deletion CScope and CObjectManager.
  *

@@ -47,6 +47,22 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+static CRef<CObjectManager> s_ObjectManager;
+static CMutex s_ObjectManagerInstanceMutex;
+
+CRef<CObjectManager> CObjectManager::GetInstance(void)
+{
+    if (!s_ObjectManager) {
+        CMutexGuard guard(s_ObjectManagerInstanceMutex);
+        if (!s_ObjectManager) {
+            s_ObjectManager.Reset(new CObjectManager);
+        }
+    }
+    return s_ObjectManager;
+}
+
+
 CObjectManager::CObjectManager(void)
     : m_Seq_id_Mapper(CSeq_id_Mapper::GetInstance())
 {
@@ -192,6 +208,13 @@ CObjectManager::x_RevokeDataLoader(CDataLoader* loader)
     m_mapNameToLoader.erase(loader->GetName());
     m_mapToSource.erase(loader);
     return lock;
+}
+
+
+CDataLoader* CObjectManager::FindDataLoader(const string& loader_name) const
+{
+    TReadLockGuard guard(m_OM_Lock);
+    return x_GetLoaderByName(loader_name);
 }
 
 
@@ -436,6 +459,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/07/21 15:51:25  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.36  2004/07/12 15:24:59  grichenk
 * Reverted changes related to CObjectManager singleton
 *

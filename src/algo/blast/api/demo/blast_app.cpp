@@ -256,9 +256,8 @@ void
 CBlastApplication::InitScope(void)
 {
     if (m_Scope.Empty()) {
-        m_ObjMgr.Reset(new CObjectManager());
-        m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                CObjectManager::eDefault);
+        m_ObjMgr = CObjectManager::GetInstance();
+        CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
         m_Scope.Reset(new CScope(*m_ObjMgr));
         m_Scope->AddDefaults();
@@ -269,10 +268,12 @@ CBlastApplication::InitScope(void)
 void 
 CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
 {
-    m_ObjMgr->RegisterDataLoader(*new CBlastDbDataLoader("BLASTDB", dbname, 
-                  db_is_na? (CBlastDbDataLoader::eNucleotide) : 
-                            (CBlastDbDataLoader::eProtein)),  
-                  CObjectManager::eDefault);
+    CBlastDbDataLoader::RegisterInObjectManager(
+        *CObjectManager::GetInstance(),
+        dbname,
+        db_is_na ? CBlastDbDataLoader::eNucleotide :
+                   CBlastDbDataLoader::eProtein,
+        CObjectManager::eDefault);
 }
 
 void

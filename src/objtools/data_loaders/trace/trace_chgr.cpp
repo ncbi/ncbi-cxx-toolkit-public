@@ -43,13 +43,45 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CTraceChromatogramLoader::CTraceChromatogramLoader()
+CTraceChromatogramLoader* CTraceChromatogramLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
 {
+    string name = GetLoaderNameFromArgs();
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CTraceChromatogramLoader* loader = new CTraceChromatogramLoader(name);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CTraceChromatogramLoader::GetLoaderNameFromArgs(void)
+{
+    return "TRACE_CHGR_LOADER";
+}
+
+
+CTraceChromatogramLoader::CTraceChromatogramLoader()
+    : CDataLoader(GetLoaderNameFromArgs())
+{
+    return;
+}
+
+
+CTraceChromatogramLoader::CTraceChromatogramLoader(const string& loader_name)
+    : CDataLoader(loader_name)
+{
+    return;
 }
 
 
 CTraceChromatogramLoader::~CTraceChromatogramLoader()
 {
+    return;
 }
 
 
@@ -109,6 +141,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.2  2004/05/21 21:42:53  gorelenk
  * Added PCH ncbi_pch.hpp
  *

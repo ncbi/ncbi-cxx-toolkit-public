@@ -45,13 +45,21 @@ class CID1Client;
 class NCBI_XLOADER_TRACE_EXPORT CTraceChromatogramLoader : public CDataLoader
 {
 public:
+    static CTraceChromatogramLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(void);
 
+    // Public constructor not to break CSimpleClassFactoryImpl code
     CTraceChromatogramLoader();
+
     ~CTraceChromatogramLoader();
 
     void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
 
 private:
+    CTraceChromatogramLoader(const string& loader_name);
 
     // cached map of resolved chromatograms
     // here, the int is the trace ID, or 'ti'
@@ -81,6 +89,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.1  2004/03/25 14:19:59  dicuccio
  * Initial revision
  *

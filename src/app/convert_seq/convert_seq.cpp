@@ -118,9 +118,8 @@ int CConversionApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    m_ObjMgr.Reset(new CObjectManager);
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
-                                 CObjectManager::eDefault);
+    m_ObjMgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
     m_Scope.Reset(new CScope(*m_ObjMgr));
     m_Scope->AddDefaults();
@@ -298,6 +297,12 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/07/21 15:51:24  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.6  2004/06/22 15:33:04  ucko
 * Migrate to new flat-file generation library.
 *

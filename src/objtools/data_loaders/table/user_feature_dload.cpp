@@ -64,13 +64,59 @@ bool CUsrFeatDataLoader::SIdHandleByContent::operator()
 }
 
 
-CUsrFeatDataLoader::CUsrFeatDataLoader(const string& input_file,
+CUsrFeatDataLoader* CUsrFeatDataLoader::RegisterInObjectManager(
+    objects::CObjectManager& om,
+    const string& input_file,
+    const string& temp_file,
+    bool delete_file,
+    EOffset offset,
+    const string& type,
+    const objects::CSeq_id* given_id,
+    objects::CObjectManager::EIsDefault is_default,
+    objects::CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs(input_file,
+                                        temp_file,
+                                        delete_file,
+                                        offset,
+                                        type,
+                                        given_id);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CUsrFeatDataLoader* loader = new CUsrFeatDataLoader(name,
+                                                        input_file,
+                                                        temp_file,
+                                                        delete_file,
+                                                        offset,
+                                                        type,
+                                                        given_id);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CUsrFeatDataLoader::GetLoaderNameFromArgs(
+    const string& input_file,
+    const string& temp_file,
+    bool delete_file,
+    EOffset offset,
+    const string& type,
+    const objects::CSeq_id* given_id)
+{
+    return input_file;
+}
+
+
+CUsrFeatDataLoader::CUsrFeatDataLoader(const string& loader_name,
+                                       const string& input_file,
                                        const string& temp_file,
                                        bool delete_file,
                                        EOffset offset,
                                        const string& type,
                                        const CSeq_id* given_id)
-    : CDataLoader(input_file), m_Offset(offset), m_Type(type)
+    : CDataLoader(loader_name), m_Offset(offset), m_Type(type)
 {
     //
     // create our SQLite DB
@@ -337,6 +383,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.3  2004/05/21 21:42:53  gorelenk
  * Added PCH ncbi_pch.hpp
  *

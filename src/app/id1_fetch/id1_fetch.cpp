@@ -307,10 +307,10 @@ int CId1FetchApp::Run(void)
     m_OutputFile = &args["out"].AsOutputFile();
 
     // Set up object manager
-    m_ObjMgr = new CObjectManager;
+    m_ObjMgr = CObjectManager::GetInstance();
     m_Scope = new CScope(*m_ObjMgr);
-    m_ObjMgr->RegisterDataLoader( *new CGBDataLoader("GENBANK"));
-    m_Scope->AddDataLoader("GENBANK");
+    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+    m_Scope->AddDefaults();
 
     int repeat = args["repeat"].AsInteger();
     for ( int pass = 0; pass < repeat; ++pass ) {
@@ -749,6 +749,12 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/07/21 15:51:24  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.50  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

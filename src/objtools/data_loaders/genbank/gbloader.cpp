@@ -131,8 +131,61 @@ CReader* s_CreateReader(string env)
 }
 */
 
-CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
-                             int gc_threshold)
+CGBDataLoader* CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CReader*        driver,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    string name = GetLoaderNameFromArgs(driver);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CGBDataLoader* loader = new CGBDataLoader(name, driver);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CGBDataLoader::GetLoaderNameFromArgs(CReader* /*driver*/)
+{
+    return "GBLOADER";
+}
+
+
+CGBDataLoader* CGBDataLoader::RegisterInObjectManager(
+    CObjectManager&        om,
+    TReader_PluginManager* plugin_manager,
+    EOwnership             take_plugin_manager,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs(
+        plugin_manager,
+        take_plugin_manager);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CGBDataLoader* loader = new CGBDataLoader(
+        name,
+        plugin_manager,
+        take_plugin_manager);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CGBDataLoader::GetLoaderNameFromArgs(
+    TReader_PluginManager* /*plugin_manager*/,
+    EOwnership /*take_plugin_manager*/)
+{
+    return "GBLOADER";
+}
+
+
+CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver)
   : CDataLoader(loader_name),
     m_Driver(driver),
     m_ReaderPluginManager(0),
@@ -167,15 +220,14 @@ CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver,
     m_Locks.m_SlowTraverseMode=0;
   
     m_TseCount=0;
-    m_TseGC_Threshhold=gc_threshold;
+    m_TseGC_Threshhold = 100;
     m_InvokeGC=false;
     //GBLOG_POST( "CGBDataLoader("<<loader_name<<"::" <<gc_threshold << ")" );
 }
 
 CGBDataLoader::CGBDataLoader(const string& loader_name,
                              TReader_PluginManager *plugin_manager,
-                             EOwnership  take_plugin_manager,
-                             int gc_threshold)
+                             EOwnership  take_plugin_manager)
   : CDataLoader(loader_name),
     m_Driver(0),
     m_ReaderPluginManager(plugin_manager),
@@ -194,7 +246,7 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,
     m_Locks.m_SlowTraverseMode=0;
   
     m_TseCount=0;
-    m_TseGC_Threshhold=gc_threshold;
+    m_TseGC_Threshhold = 100;
     m_InvokeGC=false;
 }
 
@@ -1162,6 +1214,12 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.107  2004/06/08 19:18:40  grichenk
 * Removed CSafeStaticRef from seq_id_mapper.hpp
 *

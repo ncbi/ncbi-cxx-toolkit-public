@@ -175,9 +175,8 @@ int CSeqVecBench::Run(void)
     // Setup application registry, error log, and MT-lock for CONNECT library
     CONNECT_Init(&GetConfig());
 
-    CRef<CObjectManager> object_manager(new CObjectManager());
-    object_manager->RegisterDataLoader(*new CGBDataLoader(),
-                                       CObjectManager::eDefault);
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*object_manager);
     CScope scope(*object_manager);
     scope.AddDefaults();
 
@@ -379,6 +378,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.2  2004/05/21 21:42:55  gorelenk
  * Added PCH ncbi_pch.hpp
  *

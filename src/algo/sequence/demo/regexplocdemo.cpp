@@ -128,9 +128,8 @@ int GetLoc(const string& acc, const string &pat, CSeq_loc &loc, CScope &scope)
 int CRegexpLocApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    CRef<CObjectManager> objMgr(new CObjectManager);
-    objMgr->RegisterDataLoader(*new CGBDataLoader("GENBANK"),
-                               CObjectManager::eDefault);
+    CRef<CObjectManager> objMgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objMgr);
     CScope scope(*objMgr);
     scope.AddDefaults();
     int retCode = 0;
@@ -152,6 +151,12 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.3  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -97,7 +97,7 @@ int CMemTestApp::Run(void)
                     }
                     if ( ++count <= repeat_count ) {
                         if ( add_to_objmgr ) {
-                            CRef<CObjectManager> objMgr(new CObjectManager);
+                            CRef<CObjectManager> objMgr = CObjectManager::GetInstance();
                             CRef<CScope> scope(new CScope(*objMgr));
                             scope->AddTopLevelSeqEntry(*entry);
                             if ( run_iter ) {
@@ -135,9 +135,8 @@ int CMemTestApp::Run(void)
             typedef map<const CObject*, int> TCounterMap;
             TCounterMap cnt;
             {
-                CRef<CObjectManager> objMgr(new CObjectManager);
-                objMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
-                                           CObjectManager::eDefault);
+                CRef<CObjectManager> objMgr = CObjectManager::GetInstance();
+                CGBDataLoader::RegisterInObjectManager(*objMgr);
                 CScope scope(*objMgr);
                 scope.AddDefaults();
                 CSeq_id id;
@@ -213,6 +212,12 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.4  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

@@ -51,11 +51,19 @@ BEGIN_SCOPE(objects)
 class NCBI_XLOADER_CDD_EXPORT CCddDataLoader : public CDataLoader
 {
 public:
+    static CCddDataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(void);
+
+    // Public constructor not to break CSimpleClassFactoryImpl code
     CCddDataLoader(void);
 
     void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
 
 private:
+    CCddDataLoader(const string& loader_name);
 
     // cached map of resolved consensus sequences
     typedef map<int, CRef<CSeq_entry> > TCddEntries;
@@ -73,6 +81,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/07/21 15:51:23  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.2  2003/11/28 13:14:38  dicuccio
  * Dropped const from EChoice to match base class API
  *

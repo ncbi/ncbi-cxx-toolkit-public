@@ -478,12 +478,10 @@ QueueAndPoll(string                program,
     string fasta_block;
         
     // Queue and poll
-    CRef<CObjectManager> objmgr(new CObjectManager);
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+
     CRef<CScope>         scope (new CScope(*objmgr));
-        
-    objmgr->RegisterDataLoader(*new CGBDataLoader("ID", 0, 2),
-                               CObjectManager::eDefault);
-    
     scope->AddDefaults();
         
     string err;
@@ -550,6 +548,12 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/07/21 15:51:24  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.6  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *

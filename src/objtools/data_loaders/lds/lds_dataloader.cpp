@@ -161,14 +161,95 @@ private:
 
 
 
-CLDS_DataLoader::CLDS_DataLoader()
-: m_LDS_db(0)
-{}
+CLDS_DataLoader* CLDS_DataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs();
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CLDS_DataLoader* loader = new CLDS_DataLoader(name);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CLDS_DataLoader::GetLoaderNameFromArgs(void)
+{
+    return "LDS_dataloader";
+}
+
+
+CLDS_DataLoader* CLDS_DataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    CLDS_Database& lds_db,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs(lds_db);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CLDS_DataLoader* loader = new CLDS_DataLoader(name, lds_db);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CLDS_DataLoader::GetLoaderNameFromArgs(CLDS_Database& lds_db)
+{
+    const string& alias = lds_db.GetAlias();
+    if ( !alias.empty() ) {
+        return "LDS_dataloader_" + alias;
+    }
+    return "LDS_dataloader_" + lds_db.GetDirName() + "_" + lds_db.GetDbName();
+}
+
+
+CLDS_DataLoader* CLDS_DataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& db_path,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    string name = GetLoaderNameFromArgs(db_path);
+    if ( om.FindDataLoader(name) ) {
+        return 0;
+    }
+    CLDS_DataLoader* loader = new CLDS_DataLoader(name, db_path);
+    return CDataLoader::RegisterInObjectManager(om, name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
+
+string CLDS_DataLoader::GetLoaderNameFromArgs(const string& db_path)
+{
+    return "LDS_dataloader_" + db_path;
+}
+
+
+CLDS_DataLoader::CLDS_DataLoader(void)
+    : CDataLoader(GetLoaderNameFromArgs()),
+      m_LDS_db(0)
+{
+}
+
+
+CLDS_DataLoader::CLDS_DataLoader(const string& dl_name)
+    : CDataLoader(dl_name),
+      m_LDS_db(0)
+{
+}
 
 
 
-CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db,
-                                 const string& dl_name)
+CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
+                                 CLDS_Database& lds_db)
  : CDataLoader(dl_name),
    m_LDS_db(&lds_db),
    m_OwnDatabase(false)
@@ -176,8 +257,8 @@ CLDS_DataLoader::CLDS_DataLoader(CLDS_Database& lds_db,
 }
 
 
-CLDS_DataLoader::CLDS_DataLoader(const string& db_path,
-                                 const string& dl_name)
+CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
+                                 const string& db_path)
  : CDataLoader(dl_name),
    m_LDS_db(new CLDS_Database(db_path, kEmptyStr)),
    m_OwnDatabase(true)
@@ -299,6 +380,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/07/21 15:51:26  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.15  2004/05/21 21:42:52  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -31,6 +31,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/07/21 15:51:25  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.21  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *
@@ -143,14 +149,38 @@ using namespace objects;
 class CTestDataLoader : public CDataLoader
 {
 public:
-    CTestDataLoader(const string& loader_name) : CDataLoader( loader_name)
-        {
-        }
+    static CTestDataLoader* RegisterInObjectManager(
+        CObjectManager& om,
+        const string& loader_name,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     virtual void GetRecords(const CSeq_id_Handle& /*id*/,
                             EChoice /*choice*/)
         {
         }
+
+private:
+    CTestDataLoader(const string& loader_name) : CDataLoader( loader_name)
+        {
+        }
 };
+
+
+CTestDataLoader* CTestDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& loader_name,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    if ( om.FindDataLoader(loader_name) ) {
+        return 0;
+    }
+    CTestDataLoader* loader = new CTestDataLoader(loader_name);
+    return CDataLoader::RegisterInObjectManager(om, loader_name, *loader,
+                                                is_default, priority) ?
+        loader : 0;
+}
+
 
 //===========================================================================
 // CTestApplication
@@ -183,17 +213,19 @@ int CTestApplication::Run()
 NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
 {
     {
-        CRef< CObjectManager> pOm(new CObjectManager);
+        CRef< CObjectManager> pOm = CObjectManager::GetInstance();
         {
-            CTestDataLoader *pLoader1 = new CTestDataLoader( name1);
-            pOm->RegisterDataLoader( *pLoader1, CObjectManager::eNonDefault);
-            CTestDataLoader *pLoader2 = new CTestDataLoader( name2);
-            pOm->RegisterDataLoader( *pLoader2, CObjectManager::eDefault);
+            CTestDataLoader *pLoader1 =
+                CTestDataLoader::RegisterInObjectManager(
+                *pOm, name1, CObjectManager::eNonDefault);
+            CTestDataLoader *pLoader2 =
+                CTestDataLoader::RegisterInObjectManager(
+                *pOm, name2, CObjectManager::eDefault);
 
             // scope in CRef container
             CRef< CScope> pScope1(new CScope(*pOm));
             pScope1->AddDefaults(); // loader 2 added
-            pScope1->AddDataLoader( name1);
+            pScope1->AddDataLoader(name1);
             // scope on the stack
             CScope scope2(*pOm);
             scope2.AddDefaults(); // loader 2 added
@@ -209,7 +241,7 @@ NcbiCout << "1.1.1 Creating CScope ==============================" << NcbiEndl;
 NcbiCout << "1.1.2 Adding Seq_entry to the scope=================" << NcbiEndl;
 {
     {
-        CRef< CObjectManager> pOm(new CObjectManager);
+        CRef< CObjectManager> pOm = CObjectManager::GetInstance();
         {
             // 3 scopes
             CRef< CScope> pScope1(new CScope(*pOm));
@@ -232,9 +264,9 @@ NcbiCout << "1.1.2 Adding Seq_entry to the scope=================" << NcbiEndl;
 NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
 {
     {
-        CRef< CObjectManager> pOm(new CObjectManager);
+        CRef< CObjectManager> pOm = CObjectManager::GetInstance();
         {
-            CTestDataLoader *pLoader1 = new CTestDataLoader( name1);
+            pOm->RevokeDataLoader(name1);
             CScope* pScope1 = new CScope(*pOm);
             pScope1->AddDefaults(); // nothing added
             // must throw an exception: dataloader1 not found
@@ -247,7 +279,8 @@ NcbiCout << "1.1.3 Handling Data loader==========================" << NcbiEndl;
             catch (exception& e) {
                 NcbiCout << "Expected exception: " << e.what() << NcbiEndl;
             }
-            pOm->RegisterDataLoader( *pLoader1, CObjectManager::eNonDefault);
+            CTestDataLoader *pLoader1 =
+                CTestDataLoader::RegisterInObjectManager(*pOm, name1);
             pScope1->AddDefaults(); // nothing added
             pScope1->AddDataLoader( name1); // ok
             // must fail - dataloader1 is in use

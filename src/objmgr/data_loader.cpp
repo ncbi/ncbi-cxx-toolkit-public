@@ -36,11 +36,32 @@
 #include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+bool CDataLoader::RegisterInObjectManager(CObjectManager& om,
+                                          const string& name,
+                                          CDataLoader& loader,
+                                          CObjectManager::EIsDefault is_default,
+                                          CObjectManager::TPriority priority)
+{
+    // name should be already checked by real loader class
+    try {
+        om.RegisterDataLoader(loader, is_default, priority);
+    }
+    catch (CObjMgrException& e) {
+        ERR_POST(Warning <<
+            "CDataLoader::RegisterInObjectManager: " <<
+            e.GetMsg());
+        return false;
+    }
+    return true;
+}
 
 
 CDataLoader::CDataLoader(void)
@@ -124,6 +145,12 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/07/21 15:51:25  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.14  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *

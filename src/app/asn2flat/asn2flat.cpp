@@ -194,13 +194,12 @@ int CAsn2FlatApp::Run(void)
     const CArgs&   args = GetArgs();
 
     // create object manager
-    m_Objmgr.Reset(new CObjectManager);
+    m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
     if ( args["load"]  &&  args["load"].AsString() == "gb" ) {
-        m_Objmgr->RegisterDataLoader(*new CGBDataLoader("ID"),
-                                 CObjectManager::eDefault);
+        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
     }
 
     // open the output stream
@@ -503,6 +502,12 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/07/21 15:51:24  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.10  2004/06/21 18:55:57  ucko
 * Add a GFF3 format.
 *

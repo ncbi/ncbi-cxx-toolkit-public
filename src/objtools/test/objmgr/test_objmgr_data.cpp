@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/07/21 15:51:26  grichenk
+* CObjectManager made singleton, GetInstance() added.
+* CXXXXDataLoader constructors made private, added
+* static RegisterInObjectManager() and GetLoaderNameFromArgs()
+* methods.
+*
 * Revision 1.7  2004/07/13 14:03:08  vasilche
 * Added option "idlist" to test_objmgr_data & test_objmgr_data_mt.
 *
@@ -494,9 +500,8 @@ bool CTestOM::TestApp_Init(void)
     m_pause    = args["pause"].AsInteger();
     m_prefetch = args["prefetch"];
 
-    m_ObjMgr = new CObjectManager;
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID"),
-                                 CObjectManager::eDefault);
+    m_ObjMgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
 
     // Scope shared by all threads
 /*

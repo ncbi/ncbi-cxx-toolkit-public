@@ -44,10 +44,19 @@ BEGIN_NCBI_SCOPE
 class NCBI_XLOADER_TABLE_EXPORT CSageDataLoader : public objects::CDataLoader
 {
 public:
-
-    CSageDataLoader(const string& input_file,
-                    const string& temp_file,
-                    bool delete_file = true);
+    static CSageDataLoader* RegisterInObjectManager(
+        objects::CObjectManager& om,
+        const string& input_file,
+        const string& temp_file,
+        bool delete_file = true,
+        objects::CObjectManager::EIsDefault is_default
+            = objects::CObjectManager::eNonDefault,
+        objects::CObjectManager::TPriority priority
+            = objects::CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(
+        const string& input_file,
+        const string& temp_file,
+        bool delete_file = true);
 
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
@@ -55,6 +64,11 @@ public:
                             EChoice choice);
 
 private:
+    CSageDataLoader(const string& loader_name,
+                    const string& input_file,
+                    const string& temp_file,
+                    bool delete_file = true);
+
     enum {
         eUnknown = -1,
         eAccession = 0,
@@ -104,6 +118,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/21 15:51:23  grichenk
+ * CObjectManager made singleton, GetInstance() added.
+ * CXXXXDataLoader constructors made private, added
+ * static RegisterInObjectManager() and GetLoaderNameFromArgs()
+ * methods.
+ *
  * Revision 1.4  2003/11/28 13:40:40  dicuccio
  * Fixed to match new API in CDataLoader
  *
