@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
@@ -260,6 +261,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2003/04/15 14:25:06  vasilche
+ * Added missing includes.
+ *
  * Revision 1.9  2003/03/10 18:48:48  kuznets
  * iterate->ITERATE
  *

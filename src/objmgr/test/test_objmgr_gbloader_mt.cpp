@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/04/15 14:23:11  vasilche
+* Added missing includes.
+*
 * Revision 1.20  2003/03/27 21:54:58  grichenk
 * Renamed test applications and makefiles, updated references
 *
@@ -133,6 +136,8 @@
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
 
 
 BEGIN_NCBI_SCOPE

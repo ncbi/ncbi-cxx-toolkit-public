@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/15 14:23:11  vasilche
+* Added missing includes.
+*
 * Revision 1.5  2003/03/18 21:48:33  grichenk
 * Removed obsolete class CAnnot_CI
 *
@@ -65,6 +68,8 @@
 #include <objects/objmgr/align_ci.hpp>
 #include <objects/objmgr/gbloader.hpp>
 #include <objects/objmgr/reader_id1.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
 
 #include <test/test_assert.h>  /* This header must go last */
 

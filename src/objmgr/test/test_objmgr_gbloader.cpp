@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/04/15 14:23:11  vasilche
+* Added missing includes.
+*
 * Revision 1.26  2003/03/18 21:48:33  grichenk
 * Removed obsolete class CAnnot_CI
 *
@@ -126,6 +129,8 @@
 
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
 
 
 BEGIN_NCBI_SCOPE

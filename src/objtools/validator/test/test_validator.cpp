@@ -40,6 +40,9 @@
 #include <serial/objistr.hpp>
 #include <serial/objectio.hpp>
 
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
+
 // Objects includes
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -433,6 +436,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2003/04/15 14:22:42  vasilche
+ * Added missing includes.
+ *
  * Revision 1.16  2003/04/04 18:44:42  shomrat
  * Added remote fetch flag
  *

@@ -30,6 +30,7 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr/impl/seqref_id1.hpp>
 
 #include <connect/ncbi_util.h>
 #include <connect/ncbi_core_cxx.hpp>
@@ -40,44 +41,47 @@ using namespace std;
 
 int main()
 {
-  //export CONN_DEBUG_PRINTOUT=data
-  //CORE_SetLOG(LOG_cxx2c());
-  //SetDiagTrace(eDT_Enable);
-  //SetDiagPostLevel(eDiag_Info);
-  //SetDiagPostFlag(eDPF_All);
+    //export CONN_DEBUG_PRINTOUT=data
+    //CORE_SetLOG(LOG_cxx2c());
+    //SetDiagTrace(eDT_Enable);
+    //SetDiagPostLevel(eDiag_Info);
+    //SetDiagPostFlag(eDPF_All);
 
-  //test_id1_calls();
+    //test_id1_calls();
 
-  CSeq_id seqId;
-  seqId.SetGi(5);
+    CSeq_id seqId;
+    seqId.SetGi(5);
 
-  CId1Reader reader;
-  for(int k = 0; k < 500; k++)
-  {
-    for(CIStream srs(reader.SeqrefStreamBuf(seqId)); ! srs.Eof(); )
-    {
-      CId1Seqref *seqRef = static_cast<CId1Seqref *>(reader.RetrieveSeqref(srs));
-      cout << "K: " << k << " " << seqRef->Gi() << endl;
+    CId1Reader reader;
+    for(int k = 0; k < 500; k++) {
+        vector< CRef<CSeqref> > sr;
+        reader.RetrieveSeqrefs(sr, seqId);
+        ITERATE ( vector< CRef<CSeqref> >, i, sr ) {
+            const CId1Seqref& seqRef = dynamic_cast<const CId1Seqref&>(**i);
+            cout << "K: " << k << " " << seqRef.Gi() << endl;
 
-      CBlobClass cl;
-      for(CIStream bs(seqRef->BlobStreamBuf(0, 0, cl)); ! bs.Eof(); )
-      {
-        CBlob *blob = seqRef->RetrieveBlob(bs);
-        //CObjectOStreamAsn oos(cout);
-        //oos << *blob->Seq_entry();
-        //cout << endl;
-
-        CRef<CSeq_entry> se(blob->Seq_entry());
-        delete blob;
-      }
-      delete seqRef;
+            CId1Seqref::TBlobClass cl = 0;
+            int count = 0;
+            for ( CRef<CBlobSource> bs(seqRef.GetBlobSource(0, 0, cl));
+                  bs->HaveMoreBlobs(); ++count) {
+                CRef<CBlob> blob(bs->RetrieveBlob());
+                CRef<CSeq_entry> se(blob->Seq_entry());
+                if (!se) {
+                    cout << "blob is not available\n";
+                    continue;
+                }
+            }
+            cout << "K: " << k << " " << seqRef.Gi() << " " << count << " blobs" << endl;
+        }
     }
-  }
-  return 0;
+    return 0;
 }
 
 /*
 * $Log$
+* Revision 1.12  2003/04/15 14:23:11  vasilche
+* Added missing includes.
+*
 * Revision 1.11  2003/03/27 21:54:58  grichenk
 * Renamed test applications and makefiles, updated references
 *
