@@ -2,6 +2,7 @@
 
 LIB_PROJ = dbapi_cache
 #APP_PROJ = dbapi_cache_test
+SUB_PROJ = admintool
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
