@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/04/17 21:47:29  vakatov
+* COStreamBuffer::Flush() -- try to flush the underlying output stream
+* regardless of its state (clear the state temporarily before flushing,
+* restore it afterwards).
+*
 * Revision 1.23  2001/03/14 17:59:26  vakatov
 * COStreamBuffer::  renamed GetFreeSpace() -> GetAvailableSpace()
 * to avoid clash with MS-Win system headers' #define
@@ -664,13 +669,23 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
     }
 }
 
+
 void COStreamBuffer::Flush(void)
     THROWS1((CIOException))
 {
     FlushBuffer();
-    if ( !m_Output.flush() )
-        THROW1_TRACE(CIOException, "write fault");
+    IOS_BASE::iostate state = m_Output.rdstate();
+    m_Output.clear();
+    try {
+        if ( !m_Output.flush() )
+            THROW1_TRACE(CIOException, "COStreamBuffer::Flush() failed");
+    } catch (...) {
+        m_Output.clear(state);
+        throw;
+    }
+    m_Output.clear(state);
 }
+
 
 char* COStreamBuffer::DoReserve(size_t count)
     THROWS1((CIOException, bad_alloc))
