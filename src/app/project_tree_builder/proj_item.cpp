@@ -60,7 +60,6 @@ CProjItem& CProjItem::operator= (const CProjItem& item)
     return *this;
 }
 
-
 CProjItem::CProjItem(TProjType type,
                      const string& name,
                      const string& id,
@@ -68,7 +67,8 @@ CProjItem::CProjItem(TProjType type,
                      const list<string>& sources, 
                      const list<string>& depends,
                      const list<string>& requires,
-                     const list<CDataToolGeneratedSrc> datatool_src)
+                     const list<string>& libs_3_party,
+                     const list<string>& include_dirs)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
@@ -76,11 +76,10 @@ CProjItem::CProjItem(TProjType type,
     m_Sources (sources), 
     m_Depends (depends),
     m_Requires(requires),
-    m_DatatoolSources(datatool_src)
+    m_Libs3Party (libs_3_party),
+    m_IncludeDirs(include_dirs)
 {
 }
-
-
 
 CProjItem::~CProjItem(void)
 {
@@ -103,6 +102,8 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_Sources        = item.m_Sources;
     m_Depends        = item.m_Depends;
     m_Requires       = item.m_Requires;
+    m_Libs3Party     = item.m_Libs3Party;
+    m_IncludeDirs    = item.m_IncludeDirs;
     m_DatatoolSources= item.m_DatatoolSources;
 }
 
@@ -244,6 +245,62 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
     }}
 }
 
+static string s_GetOneIncludeDir(const string& flag, const string& token)
+{
+    size_t token_pos = flag.find(token);
+    if (token_pos != NPOS && 
+        token_pos + token.length() < flag.length()) {
+        return flag.substr(token_pos + token.length()); 
+    }
+    return "";
+}
+
+static void s_CreateIncludeDirs(const list<string>& cpp_flags,
+                                const string&       source_base_dir,
+                                list<string>*       include_dirs)
+{
+    include_dirs->clear();
+    ITERATE(list<string>, p, cpp_flags) {
+        const string& flag = *p;
+        const string token("-I$(includedir)");
+
+        string token_val;
+        token_val = s_GetOneIncludeDir(flag, "-I$(includedir)");
+        if ( !token_val.empty() ) {
+            string dir = 
+                CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include,
+                                      token_val);
+            dir = CDirEntry::NormalizePath(dir);
+            dir = CDirEntry::AddTrailingPathSeparator(dir);
+
+            include_dirs->push_back(dir);
+        }
+
+        token_val = s_GetOneIncludeDir(flag, "-I$(srcdir)");
+        if ( !token_val.empty() )  {
+            string dir = 
+                CDirEntry::ConcatPath(source_base_dir,
+                                      token_val);
+            dir = CDirEntry::NormalizePath(dir);
+            dir = CDirEntry::AddTrailingPathSeparator(dir);
+
+            include_dirs->push_back(dir);
+        }
+    }
+}
+
+static void s_Create3PartyLibs(const list<string>& libs_flags, 
+                               list<string>*       libs_list)
+{
+    libs_list->clear();
+    ITERATE(list<string>, p, libs_flags) {
+        const string& flag = *p;
+        if ( NStr::StartsWith(flag, "@") &&
+             NStr::EndsWith(flag, "@") ) {
+            libs_list->push_back(string(flag, 1, flag.length() - 2));    
+        }
+    }
+}
 
 string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
                                              const string& proj_name,
@@ -268,10 +325,9 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
         return "";
     }
 
-    //sources - full pathes
+    //sources - relative  pathes from source_base_dir
     //We'll create relative pathes from them
-    list<string> sources;
-    CreateFullPathes(source_base_dir, k->second, &sources);
+    const list<string>& sources = k->second;
 
     //depends
     list<string> depends;
@@ -296,7 +352,24 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
     }
     string proj_id = k->second.front();
 
-    list<CDataToolGeneratedSrc> datatool_src;
+    //LIBS
+    list<string> libs_3_party;
+    k = m->second.m_Contents.find("LIBS");
+    if (k != m->second.m_Contents.end())
+    {
+        const list<string> libs_flags = k->second;
+        s_Create3PartyLibs(libs_flags, &libs_3_party);
+    }
+    //CPPFLAGS
+    list<string> include_dirs;
+    k = m->second.m_Contents.find("CPPFLAGS");
+    if (k != m->second.m_Contents.end())
+    {
+        const list<string> cpp_flags = k->second;
+        s_CreateIncludeDirs(cpp_flags, source_base_dir, &include_dirs);
+    }
+
+
     tree->m_Projects[proj_id] =  CProjItem(CProjItem::eApp, 
                                            proj_name, 
                                            proj_id,
@@ -304,7 +377,8 @@ string CProjectItemsTree::DoCreateAppProject(const string& source_base_dir,
                                            sources, 
                                            depends,
                                            requires,
-                                           datatool_src);
+                                           libs_3_party,
+                                           include_dirs);
     return proj_id;
 }
 
@@ -332,10 +406,9 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
         return "";
     }
 
-    // sources - full pathes 
+    // sources - relative pathes from source_base_dir
     // We'll create relative pathes from them)
-    list<string> sources;
-    CreateFullPathes(source_base_dir, k->second, &sources);
+    const list<string>& sources = k->second;
 
     // depends - TODO
     list<string> depends;
@@ -357,7 +430,23 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
     }
     string proj_id = k->second.front();
 
-    list<CDataToolGeneratedSrc> datatool_src;
+    //LIBS
+    list<string> libs_3_party;
+    k = m->second.m_Contents.find("LIBS");
+    if (k != m->second.m_Contents.end())
+    {
+        const list<string> libs_flags = k->second;
+        s_Create3PartyLibs(libs_flags, &libs_3_party);
+    }
+    //CPPFLAGS
+    list<string> include_dirs;
+    k = m->second.m_Contents.find("CPPFLAGS");
+    if (k != m->second.m_Contents.end())
+    {
+        const list<string> cpp_flags = k->second;
+        s_CreateIncludeDirs(cpp_flags, source_base_dir, &include_dirs);
+    }
+
     tree->m_Projects[proj_id] =  CProjItem(CProjItem::eLib,
                                            proj_name, 
                                            proj_id,
@@ -365,7 +454,8 @@ string CProjectItemsTree::DoCreateLibProject(const string& source_base_dir,
                                            sources, 
                                            depends,
                                            requires,
-                                           datatool_src);
+                                           libs_3_party,
+                                           include_dirs);
     return proj_id;
 }
 
@@ -533,48 +623,6 @@ CProjectItemsTree::GetExternalDepends(list<string>* external_depends) const
     }
 }
 
-
-void CProjectItemsTree::GetRoots(list<string>* ids) const
-{
-    ids->clear();
-
-    set<string> dirs;
-    ITERATE(TProjects, p, m_Projects) {
-        //collect all project dirs:
-        const CProjItem& project = p->second;
-        dirs.insert(project.m_SourcesBaseDir);
-    }
-
-    ITERATE(TProjects, p, m_Projects) {
-        //if project parent dir is not in dirs - it's a root
-        const CProjItem& project = p->second;
-        if (dirs.find(GetParentDir(project.m_SourcesBaseDir)) == dirs.end())
-            ids->push_back(project.m_ID);
-    }
-}
-
-
-void CProjectItemsTree::GetSiblings(const string& parent_id,
-                                    list<string>* ids) const
-{
-    ids->clear();
-
-    TProjects::const_iterator n = m_Projects.find(parent_id);
-    if (n == m_Projects.end()) 
-        return;
-
-    const CProjItem& parent_project = n->second;
-
-    ITERATE(TProjects, p, m_Projects) {
-        //looking for projects having parent dir as parent_project
-        const CProjItem& project_i = p->second;
-        if (GetParentDir(project_i.m_SourcesBaseDir) == 
-                                parent_project.m_SourcesBaseDir)
-            ids->push_back(project_i.m_ID);
-    }
-}
-
-
 //-----------------------------------------------------------------------------
 static bool s_IsMakeInFile(const string& name)
 {
@@ -740,18 +788,18 @@ void CProjectTreeBuilder::ProcessMakeAppFile(const string& file_name,
 }
 
 
-//recursive resolving
-void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver, 
-                                      SMakeFiles&   makefiles)
+static void s_DoResolveDefs(CSymResolver& resolver, 
+                            CProjectTreeBuilder::TFiles& files,
+                            const set<string>& keys)
 {
-    NON_CONST_ITERATE(TFiles, p, makefiles.m_App) {
+    NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
 	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
                           n, 
                           p->second.m_Contents) {
             
             const string& key    = n->first;
             list<string>& values = n->second;
-		    if (key == "LIB") {
+		    if (keys.find(key) != keys.end()) {
                 list<string> new_vals;
                 bool modified = false;
                 NON_CONST_ITERATE(list<string>, k, values) {
@@ -776,6 +824,26 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
     }
 }
 
+//recursive resolving
+void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver, 
+                                      SMakeFiles&   makefiles)
+{
+    {{
+        //App
+        set<string> keys;
+        keys.insert("LIB");
+        keys.insert("LIBS");
+        s_DoResolveDefs(resolver, makefiles.m_App, keys);
+    }}
+
+    {{
+        //Lib
+        set<string> keys;
+        keys.insert("LIBS");
+        s_DoResolveDefs(resolver, makefiles.m_Lib, keys);
+    }}
+}
+
 
 //-----------------------------------------------------------------------------
 CProjectTreeFolders::CProjectTreeFolders(const CProjectItemsTree& tree)
@@ -786,7 +854,7 @@ CProjectTreeFolders::CProjectTreeFolders(const CProjectItemsTree& tree)
         const CProjItem& project = p->second;
         
         TPath path;
-        CreatePath(GetApp().GetProjectTreeInfo().m_RootSrc, 
+        CreatePath(GetApp().GetProjectTreeInfo().m_Src, 
                    project.m_SourcesBaseDir, 
                    &path);
         SProjectTreeFolder* folder = FindOrCreateFolder(path);
@@ -861,6 +929,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/03 17:12:55  gorelenk
+ * Changed implementation of classes CProjItem and CProjectItemsTree.
+ *
  * Revision 1.7  2004/01/30 20:44:22  gorelenk
  * Initial revision.
  *
