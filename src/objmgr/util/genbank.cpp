@@ -2347,7 +2347,7 @@ bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle) const
 
     char line[BLOCK_COUNT*(BLOCK_SIZE+1)+2];
 
-    size_t seq_end = vec.size();
+    TSeqPos seq_end = vec.size();
     for (CSeqVector_CI vit(vec); vit.GetPos() < seq_end; ) {
         TSeqPos n = vit.GetPos();
         m_Stream << setw(9) << (n+1);
@@ -2851,6 +2851,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.38  2003/05/27 23:12:35  ucko
+* WriteSequence: change seq_end's type back to TSeqPos to fix 64-bit compilation.
+*
 * Revision 1.37  2003/05/27 19:44:09  grichenk
 * Added CSeqVector_CI class
 *
