@@ -1000,7 +1000,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                          best[1]->hsp_link.xsum[1],
                          query_length, subject_length,
                          BLAST_GapDecayDivisor(gap_decay_rate,
-                                              best[1]->hsp_link.num[0]));
+                                              best[1]->hsp_link.num[1]));
 
             if( best[1]->hsp_link.num[1] > 1 ) {
               if( 1 - gap_prob == 0 || (prob[1] /= 1 - gap_prob) > INT4_MAX ) {
