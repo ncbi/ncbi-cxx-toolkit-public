@@ -1,0 +1,2 @@
+LIB = seqsplit
+SRC = seqsplit__ seqsplit___
