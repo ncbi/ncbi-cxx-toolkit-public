@@ -123,6 +123,13 @@ void CTest_validatorApplication::Init(void)
         ("b", "SeqSubmit", "Input is Seq-submit [T/F]",
         CArgDescriptions::eBoolean, "false");
 
+    // !!!
+    // { DEBUG
+    // This flag should be removed once testing is done. It is intended for
+    // performance testing.
+    arg_desc->AddFlag("p", "Disable suspected performance bottlenecks");
+    // }
+
     // Program description
     string prog_description = "Test driver for Validate()\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -165,6 +172,11 @@ int CTest_validatorApplication::Run(void)
     options |= args["s"].AsBoolean() ? CValidError::eVal_splice_err : 0;
     options |= args["a"].AsBoolean() ? CValidError::eVal_val_align : 0;
     options |= args["c"].AsBoolean() ? CValidError::eVal_no_context : 0;
+
+    // !!!  DEBUG {
+    // For testing only. Should be removed in the future
+    options |= args["p"] ? CValidError::eVal_perf_bottlenecks : 0;
+    // }
 
     auto_ptr<CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
     auto_ptr<CValidError> eval;
@@ -220,6 +232,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2003/02/03 20:22:25  shomrat
+ * Added flag to supress performance bottlenecks
+ *
  * Revision 1.7  2003/02/03 17:51:06  shomrat
  * Bug fix - Trailing comma in a parameter list
  *
