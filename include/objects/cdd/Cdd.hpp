@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2004/03/17 17:51:40  gorelenk
+ * Added export prefix NCBI_CDD_EXPORT for class CCdd declaration.
+ *
  * Revision 1.17  2002/12/06 15:50:29  hurwitz
  * pulled code I added to this class and moved it to cdt_ccd.[c|h]pp
  *
@@ -103,7 +106,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CCdd : public CCdd_Base
+class NCBI_CDD_EXPORT CCdd : public CCdd_Base
 {
     typedef CCdd_Base Tparent;
 public:
