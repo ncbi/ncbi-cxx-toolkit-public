@@ -338,8 +338,10 @@ CSeqVector::TResidue CSeqVector::x_GetResidue(TSeqPos pos)
             // need to convert if both plus or both minus.
             if ( m_PlusStrand != m_SelRange->second.second ) {
                 CSeq_data* tmp = new CSeq_data;
-                CSeqportUtil::ReverseComplement(*out, tmp);
+                CSeqportUtil::ReverseComplement(*out, tmp, src_start, m_CachedLen);
                 out.Reset(tmp);
+                // Adjust starting position
+                start = 0;
             }
             switch ( out->Which() ) {
             case CSeq_data::e_Iupacna:
@@ -530,6 +532,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2002/09/10 19:55:52  grichenk
+* Fixed reverse-complement position
+*
 * Revision 1.28  2002/09/09 21:38:37  grichenk
 * Fixed problem with GetSeqData() for minus strand
 *
