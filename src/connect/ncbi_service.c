@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2002/05/06 19:16:50  lavr
+ * +#include <stdio.h>, +SERV_ServiceName() - translation of service name
+ *
  * Revision 6.36  2002/04/15 20:07:09  lavr
  * Use size_t for iterating over skip_info's
  *
@@ -148,14 +151,54 @@
  * ==========================================================================
  */
 
+#include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include "ncbi_servicep_lbsmd.h"
 #include "ncbi_servicep_dispd.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#define SERV_SERVICE_NAME "SERVICE_NAME"
+
+
+const char* SERV_ServiceName(const char* service)
+{
+    char *s, *p;
+    char key[128];
+    char srv[128];
+
+    if (!service || !*service ||
+        sizeof(DEF_CONN_REG_SECTION) + sizeof(SERV_SERVICE_NAME) +
+        strlen(service) >= sizeof(key))
+        return 0/*failure*/;
+    s = key;
+    strcpy(s, DEF_CONN_REG_SECTION);
+    s += sizeof(DEF_CONN_REG_SECTION) - 1;
+    *s++ = '_';
+    strcpy(s, SERV_SERVICE_NAME);
+    s += sizeof(SERV_SERVICE_NAME) - 1;
+    *s++ = '_';
+    strcpy(s, service);
+    strupr(key);
+    /* Looking for "CONN_SERVICE_NAME_service" in environment */
+    if (!(p = getenv(key))) {
+        *--s = '\0';
+        /* Looking for "CONN_SERVICE_NAME" in registry's section [service] */
+        CORE_REG_GET(service, key, srv, sizeof(srv), 0);
+        if (!*srv)
+            return strdup(service);
+    } else {
+        strncpy(srv, p, sizeof(srv) - 1);
+        srv[sizeof(srv) - 1] = '\0';
+    }
+
+    /* No cycle detection in service name redefinition */
+    return SERV_ServiceName(srv);
+}
 
 
 SERV_ITER SERV_OpenSimple(const char* service)
@@ -195,15 +238,14 @@ static SERV_ITER s_Open(const char* service,
                         const SSERV_Info* const skip[], size_t n_skip,
                         SSERV_Info** info, char** env)
 {
+    const char* s = SERV_ServiceName(service);
     const SSERV_VTable* op;
     SERV_ITER iter;
-
-    if (!service || !*service ||
-        !(iter = (SERV_ITER) malloc(sizeof(*iter) + strlen(service)+1)))
+    
+    if (!s || !*s || !(iter = (SERV_ITER) malloc(sizeof(*iter))))
         return 0;
 
-    iter->service = (char*) iter + sizeof(*iter);
-    strcpy((char*) iter->service, service);
+    iter->service = s;
     iter->type = type;
     iter->preferred_host = preferred_host == SERV_LOCALHOST
         ? SOCK_gethostbyname(0) : preferred_host;
@@ -273,7 +315,7 @@ SSERV_Info* SERV_GetInfoEx(const char* service,
                            const SSERV_Info* const skip[], size_t n_skip,
                            char** env)
 {
-    SSERV_Info* info;
+    SSERV_Info* info = 0;
     SERV_ITER iter = s_Open(service, type, preferred_host,
                             net_info, skip, n_skip, &info, env);
     if (iter && !info && iter->op && iter->op->GetNextInfo)
@@ -360,11 +402,10 @@ void SERV_Close(SERV_ITER iter)
     SERV_Reset(iter);
     if (iter->op && iter->op->Close)
         (*iter->op->Close)(iter);
-    iter->op = 0;
-    if (iter->skip) {
+    if (iter->skip)
         free(iter->skip);
-        iter->skip = 0;
-    }
+    if (iter->service)
+        free((void*) iter->service);
     free(iter);
 }
 
