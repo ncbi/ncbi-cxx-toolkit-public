@@ -74,7 +74,7 @@ struct tm res;
 	return str;
 }
 
-#if defined(HAVE_GETADDRINFO) || defined(HAVE_GETNAMEINFO)
+#if (defined(HAVE_GETADDRINFO) || defined(HAVE_GETNAMEINFO))  &&  defined(_REENTRANT)
 static
 int s_make_hostent(struct hostent* he, char* buf, int len, const struct addrinfo* ai)
 {
@@ -196,6 +196,11 @@ tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer
 #endif
 }
 
+#if defined(HAVE_GETNAMEINFO)  &&  defined(_REENTRANT)
+#  ifndef HAVE_SOCKLEN_T
+typedef int socklen_t;
+#  endif
+
 static
 socklen_t s_make_sa(const char *addr, int len, int type, void *buf, int blen)
 {
@@ -237,6 +242,7 @@ socklen_t s_make_sa(const char *addr, int len, int type, void *buf, int blen)
 	}
 	
 }
+#endif
 
 struct hostent   *
 tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result, char *buffer, int buflen, int *h_errnop)
@@ -284,7 +290,7 @@ tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result,
 #endif
 }
 
-#ifdef HAVE_GETADDRINFO
+#if defined(HAVE_GETADDRINFO)  &&  defined(_REENTRANT)
 static
 int s_make_servent(struct servent* se, char* buf, int len, const struct addrinfo* ai, const char* name, const char* proto)
 {
