@@ -87,6 +87,9 @@ test2 frames_with_overlaps "-noobjmgr t -truncateoverlaps t" "frames with trunca
 test2 refseq_swap "" "the common sequence (refseq) comes second"
 
 
+test2 best_reciprocal_hits "-queryseqmergeonly t -truncateoverlaps t -noobjmgr t" "best reciprocal hits"
+
+
 # clean
 rm $tmp_out
 
