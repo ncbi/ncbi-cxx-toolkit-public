@@ -172,6 +172,22 @@ extern void SOCK_SetDataLogging(SOCK sock, ESwitch log_data);
 
 
 /******************************************************************************
+ *   I/O restart on signals
+ */
+
+
+/* By default ("on_off" == eDefault,eOff), I/O is restartable if interrupted.
+ */
+extern void SOCK_SetInterruptOnSignalAPI(ESwitch on_off);
+
+
+/* Control sockets individually. eDefault causes the use of global API flag.
+ */
+extern void SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off);
+
+
+
+/******************************************************************************
  *  API Initialization and Shutdown/Cleanup
  */
 
@@ -257,10 +273,10 @@ extern EIO_Status LSOCK_GetOSHandle
  * (socket() + connect() [+ select()])
  */
 extern EIO_Status SOCK_Create
-(const char*     host,    /* [in]  host to connect to           */
- unsigned short  port,    /* [in]  port to connect to           */
- const STimeout* timeout, /* [in]  the connect timeout          */
- SOCK*           sock     /* [out] handle of the created socket */
+(const char*     host,    /* [in]  host to connect to                     */
+ unsigned short  port,    /* [in]  port to connect to                     */
+ const STimeout* timeout, /* [in]  the connect timeout (infinite if NULL) */
+ SOCK*           sock     /* [out] handle of the created socket           */
  );
 
 
@@ -273,10 +289,10 @@ extern EIO_Status SOCK_Create
  * NOTE: "new" socket inherits the old i/o timeouts,
  */
 extern EIO_Status SOCK_Reconnect
-(SOCK            sock,    /* [in] handle of the socket to reconnect */
- const char*     host,    /* [in] host to connect to                */
- unsigned short  port,    /* [in] port to connect to                */
- const STimeout* timeout  /* [in] the connect timeout               */
+(SOCK            sock,    /* [in] handle of the socket to reconnect      */
+ const char*     host,    /* [in] host to connect to  (can be NULL)      */
+ unsigned short  port,    /* [in] port to connect to  (can be 0)         */
+ const STimeout* timeout  /* [in] the connect timeout (infinite if NULL) */
  );
 
 
@@ -327,8 +343,8 @@ typedef struct {
 extern EIO_Status SOCK_Poll
 (size_t          n,         /* [in]      # of SSOCK_Poll elems in "socks"    */
  SSOCK_Poll      socks[],   /* [in|out]  array of query/result structures    */
- const STimeout* timeout,   /* [in]      max time to wait    (can be NULL)   */
- size_t*         n_out      /* [out]     # of ready sockets  (can be NULL)   */
+ const STimeout* timeout,   /* [in]      max time to wait (infinite if NULL) */
+ size_t*         n_ready    /* [out]     # of ready sockets  (can be NULL)   */
  );
 
 
@@ -365,14 +381,14 @@ extern const STimeout* SOCK_GetTimeout
  * NOTE1: Theoretically, eIO_Closed may indicate an empty message
  *        rather than a real closure of the connection...
  * NOTE2: If on input "size" == 0, then "*n_read" is set to 0, and
- *        return value can be either of eIO_Success, eIO_Closed and
+ *        return value can be either of eIO_Success, eIO_Closed or
  *        eIO_Unknown depending on connection status of the socket.
  */
 extern EIO_Status SOCK_Read
 (SOCK           sock,
  void*          buf,    /* [out] data buffer to read to          */
  size_t         size,   /* [in]  max # of bytes to read to "buf" */
- size_t*        n_read, /* [out] # of bytes read                 */
+ size_t*        n_read, /* [out] # of bytes read  (can be NULL)  */
  EIO_ReadMethod how     /* [in]  how to read the data            */
  );
 
@@ -407,16 +423,25 @@ extern EIO_Status SOCK_Status
  );
 
 
-/* Write "size" bytes from the mem.buffer "buf" to "sock".
- * In "*n_written", return the number of successfully written bytes.
- * If cannot write all data and the timeout(see SOCK_SetTimeout()) is expired
- * then return eIO_Timeout.
+/* Write "size" bytes from buffer "buf" to "sock".
+ * In "*n_written", return the number of bytes actually written.
+ * eIO_WritePlain   --  write as many bytes as possible at once and return
+ *                      immediately; if no bytes can be written then wait
+ *                      at most WRITE timeout, try again and return.
+ * eIO_WritePersist --  write all data (doing an internal retry loop
+ *                      if necessary); if any single write attempt times out
+ *                      or fails then stop writing and return (error code).
+ * Return status: eIO_Success -- some bytes were written successfully  [Plain]
+ *                            -- all bytes were written successfully [Persist]
+ *                other code denotes an error, but some bytes might have
+ *                been sent (check *n_written to know).
  */
 extern EIO_Status SOCK_Write
-(SOCK        sock,
- const void* buf,       /* [in]  data to write to the socket                */
- size_t      size,      /* [in]  # of bytes (starting at "buf") to write    */
- size_t*     n_written  /* [out] # of successf. written bytes (can be NULL) */
+(SOCK            sock,
+ const void*     buf,       /* [in]  data to write to the socket             */
+ size_t          size,      /* [in]  # of bytes (starting at "buf") to write */
+ size_t*         n_written, /* [out] # of written bytes (can be NULL)        */
+ EIO_WriteMethod how        /* [in]  eIO_WritePlain | eIO_WritePersist       */
  );
 
 
@@ -527,6 +552,9 @@ extern char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2002/08/12 14:59:12  lavr
+ * Additional (last) argument for SOCK_Write: write_mode
+ *
  * Revision 6.18  2002/08/07 16:31:00  lavr
  * Added enum ENH_ByteOrder; renamed SOCK_GetAddress() ->
  * SOCK_GetPeerAddress() and now accepts ENH_ByteOrder as last arg;
