@@ -1,4 +1,4 @@
---$Revision: 1.7 $
+--$Revision: 1.8 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -88,11 +88,26 @@ Cn3d-backbone-style ::= SEQUENCE {  -- style blob for backbones only
     user-color Cn3d-color
 }
 
-Cn3d-general-style ::= SEQUENCE {   -- style blob for everything else
+Cn3d-general-style ::= SEQUENCE {   -- style blob for other objects
     is-on BOOLEAN,
     style Cn3d-drawing-style,
     color-scheme Cn3d-color-scheme,
     user-color Cn3d-color
+}
+
+Cn3d-backbone-label-style ::= SEQUENCE { -- style blob for backbone labels
+    spacing INTEGER,        -- zero means none
+    type ENUMERATED {
+        one-letter (1),
+        three-letter (2)
+    },
+    number ENUMERATED {
+        none (0),
+        sequential (1),     -- from 1, by residues present, to match sequence
+        pdb (2)             -- use number assigned by PDB
+    },
+    termini BOOLEAN,
+    white BOOLEAN           -- all white, or (if false) color of alpha carbon
 }
 
 -- rendering settings for Cn3D (mirrors StyleSettings class)
@@ -120,7 +135,12 @@ Cn3d-style-settings ::= SEQUENCE {
     tube-worm-radius INTEGER,
     helix-radius INTEGER,
     strand-width INTEGER,
-    strand-thickness INTEGER
+    strand-thickness INTEGER,
+    -- backbone labels (no labels if not present)
+    protein-labels Cn3d-backbone-label-style OPTIONAL,
+    nucleotide-labels Cn3d-backbone-label-style OPTIONAL,
+    -- ion labels
+    ion-labels BOOLEAN OPTIONAL
 }
 
 Cn3d-style-settings-set ::= SET OF Cn3d-style-settings
