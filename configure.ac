@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.217 2003/09/11 18:26:28 ucko Exp $
+#  $Id: configure.ac,v 1.218 2003/09/25 19:58:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -87,7 +87,7 @@ AC_ARG_WITH(dll,
 AC_ARG_WITH(static,
    [ --with-static           build all libraries statically even if --with-dll])
 AC_ARG_WITH(static-exe,
-   [ --with-static-exe,      build all executables as statically as possible])
+   [ --with-static-exe       build all executables as statically as possible])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(64,

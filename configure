@@ -864,7 +864,7 @@ Optional Packages:
  --with-profiling        build profiled versions of libs and apps
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
- --with-static-exe,      build all executables as statically as possible
+ --with-static-exe       build all executables as statically as possible
  --with-mt               compile in a MultiThread-safe manner
  --with-64               compile to 64-bit code
  --without-exe           do not build executables
