@@ -78,11 +78,11 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim)
 const char* Endl(void)
 {
 #if   defined(NCBI_OS_MAC)
-    const char s_Endl[] = "\r";
+    static const char s_Endl[] = "\r";
 #elif defined(NCBI_OS_MSWIN)
-    const char s_Endl[] = "\r\n";
+    static const char s_Endl[] = "\r\n";
 #else /* assume UNIX-like EOLs */
-    const char s_Endl[] = "\n";
+    static const char s_Endl[] = "\n";
 #endif
     return s_Endl;
 }
@@ -303,6 +303,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2002/10/17 22:10:33  vakatov
+ * C&P typo fixed
+ *
  * Revision 1.17  2002/10/17 22:07:27  vakatov
  * + Endl() -- platform-specific EndOfLine
  *
