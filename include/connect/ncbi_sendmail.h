@@ -42,7 +42,7 @@ extern "C" {
 
 
 /* Default values for the structure below */
-#define MX_HOST         "nes"
+#define MX_HOST         "mailgw.ncbi.nlm.nih.gov"
 #define MX_PORT         25
 #define MX_TIMEOUT      120
 
@@ -115,6 +115,9 @@ extern const char* CORE_SendMailEx(const char* to,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/08/14 18:51:33  lavr
+ * Change MX from "nes" to more generic mail hub "mailgw.ncbi.nlm.nih.gov"
+ *
  * Revision 6.7  2002/08/14 16:38:55  lavr
  * Change default MX from "ncbi" to "nes"
  *
