@@ -210,6 +210,13 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
 */
 Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number);
 
+/** Given a context from BLAST engine core, return the query index.
+ * @param context Context saved in a BlastHSP structure [in]
+ * @param program Type of BLAST program [in]
+ * @return Query index in a set of queries.
+ */
+Int4 Blast_GetQueryIndexFromContext(Int4 context, Uint1 program);
+
 /** Find the length of an individual query within a concatenated set of 
  * queries.
  * @param query_info Queries information structure containing offsets into
@@ -222,6 +229,9 @@ Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context);
 
 /** Deallocate memory for query information structure */
 BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
+
+/** Duplicates the query information structure */
+BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
 
 Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding, 
                    Uint1** packed_seq);

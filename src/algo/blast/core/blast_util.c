@@ -671,6 +671,24 @@ Int2 BLAST_ContextToFrame(Uint1 prog_number, Int4 context_number)
    return frame;
 }
 
+Int4 
+Blast_GetQueryIndexFromContext(Int4 context, Uint1 program)
+{
+   Int4 index = 0;
+   switch (program) {
+   case blast_type_blastn:
+      index = context/NUM_STRANDS; break;
+   case blast_type_blastp: case blast_type_tblastn: 
+   case blast_type_rpsblast: case blast_type_rpstblastn:
+      index = context; break;
+   case blast_type_blastx: case blast_type_tblastx:
+      index = context/NUM_FRAMES; break;
+   default:
+      break;
+   }
+   return index;
+}
+
 Int4 BLAST_GetQueryLength(const BlastQueryInfo* query_info, Int4 context)
 {
    return query_info->context_offsets[context+1] -
@@ -684,6 +702,20 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
    sfree(query_info->eff_searchsp_array);
    sfree(query_info);
    return NULL;
+}
+
+BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info)
+{
+   BlastQueryInfo* retval = BlastMemDup(query_info, sizeof(BlastQueryInfo));
+   Int4 num_contexts = query_info->last_context + 1;
+
+   retval->context_offsets = 
+      BlastMemDup(query_info->context_offsets, (num_contexts+1)*sizeof(Int4));
+   retval->length_adjustments = 
+      BlastMemDup(query_info->length_adjustments, num_contexts*sizeof(Int4));
+   retval->eff_searchsp_array = 
+      BlastMemDup(query_info->eff_searchsp_array, num_contexts*sizeof(Int8));
+   return retval;
 }
 
 /** Convert a sequence in ncbi4na or blastna encoding into a packed sequence
