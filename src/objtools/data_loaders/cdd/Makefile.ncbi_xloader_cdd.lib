@@ -1,0 +1,8 @@
+# $Id$
+
+# Build library "xloader_cdd"
+###############################
+
+LIB = xloader_cdd
+SRC = cdd
+
