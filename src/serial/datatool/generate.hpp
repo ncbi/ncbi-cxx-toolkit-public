@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/12/09 20:01:23  vasilche
+* Fixed bug with missed internal classes.
+*
 * Revision 1.7  1999/11/15 19:36:15  vasilche
 * Fixed warnings on GCC
 *
@@ -113,12 +116,13 @@ protected:
     static void GetTypes(TTypeNames& typeNames, const string& name);
 
     enum EContext {
-        eOther,
         eRoot,
         eChoice,
-        eReference
+        eReference,
+        eElement,
+        eMember
     };
-    void CollectTypes(const CDataType* type, EContext context = eOther );
+    void CollectTypes(const CDataType* type, EContext context );
     bool AddType(const CDataType* type);
 
 private:

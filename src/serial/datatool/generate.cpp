@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/12/09 20:01:23  vasilche
+* Fixed bug with missed internal classes.
+*
 * Revision 1.19  1999/12/03 21:42:12  vasilche
 * Fixed conflict of enums in choices.
 *
@@ -279,14 +282,14 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         dynamic_cast<const CUniSequenceDataType*>(type);
     if ( array != 0 ) {
         // SET OF or SEQUENCE OF
-        if ( context != eOther ) {
+        if ( type->GetParentType() == 0 || context == eChoice ) {
             if ( !AddType(type) )
                 return;
         }
         if ( m_ExcludeRecursion )
             return;
         // we should add element type
-        CollectTypes(array->GetElementType());
+        CollectTypes(array->GetElementType(), eElement);
         return;
     }
 
@@ -316,7 +319,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
                 AddType(user);
             }
         }
-        else if ( context == eRoot ) {
+        else if ( type->GetParentType() == 0 ) {
             // alias declaration
             // generate empty class
             AddType(user);
@@ -327,16 +330,21 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         return;
     }
 
-    if ( dynamic_cast<const CStaticDataType*>(type) != 0 ||
-         dynamic_cast<const CEnumDataType*>(type) != 0 ) {
+    if ( dynamic_cast<const CStaticDataType*>(type) != 0 ) {
         // STD type
-        if ( context != eOther ) {
+        if ( type->GetParentType() == 0 || context == eChoice ) {
             AddType(type);
         }
         return;
     }
 
-    if ( context != eOther ) {
+    if ( dynamic_cast<const CEnumDataType*>(type) != 0 ) {
+        // ENUMERATED type
+        AddType(type);
+        return;
+    }
+
+    if ( type->GetParentType() == 0 || context == eChoice ) {
         if ( type->Skipped() ) {
             ERR_POST(Warning << "Skipping type: " << type->IdName());
             return;
@@ -363,10 +371,8 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
     const CDataMemberContainerType* cont =
         dynamic_cast<const CDataMemberContainerType*>(type);
     if ( cont != 0 ) {
-        if ( context != eOther ) {
-            if ( !AddType(type) )
-                return;
-        }
+        if ( !AddType(type) )
+            return;
 
         if ( m_ExcludeRecursion )
             return;
@@ -375,7 +381,7 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         iterate ( CDataMemberContainerType::TMembers, mi,
                   cont->GetMembers() ) {
             const CDataType* memberType = mi->get()->GetType();
-            CollectTypes(memberType);
+            CollectTypes(memberType, eMember);
         }
         return;
     }
