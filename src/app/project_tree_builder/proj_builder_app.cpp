@@ -36,6 +36,7 @@
 #include <app/project_tree_builder/proj_utils.hpp>
 #include <app/project_tree_builder/msvc_configure.hpp>
 #include <app/project_tree_builder/msvc_prj_defines.hpp>
+#include <app/project_tree_builder/msvc_configure_prj_generator.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -154,12 +155,29 @@ int CProjBulderApp::Run(void)
                                                CDirEntry(m_Solution).GetDir());
     master_prj_gen.SaveProject("_MasterProject");
 
+    // ConfigureProject
+    string output_dir = GetProjectTreeInfo().m_Compilers;
+    output_dir = CDirEntry::ConcatPath(output_dir, 
+                                       GetRegSettings().m_CompilersSubdir);
+    output_dir = CDirEntry::ConcatPath(output_dir, "bin");
+    output_dir = CDirEntry::AddTrailingPathSeparator(output_dir);
+    CMsvcConfigureProjectGenerator configure_generator
+                                      (output_dir,
+                                       GetRegSettings().m_ConfigInfo,
+                                       CDirEntry(m_Solution).GetDir(),
+                                       GetProjectTreeInfo().m_Root,
+                                       GetArgs()["subtree"].AsString(),
+                                       GetArgs()["solution"].AsString());
+    configure_generator.SaveProject("_CONFIGURE_");
+
+
     // Solution
     CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
     ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
         sln_gen.AddProject(p->second);
     }
-    sln_gen.AddMasterProject("_MasterProject");
+    sln_gen.AddMasterProject   ("_MasterProject");
+    sln_gen.AddConfigureProject("_CONFIGURE_");
     sln_gen.SaveSolution(m_Solution);
 
     //
@@ -421,6 +439,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/02/12 16:27:10  gorelenk
+ * Added _CONFIGURE_ project generation.
+ *
  * Revision 1.14  2004/02/11 15:40:44  gorelenk
  * Implemented support for multiple implicit excludes from source tree.
  *
