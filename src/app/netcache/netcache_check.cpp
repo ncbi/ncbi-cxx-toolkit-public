@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/netcache_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -163,6 +163,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/22 18:55:18  kuznets
+ * Reflecting changes in connect library layout
+ *
  * Revision 1.2  2005/02/15 19:07:48  kuznets
  * IsAlive call removed
  *

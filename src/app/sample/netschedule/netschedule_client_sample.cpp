@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/netschedule_client.hpp>
+#include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_types.h>
@@ -223,6 +223,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 18:56:36  kuznets
+ * Reflecting changes in connect library layout
+ *
  * Revision 1.1  2005/03/07 17:32:47  kuznets
  * Initial revision
  *

@@ -52,7 +52,7 @@
 
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
-#include <connect/netcache_client.hpp>
+#include <connect/services/netcache_client.hpp>
 
 #if defined(NCBI_OS_UNIX)
 # include <signal.h>
@@ -1248,6 +1248,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/03/22 18:55:18  kuznets
+ * Reflecting changes in connect library layout
+ *
  * Revision 1.45  2005/03/21 20:12:05  kuznets
  * Fixed race condition with setting accept timeout
  *

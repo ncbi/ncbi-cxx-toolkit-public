@@ -37,7 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
-#include <connect/netcache_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -143,6 +143,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/22 18:55:18  kuznets
+ * Reflecting changes in connect library layout
+ *
  * Revision 1.4  2005/01/05 17:47:13  kuznets
  * Use correct client name
  *
