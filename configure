@@ -1756,14 +1756,14 @@ fi
 rm -f conftest*
 echo "$ac_t""" 1>&6
 
-echo $ac_n "checking if the auto_ptr template class is not implemented""... $ac_c" 1>&6
-echo "configure:1761: checking if the auto_ptr template class is not implemented" >&5
+echo $ac_n "checking if the auto_ptr template class is poor or not implemented""... $ac_c" 1>&6
+echo "configure:1761: checking if the auto_ptr template class is poor or not implemented" >&5
 cat > conftest.$ac_ext <<EOF
 #line 1763 "configure"
 #include "confdefs.h"
 #include <memory>
 int main() {
-int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap; 
+int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); 
 ; return 0; }
 EOF
 if { (eval echo configure:1770: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then

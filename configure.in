@@ -215,10 +215,10 @@ AC_TRY_COMPILE(
 )
 AC_MSG_RESULT()
 
-AC_MSG_CHECKING(if the auto_ptr template class is not implemented)
+AC_MSG_CHECKING(if the auto_ptr template class is poor or not implemented)
 AC_TRY_COMPILE(
    [#include <memory>],
-   [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap; ],
+   [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
    ,
    AC_DEFINE_UNQUOTED(HAVE_NO_AUTO_PTR, 1)
 )
