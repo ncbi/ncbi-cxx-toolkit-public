@@ -1360,6 +1360,20 @@ void CValidError_imp::ValidateBioSource
 }
 
 
+bool CValidError_imp::IsTransgenic(const CBioSource& bsrc)
+{
+    if (bsrc.CanGetSubtype()) {
+        ITERATE (CBioSource::TSubtype, sub, bsrc.GetSubtype()) {
+            if ((*sub)->GetSubtype() == CSubSource::eSubtype_transgenic) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+
 void CValidError_imp::ValidateCitSub
 (const CCit_sub& cs,
  const CSerialObject& obj)
@@ -2456,6 +2470,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/07/29 17:09:04  shomrat
+* + IsTransgenic()
+*
 * Revision 1.54  2004/07/29 16:08:47  shomrat
 * Separated error message from offending object's description; Added error group
 *
