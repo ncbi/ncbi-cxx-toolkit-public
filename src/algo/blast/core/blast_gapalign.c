@@ -3253,15 +3253,10 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    gap_align->sbp->posMatrix = orig_pssm;
       
    /* Remove any HSPs that share a starting or ending diagonal
-      with a higher-scoring HSP. Do not perform this step with RPS
-      blast, because the alignments can change during the traceback
-      and thus may not share any diagonals later */
-
-   if (is_prot && program_number != eBlastTypeRpsBlast) {
-      hsp_list->hspcnt = 
-         CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
-            hsp_list->hspcnt);
-   }
+      with a higher-scoring HSP. */
+   hsp_list->hspcnt = 
+       CheckGappedAlignmentsForOverlap(hsp_list->hsp_array, 
+                                       hsp_list->hspcnt);
 
    /* Sort the HSP array by score */
    Blast_HSPListSortByScore(hsp_list);
