@@ -1,32 +1,32 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Christiam Camacho
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ * ===========================================================================
+ */
 
 /// @file blast_setup_cxx.cpp
 /// Auxiliary setup functions for Blast objects interface.
@@ -444,222 +444,225 @@ END_NCBI_SCOPE
 /* @} */
 
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.70  2004/07/06 15:49:30  dondosha
-* Added GetProgramFromBlastProgramType function
-*
-* Revision 1.69  2004/06/02 15:59:14  bealer
-* - Isolate objmgr dependent code.
-*
-* Revision 1.68  2004/05/21 21:41:02  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.67  2004/04/19 19:52:02  papadopo
-* correct off-by-one error in sequence size computation
-*
-* Revision 1.66  2004/04/16 14:28:49  papadopo
-* add use of eRPSBlast and eRPSTblastn programs
-*
-* Revision 1.65  2004/04/07 03:06:15  camacho
-* Added blast_encoding.[hc], refactoring blast_stat.[hc]
-*
-* Revision 1.64  2004/04/06 20:45:28  dondosha
-* Added function FindBlastDbPath: should be moved to seqdb library
-*
-* Revision 1.63  2004/03/24 19:14:48  dondosha
-* Fixed memory leaks
-*
-* Revision 1.62  2004/03/19 19:22:55  camacho
-* Move to doxygen group AlgoBlast, add missing CVS logs at EOF
-*
-* Revision 1.61  2004/03/15 19:57:52  dondosha
-* SetupSubjects takes just program argument instead of CBlastOptions*
-*
-* Revision 1.60  2004/03/11 17:26:46  dicuccio
-* Use NStr::ToUpper() instead of transform
-*
-* Revision 1.59  2004/03/09 18:53:25  dondosha
-* Do not set db length and number of sequences options to real values - these are calculated and assigned to parameters structure fields
-*
-* Revision 1.58  2004/03/06 00:39:47  camacho
-* Some refactorings, changed boolen parameter to enum in GetSequence
-*
-* Revision 1.57  2004/02/24 18:14:56  dondosha
-* Set the maximal length in the set of queries, when filling BlastQueryInfo structure
-*
-* Revision 1.56  2004/02/18 15:16:28  camacho
-* Consolidated ncbi2na mask definition
-*
-* Revision 1.55  2004/01/07 17:39:27  vasilche
-* Fixed include path to genbank loader.
-*
-* Revision 1.54  2003/12/29 17:00:57  camacho
-* Update comment
-*
-* Revision 1.53  2003/12/15 19:55:14  camacho
-* Minor fix to ensure exception safety
-*
-* Revision 1.52  2003/12/03 16:43:47  dondosha
-* Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
-*
-* Revision 1.51  2003/11/26 18:36:45  camacho
-* Renaming blast_option*pp -> blast_options*pp
-*
-* Revision 1.50  2003/11/26 18:24:00  camacho
-* +Blast Option Handle classes
-*
-* Revision 1.49  2003/11/24 17:12:44  dondosha
-* Query info structure does not have a total_length member any more; use last context offset
-*
-* Revision 1.48  2003/11/06 21:25:37  camacho
-* Revert previous change, add assertions
-*
-* Revision 1.47  2003/11/04 17:14:22  dondosha
-* Length in subject sequence block C structure should not include sentinels
-*
-* Revision 1.46  2003/10/31 19:45:03  camacho
-* Fix setting of subject sequence length
-*
-* Revision 1.45  2003/10/31 16:53:32  dondosha
-* Set length in query sequence block correctly
-*
-* Revision 1.44  2003/10/29 04:46:16  camacho
-* Use fixed AutoPtr for GetSequence return value
-*
-* Revision 1.43  2003/10/27 21:27:36  camacho
-* Remove extra argument to GetSequenceView, minor refactorings
-*
-* Revision 1.42  2003/10/22 14:21:55  camacho
-* Added sanity checking assertions
-*
-* Revision 1.41  2003/10/21 13:04:54  camacho
-* Fix bug in SetupSubjects, use sequence blk set functions
-*
-* Revision 1.40  2003/10/16 13:38:54  coulouri
-* use anonymous exceptions to fix unreferenced variable compiler warning
-*
-* Revision 1.39  2003/10/15 18:18:00  camacho
-* Fix to setup query info structure for proteins
-*
-* Revision 1.38  2003/10/15 15:09:32  camacho
-* Changes from Mike DiCuccio to use GetSequenceView to retrieve sequences.
-*
-* Revision 1.37  2003/10/08 15:13:56  dondosha
-* Test if subject mask is not NULL before converting to a C structure
-*
-* Revision 1.36  2003/10/08 15:05:47  dondosha
-* Test if mask is not NULL before converting to a C structure
-*
-* Revision 1.35  2003/10/07 17:34:05  dondosha
-* Add lower case masks to SSeqLocs forming the vector of sequence locations
-*
-* Revision 1.34  2003/10/03 16:12:18  dondosha
-* Fix in previous change for plus strand search
-*
-* Revision 1.33  2003/10/02 22:10:46  dondosha
-* Corrections for one-strand translated searches
-*
-* Revision 1.32  2003/09/30 03:23:18  camacho
-* Fixes to FindMatrixPath
-*
-* Revision 1.31  2003/09/29 21:38:29  camacho
-* Assign retval only when successfully found path to matrix
-*
-* Revision 1.30  2003/09/29 20:35:03  camacho
-* Replace abort() with exception in GetNumberOfFrames
-*
-* Revision 1.29  2003/09/16 16:48:13  dondosha
-* Use BLAST_PackDNA and BlastSetUp_SeqBlkNew from the core blast library for setting up subject sequences
-*
-* Revision 1.28  2003/09/12 17:52:42  camacho
-* Stop using pair<> as return value from GetSequence
-*
-* Revision 1.27  2003/09/11 20:55:01  camacho
-* Temporary fix for AutoPtr return value
-*
-* Revision 1.26  2003/09/11 17:45:03  camacho
-* Changed CBlastOption -> CBlastOptions
-*
-* Revision 1.25  2003/09/10 04:27:43  camacho
-* 1) Minor change to return type of GetSequence
-* 2) Fix to previous revision
-*
-* Revision 1.24  2003/09/09 22:15:02  dondosha
-* Added cast in return statement in GetSequence method, fixing compiler error
-*
-* Revision 1.23  2003/09/09 15:57:23  camacho
-* Fix indentation
-*
-* Revision 1.22  2003/09/09 14:21:39  coulouri
-* change blastkar.h to blast_stat.h
-*
-* Revision 1.21  2003/09/09 12:57:15  camacho
-* + internal setup functions, use smart pointers to handle memory mgmt
-*
-* Revision 1.20  2003/09/05 19:06:31  camacho
-* Use regular new to allocate genetic code string
-*
-* Revision 1.19  2003/09/03 19:36:27  camacho
-* Fix include path for blast_setup.hpp
-*
-* Revision 1.18  2003/08/28 22:42:54  camacho
-* Change BLASTGetSequence signature
-*
-* Revision 1.17  2003/08/28 15:49:02  madden
-* Fix for packing DNA as well as correct buflen
-*
-* Revision 1.16  2003/08/25 16:24:14  camacho
-* Updated BLASTGetMatrixPath
-*
-* Revision 1.15  2003/08/19 17:39:07  camacho
-* Minor fix to use of metaregistry class
-*
-* Revision 1.14  2003/08/18 20:58:57  camacho
-* Added blast namespace, removed *__.hpp includes
-*
-* Revision 1.13  2003/08/14 13:51:24  camacho
-* Use CMetaRegistry class to load the ncbi config file
-*
-* Revision 1.12  2003/08/11 15:17:39  dondosha
-* Added algo/blast/core to all #included headers
-*
-* Revision 1.11  2003/08/11 14:00:41  dicuccio
-* Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
-* BEGIN_NCBI_SCOPE block)
-*
-* Revision 1.10  2003/08/08 19:43:07  dicuccio
-* Compilation fixes: #include file rearrangement; fixed use of 'list' and
-* 'vector' as variable names; fixed missing ostrea<< for __int64
-*
-* Revision 1.9  2003/08/04 15:18:23  camacho
-* Minor fixes
-*
-* Revision 1.8  2003/08/01 22:35:02  camacho
-* Added function to get matrix path (fixme)
-*
-* Revision 1.7  2003/08/01 17:40:56  dondosha
-* Use renamed functions and structures from local blastkar.h
-*
-* Revision 1.6  2003/07/31 19:45:33  camacho
-* Eliminate Ptr notation
-*
-* Revision 1.5  2003/07/30 15:00:01  camacho
-* Do not use Malloc/MemNew/MemFree
-*
-* Revision 1.4  2003/07/25 13:55:58  camacho
-* Removed unnecessary #includes
-*
-* Revision 1.3  2003/07/24 18:22:50  camacho
-* #include blastkar.h
-*
-* Revision 1.2  2003/07/23 21:29:06  camacho
-* Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
-*
-* Revision 1.1  2003/07/10 18:34:19  camacho
-* Initial revision
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.71  2004/08/02 13:28:28  camacho
+ * Minor
+ *
+ * Revision 1.70  2004/07/06 15:49:30  dondosha
+ * Added GetProgramFromBlastProgramType function
+ *
+ * Revision 1.69  2004/06/02 15:59:14  bealer
+ * - Isolate objmgr dependent code.
+ *
+ * Revision 1.68  2004/05/21 21:41:02  gorelenk
+ * Added PCH ncbi_pch.hpp
+ *
+ * Revision 1.67  2004/04/19 19:52:02  papadopo
+ * correct off-by-one error in sequence size computation
+ *
+ * Revision 1.66  2004/04/16 14:28:49  papadopo
+ * add use of eRPSBlast and eRPSTblastn programs
+ *
+ * Revision 1.65  2004/04/07 03:06:15  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
+ * Revision 1.64  2004/04/06 20:45:28  dondosha
+ * Added function FindBlastDbPath: should be moved to seqdb library
+ *
+ * Revision 1.63  2004/03/24 19:14:48  dondosha
+ * Fixed memory leaks
+ *
+ * Revision 1.62  2004/03/19 19:22:55  camacho
+ * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
+ *
+ * Revision 1.61  2004/03/15 19:57:52  dondosha
+ * SetupSubjects takes just program argument instead of CBlastOptions*
+ *
+ * Revision 1.60  2004/03/11 17:26:46  dicuccio
+ * Use NStr::ToUpper() instead of transform
+ *
+ * Revision 1.59  2004/03/09 18:53:25  dondosha
+ * Do not set db length and number of sequences options to real values - these are calculated and assigned to parameters structure fields
+ *
+ * Revision 1.58  2004/03/06 00:39:47  camacho
+ * Some refactorings, changed boolen parameter to enum in GetSequence
+ *
+ * Revision 1.57  2004/02/24 18:14:56  dondosha
+ * Set the maximal length in the set of queries, when filling BlastQueryInfo structure
+ *
+ * Revision 1.56  2004/02/18 15:16:28  camacho
+ * Consolidated ncbi2na mask definition
+ *
+ * Revision 1.55  2004/01/07 17:39:27  vasilche
+ * Fixed include path to genbank loader.
+ *
+ * Revision 1.54  2003/12/29 17:00:57  camacho
+ * Update comment
+ *
+ * Revision 1.53  2003/12/15 19:55:14  camacho
+ * Minor fix to ensure exception safety
+ *
+ * Revision 1.52  2003/12/03 16:43:47  dondosha
+ * Renamed BlastMask to BlastMaskLoc, BlastResults to BlastHSPResults
+ *
+ * Revision 1.51  2003/11/26 18:36:45  camacho
+ * Renaming blast_option*pp -> blast_options*pp
+ *
+ * Revision 1.50  2003/11/26 18:24:00  camacho
+ * +Blast Option Handle classes
+ *
+ * Revision 1.49  2003/11/24 17:12:44  dondosha
+ * Query info structure does not have a total_length member any more; use last context offset
+ *
+ * Revision 1.48  2003/11/06 21:25:37  camacho
+ * Revert previous change, add assertions
+ *
+ * Revision 1.47  2003/11/04 17:14:22  dondosha
+ * Length in subject sequence block C structure should not include sentinels
+ *
+ * Revision 1.46  2003/10/31 19:45:03  camacho
+ * Fix setting of subject sequence length
+ *
+ * Revision 1.45  2003/10/31 16:53:32  dondosha
+ * Set length in query sequence block correctly
+ *
+ * Revision 1.44  2003/10/29 04:46:16  camacho
+ * Use fixed AutoPtr for GetSequence return value
+ *
+ * Revision 1.43  2003/10/27 21:27:36  camacho
+ * Remove extra argument to GetSequenceView, minor refactorings
+ *
+ * Revision 1.42  2003/10/22 14:21:55  camacho
+ * Added sanity checking assertions
+ *
+ * Revision 1.41  2003/10/21 13:04:54  camacho
+ * Fix bug in SetupSubjects, use sequence blk set functions
+ *
+ * Revision 1.40  2003/10/16 13:38:54  coulouri
+ * use anonymous exceptions to fix unreferenced variable compiler warning
+ *
+ * Revision 1.39  2003/10/15 18:18:00  camacho
+ * Fix to setup query info structure for proteins
+ *
+ * Revision 1.38  2003/10/15 15:09:32  camacho
+ * Changes from Mike DiCuccio to use GetSequenceView to retrieve sequences.
+ *
+ * Revision 1.37  2003/10/08 15:13:56  dondosha
+ * Test if subject mask is not NULL before converting to a C structure
+ *
+ * Revision 1.36  2003/10/08 15:05:47  dondosha
+ * Test if mask is not NULL before converting to a C structure
+ *
+ * Revision 1.35  2003/10/07 17:34:05  dondosha
+ * Add lower case masks to SSeqLocs forming the vector of sequence locations
+ *
+ * Revision 1.34  2003/10/03 16:12:18  dondosha
+ * Fix in previous change for plus strand search
+ *
+ * Revision 1.33  2003/10/02 22:10:46  dondosha
+ * Corrections for one-strand translated searches
+ *
+ * Revision 1.32  2003/09/30 03:23:18  camacho
+ * Fixes to FindMatrixPath
+ *
+ * Revision 1.31  2003/09/29 21:38:29  camacho
+ * Assign retval only when successfully found path to matrix
+ *
+ * Revision 1.30  2003/09/29 20:35:03  camacho
+ * Replace abort() with exception in GetNumberOfFrames
+ *
+ * Revision 1.29  2003/09/16 16:48:13  dondosha
+ * Use BLAST_PackDNA and BlastSetUp_SeqBlkNew from the core blast library for setting up subject sequences
+ *
+ * Revision 1.28  2003/09/12 17:52:42  camacho
+ * Stop using pair<> as return value from GetSequence
+ *
+ * Revision 1.27  2003/09/11 20:55:01  camacho
+ * Temporary fix for AutoPtr return value
+ *
+ * Revision 1.26  2003/09/11 17:45:03  camacho
+ * Changed CBlastOption -> CBlastOptions
+ *
+ * Revision 1.25  2003/09/10 04:27:43  camacho
+ * 1) Minor change to return type of GetSequence
+ * 2) Fix to previous revision
+ *
+ * Revision 1.24  2003/09/09 22:15:02  dondosha
+ * Added cast in return statement in GetSequence method, fixing compiler error
+ *
+ * Revision 1.23  2003/09/09 15:57:23  camacho
+ * Fix indentation
+ *
+ * Revision 1.22  2003/09/09 14:21:39  coulouri
+ * change blastkar.h to blast_stat.h
+ *
+ * Revision 1.21  2003/09/09 12:57:15  camacho
+ * + internal setup functions, use smart pointers to handle memory mgmt
+ *
+ * Revision 1.20  2003/09/05 19:06:31  camacho
+ * Use regular new to allocate genetic code string
+ *
+ * Revision 1.19  2003/09/03 19:36:27  camacho
+ * Fix include path for blast_setup.hpp
+ *
+ * Revision 1.18  2003/08/28 22:42:54  camacho
+ * Change BLASTGetSequence signature
+ *
+ * Revision 1.17  2003/08/28 15:49:02  madden
+ * Fix for packing DNA as well as correct buflen
+ *
+ * Revision 1.16  2003/08/25 16:24:14  camacho
+ * Updated BLASTGetMatrixPath
+ *
+ * Revision 1.15  2003/08/19 17:39:07  camacho
+ * Minor fix to use of metaregistry class
+ *
+ * Revision 1.14  2003/08/18 20:58:57  camacho
+ * Added blast namespace, removed *__.hpp includes
+ *
+ * Revision 1.13  2003/08/14 13:51:24  camacho
+ * Use CMetaRegistry class to load the ncbi config file
+ *
+ * Revision 1.12  2003/08/11 15:17:39  dondosha
+ * Added algo/blast/core to all #included headers
+ *
+ * Revision 1.11  2003/08/11 14:00:41  dicuccio
+ * Indenting changes.  Fixed use of C++ namespaces (USING_SCOPE(objects) inside of
+ * BEGIN_NCBI_SCOPE block)
+ *
+ * Revision 1.10  2003/08/08 19:43:07  dicuccio
+ * Compilation fixes: #include file rearrangement; fixed use of 'list' and
+ * 'vector' as variable names; fixed missing ostrea<< for __int64
+ *
+ * Revision 1.9  2003/08/04 15:18:23  camacho
+ * Minor fixes
+ *
+ * Revision 1.8  2003/08/01 22:35:02  camacho
+ * Added function to get matrix path (fixme)
+ *
+ * Revision 1.7  2003/08/01 17:40:56  dondosha
+ * Use renamed functions and structures from local blastkar.h
+ *
+ * Revision 1.6  2003/07/31 19:45:33  camacho
+ * Eliminate Ptr notation
+ *
+ * Revision 1.5  2003/07/30 15:00:01  camacho
+ * Do not use Malloc/MemNew/MemFree
+ *
+ * Revision 1.4  2003/07/25 13:55:58  camacho
+ * Removed unnecessary #includes
+ *
+ * Revision 1.3  2003/07/24 18:22:50  camacho
+ * #include blastkar.h
+ *
+ * Revision 1.2  2003/07/23 21:29:06  camacho
+ * Update BLASTFindGeneticCode to get genetic code string with C++ toolkit
+ *
+ * Revision 1.1  2003/07/10 18:34:19  camacho
+ * Initial revision
+ *
+ *
+ * ===========================================================================
+ */
