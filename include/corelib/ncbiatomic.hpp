@@ -45,22 +45,17 @@
 #  include <CarbonCore/DriverSynchronization.h>
 #endif
 
+BEGIN_NCBI_SCOPE
+
 /** @addtogroup Threads
  *
  * @{
  */
 
-
-BEGIN_NCBI_SCOPE
-
-/// Set *location to new_value, and return its immediately previous contents.
-void* SwapPointers(void * volatile * location, void* new_value);
-
 /// Out-of-line implementation; defined and used ifdef NCBI_SLOW_ATOMIC_SWAP.
 void* x_SwapPointers(void * volatile * location, void* new_value);
 
 
-/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -75,7 +70,10 @@ void* x_SwapPointers(void * volatile * location, void* new_value);
 // asm is awkward and a lot of platforms supply compare-and-swap but
 // no suitable unconditional swap.  It also doesn't help that standard
 // interfaces are typically for integral types.
-#if !defined(NCBI_COMPILER_WORKSHOP)  ||  defined(NCBI_COUNTER_IMPLEMENTATION)  ||  defined(NCBI_NO_THREADS)
+#if defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(NCBI_NO_THREADS)  &&  !defined(NCBI_COUNTER_IMPLEMENTATION)
+/// Set *location to new_value, and return its immediately previous contents.
+void* SwapPointers(void * volatile * location, void* new_value);
+#else
 #  if defined(NCBI_COMPILER_WORKSHOP)  &&  !defined(NCBI_NO_THREADS)
 #    ifdef __sparcv9
 extern "C"
@@ -178,6 +176,8 @@ void* SwapPointers(void * volatile * location, void* new_value)
 }
 #endif
 
+/* @} */
+
 
 END_NCBI_SCOPE
 
@@ -186,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/09 21:02:48  ucko
+ * Only predeclare SwapPointers when not inlining it, to avoid a warning.
+ *
  * Revision 1.3  2003/10/02 12:35:08  ucko
  * Always define SwapPointers (as inline) for ST WorkShop builds.
  *
