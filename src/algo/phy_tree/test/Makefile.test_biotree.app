@@ -8,8 +8,13 @@ REQUIRES = objects
 
 APP = test_biotree
 SRC = test_biotree
-LIB = taxon1 seq seqset seqcode pub biblio pubmed \
-      medline general biotree xalgophytree xser xutil xconnect xncbi
+LIB = xalgophytree biotree fastme taxon1 xalnmgr xconnect tables \
+      $(SOBJMGR_LIBS)
+
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS = $(FAST_LDFLAGS)
+
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 #CHECK_CMD = test_biotree
 #CHECK_TIMEOUT = 500
