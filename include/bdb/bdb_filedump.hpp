@@ -67,42 +67,50 @@ public:
         eDropNames
     };
 
+    /// Control field names printing
     void SetColumnNames(EPrintFieldNames print_names);
-
+    
+    enum EValueFormatting
+    {
+        eNoQuotes,
+        eQuoteStrings,
+        eQuoteAll
+    };
+        
+    void SetValueFormatting(EValueFormatting vf);
+	
     /// Convert BDB file into text file
     void Dump(const string& dump_file_name, CBDB_File& db);
 
     /// Convert BDB file into text and write it into the specified stream
     void Dump(CNcbiOstream& out, CBDB_File& db);
+    
+    /// Dump BDB cursor to stream
+    void Dump(CNcbiOstream& out, CBDB_FileCursor& cur);
+protected:
+        
+    void PrintHeader(CNcbiOstream& out,
+                     const CBDB_BufferManager* key,
+                     const CBDB_BufferManager* data);
 
+private:
+    void x_SetQuoteFlags(vector<unsigned>*         flags, 
+                         const CBDB_BufferManager& bman);
+
+    void x_DumpFields(CNcbiOstream&             out, 
+                      const CBDB_BufferManager& bman,
+                      const vector<unsigned>&   quote_flags, 
+                      bool                      is_key);
+	
+        
 protected:
     string               m_ColumnSeparator;
     EPrintFieldNames     m_PrintNames;
+    EValueFormatting     m_ValueFormatting;
 }; 
 
 /* @} */
 
-
-
-inline
-CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
-: m_ColumnSeparator(col_separator),
-  m_PrintNames(ePrintNames) 
-{
-}
-
-inline
-CBDB_FileDumper::CBDB_FileDumper(const CBDB_FileDumper& fdump)
-: m_ColumnSeparator(fdump.m_ColumnSeparator)
-{
-}
-
-inline
-CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
-{
-    m_ColumnSeparator = fdump.m_ColumnSeparator;
-    return *this;
-}
 
 inline
 void CBDB_FileDumper::SetColumnSeparator(const string& col_separator)
@@ -116,6 +124,11 @@ void CBDB_FileDumper::SetColumnNames(EPrintFieldNames print_names)
     m_PrintNames = print_names;
 }
 
+inline
+void CBDB_FileDumper::SetValueFormatting(EValueFormatting vf)
+{
+    m_ValueFormatting = vf;
+}
 
 
 END_NCBI_SCOPE
@@ -125,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/21 15:08:27  kuznets
+ * file dumper changed to work with cursors
+ *
  * Revision 1.3  2003/10/28 14:56:51  kuznets
  * Added option to print field names when dumping the data
  *

@@ -38,6 +38,28 @@
 
 BEGIN_NCBI_SCOPE
 
+CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
+: m_ColumnSeparator(col_separator),
+  m_PrintNames(ePrintNames),
+  m_ValueFormatting(eNoQuotes)
+{
+}
+
+CBDB_FileDumper::CBDB_FileDumper(const CBDB_FileDumper& fdump)
+: m_ColumnSeparator(fdump.m_ColumnSeparator),
+  m_PrintNames(fdump.m_PrintNames),
+  m_ValueFormatting(fdump.m_ValueFormatting)
+{
+}
+
+CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
+{
+    m_ColumnSeparator = fdump.m_ColumnSeparator;
+	m_PrintNames = fdump.m_PrintNames;
+	m_ValueFormatting = fdump.m_ValueFormatting;
+    return *this;
+}
+
 void CBDB_FileDumper::Dump(const string& dump_file_name, CBDB_File& db)
 {
     CNcbiOfstream out(dump_file_name.c_str());
@@ -52,61 +74,138 @@ void CBDB_FileDumper::Dump(const string& dump_file_name, CBDB_File& db)
 
 void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_File& db)
 {
-    const CBDB_BufferManager* key  = db.GetKeyBuffer();
-    const CBDB_BufferManager* data = db.GetDataBuffer();
-
-    // Print header
-    if (m_PrintNames == ePrintNames) {
-        if (key) {
-            for (unsigned i = 0; i < key->FieldCount(); ++i) {
-                const CBDB_Field& fld = key->GetField(i);
-                if (i != 0)
-                    out << m_ColumnSeparator;
-                out << fld.GetName();
-            }
-        }
-
-        if (data) {
-            for (unsigned i = 0; i < data->FieldCount(); ++i) {
-                const CBDB_Field& fld = data->GetField(i);
-                out << m_ColumnSeparator << fld.GetName();
-            }
-        }
-        out << endl;
-    }
-
     // Print values
     CBDB_FileCursor cur(db);
     cur.SetCondition(CBDB_FileCursor::eFirst);
+	
+    Dump(out, cur);
+}
 
+void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
+{
+    CBDB_File& db = cur.GetDBFile();
+	
+    const CBDB_BufferManager* key  = db.GetKeyBuffer();
+    const CBDB_BufferManager* data = db.GetDataBuffer();
+	
+    vector<unsigned> key_quote_flags;
+    vector<unsigned> data_quote_flags;
+
+    if (key) {
+        x_SetQuoteFlags(&key_quote_flags, *key);
+    }
+    if (data) {
+        x_SetQuoteFlags(&data_quote_flags, *data);
+    }
+	
+	
+    // Print header
+    if (m_PrintNames == ePrintNames) {
+        PrintHeader(out, key, data);
+    }
+	
     while (cur.Fetch() == eBDB_Ok) {
-
         if (key) {
-            for (unsigned i = 0; i < key->FieldCount(); ++i) {
-                const CBDB_Field& fld = key->GetField(i);
-                if (i != 0)
-                    out << m_ColumnSeparator;
-                out << fld.GetString();
-            }
+            x_DumpFields(out, *key, key_quote_flags, true/*key*/);
         }
 
         if (data) {
-            for (unsigned i = 0; i < data->FieldCount(); ++i) {
-                const CBDB_Field& fld = data->GetField(i);
-                out << m_ColumnSeparator << fld.GetString();
-            }
+            x_DumpFields(out, *data, data_quote_flags, false/*not key*/);
         }
-        out << endl;
-
+        out << NcbiEndl;
     }
+	
 }
 
+static const string kNullStr = "NULL";
+
+void CBDB_FileDumper::x_DumpFields(CNcbiOstream&             out, 
+                                   const CBDB_BufferManager& bman, 
+                                   const vector<unsigned>&   quote_flags, 
+                                   bool                      is_key)
+{
+    for (unsigned i = 0; i < bman.FieldCount(); ++i) {
+        const CBDB_Field& fld = bman.GetField(i);
+        if (is_key) {
+            if (i != 0)
+                out << m_ColumnSeparator;
+        } else {
+            out << m_ColumnSeparator;
+        }
+        
+	unsigned qf = quote_flags[i];
+    	if (qf) {
+	    out << '"';
+    	}
+        out << (fld.IsNull() ? kNullStr : fld.GetString());
+        
+    	if (qf) {    
+	    out << '"';
+    	}
+    }
+}        
+
+
+void CBDB_FileDumper::PrintHeader(CNcbiOstream& out,
+		                          const CBDB_BufferManager* key,
+				 				  const CBDB_BufferManager* data)
+{
+    if (key) {
+        for (unsigned i = 0; i < key->FieldCount(); ++i) {
+            const CBDB_Field& fld = key->GetField(i);
+            if (i != 0)
+                out << m_ColumnSeparator;
+            out << fld.GetName();
+        }
+    }
+
+    if (data) {
+        for (unsigned i = 0; i < data->FieldCount(); ++i) {
+            const CBDB_Field& fld = data->GetField(i);
+            out << m_ColumnSeparator << fld.GetName();
+        }
+    }
+    out << NcbiEndl;
+}		
+
+void CBDB_FileDumper::x_SetQuoteFlags(vector<unsigned>*         flags, 
+ 		                              const CBDB_BufferManager& bman)
+{
+    flags->resize(0);
+    for (unsigned i = 0; i < bman.FieldCount(); ++i) {
+        switch (m_ValueFormatting) {
+        case eNoQuotes:
+            flags->push_back(0);
+            break;
+        case eQuoteAll:
+            flags->push_back(1);
+            break;
+        case eQuoteStrings:
+            {
+            const CBDB_Field& fld = bman.GetField(i);
+            const CBDB_FieldStringBase* bstr = 
+		            dynamic_cast<const CBDB_FieldStringBase*>(&fld);
+            flags->push_back(bstr ? 1 : 0);
+            }
+            break;
+        default:
+            _ASSERT(0);
+        } // switch
+
+    } // for
+	
+}
+		
+		
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/21 15:08:46  kuznets
+ * file dumper changed to work with cursors
+ *
  * Revision 1.3  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
