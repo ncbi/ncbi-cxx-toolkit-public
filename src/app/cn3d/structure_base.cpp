@@ -26,83 +26,73 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      Classes to hold sets of structure data
+*      Base class for structure data
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.5  2000/07/01 15:44:23  thiessen
+* Revision 1.1  2000/07/01 15:47:18  thiessen
 * major improvements to StructureBase functionality
-*
-* Revision 1.4  2000/06/29 19:18:19  thiessen
-* improved atom map
-*
-* Revision 1.3  2000/06/29 14:35:20  thiessen
-* new atom_set files
-*
-* Revision 1.2  2000/06/28 13:08:13  thiessen
-* store alt conf ensembles
-*
-* Revision 1.1  2000/06/27 20:08:14  thiessen
-* initial checkin
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_STRUCTURESET__HPP
-#define CN3D_STRUCTURESET__HPP
-
-#include <string>
-
-#include <serial/serial.hpp>            
-#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
-#include <objects/mmdb1/Biostruc.hpp>
-
 #include "cn3d/structure_base.hpp"
 
 USING_NCBI_SCOPE;
-using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-class StructureObject;
-
-class StructureSet : public StructureBase
+// store children in parent upon construction
+StructureBase::StructureBase(StructureBase *parent) :
+    _flags(_eVisible)
 {
-public:
-    StructureSet(const CNcbi_mime_asn1& mime);
-    ~StructureSet(void);
+    //TESTMSG("in StructureBase::StructureBase()");
+    if (parent)
+        parent->_AddChild(this);
+//    else
+//        ERR_POST(Warning << "NULL parent passed to StructureBase constructor");
+}
 
-    // public data
-    typedef LIST_TYPE < const StructureObject * > ObjectList;
-    ObjectList objects;
-
-    // public methods
-    void Draw(void) const;
-
-private:
-};
-
-class AtomSet;
-
-class StructureObject : public StructureBase
+// delete children then own data upon destruction
+StructureBase::~StructureBase(void)
 {
-public:
-    StructureObject(StructureBase *parent, const CBiostruc& biostruc, bool master);
-    ~StructureObject(void);
+    TESTMSG("in StructureBase::~StructureBase(), _children.size()=" << _children.size());
+    _ChildList::iterator i, e=_children.end();
+    for (i=_children.begin(); i!=e; i++) 
+        delete (*i).first;
+}
 
-    // public data
-    const bool isMaster;
-    int mmdbID;
-    std::string pdbID;
-    typedef LIST_TYPE < const AtomSet * > AtomSetList;
-    AtomSetList atomSets;
+// draws the object and all its children
+void StructureBase::DrawAll(void) const
+{
+    if (IsVisible()) {
+        Draw();
+        _ChildList::const_iterator i, e=_children.end();
+        for (i=_children.begin(); i!=e; i++) 
+            ((*i).first)->DrawAll();
+        PostDraw();
+    }
+}
 
-    // public methods
-    void Draw(void) const;
+// every StructureBase object stored will get a unique ID (although it's
+// not really useful or accessible at the moment... just need something to map to)
+static int id = 1;
 
-private:
-};
+void StructureBase::_AddChild(StructureBase *child)
+{
+    _ChildList::const_iterator i = _children.find(child);
+    if (i == _children.end())
+        _children[child] = id++;
+    else
+        ERR_POST(Warning << "attempted to add child more than once");
+}
+
+void StructureBase::_RemoveChild(StructureBase *child)
+{
+    _ChildList::iterator i = _children.find(child);
+    if (i != _children.end())
+        _children.erase(i);
+}
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_STRUCTURESET__HPP

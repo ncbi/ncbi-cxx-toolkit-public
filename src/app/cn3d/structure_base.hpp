@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/01 15:44:23  thiessen
+* major improvements to StructureBase functionality
+*
 * Revision 1.3  2000/06/29 19:18:19  thiessen
 * improved atom map
 *
@@ -45,6 +48,8 @@
 #ifndef CN3D_STRUCTUREBASE__HPP
 #define CN3D_STRUCTUREBASE__HPP
 
+#include <map>
+
 // container type used for various lists
 #include <deque>
 #define LIST_TYPE deque
@@ -56,23 +61,54 @@ USING_NCBI_SCOPE;
 #define TESTMSG(stream) ERR_POST(Info << stream)
 //#define TESTMSG(stream)
 
-// convenience macros for lists of StructureBase-derived objects
-#define DELETE_ALL(theClass, theList) \
-    for (theClass::iterator i=(theList).begin(), e=(theList).end(); i!=e; i++) delete *i   
-
-#define DRAW_ALL(theClass, theList) \
-    for (theClass::const_iterator i=(theList).begin(), e=(theList).end(); i!=e; i++) (*i)->Draw()
-
 
 BEGIN_SCOPE(Cn3D)
 
 class StructureBase
 {
 public:
-    // pure virtual so can't instantiate this class; implemented in StructureSet.cpp
-    virtual ~StructureBase(void) = 0;
-    virtual void Draw(void) const { TESTMSG("can't draw this class!"); }
+    // will store StructureBase-derived children in parent upon construction
+    StructureBase(StructureBase *parent);
+
+    // will automatically delete children upon destruction with this desctuctor.
+    // But note that derived classes can have their own constructors that will
+    // *also* be called upon deletion; derived class destructors should *not*
+    // delete any StructureBase-derived objects.
+    virtual ~StructureBase(void);
+
+    // Draws the object (if visible) and all its children - do not override!
+    void DrawAll(void) const;
+
+    // function to draw this object, called before children are Drawn
+    virtual void Draw(void) const { ERR_POST(Fatal << "in StructureBase::Draw()"); }
+
+    // called after this object and its children have been Drawn
+    virtual void PostDraw(void) const { TESTMSG("in PostDraw()"); }
+
 private:
+    // no default construction
+    StructureBase(void);
+
+    // keep track of StructureBase-derived children, so that top-down operations
+    // like drawing or deconstructing can trickle down automatically
+    typedef map < StructureBase * , int > _ChildList;
+    _ChildList _children;
+    void _AddChild(StructureBase *child);
+    void _RemoveChild(StructureBase *child);
+
+    // misc flags
+    enum _eFlags {
+        _eVisible = 1
+    };
+    unsigned char _flags;
+
+public:
+    // to set/query flags
+    bool IsVisible(void) const { return (_flags & _eVisible); }
+    void SetVisible(bool on)
+    {
+        _flags = (on ? (_flags | _eVisible) : (_flags & ~_eVisible));
+    }
 };
 
 END_SCOPE(Cn3D)

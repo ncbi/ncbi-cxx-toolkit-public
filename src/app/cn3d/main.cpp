@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/01 15:43:50  thiessen
+* major improvements to StructureBase functionality
+*
 * Revision 1.3  2000/06/29 19:17:47  thiessen
 * improved atom map
 *
@@ -76,9 +79,9 @@ int CCn3DApp::Run() {
     *inObject >> mime;
 
     // Create StructureSet from mime data
-    StructureSet strucSet = StructureSet(mime);
+    StructureSet strucSet(mime);
 
-    //strucSet.Draw();
+    strucSet.DrawAll();
 
     return 0;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/01 15:44:23  thiessen
+* major improvements to StructureBase functionality
+*
 * Revision 1.2  2000/06/29 19:18:19  thiessen
 * improved atom map
 *
@@ -63,8 +66,8 @@ BEGIN_SCOPE(Cn3D)
 class Atom : public StructureBase
 {
 public:
-    Atom(void);
-    //~Atom(void);
+    Atom(StructureBase *parent);
+    ~Atom(void);
 
     // public data
     Vector site;
@@ -84,7 +87,7 @@ private:
 class AtomSet : public StructureBase
 {
 public:
-    AtomSet(const CAtomic_coordinates& coords);
+    AtomSet(StructureBase *parent, const CAtomic_coordinates& coords);
     ~AtomSet(void);
 
     // public data
@@ -95,26 +98,23 @@ public:
     void Draw(void) const;
     const Atom* GetAtomPntr(int moleculeID, int residueID, 
                             int atomID, char altConfID = ATOM_NO_ALTCONFID) const;
-    bool HasTemp(void) const { return (nAtoms>0 && atomList[0].HasTemp()); }
-    bool HasOccup(void) const { return (nAtoms>0 && atomList[0].HasOccup()); }
-    bool HasAlt(void) const { return (nAtoms>0 && atomList[0].HasAlt()); }
 
 private:
-    AtomSet(void);
-
-    int nAtoms;
-    Atom *atomList;
-    
     // this provides a convenient way to look up atoms from Atom-pntr info
     typedef std::pair < int, std::pair < int, std::pair < int, char > > > AtomPntrKey;
     AtomPntrKey MakeKey(int moleculeID, int residueID, int atomID, char altID) const
     {
         return std::make_pair(moleculeID, std::make_pair(residueID, std::make_pair(atomID, altID))); 
     }
-    typedef std::map < AtomPntrKey, const Atom * > AtomPntrMap;
-    AtomPntrMap atomMap;
+    typedef std::map < AtomPntrKey, const Atom * > AtomMap;
+    AtomMap atomMap;
+
+public:
+    bool HasTemp(void) const { return (atomMap.size()>0 && (*(atomMap.begin())).second->HasTemp()); }
+    bool HasOccup(void) const { return (atomMap.size()>0 && (*(atomMap.begin())).second->HasOccup()); }
+    bool HasAlt(void) const { return (atomMap.size()>0 && (*(atomMap.begin())).second->HasAlt()); }
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_STRUCTURESET__HPP
+#endif // CN3D_ATOMSET__HPP

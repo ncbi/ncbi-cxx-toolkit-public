@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/01 15:43:50  thiessen
+* major improvements to StructureBase functionality
+*
 * Revision 1.2  2000/06/29 19:17:47  thiessen
 * improved atom map
 *
@@ -58,14 +61,11 @@ using namespace objects;
 
 BEGIN_SCOPE(Cn3D)
 
-AtomSet::AtomSet(const CAtomic_coordinates& coords)
+AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
+    StructureBase(parent)
 {
-    nAtoms = coords.GetNumber_of_points();
+    int nAtoms = coords.GetNumber_of_points();
     TESTMSG("model has " << nAtoms << " atomic coords");
-
-    atomList = new Atom[nAtoms];
-    if (!atomList)
-        ERR_POST(Fatal << "AtomSet: out of memory");
 
     bool haveTemp = coords.IsSetTemperature_factors(),
          haveOccup = coords.IsSetOccupancies(),
@@ -146,19 +146,21 @@ AtomSet::AtomSet(const CAtomic_coordinates& coords)
 
     // actually do the work of unpacking serial atom data into Atom objects
     for (int i=0; i<nAtoms; i++) {
-        atomList[i].site.x = (static_cast<double>(*(i_X++)))/siteScale;
-        atomList[i].site.y = (static_cast<double>(*(i_Y++)))/siteScale;
-        atomList[i].site.z = (static_cast<double>(*(i_Z++)))/siteScale;
+        Atom *atom = new Atom(this);
+
+        atom->site.x = (static_cast<double>(*(i_X++)))/siteScale;
+        atom->site.y = (static_cast<double>(*(i_Y++)))/siteScale;
+        atom->site.z = (static_cast<double>(*(i_Z++)))/siteScale;
         if (haveOccup)
-            atomList[i].occupancy = (static_cast<double>(*((*i_occup)++)))/occupScale;
+            atom->occupancy = (static_cast<double>(*((*i_occup)++)))/occupScale;
         if (haveAlt)
-            atomList[i].altConfID = (*((*i_alt)++)).GetObject().Get()[0];
+            atom->altConfID = (*((*i_alt)++)).GetObject().Get()[0];
         if (haveTemp) {
             if (coords.GetTemperature_factors().IsIsotropic()) {
-                atomList[i].averageTemperature =
+                atom->averageTemperature =
                     (static_cast<double>(*((*i_tempI)++)))/tempScale;
             } else {
-                atomList[i].averageTemperature = (
+                atom->averageTemperature = (
                     (static_cast<double>(*((*i_tempA11)++))) +
                     (static_cast<double>(*((*i_tempA12)++))) +
                     (static_cast<double>(*((*i_tempA13)++))) +
@@ -167,22 +169,24 @@ AtomSet::AtomSet(const CAtomic_coordinates& coords)
                     (static_cast<double>(*((*i_tempA33)++)))) / (tempScale * 6.0);
             }
         }
+
         // store pointer in map - key must be unique
         const AtomPntrKey& key = MakeKey(
             (*(i_mID++)).GetObject().Get(),
             (*(i_rID++)).GetObject().Get(),
             (*(i_aID++)).GetObject().Get(),
-            atomList[i].altConfID);
+            atom->altConfID);
         if (atomMap.find(key) != atomMap.end())
             ERR_POST(Fatal << "confused by repeated atom pntr");
-        atomMap[key] = &(atomList[i]);
+        atomMap[key] = atom;
+
+        if (i==0) TESTMSG("first atom: x " << atom->site.x << 
+                ", y " << atom->site.y << 
+                ", z " << atom->site.z <<
+                ", occup " << atom->occupancy <<
+                ", altConfId '" << atom->altConfID << "'" <<
+                ", temp " << atom->averageTemperature);
     }
-    TESTMSG("first atom: x " << atomList[0].site.x << 
-            ", y " << atomList[0].site.y << 
-            ", z " << atomList[0].site.z <<
-			", occup " << atomList[0].occupancy <<
-            ", altConfId '" << atomList[0].altConfID << "'" <<
-            ", temp " << atomList[0].averageTemperature);
 
     // get alternate conformer ensembles; store as string of altID characters
     if (haveAlt && coords.IsSetConf_ensembles()) {
@@ -206,20 +210,17 @@ AtomSet::AtomSet(const CAtomic_coordinates& coords)
 
 AtomSet::~AtomSet(void)
 {
-    delete atomList;
-    DELETE_ALL(EnsembleList, ensembles);
+    TESTMSG("deleting AtomSet");
 }
 
 void AtomSet::Draw(void) const
 {
-    // draw all atoms
-    TESTMSG("drawing atom set");
-    for (int i=0; i<nAtoms; i++) atomList[i].Draw();
+    TESTMSG("drawing AtomSet");
 }
 
 const Atom* AtomSet::GetAtomPntr(int mID, int rID, int aID, char altID) const
 {
-    AtomPntrMap::const_iterator atom = atomMap.find(MakeKey(mID, rID, aID, altID));
+    AtomMap::const_iterator atom = atomMap.find(MakeKey(mID, rID, aID, altID));
     if (atom != atomMap.end())
         return (*atom).second;
     ERR_POST(Warning << "can't find atom (" << mID << ',' 
@@ -227,15 +228,22 @@ const Atom* AtomSet::GetAtomPntr(int mID, int rID, int aID, char altID) const
     return NULL;
 }
 
-Atom::Atom(void) : 
+Atom::Atom(StructureBase *parent) : 
+	StructureBase(parent),
     averageTemperature(ATOM_NO_TEMPERATURE),
     occupancy(ATOM_NO_OCCUPANCY),
     altConfID(ATOM_NO_ALTCONFID)
 {
 }
 
+Atom::~Atom(void)
+{
+    TESTMSG("deleting Atom");
+}
+
 void Atom::Draw(void) const
 {
+    TESTMSG("drawing Atom");
 }
 
 END_SCOPE(Cn3D)
