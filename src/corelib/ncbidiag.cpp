@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/01/23 23:20:42  lavr
+* MSVS++ -> MSVC++
+*
 * Revision 1.24  2000/11/16 23:52:41  vakatov
 * Porting to Mac...
 *
@@ -108,7 +111,7 @@
 * Adaptation for the SunPro compiler glitchs(see conf. #NO_INCLASS_TMPL)
 *
 * Revision 1.2  1998/10/30 20:08:37  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
+* Fixes to (first-time) compile and test-run on MSVC++
 * ==========================================================================
 */
 
