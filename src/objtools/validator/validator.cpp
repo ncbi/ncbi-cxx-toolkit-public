@@ -497,588 +497,588 @@ const string CValidErrItem::sm_Verbose [] = {
 
 /* SEQ_INST */
 
+//  SEQ_INST_ExtNotAllowed
 "A Bioseq 'extension' is used for special classes of Bioseq. This class \
 of Bioseq should not have one but it does. This is probably a software \
 error.",
-
+//  SEQ_INST_ExtBadOrMissing
 "This class of Bioseq requires an 'extension' but it is missing or of \
 the wrong type. This is probably a software error.",
-
+//  SEQ_INST_SeqDataNotFound
 "No actual sequence data was found on this Bioseq. This is probably a \
 software problem.",
-
+//  SEQ_INST_SeqDataNotAllowed
 "The wrong type of sequence data was found on this Bioseq. This is \
 probably a software problem.",
-
+//  SEQ_INST_ReprInvalid
 "This Bioseq has an invalid representation class. This is probably a \
 software error.",
-
+//  SEQ_INST_CircularProtein
 "This protein Bioseq is represented as circular. Circular topology is \
 normally used only for certain DNA molecules, for example, plasmids.",
-
+//  SEQ_INST_DSProtein
 "This protein Bioseq has strandedness indicated. Strandedness is \
 normally a property only of DNA sequences. Please unset the \
 strandedness.",
-
+//  SEQ_INST_MolNotSet
 "It is not clear whether this sequence is nucleic acid or protein. \
 Please set the appropriate molecule type (Bioseq.mol).",
-
+//  SEQ_INST_MolOther
 "Most sequences are either nucleic acid or protein. However, the \
 molecule type (Bioseq.mol) is set to 'other'. It should probably be set \
 to nucleic acid or a protein.",
+//  SEQ_INST_FuzzyLen
 "This sequence is marked as having an uncertain length, but the length \
 is known exactly.",
-
+//  SEQ_INST_InvalidLen
 "The length indicated for this sequence is invalid. This is probably a \
 software error.",
-
+//  SEQ_INST_InvalidAlphabet
 "This Bioseq has an invalid alphabet (e.g. protein codes on a nucleic \
 acid or vice versa). This is probably a software error.",
-
+//  SEQ_INST_SeqDataLenWrong
 "The length of this Bioseq does not agree with the length of the actual \
 data. This is probably a software error.",
-
+//  SEQ_INST_SeqPortFail
 "Something is very wrong with this entry. The validator cannot open a \
 SeqPort on the Bioseq. Further testing cannot be done.",
-
+//  SEQ_INST_InvalidResidue
 "Invalid residue codes were found in this Bioseq.",
-
+//  SEQ_INST_StopInProtein
 "Stop codon symbols were found in this protein Bioseq.",
-
+//  SEQ_INST_PartialInconsistent
 "This segmented sequence is described as complete or incomplete in \
 several places, but these settings are inconsistent.",
-
+//  SEQ_INST_ShortSeq
 "This Bioseq is unusually short (less than 4 amino acids or less than 11 \
 nucleic acids). GenBank does not usually accept such short sequences.",
-
+//  SEQ_INST_NoIdOnBioseq
 "No SeqIds were found on this Bioseq. This is probably a software \
 error.",
-
+//  SEQ_INST_BadDeltaSeq
 "Delta sequences should only be HTGS-1 or HTGS-2.",
-
+//  SEQ_INST_LongHtgsSequence
 "HTGS-1 or HTGS-2 sequences must be < 350 KB in length.",
-
+//  SEQ_INST_LongLiteralSequence
 "Delta literals must be < 350 KB in length.",
-
+//  SEQ_INST_SequenceExceeds350kbp
 "Individual sequences must be < 350 KB in length, unless they represent \
 a single gene.",
-
+//  SEQ_INST_ConflictingIdsOnBioseq
 "Two SeqIds of the same class was found on this Bioseq. This is probably \
 a software error.",
-
+//  SEQ_INST_MolNuclAcid
 "The specific type of this nucleic acid (DNA or RNA) is not set.",
-
+//  SEQ_INST_ConflictingBiomolTech
 "HTGS/STS/GSS records should be genomic DNA. There is a conflict between \
 the technique and expected molecule type.",
-
+//  SEQ_INST_SeqIdNameHasSpace
 "The Seq-id.name field should be a single word without any whitespace. \
 This should be fixed by the database staff.",
-
+//  SEQ_INST_IdOnMultipleBioseqs
 "There are multiple occurrences of the same Seq-id in this record. \
 Sequence identifiers must be unique within a record.",
-
+//  SEQ_INST_DuplicateSegmentReferences
 "The segmented sequence refers multiple times to the same Seq-id. This \
 may be due to a software error. Please consult with the database staff \
 to fix this record.",
-
+//  SEQ_INST_TrailingX
 "The protein sequence ends with one or more X (unknown) amino acids.",
-
+//  SEQ_INST_BadSeqIdFormat
 "A nucleotide sequence identifier should be 1 letter plus 5 digits or 2 \
 letters plus 6 digits, and a protein sequence identifer should be 3 \
 letters plus 5 digits.",
-
+//  SEQ_INST_PartsOutOfOrder
 "The parts inside a segmented set should correspond to the seq_ext of \
 the segmented bioseq. A difference will affect how the flatfile is \
 displayed.",
-
+//  SEQ_INST_BadSecondaryAccn
 "A secondary accession usually indicates a record replaced or subsumed \
 by the current record. In this case, the current accession and \
 secondary are the same.",
-
+//  SEQ_INST_ZeroGiNumber
 "GI numbers are assigned to sequences by NCBI's sequence tracking \
 database. 0 is not a legal value for a gi number.",
-
+//  SEQ_INST_RnaDnaConflict
 "The MolInfo biomol field is inconsistent with the Bioseq molecule type \
 field.",
-
+//  SEQ_INST_HistoryGiCollision
 "The Bioseq history gi refers to this Bioseq, not to its predecessor or \
 successor.",
-
+//  SEQ_INST_GiWithoutAccession
 "The Bioseq has a gi identifier but no GenBank/EMBL/DDBJ accession \
 identifier.",
-
+//  SEQ_INST_MultipleAccessions
 "The Bioseq has a gi identifier and more than one GenBank/EMBL/DDBJ \
 accession identifier.",
-
+//  SEQ_INST_HistAssemblyMissing
 "The Bioseq has a TPA identifier but does not have a Seq-hist.assembly alignment. \
 This should be annotated or calculated by the database, resulting in a PRIMARY \
 block visible in the flatfile.",
-
+//  SEQ_INST_TerminalNs
 "The Bioseq has one or more N bases at the end.",
-
+//  SEQ_INST_UnexpectedIdentifierChange
 "The set of sequence identifiers on a Bioseq are not consistent with the \
 previous version of the record in the database.",
 
 /* SEQ_DESCR */
 
+//  SEQ_DESCR_BioSourceMissing
 "The biological source of this sequence has not been described \
 correctly. A Bioseq must have a BioSource descriptor that covers the \
 entire molecule. Additional BioSource features may also be added to \
 recombinant molecules, natural or otherwise, to designate the parts of \
 the molecule. Please add the source information.",
-
+//  SEQ_DESCR_InvalidForType
 "This descriptor cannot be used with this Bioseq. A descriptor placed at \
 the BioseqSet level applies to all of the Bioseqs in the set. Please \
 make sure the descriptor is consistent with every sequence to which it \
 applies.",
-
+//  SEQ_DESCR_FileOpenCollision
 "FileOpen is unable to find a local file. This is normal, and can be \
 ignored.",
-
+//  SEQ_DESCR_Unknown
 "An unknown or 'other' modifier was used.",
-
+//  SEQ_DESCR_NoPubFound
 "No publications were found in this entry which refer to this Bioseq. If \
 a publication descriptor is added to a BioseqSet, it will apply to all \
 of the Bioseqs in the set. A publication feature should be used if the \
 publication applies only to a subregion of a sequence.",
-
+//  SEQ_DESCR_NoOrgFound
 "This entry does not specify the organism that was the source of the \
 sequence. Please name the organism.",
-
+//  SEQ_DESCR_MultipleBioSources
 "There are multiple BioSource or OrgRef descriptors in the same chain \
 with the same taxonomic name. Their information should be combined into \
 a single BioSource descriptor.",
-
+//  SEQ_DESCR_NoMolInfoFound
 "This sequence does not have a Mol-info descriptor applying to it. This \
 indicates genomic vs. message, sequencing technique, and whether the \
 sequence is incomplete.",
-
+//  SEQ_DESCR_BadCountryCode
 "The country code (up to the first colon) is not on the approved list of \
 countries.",
-
+//  SEQ_DESCR_NoTaxonID
 "The BioSource is missing a taxonID database identifier. This will be \
 inserted by the automated taxonomy lookup called by Clean Up Record.",
-
+//  SEQ_DESCR_InconsistentBioSources
 "This population study has BioSource descriptors with different \
 taxonomic names. All members of a population study should be from the \
 same organism.",
-
+//  SEQ_DESCR_MissingLineage
 "A BioSource should have a taxonomic lineage, which can be obtained from \
 the taxonomy network server.",
-
+//  SEQ_DESCR_SerialInComment
 "Comments that refer to the conclusions of a specific reference should \
 not be cited by a serial number inside brackets (e.g., [3]), but should \
 instead be attached as a REMARK on the reference itself.",
-
+//  SEQ_DESCR_BioSourceNeedsFocus
 "Focus must be set on a BioSource descriptor in records where there is a \
 BioSource feature with a different organism name.",
-
+//  SEQ_DESCR_BadOrganelle
 "Note that only Kinetoplastida have kinetoplasts, and that only \
 Chlorarchniophyta and Cryptophyta have nucleomorphs.",
-
+//  SEQ_DESCR_MultipleChromosomes
 "There are multiple chromosome qualifiers on this Bioseq. With the \
 exception of some pseudoautosomal genes, this is likely to be a \
 biological annotation error.",
-
+//  SEQ_DESCR_BadSubSource
 "Unassigned SubSource subtype.",
-
+//  SEQ_DESCR_BadOrgMod
 "Unassigned OrgMod subtype.",
-
+//  SEQ_DESCR_InconsistentProteinTitle
 "An instantiated protein title descriptor should normally be the same as \
 the automatically generated title. This may be a curated exception, or \
 it may be out of synch with the current annotation.",
-
+//  SEQ_DESCR_Inconsistent
 "There are two descriptors of the same type which are inconsistent with \
 each other. Please make them consistent.",
-
+//  SEQ_DESCR_ObsoleteSourceLocation
 "There is a source location that is no longer legal for use in GenBank \
 records.",
-
+//  SEQ_DESCR_ObsoleteSourceQual
 "There is a source qualifier that is no longer legal for use in GenBank \
 records.",
-
+//  SEQ_DESCR_StructuredSourceNote
 "The name of a structured source field is present as text in a note. \
 The data should probably be put into the appropriate field instead.",
-
+//  SEQ_DESCR_MultipleTitles
 "There are multiple title descriptors in the same chain.",
-
+//  SEQ_DESCR_Obsolete
 "Obsolete descriptor type.",
-
+//  SEQ_DESCR_UnnecessaryBioSourceFocus
 "Focus should not be set on a BioSource descriptor in records where there is no \
 BioSource feature.",
 
 /* SEQ_GENERIC */
 
+//  GENERIC_NonAsciiAsn
 "There is a non-ASCII type character in this entry.",
-
+//  GENERIC_Spell
 "There is a potentially misspelled word in this entry.",
-
+//  GENERIC_AuthorListHasEtAl
 "The author list contains et al, which should be replaced with the \
 remaining author names.",
-
+//  GENERIC_MissingPubInfo
 "The publication is missing essential information, such as title or \
 authors.",
-
+//  GENERIC_UnnecessaryPubEquiv
 "A nested Pub-equiv is not normally expected in a publication. This may \
 prevent proper display of all publication information.",
-
+//  GENERIC_BadPageNumbering
 "The publication page numbering is suspect.",
 
 /* SEQ_PKG */
 
+//  SEQ_PKG_NoCdRegionPtr
 "A protein is found in this entry, but the coding region has not been \
 described. Please add a CdRegion feature to the nucleotide Bioseq.",
-
+//  SEQ_PKG_NucProtProblem
 "Both DNA and protein sequences were expected, but one of the two seems \
 to be missing. Perhaps this is the wrong package to use.",
-
+//  SEQ_PKG_SegSetProblem
 "A segmented sequence was expected, but it was not found. Perhaps this \
 is the wrong package to use.",
-
+//  SEQ_PKG_EmptySet
 "No Bioseqs were found in this BioseqSet. Is that what was intended?",
-
+//  SEQ_PKG_NucProtNotSegSet
 "A nuc-prot set should not contain any other BioseqSet except segset.",
-
+//  SEQ_PKG_SegSetNotParts
 "A segset should not contain any other BioseqSet except parts.",
-
+//  SEQ_PKG_SegSetMixedBioseqs
 "A segset should not contain both nucleotide and protein Bioseqs.",
-
+//  SEQ_PKG_PartsSetMixedBioseqs
 "A parts set should not contain both nucleotide and protein Bioseqs.",
-
+//  SEQ_PKG_PartsSetHasSets
 "A parts set should not contain BioseqSets.",
-
+//  SEQ_PKG_FeaturePackagingProblem
 "A feature should be packaged on its bioseq, or on a set containing the \
 Bioseq.",
-
+//  SEQ_PKG_GenomicProductPackagingProblem
 "The product of an mRNA feature in a genomic product set should point to \
 a cDNA Bioseq packaged in the set, perhaps within a nuc-prot set. \
 RefSeq records may however be referenced remotely.",
-
+//  SEQ_PKG_InconsistentMolInfoBiomols
 "Mol-info.biomol is inconsistent within a segset or parts set.",
 
 /* SEQ_FEAT */
 
+//  SEQ_FEAT_InvalidForType
 "This feature type is illegal on this type of Bioseq.",
-
+//  SEQ_FEAT_PartialProblem
 "There are several places in an entry where a sequence can be described \
 as either partial or complete. In this entry, these settings are \
 inconsistent. Make sure that the location and product Seq-locs, the \
 Bioseqs, and the SeqFeat partial flag all agree in describing this \
 SeqFeat as partial or complete.",
-
+//  SEQ_FEAT_InvalidType
 "A feature with an invalid type has been detected. This is most likely a \
 software problem.",
-
+//  SEQ_FEAT_Range
 "The coordinates describing the location of a feature do not fall within \
 the sequence itself. A feature location or a product Seq-loc is out of \
 range of the Bioseq it points to.",
-
+//  SEQ_FEAT_MixedStrand
 "Mixed strands (plus and minus) have been found in the same location. \
 While this is biologically possible, it is very unusual. Please check \
 that this is really what you mean.",
-
+//  SEQ_FEAT_SeqLocOrder
 "This location has intervals that are out of order. While whis is \
 biologically possible, it is very unusual. Please check that this is \
 really what you mean.",
-
+//  SEQ_FEAT_CdTransFail
 "A fundamental error occurred in software while attempting to translate \
 this coding region. It is either a software problem or sever data \
 corruption.",
-
+//  SEQ_FEAT_StartCodon
 "An illegal start codon was used. Some possible explanations are: (1) \
 the wrong genetic code may have been selected; (2) the wrong reading \
 frame may be in use; or (3) the coding region may be incomplete at the \
 5' end, in which case a partial location should be indicated.",
-
+//  SEQ_FEAT_InternalStop
 "Internal stop codons are found in the protein sequence. Some possible \
 explanations are: (1) the wrong genetic code may have been selected; (2) \
 the wrong reading frame may be in use; (3) the coding region may be \
 incomplete at the 5' end, in which case a partial location should be \
 indicated; or (4) the CdRegion feature location is incorrect.",
-
+//  SEQ_FEAT_NoProtein
 "Normally a protein sequence is supplied. This sequence can then be \
 compared with the translation of the coding region. In this entry, no \
 protein Bioseq was found, and the comparison could not be made.",
-
+ //  SEQ_FEAT_MisMatchAA
 "The protein sequence that was supplied is not identical to the \
 translation of the coding region. Mismatching amino acids are found \
 between these two sequences.",
-
+//  SEQ_FEAT_TransLen
 "The protein sequence that was supplied is not the same length as the \
 translation of the coding region. Please determine why they are \
 different.",
-
+//  SEQ_FEAT_NoStop
 "A coding region that is complete should have a stop codon at the 3'end. \
  A stop codon was not found on this sequence, although one was \
 expected.",
-
+//  SEQ_FEAT_TranslExcept
 "An unparsed transl_except qualifier was found. This indicates a parser \
 problem.",
-
+//  SEQ_FEAT_NoProtRefFound
 "The name and description of the protein is missing from this entry. \
 Every protein Bioseq must have one full-length Prot-ref feature to \
 provide this information.",
-
+//  SEQ_FEAT_NotSpliceConsensus
 "Splice junctions typically have GT as the first two bases of the intron \
 (splice donor) and AG as the last two bases of the intron (splice \
 acceptor). This intron does not conform to that pattern.",
-
+//  SEQ_FEAT_OrfCdsHasProduct
 "A coding region flagged as orf has a protein product. There should be \
 no protein product bioseq on an orf.",
-
+//  SEQ_FEAT_GeneRefHasNoData
 "A gene feature exists with no locus name or other fields filled in.",
-
+//  SEQ_FEAT_ExceptInconsistent
 "A coding region has an exception gbqual but the excpt flag is not \
 set.",
-
+//  SEQ_FEAT_ProtRefHasNoData
 "A protein feature exists with no name or other fields filled in.",
-
+//  SEQ_FEAT_GenCodeMismatch
 "The genetic code stored in the BioSource is different than that for \
 this CDS.",
-
+//  SEQ_FEAT_RNAtype0
 "RNA type 0 (unknown RNA) should be type 255 (other).",
-
+//  SEQ_FEAT_UnknownImpFeatKey
 "An import feature has an unrecognized key.",
-
+//  SEQ_FEAT_UnknownImpFeatQual
 "An import feature has an unrecognized qualifier.",
-
+//  SEQ_FEAT_WrongQualOnImpFeat
 "This qualifier is not legal for this feature.",
-
+//  SEQ_FEAT_MissingQualOnImpFeat
 "An essential qualifier for this feature is missing.",
-
+//  SEQ_FEAT_PsuedoCdsHasProduct
 "A coding region flagged as pseudo has a protein product. There should \
 be no protein product bioseq on a pseudo CDS.",
-
+//  SEQ_FEAT_IllegalDbXref
 "The database in a cross-reference is not on the list of officially \
 recognized database abbreviations.",
-
+//  SEQ_FEAT_FarLocation
 "The location has a reference to a bioseq that is not packaged in this \
 record.",
-
+//  SEQ_FEAT_DuplicateFeat
 "The intervals on this feature are identical to another feature of the \
 same type, but the label or comment are different.",
-
+//  SEQ_FEAT_UnnecessaryGeneXref
 "This feature has a gene xref that is identical to the overlapping gene. \
 This is redundant, and probably should be removed.",
-
+//  SEQ_FEAT_TranslExceptPhase
 "A /transl_except qualifier was not on a codon boundary.",
-
+//  SEQ_FEAT_TrnaCodonWrong
 "The tRNA codon recognized does not code for the indicated amino acid \
 using the specified genetic code.",
-
+//  SEQ_FEAT_BothStrands
 "Feature location indicates that it is on both strands. This is not \
 biologically possible for this kind of feature. Please indicate the \
 correct strand (plus or minus) for this feature.",
-
+//  SEQ_FEAT_CDSgeneRange
 "A CDS is overlapped by a gene feature, but is not completely contained \
 by it. This may be an annotation error.",
-
+//  SEQ_FEAT_CDSmRNArange
 "A CDS is overlapped by an mRNA feature, but the mRNA does not cover all \
 intervals (i.e., exons) on the CDS. This may be an annotation error.",
-
+//  SEQ_FEAT_OverlappingPeptideFeat
 "The intervals on this processed protein feature overlap another protein \
 feature. This may be caused by errors in originally annotating these \
 features on DNA coordinates, where start or stop positions do not occur \
 in between codon boundaries. These then appear as errors when the \
 features are converted to protein coordinates by mapping through the \
 CDS.",
-
+//  SEQ_FEAT_SerialInComment
 "Comments that refer to the conclusions of a specific reference should \
 not be cited by a serial number inside brackets (e.g., [3]), but should \
 instead be attached as a REMARK on the reference itself.",
-
+//  SEQ_FEAT_MultipleCDSproducts
 "More than one CDS feature points to the same protein product. This can \
 happen with viral long terminal repeats (LTRs), but GenBank policy is to \
 have each equivalent CDS point to a separately accessioned protein \
 Bioseq.",
-
+//  SEQ_FEAT_FocusOnBioSourceFeature
 "The /focus flag is only appropriate on BioSource descriptors, not \
 BioSource features.",
-
+//  SEQ_FEAT_PeptideFeatOutOfFrame
 "The start or stop positions of this processed peptide feature do not \
 occur in between codon boundaries. This may incorrectly overlap other \
 peptides when the features are converted to protein coordinates by \
 mapping through the CDS.",
-
+//  SEQ_FEAT_InvalidQualifierValue
 "The value of this qualifier is constrained to a particular vocabulary \
 of style. This value does not conform to those constraints. Please see \
-the feature table documentation",
-
-"for more information.",
-
+the feature table documentation for more information.",
+//  SEQ_FEAT_MultipleMRNAproducts
 "More than one mRNA feature points to the same cDNA product. This is an \
 error in the genomic product set. Each mRNA feature should have a \
 unique product Bioseq.",
-
+//  SEQ_FEAT_mRNAgeneRange
 "An mRNA is overlapped by a gene feature, but is not completely \
 contained by it. This may be an annotation error.",
-
+//  SEQ_FEAT_TranscriptLen
 "The mRNA sequence that was supplied is not the same length as the \
 transcription of the mRNA feature. Please determine why they are \
 different.",
-
+//  SEQ_FEAT_TranscriptMismatches
 "The mRNA sequence and the transcription of the mRNA feature are \
 different. If the number is large, it may indicate incorrect intron/exon \
 boundaries.",
-
+//  SEQ_FEAT_CDSproductPackagingProblem
 "The nucleotide location and protein product of the CDS are not packaged \
 together in the same nuc-prot set. This may be an error in the software \
-used to create",
-
-"the record.",
-
+used to create the record.",
+//  SEQ_FEAT_DuplicateInterval
 "The location has identical adjacent intervals, e.g., a duplicate exon \
 reference.",
-
+//  SEQ_FEAT_PolyAsiteNotPoint
 "A polyA_site should be at a single nucleotide position.",
-
+//  SEQ_FEAT_ImpFeatBadLoc
 "An import feature loc field does not equal the feature location. This \
 should be corrected, and then the loc field should be cleared.",
-
+//  SEQ_FEAT_LocOnSegmentedBioseq
 "Feature locations traditionally go on the individual parts of a \
 segmented bioseq, not on the segmented sequence itself. These features \
 are invisible in asn2ff reports, and are now being flagged for \
 correction.",
-
+//  SEQ_FEAT_UnnecessaryCitPubEquiv
 "A set of citations on a feature should not normally have a nested \
 Pub-equiv construct. This may prevent proper matching to the correct \
 publication.",
-
+//  SEQ_FEAT_ImpCDShasTranslation
 "A CDS that has known translation errors cannot have a /translation \
 qualifier.",
-
+//  SEQ_FEAT_ImpCDSnotPseudo
 "A CDS that has known translation errors must be marked as pseudo to \
-suppress the",
-
-"translation.",
-
+suppress the translation.",
+//  SEQ_FEAT_MissingMRNAproduct
 "The mRNA feature points to a cDNA product that is not packaged in the \
 record. This is an error in the genomic product set.",
-
+//  SEQ_FEAT_AbuttingIntervals
 "The start of one interval is next to the stop of another. A single \
 interval may be desirable in this case.",
-
+//  SEQ_FEAT_CollidingGeneNames
 "Two gene features should not have the same name.",
-
+//  SEQ_FEAT_MultiIntervalGene
 "A gene feature on a single Bioseq should have a single interval \
 spanning everything considered to be under that gene.",
-
+//  SEQ_FEAT_FeatContentDup
 "The intervals on this feature are identical to another feature of the \
 same type, and the label and comment are also identical. This is likely \
 to be an error in annotating the record. Note that GenBank format \
 suppresses duplicate features, so use of Graphic view is recommended.",
-
+//  SEQ_FEAT_BadProductSeqId
 "The feature product refers to a database ID that has a locus name \
 but no accession. This is probably an error in parsing of a submission.",
-
+//  SEQ_FEAT_RnaProductMismatch
 "The RNA feature product type does not correspond to the RNA feature type. \
  These need to be consistent.",
 
 /* SEQ_ALIGN */
 
+//  SEQ_ALIGN_SeqIdProblem
 "The seqence referenced by an alignment SeqID is not packaged in the \
 record.",
-
+//  SEQ_ALIGN_StrandRev
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_DensegLenStart
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_StartLessthanZero
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_StartMorethanBiolen
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_EndLessthanZero
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_EndMorethanBiolen
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_LenLessthanZero
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_LenMorethanBiolen
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_SumLenStart
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_AlignDimSeqIdNotMatch
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_SegsDimSeqIdNotMatch
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_FastaLike
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_NullSegs
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_SegmentGap
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_SegsDimOne
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_AlignDimOne
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_Segtype
 "Please contact the sequence database for further help with this \
 error.",
-
+//  SEQ_ALIGN_BlastAligns
 "BLAST alignments are not desired in records submitted to the sequence \
 database.",
 
 /* SEQ_GRAPH */
 
+//  SEQ_GRAPH_GraphMin
 "The graph minimum value is outside of the 0-100 range.",
-
+//  SEQ_GRAPH_GraphMax
 "The graph maximum value is outside of the 0-100 range.",
-
+//  SEQ_GRAPH_GraphBelow
 "Some quality scores are below the stated graph minimum value.",
-
+//  SEQ_GRAPH_GraphAbove
 "Some quality scores are above the stated graph maximum value.",
-
-"The number of bytes in the quality graph does not correspond to the",
-
-"stated length of the graph.",
-
+//  SEQ_GRAPH_GraphByteLen
+"The number of bytes in the quality graph does not correspond to the \
+stated length of the graph.",
+//  SEQ_GRAPH_GraphOutOfOrder
 "The quality graphs are not packaged in order - may be due to an old \
 fa2htgs bug.",
-
+//  SEQ_GRAPH_GraphBioseqLen
 "The length of the quality graph does not correspond to the length of \
 the Bioseq.",
-
+//  SEQ_GRAPH_GraphSeqLitLen
 "The length of the quality graph does not correspond to the length of \
 the delta Bioseq literal component.",
-
+//  SEQ_GRAPH_GraphSeqLocLen
 "The length of the quality graph does not correspond to the length of \
 the delta Bioseq location component.",
-
+//  SEQ_GRAPH_GraphStartPhase
 "The quality graph does not start or stop on a sequence segment \
 boundary.",
-
+//  SEQ_GRAPH_GraphStopPhase
 "The quality graph does not start or stop on a sequence segment \
 boundary.",
-
+//  SEQ_GRAPH_GraphDiffNumber
 "The number quality graph does not equal the number of sequence \
 segments.",
-
+//  SEQ_GRAPH_GraphACGTScore
 "Quality score values for known bases should be above 0.",
-
+//  SEQ_GRAPH_GraphNScore
 "Quality score values for unknown bases should not be above 0.",
-
+//  SEQ_GRAPH_GraphGapScore
 "Gap positions should not have quality scores above 0.",
-
+//  SEQ_GRAPH_GraphOverlap
 "Quality graphs overlap - may be due to an old fa2htgs bug.",
 
 "UNKNOWN"
 };
-
 
 
 END_SCOPE(validator)
@@ -1090,6 +1090,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/03/28 16:27:40  shomrat
+* Added comments
+*
 * Revision 1.15  2003/03/21 21:10:26  shomrat
 * Added SEQ_DESCR_UnnecessaryBioSourceFocus
 *
