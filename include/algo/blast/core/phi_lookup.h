@@ -44,8 +44,8 @@
 extern "C" {
 #endif
 
-/*The following 3 flags define 3 options for running the program*/
-#define SEED_FLAG 1
+/** The following 3 flags define 3 options for running the program */
+#define SEED_FLAG 1         
 #define PATTERN_FLAG 2
 #define PAT_SEED_FLAG 3
 #define PAT_MATCH_FLAG 4
@@ -72,7 +72,7 @@ typedef struct PHILookupTable {
 Int2 PHILookupTableNew(const LookupTableOptions* opt, PHILookupTable* * lut,
                        Boolean is_dna, BlastScoreBlk* sbp);
 
-/* Deallocate memory for the PHI BLAST lookup table */
+/** Deallocate memory for the PHI BLAST lookup table */
 PHILookupTable* PHILookupTableDestruct(PHILookupTable* lut);
 
 /** Find all occurrencies of a pattern in query, and save starts/stops in the
