@@ -38,6 +38,12 @@ extern int (*spinroutine)(int mesg,int param);
 
 /* tcpglue.c */
 
+#ifdef __MACTCP__
+#define TCPIOCompletionProc TCPIOCompletionUPP
+#define TCPNotifyProc TCPNotifyUPP
+#define UDPIOCompletionProc UDPIOCompletionUPP
+#endif
+
 OSErr xPBControlSync(TCPiopb *pb);
 OSErr xPBControl(TCPiopb *pb, TCPIOCompletionProc completion);
 

@@ -124,11 +124,15 @@
 
 #endif
 
-#if defined(THINK_C) && !defined(mc68000)
+#if defined(THINK_C) && !defined(mc68000) && !defined(powerc)
 #define mc68000
 #endif
 
-#if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || defined(MIPSEB) || defined (BIT_ZERO_ON_LEFT)
+#if defined(__MWERKS__) && !defined(mc68000) && !defined(powerc)
+#define mc68000
+#endif
+
+#if defined(sel) || defined(pyr) || defined(mc68000) || defined(powerc) || defined(sparc) || defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || defined(MIPSEB) || defined (BIT_ZERO_ON_LEFT)
 #define BYTE_ORDER	BIG_ENDIAN
 #endif
 #endif /* BYTE_ORDER */

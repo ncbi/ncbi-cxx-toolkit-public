@@ -427,7 +427,7 @@ OSErr xUDPRelease(SocketPtr sp) {
 
 ip_addr xIPAddr(void) 
 {
-#ifndef __GETMYIPADDR__
+#if !defined(__GETMYIPADDR__) && !defined (__MWERKS__)
 	struct IPParamBlock pbr;
 #else
 	struct GetAddrParamBlock pbr;
@@ -444,7 +444,7 @@ ip_addr xIPAddr(void)
 
 long xNetMask() 
 {
-#ifndef __GETMYIPADDR__
+#if !defined(__GETMYIPADDR__) && !defined (__MWERKS__)
 	struct IPParamBlock pbr;
 #else
 	struct GetAddrParamBlock pbr;

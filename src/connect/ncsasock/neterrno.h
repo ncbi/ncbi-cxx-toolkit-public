@@ -27,40 +27,40 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 
 #include <errno.h>
 
-#ifdef NOWAY
+#ifdef __MWERKS__
 #define	EPERM		1		/* Operation not permitted */
 #define	ENOENT		2		/* No such file or directory */
 #define	ESRCH		3		/* No such process */
 #define	EINTR		4		/* Interrupted system call */
 #define	EIO		5		/* Input/output error */
-#endif /* NOWAY */
+#endif /* __MWERKS__ */
 
 #ifndef ENXIO
 #define	ENXIO		6		/* Device not configured */
 #endif /* ENXIO */
 
-#ifdef NOWAY
+#ifdef __MWERKS__
 #define	E2BIG		7		/* Argument list too long */
 #define	ENOEXEC		8		/* Exec format error */
 #define	EBADF		9		/* Bad file descriptor */
 #define	ECHILD		10		/* No child processes */
 #define	EDEADLK		11		/* Resource deadlock avoided */
 					/* 11 was EAGAIN */
-#endif /* NOWAY */
+#endif /* __MWERKS__ */
 
 #ifndef ENOMEM
 #define	ENOMEM		12		/* Cannot allocate memory */
 #endif /* ENOMEM */
 
-#ifdef NOWAY
+#ifdef __MWERKS__
 #define	EACCES		13		/* Permission denied */
-#endif /* NOWAY */
+#endif /* __MWERKS__ */
 
 #ifndef EFAULT
 #define	EFAULT		14		/* Bad address */
 #endif /* EFAULT */
 
-#ifdef NOWAY
+#ifdef __MWERKS__
 #ifndef _POSIX_SOURCE
 #define	ENOTBLK		15		/* Block device required */
 #define	EBUSY		16		/* Device busy */
@@ -84,10 +84,12 @@ extern long errno_long;     /* same as errno, but of known length (for variable 
 #define	EMLINK		31		/* Too many links */
 #define	EPIPE		32		/* Broken pipe */
 
+#endif /* __MWERKS__ */
+
+#ifdef NOWAY
 /* math software */
 #define	EDOM		33		/* Numerical argument out of domain */
 #define	ERANGE		34		/* Numerical result out of range */
-
 #endif /* NOWAY */
 
 /* non-blocking and interrupt i/o */

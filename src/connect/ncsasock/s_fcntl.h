@@ -96,7 +96,9 @@
 #define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
 
 #if __STDC__ || c_plusplus
+#ifndef __MWERKS__
 extern int fcntl(int, int, int);
+#endif
 extern int creat(const char *, mode_t);
 extern int open(const char *, int, ...);
 #else

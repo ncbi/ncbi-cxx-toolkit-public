@@ -46,7 +46,7 @@ typedef	_TIME_T_	time_t;
 #endif
 
 #ifdef	_SIZE_T_
-#if !defined(THINK_C) && !defined(COMP_THINKC)
+#if !defined(THINK_C) && !defined(COMP_THINKC) && !defined(__MWERKS__) && !defined(COMP_METRO)
 typedef	_SIZE_T_	size_t;
 #endif
 #undef	_SIZE_T_

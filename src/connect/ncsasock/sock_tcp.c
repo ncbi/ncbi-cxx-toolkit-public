@@ -36,7 +36,7 @@
 
 #endif
 
-#ifndef THINK_C
+#if !defined(THINK_C) && !defined(__MWERKS__)
 # include "sock_int.h"
 #endif
 

@@ -26,7 +26,10 @@
 
 #endif
 
+#ifdef THINK_C
 #include <FCntl.h>
+#endif
+
 #include <neti_in.h>
 #include <sock_ext.h>
 #include <sock_str.h>
