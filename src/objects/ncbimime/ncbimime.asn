@@ -1,4 +1,4 @@
---$Revision: 6.10 $
+--$Revision: 6.11 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -42,7 +42,12 @@ Biostruc-seqs-aligns-cdd ::= SEQUENCE {
         bundle Bundle-seqs-aligns,          -- either seqs + alignments
         cdd Cdd                             -- or CDD (which contains these)
     },
-    structures SET OF Biostruc OPTIONAL     -- structures
+    structures SET OF Biostruc OPTIONAL,    -- structures
+    stucture-type ENUMERATED {              -- type of structures to load if
+        ncbi-backbone(2),                   -- not present; meanings are same
+        ncbi-all-atom(3),                   -- as MMDB's Model-type
+        pdb-model(4)
+    } OPTIONAL
 }
 
 Biostruc-align ::= SEQUENCE {
