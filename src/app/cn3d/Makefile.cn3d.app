@@ -4,6 +4,8 @@
 # Build application "cn3d"
 #################################
 
+REQUIRES = gui ctools
+
 APP = cn3d
 
 OBJ = \
