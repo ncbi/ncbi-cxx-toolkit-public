@@ -387,7 +387,6 @@ private:
     friend class ::CScoreBlkTest;          // unit test class
     friend class ::CRPSTest;               // unit test class
     friend class ::CBlastSetupTest;        // unit test class
-    friend class ::CBlastEngineTest;       // unit test class
 };
 
 //#endif /* SKIP_DOXYGEN_PROCESSING */
@@ -401,6 +400,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.92  2005/04/06 19:44:32  dondosha
+* CBlastEngineTest unit test class does not need friendship any more
+*
 * Revision 1.91  2005/03/31 20:45:49  camacho
 * Remove friend declaration for CBlastRedoAlignmentTest
 *
