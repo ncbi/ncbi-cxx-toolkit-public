@@ -1,24 +1,49 @@
  <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
-    <title>Standard NCBI C++ types</title>
+    <title>Standard NCBI C++ types and their limits</title>
   </head>
 
   <body>
-	 <h1>Standard NCBI C++ types</h1>
+	 <h1>Standard NCBI C++ types and their limits</h1>
 
 	 <ul>
-		<li> <a href="#ref_Int">Basic integer types</a>
+		<li> <a href="#ref_Headers">Headers to look into</a>
+		<li> <a href="#ref_Int">Built-in integral types</a>
 		<li> <a href="#ref_Aux">Auxiliary types</a>
-		<li> <a href="#ref_Float">Floating point types</a>
 		<li> <a href="#ref_IntFixed">Fixed-size integer types</a>
 		<li> <a href="#ref_BigScalar">The <i>"Ncbi_BigScalar"</i> type</a>
 		<li> <a href="#ref_Policy">Encouraged and discouraged types</a>
 	 </ul>
 
 	 <br></br>
+	 <a name="ref_Headers"></a>
+	 <h2>Headers to look into</h2>
+
+	 <ul>
+		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbitype.h">corelib/ncbitype.h</a> --
+		  definitions of NCBI fixed-size integer types
+		</li>
+
+		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbi_limits.h">corelib/ncbi_limits.h</a> --
+		  numeric limits for:
+		  <ul>
+			 <li> NCBI fixed-size integer types </li>
+			 <li> built-in integer types </li>
+			 <li> built-in floating-point types </li>
+		  </ul>
+		</li>
+
+		<li> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbi_limits.hpp">corelib/ncbi_limits.hpp</a> --
+		  temporary (and incomplete) replacement for the
+		  Standard C++ Template Library's <a href="http://www.cygnus.com/misc/wp/dec96pub/lib-support.html#lib.limits"><i>numeric_limits&lt;&gt;</i></a> API
+		</li>
+	 </ul>
+	 
+
+	 <br></br>
 	 <a name="ref_Int"></a>
-	 <h2>Basic integer types</h2>
+	 <h2>Built-in integral types</h2>
 
 	 We <a href="#ref_Policy">encourage</a> the use of following standard
 	 C/C++ types, and we state that the following assumptions
@@ -39,63 +64,68 @@
 		  <tr>
 			 <td><i>char</i></td>
 			 <td>1</td>
-			 <td>?</td>
-			 <td>?</td>
-			 <td>It can be either <a href="http://www.cygnus.com/misc/wp/nov97/basic.html#basic.fundamental">signed or unsigned</a>!
-				Use it whereever you dont care of +/-
+			 <td><i>kMin_Char</i> <br> (0 or -128)</td>
+			 <td><i>kMax_Char</i> <br> (256 or 127)</td>
+			 <td>It can be either <a href="http://www.cygnus.com/misc/wp/dec96pub/basic.html#basic.fundamental">signed or unsigned</a>!
+				Use it wherever you dont care of +/-
 				(e.g. in character strings).
 			 </td>
 		  </tr>
 		  <tr>
 			 <td><i>signed char</i></td>
 			 <td>1</td>
-			 <td>-128</td>
-			 <td>127</td>
+			 <td><i>kMin_SChar</i> <br> (-128)</td>
+			 <td><i>kMax_SChar</i> <br> (127)</td>
 			 <td></td>
 		  </tr>
 		  <tr>
 			 <td><i>unsigned char</i></td>
 			 <td>1</td>
-			 <td>0</td>
-			 <td>255</td>
+			 <td><i>kMin_UChar</i> <br> (0)</td>
+			 <td><i>kMax_UChar</i> <br> (255)</td>
 			 <td></td>
 		  </tr>
 		  <tr>
 			 <td><i>short, signed short</i></td>
 			 <td>2 or more</td>
-			 <td>-32768 or less</td>
-			 <td>32767 or greater</td>
+			 <td><i>kMin_Short</i> <br> (-32768 or less)</td>
+			 <td><i>kMax_Short</i> <br> (32767 or greater)</td>
 			 <td>Use <i>"int"</i> if size isn't critical</td>
 		  </tr>
 		  <tr>
 			 <td><i>usigned short</i></td>
 			 <td>2 or more</td>
-			 <td>0</td>
-			 <td>65535 or greater</td>
+			 <td><i>kMin_UShort</i> <br> (0)</td>
+			 <td><i>kMax_UShort</i> <br> (65535 or greater)</td>
 			 <td>Use <i>"unsigned int"</i> if size isn't critical</td>
 		  </tr>
 		  <tr>
 			 <td><i>int,<br>signed int</i></td>
 			 <td>4 or more</td>
-			 <td>-2147483648 or less</td>
-			 <td>2147483647 or greater</td>
+			 <td><i>kMin_Int</i> <br> (-2147483648 or less)</td>
+			 <td><i>kMax_Int</i> <br> (2147483647 or greater)</td>
 			 <td></td>
 		  </tr>
 		  <tr>
 			 <td><i>unsigned int</i></td>
 			 <td>4 or more</td>
-			 <td>0</td>
-			 <td>4294967295 or greater</td>
+			 <td><i>kMin_UInt</i> <br> (0)</td>
+			 <td><i>kMax_UInt</i> <br> (4294967295 or greater)</td>
+			 <td></td>
+		  </tr>
+		  <tr>
+			 <td><i>double</i></td>
+			 <td>4 or more</td>
+			 <td><i>kMin_Double</i></td>
+			 <td><i>kMax_Double</i></td>
 			 <td></td>
 		  </tr>
 		</table>
 
 	 <p>
-	 The use of <i>"long long"</i> type is now <b>prohibited</b> in the
-	 portable code.
-	 <p>
-	 The <i>"long"</i> type is <a href="#ref_Policy">discouraged</a>
-	 to use.
+		Types <i>"long"</i> and <i>"float"</i> are
+		<a href="#ref_Policy">discouraged</a> to use in the portable code.<br>
+		Type <i>"long long"</i> is <b>prohibited</b> to use in the portable code.
 
 
 	 <br></br>
@@ -115,17 +145,6 @@
 	 <b>Use</b> type <i>"SIZE_TYPE"</i> to represent a size of standard
 	 C++ <i>"string"</i>, -- this is a portable substitution for
 	 <i>"std::string::size_type"</i>.
-
-
-	 <br></br>
-	 <br></br>
-	 <a name="ref_Float"></a>
-	 <h2>Floating point types</h2>
-	 
-	 <p>
-	 Use <i>"double"</i> whereever it is possible. Avoid using
-	 <i>"float"</i> and dont use <i>"long double"</i> in the portable
-	 code.
 
 
 	 <br></br>
@@ -286,7 +305,6 @@
 
 
 	 <br></br>
-	 <br></br>
 	 <a name="ref_BigScalar"></a>
 	 <h2>The <i>"Ncbi_BigScalar"</i> type</h2>
 
@@ -298,7 +316,7 @@
 	 any integral, floating-point or pointer variable
 	 like <i>"Int8"</i>, or <i>"double"("long double")</i>, or <i>"void*"</i>.
 	 This type can be useful e.g. to hold a callback data of arbitrary
-	 fundamental type; but, in general, the use of this type is
+	 fundamental type; however, in general, the use of this type is
 	 <b>discouraged</b>.
 
 	 <br></br>
@@ -314,12 +332,12 @@
 		<li> Use standard C/C++ integer types
 		<i> "char", "signed char", "unsigned char",
 		  "short", "unsigned short", "int", "unsigned int"</i>
-		in <b>any</b> case when the assumptions made for them in
+		in <b>any</b> case where the assumptions made for them in
 		<a href="#ref_TableIntStd">Table 1</a>
-		are enough to fit this case requirements.
+		are enough.
 		<li> It is not recommended to use <i>"long"</i> type unless it is
-		absolutely necessary(e.g. in the lower-level or third-party
-		code);  and even if you have to -- try to localize the
+		absolutely necessary (e.g. in the lower-level or third-party
+		code), and even if you have to, then try to localize the use of
 		<i>"long"</i> as much as possible.
 		<li> The same(as for <i>"long"</i>) is for the fixed-size types
 		enlisted in <a href="#ref_TableIntFixed">Table 3</a>. -- If you
@@ -337,7 +355,8 @@
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-		  <td align=right>($Revision$)</td></tr>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
 	 </table>
   </body>
 </html>
