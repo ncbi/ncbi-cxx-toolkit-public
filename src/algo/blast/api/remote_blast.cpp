@@ -90,7 +90,7 @@ void CRemoteBlast::x_SearchErrors(CRef<CBlast4_reply> reply)
     for(i = errors.begin(); i != errors.end(); i++) {
         string msg;
         
-        if ((*i)->GetMessage().size()) {
+        if ((*i)->CanGetMessage() && (! (*i)->GetMessage().empty())) {
             msg = ": ";
             msg += (*i)->GetMessage();
         }
@@ -768,6 +768,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/05/10 15:10:08  bealer
+* - Error processing problem: messages should be treated as optional.
+*
 * Revision 1.10  2004/05/05 17:39:46  dicuccio
 * Fixed syntax error on MSVC6
 *
