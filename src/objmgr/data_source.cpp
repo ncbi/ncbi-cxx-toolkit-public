@@ -139,14 +139,19 @@ void CTSE_LockingSet::x_Unlock(void)
 
 
 CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
-    : m_Loader(&loader), m_pTopEntry(0), m_ObjMgr(&objmgr)
+    : m_Loader(&loader),
+      m_pTopEntry(0),
+      m_ObjMgr(&objmgr),
+      m_DirtyAnnotIndexCount(0)
 {
     m_Loader->SetTargetDataSource(*this);
 }
 
 
 CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
-    : m_Loader(0), m_pTopEntry(&entry), m_ObjMgr(&objmgr),
+    : m_Loader(0),
+      m_pTopEntry(&entry),
+      m_ObjMgr(&objmgr),
       m_DirtyAnnotIndexCount(0)
 {
     AddTSE(entry, false);
@@ -1504,6 +1509,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2003/07/09 17:54:29  dicuccio
+* Fixed uninitialized variables in CDataSource and CSeq_annot_Info
+*
 * Revision 1.112  2003/07/01 18:01:08  vasilche
 * Added check for null m_SeqMap pointer.
 *

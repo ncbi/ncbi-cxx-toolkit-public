@@ -40,7 +40,9 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry)
-    : m_Seq_annot(&annot), m_Seq_entry_Info(&entry)
+    : m_Seq_annot(&annot),
+      m_Seq_entry_Info(&entry),
+      m_Indexed(false)
 {
     entry.m_Annots.push_back(CRef<CSeq_annot_Info>(this));
 }
@@ -87,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/07/09 17:54:29  dicuccio
+ * Fixed uninitialized variables in CDataSource and CSeq_annot_Info
+ *
  * Revision 1.2  2003/06/02 16:06:38  dicuccio
  * Rearranged src/objects/ subtree.  This includes the following shifts:
  *     - src/objects/asn2asn --> arc/app/asn2asn
