@@ -388,7 +388,7 @@ The following classes implement threads synchronization mechanisms:
 
 <ul>
 <li><i><b>CFastMutex, CFastMutexGuard</b></i>
-<li><i><b>CMutex, CAutoMutex, CMutexGuard</b></i>
+<li><i><b>CMutex, CMutexGuard</b></i>
 <li><i><b>CRWLock, CAutoRW, CReadLockGuard, CWriteLockGuard</b></i>
 </ul>
 <p>
@@ -397,7 +397,10 @@ The following classes implement threads synchronization mechanisms:
 
 <a name=cfastmutex></a>
 <h4><a href=../lxr/ident?i=CFastMutex>CFastMutex</a>,
-<a href=../lxr/ident?i=CFastMutexGuard>CFastMutexGuard</a></h4>
+<a href=../lxr/ident?i=CFastMutexGuard>CFastMutexGuard</a>,
+<a href=../lxr/ident?i=DEFINE_STATIC_FAST_MUTEX>DEFINE_STATIC_FAST_MUTEX</a>,
+<a href=../lxr/ident?i=DECLARE_CLASS_STATIC_FAST_MUTEX>DECLARE_CLASS_STATIC_FAST_MUTEX</a>,
+<a href=../lxr/ident?i=DEFINE_CLASS_STATIC_FAST_MUTEX>DEFINE_CLASS_STATIC_FAST_MUTEX</a></h4>
 <p>
 
 <i><b>CFastMutex</i></b> class is defined in
@@ -410,15 +413,24 @@ non-acquired mutex are performed. For this reason, <i><b>CFastMutex</i></b>
 should be used only to protect small and simple parts of code.
 To guarantee for the mutex release the <i><b>CFastMutexGuard</i></b> class
 may be used. The mutex is locked by the <i><b>CFastMutexGuard</i></b>
-constructor and unlocked by its destructor. The example below demonstrates how to protect
-an integer variable with the fast mutex:
+constructor and unlocked by its destructor.
+To avoid problems with initialization of static objects on different platforms, special macro definitions are intended to be used to declare static mutexes.
+Macro <i><b>DEFINE_STATIC_FAST_MUTEX(id)</b></i> will define
+static mutex variable with name <i><b>id</b</i>.
+Macro <i><b>DECLARE_CLASS_STATIC_FAST_MUTEX(id)</b></i> will declare
+static class member of mutex type with name <i><b>id</b</i>.
+Macro <i><b>DEFINE_CLASS_STATIC_FAST_MUTEX(class, id)</b></i> will define
+static class mutex variable <i><b>class::id</b</i>.
+
+The example below demonstrates how to protect an integer variable
+with the fast mutex:
 <p>
 
 <pre><font color="#008080">
 void ThreadSafe(void)
 {
     static int Count = 0;
-    static CFastMutex CountMutex;
+    DEFINE_STATIC_FAST_MUTEX(CountMutex);
     ...
     {{
         CFastMutexGuard guard(CountMutex);
@@ -430,29 +442,34 @@ void ThreadSafe(void)
 </font></pre>
 <p>
 
-
-
 <a name=cmutex></a>
 <h4><a href=../lxr/ident?i=CMutex>CMutex</a>,
-<a href=../lxr/ident?i=CAutoMutex>CAutoMutex</a>,
-<a href=../lxr/ident?i=CMutexGuard>CMutexGuard</a></h4>
+<a href=../lxr/ident?i=CMutexGuard>CMutexGuard</a>,
+<a href=../lxr/ident?i=DEFINE_STATIC_MUTEX>DEFINE_STATIC_MUTEX</a>,
+<a href=../lxr/ident?i=DECLARE_CLASS_STATIC_MUTEX>DECLARE_CLASS_STATIC_MUTEX</a>,
+<a href=../lxr/ident?i=DEFINE_CLASS_STATIC_MUTEX>DEFINE_CLASS_STATIC_MUTEX</a></h4>
 <p>
 
 <i><b>CMutex</i></b> uses the functionality of <i><b>CFastMutex</i></b>.
 It also allows nested locks and performs checks of mutex owner.
 This makes <i><b>CMutex</i></b> somewhat slower than <i><b>CFastMutex</i></b>,
 but capable of protecting complicated code, and safer to use. To guarantee
-for a mutex release, <i><b>CAutoMutex</i></b> can be used. <i><b>CAutoMutex</i></b>
-unlocks the associated mutex on destruction, but unlike <i><b>CFastMutexGuard</i></b>,
-it does not lock the mutex when created. To both acquire a mutex and guarantee
-for its release, <i><b>CMutexGuard</i></b> can be used instead.
+for a mutex release, <i><b>CMutexGuard</i></b> can be used.
+The mutex is locked by the <i><b>CMutexGuard</i></b> constructor
+and unlocked by its destructor.
+Macro <i><b>DEFINE_STATIC_MUTEX(id)</b></i> will define
+static mutex variable with name <i><b>id</b</i>.
+Macro <i><b>DECLARE_CLASS_STATIC_MUTEX(id)</b></i> will declare
+static class member of mutex type name <i><b>id</b</i>.
+Macro <i><b>DEFINE_CLASS_STATIC_MUTEX(class, id)</b></i> will define
+class static mutex variable <i><b>class::id</b</i>.
 The following example demonstrates usage of <i><b>CMutex</i></b>, including
 lock nesting:
 <p>
 
 <pre><font color="#008080">
 static int Count = 0;
-static CMutex CountMutex;
+DEFINE_STATIC_MUTEX(CountMutex);
 
 void Add2(void)
 {
