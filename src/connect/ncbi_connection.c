@@ -162,7 +162,11 @@ extern EIO_Status CONN_ReInit
         }}
         /* call current connector's "FLUSH" and "CLOSE" methods */
         if (conn->state == eCONN_Open) {
-            CONN_Flush(conn);
+            if ( conn->meta.flush ) {
+                conn->meta.flush(conn->meta.c_flush,
+                                 conn->c_timeout == CONN_DEFAULT_TIMEOUT ?
+                                 conn->meta.default_timeout : conn->c_timeout);
+            }
             if ( conn->meta.close ) {
                 status = conn->meta.close(conn->meta.c_close,
                                           conn->c_timeout ==
@@ -434,15 +438,13 @@ extern EIO_Status CONN_Flush
     assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
 
     /* call current connector's "FLUSH" method */
-    status = conn->meta.flush
-        ? conn->meta.flush(conn->meta.c_flush,
-                           conn->w_timeout == CONN_DEFAULT_TIMEOUT ?
-                           conn->meta.default_timeout : conn->w_timeout)
-        : eIO_NotSupported;
-
+    if ( !conn->meta.flush )
+        return eIO_Success;
+    status = conn->meta.flush(conn->meta.c_flush,
+                              conn->w_timeout == CONN_DEFAULT_TIMEOUT ?
+                              conn->meta.default_timeout : conn->w_timeout);
     if (status != eIO_Success)
         CONN_LOG(eLOG_Warning, "[CONN_Flush]  Cannot flush data");
-
     return status;
 }
 
@@ -521,8 +523,12 @@ static EIO_Status s_CONN_ReadPersist
         *n_read += x_read;
         if (*n_read == size  ||  status != eIO_Success)
             break;
-        /* flush the unwritten output data, if any */
-        CONN_Flush(conn);
+        /* flush the unwritten output data (if any) */
+        if ( conn->meta.flush ) {
+            conn->meta.flush(conn->meta.c_flush,
+                             conn->r_timeout == CONN_DEFAULT_TIMEOUT ?
+                             conn->meta.default_timeout : conn->r_timeout);
+        }
     }
 
     return status;
@@ -551,9 +557,14 @@ extern EIO_Status CONN_Read
         return status;
     assert(conn->state == eCONN_Open  &&  conn->meta.list != 0);
 
-    /* flush the unwritten output data */
-    CONN_Flush(conn);
+    /* flush the unwritten output data (if any) */
+    if ( conn->meta.flush ) {
+        conn->meta.flush(conn->meta.c_flush,
+                         conn->r_timeout == CONN_DEFAULT_TIMEOUT ?
+                         conn->meta.default_timeout : conn->r_timeout);
+    }
 
+    /* now do read */
     switch (how) {
     case eIO_ReadPlain:
         return s_CONN_Read(conn, buf, size, n_read, 0/*no peek*/);
@@ -720,6 +731,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2003/05/31 05:18:26  lavr
+ * Optimize on calling flush; do not require to have flush method
+ *
  * Revision 6.35  2003/05/21 17:53:06  lavr
  * Better check for {0,0} timeout in CONN_Read()
  *
