@@ -272,22 +272,22 @@ public:
     CTreePairNode<TId, TValue>* AddNode(const TId& id, const TValue& value);
 
     /// Return node's value
-    const TValueType& GetValue() const { return m_Value.value; }
+    const TValueType& GetValue() const { return this->m_Value.value; }
 
     /// Return node's id
-    const TIdType& GetId() const { return m_Value.id; }
+    const TIdType& GetId() const { return this->m_Value.id; }
 
     /// Return node's value
-    TValueType& GetValue() { return m_Value.value; }
+    TValueType& GetValue() { return this->m_Value.value; }
 
     /// Return node's id
-    TIdType& GetId() { return m_Value.id; }
+    TIdType& GetId() { return this->m_Value.id; }
 
     /// Set value for the node
-    void SetValue(const TValue& value) { m_Value.value = value; }
+    void SetValue(const TValue& value) { this->m_Value.value = value; }
 
     /// Set id for the node
-    void SetId(const TId& id) { m_Value.id = id; }
+    void SetId(const TId& id) { this->m_Value.id = id; }
 
     /// Find tree nodes corresponding to the path from the top
     ///
@@ -728,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/04/26 14:47:51  ucko
+ * Qualify dependent names with "this->" as needed (by GCC 3.4).
+ *
  * Revision 1.32  2004/04/19 16:00:14  kuznets
  * Algorithms migrated to <algo/tree>
  *
