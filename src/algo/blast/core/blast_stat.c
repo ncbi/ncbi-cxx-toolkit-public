@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.53  2004/04/05 18:53:35  madden
+ * Set dimensions if matrix from memory
+ *
  * Revision 1.52  2004/04/01 14:14:02  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
@@ -1292,6 +1295,9 @@ BlastScoreBlkMatrixLoad(BlastScoreBlk* sbp)
                                            i, j);
         }
     }
+    /* Sets dimensions of matrix. */
+    sbp->mat_dim1 = sbp->mat_dim2 = sbp->alphabet_size;
+
     return status;
 }
 
