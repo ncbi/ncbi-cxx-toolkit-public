@@ -51,11 +51,11 @@
 #  include <pwd.h>
 #  include <fcntl.h>
 #  include <sys/mman.h>
-#  ifndef MAP_FAILED
+#  if !defined(MAP_FAILED)
 #    define MAP_FAILED ((void *) -1)
 #  endif
 
-#  ifdef NCBI_COMPILER_MW_MSL
+#  if defined(NCBI_COMPILER_MW_MSL)
 #    include <ncbi_mslextras.h>
 #  endif
 
@@ -328,10 +328,10 @@ string CDirEntry::AddTrailingPathSeparator(const string& path)
     size_t len = path.length();
 #if defined(NCBI_OS_MAC)
     if ( !len ) {
-        return string(1, GetPathSeparator());
+        return string(1,GetPathSeparator());
     }
 #endif
-    if (len  &&  string(ALL_SEPARATORS).find(path.at(len-1)) == NPOS) {
+    if (len  &&  string(ALL_SEPARATORS).find(path.at(len - 1)) == NPOS) {
         return path + GetPathSeparator();
     }
     return path;
@@ -422,7 +422,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
             }
         }
     }
-    xpath = NStr::Replace(xpath, ".:",  "");
+    xpath = NStr::Replace(xpath, ".:", kEmptyStr);
     // Add leading ":" (criterion of relativity of the dir)
     if ( xpath[0] != ':' ) {
         xpath = ":" + xpath;
@@ -430,31 +430,16 @@ string CDirEntry::ConvertToOSPath(const string& path)
 #else
     // Fix current and parent refs in the path after conversion from MAC path
     // Replace all "::" to "/../"
-#if defined(DIR_PARENT)
-    string sep1 = string(1,DIR_SEPARATOR);
-    string sep2 = string(2,DIR_SEPARATOR);
-    string sep = sep1 + DIR_PARENT + sep1;
-    while ( xpath.find(sep2) != NPOS ) {
-        xpath = NStr::Replace(xpath, sep2, sep);
+#  if defined(DIR_PARENT)
+    string search  = string(2,DIR_SEPARATOR);
+    string replace = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
+    size_t pos = 0;
+    while ((pos = xpath.find(search, pos)) != NPOS ) {
+        xpath.replace(pos, search.length(), replace);
     }
-#if !defined(NCBI_OS_MAC)
-    // replace smth like "../xxx/../yyy/zzz" with "../yyy/zzz"
-    {
-        sep1 = DIR_SEPARATOR; sep1 += DIR_PARENT; sep1 += DIR_SEPARATOR;
-        for (bool erased=true; erased;) {
-            erased=false;
-            size_t found = xpath.find(sep1);
-            if (found != 0 && found != string::npos) {
-                size_t start = xpath.rfind(DIR_SEPARATOR,found-1);
-                if (start != 0 && start != string::npos && (found-start > 1)) {
-                    xpath.erase(start,found+sep1.length()-1-start);
-                    erased=true;
-                }
-            }
-        }
-    }
-#endif // NCBI_OS_MAC
-#endif // DIR_PARENT
+    // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
+    xpath = NormalizePath(xpath);
+#  endif // DIR_PARENT
     // Remove leading ":" in the relative path on non-MAC platforms 
     if ( xpath[0] == DIR_SEPARATOR ) {
         xpath.erase(0,1);
@@ -489,7 +474,7 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
     size_t pos = path.length();
 #if defined(NCBI_OS_MAC)
     if ( !pos ) {
-        path = string(1, GetPathSeparator());
+        path = string(1,GetPathSeparator());
     }
 #endif
     if ( pos  &&  string(ALL_OS_SEPARATORS).find(path.at(pos-1)) == NPOS ) {
@@ -510,6 +495,53 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
     // Add second part
     path += part;
     return path;
+}
+
+
+string CDirEntry::NormalizePath(const string& path)
+{
+#if defined(NCBI_OS_MAC)
+    // On MAC path is always normalized
+    return path;
+#else
+#  if defined(DIR_SEPARATOR_ALT)
+    // Convert all alternative separators to primary separator type
+    string xpath = NStr::Replace(path, string(1,DIR_SEPARATOR_ALT),
+                                 string(1,DIR_SEPARATOR));
+#  else
+    string xpath = path;
+#  endif
+    // Remove trailing "/." and "/.."
+    string str = string(1,DIR_SEPARATOR) + DIR_CURRENT;
+    if ( NStr::EndsWith(xpath, str) ) {
+        xpath.erase(xpath.length() - str.length() + 1);
+    } else {
+        str = string(1,DIR_SEPARATOR) + DIR_PARENT;
+        if ( NStr::EndsWith(xpath, str) ) {
+            xpath.erase(xpath.length() - str.length() + 1);
+        }
+    }
+    // Replace something like "../aaa/../bbb" with "../bbb"
+    str = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
+    size_t pos;
+    size_t start = 0;
+    while ((pos = xpath.find(str, start)) > 0  &&  pos != NPOS) {
+        start = xpath.rfind(DIR_SEPARATOR, pos - 1);
+        if (start != 0  &&  start != NPOS  &&  (pos - start > 1)) {
+            xpath.erase(start, pos + str.length() - 1 - start);
+        } else {
+            break;
+        }
+    }
+    // Remove all like "/./"
+    string search  = string(1,DIR_SEPARATOR) + DIR_CURRENT + DIR_SEPARATOR;
+    string replace = string(1,DIR_SEPARATOR);
+    pos = 0;
+    while ((pos = xpath.find(search, pos)) != NPOS ) {
+        xpath.replace(pos, search.length(), replace);
+    }
+    return xpath;
+#endif
 }
 
 
@@ -795,7 +827,7 @@ CDirEntry::EType CDirEntry::GetType(void) const
     if ( (st.st_mode & S_IFSOCK) == S_IFSOCK ) {
         return eSocket;
     }
-#    ifdef S_IFDOOR /* only Solaris seems to have this */
+#    if defined(S_IFDOOR) /* only Solaris seems to have this */
     if ( (st.st_mode & S_IFDOOR) == S_IFDOOR ) {
         return eDoor;
     }
@@ -1105,7 +1137,7 @@ string CDir::GetCwd()
 {
     string cwd;
 
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
 
     char buf[4096];
     if (getcwd(buf, sizeof(buf) - 1)) {
@@ -1239,7 +1271,7 @@ bool CDir::CreatePath(void) const
         return true;
     }
     if (path[path.length()-1] == GetPathSeparator()) {
-        path.erase(path.length()-1);
+        path.erase(path.length() - 1);
     }
     CDir dir_this(path);
     if (dir_this.Exists()) {
@@ -1268,7 +1300,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
         CDirEntry& item = **entry;
 #else
         if ( name == "."  ||  name == ".."  ||  
-             name == string(1, GetPathSeparator()) ) {
+             name == string(1,GetPathSeparator()) ) {
             continue;
         }
         // Get entry item with full pathname
@@ -1569,6 +1601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2003/09/16 15:17:16  ivanov
+ * + CDirEntry::NormalizePath()
+ *
  * Revision 1.52  2003/08/29 16:54:28  ivanov
  * GetTmpName(): use tempname() instead tmpname()
  *

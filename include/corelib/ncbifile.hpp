@@ -43,7 +43,7 @@
 #include <vector>
 
 
-#ifdef NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 struct FSSpec;
 #endif
 
@@ -79,8 +79,8 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eMemoryMap:  return "eMemoryMap";
-        default:    return CException::GetErrCodeString();
+        case eMemoryMap: return "eMemoryMap";
+        default:         return CException::GetErrCodeString();
         }
     }
 
@@ -114,7 +114,7 @@ public:
     /// Constructor.
     CDirEntry();
 
-#ifdef NCBI_OS_MAC
+#  ifdef NCBI_OS_MAC
     /// Copy constructor - for Mac file system.
     CDirEntry(const CDirEntry& other);
 
@@ -123,7 +123,7 @@ public:
 
     /// Constructor with FSSpec argument - for Mac file system.
     CDirEntry(const FSSpec& fss);
-#endif
+#  endif
 
     /// Constructor using specified path string.
     CDirEntry(const string& path);
@@ -135,11 +135,11 @@ public:
     virtual ~CDirEntry(void);
 
     /// Equality operator.
-	bool operator== (const CDirEntry& other) const;
+        bool operator== (const CDirEntry& other) const;
 
-#ifdef NCBI_OS_MAC
+# if defined(NCBI_OS_MAC)
     /// Get FSSpec setting - for Mac file system.
-	const FSSpec& FSS() const;
+        const FSSpec& FSS() const;
 #endif
 
     /// Get directory entry path.
@@ -236,6 +236,13 @@ public:
     ///   The concatenated path.
     static string ConcatPathEx(const string& first, const string& second);
 
+    /// Normalize path.
+    ///
+    /// Remove from the "path" all redundancy, convert it to the more
+    /// simple form, if possible.
+    /// Note that the "path" must be for current OS. 
+    static string NormalizePath(const string& path);
+
 
     //
     // Checks & manipulations
@@ -293,7 +300,7 @@ public:
     ///
     /// @return
     ///   Return one of the values in EType. If the directory entry does
-    ///   exist return "eUnknown".
+    ///   not exist return "eUnknown".
     EType GetType(void) const;
 
     /// Get time stamp of directory entry.
@@ -408,11 +415,11 @@ protected:
                         TMode* other_mode) const;
 
 private:
-#ifdef NCBI_OS_MAC
+#  ifdef NCBI_OS_MAC
     FSSpec* m_FSS;      ///< Mac OS specific file description
-#else
+#  else
     string m_Path;      ///< Full directory entry path
-#endif
+#  endif
 
     /// Which default mode: user, group, or other.
     ///
@@ -517,9 +524,9 @@ public:
     ///   - NULL if error encountered.
     /// @sa
     ///   CreateTmpFileEx()
-    static fstream* CreateTmpFile(const string& filename = kEmptyStr,
-                                  ETextBinary text_binary = eBinary,
-                                  EAllowRead  allow_read  = eAllowRead);
+    static fstream* CreateTmpFile(const string& filename    = kEmptyStr,
+                                  ETextBinary   text_binary = eBinary,
+                                  EAllowRead    allow_read  = eAllowRead);
 
     /// Create temporary file and return pointer to corresponding stream.
     ///
@@ -550,10 +557,10 @@ public:
     ///   - NULL if error encountered.
     /// @sa
     ///   CreateTmpFile()
-    static fstream* CreateTmpFileEx(const string& dir = ".",
-                                    const string& prefix = kEmptyStr,
-                                    ETextBinary text_binary = eBinary,
-                                    EAllowRead  allow_read  = eAllowRead);
+    static fstream* CreateTmpFileEx(const string& dir         = ".",
+                                    const string& prefix      = kEmptyStr,
+                                    ETextBinary   text_binary = eBinary,
+                                    EAllowRead    allow_read  = eAllowRead);
 };
 
 
@@ -566,9 +573,7 @@ public:
 ///
 /// NOTE: Next functions are unsafe in multithreaded applications:
 ///       - static bool Exists() (for Mac only);
-///       - bool Exists() (for Mac only);
-///       - iterators (also is unsafe in single threaded applications if
-///         one iterator used inside another);
+///       - bool Exists() (for Mac only).
 
 class NCBI_XNCBI_EXPORT CDir : public CDirEntry
 {
@@ -577,10 +582,10 @@ class NCBI_XNCBI_EXPORT CDir : public CDirEntry
 public:
     /// Constructor.
     CDir();
-#ifdef NCBI_OS_MAC
+#  if defined(NCBI_OS_MAC)
     /// Constructor - for Mac OS.
     CDir(const FSSpec& fss);
-#endif
+#  endif
     /// Constructor using specified directory name.
     CDir(const string& dirname);
 
@@ -653,15 +658,15 @@ class NCBI_XNCBI_EXPORT CMemoryFile
 public:
     /// Which operations are permitted in memory map file.
     typedef enum {
-        eMMP_Read,	      ///< Data can be read
-        eMMP_Write,	      ///< Data can be written
+        eMMP_Read,            ///< Data can be read
+        eMMP_Write,           ///< Data can be written
         eMMP_ReadWrite    ///< Data can be read and written
     } EMemMapProtect;
 
     /// Whether to share changes or not.
     typedef enum {
-        eMMS_Shared,	  ///< Changes are shared.
-        eMMS_Private	  ///< Changes are private.
+        eMMS_Shared,      ///< Changes are shared.
+        eMMS_Private      ///< Changes are private.
     } EMemMapShare;
 
     /// Constructor.
@@ -723,11 +728,11 @@ public:
     ///
     /// NOTE: Now works on UNIX platform only.
     typedef enum {
-        eMMA_Normal,	  ///< No further special treatment
-        eMMA_Random,	  ///< Expect random page references
+        eMMA_Normal,      ///< No further special treatment
+        eMMA_Random,      ///< Expect random page references
         eMMA_Sequential,  ///< Expect sequential page references
-        eMMA_WillNeed,	  ///< Will need these pages
-        eMMA_DontNeed	  ///< Don't need these pages
+        eMMA_WillNeed,    ///< Will need these pages
+        eMMA_DontNeed     ///< Don't need these pages
     } EMemMapAdvise;
 
     /// Advise on memory map usage.
@@ -898,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/09/16 15:18:13  ivanov
+ * + CDirEntry::NormalizePath()
+ *
  * Revision 1.24  2003/08/29 16:56:27  ivanov
  * Removed commit about unsafe GetTmpName() and CreateTmpFile() functions in the MT env
  *
