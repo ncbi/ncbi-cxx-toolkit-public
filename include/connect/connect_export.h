@@ -34,6 +34,7 @@
  *    explicitly labeled as such.
  */
 
+#include <ncbiconf.h>
 
 /** @addtogroup WinDLL
  *
@@ -89,6 +90,10 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.4  2003/08/28 18:46:15  ucko
+ * #include <ncbiconf.h> so that other connect headers (on the C++ side,
+ * anyway) can pick up its settings.
+ *
  * Revision 6.3  2003/07/18 21:07:56  ivanov
  * Using WIN32 definition instead NCBI_MS_WIN
  *
