@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/07/04 19:41:07  vakatov
+* Get rid of an extra semicolon
+*
 * Revision 1.8  2001/06/12 16:56:36  vakatov
 * Added comments for the time constituents access methods
 *
@@ -400,7 +403,7 @@ inline
 long CTime::NanoSecond(void) const { return (long) m_NanoSecond; }
 
 inline
-CTime& CTime::SetTimeT(const time_t& t) { return x_SetTime(&t); };
+CTime& CTime::SetTimeT(const time_t& t) { return x_SetTime(&t); }
 
 inline
 CTime& CTime::SetCurrent(void) { return x_SetTime(); }
