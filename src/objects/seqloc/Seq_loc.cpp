@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2002/04/17 15:39:08  grichenk
+ * Moved CSeq_loc_CI to the seq-loc library
+ *
  * Revision 6.7  2002/01/16 18:56:32  grichenk
  * Removed CRef<> argument from choice variant setter, updated sources to
  * use references instead of CRef<>s
@@ -1342,6 +1345,161 @@ const CSeq_id* CSeq_loc::GetId(CScope* scope) const
 }            
             
     
+
+// CSeq_loc_CI implementation
+
+CSeq_loc_CI::CSeq_loc_CI(void)
+    : m_Location(0)
+{
+    m_CurLoc = m_LocList.end();
+}
+
+
+CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc& loc)
+    : m_Location(&loc)
+{
+    x_ProcessLocation(loc);
+    m_CurLoc = m_LocList.begin();
+}
+
+
+CSeq_loc_CI::~CSeq_loc_CI(void)
+{
+    return;
+}
+
+
+CSeq_loc_CI::CSeq_loc_CI(const CSeq_loc_CI& iter)
+{
+    *this = iter;
+}
+
+
+CSeq_loc_CI& CSeq_loc_CI::operator= (const CSeq_loc_CI& iter)
+{
+    if (this == &iter)
+        return *this;
+    m_LocList.clear();
+    m_Location = iter.m_Location;
+    iterate(TLocList, li, iter.m_LocList) {
+        TLocList::iterator tmp = m_LocList.insert(m_LocList.end(), *li);
+        if (iter.m_CurLoc == li)
+            m_CurLoc = tmp;
+    }
+    return *this;
+}
+
+
+void CSeq_loc_CI::x_ProcessLocation(const CSeq_loc& loc)
+{
+    switch ( loc.Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Null:
+    case CSeq_loc::e_Empty:
+        {
+            // Ignore empty locations
+            return;
+        }
+    case CSeq_loc::e_Whole:
+        {
+            SLoc_Info info;
+            info.m_Id = &loc.GetWhole();
+            info.m_Range.SetFrom(TRange::GetWholeFrom());
+            info.m_Range.SetTo(TRange::GetWholeTo());
+            m_LocList.push_back(info);
+            return;
+        }
+    case CSeq_loc::e_Int:
+        {
+            SLoc_Info info;
+            info.m_Id = &loc.GetInt().GetId();
+            info.m_Range.SetFrom(loc.GetInt().GetFrom());
+            info.m_Range.SetTo(loc.GetInt().GetTo());
+            if ( loc.GetInt().IsSetStrand() )
+                info.m_Strand = loc.GetInt().GetStrand();
+            m_LocList.push_back(info);
+            return;
+        }
+    case CSeq_loc::e_Pnt:
+        {
+            SLoc_Info info;
+            info.m_Id = &loc.GetPnt().GetId();
+            info.m_Range.SetFrom(loc.GetPnt().GetPoint());
+            info.m_Range.SetTo(loc.GetPnt().GetPoint());
+            if ( loc.GetPnt().IsSetStrand() )
+                info.m_Strand = loc.GetPnt().GetStrand();
+            m_LocList.push_back(info);
+            return;
+        }
+    case CSeq_loc::e_Packed_int:
+        {
+            iterate ( CPacked_seqint::Tdata, ii, loc.GetPacked_int().Get() ) {
+                SLoc_Info info;
+                info.m_Id = &(*ii)->GetId();
+                info.m_Range.SetFrom((*ii)->GetFrom());
+                info.m_Range.SetTo((*ii)->GetTo());
+                if ( (*ii)->IsSetStrand() )
+                    info.m_Strand = (*ii)->GetStrand();
+                m_LocList.push_back(info);
+            }
+            return;
+        }
+    case CSeq_loc::e_Packed_pnt:
+        {
+            iterate ( CPacked_seqpnt::TPoints, pi, loc.GetPacked_pnt().GetPoints() ) {
+                SLoc_Info info;
+                info.m_Id = &loc.GetPacked_pnt().GetId();
+                info.m_Range.SetFrom(*pi);
+                info.m_Range.SetTo(*pi);
+                if ( loc.GetPacked_pnt().IsSetStrand() )
+                    info.m_Strand = loc.GetPacked_pnt().GetStrand();
+                m_LocList.push_back(info);
+            }
+            return;
+        }
+    case CSeq_loc::e_Mix:
+        {
+            iterate(CSeq_loc_mix::Tdata, li, loc.GetMix().Get()) {
+                x_ProcessLocation(**li);
+            }
+            return;
+        }
+    case CSeq_loc::e_Equiv:
+        {
+            iterate(CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get()) {
+                x_ProcessLocation(**li);
+            }
+            return;
+        }
+    case CSeq_loc::e_Bond:
+        {
+            SLoc_Info infoA;
+            infoA.m_Id = &loc.GetBond().GetA().GetId();
+            infoA.m_Range.SetFrom(loc.GetBond().GetA().GetPoint());
+            infoA.m_Range.SetTo(loc.GetBond().GetA().GetPoint());
+            if ( loc.GetBond().GetA().IsSetStrand() )
+                infoA.m_Strand = loc.GetBond().GetA().GetStrand();
+            m_LocList.push_back(infoA);
+            if ( loc.GetBond().IsSetB() ) {
+                SLoc_Info infoB;
+                infoB.m_Id = &loc.GetBond().GetB().GetId();
+                infoB.m_Range.SetFrom(loc.GetBond().GetB().GetPoint());
+                infoB.m_Range.SetTo(loc.GetBond().GetB().GetPoint());
+                if ( loc.GetBond().GetB().IsSetStrand() )
+                    infoB.m_Strand = loc.GetBond().GetB().GetStrand();
+                m_LocList.push_back(infoB);
+            }
+            return;
+        }
+    case CSeq_loc::e_Feat:
+    default:
+        {
+            throw runtime_error
+                ("CSeq_loc_CI -- unsupported location type");
+        }
+    }
+}
+
 
 
 END_objects_SCOPE // namespace ncbi::objects::

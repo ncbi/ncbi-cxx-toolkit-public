@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/04/17 15:39:06  grichenk
+ * Moved CSeq_loc_CI to the seq-loc library
+ *
  * Revision 1.6  2002/01/10 18:20:48  clausen
  * Added IsOneBioseq, GetStart, and GetId
  *
@@ -70,6 +73,8 @@
 
 //
 #include <util/range.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -135,6 +140,71 @@ private:
 
 
 
+// Seq-loc iterator class -- iterates all intervals from a seq-loc
+// in the correct order.
+class CSeq_loc_CI
+{
+public:
+    CSeq_loc_CI(void);
+    CSeq_loc_CI(const CSeq_loc& loc);
+    virtual ~CSeq_loc_CI(void);
+
+    CSeq_loc_CI(const CSeq_loc_CI& iter);
+    CSeq_loc_CI& operator= (const CSeq_loc_CI& iter);
+
+    CSeq_loc_CI& operator++ (void);
+    CSeq_loc_CI& operator++ (int);
+    operator bool (void) const;
+
+    typedef CRange<int> TRange;
+
+    // Get seq_id of the current location
+    const CSeq_id& GetSeq_id(void) const;
+    // Get the range
+    // Get starting point
+    TRange         GetRange(void) const;
+    // Get strand
+    ENa_strand GetStrand(void) const;
+
+    // True if the current location is a whole sequence
+    bool           IsWhole(void) const;
+    // True if the current location is empty
+    bool           IsEmpty(void) const;
+    // True if the current location is a single point
+    bool           IsPoint(void) const;
+
+private:
+    // Check the iterator position
+    bool x_IsValid(void) const;
+    // Check the position, throw runtime_error if not valid
+    void x_ThrowNotValid(string where) const;
+
+    // Process the location, fill the list
+    void x_ProcessLocation(const CSeq_loc& loc);
+
+    // Simple location structure: id/from/to
+    struct SLoc_Info {
+        SLoc_Info(void);
+        SLoc_Info(const SLoc_Info& loc_info);
+        SLoc_Info& operator= (const SLoc_Info& loc_info);
+
+        CConstRef<CSeq_id> m_Id;
+        TRange             m_Range;
+        ENa_strand         m_Strand;
+    };
+
+    typedef list<SLoc_Info> TLocList;
+
+    // Prevent seq-loc destruction
+    CConstRef<CSeq_loc>      m_Location;
+    // List of intervals
+    TLocList                 m_LocList;
+    // Current interval
+    TLocList::const_iterator m_CurLoc;
+};
+
+
+
 /////////////////// CSeq_loc inline methods
 
 // constructor
@@ -146,6 +216,116 @@ CSeq_loc::CSeq_loc(void)
 
 
 /////////////////// end of CSeq_loc inline methods
+
+/////////////////// CSeq_loc_CI inline methods
+
+inline
+CSeq_loc_CI::SLoc_Info::SLoc_Info(void)
+    : m_Id(0), m_Strand(eNa_strand_unknown)
+{
+    return;
+}
+
+inline
+CSeq_loc_CI::SLoc_Info::SLoc_Info(const SLoc_Info& loc_info)
+    : m_Id(loc_info.m_Id),
+      m_Range(loc_info.m_Range),
+      m_Strand(loc_info.m_Strand)
+{
+    return;
+}
+
+inline
+CSeq_loc_CI::SLoc_Info&
+CSeq_loc_CI::SLoc_Info::operator= (const SLoc_Info& loc_info)
+{
+    if (this == &loc_info)
+        return *this;
+    m_Id = loc_info.m_Id;
+    m_Range = loc_info.m_Range;
+    m_Strand = loc_info.m_Strand;
+    return *this;
+}
+
+inline
+CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
+{
+    m_CurLoc++;
+    return *this;
+}
+
+inline
+CSeq_loc_CI& CSeq_loc_CI::operator++ (int)
+{
+    m_CurLoc++;
+    return *this;
+}
+
+inline
+CSeq_loc_CI::operator bool (void) const
+{
+    return x_IsValid();
+}
+
+inline
+const CSeq_id& CSeq_loc_CI::GetSeq_id(void) const
+{
+    x_ThrowNotValid("GetSeq_id()");
+    return *m_CurLoc->m_Id;
+}
+
+inline
+CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
+{
+    x_ThrowNotValid("GetRange()");
+    return m_CurLoc->m_Range;
+}
+
+inline
+ENa_strand CSeq_loc_CI::GetStrand(void) const
+{
+    x_ThrowNotValid("GetRange()");
+    return m_CurLoc->m_Strand;
+}
+
+inline
+bool CSeq_loc_CI::IsWhole(void) const
+{
+    x_ThrowNotValid("IsWhole()");
+    return m_CurLoc->m_Range.IsWholeFrom()  &&
+        m_CurLoc->m_Range.IsWholeTo();
+}
+
+inline
+bool CSeq_loc_CI::IsEmpty(void) const
+{
+    x_ThrowNotValid("IsEmpty()");
+    return m_CurLoc->m_Range.IsEmptyFrom()  &&
+        m_CurLoc->m_Range.IsEmptyTo();
+}
+
+inline
+bool CSeq_loc_CI::IsPoint(void) const
+{
+    x_ThrowNotValid("IsPoint()");
+    return m_CurLoc->m_Range.GetLength() == 1;
+}
+
+inline
+bool CSeq_loc_CI::x_IsValid(void) const
+{
+    return m_CurLoc != m_LocList.end();
+}
+
+inline
+void CSeq_loc_CI::x_ThrowNotValid(string where) const
+{
+    if ( x_IsValid() )
+        return;
+    throw runtime_error("CSeq_loc_CI::" + where + " -- iterator is not valid");
+}
+
+/////////////////// end of CSeq_loc_CI inline methods
 
 
 END_objects_SCOPE // namespace ncbi::objects::
