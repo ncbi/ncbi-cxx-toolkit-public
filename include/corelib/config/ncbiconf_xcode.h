@@ -344,7 +344,7 @@
 
  
 //#define HAVE_LIBJPEG 0
-#define HAVE_LIBTIFF 0
+#define HAVE_LIBTIFF 1
 #define HAVE_LIBPNG  1
-//#define HAVE_LIBGIF  0
+#define HAVE_LIBGIF  1
 #define HAVE_INTPTR_T 1
