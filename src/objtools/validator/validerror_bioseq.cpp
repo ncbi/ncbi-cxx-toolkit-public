@@ -1910,6 +1910,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     EDiagSev sev = eDiag_Warning;
     bool full_length_prot_ref = false;
+    TSeqPos x5UTR_to = 0, cds_from = 0, cds_to = 0, x3UTR_from = 0;
 
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
         
@@ -1957,6 +1958,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
         }
         
         if ( IsMrna(bsh) ) {              // mRNA
+            const CSeq_loc& loc = fi->GetLocation();
+
             switch ( ftype ) {
             case CSeqFeatData::e_Cdregion:
                 if ( NumOfIntervals(fi->GetLocation()) > 1 ) {
@@ -1974,6 +1977,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                                 fi->GetOriginalFeature());
                     }
                 }
+                cds_from = loc.GetStart(kInvalidSeqPos);
+                cds_to = loc.GetEnd(kInvalidSeqPos);
                 break;
                 
             case CSeqFeatData::e_Rna:
@@ -1996,6 +2001,15 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                             "Invalid feature for an mRNA Bioseq.",
                                 fi->GetOriginalFeature());
                     }
+
+                    CSeqFeatData::ESubtype fsubtype = fi->GetData().GetSubtype();
+                    if ( fsubtype == CSeqFeatData::eSubtype_5UTR ) {
+                        x5UTR_to = loc.GetEnd(kInvalidSeqPos);
+                    }
+                    if ( fsubtype == CSeqFeatData::eSubtype_3UTR ) {
+                        x3UTR_from = loc.GetStart(kInvalidSeqPos);
+                    }
+
                 }
                 break;
 
@@ -2020,6 +2034,19 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
 
+        // check that the 5UTR and 3UTR (if exist) abut the CDS
+        if ( x5UTR_to > 0 ) {
+            if ( x5UTR_to + 1 != cds_from ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                    "5'UTR does not abut CDS", fi->GetOriginalFeature());
+            }
+        }
+        if ( x3UTR_from > 0 ) {
+            if ( cds_to + 1 != x3UTR_from ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                    "CDS does not abut 3'UTR", fi->GetOriginalFeature());
+            }
+        }
         if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(fi->GetLocation()) ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
                 "Feature has 'far' location - accession not packaged in record",
@@ -3291,6 +3318,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2003/10/27 14:55:19  shomrat
+* added test for eErr_SEQ_FEAT_UTRdoesNotAbutCDS on mRNA bioseqs
+*
 * Revision 1.51  2003/10/27 14:16:50  shomrat
 * added ERR_SEQ_INST_SeqLitGapLength0
 *
