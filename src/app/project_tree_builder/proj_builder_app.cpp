@@ -698,6 +698,22 @@ const CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
 }
 
 
+const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
+{
+    if ( !m_WholeTree.get() ) {
+        m_WholeTree = 
+            auto_ptr<CProjectItemsTree>(new CProjectItemsTree);
+
+        CProjectDummyFilter pass_all_filter;
+        CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
+                                              GetProjectTreeInfo().m_Src, 
+                                              m_WholeTree.get());
+
+    }    
+    return *m_WholeTree;
+}
+
+
 string CProjBulderApp::GetDatatoolId(void) const
 {
     return GetConfig().GetString("Datatool", "datatool", "datatool");
@@ -744,6 +760,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/03/23 14:35:51  gorelenk
+ * Added implementation of CProjBulderApp::GetWholeTree.
+ *
  * Revision 1.33  2004/03/10 21:29:27  gorelenk
  * Changed implementation of CProjBulderApp::Run.
  *
