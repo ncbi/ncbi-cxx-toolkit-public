@@ -161,7 +161,21 @@ case "$host:$compiler" in
    CFLAGS="-mt $WS64_CFLAGS"
    CXXFLAGS="-mt +w +w2 $WS64_CFLAGS"
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
-   AR="$CXX -xar -o"
+   if test "$with_dll" != "no" ; then
+      CFLAGS="$CFLAGS -KPIC"
+      CXXFLAGS="$CXXFLAGS -KPIC"
+   fi
+   if test "$with_dll" = "yes" ; then
+      lib_dll="dll"
+      CONF_lib_ext=".so"
+      AR="$CXX -G -h \$@ -o"
+   else
+      AR="$CXX -xar -o"
+   fi
+   STRIP=":"
+   if test "$with_debug" = "no" ; then
+      LDFLAGS="-s $LDFLAGS"
+   fi
    RANLIB=":"
    CXX_FILTER="2>&1 | $(top_srcdir)/compilers/cxx_filter.WorkShop5.sh"
    serial_ws50_rtti_kludge="rtti"
@@ -340,6 +354,8 @@ if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_ou
 if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
 if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
+lib_dll="${lib_dll:=lib}"
+
 
 #### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
 #### old object/lib/binary file with the new one -- they will always be
@@ -758,6 +774,7 @@ AC_SUBST(lib_pre)
 AC_SUBST(lib_l_pre)
 AC_SUBST(lib_ext)
 AC_SUBST(lib_l_ext)
+AC_SUBST(lib_dll)
 AC_SUBST(exe_ext)
 AC_SUBST(f_compile)
 AC_SUBST(f_outobj)
@@ -838,11 +855,12 @@ Configuration completed.
 Optional configure flags:
  --without-debug         build non-debug versions of libs and apps
  --without-optimization  turn off optimization flags
+ --with-dll              build all libraries as DLLs
  --without-bincopy       do not check whether the copied binaries are identical
  --with-internal         build all projects including the internal ones
  --without-sybase        do not use SYBASE libraries
- --without-ncbi-c        do not use the NCBI C Toolkit
- --without-fastcgi       do not Fast-CGI library
+ --without-ncbi-c        do not use NCBI C Toolkit
+ --without-fastcgi       do not use Fast-CGI library
  --without-sssdb         do not use NCBI SSS DB library
  --without-pubmed        do not use NCBI PubMed libraries
  --exec-prefix           specify a non-default build directory name
@@ -853,11 +871,10 @@ CFLAGS   = $CFLAGS
 CXXFLAGS = $CXXFLAGS
 CPPFLAGS = $CPPFLAGS
 LDFLAGS  = $LDFLAGS
+Tools / flags / paths:  $builddir/Makefile.mk
+Configuration  header:  $ncbiconf
 
-Tools / flags / paths are in:  $builddir/Makefile.mk
-Preprocessor defines  are in:  $ncbiconf
-
-To build everything:    cd $builddir && make all_r
+To build everything:  cd $builddir && make all_r
 EOCONF
 ,
 
