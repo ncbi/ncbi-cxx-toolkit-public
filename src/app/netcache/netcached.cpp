@@ -93,12 +93,13 @@ public:
     CNetCacheServer(unsigned int port,
                     ICache*      cache,
                     unsigned     max_threads,
-                    unsigned     init_threads) 
+                    unsigned     init_threads,
+                    unsigned     network_timeout) 
         : CThreadedServer(port),
           m_MaxId(0),
           m_Cache(cache),
           m_Shutdown(false),
-          m_InactivityTimeout(30)
+          m_InactivityTimeout(network_timeout)
     {
         char hostname[256];
         int status = SOCK_gethostname(hostname, sizeof(hostname));
@@ -873,9 +874,20 @@ int CNetCacheDApp::Run(void)
             reg.GetInt("server", "max_threads", 25, CNcbiRegistry::eReturn);
         unsigned init_threads =
             reg.GetInt("server", "init_threads", 5, CNcbiRegistry::eReturn);
+        unsigned network_timeout =
+            reg.GetInt("server", "network_timeout", 10, CNcbiRegistry::eReturn);
+        if (network_timeout == 0) {
+            LOG_POST(Warning << 
+                "INI file sets 0 sec. network timeout. Assume 10 seconds.");
+            network_timeout =  10;
+        }
 
         auto_ptr<CNetCacheServer> thr_srv(
-            new CNetCacheServer(port, cache.get(), max_threads, init_threads));
+            new CNetCacheServer(port, 
+                                cache.get(), 
+                                max_threads, 
+                                init_threads,
+                                network_timeout));
 
         LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
@@ -916,6 +928,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/10/26 14:21:41  kuznets
+ * New parameter network_timeout
+ *
  * Revision 1.17  2004/10/26 13:36:27  kuznets
  * new startup flag -reinit and drop_db ini parameter
  *
