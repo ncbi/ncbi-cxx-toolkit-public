@@ -1,0 +1,90 @@
+--$Revision: 1.1 $ 
+--********************************************************************** 
+-- 
+--  NCBI Entrezgene 
+--  by James Ostell, 2001 
+--   
+--  Generic "Gene" object for Entrez Genes 
+--    This object is designed to incorporate a subset of information from 
+--    LocusLink and from records in Entrez Genomes to provide indexing, 
+--    linkage, and a useful summary report in Entrez for "Genes" 
+-- 
+--********************************************************************** 
+ 
+NCBI-Entrezgene DEFINITIONS ::= 
+BEGIN 
+ 
+EXPORTS Entrezgene; 
+ 
+IMPORTS Gene-ref FROM NCBI-Gene 
+        Prot-ref FROM NCBI-Protein 
+    BioSource FROM NCBI-BioSource 
+    RNA-ref FROM NCBI-RNA 
+        Dbtag, Date FROM NCBI-General 
+        Seq-loc FROM NCBI-Seqloc 
+    Pub FROM NCBI-Pub; 
+ 
+--******************************************** 
+-- Entrezgene is the "document" indexed in Entrez 
+--  and presented in the full display 
+-- It also contains the Entrez ID and date information 
+--******************************************* 
+Entrezgene ::= SEQUENCE { 
+    track-info Gene-track OPTIONAL , -- not in submission, but in retreival 
+    source BioSource , 
+    gene Gene-ref , 
+    prot Prot-ref OPTIONAL , 
+    rna RNA-ref OPTIONAL , 
+    summary VisibleString OPTIONAL ,   -- short summary 
+    chromosome VisibleString OPTIONAL , -- new
+    location SEQUENCE OF Maps OPTIONAL,
+    gene-source Gene-source OPTIONAL ,  -- NCBI source to Entrez 
+    locus SEQUENCE OF Gene-commentary OPTIONAL ,     -- where is the gene on a chromosome 
+    refgene SEQUENCE OF Gene-commentary OPTIONAL ,          -- NG for this? 
+    transcripts SEQUENCE OF Gene-commentary OPTIONAL ,   -- all the alternative splice forms 
+    products SEQUENCE OF Gene-commentary OPTIONAL ,         -- all the proteins 
+    comments SEQUENCE OF Gene-commentary OPTIONAL } 
+ 
+Gene-track ::= SEQUENCE { 
+        geneid INTEGER ,     -- required unique document id 
+        create-date Date ,   -- date created in Entrez 
+        update-date Date }   -- last date updated in Entrez 
+ 
+Gene-source ::= SEQUENCE { 
+    src VisibleString ,     -- key to the source within NCBI locuslink, Ecoli, etc 
+        src-int INTEGER OPTIONAL ,   -- eg. locuslink id 
+        src-str1 VisibleString OPTIONAL ,  -- eg. chromosome1 
+    src-str2 VisibleString OPTIONAL ,  -- eg. HI00056, or protein accession 
+    gene-display BOOLEAN DEFAULT FALSE , -- do we have a URL for gene display? 
+    locus-display BOOLEAN DEFAULT FALSE , -- do we have a URL for map/locus display? 
+    extra-terms BOOLEAN DEFAULT FALSE } -- do we have a URL for extra indexing terms? 
+ 
+Gene-commentary ::= SEQUENCE { 
+    heading VisibleString OPTIONAL ,  -- appears above text 
+    label VisibleString OPTIONAL ,        -- occurs to left of text 
+    text VisibleString OPTIONAL ,         -- block of text 
+    refs SEQUENCE OF Pub OPTIONAL ,       -- refs for this 
+    source SEQUENCE OF Other-source OPTIONAL ,   -- links and refs 
+    seqs SEQUENCE OF Seq-loc OPTIONAL ,           -- referenced sequences 
+    comment SEQUENCE OF Gene-commentary OPTIONAL } 
+ 
+Other-source ::= SEQUENCE { 
+    src Dbtag ,   -- key to non-ncbi source 
+    pre-text VisibleString OPTIONAL ,   -- text before anchor 
+    anchor VisibleString ,   -- text to show as highlight 
+    url VisibleString OPTIONAL ,   -- if present, use this URL not Dbtag and datbase 
+    post-text VisibleString OPTIONAL }   -- text after anchor 
+
+
+Maps::= SEQUENCE {
+        display-str VisibleString ,
+        method CHOICE {
+            proxy VisibleString ,  --url to non mapviewer mapviewing resource
+            map-type ENUMERATED { -- units used in display-str to query mapviewer 
+                    cyto (0) ,
+                    bp (1) ,
+                    cM (2) ,
+                    cR (3) ,
+                    min (4)}}}
+                        
+END 
