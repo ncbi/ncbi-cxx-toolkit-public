@@ -75,10 +75,10 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                     // Create CHandleRange from an align element
                     CSeq_loc* loc = new CSeq_loc;
                     loc->SetInt().SetId().Assign(**it_id);
-                    loc->GetInt().SetFrom(*it_start);
-                    loc->GetInt().SetTo(*it_start + len);
+                    loc->SetInt().SetFrom(*it_start);
+                    loc->SetInt().SetTo(*it_start + len);
                     if ( (*it)->IsSetStrands() ) {
-                        loc->GetInt().SetStrand(*it_strand);
+                        loc->SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
                     m_RangeMap->AddLocation(*loc);
@@ -109,10 +109,10 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                         continue;
                     CSeq_loc* loc = new CSeq_loc;
                     loc->SetInt().SetId().Assign(**it_id);
-                    loc->GetInt().SetFrom(*it_start);
-                    loc->GetInt().SetTo(*it_start + *it_len);
+                    loc->SetInt().SetFrom(*it_start);
+                    loc->SetInt().SetTo(*it_start + *it_len);
                     if ( denseg.IsSetStrands() ) {
-                        loc->GetInt().SetStrand(*it_strand);
+                        loc->SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
                     m_RangeMap->AddLocation(*loc);
@@ -154,10 +154,10 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                     if ( *it_pres ) {
                         CSeq_loc* loc = new CSeq_loc;
                         loc->SetInt().SetId().Assign(**it_id);
-                        loc->GetInt().SetFrom(*it_start);
-                        loc->GetInt().SetTo(*it_start + *it_len);
+                        loc->SetInt().SetFrom(*it_start);
+                        loc->SetInt().SetTo(*it_start + *it_len);
                         if ( packed.IsSetStrands() ) {
-                            loc->GetInt().SetStrand(*it_strand);
+                            loc->SetInt().SetStrand(*it_strand);
                             ++it_strand;
                         }
                         ++it_id;
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/07/25 15:01:51  grichenk
+* Replaced non-const GetXXX() with SetXXX()
+*
 * Revision 1.10  2002/07/08 20:51:00  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

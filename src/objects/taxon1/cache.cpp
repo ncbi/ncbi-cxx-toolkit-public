@@ -92,7 +92,7 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
             if( m_host.SendRequest( req, resp ) ) {
                 if( resp.IsTaxalineage() ) {
                     // Correct response, return object
-                    list< CRef<CTaxon1_name> >& lLin = resp.GetTaxalineage();
+                    list< CRef<CTaxon1_name> >& lLin = resp.SetTaxalineage();
                     CTaxon1Node* pParent = 0;
                     pNode   = 0;
                     list< CRef< CTaxon1_name > >::reverse_iterator i;
@@ -403,7 +403,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
         if( resp.IsGetorgnames() ) {
             // Correct response, return object
             list< CRef< CTaxon1_name > >&
-                lLin = ( resp.GetGetorgnames() );
+                lLin = ( resp.SetGetorgnames() );
             // Save taxname
             org.SetTaxname().swap( lLin.front()->SetOname() );
             lLin.pop_front();
@@ -877,6 +877,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.7  2002/07/25 15:01:56  grichenk
+ * Replaced non-const GetXXX() with SetXXX()
+ *
  * Revision 6.6  2002/02/14 22:44:50  vakatov
  * Use STimeout instead of time_t.
  * Get rid of warnings and extraneous #include's, shuffled code a little.

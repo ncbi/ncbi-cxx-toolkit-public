@@ -453,7 +453,7 @@ CTaxon1::GetChildren(int id_tax, TTaxIdList& children_ids)
         if( SendRequest( req, resp ) ) {
             if( resp.IsTaxachildren() ) {
                 // Correct response, return object
-                list< CRef< CTaxon1_name > >& lNm = resp.GetTaxachildren();
+                list< CRef< CTaxon1_name > >& lNm = resp.SetTaxachildren();
                 // Fill in the list
                 CTreeIterator* pIt = m_plCache->GetTree().GetIterator();
                 pIt->GoNode( pNode );
@@ -732,6 +732,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.5  2002/07/25 15:01:56  grichenk
+ * Replaced non-const GetXXX() with SetXXX()
+ *
  * Revision 6.4  2002/02/14 22:44:50  vakatov
  * Use STimeout instead of time_t.
  * Get rid of warnings and extraneous #include's, shuffled code a little.

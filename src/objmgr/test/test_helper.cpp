@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/07/25 15:01:53  grichenk
+* Replaced non-const GetXXX() with SetXXX()
+*
 * Revision 1.15  2002/07/03 14:40:46  ucko
 * Use typedef rather than hard-coded type for Dense_diag.ids.
 *
@@ -933,8 +936,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_feat iterator for the specified range
     // Copy location seq-id
     loc.SetInt().SetId().Assign(id);
-    loc.GetInt().SetFrom(0);
-    loc.GetInt().SetTo(10);
+    loc.SetInt().SetFrom(0);
+    loc.SetInt().SetTo(10);
     count = 0;
     annot_set.clear();
     if ( !tse_feat_test ) {
@@ -982,8 +985,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_align iterator for the specified range
     // Copy location seq-id
     loc.SetInt().SetId().Assign(id);
-    loc.GetInt().SetFrom(10);
-    loc.GetInt().SetTo(20);
+    loc.SetInt().SetFrom(10);
+    loc.SetInt().SetTo(20);
     count = 0;
     annot_set.clear();
     if ( !tse_feat_test ) {

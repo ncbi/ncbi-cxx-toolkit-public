@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2002/07/25 15:01:55  grichenk
+ * Replaced non-const GetXXX() with SetXXX()
+ *
  * Revision 6.3  2002/05/22 14:03:41  grichenk
  * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
  *
@@ -74,7 +77,7 @@ void CSeq_entry::Parentize(void)
         return; // already parentized
     }
     if ( IsSeq() ) {
-        GetSeq().SetParentEntry(this);
+        SetSeq().SetParentEntry(this);
     }
     else {
         CBioseq_set::TSeq_set::const_iterator s_end =

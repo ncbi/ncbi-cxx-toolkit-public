@@ -233,9 +233,9 @@ CSeq_entry *CId1Blob::Seq_entry()
       clenup=true;
     }
   if(id1_reply.IsGotseqentry())
-    m_Seq_entry = &id1_reply.GetGotseqentry();
+    m_Seq_entry = &id1_reply.SetGotseqentry();
   else if(id1_reply.IsGotdeadseqentry())
-    m_Seq_entry = &id1_reply.GetGotdeadseqentry();
+    m_Seq_entry = &id1_reply.SetGotdeadseqentry();
   if(clenup)
     m_Seq_entry=0;
   
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.22  2002/07/25 15:01:51  grichenk
+* Replaced non-const GetXXX() with SetXXX()
+*
 * Revision 1.21  2002/05/09 21:40:59  kimelman
 * MT tuning
 *

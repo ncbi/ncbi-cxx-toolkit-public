@@ -354,7 +354,7 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         rhandle.x_ResolveTo(scope, *this, *entry, *info);
     }
     _ASSERT(entry->IsSeq());
-    CBioseq& seq = entry->GetSeq();
+    CBioseq& seq = entry->SetSeq();
     if ( seq.GetInst().IsSetSeq_data() ) {
         // Simple sequence -- just return seq-data
         seq_piece->dest_start = 0;
@@ -755,7 +755,7 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
 
     m_Entries[&entry] = tse_info;
     if ( entry.IsSeq() ) {
-        CBioseq* seq = &entry.GetSeq();
+        CBioseq* seq = &entry.SetSeq();
         CBioseq_Info* info = new CBioseq_Info(entry);
         iterate ( CBioseq::TId, id, seq->GetId() ) {
             // Find the bioseq index
@@ -1386,7 +1386,7 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
         tse = tse->GetParentEntry();
     }
     if ( entry.IsSeq() ) {
-        CBioseq& seq = entry.GetSeq();
+        CBioseq& seq = entry.SetSeq();
         CSeq_id_Handle key;
         iterate ( CBioseq::TId, id, seq.GetId() ) {
             // Find TSE and bioseq positions
@@ -1905,6 +1905,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2002/07/25 15:01:51  grichenk
+* Replaced non-const GetXXX() with SetXXX()
+*
 * Revision 1.56  2002/07/08 20:51:01  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
