@@ -90,6 +90,7 @@
 #  define NCBI_SEQLOC_EXPORTS
 #  define NCBI_SEQRES_EXPORTS
 #  define NCBI_SEQSET_EXPORTS
+#  define NCBI_SEQTEST_EXPORTS
 #  define NCBI_SUBMIT_EXPORTS
 #  define NCBI_TAXON1_EXPORTS
 #endif
@@ -621,6 +622,15 @@
 #endif
 
 /*
+ * Export specifier for library seqtest
+ */
+#ifdef NCBI_SEQTEST_EXPORTS
+#  define NCBI_SEQTEST_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_SEQTEST_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library seq
  */
 #ifdef NCBI_SEQ_EXPORTS
@@ -1020,6 +1030,7 @@
 #  define NCBI_SEQLOC_EXPORT
 #  define NCBI_SEQRES_EXPORT
 #  define NCBI_SEQSET_EXPORT
+#  define NCBI_SEQTEST_EXPORT
 #  define NCBI_SEQUENCE_EXPORT
 #  define NCBI_SEQ_EXPORT
 #  define NCBI_SUBMIT_EXPORT
@@ -1078,6 +1089,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.82  2004/08/19 16:24:17  jcherry
+ * Added NCBI_SEQTEST_EXPORT (to NCBI_SEQ)
+ *
  * Revision 1.81  2004/08/12 17:33:27  dicuccio
  * Expunged last bits of GUI export specifiers
  *
