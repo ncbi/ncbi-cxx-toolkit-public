@@ -345,14 +345,24 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     asn1_pssm.SetIsProtein(true);
     asn1_pssm.SetNumRows(pssm->nrows);
     asn1_pssm.SetNumColumns(pssm->ncols);
-    asn1_pssm.SetByRow(false);
+    asn1_pssm.SetByRow(false);  // this is the default
 
     asn1_pssm.SetFinalData().SetLambda(pssm->lambda);
     asn1_pssm.SetFinalData().SetKappa(pssm->kappa);
     asn1_pssm.SetFinalData().SetH(pssm->h);
-    for (unsigned int i = 0; i < pssm->ncols; i++) {
-        for (unsigned int j = 0; j < pssm->nrows; j++) {
-            asn1_pssm.SetFinalData().SetScores().push_back(pssm->pssm[i][j]);
+    if (asn1_pssm.GetByRow() == false) {
+        for (unsigned int i = 0; i < pssm->ncols; i++) {
+            for (unsigned int j = 0; j < pssm->nrows; j++) {
+                asn1_pssm.SetFinalData().SetScores().
+                    push_back(pssm->pssm[i][j]);
+            }
+        }
+    } else {
+        for (unsigned int i = 0; i < pssm->nrows; i++) {
+            for (unsigned int j = 0; j < pssm->ncols; j++) {
+                asn1_pssm.SetFinalData().SetScores().
+                    push_back(pssm->pssm[j][i]);
+            }
         }
     }
     /* FIXME: use a constant here? */
@@ -377,9 +387,17 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     if (diagnostics->residue_freqs) {
         CPssmIntermediateData::TResFreqsPerPos& res_freqs =
             asn1_pssm.SetIntermediateData().SetResFreqsPerPos();
-        for (unsigned int i = 0; i < pssm->ncols; i++) {
-            for (unsigned int j = 0; j < pssm->nrows; j++) {
-                res_freqs.push_back(diagnostics->residue_freqs[i][j]);
+        if (asn1_pssm.GetByRow() == false) {
+            for (unsigned int i = 0; i < pssm->ncols; i++) {
+                for (unsigned int j = 0; j < pssm->nrows; j++) {
+                    res_freqs.push_back(diagnostics->residue_freqs[i][j]);
+                }
+            }
+        } else {
+            for (unsigned int i = 0; i < pssm->nrows; i++) {
+                for (unsigned int j = 0; j < pssm->ncols; j++) {
+                    res_freqs.push_back(diagnostics->residue_freqs[j][i]);
+                }
             }
         }
     }
@@ -387,9 +405,19 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     if (diagnostics->weighted_residue_freqs) {
         CPssmIntermediateData::TWeightedResFreqsPerPos& wres_freqs =
             asn1_pssm.SetIntermediateData().SetWeightedResFreqsPerPos();
-        for (unsigned int i = 0; i < pssm->ncols; i++) {
-            for (unsigned int j = 0; j < pssm->nrows; j++) {
-                wres_freqs.push_back(diagnostics->weighted_residue_freqs[i][j]);
+        if (asn1_pssm.GetByRow() == false) {
+            for (unsigned int i = 0; i < pssm->ncols; i++) {
+                for (unsigned int j = 0; j < pssm->nrows; j++) {
+                    wres_freqs.
+                        push_back(diagnostics->weighted_residue_freqs[i][j]);
+                }
+            }
+        } else {
+            for (unsigned int i = 0; i < pssm->nrows; i++) {
+                for (unsigned int j = 0; j < pssm->ncols; j++) {
+                    wres_freqs.
+                        push_back(diagnostics->weighted_residue_freqs[j][i]);
+                }
             }
         }
     }
@@ -397,9 +425,17 @@ CPssmEngine::x_PSIMatrix2Asn1(const PSIMatrix* pssm,
     if (diagnostics->frequency_ratios) {
         CPssmIntermediateData::TFreqRatios& freq_ratios = 
             asn1_pssm.SetIntermediateData().SetFreqRatios();
-        for (unsigned int i = 0; i < pssm->ncols; i++) {
-            for (unsigned int j = 0; j < pssm->nrows; j++) {
-                freq_ratios.push_back(diagnostics->frequency_ratios[i][j]);
+        if (asn1_pssm.GetByRow() == false) {
+            for (unsigned int i = 0; i < pssm->ncols; i++) {
+                for (unsigned int j = 0; j < pssm->nrows; j++) {
+                    freq_ratios.push_back(diagnostics->frequency_ratios[i][j]);
+                }
+            }
+        } else {
+            for (unsigned int i = 0; i < pssm->nrows; i++) {
+                for (unsigned int j = 0; j < pssm->ncols; j++) {
+                    freq_ratios.push_back(diagnostics->frequency_ratios[j][i]);
+                }
             }
         }
     }
@@ -421,6 +457,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2005/03/21 18:05:36  camacho
+ * Added code to write matrix by row to aid in testing
+ *
  * Revision 1.31  2005/03/08 17:00:49  camacho
  * Added unknown error code value to error message in case of PSSM engine failure
  *
