@@ -55,12 +55,12 @@ public:
         delete m_BlobStream;
     }
 
-    virtual EIO_Result Read(void*   buf, 
+    virtual ERW_Result Read(void*   buf, 
                             size_t  count,
                             size_t* bytes_read)
     {
         if (count == 0)
-            return eIO_Success;
+            return eRW_Success;
         
         size_t br;
 
@@ -73,13 +73,13 @@ public:
             *bytes_read = br;
         
         if (br == 0) 
-            return eIO_Eof;
-        return eIO_Success;
+            return eRW_Eof;
+        return eRW_Success;
     }
 
-    virtual EIO_Result PendingCount(size_t* /*count*/)
+    virtual ERW_Result PendingCount(size_t* /*count*/)
     {
-        return eIO_NotImplemented;
+        return eRW_NotImplemented;
     }
 
 
@@ -105,11 +105,11 @@ public:
         delete m_BlobStream;
     }
 
-    virtual EIO_Result Write(const void* buf, size_t count,
+    virtual ERW_Result Write(const void* buf, size_t count,
                              size_t* bytes_written = 0)
     {
         if (count == 0)
-            return eIO_Success;
+            return eRW_Success;
 
         {{
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
@@ -119,7 +119,7 @@ public:
         if (bytes_written)
             *bytes_written = count;
 
-        return eIO_Success;
+        return eRW_Success;
     }
 
 private:
@@ -191,7 +191,7 @@ void BDB_BLOB_Cache::Store(const string& key,
     m_TimeDB.version = version;
 
     CTime time_stamp(CTime::eCurrent);
-    m_TimeDB.time_stamp = time_stamp.GetTimeT();
+    m_TimeDB.time_stamp = (unsigned)time_stamp.GetTimeT();
 
     m_TimeDB.UpdateInsert();
 }
@@ -250,7 +250,7 @@ void BDB_BLOB_Cache::x_UpdateAccessTime(const string&  key,
     m_TimeDB.version = version;
 
     CTime time_stamp(CTime::eCurrent);
-    m_TimeDB.time_stamp = time_stamp.GetTimeT();
+    m_TimeDB.time_stamp = (unsigned)time_stamp.GetTimeT();
 
     m_TimeDB.UpdateInsert();
 }
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/29 16:26:34  kuznets
+ * Reflected ERW_Result rename + cleaned up 64-bit compilation
+ *
  * Revision 1.3  2003/09/29 15:45:17  kuznets
  * Minor warning fixed
  *
