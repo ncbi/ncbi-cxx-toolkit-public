@@ -87,11 +87,11 @@ struct NCBI_BDB_EXPORT SBLOB_Cache_AccessTimeDB : public CBDB_File
 ///
 /// Class implements IBLOB_Cache interface using local Berkeley DB
 /// database.
-class NCBI_BDB_EXPORT BDB_BLOB_Cache : public IBLOB_Cache
+class NCBI_BDB_EXPORT CBDB_BLOB_Cache : public IBLOB_Cache
 {
 public:
-    BDB_BLOB_Cache();
-    virtual ~BDB_BLOB_Cache();
+    CBDB_BLOB_Cache();
+    virtual ~CBDB_BLOB_Cache();
 
     void Open(const char* cache_path);
 
@@ -136,6 +136,10 @@ private:
 
     void x_DropBLOB(const char*    key,
                     int            version);
+
+private:
+    CBDB_BLOB_Cache(const CBDB_BLOB_Cache&);
+    CBDB_BLOB_Cache& operator=(const CBDB_BLOB_Cache);
 private:
     CBDB_Env                   m_Env;
     SBLOB_CacheDB              m_BlobDB;
@@ -151,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/02 20:14:16  kuznets
+ * Minor code cleanup
+ *
  * Revision 1.4  2003/10/01 20:49:41  kuznets
  * Changed several function prototypes (were marked as pure virual)
  *

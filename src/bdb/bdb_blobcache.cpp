@@ -134,15 +134,15 @@ private:
 
 
 
-BDB_BLOB_Cache::BDB_BLOB_Cache()
+CBDB_BLOB_Cache::CBDB_BLOB_Cache()
 {
 }
 
-BDB_BLOB_Cache::~BDB_BLOB_Cache()
+CBDB_BLOB_Cache::~CBDB_BLOB_Cache()
 {
 }
 
-void BDB_BLOB_Cache::Open(const char* path)
+void CBDB_BLOB_Cache::Open(const char* path)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -154,7 +154,7 @@ void BDB_BLOB_Cache::Open(const char* path)
     m_TimeDB.Open("lc_time.db", CBDB_RawFile::eReadWriteCreate);
 }
 
-void BDB_BLOB_Cache::Store(const string& key,
+void CBDB_BLOB_Cache::Store(const string& key,
                            int           version,
                            const void*   data,
                            size_t        size,
@@ -197,7 +197,7 @@ void BDB_BLOB_Cache::Store(const string& key,
 }
 
 
-size_t BDB_BLOB_Cache::GetSize(const string& key,
+size_t CBDB_BLOB_Cache::GetSize(const string& key,
                                int           version)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
@@ -213,7 +213,7 @@ size_t BDB_BLOB_Cache::GetSize(const string& key,
 }
 
 
-bool BDB_BLOB_Cache::Read(const string& key, 
+bool CBDB_BLOB_Cache::Read(const string& key, 
                           int           version, 
                           void*         buf, 
                           size_t        buf_size)
@@ -237,14 +237,14 @@ bool BDB_BLOB_Cache::Read(const string& key,
 }
 
 
-void BDB_BLOB_Cache::Remove(const string& key)
+void CBDB_BLOB_Cache::Remove(const string& key)
 {
     Purge(key, 0, eDropAll);
 }
 
 
-void BDB_BLOB_Cache::x_UpdateAccessTime(const string&  key,
-                                        int            version)
+void CBDB_BLOB_Cache::x_UpdateAccessTime(const string&  key,
+                                         int            version)
 {
     m_TimeDB.key = key;
     m_TimeDB.version = version;
@@ -256,8 +256,8 @@ void BDB_BLOB_Cache::x_UpdateAccessTime(const string&  key,
 }
 
 
-time_t BDB_BLOB_Cache::GetAccessTime(const string& key,
-                                     int           version)
+time_t CBDB_BLOB_Cache::GetAccessTime(const string& key,
+                                      int           version)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -273,8 +273,8 @@ time_t BDB_BLOB_Cache::GetAccessTime(const string& key,
     return 0;
 }
 
-void BDB_BLOB_Cache::Purge(time_t           access_time,
-                           EKeepVersions    keep_last_version)
+void CBDB_BLOB_Cache::Purge(time_t           access_time,
+                            EKeepVersions    keep_last_version)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -300,9 +300,9 @@ void BDB_BLOB_Cache::Purge(time_t           access_time,
     }
 }
 
-void BDB_BLOB_Cache::Purge(const string&    key,
-                           time_t           access_time,
-                           EKeepVersions    keep_last_version)
+void CBDB_BLOB_Cache::Purge(const string&    key,
+                            time_t           access_time,
+                            EKeepVersions    keep_last_version)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -328,8 +328,8 @@ void BDB_BLOB_Cache::Purge(const string&    key,
 }
 
 
-IReader* BDB_BLOB_Cache::GetReadStream(const string& key, 
-                                       int   version)
+IReader* CBDB_BLOB_Cache::GetReadStream(const string& key, 
+                                        int   version)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
@@ -345,9 +345,9 @@ IReader* BDB_BLOB_Cache::GetReadStream(const string& key,
 
 }
 
-IWriter* BDB_BLOB_Cache::GetWriteStream(const string&    key, 
-                                        int              version,
-                                        EKeepVersions    keep_versions)
+IWriter* CBDB_BLOB_Cache::GetWriteStream(const string&    key, 
+                                         int              version,
+                                         EKeepVersions    keep_versions)
 {
     if (keep_versions == eDropAll || keep_versions == eDropOlder) {
         Purge(key, 0, keep_versions);
@@ -362,8 +362,8 @@ IWriter* BDB_BLOB_Cache::GetWriteStream(const string&    key,
     return new CBDB_BLOB_CacheIWriter(bstream);
 }
 
-void BDB_BLOB_Cache::x_DropBLOB(const char*    key,
-                                int            version)
+void CBDB_BLOB_Cache::x_DropBLOB(const char*    key,
+                                 int            version)
 {
     m_BlobDB.key = key;
     m_BlobDB.version = version;
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/02 20:13:25  kuznets
+ * Minor code cleanup
+ *
  * Revision 1.4  2003/09/29 16:26:34  kuznets
  * Reflected ERW_Result rename + cleaned up 64-bit compilation
  *
