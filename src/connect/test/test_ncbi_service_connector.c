@@ -30,11 +30,14 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2001/05/11 16:05:41  lavr
+ * Change log message corrected
+ *
  * Revision 6.10  2001/05/11 15:38:01  lavr
  * Print connector type along with read data
  *
  * Revision 6.9  2001/04/24 21:42:43  lavr
- * Burshed code to use CORE_LOG facility only.
+ * Brushed code to use CORE_LOG facility only.
  *
  * Revision 6.8  2001/01/25 17:13:22  lavr
  * Added: close/free everything on program exit: useful to check memory leaks
