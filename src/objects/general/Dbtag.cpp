@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2003/06/27 16:22:25  shomrat
+ * Changed initialization of kApprovedDbXrefs
+ *
  * Revision 6.5  2003/06/27 15:40:09  shomrat
  * Implemented IsApproved
  *
@@ -73,77 +76,66 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-struct SDbEntry
-{
-    const char*  m_Db;
-    const char*  m_URLPrefix;
-
-    bool operator<(const SDbEntry& other) const {
-        return strcmp(m_Db, other.m_Db) < 0;
-    }
-};
-
-
 // List of approved DB names.
 // NOTE: these must stay in ASCIIbetical order!
 static const string kApprovedDbXrefs[] = {
-    { "ATCC"              },
-    { "ATCC(dna)"         },
-    { "ATCC(in host)"     },
-    { "AceView/WormGenes" },
-    { "BDGP_EST"          },
-    { "BDGP_INS"          },
-    { "CDD"               },
-    { "CK"                },
-    { "COG"               },
-    { "ENSEMBL"           },
-    { "ESTLIB"            },
-    { "FANTOM_DB"         },
-    { "FLYBASE"           },
-    { "GABI"              },
-    { "GDB"               },
-    { "GI"                },
-    { "GO"                },
-    { "GOA"               },
-    { "GeneDB"            },
-    { "GeneID"            },
-    { "IFO"               },
-    { "IMGT/HLA"          },
-    { "IMGT/LIGM"         },
-    { "ISFinder"          },
-    { "InterimID"         },
-    { "Interpro"          },
-    { "JCM"               },
-    { "LocusID"           },
-    { "MGD"               },
-    { "MGI"               },
-    { "MIM"               },
-    { "MaizeDB"           },
-    { "NextDB"            },
-    { "PID"               },
-    { "PIDd"              },
-    { "PIDe"              },
-    { "PIDg"              },
-    { "PIR"               },
-    { "PSEUDO"            },
-    { "RATMAP"            },
-    { "REMTREMBL"         },
-    { "RGD"               },
-    { "RZPD"              },
-    { "RiceGenes"         },
-    { "SGD"               },
-    { "SPTREMBL"          },
-    { "SWISS-PROT"        },
-    { "SoyBase"           },
-    { "UniGene"           },
-    { "UniSTS"            },
-    { "WorfDB"            },
-    { "WormBase"          },
-    { "dbEST"             },
-    { "dbSNP"             },
-    { "dbSTS"             },
-    { "niaEST"            },
-    { "taxon",              }
+    "ATCC",
+    "ATCC(dna)",
+    "ATCC(in host)",
+    "AceView/WormGenes",
+    "BDGP_EST",
+    "BDGP_INS",
+    "CDD",
+    "CK",
+    "COG",
+    "ENSEMBL",
+    "ESTLIB",
+    "FANTOM_DB"         ,
+    "FLYBASE",
+    "GABI",
+    "GDB",
+    "GI",
+    "GO",
+    "GOA",
+    "GeneDB",
+    "GeneID",
+    "IFO",
+    "IMGT/HLA",
+    "IMGT/LIGM",
+    "ISFinder",
+    "InterimID",
+    "Interpro",
+    "JCM",
+    "LocusID",
+    "MGD",
+    "MGI",
+    "MIM",
+    "MaizeDB",
+    "NextDB",
+    "PID",
+    "PIDd",
+    "PIDe",
+    "PIDg",
+    "PIR",
+    "PSEUDO",
+    "RATMAP",
+    "REMTREMBL",
+    "RGD",
+    "RZPD",
+    "RiceGenes",
+    "SGD",
+    "SPTREMBL",
+    "SWISS-PROT",
+    "SoyBase",
+    "UniGene",
+    "UniSTS",
+    "WorfDB",
+    "WormBase",
+    "dbEST",
+    "dbSNP",
+    "dbSTS",
+    "niaEST",
+    "taxon"
 };
 static const string* kApprovedDbXrefsEnd
     = kApprovedDbXrefs + sizeof(kApprovedDbXrefs)/sizeof(string);
