@@ -129,7 +129,8 @@ const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLo
     // If allocating more than 256MB in a file, do a full sweep first.
     // This technique may help prevent unnecessary fragmentation.
     // How?  Well, it's kind of a fudge, really: before allocating
-    // anything really big, we want to clean memory as much as possible.
+    // anything really big, we want to clean memory as much as
+    // possible.
     //
     // Essentially, big objects can fail due to fragmentation, even if
     // we are well below the memory bound.  So if there is a big spot
@@ -320,7 +321,6 @@ void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
 // mappings of size "small slice" or "small slice * 2", and 2 for
 // mappings that do not correspond to any slice size, i.e. the "tail"
 // portion of a file, or whole mappings of short files. (KMB)
-
 
 void CRegionMap::x_Roundup(TIndx       & begin,
                            TIndx       & end,
@@ -599,7 +599,7 @@ void CSeqDBAtlas::GetRegion(CSeqDBMemLease & lease,
     if (result) {
         _ASSERT(start);
         
-        lease.SetRegion(begin, end, start, rmap);
+        lease.x_SetRegion(begin, end, start, rmap);
     }
 }
 
