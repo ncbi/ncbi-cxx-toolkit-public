@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/11/28 12:47:41  ostell
+ * fixed first switch statement to break properly
+ *
  * Revision 6.1  2000/11/21 18:58:29  vasilche
  * Added Match() methods for CSeq_id, CObject_id and CDbtag.
  *
@@ -86,6 +89,7 @@ CSeq_id::E_SIC CSeq_id::Compare(const CSeq_id& sid2) const
 					default:
 						return e_DIFF;
 				}
+				break;  // goto next switch
 			}
 			default:
 				return e_DIFF;
