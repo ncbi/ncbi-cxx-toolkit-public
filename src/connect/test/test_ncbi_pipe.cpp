@@ -188,19 +188,22 @@ int CTest::Run(void)
     string str;
     vector<string> args;
 
-    char        buf[kBufferSize];
-    size_t      n_read    = 0;
-    size_t      n_written = 0;
-    int         exitcode  = 0;
-    string      message;
-    EIO_Status  status;
+    char           buf[kBufferSize];
+    size_t         n_read    = 0;
+    size_t         n_written = 0;
+    int            exitcode  = 0;
+    string         message;
+    EIO_Status     status;
+    TProcessHandle handle;
 
     // Create pipe object
     CPipe pipe;
-    STimeout timeout = {2,0};
-    assert(pipe.SetTimeout(eIO_Read,  &timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Close, &timeout) == eIO_Success);
+    STimeout io_timeout    = {2,0};
+    STimeout close_timeout = {1,0};
+
+    assert(pipe.SetTimeout(eIO_Read,  &io_timeout)    == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Write, &io_timeout)    == eIO_Success);
+    assert(pipe.SetTimeout(eIO_Close, &close_timeout) == eIO_Success);
 
 #if defined(NCBI_OS_UNIX)
     // Pipe for reading (direct from pipe)
@@ -241,9 +244,11 @@ int CTest::Run(void)
     assert(exitcode == 0);
 #endif
 
+
     // Pipe for writing (direct to pipe)
+
     args.clear();
-    args.push_back("one");
+    args.push_back("1");
     assert(pipe.Open(app.c_str(), args, CPipe::fStdOut_Close) == eIO_Success);
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Unknown);
     assert(n_read == 0);
@@ -254,10 +259,11 @@ int CTest::Run(void)
     assert(pipe.Close(&exitcode) == eIO_Success);
     assert(exitcode == kTestResult);
 
+
     // Bidirectional pipe (direct from pipe)
+
     args.clear();
-    args.push_back("one");
-    args.push_back("two");
+    args.push_back("2");
     assert(pipe.Open(app.c_str(), args) == eIO_Success);
     assert(s_ReadPipe(pipe, buf, kBufferSize, &n_read) == eIO_Timeout);
     assert(n_read == 0);
@@ -278,11 +284,11 @@ int CTest::Run(void)
     assert(s_WritePipe(pipe, buf, kBufferSize, &n_written) == eIO_Closed);
     assert(n_written == 0);
 
+
     // Bidirectional pipe (iostream)
+
     args.clear();
-    args.push_back("one");
-    args.push_back("two");
-    args.push_back("three");
+    args.push_back("3");
     CConn_PipeStream ps(app.c_str(), args, CPipe::fStdErr_Open);
     cout << endl;
     for (int i = 5; i<=10; i++) {
@@ -302,6 +308,50 @@ int CTest::Run(void)
     assert(ps.GetPipe().Close(&exitcode) == eIO_Success);
     assert(exitcode == kTestResult);
 
+
+    // f*OnClose flags test
+
+    args.clear();
+    args.push_back("4");
+    
+    assert(pipe.Open(app.c_str(), args, CPipe::fKeepOnClose) == eIO_Success);
+    handle = pipe.GetProcessHandle();
+    assert(handle > 0);
+    assert(pipe.Close(&exitcode) == eIO_Timeout);
+    assert(exitcode == -1 );
+    {{
+        CProcess process(handle, CProcess::eHandle);
+        assert(process.IsAlive());
+        assert(process.Kill());
+        assert(!process.IsAlive());
+    }}
+
+    args.clear();
+    args.push_back("4");
+
+    assert(pipe.Open(app.c_str(), args, CPipe::fKillOnClose) == eIO_Success);
+    handle = pipe.GetProcessHandle();
+    assert(handle > 0);
+    assert(pipe.Close(&exitcode) == eIO_Success);
+    assert(exitcode == -1 );
+    {{
+        CProcess process(handle, CProcess::eHandle);
+        assert(!process.IsAlive());
+    }}
+
+    assert(pipe.Open(app.c_str(), args, CPipe::fKeepOnClose) == eIO_Success);
+    handle = pipe.GetProcessHandle();
+    assert(handle > 0);
+    assert(pipe.Close(&exitcode) == eIO_Timeout);
+    assert(exitcode == -1);
+    {{
+        CProcess process(handle, CProcess::eHandle);
+        assert(process.IsAlive());
+        assert(process.Wait(4000) == kTestResult);
+        assert(!process.IsAlive());
+    }}
+
+    // Done
     cout << "\nTEST execution completed successfully!\n";
 
     return 0;
@@ -316,13 +366,23 @@ int main(int argc, const char* argv[])
 {
     string command;
 
-    // Invalid arguments
-    if (argc > 4) {
+    // Check arguments
+    if (argc > 2) {
+        // Invalid arguments
         exit(1);
     }
+    if (argc == 1) {
+        // Execute main application function
+        return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    }
 
+    // Internal tests
+    int test_num = NStr::StringToInt(argv[1]);
+
+    switch ( test_num ) {
     // Spawned process for unidirectional test
-    if (argc == 2) {
+    case 1:
+    {
         cerr << endl << "--- CPipe unidirectional test ---" << endl;
         command = s_ReadFile(stdin);
         _TRACE("read back >>" << command << "<<");
@@ -330,18 +390,18 @@ int main(int argc, const char* argv[])
         cerr << "Ok. Test 1 running." << endl;
         exit(kTestResult);
     }
-
     // Spawned process for bidirectional test (direct from pipe)
-    if (argc == 3) {
+    case 2:
+    {
         cerr << endl << "--- CPipe bidirectional test (pipe) ---" << endl;
         command = s_ReadFile(stdin);
         assert(command == "Child, are you ready again?");
         s_WriteFile(stdout, "Ok. Test 2 running.");
         exit(kTestResult);
     }
-
     // Spawned process for bidirectional test (iostream)
-    if (argc == 4) {
+    case 3:
+    {
         //cerr << endl << "--- CPipe bidirectional test (iostream) ---"<<endl;
         for (int i = 5; i<=10; i++) {
             int value;
@@ -353,15 +413,23 @@ int main(int argc, const char* argv[])
         cerr << "Done" << endl;
         exit(kTestResult);
     }
+    // Test for fKeepOnClose && fKillOnClose flags
+    case 4:
+    {
+        SleepSec(3);
+        exit(kTestResult);
+    }}
 
-    // Execute main application function
-    return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
+    return -1;
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2003/12/04 16:29:22  ivanov
+ * Added f*OnClose flags test
+ *
  * Revision 6.20  2003/11/15 15:35:36  ucko
  * +<stdio.h> (no longer included by ncbi_pipe.hpp)
  *
@@ -431,4 +499,3 @@ int main(int argc, const char* argv[])
  *
  * ===========================================================================
  */
-
