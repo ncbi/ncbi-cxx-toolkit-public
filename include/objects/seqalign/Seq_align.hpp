@@ -48,6 +48,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_id;
+
 class NCBI_SEQALIGN_EXPORT CSeq_align : public CSeq_align_Base
 {
     typedef CSeq_align_Base Tparent;
@@ -120,6 +122,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/02/23 16:17:53  ucko
+* Add forward declaration of CSeq_id.
+*
 * Revision 1.7  2004/02/23 15:30:55  todorov
 * +TChooseSeqIdCallback to abstract resolving seq-ids in CreateDensegFromStdseg()
 *
