@@ -9,7 +9,7 @@
 APP = serialtest
 SRC = serialobject serialobject_Base testserial cppwebenv twebenv \
       we_cpp__ we_cpp___
-LIB = xser xutil xncbi
+LIB = xcser xser xutil xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I$(srcdir) -I$(srcdir)/webenv
 

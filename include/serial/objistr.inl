@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.18  2001/10/17 20:41:19  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -118,7 +124,7 @@ CObjectIStream* CObjectIStream::Open(const string& fileName,
 }
 
 inline
-unsigned CObjectIStream::GetFailFlags(void) const
+CObjectIStream::TFailFlags CObjectIStream::GetFailFlags(void) const
 {
     return m_Fail;
 }
@@ -130,31 +136,31 @@ bool CObjectIStream::fail(void) const
 }
 
 inline
-unsigned CObjectIStream::ClearFailFlags(unsigned flags)
+CObjectIStream::TFailFlags CObjectIStream::ClearFailFlags(TFailFlags flags)
 {
-    unsigned old = GetFailFlags();
+    TFailFlags old = GetFailFlags();
     m_Fail &= ~flags;
     return old;
 }
 
 inline
-unsigned CObjectIStream::GetFlags(void) const
+CObjectIStream::TFlags CObjectIStream::GetFlags(void) const
 {
     return m_Flags;
 }
 
 inline
-unsigned CObjectIStream::SetFlags(unsigned flags)
+CObjectIStream::TFlags CObjectIStream::SetFlags(TFlags flags)
 {
-    unsigned old = GetFlags();
+    TFlags old = GetFlags();
     m_Flags |= flags;
     return old;
 }
 
 inline
-unsigned CObjectIStream::ClearFlags(unsigned flags)
+CObjectIStream::TFlags CObjectIStream::ClearFlags(TFlags flags)
 {
-    unsigned old = GetFlags();
+    TFlags old = GetFlags();
     m_Flags &= ~flags;
     return old;
 }
@@ -240,38 +246,6 @@ void CObjectIStream::CharBlock::EndOfBlock(void)
     _ASSERT(!KnownLength());
     m_Length = 0;
 }
-
-#if HAVE_NCBI_C
-inline
-CObjectIStream& CObjectIStream::AsnIo::GetStream(void) const
-{
-    return m_Stream;
-}
-
-inline
-CObjectIStream::AsnIo::operator asnio*(void)
-{
-    return m_AsnIo;
-}
-
-inline
-asnio* CObjectIStream::AsnIo::operator->(void)
-{
-    return m_AsnIo;
-}
-
-inline
-const string& CObjectIStream::AsnIo::GetRootTypeName(void) const
-{
-    return m_RootTypeName;
-}
-
-inline
-size_t CObjectIStream::AsnIo::Read(char* data, size_t length)
-{
-    return GetStream().AsnRead(*this, data, length);
-}
-#endif
 
 // standard readers
 // bool

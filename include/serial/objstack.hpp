@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.10  2002/10/15 13:40:33  gouriano
 * added "skiptag" flag
 *
@@ -178,9 +184,14 @@ private:
 #include <serial/objstack.inl>
 
 #define BEGIN_OBJECT_FRAME_OFx(Stream, Args) \
-    (Stream).PushFrame Args; try {
+    (Stream).PushFrame Args; \
+    try {
 #define END_OBJECT_FRAME_OF(Stream) \
-    } catch (...) { (Stream).PopErrorFrame(); throw; } (Stream).PopFrame()
+    } catch (...) { \
+        (Stream).PopErrorFrame(); \
+        throw; \
+    } \
+    (Stream).PopFrame()
 
 #define BEGIN_OBJECT_FRAME_OF(Stream, Type) \
     BEGIN_OBJECT_FRAME_OFx(Stream, (CObjectStackFrame::Type))
@@ -192,9 +203,18 @@ private:
 #define END_OBJECT_FRAME() END_OBJECT_FRAME_OF(*this)
 
 #define BEGIN_OBJECT_2FRAMES_OFx(Stream, Args) \
-    (Stream).In().PushFrame Args; (Stream).Out().PushFrame Args; try {
+    (Stream).In().PushFrame Args; \
+    (Stream).Out().PushFrame Args; \
+    try {
 #define END_OBJECT_2FRAMES_OF(Stream) \
-    } catch (...) { (Stream).Out().PopFrame(); (Stream).Out().SetFailFlagsNoError(CObjectOStream::eInvalidData); (Stream).In().PopErrorFrame(); throw; } (Stream).Out().PopFrame(); (Stream).In().PopFrame()
+    } catch (...) { \
+        (Stream).Out().PopFrame(); \
+        (Stream).Out().SetFailFlagsNoError(CObjectOStream::fInvalidData); \
+        (Stream).In().PopErrorFrame(); \
+        throw; \
+    } \
+    (Stream).Out().PopFrame(); \
+    (Stream).In().PopFrame()
 
 #define BEGIN_OBJECT_2FRAMES_OF(Stream, Type) \
     BEGIN_OBJECT_2FRAMES_OFx(Stream, (CObjectStackFrame::Type))

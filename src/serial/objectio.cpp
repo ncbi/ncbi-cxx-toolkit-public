@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.5  2001/08/31 20:05:45  ucko
 * Fix ICC build.
 *
@@ -170,7 +176,7 @@ void CIStreamClassMemberIterator::BeginClassMember(void)
 inline
 void CIStreamClassMemberIterator::IllegalCall(const char* message) const
 {
-    GetStream().ThrowError(CObjectIStream::eIllegalCall, message);
+    GetStream().ThrowError(CObjectIStream::fIllegalCall, message);
 }
 
 inline
@@ -270,7 +276,7 @@ void CIStreamContainerIterator::BeginElement(void)
 inline
 void CIStreamContainerIterator::IllegalCall(const char* message) const
 {
-    GetStream().ThrowError(CObjectIStream::eIllegalCall, message);
+    GetStream().ThrowError(CObjectIStream::fIllegalCall, message);
 }
 
 inline

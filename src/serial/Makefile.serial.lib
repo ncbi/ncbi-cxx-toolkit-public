@@ -5,16 +5,14 @@
 
 SRC = \
 	hookdata typeinfo objectinfo objectiter objectio typeref typemap \
-    stdtypes enumerated ptrinfo autoptrinfo continfo stltypes asntypes \
+        stdtypes enumerated ptrinfo autoptrinfo continfo stltypes \
 	memberid memberlist item classinfob member classinfo \
 	variant choice choiceptr \
 	objistr objostr objcopy iterator \
-	serial serialasn delaybuf \
+	serial delaybuf \
 	exception objhook objlist objstack \
 	$(serial_ws50_rtti_kludge) \
 	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml \
 	serializable serialobject
 
 LIB    = xser
-
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)

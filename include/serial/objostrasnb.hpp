@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.37  2001/10/17 20:41:20  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -234,11 +240,11 @@ public:
     void WriteEndOfContent(void);
 
     EFixNonPrint FixNonPrint(EFixNonPrint how)
-    {
-        EFixNonPrint tmp = m_FixMethod;
-        m_FixMethod = how;
-        return tmp;
-    }
+        {
+            EFixNonPrint tmp = m_FixMethod;
+            m_FixMethod = how;
+            return tmp;
+        }
 
 protected:
     virtual void WriteBool(bool data);
@@ -257,11 +263,6 @@ protected:
     virtual void CopyStringStore(CObjectIStream& in);
     void CopyStringValue(CObjectIStreamAsnBinary& in,
                          bool checkVisible = false);
-
-#if HAVE_NCBI_C
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
-#endif
 
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TObjectIndex index);
@@ -305,13 +306,17 @@ protected:
                                     const CMemberId& id);
     virtual void EndChoiceVariant(void);
 
-	virtual void BeginBytes(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block,
+    virtual void BeginBytes(const ByteBlock& block);
+    virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length);
 
-	virtual void BeginChars(const CharBlock& block);
-	virtual void WriteChars(const CharBlock& block,
+    virtual void BeginChars(const CharBlock& block);
+    virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length);
+
+#if HAVE_NCBI_C
+    friend class CObjectOStream::AsnIo;
+#endif
 
 private:
 

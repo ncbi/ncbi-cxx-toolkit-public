@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.71  2002/10/08 18:59:38  grichenk
 * Check for null pointers in containers (assert in debug mode,
 * warning in release).
@@ -335,10 +341,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#if HAVE_NCBI_C
-# include <asn.h>
-#endif
-
 BEGIN_NCBI_SCOPE
 
 CObjectOStream* CObjectOStream::OpenObjectOStreamAsn(CNcbiOstream& out,
@@ -459,7 +461,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     _ASSERT(sizeof(buffer) > digits + 16);
     int width = sprintf(buffer, "%.*e", int(digits-1), data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        ThrowError(eOverflow, "buffer overflow");
+        ThrowError(fOverflow, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);
     char* dotPos = strchr(buffer, '.');
     _ASSERT(dotPos);
@@ -473,7 +475,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     int exp;
     // calculate exponent
     if ( sscanf(ePos + 1, "%d", &exp) != 1 )
-        ThrowError(eFail, "double conversion error");
+        ThrowError(fFail, "double conversion error");
 
     // remove trailing zeroes
     int fractDigits = int(ePos - dotPos - 1);
@@ -584,7 +586,7 @@ void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         m_Output.PutInt8(index);
     else
-        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
 }
 
 void CObjectOStreamAsn::WriteOtherBegin(TTypeInfo typeInfo)
@@ -906,7 +908,7 @@ void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
 
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
-        copier.ThrowError(CObjectIStream::eFormatError,
+        copier.ThrowError(CObjectIStream::fFormatError,
                           "choice variant id expected");
     }
 
@@ -972,60 +974,6 @@ void CObjectOStreamAsn::EndChars(const CharBlock& )
     m_Output.WrapAt(78, false);
     m_Output.PutChar('"');
 }
-
-#if HAVE_NCBI_C
-unsigned CObjectOStreamAsn::GetAsnFlags(void)
-{
-    return ASNIO_TEXT;
-}
-
-void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
-{
-    asn.m_Count = 0;
-    size_t indent = m_Output.GetIndentLevel();
-    asn->indent_level = Int1(indent);
-    size_t max_indent = asn->max_indent;
-    if ( indent >= max_indent ) {
-        Boolean* tmp = asn->first;
-        asn->first = (BoolPtr) MemNew((sizeof(Boolean) * (indent + 10)));
-        MemCopy(asn->first, tmp, (size_t)(sizeof(Boolean) * max_indent));
-        MemFree(tmp);
-        asn->max_indent = Int1(indent);
-    }
-}
-
-void CObjectOStreamAsn::AsnWrite(AsnIo& asn, const char* data, size_t length)
-{
-    if ( asn.m_Count == 0 ) {
-        // dirty hack to skip structure name with '::='
-        const char* p = (const char*)memchr(data, ':', length);
-        if ( p && p[1] == ':' && p[2] == '=' ) {
-            // check type name
-            const char* beg = data;
-            const char* end = p;
-            while ( beg < end && isspace(beg[0]) )
-                beg++;
-            while ( end > beg && isspace(end[-1]) )
-                end--;
-            if ( string(beg, end) != asn.GetRootTypeName() ) {
-                ERR_POST("AsnWrite: wrong ASN.1 type name: must be \"" <<
-                         asn.GetRootTypeName() << "\"");
-            }
-            // skip header
-            size_t skip = p + 3 - data;
-            _TRACE(Warning <<
-                   "AsnWrite: skipping \"" << string(data, skip) << "\"");
-            data += skip;
-            length -= skip;
-        }
-        else {
-            ERR_POST("AsnWrite: no \"Asn-Type ::=\" header");
-        }
-        asn.m_Count = 1;
-    }
-    m_Output.PutString(data, length);
-}
-#endif
 
 
 void CObjectOStreamAsn::WriteSeparator(void)

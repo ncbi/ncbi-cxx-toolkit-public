@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.5  2001/05/17 14:57:00  lavr
 * Typos corrected
 *
@@ -82,50 +88,50 @@ void CObjectStreamCopier::CopyObject(TTypeInfo type)
 }
 
 inline
-void CObjectStreamCopier::ThrowError1(EFailFlags flags,
+void CObjectStreamCopier::ThrowError1(TFailFlags flags,
                                       const char* message)
 {
-    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
     In().ThrowError1(flags, message);
 }
 
 inline
-void CObjectStreamCopier::ThrowError1(EFailFlags flags,
+void CObjectStreamCopier::ThrowError1(TFailFlags flags,
                                       const string& message)
 {
-    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
     In().ThrowError1(flags, message);
 }
 
 inline
 void CObjectStreamCopier::ThrowError1(const char* file, int line,
-                                      EFailFlags flags,
+                                      TFailFlags flags,
                                       const char* message)
 {
-    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
     In().ThrowError1(file, line, flags, message);
 }
 
 inline
 void CObjectStreamCopier::ThrowError1(const char* file, int line,
-                                      EFailFlags flags,
+                                      TFailFlags flags,
                                       const string& message)
 {
-    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
     In().ThrowError1(file, line, flags, message);
 }
 
 inline
 void CObjectStreamCopier::ExpectedMember(const CMemberInfo* memberInfo)
 {
-    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
     In().ExpectedMember(memberInfo);
 }
 
 inline
 void CObjectStreamCopier::DuplicatedMember(const CMemberInfo* memberInfo)
 {
-    Out().SetFailFlagsNoError(CObjectOStream::eInvalidData);
+    Out().SetFailFlagsNoError(CObjectOStream::fInvalidData);
     In().DuplicatedMember(memberInfo);
 }
 

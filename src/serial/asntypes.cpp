@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.55  2002/08/30 16:22:21  vasilche
 * Removed excessive _TRACEs
 *
@@ -260,6 +266,8 @@
 #include <serial/classinfo.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objistrasnb.hpp>
+#include <serial/objostrasnb.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/typemap.hpp>
@@ -721,7 +729,7 @@ void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
 {
 	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
 	if ( bs == 0 )
-		out.ThrowError(out.eIllegalCall, "null bytestore pointer");
+		out.ThrowError(out.fIllegalCall, "null bytestore pointer");
 	Int4 len = BSLen(bs);
 	CObjectOStream::ByteBlock block(out, len);
 	BSSeek(bs, 0, SEEK_SET);
@@ -833,7 +841,7 @@ void COldAsnTypeInfo::ReadOldAsnStruct(CObjectIStream& in,
 
     CObjectIStream::AsnIo io(in, oldAsnType->GetName());
     if ( (Get(objectPtr) = oldAsnType->m_ReadProc(io, 0)) == 0 )
-        in.ThrowError(in.eFail, "read fault");
+        in.ThrowError(in.fFail, "read fault");
     io.End();
 }
 
@@ -846,8 +854,231 @@ void COldAsnTypeInfo::WriteOldAsnStruct(CObjectOStream& out,
 
     CObjectOStream::AsnIo io(out, oldAsnType->GetName());
     if ( !oldAsnType->m_WriteProc(Get(objectPtr), io, 0) )
-        out.ThrowError(out.eFail, "write fault");
+        out.ThrowError(out.fFail, "write fault");
     io.End();
+}
+
+// CObjectOStream, CObjectIStream, and corresponding AsnIo
+
+extern "C" {
+    Int2 LIBCALLBACK WriteAsn(Pointer object, CharPtr data, Uint2 length)
+    {
+        if ( !object || !data )
+            return -1;
+    
+        static_cast<CObjectOStream::AsnIo*>(object)->Write(data, length);
+        return length;
+    }
+
+    Int2 LIBCALLBACK ReadAsn(Pointer object, CharPtr data, Uint2 length)
+    {
+        if ( !object || !data )
+            return -1;
+        CObjectIStream::AsnIo* asnio =
+            static_cast<CObjectIStream::AsnIo*>(object);
+        return Uint2(asnio->Read(data, length));
+    }
+}
+
+CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
+    : m_Stream(out), m_RootTypeName(rootTypeName), m_Ended(false), m_Count(0)
+{
+    Int1 flags = ASNIO_OUT;
+    ESerialDataFormat format = out.GetDataFormat();
+    if ( format == eSerial_AsnText )
+        flags |= ASNIO_TEXT;
+    else if ( format == eSerial_AsnBinary )
+        flags |= ASNIO_BIN;
+    else
+        out.ThrowError(out.fIllegalCall,
+                       "incompatible stream format - must be ASN.1");
+    m_AsnIo = AsnIoNew(flags, 0, this, 0, WriteAsn);
+    if ( format == eSerial_AsnText ) {
+        // adjust indent level and buffer
+        size_t indent = out.m_Output.GetIndentLevel();
+        m_AsnIo->indent_level = Int1(indent);
+        size_t max_indent = m_AsnIo->max_indent;
+        if ( indent >= max_indent ) {
+            Boolean* tmp = m_AsnIo->first;
+            m_AsnIo->first = (BoolPtr) MemNew((sizeof(Boolean) * (indent + 10)));
+            MemCopy(m_AsnIo->first, tmp, (size_t)(sizeof(Boolean) * max_indent));
+            MemFree(tmp);
+            m_AsnIo->max_indent = Int1(indent);
+        }
+    }
+}
+
+void CObjectOStream::AsnIo::End(void)
+{
+    _ASSERT(!m_Ended);
+    if ( GetStream().InGoodState() ) {
+        AsnIoClose(*this);
+        m_Ended = true;
+    }
+}
+
+CObjectOStream::AsnIo::~AsnIo(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("AsnIo write error");
+}
+
+CObjectOStream& CObjectOStream::AsnIo::GetStream(void) const
+{
+    return m_Stream;
+}
+
+CObjectOStream::AsnIo::operator asnio*(void)
+{
+    return m_AsnIo;
+}
+
+asnio* CObjectOStream::AsnIo::operator->(void)
+{
+    return m_AsnIo;
+}
+
+const string& CObjectOStream::AsnIo::GetRootTypeName(void) const
+{
+    return m_RootTypeName;
+}
+
+void CObjectOStream::AsnIo::Write(const char* data, size_t length)
+{
+    if ( GetStream().GetDataFormat() == eSerial_AsnText ) {
+        if ( m_Count == 0 ) {
+            // dirty hack to skip structure name with '::='
+            const char* p = (const char*)memchr(data, ':', length);
+            if ( p && p[1] == ':' && p[2] == '=' ) {
+                // check type name
+                const char* beg = data;
+                const char* end = p;
+                while ( beg < end && isspace(beg[0]) )
+                    beg++;
+                while ( end > beg && isspace(end[-1]) )
+                    end--;
+                if ( string(beg, end) != GetRootTypeName() ) {
+                    ERR_POST("AsnWrite: wrong ASN.1 type name: must be \"" <<
+                             GetRootTypeName() << "\"");
+                }
+                // skip header
+                size_t skip = p + 3 - data;
+                _TRACE(Warning <<
+                       "AsnWrite: skipping \"" << string(data, skip) << "\"");
+                data += skip;
+                length -= skip;
+            }
+            else {
+                ERR_POST("AsnWrite: no \"Asn-Type ::=\" header");
+            }
+            m_Count = 1;
+        }
+        GetStream().m_Output.PutString(data, length);
+    }
+    else {
+        if ( length == 0 )
+            return;
+        CObjectOStreamAsnBinary& out =
+            static_cast<CObjectOStreamAsnBinary&>(GetStream());
+#if CHECK_STREAM_INTEGRITY
+        _TRACE("WriteBytes: " << length);
+        if ( out.m_CurrentTagState != out.eTagStart )
+            out.ThrowError(out.fIllegalCall, "AsnWrite only allowed at tag start");
+        if ( out.m_CurrentPosition + length > out.m_CurrentTagLimit )
+            out.ThrowError(out.fIllegalCall, "tag DATA overflow");
+        out.m_CurrentPosition += length;
+#endif
+        out.m_Output.PutString(data, length);
+    }
+}
+
+CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
+    : m_Stream(in), m_Ended(false),
+      m_RootTypeName(rootTypeName), m_Count(0)
+{
+    Int1 flags = ASNIO_IN;
+    ESerialDataFormat format = in.GetDataFormat();
+    if ( format == eSerial_AsnText )
+        flags |= ASNIO_TEXT;
+    else if ( format == eSerial_AsnBinary )
+        flags |= ASNIO_BIN;
+    else
+        in.ThrowError(in.fIllegalCall,
+                      "incompatible stream format - must be ASN.1");
+    m_AsnIo = AsnIoNew(flags, 0, this, ReadAsn, 0);
+    if ( format == eSerial_AsnBinary ) {
+#if CHECK_STREAM_INTEGRITY
+        CObjectIStreamAsnBinary& in =
+            static_cast<CObjectIStreamAsnBinary&>(GetStream());
+        if ( in.m_CurrentTagState != in.eTagStart ) {
+            in.ThrowError(in.fIllegalCall, "double tag read");
+        }
+#endif
+    }
+}
+
+void CObjectIStream::AsnIo::End(void)
+{
+    _ASSERT(!m_Ended);
+    if ( GetStream().InGoodState() ) {
+        AsnIoClose(*this);
+        m_Ended = true;
+    }
+}
+
+CObjectIStream::AsnIo::~AsnIo(void)
+{
+    if ( !m_Ended )
+        GetStream().Unended("AsnIo read error");
+}
+
+CObjectIStream& CObjectIStream::AsnIo::GetStream(void) const
+{
+    return m_Stream;
+}
+
+CObjectIStream::AsnIo::operator asnio*(void)
+{
+    return m_AsnIo;
+}
+
+asnio* CObjectIStream::AsnIo::operator->(void)
+{
+    return m_AsnIo;
+}
+
+const string& CObjectIStream::AsnIo::GetRootTypeName(void) const
+{
+    return m_RootTypeName;
+}
+
+size_t CObjectIStream::AsnIo::Read(char* data, size_t length)
+{
+    if ( GetStream().GetDataFormat() == eSerial_AsnText ) {
+        size_t count = 0;
+        if ( m_Count == 0 ) {
+            // dirty hack to add structure name with '::='
+            const string& name = GetRootTypeName();
+            SIZE_TYPE nameLength = name.size();
+            count = nameLength + 3;
+            if ( length < count ) {
+                GetStream().ThrowError(GetStream().fFail,
+                                       "buffer too small to put structure name");
+            }
+            memcpy(data, name.data(), nameLength);
+            data[nameLength] = ':';
+            data[nameLength + 1] = ':';
+            data[nameLength + 2] = '=';
+            data += count;
+            length -= count;
+            m_Count = 1;
+        }
+        return count + GetStream().m_Input.ReadLine(data, length);
+    }
+    else {
+        *data = GetStream().m_Input.GetChar();
+        return 1;
+    }
 }
 
 END_NCBI_SCOPE

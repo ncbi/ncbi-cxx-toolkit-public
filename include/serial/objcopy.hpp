@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.6  2001/05/17 14:56:51  lavr
 * Typos corrected
 *
@@ -129,13 +135,13 @@ public:
 
     void CopyChoice(const CChoiceTypeInfo* choiceType);
 
-    typedef CObjectIStream::EFailFlags EFailFlags;
-    void ThrowError1(EFailFlags fail, const char* message);
-    void ThrowError1(EFailFlags fail, const string& message);
+    typedef CObjectIStream::TFailFlags TFailFlags;
+    void ThrowError1(TFailFlags fail, const char* message);
+    void ThrowError1(TFailFlags fail, const string& message);
     void ThrowError1(const char* file, int line,
-                     EFailFlags fail, const char* message);
+                     TFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
-                     EFailFlags fail, const string& message);
+                     TFailFlags fail, const string& message);
     void ExpectedMember(const CMemberInfo* memberInfo);
     void DuplicatedMember(const CMemberInfo* memberInfo);
 

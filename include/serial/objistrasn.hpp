@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.51  2001/10/17 20:41:19  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -320,12 +326,6 @@ protected:
     virtual void SkipString(void);
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
-
-#if HAVE_NCBI_C
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnOpen(AsnIo& asn);
-    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
-#endif
 
 protected:
 #ifdef VIRTUAL_MID_LEVEL_IO

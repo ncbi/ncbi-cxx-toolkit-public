@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.29  2002/05/22 14:03:42  grichenk
 * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
 *
@@ -365,7 +371,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        in.ThrowError(in.eFormatError,
+        in.ThrowError(in.fFormatError,
                       "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
@@ -387,7 +393,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoice, choiceType);
     TMemberIndex index = choiceType->GetIndex(objectPtr);
     if ( index == kInvalidMember )
-        out.ThrowError(out.eIllegalCall, "cannot write empty choice");
+        out.ThrowError(out.fIllegalCall, "cannot write empty choice");
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());
@@ -415,7 +421,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
     TMemberIndex index = in.BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        in.ThrowError(in.eFormatError,
+        in.ThrowError(in.fFormatError,
                       "choice variant id expected");
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());

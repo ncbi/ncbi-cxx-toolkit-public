@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.18  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -158,6 +164,7 @@ enum ESerialOpenFlags {
     eSerial_StdWhenAny   = eSerial_StdWhenMask,
     eSerial_UseFileForReread = 1 << 4
 };
+typedef int TSerialOpenFlags;
 
 // type family
 enum ETypeFamily {

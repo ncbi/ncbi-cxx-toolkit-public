@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.23  2002/09/19 20:05:44  vasilche
 * Safe initialization of static mutexes
 *
@@ -364,11 +370,11 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
     }
     catch ( exception& e ) {
         CNcbiDiag() << Error << "[ReadEnum] Exception: " << e.what();
-        in.ThrowError(in.eFormatError, "invalid enum value");
+        in.ThrowError(in.fFormatError, "invalid enum value");
         throw;
     }
     catch ( ... ) {
-        in.ThrowError(in.eFormatError, "invalid enum value");
+        in.ThrowError(in.fFormatError, "invalid enum value");
         throw;
     }
 }
@@ -385,11 +391,11 @@ void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
     }
     catch ( exception& e ) {
         CNcbiDiag() << Error << "[WriteEnum] Exception: " << e.what();
-        out.ThrowError(out.eFormatError, "invalid enum value");
+        out.ThrowError(out.fFormatError, "invalid enum value");
         throw;
     }
     catch ( ... ) {
-        out.ThrowError(out.eInvalidData, "invalid enum value");
+        out.ThrowError(out.fInvalidData, "invalid enum value");
         throw;
     }
 }
@@ -404,11 +410,11 @@ void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
     }
     catch ( exception& e ) {
         CNcbiDiag() << Error << "[CopyEnum] Exception: " << e.what();
-        copier.ThrowError(CObjectIStream::eFormatError, "invalid enum value");
+        copier.ThrowError(CObjectIStream::fFormatError, "invalid enum value");
         throw;
     }
     catch ( ... ) {
-        copier.ThrowError(CObjectIStream::eFormatError, "invalid enum value");
+        copier.ThrowError(CObjectIStream::fFormatError, "invalid enum value");
         throw;
     }
 }
@@ -423,11 +429,11 @@ void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
     }
     catch ( exception& e ) {
         CNcbiDiag() << Error << "[SkipEnum] Exception: " << e.what();
-        in.ThrowError(in.eFormatError, "invalid enum value");
+        in.ThrowError(in.fFormatError, "invalid enum value");
         throw;
     }
     catch ( ... ) {
-        in.ThrowError(in.eFormatError, "invalid enum value");
+        in.ThrowError(in.fFormatError, "invalid enum value");
         throw;
     }
 }

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.15  2002/08/26 18:32:28  grichenk
 * Added Get/SetAutoSeparator() to CObjectOStream to control
 * output of separators.
@@ -121,7 +127,7 @@ void CObjectOStream::Flush(void)
 }
 
 inline
-unsigned CObjectOStream::GetFailFlags(void) const
+CObjectOStream::TFailFlags CObjectOStream::GetFailFlags(void) const
 {
     return m_Fail;
 }
@@ -133,31 +139,31 @@ bool CObjectOStream::fail(void) const
 }
 
 inline
-unsigned CObjectOStream::ClearFailFlags(unsigned flags)
+CObjectOStream::TFailFlags CObjectOStream::ClearFailFlags(TFailFlags flags)
 {
-    unsigned old = GetFailFlags();
+    TFailFlags old = GetFailFlags();
     m_Fail &= ~flags;
     return old;
 }
 
 inline
-unsigned CObjectOStream::GetFlags(void) const
+CObjectOStream::TFlags CObjectOStream::GetFlags(void) const
 {
     return m_Flags;
 }
 
 inline
-unsigned CObjectOStream::SetFlags(unsigned flags)
+CObjectOStream::TFlags CObjectOStream::SetFlags(TFlags flags)
 {
-    unsigned old = GetFlags();
+    TFlags old = GetFlags();
     m_Flags |= flags;
     return old;
 }
 
 inline
-unsigned CObjectOStream::ClearFlags(unsigned flags)
+CObjectOStream::TFlags CObjectOStream::ClearFlags(TFlags flags)
 {
-    unsigned old = GetFlags();
+    TFlags old = GetFlags();
     m_Flags &= ~flags;
     return old;
 }
@@ -366,41 +372,6 @@ void CObjectOStream::CharBlock::Write(const char* chars, size_t length)
     GetStream().WriteChars(*this, chars, length);
     m_Length -= length;
 }
-
-#if HAVE_NCBI_C
-
-inline
-CObjectOStream& CObjectOStream::AsnIo::GetStream(void) const
-{
-    return m_Stream;
-}
-
-inline
-CObjectOStream::AsnIo::operator asnio*(void)
-{
-    return m_AsnIo;
-}
-
-inline
-asnio* CObjectOStream::AsnIo::operator->(void)
-{
-    return m_AsnIo;
-}
-
-inline
-const string& CObjectOStream::AsnIo::GetRootTypeName(void) const
-{
-    return m_RootTypeName;
-}
-
-inline
-void CObjectOStream::AsnIo::Write(const char* data, size_t length)
-{
-    GetStream().AsnWrite(*this, data, length);
-}
-
-#endif
-
 
 inline
 CObjectOStream& Separator(CObjectOStream& os)

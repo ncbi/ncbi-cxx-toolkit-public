@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.34  2002/10/18 14:27:09  gouriano
 * added possibility to enable/disable/set public identifier
 *
@@ -419,7 +425,7 @@ void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
     _ASSERT(sizeof(buffer) > size_t(precision + 16));
     int width = sprintf(buffer, "%.*f", precision, data);
     if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
-        ThrowError(eOverflow, "buffer overflow");
+        ThrowError(fOverflow, "buffer overflow");
     _ASSERT(int(strlen(buffer)) == width);
     if ( precision != 0 ) { // skip trailing zeroes
         while ( buffer[width - 1] == '0' ) {
@@ -507,7 +513,7 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         m_Output.PutInt8(index);
     else
-        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
     m_Output.PutString("/>");
 }
 
@@ -602,7 +608,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
     default:
         break;
     }
-    ThrowError(eIllegalCall, "illegal frame type");
+    ThrowError(fIllegalCall, "illegal frame type");
 }
 
 void CObjectOStreamXml::WriteOtherBegin(TTypeInfo typeInfo)

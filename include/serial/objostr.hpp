@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.63  2002/09/19 14:00:37  grichenk
 * Implemented CObjectHookGuard for write and copy hooks
 * Added DefaultRead/Write/Copy methods to base hook classes
@@ -320,7 +326,7 @@ public:
     // open methods
     static CObjectOStream* Open(ESerialDataFormat format,
                                 const string& fileName,
-                                unsigned openFlags = 0);
+                                TSerialOpenFlags openFlags = 0);
     static CObjectOStream* Open(const string& fileName,
                                 ESerialDataFormat format);
     static CObjectOStream* Open(ESerialDataFormat format,
@@ -365,8 +371,8 @@ public:
     // internal writer
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
-	// member interface
-	void WriteClassMember(const CConstObjectInfoMI& member);
+    // member interface
+    void WriteClassMember(const CConstObjectInfoMI& member);
 
     // choice variant interface
     void WriteChoiceVariant(const CConstObjectInfoCV& member);
@@ -454,7 +460,7 @@ public:
     virtual void CopyStringStore(CObjectIStream& in) = 0;
 
     // C string
-	virtual void WriteCString(const char* str) = 0;
+    virtual void WriteCString(const char* str) = 0;
 
     // NULL
     virtual void WriteNull(void) = 0;
@@ -470,39 +476,43 @@ public:
 
     // low level readers:
     enum EFailFlags {
-        eNoError       = 0,
-        eEOF           = 1 << 0,
-        eWriteError    = 1 << 1,
-        eFormatError   = 1 << 2,
-        eOverflow      = 1 << 3,
-        eInvalidData   = 1 << 4,
-        eIllegalCall   = 1 << 5,
-        eFail          = 1 << 6,
-        eNotOpen       = 1 << 7
+        fNoError       = 0,             eNoError     = fNoError,
+        fEOF           = 1 << 0,        eEOF         = fEOF,
+        fWriteError    = 1 << 1,        eWriteError  = fWriteError,
+        fFormatError   = 1 << 2,        eFormatError = fFormatError,
+        fOverflow      = 1 << 3,        eOverflow    = fOverflow,
+        fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
+        fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
+        fFail          = 1 << 6,        eFail        = fFail,
+        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen
     };
+    typedef int TFailFlags;
     bool fail(void) const;
-    unsigned GetFailFlags(void) const;
-    unsigned SetFailFlagsNoError(unsigned flags);
-    unsigned SetFailFlags(unsigned flags, const char* message);
-    unsigned ClearFailFlags(unsigned flags);
+    TFailFlags GetFailFlags(void) const;
+    TFailFlags SetFailFlagsNoError(TFailFlags flags);
+    TFailFlags SetFailFlags(TFailFlags flags, const char* message);
+    TFailFlags ClearFailFlags(TFailFlags flags);
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
 
     enum EFlags {
-        eFlagNone                = 0,
-        eFlagAllowNonAsciiChars  = 1 << 0
+        fFlagNone                = 0,
+        eFlagNone                = fFlagNone,
+        fFlagAllowNonAsciiChars  = 1 << 0,
+        eFlagAllowNonAsciiChars  = fFlagAllowNonAsciiChars
     };
-    unsigned GetFlags(void) const;
-    unsigned SetFlags(unsigned flags);
-    unsigned ClearFlags(unsigned flags);
+    typedef int TFlags;
+    TFlags GetFlags(void) const;
+    TFlags SetFlags(TFlags flags);
+    TFlags ClearFlags(TFlags flags);
 
-    void ThrowError1(EFailFlags fail, const char* message);
-    void ThrowError1(EFailFlags fail, const string& message);
+    void ThrowError1(TFailFlags fail, const char* message);
+    void ThrowError1(TFailFlags fail, const string& message);
     void ThrowError1(const char* file, int line,
-                     EFailFlags fail, const char* message);
+                     TFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
-                     EFailFlags fail, const string& message);
+                     TFailFlags fail, const string& message);
 
 #ifndef FILE_LINE
 # ifdef _DEBUG
@@ -515,48 +525,48 @@ public:
 # define CheckIOError(in) CheckIOError1(FILE_LINE in)
 #endif
 
-	class ByteBlock;
-	friend class ByteBlock;
-	class ByteBlock
+    class ByteBlock;
+    friend class ByteBlock;
+    class ByteBlock
     {
-	public:
-		ByteBlock(CObjectOStream& out, size_t length);
-		~ByteBlock(void);
+    public:
+        ByteBlock(CObjectOStream& out, size_t length);
+        ~ByteBlock(void);
 
         CObjectOStream& GetStream(void) const;
 
-		size_t GetLength(void) const;
+        size_t GetLength(void) const;
 
-		void Write(const void* bytes, size_t length);
+        void Write(const void* bytes, size_t length);
 
         void End(void);
 
-	private:
+    private:
         CObjectOStream& m_Stream;
-		size_t m_Length;
+        size_t m_Length;
         bool m_Ended;
-	};
-	class CharBlock;
-	friend class CharBlock;
-	class CharBlock
+    };
+    class CharBlock;
+    friend class CharBlock;
+    class CharBlock
     {
-	public:
-		CharBlock(CObjectOStream& out, size_t length);
-		~CharBlock(void);
+    public:
+        CharBlock(CObjectOStream& out, size_t length);
+        ~CharBlock(void);
 
         CObjectOStream& GetStream(void) const;
 
-		size_t GetLength(void) const;
+        size_t GetLength(void) const;
 
-		void Write(const char* chars, size_t length);
+        void Write(const char* chars, size_t length);
 
         void End(void);
 
-	private:
+    private:
         CObjectOStream& m_Stream;
-		size_t m_Length;
+        size_t m_Length;
         bool m_Ended;
-	};
+    };
 
 #if HAVE_NCBI_C
     class AsnIo
@@ -585,12 +595,6 @@ public:
         size_t m_Count;
     };
     friend class AsnIo;
-protected:
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
-    virtual void AsnClose(AsnIo& asn);
-
 public:
 #endif
 
@@ -657,17 +661,17 @@ public:
                                     const CMemberId& id) = 0;
     virtual void EndChoiceVariant(void);
 
-	// write byte blocks
-	virtual void BeginBytes(const ByteBlock& block);
-	virtual void WriteBytes(const ByteBlock& block,
+    // write byte blocks
+    virtual void BeginBytes(const ByteBlock& block);
+    virtual void WriteBytes(const ByteBlock& block,
                             const char* bytes, size_t length) = 0;
-	virtual void EndBytes(const ByteBlock& block);
+    virtual void EndBytes(const ByteBlock& block);
 
-	// write char blocks
-	virtual void BeginChars(const CharBlock& block);
-	virtual void WriteChars(const CharBlock& block,
+    // write char blocks
+    virtual void BeginChars(const CharBlock& block);
+    virtual void WriteChars(const CharBlock& block,
                             const char* chars, size_t length) = 0;
-	virtual void EndChars(const CharBlock& block);
+    virtual void EndChars(const CharBlock& block);
 
     void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 protected:
@@ -700,8 +704,8 @@ protected:
 protected:
     COStreamBuffer m_Output;
 
-    unsigned m_Fail;
-    unsigned m_Flags;
+    TFailFlags m_Fail;
+    TFlags m_Flags;
 
     AutoPtr<CWriteObjectList> m_Objects;
 

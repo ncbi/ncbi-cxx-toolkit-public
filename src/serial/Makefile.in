@@ -3,7 +3,7 @@
 # Meta-makefile("SERIAL" project)
 #################################
 
-LIB_PROJ = serial
+LIB_PROJ = serial cserial
 SUB_PROJ = datatool test
 
 srcdir = @srcdir@

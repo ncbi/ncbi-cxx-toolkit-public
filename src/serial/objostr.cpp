@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.66  2002/09/19 14:00:38  grichenk
 * Implemented CObjectHookGuard for write and copy hooks
 * Added DefaultRead/Write/Copy methods to base hook classes
@@ -311,10 +317,6 @@
 #include <serial/objectiter.hpp>
 #include <serial/objlist.hpp>
 
-#if HAVE_NCBI_C
-# include <asn.h>
-#endif
-
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
 
@@ -322,7 +324,7 @@ BEGIN_NCBI_SCOPE
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      const string& fileName,
-                                     unsigned openFlags)
+                                     TSerialOpenFlags openFlags)
 {
     CNcbiOstream* outStream = 0;
     bool deleteStream;
@@ -375,7 +377,7 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 }
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut), m_Fail(eNoError), m_Flags(eFlagNone),
+    : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
       m_Separator(""), m_AutoSeparator(false)
 {
 }
@@ -386,23 +388,24 @@ CObjectOStream::~CObjectOStream(void)
 
 void CObjectOStream::Close(void)
 {
-    m_Fail = eNotOpen;
+    m_Fail = fNotOpen;
     m_Output.Close();
     if ( m_Objects )
         m_Objects->Clear();
     ClearStack();
 }
 
-unsigned CObjectOStream::SetFailFlagsNoError(unsigned flags)
+CObjectOStream::TFailFlags CObjectOStream::SetFailFlagsNoError(TFailFlags flags)
 {
-    unsigned old = m_Fail;
+    TFailFlags old = m_Fail;
     m_Fail |= flags;
     return old;
 }
 
-unsigned CObjectOStream::SetFailFlags(unsigned flags, const char* message)
+CObjectOStream::TFailFlags CObjectOStream::SetFailFlags(TFailFlags flags,
+                                                        const char* message)
 {
-    unsigned old = m_Fail;
+    TFailFlags old = m_Fail;
     m_Fail |= flags;
     if ( !old && flags ) {
         // first fail
@@ -420,7 +423,7 @@ bool CObjectOStream::InGoodState(void)
     }
     else if ( m_Output.fail() ) {
         // IO exception thrown without setting fail flag
-        SetFailFlags(eWriteError, m_Output.GetError());
+        SetFailFlags(fWriteError, m_Output.GetError());
         m_Output.ResetFail();
         return false;
     }
@@ -433,7 +436,7 @@ bool CObjectOStream::InGoodState(void)
 void CObjectOStream::Unended(const string& msg)
 {
     if ( InGoodState() )
-        ThrowError(eFail, msg);
+        ThrowError(fFail, msg);
 }
 
 void CObjectOStream::UnendedFrame(void)
@@ -446,27 +449,27 @@ string CObjectOStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-void CObjectOStream::ThrowError1(EFailFlags fail, const char* message)
+void CObjectOStream::ThrowError1(TFailFlags fail, const char* message)
 {
     SetFailFlags(fail, message);
     THROW1_TRACE(runtime_error, message);
 }
 
-void CObjectOStream::ThrowError1(EFailFlags fail, const string& message)
+void CObjectOStream::ThrowError1(TFailFlags fail, const string& message)
 {
     SetFailFlags(fail, message.c_str());
     THROW1_TRACE(runtime_error, message);
 }
 
 void CObjectOStream::ThrowError1(const char* file, int line, 
-                                 EFailFlags fail, const char* message)
+                                 TFailFlags fail, const char* message)
 {
     CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
 }
 
 void CObjectOStream::ThrowError1(const char* file, int line, 
-                                 EFailFlags fail, const string& message)
+                                 TFailFlags fail, const string& message)
 {
     CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
@@ -940,7 +943,7 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
 
     TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember ) {
-        copier.ThrowError(CObjectIStream::eFormatError,
+        copier.ThrowError(CObjectIStream::fFormatError,
                           "choice variant id expected");
     }
 
@@ -1005,60 +1008,6 @@ CObjectOStream::CharBlock::~CharBlock(void)
     if ( !m_Ended )
         GetStream().Unended("char block not fully written");
 }
-
-#if HAVE_NCBI_C
-extern "C" {
-    Int2 LIBCALLBACK WriteAsn(Pointer object, CharPtr data, Uint2 length)
-    {
-        if ( !object || !data )
-            return -1;
-    
-        static_cast<CObjectOStream::AsnIo*>(object)->Write(data, length);
-        return length;
-    }
-}
-
-CObjectOStream::AsnIo::AsnIo(CObjectOStream& out, const string& rootTypeName)
-    : m_Stream(out), m_RootTypeName(rootTypeName), m_Ended(false), m_Count(0)
-{
-    m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
-    out.AsnOpen(*this);
-}
-
-void CObjectOStream::AsnIo::End(void)
-{
-    _ASSERT(!m_Ended);
-    if ( GetStream().InGoodState() ) {
-        AsnIoClose(*this);
-        GetStream().AsnClose(*this);
-        m_Ended = true;
-    }
-}
-
-CObjectOStream::AsnIo::~AsnIo(void)
-{
-    if ( !m_Ended )
-        GetStream().Unended("AsnIo write error");
-}
-
-void CObjectOStream::AsnOpen(AsnIo& )
-{
-}
-
-void CObjectOStream::AsnClose(AsnIo& )
-{
-}
-
-unsigned CObjectOStream::GetAsnFlags(void)
-{
-    return 0;
-}
-
-void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
-{
-    ThrowError(eIllegalCall, "illegal call");
-}
-#endif
 
 
 void CObjectOStream::WriteSeparator(void)

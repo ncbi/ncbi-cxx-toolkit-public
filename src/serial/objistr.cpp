@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.93  2002/10/22 20:22:13  gouriano
 * undo the prev change, but reduce severity of the ERR_POST to Info
 *
@@ -404,10 +410,6 @@
 # include <float.h>
 #endif
 
-#if HAVE_NCBI_C
-# include <asn.h>
-#endif
-
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
 
@@ -415,7 +417,7 @@ BEGIN_NCBI_SCOPE
 
 CRef<CByteSource> CObjectIStream::GetSource(ESerialDataFormat format,
                                             const string& fileName,
-                                            unsigned openFlags)
+                                            TSerialOpenFlags openFlags)
 {
     if ( (openFlags & eSerial_StdWhenEmpty) && fileName.empty() ||
          (openFlags & eSerial_StdWhenDash) && fileName == "-" ||
@@ -492,13 +494,13 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
 
 CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
                                      const string& fileName,
-                                     unsigned openFlags)
+                                     TSerialOpenFlags openFlags)
 {
     return Create(format, GetSource(format, fileName, openFlags));
 }
 
 CObjectIStream::CObjectIStream(void)
-    : m_Fail(eNotOpen), m_Flags(eFlagNone)
+    : m_Fail(fNotOpen), m_Flags(fFlagNone)
 {
 }
 
@@ -509,7 +511,7 @@ CObjectIStream::~CObjectIStream(void)
 void CObjectIStream::Open(const CRef<CByteSourceReader>& reader)
 {
     Close();
-    _ASSERT(m_Fail == eNotOpen);
+    _ASSERT(m_Fail == fNotOpen);
     m_Input.Open(reader);
     m_Fail = 0;
 }
@@ -530,12 +532,13 @@ void CObjectIStream::Close(void)
     if ( m_Objects )
         m_Objects->Clear();
     ClearStack();
-    m_Fail = eNotOpen;
+    m_Fail = fNotOpen;
 }
 
-unsigned CObjectIStream::SetFailFlags(unsigned flags, const char* message)
+CObjectIStream::TFailFlags CObjectIStream::SetFailFlags(TFailFlags flags,
+                                                        const char* message)
 {
-    unsigned old = m_Fail;
+    TFailFlags old = m_Fail;
     m_Fail |= flags;
     if ( !old && flags ) {
         // first fail
@@ -553,7 +556,7 @@ bool CObjectIStream::InGoodState(void)
     }
     else if ( m_Input.fail() ) {
         // IO exception thrown without setting fail flag
-        SetFailFlags(eReadError, m_Input.GetError());
+        SetFailFlags(fReadError, m_Input.GetError());
         m_Input.ResetFail();
         return false;
     }
@@ -566,7 +569,7 @@ bool CObjectIStream::InGoodState(void)
 void CObjectIStream::Unended(const string& msg)
 {
     if ( InGoodState() )
-        ThrowError(eFail, msg);
+        ThrowError(fFail, msg);
 }
 
 void CObjectIStream::UnendedFrame(void)
@@ -579,27 +582,27 @@ string CObjectIStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-void CObjectIStream::ThrowError1(EFailFlags fail, const char* message)
+void CObjectIStream::ThrowError1(TFailFlags fail, const char* message)
 {
     SetFailFlags(fail, message);
     THROW1_TRACE(runtime_error, message);
 }
 
-void CObjectIStream::ThrowError1(EFailFlags fail, const string& message)
+void CObjectIStream::ThrowError1(TFailFlags fail, const string& message)
 {
     SetFailFlags(fail, message.c_str());
     THROW1_TRACE(runtime_error, message);
 }
 
 void CObjectIStream::ThrowError1(const char* file, int line, 
-                                 EFailFlags fail, const char* message)
+                                 TFailFlags fail, const char* message)
 {
     CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
 }
 
 void CObjectIStream::ThrowError1(const char* file, int line, 
-                                 EFailFlags fail, const string& message)
+                                 TFailFlags fail, const string& message)
 {
     CNcbiDiag(file, line, eDiag_Trace) << message;
     ThrowError1(fail, message);
@@ -627,7 +630,7 @@ const CReadObjectInfo&
 CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index)
 {
     if ( !m_Objects ) {
-        ThrowError(eFormatError,
+        ThrowError(fFormatError,
                    "invalid object index: NO_COLLECT defined");
     }
     return m_Objects->GetRegisteredObject(index);
@@ -640,7 +643,7 @@ void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
     
     string name = ReadFileHeader();
     if ( !name.empty() && name != typeInfo->GetName() ) {
-        ThrowError(eFormatError,
+        ThrowError(fFormatError,
                    "incompatible type "+name+"<>"+typeInfo->GetName());
     }
 
@@ -742,13 +745,13 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
 {
-    ThrowError(eFormatError,
+    ThrowError(fFormatError,
                "member "+memberInfo->GetId().ToString()+" expected");
 }
 
 void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)
 {
-    ThrowError(eFormatError,
+    ThrowError(fFormatError,
                "duplicated member: "+memberInfo->GetId().ToString());
 }
 
@@ -840,7 +843,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectType = info.GetTypeInfo();
             objectPtr = info.GetObjectPtr();
             if ( !objectPtr ) {
-                ThrowError(eFormatError,
+                ThrowError(fFormatError,
                            "invalid reference to skipped object");
             }
             break;
@@ -882,7 +885,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        ThrowError(eFormatError, "illegal pointer type");
+        ThrowError(fFormatError, "illegal pointer type");
         objectPtr = 0;
         objectType = 0;
         break;
@@ -890,7 +893,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
     while ( objectType != declaredType ) {
         // try to check parent class pointer
         if ( objectType->GetTypeFamily() != eTypeFamilyClass ) {
-            ThrowError(eFormatError, "incompatible member type");
+            ThrowError(fFormatError, "incompatible member type");
         }
         const CClassTypeInfo* parentClass =
             CTypeConverter<CClassTypeInfo>::SafeCast(objectType)->GetParentClassInfo();
@@ -898,7 +901,7 @@ pair<TObjectPtr, TTypeInfo> CObjectIStream::ReadPointer(TTypeInfo declaredType)
             objectType = parentClass;
         }
         else {
-            ThrowError(eFormatError, "incompatible member type");
+            ThrowError(fFormatError, "incompatible member type");
         }
     }
     return make_pair(objectPtr, objectType);
@@ -953,7 +956,7 @@ void CObjectIStream::SkipPointer(TTypeInfo declaredType)
             break;
         }
     default:
-        ThrowError(eFormatError, "illegal pointer type");
+        ThrowError(fFormatError, "illegal pointer type");
     }
 }
 
@@ -1167,7 +1170,7 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 
     TMemberIndex index = BeginChoiceVariant(choiceType);
     if ( index == kInvalidMember )
-        ThrowError(eFormatError, "choice variant id expected");
+        ThrowError(fFormatError, "choice variant id expected");
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
@@ -1225,7 +1228,7 @@ size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
     
     if ( length == 0 ) {
         if ( forceLength && needLength != 0 )
-            GetStream().ThrowError(eReadError, "read fault");
+            GetStream().ThrowError(fReadError, "read fault");
         return 0;
     }
 
@@ -1233,7 +1236,7 @@ size_t CObjectIStream::ByteBlock::Read(void* dst, size_t needLength,
     if ( KnownLength() )
         m_Length -= length;
     if ( forceLength && needLength != length )
-        GetStream().ThrowError(eReadError, "read fault");
+        GetStream().ThrowError(fReadError, "read fault");
     return length;
 }
 
@@ -1282,7 +1285,7 @@ size_t CObjectIStream::CharBlock::Read(char* dst, size_t needLength,
     
     if ( length == 0 ) {
         if ( forceLength && needLength != 0 )
-            GetStream().ThrowError(eReadError, "read fault");
+            GetStream().ThrowError(fReadError, "read fault");
         return 0;
     }
 
@@ -1290,7 +1293,7 @@ size_t CObjectIStream::CharBlock::Read(char* dst, size_t needLength,
     if ( KnownLength() )
         m_Length -= length;
     if ( forceLength && needLength != length )
-        GetStream().ThrowError(eReadError, "read fault");
+        GetStream().ThrowError(fReadError, "read fault");
     return length;
 }
 
@@ -1308,7 +1311,7 @@ Int1 CObjectIStream::ReadInt1(void)
     Int4 data = ReadInt4();
     Int1 ret = Int1(data);
     if ( ret != data )
-        ThrowError(eOverflow, "integer overflow");
+        ThrowError(fOverflow, "integer overflow");
     return ret;
 }
 
@@ -1317,7 +1320,7 @@ Uint1 CObjectIStream::ReadUint1(void)
     Uint4 data = ReadUint4();
     Uint1 ret = Uint1(data);
     if ( ret != data )
-        ThrowError(eOverflow, "integer overflow");
+        ThrowError(fOverflow, "integer overflow");
     return ret;
 }
 
@@ -1326,7 +1329,7 @@ Int2 CObjectIStream::ReadInt2(void)
     Int4 data = ReadInt4();
     Int2 ret = Int2(data);
     if ( ret != data )
-        ThrowError(eOverflow, "integer overflow");
+        ThrowError(fOverflow, "integer overflow");
     return ret;
 }
 
@@ -1335,7 +1338,7 @@ Uint2 CObjectIStream::ReadUint2(void)
     Uint4 data = ReadUint4();
     Uint2 ret = Uint2(data);
     if ( ret != data )
-        ThrowError(eOverflow, "integer overflow");
+        ThrowError(fOverflow, "integer overflow");
     return ret;
 }
 
@@ -1344,7 +1347,7 @@ Int4 CObjectIStream::ReadInt4(void)
     Int8 data = ReadInt8();
     Int4 ret = Int4(data);
     if ( ret != data )
-        ThrowError(eOverflow, "integer overflow");
+        ThrowError(fOverflow, "integer overflow");
     return ret;
 }
 
@@ -1353,7 +1356,7 @@ Uint4 CObjectIStream::ReadUint4(void)
     Uint8 data = ReadUint8();
     Uint4 ret = Uint4(data);
     if ( ret != data )
-        ThrowError(eOverflow, "integer overflow");
+        ThrowError(fOverflow, "integer overflow");
     return ret;
 }
 
@@ -1362,7 +1365,7 @@ float CObjectIStream::ReadFloat(void)
     double data = ReadDouble();
 #if defined(FLT_MIN) && defined(FLT_MAX)
     if ( data < FLT_MIN || data > FLT_MAX )
-        ThrowError(eOverflow, "float overflow");
+        ThrowError(fOverflow, "float overflow");
 #endif
     return float(data);
 }
@@ -1452,62 +1455,6 @@ void CObjectIStream::SkipStringStore(void)
 {
     SkipString();
 }
-
-#if HAVE_NCBI_C
-extern "C" {
-    Int2 LIBCALLBACK ReadAsn(Pointer object, CharPtr data, Uint2 length)
-    {
-        if ( !object || !data )
-            return -1;
-        CObjectIStream::AsnIo* asnio =
-            static_cast<CObjectIStream::AsnIo*>(object);
-        return Uint2(asnio->Read(data, length));
-    }
-}
-
-CObjectIStream::AsnIo::AsnIo(CObjectIStream& in, const string& rootTypeName)
-    : m_Stream(in), m_Ended(false),
-      m_RootTypeName(rootTypeName), m_Count(0)
-{
-    m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
-    in.AsnOpen(*this);
-}
-
-void CObjectIStream::AsnIo::End(void)
-{
-    _ASSERT(!m_Ended);
-    if ( GetStream().InGoodState() ) {
-        AsnIoClose(*this);
-        GetStream().AsnClose(*this);
-        m_Ended = true;
-    }
-}
-
-CObjectIStream::AsnIo::~AsnIo(void)
-{
-    if ( !m_Ended )
-        GetStream().Unended("AsnIo read error");
-}
-
-unsigned CObjectIStream::GetAsnFlags(void)
-{
-    return 0;
-}
-
-void CObjectIStream::AsnOpen(AsnIo& )
-{
-}
-
-void CObjectIStream::AsnClose(AsnIo& )
-{
-}
-
-size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
-{
-    ThrowError(eIllegalCall, "illegal call");
-    return 0;
-}
-#endif
 
 
 char& ReplaceVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.72  2002/10/15 13:45:15  gouriano
 * added "UndoClassMember" function
 *
@@ -362,7 +368,7 @@ public:
                                 bool deleteInStream = false);
     static CObjectIStream* Open(ESerialDataFormat format,
                                 const string& fileName,
-                                unsigned openFlags = 0);
+                                TSerialOpenFlags openFlags = 0);
     static CObjectIStream* Open(const string& fileName,
                                 ESerialDataFormat format);
 
@@ -409,8 +415,8 @@ public:
     // temporary reader
     void ReadSeparateObject(const CObjectInfo& object);
 
-	// member
-	void ReadClassMember(const CObjectInfoMI& member);
+    // member
+    void ReadClassMember(const CObjectInfoMI& member);
 
     // variant
     void ReadChoiceVariant(const CObjectInfoCV& object);
@@ -556,30 +562,32 @@ public:
 
     // low level readers:
     enum EFailFlags {
-        eNoError       = 0,
-        eEOF           = 1 << 0,
-        eReadError     = 1 << 1,
-        eFormatError   = 1 << 2,
-        eOverflow      = 1 << 3,
-        eInvalidData   = 1 << 4,
-        eIllegalCall   = 1 << 5,
-        eFail          = 1 << 6,
-        eNotOpen       = 1 << 7
+        fNoError       = 0,             eNoError     = fNoError,
+        fEOF           = 1 << 0,        eEOF         = fEOF,
+        fReadError     = 1 << 1,        eReadError   = fReadError,
+        fFormatError   = 1 << 2,        eFormatError = fFormatError,
+        fOverflow      = 1 << 3,        eOverflow    = fOverflow,
+        fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
+        fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
+        fFail          = 1 << 6,        eFail        = fFail,
+        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen
     };
+    typedef int TFailFlags;
+
     bool fail(void) const;
-    unsigned GetFailFlags(void) const;
-    unsigned SetFailFlags(unsigned flags, const char* message);
-    unsigned ClearFailFlags(unsigned flags);
+    TFailFlags GetFailFlags(void) const;
+    TFailFlags SetFailFlags(TFailFlags flags, const char* message);
+    TFailFlags ClearFailFlags(TFailFlags flags);
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
 
-    void ThrowError1(EFailFlags fail, const char* message);
-    void ThrowError1(EFailFlags fail, const string& message);
+    void ThrowError1(TFailFlags fail, const char* message);
+    void ThrowError1(TFailFlags fail, const string& message);
     void ThrowError1(const char* file, int line,
-                     EFailFlags fail, const char* message);
+                     TFailFlags fail, const char* message);
     void ThrowError1(const char* file, int line,
-                     EFailFlags fail, const string& message);
+                     TFailFlags fail, const string& message);
 
 #ifndef FILE_LINE
 # ifdef _DEBUG
@@ -593,65 +601,68 @@ public:
 #endif
 
     enum EFlags {
-        eFlagNone                = 0,
-        eFlagAllowNonAsciiChars  = 1 << 0
+        fFlagNone                = 0,
+        eFlagNone                = fFlagNone,
+        fFlagAllowNonAsciiChars  = 1 << 0,
+        eFlagAllowNonAsciiChars  = fFlagAllowNonAsciiChars
     };
-    unsigned GetFlags(void) const;
-    unsigned SetFlags(unsigned flags);
-    unsigned ClearFlags(unsigned flags);
+    typedef int TFlags;
+    TFlags GetFlags(void) const;
+    TFlags SetFlags(TFlags flags);
+    TFlags ClearFlags(TFlags flags);
 
-	class ByteBlock
+    class ByteBlock
     {
-	public:
-		ByteBlock(CObjectIStream& in);
-		~ByteBlock(void);
+    public:
+        ByteBlock(CObjectIStream& in);
+        ~ByteBlock(void);
 
         void End(void);
 
         CObjectIStream& GetStream(void) const;
 
-		size_t Read(void* dst, size_t length, bool forceLength = false);
+        size_t Read(void* dst, size_t length, bool forceLength = false);
 
         bool KnownLength(void) const;
-		size_t GetExpectedLength(void) const;
+        size_t GetExpectedLength(void) const;
 
         void SetLength(size_t length);
         void EndOfBlock(void);
         
-	private:
+    private:
         CObjectIStream& m_Stream;
-		bool m_KnownLength;
+        bool m_KnownLength;
         bool m_Ended;
-		size_t m_Length;
+        size_t m_Length;
 
-		friend class CObjectIStream;
-	};
-	class CharBlock
+        friend class CObjectIStream;
+    };
+    class CharBlock
     {
-	public:
-		CharBlock(CObjectIStream& in);
-		~CharBlock(void);
+    public:
+        CharBlock(CObjectIStream& in);
+        ~CharBlock(void);
 
         void End(void);
 
         CObjectIStream& GetStream(void) const;
 
-		size_t Read(char* dst, size_t length, bool forceLength = false);
+        size_t Read(char* dst, size_t length, bool forceLength = false);
 
         bool KnownLength(void) const;
-		size_t GetExpectedLength(void) const;
+        size_t GetExpectedLength(void) const;
 
         void SetLength(size_t length);
         void EndOfBlock(void);
         
-	private:
+    private:
         CObjectIStream& m_Stream;
-		bool m_KnownLength;
+        bool m_KnownLength;
         bool m_Ended;
-		size_t m_Length;
+        size_t m_Length;
 
-		friend class CObjectIStream;
-	};
+        friend class CObjectIStream;
+    };
 
 
 #if HAVE_NCBI_C
@@ -682,12 +693,6 @@ public:
         size_t m_Count;
     };
     friend class AsnIo;
-protected:
-    // ASN.1 interface
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnOpen(AsnIo& asn);
-    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
-    virtual void AsnClose(AsnIo& asn);
 public:
 #endif
     
@@ -742,14 +747,14 @@ public:
     virtual void EndChoiceVariant(void);
 
     // byte block
-	virtual void BeginBytes(ByteBlock& block) = 0;
-	virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count) = 0;
-	virtual void EndBytes(const ByteBlock& block);
+    virtual void BeginBytes(ByteBlock& block) = 0;
+    virtual size_t ReadBytes(ByteBlock& block, char* buffer, size_t count) = 0;
+    virtual void EndBytes(const ByteBlock& block);
 
     // char block
-	virtual void BeginChars(CharBlock& block) = 0;
-	virtual size_t ReadChars(CharBlock& block, char* buffer, size_t count) = 0;
-	virtual void EndChars(const CharBlock& block);
+    virtual void BeginChars(CharBlock& block) = 0;
+    virtual size_t ReadChars(CharBlock& block, char* buffer, size_t count) = 0;
+    virtual void EndChars(const CharBlock& block);
 
     // report error about unended block
     void Unended(const string& msg);
@@ -786,7 +791,7 @@ public:
 private:
     static CRef<CByteSource> GetSource(ESerialDataFormat format,
                                        const string& fileName,
-                                       unsigned openFlags = 0);
+                                       TSerialOpenFlags openFlags = 0);
     static CRef<CByteSource> GetSource(CNcbiIstream& inStream,
                                        bool deleteInStream = false);
 
@@ -800,8 +805,8 @@ protected:
 private:
     AutoPtr<CReadObjectList> m_Objects;
 
-    unsigned m_Fail;
-    unsigned m_Flags;
+    TFailFlags m_Fail;
+    TFlags m_Flags;
 
 public:
     // hook support

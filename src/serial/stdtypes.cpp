@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.31  2002/07/01 15:42:07  grichenk
 * Fixed 'unused variable' warnings, removed commented code.
 *
@@ -312,23 +318,23 @@ void CVoidTypeFunctions::Assign(TObjectPtr , TConstObjectPtr )
 void CVoidTypeFunctions::Read(CObjectIStream& in, TTypeInfo ,
                               TObjectPtr )
 {
-    in.ThrowError(in.eIllegalCall, "cannot read");
+    in.ThrowError(in.fIllegalCall, "cannot read");
 }
 
 void CVoidTypeFunctions::Write(CObjectOStream& out, TTypeInfo ,
                                TConstObjectPtr )
 {
-    out.ThrowError(out.eIllegalCall, "cannot write");
+    out.ThrowError(out.fIllegalCall, "cannot write");
 }
 
 void CVoidTypeFunctions::Copy(CObjectStreamCopier& copier, TTypeInfo )
 {
-    copier.ThrowError(CObjectIStream::eIllegalCall, "cannot copy");
+    copier.ThrowError(CObjectIStream::fIllegalCall, "cannot copy");
 }
 
 void CVoidTypeFunctions::Skip(CObjectIStream& in, TTypeInfo )
 {
-    in.ThrowError(in.eIllegalCall, "cannot skip");
+    in.ThrowError(in.fIllegalCall, "cannot skip");
 }
 
 TObjectPtr CVoidTypeFunctions::Create(TTypeInfo objectType)

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.74  2001/12/09 07:42:25  vakatov
 * Fixed a warning
 *
@@ -351,9 +357,6 @@
 #if !defined(DBL_MAX_10_EXP) || !defined(FLT_MAX)
 # include <float.h>
 #endif
-#if HAVE_NCBI_C
-# include <asn.h>
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -458,7 +461,7 @@ void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
         string msg("\'");
         msg += expect;
         msg += "' expected";
-        ThrowError(eFormatError, msg);
+        ThrowError(fFormatError, msg);
     }
 }
 
@@ -478,7 +481,7 @@ bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
     msg += "' or '";
     msg += choiceFalse;
     msg += "' expected";
-    ThrowError(eFormatError, msg);
+    ThrowError(fFormatError, msg);
     return false;
 }
 
@@ -564,7 +567,7 @@ CLightString CObjectIStreamAsn::ReadTypeId(char c)
             switch ( m_Input.PeekChar(i) ) {
             case '\r':
             case '\n':
-                ThrowError(eFormatError, "end of line: expected ']'");
+                ThrowError(fFormatError, "end of line: expected ']'");
                 break;
             case ']':
                 {
@@ -584,7 +587,7 @@ CLightString CObjectIStreamAsn::ReadNumber(void)
 {
     char c = SkipWhiteSpace();
     if ( c != '-' && c != '+' && !isdigit(c) )
-        ThrowError(eFormatError, "invalid number");
+        ThrowError(fFormatError, "invalid number");
     for ( size_t i = 1; ; ++i ) {
         c = m_Input.PeekChar(i);
         if ( !isdigit(c) ) {
@@ -615,7 +618,7 @@ CLightString CObjectIStreamAsn::ReadMemberId(char c)
             switch ( m_Input.PeekChar(i) ) {
             case '\r':
             case '\n':
-                ThrowError(eFormatError, "end of line: expected ']'");
+                ThrowError(fFormatError, "end of line: expected ']'");
                 break;
             case ']':
                 {
@@ -687,7 +690,7 @@ void CObjectIStreamAsn::ReadNull(void)
         m_Input.SkipChars(4);
     }
     else
-        ThrowError(eFormatError, "'NULL' expected");
+        ThrowError(fFormatError, "'NULL' expected");
 }
 
 string CObjectIStreamAsn::ReadFileHeader()
@@ -700,7 +703,7 @@ string CObjectIStreamAsn::ReadFileHeader()
         m_Input.SkipChars(3);
     }
     else
-        ThrowError(eFormatError, "'::=' expected");
+        ThrowError(fFormatError, "'::=' expected");
     return s;
 }
 
@@ -743,7 +746,7 @@ bool CObjectIStreamAsn::ReadBool(void)
         }
         break;
     }
-    ThrowError(eFormatError, "TRUE or FALSE expected");
+    ThrowError(fFormatError, "TRUE or FALSE expected");
     return false;
 }
 
@@ -752,7 +755,7 @@ char CObjectIStreamAsn::ReadChar(void)
     string s;
     ReadString(s);
     if ( s.size() != 1 ) {
-        ThrowError(eFormatError,
+        ThrowError(fFormatError,
                    "\"" + s + "\": one char string expected");
     }
     return s[0];
@@ -789,20 +792,20 @@ double CObjectIStreamAsn::ReadDouble(void)
     size_t mantissaLength = mantissaStr.GetLength();
     char buffer[128];
     if ( mantissaLength >= sizeof(buffer) - 1 )
-        ThrowError(eFormatError, "buffer overflow");
+        ThrowError(fFormatError, "buffer overflow");
     memcpy(buffer, mantissaStr.GetString(), mantissaLength);
     buffer[mantissaLength] = '\0';
     char* endptr;
     double mantissa = strtod(buffer, &endptr);
     if ( *endptr != 0 )
-        ThrowError(eFormatError, "bad number");
+        ThrowError(fFormatError, "bad number");
     Expect(',', true);
     unsigned base = ReadUint4();
     Expect(',', true);
     int exp = ReadInt4();
     Expect('}', true);
     if ( base != 2 && base != 10 )
-        ThrowError(eFormatError, "illegal REAL base (must be 2 or 10)");
+        ThrowError(fFormatError, "illegal REAL base (must be 2 or 10)");
 
     if ( base == 10 ) {     /* range checking only on base 10, for doubles */
     	if ( exp > DBL_MAX_10_EXP )   /* exponent too big */
@@ -816,7 +819,7 @@ double CObjectIStreamAsn::ReadDouble(void)
 
 void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
 {
-    ThrowError(eFormatError,
+    ThrowError(fFormatError,
                "bad char in string starting at line "+
                NStr::UIntToString(startLine)+": "+
                NStr::IntToString(c));
@@ -824,7 +827,7 @@ void CObjectIStreamAsn::BadStringChar(size_t startLine, char c)
 
 void CObjectIStreamAsn::UnendedString(size_t startLine)
 {
-    ThrowError(eFormatError,
+    ThrowError(fFormatError,
                "unclosed string starts at line "+
                NStr::UIntToString(startLine));
 }
@@ -924,7 +927,7 @@ void CObjectIStreamAsn::SkipBool(void)
         }
         break;
     }
-    ThrowError(eFormatError, "TRUE or FALSE expected");
+    ThrowError(fFormatError, "TRUE or FALSE expected");
 }
 
 void CObjectIStreamAsn::SkipChar(void)
@@ -950,7 +953,7 @@ void CObjectIStreamAsn::SkipSNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(eFormatError, "bad number");
+        ThrowError(fFormatError, "bad number");
     }
     while ( (c = m_Input.PeekChar(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -974,7 +977,7 @@ void CObjectIStreamAsn::SkipUNumber(void)
         break;
     }
     if ( c < '0' || c > '9' ) {
-        ThrowError(eFormatError, "bad number");
+        ThrowError(fFormatError, "bad number");
     }
     while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
         ++i;
@@ -992,7 +995,7 @@ void CObjectIStreamAsn::SkipFNumber(void)
     SkipSNumber();
     Expect('}', true);
     if ( base != 2 && base != 10 )
-        ThrowError(eFormatError, "illegal REAL base (must be 2 or 10)");
+        ThrowError(fFormatError, "illegal REAL base (must be 2 or 10)");
 }
 
 void CObjectIStreamAsn::SkipString(void)
@@ -1052,7 +1055,7 @@ void CObjectIStreamAsn::SkipNull(void)
         m_Input.SkipChars(4);
         return;
     }
-    ThrowError(eFormatError, "NULL expected");
+    ThrowError(fFormatError, "NULL expected");
 }
 
 void CObjectIStreamAsn::SkipByteBlock(void)
@@ -1077,7 +1080,7 @@ void CObjectIStreamAsn::SkipByteBlock(void)
         }
         else {
             m_Input.UngetChar(c);
-            ThrowError(eFormatError, "bad char in octet string");
+            ThrowError(fFormatError, "bad char in octet string");
         }
     }
 	Expect('H', true);
@@ -1104,7 +1107,7 @@ bool CObjectIStreamAsn::NextElement(void)
             return true;
         }
         else if ( c != '}' )
-            ThrowError(eFormatError, "',' or '}' expected");
+            ThrowError(fFormatError, "',' or '}' expected");
         return false;
     }
 }
@@ -1181,7 +1184,7 @@ void CObjectIStreamAsn::UnexpectedMember(const CLightString& id,
     for ( CItemsInfo::CIterator i(items); i.Valid(); ++i ) {
         message += '\"' + items.GetItemInfo(i)->GetId().ToString() + "\" ";
     }
-    ThrowError(eFormatError, message);
+    ThrowError(fFormatError, message);
 }
 
 TMemberIndex
@@ -1306,7 +1309,7 @@ void CObjectIStreamAsn::ReadChoice(const CChoiceTypeInfo* choiceType,
 {
     CLightString id = ReadMemberId(SkipWhiteSpace());
     if ( id.Empty() )
-        ThrowError(eFormatError, "choice variant id expected");
+        ThrowError(fFormatError, "choice variant id expected");
 
     TMemberIndex index = GetChoiceIndex(choiceType, id);
     if ( index == kInvalidMember )
@@ -1324,7 +1327,7 @@ void CObjectIStreamAsn::SkipChoice(const CChoiceTypeInfo* choiceType)
 {
     CLightString id = ReadMemberId(SkipWhiteSpace());
     if ( id.Empty() )
-        ThrowError(eFormatError, "choice variant id expected");
+        ThrowError(fFormatError, "choice variant id expected");
 
     TMemberIndex index = GetChoiceIndex(choiceType, id);
     if ( index == kInvalidMember )
@@ -1366,7 +1369,7 @@ int CObjectIStreamAsn::GetHexChar(void)
             break;
         default:
             m_Input.UngetChar(c);
-            ThrowError(eFormatError, "bad char in octet string");
+            ThrowError(fFormatError, "bad char in octet string");
         }
     }
 }
@@ -1481,7 +1484,7 @@ CObjectIStream::TObjectIndex CObjectIStreamAsn::ReadObjectPointer(void)
     else if ( sizeof(TObjectIndex) == sizeof(Int8) )
         return TObjectIndex(ReadInt8());
     else
-        ThrowError(eIllegalCall, "invalid size of TObjectIndex");
+        ThrowError(fIllegalCall, "invalid size of TObjectIndex");
     return 0;
 }
 
@@ -1489,39 +1492,5 @@ string CObjectIStreamAsn::ReadOtherPointer(void)
 {
     return ReadTypeId(SkipWhiteSpace());
 }
-
-#if HAVE_NCBI_C
-unsigned CObjectIStreamAsn::GetAsnFlags(void)
-{
-    return ASNIO_TEXT;
-}
-
-void CObjectIStreamAsn::AsnOpen(AsnIo& asn)
-{
-    asn.m_Count = 0;
-}
-
-size_t CObjectIStreamAsn::AsnRead(AsnIo& asn, char* data, size_t length)
-{
-    size_t count = 0;
-    if ( asn.m_Count == 0 ) {
-        // dirty hack to add structure name with '::='
-        const string& name = asn.GetRootTypeName();
-        SIZE_TYPE nameLength = name.size();
-        count = nameLength + 3;
-        if ( length < count ) {
-            ThrowError(eFail, "buffer too small to put structure name");
-        }
-        memcpy(data, name.data(), nameLength);
-        data[nameLength] = ':';
-        data[nameLength + 1] = ':';
-        data[nameLength + 2] = '=';
-        data += count;
-        length -= count;
-        asn.m_Count = 1;
-    }
-    return count + m_Input.ReadLine(data, length);
-}
-#endif
 
 END_NCBI_SCOPE

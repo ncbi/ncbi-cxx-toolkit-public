@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.40  2002/03/07 22:02:00  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -242,12 +248,6 @@ protected:
     virtual void WriteStringStore(const string& str);
     virtual void CopyString(CObjectIStream& in);
     virtual void CopyStringStore(CObjectIStream& in);
-
-#if HAVE_NCBI_C
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnOpen(AsnIo& asn);
-    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
-#endif
 
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TObjectIndex index);

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/10/25 14:49:29  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.35  2001/10/17 20:41:19  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -208,11 +214,11 @@ public:
     virtual void ReadNull(void);
 
     EFixNonPrint FixNonPrint(EFixNonPrint how)
-    {
-        EFixNonPrint tmp = m_FixMethod;
-        m_FixMethod = how;
-        return tmp;
-    }
+        {
+            EFixNonPrint tmp = m_FixMethod;
+            m_FixMethod = how;
+            return tmp;
+        }
 
 protected:
     virtual bool ReadBool(void);
@@ -270,18 +276,16 @@ protected:
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
     virtual void EndChoiceVariant(void);
 
-	virtual void BeginBytes(ByteBlock& block);
-	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
-	virtual void EndBytes(const ByteBlock& block);
+    virtual void BeginBytes(ByteBlock& block);
+    virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
+    virtual void EndBytes(const ByteBlock& block);
 
-	virtual void BeginChars(CharBlock& block);
-	virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
-	virtual void EndChars(const CharBlock& block);
+    virtual void BeginChars(CharBlock& block);
+    virtual size_t ReadChars(CharBlock& block, char* dst, size_t length);
+    virtual void EndChars(const CharBlock& block);
 
 #if HAVE_NCBI_C
-    virtual unsigned GetAsnFlags(void);
-    virtual void AsnOpen(AsnIo& asn);
-    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+    friend class CObjectIStream::AsnIo;
 #endif
 
 private:

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2002/10/25 14:49:27  vasilche
+* NCBI C Toolkit compatibility code extracted to libxcser library.
+* Serial streams flags names were renamed to fXxx.
+*
+* Names of flags
+*
 * Revision 1.26  2001/05/17 15:07:04  lavr
 * Typos corrected
 *
@@ -292,7 +298,7 @@ public:
                      TObjectPtr objectPtr)
         {
             if ( objectPtr != 0 ) {
-                in.ThrowError(in.eInvalidData, "non null value");
+                in.ThrowError(in.fInvalidData, "non null value");
             }
             in.ReadNull();
         }
@@ -300,7 +306,7 @@ public:
                       TConstObjectPtr objectPtr)
         {
             if ( objectPtr != 0 ) {
-                out.ThrowError(out.eInvalidData, "non null value");
+                out.ThrowError(out.fInvalidData, "non null value");
             }
             out.WriteNull();
         }
