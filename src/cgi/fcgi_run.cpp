@@ -250,7 +250,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             // Restore old diagnostic state when done.
             CDiagRestorer     diag_restorer;
             ConfigureDiagnostics(*m_Context);
-            
+
             x_AddLBCookie();
 
             // Call ProcessRequest()
@@ -335,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2003/02/19 17:53:30  kuznets
+ * Cosmetic fix
+ *
  * Revision 1.21  2003/02/19 17:51:46  kuznets
  * Added generation of load balancing cookie
  *
