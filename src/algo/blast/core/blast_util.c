@@ -245,34 +245,6 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
 }
 
 
-Int4 MakeBlastSequenceBlkFromGI(ReadDBFILEPtr db, Int4 gi, BLAST_SequenceBlkPtr seq)
-{
-  Int4 oid;
-  Int4 length;
-  
-  oid=readdb_gi2seq(db, gi, NULL);
-  
-  length=readdb_get_sequence(db, oid, &(seq->sequence) );
-  
-  seq->sequence_start = NULL;
-  seq->length = length;
-  seq->frame = 0;
-  return 0;
-}
-
-Int4 MakeBlastSequenceBlkFromOID(ReadDBFILEPtr db, Int4 oid, BLAST_SequenceBlkPtr seq)
-{
-  Int4 length;
-  
-  length=readdb_get_sequence(db, oid, &(seq->sequence) );
-  
-  seq->sequence_start = NULL;
-  seq->length = length;
-  seq->frame = 0;
-  seq->oid = oid;
-  return 0;
-}
-
 /*
   Translate a compressed nucleotide sequence without ambiguity codes.
 */
