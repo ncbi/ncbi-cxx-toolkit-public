@@ -106,7 +106,7 @@ x_GetAlignmentStart(int& curr_pos, const GapXEditScriptPtr esp,
 /// collected from the esp argument for nsegs segments
 static void
 x_CollectSeqAlignData(const GapXEditBlockPtr edit_block, 
-        const GapXEditScriptPtr esp_head, int nsegs,
+        const GapXEditScriptPtr esp_head, unsigned int nsegs,
         vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
         vector<ENa_strand>& strands)
 {
@@ -114,14 +114,14 @@ x_CollectSeqAlignData(const GapXEditBlockPtr edit_block,
 
     GapXEditScriptPtr esp = esp_head;   // start of list of esp's
     ENa_strand m_strand, s_strand;      // strands of alignment
-    TSeqPos m_start, s_start;           // running starts of alignment
+    TSignedSeqPos m_start, s_start;     // running starts of alignment
     int start1 = edit_block->start1;    // start of alignment on master sequence
     int start2 = edit_block->start2;    // start of alignment on slave sequence
 
     m_strand = x_Frame2Strand(edit_block->frame1);
     s_strand = x_Frame2Strand(edit_block->frame2);
 
-    for (int i = 0; esp && i < nsegs; esp = esp->next, i++) {
+    for (unsigned int i = 0; esp && i < nsegs; esp = esp->next, i++) {
         switch (esp->op_type) {
         case GAPALIGN_DECLINE:
         case GAPALIGN_SUB:
@@ -246,8 +246,8 @@ x_CreateStdSegs(CConstRef<CSeq_id> master, CConstRef<CSeq_id> slave,
 
     CSeq_align::C_Segs::TStd retval;
     int nsegs = lengths.size();         // number of segments in alignment
-    TSeqPos m_start, m_stop;            // start and stop for master sequence
-    TSeqPos s_start, s_stop;            // start and stop for slave sequence
+    TSignedSeqPos m_start, m_stop;      // start and stop for master sequence
+    TSignedSeqPos s_start, s_stop;      // start and stop for slave sequence
 
     CRef<CSeq_id> master_id(new CSeq_id(master->AsFastaString()));
     CRef<CSeq_id> slave_id(new CSeq_id(slave->AsFastaString()));
@@ -642,6 +642,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/14 21:40:22  camacho
+* Pacify compiler warnings
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *
