@@ -370,6 +370,19 @@ BlastOOFGetNumIdentical(Uint1* query_seq, Uint1* subject_seq,
 
 }
 
+static Int4 GetPatternLengthFromBlastHSP(BlastHSP* hsp)
+{
+   return hsp->query.end_trim;
+}
+
+static void SavePatternLengthInGapAlignStruct(Int4 length,
+               BlastGapAlignStruct* gap_align)
+{
+   /* Kludge: save length in an output structure member, to avoid introducing 
+      a new structure member. Probably should be changed??? */
+   gap_align->query_stop = length;
+}
+
 /** Compute gapped alignment with traceback for all HSPs from a single
  * query/subject sequence pair.
  * @param program_number Type of BLAST program [in]
@@ -419,6 +432,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
    Int4* frame_offsets = NULL;
    Uint1* nucl_sequence = NULL;
    BLAST_KarlinBlk** kbp;
+   Boolean phi_align = (hit_options->phi_align);
 
    if (hsp_list->hspcnt == 0) {
       return 0;
@@ -562,10 +576,18 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                               s_start + hsp->subject.length + max_start);
 
          /* Perform the gapped extension with traceback */
-         BLAST_GappedAlignmentWithTraceback(program_number, query, subject, 
-            gap_align, score_options, q_start, s_start, query_length, 
-            subject_length);
-         
+         if (phi_align) {
+            Int4 pat_length = GetPatternLengthFromBlastHSP(hsp);
+            SavePatternLengthInGapAlignStruct(pat_length, gap_align);
+            PHIGappedAlignmentWithTraceback(program_number, query, subject,
+               gap_align, score_options, q_start, s_start, query_length, 
+               subject_length);
+         } else {
+            BLAST_GappedAlignmentWithTraceback(program_number, query, subject, 
+               gap_align, score_options, q_start, s_start, query_length, 
+               subject_length);
+         }
+
          if (gap_align->score >= min_score_to_keep) {
             hsp->subject.offset = gap_align->subject_start + start_shift;
             hsp->query.offset = gap_align->query_start;
@@ -625,9 +647,13 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                else
                   kbp = sbp->kbp;
 
-               hsp->evalue = 
-                  BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
+               if (hit_options->phi_align) {
+                  hsp->evalue = PHIScoreToEvalue(hsp->score, sbp);
+               } else {
+                  hsp->evalue = 
+                     BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                      (double)query_info->eff_searchsp_array[hsp->context]);
+               }
                if (hsp->evalue > hit_options->expect_value) 
                   /* put in for comp. based stats. */
                   keep = FALSE;
@@ -709,6 +735,8 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
         if (hit_options->do_sum_stats == TRUE) {
            BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
                          sbp, hit_params, score_options->gapped_calculation);
+        } else if (hit_options->phi_align) {
+           PHIGetEvalue(hsp_list, sbp);
         } else {
            BLAST_GetNonSumStatsEvalue(program_number, query_info, hsp_list, 
                                       hit_options, sbp);
