@@ -1,4 +1,11 @@
---$Revision: 1.2 $
+-- $Id: docsum.asn,v 1.3 2000/08/24 14:47:53 sherry Exp $
+-- $Log: docsum.asn,v $
+-- Revision 1.3  2000/08/24 14:47:53  sherry
+-- added subsnp-class and mixed snp-class type
+--
+--08/23/00:	changed source of NCBI-RefSNPDocsum.taxid to new taxid column in SNP table
+--		added NCBI-RefSNPDocsum.snp-class type (7) for cases of mixed subsnp-class in single refSNP (none currently in database)
+--		added NCBI-subsnp-id.subsnp-class to define allele class for subSNP as well as SNP
 --06/20/00:	Added 'duplicatesub' and 'NotSpecified' as WITHDRAWN reason for snp-type
 --05/22/00:	Added splice to fxn-class, 
 --		added map coordinates in contig component coordinates (RefSNPSeqHit),
@@ -77,12 +84,12 @@ NCBI-RefSNPLocusID ::= SEQUENCE {		-- set of data for a specific locus ID within
 	url-id INTEGER DEFAULT 3,
 	fxn-class ENUMERATED {			-- functional class 						MapLinkPid.function || MapLinkLocusList.function
 		locus-region (1),		-- Maps to MapSum (L)						default to (1) until code is finished
-		coding (2),			-- Maps to MapSum (LTC)
-		coding-syn   (3),		-- Maps to MapSum (LTC)
-		coding-nonsyn (4),		-- Maps to MapSum (LTCN) N not implemented in MapViewer yet
-		transcribed-untranslated (5),	-- Maps to MapSum (LT)
-		intron	     (6), 		-- Maps to MapSum (L)
-		splice       (7) } OPTIONAL,	-- Maps to MapSum (L)
+		coding (2),			-- Maps to MapSum (C)
+		coding-syn   (3),		-- Maps to MapSum (C)
+		coding-nonsyn (4),		-- Maps to MapSum (CN) N not implemented in MapViewer yet
+		transcribed-untranslated (5),	-- Maps to MapSum (T)
+		intron	     (6), 		-- Maps to MapSum (T)
+		splice       (7) } OPTIONAL,	-- Maps to MapSum (T)
 	symbol VisibleString OPTIONAL }		-- symbol for locusID   					"dgb_ex..locRef.current_symbol" with locusID as parameter
 
 NCBI-RefSNPSeqHit ::= SEQUENCE {		-- Properties of individual mapping result from finished & draft sequences
@@ -99,11 +106,18 @@ NCBI-RefSNPlink ::= SEQUENCE {			-- link data for anther resource
 NCBI-SubSNPid ::= SEQUENCE {
 	subsnp-id INTEGER,			-- dbSNP ss# (dbSNP assay ID) for submission			SubSNP.subsnp_id
 	handle	VisibleString,			-- submitter handle						Batch.handle
-	loc-snp-id VisibleString}		-- submitter local ID for subsnp				SubSNP.loc_snp_id
+	loc-snp-id VisibleString,		-- submitter local ID for subsnp				SubSNP.loc_snp_id
+	subsnp-class ENUMERATED {		-- SubSNP classification by type of variation			SubSNP.subsnp_class
+		snp         (1),		-- alleles of length=1 and from set of {A,T,C,G}
+		in-del      (2),		-- alleles of different length or include '-' character
+		het         (3),		-- allele contains string '(heterozygous)'
+		microsat    (4),		-- allele string contains numbers and '(motif)' pattern
+		named       (5),		-- allele string contains '(', ')' but not het. or microsat	
+		no-variation (6)} }		-- SubSNP is a NoVariation feature
 	
 NCBI-RefSNPdocsum ::= SEQUENCE {		-- defines the docsum structure that summarizes a refSNP
 	refsnp-id INTEGER,			-- reference SNP ID 						SNP.snp_id
-	taxid INTEGER,				-- tax ID for SNP						from viewRsTaxID (stored proc)
+	taxid INTEGER,				-- tax ID for SNP						SNP.taxid
 	organism VisibleString OPTIONAL,	-- species code 						OrganismTax.abbr for taxid (stored proc)
 	snp-class ENUMERATED {			-- SNP classification by type of variation			SNP.snp_class
 		snp         (1),		-- alleles of length=1 and from set of {A,T,C,G}
@@ -111,7 +125,8 @@ NCBI-RefSNPdocsum ::= SEQUENCE {		-- defines the docsum structure that summarize
 		het         (3),		-- allele contains string '(heterozygous)'
 		microsat    (4),		-- allele string contains numbers and '(motif)' pattern
 		named       (5),		-- allele string contains '(', ')' but not het. or microsat	
-		no-variation (6) },		-- RefSNP is a NoVariation feature
+		no-variation (6),		-- RefSNP is a NoVariation feature
+		mixed       (7) },              -- RefSNP allele list defines multiple classes
 	observed VisibleString,			-- '/' delimited string of all alleles 				GenomeSNPAllele.allele
 	seq-5 SEQUENCE OF VisibleString,	-- 5' flank sequence for refSNP					SNPSeq5.line
 	seq-3 SEQUENCE OF VisibleString,	-- 3' flank sequence for refSNP					SNPSeq3.line
