@@ -67,12 +67,12 @@ inline
 ENa_strand Reverse(ENa_strand s)
 {
     switch ( s ) {
-    case eNa_strand_minus:     s = eNa_strand_plus;        break;
-    case eNa_strand_plus:      s = eNa_strand_minus;       break;
-    case eNa_strand_both:      s = eNa_strand_both_rev;    break;
-    case eNa_strand_both_rev:  s = eNa_strand_both;        break;
+    case eNa_strand_minus:     return eNa_strand_plus;
+    case eNa_strand_plus:      return eNa_strand_minus;
+    case eNa_strand_both:      return eNa_strand_both_rev;
+    case eNa_strand_both_rev:  return eNa_strand_both;
+    default:                   return s;
     }
-    return s;
 }
 
 
@@ -85,6 +85,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/12/18 02:55:52  ucko
+* Rework Reverse to avoid warnings about unhandled cases.
+*
 * Revision 1.2  2003/08/27 14:20:27  vasilche
 * Added Reverse(ENa_strand).
 *
