@@ -79,6 +79,10 @@
  *  @ingroup CORELIB
  */
 
+/** @defgroup PluginMgr Plugin Manager
+ *  @ingroup CORELIB
+ */
+
 /** @defgroup Exec Portable Exec Handling
  *  @ingroup CORELIB
  */
@@ -504,3 +508,14 @@
  *  HTML members
  */
 
+
+/* ========================================================================= */
+
+
+/** @defgroup MISC
+ *  Miscellaneous
+ */
+
+/** @defgroup Miscellaneous
+ *  @ingroup MISC
+ */
