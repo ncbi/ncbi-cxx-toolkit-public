@@ -18763,7 +18763,7 @@ test -f "$ncbicfg" -a ! -f "$ncbicfg.last" && cp -p "$ncbicfg" "$ncbicfg.last"
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-                    ac_config_files="$ac_config_files $configurables $srcdir/Makefile:Makefile.in"
+                    ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:Makefile.in"
 
 
           ac_config_commands="$ac_config_commands default"
@@ -19321,7 +19321,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "$configurables" ) CONFIG_FILES="$CONFIG_FILES $configurables" ;;
-  "$srcdir/Makefile" ) CONFIG_FILES="$CONFIG_FILES $srcdir/Makefile:Makefile.in" ;;
+  "$srcdir/./Makefile" ) CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:Makefile.in" ;;
   "default" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
   "${ncbiconf}" ) CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

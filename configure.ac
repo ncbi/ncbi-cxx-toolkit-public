@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.232 2003/11/06 18:12:08 ucko Exp $
+#  $Id: configure.ac,v 1.233 2003/11/06 19:07:29 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3746,7 +3746,7 @@ AC_CONFIG_HEADER(${ncbiconf}:config.h.in)
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-AC_CONFIG_FILES($configurables $srcdir/Makefile:Makefile.in)
+AC_CONFIG_FILES($configurables $srcdir/./Makefile:Makefile.in)
 
 AC_CONFIG_COMMANDS([default], [
 status_dir="$SAVE_status_dir"
