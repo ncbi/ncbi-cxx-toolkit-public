@@ -607,7 +607,9 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         SQL_TIMESTAMP_STRUCT v;
         outlen= xGetData(SQL_C_TYPE_TIMESTAMP, &v, sizeof(SQL_TIMESTAMP_STRUCT));
         if (outlen <= 0) {
-            return new CDB_SmallInt();
+            return (m_ColFmt[m_CurrItem].ColumnSize > 16 ||
+				m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime()) :
+				(CDB_Object*)(new CDB_SmallDateTime());
         }
         else {
             CTime t((int)v.year, (int)v.month, (int)v.day,
@@ -1047,6 +1049,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/01 18:01:20  soussov
+ * fixes copy-paste bug
+ *
  * Revision 1.13  2005/01/31 21:48:27  soussov
  * fixes bug in xMakeItem. It should return CDB_SmallDateTime if DecimalDigits == 0
  *
