@@ -2466,7 +2466,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         return eIO_Closed;
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
-#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_IRIX)
+#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_IRIX)
         if (peer.sa.sa_family != AF_UNSPEC/*0*/)
 #  endif
             return eIO_InvalidArg;
@@ -2477,7 +2477,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     
 #ifdef NCBI_OS_UNIX
     if (
-#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_IRIX)
+#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_IRIX)
         peer.sa.sa_family == AF_UNSPEC/*0*/  ||
 #  endif
         peer.sa.sa_family == AF_UNIX) {
@@ -3953,6 +3953,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.137  2003/10/27 16:45:46  ivanov
+ * Use workaround for unnamed peer's UNIX sockets on DARWIN also.
+ *
  * Revision 6.136  2003/10/24 17:39:43  lavr
  * Fix '==' => '!=' bug in s_Select() introduced by previous commit
  *
