@@ -321,6 +321,7 @@ void CDistMethods::Divergence(const CAlnVec& avec_in, TMatrix& result)
 }
 
 
+#if 0
 void CDistMethods::Divergence(const CAlignment& aln, TMatrix& result)
 {
     int nseqs = aln.GetSeqs().size();
@@ -334,6 +335,7 @@ void CDistMethods::Divergence(const CAlignment& aln, TMatrix& result)
         }
     }
 }
+#endif
 
 END_NCBI_SCOPE
 
@@ -341,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/02/19 16:43:45  jcherry
+ * Temporarily disable one form of Divergence() method
+ *
  * Revision 1.5  2004/02/19 13:20:04  dicuccio
  * Roll back to version 1.3
  *
