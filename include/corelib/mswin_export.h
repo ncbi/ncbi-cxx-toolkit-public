@@ -1074,7 +1074,7 @@
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
-#  define NCBI_XALGOGNOMON_EXPORTS
+#  define NCBI_XALGOGNOMON_EXPORT
 #  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
@@ -1103,6 +1103,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.43  2003/10/24 15:23:26  dicuccio
+ * Fixed gnomon export specifier
+ *
  * Revision 1.42  2003/10/24 15:17:15  dicuccio
  * Added export specifier for gnomon
  *
