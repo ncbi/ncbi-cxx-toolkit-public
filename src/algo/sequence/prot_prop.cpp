@@ -101,7 +101,7 @@ static const double pKaSide[26] =
 {0, 0, 0, 9, 4.05, 4.45, 0, 0, 5.98, 0, 10, 0, 0, 0, 0, 0, 12.0, 0, 0, 0, 0, 0, 10, 0, 0, 0};
 static const size_t maxRes = sizeof(pKaN) / sizeof(*pKaN) - 1;
 
-double CProtProp::GetProteinCharge(const vector<TSeqPos> aacount,
+double CProtProp::GetProteinCharge(const vector<TSeqPos>& aacount,
                         CSeqVector::TResidue nter,
                         CSeqVector::TResidue cter,
                         double pH)
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/14 01:24:15  jcherry
+ * Pass vector by reference
+ *
  * Revision 1.2  2003/07/01 19:01:13  ucko
  * Fix scope use
  *

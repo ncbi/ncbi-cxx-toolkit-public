@@ -52,7 +52,7 @@ public:
 
     /// Estimates the charge on a protein
     /// at a given pH.
-    static double GetProteinCharge(const vector<TSeqPos> aacount,
+    static double GetProteinCharge(const vector<TSeqPos>& aacount,
                                    CSeqVector::TResidue nter,
                                    CSeqVector::TResidue cter,
                                    double pH);
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/14 01:24:15  jcherry
+ * Pass vector by reference
+ *
  * Revision 1.5  2003/12/11 17:30:44  ivanov
  * Explicit Using pow(double,double) to avoid compilation problems on MSVC7
  *
