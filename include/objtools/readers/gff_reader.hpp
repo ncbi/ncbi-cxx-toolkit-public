@@ -66,8 +66,9 @@ class NCBI_XOBJREAD_EXPORT CGFFReader
 {
 public:
     enum EFlags {
-        fNoGTF   = 0x1, // don't honor/recognize GTF conventions
-        fGBQuals = 0x2  // attribute tags are GenBank qualifiers
+        fNoGTF      = 0x1, // don't honor/recognize GTF conventions
+        fGBQuals    = 0x2, // attribute tags are GenBank qualifiers
+        fMergeExons = 0x4  // merge exons with the same transcript_id
     };
     typedef int TFlags;
 
@@ -75,7 +76,6 @@ public:
 
     CRef<CSeq_entry> Read(CNcbiIstream& in, TFlags flags = 0);
 
-protected:
     struct SRecord : public CObject
     {
         struct SSubLoc
@@ -95,8 +95,12 @@ protected:
         int          frame;     ///< 0-based; . maps to -1.
         TAttrs       attrs;
         unsigned int line_no;
+
+        TAttrs::const_iterator FindAttribute(const string& name,
+                                             size_t min_values = 1) const;
     };
 
+protected:
     virtual void            x_Warn(const string& message,
                                    unsigned int line = 0);
 
@@ -173,6 +177,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/27 17:12:34  ucko
+ * Make SRecord public to resolve visibility errors on IBM VisualAge C++.
+ *
  * Revision 1.2  2003/12/03 21:03:19  ucko
  * Add Windows export specifier.
  *
