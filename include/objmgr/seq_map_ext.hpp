@@ -34,20 +34,19 @@
 *   i.e. location and type only, without providing real data
 *
 */
-
+#include <objects/seq/Delta_ext.hpp>
 #include <objmgr/seq_map.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CDelta_ext;
 class CSeg_ext;
 
 class NCBI_XOBJMGR_EXPORT CSeqMap_Delta_seqs : public CSeqMap
 {
 public:
-    typedef CDelta_ext TObject;
-    typedef list< CRef<CDelta_seq> > TList;
+    typedef CDelta_ext            TObject;
+    typedef TObject::Tdata        TList;
     typedef TList::const_iterator TList_I;
 
     CSeqMap_Delta_seqs(const TObject& obj);
@@ -92,9 +91,9 @@ private:
 class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_locs : public CSeqMap
 {
 public:
-    typedef CObject TObject;
-    typedef list< CRef<CSeq_loc> > TList;
-    typedef TList::const_iterator TList_I;
+    typedef CObject                 TObject;
+    typedef list< CRef<CSeq_loc> >  TList;
+    typedef TList::const_iterator   TList_I;
 
     CSeqMap_Seq_locs(const CSeg_ext& obj, const TList& seq);
     CSeqMap_Seq_locs(const CSeq_loc_mix& obj, const TList& seq);
@@ -132,8 +131,8 @@ private:
 class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_intervals : public CSeqMap
 {
 public:
-    typedef CPacked_seqint TObject;
-    typedef list< CRef<CSeq_interval> > TList;
+    typedef CPacked_seqint        TObject;
+    typedef TObject::Tdata        TList;
     typedef TList::const_iterator TList_I;
 
     CSeqMap_Seq_intervals(const TObject& obj);
@@ -171,8 +170,8 @@ private:
 class NCBI_XOBJMGR_EXPORT CSeqMap_SeqPoss : public CSeqMap
 {
 public:
-    typedef CPacked_seqpnt TObject;
-    typedef list< TSeqPos > TList;
+    typedef CPacked_seqpnt        TObject;
+    typedef TObject::TPoints      TList;
     typedef TList::const_iterator TList_I;
 
     CSeqMap_SeqPoss(const TObject& obj);
@@ -218,6 +217,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/01/22 22:11:59  shomrat
+* using typedefs instead of concrete types
+*
 * Revision 1.7  2003/11/12 16:53:16  grichenk
 * Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
 *
