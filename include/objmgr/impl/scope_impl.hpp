@@ -46,15 +46,11 @@
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/priority.hpp>
 
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/seq_annot_handle.hpp>
-
 #include <objects/seq/seq_id_handle.hpp>
-#include <objects/seq/seq_id_mapper.hpp>
 
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
+#include <objmgr/impl/data_source.hpp>
 
 #include <objects/seq/Seq_inst.hpp> // for enum EMol
 
@@ -85,16 +81,18 @@ class CBioseq_Info;
 class CBioseq_set_Info;
 class CSeq_id_Handle;
 class CSeqMap;
-class CSeqMatch_Info;
 class CSynonymsSet;
+class CTSE_Handle;
 class CBioseq_Handle;
 class CSeq_annot_Handle;
 class CSeq_entry_Handle;
+class CBioseq_set_Handle;
 class CBioseq_EditHandle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_EditHandle;
+class CBioseq_set_EditHandle;
 class CHandleRangeMap;
-struct CDataSource_ScopeInfo;
+class CDataSource_ScopeInfo;
 struct SAnnotTypeSelector;
 struct SAnnotSelector;
 class CPriorityTree;
@@ -105,21 +103,26 @@ class CPriorityNode;
 // CScope_Impl
 /////////////////////////////////////////////////////////////////////////////
 
+
+struct SSeqMatch_Scope : public SSeqMatch_TSE
+{
+    CTSE_ScopeUserLock   m_TSE_Lock;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CScope_Impl : public CObject
 {
 public:
-    typedef set<TTSE_Lock>                           TTSE_LockSet;
+    typedef CTSE_ScopeUserLock                       TTSE_Lock;
 
     // History of requests
     typedef map<CSeq_id_Handle, SSeq_id_ScopeInfo>   TSeq_idMap;
     typedef TSeq_idMap::value_type                   TSeq_idMapValue;
-    typedef CRef<CBioseq_ScopeInfo>                  TBioseqMapValue;
-    typedef const CBioseq_Info*                      TBioseqMapKey;
-    typedef map<TBioseqMapKey, TBioseqMapValue>      TBioseqMap;
-    typedef SSeq_id_ScopeInfo::TTSE_LockMap          TTSE_LockMap;
-    typedef SSeq_id_ScopeInfo::TAnnotRefMap          TAnnotRefMap;
+    typedef set<CSeq_id_Handle>                      TSeq_idSet;
+    typedef map<CTSE_Handle, TSeq_idSet>             TTSE_LockMatchSet;
     typedef int                                      TPriority;
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
+    typedef map<CRef<CDataSource>, CRef<CDataSource_ScopeInfo> > TDSMap;
 
     //////////////////////////////////////////////////////////////////
     // Adding top level objects: DataLoader, Seq-entry, Bioseq, Seq-annot
@@ -199,17 +202,10 @@ public:
                                    const CBioseq_set_EditHandle& seqset);
 
     // Get bioseq handle, limit id resolving
-    CBioseq_Handle GetBioseqHandle(const CSeq_id& id, int get_flag);
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id, int get_flag);
 
-    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
-                                          const CBioseq_Handle& bh);
-    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id& id,
-                                          const CSeq_entry_Handle& seh);
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                          const CBioseq_Handle& bh);
-    CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                          const CSeq_entry_Handle& seh);
+                                          const CTSE_Handle& tse);
 
     // Get bioseq handle by seqloc
     CBioseq_Handle GetBioseqHandle(const CSeq_loc& loc, int get_flag);
@@ -218,23 +214,22 @@ public:
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq);
     CSeq_entry_Handle GetSeq_entryHandle(const CSeq_entry& entry);
     CSeq_annot_Handle GetSeq_annotHandle(const CSeq_annot& annot);
-    CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Lock& tse_lock);
+    CSeq_entry_Handle GetSeq_entryHandle(const CTSE_Handle& tse);
 
     void ResetHistory(void);
 
-    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+    CScope& GetScope(void);
 
     // Get "native" bioseq ids without filtering and matching.
-    typedef CBioseq_Handle::TId TIds;
-    TIds GetIds(const CSeq_id& id);
+    typedef vector<CSeq_id_Handle> TIds;
     TIds GetIds(const CSeq_id_Handle& idh);
 
     // Get bioseq synonyms, resolving to the bioseq in this scope.
-    CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id& id,
-                                        int get_flag);
     CConstRef<CSynonymsSet> GetSynonyms(const CSeq_id_Handle& id,
                                         int get_flag);
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
+                                   const CBioseq_ScopeInfo& binfo);
 
     typedef vector<CSeq_entry_Handle> TTSE_Handles;
     void GetAllTSEs(TTSE_Handles& tses, int kind);
@@ -251,11 +246,7 @@ private:
     // Return the highest priority loader or null
     CDataSource* GetFirstLoaderSource(void);
 
-    void UpdateAnnotIndex(const CSeq_annot& limit_annot);
-    void UpdateAnnotIndex(const CSeq_annot_Handle& annot);
-
-    CConstRef<TAnnotRefMap>
-    GetTSESetWithAnnots(const CSeq_id_Handle& idh_type);
+    TTSE_LockMatchSet GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
@@ -264,11 +255,14 @@ private:
     // clean some cache entries when new data source is added
     void x_ClearCacheOnNewData(void);
     void x_ClearAnnotCache(void);
-    void x_ClearCacheOnRemoveData(const CSeq_entry_Info& entry);
-    void x_ClearCacheOnRemoveData(const CBioseq_set_Info& seqset);
-    void x_ClearCacheOnRemoveData(const CBioseq_Info& seq);
+    void x_ClearCacheOnRemoveData(const CTSE_ScopeInfo& tse,
+                                  const CSeq_entry_Info& entry);
+    void x_ClearCacheOnRemoveData(const CTSE_ScopeInfo& tse,
+                                  const CBioseq_set_Info& seqset);
+    void x_ClearCacheOnRemoveData(const CTSE_ScopeInfo& tse,
+                                  const CBioseq_Info& seq);
 
-    CRef<CTSE_Info> x_GetEditTSE(const CTSE_Info& src_tse);
+    CRef<CTSE_ScopeInfo> x_GetEditTSE(const CTSE_Info& src_tse);
 
     CSeq_entry_EditHandle x_AttachEntry(const CBioseq_set_EditHandle& seqset,
                                         CRef<CSeq_entry_Info> entry,
@@ -282,31 +276,27 @@ private:
                                        CRef<CBioseq_set_Info> seqset);
 
     // Find the best possible resolution for the Seq-id
-    void x_ResolveSeq_id(TSeq_idMapValue& id, int get_flag);
+    void x_ResolveSeq_id(TSeq_idMapValue& id,
+                         int get_flag,
+                         SSeqMatch_Scope& match);
     // Iterate over priorities, find all possible data sources
-    CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityTree& tree,
-                                            const CSeq_id_Handle& idh,
-                                            const TSeq_id_HandleSet* hset,
-                                            CSeqMatch_Info& match_info,
-                                            int get_flag);
-    CDataSource_ScopeInfo* x_FindBioseqInfo(const CPriorityNode& node,
-                                            const CSeq_id_Handle& idh,
-                                            const TSeq_id_HandleSet* hset,
-                                            CSeqMatch_Info& match_info,
-                                            int get_flag);
-    CDataSource_ScopeInfo* x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
-                                            const CSeq_id_Handle& idh,
-                                            const TSeq_id_HandleSet* hset,
-                                            CSeqMatch_Info& match_info,
-                                            int get_flag);
+    SSeqMatch_Scope x_FindBioseqInfo(const CPriorityTree& tree,
+                                     const CSeq_id_Handle& idh,
+                                     int get_flag);
+    SSeqMatch_Scope x_FindBioseqInfo(const CPriorityNode& node,
+                                     const CSeq_id_Handle& idh,
+                                     int get_flag);
+    SSeqMatch_Scope x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
+                                     const CSeq_id_Handle& idh,
+                                     int get_flag);
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                            const TTSE_Lock& tse);
+                                            const CTSE_Handle& tse);
 
     CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq,
-                                   const TTSE_Lock& tse_lock);
+                                   const CTSE_Handle& tse);
     CBioseq_Handle x_GetBioseqHandle(const CBioseq_Info& seq,
-                                     const TTSE_Lock& tse_lock);
+                                     const CTSE_Handle& tse);
 
 public:
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
@@ -317,6 +307,12 @@ public:
     TSeq_entry_Lock x_GetSeq_entry_Lock(const CSeq_entry& entry);
     TSeq_annot_Lock x_GetSeq_annot_Lock(const CSeq_annot& annot);
     TBioseq_Lock x_GetBioseq_Lock(const CBioseq& bioseq);
+    TBioseq_Lock x_GetBioseq_Lock(const CBioseq_ScopeInfo& binfo);
+
+    TTSE_Lock x_GetTSE_Lock(const CTSE_Lock& lock, CDataSource_ScopeInfo& ds);
+    TTSE_Lock x_GetTSE_Lock(const CTSE_ScopeInfo& tse);
+
+    CRef<CDataSource_ScopeInfo> GetDSInfo(CDataSource& ds);
 
 private:
     // Get bioseq handles for sequences from the given TSE using the filter
@@ -331,46 +327,55 @@ private:
     void x_AddSynonym(const CSeq_id_Handle& idh,
                       CSynonymsSet& syn_set, CBioseq_ScopeInfo& info);
 
-    // Check if any bioseq synonym has been resolved
-    bool x_HaveResolvedSynonym(CSeqMatch_Info& info);
     // Conflict reporting function
     enum EConflict {
         eConflict_History,
         eConflict_Live
     };
     void x_ThrowConflict(EConflict conflict_type,
-                         const CSeqMatch_Info& info1,
-                         const CSeqMatch_Info& info2) const;
+                         const SSeqMatch_Scope& info1,
+                         const SSeqMatch_Scope& info2) const;
 
     TSeq_idMapValue& x_GetSeq_id_Info(const CSeq_id_Handle& id);
     TSeq_idMapValue& x_GetSeq_id_Info(const CBioseq_Handle& bh);
     TSeq_idMapValue* x_FindSeq_id_Info(const CSeq_id_Handle& id);
 
     CRef<CBioseq_ScopeInfo> x_InitBioseq_Info(TSeq_idMapValue& info,
-                                              int get_flag);
+                                              int get_flag,
+                                              SSeqMatch_Scope& match);
     bool x_InitBioseq_Info(TSeq_idMapValue& info,
                            CBioseq_ScopeInfo& bioseq_info);
     CRef<CBioseq_ScopeInfo> x_GetBioseq_Info(const CSeq_id_Handle& id,
-                                             int get_flag);
+                                             int get_flag,
+                                             SSeqMatch_Scope& match);
     CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id,
-                                              int get_flag);
+                                              int get_flag,
+                                              SSeqMatch_Scope& match);
 
-    void x_AddTSESetWithAnnots(TTSE_LockMap& tse_map,
-                               const TTSE_LockMap& add,
+    typedef CBioseq_ScopeInfo::TTSE_MatchSet TTSE_MatchSet;
+    typedef CDataSource::TTSE_LockMatchSet TTSE_LockMatchSet_DS;
+    void x_AddTSESetWithAnnots(TTSE_LockMatchSet& lock,
+                               TTSE_MatchSet& match,
+                               const TTSE_LockMatchSet_DS& add,
                                CDataSource_ScopeInfo& ds_info);
-    CDataSource_ScopeInfo*
-    x_GetTSESetWithOrphanAnnots(TTSE_LockMap& tse_map,
-                                const TSeq_id_HandleSet& ids,
-                                CDataSource* bioseq_ds);
-    CDataSource_ScopeInfo*
-    x_GetTSESetWithBioseqAnnots(TTSE_LockMap& tse_map,
-                                CBioseq_ScopeInfo& binfo);
+    void x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
+                                     TTSE_MatchSet& match,
+                                     const TSeq_idSet& ids,
+                                     CDataSource_ScopeInfo* excl_ds);
+    void x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
+                                     TTSE_MatchSet& match,
+                                     CBioseq_ScopeInfo& binfo);
+
+    void x_LockMatchSet(TTSE_LockMatchSet& lock,
+                        const TTSE_MatchSet& match);
 
 private:
     CScope*         m_HeapScope;
 
     CObjectManager* m_pObjMgr;
     CPriorityTree   m_setDataSrc; // Data sources ordered by priority
+
+    TDSMap          m_DSMap;
 
     CInitMutexPool  m_MutexPool;
 
@@ -382,8 +387,6 @@ private:
 
     TSeq_idMap      m_Seq_idMap;
     mutable TRWLock m_Seq_idMapLock;
-    TBioseqMap      m_BioseqMap;
-    mutable TRWLock m_BioseqMapLock;
     TEditInfoMap    m_EditInfoMap;
 
     friend class CScope;
