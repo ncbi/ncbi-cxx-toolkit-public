@@ -449,6 +449,8 @@ CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align)
     case CSeq_align::C_Segs::e_Disc:
         x_Init(align.GetSegs().GetDisc());
         break;
+    default:
+        break;
     }
 }
 
@@ -940,6 +942,11 @@ CRef<CSeq_align> CSeq_align_Mapper::GetDstAlign(void) const
             }
             break;
         }
+    default:
+        {
+            dst->Assign(*m_OrigAlign);
+            break;
+        }
     }
     return m_DstAlign = dst;
 }
@@ -1331,6 +1338,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/02/05 22:49:19  grichenk
+* Added default cases in switches
+*
 * Revision 1.17  2004/02/05 20:18:37  grichenk
 * Fixed std-segs processing
 *
