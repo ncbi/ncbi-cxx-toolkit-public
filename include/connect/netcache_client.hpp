@@ -38,15 +38,17 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_core.h>
+#include <util/reader_writer.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 class CSocket;
-class IReader;
 
 /// Client API for NetCache server
 ///
+/// After any Put, Get transactions connection socket
+/// is closed (part of NetCache protocol implemenation)
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
@@ -58,17 +60,45 @@ public:
     CNetCacheClient(CSocket* sock, const char* client_name=0);
 
     /// Put BLOB to server
-    string PutData(void* buf, size_t size);
+    ///
+    /// @param time_to_live
+    ///    Timeout value in seconds. 0 - server side default assumed.
+    string PutData(void*         buf, 
+                   size_t        size,
+                   unsigned int  time_to_live = 0);
 
     /// Retrieve BLOB from server by key
     /// If BLOB not found method returns NULL
-    /// Caller is responsible for deletion of IReader*
+    /// Caller is responsible for deletion of the IReader*
+    ///
+    /// @param key
+    ///    BLOB key to read (returned by PutData)
+    /// @return
+    ///    IReader* (caller must delete this)
     IReader* GetData(const string& key);
+
+
+    enum EReadResult {
+        eReadComplete, ///< The whole BLOB has been read
+        eNotFound,     ///< BLOB not found or error
+        eReadPart,     ///< Read part of the BLOB (buffer capacity)
+    };
+
+    /// Retrieve BLOB from server by key
+    ///
+    /// @note
+    ///    Function waits for enought data to arrive.
+    EReadResult GetData(const string&  key,
+                        void*          buf, 
+                        size_t         buf_size, 
+                        size_t*        n_read = 0);
 
 protected:
 
     bool ReadStr(CSocket& sock, string* str);
     bool IsError(const char* str);
+
+    void WriteStr(const char* str, size_t len);
 
 private:
     CSocket*    m_Sock;
@@ -82,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/10/05 18:17:58  kuznets
+ * comments, added GetData
+ *
  * Revision 1.1  2004/10/04 18:44:33  kuznets
  * Initial revision
  *
