@@ -42,13 +42,10 @@ extern "C" {
 #endif
 
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/core/aa_lookup.h>
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_seqsrc.h>
-
-#define OFFSET_ARRAY_SIZE 4096
 
 /** The high level function performing the BLAST search against a BLAST 
  * database after all the setup has been done.
@@ -115,19 +112,6 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
    BlastResults* results, BlastReturnStat* return_stats);
-
-/** Create the lookup table for all query words.
- * @param query The query sequence [in]
- * @param lookup_options What kind of lookup table to build? [in]
- * @param lookup_segments Locations on query to be used for lookup table
- *                        construction [in]
- * @param sbp Scoring block containing matrix [in]
- * @param lookup_wrap_ptr The initialized lookup table [out]
- */
-Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
-        const LookupTableOptions* lookup_options,	
-        ListNode* lookup_segments, BlastScoreBlk* sbp, 
-        LookupTableWrap** lookup_wrap_ptr);
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 
